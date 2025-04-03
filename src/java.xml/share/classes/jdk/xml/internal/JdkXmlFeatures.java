@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class JdkXmlFeatures {
          * function is disabled.
          */
         ENABLE_EXTENSION_FUNCTION(ImplPropMap.ENABLEEXTFUNC, null, null, true,
-                null, null, true, false, true, true),
+                null, null, false, false, true, true),
         /**
          * The {@link javax.xml.XMLConstants.USE_CATALOG} feature.
          * FSP: USE_CATALOG is not enforced by FSP.
@@ -382,13 +382,7 @@ public class JdkXmlFeatures {
      */
     private void readSystemProperties() {
         for (XmlFeature feature : XmlFeature.values()) {
-            if (!getSystemProperty(feature, feature.systemProperty())) {
-                //if system property is not found, try the older form if any
-                String oldName = feature.systemPropertyOld();
-                if (oldName != null) {
-                    getSystemProperty(feature, oldName);
-                }
-            }
+            getSystemProperty(feature, feature.systemProperty());
         }
     }
 
@@ -401,7 +395,12 @@ public class JdkXmlFeatures {
      */
     private boolean getSystemProperty(XmlFeature feature, String sysPropertyName) {
         try {
-            String value = SecuritySupport.getSystemProperty(sysPropertyName);
+            String value = System.getProperty(sysPropertyName);
+            if (value == null && feature.systemPropertyOld() != null) {
+                // legacy system property
+                value = System.getProperty(feature.systemPropertyOld());
+            }
+
             if (value != null && !value.isEmpty()) {
                 setFeature(feature, State.SYSTEMPROPERTY, Boolean.parseBoolean(value));
                 return true;

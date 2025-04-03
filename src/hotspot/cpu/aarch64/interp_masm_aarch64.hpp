@@ -58,6 +58,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void load_earlyret_value(TosState state);
 
+  void call_VM_preemptable(Register oop_result,
+                           address entry_point,
+                           Register arg_1);
+  void restore_after_resume(bool is_native);
+
   void jump_to_entry(address entry);
 
   virtual void check_and_handle_popframe(Register java_thread);
@@ -298,8 +303,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // only if +VerifyOops && state == atos
 #define interp_verify_oop(reg, state) _interp_verify_oop(reg, state, __FILE__, __LINE__);
   void _interp_verify_oop(Register reg, TosState state, const char* file, int line);
-  // only if +VerifyFPU  && (state == ftos || state == dtos)
-  void verify_FPU(int stack_depth, TosState state = ftos);
 
   typedef enum { NotifyJVMTI, SkipNotifyJVMTI } NotifyMethodExitMode;
 

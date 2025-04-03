@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,7 +233,7 @@ public class Events {
 
     private static void assertThread(RecordedThread eventThread, Thread thread) {
         assertNotNull(eventThread, "Thread in event was null");
-        assertEquals(eventThread.getJavaThreadId(), thread.getId(), "Wrong thread id");
+        assertEquals(eventThread.getJavaThreadId(), thread.threadId(), "Wrong thread id");
         assertEquals(eventThread.getJavaName(), thread.getName(), "Wrong thread name");
 
         ThreadGroup threadGroup = thread.getThreadGroup();

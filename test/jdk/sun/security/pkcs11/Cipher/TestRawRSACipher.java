@@ -30,7 +30,6 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestRawRSACipher
- * @run main/othervm -Djava.security.manager=allow TestRawRSACipher sm
  */
 
 import java.security.GeneralSecurityException;

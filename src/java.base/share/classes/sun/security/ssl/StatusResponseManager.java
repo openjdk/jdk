@@ -27,14 +27,10 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.AccessController;
 import java.security.cert.Extension;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.*;
-import sun.security.action.GetBooleanAction;
-import sun.security.action.GetIntegerAction;
-import sun.security.action.GetPropertyAction;
 import sun.security.provider.certpath.CertId;
 import sun.security.provider.certpath.OCSP;
 import sun.security.provider.certpath.OCSPResponse;
@@ -63,20 +59,17 @@ final class StatusResponseManager {
      * Create a StatusResponseManager with default parameters.
      */
     StatusResponseManager() {
-        @SuppressWarnings("removal")
-        int cap = AccessController.doPrivileged(
-                new GetIntegerAction("jdk.tls.stapling.cacheSize",
-                    DEFAULT_CACHE_SIZE));
+        int cap = Integer.getInteger(
+                "jdk.tls.stapling.cacheSize",
+                DEFAULT_CACHE_SIZE);
         cacheCapacity = cap > 0 ? cap : 0;
 
-        @SuppressWarnings("removal")
-        int life = AccessController.doPrivileged(
-                new GetIntegerAction("jdk.tls.stapling.cacheLifetime",
-                    DEFAULT_CACHE_LIFETIME));
+        int life = Integer.getInteger(
+                "jdk.tls.stapling.cacheLifetime",
+                DEFAULT_CACHE_LIFETIME);
         cacheLifetime = life > 0 ? life : 0;
 
-        String uriStr = GetPropertyAction
-                .privilegedGetProperty("jdk.tls.stapling.responderURI");
+        String uriStr = System.getProperty("jdk.tls.stapling.responderURI");
         URI tmpURI;
         try {
             tmpURI = ((uriStr != null && !uriStr.isEmpty()) ?
@@ -86,10 +79,9 @@ final class StatusResponseManager {
         }
         defaultResponder = tmpURI;
 
-        respOverride = GetBooleanAction
-                .privilegedGetProperty("jdk.tls.stapling.responderOverride");
-        ignoreExtensions = GetBooleanAction
-                .privilegedGetProperty("jdk.tls.stapling.ignoreExtensions");
+        respOverride = Boolean.getBoolean("jdk.tls.stapling.responderOverride");
+        ignoreExtensions = Boolean.getBoolean
+                ("jdk.tls.stapling.ignoreExtensions");
 
         threadMgr = new ScheduledThreadPoolExecutor(DEFAULT_CORE_THREADS,
                 r -> {

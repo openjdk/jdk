@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4490179
+ * @bug 4490179 8049069
  * @summary Tests that JButton only responds to left mouse clicks.
  * @key headful
  * @run main bug4490179

@@ -28,7 +28,6 @@ package com.sun.management.internal;
 import com.sun.management.DiagnosticCommandMBean;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.security.Permission;
 import java.util.*;
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -104,58 +103,15 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
         String name;
         String cmd;
         DiagnosticCommandInfo info;
-        Permission permission;
 
         Wrapper(String name, String cmd, DiagnosticCommandInfo info)
                 throws InstantiationException {
             this.name = name;
             this.cmd = cmd;
             this.info = info;
-            this.permission = null;
-            Exception cause = null;
-            if (info.getPermissionClass() != null) {
-                try {
-                    Class<?> c = Class.forName(info.getPermissionClass());
-                    if (info.getPermissionAction() == null) {
-                        try {
-                            Constructor<?> constructor = c.getConstructor(String.class);
-                            permission = (Permission) constructor.newInstance(info.getPermissionName());
-
-                        } catch (InstantiationException | IllegalAccessException
-                                | IllegalArgumentException | InvocationTargetException
-                                | NoSuchMethodException | SecurityException ex) {
-                            cause = ex;
-                        }
-                    }
-                    if (permission == null) {
-                        try {
-                            Constructor<?> constructor = c.getConstructor(String.class, String.class);
-                            permission = (Permission) constructor.newInstance(
-                                    info.getPermissionName(),
-                                    info.getPermissionAction());
-                        } catch (InstantiationException | IllegalAccessException
-                                | IllegalArgumentException | InvocationTargetException
-                                | NoSuchMethodException | SecurityException ex) {
-                            cause = ex;
-                        }
-                    }
-                } catch (ClassNotFoundException ex) { }
-                if (permission == null) {
-                    InstantiationException iex =
-                            new InstantiationException("Unable to instantiate required permission");
-                    iex.initCause(cause);
-                }
-            }
         }
 
         public String execute(String[] args) {
-            if (permission != null) {
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (sm != null) {
-                    sm.checkPermission(permission);
-                }
-            }
             if(args == null) {
                 return executeDiagnosticCommand(cmd);
             } else {
@@ -304,9 +260,6 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
         map.put("dcmd.name", w.info.getName());
         map.put("dcmd.description", w.info.getDescription());
         map.put("dcmd.vmImpact", w.info.getImpact());
-        map.put("dcmd.permissionClass", w.info.getPermissionClass());
-        map.put("dcmd.permissionName", w.info.getPermissionName());
-        map.put("dcmd.permissionAction", w.info.getPermissionAction());
         map.put("dcmd.enabled", w.info.isEnabled());
         StringBuilder sb = new StringBuilder();
         sb.append("help ");

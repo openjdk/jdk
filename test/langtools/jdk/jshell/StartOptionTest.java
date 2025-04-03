@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
  /*
- * @test 8151754 8080883 8160089 8170162 8166581 8172102 8171343 8178023 8186708 8179856 8185840 8190383
+ * @test 8151754 8080883 8160089 8170162 8166581 8172102 8171343 8178023 8186708 8179856 8185840 8190383 8341631
  * @summary Testing startExCe-up options.
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -89,16 +89,32 @@ public class StartOptionTest {
     }
 
     protected void check(ByteArrayOutputStream str, Consumer<String> checkOut, String label) {
-        byte[] bytes = str.toByteArray();
-        str.reset();
-        String out = new String(bytes, StandardCharsets.UTF_8);
-        out = stripAnsi(out);
-        out = out.replaceAll("[\r\n]+", "\n");
-        if (checkOut != null) {
-            checkOut.accept(out);
-        } else {
-            assertEquals(out, "", label + ": Expected empty -- ");
+        try {
+            byte[] bytes = str.toByteArray();
+            str.reset();
+            String out = new String(bytes, StandardCharsets.UTF_8);
+            out = stripAnsi(out);
+            out = out.replaceAll("[\r\n]+", "\n");
+            if (checkOut != null) {
+                checkOut.accept(out);
+            } else {
+                assertEquals(out, "", label + ": Expected empty -- ");
+            }
+        } catch (Throwable t) {
+            logOutput("cmdout", cmdout);
+            logOutput("cmderr", cmderr);
+            logOutput("console", console);
+            logOutput("userout", userout);
+            logOutput("usererr", usererr);
+
+            throw t;
         }
+    }
+
+    private void logOutput(String outName, ByteArrayOutputStream out) {
+        System.err.println(outName + ": " +
+                           new String(out.toByteArray(),
+                                      StandardCharsets.UTF_8));
     }
 
     protected void checkExit(int ec, Consumer<Integer> checkCode) {
@@ -366,14 +382,49 @@ public class StartOptionTest {
     }
 
     public void testPreviewEnabled() {
-        String fn = writeToFile("System.out.println(\"prefix\");\n" +
-                "System.out.println(MethodHandle.class.getName());\n" +
-                "System.out.println(\"suffix\");\n" +
-                "/exit\n");
+        String fn = writeToFile(
+                """
+                System.out.println(\"prefix\");
+                System.out.println(MethodHandle.class.getName());
+                System.out.println(\"suffix\");
+                /exit
+                """);
         startCheckUserOutput(s -> assertEquals(s, "prefix\nsuffix\n"),
                              fn);
         startCheckUserOutput(s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
                              "--enable-preview", fn);
+        //JDK-8341631:
+        String fn2 = writeToFile(
+                """
+                System.out.println(\"prefix\");
+                IO.println(\"test\");
+                System.out.println(\"suffix\");
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals(s, "prefix\nsuffix\n"),
+                             fn2);
+        startCheckUserOutput(s -> assertEquals(s, "prefix\ntest\nsuffix\n"),
+                             "--enable-preview", fn2);
+    }
+    public void testInput() {
+        //readLine(String):
+        String readLinePrompt = writeToFile(
+                """
+                var v = System.console().readLine("prompt: ");
+                System.out.println(v);
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals(s, "prompt: null\n"),
+                             readLinePrompt);
+        //readPassword(String):
+        String readPasswordPrompt = writeToFile(
+                """
+                var v = System.console().readPassword("prompt: ");
+                System.out.println(java.util.Arrays.toString(v));
+                /exit
+                """);
+        startCheckUserOutput(s -> assertEquals(s, "prompt: null\n"),
+                             readPasswordPrompt);
     }
 
     @AfterMethod

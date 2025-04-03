@@ -28,7 +28,6 @@ package jdk.internal.vm;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import sun.security.action.GetPropertyAction;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -51,7 +50,7 @@ public class Continuation {
 
         StackChunk.init(); // ensure StackChunk class is initialized
 
-        String value = GetPropertyAction.privilegedGetProperty("jdk.preserveScopedValueCache");
+        String value = System.getProperty("jdk.preserveScopedValueCache");
         PRESERVE_SCOPED_VALUE_CACHE = (value == null) || Boolean.parseBoolean(value);
     }
 
@@ -59,7 +58,9 @@ public class Continuation {
     public enum Pinned {
         /** Native frame on stack */ NATIVE,
         /** Monitor held */          MONITOR,
-        /** In critical section */   CRITICAL_SECTION }
+        /** In critical section */   CRITICAL_SECTION,
+        /** Exception (OOME/SOE) */  EXCEPTION
+    }
 
     /** Preemption attempt result */
     public enum PreemptStatus {
@@ -85,6 +86,7 @@ public class Continuation {
             case 2 -> Pinned.CRITICAL_SECTION;
             case 3 -> Pinned.NATIVE;
             case 4 -> Pinned.MONITOR;
+            case 5 -> Pinned.EXCEPTION;
             default -> throw new AssertionError("Unknown pinned reason: " + reason);
         };
     }
@@ -358,8 +360,6 @@ public class Continuation {
     @Hidden
     @JvmtiHideEvents
     private boolean yield0(ContinuationScope scope, Continuation child) {
-        preempted = false;
-
         if (scope != this.scope)
             this.yieldInfo = scope;
         int res = doYield();
@@ -502,7 +502,7 @@ public class Continuation {
     }
 
     private static boolean isEmptyOrTrue(String property) {
-        String value = GetPropertyAction.privilegedGetProperty(property);
+        String value = System.getProperty(property);
         if (value == null)
             return false;
         return value.isEmpty() || Boolean.parseBoolean(value);

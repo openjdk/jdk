@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -124,12 +124,9 @@ class NativeCall: private NativeInstruction {
  public:
 
   static int byte_size() {
-    if (UseTrampolines) {
-      return NativeInstruction::instruction_size; // jal
-    } else {
-      return 3 * NativeInstruction::instruction_size; // auipc + ld + jalr
-    }
+    return 3 * NativeInstruction::instruction_size; // auipc + ld + jalr
   }
+
   // Creation
   friend NativeCall* nativeCall_at(address addr);
   friend NativeCall* nativeCall_before(address return_address);

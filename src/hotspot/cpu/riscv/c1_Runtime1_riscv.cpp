@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Defs.hpp"
@@ -147,7 +146,7 @@ int StubAssembler::call_RT(Register oop_result, Register metadata_result, addres
     const int arg1_sp_offset = 0;
     const int arg2_sp_offset = 1;
     const int arg3_sp_offset = 2;
-    addi(sp, sp, -(arg_num + 1) * wordSize);
+    subi(sp, sp, (arg_num + 1) * wordSize);
     sd(arg1, Address(sp, arg1_sp_offset * wordSize));
     sd(arg2, Address(sp, arg2_sp_offset * wordSize));
     sd(arg3, Address(sp, arg3_sp_offset * wordSize));
@@ -165,7 +164,7 @@ int StubAssembler::call_RT(Register oop_result, Register metadata_result, addres
 }
 
 enum return_state_t {
-  does_not_return, requires_return
+  does_not_return, requires_return, requires_pop_epilogue_return
 };
 
 // Implementation of StubFrame
@@ -173,7 +172,7 @@ enum return_state_t {
 class StubFrame: public StackObj {
  private:
   StubAssembler* _sasm;
-  bool _return_state;
+  return_state_t _return_state;
 
  public:
   StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments, return_state_t return_state=requires_return);
@@ -187,8 +186,18 @@ void StubAssembler::prologue(const char* name, bool must_gc_arguments) {
   enter();
 }
 
-void StubAssembler::epilogue() {
-  leave();
+void StubAssembler::epilogue(bool use_pop) {
+  // Avoid using a leave instruction when this frame may
+  // have been frozen, since the current value of fp
+  // restored from the stub would be invalid. We still
+  // must restore the fp value saved on enter though.
+  if (use_pop) {
+    ld(fp, Address(sp));
+    ld(ra, Address(sp, wordSize));
+    addi(sp, sp, 2 * wordSize);
+  } else {
+    leave();
+  }
   ret();
 }
 
@@ -208,10 +217,10 @@ void StubFrame::load_argument(int offset_in_words, Register reg) {
 
 
 StubFrame::~StubFrame() {
-  if (_return_state == requires_return) {
-    __ epilogue();
-  } else {
+  if (_return_state == does_not_return) {
     __ should_not_reach_here();
+  } else {
+    __ epilogue(_return_state == requires_pop_epilogue_return);
   }
   _sasm = nullptr;
 }
@@ -266,6 +275,10 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
                               r->as_VMReg());
   }
 
+  int sp_offset = cpu_reg_save_offsets[xthread->encoding()];
+  oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset),
+                            xthread->as_VMReg());
+
   // fpu_regs
   if (save_fpu_registers) {
     for (int i = 0; i < FrameMap::nof_fpu_regs; i++) {
@@ -287,14 +300,14 @@ static OopMap* save_live_registers(StubAssembler* sasm,
 
   if (save_fpu_registers) {
     // float registers
-    __ addi(sp, sp, -(FrameMap::nof_fpu_regs * wordSize));
+    __ subi(sp, sp, FrameMap::nof_fpu_regs * wordSize);
     for (int i = 0; i < FrameMap::nof_fpu_regs; i++) {
       __ fsd(as_FloatRegister(i), Address(sp, i * wordSize));
     }
   } else {
     // we define reg_save_layout = 62 as the fixed frame size,
     // we should also sub 32 * wordSize to sp when save_fpu_registers == false
-    __ addi(sp, sp, -32 * wordSize);
+    __ subi(sp, sp, 32 * wordSize);
   }
 
   return generate_oop_map(sasm, save_fpu_registers);
@@ -352,6 +365,16 @@ void Runtime1::initialize_pd() {
     cpu_reg_save_offsets[i] = sp_offset;
     sp_offset += step;
   }
+}
+
+// return: offset in 64-bit words.
+uint Runtime1::runtime_blob_current_thread_offset(frame f) {
+  CodeBlob* cb = f.cb();
+  assert(cb == Runtime1::blob_for(C1StubId::monitorenter_id) ||
+         cb == Runtime1::blob_for(C1StubId::monitorenter_nofpu_id), "must be");
+  assert(cb != nullptr && cb->is_runtime_stub(), "invalid frame");
+  int offset = cpu_reg_save_offsets[xthread->encoding()];
+  return offset / 2;   // SP offsets are in halfwords
 }
 
 // target: the entry point of the method that creates and posts the exception oop
@@ -519,7 +542,7 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // Save our return address because
   // exception_handler_for_return_address will destroy it.  We also
   // save exception_oop
-  __ addi(sp, sp, -2 * wordSize);
+  __ subi(sp, sp, 2 * wordSize);
   __ sd(exception_oop, Address(sp, wordSize));
   __ sd(ra, Address(sp));
 
@@ -859,7 +882,13 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         __ ld(x10, Address(sp, (sup_k_off) * VMRegImpl::stack_slot_size)); // super klass
 
         Label miss;
-        __ check_klass_subtype_slow_path(x14, x10, x12, x15, nullptr, &miss);
+        __ check_klass_subtype_slow_path(x14,     /*sub_klass*/
+                                         x10,     /*super_klass*/
+                                         x12,     /*tmp1_reg*/
+                                         x15,     /*tmp2_reg*/
+                                         nullptr, /*L_success*/
+                                         &miss    /*L_failure*/);
+        // Need extras for table lookup: x7, x11, x13
 
         // fallthrough on success:
         __ mv(t0, 1);
@@ -879,7 +908,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       // fall through
     case C1StubId::monitorenter_id:
       {
-        StubFrame f(sasm, "monitorenter", dont_gc_arguments);
+        StubFrame f(sasm, "monitorenter", dont_gc_arguments, requires_pop_epilogue_return);
         OopMap* map = save_live_registers(sasm, save_fpu_registers);
         assert_cond(map != nullptr);
 
@@ -893,6 +922,52 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         assert_cond(oop_maps != nullptr);
         oop_maps->add_gc_map(call_offset, map);
         restore_live_registers(sasm, save_fpu_registers);
+      }
+      break;
+
+    case C1StubId::is_instance_of_id:
+      {
+        // Mirror: x10
+        // Object: x11
+        // Temps: x13, x14, x15, x16, x17
+        // Result: x10
+
+        // Get the Klass* into x16
+        Register klass = x16, obj = x11, result = x10;
+        __ ld(klass, Address(x10, java_lang_Class::klass_offset()));
+
+        Label fail, is_secondary, success;
+
+        __ beqz(klass, fail); // Klass is null
+        __ beqz(obj, fail); // obj is null
+
+        __ lwu(x13, Address(klass, in_bytes(Klass::super_check_offset_offset())));
+        __ mv(x17, in_bytes(Klass::secondary_super_cache_offset()));
+        __ beq(x13, x17, is_secondary); // Klass is a secondary superclass
+
+        // Klass is a concrete class
+        __ load_klass(x15, obj);
+        __ add(x17, x15, x13);
+        __ ld(x17, Address(x17));
+        __ beq(klass, x17, success);
+        __ mv(result, 0);
+        __ ret();
+
+        __ bind(is_secondary);
+        __ load_klass(obj, obj);
+
+        // This is necessary because I am never in my own secondary_super list.
+        __ beq(obj, klass, success);
+
+        __ lookup_secondary_supers_table_var(obj, klass, result, x13, x14, x15, x17, &success);
+
+        __ bind(fail);
+        __ mv(result, 0);
+        __ ret();
+
+        __ bind(success);
+        __ mv(result, 1);
+        __ ret();
       }
       break;
 

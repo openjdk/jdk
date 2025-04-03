@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFile;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
 import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Benchmark)
 @Fork(value = 1, jvmArgs = {
-        "--enable-preview"})
+        "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED"})
 @Warmup(iterations = 3)
 @Measurement(iterations = 4)
 public class RepeatedModelTraversal {

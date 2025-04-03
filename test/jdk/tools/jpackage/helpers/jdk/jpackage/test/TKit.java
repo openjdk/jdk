@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,28 @@
  */
 package jdk.jpackage.test;
 
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import static java.util.stream.Collectors.toSet;
+
 import java.io.Closeable;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.StandardCopyOption;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -59,16 +62,15 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Functional.ExceptionBox;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Functional.ThrowingRunnable;
-import jdk.jpackage.test.Functional.ThrowingSupplier;
+import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.util.function.ExceptionBox;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.ThrowingUnaryOperator;
 
 public final class TKit {
-
-    private static final String OS = System.getProperty("os.name").toLowerCase();
 
     public static final Path TEST_SRC_ROOT = Functional.identity(() -> {
         Path root = Path.of(System.getProperty("test.src"));
@@ -108,11 +110,18 @@ public final class TKit {
             ThrowingRunnable.toRunnable(action).run();
         } else {
             try (PrintStream logStream = openLogStream()) {
-                extraLogStream = logStream;
-                ThrowingRunnable.toRunnable(action).run();
-            } finally {
-                extraLogStream = null;
+                withExtraLogStream(action, logStream);
             }
+        }
+    }
+
+    static void withExtraLogStream(ThrowingRunnable action, PrintStream logStream) {
+        var oldExtraLogStream = extraLogStream;
+        try {
+            extraLogStream = logStream;
+            ThrowingRunnable.toRunnable(action).run();
+        } finally {
+            extraLogStream = oldExtraLogStream;
         }
     }
 
@@ -176,23 +185,19 @@ public final class TKit {
     }
 
     public static boolean isWindows() {
-        return (OS.contains("win"));
+        return OperatingSystem.isWindows();
     }
 
     public static boolean isOSX() {
-        return (OS.contains("mac"));
+        return OperatingSystem.isMacOS();
     }
 
     public static boolean isLinux() {
-        return ((OS.contains("nix") || OS.contains("nux")));
+        return OperatingSystem.isLinux();
     }
 
     public static boolean isLinuxAPT() {
-        if (!isLinux()) {
-            return false;
-        }
-        File aptFile = new File("/usr/bin/apt-get");
-        return aptFile.exists();
+        return isLinux() && Files.exists(Path.of("/usr/bin/apt-get"));
     }
 
     private static String addTimestamp(String msg) {
@@ -250,11 +255,6 @@ public final class TKit {
     }
 
     public static void createPropertiesFile(Path propsFilename,
-            Map.Entry<String, String>... props) {
-        createPropertiesFile(propsFilename, List.of(props));
-    }
-
-    public static void createPropertiesFile(Path propsFilename,
             Map<String, String> props) {
         createPropertiesFile(propsFilename, props.entrySet());
     }
@@ -292,9 +292,17 @@ public final class TKit {
         }
     }
 
-    private static final String TEMP_FILE_PREFIX = null;
+    private static Path createUniquePath(String defaultName) {
+        return createUniquePath(defaultName, workDir());
+    }
 
-    private static Path createUniqueFileName(String defaultName) {
+    private static Path createUniquePath(String defaultName, Path basedir) {
+        Objects.requireNonNull(defaultName);
+        Objects.requireNonNull(basedir);
+        if (defaultName.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+
         final String[] nameComponents;
 
         int separatorIdx = defaultName.lastIndexOf('.');
@@ -308,7 +316,6 @@ public final class TKit {
                 separatorIdx + 1)};
         }
 
-        final Path basedir = workDir();
         int i = 0;
         for (; i < 100; ++i) {
             Path path = basedir.resolve(String.join(".", nameComponents));
@@ -324,32 +331,42 @@ public final class TKit {
                 baseName, i));
     }
 
-    public static Path createTempDirectory(String role) throws IOException {
-        if (role == null) {
-            return Files.createTempDirectory(workDir(), TEMP_FILE_PREFIX);
+    public static Path createTempDirectory(String role) {
+        return createTempDirectory(Path.of(role));
+    }
+
+    public static Path createTempDirectory(Path role) {
+        return createTempPath(role, Files::createDirectory);
+    }
+
+    public static Path createTempFile(String role) {
+        return createTempFile(Path.of(role));
+    }
+
+    public static Path createTempFile(Path role) {
+        return createTempPath(role, Files::createFile);
+    }
+
+    private static Path createTempPath(Path templatePath, ThrowingUnaryOperator<Path> createPath) {
+        if (templatePath.isAbsolute()) {
+            throw new IllegalArgumentException();
         }
-        return Files.createDirectory(createUniqueFileName(role));
-    }
+        final Path basedir;
+        if (templatePath.getNameCount() > 1) {
+            basedir = workDir().resolve(templatePath.getParent());
+        } else {
+            basedir = workDir();
+        }
 
-    public static Path createTempFile(Path templateFile) throws
-            IOException {
-        return Files.createFile(createUniqueFileName(
-                templateFile.getFileName().toString()));
-    }
+        final var path = createUniquePath(templatePath.getFileName().toString(), basedir);
 
-    public static Path withTempFile(Path templateFile,
-            ThrowingConsumer<Path> action) {
-        final Path tempFile = ThrowingSupplier.toSupplier(() -> createTempFile(
-                templateFile)).get();
-        boolean keepIt = true;
         try {
-            ThrowingConsumer.toConsumer(action).accept(tempFile);
-            keepIt = false;
-            return tempFile;
-        } finally {
-            if (tempFile != null && !keepIt) {
-                ThrowingRunnable.toRunnable(() -> Files.deleteIfExists(tempFile)).run();
-            }
+            Files.createDirectories(path.getParent());
+            return createPath.apply(path);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        } catch (Throwable t) {
+            throw ExceptionBox.rethrowUnchecked(t);
         }
     }
 
@@ -502,18 +519,21 @@ public final class TKit {
     }
 
     public static RuntimeException throwSkippedException(String reason) {
-        trace("Skip the test: " + reason);
-        RuntimeException ex = ThrowingSupplier.toSupplier(
-                () -> (RuntimeException) Class.forName("jtreg.SkippedException").getConstructor(
-                        String.class).newInstance(reason)).get();
+        RuntimeException ex = ThrowingSupplier.toSupplier(() -> {
+            return JtregSkippedExceptionClass.INSTANCE.getConstructor(String.class).newInstance(reason);
+        }).get();
+        return throwSkippedException(ex);
+    }
 
+    public static RuntimeException throwSkippedException(RuntimeException ex) {
+        trace("Skip the test: " + ex.getMessage());
         currentTest.notifySkipped(ex);
         throw ex;
     }
 
     public static Path createRelativePathCopy(final Path file) {
         Path fileCopy = ThrowingSupplier.toSupplier(() -> {
-            Path localPath = createTempFile(file);
+            Path localPath = createTempFile(file.getFileName());
             Files.copy(file, localPath, StandardCopyOption.REPLACE_EXISTING);
             return localPath;
         }).get().toAbsolutePath().normalize();
@@ -599,7 +619,7 @@ public final class TKit {
                     msg));
         }
 
-        traceAssert(String.format("assertEquals(%d): %s", expected, msg));
+        traceAssert(concatMessages(String.format("assertEquals(%d)", expected), msg));
     }
 
     public static void assertNotEquals(long expected, long actual, String msg) {
@@ -609,9 +629,32 @@ public final class TKit {
                     msg));
         }
 
-        traceAssert(String.format("assertNotEquals(%d, %d): %s", expected,
-                actual, msg));
+        traceAssert(concatMessages(String.format("assertNotEquals(%d, %d)", expected,
+                actual), msg));
     }
+
+    public static void assertEquals(boolean expected, boolean actual, String msg) {
+        currentTest.notifyAssert();
+        if (expected != actual) {
+            error(concatMessages(String.format(
+                    "Expected [%s]. Actual [%s]", expected, actual),
+                    msg));
+        }
+
+        traceAssert(concatMessages(String.format("assertEquals(%s)", expected), msg));
+    }
+
+    public static void assertNotEquals(boolean expected, boolean actual, String msg) {
+        currentTest.notifyAssert();
+        if (expected == actual) {
+            error(concatMessages(String.format("Unexpected [%s] value", actual),
+                    msg));
+        }
+
+        traceAssert(concatMessages(String.format("assertNotEquals(%s, %s)", expected,
+                actual), msg));
+    }
+
 
     public static void assertEquals(String expected, String actual, String msg) {
         currentTest.notifyAssert();
@@ -622,7 +665,7 @@ public final class TKit {
                     msg));
         }
 
-        traceAssert(String.format("assertEquals(%s): %s", expected, msg));
+        traceAssert(concatMessages(String.format("assertEquals(%s)", expected), msg));
     }
 
     public static void assertNotEquals(String expected, String actual, String msg) {
@@ -630,8 +673,8 @@ public final class TKit {
         if ((actual != null && !actual.equals(expected))
                 || (expected != null && !expected.equals(actual))) {
 
-            traceAssert(String.format("assertNotEquals(%s, %s): %s", expected,
-                actual, msg));
+            traceAssert(concatMessages(String.format("assertNotEquals(%s, %s)", expected,
+                actual), msg));
             return;
         }
 
@@ -645,7 +688,7 @@ public final class TKit {
                     value), msg));
         }
 
-        traceAssert(String.format("assertNull(): %s", msg));
+        traceAssert(concatMessages("assertNull()", msg));
     }
 
     public static void assertNotNull(Object value, String msg) {
@@ -654,7 +697,7 @@ public final class TKit {
             error(concatMessages("Unexpected null value", msg));
         }
 
-        traceAssert(String.format("assertNotNull(%s): %s", value, msg));
+        traceAssert(concatMessages(String.format("assertNotNull(%s)", value), msg));
     }
 
     public static void assertTrue(boolean actual, String msg) {
@@ -674,7 +717,7 @@ public final class TKit {
             error(concatMessages("Failed", msg));
         }
 
-        traceAssert(String.format("assertTrue(): %s", msg));
+        traceAssert(concatMessages("assertTrue()", msg));
     }
 
     public static void assertFalse(boolean actual, String msg, Runnable onFail) {
@@ -686,7 +729,7 @@ public final class TKit {
             error(concatMessages("Failed", msg));
         }
 
-        traceAssert(String.format("assertFalse(): %s", msg));
+        traceAssert(concatMessages("assertFalse()", msg));
     }
 
     public static void assertPathExists(Path path, boolean exists) {
@@ -707,7 +750,7 @@ public final class TKit {
         assertDirectoryExists(path, Optional.of(true));
     }
 
-    public static void assertDirectoryExists(Path path, Optional<Boolean> isEmptyCheck) {
+    private static void assertDirectoryExists(Path path, Optional<Boolean> isEmptyCheck) {
         assertPathExists(path, true);
         boolean isDirectory = Files.isDirectory(path);
         if (isEmptyCheck.isEmpty() || !isDirectory) {
@@ -780,18 +823,18 @@ public final class TKit {
             currentTest.notifyAssert();
 
             var comm = Comm.compare(content, expected);
-            if (!comm.unique1.isEmpty() && !comm.unique2.isEmpty()) {
+            if (!comm.unique1().isEmpty() && !comm.unique2().isEmpty()) {
                 error(String.format(
                         "assertDirectoryContentEquals(%s): Some expected %s. Unexpected %s. Missing %s",
-                        baseDir, format(comm.common), format(comm.unique1), format(comm.unique2)));
-            } else if (!comm.unique1.isEmpty()) {
+                        baseDir, format(comm.common()), format(comm.unique1()), format(comm.unique2())));
+            } else if (!comm.unique1().isEmpty()) {
                 error(String.format(
-                        "assertDirectoryContentEquals%s: Expected %s. Unexpected %s",
-                        baseDir, format(comm.common), format(comm.unique1)));
-            } else if (!comm.unique2.isEmpty()) {
+                        "assertDirectoryContentEquals(%s): Expected %s. Unexpected %s",
+                        baseDir, format(comm.common()), format(comm.unique1())));
+            } else if (!comm.unique2().isEmpty()) {
                 error(String.format(
                         "assertDirectoryContentEquals(%s): Some expected %s. Missing %s",
-                        baseDir, format(comm.common), format(comm.unique2)));
+                        baseDir, format(comm.common()), format(comm.unique2())));
             } else {
                 traceAssert(String.format(
                         "assertDirectoryContentEquals(%s): Expected %s",
@@ -807,10 +850,10 @@ public final class TKit {
             currentTest.notifyAssert();
 
             var comm = Comm.compare(content, expected);
-            if (!comm.unique2.isEmpty()) {
+            if (!comm.unique2().isEmpty()) {
                 error(String.format(
                         "assertDirectoryContentContains(%s): Some expected %s. Missing %s",
-                        baseDir, format(comm.common), format(comm.unique2)));
+                        baseDir, format(comm.common()), format(comm.unique2())));
             } else {
                 traceAssert(String.format(
                         "assertDirectoryContentContains(%s): Expected %s",
@@ -818,30 +861,23 @@ public final class TKit {
             }
         }
 
-        public DirectoryContentVerifier removeAll(Path ... paths) {
+        public DirectoryContentVerifier removeAll(Collection<Path> paths) {
             Set<Path> newContent = new HashSet<>(content);
-            newContent.removeAll(List.of(paths));
+            newContent.removeAll(paths);
             return new DirectoryContentVerifier(baseDir, newContent);
+        }
+
+        public DirectoryContentVerifier removeAll(Path ... paths) {
+            return removeAll(List.of(paths));
+        }
+
+        public Set<Path> items() {
+            return content;
         }
 
         private DirectoryContentVerifier(Path baseDir, Set<Path> contents) {
             this.baseDir = baseDir;
             this.content = contents;
-        }
-
-        private static record Comm(Set<Path> common, Set<Path> unique1, Set<Path> unique2) {
-            static Comm compare(Set<Path> a, Set<Path> b) {
-                Set<Path> common = new HashSet<>(a);
-                common.retainAll(b);
-
-                Set<Path> unique1 = new HashSet<>(a);
-                unique1.removeAll(common);
-
-                Set<Path> unique2 = new HashSet<>(b);
-                unique2.removeAll(common);
-
-                return new Comm(common, unique1, unique2);
-            }
         }
 
         private static String format(Set<Path> paths) {
@@ -858,7 +894,7 @@ public final class TKit {
             List<String> actual, String msg) {
         currentTest.notifyAssert();
 
-        traceAssert(String.format("assertStringListEquals(): %s", msg));
+        traceAssert(concatMessages("assertStringListEquals()", msg));
 
         String idxFieldFormat = Functional.identity(() -> {
             int listSize = expected.size();
@@ -888,7 +924,7 @@ public final class TKit {
                     expectedStr));
         });
 
-        if (expected.size() < actual.size()) {
+        if (actual.size() > expected.size()) {
             // Actual string list is longer than expected
             error(concatMessages(String.format(
                     "Actual list is longer than expected by %d elements",
@@ -898,7 +934,7 @@ public final class TKit {
         if (actual.size() < expected.size()) {
             // Actual string list is shorter than expected
             error(concatMessages(String.format(
-                    "Actual list is longer than expected by %d elements",
+                    "Actual list is shorter than expected by %d elements",
                     expected.size() - actual.size()), msg));
         }
     }
@@ -952,6 +988,16 @@ public final class TKit {
             return this;
         }
 
+        public TextStreamVerifier andThen(Consumer<? super Stream<String>> anotherVerifier) {
+            this.anotherVerifier = anotherVerifier;
+            return this;
+        }
+
+        public TextStreamVerifier andThen(TextStreamVerifier anotherVerifier) {
+            this.anotherVerifier = anotherVerifier::apply;
+            return this;
+        }
+
         public TextStreamVerifier orElseThrow(RuntimeException v) {
             return orElseThrow(() -> v);
         }
@@ -962,9 +1008,22 @@ public final class TKit {
         }
 
         public void apply(Stream<String> lines) {
-            String matchedStr = lines.filter(line -> predicate.test(line, value)).findFirst().orElse(
-                    null);
-            String labelStr = Optional.ofNullable(label).orElse("output");
+            final String matchedStr;
+
+            lines = lines.dropWhile(line -> !predicate.test(line, value));
+            if (anotherVerifier == null) {
+                matchedStr = lines.findFirst().orElse(null);
+            } else {
+                var tail = lines.toList();
+                if (tail.isEmpty()) {
+                    matchedStr = null;
+                } else {
+                    matchedStr = tail.get(0);
+                }
+                lines = tail.stream().skip(1);
+            }
+
+            final String labelStr = Optional.ofNullable(label).orElse("output");
             if (negate) {
                 String msg = String.format(
                         "Check %s doesn't contain [%s] string", labelStr, value);
@@ -988,12 +1047,17 @@ public final class TKit {
                     }
                 }
             }
+
+            if (anotherVerifier != null) {
+                anotherVerifier.accept(lines);
+            }
         }
 
         private BiPredicate<String, String> predicate;
         private String label;
         private boolean negate;
         private Supplier<RuntimeException> createException;
+        private Consumer<? super Stream<String>> anotherVerifier;
         private final String value;
     }
 
@@ -1076,5 +1140,31 @@ public final class TKit {
             VERBOSE_JPACKAGE = isNonOf.test(Set.of("jpackage", "jp"));
             VERBOSE_TEST_SETUP = isNonOf.test(Set.of("init", "i"));
         }
+    }
+
+    private static final class JtregSkippedExceptionClass extends ClassLoader {
+        @SuppressWarnings("unchecked")
+        JtregSkippedExceptionClass() {
+            super(TKit.class.getClassLoader());
+
+            final byte[] bytes = Base64.getDecoder().decode(
+                    // Base64-encoded "jtreg/SkippedException.class" file
+                    // emitted by jdk8's javac from "$OPEN_JDK/test/lib/jtreg/SkippedException.java"
+                    "yv66vgAAADQAFQoABAARCgAEABIHABMHABQBABBzZXJpYWxWZXJzaW9uVUlEAQABSgEADUNvbnN0"
+                    + "YW50VmFsdWUFErH6BHk+kr0BAAY8aW5pdD4BACooTGphdmEvbGFuZy9TdHJpbmc7TGphdmEvbGFu"
+                    + "Zy9UaHJvd2FibGU7KVYBAARDb2RlAQAPTGluZU51bWJlclRhYmxlAQAVKExqYXZhL2xhbmcvU3Ry"
+                    + "aW5nOylWAQAKU291cmNlRmlsZQEAFVNraXBwZWRFeGNlcHRpb24uamF2YQwACgALDAAKAA4BABZq"
+                    + "dHJlZy9Ta2lwcGVkRXhjZXB0aW9uAQAaamF2YS9sYW5nL1J1bnRpbWVFeGNlcHRpb24AMQADAAQA"
+                    + "AAABABoABQAGAAEABwAAAAIACAACAAEACgALAAEADAAAACMAAwADAAAAByorLLcAAbEAAAABAA0A"
+                    + "AAAKAAIAAAAiAAYAIwABAAoADgABAAwAAAAiAAIAAgAAAAYqK7cAArEAAAABAA0AAAAKAAIAAAAm"
+                    + "AAUAJwABAA8AAAACABA");
+
+            clazz = (Class<RuntimeException>)defineClass("jtreg.SkippedException", bytes, 0, bytes.length);
+        }
+
+        private final Class<RuntimeException> clazz;
+
+        static final Class<RuntimeException> INSTANCE = new JtregSkippedExceptionClass().clazz;
+
     }
 }

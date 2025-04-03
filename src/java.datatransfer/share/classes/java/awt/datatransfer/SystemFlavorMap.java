@@ -30,8 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.ref.SoftReference;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -202,12 +200,8 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
         }
         isMapInitialized = true;
 
-        @SuppressWarnings("removal")
-        InputStream is = AccessController.doPrivileged(
-            (PrivilegedAction<InputStream>) () -> {
-                return SystemFlavorMap.class.getResourceAsStream(
+        InputStream is = SystemFlavorMap.class.getResourceAsStream(
                         "/sun/datatransfer/resources/flavormap.properties");
-            });
         if (is == null) {
             throw new InternalError("Default flavor mapping not found");
         }

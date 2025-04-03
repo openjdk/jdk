@@ -241,7 +241,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             params.init(spec);
             return params;
         } catch (NoSuchAlgorithmException | InvalidParameterSpecException e) {
-            throw new RuntimeException(e);
+            throw new ProviderException(e);
         }
     }
 
@@ -781,7 +781,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         int mergeBlock(byte[] buffer, int bufOfs, int bufLen, byte[] in,
             int inOfs, int inLen, byte[] block) {
             if (bufLen > blockSize) {
-                throw new RuntimeException("mergeBlock called on an ibuffer " +
+                throw new ProviderException("mergeBlock called on an ibuffer " +
                     "too big:  " + bufLen + " bytes");
             }
 

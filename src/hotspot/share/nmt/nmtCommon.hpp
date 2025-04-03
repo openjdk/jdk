@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
 
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -29,8 +29,6 @@
 
 #include "memory/allStatic.hpp"
 #include "nmt/memTag.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -90,7 +88,7 @@ class NMTUtil : AllStatic {
 
   // Map memory tag to index
   static inline int tag_to_index(MemTag mem_tag) {
-    assert(tag_is_valid(mem_tag), "Invalid type (%u)", (unsigned)mem_tag);
+    assert(tag_is_valid(mem_tag), "Invalid tag (%u)", (unsigned)mem_tag);
     return static_cast<int>(mem_tag);
   }
 
@@ -106,7 +104,7 @@ class NMTUtil : AllStatic {
 
   // Map an index to memory tag
   static MemTag index_to_tag(int index) {
-    assert(tag_index_is_valid(index), "Invalid type index (%d)", index);
+    assert(tag_index_is_valid(index), "Invalid tag index (%d)", index);
     return static_cast<MemTag>(index);
   }
 
@@ -139,13 +137,5 @@ class NMTUtil : AllStatic {
   static S _strings[mt_number_of_tags];
 };
 
-// Same as MutexLocker but can be used during VM init.
-// Performs no action if given a null mutex or with detached threads.
-class NmtVirtualMemoryLocker: public ConditionalMutexLocker {
-public:
-    NmtVirtualMemoryLocker() :
-            ConditionalMutexLocker(NmtVirtualMemory_lock, Thread::current_or_null_safe() != nullptr, Mutex::_no_safepoint_check_flag) {
-    }
-};
 
 #endif // SHARE_NMT_NMTCOMMON_HPP

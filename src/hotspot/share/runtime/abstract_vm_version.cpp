@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "jvm_io.h"
@@ -82,6 +81,10 @@ VirtualizationType Abstract_VM_Version::_detected_virtualization = NoDetectedVir
   #error HOTSPOT_BUILD_TIME must be defined
 #endif
 
+#ifndef JVM_VARIANT
+  #error JVM_VARIANT must be defined
+#endif
+
 #define VM_RELEASE HOTSPOT_VERSION_STRING
 
 // HOTSPOT_VERSION_STRING equals the JDK VERSION_STRING (unless overridden
@@ -135,31 +138,41 @@ const char* Abstract_VM_Version::vm_vendor() {
 
 
 const char* Abstract_VM_Version::vm_info_string() {
+  const char* mode;
   switch (Arguments::mode()) {
     case Arguments::_int:
-      return CDSConfig::is_using_archive() ? "interpreted mode, sharing" : "interpreted mode";
+      mode = "interpreted mode";
+      break;
     case Arguments::_mixed:
-      if (CDSConfig::is_using_archive()) {
-        if (CompilationModeFlag::quick_only()) {
-          return "mixed mode, emulated-client, sharing";
-        } else {
-          return "mixed mode, sharing";
-         }
+      if (CompilationModeFlag::quick_only()) {
+        mode = "mixed mode, emulated-client";
       } else {
-        if (CompilationModeFlag::quick_only()) {
-          return "mixed mode, emulated-client";
-        } else {
-          return "mixed mode";
-        }
+        mode = "mixed mode";
       }
+      break;
     case Arguments::_comp:
       if (CompilationModeFlag::quick_only()) {
-         return CDSConfig::is_using_archive() ? "compiled mode, emulated-client, sharing" : "compiled mode, emulated-client";
+        mode = "compiled mode, emulated-client";
+      } else {
+        mode = "compiled mode";
       }
-      return CDSConfig::is_using_archive() ? "compiled mode, sharing" : "compiled mode";
+      break;
+    default:
+      ShouldNotReachHere();
   }
-  ShouldNotReachHere();
-  return "";
+
+  const char* static_info = ", static";
+  const char* sharing_info = ", sharing";
+  size_t len = strlen(mode) +
+               (is_vm_statically_linked() ? strlen(static_info) : 0) +
+               (CDSConfig::is_using_archive() ? strlen(sharing_info) : 0) +
+               1;
+  char* vm_info = NEW_C_HEAP_ARRAY(char, len, mtInternal);
+  // jio_snprintf places null character in the last character.
+  jio_snprintf(vm_info, len, "%s%s%s", mode,
+               is_vm_statically_linked() ? static_info : "",
+               CDSConfig::is_using_archive() ? sharing_info : "");
+  return vm_info;
 }
 
 // NOTE: do *not* use stringStream. this function is called by
@@ -187,7 +200,6 @@ const char* Abstract_VM_Version::vm_release() {
 #define CPU      AARCH64_ONLY("aarch64")         \
                  AMD64_ONLY("amd64")             \
                  IA32_ONLY("x86")                \
-                 IA64_ONLY("ia64")               \
                  S390_ONLY("s390")               \
                  RISCV64_ONLY("riscv64")
 #endif // !ZERO
@@ -195,6 +207,10 @@ const char* Abstract_VM_Version::vm_release() {
 
 const char *Abstract_VM_Version::vm_platform_string() {
   return OS "-" CPU;
+}
+
+const char* Abstract_VM_Version::vm_variant() {
+  return JVM_VARIANT;
 }
 
 const char* Abstract_VM_Version::internal_vm_info_string() {

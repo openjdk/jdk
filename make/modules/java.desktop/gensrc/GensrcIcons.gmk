@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,11 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
+
 GENSRC_AWT_ICONS :=
 GENSRC_AWT_ICONS_SRC :=
 GENSRC_AWT_ICONS_TMP := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop
@@ -36,23 +41,6 @@ GENSRC_AWT_ICONS_SRC += \
     $(X11_ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon24.png \
     $(X11_ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon32.png \
     $(X11_ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon48.png
-
-
-AWT_ICONPATH := $(MODULE_SRC)/share/classes/sun/awt/resources
-
-GENSRC_AWT_ICONS_SRC += \
-    $(AWT_ICONPATH)/security-icon-bw16.png \
-    $(AWT_ICONPATH)/security-icon-interim16.png \
-    $(AWT_ICONPATH)/security-icon-yellow16.png \
-    $(AWT_ICONPATH)/security-icon-bw24.png \
-    $(AWT_ICONPATH)/security-icon-interim24.png \
-    $(AWT_ICONPATH)/security-icon-yellow24.png \
-    $(AWT_ICONPATH)/security-icon-bw32.png \
-    $(AWT_ICONPATH)/security-icon-interim32.png \
-    $(AWT_ICONPATH)/security-icon-yellow32.png \
-    $(AWT_ICONPATH)/security-icon-bw48.png \
-    $(AWT_ICONPATH)/security-icon-interim48.png \
-    $(AWT_ICONPATH)/security-icon-yellow48.png
 
 GENSRC_AWT_ICONS_FILES := $(notdir $(GENSRC_AWT_ICONS_SRC))
 
@@ -125,3 +113,8 @@ ifeq ($(call isTargetOs, macosx), true)
 
   TARGETS += $(GENSRC_OSX_ICONS)
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

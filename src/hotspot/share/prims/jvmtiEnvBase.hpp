@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,8 +90,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   // It is unsafe to use this function when virtual threads are executed.
   static bool disable_virtual_threads_notify_jvmti();
 
-  static jvmtiError suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend,
-                                   int* need_safepoint_p);
+  static jvmtiError suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend);
   static jvmtiError resume_thread(oop thread_oop, JavaThread* java_thread, bool single_resume);
   static jvmtiError check_thread_list(jint count, const jthread* list);
   static bool is_in_thread_list(jint count, const jthread* list, oop jt_oop);
@@ -358,7 +357,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                    JavaThread* java_thread,
                                    javaVFrame *jvf,
                                    GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list,
-                                   jint depth);
+                                   jint depth, oop vthread = nullptr);
  public:
   static javaVFrame* jvf_for_thread_and_depth(JavaThread* java_thread, jint depth);
 
@@ -366,7 +365,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static bool get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd);
 
   // check and skip frames hidden in mount/unmount transitions
-  static javaVFrame* skip_yield_frames_for_unmounted_vthread(javaVFrame* jvf);
+  static javaVFrame* skip_yield_frames_for_unmounted_vthread(oop vthread, javaVFrame* jvf);
   static javaVFrame* check_and_skip_hidden_frames(bool is_in_VTMS_transition, javaVFrame* jvf);
   static javaVFrame* check_and_skip_hidden_frames(JavaThread* jt, javaVFrame* jvf);
 
@@ -410,6 +409,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   jvmtiError get_frame_location(oop vthread_oop, jint depth,
                                 jmethodID* method_ptr, jlocation* location_ptr);
   jvmtiError set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth);
+  jvmtiError clear_all_frame_pops(JvmtiThreadState* state);
   jvmtiError get_object_monitor_usage(JavaThread* calling_thread,
                                       jobject object, jvmtiMonitorUsage* info_ptr);
   jvmtiError get_stack_trace(javaVFrame* jvf,
@@ -422,8 +422,8 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                            jobject* monitor_ptr, bool is_virtual);
   jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread,
                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
-  jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread, javaVFrame* jvf,
-                                GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
+  jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* carrier, javaVFrame* jvf,
+                                GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list, oop vthread);
   static jvmtiError check_top_frame(Thread* current_thread, JavaThread* java_thread,
                                     jvalue value, TosState tos, Handle* ret_ob_h);
   jvmtiError force_early_return(jthread thread, jvalue value, TosState tos);
@@ -534,17 +534,19 @@ public:
 };
 
 // HandshakeClosure to set frame pop.
-class SetFramePopClosure : public JvmtiUnitedHandshakeClosure {
+class SetOrClearFramePopClosure : public JvmtiUnitedHandshakeClosure {
 private:
-  JvmtiEnv *_env;
+  JvmtiEnvBase *_env;
   JvmtiThreadState* _state;
-  jint _depth;
+  bool _set;
+  jint _depth; // used for NotiftyFramePop only
 
 public:
-  SetFramePopClosure(JvmtiEnv *env, JvmtiThreadState* state, jint depth)
-    : JvmtiUnitedHandshakeClosure("SetFramePopClosure"),
-      _env(env),
+  SetOrClearFramePopClosure(JvmtiEnv *env, JvmtiThreadState* state, bool set, jint depth = 0)
+    : JvmtiUnitedHandshakeClosure("SetOrClearFramePopClosure"),
+      _env((JvmtiEnvBase*)env),
       _state(state),
+      _set(set),
       _depth(depth) {}
   void do_thread(Thread *target);
   void do_vthread(Handle target_h);

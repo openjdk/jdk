@@ -35,9 +35,6 @@
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-import java.security.AccessControlContext;
-import java.security.AccessControlException;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
@@ -342,9 +339,7 @@ public class ExecutorsTest extends JSR166TestCase {
                     Thread current = Thread.currentThread();
                     assertFalse(current.isDaemon());
                     assertTrue(current.getPriority() <= Thread.NORM_PRIORITY);
-                    SecurityManager s = System.getSecurityManager();
-                    assertSame(current.getThreadGroup(),
-                               (s == null) ? egroup : s.getThreadGroup());
+                    assertSame(current.getThreadGroup(), egroup);
                     assertTrue(current.getName().endsWith("thread-1"));
                 } catch (SecurityException ok) {
                     // Also pass if not allowed to change setting
@@ -361,7 +356,7 @@ public class ExecutorsTest extends JSR166TestCase {
     /**
      * ThreadPoolExecutor using privilegedThreadFactory has
      * specified group, priority, daemon status, name,
-     * access control context and context class loader
+     * and context class loader
      */
     @SuppressWarnings("removal")
     public void testPrivilegedThreadFactory() throws Exception {
@@ -370,18 +365,14 @@ public class ExecutorsTest extends JSR166TestCase {
             public void realRun() throws Exception {
                 final ThreadGroup egroup = Thread.currentThread().getThreadGroup();
                 final ClassLoader thisccl = Thread.currentThread().getContextClassLoader();
-                final AccessControlContext thisacc = AccessController.getContext();
                 Runnable r = new CheckedRunnable() {
                     public void realRun() {
                         Thread current = Thread.currentThread();
                         assertFalse(current.isDaemon());
                         assertTrue(current.getPriority() <= Thread.NORM_PRIORITY);
-                        SecurityManager s = System.getSecurityManager();
-                        assertSame(current.getThreadGroup(),
-                                   (s == null) ? egroup : s.getThreadGroup());
+                        assertSame(current.getThreadGroup(), egroup);
                         assertTrue(current.getName().endsWith("thread-1"));
                         assertSame(thisccl, current.getContextClassLoader());
-                        assertEquals(thisacc, AccessController.getContext());
                         done.countDown();
                     }};
                 ExecutorService e = Executors.newSingleThreadExecutor(Executors.privilegedThreadFactory());
@@ -391,165 +382,7 @@ public class ExecutorsTest extends JSR166TestCase {
                 }
             }};
 
-        runWithPermissions(r,
-                           new RuntimePermission("getClassLoader"),
-                           new RuntimePermission("setContextClassLoader"),
-                           new RuntimePermission("modifyThread"));
-    }
-
-    @SuppressWarnings("removal")
-    boolean haveCCLPermissions() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                sm.checkPermission(new RuntimePermission("setContextClassLoader"));
-                sm.checkPermission(new RuntimePermission("getClassLoader"));
-            } catch (AccessControlException e) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @SuppressWarnings("removal")
-    void checkCCL() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("setContextClassLoader"));
-            sm.checkPermission(new RuntimePermission("getClassLoader"));
-        }
-    }
-
-    class CheckCCL implements Callable<Object> {
-        public Object call() {
-            checkCCL();
-            return null;
-        }
-    }
-
-    /**
-     * Without class loader permissions, creating
-     * privilegedCallableUsingCurrentClassLoader throws ACE
-     */
-    @SuppressWarnings("removal")
-    public void testCreatePrivilegedCallableUsingCCLWithNoPrivs() {
-        Runnable r = new CheckedRunnable() {
-            public void realRun() throws Exception {
-                if (System.getSecurityManager() == null)
-                    return;
-                try {
-                    Executors.privilegedCallableUsingCurrentClassLoader(new NoOpCallable());
-                    shouldThrow();
-                } catch (AccessControlException success) {}
-            }};
-
-        runWithoutPermissions(r);
-    }
-
-    /**
-     * With class loader permissions, calling
-     * privilegedCallableUsingCurrentClassLoader does not throw ACE
-     */
-    @SuppressWarnings("removal")
-    public void testPrivilegedCallableUsingCCLWithPrivs() throws Exception {
-        Runnable r = new CheckedRunnable() {
-            public void realRun() throws Exception {
-                Executors.privilegedCallableUsingCurrentClassLoader
-                    (new NoOpCallable())
-                    .call();
-            }};
-
-        runWithPermissions(r,
-                           new RuntimePermission("getClassLoader"),
-                           new RuntimePermission("setContextClassLoader"));
-    }
-
-    /**
-     * Without permissions, calling privilegedCallable throws ACE
-     */
-    @SuppressWarnings("removal")
-    public void testPrivilegedCallableWithNoPrivs() throws Exception {
-        // Avoid classloader-related SecurityExceptions in swingui.TestRunner
-        Executors.privilegedCallable(new CheckCCL());
-
-        Runnable r = new CheckedRunnable() {
-            public void realRun() throws Exception {
-                if (System.getSecurityManager() == null)
-                    return;
-                Callable<?> task = Executors.privilegedCallable(new CheckCCL());
-                try {
-                    task.call();
-                    shouldThrow();
-                } catch (AccessControlException success) {}
-            }};
-
-        runWithoutPermissions(r);
-
-        // It seems rather difficult to test that the
-        // AccessControlContext of the privilegedCallable is used
-        // instead of its caller.  Below is a failed attempt to do
-        // that, which does not work because the AccessController
-        // cannot capture the internal state of the current Policy.
-        // It would be much more work to differentiate based on,
-        // e.g. CodeSource.
-
-//         final AccessControlContext[] noprivAcc = new AccessControlContext[1];
-//         final Callable[] task = new Callable[1];
-
-//         runWithPermissions
-//             (new CheckedRunnable() {
-//                 public void realRun() {
-//                     if (System.getSecurityManager() == null)
-//                         return;
-//                     noprivAcc[0] = AccessController.getContext();
-//                     task[0] = Executors.privilegedCallable(new CheckCCL());
-//                     try {
-//                         AccessController.doPrivileged(new PrivilegedAction<Void>() {
-//                                                           public Void run() {
-//                                                               checkCCL();
-//                                                               return null;
-//                                                           }}, noprivAcc[0]);
-//                         shouldThrow();
-//                     } catch (AccessControlException success) {}
-//                 }});
-
-//         runWithPermissions
-//             (new CheckedRunnable() {
-//                 public void realRun() throws Exception {
-//                     if (System.getSecurityManager() == null)
-//                         return;
-//                     // Verify that we have an underprivileged ACC
-//                     try {
-//                         AccessController.doPrivileged(new PrivilegedAction<Void>() {
-//                                                           public Void run() {
-//                                                               checkCCL();
-//                                                               return null;
-//                                                           }}, noprivAcc[0]);
-//                         shouldThrow();
-//                     } catch (AccessControlException success) {}
-
-//                     try {
-//                         task[0].call();
-//                         shouldThrow();
-//                     } catch (AccessControlException success) {}
-//                 }},
-//              new RuntimePermission("getClassLoader"),
-//              new RuntimePermission("setContextClassLoader"));
-    }
-
-    /**
-     * With permissions, calling privilegedCallable succeeds
-     */
-    @SuppressWarnings("removal")
-    public void testPrivilegedCallableWithPrivs() throws Exception {
-        Runnable r = new CheckedRunnable() {
-            public void realRun() throws Exception {
-                Executors.privilegedCallable(new CheckCCL()).call();
-            }};
-
-        runWithPermissions(r,
-                           new RuntimePermission("getClassLoader"),
-                           new RuntimePermission("setContextClassLoader"));
+        r.run();
     }
 
     /**
@@ -650,6 +483,16 @@ public class ExecutorsTest extends JSR166TestCase {
                 identityString(c) + "[Wrapped task = " + r.toString() + "]",
                 c.toString());
         }
+    }
+
+    /**
+     * privilegedCallable
+     */
+    @SuppressWarnings("removal")
+    public void testPrivilegedCallable() throws Exception {
+        Callable<String> c = () -> "";
+        Callable<String> priv = Executors.privilegedCallable(c);
+        assertEquals("", priv.call());
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Defs.hpp"
@@ -160,16 +159,15 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 }
 
 enum return_state_t {
-  does_not_return, requires_return
+  does_not_return, requires_return, requires_pop_epilogue_return
 };
-
 
 // Implementation of StubFrame
 
 class StubFrame: public StackObj {
  private:
   StubAssembler* _sasm;
-  bool _return_state;
+  return_state_t _return_state;
 
  public:
   StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments, return_state_t return_state=requires_return);
@@ -183,8 +181,17 @@ void StubAssembler::prologue(const char* name, bool must_gc_arguments) {
   enter();
 }
 
-void StubAssembler::epilogue() {
-  leave();
+void StubAssembler::epilogue(bool use_pop) {
+  // Avoid using a leave instruction when this frame may
+  // have been frozen, since the current value of rfp
+  // restored from the stub would be invalid. We still
+  // must restore the rfp value saved on enter though.
+  if (use_pop) {
+    ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
+    authenticate_return_address();
+  } else {
+    leave();
+  }
   ret(lr);
 }
 
@@ -203,10 +210,10 @@ void StubFrame::load_argument(int offset_in_words, Register reg) {
 }
 
 StubFrame::~StubFrame() {
-  if (_return_state == requires_return) {
-    __ epilogue();
-  } else {
+  if (_return_state == does_not_return) {
     __ should_not_reach_here();
+  } else {
+    __ epilogue(_return_state == requires_pop_epilogue_return);
   }
 }
 
@@ -250,14 +257,17 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
   int frame_size_in_slots = frame_size_in_bytes / sizeof(jint);
   OopMap* oop_map = new OopMap(frame_size_in_slots, 0);
 
-  for (int i = 0; i < FrameMap::nof_cpu_regs; i++) {
-    Register r = as_Register(i);
-    if (i <= 18 && i != rscratch1->encoding() && i != rscratch2->encoding()) {
-      int sp_offset = cpu_reg_save_offsets[i];
-      oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset),
-                                r->as_VMReg());
-    }
+  for (int i = 0; i < FrameMap::nof_caller_save_cpu_regs(); i++) {
+    LIR_Opr opr = FrameMap::caller_save_cpu_reg_at(i);
+    Register r = opr->as_register();
+    int reg_num = r->encoding();
+    int sp_offset = cpu_reg_save_offsets[reg_num];
+    oop_map->set_callee_saved(VMRegImpl::stack2reg(cpu_reg_save_offsets[reg_num]), r->as_VMReg());
   }
+
+  Register r = rthread;
+  int reg_num = r->encoding();
+  oop_map->set_callee_saved(VMRegImpl::stack2reg(cpu_reg_save_offsets[reg_num]), r->as_VMReg());
 
   if (save_fpu_registers) {
     for (int i = 0; i < FrameMap::nof_fpu_regs; i++) {
@@ -337,6 +347,15 @@ void Runtime1::initialize_pd() {
   }
 }
 
+// return: offset in 64-bit words.
+uint Runtime1::runtime_blob_current_thread_offset(frame f) {
+  CodeBlob* cb = f.cb();
+  assert(cb == Runtime1::blob_for(C1StubId::monitorenter_id) ||
+         cb == Runtime1::blob_for(C1StubId::monitorenter_nofpu_id), "must be");
+  assert(cb != nullptr && cb->is_runtime_stub(), "invalid frame");
+  int offset = cpu_reg_save_offsets[rthread->encoding()];
+  return offset / 2;   // SP offsets are in halfwords
+}
 
 // target: the entry point of the method that creates and posts the exception oop
 // has_argument: true if the exception needs arguments (passed in rscratch1 and rscratch2)
@@ -842,7 +861,13 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         __ ldp(r4, r0, Address(sp, (sup_k_off) * VMRegImpl::stack_slot_size));
 
         Label miss;
-        __ check_klass_subtype_slow_path(r4, r0, r2, r5, nullptr, &miss);
+        __ check_klass_subtype_slow_path(/*sub_klass*/r4,
+                                         /*super_klass*/r0,
+                                         /*temp_reg*/r2,
+                                         /*temp2_reg*/r5,
+                                         /*L_success*/nullptr,
+                                         /*L_failure*/&miss);
+        // Need extras for table lookup: r1, r3, vtemp
 
         // fallthrough on success:
         __ mov(rscratch1, 1);
@@ -862,7 +887,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       // fall through
     case C1StubId::monitorenter_id:
       {
-        StubFrame f(sasm, "monitorenter", dont_gc_arguments);
+        StubFrame f(sasm, "monitorenter", dont_gc_arguments, requires_pop_epilogue_return);
         OopMap* map = save_live_registers(sasm, save_fpu_registers);
 
         // Called with store_parameter and not C abi
@@ -875,6 +900,55 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
         restore_live_registers(sasm, save_fpu_registers);
+      }
+      break;
+
+    case C1StubId::is_instance_of_id:
+      {
+        // Mirror: c_rarg0
+        // Object: c_rarg1
+        // Temps: r3, r4, r5, r6
+        // Result: r0
+
+        // Get the Klass* into c_rarg6
+        Register klass = c_rarg6, obj = c_rarg1, result = r0;
+        __ ldr(klass, Address(c_rarg0, java_lang_Class::klass_offset()));
+
+        Label fail, is_secondary, success;
+
+        __ cbz(klass, fail); // Klass is null
+        __ cbz(obj, fail); // obj is null
+
+        __ ldrw(r3, Address(klass, in_bytes(Klass::super_check_offset_offset())));
+        __ cmpw(r3, in_bytes(Klass::secondary_super_cache_offset()));
+        __ br(Assembler::EQ, is_secondary); // Klass is a secondary superclass
+
+        // Klass is a concrete class
+        __ load_klass(r5, obj);
+        __ ldr(rscratch1, Address(r5, r3));
+        __ cmp(klass, rscratch1);
+        __ cset(result, Assembler::EQ);
+        __ ret(lr);
+
+        __ bind(is_secondary);
+
+        __ load_klass(obj, obj);
+
+        // This is necessary because I am never in my own secondary_super list.
+        __ cmp(obj, klass);
+        __ br(Assembler::EQ, success);
+
+        __ lookup_secondary_supers_table_var(obj, klass,
+                                             /*temps*/r3, r4, r5, v0,
+                                             result,
+                                             &success);
+        __ bind(fail);
+        __ mov(result, 0);
+        __ ret(lr);
+
+        __ bind(success);
+        __ mov(result, 1);
+        __ ret(lr);
       }
       break;
 

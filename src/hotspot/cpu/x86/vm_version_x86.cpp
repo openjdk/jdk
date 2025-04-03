@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/vmIntrinsics.hpp"
@@ -517,12 +516,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
       // https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
       __ subptr(rsp, 64);
       __ evmovdqul(Address(rsp, 0), xmm7, Assembler::AVX_512bit);
-#ifdef _LP64
       __ subptr(rsp, 64);
       __ evmovdqul(Address(rsp, 0), xmm8, Assembler::AVX_512bit);
       __ subptr(rsp, 64);
       __ evmovdqul(Address(rsp, 0), xmm31, Assembler::AVX_512bit);
-#endif // _LP64
 #endif // _WINDOWS
 
       // load value into all 64 bytes of zmm7 register
@@ -546,12 +543,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 #ifdef _WINDOWS
     __ subptr(rsp, 32);
     __ vmovdqu(Address(rsp, 0), xmm7);
-#ifdef _LP64
     __ subptr(rsp, 32);
     __ vmovdqu(Address(rsp, 0), xmm8);
     __ subptr(rsp, 32);
     __ vmovdqu(Address(rsp, 0), xmm15);
-#endif // _LP64
 #endif // _WINDOWS
 
     // load value into all 32 bytes of ymm7 register
@@ -611,12 +606,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 #endif
 
 #ifdef _WINDOWS
-#ifdef _LP64
       __ evmovdqul(xmm31, Address(rsp, 0), Assembler::AVX_512bit);
       __ addptr(rsp, 64);
       __ evmovdqul(xmm8, Address(rsp, 0), Assembler::AVX_512bit);
       __ addptr(rsp, 64);
-#endif // _LP64
       __ evmovdqul(xmm7, Address(rsp, 0), Assembler::AVX_512bit);
       __ addptr(rsp, 64);
 #endif // _WINDOWS
@@ -641,12 +634,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 #endif
 
 #ifdef _WINDOWS
-#ifdef _LP64
     __ vmovdqu(xmm15, Address(rsp, 0));
     __ addptr(rsp, 32);
     __ vmovdqu(xmm8, Address(rsp, 0));
     __ addptr(rsp, 32);
-#endif // _LP64
     __ vmovdqu(xmm7, Address(rsp, 0));
     __ addptr(rsp, 32);
 #endif // _WINDOWS
@@ -937,7 +928,8 @@ void VM_Version::get_processor_features() {
 
   // Check if processor has Intel Ecore
   if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && cpu_family() == 6 &&
-    (_model == 0x97 || _model == 0xAA || _model == 0xAC || _model == 0xAF)) {
+    (_model == 0x97 || _model == 0xAA || _model == 0xAC || _model == 0xAF ||
+      _model == 0xCC || _model == 0xDD)) {
     FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
   }
 
@@ -1036,6 +1028,7 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512_BITALG;
     _features &= ~CPU_AVX512_IFMA;
     _features &= ~CPU_APX_F;
+    _features &= ~CPU_AVX512_FP16;
   }
 
   // Currently APX support is only enabled for targets supporting AVX512VL feature.
@@ -1086,6 +1079,7 @@ void VM_Version::get_processor_features() {
       _features &= ~CPU_AVX512_BITALG;
       _features &= ~CPU_AVX512_IFMA;
       _features &= ~CPU_AVX_IFMA;
+      _features &= ~CPU_AVX512_FP16;
     }
   }
 
@@ -1412,7 +1406,7 @@ void VM_Version::get_processor_features() {
   }
 
 #ifdef _LP64
-  if (supports_avx512ifma() && supports_avx512vlbw()) {
+  if ((supports_avx512ifma() && supports_avx512vlbw()) || supports_avxifma()) {
     if (FLAG_IS_DEFAULT(UseIntPolyIntrinsics)) {
       FLAG_SET_DEFAULT(UseIntPolyIntrinsics, true);
     }
@@ -1730,9 +1724,9 @@ void VM_Version::get_processor_features() {
       if (ArrayOperationPartialInlineSize > MaxVectorSize) {
         ArrayOperationPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
         if (ArrayOperationPartialInlineSize) {
-          warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
+          warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize=%zd", MaxVectorSize);
         } else {
-          warning("Setting ArrayOperationPartialInlineSize as " INTX_FORMAT, ArrayOperationPartialInlineSize);
+          warning("Setting ArrayOperationPartialInlineSize as %zd", ArrayOperationPartialInlineSize);
         }
       }
     }
@@ -3118,6 +3112,9 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
     }
     if (sef_cpuid7_edx.bits.serialize != 0)
       result |= CPU_SERIALIZE;
+
+    if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0)
+      result |= CPU_AVX512_FP16;
   }
 
   // ZX features.

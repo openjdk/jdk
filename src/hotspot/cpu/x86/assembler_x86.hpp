@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -585,6 +585,8 @@ class Assembler : public AbstractAssembler  {
     VEX_OPCODE_0F_38 = 0x2,
     VEX_OPCODE_0F_3A = 0x3,
     VEX_OPCODE_0F_3C = 0x4,
+    VEX_OPCODE_MAP5  = 0x5,
+    VEX_OPCODE_MAP6  = 0x6,
     VEX_OPCODE_MASK  = 0x1F
   };
 
@@ -821,6 +823,7 @@ private:
   void emit_arith_b(int op1, int op2, Register dst, int imm8);
 
   void emit_arith(int op1, int op2, Register dst, int32_t imm32);
+  void emit_arith_ndd(int op1, int op2, Register dst, int32_t imm32);
   // Force generation of a 4 byte immediate value even if it fits into 8bit
   void emit_arith_imm32(int op1, int op2, Register dst, int32_t imm32);
   void emit_arith(int op1, int op2, Register dst, Register src);
@@ -954,20 +957,13 @@ private:
   // the product flag UseIncDec value.
 
   void decl(Register dst);
-  void edecl(Register dst, Register src, bool no_flags);
   void decl(Address dst);
-  void edecl(Register dst, Address src, bool no_flags);
   void decq(Address dst);
-  void edecq(Register dst, Address src, bool no_flags);
 
   void incl(Register dst);
-  void eincl(Register dst, Register src, bool no_flags);
   void incl(Address dst);
-  void eincl(Register dst, Address src, bool no_flags);
   void incq(Register dst);
-  void eincq(Register dst, Register src, bool no_flags);
   void incq(Address dst);
-  void eincq(Register dst, Address src, bool no_flags);
 
   // New cpus require use of movsd and movss to avoid partial register stall
   // when loading from memory. But for old Opteron use movlpd instead of movsd.
@@ -1116,6 +1112,14 @@ private:
   void eaddq(Register dst, Register src1, Address src2, bool no_flags);
   void addq(Register dst, Register src);
   void eaddq(Register dst, Register src1, Register src2, bool no_flags);
+
+  void edecl(Register dst, Register src, bool no_flags);
+  void edecl(Register dst, Address src, bool no_flags);
+  void edecq(Register dst, Address src, bool no_flags);
+  void eincl(Register dst, Register src, bool no_flags);
+  void eincl(Register dst, Address src, bool no_flags);
+  void eincq(Register dst, Register src, bool no_flags);
+  void eincq(Register dst, Address src, bool no_flags);
 
 #ifdef _LP64
  //Add Unsigned Integers with Carry Flag
@@ -1625,6 +1629,10 @@ private:
 
   void leaq(Register dst, Address src);
 
+#ifdef _LP64
+  void lea(Register dst, Label& L);
+#endif
+
   void lfence();
 
   void lock();
@@ -1750,6 +1758,10 @@ private:
   void vmovdqu(XMMRegister dst, Address src);
   void vmovdqu(XMMRegister dst, XMMRegister src);
 
+  // Move Aligned 256bit Vector
+  void vmovdqa(XMMRegister dst, Address src);
+  void vmovdqa(Address dst, XMMRegister src);
+
    // Move Unaligned 512bit Vector
   void evmovdqub(XMMRegister dst, XMMRegister src, int vector_len);
   void evmovdqub(XMMRegister dst, Address src, int vector_len);
@@ -1783,6 +1795,10 @@ private:
   void evmovdquq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
   void evmovdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
 
+  // Move Aligned 512bit Vector
+  void evmovdqaq(XMMRegister dst, Address src, int vector_len);
+  void evmovdqaq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
+
   // Move lower 64bit to high 64bit in 128bit register
   void movlhps(XMMRegister dst, XMMRegister src);
 
@@ -1809,6 +1825,9 @@ private:
 
   void movsbl(Register dst, Address src);
   void movsbl(Register dst, Register src);
+
+  void vmovw(XMMRegister dst, Register src);
+  void vmovw(Register dst, XMMRegister src);
 
 #ifdef _LP64
   void movsbq(Register dst, Address src);
@@ -2686,6 +2705,16 @@ private:
   void vpaddd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpaddq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
+  // FP16 instructions
+  void vaddsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vsubsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vmulsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vdivsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vmaxsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vminsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vsqrtsh(XMMRegister dst, XMMRegister src);
+  void vfmadd132sh(XMMRegister dst, XMMRegister src1, XMMRegister src2);
+
   // Saturating packed insturctions.
   void vpaddsb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpaddsw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -3165,6 +3194,9 @@ private:
   void vcmpps(XMMRegister dst, XMMRegister nds, XMMRegister src, int comparison, int vector_len);
   void evcmpps(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
                ComparisonPredicateFP comparison, int vector_len);
+
+  void evcmpsh(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
+               ComparisonPredicateFP comparison);
 
   // Vector integer compares
   void vpcmpgtd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);

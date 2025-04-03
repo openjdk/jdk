@@ -240,14 +240,6 @@ public abstract class AsynchronousFileChannel
      *          specific exception</a>)</i>
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          If a security manager is installed and it denies an
-     *          unspecified permission required by the implementation.
-     *          In the case of the default provider, the {@link
-     *          SecurityManager#checkRead(String)} method is invoked to check
-     *          read access if the file is opened for reading. The {@link
-     *          SecurityManager#checkWrite(String)} method is invoked to check
-     *          write access if the file is opened for writing
      */
     public static AsynchronousFileChannel open(Path file,
                                                Set<? extends OpenOption> options,
@@ -301,14 +293,6 @@ public abstract class AsynchronousFileChannel
      *          specific exception</a>)</i>
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          If a security manager is installed and it denies an
-     *          unspecified permission required by the implementation.
-     *          In the case of the default provider, the {@link
-     *          SecurityManager#checkRead(String)} method is invoked to check
-     *          read access if the file is opened for reading. The {@link
-     *          SecurityManager#checkWrite(String)} method is invoked to check
-     *          write access if the file is opened for writing
      */
     public static AsynchronousFileChannel open(Path file, OpenOption... options)
         throws IOException

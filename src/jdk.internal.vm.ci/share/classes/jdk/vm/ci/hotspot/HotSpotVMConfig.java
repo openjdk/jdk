@@ -55,7 +55,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
      * Gets the host architecture name for the purpose of finding the corresponding
      * {@linkplain HotSpotJVMCIBackendFactory backend}.
      */
-    String getHostArchitectureName() {
+    static String getHostArchitectureName() {
         Architecture arch = Architecture.current();
         switch (arch) {
             case X64: return "amd64";
@@ -69,7 +69,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final int objectAlignment = getFlag("ObjectAlignmentInBytes", Integer.class);
 
-    final int hubOffset = getFieldOffset("oopDesc::_metadata._klass", Integer.class, "Klass*");
+    final int klassOffsetInBytes = getFieldValue("CompilerToVM::Data::oopDesc_klass_offset_in_bytes", Integer.class, "int");
 
     final int subklassOffset = getFieldOffset("Klass::_subklass", Integer.class, "Klass*");
     final int superOffset = getFieldOffset("Klass::_super", Integer.class, "Klass*");

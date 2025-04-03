@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,17 +163,11 @@ public final class Cleaner {
      * The {@linkplain java.lang.Thread#getContextClassLoader context class loader}
      * of the thread is set to the
      * {@linkplain ClassLoader#getSystemClassLoader() system class loader}.
-     * The thread has no permissions, enforced only if a
-     * {@linkplain java.lang.System#setSecurityManager(SecurityManager)
-     * {@code SecurityManager} is set}.
      * <p>
      * The cleaner terminates when it is phantom reachable and all of the
      * registered cleaning actions are complete.
      *
      * @return a new {@code Cleaner}
-     *
-     * @throws  SecurityException  if the current thread is not allowed to
-     *               create or start the thread.
      */
     public static Cleaner create() {
         Cleaner cleaner = new Cleaner();
@@ -199,8 +193,6 @@ public final class Cleaner {
      *
      * @throws  IllegalThreadStateException  if the thread from the thread
      *               factory was {@linkplain Thread.State#NEW not a new thread}.
-     * @throws  SecurityException  if the current thread is not allowed to
-     *               create or start the thread.
      */
     public static Cleaner create(ThreadFactory threadFactory) {
         Objects.requireNonNull(threadFactory, "threadFactory");

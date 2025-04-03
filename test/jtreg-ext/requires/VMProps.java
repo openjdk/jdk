@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.CABI;
+import jdk.internal.misc.PreviewFeatures;
 import jdk.test.whitebox.code.Compiler;
 import jdk.test.whitebox.cpuinfo.CPUInfo;
 import jdk.test.whitebox.gc.GC;
@@ -122,12 +123,14 @@ public class VMProps implements Callable<Map<String, String>> {
         // vm.cds is true if the VM is compiled with cds support.
         map.put("vm.cds", this::vmCDS);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
+        map.put("vm.cds.supports.aot.class.linking", this::vmCDSSupportsAOTClassLinking);
         map.put("vm.cds.write.archived.java.heap", this::vmCDSCanWriteArchivedJavaHeap);
         map.put("vm.continuations", this::vmContinuations);
         // vm.graal.enabled is true if Graal is used as JIT
         map.put("vm.graal.enabled", this::isGraalEnabled);
         // jdk.hasLibgraal is true if the libgraal shared library file is present
         map.put("jdk.hasLibgraal", this::hasLibgraal);
+        map.put("java.enablePreview", this::isPreviewEnabled);
         map.put("vm.libgraal.jit", this::isLibgraalJIT);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
         map.put("vm.compiler2.enabled", this::isCompiler2Enabled);
@@ -138,6 +141,8 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
         map.put("jdk.foreign.linker", this::jdkForeignLinker);
+        map.put("jlink.packagedModules", this::packagedModules);
+        map.put("jdk.static", this::isStatic);
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
@@ -376,6 +381,7 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlag(map, "UnlockExperimentalVMOptions");
         vmOptFinalFlag(map, "UseCompressedOops");
         vmOptFinalFlag(map, "UseLargePages");
+        vmOptFinalFlag(map, "UseTransparentHugePages");
         vmOptFinalFlag(map, "UseVectorizedMismatchIntrinsic");
     }
 
@@ -449,11 +455,21 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * @return true if this VM can write Java heap objects into the CDS archive
+     * @return true if it's possible for "java -Xshare:dump" to write Java heap objects
+     *         with the current set of jtreg VM options. For example, false will be returned
+     *         if -XX:-UseCompressedClassPointers is specified,
      */
     protected String vmCDSCanWriteArchivedJavaHeap() {
         return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive()
                      && isCDSRuntimeOptionsCompatible());
+    }
+
+    /**
+     * @return true if this VM can support the -XX:AOTClassLinking option
+     */
+    protected String vmCDSSupportsAOTClassLinking() {
+      // Currently, the VM supports AOTClassLinking as long as it's able to write archived java heap.
+      return vmCDSCanWriteArchivedJavaHeap();
     }
 
     /**
@@ -572,6 +588,9 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + Compiler.isC2Enabled();
     }
 
+    protected String isPreviewEnabled() {
+        return "" + PreviewFeatures.isEnabled();
+    }
     /**
      * A simple check for container support
      *
@@ -715,6 +734,21 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + "true".equalsIgnoreCase(isEnabled);
     }
 
+    private String packagedModules() {
+        // Some jlink tests require packaged modules being present (jmods).
+        // For a runtime linkable image build packaged modules aren't present
+        try {
+            Path jmodsDir = Path.of(System.getProperty("java.home"), "jmods");
+            if (jmodsDir.toFile().exists()) {
+                return Boolean.TRUE.toString();
+            } else {
+                return Boolean.FALSE.toString();
+            }
+        } catch (Throwable t) {
+            return Boolean.FALSE.toString();
+        }
+    }
+
     /**
      * Checks if we are in <i>almost</i> out-of-box configuration, i.e. the flags
      * which JVM is started with don't affect its behavior "significantly".
@@ -790,6 +824,10 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     private String jdkForeignLinker() {
         return String.valueOf(CABI.current());
+    }
+
+    private String isStatic() {
+        return Boolean.toString(WB.isStatic());
     }
 
     /**

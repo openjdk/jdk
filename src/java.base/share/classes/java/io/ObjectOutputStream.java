@@ -26,8 +26,6 @@
 
 package java.io;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,7 +35,6 @@ import java.util.StringJoiner;
 import jdk.internal.util.ByteArray;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.reflect.misc.ReflectUtil;
 
 import static jdk.internal.util.ModifiedUtf.putChar;
 import static jdk.internal.util.ModifiedUtf.utfLen;
@@ -224,11 +221,8 @@ public class ObjectOutputStream
      * value of "sun.io.serialization.extendedDebugInfo" property,
      * as true or false for extended information about exception's place
      */
-    @SuppressWarnings("removal")
     private static final boolean extendedDebugInfo =
-        java.security.AccessController.doPrivileged(
-            new sun.security.action.GetBooleanAction(
-                "sun.io.serialization.extendedDebugInfo")).booleanValue();
+            Boolean.getBoolean("sun.io.serialization.extendedDebugInfo");
 
     /**
      * Creates an ObjectOutputStream that writes to the specified OutputStream.
@@ -237,16 +231,8 @@ public class ObjectOutputStream
      * ensure that constructors for receiving ObjectInputStreams will not block
      * when reading the header.
      *
-     * <p>If a security manager is installed, this constructor will check for
-     * the "enableSubclassImplementation" SerializablePermission when invoked
-     * directly or indirectly by the constructor of a subclass which overrides
-     * the ObjectOutputStream.putFields or ObjectOutputStream.writeUnshared
-     * methods.
-     *
      * @param   out output stream to write to
      * @throws  IOException if an I/O error occurs while writing stream header
-     * @throws  SecurityException if untrusted subclass illegally overrides
-     *          security-sensitive methods
      * @throws  NullPointerException if {@code out} is {@code null}
      * @since   1.4
      * @see     ObjectOutputStream#ObjectOutputStream()
@@ -255,7 +241,6 @@ public class ObjectOutputStream
      */
     @SuppressWarnings("this-escape")
     public ObjectOutputStream(OutputStream out) throws IOException {
-        verifySubclass();
         bout = new BlockDataOutputStream(out);
         handles = new HandleTable(10, (float) 3.00);
         subs = new ReplaceTable(10, (float) 3.00);
@@ -274,24 +259,9 @@ public class ObjectOutputStream
      * ObjectOutputStream to not have to allocate private data just used by
      * this implementation of ObjectOutputStream.
      *
-     * <p>If there is a security manager installed, this method first calls the
-     * security manager's {@code checkPermission} method with a
-     * {@code SerializablePermission("enableSubclassImplementation")}
-     * permission to ensure it's ok to enable subclassing.
-     *
-     * @throws  SecurityException if a security manager exists and its
-     *          {@code checkPermission} method denies enabling
-     *          subclassing.
      * @throws  IOException if an I/O error occurs while creating this stream
-     * @see SecurityManager#checkPermission
-     * @see java.io.SerializablePermission
      */
-    protected ObjectOutputStream() throws IOException, SecurityException {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
-        }
+    protected ObjectOutputStream() throws IOException {
         bout = null;
         handles = null;
         subs = null;
@@ -413,12 +383,6 @@ public class ObjectOutputStream
      * rules described above only apply to the base-level object written with
      * writeUnshared, and not to any transitively referenced sub-objects in the
      * object graph to be serialized.
-     *
-     * <p>ObjectOutputStream subclasses which override this method can only be
-     * constructed in security contexts possessing the
-     * "enableSubclassImplementation" SerializablePermission; any attempt to
-     * instantiate such a subclass without this permission will cause a
-     * SecurityException to be thrown.
      *
      * @param   obj object to write to stream
      * @throws  NotSerializableException if an object in the graph to be
@@ -611,35 +575,13 @@ public class ObjectOutputStream
      * enabled, the {@link #replaceObject} method is called for every object being
      * serialized.
      *
-     * <p>If object replacement is currently not enabled, and
-     * {@code enable} is true, and there is a security manager installed,
-     * this method first calls the security manager's
-     * {@code checkPermission} method with the
-     * {@code SerializablePermission("enableSubstitution")} permission to
-     * ensure that the caller is permitted to enable the stream to do replacement
-     * of objects written to the stream.
-     *
      * @param   enable true for enabling use of {@code replaceObject} for
      *          every object being serialized
      * @return  the previous setting before this method was invoked
-     * @throws  SecurityException if a security manager exists and its
-     *          {@code checkPermission} method denies enabling the stream
-     *          to do replacement of objects written to the stream.
-     * @see SecurityManager#checkPermission
-     * @see java.io.SerializablePermission
      */
-    protected boolean enableReplaceObject(boolean enable)
-        throws SecurityException
-    {
+    protected boolean enableReplaceObject(boolean enable) {
         if (enable == enableReplace) {
             return enable;
-        }
-        if (enable) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(SUBSTITUTION_PERMISSION);
-            }
         }
         enableReplace = enable;
         return !enableReplace;
@@ -664,8 +606,8 @@ public class ObjectOutputStream
      * stream.  Subclasses of ObjectOutputStream may override this method to
      * customize the way in which class descriptors are written to the
      * serialization stream.  The corresponding method in ObjectInputStream,
-     * {@link ObjectInputStream#readClassDescriptor readClassDescriptor}, should then be overridden to
-     * reconstitute the class descriptor from its custom stream representation.
+     * {@link ObjectInputStream#readClassDescriptor readClassDescriptor}, should then be
+     * overridden to reconstitute the class descriptor from its custom stream representation.
      * By default, this method writes class descriptors according to the format
      * defined in the <a href="{@docRoot}/../specs/serialization/index.html">
      * <cite>Java Object Serialization Specification</cite></a>.
@@ -1062,57 +1004,28 @@ public class ObjectOutputStream
     }
 
     /**
-     * Verifies that this (possibly subclass) instance can be constructed
-     * without violating security constraints: the subclass must not override
-     * security-sensitive non-final methods, or else the
-     * "enableSubclassImplementation" SerializablePermission is checked.
-     */
-    private void verifySubclass() {
-        Class<?> cl = getClass();
-        if (cl == ObjectOutputStream.class) {
-            return;
-        }
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            return;
-        }
-        boolean result = Caches.subclassAudits.get(cl);
-        if (!result) {
-            sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
-        }
-    }
-
-    /**
      * Performs reflective checks on given subclass to verify that it doesn't
      * override security-sensitive non-final methods.  Returns TRUE if subclass
      * is "safe", FALSE otherwise.
      */
-    @SuppressWarnings("removal")
     private static Boolean auditSubclass(Class<?> subcl) {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                public Boolean run() {
-                    for (Class<?> cl = subcl;
-                         cl != ObjectOutputStream.class;
-                         cl = cl.getSuperclass())
-                    {
-                        try {
-                            cl.getDeclaredMethod(
-                                "writeUnshared", new Class<?>[] { Object.class });
-                            return Boolean.FALSE;
-                        } catch (NoSuchMethodException ex) {
-                        }
-                        try {
-                            cl.getDeclaredMethod("putFields", (Class<?>[]) null);
-                            return Boolean.FALSE;
-                        } catch (NoSuchMethodException ex) {
-                        }
-                    }
-                    return Boolean.TRUE;
-                }
+        for (Class<?> cl = subcl;
+             cl != ObjectOutputStream.class;
+             cl = cl.getSuperclass())
+        {
+            try {
+                cl.getDeclaredMethod(
+                    "writeUnshared", new Class<?>[] { Object.class });
+                return Boolean.FALSE;
+            } catch (NoSuchMethodException ex) {
             }
-        );
+            try {
+                cl.getDeclaredMethod("putFields", (Class<?>[]) null);
+                return Boolean.FALSE;
+            } catch (NoSuchMethodException ex) {
+            }
+        }
+        return Boolean.TRUE;
     }
 
     /**
@@ -1256,12 +1169,6 @@ public class ObjectOutputStream
         }
     }
 
-    private boolean isCustomSubclass() {
-        // Return true if this class is a custom subclass of ObjectOutputStream
-        return getClass().getClassLoader()
-                   != ObjectOutputStream.class.getClassLoader();
-    }
-
     /**
      * Writes class descriptor representing a dynamic proxy class to stream.
      */
@@ -1279,9 +1186,6 @@ public class ObjectOutputStream
         }
 
         bout.setBlockDataMode(true);
-        if (isCustomSubclass()) {
-            ReflectUtil.checkPackageAccess(cl);
-        }
         annotateProxyClass(cl);
         bout.setBlockDataMode(false);
         bout.writeByte(TC_ENDBLOCKDATA);
@@ -1308,9 +1212,6 @@ public class ObjectOutputStream
 
         Class<?> cl = desc.forClass();
         bout.setBlockDataMode(true);
-        if (cl != null && isCustomSubclass()) {
-            ReflectUtil.checkPackageAccess(cl);
-        }
         annotateClass(cl);
         bout.setBlockDataMode(false);
         bout.writeByte(TC_ENDBLOCKDATA);

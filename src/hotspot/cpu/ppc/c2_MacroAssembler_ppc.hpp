@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@
                              Register tmp1, Register tmp2, Register tmp3);
   void fast_unlock_lightweight(ConditionRegister flag, Register obj, Register box,
                                Register tmp1, Register tmp2, Register tmp3);
+
+  void load_narrow_klass_compact_c2(Register dst, Register obj, int disp);
 
   // Intrinsics for CompactStrings
   // Compress char[] to byte[] by compressing 16 bytes at once.

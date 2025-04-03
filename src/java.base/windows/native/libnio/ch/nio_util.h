@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,21 +47,10 @@ jint convertReturnVal(JNIEnv *env, jint n, jboolean r);
 jlong convertLongReturnVal(JNIEnv *env, jlong n, jboolean r);
 jboolean purgeOutstandingICMP(JNIEnv *env, jclass clazz, jint fd);
 
-#ifdef _WIN64
-
 struct iovec {
     jlong  iov_base;
     jint  iov_len;
 };
-
-#else
-
-struct iovec {
-    jint  iov_base;
-    jint  iov_len;
-};
-
-#endif
 
 /* Defined in UnixDomainSockets.c */
 
@@ -69,4 +58,3 @@ jbyteArray sockaddrToUnixAddressBytes(JNIEnv *env, struct sockaddr_un *sa, sockl
 
 jint unixSocketAddressToSockaddr(JNIEnv *env, jbyteArray uaddr,
                                 struct sockaddr_un *sa, int *len);
-

@@ -34,7 +34,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 /**
  * @test
  * @summary Test jfr configure
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.tool.TestConfigure

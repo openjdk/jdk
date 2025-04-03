@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6501431
  * @summary Tests AWTKeyStroke encoding
- * @run main/othervm -Djava.security.manager=allow java_awt_AWTKeyStroke
+ * @run main/othervm java_awt_AWTKeyStroke
  * @author Sergey Malenkov
  */
 
@@ -35,7 +35,7 @@ import java.awt.event.InputEvent;
 
 public final class java_awt_AWTKeyStroke extends AbstractTest<AWTKeyStroke> {
     public static void main(String[] args) {
-        new java_awt_AWTKeyStroke().test(true);
+        new java_awt_AWTKeyStroke().test();
     }
 
     protected AWTKeyStroke getObject() {

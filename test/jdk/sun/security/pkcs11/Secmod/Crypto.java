@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm Crypto
- * @run main/othervm -Djava.security.manager=allow Crypto sm policy
  */
 
 import java.io.File;
@@ -47,12 +46,6 @@ public class Crypto extends SecmodTest {
 
         String configName = BASE + SEP + "nsscrypto.cfg";
         Provider p = getSunPKCS11(configName);
-
-        if (args.length > 1 && "sm".equals(args[0])) {
-            System.setProperty("java.security.policy",
-                    BASE + File.separator + args[1]);
-            System.setSecurityManager(new SecurityManager());
-        }
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
         KeyPair kp = kpg.generateKeyPair();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,6 @@ public final class ResolverConfigurationImpl
 
     // Load DNS configuration from OS
 
-    @SuppressWarnings("removal")
     private void loadConfig() {
         assert Thread.holdsLock(lock);
 
@@ -130,15 +129,9 @@ public final class ResolverConfigurationImpl
         }
 
         // get the name servers from /etc/resolv.conf
-        nameservers =
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<>() {
-                    public ArrayList<String> run() {
-                        // typically MAXNS is 3 but we've picked 5 here
-                        // to allow for additional servers if required.
-                        return resolvconf("nameserver", 1, 5);
-                    } /* run */
-                });
+        // typically MAXNS is 3 but we've picked 5 here
+        // to allow for additional servers if required.
+        nameservers = resolvconf("nameserver", 1, 5);
 
         // get the search list (or domain)
         searchlist = getSearchList();
@@ -149,54 +142,19 @@ public final class ResolverConfigurationImpl
 
 
     // obtain search list or local domain
-
-    @SuppressWarnings("removal")
     private ArrayList<String> getSearchList() {
-
-        ArrayList<String> sl;
 
         // first try the search keyword in /etc/resolv.conf
 
-        sl = java.security.AccessController.doPrivileged(
-                 new java.security.PrivilegedAction<>() {
-                    public ArrayList<String> run() {
-                        ArrayList<String> ll;
-
-                        // first try search keyword (max 6 domains)
-                        ll = resolvconf("search", 6, 1);
-                        if (ll.size() > 0) {
-                            return ll;
-                        }
-
-                        return null;
-
-                    } /* run */
-
-                });
-        if (sl != null) {
-            return sl;
-        }
+        // first try search keyword (max 6 domains)
+        ArrayList<String> sl = resolvconf("search", 6, 1);
+        if (sl.size() > 0) return sl;
 
         // No search keyword so use local domain
 
         // try domain keyword in /etc/resolv.conf
-
-        sl = java.security.AccessController.doPrivileged(
-                 new java.security.PrivilegedAction<>() {
-                    public ArrayList<String> run() {
-                        ArrayList<String> ll;
-
-                        ll = resolvconf("domain", 1, 1);
-                        if (ll.size() > 0) {
-                            return ll;
-                        }
-                        return null;
-
-                    } /* run */
-                });
-        if (sl != null) {
-            return sl;
-        }
+        sl = resolvconf("domain", 1, 1);
+        if (sl.size() > 0) return sl;
 
         // no local domain so try fallback (RPC) domain or
         // hostName

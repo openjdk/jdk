@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import org.openide.util.NbBundle.Messages;
         @ActionReference(path = "Shortcuts", name = "D-X")
 })
 @Messages({
-        "CTL_ExtractAction=Extract action",
+        "CTL_ExtractAction=Extract",
         "HINT_ExtractAction=Extract current set of selected nodes"
 })
 public final class ExtractAction extends ModelAwareAction {

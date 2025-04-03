@@ -28,7 +28,7 @@
 #include "jvm.h"
 #include "java_lang_VirtualThread.h"
 
-#define THREAD "Ljava/lang/Thread;"
+#define STR  "Ljava/lang/String;"
 #define VIRTUAL_THREAD  "Ljava/lang/VirtualThread;"
 
 static JNINativeMethod methods[] = {
@@ -37,6 +37,8 @@ static JNINativeMethod methods[] = {
     { "notifyJvmtiMount",          "(Z)V", (void *)&JVM_VirtualThreadMount },
     { "notifyJvmtiUnmount",        "(Z)V", (void *)&JVM_VirtualThreadUnmount },
     { "notifyJvmtiDisableSuspend", "(Z)V", (void *)&JVM_VirtualThreadDisableSuspend },
+    { "postPinnedEvent",           "(" STR ")V", (void *)&JVM_VirtualThreadPinnedEvent },
+    { "takeVirtualThreadListToUnblock", "()" VIRTUAL_THREAD, (void *)&JVM_TakeVirtualThreadListToUnblock},
 };
 
 JNIEXPORT void JNICALL

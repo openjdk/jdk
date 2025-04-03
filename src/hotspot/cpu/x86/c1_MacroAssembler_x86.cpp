@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "code/compiledIC.hpp"
@@ -109,9 +108,8 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     jcc(Assembler::notZero, slow_case);
     // done
     bind(done);
+    inc_held_monitor_count();
   }
-
-  inc_held_monitor_count();
 
   return null_check_offset;
 }
@@ -153,9 +151,9 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
     // we do unlocking via runtime call
     jcc(Assembler::notEqual, slow_case);
     // done
+    bind(done);
+    dec_held_monitor_count();
   }
-  bind(done);
-  dec_held_monitor_count();
 }
 
 
@@ -170,16 +168,20 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
 
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
-  assert_different_registers(obj, klass, len);
-  movptr(Address(obj, oopDesc::mark_offset_in_bytes()), checked_cast<int32_t>(markWord::prototype().value()));
+  assert_different_registers(obj, klass, len, t1, t2);
 #ifdef _LP64
-  if (UseCompressedClassPointers) { // Take care not to kill klass
+  if (UseCompactObjectHeaders) {
+    movptr(t1, Address(klass, Klass::prototype_header_offset()));
+    movptr(Address(obj, oopDesc::mark_offset_in_bytes()), t1);
+  } else if (UseCompressedClassPointers) { // Take care not to kill klass
+    movptr(Address(obj, oopDesc::mark_offset_in_bytes()), checked_cast<int32_t>(markWord::prototype().value()));
     movptr(t1, klass);
     encode_klass_not_null(t1, rscratch1);
     movl(Address(obj, oopDesc::klass_offset_in_bytes()), t1);
   } else
 #endif
   {
+    movptr(Address(obj, oopDesc::mark_offset_in_bytes()), checked_cast<int32_t>(markWord::prototype().value()));
     movptr(Address(obj, oopDesc::klass_offset_in_bytes()), klass);
   }
 
@@ -196,7 +198,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 #endif
   }
 #ifdef _LP64
-  else if (UseCompressedClassPointers) {
+  else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
     xorptr(t1, t1);
     store_klass_gap(obj, t1);
   }
@@ -230,7 +232,9 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0,
          "con_size_in_bytes is not multiple of alignment");
   const int hdr_size_in_bytes = instanceOopDesc::header_size() * HeapWordSize;
-
+  if (UseCompactObjectHeaders) {
+    assert(hdr_size_in_bytes == 8, "check object headers size");
+  }
   initialize_header(obj, klass, noreg, t1, t2);
 
   if (!(UseTLAB && ZeroTLAB && is_tlab_allocated)) {
@@ -328,12 +332,6 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   if (PreserveFramePointer) {
     mov(rbp, rsp);
   }
-#if !defined(_LP64) && defined(COMPILER2)
-  if (UseSSE < 2 && !CompilerConfig::is_c1_only_no_jvmci()) {
-    // c2 leaves fpu stack dirty. Clean it on entry
-    empty_FPU_stack();
-  }
-#endif // !_LP64 && COMPILER2
   decrement(rsp, frame_size_in_bytes); // does not emit code for frame_size == 0
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();

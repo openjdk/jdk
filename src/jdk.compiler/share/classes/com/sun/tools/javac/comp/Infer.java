@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,8 @@ public class Infer {
 
     private final boolean dumpStacktraceOnError;
 
+    private final boolean erasePolySigReturnType;
+
     public static Infer instance(Context context) {
         Infer instance = context.get(inferKey);
         if (instance == null)
@@ -123,6 +125,8 @@ public class Infer {
 
         emptyContext = new InferenceContext(this, List.nil());
         dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
+        Source source = Source.instance(context);
+        erasePolySigReturnType = Source.Feature.ERASE_POLY_SIG_RETURN_TYPE.allowedInSource(source);
     }
 
     /** A value for prototypes that admit any type, including polymorphic ones. */
@@ -544,8 +548,8 @@ public class Infer {
             case TYPECAST:
                 JCTypeCast castTree = (JCTypeCast)env.next.tree;
                 restype = (TreeInfo.skipParens(castTree.expr) == env.tree) ?
-                          castTree.clazz.type :
-                          spType;
+                              (erasePolySigReturnType ? types.erasure(castTree.clazz.type) : castTree.clazz.type) :
+                              spType;
                 break;
             case EXEC:
                 JCTree.JCExpressionStatement execTree =

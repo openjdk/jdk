@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,6 @@ import java.awt.print.Pageable;
 import java.awt.print.Paper;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
-
 
 
 public class UnixPrintJob implements CancelablePrintJob {
@@ -525,8 +524,7 @@ public class UnixPrintJob implements CancelablePrintJob {
 
         // now spool the print data.
         PrinterOpener po = new PrinterOpener();
-        @SuppressWarnings("removal")
-        var dummy = java.security.AccessController.doPrivileged(po);
+        po.run();
         if (po.pex != null) {
             throw po.pex;
         }
@@ -599,8 +597,7 @@ public class UnixPrintJob implements CancelablePrintJob {
 
         if (mDestType == UnixPrintJob.DESTPRINTER) {
             PrinterSpooler spooler = new PrinterSpooler();
-            @SuppressWarnings("removal")
-            var dummy2 = java.security.AccessController.doPrivileged(spooler);
+            spooler.run();
             if (spooler.pex != null) {
                 throw spooler.pex;
             }
@@ -710,12 +707,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
 
         /* add the user name to the job */
-        String userName = "";
-        try {
-          userName = System.getProperty("user.name");
-        } catch (SecurityException se) {
-        }
-
+        String userName = System.getProperty("user.name");
         if (userName == null || userName.isEmpty()) {
             RequestingUserName ruName =
                 (RequestingUserName)reqSet.get(RequestingUserName.class);
@@ -794,17 +786,6 @@ public class UnixPrintJob implements CancelablePrintJob {
                     } catch (Exception e) {
                         throw new PrintException(e);
                     }
-                    // check write access
-                    @SuppressWarnings("removal")
-                    SecurityManager security = System.getSecurityManager();
-                    if (security != null) {
-                      try {
-                        security.checkWrite(mDestination);
-                      } catch (SecurityException se) {
-                        notifyEvent(PrintJobEvent.JOB_FAILED);
-                        throw new PrintException(se);
-                      }
-                    }
                 }
             } else if (category == JobSheets.class) {
                 if ((JobSheets)attr == JobSheets.NONE) {
@@ -855,7 +836,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
         if (options != null && !options.isEmpty()) {
             pFlags |= OPTIONS;
-            ncomps+=1;
+            ncomps+=options.trim().split(" ").length;
         }
         if (jobTitle != null && !jobTitle.isEmpty()) {
             pFlags |= JOBTITLE;
@@ -890,7 +871,9 @@ public class UnixPrintJob implements CancelablePrintJob {
             execCmd[n++] = "-o job-sheets=standard";
         }
         if ((pFlags & OPTIONS) != 0) {
-            execCmd[n++] = "-o" + options;
+            for (String option : options.trim().split(" ")) {
+                execCmd[n++] = "-o " + option;
+            }
         }
         execCmd[n++] = spoolFile;
         if (IPPPrintService.debugPrint) {
@@ -911,9 +894,7 @@ public class UnixPrintJob implements CancelablePrintJob {
     private String mDestination, mOptions="";
     private boolean mNoJobSheet = false;
 
-    // Inner class to run "privileged" to open the printer output stream.
-
-    private class PrinterOpener implements java.security.PrivilegedAction<OutputStream> {
+    private class PrinterOpener {
         PrintException pex;
         OutputStream result;
 
@@ -941,9 +922,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         }
     }
 
-    // Inner class to run "privileged" to invoke the system print command
-
-    private class PrinterSpooler implements java.security.PrivilegedAction<Object> {
+    private class PrinterSpooler {
         PrintException pex;
 
         private void handleProcessFailure(final Process failedProcess,

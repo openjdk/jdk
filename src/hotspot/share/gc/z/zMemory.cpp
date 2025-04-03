@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zList.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zMemory.inline.hpp"
@@ -99,6 +98,18 @@ zoffset ZMemoryManager::peek_low_address() const {
 
   // Out of memory
   return zoffset(UINTPTR_MAX);
+}
+
+zoffset_end ZMemoryManager::peak_high_address_end() const {
+  ZLocker<ZLock> locker(&_lock);
+
+  const ZMemory* const area = _freelist.last();
+  if (area != nullptr) {
+    return area->end();
+  }
+
+  // Out of memory
+  return zoffset_end(UINTPTR_MAX);
 }
 
 zoffset ZMemoryManager::alloc_low_address(size_t size) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@ import java.util.Collection;
 import java.util.List;
 import static java.util.stream.Collectors.joining;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.IOUtils;
-import jdk.jpackage.test.Functional.ThrowingFunction;
+import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.test.JPackageCommand;
 
 
@@ -65,12 +65,12 @@ public class AppContentTest {
     // In particular, random files should be placed in "Contents/Resources" folder
     // otherwise "codesign" will fail to sign.
     // Need to prepare arguments for `--app-content` accordingly.
-    private final static boolean copyInResources = TKit.isOSX();
+    private static final boolean copyInResources = TKit.isOSX();
 
     private final List<String> testPathArgs;
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
         return List.of(new String[][]{
             {TEST_JAVA, TEST_DUKE}, // include two files in two options
             {TEST_JAVA, TEST_BAD},  // try to include non-existant content
@@ -148,7 +148,7 @@ public class AppContentTest {
             var srcPath = TKit.TEST_SRC_ROOT.resolve(appContentPath);
             var dstPath = appContentArg.resolve(srcPath.getFileName());
             Files.createDirectories(dstPath.getParent());
-            IOUtils.copyRecursive(srcPath, dstPath);
+            FileUtils.copyRecursive(srcPath, dstPath);
             return appContentArg;
         }
 

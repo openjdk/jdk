@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package jdk.javadoc.internal.doclets.formats.html.taglets;
 
 import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -133,43 +131,39 @@ public class SnippetTaglet extends BaseTaglet {
         if (lang != null && !lang.isBlank()) {
             code.addStyle("language-" + lang);
         }
-
         content.consumeBy((styles, sequence) -> {
             CharSequence text = Text.normalizeNewlines(sequence);
             if (styles.isEmpty()) {
                 code.add(text);
             } else {
                 Element e = null;
-                String t = null;
-                boolean linkEncountered = false;
+                String linkTarget = null;
                 boolean markupEncountered = false;
                 Set<String> classes = new HashSet<>();
                 for (Style s : styles) {
-                    if (s instanceof Style.Name n) {
-                        classes.add(n.name());
-                    } else if (s instanceof Style.Link l) {
-                        assert !linkEncountered; // TODO: do not assert; pick the first link report on subsequent
-                        linkEncountered = true;
-                        t = l.target();
-                        e = getLinkedElement(element, t);
-                        if (e == null) {
-                            // TODO: diagnostic output
+                    switch (s) {
+                        case Style.Name n -> classes.add(n.name());
+                        case Style.Link l -> {
+                            if (linkTarget != null) {
+                                messages.error(utils.getCommentHelper(element).getDocTreePath(tag),
+                                        "doclet.error.snippet.ambiguous.link",
+                                        linkTarget,
+                                        l.target(),
+                                        content.asCharSequence().toString().trim());
+                            }
+                            linkTarget = l.target();
+                            e = getLinkedElement(element, linkTarget);
+                            if (e == null) {
+                                // TODO: diagnostic output
+                            }
                         }
-                    } else if (s instanceof Style.Markup) {
-                        markupEncountered = true;
-                        break;
-                    } else {
-                        // TODO: transform this if...else into an exhaustive
-                        // switch over the sealed Style hierarchy when "Pattern
-                        // Matching for switch" has been implemented (JEP 406
-                        // and friends)
-                        throw new AssertionError(styles);
+                        case Style.Markup m -> markupEncountered = true;
                     }
                 }
                 Content c;
                 if (markupEncountered) {
                     return;
-                } else if (linkEncountered) {
+                } else if (linkTarget != null) {
                     assert e != null;
                     //disable preview tagging inside the snippets:
                     Utils.PreviewFlagProvider prevPreviewProvider = utils.setPreviewFlagProvider(el -> false);
@@ -177,7 +171,7 @@ public class SnippetTaglet extends BaseTaglet {
                         var lt = (LinkTaglet) config.tagletManager.getTaglet(DocTree.Kind.LINK);
                         c = lt.linkSeeReferenceOutput(element,
                                 null,
-                                t,
+                                linkTarget,
                                 e,
                                 false, // TODO: for now
                                 Text.of(sequence.toString()),
@@ -200,10 +194,9 @@ public class SnippetTaglet extends BaseTaglet {
                 HtmlTree.of(HtmlTag.BUTTON)
                         .add(HtmlTree.SPAN(Text.of(copyText))
                                 .put(HtmlAttr.DATA_COPIED, copiedText))
-                        .add(HtmlTree.of(HtmlTag.IMG)
-                                .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.RESOURCE_FILES)
-                                                             .resolve(DocPaths.CLIPBOARD_SVG).getPath())
-                                .put(HtmlAttr.ALT, copySnippetText))
+                        .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES)
+                                        .resolve(DocPaths.CLIPBOARD_SVG),
+                                copySnippetText))
                         .addStyle(HtmlStyles.copy)
                         .addStyle(HtmlStyles.snippetCopy)
                         .put(HtmlAttr.ARIA_LABEL, copySnippetText)

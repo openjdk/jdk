@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -82,9 +82,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
       fi
 
       AC_MSG_NOTICE([Found Visual Studio installation at $VS_BASE using $METHOD])
-      if test "x$TARGET_CPU" = xx86; then
-        VCVARSFILES="vcvars32.bat vcvarsamd64_x86.bat"
-      elif test "x$TARGET_CPU" = xx86_64; then
+      if test "x$TARGET_CPU" = xx86_64; then
         VCVARSFILES="vcvars64.bat vcvarsx86_amd64.bat"
       elif test "x$TARGET_CPU" = xaarch64; then
         # for host x86-64, target aarch64
@@ -132,9 +130,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT],
       elif test -f "$WIN_SDK_BASE/bin/setenv.cmd"; then
         AC_MSG_NOTICE([Found Windows SDK installation at $WIN_SDK_BASE using $METHOD])
         VS_ENV_CMD="$WIN_SDK_BASE/bin/setenv.cmd"
-        if test "x$TARGET_CPU" = xx86; then
-          VS_ENV_ARGS="/x86"
-        elif test "x$TARGET_CPU" = xx86_64; then
+        if test "x$TARGET_CPU" = xx86_64; then
           VS_ENV_ARGS="/x64"
         elif test "x$TARGET_CPU" = xaarch64; then
           VS_ENV_ARGS="/arm64"
@@ -438,9 +434,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL],
     # Need to check if the found msvcr is correct architecture
     AC_MSG_CHECKING([found $DLL_NAME architecture])
     MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_TARGET_CPU" = xx86; then
-      CORRECT_MSVCR_ARCH=386
-    elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+    if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
       CORRECT_MSVCR_ARCH=x86-64
     elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
       # The cygwin 'file' command only returns "PE32+ executable (DLL) (console), for MS Windows",
@@ -466,9 +460,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
   DLL_HELP="$2"
   MSVC_DLL=
 
-  if test "x$OPENJDK_TARGET_CPU" = xx86; then
-    vs_target_cpu=x86
-  elif test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+  if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
     vs_target_cpu=x64
   elif test "x$OPENJDK_TARGET_CPU" = xaarch64; then
     vs_target_cpu=arm64
@@ -522,18 +514,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
     # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
     # (This was the original behaviour; kept since it might turn something up)
     if test "x$VCINSTALLDIR" != x; then
-      if test "x$OPENJDK_TARGET_CPU" = xx86; then
-        POSSIBLE_MSVC_DLL=`$FIND "$VCINSTALLDIR" -name $DLL_NAME \
-        | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $GREP -v arm64 | $HEAD --lines 1`
-        if test "x$POSSIBLE_MSVC_DLL" = x; then
-          # We're grasping at straws now...
-          POSSIBLE_MSVC_DLL=`$FIND "$VCINSTALLDIR" -name $DLL_NAME \
-          | $HEAD --lines 1`
-        fi
-      else
-        POSSIBLE_MSVC_DLL=`$FIND "$VCINSTALLDIR" -name $DLL_NAME \
-        | $GREP x64 | $HEAD --lines 1`
-      fi
+      POSSIBLE_MSVC_DLL=`$FIND "$VCINSTALLDIR" -name $DLL_NAME \
+      | $GREP x64 | $HEAD --lines 1`
 
       TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$POSSIBLE_MSVC_DLL],
           [search of VCINSTALLDIR])

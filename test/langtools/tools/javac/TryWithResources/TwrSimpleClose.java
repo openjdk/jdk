@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
  * @bug 8194978
  * @summary Verify than an appropriate number of close method invocations is generated.
  * @library /tools/lib
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox TwrSimpleClose
  * @run main TwrSimpleClose
  */

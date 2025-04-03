@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/psCompactionManager.inline.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
+#include "memory/memoryReserver.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -42,35 +42,44 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   const size_t raw_bytes = words * sizeof(idx_t);
   const size_t page_sz = os::page_size_for_region_aligned(raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
-  _reserved_byte_size = align_up(raw_bytes, MAX2(page_sz, granularity));
+  const size_t rs_align = MAX2(page_sz, granularity);
 
-  const size_t rs_align = page_sz == os::vm_page_size() ? 0 :
-    MAX2(page_sz, granularity);
-  ReservedSpace rs(_reserved_byte_size, rs_align, page_sz);
+  _reserved_byte_size = align_up(raw_bytes, rs_align);
+
+  ReservedSpace rs = MemoryReserver::reserve(_reserved_byte_size,
+                                             rs_align,
+                                             page_sz);
+
+  if (!rs.is_reserved()) {
+    // Failed to reserve memory for the bitmap,
+    return false;
+  }
+
   const size_t used_page_sz = rs.page_size();
   os::trace_page_sizes("Mark Bitmap", raw_bytes, raw_bytes,
                        rs.base(), rs.size(), used_page_sz);
 
-  MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(rs, mtGC);
 
   _virtual_space = new PSVirtualSpace(rs, page_sz);
-  if (_virtual_space != nullptr && _virtual_space->expand_by(_reserved_byte_size)) {
-    _heap_start = covered_region.start();
-    _heap_size = covered_region.word_size();
-    BitMap::bm_word_t* map = (BitMap::bm_word_t*)_virtual_space->reserved_low_addr();
-    _beg_bits = BitMapView(map, bits);
-    return true;
+
+  if (!_virtual_space->expand_by(_reserved_byte_size)) {
+    // Failed to commit memory for the bitmap.
+
+    delete _virtual_space;
+
+    // Release memory reserved in the space.
+    MemoryReserver::release(rs);
+
+    return false;
   }
 
-  _heap_start = nullptr;
-  _heap_size = 0;
-  if (_virtual_space != nullptr) {
-    delete _virtual_space;
-    _virtual_space = nullptr;
-    // Release memory reserved in the space.
-    rs.release();
-  }
-  return false;
+  _heap_start = covered_region.start();
+  _heap_size = covered_region.word_size();
+  BitMap::bm_word_t* map = (BitMap::bm_word_t*)_virtual_space->reserved_low_addr();
+  _beg_bits = BitMapView(map, bits);
+
+  return true;
 }
 
 #ifdef ASSERT

@@ -56,7 +56,7 @@ import jdk.internal.classfile.impl.*;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 1, time = 2)
 @Measurement(iterations = 3, time = 1)
-@Fork(jvmArgs = "--enable-preview", value = 3)
+@Fork(value = 3)
 @State(Scope.Thread)
 public class Utf8EntryWriteTo {
     static final ClassDesc STRING_BUILDER = ClassDesc.ofDescriptor("Ljava/lang/StringBuilder;");

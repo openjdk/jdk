@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1071,6 +1071,11 @@ public class JavacTrees extends DocTrees {
             }
 
             @Override
+            public Comment stripIndent() {
+                return this;
+            }
+
+            @Override
             public JCDiagnostic.DiagnosticPosition getPos() {
                 return null;
             }
@@ -1402,6 +1407,7 @@ public class JavacTrees extends DocTrees {
         jcCompilationUnit.namedImportScope = new NamedImportScope(psym);
         jcCompilationUnit.packge = psym;
         jcCompilationUnit.starImportScope = new StarImportScope(psym);
+        jcCompilationUnit.moduleImportScope = new StarImportScope(psym);
         jcCompilationUnit.toplevelScope = WriteableScope.create(psym);
         return new TreePath(jcCompilationUnit);
     }

@@ -234,7 +234,7 @@ public record ClassRecord(
         public static AttributesRecord ofStreamingElements(Supplier<Stream<? extends ClassFileElement>> elements, ConstantPool cp, CompatibilityFilter... cf) {
             Map<String, Attribute<?>> attrs = elements.get().filter(e -> e instanceof Attribute<?>)
                     .map(e -> (Attribute<?>) e)
-                    .collect(toMap(Attribute::attributeName, e -> e));
+                    .collect(toMap(a -> a.attributeName().stringValue(), e -> e));
             return new AttributesRecord(
                     mapAttr(attrs, annotationDefault(), a -> ElementValueRecord.ofElementValue(a.defaultValue())),
                     cp == null ? null : IntStream.range(0, cp.bootstrapMethodCount()).mapToObj(i -> BootstrapMethodRecord.ofBootstrapMethodEntry(cp.bootstrapMethodEntry(i))).collect(toSetOrNull()),

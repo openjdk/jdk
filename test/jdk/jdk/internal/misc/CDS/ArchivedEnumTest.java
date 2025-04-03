@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
  * @run driver ArchivedEnumTest
  */
 
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -46,7 +47,7 @@ public class ArchivedEnumTest {
                                                  TestCommon.list("ArchivedEnumApp"));
         // Note: You can get the following line to fail by commenting out
         // the ADD_EXCL(...) lines in cdsHeapVerifier.cpp
-        out.shouldNotContain("object points to a static field that may be reinitialized at runtime");
+        out.shouldNotContain(CDSTestUtils.MSG_STATIC_FIELD_MAY_HOLD_DIFFERENT_VALUE);
 
         TestCommon.run("-cp", appJar,
                        "-Xlog:cds=debug",

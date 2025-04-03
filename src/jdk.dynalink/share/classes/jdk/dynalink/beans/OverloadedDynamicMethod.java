@@ -62,9 +62,6 @@ package jdk.dynalink.beans;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -73,9 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.SecureLookupSupplier;
 import jdk.dynalink.beans.ApplicableOverloadedMethods.ApplicabilityTest;
-import jdk.dynalink.internal.AccessControlContextFactory;
 import jdk.dynalink.internal.InternalTypeUtilities;
 import jdk.dynalink.linker.LinkerServices;
 
@@ -194,16 +189,8 @@ class OverloadedDynamicMethod extends DynamicMethod {
         }
     }
 
-    @SuppressWarnings("removal")
-    private static final AccessControlContext GET_CALL_SITE_CLASS_LOADER_CONTEXT =
-            AccessControlContextFactory.createAccessControlContext(
-                    "getClassLoader", SecureLookupSupplier.GET_LOOKUP_PERMISSION_NAME);
-
-    @SuppressWarnings("removal")
     private static ClassLoader getCallSiteClassLoader(final CallSiteDescriptor callSiteDescriptor) {
-        return AccessController.doPrivileged(
-            (PrivilegedAction<ClassLoader>) () -> callSiteDescriptor.getLookup().lookupClass().getClassLoader(),
-            GET_CALL_SITE_CLASS_LOADER_CONTEXT);
+        return callSiteDescriptor.getLookup().lookupClass().getClassLoader();
     }
 
     @Override

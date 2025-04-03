@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 import java.awt.Dialog;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -29,63 +30,93 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Panel;
 import java.awt.geom.AffineTransform;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /*
  * @test
  * @bug 8069361
  * @key headful
  * @summary SunGraphics2D.getDefaultTransform() does not include scale factor
- * @author Alexander Scherbatiy
- * @run main ScaledTransform
+ * @run main/timeout=300 ScaledTransform
  */
 public class ScaledTransform {
 
-    private static volatile boolean passed = false;
+    private static volatile CountDownLatch painted;
+    private static volatile boolean passed;
+    private static volatile Dialog dialog;
+    private static volatile long startTime;
+    private static volatile long endTime;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         GraphicsEnvironment ge = GraphicsEnvironment.
                 getLocalGraphicsEnvironment();
 
-        if (ge.isHeadlessInstance()) {
-            return;
-        }
-
         for (GraphicsDevice gd : ge.getScreenDevices()) {
-            for (GraphicsConfiguration gc : gd.getConfigurations()) {
-                testScaleFactor(gc);
+            System.out.println("Screen = " + gd);
+            test(gd.getDefaultConfiguration());
+            /* Don't want to run too long. Test the default and up to 10 more */
+            GraphicsConfiguration[] configs = gd.getConfigurations();
+            for (int c = 0; c < configs.length && c < 10; c++) {
+                test(configs[c]);
             }
         }
     }
 
-    private static void testScaleFactor(final GraphicsConfiguration gc) {
-        final Dialog dialog = new Dialog((Frame) null, "Test", true, gc);
-
+    static void test(GraphicsConfiguration gc) throws Exception {
         try {
-            dialog.setSize(100, 100);
-            Panel panel = new Panel() {
-
-                @Override
-                public void paint(Graphics g) {
-                    if (g instanceof Graphics2D) {
-                        AffineTransform gcTx = gc.getDefaultTransform();
-                        AffineTransform gTx
-                                = ((Graphics2D) g).getTransform();
-                        passed = gcTx.getScaleX() == gTx.getScaleX()
-                                && gcTx.getScaleY() == gTx.getScaleY();
-                    } else {
-                        passed = true;
-                    }
-                    dialog.setVisible(false);
-                }
-            };
-            dialog.add(panel);
-            dialog.setVisible(true);
-
+            /* reset vars for each run */
+            passed = false;
+            dialog = null;
+            painted = new CountDownLatch(1);
+            EventQueue.invokeLater(() -> showDialog(gc));
+            startTime = System.currentTimeMillis();
+            endTime = startTime;
+            if (!painted.await(5, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Panel is not painted!");
+            }
+            System.out.println("Time to paint = " + (endTime - startTime) + "ms.");
             if (!passed) {
                 throw new RuntimeException("Transform is not scaled!");
             }
         } finally {
-            dialog.dispose();
+            EventQueue.invokeAndWait(() -> disposeDialog());
         }
+    }
+
+    private static void showDialog(final GraphicsConfiguration gc) {
+        System.out.println("Creating dialog for gc=" + gc + " with tx=" + gc.getDefaultTransform());
+        dialog = new Dialog((Frame) null, "ScaledTransform", true, gc);
+        dialog.setSize(300, 100);
+
+        Panel panel = new Panel() {
+
+            @Override
+            public void paint(Graphics g) {
+                System.out.println("Painting panel");
+                if (g instanceof Graphics2D g2d) {
+                    AffineTransform gcTx = gc.getDefaultTransform();
+                    AffineTransform gTx = g2d.getTransform();
+                    System.out.println("GTX = " + gTx);
+                    passed = (gcTx.getScaleX() == gTx.getScaleX()) &&
+                             (gcTx.getScaleY() == gTx.getScaleY());
+                } else {
+                    passed = true;
+                }
+                endTime = System.currentTimeMillis();
+                painted.countDown();
+                System.out.println("Painted panel");
+            }
+        };
+        dialog.add(panel);
+        dialog.setVisible(true);
+    }
+
+    private static void disposeDialog() {
+       if (dialog != null) {
+           System.out.println("Disposing dialog");
+           dialog.setVisible(false);
+           dialog.dispose();
+       }
     }
 }

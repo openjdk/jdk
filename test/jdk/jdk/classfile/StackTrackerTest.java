@@ -31,7 +31,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.classfile.*;
-import java.lang.classfile.components.CodeStackTracker;
+import jdk.internal.classfile.components.CodeStackTracker;
 import static java.lang.classfile.TypeKind.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;

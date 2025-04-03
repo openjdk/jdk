@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_LIRAssembler.hpp"
@@ -1017,7 +1016,7 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
   }
 }
 
-void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type, bool pop_fpu_stack) {
+void LIR_Assembler::reg2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
   assert(src->is_register(), "should not call otherwise");
   assert(dest->is_stack(), "should not call otherwise");
 
@@ -1075,7 +1074,7 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
 }
 
 void LIR_Assembler::reg2mem(LIR_Opr from, LIR_Opr dest_opr, BasicType type,
-                            LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack,
+                            LIR_PatchCode patch_code, CodeEmitInfo* info,
                             bool wide) {
   assert(type != T_METADATA, "store of metadata ptr not supported");
   LIR_Address* addr = dest_opr->as_address_ptr();
@@ -1502,7 +1501,7 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
 }
 
 void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest,
-                             CodeEmitInfo* info, bool pop_fpu_stack) {
+                             CodeEmitInfo* info) {
   assert(info == nullptr, "should never be used, idiv/irem and ldiv/lrem not handled by this method");
 
   if (left->is_single_cpu()) {
@@ -1532,8 +1531,12 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       // cpu register - constant
       jint c = right->as_constant_ptr()->as_jint();
       switch (code) {
-        case lir_add: __ z_agfi(lreg, c);  break;
-        case lir_sub: __ z_agfi(lreg, -c); break; // note: -min_jint == min_jint
+        case lir_add:
+                      __ add2reg_32(lreg, c);
+                      break;
+        case lir_sub:
+                      __ add2reg_32(lreg, java_negate(c));
+                      break;
         case lir_mul: __ z_msfi(lreg, c);  break;
         default: ShouldNotReachHere();
       }
@@ -2047,8 +2050,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   Address src_length_addr = Address(src, arrayOopDesc::length_offset_in_bytes());
   Address dst_length_addr = Address(dst, arrayOopDesc::length_offset_in_bytes());
-  Address src_klass_addr = Address(src, oopDesc::klass_offset_in_bytes());
-  Address dst_klass_addr = Address(dst, oopDesc::klass_offset_in_bytes());
 
   // Length and pos's are all sign extended at this point on 64bit.
 
@@ -2112,13 +2113,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // We don't know the array types are compatible.
     if (basic_type != T_OBJECT) {
       // Simple test for basic type arrays.
-      if (UseCompressedClassPointers) {
-        __ z_l(tmp, src_klass_addr);
-        __ z_c(tmp, dst_klass_addr);
-      } else {
-        __ z_lg(tmp, src_klass_addr);
-        __ z_cg(tmp, dst_klass_addr);
-      }
+      __ cmp_klasses_from_objects(src, dst, tmp, Z_R1_scratch);
       __ branch_optimized(Assembler::bcondNotEqual, *stub->entry());
     } else {
       // For object arrays, if src is a sub class of dst then we can
@@ -2252,15 +2247,13 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     }
 
     if (basic_type != T_OBJECT) {
-      if (UseCompressedClassPointers)         { __ z_c (tmp, dst_klass_addr); }
-      else                                    { __ z_cg(tmp, dst_klass_addr); }
+      __ cmp_klass(tmp, dst, Z_R1_scratch);
       __ branch_optimized(Assembler::bcondNotEqual, halt);
-      if (UseCompressedClassPointers)         { __ z_c (tmp, src_klass_addr); }
-      else                                    { __ z_cg(tmp, src_klass_addr); }
+
+      __ cmp_klass(tmp, src, Z_R1_scratch);
       __ branch_optimized(Assembler::bcondEqual, known_ok);
     } else {
-      if (UseCompressedClassPointers)         { __ z_c (tmp, dst_klass_addr); }
-      else                                    { __ z_cg(tmp, dst_klass_addr); }
+      __ cmp_klass(tmp, dst, Z_R1_scratch);
       __ branch_optimized(Assembler::bcondEqual, known_ok);
       __ compareU64_and_branch(src, dst, Assembler::bcondEqual, known_ok);
     }
@@ -2549,13 +2542,11 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   } else {
     bool need_slow_path = !k->is_loaded() ||
                           ((int) k->super_check_offset() == in_bytes(Klass::secondary_super_cache_offset()));
-    intptr_t super_check_offset = k->is_loaded() ? k->super_check_offset() : -1L;
     __ load_klass(klass_RInfo, obj);
     // Perform the fast part of the checking logic.
     __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1,
                                      (need_slow_path ? success_target : nullptr),
-                                     failure_target, nullptr,
-                                     RegisterOrConstant(super_check_offset));
+                                     failure_target, nullptr);
     if (need_slow_path) {
       // Call out-of-line instance of __ check_klass_subtype_slow_path(...):
       address a = Runtime1::entry_for (C1StubId::slow_subtype_check_id);
@@ -2755,12 +2746,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
     add_debug_info_for_null_check_here(info);
   }
 
-  if (UseCompressedClassPointers) {
-    __ z_llgf(result, Address(obj, oopDesc::klass_offset_in_bytes()));
-    __ decode_klass_not_null(result);
-  } else {
-    __ z_lg(result, Address(obj, oopDesc::klass_offset_in_bytes()));
-  }
+  __ load_klass(result, obj);
 }
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();

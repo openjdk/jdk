@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLiveMap.inline.hpp"
@@ -46,8 +45,15 @@ ZLiveMap::ZLiveMap(uint32_t size)
     _live_bytes(0),
     _segment_live_bits(0),
     _segment_claim_bits(0),
-    _bitmap(bitmap_size(size, NumSegments)),
+    _bitmap_size(bitmap_size(size, NumSegments)),
+    _bitmap(0),
     _segment_shift(log2i_exact(segment_size())) {}
+
+void ZLiveMap::allocate_bitmap() {
+  if (_bitmap.size() != _bitmap_size) {
+    _bitmap.initialize(_bitmap_size, false /* clear */);
+  }
+}
 
 void ZLiveMap::reset(ZGenerationId id) {
   ZGeneration* const generation = ZGeneration::generation(id);
@@ -64,6 +70,10 @@ void ZLiveMap::reset(ZGenerationId id) {
       // Reset marking information
       _live_bytes = 0;
       _live_objects = 0;
+
+      // We lazily initialize the bitmap the first time the page is
+      // marked, i.e. a bit is about to be set for the first time.
+      allocate_bitmap();
 
       // Clear segment claimed/live bits
       segment_live_bits().clear();
@@ -103,7 +113,7 @@ void ZLiveMap::reset_segment(BitMap::idx_t segment) {
         ZStatInc(ZCounterMarkSegmentResetContention);
         contention = true;
 
-        log_trace(gc)("Mark segment reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT ", segment: " SIZE_FORMAT,
+        log_trace(gc)("Mark segment reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT ", segment: %zu",
                       p2i(Thread::current()), ZUtils::thread_name(), p2i(this), segment);
       }
     }
@@ -128,8 +138,10 @@ void ZLiveMap::reset_segment(BitMap::idx_t segment) {
 
 void ZLiveMap::resize(uint32_t size) {
   const size_t new_bitmap_size = bitmap_size(size, NumSegments);
-  if (_bitmap.size() != new_bitmap_size) {
+  _bitmap_size = new_bitmap_size;
+  _segment_shift = log2i_exact(segment_size());
+
+  if (_bitmap.size() != 0 && _bitmap.size() != new_bitmap_size) {
     _bitmap.reinitialize(new_bitmap_size, false /* clear */);
-    _segment_shift = log2i_exact(segment_size());
   }
 }

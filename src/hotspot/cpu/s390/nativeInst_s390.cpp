@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,6 @@
 
 // Major contributions by JL, LS
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_s390.hpp"
@@ -59,7 +58,7 @@ void NativeInstruction::verify() {
   //  - any address in first page (0x0000 .. 0x0fff)
   //  - odd address (will cause a "specification exception")
   address addr = addr_at(0);
-  if ((addr == 0) || (((unsigned long)addr & ~0x0fff) == 0) || ((intptr_t)addr & 1) != 0) {
+  if ((addr == nullptr) || (((unsigned long)addr & ~0x0fff) == 0) || ((intptr_t)addr & 1) != 0) {
     tty->print_cr(INTPTR_FORMAT ": bad instruction address", p2i(addr));
     fatal("not an instruction address");
   }

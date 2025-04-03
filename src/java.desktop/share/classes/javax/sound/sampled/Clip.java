@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,6 @@ public interface Clip extends DataLine {
      *         integral number of sample frames, or if {@code format} is not
      *         fully specified or invalid
      * @throws IllegalStateException if the line is already open
-     * @throws SecurityException if the line cannot be opened due to security
-     *         restrictions
      * @see #close
      * @see #isOpen
      * @see LineListener
@@ -118,8 +116,6 @@ public interface Clip extends DataLine {
      * @throws IllegalArgumentException if the stream's audio format is not
      *         fully specified or invalid
      * @throws IllegalStateException if the line is already open
-     * @throws SecurityException if the line cannot be opened due to security
-     *         restrictions
      * @see #close
      * @see #isOpen
      * @see LineListener

@@ -38,6 +38,7 @@ class outputStream;
   LOG_TAG(age) \
   LOG_TAG(alloc) \
   LOG_TAG(annotation) \
+  LOG_TAG(aot) \
   LOG_TAG(arguments) \
   LOG_TAG(array) \
   LOG_TAG(attach) \
@@ -67,6 +68,7 @@ class outputStream;
   LOG_TAG(data) \
   LOG_TAG(datacreation) \
   LOG_TAG(dcmd) \
+  DEBUG_ONLY(LOG_TAG(deathtest)) /* Log Internal death test tag */ \
   LOG_TAG(decoder) \
   LOG_TAG(defaultmethods) \
   LOG_TAG(deoptimization) \
@@ -160,7 +162,6 @@ class outputStream;
   LOG_TAG(preorder)  /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(preview)   /* Trace loading of preview feature types */ \
   LOG_TAG(promotion) \
-  LOG_TAG(protectiondomain) /* "Trace protection domain verification" */ \
   LOG_TAG(ptrqueue) \
   LOG_TAG(purge) \
   LOG_TAG(record) \

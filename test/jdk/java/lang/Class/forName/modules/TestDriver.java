@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class TestDriver {
     private static final Path MOD_SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path MOD_DEST_DIR = Paths.get("mods");
 
-    private static final String[] modules = new String[] {"m1", "m2", "m3"};
+    private static final String[] modules = new String[] {"m1", "m2"};
 
     /**
      * Compiles all modules used by the test.
@@ -109,52 +109,8 @@ public class TestDriver {
         runTest(options);
     }
 
-    @Test
-    public void testDeniedClassLoaderAccess() throws Exception {
-        String[] options = new String[] {
-                "--module-path", MOD_DEST_DIR.toString(),
-                "--add-modules", String.join(",", modules),
-                "-Djava.security.manager=allow",
-                "-m", "m3/p3.NoGetClassLoaderAccess"
-        };
-        assertTrue(executeTestJava(options)
-                        .outputTo(System.out)
-                        .errorTo(System.err)
-                        .getExitValue() == 0);
-    }
-
-    @Test
-    public void testDeniedAccess() throws Exception {
-        Path policyFile = Paths.get(TEST_SRC, "policy.denied");
-
-        String[] options = new String[] {
-                "-Djava.security.manager",
-                "-Djava.security.policy=" + policyFile.toString(),
-                "--module-path", MOD_DEST_DIR.toString(),
-                "--add-modules", String.join(",", modules),
-                "-m", "m3/p3.NoAccess"
-        };
-        assertTrue(executeTestJava(options)
-                        .outputTo(System.out)
-                        .errorTo(System.err)
-                        .getExitValue() == 0);
-    }
-
-    private String[] runWithSecurityManager(String[] options) {
-        Path policyFile = Paths.get(TEST_SRC, "policy");
-        Stream<String> opts = Stream.concat(Stream.of("-Djava.security.manager",
-                                                      "-Djava.security.policy=" + policyFile.toString()),
-                                            Arrays.stream(options));
-        return opts.toArray(String[]::new);
-    }
-
     private void runTest(String[] options) throws Exception {
         assertTrue(executeTestJava(options)
-                        .outputTo(System.out)
-                        .errorTo(System.err)
-                        .getExitValue() == 0);
-
-        assertTrue(executeTestJava(runWithSecurityManager(options))
                         .outputTo(System.out)
                         .errorTo(System.err)
                         .getExitValue() == 0);

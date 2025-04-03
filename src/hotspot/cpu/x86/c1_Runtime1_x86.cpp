@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -206,9 +205,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 class StubFrame: public StackObj {
  private:
   StubAssembler* _sasm;
+  bool _use_pop_on_epilog;
 
  public:
-  StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments);
+  StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments, bool use_pop_on_epilog = false);
   void load_argument(int offset_in_words, Register reg);
 
   ~StubFrame();
@@ -219,15 +219,20 @@ void StubAssembler::prologue(const char* name, bool must_gc_arguments) {
   enter();
 }
 
-void StubAssembler::epilogue() {
-  leave();
+void StubAssembler::epilogue(bool use_pop) {
+  // Avoid using a leave instruction when this frame may
+  // have been frozen, since the current value of rbp
+  // restored from the stub would be invalid. We still
+  // must restore the rbp value saved on enter though.
+  use_pop ? pop(rbp) : leave();
   ret(0);
 }
 
 #define __ _sasm->
 
-StubFrame::StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments) {
+StubFrame::StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments, bool use_pop_on_epilog) {
   _sasm = sasm;
+  _use_pop_on_epilog = use_pop_on_epilog;
   __ prologue(name, must_gc_arguments);
 }
 
@@ -239,7 +244,7 @@ void StubFrame::load_argument(int offset_in_words, Register reg) {
 
 
 StubFrame::~StubFrame() {
-  __ epilogue();
+  __ epilogue(_use_pop_on_epilog);
 }
 
 #undef __
@@ -632,6 +637,15 @@ void Runtime1::initialize_pd() {
   // nothing to do
 }
 
+// return: offset in 64-bit words.
+uint Runtime1::runtime_blob_current_thread_offset(frame f) {
+#ifdef _LP64
+  return r15_off / 2;  // rsp offsets are in halfwords
+#else
+  Unimplemented();
+  return 0;
+#endif
+}
 
 // Target: the entry point of the method that creates and posts the exception oop.
 // has_argument: true if the exception needs arguments (passed on the stack because
@@ -1303,12 +1317,66 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       }
       break;
 
+    case C1StubId::is_instance_of_id:
+      {
+        // Mirror: c_rarg0  (Windows: rcx, SysV: rdi)
+        // Object: c_rarg1  (Windows: rdx, SysV: rsi)
+        // ObjClass: r9
+        // Temps:  rcx, r8, r10, r11
+        // Result: rax
+
+        Register klass = r9, obj = c_rarg1, result = rax;
+        Register temp0 = rcx, temp1 = r8, temp2 = r10, temp3 = r11;
+
+        // Get the Klass* into r9. c_rarg0 is now dead.
+        __ movptr(klass, Address(c_rarg0, java_lang_Class::klass_offset()));
+
+        Label done, is_secondary, same;
+
+        __ xorq(result, result);
+        __ testq(klass, klass);
+        __ jcc(Assembler::equal, done); // Klass is null
+
+        __ testq(obj, obj);
+        __ jcc(Assembler::equal, done); // obj is null
+
+        __ movl(temp0, Address(klass, in_bytes(Klass::super_check_offset_offset())));
+        __ cmpl(temp0, in_bytes(Klass::secondary_super_cache_offset()));
+        __ jcc(Assembler::equal, is_secondary); // Klass is a secondary superclass
+
+        // Klass is a concrete class
+        __ load_klass(temp2, obj, /*tmp*/temp1);
+        __ cmpptr(klass, Address(temp2, temp0));
+        __ setcc(Assembler::equal, result);
+        __ ret(0);
+
+        __ bind(is_secondary);
+
+        __ load_klass(obj, obj, /*tmp*/temp1);
+
+        // This is necessary because I am never in my own secondary_super list.
+        __ cmpptr(obj, klass);
+        __ jcc(Assembler::equal, same);
+
+        __ lookup_secondary_supers_table_var(obj, klass,
+                                             /*temps*/temp0, temp1, temp2, temp3,
+                                             result);
+        __ testq(result, result);
+
+        __ bind(same);
+        __ setcc(Assembler::equal, result);
+
+        __ bind(done);
+        __ ret(0);
+      }
+      break;
+
     case C1StubId::monitorenter_nofpu_id:
       save_fpu_registers = false;
       // fall through
     case C1StubId::monitorenter_id:
       {
-        StubFrame f(sasm, "monitorenter", dont_gc_arguments);
+        StubFrame f(sasm, "monitorenter", dont_gc_arguments, true /* use_pop_on_epilog */);
         OopMap* map = save_live_registers(sasm, 3, save_fpu_registers);
 
         // Called with store_parameter and not C abi

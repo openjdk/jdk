@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -666,13 +666,6 @@ final class Win32ShellFolder2 extends ShellFolder {
                 return getFileSystemPath0(csidl);
             }
         }, IOException.class);
-        if (path != null) {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                security.checkRead(path);
-            }
-        }
         return path;
     }
 
@@ -750,11 +743,6 @@ final class Win32ShellFolder2 extends ShellFolder {
      *         {@code null} if this shellfolder does not denote a directory.
      */
     public File[] listFiles(final boolean includeHiddenFiles) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(getPath());
-        }
 
         try {
             File[] files = invoke(new Callable<File[]>() {
@@ -813,7 +801,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                 }
             }, InterruptedException.class);
 
-            return Win32ShellFolderManager2.checkFiles(files);
+            return files;
         } catch (InterruptedException e) {
             return new File[0];
         }
@@ -1213,8 +1201,12 @@ final class Win32ShellFolder2 extends ShellFolder {
      */
     static Image getSystemIcon(SystemIcon iconType) {
         long hIcon = getSystemIcon(iconType.getIconID());
+        if (hIcon == 0) {
+            return null;
+        }
+
         Image icon = makeIcon(hIcon);
-        if (LARGE_ICON_SIZE != icon.getWidth(null)) {
+        if (icon != null && LARGE_ICON_SIZE != icon.getWidth(null)) {
             icon = new MultiResolutionIconImage(LARGE_ICON_SIZE, icon);
         }
         disposeIcon(hIcon);
@@ -1226,15 +1218,16 @@ final class Win32ShellFolder2 extends ShellFolder {
      */
     static Image getShell32Icon(int iconID, int size) {
         long hIcon = getIconResource("shell32.dll", iconID, size, size);
-        if (hIcon != 0) {
-            Image icon = makeIcon(hIcon);
-            if (size != icon.getWidth(null)) {
-                icon = new MultiResolutionIconImage(size, icon);
-            }
-            disposeIcon(hIcon);
-            return icon;
+        if (hIcon == 0) {
+            return null;
         }
-        return null;
+
+        Image icon = makeIcon(hIcon);
+        if (icon != null && size != icon.getWidth(null)) {
+            icon = new MultiResolutionIconImage(size, icon);
+        }
+        disposeIcon(hIcon);
+        return icon;
     }
 
     /**

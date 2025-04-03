@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import com.sun.jmx.mbeanserver.MXBeanSupport;
 import com.sun.jmx.mbeanserver.StandardMBeanSupport;
 import com.sun.jmx.mbeanserver.Util;
 
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
@@ -1163,9 +1162,7 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
             Boolean safe = mbeanInfoSafeMap.get(subclass);
             if (safe == null) {
                 try {
-                    MBeanInfoSafeAction action =
-                        new MBeanInfoSafeAction(subclass);
-                    safe = AccessController.doPrivileged(action);
+                    safe = mBeanInfoSafe(subclass);
                 } catch (Exception e) { // e.g. SecurityException
                     /* We don't know, so we assume it isn't.  */
                     safe = false;
@@ -1189,16 +1186,8 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
         return false;
     }
 
-    private static class MBeanInfoSafeAction
-            implements PrivilegedAction<Boolean> {
 
-        private final Class<?> subclass;
-
-        MBeanInfoSafeAction(Class<?> subclass) {
-            this.subclass = subclass;
-        }
-
-        public Boolean run() {
+    private static boolean mBeanInfoSafe(Class<?> subclass) {
             // Check for "void cacheMBeanInfo(MBeanInfo)" method.
             //
             if (overrides(subclass, StandardMBean.class,
@@ -1230,6 +1219,5 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
                               "getNotificationInfo", (Class<?>[]) null))
                     return false;
             return true;
-        }
     }
 }

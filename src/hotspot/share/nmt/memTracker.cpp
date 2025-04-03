@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +22,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -52,6 +51,8 @@ NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 
 MemBaseline MemTracker::_baseline;
 
+bool MemTracker::NmtVirtualMemoryLocker::_safe_to_use;
+
 void MemTracker::initialize() {
   bool rc = true;
   assert(_tracking_level == NMT_unknown, "only call once");
@@ -61,7 +62,7 @@ void MemTracker::initialize() {
   assert(level == NMT_off || level == NMT_summary || level == NMT_detail,
          "Invalid setting for NativeMemoryTracking (%s)", NativeMemoryTracking);
 
-  // Memory type is encoded into tracking header as a byte field,
+  // Memory tag is encoded into tracking header as a byte field,
   // make sure that we don't overflow it.
   STATIC_ASSERT(mt_number_of_tags <= max_jubyte);
 

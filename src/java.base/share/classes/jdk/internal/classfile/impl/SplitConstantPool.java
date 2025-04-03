@@ -146,6 +146,11 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                     for (int i = 0; i < bsmSize; i++)
                         bootstrapMethodEntry(i).writeTo(buf);
                 }
+
+                @Override
+                public Utf8Entry attributeName() {
+                    return utf8Entry(Attributes.NAME_BOOTSTRAP_METHODS);
+                }
             };
             a.writeTo(buf);
         }

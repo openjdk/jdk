@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
 import java.util.HashMap;
@@ -39,7 +37,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 
 import jdk.internal.util.StaticProperty;
-import sun.security.action.GetBooleanAction;
 
 import static sun.security.util.SecurityProviderConstants.getAliases;
 
@@ -83,8 +80,6 @@ import static sun.security.util.SecurityProviderConstants.getAliases;
  * - PKIX is the certification path validation algorithm described
  *   in RFC 5280. The ValidationAlgorithm attribute notes the
  *   specification that this provider implements.
- *
- * - JavaPolicy is the default file-based Policy type.
  *
  * - JavaLoginConfig is the default file-based LoginModule Configuration type.
  */
@@ -189,20 +184,33 @@ public final class SunEntries {
         attrs.clear();
         attrs.put("ImplementedIn", "Software");
         addWithAlias(p, "Signature", "HSS/LMS", "sun.security.provider.HSS", attrs);
+
+        add(p, "Signature", "ML-DSA", "sun.security.provider.ML_DSA_Impls$SIG", attrs);
+        addWithAlias(p, "Signature", "ML-DSA-44", "sun.security.provider.ML_DSA_Impls$SIG2", attrs);
+        addWithAlias(p, "Signature", "ML-DSA-65", "sun.security.provider.ML_DSA_Impls$SIG3", attrs);
+        addWithAlias(p, "Signature", "ML-DSA-87", "sun.security.provider.ML_DSA_Impls$SIG5", attrs);
+
         /*
          *  Key Pair Generator engines
          */
         attrs.clear();
         attrs.put("ImplementedIn", "Software");
-        attrs.put("KeySize", "2048"); // for DSA KPG and APG only
 
         String dsaKPGImplClass = "sun.security.provider.DSAKeyPairGenerator$";
         dsaKPGImplClass += (useLegacyDSA? "Legacy" : "Current");
+        attrs.put("KeySize", "2048");
         addWithAlias(p, "KeyPairGenerator", "DSA", dsaKPGImplClass, attrs);
+        attrs.remove("KeySize");
+
+        add(p, "KeyPairGenerator", "ML-DSA", "sun.security.provider.ML_DSA_Impls$KPG", attrs);
+        addWithAlias(p, "KeyPairGenerator", "ML-DSA-44", "sun.security.provider.ML_DSA_Impls$KPG2", attrs);
+        addWithAlias(p, "KeyPairGenerator", "ML-DSA-65", "sun.security.provider.ML_DSA_Impls$KPG3", attrs);
+        addWithAlias(p, "KeyPairGenerator", "ML-DSA-87", "sun.security.provider.ML_DSA_Impls$KPG5", attrs);
 
         /*
          * Algorithm Parameter Generator engines
          */
+        attrs.put("KeySize", "2048");
         addWithAlias(p, "AlgorithmParameterGenerator", "DSA",
                 "sun.security.provider.DSAParameterGenerator", attrs);
         attrs.remove("KeySize");
@@ -220,6 +228,11 @@ public final class SunEntries {
                 "sun.security.provider.DSAKeyFactory", attrs);
         addWithAlias(p, "KeyFactory", "HSS/LMS",
                 "sun.security.provider.HSS$KeyFactoryImpl", attrs);
+
+        add(p, "KeyFactory", "ML-DSA", "sun.security.provider.ML_DSA_Impls$KF", attrs);
+        addWithAlias(p, "KeyFactory", "ML-DSA-44", "sun.security.provider.ML_DSA_Impls$KF2", attrs);
+        addWithAlias(p, "KeyFactory", "ML-DSA-65", "sun.security.provider.ML_DSA_Impls$KF3", attrs);
+        addWithAlias(p, "KeyFactory", "ML-DSA-87", "sun.security.provider.ML_DSA_Impls$KF5", attrs);
 
         /*
          * Digest engines
@@ -282,11 +295,6 @@ public final class SunEntries {
                 attrs);
 
         /*
-         * Policy
-         */
-        add(p, "Policy", "JavaPolicy", "sun.security.provider.PolicySpiFile");
-
-        /*
          * Configuration
          */
         add(p, "Configuration", "JavaLoginConfig",
@@ -334,29 +342,24 @@ public final class SunEntries {
     private static final String PROP_RNDSOURCE = "securerandom.source";
 
     private static final boolean useLegacyDSA =
-        GetBooleanAction.privilegedGetProperty
-            ("jdk.security.legacyDSAKeyPairGenerator");
+        Boolean.getBoolean("jdk.security.legacyDSAKeyPairGenerator");
 
     static final String URL_DEV_RANDOM = "file:/dev/random";
     static final String URL_DEV_URANDOM = "file:/dev/urandom";
 
-    @SuppressWarnings("removal")
-    private static final String seedSource = AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
+    private static final String seedSource = getOverridableSeedSource();
 
-            @Override
-            public String run() {
-                String egdSource = System.getProperty(PROP_EGD, "");
-                if (egdSource.length() != 0) {
-                    return egdSource;
-                }
-                egdSource = Security.getProperty(PROP_RNDSOURCE);
-                if (egdSource == null) {
-                    return "";
-                }
-                return egdSource;
-            }
-        });
+    private static String getOverridableSeedSource() {
+        String egdSource = System.getProperty(PROP_EGD, "");
+        if (egdSource.length() != 0) {
+            return egdSource;
+        }
+        egdSource = Security.getProperty(PROP_RNDSOURCE);
+        if (egdSource == null) {
+            return "";
+        }
+        return egdSource;
+    }
 
     static {
         DEF_SECURE_RANDOM_ALGO  = (NativePRNG.isAvailable() &&
@@ -374,8 +377,6 @@ public final class SunEntries {
      * which is less strict on syntax. If we encounter a
      * URISyntaxException we make a best effort for backwards
      * compatibility. e.g. space character in deviceName string.
-     *
-     * Method called within PrivilegedExceptionAction block.
      *
      * Moved from SeedGenerator to avoid initialization problems with
      * signed providers.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import com.sun.jmx.remote.util.EnvHelp;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
-import sun.reflect.misc.ReflectUtil;
 import sun.rmi.server.UnicastServerRef;
 import sun.rmi.server.UnicastServerRef2;
 import sun.rmi.transport.LiveRef;
@@ -119,7 +118,6 @@ public class RMIJRMPServerImpl extends RMIServerImpl {
         else if (credentialsTypes != null) {
             allowedTypes = Arrays.stream(credentialsTypes).filter(
                     s -> s!= null).collect(Collectors.toSet());
-            allowedTypes.forEach(ReflectUtil::checkPackageAccess);
             cFilter = this::newClientCheckInput;
         } else {
             allowedTypes = null;

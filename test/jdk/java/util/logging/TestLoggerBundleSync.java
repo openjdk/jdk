@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,6 @@
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
-import java.security.Permission;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListResourceBundle;
@@ -55,7 +52,7 @@ import java.util.logging.Logger;
  *          reproduce intermittent issues can be a good idea.
  * @modules java.logging
  *          java.management
- * @run main/othervm -Djava.security.manager=allow TestLoggerBundleSync
+ * @run main/othervm TestLoggerBundleSync
  * @author danielfuchs
  */
 public class TestLoggerBundleSync {
@@ -107,8 +104,6 @@ public class TestLoggerBundleSync {
 
 
     /**
-     * This test will run both with and without a security manager.
-     *
      * The test starts a number of threads that will attempt to concurrently
      * set resource bundles on Logger, and verifies the consistency of the
      * obtained results.
@@ -120,21 +115,6 @@ public class TestLoggerBundleSync {
     public static void main(String[] args) throws Exception {
 
         try {
-            // test without security
-            System.out.println("No security");
-            test();
-
-            // test with security
-            System.out.println("\nWith security");
-            Policy.setPolicy(new Policy() {
-                @Override
-                public boolean implies(ProtectionDomain domain, Permission permission) {
-                    if (super.implies(domain, permission)) return true;
-                    // System.out.println("Granting " + permission);
-                    return true; // all permissions
-                }
-            });
-            System.setSecurityManager(new SecurityManager());
             test();
         } finally {
             SetRB.executor.shutdownNow();

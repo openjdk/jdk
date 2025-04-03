@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1155,6 +1155,7 @@ public enum Option {
      * @implNote The return value is the opposite of that used by {@link #process}.
      */
     public void handleOption(OptionHelper helper, String arg, Iterator<String> rest) throws InvalidValueException {
+        helper.initialize();
         if (hasArg()) {
             String option;
             String operand;
@@ -1208,6 +1209,7 @@ public enum Option {
      * @throws InvalidValueException if an error occurred
      */
     public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
+        helper.initialize();
         if (choices != null) {
             if (choiceKind == ChoiceKind.ONEOF) {
                 // some clients like to see just one of option+choice set

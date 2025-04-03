@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "classfile/vmClasses.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "interpreter/oopMapCache.hpp"
@@ -40,15 +36,10 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/java.hpp"
-#include "runtime/javaCalls.hpp"
-#include "runtime/jniHandles.hpp"
 #include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/serviceThread.hpp"
-#include "services/diagnosticArgument.hpp"
-#include "services/diagnosticFramework.hpp"
 #include "services/finalizerService.hpp"
 #include "services/gcNotifier.hpp"
 #include "services/lowMemoryDetector.hpp"
@@ -88,7 +79,6 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     bool finalizerservice_work = false;
     bool resolved_method_table_work = false;
     bool thread_id_table_work = false;
-    bool protection_domain_table_work = false;
     bool oopstorage_work = false;
     JvmtiDeferredEvent jvmti_event;
     bool oop_handles_to_release = false;
@@ -118,7 +108,6 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (finalizerservice_work = FinalizerService::has_work()) |
               (resolved_method_table_work = ResolvedMethodTable::has_work()) |
               (thread_id_table_work = ThreadIdTable::has_work()) |
-              (protection_domain_table_work = ProtectionDomainCacheTable::has_work()) |
               (oopstorage_work = OopStorage::has_cleanup_work_and_reset()) |
               (oop_handles_to_release = JavaThread::has_oop_handles_to_release()) |
               (cldg_cleanup_work = ClassLoaderDataGraph::should_clean_metaspaces_and_reset()) |
@@ -161,10 +150,6 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
     if (thread_id_table_work) {
       ThreadIdTable::do_concurrent_work(jt);
-    }
-
-    if (protection_domain_table_work) {
-      ProtectionDomainCacheTable::unlink();
     }
 
     if (oopstorage_work) {

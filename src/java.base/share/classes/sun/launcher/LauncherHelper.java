@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.jar.Attributes;
@@ -155,7 +156,6 @@ public final class LauncherHelper {
      *    this code determine this value, using a suitable method or omit the
      *    line entirely.
      */
-    @SuppressWarnings("fallthrough")
     static void showSettings(boolean printToStderr, String optionFlag,
             long initialHeapSize, long maxHeapSize, long stackSize) {
 
@@ -318,6 +318,8 @@ public final class LauncherHelper {
                 Locale.getDefault(Category.DISPLAY).getDisplayName());
         ostream.println(INDENT + "default format locale = " +
                 Locale.getDefault(Category.FORMAT).getDisplayName());
+        ostream.println(INDENT + "default timezone = " +
+                TimeZone.getDefault().getID());
         ostream.println(INDENT + "tzdata version = " +
                 ZoneInfoFile.getVersion());
         if (verbose) {
@@ -586,6 +588,15 @@ public final class LauncherHelper {
         }
     }
 
+    /**
+     * Prints the short usage text to the desired output stream.
+     */
+    static void printConciseUsageMessage(boolean printToStderr) {
+        initOutput(printToStderr);
+        ostream.println(getLocalizedMessage("java.launcher.opt.concise.header",
+                File.pathSeparator));
+    }
+
     static void initOutput(boolean printToStderr) {
         ostream =  (printToStderr) ? System.err : System.out;
     }
@@ -721,7 +732,6 @@ public final class LauncherHelper {
      *
      * @return the application's main class
      */
-    @SuppressWarnings("fallthrough")
     public static Class<?> checkAndLoadMain(boolean printToStderr,
                                             int mode,
                                             String what) {

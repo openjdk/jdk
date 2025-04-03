@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,7 +39,6 @@ class G1Arguments : public GCArguments {
   static void parse_verification_type(const char* type);
 
   virtual void initialize_alignments();
-  virtual void initialize_heap_flags_and_sizes();
 
   virtual void initialize();
   virtual size_t conservative_max_heap_alignment();

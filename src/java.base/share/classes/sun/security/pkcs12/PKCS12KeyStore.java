@@ -26,7 +26,6 @@
 package sun.security.pkcs12;
 
 import java.io.*;
-import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
@@ -37,7 +36,6 @@ import java.security.KeyStoreSpi;
 import java.security.KeyStoreException;
 import java.security.PKCS12Attribute;
 import java.security.PrivateKey;
-import java.security.PrivilegedAction;
 import java.security.UnrecoverableEntryException;
 import java.security.UnrecoverableKeyException;
 import java.security.SecureRandom;
@@ -67,7 +65,6 @@ import javax.security.auth.DestroyFailedException;
 import javax.security.auth.x500.X500Principal;
 
 import jdk.internal.access.SharedSecrets;
-import sun.security.action.GetPropertyAction;
 import sun.security.tools.KeyStoreUtil;
 import sun.security.util.*;
 import sun.security.pkcs.ContentInfo;
@@ -2697,15 +2694,14 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     // key entries.
 
     private static boolean useLegacy() {
-        return GetPropertyAction.privilegedGetProperty(
-                USE_LEGACY_PROP) != null;
+        return System.getProperty(USE_LEGACY_PROP) != null;
     }
 
     private static String defaultCertProtectionAlgorithm() {
         if (useLegacy()) {
             return LEGACY_CERT_PBE_ALGORITHM;
         }
-        String result = SecurityProperties.privilegedGetOverridable(
+        String result = SecurityProperties.getOverridableProperty(
                 "keystore.pkcs12.certProtectionAlgorithm");
         return (result != null && !result.isEmpty())
                 ? result : DEFAULT_CERT_PBE_ALGORITHM;
@@ -2715,7 +2711,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         if (useLegacy()) {
             return LEGACY_PBE_ITERATION_COUNT;
         }
-        String result = SecurityProperties.privilegedGetOverridable(
+        String result = SecurityProperties.getOverridableProperty(
                 "keystore.pkcs12.certPbeIterationCount");
         return (result != null && !result.isEmpty())
                 ? string2IC("certPbeIterationCount", result)
@@ -2728,27 +2724,18 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         if (useLegacy()) {
             return LEGACY_KEY_PBE_ALGORITHM;
         }
-        @SuppressWarnings("removal")
-        String result = AccessController.doPrivileged(new PrivilegedAction<String>() {
-            public String run() {
-                String result;
-                String name1 = "keystore.pkcs12.keyProtectionAlgorithm";
-                String name2 = "keystore.PKCS12.keyProtectionAlgorithm";
-                result = System.getProperty(name1);
-                if (result != null) {
-                    return result;
-                }
-                result = System.getProperty(name2);
-                if (result != null) {
-                    return result;
-                }
+        String name1 = "keystore.pkcs12.keyProtectionAlgorithm";
+        String name2 = "keystore.PKCS12.keyProtectionAlgorithm";
+        String result = System.getProperty(name1);
+        if (result == null) {
+            result = System.getProperty(name2);
+            if (result == null) {
                 result = Security.getProperty(name1);
-                if (result != null) {
-                    return result;
+                if (result == null) {
+                    result = Security.getProperty(name2);
                 }
-                return Security.getProperty(name2);
             }
-        });
+        }
         return (result != null && !result.isEmpty())
                 ? result : DEFAULT_KEY_PBE_ALGORITHM;
     }
@@ -2757,7 +2744,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         if (useLegacy()) {
             return LEGACY_PBE_ITERATION_COUNT;
         }
-        String result = SecurityProperties.privilegedGetOverridable(
+        String result = SecurityProperties.getOverridableProperty(
                 "keystore.pkcs12.keyPbeIterationCount");
         return (result != null && !result.isEmpty())
                 ? string2IC("keyPbeIterationCount", result)
@@ -2768,7 +2755,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         if (useLegacy()) {
             return LEGACY_MAC_ALGORITHM;
         }
-        String result = SecurityProperties.privilegedGetOverridable(
+        String result = SecurityProperties.getOverridableProperty(
                 "keystore.pkcs12.macAlgorithm");
         return (result != null && !result.isEmpty())
                 ? result : DEFAULT_MAC_ALGORITHM;
@@ -2778,7 +2765,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         if (useLegacy()) {
             return LEGACY_MAC_ITERATION_COUNT;
         }
-        String result = SecurityProperties.privilegedGetOverridable(
+        String result = SecurityProperties.getOverridableProperty(
                 "keystore.pkcs12.macIterationCount");
         return (result != null && !result.isEmpty())
                 ? string2IC("macIterationCount", result)

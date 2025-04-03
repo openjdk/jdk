@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -40,12 +39,10 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 4969089
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4969089
  * @run testng/othervm validation.Bug4969089
  * @summary Test when an ErrorHandler is set for a SchemaFactory, SchemaFactory.newSchema(Source[])
  * method throws an exception that is not equal to the exception thrown from the ErrorHandler.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug4969089 {
 
     @Test

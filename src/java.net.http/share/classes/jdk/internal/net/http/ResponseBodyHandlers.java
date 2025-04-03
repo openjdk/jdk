@@ -25,8 +25,6 @@
 
 package jdk.internal.net.http;
 
-import java.io.File;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -34,10 +32,8 @@ import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.util.List;
-import java.util.Objects;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
@@ -56,62 +52,31 @@ public final class ResponseBodyHandlers {
 
     private ResponseBodyHandlers() { }
 
-    private static final String pathForSecurityCheck(Path path) {
-        return path.toFile().getPath();
-    }
-
     /**
      * A Path body handler.
      */
     public static class PathBodyHandler implements BodyHandler<Path>{
         private final Path file;
         private final List<OpenOption> openOptions;  // immutable list
-        @SuppressWarnings("removal")
-        private final AccessControlContext acc;
-        private final FilePermission filePermission;
 
         /**
          * Factory for creating PathBodyHandler.
-         *
-         * Permission checks are performed here before construction of the
-         * PathBodyHandler. Permission checking and construction are
-         * deliberately and tightly co-located.
          */
         public static PathBodyHandler create(Path file,
                                              List<OpenOption> openOptions) {
-            FilePermission filePermission = null;
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                try {
-                    String fn = pathForSecurityCheck(file);
-                    FilePermission writePermission = new FilePermission(fn, "write");
-                    sm.checkPermission(writePermission);
-                    filePermission = writePermission;
-                } catch (UnsupportedOperationException ignored) {
-                    // path not associated with the default file system provider
-                }
-            }
 
-            assert filePermission == null || filePermission.getActions().equals("write");
-            @SuppressWarnings("removal")
-            var acc = sm != null ? AccessController.getContext() : null;
-            return new PathBodyHandler(file, openOptions, acc, filePermission);
+            return new PathBodyHandler(file, openOptions);
         }
 
         private PathBodyHandler(Path file,
-                                List<OpenOption> openOptions,
-                                @SuppressWarnings("removal") AccessControlContext acc,
-                                FilePermission filePermission) {
+                                List<OpenOption> openOptions) {
             this.file = file;
             this.openOptions = openOptions;
-            this.acc = acc;
-            this.filePermission = filePermission;
         }
 
         @Override
         public BodySubscriber<Path> apply(ResponseInfo responseInfo) {
-            return new PathSubscriber(file, openOptions, acc, filePermission);
+            return new PathSubscriber(file, openOptions);
         }
     }
 
@@ -170,44 +135,20 @@ public final class ResponseBodyHandlers {
     public static class FileDownloadBodyHandler implements BodyHandler<Path> {
         private final Path directory;
         private final List<OpenOption> openOptions;
-        @SuppressWarnings("removal")
-        private final AccessControlContext acc;
-        private final FilePermission[] filePermissions;  // may be null
 
         /**
          * Factory for creating FileDownloadBodyHandler.
-         *
-         * Permission checks are performed here before construction of the
-         * FileDownloadBodyHandler. Permission checking and construction are
-         * deliberately and tightly co-located.
          */
         public static FileDownloadBodyHandler create(Path directory,
                                                      List<OpenOption> openOptions) {
-            String fn;
             try {
-                fn = pathForSecurityCheck(directory);
+                directory.toFile().getPath();
             } catch (UnsupportedOperationException uoe) {
                 // directory not associated with the default file system provider
                 throw new IllegalArgumentException("invalid path: " + directory, uoe);
             }
 
-            FilePermission filePermissions[] = null;
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                FilePermission writePermission = new FilePermission(fn, "write");
-                String writePathPerm = fn + File.separatorChar + "*";
-                FilePermission writeInDirPermission = new FilePermission(writePathPerm, "write");
-                sm.checkPermission(writeInDirPermission);
-                FilePermission readPermission = new FilePermission(fn, "read");
-                sm.checkPermission(readPermission);
-
-                // read permission is only needed before determine the below checks
-                // only write permission is required when downloading to the file
-                filePermissions = new FilePermission[] { writePermission, writeInDirPermission };
-            }
-
-            // existence, etc, checks must be after permission checks
+            // existence, etc, checks must be after FS checks
             if (Files.notExists(directory))
                 throw new IllegalArgumentException("non-existent directory: " + directory);
             if (!Files.isDirectory(directory))
@@ -215,21 +156,13 @@ public final class ResponseBodyHandlers {
             if (!Files.isWritable(directory))
                 throw new IllegalArgumentException("non-writable directory: " + directory);
 
-            assert filePermissions == null || (filePermissions[0].getActions().equals("write")
-                    && filePermissions[1].getActions().equals("write"));
-            @SuppressWarnings("removal")
-            var acc = sm != null ? AccessController.getContext() : null;
-            return new FileDownloadBodyHandler(directory, openOptions, acc, filePermissions);
+            return new FileDownloadBodyHandler(directory, openOptions);
         }
 
         private FileDownloadBodyHandler(Path directory,
-                                       List<OpenOption> openOptions,
-                                       @SuppressWarnings("removal") AccessControlContext acc,
-                                       FilePermission... filePermissions) {
+                                       List<OpenOption> openOptions) {
             this.directory = directory;
             this.openOptions = openOptions;
-            this.acc = acc;
-            this.filePermissions = filePermissions;
         }
 
         /** The "attachment" disposition-type and separator. */
@@ -394,7 +327,7 @@ public final class ResponseBodyHandlers {
                         "Resulting file, " + file.toString() + ", outside of given directory");
             }
 
-            return new PathSubscriber(file, openOptions, acc, filePermissions);
+            return new PathSubscriber(file, openOptions);
         }
     }
 }

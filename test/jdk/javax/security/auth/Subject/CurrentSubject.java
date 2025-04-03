@@ -30,8 +30,7 @@ import java.security.PrivilegedExceptionAction;
  * @test
  * @bug 8267108
  * @summary confirm current subject specification
- * @run main/othervm -Djava.security.manager=allow CurrentSubject
- * @run main/othervm -Djava.security.manager=disallow CurrentSubject
+ * @run main/othervm CurrentSubject
  */
 public class CurrentSubject {
 

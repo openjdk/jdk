@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,24 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
+#include "gc/z/zIndexDistributor.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 
+static size_t get_max_offset_for_map() {
+  // The page table has (ZAddressOffsetMax >> ZGranuleSizeShift) slots
+  const size_t max_count = ZAddressOffsetMax >> ZGranuleSizeShift;
+  const size_t required_count = ZIndexDistributor::get_count(max_count);
+
+  return required_count << ZGranuleSizeShift;
+}
+
 ZPageTable::ZPageTable()
-  : _map(ZAddressOffsetMax) {}
+  : _map(get_max_offset_for_map()) {}
 
 void ZPageTable::insert(ZPage* page) {
   const zoffset offset = page->start();

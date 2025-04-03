@@ -505,6 +505,7 @@ final class ForEachOps {
             // "happens-before" completion of the associated left-most leaf task
             // of right subtree (if any, which can be this task's right sibling)
             //
+            @SuppressWarnings("unchecked")
             var leftDescendant = (ForEachOrderedTask<S, T>)NEXT.getAndSet(this, null);
             if (leftDescendant != null)
                 leftDescendant.tryComplete();

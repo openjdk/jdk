@@ -63,7 +63,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import jdk.internal.util.StaticProperty;
-import sun.security.action.GetPropertyAction;
 import sun.util.resources.LocaleData;
 import sun.util.resources.OpenListResourceBundle;
 import sun.util.resources.ParallelListResourceBundle;
@@ -899,7 +898,7 @@ public class LocaleResources {
     }
 
     private static final boolean TRACE_ON = Boolean.parseBoolean(
-        GetPropertyAction.privilegedGetProperty("locale.resources.debug", "false"));
+        System.getProperty("locale.resources.debug", "false"));
 
     public static void trace(String format, Object... params) {
         if (TRACE_ON) {

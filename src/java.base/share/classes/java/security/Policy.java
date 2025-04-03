@@ -27,71 +27,31 @@
 package java.security;
 
 import java.util.Enumeration;
-import java.util.WeakHashMap;
 import java.util.Objects;
 import sun.security.jca.GetInstance;
-import sun.security.util.Debug;
-import sun.security.util.SecurityConstants;
-
 
 /**
- * A {@code Policy} object is responsible for determining whether code executing
- * in the Java runtime environment has permission to perform a
- * security-sensitive operation.
- *
- * <p> There is only one {@code Policy} object installed in the runtime at any
- * given time.  A {@code Policy} object can be installed by calling the
- * {@code setPolicy} method.  The installed {@code Policy} object can be
- * obtained by calling the {@code getPolicy} method.
- *
- * <p> If no {@code Policy} object has been installed in the runtime, a call to
- * {@code getPolicy} installs an instance of the default {@code Policy}
- * implementation (a default subclass implementation of this abstract class).
- * The default {@code Policy} implementation can be changed by setting the value
- * of the {@code policy.provider} security property to the fully qualified
- * name of the desired {@code Policy} subclass implementation. The system
- * class loader is used to load this class.
- *
- * <p> Application code can directly subclass {@code Policy} to provide a custom
- * implementation.  In addition, an instance of a {@code Policy} object can be
- * constructed by invoking one of the {@code getInstance} factory methods
- * with a standard type.  The default policy type is "JavaPolicy".
- *
- * <p> Once a {@code Policy} instance has been installed (either by default,
- * or by calling {@code setPolicy}), the Java runtime invokes its
- * {@code implies} method when it needs to
- * determine whether executing code (encapsulated in a ProtectionDomain)
- * can perform SecurityManager-protected operations.  How a {@code Policy}
- * object retrieves its policy data is up to the {@code Policy} implementation
- * itself. The policy data may be stored, for example, in a flat ASCII file,
- * in a serialized binary file of the {@code Policy} class, or in a database.
- *
- * <p> The {@code refresh} method causes the policy object to
- * refresh/reload its data.  This operation is implementation-dependent.
- * For example, if the policy object stores its data in configuration files,
- * calling {@code refresh} will cause it to re-read the configuration
- * policy files.  If a refresh operation is not supported, this method does
- * nothing.  Note that refreshed policy may not have an effect on classes
- * in a particular ProtectionDomain. This is dependent on the policy
- * provider's implementation of the {@code implies}
- * method and its PermissionCollection caching strategy.
+ * A {@code Policy} object was responsible for determining whether code
+ * executing in the Java runtime environment had permission to perform a
+ * security-sensitive operation. This feature no longer exists.
  *
  * @author Roland Schemers
  * @author Gary Ellison
  * @since 1.2
- * @see java.security.Provider
- * @see java.security.ProtectionDomain
- * @see java.security.Permission
- * @see java.security.Security security properties
- * @deprecated This class is only useful in conjunction with
- *       {@linkplain SecurityManager the Security Manager}, which is deprecated
- *       and subject to removal in a future release. Consequently, this class
- *       is also deprecated and subject to removal. There is no replacement for
- *       the Security Manager or this class.
+ * @deprecated This class was only useful in conjunction with
+ *       {@linkplain SecurityManager the Security Manager}, which is no longer
+ *       supported. Installing a system-wide {@code Policy} object is no longer
+ *       supported. The {@linkplain #setPolicy setPolicy} method has been
+ *       changed to always throw {@code UnsupportedOperationException}. The
+ *       {@linkplain #getPolicy getPolicy} method has been changed to always
+ *       return a {@code Policy} object that grants no permissions. There is no
+ *       replacement for the Security Manager or this class.
  */
 
 @Deprecated(since="17", forRemoval=true)
 public abstract class Policy {
+
+    private static Policy NO_PERMISSIONS_POLICY = new Policy() {};
 
     /**
      * Constructor for subclasses to call.
@@ -105,261 +65,55 @@ public abstract class Policy {
     public static final PermissionCollection UNSUPPORTED_EMPTY_COLLECTION =
                         new UnsupportedEmptyCollection();
 
-    // Information about the system-wide policy.
-    private static class PolicyInfo {
-        // the system-wide policy
-        final Policy policy;
-        // a flag indicating if the system-wide policy has been initialized
-        final boolean initialized;
-
-        PolicyInfo(Policy policy, boolean initialized) {
-            this.policy = policy;
-            this.initialized = initialized;
-        }
-    }
-
-    // PolicyInfo is volatile since we apply DCL during initialization.
-    // For correctness, care must be taken to read the field only once and only
-    // write to it after any other initialization action has taken place.
-    private static volatile PolicyInfo policyInfo = new PolicyInfo(null, false);
-
-    private static final Debug debug = Debug.getInstance("policy");
-
-    // Default policy provider
-    private static final String DEFAULT_POLICY =
-        "sun.security.provider.PolicyFile";
-
-    // Cache mapping ProtectionDomain.Key to PermissionCollection
-    private WeakHashMap<ProtectionDomain.Key, PermissionCollection> pdMapping;
-
-    /** package private for AccessControlContext and ProtectionDomain */
-    static boolean isSet() {
-        PolicyInfo pi = policyInfo;
-        return pi.policy != null && pi.initialized == true;
-    }
-
-    private static void checkPermission(String type) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new SecurityPermission("createPolicy." + type));
-        }
-    }
-
     /**
-     * Returns the installed {@code Policy} object. This value should not be
-     * cached, as it may be changed by a call to {@code setPolicy}.
-     * This method first calls
-     * {@code SecurityManager.checkPermission} with a
-     * {@code SecurityPermission("getPolicy")} permission
-     * to ensure it's ok to get the {@code Policy} object.
+     * Returns a {@code Policy} object that grants no permissions.
+     * Specifically:
      *
-     * @return the installed Policy.
+     * <ul>
+     *     <li> The {@code getParameters} method returns {@code null}. </li>
+     *     <li> The {@code getPermissions(CodeSource)} and
+     *     {@code getPermissions(ProtectionDomain)} methods return a read-only
+     *     empty {@code PermissionCollection}. </li>
+     *     <li> The {@code implies} method always returns {@code false}. </li>
+     * </ul>
      *
-     * @throws SecurityException
-     *        if a security manager exists and its
-     *        {@code checkPermission} method doesn't allow
-     *        getting the {@code Policy} object.
+     * @return a {@code Policy} object that grants no permissions
      *
-     * @see SecurityManager#checkPermission(Permission)
+     * @apiNote This method originally returned the installed {@code Policy}
+     *    object, or if no {@code Policy} object had been installed, a default
+     *    {@code Policy} implementation. Installing a system-wide {@code Policy}
+     *    object is no longer supported. This method always returns a
+     *    default {@code Policy} object that grants no permissions. A
+     *    {@code Policy} object was only useful in conjunction with
+     *    {@linkplain SecurityManager the Security Manager}, which is no
+     *    longer supported. There is no replacement for this method.
+     *
      * @see #setPolicy(java.security.Policy)
      */
     public static Policy getPolicy()
     {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(SecurityConstants.GET_POLICY_PERMISSION);
-        return getPolicyNoCheck();
+        return NO_PERMISSIONS_POLICY;
     }
 
     /**
-     * Returns the installed {@code Policy} object, skipping the security check.
-     * Used by ProtectionDomain and getPolicy.
+     * Throws {@code UnsupportedOperationException}. Setting a system-wide
+     * {@code Policy} object is not supported.
      *
-     * @return the installed {@code Policy}.
-     */
-    static Policy getPolicyNoCheck()
-    {
-        PolicyInfo pi = policyInfo;
-        // Use double-check idiom to avoid locking if system-wide policy is
-        // already initialized
-        if (pi.initialized == false || pi.policy == null) {
-            synchronized (Policy.class) {
-                pi = policyInfo;
-                if (pi.policy == null) {
-                    return loadPolicyProvider();
-                }
-            }
-        }
-        return pi.policy;
-    }
-
-    /**
-     * Loads and instantiates a Policy implementation specified by the
-     * policy.provider security property. Note that this method should only
-     * be called by getPolicyNoCheck and from within a synchronized block with
-     * an intrinsic lock on the Policy.class.
-     */
-    private static Policy loadPolicyProvider() {
-        @SuppressWarnings("removal")
-        String policyProvider =
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                @Override
-                public String run() {
-                    return Security.getProperty("policy.provider");
-                }
-            });
-
-        /*
-         * If policy.provider is not set or is set to the default provider,
-         * simply instantiate it and return.
-         */
-        if (policyProvider == null || policyProvider.isEmpty() ||
-            policyProvider.equals(DEFAULT_POLICY))
-        {
-            Policy polFile = new sun.security.provider.PolicyFile();
-            policyInfo = new PolicyInfo(polFile, true);
-            return polFile;
-        }
-
-        /*
-         * Locate, load, and instantiate the policy.provider impl using
-         * the system class loader. While doing so, install the bootstrap
-         * provider to avoid potential recursion.
-         */
-        Policy polFile = new sun.security.provider.PolicyFile();
-        policyInfo = new PolicyInfo(polFile, false);
-
-        @SuppressWarnings("removal")
-        Policy pol = AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public Policy run() {
-                try {
-                    ClassLoader scl = ClassLoader.getSystemClassLoader();
-                    @SuppressWarnings("deprecation")
-                    Object o = Class.forName(policyProvider, true, scl).newInstance();
-                    return (Policy)o;
-                } catch (Exception e) {
-                    if (debug != null) {
-                        debug.println("policy provider " + policyProvider +
-                                      " not available");
-                        e.printStackTrace();
-                    }
-                    return null;
-                }
-            }
-        });
-
-        if (pol == null) {
-            // Fallback and use the system default implementation
-            if (debug != null) {
-                debug.println("using " + DEFAULT_POLICY);
-            }
-            pol = polFile;
-        }
-        policyInfo = new PolicyInfo(pol, true);
-        return pol;
-    }
-
-    /**
-     * Sets the system-wide {@code Policy} object. This method first calls
-     * {@code SecurityManager.checkPermission} with a
-     * {@code SecurityPermission("setPolicy")}
-     * permission to ensure it's ok to set the Policy.
+     * @param p ignored
+     * @throws UnsupportedOperationException always
+     * @apiNote This method originally installed the system-wide
+     *    {@code Policy} object. Installing a system-wide {@code Policy} object
+     *    is no longer supported. A {@code Policy} object was only useful in
+     *    conjunction with {@linkplain SecurityManager the Security Manager},
+     *    which is no longer supported. There is no replacement for this method.
      *
-     * @param p the new system {@code Policy} object.
-     *
-     * @throws SecurityException
-     *        if a security manager exists and its
-     *        {@code checkPermission} method doesn't allow
-     *        setting the Policy.
-     *
-     * @see SecurityManager#checkPermission(Permission)
      * @see #getPolicy()
-     *
      */
     public static void setPolicy(Policy p)
     {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) sm.checkPermission(
-                                 new SecurityPermission("setPolicy"));
-        if (p != null) {
-            initPolicy(p);
-        }
-        synchronized (Policy.class) {
-            policyInfo = new PolicyInfo(p, p != null);
-        }
+        throw new UnsupportedOperationException(
+                "Setting a system-wide Policy object is not supported");
     }
-
-    /**
-     * Initialize superclass state such that a legacy provider can
-     * handle queries for itself.
-     *
-     * @since 1.4
-     */
-    private static void initPolicy (final Policy p) {
-        /*
-         * A policy provider not on the bootclasspath could trigger
-         * security checks fulfilling a call to either Policy.implies
-         * or Policy.getPermissions. If this does occur the provider
-         * must be able to answer for it's own ProtectionDomain
-         * without triggering additional security checks, otherwise
-         * the policy implementation will end up in an infinite
-         * recursion.
-         *
-         * To mitigate this, the provider can collect it's own
-         * ProtectionDomain and associate a PermissionCollection while
-         * it is being installed. The currently installed policy
-         * provider (if there is one) will handle calls to
-         * Policy.implies or Policy.getPermissions during this
-         * process.
-         *
-         * This Policy superclass caches away the ProtectionDomain and
-         * statically binds permissions so that legacy Policy
-         * implementations will continue to function.
-         */
-
-        @SuppressWarnings("removal")
-        ProtectionDomain policyDomain =
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-            public ProtectionDomain run() {
-                return p.getClass().getProtectionDomain();
-            }
-        });
-
-        /*
-         * Collect the permissions granted to this protection domain
-         * so that the provider can be security checked while processing
-         * calls to Policy.implies or Policy.getPermissions.
-         */
-        PermissionCollection policyPerms = null;
-        synchronized (p) {
-            if (p.pdMapping == null) {
-                p.pdMapping = new WeakHashMap<>();
-           }
-        }
-
-        if (policyDomain.getCodeSource() != null) {
-            Policy pol = policyInfo.policy;
-            if (pol != null) {
-                policyPerms = pol.getPermissions(policyDomain);
-            }
-
-            if (policyPerms == null) { // assume it has all
-                policyPerms = new Permissions();
-                policyPerms.add(SecurityConstants.ALL_PERMISSION);
-            }
-
-            synchronized (p.pdMapping) {
-                // cache of pd to permissions
-                p.pdMapping.put(policyDomain.key, policyPerms);
-            }
-        }
-        return;
-    }
-
 
     /**
      * Returns a Policy object of the specified type.
@@ -381,11 +135,7 @@ public abstract class Policy {
      * may be different than the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
-     * @param type the specified Policy type.  See the Policy section in the
-     *    <a href=
-     *    "{@docRoot}/../specs/security/standard-names.html#policy-types">
-     *    Java Security Standard Algorithm Names Specification</a>
-     *    for a list of standard Policy types.
+     * @param type the specified Policy type
      *
      * @param params parameters for the {@code Policy}, which may be
      * {@code null}.
@@ -401,9 +151,6 @@ public abstract class Policy {
      *
      * @throws NullPointerException if {@code type} is {@code null}
      *
-     * @throws SecurityException if the caller does not have permission
-     *         to get a {@code Policy} instance for the specified type.
-     *
      * @see Provider
      * @since 1.6
      */
@@ -411,7 +158,6 @@ public abstract class Policy {
     public static Policy getInstance(String type, Policy.Parameters params)
                 throws NoSuchAlgorithmException {
         Objects.requireNonNull(type, "null type name");
-        checkPermission(type);
         try {
             GetInstance.Instance instance = GetInstance.getInstance("Policy",
                                                         PolicySpi.class,
@@ -437,11 +183,7 @@ public abstract class Policy {
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
-     * @param type the specified Policy type.  See the Policy section in the
-     *    <a href=
-     *    "{@docRoot}/../specs/security/standard-names.html#policy-types">
-     *    Java Security Standard Algorithm Names Specification</a>
-     *    for a list of standard Policy types.
+     * @param type the specified Policy type
      *
      * @param params parameters for the {@code Policy}, which may be
      * {@code null}.
@@ -464,9 +206,6 @@ public abstract class Policy {
      *
      * @throws NullPointerException if {@code type} is {@code null}
      *
-     * @throws SecurityException if the caller does not have permission
-     *         to get a {@code Policy} instance for the specified type
-     *
      * @see Provider
      * @since 1.6
      */
@@ -481,7 +220,6 @@ public abstract class Policy {
             throw new IllegalArgumentException("missing provider");
         }
 
-        checkPermission(type);
         try {
             GetInstance.Instance instance = GetInstance.getInstance("Policy",
                                                         PolicySpi.class,
@@ -505,11 +243,7 @@ public abstract class Policy {
      * is returned.  Note that the specified provider does not
      * have to be registered in the provider list.
      *
-     * @param type the specified Policy type.  See the Policy section in the
-     *    <a href=
-     *    "{@docRoot}/../specs/security/standard-names.html#policy-types">
-     *    Java Security Standard Algorithm Names Specification</a>
-     *    for a list of standard Policy types.
+     * @param type the specified Policy type
      *
      * @param params parameters for the {@code Policy}, which may be
      * {@code null}.
@@ -529,9 +263,6 @@ public abstract class Policy {
      *
      * @throws NullPointerException if {@code type} is {@code null}
      *
-     * @throws SecurityException if the caller does not have permission
-     *         to get a {@code Policy} instance for the specified type
-     *
      * @see Provider
      * @since 1.6
      */
@@ -546,7 +277,6 @@ public abstract class Policy {
             throw new IllegalArgumentException("missing provider");
         }
 
-        checkPermission(type);
         try {
             GetInstance.Instance instance = GetInstance.getInstance("Policy",
                                                         PolicySpi.class,
@@ -620,20 +350,10 @@ public abstract class Policy {
      * Return a PermissionCollection object containing the set of
      * permissions granted to the specified CodeSource.
      *
-     * <p> Applications are discouraged from calling this method
-     * since this operation may not be supported by all policy implementations.
-     * Applications should solely rely on the {@code implies} method
-     * to perform policy checks.  If an application absolutely must call
-     * a getPermissions method, it should call
-     * {@code getPermissions(ProtectionDomain)}.
+     * <p> The default implementation of this method ignores the
+     * CodeSource and returns Policy.UNSUPPORTED_EMPTY_COLLECTION.
      *
-     * <p> The default implementation of this method returns
-     * Policy.UNSUPPORTED_EMPTY_COLLECTION.  This method can be
-     * overridden if the policy implementation can return a set of
-     * permissions granted to a CodeSource.
-     *
-     * @param codesource the CodeSource to which the returned
-     *          PermissionCollection has been granted.
+     * @param codesource ignored
      *
      * @return a set of permissions granted to the specified CodeSource.
      *          If this operation is supported, the returned
@@ -650,26 +370,10 @@ public abstract class Policy {
      * Return a PermissionCollection object containing the set of
      * permissions granted to the specified ProtectionDomain.
      *
-     * <p> Applications are discouraged from calling this method
-     * since this operation may not be supported by all policy implementations.
-     * Applications should rely on the {@code implies} method
-     * to perform policy checks.
+     * <p> The default implementation of this method ignores the
+     * ProtectionDomain and returns Policy.UNSUPPORTED_EMPTY_COLLECTION.
      *
-     * <p> The default implementation of this method first retrieves
-     * the permissions returned via {@code getPermissions(CodeSource)}
-     * (the CodeSource is taken from the specified ProtectionDomain),
-     * as well as the permissions located inside the specified ProtectionDomain.
-     * All of these permissions are then combined and returned in a new
-     * PermissionCollection object.  If {@code getPermissions(CodeSource)}
-     * returns Policy.UNSUPPORTED_EMPTY_COLLECTION, then this method
-     * returns the permissions contained inside the specified ProtectionDomain
-     * in a new PermissionCollection object.
-     *
-     * <p> This method can be overridden if the policy implementation
-     * supports returning a set of permissions granted to a ProtectionDomain.
-     *
-     * @param domain the ProtectionDomain to which the returned
-     *          PermissionCollection has been granted.
+     * @param domain ignored
      *
      * @return a set of permissions granted to the specified ProtectionDomain.
      *          If this operation is supported, the returned
@@ -681,103 +385,32 @@ public abstract class Policy {
      * @since 1.4
      */
     public PermissionCollection getPermissions(ProtectionDomain domain) {
-        PermissionCollection pc = null;
-
-        if (domain == null)
-            return new Permissions();
-
-        if (pdMapping == null) {
-            initPolicy(this);
-        }
-
-        synchronized (pdMapping) {
-            pc = pdMapping.get(domain.key);
-        }
-
-        if (pc != null) {
-            Permissions perms = new Permissions();
-            synchronized (pc) {
-                for (Enumeration<Permission> e = pc.elements() ; e.hasMoreElements() ;) {
-                    perms.add(e.nextElement());
-                }
-            }
-            return perms;
-        }
-
-        pc = getPermissions(domain.getCodeSource());
-        if (pc == null || pc == UNSUPPORTED_EMPTY_COLLECTION) {
-            pc = new Permissions();
-        }
-
-        addStaticPerms(pc, domain.getPermissions());
-        return pc;
+        return Policy.UNSUPPORTED_EMPTY_COLLECTION;
     }
 
     /**
-     * add static permissions to provided permission collection
-     */
-    private void addStaticPerms(PermissionCollection perms,
-                                PermissionCollection statics) {
-        if (statics != null) {
-            synchronized (statics) {
-                Enumeration<Permission> e = statics.elements();
-                while (e.hasMoreElements()) {
-                    perms.add(e.nextElement());
-                }
-            }
-        }
-    }
-
-    /**
-     * Evaluates the global policy for the permissions granted to
-     * the ProtectionDomain and tests whether the permission is
-     * granted.
+     * Evaluates the permissions granted to the ProtectionDomain and tests
+     * whether the permission is granted.
      *
-     * @param domain the ProtectionDomain to test
-     * @param permission the Permission object to be tested for implication.
+     * <p> The default implementation of this method ignores the
+     * ProtectionDomain and Permission parameters and always returns false.
      *
-     * @return {@code true} if "permission" is a proper subset of a permission
-     * granted to this ProtectionDomain.
+     * @param domain ignored
+     * @param permission ignored
+     *
+     * @return {@code false} always
      *
      * @see java.security.ProtectionDomain
      * @since 1.4
      */
     public boolean implies(ProtectionDomain domain, Permission permission) {
-        PermissionCollection pc;
-
-        if (pdMapping == null) {
-            initPolicy(this);
-        }
-
-        synchronized (pdMapping) {
-            pc = pdMapping.get(domain.key);
-        }
-
-        if (pc != null) {
-            return pc.implies(permission);
-        }
-
-        pc = getPermissions(domain);
-        if (pc == null) {
-            return false;
-        }
-
-        synchronized (pdMapping) {
-            // cache it
-            pdMapping.put(domain.key, pc);
-        }
-
-        return pc.implies(permission);
+        return false;
     }
 
     /**
-     * Refreshes/reloads the policy configuration. The behavior of this method
-     * depends on the implementation. For example, calling {@code refresh}
-     * on a file-based policy will cause the file to be re-read.
+     * Refreshes/reloads the policy configuration.
      *
      * <p> The default implementation of this method does nothing.
-     * This method should be overridden if a refresh operation is supported
-     * by the policy implementation.
      */
     public void refresh() { }
 
@@ -829,11 +462,10 @@ public abstract class Policy {
      * This represents a marker interface for Policy parameters.
      *
      * @since 1.6
-     * @deprecated This class is only useful in conjunction with
+     * @deprecated This class was only useful in conjunction with
      *       {@linkplain SecurityManager the Security Manager}, which is
-     *       deprecated and subject to removal in a future release.
-     *       Consequently, this class is also deprecated and subject to removal.
-     *       There is no replacement for the Security Manager or this class.
+     *       no longer supported. There is no replacement for the Security
+     *       Manager or this class.
      */
     @Deprecated(since="17", forRemoval=true)
     public static interface Parameters { }

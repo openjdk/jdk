@@ -44,10 +44,6 @@ char **__initenv;
 int WINAPI
 WinMain(HINSTANCE inst, HINSTANCE previnst, LPSTR cmdline, int cmdshow)
 {
-    int margc;
-    char** margv;
-    int jargc;
-    char** jargv;
     const jboolean const_javaw = JNI_TRUE;
 
     __initenv = _environ;
@@ -56,47 +52,17 @@ WinMain(HINSTANCE inst, HINSTANCE previnst, LPSTR cmdline, int cmdshow)
 JNIEXPORT int
 main(int argc, char **argv)
 {
+    const jboolean const_javaw = JNI_FALSE;
+#endif /* JAVAW */
+
     int margc;
     char** margv;
     int jargc;
-    char** jargv;
-    const jboolean const_javaw = JNI_FALSE;
-#endif /* JAVAW */
-    {
-        int i, main_jargc, extra_jargc;
-        JLI_List list;
+    const char** jargv = const_jargs;
 
-        main_jargc = (sizeof(const_jargs) / sizeof(char *)) > 1
-            ? sizeof(const_jargs) / sizeof(char *)
-            : 0; // ignore the null terminator index
-
-        extra_jargc = (sizeof(const_extra_jargs) / sizeof(char *)) > 1
-            ? sizeof(const_extra_jargs) / sizeof(char *)
-            : 0; // ignore the null terminator index
-
-        if (main_jargc > 0 && extra_jargc > 0) { // combine extra java args
-            jargc = main_jargc + extra_jargc;
-            list = JLI_List_new(jargc + 1);
-
-            for (i = 0 ; i < extra_jargc; i++) {
-                JLI_List_add(list, JLI_StringDup(const_extra_jargs[i]));
-            }
-
-            for (i = 0 ; i < main_jargc ; i++) {
-                JLI_List_add(list, JLI_StringDup(const_jargs[i]));
-            }
-
-            // terminate the list
-            JLI_List_add(list, NULL);
-            jargv = list->elements;
-         } else if (extra_jargc > 0) { // should never happen
-            fprintf(stderr, "EXTRA_JAVA_ARGS defined without JAVA_ARGS");
-            abort();
-         } else { // no extra args, business as usual
-            jargc = main_jargc;
-            jargv = (char **) const_jargs;
-         }
-    }
+    jargc = (sizeof(const_jargs) / sizeof(char *)) > 1
+        ? sizeof(const_jargs) / sizeof(char *)
+        : 0; // ignore the null terminator index
 
     JLI_InitArgProcessing(jargc > 0, const_disable_argfile);
 
@@ -182,7 +148,7 @@ main(int argc, char **argv)
     }
 #endif /* WIN32 */
     return JLI_Launch(margc, margv,
-                   jargc, (const char**) jargv,
+                   jargc, jargv,
                    0, NULL,
                    VERSION_STRING,
                    DOT_VERSION,

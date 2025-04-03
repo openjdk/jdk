@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.util.*;
 import java.security.AccessControlException;
 import java.security.Permission;
 import java.rmi.server.RMIClassLoader;
-import java.security.PrivilegedAction;
 
 /**
  * MarshalInputStream is an extension of ObjectInputStream.  When resolving
@@ -62,12 +61,9 @@ public class MarshalInputStream extends ObjectInputStream {
      * The value is only false when the property is present
      * and is equal to "false".
      */
-    @SuppressWarnings("removal")
     private static final boolean useCodebaseOnlyProperty =
-        ! java.security.AccessController.doPrivileged(
-            (PrivilegedAction<String>) () -> System.getProperty(
-                "java.rmi.server.useCodebaseOnly", "true"))
-            .equalsIgnoreCase("false");
+        ! System.getProperty("java.rmi.server.useCodebaseOnly", "true")
+                .equalsIgnoreCase("false");
 
     /** table to hold sun classes to which access is explicitly permitted */
     protected static Map<String, Class<?>> permittedSunClasses

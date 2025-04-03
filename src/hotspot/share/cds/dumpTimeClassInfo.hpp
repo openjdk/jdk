@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
   bool                         _excluded;
   bool                         _is_early_klass;
   bool                         _has_checked_exclusion;
-
   class DTLoaderConstraint {
     Symbol* _name;
     char _loader_type1;
@@ -122,7 +121,7 @@ public:
   InstanceKlass*               _klass;
   InstanceKlass*               _nest_host;
   bool                         _failed_verification;
-  bool                         _is_archived_lambda_proxy;
+  bool                         _is_registered_lambda_proxy;
   int                          _id;
   int                          _clsfile_size;
   int                          _clsfile_crc32;
@@ -135,7 +134,7 @@ public:
     _klass = nullptr;
     _nest_host = nullptr;
     _failed_verification = false;
-    _is_archived_lambda_proxy = false;
+    _is_registered_lambda_proxy = false;
     _has_checked_exclusion = false;
     _id = -1;
     _clsfile_size = -1;

@@ -52,6 +52,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stream.StreamSource;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -98,7 +99,7 @@ final class WixSourceConverter {
 
         Document inputXmlDom;
         try {
-            inputXmlDom = IOUtils.initDocumentBuilder().parse(new ByteArrayInputStream(buf));
+            inputXmlDom = XmlUtils.initDocumentBuilder().parse(new ByteArrayInputStream(buf));
         } catch (SAXException ex) {
             // Malformed XML, don't run converter, save as is.
             resource.saveToFile(resourceSaveAsFile);

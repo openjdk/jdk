@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
-import java.security.AllPermission;
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
 import java.util.Optional;
@@ -48,8 +41,7 @@ import jdk.internal.logger.LazyLoggers;
 
 /*
  * @test
- * @bug     8140364 8189291
- * @author  danielfuchs
+ * @bug 8140364 8189291
  * @summary JDK implementation specific unit test for JDK internal artifacts.
             Tests the behavior of bootstrap loggers (and SimpleConsoleLoggers
  *          too).
@@ -57,13 +49,11 @@ import jdk.internal.logger.LazyLoggers;
  * @modules java.base/jdk.internal.logger:+open
  *          java.logging
  * @build LogStream
- * @run main/othervm BootstrapLoggerTest NO_SECURITY
- * @run main/othervm -Djava.security.manager=allow BootstrapLoggerTest SECURE
- * @run main/othervm/timeout=120 -Djava.security.manager=allow BootstrapLoggerTest SECURE_AND_WAIT
+ * @run main/othervm BootstrapLoggerTest
+ * @run main/othervm/timeout=120 BootstrapLoggerTest RUN_AND_WAIT
  */
 public class BootstrapLoggerTest {
 
-    static final Policy DEFAULT_POLICY = Policy.getPolicy();
     static final Method isAlive;
     static final Field logManagerInitialized;
     static {
@@ -84,12 +74,12 @@ public class BootstrapLoggerTest {
     }
 
     static enum TestCase {
-        NO_SECURITY, SECURE, SECURE_AND_WAIT
+        DEFAULTS, RUN_AND_WAIT
     }
 
     public static void main(String[] args) throws Exception {
         if (args == null || args.length == 0) {
-            args = new String[] { TestCase.SECURE_AND_WAIT.name() };
+            args = new String[] { TestCase.RUN_AND_WAIT.name() };
         }
         if (args.length > 1) throw new RuntimeException("Only one argument allowed");
         TestCase test = TestCase.valueOf(args[0]);
@@ -110,12 +100,6 @@ public class BootstrapLoggerTest {
             throw new RuntimeException("VM should not be booted!");
         }
         Logger logger = LazyLoggers.getLogger("foo.bar", Thread.class.getModule());
-
-        if (test != TestCase.NO_SECURITY) {
-            LogStream.err.println("Setting security manager");
-            Policy.setPolicy(new SimplePolicy());
-            System.setSecurityManager(new SecurityManager());
-        }
 
         Level[] levels = {Level.INFO, Level.WARNING, Level.INFO};
         int index = 0;
@@ -150,24 +134,25 @@ public class BootstrapLoggerTest {
         // initialized yet, this should be a SimpleConsoleLogger...
         logger.log(Level.INFO, "LOG#4: VM now booted: {0}", vmBooted.get());
         logger.log(Level.DEBUG, "LOG#5: hi!");
-        SimplePolicy.allowAll.set(Boolean.TRUE);
         WeakReference<Thread> threadRef = null;
         ReferenceQueue<Thread> queue = new ReferenceQueue<>();
+        Set<Thread> set = Thread.getAllStackTraces().keySet().stream()
+                .filter((t) -> t.getName().startsWith("BootstrapMessageLoggerTask-"))
+                .collect(Collectors.toSet());
         try {
-            Set<Thread> set = Thread.getAllStackTraces().keySet().stream()
-                    .filter((t) -> t.getName().startsWith("BootstrapMessageLoggerTask-"))
-                    .collect(Collectors.toSet());
             set.stream().forEach(t -> LogStream.err.println("Found: " + t));
             if (set.size() > 1) {
                 throw new RuntimeException("Too many bootstrap threads found");
             }
-            Optional<Thread> t = set.stream().findFirst();
-            if (t.isPresent()) {
-                threadRef = new WeakReference<>(t.get(), queue);
+            Optional<Thread> firstThread = set.stream().findFirst();
+            if (firstThread.isPresent()) {
+                threadRef = new WeakReference<>(firstThread.get(), queue);
             }
-        } finally{
-            SimplePolicy.allowAll.set(Boolean.FALSE);
+        } finally {
+            set.clear();
+            set = null;
         }
+
         if (!BootstrapLogger.isBooted()) {
             throw new RuntimeException("VM should still be booted!");
         }
@@ -207,7 +192,6 @@ public class BootstrapLoggerTest {
         // We're using reflection so that the test can also run in
         // configurations where java.util.logging is not present.
         boolean hasJUL = false;
-        SimplePolicy.allowAll.set(Boolean.TRUE);
         try {
             Class<?> loggerClass = Class.forName("java.util.logging.Logger");
             Class<?> levelClass  = Class.forName("java.util.logging.Level");
@@ -235,8 +219,6 @@ public class BootstrapLoggerTest {
             LogStream.err.println("JUL is not present: class " + x.getMessage()
                     + " not found");
             hasJUL = false;
-        } finally {
-            SimplePolicy.allowAll.set(Boolean.FALSE);
         }
 
         logger.log(Level.DEBUG, "hi now!");
@@ -261,17 +243,14 @@ public class BootstrapLoggerTest {
                 throw new RuntimeException("LogManager shouldn't be initialized yet!");
             }
         }
-        Logger bazbaz = null;
-        SimplePolicy.allowAll.set(Boolean.TRUE);
-        try {
-            bazbaz = java.lang.System.LoggerFinder
+
+        Logger bazbaz = java.lang.System.LoggerFinder
                     .getLoggerFinder().getLogger("foo.bar.baz.baz", BootstrapLoggerTest.class.getModule());
-        } finally {
-            SimplePolicy.allowAll.set(Boolean.FALSE);
-        }
+
         if (!((Boolean)logManagerInitialized.get(null)).booleanValue()) {
             throw new RuntimeException("LogManager should be initialized now!");
         }
+
         Logger bazbaz2 = System.getLogger("foo.bar.baz.baz");
         if (bazbaz2.getClass() != bazbaz.getClass()) {
             throw new RuntimeException("bazbaz2.class != bazbaz.class ["
@@ -293,122 +272,85 @@ public class BootstrapLoggerTest {
         // If this test fails in timeout - we could envisage skipping this part,
         // or adding some System property to configure the keep alive delay
         // of the executor.
-        SimplePolicy.allowAll.set(Boolean.TRUE);
-        try {
-            // Though unlikely, it is not impossible that the bootstrap logger
-            // executor may have released its first thread and spawned a new one.
-            // If that happened then the executor itself might have been GC'ed
-            // as well and a new one might have been created.
-            // The code below will lookup the executor threads again and
-            // join them.
-            // Only one may be active at a given time, but that might not
-            // be the one referenced by threadRef.
-            // We're just making sure all of them have stopped running
-            // before verifying that the executor is eventually GC'ed.
-            final WeakReference<Thread> previous = threadRef;
-            Stream<WeakReference<Thread>> stream = Thread.getAllStackTraces().keySet().stream()
-               .filter((t) -> t.getName().startsWith("BootstrapMessageLoggerTask-"))
-               .filter((t) -> previous == null ? true : t != previous.get())
-               .map((t) -> new WeakReference<>(t, queue));
-            List<WeakReference<Thread>> threads = stream.collect(Collectors.toList());
-            if (previous != null) threads.add(previous);
-            threads.forEach(t -> LogStream.err.println(t.get()));
-            stream = null;
+        //
+        // Though unlikely, it is not impossible that the bootstrap logger
+        // executor may have released its first thread and spawned a new one.
+        // If that happened then the executor itself might have been GC'ed
+        // as well and a new one might have been created.
+        // The code below will lookup the executor threads again and
+        // join them.
+        // Only one may be active at a given time, but that might not
+        // be the one referenced by threadRef.
+        // We're just making sure all of them have stopped running
+        // before verifying that the executor is eventually GC'ed.
+        final WeakReference<Thread> previous = threadRef;
+        Stream<WeakReference<Thread>> stream = Thread.getAllStackTraces().keySet().stream()
+           .filter((t) -> t.getName().startsWith("BootstrapMessageLoggerTask-"))
+           .filter((t) -> previous == null ? true : t != previous.get())
+           .map((t) -> new WeakReference<>(t, queue));
+        List<WeakReference<Thread>> threads = stream.collect(Collectors.toList());
+        if (previous != null) threads.add(previous);
+        threads.forEach(t -> LogStream.err.println(t.get()));
+        stream = null;
 
-            if (test == TestCase.SECURE_AND_WAIT) {
-                // First wait for all executor threads to terminate
-                for (var ref : threads) {
-                    Thread t = ref.get();
-                    if (t != null) {
-                        if (!(Boolean)isAlive.invoke(null) && t.isAlive()) {
-                            throw new RuntimeException("Executor already terminated");
-                        } else {
-                            LogStream.err.println("Executor still alive as expected: " + t.getName());
-                        }
-                        LogStream.err.println("Waiting for " + t.getName() + " to terminate (join)");
-                        t.join(60_000);
-                        t = null;
+        if (test == TestCase.RUN_AND_WAIT) {
+            // First wait for all executor threads to terminate
+            for (var ref : threads) {
+                Thread t = ref.get();
+                if (t != null) {
+                    if (!(Boolean)isAlive.invoke(null) && t.isAlive()) {
+                        throw new RuntimeException("Executor already terminated");
                     } else {
-                        LogStream.err.println("WeakReference<Thread> is already cleared.");
-                        long count = Thread.getAllStackTraces().keySet().stream()
-                            .filter((tr) -> tr.getName().startsWith("BootstrapMessageLoggerTask-"))
-                            .count();
-                        if (count != 0) {
-                            LogStream.err.println("There are " + count + " threads still lingering.");
-                        }
+                        LogStream.err.println("Executor still alive as expected: " + t.getName());
                     }
-                }
-                // Then wait until all the executor threads are GC'ed
-                while (!threads.isEmpty()) {
-                    LogStream.err.println("Calling System.gc()");
-                    System.gc();
-                    LogStream.err.println("Waiting for BootstrapMessageLoggerTask to be gc'ed");
-                    Reference<?> tref;
-                    while ((tref = queue.remove(1000)) == null) {
-                        LogStream.err.println("Calling System.gc()");
-                        System.gc();
-                    }
-
-                    threads.remove(tref);
-                    LogStream.err.println("BootstrapMessageLoggerTask has been gc'ed: "
-                                          + threads.size() + " remaining...");
-                }
-                // Then wait for the executor to be gc'ed...
-                LogStream.err.println("Waiting for the executor to be gc'ed: Calling System.gc()");
-                System.gc();
-                for (int i=0; i<10; i++) {
-                    if (!(Boolean)isAlive.invoke(null)) break;
-                    // It would be unexpected that we reach here...
-                    Thread.sleep(1000);
-                    LogStream.err.println("Calling System.gc()");
-                    System.gc();
-                }
-
-                if ((Boolean)isAlive.invoke(null)) {
-                    throw new RuntimeException("Executor still alive");
+                    LogStream.err.println("Waiting for " + t.getName() + " to terminate (join)");
+                    t.join(60_000);
+                    t = null;
                 } else {
-                    LogStream.err.println("Executor terminated as expected.");
+                    LogStream.err.println("WeakReference<Thread> is already cleared.");
+                    long count = Thread.getAllStackTraces().keySet().stream()
+                        .filter((tr) -> tr.getName().startsWith("BootstrapMessageLoggerTask-"))
+                        .count();
+                    if (count != 0) {
+                        LogStream.err.println("There are " + count + " threads still lingering.");
+                    }
                 }
-            } else {
-                LogStream.err.println("Not checking executor termination for " + test);
             }
-        } finally {
-            SimplePolicy.allowAll.set(Boolean.FALSE);
+            // Then wait until all the executor threads are GC'ed
+            while (!threads.isEmpty()) {
+                LogStream.err.println("Calling System.gc()");
+                System.gc();
+                LogStream.err.println("Waiting for BootstrapMessageLoggerTask to be gc'ed");
+                Reference<?> tref;
+                while ((tref = queue.remove(1000)) == null) {
+                    LogStream.err.println("Calling System.gc()");
+                    System.gc();
+                }
+
+                threads.remove(tref);
+                LogStream.err.println("BootstrapMessageLoggerTask has been gc'ed: "
+                                      + threads.size() + " remaining...");
+            }
+            // Then wait for the executor to be gc'ed...
+            LogStream.err.println("Waiting for the executor to be gc'ed: Calling System.gc()");
+            System.gc();
+            for (int i=0; i<10; i++) {
+                if (!(Boolean)isAlive.invoke(null)) break;
+                // It would be unexpected that we reach here...
+                Thread.sleep(1000);
+                LogStream.err.println("Calling System.gc()");
+                System.gc();
+            }
+
+            if ((Boolean)isAlive.invoke(null)) {
+                throw new RuntimeException("Executor still alive");
+            } else {
+                LogStream.err.println("Executor terminated as expected.");
+            }
+        } else {
+            LogStream.err.println("Not checking executor termination for " + test);
         }
         LogStream.err.println(test.name() + ": PASSED");
     }
 
-    final static class SimplePolicy extends Policy {
-        static final ThreadLocal<Boolean> allowAll = new ThreadLocal<Boolean>() {
-            @Override
-            protected Boolean initialValue() {
-                return Boolean.FALSE;
-            }
-        };
-
-        Permissions getPermissions() {
-            Permissions perms = new Permissions();
-            if (allowAll.get()) {
-                perms.add(new AllPermission());
-            }
-            return perms;
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain domain, Permission permission) {
-            return getPermissions(domain).implies(permission) ||
-                   DEFAULT_POLICY.implies(domain, permission);
-        }
-
-        @Override
-        public PermissionCollection getPermissions(CodeSource codesource) {
-            return getPermissions();
-        }
-
-        @Override
-        public PermissionCollection getPermissions(ProtectionDomain domain) {
-            return getPermissions();
-        }
-
-    }
 }

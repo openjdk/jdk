@@ -30,7 +30,6 @@ import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.*;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.util.HexDumpEncoder;
 
@@ -820,7 +819,7 @@ enum SSLExtension implements SSLStringizer {
     // Get disabled extensions, which could be customized with System Properties.
     private static Collection<String> getDisabledExtensions(
                 String propertyName) {
-        String property = GetPropertyAction.privilegedGetProperty(propertyName);
+        String property = System.getProperty(propertyName);
         if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
             SSLLogger.fine(
                     "System property " + propertyName + " is set to '" +

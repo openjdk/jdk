@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.awt.image.WritableRaster;
-import java.security.AccessController;
 import java.util.HashMap;
 
 import javax.swing.AbstractButton;
@@ -79,7 +78,6 @@ import javax.swing.text.JTextComponent;
 
 import sun.awt.image.SunWritableRaster;
 import sun.awt.windows.ThemeReader;
-import sun.security.action.GetPropertyAction;
 import sun.swing.CachedPainter;
 
 import static com.sun.java.swing.plaf.windows.TMSchema.Part;
@@ -124,7 +122,6 @@ class XPStyle {
      * @return the singleton instance of this class or null if XP styles
      * are not active or if this is not Windows XP
      */
-    @SuppressWarnings("removal")
     static synchronized XPStyle getXP() {
         if (themeActive == null) {
             Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -134,9 +131,8 @@ class XPStyle {
                 themeActive = Boolean.FALSE;
             }
             if (themeActive.booleanValue()) {
-                GetPropertyAction propertyAction =
-                    new GetPropertyAction("swing.noxp");
-                if (AccessController.doPrivileged(propertyAction) == null &&
+                String propertyAction = System.getProperty("swing.noxp");
+                if (propertyAction == null &&
                     ThemeReader.isThemed() &&
                     !(UIManager.getLookAndFeel()
                       instanceof WindowsClassicLookAndFeel)) {

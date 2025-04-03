@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,6 @@ enum class SharedStubId :int {
 #undef SHARED_STUB_ID_ENUM_DECLARE
 
 class SharedRuntime: AllStatic {
-  friend class VMStructs;
-
  private:
   // Declare shared stub fields
 #define SHARED_STUB_FIELD_DECLARE(name, type) \
@@ -511,6 +509,10 @@ class SharedRuntime: AllStatic {
   // otherwise be preserved.  On Intel this includes the return address.
   // On PowerPC it includes the 4 words holding the old TOC & LR glue.
   static uint in_preserve_stack_slots();
+
+  static VMReg thread_register();
+
+  static void continuation_enter_cleanup(MacroAssembler* masm);
 
   // Is vector's size (in bytes) bigger than a size saved by default?
   // For example, on x86 16 bytes XMM registers are saved by default.

@@ -25,8 +25,6 @@
 
 package java.io;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
@@ -35,7 +33,6 @@ import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
 import jdk.internal.javac.PreviewFeature;
 import sun.nio.cs.UTF_8;
-import sun.security.action.GetPropertyAction;
 
 /**
  * Methods to access the character-based console device, if any, associated
@@ -173,6 +170,19 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
+     * Terminates the current line in this console's output stream using
+     * {@link System#lineSeparator()} and then flushes the console.
+     *
+     * @return  This console
+     *
+     * @since 24
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public Console println() {
+        return println("");
+    }
+
+    /**
      * Writes a string representation of the specified object to this console's
      * output stream and then flushes the console.
      *
@@ -211,6 +221,24 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      */
     @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
     public String readln(String prompt) {
+        throw newUnsupportedOperationException();
+    }
+
+    /**
+     * Reads a single line of text from this console.
+     *
+     * @throws IOError
+     *         If an I/O error occurs.
+     *
+     * @return  A string containing the line read from the console, not
+     *          including any line-termination characters, or {@code null}
+     *          if an end of stream has been reached without having read
+     *          any characters.
+     *
+     * @since 24
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public String readln() {
         throw newUnsupportedOperationException();
     }
 
@@ -617,7 +645,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
     private static final boolean istty = istty();
     static final Charset CHARSET =
-        Charset.forName(GetPropertyAction.privilegedGetProperty("stdout.encoding"), UTF_8.INSTANCE);
+        Charset.forName(System.getProperty("stdout.encoding"), UTF_8.INSTANCE);
     private static final Console cons = instantiateConsole();
     static {
         // Set up JavaIOAccess in SharedSecrets
@@ -628,9 +656,8 @@ public sealed class Console implements Flushable permits ProxyingConsole {
         });
     }
 
-    @SuppressWarnings("removal")
     private static Console instantiateConsole() {
-        Console c;
+        Console c = null;
 
         try {
             /*
@@ -642,25 +669,19 @@ public sealed class Console implements Flushable permits ProxyingConsole {
              * If no providers are available, or instantiation failed, java.base built-in
              * Console implementation is used.
              */
-            c = AccessController.doPrivileged(new PrivilegedAction<Console>() {
-                public Console run() {
-                    var consModName = System.getProperty("jdk.console",
-                            JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
+            var consModName = System.getProperty("jdk.console",
+                    JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
 
-                    for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
-                        if (consModName.equals(jcp.getClass().getModule().getName())) {
-                            var jc = jcp.console(istty, CHARSET);
-                            if (jc != null) {
-                                return new ProxyingConsole(jc);
-                            }
-                            break;
-                        }
+            for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
+                if (consModName.equals(jcp.getClass().getModule().getName())) {
+                    var jc = jcp.console(istty, CHARSET);
+                    if (jc != null) {
+                        c = new ProxyingConsole(jc);
                     }
-                    return null;
+                    break;
                 }
-            });
+            }
         } catch (ServiceConfigurationError _) {
-            c = null;
         }
 
         // If not found, default to built-in Console

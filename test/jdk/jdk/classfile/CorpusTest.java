@@ -93,6 +93,11 @@ class CorpusTest {
                         b.writeU2(curPc);
                         b.writeU2(ln.line());
                     }
+
+                    @Override
+                    public Utf8Entry attributeName() {
+                        return cob.constantPool().utf8Entry(Attributes.NAME_LINE_NUMBER_TABLE);
+                    }
                 });
                 case LocalVariable lv -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTable()) {
                     @Override
@@ -100,12 +105,22 @@ class CorpusTest {
                         b.writeU2(1);
                         Util.writeLocalVariable(b, lv);
                     }
+
+                    @Override
+                    public Utf8Entry attributeName() {
+                        return cob.constantPool().utf8Entry(Attributes.NAME_LOCAL_VARIABLE_TABLE);
+                    }
                 });
                 case LocalVariableType lvt -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTypeTable()) {
                     @Override
                     public void writeBody(BufWriterImpl b) {
                         b.writeU2(1);
                         Util.writeLocalVariable(b, lvt);
+                    }
+
+                    @Override
+                    public Utf8Entry attributeName() {
+                        return cob.constantPool().utf8Entry(Attributes.NAME_LOCAL_VARIABLE_TYPE_TABLE);
                     }
                 });
                 default -> cob.with(coe);

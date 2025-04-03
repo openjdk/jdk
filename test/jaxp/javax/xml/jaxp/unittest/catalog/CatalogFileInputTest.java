@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 import jdk.test.lib.net.SimpleHttpServer;
@@ -72,7 +71,6 @@ import jdk.test.lib.net.SimpleHttpServer;
  *          JDK-8168968, it has to only run without SecurityManager
  *          because an ACE will be thrown for invalid path.
  */
-@Listeners({jaxp.library.FilePolicy.class, jaxp.library.NetAccessPolicy.class})
 public class CatalogFileInputTest extends CatalogSupportBase {
 
     static final CatalogFeatures FEATURES = CatalogFeatures.builder().

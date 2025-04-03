@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.io.Writer;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,6 +34,7 @@ import jdk.test.lib.process.ProcessTools;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
@@ -48,9 +50,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
- * @bug 8305457
+ * @bug 8305457 8342936 8351435
  * @summary java.io.IO tests
  * @library /test/lib
+ * @modules jdk.internal.le
  * @run junit IO
  */
 @ExtendWith(IO.TimingExtension.class)
@@ -131,22 +134,26 @@ public class IO {
             var testSrc = System.getProperty("test.src", ".");
             var command = new ArrayList<String>();
             command.add(expect.toString());
-            command.add(Path.of(testSrc, "input.exp").toAbsolutePath().toString());
+            String expectInputName = PROMPT_NONE.equals(prompt) ? "input-no-prompt"
+                                                                : "input";
+            command.add(Path.of(testSrc, expectInputName + ".exp").toAbsolutePath().toString());
             command.add(System.getProperty("test.jdk") + "/bin/java");
             command.add("--enable-preview");
             if (console != null)
                 command.add("-Djdk.console=" + console);
             command.add(Path.of(testSrc, "Input.java").toAbsolutePath().toString());
-            command.add(prompt == null ? "0" : "1");
+            command.add(prompt == null ? "0" : PROMPT_NONE.equals(prompt) ? "2" : "1");
             command.add(String.valueOf(prompt));
             OutputAnalyzer output = ProcessTools.executeProcess(command.toArray(new String[]{}));
             output.reportDiagnosticSummary();
             assertEquals(0, output.getExitValue());
         }
 
+        private static final String PROMPT_NONE = "prompt-none";
+
         public static Stream<Arguments> args() {
             // cross product: consoles x prompts
-            return Stream.of(null, "gibberish").flatMap(console -> Stream.of(null, "?", "%s")
+            return Stream.of("jdk.internal.le", "gibberish").flatMap(console -> Stream.of(null, "?", "%s", PROMPT_NONE)
                     .map(prompt -> new String[]{console, prompt}).map(Arguments::of));
         }
     }
@@ -156,7 +163,7 @@ public class IO {
     public void printTest(String mode) throws Exception {
         var file = Path.of(System.getProperty("test.src", "."), "Output.java")
                 .toAbsolutePath().toString();
-        var pb = ProcessTools.createTestJavaProcessBuilder("--enable-preview", file, mode);
+        var pb = ProcessTools.createTestJavaProcessBuilder("-Djdk.console=jdk.internal.le", "--enable-preview", file, mode);
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         assertEquals(0, output.getExitValue());
         assertTrue(output.getStderr().isEmpty());
@@ -170,6 +177,33 @@ public class IO {
         assertFalse(out.isBlank());
         assertEquals(out.substring(0, out.length() / 2),
                 out.substring(out.length() / 2));
+    }
+
+    @Test //JDK-8342936
+    public void printlnNoParamsTest() throws Exception {
+        var file = Path.of("PrintlnNoParams.java");
+        try (Writer w = Files.newBufferedWriter(file)) {
+            w.write("""
+                    void main() {
+                        print("1 ");
+                        print("2 ");
+                        print("3 ");
+                        println();
+                        System.console().print("1 ");
+                        System.console().print("2 ");
+                        System.console().print("3 ");
+                        System.console().println();
+                    }
+                    """);
+        }
+        var pb = ProcessTools.createTestJavaProcessBuilder("-Djdk.console=jdk.internal.le", "--enable-preview", file.toString());
+        OutputAnalyzer output = ProcessTools.executeProcess(pb);
+        assertEquals(0, output.getExitValue());
+        assertTrue(output.getStderr().isEmpty());
+        output.reportDiagnosticSummary();
+        String out = output.getStdout();
+        String nl = System.getProperty("line.separator");
+        assertEquals("1 2 3 " + nl + "1 2 3 " + nl, out);
     }
 
 

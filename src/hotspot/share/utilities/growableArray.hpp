@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -608,8 +608,10 @@ class GrowableArrayNestingCheck {
 
 public:
   GrowableArrayNestingCheck(bool on_resource_area);
+  GrowableArrayNestingCheck(Arena* arena);
 
   void on_resource_area_alloc() const;
+  void on_arena_alloc(Arena* arena) const;
 };
 
 #endif // ASSERT
@@ -649,7 +651,7 @@ public:
   // Arena allocation
   GrowableArrayMetadata(Arena* arena) :
       _bits(bits(arena))
-      debug_only(COMMA _nesting_check(false)) {
+      debug_only(COMMA _nesting_check(arena)) {
   }
 
   // CHeap allocation
@@ -676,6 +678,7 @@ public:
 
   void init_checks(const GrowableArrayBase* array) const;
   void on_resource_area_alloc_check() const;
+  void on_arena_alloc_check() const;
 #endif // ASSERT
 
   bool on_C_heap() const        { return (_bits & 1) == 1; }
@@ -740,6 +743,7 @@ class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>> {
     }
 
     assert(on_arena(), "Sanity");
+    debug_only(_metadata.on_arena_alloc_check());
     return allocate(this->_capacity, _metadata.arena());
   }
 
@@ -807,10 +811,6 @@ class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHe
   STATIC_ASSERT(MT != mtNone);
 
   static E* allocate(int max, MemTag mem_tag) {
-    if (max == 0) {
-      return nullptr;
-    }
-
     return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), mem_tag);
   }
 

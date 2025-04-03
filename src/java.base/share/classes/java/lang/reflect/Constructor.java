@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,21 +169,18 @@ public final class Constructor<T> extends Executable {
     /**
      * {@inheritDoc}
      *
-     * <p> A {@code SecurityException} is also thrown if this object is a
+     * <p> A {@code SecurityException} is thrown if this object is a
      * {@code Constructor} object for the class {@code Class} and {@code flag}
      * is true. </p>
      *
      * @param flag {@inheritDoc}
      *
      * @throws InaccessibleObjectException {@inheritDoc}
-     * @throws SecurityException if the request is denied by the security manager
-     *         or this is a constructor for {@code java.lang.Class}
-     *
+     * @throws SecurityException if this is a constructor for {@code java.lang.Class}
      */
     @Override
     @CallerSensitive
     public void setAccessible(boolean flag) {
-        AccessibleObject.checkPermission();
         if (flag) {
             checkCanSetAccessible(Reflection.getCallerClass());
         }
@@ -243,7 +240,7 @@ public final class Constructor<T> extends Executable {
      * @since 1.5
      */
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("unchecked")
     public TypeVariable<Constructor<T>>[] getTypeParameters() {
       if (getSignature() != null) {
         return (TypeVariable<Constructor<T>>[])getGenericInfo().getTypeParameters();

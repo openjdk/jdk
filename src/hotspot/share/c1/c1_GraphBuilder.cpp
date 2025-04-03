@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "c1/c1_CFGPrinter.hpp"
 #include "c1/c1_Canonicalizer.hpp"
+#include "c1/c1_CFGPrinter.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_GraphBuilder.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
@@ -41,12 +40,8 @@
 #include "interpreter/bytecode.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/oop.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/vm_version.hpp"
-#include "utilities/bitMap.inline.hpp"
 #include "utilities/checkedCast.hpp"
-#include "utilities/powerOfTwo.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
@@ -678,17 +673,6 @@ class MemoryBuffer: public CompilationResourceObj {
       return load;
     }
 
-    if (strict_fp_requires_explicit_rounding && load->type()->is_float_kind()) {
-#ifdef IA32
-      if (UseSSE < 2) {
-        // can't skip load since value might get rounded as a side effect
-        return load;
-      }
-#else
-      Unimplemented();
-#endif // IA32
-    }
-
     ciField* field = load->field();
     Value object   = load->obj();
     if (field->holder()->is_loaded() && !field->is_volatile()) {
@@ -1057,7 +1041,7 @@ void GraphBuilder::store_local(ValueStack* state, Value x, int index) {
     }
   }
 
-  state->store_local(index, round_fp(x));
+  state->store_local(index, x);
 }
 
 
@@ -1209,10 +1193,7 @@ void GraphBuilder::arithmetic_op(ValueType* type, Bytecodes::Code code, ValueSta
   Value y = pop(type);
   Value x = pop(type);
   Value res = new ArithmeticOp(code, x, y, state_before);
-  // Note: currently single-precision floating-point rounding on Intel is handled at the LIRGenerator level
-  res = append(res);
-  res = round_fp(res);
-  push(type, res);
+  push(type, append(res));
 }
 
 
@@ -2121,7 +2102,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 
   if (cha_monomorphic_target != nullptr) {
-    assert(!target->can_be_statically_bound() || target->equals(cha_monomorphic_target), "");
+    assert(!target->can_be_statically_bound() || target == cha_monomorphic_target, "");
     assert(!cha_monomorphic_target->is_abstract(), "");
     if (!cha_monomorphic_target->can_be_statically_bound(actual_recv)) {
       // If we inlined because CHA revealed only a single target method,
@@ -2233,7 +2214,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   append_split(result);
 
   if (result_type != voidType) {
-    push(result_type, round_fp(result));
+    push(result_type, result);
   }
   if (profile_return() && result_type->is_object_kind()) {
     profile_return_type(result, target);
@@ -2358,29 +2339,6 @@ void GraphBuilder::throw_op(int bci) {
   // operand stack not needed after a throw
   state()->truncate_stack(0);
   append_with_bci(t, bci);
-}
-
-
-Value GraphBuilder::round_fp(Value fp_value) {
-  if (strict_fp_requires_explicit_rounding) {
-#ifdef IA32
-    // no rounding needed if SSE2 is used
-    if (UseSSE < 2) {
-      // Must currently insert rounding node for doubleword values that
-      // are results of expressions (i.e., not loads from memory or
-      // constants)
-      if (fp_value->type()->tag() == doubleTag &&
-          fp_value->as_Constant() == nullptr &&
-          fp_value->as_Local() == nullptr &&       // method parameters need no rounding
-          fp_value->as_RoundFP() == nullptr) {
-        return append(new RoundFP(fp_value));
-      }
-    }
-#else
-    Unimplemented();
-#endif // IA32
-  }
-  return fp_value;
 }
 
 

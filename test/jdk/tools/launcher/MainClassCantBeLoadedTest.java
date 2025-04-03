@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,68 +81,6 @@ public class MainClassCantBeLoadedTest extends TestHelper {
         // then this error message should be generated
         trExecution.contains("Error: Could not find or load main class A");
         trExecution.contains("Caused by: java.lang.NoClassDefFoundError: B");
-        if (!trExecution.testStatus)
-            System.err.println(trExecution);
-    }
-
-    @Test
-    void testFailToInitializeMainClass() throws Exception {
-        if (!isEnglishLocale()) {
-            return;
-        }
-
-        File cwd = new File(".");
-        File srcDir = new File(cwd, "src");
-        if (srcDir.exists()) {
-            recursiveDelete(srcDir);
-        }
-        srcDir.mkdirs();
-
-        /* we want to generate class C that will resolve additional class
-         */
-        ArrayList<String> scratchpad = new ArrayList<>();
-        scratchpad.add("public class C {");
-        scratchpad.add("    public static void main(String... args) {");
-        scratchpad.add("        try {");
-        scratchpad.add("            System.out.println(\"loading of restricted class\");");
-        scratchpad.add("        } catch (Exception e) {");
-        scratchpad.add("            java.security.Provider p = new com.sun.crypto.provider.SunJCE();");
-        scratchpad.add("            p.toString();");
-        scratchpad.add("        }");
-        scratchpad.add("    }");
-        scratchpad.add("}");
-        createFile(new File(srcDir, "C.java"), scratchpad);
-
-
-        // Compile and execute C should succeed
-        TestResult trCompilation = doExec(javacCmd,
-            "--add-exports", "java.base/com.sun.crypto.provider=ALL-UNNAMED",
-            "-d", "out",
-            new File(srcDir, "C.java").toString());
-        if (!trCompilation.isOK()) {
-            System.err.println(trCompilation);
-            throw new RuntimeException("Error: compiling");
-        }
-
-        TestResult trExecution = doExec(javaCmd,
-            "--add-exports", "java.base/com.sun.crypto.provider=ALL-UNNAMED",
-            "-cp", "out", "C");
-        if (!trExecution.isOK()) {
-            System.err.println(trExecution);
-            throw new RuntimeException("Error: executing");
-        }
-
-        // Execute C with security manager will fail with AccessControlException
-        trExecution = doExec(javaCmd,
-            "-Djava.security.manager",
-            "--add-exports", "java.base/com.sun.crypto.provider=ALL-UNNAMED",
-            "-cp", "out", "C");
-
-        // then this error message should be generated
-        trExecution.contains("Error: Unable to initialize main class C");
-        trExecution.contains("Caused by: java.security.AccessControlException: " +
-            "access denied (\"java.lang.RuntimePermission\"" +
-            " \"accessClassInPackage.com.sun.crypto.provider\")");
         if (!trExecution.testStatus)
             System.err.println(trExecution);
     }

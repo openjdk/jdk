@@ -87,8 +87,9 @@ public class Navigation {
         PACKAGE,
         PREVIEW,
         RESTRICTED,
-        SERIALIZED_FORM,
         SEARCH,
+        SEARCH_TAGS,
+        SERIALIZED_FORM,
         SYSTEM_PROPERTIES,
         TREE,
         USE
@@ -274,6 +275,7 @@ public class Navigation {
             case CONSTANT_VALUES:
             case EXTERNAL_SPECS:
             case RESTRICTED:
+            case SEARCH_TAGS:
             case SERIALIZED_FORM:
             case SYSTEM_PROPERTIES:
                 addOverviewLink(target);
@@ -496,7 +498,8 @@ public class Navigation {
         var inputText = HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlIds.SEARCH_INPUT)
                 .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.search_placeholder"))
                 .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.search_in_documentation"))
-                .put(HtmlAttr.AUTOCOMPLETE, "off");
+                .put(HtmlAttr.AUTOCOMPLETE, "off")
+                .put(HtmlAttr.SPELLCHECK, "false");
         var inputReset = HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlIds.RESET_SEARCH)
                 .put(HtmlAttr.VALUE, resources.getText("doclet.search_reset"));
         var searchDiv = HtmlTree.DIV(HtmlStyles.navListSearch)

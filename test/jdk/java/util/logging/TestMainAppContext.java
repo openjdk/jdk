@@ -33,7 +33,7 @@ import sun.awt.SunToolkit;
  * @modules java.desktop/sun.awt
  *          java.logging
  * @build TestMainAppContext
- * @run main/othervm -Djava.security.manager=allow TestMainAppContext
+ * @run main/othervm TestMainAppContext
  * @author danielfuchs
  */
 public class TestMainAppContext {
@@ -74,14 +74,11 @@ public class TestMainAppContext {
             }
 
         };
-
-        System.setSecurityManager(new SecurityManager());
         t2.start();
         t2.join();
         if (thrown != null) {
             throw new RuntimeException("Test failed: " + thrown, thrown);
         }
-
     }
 
 }
