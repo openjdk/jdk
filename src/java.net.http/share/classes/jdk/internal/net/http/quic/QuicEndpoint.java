@@ -783,10 +783,11 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                     }
                     // at this point buffer has been copied. We only buffer what's
                     // needed.
-                    int buffered = buffer(datagram.payload().remaining());
+                    int rcv = datagram.payload().remaining();
+                    int buffered = buffer(rcv);
                     if (debug.on()) {
-                        debug.log("adding %s to read queue from %s, queue size %s, type %s",
-                                buffered, source, readQueue.size(), datagram.getClass().getSimpleName());
+                        debug.log("adding %s in read queue from %s, queue size %s, buffered %s, type %s",
+                                rcv, source, readQueue.size(), buffered, datagram.getClass().getSimpleName());
                     }
                     readQueue.add(datagram);
                     buffer.clear();
