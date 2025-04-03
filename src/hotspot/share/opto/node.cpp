@@ -3151,5 +3151,3 @@ Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return Node::Ideal(phase, can_reshape);
 }
 
-
-
