@@ -134,7 +134,28 @@ void MemPointerParser::create_summands() {
 }
 
 void MemPointerParser::canonicalize_summands() {
+  // Sorting by variable idx means that all summands with the same variable are consecutive.
+  // This simplifies the combining of summands with the same variable below.
+  _summands.sort(MemPointerSummand::cmp_by_variable_idx);
 
+  // Combine summands for the same variable, adding up the scales.
+  int pos_put = 0;
+  int pos_get = 0;
+  while (pos_get < _summands.length()) {
+    const MemPointerSummand& summand = _summands.at(pos_get++);
+    Node* variable      = summand.variable();
+    NoOverflowInt scale = summand.scale();
+    // Add up scale of all summands with the same variable.
+    while (pos_get < _summands.length() && _summands.at(pos_get).variable() == variable) {
+      MemPointerSummand s = _summands.at(pos_get++);
+      scale = scale + s.scale();
+    }
+    // Keep summands with non-zero scale.
+    if (!scale.is_zero()) {
+      _summands.at_put(pos_put++, MemPointerSummand(variable, scale));
+    }
+  }
+  _summands.trunc_to(pos_put);
 }
 
 // Parse a sub-expression of the pointer, starting at the current summand. We parse the
