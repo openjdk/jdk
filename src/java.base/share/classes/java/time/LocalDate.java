@@ -103,6 +103,8 @@ import java.util.Objects;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import jdk.internal.util.DateTimeHelper;
+
 /**
  * A date without a time-zone in the ISO-8601 calendar system,
  * such as {@code 2007-12-03}.
@@ -2148,35 +2150,8 @@ public final class LocalDate
     @Override
     public String toString() {
         var buf = new StringBuilder(10);
-        formatTo(buf);
+        DateTimeHelper.formatTo(buf, this);
         return buf.toString();
-    }
-
-    /**
-     * Prints the toString result to the given buf, avoiding extra string allocations.
-     * Requires extra capacity of 10 to avoid StringBuilder reallocation.
-     */
-    void formatTo(StringBuilder buf) {
-        int yearValue = year;
-        int monthValue = month;
-        int dayValue = day;
-        int absYear = Math.abs(yearValue);
-        if (absYear < 1000) {
-            if (yearValue < 0) {
-                buf.append('-');
-            }
-            buf.repeat('0', absYear < 10 ? 3 : absYear < 100 ? 2 : 1);
-            buf.append(absYear);
-        } else {
-            if (yearValue > 9999) {
-                buf.append('+');
-            }
-            buf.append(yearValue);
-        }
-        buf.append(monthValue < 10 ? "-0" : "-")
-           .append(monthValue)
-           .append(dayValue < 10 ? "-0" : "-")
-           .append(dayValue);
     }
 
     //-----------------------------------------------------------------------
