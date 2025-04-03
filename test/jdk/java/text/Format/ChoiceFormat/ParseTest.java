@@ -59,6 +59,8 @@ public class ParseTest {
 
     private static Stream<Arguments> parseTest() {
         return Stream.of(
+                Arguments.of("1#foo", "foo", Double.NaN, -1),
+                Arguments.of("1#baz", "foo bar baz", Double.NaN, 20),
                 Arguments.of("1#baz", "foo bar baz", 1d, 8),
                 Arguments.of("1#baz", "foo baz quux", Double.NaN, 8),
                 Arguments.of("1#a", "", Double.NaN, 0),
