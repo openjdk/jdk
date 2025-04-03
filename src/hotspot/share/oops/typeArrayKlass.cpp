@@ -34,7 +34,6 @@
 #include "oops/arrayKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/klassInfoLUT.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.inline.hpp"
@@ -74,9 +73,7 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
   JFR_ONLY(ASSIGN_PRIMITIVE_CLASS_ID(ak);)
 
   // Add to KLUT
-  if (UseKLUT) {
-    KlassInfoLUT::register_klass(ak);
-  }
+  ak->register_with_klut();
 
   return ak;
 }
