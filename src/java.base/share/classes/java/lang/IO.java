@@ -43,7 +43,11 @@ import jdk.internal.javac.PreviewFeature;
  * If this property is not present, or if the charset it names cannot be loaded, then
  * UTF-8 is used instead. These internal objects are created upon the first call to
  * either of the {@code readln} methods and are stored for subsequent reuse by these
- * methods. The result of interleaving calls to the {@code readln} methods with operations
+ * methods.
+ * <p>
+ * The internal objects used by the {@code readln} methods may buffer additional bytes
+ * beyond those that have been decoded to characters returned to the application. The
+ * result of interleaving calls to the {@code readln} methods with other operations
  * on {@code System.in} is unspecified.
  *
  * @since 25
@@ -83,9 +87,8 @@ public final class IO {
     }
 
     /**
-     * Writes a string representation of the specified object and then
-     * terminates the current line on the standard output.
-     * standard output.
+     * Writes a string representation of the specified object and then writes
+     * a line separator to the standard output.
      *
      * <p> The effect is as if {@link java.io.PrintStream#println(Object) println(obj)}
      * had been called on {@code System.out}.
@@ -97,7 +100,7 @@ public final class IO {
     }
 
     /**
-     * Terminates the current line on the standard output.
+     * Writes a line separator to the standard output.
      *
      * <p> The effect is as if {@link java.io.PrintStream#println() println()}
      * had been called on {@code System.out}.
@@ -123,19 +126,16 @@ public final class IO {
     /**
      * Reads a single line of text from the standard input.
      * <p>
-     * If necessary, this method first creates an internal
-     * {@link java.nio.charset.CharsetDecoder CharsetDecoder}
-     * to decode the bytes read from the standard input into characters.
-     * It is then wrapped within a {@link java.io.Reader Reader} to
-     * provide character input. These objects are retained for
-     * subsequent use by this method.
+     * If necessary, this method first creates internal objects that decode
+     * the bytes read from the standard input into characters. These objects
+     * are retained for subsequent reuse by this method.
      * <p>
-     * One line is read as if by
+     * One line is read from the decoded input as if by
      * {@link java.io.BufferedReader#readLine() BufferedReader.readLine()}
      * and then the result is returned.
      *
      * @return a string containing the line read from the standard input, not
-     * including any line-termination characters. Returns {@code null} if an
+     * including any line separator characters. Returns {@code null} if an
      * end of stream has been reached without having read any characters.
      *
      * @throws IOError if an I/O error occurs
@@ -158,7 +158,7 @@ public final class IO {
      * @param prompt the prompt string, may be {@code null}
      *
      * @return a string containing the line read from the standard input, not
-     * including any line-termination characters. Returns {@code null} if an
+     * including any line separator characters. Returns {@code null} if an
      * end of stream has been reached without having read any characters.
      *
      * @throws IOError if an I/O error occurs
