@@ -78,7 +78,6 @@ public class TaskbarPositionTest implements ActionListener {
     private static JFrame frame;
     private static JPopupMenu popupMenu;
     private static JPanel panel;
-    private static Robot robot;
 
     private static JComboBox<String> combo1;
     private static JComboBox<String> combo2;
@@ -215,10 +214,10 @@ public class TaskbarPositionTest implements ActionListener {
     }
 
     // for debugging purpose, saves screen capture when test fails.
-    private static void saveScreenCapture(Rectangle bounds) {
-        BufferedImage image = robot.createScreenCapture(bounds);
+    private static void saveScreenCapture(Robot robot) {
+        BufferedImage image = robot.createScreenCapture(screenBounds);
         try {
-            ImageIO.write(image,"png", new File("Screenshot.png"));
+            ImageIO.write(image, "png", new File("Screenshot.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -229,7 +228,6 @@ public class TaskbarPositionTest implements ActionListener {
      */
     private static void isPopupOnScreen(JPopupMenu popup, Rectangle checkBounds) {
         if (!popup.isVisible()) {
-            saveScreenCapture(checkBounds);
             throw new RuntimeException("Popup not visible");
         }
         Dimension dim = popup.getSize();
@@ -237,7 +235,6 @@ public class TaskbarPositionTest implements ActionListener {
         Rectangle bounds = new Rectangle(pt, dim);
 
         if (!SwingUtilities.isRectangleContainingRectangle(checkBounds, bounds)) {
-            saveScreenCapture(checkBounds);
             throw new RuntimeException("Popup is outside of screen bounds "
                     + checkBounds + " / " + bounds);
         }
@@ -245,7 +242,6 @@ public class TaskbarPositionTest implements ActionListener {
 
     private static void isComboPopupOnScreen(JComboBox<?> comboBox) {
         if (!comboBox.isPopupVisible()) {
-            saveScreenCapture(screenBounds);
             throw new RuntimeException("ComboBox popup not visible");
         }
         JPopupMenu popupMenu = (JPopupMenu) comboBox.getUI().getAccessibleChild(comboBox, 0);
@@ -355,11 +351,11 @@ public class TaskbarPositionTest implements ActionListener {
             }
         }
 
-        try {
-            // Use Robot to automate the test
-            robot = new Robot();
-            robot.setAutoDelay(50);
+        // Use Robot to automate the test
+        Robot robot = new Robot();
+        robot.setAutoDelay(50);
 
+        try {
             SwingUtilities.invokeAndWait(TaskbarPositionTest::new);
 
             robot.waitForIdle();
@@ -460,6 +456,9 @@ public class TaskbarPositionTest implements ActionListener {
             hidePopup(robot);
 
             robot.waitForIdle();
+        } catch (Throwable t) {
+            saveScreenCapture(robot);
+            throw t;
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
