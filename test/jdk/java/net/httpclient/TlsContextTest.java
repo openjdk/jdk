@@ -110,16 +110,16 @@ public class TlsContextTest implements HttpServerAdapters {
         var builder = version == HTTP_3 ? newClientBuilderForH3()
                 : HttpClient.newBuilder().version(version);
         var reqBuilder = HttpRequest.newBuilder(new URI(https2URI));
-        if (version == HTTP_3) reqBuilder.version(HTTP_3);
 
         HttpClient client = builder.sslContext(context)
                                       .build();
-        HttpRequest request = reqBuilder.GET().build();
         if (version == HTTP_3) {
             // warmup to obtain AltService
-            client.send(request, ofString());
+            client.send(reqBuilder.version(HTTP_2).GET().build(), ofString());
+            reqBuilder = reqBuilder.version(HTTP_3);
         }
 
+        HttpRequest request = reqBuilder.GET().build();
         for (int i = 0; i < ITERATIONS; i++) {
             HttpResponse<String> response = client.send(request, ofString());
             testAllProtocols(response, expectedProtocol, version);
