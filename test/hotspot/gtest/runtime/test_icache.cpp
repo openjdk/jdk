@@ -37,7 +37,7 @@ TEST_VM(ICacheTest, flush_perf) {
 
   const int ITERS = 1000;
 
-  for (size_t size = 1; size <= 1024*1024; size *= 2) {
+  for (int size = 1; size <= 1024*1024; size *= 2) {
     address p = (address)os::malloc(size, mtTest);
     EXPECT_NOT_NULL(p);
 
@@ -63,7 +63,7 @@ TEST_VM(ICacheTest, flush_perf) {
       total_readback += time3 - time2;
     }
 
-    tty->print_cr("%10zu bytes flushed in " JLONG_FORMAT_W(10) " ns, read back in " JLONG_FORMAT_W(10) " ns",
+    tty->print_cr("%10d bytes flushed in " JLONG_FORMAT_W(10) " ns, read back in " JLONG_FORMAT_W(10) " ns",
                   size, total_flush / ITERS, total_readback / ITERS);
 
     os::free(p);
