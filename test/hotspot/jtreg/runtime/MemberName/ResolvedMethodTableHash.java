@@ -50,67 +50,67 @@ public class ResolvedMethodTableHash {
     public static class ResolvedMethodTableHashTest extends ClassLoader {
         // Generate a MethodHandle for ClassName.m()
         private MethodHandle generate(String className) throws ReflectiveOperationException {
-                byte[] buf = new byte[100];
-                int size = writeClass(buf, className);
-                Class<?> cls = defineClass(null, buf, 0, size);
-                return MethodHandles.publicLookup().findStatic(cls, "m", MethodType.methodType(void.class));
+            byte[] buf = new byte[100];
+            int size = writeClass(buf, className);
+            Class<?> cls = defineClass(null, buf, 0, size);
+            return MethodHandles.publicLookup().findStatic(cls, "m", MethodType.methodType(void.class));
         }
 
         private MethodHandle generateWithSameName() throws ReflectiveOperationException {
-                byte[] buf = new byte[100];
-                int size = writeClass(buf, "MH$$");
-                // use different classloader instances to load the classes with the same name
-                Class<?> cls = new ResolvedMethodTableHashTest().defineClass(null, buf, 0, size);
-                return MethodHandles.publicLookup().findStatic(cls, "m", MethodType.methodType(void.class));
+            byte[] buf = new byte[100];
+            int size = writeClass(buf, "MH$$");
+            // use different classloader instances to load the classes with the same name
+            Class<?> cls = new ResolvedMethodTableHashTest().defineClass(null, buf, 0, size);
+            return MethodHandles.publicLookup().findStatic(cls, "m", MethodType.methodType(void.class));
         }
 
         // Produce a class file with the given name and a single method:
         //         public static native void m();
         private int writeClass(byte[] buf, String className) {
-                return ByteBuffer.wrap(buf)
-                                .putInt(0xCAFEBABE)           // magic
-                                .putInt(50)                           // version: 50
-                                .putShort((short) 7)          // constant_pool_count: 7
-                                .put((byte) 7).putShort((short) 2)
-                                .put((byte) 1).putShort((short) className.length()).put(className.getBytes())
-                                .put((byte) 7).putShort((short) 4)
-                                .put((byte) 1).putShort((short) 16).put("java/lang/Object".getBytes())
-                                .put((byte) 1).putShort((short) 1).put("m".getBytes())
-                                .put((byte) 1).putShort((short) 3).put("()V".getBytes())
-                                .putShort((short) 0x21)   // access_flags: public super
-                                .putShort((short) 1)          // this_class: #1
-                                .putShort((short) 3)          // super_class: #3
-                                .putShort((short) 0)          // interfaces_count: 0
-                                .putShort((short) 0)          // fields_count: 0
-                                .putShort((short) 1)          // methods_count: 1
-                                .putShort((short) 0x109)  //   access_flags: public static native
-                                .putShort((short) 5)          //   name_index: #5
-                                .putShort((short) 6)          //   descriptor_index: #6
-                                .putShort((short) 0)          //   attributes_count: 0
-                                .putShort((short) 0)          // attributes_count: 0
-                                .position();
+            return ByteBuffer.wrap(buf)
+                .putInt(0xCAFEBABE)           // magic
+                .putInt(50)                           // version: 50
+                .putShort((short) 7)          // constant_pool_count: 7
+                .put((byte) 7).putShort((short) 2)
+                .put((byte) 1).putShort((short) className.length()).put(className.getBytes())
+                .put((byte) 7).putShort((short) 4)
+                .put((byte) 1).putShort((short) 16).put("java/lang/Object".getBytes())
+                .put((byte) 1).putShort((short) 1).put("m".getBytes())
+                .put((byte) 1).putShort((short) 3).put("()V".getBytes())
+                .putShort((short) 0x21)   // access_flags: public super
+                .putShort((short) 1)          // this_class: #1
+                .putShort((short) 3)          // super_class: #3
+                .putShort((short) 0)          // interfaces_count: 0
+                .putShort((short) 0)          // fields_count: 0
+                .putShort((short) 1)          // methods_count: 1
+                .putShort((short) 0x109)  //   access_flags: public static native
+                .putShort((short) 5)          //   name_index: #5
+                .putShort((short) 6)          //   descriptor_index: #6
+                .putShort((short) 0)          //   attributes_count: 0
+                .putShort((short) 0)          // attributes_count: 0
+                .position();
         }
 
         public static void main(String[] args) throws Exception {
 
-                ResolvedMethodTableHashTest generator = new ResolvedMethodTableHashTest();
-                List<MethodHandle> handles = new ArrayList<>();
+            ResolvedMethodTableHashTest generator = new ResolvedMethodTableHashTest();
+            List<MethodHandle> handles = new ArrayList<>();
 
-                int count = args.length > 0 ? Integer.parseInt(args[0]) : 200000;
+            int count = 1001;
 
-                for (int i = 0; i < count; i++) {
-                        // prevents metaspace oom
-                        if (i % 20 != 0) {
-                                handles.add(generator.generate("MH$" + i));
-                        } else {
-                                handles.add(generator.generateWithSameName());
-                        }
-                        if (i % 1000 == 0) {
-                                System.out.println("Generated " + i + " handles");
-                        }
+            for (int i = 0; i < count; i++) {
+                // prevents metaspace oom
+                if (i % 20 != 0) {
+                    handles.add(generator.generate("MH$" + i));
+                } else {
+                    handles.add(generator.generateWithSameName());
                 }
+                if (i % 1000 == 0) {
+                    System.out.println("Generated " + i + " handles");
+                }
+            }
 
-                System.out.println("Test passed");
+            System.out.println("Test passed");
         }
     }
 
@@ -118,7 +118,7 @@ public class ResolvedMethodTableHash {
 
         // Running the table with only 1000 entries should not provoke a needs rehash warning, unless the hash code is bad.
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:membername+table",
-                                                                             ResolvedMethodTableHashTest.class.getName(), "1001");
+                                                                             ResolvedMethodTableHashTest.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("[membername,table] Rehash warning, load factor");
         output.shouldContain("Generated 1000 handles");
