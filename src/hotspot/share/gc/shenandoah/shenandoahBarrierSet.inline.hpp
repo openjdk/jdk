@@ -72,6 +72,8 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
       Thread* const t = Thread::current();
       ShenandoahEvacOOMScope scope(t);
       fwd = _heap->evacuate_object(obj, t);
+    } else {
+      return ShenandoahForwarding::try_forward_to_self(obj);
     }
   }
 
@@ -97,10 +99,13 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
 
     oop fwd = resolve_forwarded_not_null(obj);
     if (obj == fwd && _heap->is_evacuation_in_progress()) {
+      // TODO: Move this decision into shHeap::evacuate
       if (_heap->should_evacuate_object(obj)) {
         Thread* t = Thread::current();
         ShenandoahEvacOOMScope oom_evac_scope(t);
         return _heap->evacuate_object(obj, t);
+      } else {
+        return ShenandoahForwarding::try_forward_to_self(obj);
       }
     }
     return fwd;
