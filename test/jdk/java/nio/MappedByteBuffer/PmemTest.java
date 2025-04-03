@@ -77,23 +77,17 @@
  *  make test TEST=jdk/java/nio/MappedByteBuffer/PmemTest.java
 */
 
-/* @test
- * @summary Testing NVRAM mapped byte buffer support
- * @run main/manual PmemTest
- * @requires (os.family == "linux")
- * @requires (os.arch == "x86_64")
- */
-
-/* @test
- * @summary Testing NVRAM mapped byte buffer support
- * @run main/manual PmemTest
- * @requires (os.family == "linux")
- * @requires ((os.arch == "amd64")|(os.arch == "aarch64")|(os.arch == "ppc64le"))
- * @ignore The test described here is currently disabled on systems that are not
- * x64-based and lack an external NVRAM memory device. In order to re-enable the
+/*
+ * In order to enable the
  * test, you will need to mount the NVRAM device, which will typically appear as
  * /dev/pmem0, to the directory /mnt/pmem. Once that is done, you can follow the
  * instructions above to create a test directory and remove the ignore tag.
+ * 
+ * @test
+ * @summary Testing NVRAM mapped byte buffer support
+ * @run main/manual PmemTest
+ * @requires (os.family == "linux")
+ * @requires ((os.arch == "amd64")|(os.arch == "aarch64")|(os.arch == "ppc64le")|(os.arch == "x86_64"))
  */
 
 import java.io.File;
