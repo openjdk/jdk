@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -479,6 +479,7 @@ public class JEditorPane extends JTextComponent {
             // The same page with different reference
             if (reference != null) {
                 scrollToReference(reference);
+                getDocument().putProperty(Document.StreamDescriptionProperty, page);
             } else {
                 // Scroll to the top of the page
                 scrollRectToVisible(new Rectangle(0, 0, 1, 1));
