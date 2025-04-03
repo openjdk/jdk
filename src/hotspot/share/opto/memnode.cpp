@@ -3450,7 +3450,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   if (MergeStores && UseUnalignedAccesses) {
-    if (phase->C->merge_stores_phase()) {
+    if (phase->C->merge_memops_phase()) {
       MergePrimitiveStores merge(phase, this);
       Node* progress = merge.run();
       if (progress != nullptr) { return progress; }
@@ -3466,7 +3466,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       //   StoreI            [   StoreL  ]            StoreI
       // But now it would have been better to do this instead:
       //   [         StoreL       ] [       StoreL         ]
-      phase->C->record_for_merge_stores_igvn(this);
+      phase->C->record_for_merge_memops_igvn(this);
     }
   }
 
