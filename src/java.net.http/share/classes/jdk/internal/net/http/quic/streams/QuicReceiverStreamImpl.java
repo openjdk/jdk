@@ -413,15 +413,7 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                     QuicTLSEngine.KeySpace.ONE_RTT, streamFrame.getTypeField(), QuicTransportErrors.FINAL_SIZE_ERROR);
         }
         // check maxData
-        long diff = updateMaxReceivedData(size);
-        if (diff > 0) {
-            // report accepted data to connection flow control,
-            // and update the amount of data received in the
-            // connection. This will also check whether connection
-            // flow control is exceeded, and throw in
-            // this case
-            increaseConnectionData(diff, streamFrame.getTypeField());
-        }
+        updateMaxReceivedData(size, streamFrame.getTypeField());
         if (streamFrame.isLast()) {
             // check max received data, throw if we have data beyond the (new) EOF
             if (size < maxReceivedData) {
@@ -470,16 +462,7 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                     QuicTLSEngine.KeySpace.ONE_RTT, resetStreamFrame.getTypeField(), QuicTransportErrors.FLOW_CONTROL_ERROR);
         }
         ReceivingStreamState state = receivingState;
-        // check maxData
-        long diff = updateMaxReceivedData(size);
-        if (diff > 0) {
-            // report accepted data to connection flow control,
-            // and update the amount of data received in the
-            // connection. This will also check whether connection
-            // flow control is exceeded, and throw in
-            // this case
-            increaseConnectionData(diff, resetStreamFrame.getTypeField());
-        }
+        updateMaxReceivedData(size, resetStreamFrame.getTypeField());
         // check max received data, throw if we have data beyond the (new) EOF
         if (size < maxReceivedData) {
             String reason = "Stream truncated: finalSize=%s, max received=%s"
@@ -544,36 +527,29 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
     /**
      * Update the {@code maxReceivedData} value, and return the amount
      * by which {@code maxReceivedData} was increased. This method is a
-     * no-op and returns 0 if {@code maxReceivedData > newMax}.
+     * no-op and returns 0 if {@code maxReceivedData >= newMax}.
      *
      * @param newMax the new max offset - typically obtained
      *               by adding the length of a frame to its
      *               offset
-     *
-     * @return the amount by which {@code maxReceivedData} was increased,
-     *  or 0.
+     * @param frameType type of frame received
+     * @throws QuicTransportException if flow control was violated
      */
-    private long updateMaxReceivedData(long newMax) {
+    private void updateMaxReceivedData(long newMax, long frameType) throws QuicTransportException {
         assert newMax >= 0;
         var max = this.maxReceivedData;
         while (max < newMax) {
             if (Handles.MAX_RECEIVED_DATA.compareAndSet(this, max, newMax)) {
-                return newMax - max;
+                // report accepted data to connection flow control,
+                // and update the amount of data received in the
+                // connection. This will also check whether connection
+                // flow control is exceeded, and throw in
+                // this case
+                connection().increaseReceivedData(newMax - max, frameType);
+                return;
             }
             max = this.maxReceivedData;
         }
-        return 0;
-    }
-
-    /**
-     * Increases the amount of data received on the connection by
-     * the specified amount.
-     * @param diff the amount by which received data should be increased
-     * @param frameType type of frame received
-     * @throws QuicTransportException if flow control was violated
-     */
-    private void increaseConnectionData(long diff, long frameType) throws QuicTransportException {
-        connection().increaseReceivedData(diff, frameType);
     }
 
     /**
