@@ -56,13 +56,12 @@ public abstract class StreamWriterQueue {
 
     // The current buffer containing data to send.
     private ByteBuffer current;
-    // The offset of the data that has been processed by the
-    // consumer.
-    private volatile long offsetProcessed;
+    // The offset of the data that has been consumed
+    private volatile long bytesConsumed;
     // The offset of the data that has been supplied by the
     // producer.
-    // offsetPending >= offsetProcessed at all times.
-    private volatile long offsetPending;
+    // bytesProduced >= bytesConsumed at all times.
+    private volatile long bytesProduced;
     // The stream size, when known, -1 otherwise.
     // The stream size may be known at the creation of the stream,
     // or at the latest when the last ByteBuffer is provided by
@@ -71,7 +70,7 @@ public abstract class StreamWriterQueue {
     // true if reset was requested, false otherwise
     private volatile boolean resetRequested;
     // The maximum offset that will be accepted by the peer at this
-    // time. offsetProcessed <= maxStreamData at all times.
+    // time. bytesConsumed <= maxStreamData at all times.
     private volatile long maxStreamData;
     // negative if stop sending was received; contains -(errorCode + 1)
     private volatile long stopSending;
@@ -117,7 +116,7 @@ public abstract class StreamWriterQueue {
      */
     public final ByteBuffer poll(int maxbytes) {
         boolean producerWasBlocked, producerUnblocked;
-        long pending, processed;
+        long produced, consumed;
         ByteBuffer buffer;
         long credit = consumerCredit();
         assert credit >= 0 : credit;
@@ -137,35 +136,35 @@ public abstract class StreamWriterQueue {
             }
             int remaining = buffer.remaining();
             int position = buffer.position();
-            processed = offsetProcessed;
+            consumed = bytesConsumed;
             if (remaining <= maxbytes) {
                 current = queue.poll();
-                offsetProcessed = processed = Math.addExact(processed, remaining);
+                bytesConsumed = consumed = Math.addExact(consumed, remaining);
             } else {
                 buffer = buffer.slice(position, maxbytes);
                 current.position(position + maxbytes);
-                offsetProcessed = processed = Math.addExact(processed, maxbytes);
+                bytesConsumed = consumed = Math.addExact(consumed, maxbytes);
             }
             long size = streamSize;
-            pending = offsetPending;
+            produced = bytesProduced;
             producerUnblocked = producerWasBlocked && !producerBlocked();
             if (StreamWriterQueue.class.desiredAssertionStatus()) {
-                assert processed <= pending
-                        : "processed: " + processed + ", pending: " + pending + ", size: " + size;
-                assert size == -1 || processed <= size
-                        : "processed: " + processed + ", pending: " + pending + ", size: " + size;
-                assert size == -1 || pending <= size
-                        : "processed: " + processed + ", pending: " + pending + ", size: " + size;
+                assert consumed <= produced
+                        : "consumed: " + consumed + ", produced: " + produced + ", size: " + size;
+                assert size == -1 || consumed <= size
+                        : "consumed: " + consumed + ", produced: " + produced + ", size: " + size;
+                assert size == -1 || produced <= size
+                        : "consumed: " + consumed + ", produced: " + produced + ", size: " + size;
             }
-            if (size >= 0 && processed == size) {
+            if (size >= 0 && consumed == size) {
                 switchState(SendingStreamState.DATA_SENT);
             }
         } finally {
             unlock();
         }
         if (producerUnblocked) {
-            debug().log("producer unblocked pending:%s, processed:%s",
-                    pending, processed);
+            debug().log("producer unblocked produced:%s, consumed:%s",
+                    produced, consumed);
             wakeupProducer();
         }
         return buffer;
@@ -190,30 +189,30 @@ public abstract class StreamWriterQueue {
      */
     public final long setMaxStreamData(long data) {
         assert data >= 0 : "maxStreamData: " + data;
-        long max, pending, processed;
+        long max, produced, consumed;
         boolean consumerWasBlocked, consumerUnblocked;
         lock();
         try {
             max = maxStreamData;
-            processed = offsetProcessed;
-            pending = offsetPending;
+            consumed = bytesConsumed;
+            produced = bytesProduced;
             consumerWasBlocked = consumerBlocked();
             if (data <= max) return max;
             maxStreamData = max = data;
             consumerUnblocked = consumerWasBlocked && !consumerBlocked();
             if (StreamWriterQueue.class.desiredAssertionStatus()) {
                 long size = streamSize;
-                assert processed <= pending;
-                assert size == -1 || processed <= size;
-                assert size == -1 || pending <= size;
+                assert consumed <= produced;
+                assert size == -1 || consumed <= size;
+                assert size == -1 || produced <= size;
             }
         } finally {
             unlock();
         }
         debug().log("set max stream data: %s", max);
-        if (consumerUnblocked && pending > 0) {
-            debug().log("consumer unblocked pending:%s, processed:%s, max stream data:%s",
-                    pending, processed, max);
+        if (consumerUnblocked && produced > 0) {
+            debug().log("consumer unblocked produced:%s, consumed:%s, max stream data:%s",
+                    produced, consumed, max);
             wakeupConsumer();
         }
         return max;
@@ -245,8 +244,8 @@ public abstract class StreamWriterQueue {
      * to race conditions if {@link #poll(int)} is called concurrently
      * by another thread.
      */
-    public final long offsetProcessed() {
-        return offsetProcessed;
+    public final long bytesConsumed() {
+        return bytesConsumed;
     }
 
     /**
@@ -258,13 +257,12 @@ public abstract class StreamWriterQueue {
      * or {@link #queue(ByteBuffer)} are called concurrently
      * by another thread.
      */
-    public final long offsetPending() {
-        return offsetPending;
+    public final long bytesProduced() {
+        return bytesProduced;
     }
 
     /**
-     * {@return the amount of pending data that is available, and which
-     * has not been consumed yet}
+     * {@return the amount of produced data which has not been consumed yet}
      * This is independent of flow control.
      *
      * @apiNote
@@ -275,7 +273,7 @@ public abstract class StreamWriterQueue {
      * by another thread.
      */
     public final long available() {
-        return offsetPending - offsetProcessed;
+        return bytesProduced - bytesConsumed;
     }
 
     /**
@@ -315,9 +313,9 @@ public abstract class StreamWriterQueue {
      */
     public final boolean isConsumerDone() {
         long size = streamSize;
-        long processed = offsetProcessed;
-        assert size == -1 || size >= processed;
-        return size >= 0 && size <= processed;
+        long consumed = bytesConsumed;
+        assert size == -1 || size >= consumed;
+        return size >= 0 && size <= consumed;
     }
 
     /**
@@ -332,16 +330,16 @@ public abstract class StreamWriterQueue {
      */
     public final boolean isProducerDone() {
         long size = streamSize;
-        long pending = offsetPending;
-        assert size == -1 || size >= pending;
-        return size >= 0 && size <= pending;
+        long produced = bytesProduced;
+        assert size == -1 || size >= produced;
+        return size >= 0 && size <= produced;
     }
 
     /**
      * This method is called by the producer to submit data to this
      * stream. The producer should not modify the provided buffer
      * after this point. The provided buffer will be queued even if
-     * the pending data exceeds the maximum offset that the peer
+     * the produced data exceeds the maximum offset that the peer
      * is prepared to accept.
      *
      * @apiNote
@@ -361,7 +359,7 @@ public abstract class StreamWriterQueue {
      * This method is called by the producer to queue data to this
      * stream. The producer should not modify the provided buffer
      * after this point. The provided buffer will be queued even if
-     * the pending data exceeds the maximum offset that the peer
+     * the produced data exceeds the maximum offset that the peer
      * is prepared to accept.
      *
      * @apiNote
@@ -388,7 +386,7 @@ public abstract class StreamWriterQueue {
     private void offer(ByteBuffer buffer, boolean last, boolean waitForMore)
             throws IOException {
         long length = buffer.remaining();
-        long processed, pending, max, size;
+        long consumed, produced, max, size;
         boolean wakeupConsumer;
         lock();
         try {
@@ -399,36 +397,36 @@ public abstract class StreamWriterQueue {
             }
             if (resetRequested) return;
             size = streamSize;
-            processed = offsetProcessed;
+            consumed = bytesConsumed;
             max = maxStreamData;
-            pending = Math.addExact(offsetPending, length);
-            if (size >= 0 && pending > size) {
+            produced = Math.addExact(bytesProduced, length);
+            if (size >= 0 && produced > size) {
                 // TODO: change that to a checked exception?
                 throw new IllegalStateException("too many bytes provided: "
-                        + pending + " > " + size);
+                        + produced + " > " + size);
             }
-            offsetPending = pending;
+            bytesProduced = produced;
             if (length > 0 || last) {
                 // allow to queue a zero-length buffer if it's the last.
                 queue.offer(buffer);
             }
             if (last) {
-                assert size == -1 || size == pending;
-                streamSize = size = pending;
+                assert size == -1 || size == produced;
+                streamSize = size = produced;
             }
             if (StreamWriterQueue.class.desiredAssertionStatus()) {
-                assert processed <= pending;
-                assert size == -1 || processed <= size;
-                assert size == -1 || pending <= size;
+                assert consumed <= produced;
+                assert size == -1 || consumed <= size;
+                assert size == -1 || produced <= size;
             }
-            wakeupConsumer = processed < max && processed < pending
-                    || size >= 0 && processed == size && pending == size && last;
+            wakeupConsumer = consumed < max && consumed < produced
+                    || size >= 0 && consumed == size && produced == size && last;
         } finally {
             unlock();
         }
         if (wakeupConsumer && !waitForMore) {
-            debug().log("consumer unblocked pending:%s, processed:%s, max stream data:%s",
-                    pending, processed, max);
+            debug().log("consumer unblocked produced:%s, consumed:%s, max stream data:%s",
+                    produced, consumed, max);
             wakeupConsumer();
         }
     }
@@ -450,12 +448,12 @@ public abstract class StreamWriterQueue {
     /**
      * {@return the credit of the consumer}
      * @implSpec
-     * This is equivalent to {@link #maxStreamData()} - {@link #offsetProcessed()}.
+     * This is equivalent to {@link #maxStreamData()} - {@link #bytesConsumed()}.
      */
     public final long consumerCredit() {
         lock();
         try {
-            return maxStreamData - offsetProcessed;
+            return maxStreamData - bytesConsumed;
         } finally {
             unlock();
         }
@@ -468,18 +466,18 @@ public abstract class StreamWriterQueue {
      *  flow control.
      */
     public final long readyToSend() {
-        long processed, pending, max;
+        long consumed, produced, max;
         lock();
         try {
-            processed = offsetProcessed;
+            consumed = bytesConsumed;
             max = maxStreamData;
-            pending = offsetPending;
+            produced = bytesProduced;
         } finally {
             unlock();
         }
-        assert max >= processed;
-        assert pending >= processed;
-        return Math.min(max - processed, pending - processed);
+        assert max >= consumed;
+        assert produced >= consumed;
+        return Math.min(max - consumed, produced - consumed);
     }
 
     public final void markReset() {
@@ -494,7 +492,7 @@ public abstract class StreamWriterQueue {
     final void close() {
         lock();
         try {
-            offsetPending = offsetProcessed;
+            bytesProduced = bytesConsumed;
             queue.clear();
             current = null;
         } finally {
@@ -511,7 +509,7 @@ public abstract class StreamWriterQueue {
         lock();
         try {
             if (resetRequested) return false;
-            if (streamSize >= 0 && offsetProcessed == streamSize) return false;
+            if (streamSize >= 0 && bytesConsumed == streamSize) return false;
             if ((stopSending = this.stopSending) < 0) return false;
             this.stopSending = stopSending = - (errorCode + 1);
         } finally {

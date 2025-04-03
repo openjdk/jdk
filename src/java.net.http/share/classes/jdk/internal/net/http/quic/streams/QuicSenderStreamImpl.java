@@ -135,7 +135,7 @@ public final class QuicSenderStreamImpl extends AbstractQuicStream implements Qu
         // returns the amount of data that has been submitted for
         // sending downstream. This will be the amount of data that
         // has been consumed by the downstream consumer.
-        return queue.offsetProcessed();
+        return queue.bytesConsumed();
     }
 
     /**
@@ -167,7 +167,7 @@ public final class QuicSenderStreamImpl extends AbstractQuicStream implements Qu
      * of this method invocation
      */
     public boolean resetAcknowledged(long finalSize) {
-        long queueSize = queue.offsetProcessed();
+        long queueSize = queue.bytesConsumed();
         if (switchSendingState(SendingStreamState.RESET_RECVD)) {
             if (debug.on()) {
                 debug.log("Reset received: final: %d, processed: %d",
@@ -192,7 +192,7 @@ public final class QuicSenderStreamImpl extends AbstractQuicStream implements Qu
      * of this method invocation
      */
     public boolean dataAcknowledged(long finalSize) {
-        long queueSize = queue.offsetProcessed();
+        long queueSize = queue.bytesConsumed();
         if (switchSendingState(SendingStreamState.DATA_RECVD)) {
             if (debug.on()) {
                 debug.log("Last data received: final: %d, processed: %d",
