@@ -350,6 +350,7 @@ public abstract class StreamWriterQueue {
      * @param last whether this is the last buffer that will ever be
      *             provided by the provided
      * @throws IOException if the stream was reset by peer
+     * @throws IllegalStateException if the last data was submitted already
      */
     public final void submit(ByteBuffer buffer, boolean last) throws IOException {
         offer(buffer, last, false);
@@ -369,6 +370,7 @@ public abstract class StreamWriterQueue {
      *
      * @param buffer a buffer containing data for the stream
      * @throws IOException if the stream was reset by peer
+     * @throws IllegalStateException if the last data was submitted already
      */
     public final void queue(ByteBuffer buffer) throws IOException {
         offer(buffer, false, true);
@@ -382,11 +384,12 @@ public abstract class StreamWriterQueue {
      * @param waitForMore whether we should wait for the next submission before
      *                    waking up the consumer
      * @throws IOException if the stream was reset by peer
+     * @throws IllegalStateException if the last data was submitted already
      */
     private void offer(ByteBuffer buffer, boolean last, boolean waitForMore)
             throws IOException {
         long length = buffer.remaining();
-        long consumed, produced, max, size;
+        long consumed, produced, max;
         boolean wakeupConsumer;
         lock();
         try {
@@ -396,31 +399,23 @@ public abstract class StreamWriterQueue {
                         .formatted(streamId(), 1 - stopSending));
             }
             if (resetRequested) return;
-            size = streamSize;
+            if (streamSize >= 0) {
+                throw new IllegalStateException("Too many bytes provided");
+            }
             consumed = bytesConsumed;
             max = maxStreamData;
             produced = Math.addExact(bytesProduced, length);
-            if (size >= 0 && produced > size) {
-                // TODO: change that to a checked exception?
-                throw new IllegalStateException("too many bytes provided: "
-                        + produced + " > " + size);
-            }
             bytesProduced = produced;
             if (length > 0 || last) {
                 // allow to queue a zero-length buffer if it's the last.
                 queue.offer(buffer);
             }
             if (last) {
-                assert size == -1 || size == produced;
-                streamSize = size = produced;
+                streamSize = produced;
             }
-            if (StreamWriterQueue.class.desiredAssertionStatus()) {
-                assert consumed <= produced;
-                assert size == -1 || consumed <= size;
-                assert size == -1 || produced <= size;
-            }
+            assert consumed <= produced;
             wakeupConsumer = consumed < max && consumed < produced
-                    || size >= 0 && consumed == size && produced == size && last;
+                    || consumed == produced && last;
         } finally {
             unlock();
         }
