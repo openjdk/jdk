@@ -1130,6 +1130,7 @@ TEST_VM(os, commit_memory_or_exit) {
   EXPECT_TRUE(os::release_memory(base, size));
 }
 
+#if !defined(_AIX)
 TEST_VM(os, map_memory_to_file) {
   const char* letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const size_t size = strlen(letters) +1;
@@ -1180,3 +1181,4 @@ TEST_VM(os, map_memory_to_file_aligned) {
   EXPECT_TRUE(os::unmap_memory(result, os::vm_allocation_granularity()));
   ::close(fd);
 }
+#endif
