@@ -127,17 +127,10 @@ public non-sealed interface QuicReceiverStream extends QuicStream {
     ReceivingStreamState receivingState();
 
     /**
-     * Connects a reader to the receiver end of this stream.
-     * @param scheduler A sequential scheduler that will
-     *                  poll data out of the returned {@linkplain
-     *                  QuicStreamReader#QuicStreamReader(SequentialScheduler)
-     *                  reader}.
-     *
-     * @apiNote
-     * The caller should call {@code scheduler.runOrSchedule()} once
-     * after receiving the {@code QuicStreamReader}, since data may have arrived
-     * before the reader was connected.
-     *
+     * Connects an {@linkplain QuicStreamReader#started() unstarted} reader
+     * to the receiver end of this stream.
+     * @param scheduler A sequential scheduler that will be invoked
+     *                  when the reader is started and new data becomes available for reading
      * @return a {@code QuicStreamReader} to read data from this
      *         stream.
      * @throws IllegalStateException if a reader is already connected.
