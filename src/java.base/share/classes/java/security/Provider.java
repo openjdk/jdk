@@ -2132,7 +2132,7 @@ public abstract class Provider extends Properties {
         }
 
         /*
-         * Copy constructor used from the ServicesMap Legacy API for the
+         * Copy constructor used by the ServicesMap Legacy API for the
          * copy-on-write strategy. This constructor is invoked after every
          * update to a service on the ServicesMap.
          */
@@ -2167,7 +2167,7 @@ public abstract class Provider extends Properties {
         }
 
         /*
-         * Methods used from the ServicesMap Legacy API to update a service.
+         * Methods used by the ServicesMap Legacy API to update a service.
          */
 
         private void addAliasKey(ServiceKey aliasKey) {
