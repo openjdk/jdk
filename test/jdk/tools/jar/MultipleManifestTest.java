@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8335912
+ * @bug 8335912 8345431
  * @summary test extract jar with multpile manifest files
  * @library /test/lib
  * @modules jdk.jartool
@@ -100,7 +100,11 @@ class MultipleManifestTest {
      * @throws IOException if an error occurs
      */
     @BeforeAll
-    public void writeManifestAsFirstSecondAndFourthEntry() throws IOException {
+    public void beforeAll() throws IOException {
+        writeManifestAsFirstSecondAndFourthEntry(zip, true, true);
+    }
+
+    private void writeManifestAsFirstSecondAndFourthEntry(Path path, boolean useCen, boolean useLoc) throws IOException {
         int locPosA, locPosB, cenPos;
         System.out.printf("%n%n*****Creating Jar with the Manifest as the 1st, 2nd and 4th entry*****%n%n");
         var out = new ByteArrayOutputStream(1024);
@@ -126,14 +130,20 @@ class MultipleManifestTest {
         // ISO_8859_1 to keep the 8-bit value
         var s = new String(template, StandardCharsets.ISO_8859_1);
         // change META-INF/AANIFEST.MF to META-INF/MANIFEST.MF
-        var loc = s.indexOf("AANIFEST.MF", locPosA);
-        var cen = s.indexOf("AANIFEST.MF", cenPos);
-        template[loc] = template[cen] = (byte) 'M';
-        // change META-INF/BANIFEST.MF to META-INF/MANIFEST.MF
-        loc = s.indexOf("BANIFEST.MF", locPosB);
-        cen = s.indexOf("BANIFEST.MF", cenPos);
-        template[loc] = template[cen] = (byte) 'M';
-        Files.write(zip, template);
+        if (useCen) {
+            var cen = s.indexOf("AANIFEST.MF", cenPos);
+            template[cen] = (byte) 'M';
+            // change META-INF/BANIFEST.MF to META-INF/MANIFEST.MF
+            cen = s.indexOf("BANIFEST.MF", cenPos);
+            template[cen] = (byte) 'M';
+        }
+        if (useLoc) {
+            var loc = s.indexOf("AANIFEST.MF", locPosA);
+            template[loc] = (byte) 'M';
+            loc = s.indexOf("BANIFEST.MF", locPosB);
+            template[loc] = (byte) 'M';
+        }
+        Files.write(path, template);
     }
 
     @AfterEach
@@ -171,6 +181,45 @@ class MultipleManifestTest {
                 "  skipped: META-INF/MANIFEST.MF exists" + nl +
                 " inflated: entry2.txt" + nl;
         assertOutputContains(output);
+    }
+
+    @Test
+    public void testValidate() {
+        try {
+            jar("--validate --file " + zip.toString());
+        } catch (IOException e) {
+            var err = e.getMessage();
+            System.out.println(err);
+            Assertions.assertTrue(err.contains("Warning: More than one copy of META-INF/MANIFEST.MF is detected"));
+        }
+    }
+
+    @Test
+    public void testOnlyLocModified() throws IOException {
+        Path f = Path.of("LocHacked.jar");
+        writeManifestAsFirstSecondAndFourthEntry(f, false, true);
+        try {
+            jar("--validate --file " + f.toString());
+        } catch (IOException e) {
+            var err = e.getMessage();
+            System.out.println(err);
+            Assertions.assertTrue(err.contains("Warning: More than one copy of META-INF/MANIFEST.MF is detected"));
+            Assertions.assertTrue(err.contains("Warning: The list of entries does not match the content"));
+        }
+    }
+
+    @Test
+    public void testOnlyCenModified() throws IOException {
+        Path f = Path.of("CenHacked.jar");
+        writeManifestAsFirstSecondAndFourthEntry(f, true, false);
+        try {
+            jar("--validate --file " + f.toString());
+        } catch (IOException e) {
+            var err = e.getMessage();
+            System.out.println(err);
+            Assertions.assertTrue(err.contains("Warning: More than one copy of META-INF/MANIFEST.MF is detected"));
+            Assertions.assertTrue(err.contains("Warning: The list of entries does not match the content"));
+        }
     }
 
     private String getManifestVersion() throws IOException {

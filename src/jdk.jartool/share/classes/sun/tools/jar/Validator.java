@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.tools.jar;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.module.ModuleDescriptor;
@@ -33,6 +32,7 @@ import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Requires;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,8 +44,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
-import static java.util.jar.JarFile.MANIFEST_NAME;
 import static sun.tools.jar.Main.VERSIONS_DIR;
 import static sun.tools.jar.Main.VERSIONS_DIR_LENGTH;
 import static sun.tools.jar.Main.MODULE_INFO;
@@ -62,20 +62,55 @@ final class Validator {
     private Set<String> concealedPkgs = Collections.emptySet();
     private ModuleDescriptor md;
     private String mdName;
+    private final ZipInputStream zis;
+    private final Set<String> entryNames = new HashSet<>();
+    private final List<String> duplicateEntries = new ArrayList<>();
 
-    private Validator(Main main, ZipFile zf) {
+    private Validator(Main main, ZipFile zf, ZipInputStream zis) {
         this.main = main;
         this.zf = zf;
+        this.zis = zis;
         checkModuleDescriptor(MODULE_INFO);
     }
 
-    static boolean validate(Main main, ZipFile zf) throws IOException {
-        return new Validator(main, zf).validate();
+    static boolean validate(Main main, ZipFile zf, ZipInputStream zis) throws IOException {
+        return new Validator(main, zf, zis).validate();
+    }
+
+    private void checkDuplicates(ZipEntry e) {
+        if (!entryNames.add(e.getName())) {
+            duplicateEntries.add(e.getName());
+        }
+    }
+
+    private void checkZipInputStream() {
+        var locEntryNames = new HashSet<String>();
+        var missingEntryNames = new ArrayList<String>();
+        try {
+            ZipEntry e;
+            while ((e = zis.getNextEntry()) != null) {
+                var entryName = e.getName();
+                if (!locEntryNames.add(entryName)) {
+                    isValid = false;
+                    warn(formatMsg("warn.validator.duplicate.entry", entryName));
+                }
+                if (!entryNames.contains(entryName)) {
+                    missingEntryNames.add(entryName);
+                }
+            }
+            if (!missingEntryNames.isEmpty() || locEntryNames.size() != entryNames.size()) {
+                isValid = false;
+                warn(getMsg("warn.validator.inconsistent.content"));
+            }
+        } catch (IOException ioe) {
+           throw new InvalidJarException(ioe.getMessage());
+        }
     }
 
     private boolean validate() {
         try {
             zf.stream()
+              .peek(this::checkDuplicates)
               .filter(e -> e.getName().endsWith(".class"))
               .map(this::getFingerPrint)
               .filter(FingerPrint::isClass)    // skip any non-class entry
@@ -91,6 +126,11 @@ final class Validator {
                       else
                           validateVersioned(entries);
                   });
+            if (!duplicateEntries.isEmpty()) {
+                duplicateEntries.forEach(name -> warn(formatMsg("warn.validator.duplicate.entry", name)));
+                isValid = false;
+            }
+            checkZipInputStream();
         } catch (InvalidJarException e) {
             errorAndInvalid(e.getMessage());
         }
