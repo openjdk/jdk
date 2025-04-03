@@ -746,6 +746,8 @@ class SerializeClosure;
   template(jdk_internal_vm_JcmdVThreadCommands,    "jdk/internal/vm/JcmdVThreadCommands")                         \
   template(printScheduler_name,                    "printScheduler")                                              \
   template(printPollers_name,                      "printPollers")                                                \
+  template(dumpThreadsAndVThreads_name,            "dumpThreadsAndVThreads")                                      \
+  template(void_thread_array_signature,            "()[Ljava/lang/Thread;")                                       \
 
   /*end*/
 

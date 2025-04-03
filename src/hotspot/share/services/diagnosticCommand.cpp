@@ -48,12 +48,14 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiAgentList.hpp"
+#include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
+#include "runtime/vframe.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/diagnosticArgument.hpp"
@@ -129,6 +131,7 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpToFileDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadSchedulerDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadPollersDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadAndVThreadDumpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderHierarchyDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export, true, false));
@@ -1141,6 +1144,134 @@ void VThreadSchedulerDCmd::execute(DCmdSource source, TRAPS) {
 
 void VThreadPollersDCmd::execute(DCmdSource source, TRAPS) {
   execute_vthread_command(vmSymbols::printPollers_name(), output(), CHECK);
+}
+
+class PrintStackTraceHandShakeClosure : public HandshakeClosure {
+private:
+  outputStream* _output;
+public:
+  PrintStackTraceHandShakeClosure(outputStream* output)
+    : HandshakeClosure("PrintStackTraceHandShakeClosure"),
+      _output(output) {}
+
+  void do_thread(Thread* t) {
+    ResourceMark rm;
+    JavaThread* java_thread = JavaThread::cast(t);
+    java_thread->print_on(_output, true);
+    if (!java_thread->has_last_Java_frame()) {
+      return;
+    }
+    java_thread->print_stack_on(_output);
+    if (java_thread->is_vthread_mounted()) {
+      oop vthread = java_thread->vthread();
+      oop name = java_lang_Thread::name(vthread);
+      const char* vthread_name = "Unknown Virtual Thread";
+      if (name != nullptr) {
+        vthread_name = java_lang_String::as_utf8_string(name);
+      }
+      _output->print_cr("   \"%s\" #" INT64_FORMAT " Mounted virtual thread on \"%s\" #" INT64_FORMAT, vthread_name, java_lang_Thread::thread_id(vthread), java_thread->name(), java_lang_Thread::thread_id(java_thread->threadObj()));
+      java_thread->print_vthread_stack_on(_output);
+    }
+  }
+};
+
+void ThreadAndVThreadDumpDCmd::execute(DCmdSource source, TRAPS) {
+  // java call `ThreadDumper.dumpThreadsAndVThreads`
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  Symbol* sym = vmSymbols::jdk_internal_vm_ThreadDumper();
+  Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK);
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output());
+    output()->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+  // Keep the state of threads unchanged
+  ThreadsListHandle tlh(JavaThread::current());
+  JvmtiVTMSTransitionDisabler disabler; // cannot hold locks such as Threads_lock, otherwise it may encounter dead lock
+
+  char buf[32];
+  output()->print_raw_cr(os::local_time_string(buf, sizeof(buf)));
+
+  output()->print_cr("Full thread dump %s (%s %s):",
+                VM_Version::vm_name(),
+                VM_Version::vm_release(),
+                VM_Version::vm_info_string());
+  output()->cr();
+  ThreadsSMRSupport::print_info_on(output());
+  output()->cr();
+
+  // invoke `ThreadDumper.dumpThreadsAndVThreads` to get list of all threads and vthreads
+  JavaValue result(T_ARRAY);
+  JavaCallArguments args;
+  JavaCalls::call_static(&result,
+                          k,
+                          vmSymbols::dumpThreadsAndVThreads_name(),
+                          vmSymbols::void_thread_array_signature(),
+                          &args,
+                          THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output());
+    output()->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+  
+  // Thread[]
+  objArrayOop result_oop = (objArrayOop) result.get_oop();
+
+  if (result_oop->length() == 0) {
+    output()->print_cr("No Thread needs printing");
+    return;
+  }
+  
+  for(int i = 0; i < result_oop->length(); i++) {
+    oop thread_oop = result_oop->obj_at(i);
+    if (thread_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
+      oop name = java_lang_Thread::name(thread_oop);
+      ResourceMark mark;
+      const char* vthread_name = "Unknown Virtual Thread";
+      if (name != nullptr) {
+        vthread_name = java_lang_String::as_utf8_string(name);
+      }
+      oop cont = java_lang_VirtualThread::continuation(thread_oop);
+      oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_oop);
+      if (carrier_thread != nullptr) {
+        JavaThread* java_thread = java_lang_Thread::thread(carrier_thread);
+        if (Continuation::is_continuation_mounted(java_thread, cont)) {
+          output()->print_cr("\"%s\" #" INT64_FORMAT " Mounted virtual thread on java thread \"%s\" #" INT64_FORMAT , vthread_name, java_lang_Thread::thread_id(thread_oop), java_thread->name(), java_lang_Thread::thread_id(carrier_thread));
+          output()->cr();
+          continue; // will print by its java thread
+        }
+      }
+
+      output()->print_cr("\"%s\" #" INT64_FORMAT " Unmounted virtual thread", vthread_name, java_lang_Thread::thread_id(thread_oop));
+      javaVFrame* jvf = nullptr;
+      vframeStream vfs(cont);
+      jvf = vfs.at_end() ? nullptr : vfs.asJavaVFrame();
+      int count = 0;
+      for ( ; jvf != nullptr; jvf = jvf->java_sender()) {
+        java_lang_Throwable::print_stack_element(output(), jvf->method(), jvf->bci());
+        // Print out lock information
+        if (JavaMonitorsInStackTrace) {
+          jvf->print_unmounted_vthread_lock_info_on(output(), count, thread_oop);
+        }
+        count++;
+      }
+
+    } else {
+      JavaThread * java_thread = java_lang_Thread::thread(thread_oop);
+      // handshake to reach a safepoint
+      if (java_thread) { // java_thread may be nullptr if the JavaThread(java object) has not yet associated to a JavaThread*
+        PrintStackTraceHandShakeClosure cl(output());
+        Handshake::execute(&cl, &tlh, java_thread);
+      }
+    }
+    output()->cr();
+  }
 }
 
 CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* output, bool heap) :

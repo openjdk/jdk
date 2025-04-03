@@ -204,6 +204,12 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       oop obj = thread()->current_park_blocker();
       Klass* k = obj->klass();
       st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", p2i(obj), k->external_name());
+    } else if (thread()->is_vthread_mounted()) {
+      oop park_blocker = java_lang_Thread::park_blocker(thread()->vthread());
+      if (park_blocker != nullptr) {
+        Klass* k = park_blocker->klass();
+        st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", p2i(park_blocker), k->external_name());
+      }
     }
     else if (thread()->osthread()->get_state() == OBJECT_WAIT) {
       // We are waiting on an Object monitor but Object.wait() isn't the
@@ -266,6 +272,67 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
     }
   }
 }
+
+void javaVFrame::print_unmounted_vthread_lock_info_on(outputStream* st, int frame_count, oop vthread) {
+  Thread* current = Thread::current();
+  ResourceMark rm(current);
+  HandleMark hm(current);
+
+  if (frame_count == 0) {
+    // virtual thread's current_park_blocker()
+    oop park_blocker = java_lang_Thread::park_blocker(vthread);
+    if (park_blocker != nullptr) {
+      Klass* k = park_blocker->klass();
+      st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", p2i(park_blocker), k->external_name());
+    }
+
+  }
+
+  // Print out all monitors that we have locked, or are trying to lock.
+  GrowableArray<MonitorInfo*>* mons = monitors();
+  if (!mons->is_empty()) {
+    bool found_first_monitor = false;
+    for (int index = (mons->length()-1); index >= 0; index--) {
+      MonitorInfo* monitor = mons->at(index);
+      if (monitor->eliminated() && is_compiled_frame()) { // Eliminated in compiled code
+        if (monitor->owner_is_scalar_replaced()) {
+          Klass* k = java_lang_Class::as_Klass(monitor->owner_klass());
+          st->print_cr("\t- eliminated <owner is scalar replaced> (a %s)", k->external_name());
+        } else {
+          Handle obj(current, monitor->owner());
+          if (obj() != nullptr) {
+            print_locked_object_class_name(st, obj, "eliminated");
+          }
+        }
+        continue;
+      }
+      if (monitor->owner() != nullptr) {
+        // the monitor is associated with an object, i.e., it is locked
+
+        const char *lock_state = "locked"; // assume we have the monitor locked
+        // coroutines which yielded when entering synchronized or in object.wait should be in the state of `waiting to lock`
+        if (!found_first_monitor) {
+          // If we haven't found an owned monitor before, then we need to see
+          // if we have completed the lock or if we are blocked trying to acquire (/wait for) it.
+          // Only an inflated monitor that is first on the monitor list can block us on a monitor enter or a monitor wait.
+          markWord mark = monitor->owner()->mark();
+          // The first stage of async deflation does not affect any field
+          // used by this comparison so the ObjectMonitor* is usable here.
+          if (mark.has_monitor() &&
+              ( // we are not the owner of this monitor, so this vthread is waiting for the monitor
+                (int64_t)mark.monitor()->owner() != java_lang_Thread::thread_id(vthread))
+              ) {
+            lock_state = "waiting to lock";
+          }
+        }
+        print_locked_object_class_name(st, Handle(current, monitor->owner()), lock_state);
+
+        found_first_monitor = true;
+      }
+    }
+  }
+}
+
 
 // ------------- interpretedVFrame --------------
 

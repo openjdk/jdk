@@ -367,4 +367,13 @@ public class ThreadDumper {
             return -1L;
         }
     }
+
+    public static Thread[] dumpThreadsAndVThreads() {
+        List<Thread> allThreadList = new ArrayList<>();
+        List<ThreadContainer> containers = allContainers();
+        containers.forEach(container -> {
+            allThreadList.addAll(container.threads().toList());
+        });
+        return allThreadList.toArray(new Thread[0]);
+    }
 }

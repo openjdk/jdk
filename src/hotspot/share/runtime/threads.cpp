@@ -1362,7 +1362,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
       } else {
         p->print_stack_on(st);
         if (p->is_vthread_mounted()) {
-          st->print_cr("   Mounted virtual thread #" INT64_FORMAT, java_lang_Thread::thread_id(p->vthread()));
+          st->print_cr("   Mounted virtual thread \"%s\" #" INT64_FORMAT, JavaThread::name_for(p->vthread()), java_lang_Thread::thread_id(p->vthread()));
           p->print_vthread_stack_on(st);
         }
       }

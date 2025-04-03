@@ -803,6 +803,21 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class ThreadAndVThreadDumpDCmd : public DCmdWithParser {
+  public:
+    ThreadAndVThreadDumpDCmd(outputStream *output, bool heap) : DCmdWithParser(output, heap) {}
+    static const char *name() {
+      return "ThreadAndVThread.dump";
+    }
+    static const char *description() {
+      return "Dump all threads and virtual threads, with stack traces.";
+    }
+    static const char* impact() {
+      return "Medium: Depends on the number of threads and virtual threads.";
+    }
+    virtual void execute(DCmdSource source, TRAPS);
+  };
+
 class CompilationMemoryStatisticDCmd: public DCmdWithParser {
 protected:
   DCmdArgument<bool> _human_readable;

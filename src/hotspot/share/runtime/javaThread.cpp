@@ -1543,6 +1543,7 @@ void JavaThread::print_on(outputStream *st, bool print_extended_info) const {
   st->print_cr("[" INTPTR_FORMAT "]", (intptr_t)last_Java_sp() & ~right_n_bits(12));
   if (thread_oop != nullptr) {
     if (is_vthread_mounted()) {
+      st->print_cr("   java.lang.Thread.State: %s", java_lang_Thread::thread_status_name(thread_oop));
       st->print_cr("   Carrying virtual thread #" INT64_FORMAT, java_lang_Thread::thread_id(vthread()));
     } else {
       st->print_cr("   java.lang.Thread.State: %s", java_lang_Thread::thread_status_name(thread_oop));
