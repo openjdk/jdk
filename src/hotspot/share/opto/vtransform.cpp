@@ -227,7 +227,8 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
     }
 #endif
 
-    ResourceMark rm;
+    // TODO: ResourceMark, collides with resource allocation in PhaseIdealLoop::set_idom
+    //ResourceMark rm;
     VectorSet visited;
 
     const GrowableArray<VTransformNode*>& schedule = _graph.get_schedule();
@@ -261,6 +262,9 @@ Node* make_a_plus_b_leq_c(Node* a, jint b, Node* c, PhaseIdealLoop* phase) {
   Node* a_plus_b = new AddLNode(a, b_con);
   Node* cmp = CmpNode::make(a_plus_b, c, T_INT, true);
   Node* bol = new BoolNode(cmp, BoolTest::le);
+  phase->register_new_node_with_ctrl_of(a_plus_b, a);
+  phase->register_new_node_with_ctrl_of(cmp, a);
+  phase->register_new_node_with_ctrl_of(bol, a);
   return bol;
 }
 
@@ -414,8 +418,14 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
 
     Node* c1_or_c2 = new OrINode(condition1, condition2);
     tty->print("c1_or_c2 "); c1_or_c2->dump();
+    Node* zero = _vloop.phase()->igvn().intcon(0);
+    Node* cmp = CmpNode::make(c1_or_c2, zero, T_INT);
+    BoolNode* bol = new BoolNode(cmp, BoolTest::ne);
+    _vloop.phase()->register_new_node_with_ctrl_of(c1_or_c2, init);
+    _vloop.phase()->register_new_node_with_ctrl_of(cmp, init);
+    _vloop.phase()->register_new_node_with_ctrl_of(bol, init);
 
-    assert(false, "TODO");
+    add_speculative_check(bol);
   } else {
     // TODO: check if iv_stride >=, ...
     assert(false, "different slopes not implemented yet");

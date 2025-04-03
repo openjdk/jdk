@@ -470,6 +470,14 @@ Node* VPointer::make_pointer_expression(Node* iv_value) const {
   PhaseIdealLoop* phase = _vloop.phase();
   PhaseIterGVN& igvn = phase->igvn();
   Node* iv = _vloop.iv();
+  Node* ctrl = phase->get_ctrl(iv_value);
+
+  auto maybe_add = [&] (Node* n1, Node* n2, BasicType bt) {
+    if (n1 == nullptr) { return n2; }
+    Node* add = AddNode::make(n1, n2, bt);
+    phase->register_new_node(add, ctrl);
+    return add;
+  };
 
   tty->print_cr("VPointer::make_pointer_expression");
   tty->print("iv_value "); iv_value->dump();
@@ -488,8 +496,9 @@ Node* VPointer::make_pointer_expression(Node* iv_value) const {
       Node* scaleL = igvn.longcon(s.scaleL().value());
       Node* variable = (s.variable() == iv) ? iv_value : s.variable();
       node = new MulLNode(scaleL, variable);
+      phase->register_new_node(node, ctrl);
     }
-    expression = (expression == nullptr) ? node : new AddLNode(expression, node);
+    expression = maybe_add(expression, node, T_LONG);
   });
 
   int max_int_group = mem_pointer().max_int_group();
@@ -503,12 +512,14 @@ Node* VPointer::make_pointer_expression(Node* iv_value) const {
         Node* scaleI = igvn.intcon(s.scaleI().value());
         Node* variable = (s.variable() == iv) ? iv_value : s.variable();
         node = new MulINode(scaleI, variable);
+        phase->register_new_node(node, ctrl);
       }
-      int_expression = (int_expression == nullptr) ? node : new AddINode(int_expression, node);
+      int_expression = maybe_add(int_expression, node, T_INT);
     });
     assert(int_expression != nullptr, "no empty int group");
     int_expression = new ConvI2LNode(int_expression);
-    expression = (expression == nullptr) ? int_expression : new AddLNode(expression, int_expression);
+    phase->register_new_node(int_expression, ctrl);
+    expression = maybe_add(expression, int_expression, T_LONG);
   }
 
   return expression;
