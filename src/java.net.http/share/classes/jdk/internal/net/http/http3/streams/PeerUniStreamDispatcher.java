@@ -24,6 +24,7 @@
  */
 package jdk.internal.net.http.http3.streams;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -211,6 +212,19 @@ public abstract class PeerUniStreamDispatcher {
                     unknownStreamType(code, stream);
                 }
             }
+        } catch (IOException io) {
+            if (stream.receivingState().isReset() || stream.receivingState().isTerminal()) {
+                if (firstLong == -1) {
+                    debug().log("stream %s %s before stream type received, cannot dispatch!",
+                            stream.streamId(), stream.receivingState());
+                    // RFC 9114: https://www.rfc-editor.org/rfc/rfc9114.html#section-6.2-10
+                    // > A receiver MUST tolerate unidirectional streams being closed or reset
+                    // > prior to the reception of the unidirectional stream header
+                    abandon();
+                    return;
+                }
+            }
+            abort(Http3Error.H3_INTERNAL_ERROR, io);
         } catch (Throwable throwable) {
             // We shouldn't come here, so if we do, it's closer to an
             // internal error than a stream creation error.
