@@ -24,6 +24,7 @@
 
 #include "code/codeBlob.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/java.hpp"
@@ -120,12 +121,16 @@ void AbstractICache::invalidate_range(address start, int nbytes) {
 
 // For init.cpp
 void icache_init() {
-  // Initial stub that is settings-independent, and would be used until
-  // we can generate a final stub.
+  // Initial stub that runs with most basic mechanism, until CPU feature
+  // detection code figures out a better one, or terminates.
+#ifdef X86
+  IntFlagSetting fs(ICacheFlush, 1);
+#endif
   ICache::initialize(1);
 }
 
 void icache_init2() {
-  // Final stub that can select a flush mechanism.
+  // Final stub that uses the requested flush mechanism. Happens after
+  // CPU feature detection knows which mechanism to use.
   ICache::initialize(2);
 }
