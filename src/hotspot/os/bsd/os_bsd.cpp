@@ -1505,7 +1505,6 @@ void os::jvm_path(char *buf, jint buflen) {
   // Look for JAVA_HOME in the environment.
   char* java_home_var = ::getenv("JAVA_HOME");
   if (java_home_var != nullptr && java_home_var[0] != 0) {
-    char* jrelib_p;
     int len;
 
     // Check the current module name "libjvm"
@@ -1520,17 +1519,17 @@ void os::jvm_path(char *buf, jint buflen) {
     // modules image doesn't have "jre" subdirectory
     len = strlen(buf);
     assert(len < buflen, "Ran out of buffer space");
-    jrelib_p = buf + len;
+    char* lib_p = buf + len;
 
     // Add the appropriate library subdir
-    snprintf(jrelib_p, buflen-len, "/lib");
+    snprintf(lib_p, buflen-len, "/lib");
 
     // Add the appropriate JVM variant subdir
     len = strlen(buf);
-    jrelib_p = buf + len;
-    snprintf(jrelib_p, buflen-len, "/%s", Abstract_VM_Version::vm_variant());
+    lib_p = buf + len;
+    snprintf(lib_p, buflen-len, "/%s", Abstract_VM_Version::vm_variant());
     if (0 != access(buf, F_OK)) {
-      snprintf(jrelib_p, buflen-len, "%s", "");
+      snprintf(lib_p, buflen-len, "%s", "");
     }
 
     // If the path exists within JAVA_HOME, add the JVM library name

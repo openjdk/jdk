@@ -2775,7 +2775,6 @@ void os::jvm_path(char *buf, jint buflen) {
   // Look for JAVA_HOME in the environment.
   char* java_home_var = ::getenv("JAVA_HOME");
   if (java_home_var != nullptr && java_home_var[0] != 0) {
-    char* jrelib_p;
     int len;
 
     // Check the current module name "libjvm.so".
@@ -2793,8 +2792,8 @@ void os::jvm_path(char *buf, jint buflen) {
     // modules image doesn't have "jre" subdirectory
     len = checked_cast<int>(strlen(buf));
     assert(len < buflen, "Ran out of buffer room");
-    jrelib_p = buf + len;
-    snprintf(jrelib_p, buflen-len, "/lib");
+    char* lib_p = buf + len;
+    snprintf(lib_p, buflen-len, "/lib");
 
     if (0 == access(buf, F_OK)) {
       // Use current module name "libjvm.so"
