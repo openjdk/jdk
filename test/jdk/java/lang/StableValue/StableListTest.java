@@ -24,8 +24,8 @@
 /* @test
  * @summary Basic tests for LazyList methods
  * @modules java.base/jdk.internal.lang.stable
- * @compile --enable-preview -source ${jdk.version} StableListTest.java
- * @run junit/othervm --enable-preview StableListTest
+ * @enablePreview
+ * @run junit StableListTest
  */
 
 import jdk.internal.lang.stable.StableUtil;
@@ -35,6 +35,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -109,10 +110,16 @@ final class StableListTest {
 
     @Test
     void toArrayWithArrayLarger() {
-        Integer[] arr = new Integer[SIZE];
-        arr[INDEX] = 1;
-        assertSame(arr, StableValue.list(INDEX, IDENTITY).toArray(arr));
-        assertNull(arr[INDEX]);
+        Integer[] actual = new Integer[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            actual[INDEX] = 100 + i;
+        }
+        var list = StableValue.list(INDEX, IDENTITY);
+        assertSame(actual, list.toArray(actual));
+        Integer[] expected = IntStream.range(0, SIZE)
+                .mapToObj(i -> i < INDEX ? i : null)
+                .toArray(Integer[]::new);
+        assertArrayEquals(expected, actual);
     }
 
     @Test
@@ -280,7 +287,8 @@ final class StableListTest {
         AtomicReference<IntFunction<Integer>> ref = new AtomicReference<>();
         var lazy = StableValue.list(SIZE, i -> ref.get().apply(i));
         ref.set(lazy::get);
-        assertThrows(IllegalStateException.class, () -> lazy.get(INDEX));
+        var x = assertThrows(IllegalStateException.class, () -> lazy.get(INDEX));
+        assertEquals("Recursive initialization is not supported", x.getMessage());
     }
 
     // Immutability

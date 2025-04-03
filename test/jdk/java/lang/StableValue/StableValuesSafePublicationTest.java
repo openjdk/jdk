@@ -24,8 +24,8 @@
 /* @test
  * @summary Basic tests for making sure StableValue publishes values safely
  * @modules java.base/jdk.internal.misc
- * @compile --enable-preview -source ${jdk.version} StableValuesSafePublicationTest.java
- * @run junit/othervm --enable-preview StableValuesSafePublicationTest
+ * @enablePreview
+ * @run junit StableValuesSafePublicationTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -60,12 +60,10 @@ final class StableValuesSafePublicationTest {
     static final class Holder {
         // These are non-final fields but should be seen
         // fully initialized thanks to the HB properties of StableValue.
-        int a;
-        int b;
+        int a, b, c, d, e;
 
         Holder() {
-            a = 1;
-            b = 1;
+            a = b = c = d = e = 1;
         }
     }
 
@@ -84,7 +82,10 @@ final class StableValuesSafePublicationTest {
                 while ((h = s.orElse(null)) == null) {}
                 int a = h.a;
                 int b = h.b;
-                observations[i] = a + (b << 1);
+                int c = h.c;
+                int d = h.d;
+                int e = h.e;
+                observations[i] = a + (b << 1) + (c << 2) + (c << 3) + (d << 4) + (e << 5);
             }
         }
     }
@@ -129,28 +130,26 @@ final class StableValuesSafePublicationTest {
         join(consumers, producerThread);
         join(consumers, consumersThreads.toArray(Thread[]::new));
 
-        int[] histogram = new int[4];
+        int[] histogram = new int[64];
         for (Consumer consumer : consumers) {
             for (int i = 0; i < SIZE; i++) {
                 histogram[consumer.observations[i]]++;
             }
         }
 
-        // a = 0, b = 0 : index 0
-        assertEquals(0, histogram[0]);
-        // a = 1, b = 0 : index 1
-        assertEquals(0, histogram[1]);
-        // a = 0, b = 1 : index 2
-        assertEquals(0, histogram[2]);
-        // a = 1, b = 1 : index 3
+        // unless a = 1, ..., e = 1, zero observations should be seen
+        for (int i = 0; i < 63; i++) {
+            assertEquals(0, histogram[i]);
+        }
+        // a = 1, ..., e = 1 : index 2^5-1 = 63
         // All observations should end up in this bucket
-        assertEquals(THREADS * SIZE, histogram[3]);
+        assertEquals(THREADS * SIZE, histogram[63]);
     }
 
     static void join(List<Consumer> consumers, Thread... threads) {
         try {
             for (Thread t:threads) {
-                long deadline = System.currentTimeMillis()+TimeUnit.MINUTES.toMillis(1);
+                long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(1);
                 while (t.isAlive()) {
                     t.join(TimeUnit.SECONDS.toMillis(10));
                     if (t.isAlive()) {
@@ -162,7 +161,7 @@ final class StableValuesSafePublicationTest {
                             System.err.println("Consumer " + i + ": " + consumers.get(i).i);
                         }
                     }
-                    if (System.currentTimeMillis() > deadline) {
+                    if (System.nanoTime() > deadline) {
                         long nonNulls = CompletableFuture.supplyAsync(() ->
                                 Stream.of(STABLES)
                                         .map(s -> s.orElse(null))

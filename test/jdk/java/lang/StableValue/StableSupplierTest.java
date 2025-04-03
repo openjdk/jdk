@@ -23,8 +23,8 @@
 
 /* @test
  * @summary Basic tests for StableSupplierTest methods
- * @compile --enable-preview -source ${jdk.version} StableSupplierTest.java
- * @run junit/othervm --enable-preview StableSupplierTest
+ * @enablePreview
+ * @run junit StableSupplierTest
  */
 
 import org.junit.jupiter.api.Test;

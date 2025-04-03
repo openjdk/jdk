@@ -23,8 +23,8 @@
 
 /* @test
  * @summary Basic tests for StableFunctionTest methods
- * @compile --enable-preview -source ${jdk.version} StableFunctionTest.java
- * @run junit/othervm --enable-preview StableFunctionTest
+ * @enablePreview
+ * @run junit StableFunctionTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -83,7 +83,9 @@ final class StableFunctionTest {
     @MethodSource("nonEmptySets")
     void basic(Set<Value> inputs) {
         basic(inputs, MAPPER);
+        toStringTest(inputs, MAPPER);
         basic(inputs, _ -> null);
+        toStringTest(inputs, _ -> null);
     }
 
     void basic(Set<Value> inputs, Function<Value, Integer> mapper) {
@@ -93,19 +95,25 @@ final class StableFunctionTest {
         assertEquals(1, cif.cnt());
         assertEquals(mapper.apply(Value.FORTY_TWO), cached.apply(Value.FORTY_TWO));
         assertEquals(1, cif.cnt());
-        assertTrue(cached.toString().startsWith("{"), cached.toString());
-        // Key order is unspecified
-        assertTrue(cached.toString().contains(Value.THIRTEEN + "=.unset"));
-        assertTrue(cached.toString().contains(Value.FORTY_TWO + "=" + mapper.apply(Value.FORTY_TWO)), cached.toString());
-        assertTrue(cached.toString().endsWith("}"));
-        // One between the values
-        assertEquals(1L, cached.toString().chars().filter(ch -> ch == ',').count(), cached.toString());
         var x0 = assertThrows(IllegalArgumentException.class, () -> cached.apply(Value.ILLEGAL_BEFORE));
-        assertTrue(x0.getMessage().contains("ILLEGAL"));
+        assertEquals("Input not allowed: ILLEGAL_BEFORE", x0.getMessage());
         var x1 = assertThrows(IllegalArgumentException.class, () -> cached.apply(Value.ILLEGAL_BETWEEN));
-        assertTrue(x1.getMessage().contains("ILLEGAL"));
+        assertEquals("Input not allowed: ILLEGAL_BETWEEN", x1.getMessage());
         var x2 = assertThrows(IllegalArgumentException.class, () -> cached.apply(Value.ILLEGAL_AFTER));
-        assertTrue(x2.getMessage().contains("ILLEGAL"));
+        assertEquals("Input not allowed: ILLEGAL_AFTER", x2.getMessage());
+    }
+
+    void toStringTest(Set<Value> inputs, Function<Value, Integer> mapper) {
+        var cached = StableValue.function(inputs, mapper);
+        cached.apply(Value.FORTY_TWO);
+        var toString = cached.toString();
+        assertTrue(toString.startsWith("{"));
+        // Key order is unspecified
+        assertTrue(toString.contains(Value.THIRTEEN + "=.unset"));
+        assertTrue(toString.contains(Value.FORTY_TWO + "=" + mapper.apply(Value.FORTY_TWO)));
+        assertTrue(toString.endsWith("}"));
+        // One between the values
+        assertEquals(1L, toString.chars().filter(ch -> ch == ',').count());
     }
 
     @ParameterizedTest
@@ -113,7 +121,7 @@ final class StableFunctionTest {
     void empty(Set<Value> inputs) {
         Function<Value, Integer> f0 = StableValue.function(inputs, Value::asInt);
         Function<Value, Integer> f1 = StableValue.function(inputs, Value::asInt);
-        assertTrue(f0.toString().contains("{}"));
+        assertEquals("{}", f0.toString());
         assertThrows(NullPointerException.class, () -> f0.apply(null));
         assertNotEquals(f0, f1);
         assertNotEquals(null, f0);
@@ -130,11 +138,12 @@ final class StableFunctionTest {
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> cached.apply(Value.FORTY_TWO));
         assertEquals(2, cif.cnt());
-        assertTrue(cached.toString().startsWith("{"));
+        var toString = cached.toString();
+        assertTrue(toString.startsWith("{"));
         // Key order is unspecified
-        assertTrue(cached.toString().contains(Value.THIRTEEN + "=.unset"));
-        assertTrue(cached.toString().contains(Value.FORTY_TWO + "=.unset"), cached.toString());
-        assertTrue(cached.toString().endsWith("}"));
+        assertTrue(toString.contains(Value.THIRTEEN + "=.unset"));
+        assertTrue(toString.contains(Value.FORTY_TWO + "=.unset"));
+        assertTrue(toString.endsWith("}"));
     }
 
     @ParameterizedTest
@@ -144,8 +153,8 @@ final class StableFunctionTest {
         Function<Value, Function<?, ?>> cached = StableValue.function(inputs, _ -> ref.get());
         ref.set(cached);
         cached.apply(Value.FORTY_TWO);
-        String toString = cached.toString();
-        assertTrue(toString.contains("(this StableFunction)"), toString);
+        var toString = cached.toString();
+        assertTrue(toString.contains("FORTY_TWO=(this StableFunction)"), toString);
         assertDoesNotThrow(cached::hashCode);
         assertDoesNotThrow((() -> cached.equals(cached)));
     }

@@ -23,8 +23,8 @@
 
 /* @test
  * @summary Basic tests for StableIntFunctionTest methods
- * @compile --enable-preview -source ${jdk.version} StableIntFunctionTest.java
- * @run junit/othervm --enable-preview StableIntFunctionTest
+ * @enablePreview
+ * @run junit StableIntFunctionTest
  */
 
 import org.junit.jupiter.api.Test;

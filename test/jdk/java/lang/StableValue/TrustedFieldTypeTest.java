@@ -26,9 +26,9 @@
  * @modules jdk.unsupported/sun.misc
  * @modules java.base/jdk.internal.lang.stable
  * @modules java.base/jdk.internal.misc
- * @compile --enable-preview -source ${jdk.version} TrustedFieldTypeTest.java
- * @run junit/othervm --enable-preview --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED -Dopens=true TrustedFieldTypeTest
- * @run junit/othervm --enable-preview -Dopens=false TrustedFieldTypeTest
+ * @enablePreview
+ * @run junit/othervm --add-opens java.base/jdk.internal.lang.stable=ALL-UNNAMED -Dopens=true TrustedFieldTypeTest
+ * @run junit/othervm -Dopens=false TrustedFieldTypeTest
  */
 
 import jdk.internal.lang.stable.StableValueImpl;
@@ -110,14 +110,10 @@ final class TrustedFieldTypeTest {
             StableValue<Integer> stableValue = StableValue.of();
             stableValue.trySet(42);
 
-//            assertThrows(IllegalAccessException.class, () -> {
             Object oldData = field.get(stableValue);
             assertEquals(42, oldData);
-//            });
 
-//            assertThrows(IllegalAccessException.class, () -> {
             field.set(stableValue, 13);
-//            });
             assertEquals(13, stableValue.orElseThrow());
         } else {
             Field field = StableValueImpl.class.getDeclaredField("content");

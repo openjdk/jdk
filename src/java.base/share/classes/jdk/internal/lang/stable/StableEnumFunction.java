@@ -59,7 +59,7 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
     @ForceInline
     @Override
     public R apply(E value) {
-        if (!member.test(value.ordinal())) {
+        if (!member.test(value.ordinal())) { // Implicit null-check of value
             throw new IllegalArgumentException("Input not allowed: " + value);
         }
         final int index = value.ordinal() - firstOrdinal;
@@ -86,8 +86,8 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
 
     @Override
     public String toString() {
-        final Collection<Map.Entry<E, StableValueImpl<R>>> entries = new ArrayList<>();
         final E[] enumElements = enumType.getEnumConstants();
+        final Collection<Map.Entry<E, StableValueImpl<R>>> entries = new ArrayList<>(enumElements.length);
         int ordinal = firstOrdinal;
         for (int i = 0; i < delegates.length; i++, ordinal++) {
             if (member.test(ordinal)) {

@@ -91,7 +91,9 @@ import java.util.function.Supplier;
  * }
  *}
  * <p>
- * Note that the content can only be set at most once.
+ * If {@code getLogger()} is called from several threads, several instances of
+ * {@code Logger} might be created. However, the content can only be set at most once
+ * meaning one "winner" is picked among the many loggers.
  * In the example above, the {@code logger} field is declared {@code static final} which
  * is a prerequisite for being treated as a constant by the JVM.
  *
@@ -127,7 +129,7 @@ import java.util.function.Supplier;
  * before it is used.
  * <p>
  * Furthermore, {@code orElseSet()} guarantees that the supplier provided is
- * evaluated only once, even when {@code logger.orElseSet()} is invoked concurrently.
+ * evaluated at most once, even when {@code logger.orElseSet()} is invoked concurrently.
  * This property is crucial as evaluation of the supplier may have side effects,
  * e.g., the call above to {@code Logger.create()} may result in storage resources
  * being prepared.
@@ -159,7 +161,7 @@ import java.util.function.Supplier;
  * <p>
  * A <em>stable int function</em> is a function that takes an {@code int} parameter and
  * uses it to compute a result that is then cached by the backing stable value storage
- * for that parameter value. A stable int function is created via the
+ * for that parameter value. A stable {@link IntFunction} is created via the
  * {@linkplain StableValue#intFunction(int, IntFunction) StableValue.intFunction()}
  * factory. Upon creation, the input range (i.e. {@code [0, size)}) is specified together
  * with an original {@linkplain IntFunction} which is invoked at most once per input value.
@@ -169,7 +171,7 @@ import java.util.function.Supplier;
  * {@snippet lang = java:
  * public final class SqrtUtil {
  *
- *      private SqrtUtil(){}
+ *      private SqrtUtil() {}
  *
  *      private static final int CACHED_SIZE = 10;
  *
@@ -204,7 +206,7 @@ import java.util.function.Supplier;
  * {@snippet lang = java:
  * public final class SqrtUtil {
  *
- *     private SqrtUtil(){}
+ *     private SqrtUtil() {}
  *
  *     private static final Set<Integer> CACHED_KEYS = Set.of(1, 2, 4, 8, 16, 32);
  *
@@ -239,7 +241,7 @@ import java.util.function.Supplier;
  *
  *      private static final int CACHED_SIZE = 10;
  *
- *     private SqrtUtil(){}
+ *     private SqrtUtil() {}
  *
  *     private static final List<Double> SQRT =
  *             // @link substring="list" target="#list(int,IntFunction)" :
@@ -268,13 +270,13 @@ import java.util.function.Supplier;
  * {@snippet lang = java:
  * public final class SqrtUtil {
  *
- *     private SqrtUtil(){}
+ *     private SqrtUtil() {}
  *
  *     private static final Set<Integer> CACHED_KEYS = Set.of(1, 2, 4, 8, 16, 32);
  *
  *     private static final Map<Integer, Double> SQRT =
  *             // @link substring="map" target="#map(Set,Function)" :
- *             StableValue.map(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
+ *             StableValue.map(CACHED_KEYS, StrictMath::sqrt);
  *
  *     public static double sqrt(int a) {
  *          if (CACHED_KEYS.contains(a)) {
@@ -293,7 +295,7 @@ import java.util.function.Supplier;
  *}
  *
  * <h2 id="composition">Composing stable values</h2>
- * A stable value can depend on other stable values, thereby creating a dependency graph
+ * A stable value can depend on other stable values, forming a dependency graph
  * that can be lazily computed but where access to individual elements still can be
  * constant-folded. In the following example, a single {@code Foo} and a {@code Bar}
  * instance (that is dependent on the {@code Foo} instance) are lazily created, both of
@@ -301,7 +303,7 @@ import java.util.function.Supplier;
  * {@snippet lang = java:
  * public final class DependencyUtil {
  *
- *     private DependencyUtil(){}
+ *     private DependencyUtil() {}
  *
  *     public static class Foo {
  *          // ...
@@ -350,7 +352,7 @@ import java.util.function.Supplier;
  *
  * }
  *}
- * Both {@code FIB} and {@code Fibonacci::fib} recurses into each other. Because the
+ * Both {@code FIB} and {@code Fibonacci::fib} recurse into each other. Because the
  * stable int function {@code FIB} caches intermediate results, the initial
  * computational complexity is reduced from exponential to linear compared to a
  * traditional non-caching recursive fibonacci method. Once computed, the VM is free to
@@ -370,7 +372,7 @@ import java.util.function.Supplier;
  *}
  *
  * If there are circular dependencies in a dependency graph, a stable value will
- * eventually throw a {@linkplain StackOverflowError} upon referencing elements in
+ * eventually throw an {@linkplain IllegalStateException} upon referencing elements in
  * a circularity.
  *
  * <h2 id="thread-safety">Thread Safety</h2>
@@ -423,7 +425,7 @@ import java.util.function.Supplier;
  *           of unintended memory leaks. A stable value's content is
  *           {@linkplain java.lang.ref##reachability strongly reachable}. Clients are
  *           advised that {@linkplain java.lang.ref##reachability reachable} stable values
- *           will hold their set content perpetually.
+ *           will hold their set content until the stable value itself is collected.
  *           A {@linkplain StableValue} that has a type parameter {@code T} that is an array
  *           type (of arbitrary rank) will only allow the JVM to treat the <em>array reference</em>
  *           as a stable value but <em>not its components</em>. Clients can instead use
@@ -590,27 +592,27 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new stable int function}
+     * {@return a new stable {@linkplain IntFunction}}
      * <p>
-     * The returned {@link IntFunction int function} is a caching int function that,
-     * for each allowed input, records the values of the provided {@code original}
-     * int function upon being first accessed via the returned int function's
+     * The returned function is a caching function that, for each allowed {@code int}
+     * input, records the values of the provided {@code original}
+     * function upon being first accessed via the returned function's
      * {@linkplain IntFunction#apply(int) apply()} method.
      * <p>
-     * The provided {@code original} int function is guaranteed to be successfully invoked
+     * The provided {@code original} function is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
-     * threads invoking the returned int function's
+     * threads invoking the returned function's
      * {@linkplain IntFunction#apply(int) apply()} method when a value is already under
      * computation will block until a value is computed or an exception is thrown by
      * the computing thread.
      * <p>
-     * If the provided {@code original} int function throws an exception, it is relayed
+     * If the provided {@code original} function throws an exception, it is relayed
      * to the initial caller and no content is recorded.
      * <p>
-     * The returned int function is not {@link Serializable}.
+     * The returned function is not {@link Serializable}.
      * <p>
-     * If the provided {@code original} int function recursively calls the returned
-     * int function for the same index, an {@linkplain IllegalStateException} will
+     * If the provided {@code original} function recursively calls the returned
+     * function for the same index, an {@linkplain IllegalStateException} will
      * be thrown.
      *
      * @param size     the size of the allowed inputs in {@code [0, size)}
@@ -628,9 +630,9 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new stable function}
+     * {@return a new stable {@linkplain Function}}
      * <p>
-     * The returned {@link Function function} is a caching function that, for each allowed
+     * The returned function is a caching function that, for each allowed
      * input in the given set of {@code inputs}, records the values of the provided
      * {@code original} function upon being first accessed via the returned function's
      * {@linkplain Function#apply(Object) apply()} method.

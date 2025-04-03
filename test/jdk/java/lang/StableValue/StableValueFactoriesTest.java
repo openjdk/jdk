@@ -24,8 +24,8 @@
 /* @test
  * @summary Basic tests for StableValueFactoriesTest implementations
  * @modules java.base/jdk.internal.lang.stable
- * @compile --enable-preview -source ${jdk.version} StableValueFactoriesTest.java
- * @run junit/othervm --enable-preview StableValueFactoriesTest
+ * @enablePreview
+ * @run junit StableValueFactoriesTest
  */
 
 import jdk.internal.lang.stable.StableUtil;

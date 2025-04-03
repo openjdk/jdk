@@ -23,22 +23,22 @@
 
 /* @test
  * @summary Basic tests for StableValue implementations
- * @compile --enable-preview -source ${jdk.version} StableValueTest.java
- * @run junit/othervm --enable-preview StableValueTest
+ * @enablePreview
+ * @run junit StableValueTest
  */
 
 import org.junit.jupiter.api.Test;
 
-import java.util.BitSet;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiPredicate;
-import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -65,7 +65,7 @@ final class StableValueTest {
         assertFalse(stable.trySet(VALUE2));
         var e = assertThrows(IllegalStateException.class, () -> stable.setOrThrow(VALUE2));
         assertEquals(
-                "Cannot set the content to " + VALUE2 + " because the content is already set: " + VALUE,
+                "The content is already set",
                 e.getMessage());
     }
 
@@ -83,7 +83,7 @@ final class StableValueTest {
         StableValue<Integer> stable = StableValue.of();
         stable.setOrThrow(VALUE);
         var e = assertThrows(IllegalStateException.class, () -> stable.setOrThrow(VALUE2));
-        assertEquals("Cannot set the content to " + VALUE2 + " because the content is already set: " + VALUE, e.getMessage());
+        assertEquals("The content is already set", e.getMessage());
     }
 
     @Test
@@ -91,7 +91,7 @@ final class StableValueTest {
         StableValue<Integer> stable = StableValue.of();
         stable.setOrThrow(null);
         var e = assertThrows(IllegalStateException.class, () -> stable.setOrThrow(null));
-        assertEquals("Cannot set the content to null because the content is already set: null", e.getMessage());
+        assertEquals("The content is already set", e.getMessage());
     }
 
     @Test
@@ -241,13 +241,13 @@ final class StableValueTest {
         int noThreads = 10;
         CountDownLatch starter = new CountDownLatch(1);
         StableValue<Integer> stable = StableValue.of();
-        BitSet winner = new BitSet(noThreads);
+        Map<Integer, Boolean> winners = new ConcurrentHashMap<>();
         List<Thread> threads = IntStream.range(0, noThreads).mapToObj(i -> new Thread(() -> {
                     try {
                         // Ready, set ...
                         starter.await();
                         // Here we go!
-                        winner.set(i, winnerPredicate.test(stable, i));
+                        winners.put(i, winnerPredicate.test(stable, i));
                     } catch (Throwable t) {
                         fail(t);
                     }
@@ -259,7 +259,7 @@ final class StableValueTest {
         starter.countDown();
         threads.forEach(StableValueTest::join);
         // There can only be one winner
-        assertEquals(1, winner.cardinality());
+        assertEquals(1, winners.values().stream().filter(b -> b).count());
     }
 
     private static void join(Thread thread) {

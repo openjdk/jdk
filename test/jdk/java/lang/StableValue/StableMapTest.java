@@ -24,8 +24,8 @@
 /* @test
  * @summary Basic tests for LazyMap methods
  * @modules java.base/jdk.internal.lang.stable
- * @compile --enable-preview -source ${jdk.version} StableMapTest.java
- * @run junit/othervm --enable-preview StableMapTest
+ * @enablePreview
+ * @run junit StableMapTest
  */
 
 import jdk.internal.lang.stable.StableUtil;
@@ -171,11 +171,12 @@ final class StableMapTest {
     void entrySetToString() {
         var map = newMap();
         var entrySet = map.entrySet();
+        var toString = entrySet.toString();
         for (var key : KEYS) {
-            assertTrue(entrySet.toString().contains(key + "=.unset"));
+            assertTrue(toString.contains(key + "=.unset"));
         }
-        assertTrue(entrySet.toString().startsWith("["));
-        assertTrue(entrySet.toString().endsWith("]"));
+        assertTrue(toString.startsWith("["));
+        assertTrue(toString.endsWith("]"));
 
         map.get(KEY);
         for (var key : KEYS) {
@@ -193,11 +194,12 @@ final class StableMapTest {
         var values = map.values();
         // Look at one of the elements
         var val = values.stream().iterator().next();
+        var toString = map.toString();
         for (var key : KEYS) {
             if (key.equals(val)) {
-                assertTrue(map.toString().contains(key + "=" + key));
+                assertTrue(toString.contains(key + "=" + key));
             } else {
-                assertTrue(map.toString().contains(key + "=.unset"));
+                assertTrue(toString.contains(key + "=.unset"));
             }
         }
 

@@ -89,8 +89,9 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @Override
     public void setOrThrow(T content) {
         if (!trySet(content)) {
-            throw new IllegalStateException("Cannot set the content to " + content +
-                    " because the content is already set: " + orElseThrow());
+            // Neither the set content nor the provided content is reveled in the
+            // exception message as it might be sensitive.
+            throw new IllegalStateException("The content is already set");
         }
     }
 
@@ -165,20 +166,27 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     private void preventReentry() {
         if (Thread.holdsLock(this)) {
-            throw new IllegalStateException("Recursing supplier detected");
+            throw new IllegalStateException("Recursive initialization is not supported");
         }
     }
 
+    /**
+     * Wraps the provided {@code newValue} and tries to set the content.
+     * <p>
+     * This method ensures the {@link Stable} field is written to at most once.
+     *
+     * @param newValue to wrap and set
+     * @return if the content was set
+     */
     @ForceInline
     private boolean wrapAndSet(Object newValue) {
         assert Thread.holdsLock(this);
-        // This upholds the invariant, a `@Stable` field is written to at most once
         // We know we hold the monitor here so plain semantic is enough
-        if (content != null) {
-            return false;
+        if (content == null) {
+            UNSAFE.putReferenceRelease(this, CONTENT_OFFSET, wrap(newValue));
+            return true;
         }
-        UNSAFE.putReferenceRelease(this, CONTENT_OFFSET, wrap(newValue));
-        return true;
+        return false;
     }
 
     // Used to indicate a holder value is `null` (see field `value` below)
