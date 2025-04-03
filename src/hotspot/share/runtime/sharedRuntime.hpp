@@ -692,17 +692,16 @@ class AdapterHandlerEntry : public MetaspaceObj {
   int            _saved_code_length;
 #endif
 
-  AdapterHandlerEntry(AdapterFingerPrint* fingerprint, address i2c_entry, address c2i_entry,
-                      address c2i_unverified_entry,
-                      address c2i_no_clinit_check_entry) :
+  AdapterHandlerEntry(AdapterFingerPrint* fingerprint) :
     _fingerprint(fingerprint),
-    _i2c_entry(i2c_entry),
-    _c2i_entry(c2i_entry),
-    _c2i_unverified_entry(c2i_unverified_entry),
-    _c2i_no_clinit_check_entry(c2i_no_clinit_check_entry),
+    _i2c_entry(nullptr),
+    _c2i_entry(nullptr),
+    _c2i_unverified_entry(nullptr),
+    _c2i_no_clinit_check_entry(nullptr),
     _linked(false)
 #ifdef ASSERT
-    , _saved_code_length(0)
+    , _saved_code(nullptr),
+    _saved_code_length(0)
 #endif
   { }
 
@@ -718,13 +717,8 @@ class AdapterHandlerEntry : public MetaspaceObj {
   }
 
  public:
-  static AdapterHandlerEntry* allocate(AdapterFingerPrint* fingerprint,
-                                       address i2c_entry,
-                                       address c2i_entry,
-                                       address c2i_unverified_entry,
-                                       address c2i_no_clinit_check_entry)
-  {
-    return new(0) AdapterHandlerEntry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry, c2i_no_clinit_check_entry);
+  static AdapterHandlerEntry* allocate(AdapterFingerPrint* fingerprint) {
+    return new(0) AdapterHandlerEntry(fingerprint);
   }
 
   static void deallocate(AdapterHandlerEntry *handler) {
@@ -807,11 +801,7 @@ class AdapterHandlerLibrary: public AllStatic {
 #endif // PRODUCT
  public:
 
-  static AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint,
-                                        address i2c_entry = nullptr,
-                                        address c2i_entry = nullptr,
-                                        address c2i_unverified_entry = nullptr,
-                                        address c2i_no_clinit_check_entry = nullptr);
+  static AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint);
   static void create_native_wrapper(const methodHandle& method);
   static AdapterHandlerEntry* get_adapter(const methodHandle& method);
   static AdapterHandlerEntry* lookup(AdapterFingerPrint* fp);
@@ -820,6 +810,10 @@ class AdapterHandlerLibrary: public AllStatic {
                                     int total_args_passed,
                                     BasicType* sig_bt,
                                     bool is_transient);
+
+#ifdef ASSERT
+  static void verify_adapter_sharing(int total_args_passed, BasicType* sig_bt, AdapterHandlerEntry* cached);
+#endif // ASSERT
 
   static void print_handler(const CodeBlob* b) { print_handler_on(tty, b); }
   static void print_handler_on(outputStream* st, const CodeBlob* b);

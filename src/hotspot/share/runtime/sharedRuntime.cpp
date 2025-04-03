@@ -2555,9 +2555,11 @@ void AdapterHandlerLibrary::initialize() {
     // Pass wrong_method_abstract for the c2i transitions to return
     // AbstractMethodError for invalid invocations.
     address wrong_method_abstract = SharedRuntime::get_handle_wrong_method_abstract_stub();
-    _abstract_method_handler = AdapterHandlerLibrary::new_entry(AdapterFingerPrint::allocate(0, nullptr),
-                                                                SharedRuntime::throw_AbstractMethodError_entry(),
-                                                                wrong_method_abstract, wrong_method_abstract);
+    _abstract_method_handler = AdapterHandlerLibrary::new_entry(AdapterFingerPrint::allocate(0, nullptr));
+    _abstract_method_handler->set_entry_points(SharedRuntime::throw_AbstractMethodError_entry(),
+                                               wrong_method_abstract,
+                                               wrong_method_abstract,
+                                               nullptr);
 
     _buffer = BufferBlob::create("adapters", AdapterHandlerLibrary_size);
     _no_arg_handler = create_simple_adapter(no_arg_blob, 0, nullptr);
@@ -2610,14 +2612,8 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_simple_adapter(AdapterBlob*& 
   return entry;
 }
 
-AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* fingerprint,
-                                                      address i2c_entry,
-                                                      address c2i_entry,
-                                                      address c2i_unverified_entry,
-                                                      address c2i_no_clinit_check_entry) {
-  // Insert an entry into the table
-  return AdapterHandlerEntry::allocate(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry,
-                                       c2i_no_clinit_check_entry);
+AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* fingerprint) {
+  return AdapterHandlerEntry::allocate(fingerprint);
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::get_simple_adapter(const methodHandle& method) {
@@ -2706,6 +2702,19 @@ const char* AdapterHandlerEntry::_entry_names[] = {
   "i2c", "c2i", "c2i_unverified", "c2i_no_clinit_check"
 };
 
+#ifdef ASSERT
+void AdapterHandlerLibrary::verify_adapter_sharing(int total_args_passed, BasicType* sig_bt, AdapterHandlerEntry* cached_entry) {
+  AdapterBlob* comparison_blob = nullptr;
+  AdapterFingerPrint* comparison_fp = AdapterFingerPrint::allocate(total_args_passed, sig_bt);
+  AdapterHandlerEntry* comparison_entry = create_adapter(comparison_blob, comparison_fp, total_args_passed, sig_bt, true);
+  assert(comparison_blob == nullptr, "no blob should be created when creating an adapter for comparison");
+  assert(comparison_entry->compare_code(cached_entry), "code must match");
+  AdapterFingerPrint::deallocate(comparison_fp);
+  // Release the one just created and return the original
+  AdapterHandlerEntry::deallocate(comparison_entry);
+}
+#endif /* ASSERT*/
+
 AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& method) {
   // Use customized signature handler.  Need to lock around updates to
   // the _adapter_handler_table (it is not safe for concurrent readers
@@ -2719,7 +2728,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
   }
 
   ResourceMark rm;
-  AdapterBlob* new_adapter = nullptr;
+  AdapterBlob* adapter_blob = nullptr;
 
   // Fill in the signature array, for the calling-convention call.
   int total_args_passed = method->size_of_parameters(); // All args on stack
@@ -2736,28 +2745,27 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
     entry = lookup(fp);
 
     if (entry != nullptr) {
+      if (entry->is_shared() && !entry->is_linked()) {
+        if (!link_adapter_handler(entry, adapter_blob)) {
+          if (!generate_adapter_code(adapter_blob, entry, total_args_passed, sig_bt, /* is_transient */ false)) {
+            return nullptr;
+          }
+        }
+      }
 #ifdef ASSERT
-      if (VerifyAdapterSharing) {
-        AdapterBlob* comparison_blob = nullptr;
-        AdapterFingerPrint* comparison_fp = AdapterFingerPrint::allocate(total_args_passed, sig_bt);
-        AdapterHandlerEntry* comparison_entry = create_adapter(comparison_blob, comparison_fp, total_args_passed, sig_bt, true);
-        assert(comparison_blob == nullptr, "no blob should be created when creating an adapter for comparison");
-        assert(comparison_entry->compare_code(entry), "code must match");
-        AdapterFingerPrint::deallocate(comparison_fp);
-        // Release the one just created and return the original
-        AdapterHandlerEntry::deallocate(comparison_entry);
+      if (!entry->is_shared() && VerifyAdapterSharing) {
+        verify_adapter_sharing(total_args_passed, sig_bt, entry);
       }
 #endif
       AdapterFingerPrint::deallocate(fp);
-      return entry;
+    } else {
+      entry = create_adapter(adapter_blob, fp, total_args_passed, sig_bt, /* is_transient */ false);
     }
-
-    entry = create_adapter(new_adapter, fp, total_args_passed, sig_bt, /* is_transient */ false);
   }
 
   // Outside of the lock
-  if (new_adapter != nullptr) {
-    post_adapter_creation(new_adapter, entry);
+  if (adapter_blob != nullptr) {
+    post_adapter_creation(adapter_blob, entry);
   }
   return entry;
 }
@@ -2822,7 +2830,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
                                          sig_bt,
                                          regs,
                                          handler);
-  if (CDSConfig::is_dumping_adapters()) {
+  if (!is_transient && CDSConfig::is_dumping_adapters()) {
     // try to save generated code
     const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
     const uint32_t id = AdapterHandlerLibrary::id(handler->fingerprint());
@@ -2868,6 +2876,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& adapter
                                                            bool is_transient) {
   AdapterHandlerEntry* handler = AdapterHandlerLibrary::new_entry(fingerprint);
   if (!generate_adapter_code(adapter_blob, handler, total_args_passed, sig_bt, is_transient)) {
+    AdapterHandlerEntry::deallocate(handler);
     return nullptr;
   }
   if (!is_transient) {
@@ -2993,6 +3002,10 @@ void AdapterHandlerEntry::metaspace_pointers_do(MetaspaceClosure* it) {
 
 #if INCLUDE_CDS
 void AdapterHandlerEntry::remove_unshareable_info() {
+#ifdef ASSERT
+   _saved_code = nullptr;
+   _saved_code_length = 0;
+#endif // ASSERT
   set_entry_points(nullptr, nullptr, nullptr, nullptr, false);
 }
 
@@ -3005,16 +3018,30 @@ void AdapterHandlerEntry::restore_unshareable_info(TRAPS) {
     return;
   }
   AdapterBlob* adapter_blob = nullptr;
+  ResourceMark rm;
   {
     MutexLocker mu(AdapterHandlerLibrary_lock);
+    // If some other thread beat me and did the linkage, just return
+    if (is_linked()) {
+      return;
+    }
     assert(_fingerprint != nullptr, "_fingerprint must not be null");
 #ifdef ASSERT
     AdapterHandlerEntry* entry = AdapterHandlerLibrary::lookup(_fingerprint);
     assert(entry == this, "sanity check");
-#endif
-    if (!AdapterHandlerLibrary::link_adapter_handler(this, adapter_blob)) {
-      ResourceMark rm;
-      log_warning(cds)("Failed to link AdapterHandlerEntry to its code in the AOT code cache");
+#endif // ASSERT
+    bool generate_code = false;
+    // Generate code only if AOTCodeCache is not available, or
+    // we fail to link the AdapterHandlerEntry to its code in the AOTCodeCache
+    if (AOTCodeCache::is_on_for_read()) {
+      if (!AdapterHandlerLibrary::link_adapter_handler(this, adapter_blob)) {
+        log_warning(cds)("Failed to link AdapterHandlerEntry (fp=%s) to its code in the AOT code cache", _fingerprint->as_basic_args_string());
+        generate_code = true;
+      }
+    } else {
+      generate_code = true;
+    }
+    if (generate_code) {
       int nargs;
       BasicType* bt = _fingerprint->as_basic_type(nargs);
       if (!AdapterHandlerLibrary::generate_adapter_code(adapter_blob, this, nargs, bt, /* is_transient */ false)) {

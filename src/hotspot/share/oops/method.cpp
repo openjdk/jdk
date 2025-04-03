@@ -1191,8 +1191,12 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
 
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
-  if (adapter() != nullptr && !adapter()->is_shared()) {
-    return;
+  if (adapter() != nullptr) {
+    if (adapter()->is_shared()) {
+      assert(adapter()->is_linked(), "Adapter is shared but not linked");
+    } else {
+      return;
+    }
   }
   assert( _code == nullptr, "nothing compiled yet" );
 
@@ -1222,6 +1226,7 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // problem we'll make these lazily later.
   if (_adapter == nullptr) {
     (void) make_adapters(h_method, CHECK);
+    assert(adapter()->is_linked(), "Adapter must have been linked");
   }
 
   // ONLY USE the h_method now as make_adapter may have blocked

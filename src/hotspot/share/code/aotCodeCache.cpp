@@ -602,7 +602,6 @@ bool AOTCodeCache::finish_write() {
       current += size;
       uint n = write_bytes(&(entries_address[i]), sizeof(AOTCodeEntry));
       if (n != sizeof(AOTCodeEntry)) {
-        FREE_C_HEAP_ARRAY(char, buffer);
         FREE_C_HEAP_ARRAY(uint, search);
         return false;
       }
@@ -618,7 +617,6 @@ bool AOTCodeCache::finish_write() {
     }
     if (entries_count == 0) {
       log_info(aot, codecache, exit)("AOT Code Cache was not created: no entires");
-      FREE_C_HEAP_ARRAY(char, buffer);
       FREE_C_HEAP_ARRAY(uint, search);
       return true; // Nothing to write
     }

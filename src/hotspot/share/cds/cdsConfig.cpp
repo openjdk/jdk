@@ -538,7 +538,7 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   if (is_using_archive() && !is_dumping_archive() && !FLAG_IS_DEFAULT(AOTCache)) {
     FLAG_SET_ERGO_IF_DEFAULT(LoadAOTCode, true);
   } else if (LoadAOTCode) {
-    log_info(aot, codecache, init)("-XX:+LoadAOTCode requires -XX:AOTCache");
+    log_warning(aot, codecache, init)("-XX:+LoadAOTCode requires -XX:AOTCache");
     return false;
   }
   if (LoadAOTCode) {
@@ -547,7 +547,7 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   if (is_dumping_final_static_archive()) {
     FLAG_SET_ERGO_IF_DEFAULT(StoreAOTCode, true);
   } else if (StoreAOTCode) {
-    log_info(aot, codecache, init)("-XX:+StoreAOTCode requires -XX:AOTMode=create");
+    log_warning(aot, codecache, init)("-XX:+StoreAOTCode requires -XX:AOTMode=create");
     return false;
   }
   if (StoreAOTCode) {
