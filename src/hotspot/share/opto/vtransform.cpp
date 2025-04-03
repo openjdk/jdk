@@ -260,7 +260,7 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
 Node* make_a_plus_b_leq_c(Node* a, jint b, Node* c, PhaseIdealLoop* phase) {
   Node* b_con = phase->igvn().longcon(b);
   Node* a_plus_b = new AddLNode(a, b_con);
-  Node* cmp = CmpNode::make(a_plus_b, c, T_INT, true);
+  Node* cmp = CmpNode::make(a_plus_b, c, T_LONG, true);
   Node* bol = new BoolNode(cmp, BoolTest::le);
   phase->register_new_node_with_ctrl_of(a_plus_b, a);
   phase->register_new_node_with_ctrl_of(cmp, a);

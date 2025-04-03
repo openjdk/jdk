@@ -23,6 +23,7 @@
  */
 
 #include "opto/addnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/mulnode.hpp"
@@ -495,6 +496,10 @@ Node* VPointer::make_pointer_expression(Node* iv_value) const {
       assert(s.scaleI().is_one(), "must be long variable");
       Node* scaleL = igvn.longcon(s.scaleL().value());
       Node* variable = (s.variable() == iv) ? iv_value : s.variable();
+      if (variable->bottom_type()->is_ptr() != nullptr) {
+        variable = new CastP2XNode(nullptr, variable);
+        phase->register_new_node(variable, ctrl);
+      }
       node = new MulLNode(scaleL, variable);
       phase->register_new_node(node, ctrl);
     }
