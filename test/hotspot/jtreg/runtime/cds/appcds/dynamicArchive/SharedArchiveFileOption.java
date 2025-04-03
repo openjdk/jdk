@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,7 +163,7 @@ public class SharedArchiveFileOption extends DynamicArchiveTestBase {
 
         testcase("A dynamic archive is already loaded when -XX:SharedArchiveFile is specified");
         dump2(baseArchiveName /*this is overridden by -XX:SharedArchiveFile= below*/,
-              topArchiveName,
+              topArchiveName + "dummy",
               "-XX:SharedArchiveFile=" + topArchiveName,
               "-cp", appJar, mainClass)
             .assertAbnormalExit("-XX:ArchiveClassesAtExit is unsupported when a dynamic CDS archive is specified in -XX:SharedArchiveFile:");

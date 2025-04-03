@@ -51,9 +51,10 @@ bool CDSConfig::_old_cds_flags_used = false;
 bool CDSConfig::_new_aot_flags_used = false;
 bool CDSConfig::_disable_heap_dumping = false;
 
-char* CDSConfig::_default_archive_path = nullptr;
-char* CDSConfig::_static_archive_path = nullptr;
-char* CDSConfig::_dynamic_archive_path = nullptr;
+const char* CDSConfig::_default_archive_path = nullptr;
+const char* CDSConfig::_input_static_archive_path = nullptr;
+const char* CDSConfig::_input_dynamic_archive_path = nullptr;
+const char* CDSConfig::_output_archive_path = nullptr;
 
 JavaThread* CDSConfig::_dumper_thread = nullptr;
 
@@ -66,7 +67,11 @@ int CDSConfig::get_status() {
          (is_using_archive()                ? IS_USING_ARCHIVE : 0);
 }
 
-void CDSConfig::initialize() {
+DEBUG_ONLY(static bool _cds_ergo_initialize_started = false);
+
+void CDSConfig::ergo_initialize() {
+  DEBUG_ONLY(_cds_ergo_initialize_started = true);
+
   if (is_dumping_static_archive() && !is_dumping_final_static_archive()) {
     // Note: -Xshare and -XX:AOTMode flags are mutually exclusive.
     // - Classic workflow: -Xshare:on and -Xshare:dump cannot take effect at the same time.
@@ -83,10 +88,13 @@ void CDSConfig::initialize() {
 
   // Initialize shared archive paths which could include both base and dynamic archive paths
   // This must be after set_ergonomics_flags() called so flag UseCompressedOops is set properly.
-  //
-  // UseSharedSpaces may be disabled if -XX:SharedArchiveFile is invalid.
   if (is_dumping_static_archive() || is_using_archive()) {
-    init_shared_archive_paths();
+    ergo_check_dynamic_dump_options();
+    if (new_aot_flags_used()) {
+      init_aot_paths();
+    } else {
+      init_classic_archive_paths();
+    }
   }
 
   if (!is_dumping_heap()) {
@@ -94,7 +102,10 @@ void CDSConfig::initialize() {
   }
 }
 
-char* CDSConfig::default_archive_path() {
+const char* CDSConfig::default_archive_path() {
+  // The path depends on UseCompressedOops, etc, which are set by GC ergonomics just
+  // before CDSConfig::ergo_initialize() is called.
+  assert(_cds_ergo_initialize_started, "sanity");
   if (_default_archive_path == nullptr) {
     stringStream tmp;
     const char* subdir = WINDOWS_ONLY("bin") NOT_WINDOWS("lib");
@@ -116,12 +127,12 @@ char* CDSConfig::default_archive_path() {
   return _default_archive_path;
 }
 
-int CDSConfig::num_archives(const char* archive_path) {
-  if (archive_path == nullptr) {
+int CDSConfig::num_archive_paths(const char* path_spec) {
+  if (path_spec == nullptr) {
     return 0;
   }
   int npaths = 1;
-  char* p = (char*)archive_path;
+  char* p = (char*)path_spec;
   while (*p != '\0') {
     if (*p == os::path_separator()[0]) {
       npaths++;
@@ -131,9 +142,9 @@ int CDSConfig::num_archives(const char* archive_path) {
   return npaths;
 }
 
-void CDSConfig::extract_shared_archive_paths(const char* archive_path,
-                                             char** base_archive_path,
-                                             char** top_archive_path) {
+void CDSConfig::extract_archive_paths(const char* archive_path,
+                                      const char** base_archive_path,
+                                      const char** top_archive_path) {
   char* begin_ptr = (char*)archive_path;
   char* end_ptr = strchr((char*)archive_path, os::path_separator()[0]);
   if (end_ptr == nullptr || end_ptr == begin_ptr) {
@@ -157,12 +168,10 @@ void CDSConfig::extract_shared_archive_paths(const char* archive_path,
   *top_archive_path = cur_path;
 }
 
-void CDSConfig::init_shared_archive_paths() {
+void CDSConfig::ergo_check_dynamic_dump_options() {
+  assert(_cds_ergo_initialize_started, "sanity");
   if (ArchiveClassesAtExit != nullptr) {
     assert(!RecordDynamicDumpInfo, "already checked");
-    if (is_dumping_static_archive()) {
-      vm_exit_during_initialization("-XX:ArchiveClassesAtExit cannot be used with -Xshare:dump");
-    }
     check_unsupported_dumping_module_options();
 
     if (os::same_files(default_archive_path(), ArchiveClassesAtExit)) {
@@ -170,91 +179,92 @@ void CDSConfig::init_shared_archive_paths() {
         "Cannot specify the default CDS archive for -XX:ArchiveClassesAtExit", default_archive_path());
     }
   }
+}
 
+void CDSConfig::init_classic_archive_paths() {
   if (SharedArchiveFile == nullptr) {
-    _static_archive_path = default_archive_path();
+    _input_static_archive_path = default_archive_path();
+    if (is_dumping_static_archive()) {
+      _output_archive_path = _input_static_archive_path;
+    }
   } else {
-    int archives = num_archives(SharedArchiveFile);
-    assert(archives > 0, "must be");
+    int num_archives = num_archive_paths(SharedArchiveFile);
+    assert(num_archives > 0, "must be");
 
-    if (is_dumping_archive() && archives > 1) {
+    if (is_dumping_archive() && num_archives > 1) {
       vm_exit_during_initialization(
-        "Cannot have more than 1 archive file specified in -XX:SharedArchiveFile during CDS dumping");
+          "Cannot have more than 1 archive file specified in -XX:SharedArchiveFile during CDS dumping");
     }
 
-    if (is_dumping_static_archive()) {
-      assert(archives == 1, "must be");
-      // Static dump is simple: only one archive is allowed in SharedArchiveFile. This file
-      // will be overwritten no matter regardless of its contents
-      _static_archive_path = os::strdup_check_oom(SharedArchiveFile, mtArguments);
+   if (is_dumping_static_archive()) {
+      assert(num_archives == 1, "just checked above");
+      _output_archive_path = os::strdup_check_oom(SharedArchiveFile, mtArguments);
     } else {
-      // SharedArchiveFile may specify one or two files. In case (c), the path for base.jsa
-      // is read from top.jsa
-      //    (a) 1 file:  -XX:SharedArchiveFile=base.jsa
-      //    (b) 2 files: -XX:SharedArchiveFile=base.jsa:top.jsa
-      //    (c) 2 files: -XX:SharedArchiveFile=top.jsa
-      //
-      // However, if either RecordDynamicDumpInfo or ArchiveClassesAtExit is used, we do not
-      // allow cases (b) and (c). Case (b) is already checked above.
+      init_complex_archive_paths(num_archives);
+    }
+  }
+}
 
-      if (archives > 2) {
-        vm_exit_during_initialization(
-          "Cannot have more than 2 archive files specified in the -XX:SharedArchiveFile option");
-      }
-      if (archives == 1) {
-        char* base_archive_path = nullptr;
-        bool success =
-          FileMapInfo::get_base_archive_name_from_header(SharedArchiveFile, &base_archive_path);
-        if (!success) {
-          // If +AutoCreateSharedArchive and the specified shared archive does not exist,
-          // regenerate the dynamic archive base on default archive.
-          if (AutoCreateSharedArchive && !os::file_exists(SharedArchiveFile)) {
-            enable_dumping_dynamic_archive();
-            ArchiveClassesAtExit = const_cast<char *>(SharedArchiveFile);
-            _static_archive_path = default_archive_path();
-            SharedArchiveFile = nullptr;
-          } else {
-            if (AutoCreateSharedArchive) {
-              warning("-XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
-              AutoCreateSharedArchive = false;
-            }
-            log_error(cds)("Not a valid %s (%s)", new_aot_flags_used() ? "AOT cache" : "archive", SharedArchiveFile);
-            Arguments::no_shared_spaces("invalid archive");
-          }
-        } else if (base_archive_path == nullptr) {
-          // User has specified a single archive, which is a static archive.
-          _static_archive_path = const_cast<char *>(SharedArchiveFile);
-        } else {
-          // User has specified a single archive, which is a dynamic archive.
-          _dynamic_archive_path = const_cast<char *>(SharedArchiveFile);
-          _static_archive_path = base_archive_path; // has been c-heap allocated.
-        }
+void CDSConfig::init_complex_archive_paths(int num_archives) {
+  // SharedArchiveFile may specify one or two files. In case (c), the path for base.jsa
+  // is read from top.jsa
+  //    (a) 1 file:  -XX:SharedArchiveFile=base.jsa
+  //    (b) 2 files: -XX:SharedArchiveFile=base.jsa:top.jsa
+  //    (c) 2 files: -XX:SharedArchiveFile=top.jsa
+  //
+  // However, if either RecordDynamicDumpInfo or ArchiveClassesAtExit is used, we do not
+  // allow cases (b) and (c). Case (b) is already checked above.
+
+  if (num_archives > 2) {
+    vm_exit_during_initialization(
+        "Cannot have more than 2 archive files specified in the -XX:SharedArchiveFile option");
+  }
+
+  if (num_archives == 1) {
+    const char* base_archive_path = nullptr;
+    bool success =
+        FileMapInfo::get_base_archive_name_from_header(SharedArchiveFile, &base_archive_path);
+    if (!success) {
+      // If +AutoCreateSharedArchive and the specified shared archive does not exist,
+      // regenerate the dynamic archive base on default archive.
+      if (AutoCreateSharedArchive && !os::file_exists(SharedArchiveFile)) {
+        enable_dumping_dynamic_archive(SharedArchiveFile);
+        ArchiveClassesAtExit = os::strdup_check_oom(SharedArchiveFile, mtArguments);
+        _input_static_archive_path = default_archive_path();
       } else {
-        extract_shared_archive_paths((const char*)SharedArchiveFile,
-                                      &_static_archive_path, &_dynamic_archive_path);
-        if (_static_archive_path == nullptr) {
-          assert(_dynamic_archive_path == nullptr, "must be");
-          Arguments::no_shared_spaces("invalid archive");
+        if (AutoCreateSharedArchive) {
+          warning("-XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
+          AutoCreateSharedArchive = false;
         }
+        log_error(cds)("Not a valid archive (%s)", SharedArchiveFile);
+        Arguments::no_shared_spaces("invalid archive");
       }
+    } else if (base_archive_path == nullptr) {
+      // User has specified a single archive, which is a static archive.
+      _input_static_archive_path = os::strdup_check_oom(SharedArchiveFile, mtArguments);
+    } else {
+      // User has specified a single archive, which is a dynamic archive.
+      _input_dynamic_archive_path = os::strdup_check_oom(SharedArchiveFile, mtArguments);
+      _input_static_archive_path = base_archive_path; // has been c-heap allocated.
+    }
+  } else {
+    extract_archive_paths((const char*)SharedArchiveFile,
+                          &_input_static_archive_path, &_input_dynamic_archive_path);
+    if (_input_static_archive_path == nullptr) {
+      assert(_input_dynamic_archive_path == nullptr, "must be");
+      Arguments::no_shared_spaces("invalid archive");
+    }
+  }
 
-      if (_dynamic_archive_path != nullptr) {
-        // Check for case (c)
-        if (RecordDynamicDumpInfo) {
-          vm_exit_during_initialization("-XX:+RecordDynamicDumpInfo is unsupported when a dynamic CDS archive is specified in -XX:SharedArchiveFile",
-                                        SharedArchiveFile);
-        }
-        if (ArchiveClassesAtExit != nullptr) {
-          vm_exit_during_initialization("-XX:ArchiveClassesAtExit is unsupported when a dynamic CDS archive is specified in -XX:SharedArchiveFile",
-                                        SharedArchiveFile);
-        }
-      }
-
-      if (ArchiveClassesAtExit != nullptr && os::same_files(SharedArchiveFile, ArchiveClassesAtExit)) {
-          vm_exit_during_initialization(
-            "Cannot have the same archive file specified for -XX:SharedArchiveFile and -XX:ArchiveClassesAtExit",
-            SharedArchiveFile);
-      }
+  if (_input_dynamic_archive_path != nullptr) {
+    // Check for case (c)
+    if (RecordDynamicDumpInfo) {
+      vm_exit_during_initialization("-XX:+RecordDynamicDumpInfo is unsupported when a dynamic CDS archive is specified in -XX:SharedArchiveFile",
+                                    SharedArchiveFile);
+    }
+    if (ArchiveClassesAtExit != nullptr) {
+      vm_exit_during_initialization("-XX:ArchiveClassesAtExit is unsupported when a dynamic CDS archive is specified in -XX:SharedArchiveFile",
+                                    SharedArchiveFile);
     }
   }
 }
@@ -364,6 +374,14 @@ void CDSConfig::check_flag_alias(bool alias_is_default, const char* alias_name) 
   }
 }
 
+#define CHECK_SINGLE_PATH(f) check_flag_single_path(#f, f)
+
+void CDSConfig::check_flag_single_path(const char* flag_name, const char* value) {
+  if (value != nullptr && num_archive_paths(value) != 1) {
+    vm_exit_during_initialization(err_msg("Option %s must specify a single file name", flag_name));
+  }
+}
+
 void CDSConfig::check_aot_flags() {
   if (!FLAG_IS_DEFAULT(DumpLoadedClassList) ||
       !FLAG_IS_DEFAULT(SharedClassListFile) ||
@@ -374,6 +392,9 @@ void CDSConfig::check_aot_flags() {
   CHECK_ALIAS(AOTCache);
   CHECK_ALIAS(AOTConfiguration);
   CHECK_ALIAS(AOTMode);
+
+  CHECK_SINGLE_PATH(AOTCache);
+  CHECK_SINGLE_PATH(AOTConfiguration);
 
   if (FLAG_IS_DEFAULT(AOTCache) && FLAG_IS_DEFAULT(AOTConfiguration) && FLAG_IS_DEFAULT(AOTMode)) {
     // AOTCache/AOTConfiguration/AOTMode not used.
@@ -411,10 +432,10 @@ void CDSConfig::check_aotmode_auto_or_on() {
     vm_exit_during_initialization("AOTConfiguration can only be used with -XX:AOTMode=record or -XX:AOTMode=create");
   }
 
-  if (!FLAG_IS_DEFAULT(AOTCache)) {
-    assert(FLAG_IS_DEFAULT(SharedArchiveFile), "already checked");
-    FLAG_SET_ERGO(SharedArchiveFile, AOTCache);
-  }
+//  if (!FLAG_IS_DEFAULT(AOTCache)) {
+//    assert(FLAG_IS_DEFAULT(SharedArchiveFile), "already checked");
+//    FLAG_SET_ERGO(SharedArchiveFile, AOTCache);
+//  }
 
   UseSharedSpaces = true;
   if (FLAG_IS_DEFAULT(AOTMode) || (strcmp(AOTMode, "auto") == 0)) {
@@ -431,8 +452,8 @@ void CDSConfig::check_aotmode_record() {
   }
 
   assert(FLAG_IS_DEFAULT(DumpLoadedClassList), "already checked");
-  assert(FLAG_IS_DEFAULT(SharedArchiveFile), "already checked");
-  FLAG_SET_ERGO(SharedArchiveFile, AOTConfiguration);
+//  assert(FLAG_IS_DEFAULT(SharedArchiveFile), "already checked");
+//  FLAG_SET_ERGO(SharedArchiveFile, AOTConfiguration);
   FLAG_SET_ERGO(DumpLoadedClassList, nullptr);
   UseSharedSpaces = false;
   RequireSharedSpaces = false;
@@ -449,10 +470,10 @@ void CDSConfig::check_aotmode_create() {
     vm_exit_during_initialization("AOTCache must be specified when using -XX:AOTMode=create");
   }
 
-  assert(FLAG_IS_DEFAULT(SharedArchiveFile), "already checked");
+//  assert(FLAG_IS_DEFAULT(SharedArchiveFile), "already checked");
 
   _is_dumping_final_static_archive = true;
-  FLAG_SET_ERGO(SharedArchiveFile, AOTConfiguration);
+//  FLAG_SET_ERGO(SharedArchiveFile, AOTConfiguration);
   UseSharedSpaces = true;
   RequireSharedSpaces = true;
 
@@ -463,7 +484,28 @@ void CDSConfig::check_aotmode_create() {
   CDSConfig::enable_dumping_static_archive();
 }
 
+void CDSConfig::init_aot_paths() {
+  if (is_dumping_static_archive()) {
+    if (is_dumping_preimage_static_archive()) {
+      _output_archive_path = AOTConfiguration;
+    } else {
+      assert(is_dumping_final_static_archive(), "must be");
+      _input_static_archive_path = AOTConfiguration;
+      _output_archive_path = AOTCache;
+    }
+  } else if (is_using_archive()) {
+    if (FLAG_IS_DEFAULT(AOTCache)) {
+      // Only -XX:AOTMode={auto,on} is specified
+      _input_static_archive_path = default_archive_path();
+    } else {
+      _input_static_archive_path = AOTCache;
+    }
+  }
+}
+
 bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_flag_cmd_line) {
+  assert(!_cds_ergo_initialize_started, "This is called earlier than CDSConfig::ergo_initialize()");
+
   check_aot_flags();
 
   if (!FLAG_IS_DEFAULT(AOTMode)) {
@@ -502,6 +544,16 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
 
     // Don't use SoftReferences so that objects used by java.lang.invoke tables can be archived.
     Arguments::PropertyList_add(new SystemProperty("java.lang.invoke.MethodHandleNatives.USE_SOFT_CACHE", "false", false));
+
+    if (ArchiveClassesAtExit != nullptr) {
+      vm_exit_during_initialization("-XX:ArchiveClassesAtExit cannot be used with -Xshare:dump");
+    }
+  }
+
+  if (ArchiveClassesAtExit != nullptr && os::same_files(SharedArchiveFile, ArchiveClassesAtExit)) {
+    vm_exit_during_initialization(
+            "Cannot have the same archive file specified for -XX:SharedArchiveFile and -XX:ArchiveClassesAtExit",
+            SharedArchiveFile);
   }
 
   // RecordDynamicDumpInfo is not compatible with ArchiveClassesAtExit
@@ -514,7 +566,7 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   if (ArchiveClassesAtExit == nullptr && !RecordDynamicDumpInfo) {
     disable_dumping_dynamic_archive();
   } else {
-    enable_dumping_dynamic_archive();
+    enable_dumping_dynamic_archive(ArchiveClassesAtExit);
   }
 
   if (AutoCreateSharedArchive) {
@@ -546,6 +598,34 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   return true;
 }
 
+void CDSConfig::prepare_for_dumping() {
+  assert(CDSConfig::is_dumping_archive(), "sanity");
+
+  if (is_dumping_dynamic_archive() && !is_using_archive()) {
+    assert(!is_dumping_static_archive(), "cannot be dumping both static and dynamic archives");
+
+    // This could happen if SharedArchiveFile has failed to load:
+    // - -Xshare:off was specified
+    // - SharedArchiveFile points to an non-existent file.
+    // - SharedArchiveFile points to an archive that has failed CRC check
+    // - SharedArchiveFile is not specified and the VM doesn't have a compatible default archive
+
+#define __THEMSG " is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info."
+    if (RecordDynamicDumpInfo) {
+      log_error(cds)("-XX:+RecordDynamicDumpInfo%s", __THEMSG);
+      MetaspaceShared::unrecoverable_loading_error();
+    } else {
+      assert(ArchiveClassesAtExit != nullptr, "sanity");
+      log_warning(cds)("-XX:ArchiveClassesAtExit" __THEMSG);
+    }
+#undef __THEMSG
+    disable_dumping_dynamic_archive();
+    return;
+  }
+
+  check_unsupported_dumping_module_options();
+}
+
 bool CDSConfig::is_dumping_classic_static_archive() {
   return _is_dumping_static_archive &&
     !is_dumping_preimage_static_archive() &&
@@ -558,6 +638,14 @@ bool CDSConfig::is_dumping_preimage_static_archive() {
 
 bool CDSConfig::is_dumping_final_static_archive() {
   return _is_dumping_final_static_archive;
+}
+
+void CDSConfig::enable_dumping_dynamic_archive(const char* output_path) {
+  _is_dumping_dynamic_archive = true;
+  if (output_path != nullptr) {
+    // Comment -- why can this be null?
+    _output_archive_path = os::strdup_check_oom(output_path, mtArguments);
+  }
 }
 
 bool CDSConfig::allow_only_single_java_thread() {
