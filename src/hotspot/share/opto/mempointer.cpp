@@ -47,6 +47,14 @@ MemPointer MemPointerParser::parse(MemPointerParserCallback& callback
   Node* pointer = _mem->in(MemNode::Address);
   const jint size = _mem->memory_size();
 
+#ifndef PRODUCT
+  if (trace.is_trace_parsing()) {
+    tty->print_cr("MemPointerParser::parse: size=%d", size);
+    tty->print("  mem:     "); _mem->dump();
+    tty->print("  pointer: "); pointer->dump();
+  }
+#endif
+
   // Start with the trivial summand.
   _worklist.push(MemPointerRawSummand::make_trivial(pointer));
 
@@ -62,7 +70,14 @@ MemPointer MemPointerParser::parse(MemPointerParserCallback& callback
   }
 
   NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerRawSummand::print_on(tty, _raw_summands); } )
+  canonicalize_raw_summands();
+  NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerRawSummand::print_on(tty, _raw_summands); } )
 
+
+  return MemPointer::make(pointer, _raw_summands, size NOT_PRODUCT(COMMA trace));
+}
+
+void MemPointerParser::canonicalize_raw_summands() {
   // We sort by:
   //  - int group id
   //  - variable idx
@@ -92,20 +107,12 @@ MemPointer MemPointerParser::parse(MemPointerParserCallback& callback
         scaleI = scaleI + s.scaleI();
       }
     }
-    // Bail out if scale is NaN.
-    if (scaleI.is_NaN() || scaleL.is_NaN()) {
-      return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
-    }
     // Keep summands with non-zero scale.
     if (!scaleI.is_zero() && !scaleL.is_NaN()) {
       _raw_summands.at_put(pos_put++, MemPointerRawSummand(variable, scaleI, scaleL, int_group));
-      // TODO: _summands !!!!
     }
   }
   _raw_summands.trunc_to(pos_put);
-
-  NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerRawSummand::print_on(tty, _raw_summands); } )
-  return MemPointer::make(pointer, _raw_summands, size NOT_PRODUCT(COMMA trace));
 }
 
 // Parse a sub-expression of the pointer, starting at the current summand. We parse the

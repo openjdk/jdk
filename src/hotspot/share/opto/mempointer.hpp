@@ -752,12 +752,14 @@ public:
     if (!is_valid()) {
       st->print("<invalid>");
     } else {
+      st->print("<%d: ", _int_group);
       _scaleL.print_on(st);
       st->print(" * ");
       _scaleI.print_on(st);
       if (!is_con()) {
         st->print(" * [%d %s]", _variable->_idx, _variable->Name());
       }
+      st->print(">");
     }
   }
 
@@ -1115,6 +1117,8 @@ private:
   static bool sub_expression_has_native_base_candidate(Node* n);
 
   bool is_safe_to_decompose_op(const int opc, const NoOverflowInt& scale) const;
+
+  void canonicalize_raw_summands();
 };
 
 #endif // SHARE_OPTO_MEMPOINTER_HPP
