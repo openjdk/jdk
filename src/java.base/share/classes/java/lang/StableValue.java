@@ -58,12 +58,6 @@ import java.util.function.Supplier;
  * can never change and can be retrieved by calling {@linkplain #orElseThrow() orElseThrow()}
  * , {@linkplain #orElse(Object) orElse()}, or {@linkplain #orElseSet(Supplier) orElseSet()}.
  * <p>
- * A stable value that is <em>set</em> is treated as a constant by the JVM, enabling the
- * same performance optimizations that are available for {@code final} fields.
- * As such, stable values can be used to replace {@code final} fields in cases where
- * <em>at-most-once</em> update semantics is crucial, but where the eager initialization
- * semantics associated with {@code final} fields is too restrictive.
- * <p>
  * Consider the following example where a stable value field "{@code logger}" is a
  * shallowly immutable holder of content of type {@code Logger} and that is initially
  * created as <em>unset</em>, which means it holds no content. Later in the example, the
@@ -75,7 +69,7 @@ import java.util.function.Supplier;
  *
  *    // Creates a new unset stable value with no content
  *    // @link substring="of" target="#of" :
- *    private static final StableValue<Logger> logger = StableValue.of();
+ *    private final StableValue<Logger> logger = StableValue.of();
  *
  *    private Logger getLogger() {
  *        if (!logger.isSet()) {
@@ -94,9 +88,6 @@ import java.util.function.Supplier;
  * If {@code getLogger()} is called from several threads, several instances of
  * {@code Logger} might be created. However, the content can only be set at most once
  * meaning one "winner" is picked among the many loggers.
- * In the example above, the {@code logger} field is declared {@code static final} which
- * is a prerequisite for being treated as a constant by the JVM.
- *
  * <p>
  * To guarantee that, even under races, only one instance of {@code Logger} is ever
  * created, the {@linkplain #orElseSet(Supplier) orElseSet()} method can be used
@@ -109,7 +100,7 @@ import java.util.function.Supplier;
  *
  *    // Creates a new unset stable value with no content
  *    // @link substring="of" target="#of" :
- *    private static final StableValue<Logger> logger = StableValue.of();
+ *    private final StableValue<Logger> logger = StableValue.of();
  *
  *    private Logger getLogger() {
  *        return logger.orElseSet( () -> Logger.create(Component.class) );
@@ -145,7 +136,7 @@ import java.util.function.Supplier;
  * {@snippet lang = java:
  * public class Component {
  *
- *     private static final Supplier<Logger> logger =
+ *     private final Supplier<Logger> logger =
  *             // @link substring="supplier" target="#supplier(Supplier)" :
  *             StableValue.supplier( () -> Logger.getLogger(Component.class) );
  *
@@ -297,7 +288,7 @@ import java.util.function.Supplier;
  * <h2 id="composition">Composing stable values</h2>
  * A stable value can depend on other stable values, forming a dependency graph
  * that can be lazily computed but where access to individual elements still can be
- * constant-folded. In the following example, a single {@code Foo} and a {@code Bar}
+ * performant. In the following example, a single {@code Foo} and a {@code Bar}
  * instance (that is dependent on the {@code Foo} instance) are lazily created, both of
  * which are held by stable values:
  * {@snippet lang = java:
@@ -356,7 +347,7 @@ import java.util.function.Supplier;
  * stable int function {@code FIB} caches intermediate results, the initial
  * computational complexity is reduced from exponential to linear compared to a
  * traditional non-caching recursive fibonacci method. Once computed, the VM is free to
- * constant-fold expressions like {@code Fibonacci.fib(10)}.
+ * constant-fold expressions like {@code Fibonacci.fib(5)}.
  * <p>
  * The fibonacci example above is a dependency graph with no circular dependencies (i.e.,
  * it is a dependency tree):
@@ -402,6 +393,19 @@ import java.util.function.Supplier;
  * race. Since stable functions and stable collections are built on top of
  * {@linkplain StableValue#orElseSet(Supplier) orElseSet()} they too are
  * thread safe and guarantee at-most-once-per-input invocation.
+ *
+ * <h2 id="performance">Performance</h2>
+ * A stable value that is <em>set</em> is treated as a constant by the JVM, enabling the
+ * same performance optimizations that are available for {@code final} fields.
+ * As such, stable values can be used to replace {@code final} fields in cases where
+ * <em>at-most-once</em> update semantics is crucial, but where the eager initialization
+ * semantics associated with {@code final} fields is too restrictive.
+ * <p>
+ * In JDK 24, {@code final} instance fields in records and hidden classes (such as classes
+ * spun from method references) are trusted by the JVM, allowing them to be treated as
+ * constants. However, {@code final} instance fields in regular classes are <em>not</em>
+ * trusted meaning that such fields are <em>not</em> eligible for performance
+ * optimizations by the JVM (such as constant folding).
  *
  * @implSpec Implementing classes of {@linkplain StableValue} are free to synchronize on
  *           {@code this} and consequently, care should be taken whenever
