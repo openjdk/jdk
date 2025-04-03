@@ -429,7 +429,7 @@ public abstract class Provider extends Properties {
      * @since 1.2
      */
     @Override
-    public Set<Object> keySet() {
+    public synchronized Set<Object> keySet() {
         checkInitialized();
         return Collections.unmodifiableSet(super.keySet());
     }
@@ -441,7 +441,7 @@ public abstract class Provider extends Properties {
      * @since 1.2
      */
     @Override
-    public Collection<Object> values() {
+    public synchronized Collection<Object> values() {
         checkInitialized();
         return Collections.unmodifiableCollection(super.values());
     }
@@ -672,7 +672,8 @@ public abstract class Provider extends Properties {
     }
 
     // let javadoc show doc from superclass
-    public String getProperty(String key) {
+    @Override
+    public synchronized String getProperty(String key) {
         checkInitialized();
         return super.getProperty(key);
     }
