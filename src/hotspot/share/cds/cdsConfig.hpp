@@ -57,14 +57,11 @@ class CDSConfig : public AllStatic {
   static void extract_archive_paths(const char* archive_path,
                                     const char** base_archive_path,
                                     const char** top_archive_path);
-  static void init_classic_archive_paths();
-  static void init_complex_archive_paths(int num_archives);
   static int num_archive_paths(const char* path_spec);
   static void check_flag_single_path(const char* flag_name, const char* value);
-  static void init_aot_paths();
 
   // Checks before Arguments::apply_ergo()
-  static void check_flag_alias(bool alias_is_default, const char* alias_name);
+  static void check_new_flag(bool new_flag_is_default, const char* new_flag_name);
   static void check_aot_flags();
   static void check_aotmode_off();
   static void check_aotmode_auto_or_on();
@@ -72,8 +69,9 @@ class CDSConfig : public AllStatic {
   static void check_aotmode_create();
   static void check_unsupported_dumping_module_options();
 
-  // Checks after Arguments::apply_ergo() has started
-  static void ergo_check_dynamic_dump_options();
+  // Called after Arguments::apply_ergo() has started
+  static void ergo_init_classic_archive_paths();
+  static void ergo_init_aot_paths();
 
 public:
   // Used by jdk.internal.misc.CDS.getCDSConfigStatus();
