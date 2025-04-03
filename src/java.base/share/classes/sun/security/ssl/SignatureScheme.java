@@ -549,6 +549,26 @@ enum SignatureScheme {
         return null;
     }
 
+    // Convenience method to set all locally supported signature schemes for
+    // a given HandshakeContext.
+    static void setHandshakeLocalSupportedAlgs(HandshakeContext hc) {
+        List<ProtocolVersion> protocols = hc.negotiatedProtocol != null ?
+                List.of(hc.negotiatedProtocol) :
+                hc.activeProtocols;
+
+        hc.localSupportedSignAlgs = getSupportedAlgorithms(
+                hc.sslConfig,
+                hc.algorithmConstraints,
+                protocols,
+                HANDSHAKE_SCOPE);
+
+        hc.localSupportedCertSignAlgs = getSupportedAlgorithms(
+                hc.sslConfig,
+                hc.algorithmConstraints,
+                protocols,
+                CERTIFICATE_SCOPE);
+    }
+
     // Returns true if this signature scheme is supported for the given
     // protocol version and SSL scopes.
     private boolean isSupportedProtocol(

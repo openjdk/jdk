@@ -105,6 +105,7 @@ public class CriticalSubjectAltName implements HostnameVerifier {
             (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
         SSLServerSocket sslServerSocket =
             (SSLServerSocket) sslssf.createServerSocket(serverPort);
+        sslServerSocket.setEnabledProtocols(new String[]{"TLSv1.2"});
         serverPort = sslServerSocket.getLocalPort();
 
         /*
