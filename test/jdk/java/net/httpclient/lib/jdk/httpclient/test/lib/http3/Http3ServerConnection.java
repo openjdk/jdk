@@ -690,7 +690,14 @@ public class Http3ServerConnection {
         var push = new PendingPush(pushId, stream, headers, exchange);
         expungePromiseMap();
         var previous = promiseMap.putIfAbsent(pushId, push);
-        return previous == null ? push : previous;
+        if (previous == null || !(previous instanceof CancelledPush)) {
+            // allow to open multiple streams for the same pushId
+            // in order to test client behavior. We will return
+            // push even if the map contains a pending or completed
+            // push;
+            return push;
+        }
+        return previous;
     }
 
     void addPushPromise(final long promiseId, final PushPromise promise) {
@@ -699,10 +706,6 @@ public class Http3ServerConnection {
 
     PushPromise getPushPromise(final long promiseId) {
         return this.promiseMap.get(promiseId);
-    }
-
-    PushPromise removePushPromise(final long promiseId) {
-        return this.promiseMap.remove(promiseId);
     }
 
     void cancelPush(long pushId) {

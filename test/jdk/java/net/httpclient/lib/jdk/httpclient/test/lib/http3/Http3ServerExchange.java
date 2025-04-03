@@ -471,7 +471,7 @@ public final class Http3ServerExchange implements Http2TestExchange {
                 .openNewLocalUniStream(Duration.ofSeconds(10));
         final Http3ServerConnection.PushPromise promise =
                 serverConn.addPendingPush(pushId, stream, reqHeaders, this);
-        if (!(promise instanceof Http3ServerConnection.PendingPush ppp) || ppp.stream() != stream) {
+        if (!(promise instanceof Http3ServerConnection.PendingPush)) {
             stream.thenApply(this::cancel);
             return promise;
         }
@@ -481,7 +481,7 @@ public final class Http3ServerExchange implements Http2TestExchange {
             }
             String tag = "streamId=" + s.streamId() + ": ";
             var push = serverConn.getPushPromise(pushId);
-            if (!(push instanceof Http3ServerConnection.PendingPush)) {
+            if (push instanceof Http3ServerConnection.CancelledPush) {
                 this.cancel(s);
                 return push;
             }
@@ -525,7 +525,6 @@ public final class Http3ServerExchange implements Http2TestExchange {
                             if (debug.on()) {
                                 debug.log(tag + "Server push response body sent pushId=" + pushId);
                             }
-                            serverConn.removePushPromise(pushId); // we're done
                         } else {
                             if (debug.on()) {
                                 debug.log(tag + "Server push response body cancelled pushId=" + pushId);
