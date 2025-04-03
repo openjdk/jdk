@@ -1034,10 +1034,12 @@ public final class QuicConnectionStreams {
             // fit in the quic packet.
             sendersReady.add(sender);
         } else {
+            String msg = String.format("Stream %s not a sending or bidi stream: %s",
+                    streamId, stream.getClass().getName());
             if (debug.on()) {
-                debug.log("WARNING: stream %d not a sending or bidi stream: %s",
-                        streamId, stream.getClass().getName());
+                debug.log("WARNING: " + msg);
             }
+            throw new AssertionError(msg);
         }
     }
 

@@ -462,8 +462,8 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
                          receivePushPromiseFrame(ppf, payload);
                      } else if (partialFrame instanceof UnknownFrame) {
                          if (debug.on()) {
-                             debug.log("Warning: ignoring %d bytes for unknown frame type: %s",
-                                     payload == null ? 0 : Utils.remaining(payload),
+                             debug.log("ignoring %s bytes for unknown frame type: %s",
+                                     Utils.remaining(payload),
                                      Http3FrameType.asString(frameType));
                          }
                      } else {
