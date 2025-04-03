@@ -206,6 +206,9 @@ public:
   //  structures outside this range).
   static void initialize(address addr, size_t len);
 
+  static bool pre_initialized()   { return _narrow_klass_pointer_bits != -1; }
+  static bool fully_initialized() { return _base != (address)-1; }
+
   static void     print_mode(outputStream* st);
 
   // Can only be used after initialization

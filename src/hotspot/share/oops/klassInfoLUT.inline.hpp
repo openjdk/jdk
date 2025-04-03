@@ -32,10 +32,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/debug.hpp"
 
-inline unsigned KlassInfoLUT::num_entries() {
-   return nth_bit(CompressedKlassPointers::narrow_klass_pointer_bits());
-}
-
 ALWAYSINLINE uint32_t KlassInfoLUT::at(unsigned index) {
   assert(_entries != nullptr, "LUT table does not exist");
   assert(index < num_entries(), "oob (%x vs %x)", index, num_entries());

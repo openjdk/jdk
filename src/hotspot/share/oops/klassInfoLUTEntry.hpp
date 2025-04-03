@@ -175,7 +175,7 @@ public:
   // an error somewhere.
   bool is_invalid() const { return _v.raw == invalid_entry; }
 
-  static KlassLUTEntry build_from_klass(const Klass* k);
+  static uint32_t build_from_klass(const Klass* k);
 
 #ifdef ASSERT
   void verify_against_klass(const Klass* k) const;
