@@ -60,22 +60,21 @@ public non-sealed interface QuicBidiStream extends QuicStream, QuicReceiverStrea
         OPENED,
         /**
          * A bidirectional stream is considered locally half closed
-         * if one of its part is locally closed:
-         * all data has been sent and acknowledged, or all data
-         * has been received by the application, or a reset has
-         * been or received by one of its parts, but the other
-         * part is still sending or receiving.
+         * if the sending part is locally closed:
+         * all data has been sent and acknowledged, or a reset has
+         * been sent, but the receiving part is still receiving.
          */
         HALF_CLOSED_LOCAL,
         /**
          * A bidirectional stream is considered remotely half closed
-         * if all data has been read or received on the receiving part,
-         * or reset has been read or received on any part, but
-         * the other part is still sending or receiving.
+         * if the receiving part is closed:
+         * all data has been read or received on the receiving part,
+         * or reset has been read or received on the receiving part, but
+         * the sending part is still sending.
          */
         HALF_CLOSED_REMOTE,
         /**
-         * A bidirectional stream is considered closed is both parts
+         * A bidirectional stream is considered closed when both parts
          * have been reset or all data has been sent and acknowledged
          * and all data has been received.
          */
