@@ -675,19 +675,17 @@ public final class Http3PushManager {
             if (pe == null) {
                 promiseLock.lock();
                 try {
-                    if ((pe = ppp.exchange) == null) {
+                    if (ppp.exchange == null) {
+                        assert ppp.promiseHeaders == null;
                         @SuppressWarnings("unchecked")
-                        var ppe = pe = ((PendingPushPromise<U>) ppp).exchange = exchange;
-                        ppp.promiseHeaders = promiseHeaders;
+                        var pppU = (PendingPushPromise<U>) ppp;
+                        pppU.exchange = exchange;
+                        pppU.promiseHeaders = promiseHeaders;
+                        return pppU;
                     }
                 } finally {
                     promiseLock.unlock();
                 }
-            }
-            if (pe == exchange) {
-                @SuppressWarnings("unchecked")
-                var pp = ((PendingPushPromise<U>) promise);
-                return pp;
             }
             var previousHeaders = ppp.promiseHeaders;
             if (previousHeaders != null && !previousHeaders.equals(promiseHeaders)) {
