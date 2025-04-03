@@ -398,8 +398,9 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   //     The proof for (P1-AFTER-P2) can be done symmetrically.
 
   // TODO: check if limit is really ok, or if we have to adjust slightly.
+  //       also we have to check that we don't create cycles ...
 
-  Node* init = _vloop.cl()->init_trip();
+  Node* init = _vloop.pre_loop_head()->init_trip();
   Node* limit = _vloop.cl()->limit();
   tty->print("init  "); init->dump();
   tty->print("limit "); limit->dump();
