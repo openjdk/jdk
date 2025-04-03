@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,31 +180,17 @@ public class StreamHandler extends Handler {
      * {@code OutputStream}, the {@code Formatter}'s "head" string is
      * written to the stream before the {@code LogRecord} is written.
      *
-     * @implSpec This method avoids acquiring locks during {@code LogRecord}
-     * formatting, but {@code this} instance is synchronized when writing to the
-     * output stream. To avoid deadlock risk, subclasses must not hold locks
-     * while calling {@code super.publish()}. Specifically, subclasses must
-     * not define the overridden {@code publish()} method to be
-     * {@code synchronized} if they call {@code super.publish()}.
-     *
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
      */
     @Override
-    public void publish(LogRecord record) {
-        if (!isLoggable(record)) {
+    public synchronized void publish(LogRecord record) {
+       if (!isLoggable(record)) {
             return;
         }
-        // Read once for consistency (whether in or outside the locked region
-        // is not important).
-        Formatter formatter = getFormatter();
-        // JDK-8349206: To avoid deadlock risk, it is essential that the handler
-        // is not locked while formatting the log record. Methods such as
-        // reportError() and isLoggable() are defined to be thread safe, so we
-        // can restrict locking to just writing the message.
         String msg;
         try {
-            msg = formatter.format(record);
+            msg = getFormatter().format(record);
         } catch (Exception ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
@@ -213,15 +199,12 @@ public class StreamHandler extends Handler {
         }
 
         try {
-            synchronized(this) {
-                Writer writer = this.writer;
-                if (!doneHeader) {
-                    writer.write(formatter.getHead(this));
-                    doneHeader = true;
-                }
-                writer.write(msg);
-                synchronousPostWriteHook();
+            Writer writer = this.writer;
+            if (!doneHeader) {
+                writer.write(getFormatter().getHead(this));
+                doneHeader = true;
             }
+            writer.write(msg);
         } catch (Exception ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
@@ -229,17 +212,6 @@ public class StreamHandler extends Handler {
         }
     }
 
-    /**
-     * Overridden by other handlers in this package to facilitate synchronous
-     * post-write behaviour. If other handlers need similar functionality, it
-     * might be feasible to make this method protected (see JDK-8349206), but
-     * please find a better name if you do ;).
-     */
-    void synchronousPostWriteHook() {
-        // Empty by default. We could do:
-        //    assert Thread.holdsLock(this);
-        // but this is already covered by unit tests.
-    }
 
     /**
      * Check if this {@code Handler} would actually log a given {@code LogRecord}.
@@ -277,17 +249,15 @@ public class StreamHandler extends Handler {
         }
     }
 
-    // Called synchronously with "this" handler instance locked.
     private void flushAndClose() {
         Writer writer = this.writer;
         if (writer != null) {
-            Formatter formatter = getFormatter();
             try {
                 if (!doneHeader) {
-                    writer.write(formatter.getHead(this));
+                    writer.write(getFormatter().getHead(this));
                     doneHeader = true;
                 }
-                writer.write(formatter.getTail(this));
+                writer.write(getFormatter().getTail(this));
                 writer.flush();
                 writer.close();
             } catch (Exception ex) {
