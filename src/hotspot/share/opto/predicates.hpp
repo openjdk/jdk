@@ -1254,6 +1254,11 @@ class EliminateUselessPredicates : public StackObj {
   template <class PredicateList>
   void mark_maybe_useful_predicates_on_list_useless(const PredicateList& predicate_list) const;
 
+#ifdef ASSERT
+  void verify_loop_nodes_of_useless_templates_assertion_predicates_are_dead() const;
+  Unique_Node_List collect_loop_nodes_of_useless_template_assertion_predicates() const;
+  void verify_associated_loop_nodes_are_dead(const Unique_Node_List& loop_nodes_of_useless_template_assertion_predicates) const;
+#endif // ASSERT
  public:
   EliminateUselessPredicates(PhaseIterGVN& igvn, IdealLoopTree* ltree_root)
       : C(igvn.C), _parse_predicates(igvn.C->parse_predicates()),

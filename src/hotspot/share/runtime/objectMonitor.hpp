@@ -148,6 +148,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 #define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
 
 class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
+  friend class LightweightSynchronizer;
   friend class ObjectSynchronizer;
   friend class ObjectWaiter;
   friend class VMStructs;
