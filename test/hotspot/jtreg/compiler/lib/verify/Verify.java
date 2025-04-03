@@ -59,7 +59,7 @@ public final class Verify {
     /**
      * When comparing arbitrary classes recursively, we need to remember which
      * pairs of objects {@code (a, b)} we have already visited. The maps
-     * {@link a2b} and {@link b2a} track these edges. Caching which pairs
+     * {@code a2b} and {@code b2a} track these edges. Caching which pairs
      * we have already visited means the traversal only needs to visit every
      * pair once. And should we ever find a pair {@code (a, b')} or {@code (a', b)},
      * then we know that the two structures are not structurally equivalent.
@@ -74,7 +74,7 @@ public final class Verify {
     /**
      * Verify the contents of two Objects on a raw bit level, possibly recursively.
      * Different NaN encodings are considered non-equal, since we compare
-     * floating number by their raw bits.
+     * floating numbers by their raw bits.
      *
      * @param a First object to be recursively compared with the second.
      * @param b Second object to be recursively compared with the first.
@@ -87,7 +87,7 @@ public final class Verify {
 
     /**
      * Verify the contents of two Objects, possibly recursively.
-     * Different NaN encodins are considered equal.
+     * Different NaN encodings are considered equal.
      *
      * @param a First object to be recursively compared with the second.
      * @param b Second object to be recursively compared with the first.
@@ -303,8 +303,8 @@ public final class Verify {
 
     /**
      * Verify that two Exceptions have the same message. Messages are not always carried,
-     * they are often dropped to performance, and that is ok. But if both Exceptions have
-     * the message, we should compare them.
+     * they are often dropped for performance reasons, and that is okay. But if both Exceptions
+     * have the message, we should compare them.
      */
     private void checkEQimpl(Exception a, Exception b, String field, Object aParent, Object bParent) {
         String am = a.getMessage();
@@ -492,7 +492,7 @@ public final class Verify {
     /**
      * When comparing arbitrary classes recursively, we need to remember which
      * pairs of objects {@code (a, b)} we have already visited. The maps
-     * {@link a2b} and {@link b2a} track these edges. Caching which pairs
+     * {@link #a2b} and {@link #b2a} track these edges. Caching which pairs
      * we have already visited means the traversal only needs to visit every
      * pair once. And should we ever find a pair {@code (a, b')} or {@code (a', b)},
      * then we know that the two structures are not structurally equivalent.
