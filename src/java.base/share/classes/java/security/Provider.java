@@ -731,8 +731,9 @@ public abstract class Provider extends Properties {
 
         // Auxiliary set to determine if a service on the services map was added
         // with the Legacy API. The absence of a service key on this set is an
-        // indication that the service was either not added or added with the
-        // Current API. Only algorithm service keys are added to this set.
+        // indication that the service was either not added to the services
+        // map (any API) or was added with the Current API. Only algorithm
+        // service keys are added to this set.
         private final Set<ServiceKey> legacySvcKeys;
 
         // Auxiliary map to keep track of the Properties map entries that
@@ -747,6 +748,9 @@ public abstract class Provider extends Properties {
         // added to this map.
         private final Map<ServiceKey, Map<UString, String>> serviceAttrProps;
 
+        /*
+         * Default constructor. Creates an empty services map for a Provider.
+         */
         ServicesMap() {
             serviceSet = new AtomicReference<>();
             services = new ConcurrentHashMap<>();
@@ -983,9 +987,10 @@ public abstract class Provider extends Properties {
                         opSucceeded = removeAliasLegacy(miByKey.algKey, key,
                                 keysToBeKept);
                     } else {
-                        // The service was added with the Current API. Overwrite
-                        // the alias entry on the services map without modifying
-                        // the service that is currently using it.
+                        // The service was added with the Current API. Once we
+                        // return to putService, the alias entry on the services
+                        // map will be overwritten without modifying the service
+                        // that is currently associated with.
 
                         // Remove any Properties map key entry because, if no
                         // longer used as an alias, the entry would not be
@@ -1122,7 +1127,7 @@ public abstract class Provider extends Properties {
                 String canonicalPropKey = propKey;
                 if (oldMi.svc != null) {
                     // The service exists. Get its Properties map entry. Note:
-                    // Services added through an alias or an attribute may don't
+                    // Services added through an alias or an attribute may not
                     // have one.
                     String oldPropKey = serviceProps.get(oldMi.algKey);
                     if (oldMi.algKey.equals(key)) {
@@ -1367,6 +1372,8 @@ public abstract class Provider extends Properties {
          * The updated version of the service is put on the services map.
          * Algorithm and alias based entries pointing to the old version of the
          * service are overwritten.
+         *
+         * This method is invoked from the Legacy API only.
          */
         private boolean updateSvc(ServiceKey key,
                 ServiceUpdateCallback updateCb) {
@@ -1533,9 +1540,9 @@ public abstract class Provider extends Properties {
     }
 
     private Object implRemove(Object key) {
-        Object oldValue = super.get(key);
-        return doLegacyOp(servicesMap, key, oldValue, null, OPType.REMOVE) ==
-                PropertiesMapAction.UPDATE ? super.remove(key) : oldValue;
+        Object value = super.get(key);
+        return doLegacyOp(servicesMap, key, value, null, OPType.REMOVE) ==
+                PropertiesMapAction.UPDATE ? super.remove(key) : value;
     }
 
     private boolean implRemove(Object key, Object value) {
@@ -1651,7 +1658,6 @@ public abstract class Provider extends Properties {
                 PropertiesMapAction.UPDATE ? super.put(key, value) : oldValue;
     }
 
-    // used as key in the serviceMap and legacyMap HashMaps
     private static final class ServiceKey {
         private final String type;
         private final String algorithm;
@@ -2066,16 +2072,19 @@ public abstract class Provider extends Properties {
         private Map<UString, String> attributes;
         private final EngineDescription engineDescription;
 
-        // For services added to a ServicesMap, their algorithm service key.
-        // This value derives from the algorithm field. For services (still)
-        // not added to a ServicesMap, value is null.
+        // This value is the algorithm service key when the service is added to
+        // the ServicesMap. Value is null otherwise.
         private ServiceKey algKey;
 
-        // For services added to a ServicesMap, this is a map from alias service
-        // keys to alias string values. Empty map if no aliases. While map
-        // entries derive from the aliases field, keys are not repeated
-        // (case-insensitive comparison) and not equal to the algorithm. For
-        // services (still) not added to a ServicesMap, value is an empty map.
+        // This map is empty if the service has no aliases or has not been
+        // registered in the ServicesMap. When the service has aliases and is
+        // registered in the ServicesMap, this information maps the alias
+        // ServiceKey to the string alias as originally defined in the service.
+        //
+        // The purpose for this map is both to keep references to alias
+        // ServiceKeys for reuse (i.e. we don't have to construct them from
+        // strings multiple times) and to facilitate alias string updates with
+        // different casing from the Legacy API.
         private Map<ServiceKey, String> aliasKeys;
 
         // Reference to the cached implementation Class object.
@@ -2107,7 +2116,7 @@ public abstract class Provider extends Properties {
         private static final Class<?>[] CLASS0 = new Class<?>[0];
 
         /*
-         * Constructor used from the ServicesMap Legacy API.
+         * Constructor used by the ServicesMap Legacy API.
          */
         private Service(Provider provider, ServiceKey algKey) {
             assert algKey.algorithm.intern() == algKey.algorithm :
@@ -2146,7 +2155,6 @@ public abstract class Provider extends Properties {
             } else {
                 attributes = new HashMap<>(svc.attributes);
             }
-            registered = false;
 
             // Do not copy cached fields because the updated service may have a
             // different class name or attributes and these values have to be
@@ -2238,34 +2246,11 @@ public abstract class Provider extends Properties {
             if (attributes == null) {
                 this.attributes = Collections.emptyMap();
             } else {
-                this.attributes = new HashMap<>();
+                this.attributes = new HashMap<>(attributes.size(), 1.0f);
                 for (Map.Entry<String, String> entry : attributes.entrySet()) {
                     this.attributes.put(new UString(entry.getKey()),
                             entry.getValue());
                 }
-            }
-        }
-
-        /*
-         * When a Service is added to a ServicesMap with the Current API,
-         * service and alias keys must be generated. Currently used by
-         * ServicesMap::putService. Legacy API methods do not need to call:
-         * they generated the algorithm key at construction time and alias
-         * keys with Service::addAliasKey.
-         */
-        private void generateServiceKeys() {
-            if (algKey == null) {
-                assert (Object)aliasKeys == Collections.emptyMap() :
-                        "aliasKeys expected to be the empty map.";
-                algKey = new ServiceKey(type, algorithm, true);
-                aliasKeys = new HashMap<>(aliases.size());
-                for (String alias : aliases) {
-                    ServiceKey aliasKey = new ServiceKey(type, alias, true);
-                    if (!aliasKey.equals(algKey)) {
-                        aliasKeys.put(aliasKey, alias);
-                    }
-                }
-                aliasKeys = Collections.unmodifiableMap(aliasKeys);
             }
         }
 
@@ -2401,6 +2386,31 @@ public abstract class Provider extends Properties {
                     ("Error constructing implementation (algorithm: "
                     + algorithm + ", provider: " + provider.getName()
                     + ", class: " + className + ")", e);
+            }
+        }
+
+        /*
+         * When a Service is added to a ServicesMap with the Current API,
+         * service and alias keys must be generated. Currently used by
+         * ServicesMap::putService. Legacy API methods do not need to call:
+         * they generated the algorithm key at construction time and alias
+         * keys with Service::addAliasKey.
+         */
+        private void generateServiceKeys() {
+            if (algKey == null) {
+                assert (Object)aliasKeys == Collections.emptyMap() :
+                        "aliasKeys expected to be the empty map.";
+                algKey = new ServiceKey(type, algorithm, true);
+                if (!aliases.isEmpty()) {
+                    aliasKeys = new HashMap<>(aliases.size());
+                    for (String alias : aliases) {
+                        ServiceKey aliasKey = new ServiceKey(type, alias, true);
+                        if (!aliasKey.equals(algKey)) {
+                            aliasKeys.put(aliasKey, alias);
+                        }
+                    }
+                    aliasKeys = Collections.unmodifiableMap(aliasKeys);
+                }
             }
         }
 
