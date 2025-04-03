@@ -55,6 +55,15 @@ import java.util.HashMap;
  */
 public final class Verify {
     private final boolean isFloatCheckWithRawBits;
+
+    /**
+     * When comparing arbitrary classes recursively, we need to remember which
+     * pairs of objects {@code (a, b)} we have already visited. The maps
+     * {@link a2b} and {@link b2a} track these edges. Caching which pairs
+     * we have already visited means the traversal only needs to visit every
+     * pair once. And should we ever find a pair {@code (a, b')} or {@code (a', b)},
+     * then we know that the two structures are not structurally equivalent.
+     */
     private final HashMap<Object, Object> a2b = new HashMap<>();
     private final HashMap<Object, Object> b2a = new HashMap<>();
 
@@ -103,8 +112,8 @@ public final class Verify {
         }
 
         // Class mismatch
-        Class ca = a.getClass();
-        Class cb = b.getClass();
+        Class<?> ca = a.getClass();
+        Class<?> cb = b.getClass();
         if (ca != cb) {
             System.err.println("ERROR: Verify.checkEQ failed: class mismatch.");
             System.err.println("       " + ca.getName() + " vs " + cb.getName());
@@ -120,14 +129,14 @@ public final class Verify {
 
         switch (a) {
             case Object[]  x -> checkEQimpl(x, (Object[])b,                 field, aParent, bParent);
-            case Byte      x -> checkEQimpl(x, ((Byte)b).byteValue(),       field, aParent, bParent);
-            case Character x -> checkEQimpl(x, ((Character)b).charValue(),  field, aParent, bParent);
-            case Short     x -> checkEQimpl(x, ((Short)b).shortValue(),     field, aParent, bParent);
-            case Integer   x -> checkEQimpl(x, ((Integer)b).intValue(),     field, aParent, bParent);
-            case Long      x -> checkEQimpl(x, ((Long)b).longValue(),       field, aParent, bParent);
-            case Float     x -> checkEQimpl(x, ((Float)b).floatValue(),     field, aParent, bParent);
-            case Double    x -> checkEQimpl(x, ((Double)b).doubleValue(),   field, aParent, bParent);
-            case Boolean   x -> checkEQimpl(x, ((Boolean)b).booleanValue(), field, aParent, bParent);
+            case Byte      x -> checkEQimpl(x, (Byte)b,                     field, aParent, bParent);
+            case Character x -> checkEQimpl(x, (Character)b,                field, aParent, bParent);
+            case Short     x -> checkEQimpl(x, (Short)b,                    field, aParent, bParent);
+            case Integer   x -> checkEQimpl(x, (Integer)b,                  field, aParent, bParent);
+            case Long      x -> checkEQimpl(x, (Long)b,                     field, aParent, bParent);
+            case Float     x -> checkEQimpl(x, (Float)b,                    field, aParent, bParent);
+            case Double    x -> checkEQimpl(x, (Double)b,                   field, aParent, bParent);
+            case Boolean   x -> checkEQimpl(x, (Boolean)b,                  field, aParent, bParent);
             case byte[]    x -> checkEQimpl(x, (byte[])b,                   field, aParent, bParent);
             case char[]    x -> checkEQimpl(x, (char[])b,                   field, aParent, bParent);
             case short[]   x -> checkEQimpl(x, (short[])b,                  field, aParent, bParent);
@@ -139,26 +148,11 @@ public final class Verify {
             case MemorySegment x -> checkEQimpl(x, (MemorySegment) b,       field, aParent, bParent);
             case Exception x -> checkEQimpl(x, (Exception) b,               field, aParent, bParent);
             default -> {
-                if (ca.getName().startsWith("jdk.incubator.vector") && ca.getName().contains("Vector")) {
-                    // We do not want to import jdk.incubator.vector explicitly, because it would mean we would also have
-                    // to add "--add-modules=jdk.incubator.vector" to the command-line of every test that uses the Verify
-                    // class. So we hack this via reflection.
-                    Object va = null;
-                    Object vb = null;
-                    try {
-                        Method m = ca.getMethod("toArray");
-                        m.setAccessible(true);
-                        va = m.invoke(a);
-                        vb = m.invoke(b);
-                    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                        throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
-                    }
-                    checkEQdispatch(va, vb, field + ".toArray", aParent, bParent);
-                    return;
+                if (isVectorAPIClass(ca)) {
+                    checkEQForVectorAPIClass(a, b, field, aParent, bParent);
+                } else {
+                    checkEQArbitraryClasses(a, b);
                 }
-
-                checkEQArbitraryClasses(a, b);
-                return;
             }
         }
     }
@@ -179,6 +173,8 @@ public final class Verify {
      */
     private void checkEQimpl(char a, char b, String field, Object aParent, Object bParent) {
         if (a != b) {
+            // Note: we need to cast "(int)a", otherwise a char of numerical value "66" is
+            //       formatted as character "B".
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + (int)a + " vs " + (int)b);
             print(a, b, field, aParent, bParent);
             throw new VerifyException("Value mismatch: " + (int)a + " vs " + (int)b);
@@ -190,9 +186,9 @@ public final class Verify {
      */
     private void checkEQimpl(short a, short b, String field, Object aParent, Object bParent) {
         if (a != b) {
-            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + (int)a + " vs " + (int)b);
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b);
             print(a, b, field, aParent, bParent);
-            throw new VerifyException("Value mismatch: " + (int)a + " vs " + (int)b);
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
         }
     }
 
@@ -229,23 +225,23 @@ public final class Verify {
      * pattern in all cases, except for NaN we project to the canonical NaN, using Float.floatToIntBits.
      */
     private boolean isFloatEQ(float a, float b) {
-        return isFloatCheckWithRawBits ? Float.floatToRawIntBits(a) != Float.floatToRawIntBits(b)
-                                       : Float.floatToIntBits(a) != Float.floatToIntBits(b);
+        return isFloatCheckWithRawBits ? Float.floatToRawIntBits(a) == Float.floatToRawIntBits(b)
+                                       : Float.floatToIntBits(a) == Float.floatToIntBits(b);
     }
 
     /**
      * See comments for {@link #isFloatEQ}.
      */
     private boolean isDoubleEQ(double a, double b) {
-        return isFloatCheckWithRawBits ? Double.doubleToRawLongBits(a) != Double.doubleToRawLongBits(b)
-                                       : Double.doubleToLongBits(a) != Double.doubleToLongBits(b);
+        return isFloatCheckWithRawBits ? Double.doubleToRawLongBits(a) == Double.doubleToRawLongBits(b)
+                                       : Double.doubleToLongBits(a) == Double.doubleToLongBits(b);
     }
 
     /**
      * Check that two floats are equal according to {@link #isFloatEQ}.
      */
     private void checkEQimpl(float a, float b, String field, Object aParent, Object bParent) {
-        if (isFloatEQ(a, b)) {
+        if (!isFloatEQ(a, b)) {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch. check raw: " + isFloatCheckWithRawBits);
             System.err.println("  Values: " + a + " vs " + b);
             System.err.println("  Raw:    " + Float.floatToRawIntBits(a) + " vs " + Float.floatToRawIntBits(b));
@@ -258,7 +254,7 @@ public final class Verify {
      * Check that two doubles are equal according to {@link #isDoubleEQ}.
      */
     private void checkEQimpl(double a, double b, String field, Object aParent, Object bParent) {
-        if (isDoubleEQ(a, b)) {
+        if (!isDoubleEQ(a, b)) {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch. check raw: " + isFloatCheckWithRawBits);
             System.err.println("       Values: " + a + " vs " + b);
             System.err.println("       Raw:    " + Double.doubleToRawLongBits(a) + " vs " + Double.doubleToRawLongBits(b));
@@ -306,8 +302,9 @@ public final class Verify {
     }
 
     /**
-     * Verify that the content of two MemorySegments is identical. Note: we do not check the
-     * backing type, only the size and content.
+     * Verify that two Exceptions have the same message. Messages are not always carried,
+     * they are often dropped to performance, and that is ok. But if both Exceptions have
+     * the message, we should compare them.
      */
     private void checkEQimpl(Exception a, Exception b, String field, Object aParent, Object bParent) {
         String am = a.getMessage();
@@ -318,8 +315,8 @@ public final class Verify {
         if (am.equals(bm)) { return; }
 
         System.err.println("ERROR: Verify.checkEQ failed:");
-        System.out.println("a: " + a.getMessage());
-        System.out.println("b: " + b.getMessage());
+        System.err.println("a: " + a.getMessage());
+        System.err.println("b: " + b.getMessage());
         print(a, b, field, aParent, bParent);
         throw new VerifyException("Exception message mismatch: " + a + " vs " + b);
     }
@@ -370,7 +367,7 @@ public final class Verify {
         }
 
         for (int i = 0; i < a.length; i++) {
-            if (isFloatEQ(a[i], b[i])) {
+            if (!isFloatEQ(a[i], b[i])) {
                 System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + ". check raw: " + isFloatCheckWithRawBits);
                 print(a, b, field, aParent, bParent);
                 throw new VerifyException("Float array value mismatch " + a[i] + " vs " + b[i]);
@@ -389,7 +386,7 @@ public final class Verify {
         }
 
         for (int i = 0; i < a.length; i++) {
-            if (isDoubleEQ(a[i], b[i])) {
+            if (!isDoubleEQ(a[i], b[i])) {
                 System.err.println("ERROR: Verify.checkEQ failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + ". check raw: " + isFloatCheckWithRawBits);
                 print(a, b, field, aParent, bParent);
                 throw new VerifyException("Double array value mismatch " + a[i] + " vs " + b[i]);
@@ -434,6 +431,36 @@ public final class Verify {
         }
     }
 
+    /**
+     * We do not want to import jdk.incubator.vector explicitly, because it would mean we would also have
+     * to add "--add-modules=jdk.incubator.vector" to the command-line of every test that uses the Verify
+     * class. So we hack this via reflection.
+     */
+    private static boolean isVectorAPIClass(Class<?> c) {
+        return c.getName().startsWith("jdk.incubator.vector") &&
+               c.getName().contains("Vector");
+    }
+
+    /**
+     * We do not want to import jdk.incubator.vector explicitly, because it would mean we would also have
+     * to add "--add-modules=jdk.incubator.vector" to the command-line of every test that uses the Verify
+     * class. So we hack this via reflection.
+     */
+    private void checkEQForVectorAPIClass(Object a, Object b, String field, Object aParent, Object bParent) {
+        Class<?> ca = a.getClass();
+        Object va;
+        Object vb;
+        try {
+            Method m = ca.getMethod("toArray");
+            m.setAccessible(true);
+            va = m.invoke(a);
+            vb = m.invoke(b);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
+        }
+        checkEQdispatch(va, vb, field + ".toArray", aParent, bParent);
+    }
+
     private void checkEQArbitraryClasses(Object a, Object b) {
         Class<?> c = a.getClass();
         while (c != Object.class) {
@@ -461,6 +488,15 @@ public final class Verify {
         System.err.println("  b:       " + b);
     }
 
+
+    /**
+     * When comparing arbitrary classes recursively, we need to remember which
+     * pairs of objects {@code (a, b)} we have already visited. The maps
+     * {@link a2b} and {@link b2a} track these edges. Caching which pairs
+     * we have already visited means the traversal only needs to visit every
+     * pair once. And should we ever find a pair {@code (a, b')} or {@code (a', b)},
+     * then we know that the two structures are not structurally equivalent.
+     */
     private boolean checkAlreadyVisited(Object a, Object b, String field, Object aParent, Object bParent) {
         // Boxed primitives are not guaranteed to be the same Object for the same primitive value.
         // Hence, we cannot use the mapping below. We test these boxed primitive types by value anyway,
@@ -516,7 +552,7 @@ public final class Verify {
             byte b = a.get(ValueLayout.JAVA_BYTE, i);
             System.err.print(String.format("%02x ", b));
         }
-        System.err.println("");
+        System.err.println();
         for (long i = start; i < end; i++) {
             if (i == offset) {
                 System.err.print("^^ ");
@@ -524,6 +560,6 @@ public final class Verify {
                 System.err.print("   ");
             }
         }
-        System.err.println("");
+        System.err.println();
     }
 }
