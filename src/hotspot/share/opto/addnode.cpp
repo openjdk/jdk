@@ -829,7 +829,7 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     Node* tn = phase->transform(and_a_b);
     return AddNode::make_not(phase, tn, T_INT);
   }
-  return nullptr;
+  return AddNode::Ideal(phase, can_reshape);
 }
 
 //------------------------------add_ring---------------------------------------
@@ -909,7 +909,7 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return AddNode::make_not(phase, tn, T_LONG);
   }
 
-  return nullptr;
+  return AddNode::Ideal(phase, can_reshape);
 }
 
 //------------------------------add_ring---------------------------------------
