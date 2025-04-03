@@ -29,7 +29,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
-import java.util.ArrayList;
 
 
 /**
@@ -64,8 +63,8 @@ public final class Verify {
     }
 
     /**
-     * Verify the content of two Objects, possibly recursively.
-     * Different NaN encodins are considered non-qual, since we compare
+     * Verify the contents of two Objects on a raw bit level, possibly recursively.
+     * Different NaN encodings are considered non-equal, since we compare
      * floating number by their raw bits.
      *
      * @param a First object to be recursively compared with the second.
@@ -78,7 +77,7 @@ public final class Verify {
     }
 
     /**
-     * Verify the content of two Objects, possibly recursively.
+     * Verify the contents of two Objects, possibly recursively.
      * Different NaN encodins are considered equal.
      *
      * @param a First object to be recursively compared with the second.
@@ -151,11 +150,7 @@ public final class Verify {
                         m.setAccessible(true);
                         va = m.invoke(a);
                         vb = m.invoke(b);
-                    } catch (NoSuchMethodException e) {
-                        throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
-                    } catch (IllegalAccessException e) {
-                        throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
-                    } catch (InvocationTargetException e) {
+                    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                         throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
                     }
                     checkEQdispatch(va, vb, field + ".toArray", aParent, bParent);
@@ -230,7 +225,7 @@ public final class Verify {
      * But the Java spec allows us to return different bits for a NaN, which allows swapping the inputs
      * of an add or mul (NaN1 * NaN2 does not have same bits as NaN2 * NaN1, because the multiplication
      * of two NaN values should always return the first of the two).
-     * Hence, by default, we pick the non-raw coparison: we verify that we have the same bit
+     * Hence, by default, we pick the non-raw comparison: we verify that we have the same bit
      * pattern in all cases, except for NaN we project to the canonical NaN, using Float.floatToIntBits.
      */
     private boolean isFloatEQ(float a, float b) {
@@ -239,7 +234,7 @@ public final class Verify {
     }
 
     /**
-     * See comments for "isFloatEQ".
+     * See comments for {@link #isFloatEQ}.
      */
     private boolean isDoubleEQ(double a, double b) {
         return isFloatCheckWithRawBits ? Double.doubleToRawLongBits(a) != Double.doubleToRawLongBits(b)
@@ -247,7 +242,7 @@ public final class Verify {
     }
 
     /**
-     * Check that two floats are equal according to "isFloatEQ".
+     * Check that two floats are equal according to {@link #isFloatEQ}.
      */
     private void checkEQimpl(float a, float b, String field, Object aParent, Object bParent) {
         if (isFloatEQ(a, b)) {
@@ -260,7 +255,7 @@ public final class Verify {
     }
 
     /**
-     * Check that two doubles are equal according to "isDoubleEQ".
+     * Check that two doubles are equal according to {@link #isDoubleEQ}.
      */
     private void checkEQimpl(double a, double b, String field, Object aParent, Object bParent) {
         if (isDoubleEQ(a, b)) {
@@ -284,7 +279,7 @@ public final class Verify {
     }
 
     /**
-     * Verify that the content of two MemorySegments is identical. Note: we do not check the
+     * Verify that the contents of two MemorySegments are identical. Note: we do not check the
      * backing type, only the size and content.
      */
     private void checkEQimpl(MemorySegment a, MemorySegment b, String field, Object aParent, Object bParent) {
@@ -330,42 +325,42 @@ public final class Verify {
     }
 
     /**
-     * Verify that the content of two byte arrays is identical.
+     * Verify that the contents of two byte arrays are identical.
      */
     private void checkEQimpl(byte[] a, byte[] b, String field, Object aParent, Object bParent) {
         checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), field + " -> to MemorySegment", aParent, bParent);
     }
 
     /**
-     * Verify that the content of two char arrays is identical.
+     * Verify that the contents of two char arrays are identical.
      */
     private void checkEQimpl(char[] a, char[] b, String field, Object aParent, Object bParent) {
         checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), field + " -> to MemorySegment", aParent, bParent);
     }
 
     /**
-     * Verify that the content of two short arrays is identical.
+     * Verify that the contents of two short arrays are identical.
      */
     private void checkEQimpl(short[] a, short[] b, String field, Object aParent, Object bParent) {
         checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), field + " -> to MemorySegment", aParent, bParent);
     }
 
     /**
-     * Verify that the content of two int arrays is identical.
+     * Verify that the contents of two int arrays are identical.
      */
     private void checkEQimpl(int[] a, int[] b, String field, Object aParent, Object bParent) {
         checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), field + " -> to MemorySegment", aParent, bParent);
     }
 
     /**
-     * Verify that the content of two long arrays is identical.
+     * Verify that the contents of two long arrays are identical.
      */
     private void checkEQimpl(long[] a, long[] b, String field, Object aParent, Object bParent) {
         checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), field + " -> to MemorySegment", aParent, bParent);
     }
 
     /**
-     * Check that two float arrays are equal according to "isFloatEQ".
+     * Check that two float arrays are equal according to {@link #isFloatEQ}.
      */
     private void checkEQimpl(float[] a, float[] b, String field, Object aParent, Object bParent) {
         if (a.length != b.length) {
@@ -384,7 +379,7 @@ public final class Verify {
     }
 
     /**
-     * Check that two double arrays are equal according to "isDoubleEQ".
+     * Check that two double arrays are equal according to {@link #isDoubleEQ}.
      */
     private void checkEQimpl(double[] a, double[] b, String field, Object aParent, Object bParent) {
         if (a.length != b.length) {
@@ -403,7 +398,7 @@ public final class Verify {
     }
 
     /**
-     * Verify that the content of two boolean arrays is identical.
+     * Verify that the contents of two boolean arrays are identical.
      */
     private void checkEQimpl(boolean[] a, boolean[] b, String field, Object aParent, Object bParent) {
         if (a.length != b.length) {
@@ -422,7 +417,7 @@ public final class Verify {
     }
 
     /**
-     * Verify that the content of two Object arrays is identical, recursively:
+     * Verify that the contents of two Object arrays are identical, recursively:
      * every element is compared with checkEQimpl for the corresponding type.
      */
     private void checkEQimpl(Object[] a, Object[] b, String field, Object aParent, Object bParent) {
@@ -440,11 +435,11 @@ public final class Verify {
     }
 
     private void checkEQArbitraryClasses(Object a, Object b) {
-        Class c = a.getClass();
+        Class<?> c = a.getClass();
         while (c != Object.class) {
             for (Field field : c.getDeclaredFields()) {
-                Object va = null;
-                Object vb = null;
+                Object va;
+                Object vb;
                 try {
                     field.setAccessible(true);
                     va = field.get(a);
@@ -471,14 +466,14 @@ public final class Verify {
         // Hence, we cannot use the mapping below. We test these boxed primitive types by value anyway,
         // and they are no recursive structures, so there is no point in optimizing here anyway.
         switch(a) {
-            case Boolean x -> { return false; }
-            case Byte x -> { return false; }
-            case Short x -> { return false; }
-            case Character x -> { return false; }
-            case Integer x -> { return false; }
-            case Long x -> { return false; }
-            case Float x -> { return false; }
-            case Double x -> { return false; }
+            case Boolean _, 
+                 Byte _, 
+                 Short _, 
+                 Character _, 
+                 Integer _, 
+                 Long _, 
+                 Float _, 
+                 Double _ -> { return false; }
             default -> {}
         }
 
