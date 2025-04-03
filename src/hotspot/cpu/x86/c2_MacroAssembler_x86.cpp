@@ -7105,7 +7105,7 @@ void C2_MacroAssembler::scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegi
     // the second source operand, either a NaN or a valid floating-point value, is returned
     // dst = max(xtmp1, xtmp2)
     vmaxsh(dst, xtmp1, xtmp2);
-    // isNaN = is_unordered_quite(xtmp1)
+    // isNaN = is_unordered_quiet(xtmp1)
     evcmpsh(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q);
     // Final result is same as first source if its a NaN value,
     // in case second operand holds a NaN value then as per above semantics
@@ -7126,7 +7126,7 @@ void C2_MacroAssembler::scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegi
     // or a valid floating-point value, is written to the result.
     // dst = min(xtmp1, xtmp2)
     vminsh(dst, xtmp1, xtmp2);
-    // isNaN = is_unordered_quite(xtmp1)
+    // isNaN = is_unordered_quiet(xtmp1)
     evcmpsh(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q);
     // Final result is same as first source if its a NaN value,
     // in case second operand holds a NaN value then as per above semantics
