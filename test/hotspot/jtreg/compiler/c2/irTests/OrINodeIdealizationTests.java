@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8322077
+ * @bug 8322077 8353359
  * @summary Test that Ideal transformations of OrINode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.OrINodeIdealizationTests
