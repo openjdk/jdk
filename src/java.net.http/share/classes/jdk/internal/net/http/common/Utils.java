@@ -1024,13 +1024,6 @@ public final class Utils {
         return sliceOrCopy(src, start, len, SLICE_THRESHOLD);
     }
 
-    private static int memory(ByteBuffer buffer) {
-        var capacity = buffer.capacity();
-        return buffer.hasArray()
-                ? Math.max(buffer.array().length, capacity)
-                : capacity;
-    }
-
     /**
      * Creates a slice of a buffer, possibly copying the data instead
      * of slicing.
@@ -1045,7 +1038,8 @@ public final class Utils {
      * @return a new ByteBuffer for the given slice
      */
     public static ByteBuffer sliceOrCopy(ByteBuffer src, int start, int len, int threshold) {
-        int cap = memory(src);
+        assert src.hasArray();
+        int cap = src.array().length;
         if (cap - len < threshold) {
             return src.slice(start, len);
         } else {
