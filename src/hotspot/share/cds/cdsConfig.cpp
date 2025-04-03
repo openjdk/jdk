@@ -225,9 +225,9 @@ void CDSConfig::ergo_init_classic_archive_paths() {
           // regenerate the dynamic archive base on default archive.
           if (AutoCreateSharedArchive && !os::file_exists(SharedArchiveFile)) {
             enable_dumping_dynamic_archive(SharedArchiveFile);
-            ArchiveClassesAtExit = SharedArchiveFile;
+            FLAG_SET_ERGO(ArchiveClassesAtExit, SharedArchiveFile);
             _input_static_archive_path = default_archive_path();
-            SharedArchiveFile = nullptr;
+            FLAG_SET_ERGO(SharedArchiveFile, nullptr);
          } else {
             if (AutoCreateSharedArchive) {
               warning("-XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
@@ -627,8 +627,12 @@ bool CDSConfig::is_dumping_final_static_archive() {
 
 void CDSConfig::enable_dumping_dynamic_archive(const char* output_path) {
   _is_dumping_dynamic_archive = true;
-  if (output_path != nullptr) {
-    // Comment -- why can this be null?
+  if (output_path == nullptr) {
+    // output_path can be null when the VM is started with -XX:+RecordDynamicDumpInfo
+    // in anticipation of "jcmd VM.cds dynamic_dump", which will provide the actual
+    // output path.
+    _output_archive_path = nullptr;
+  } else {
     _output_archive_path = os::strdup_check_oom(output_path, mtArguments);
   }
 }
