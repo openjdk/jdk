@@ -47,6 +47,7 @@ class AMD64HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int useAVX = getFlag("UseAVX", Integer.class);
 
     final long vmVersionFeatures = getFieldValue("Abstract_VM_Version::_features", Long.class, "uint64_t");
+    final long vmVersionExtraFeatures = getFieldValue("Abstract_VM_Version::_extra_features", Long.class, "uint64_t");
 
     // CPU feature flags
     final long amd64CX8 = getConstant("VM_Version::CPU_CX8", Long.class);
@@ -88,4 +89,6 @@ class AMD64HotSpotVMConfig extends HotSpotVMConfigAccess {
     final long amd64OSPKE = getConstant("VM_Version::CPU_OSPKE", Long.class);
     final long amd64CET_IBT = getConstant("VM_Version::CPU_CET_IBT", Long.class);
     final long amd64CET_SS = getConstant("VM_Version::CPU_CET_SS", Long.class);
+    final long avx10_1 = getConstant("VM_Version::CPU_AVX10_1", Long.class);
+    final long avx10_2 = getConstant("VM_Version::EXTRA_CPU_AVX10_2", Long.class);
 }

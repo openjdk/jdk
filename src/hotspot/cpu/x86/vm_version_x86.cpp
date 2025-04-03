@@ -51,6 +51,10 @@ VM_Version::CpuidInfo VM_Version::_cpuid_info = { 0, };
 const char* VM_Version::_features_names[] = { CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_NAME)};
 #undef DECLARE_CPU_FEATURE_FLAG
 
+#define DECLARE_EXTRA_CPU_FEATURE_NAME(id, name, bit) name,
+const char* VM_Version::_extra_features_names[] = { EXTRA_CPU_FEATURE_FLAGS(DECLARE_EXTRA_CPU_FEATURE_NAME)};
+#undef DECLARE_EXTRA_CPU_FEATURE_FLAG
+
 // Address of instruction which causes SEGV
 address VM_Version::_cpuinfo_segv_addr = nullptr;
 // Address of instruction after the one which causes SEGV
@@ -138,7 +142,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     const uint32_t CPU_FAMILY_486 = (4 << CPU_FAMILY_SHIFT);
     bool use_evex = FLAG_IS_DEFAULT(UseAVX) || (UseAVX > 2);
 
-    Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4;
+    Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4, std_cpuid24;
     Label sef_cpuid, sefsl1_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid7;
     Label ext_cpuid8, done, wrapup, vector_save_restore, apx_save_restore_warning;
     Label legacy_setup, save_restore_except, legacy_save_restore, start_simd_check;
@@ -342,6 +346,17 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi, 4), rdx);
 
     //
+    // cpuid(0x24) Converged Vector ISA Main Leaf (EAX = 24H, ECX = 0).
+    //
+    __ bind(std_cpuid24);
+    __ movl(rax, 0x24);
+    __ movl(rcx, 0);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid24_offset())));
+    __ movl(Address(rsi, 0), rax);
+    __ movl(Address(rsi, 4), rbx);
+
+    //
     // Extended cpuid(0x80000000)
     //
     __ bind(ext_cpuid);
@@ -428,13 +443,11 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::sefsl1_cpuid7_offset())));
     __ movl(rax, 0x200000);
     __ andl(rax, Address(rsi, 4));
-    __ cmpl(rax, 0x200000);
-    __ jcc(Assembler::notEqual, vector_save_restore);
+    __ jcc(Assembler::equal, vector_save_restore);
     // check _cpuid_info.xem_xcr0_eax.bits.apx_f
     __ movl(rax, 0x80000);
     __ andl(rax, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset()))); // xcr0 bits apx_f
-    __ cmpl(rax, 0x80000);
-    __ jcc(Assembler::notEqual, vector_save_restore);
+    __ jcc(Assembler::equal, vector_save_restore);
 
 #ifndef PRODUCT
     bool save_apx = UseAPX;
@@ -463,13 +476,11 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid1_offset())));
     __ movl(rcx, 0x18000000); // cpuid1 bits osxsave | avx
     __ andl(rcx, Address(rsi, 8)); // cpuid1 bits osxsave | avx
-    __ cmpl(rcx, 0x18000000);
-    __ jccb(Assembler::notEqual, done); // jump if AVX is not supported
+    __ jccb(Assembler::equal, done); // jump if AVX is not supported
 
     __ movl(rax, 0x6);
     __ andl(rax, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset()))); // xcr0 bits sse | ymm
-    __ cmpl(rax, 0x6);
-    __ jccb(Assembler::equal, start_simd_check); // return if AVX is not supported
+    __ jccb(Assembler::notEqual, start_simd_check); // return if AVX is not supported
 
     // we need to bridge farther than imm8, so we use this island as a thunk
     __ bind(done);
@@ -488,18 +499,21 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     // If UseAVX is uninitialized or is set by the user to include EVEX
     if (use_evex) {
       // check _cpuid_info.sef_cpuid7_ebx.bits.avx512f
+      // OR check _cpuid_info.std_cpuid24_ebx.bits.avx10
       __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_offset())));
       __ movl(rax, 0x10000);
-      __ andl(rax, Address(rsi, 4)); // xcr0 bits sse | ymm
-      __ cmpl(rax, 0x10000);
-      __ jccb(Assembler::notEqual, legacy_setup); // jump if EVEX is not supported
+      __ andl(rax, Address(rsi, 4));
+      __ lea(rsi, Address(rbp, in_bytes(VM_Version::sefsl1_cpuid7_offset())));
+      __ movl(rbx, 0x80000);
+      __ andl(rbx, Address(rsi, 4));
+      __ orl(rax, rbx);
+      __ jccb(Assembler::equal, legacy_setup); // jump if EVEX is not supported
       // check _cpuid_info.xem_xcr0_eax.bits.opmask
       // check _cpuid_info.xem_xcr0_eax.bits.zmm512
       // check _cpuid_info.xem_xcr0_eax.bits.zmm32
       __ movl(rax, 0xE0);
       __ andl(rax, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset()))); // xcr0 bits sse | ymm
-      __ cmpl(rax, 0xE0);
-      __ jccb(Assembler::notEqual, legacy_setup); // jump if EVEX is not supported
+      __ jccb(Assembler::equal, legacy_setup); // jump if EVEX is not supported
 
       if (FLAG_IS_DEFAULT(UseAVX)) {
         __ lea(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid1_offset())));
@@ -577,15 +591,13 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
       __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_offset())));
       __ movl(rax, 0x10000);
       __ andl(rax, Address(rsi, 4));
-      __ cmpl(rax, 0x10000);
-      __ jcc(Assembler::notEqual, legacy_save_restore);
+      __ jcc(Assembler::equal, legacy_save_restore);
       // check _cpuid_info.xem_xcr0_eax.bits.opmask
       // check _cpuid_info.xem_xcr0_eax.bits.zmm512
       // check _cpuid_info.xem_xcr0_eax.bits.zmm32
       __ movl(rax, 0xE0);
       __ andl(rax, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset()))); // xcr0 bits sse | ymm
-      __ cmpl(rax, 0xE0);
-      __ jcc(Assembler::notEqual, legacy_save_restore);
+      __ jcc(Assembler::equal, legacy_save_restore);
 
       if (FLAG_IS_DEFAULT(UseAVX)) {
         __ lea(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid1_offset())));
@@ -879,6 +891,7 @@ void VM_Version::get_processor_features() {
 
   if (cpu_family() > 4) { // it supports CPUID
     _features = _cpuid_info.feature_flags(); // These can be changed by VM settings
+    _extra_features = _cpuid_info.extra_feature_flags(); // These can be changed by VM settings
     _cpu_features = _features;   // Preserve features
     // Logical processors are only available on P4s and above,
     // and only if hyperthreading is available.
@@ -891,6 +904,7 @@ void VM_Version::get_processor_features() {
   _supports_atomic_getadd4 = true;
   LP64_ONLY(_supports_atomic_getset8 = true);
   LP64_ONLY(_supports_atomic_getadd8 = true);
+
 
 #ifdef _LP64
   // OS should support SSE for x64 and hardware should support at least SSE2.
@@ -1018,6 +1032,8 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512DQ;
     _features &= ~CPU_AVX512CD;
     _features &= ~CPU_AVX512BW;
+    _features &= ~CPU_AVX512ER;
+    _features &= ~CPU_AVX512PF;
     _features &= ~CPU_AVX512VL;
     _features &= ~CPU_AVX512_VPOPCNTDQ;
     _features &= ~CPU_AVX512_VPCLMULQDQ;
@@ -1029,6 +1045,8 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512_IFMA;
     _features &= ~CPU_APX_F;
     _features &= ~CPU_AVX512_FP16;
+    _features &= ~CPU_AVX10_1;
+    _features &= ~EXTRA_CPU_AVX10_2;
   }
 
   // Currently APX support is only enabled for targets supporting AVX512VL feature.
@@ -1089,14 +1107,16 @@ void VM_Version::get_processor_features() {
     _has_intel_jcc_erratum = IntelJccErratumMitigation;
   }
 
-  char buf[1024];
+  char buf[2048] = {'\0'};
   int res = jio_snprintf(
               buf, sizeof(buf),
               "(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
               cores_per_cpu(), threads_per_core(),
               cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   assert(res > 0, "not enough temporary space allocated");
-  insert_features_names(buf + res, sizeof(buf) - res, _features_names);
+  insert_features_names(_features, buf + res, sizeof(buf) - res, _features_names);
+  res = (int)strlen(buf);
+  insert_features_names(_extra_features, buf + res, sizeof(buf) - res, _extra_features_names);
 
   _features_string = os::strdup(buf);
 
@@ -2962,6 +2982,21 @@ int64_t VM_Version::maximum_qualified_cpu_frequency(void) {
   return _max_qualified_cpu_frequency;
 }
 
+uint64_t VM_Version::CpuidInfo::extra_feature_flags() const {
+  uint64_t result = 0;
+  if (is_intel()) {
+    if (sefsl1_cpuid7_edx.bits.avx10 != 0 &&
+        std_cpuid24_ebx.bits.avx10_vlen_512 !=0 &&
+        std_cpuid24_ebx.bits.avx10_converged_isa_version >= 2 &&
+        xem_xcr0_eax.bits.opmask != 0 &&
+        xem_xcr0_eax.bits.zmm512 != 0 &&
+        xem_xcr0_eax.bits.zmm32 != 0) {
+      result |= EXTRA_CPU_AVX10_2;
+    }
+  }
+  return result;
+}
+
 uint64_t VM_Version::CpuidInfo::feature_flags() const {
   uint64_t result = 0;
   if (std_cpuid1_edx.bits.cmpxchg8 != 0)
@@ -3054,7 +3089,34 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
       if (sef_cpuid7_ecx.bits.avx512_vbmi2 != 0)
         result |= CPU_AVX512_VBMI2;
     }
+    if (is_intel()) {
+      if (sefsl1_cpuid7_edx.bits.avx10 != 0 &&
+          std_cpuid24_ebx.bits.avx10_vlen_512 !=0 &&
+          std_cpuid24_ebx.bits.avx10_converged_isa_version >= 1 &&
+          xem_xcr0_eax.bits.opmask != 0 &&
+          xem_xcr0_eax.bits.zmm512 != 0 &&
+          xem_xcr0_eax.bits.zmm32 != 0) {
+        result |= CPU_AVX10_1;
+        result |= CPU_AVX_IFMA;
+        result |= CPU_AVX512F;
+        result |= CPU_AVX512CD;
+        result |= CPU_AVX512DQ;
+        result |= CPU_AVX512_IFMA;
+        result |= CPU_AVX512PF;
+        result |= CPU_AVX512ER;
+        result |= CPU_AVX512BW;
+        result |= CPU_AVX512VL;
+        result |= CPU_AVX512_VPOPCNTDQ;
+        result |= CPU_AVX512_VPCLMULQDQ;
+        result |= CPU_AVX512_VAES;
+        result |= CPU_AVX512_VNNI;
+        result |= CPU_AVX512_BITALG;
+        result |= CPU_AVX512_VBMI;
+        result |= CPU_AVX512_VBMI2;
+      }
+    }
   }
+
   if (std_cpuid1_ecx.bits.hv != 0)
     result |= CPU_HV;
   if (sef_cpuid7_ebx.bits.bmi1 != 0)

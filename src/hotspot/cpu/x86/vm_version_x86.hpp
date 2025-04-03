@@ -295,9 +295,29 @@ class VM_Version : public Abstract_VM_Version {
   union SefCpuid7SubLeaf1Edx {
     uint32_t value;
     struct {
-      uint32_t       : 21,
+      uint32_t       : 19,
+              avx10  : 1,
+                     : 1,
               apx_f  : 1,
                      : 10;
+    } bits;
+  };
+
+  union StdCpuid24MainLeafEax {
+    uint32_t value;
+    struct {
+      uint32_t  sub_leaves_cnt  : 31;
+    } bits;
+  };
+
+  union StdCpuid24MainLeafEbx {
+    uint32_t value;
+    struct {
+      uint32_t  avx10_converged_isa_version  : 8,
+                                             : 8,
+                                             : 2,
+                avx10_vlen_512               : 1,
+                                             : 13;
     } bits;
   };
 
@@ -342,7 +362,7 @@ protected:
   /*
    * Update following files when declaring new flags:
    * test/lib-test/jdk/test/whitebox/CPUInfoTest.java
-   * src/jdk.internal.vm.ci/share/classes/jdk.vm.ci.amd64/src/jdk/vm/ci/amd64/AMD64.java
+   * src/jdk.internal.vm.ci/share/classes/jdk/vm/ci/amd64/AMD64.java
    */
   enum Feature_Flag : uint64_t {
 #define CPU_FEATURE_FLAGS(decl) \
@@ -420,14 +440,30 @@ protected:
     decl(AVX_IFMA,          "avx_ifma",          59) /* 256-bit VEX-coded variant of AVX512-IFMA*/ \
     decl(APX_F,             "apx_f",             60) /* Intel Advanced Performance Extensions*/ \
     decl(SHA512,            "sha512",            61) /* SHA512 instructions*/ \
-    decl(AVX512_FP16,       "avx512_fp16",       62) /* AVX512 FP16 ISA support*/
+    decl(AVX512_FP16,       "avx512_fp16",       62) /* AVX512 FP16 ISA support*/ \
+    decl(AVX10_1,           "avx10_1",           63) /* AVX10 512 bit vector ISA Version 1 support*/
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1ULL << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
 #undef DECLARE_CPU_FEATURE_FLAG
   };
 
+  /*
+   * Update following files when declaring new flags:
+   * test/lib-test/jdk/test/whitebox/CPUInfoTest.java
+   * src/jdk.internal.vm.ci/share/classes/jdk/vm/ci/amd64/AMD64.java
+   */
+  enum Extra_Feature_Flag : uint64_t {
+#define EXTRA_CPU_FEATURE_FLAGS(decl) \
+    decl(AVX10_2,           "avx10_2",           0) /* AVX10 512 bit vector ISA Version 2 support*/
+
+#define DECLARE_EXTRA_CPU_FEATURE_FLAG(id, name, bit) EXTRA_CPU_##id = (1ULL << bit),
+    EXTRA_CPU_FEATURE_FLAGS(DECLARE_EXTRA_CPU_FEATURE_FLAG)
+#undef DECLARE_EXTRA_CPU_FEATURE_FLAG
+  };
+
   static const char* _features_names[];
+  static const char* _extra_features_names[];
 
   enum Extended_Family {
     // AMD
@@ -491,6 +527,11 @@ protected:
     // eax = 7, ecx = 1
     SefCpuid7SubLeaf1Eax sefsl1_cpuid7_eax;
     SefCpuid7SubLeaf1Edx sefsl1_cpuid7_edx;
+
+    // cpuid function 24 converged vector ISA main leaf
+    // eax = 24, ecx = 0
+    StdCpuid24MainLeafEax std_cpuid24_eax;
+    StdCpuid24MainLeafEbx std_cpuid24_ebx;
 
     // cpuid function 0xB (processor topology)
     // ecx = 0
@@ -566,6 +607,7 @@ protected:
     jlong        apx_save[2]; // Save r16 and r31
 
     uint64_t feature_flags() const;
+    uint64_t extra_feature_flags() const;
 
     // Asserts
     void assert_is_initialized() const {
@@ -611,6 +653,7 @@ public:
   // Offsets for cpuid asm stub
   static ByteSize std_cpuid0_offset() { return byte_offset_of(CpuidInfo, std_max_function); }
   static ByteSize std_cpuid1_offset() { return byte_offset_of(CpuidInfo, std_cpuid1_eax); }
+  static ByteSize std_cpuid24_offset() { return byte_offset_of(CpuidInfo, std_cpuid24_eax); }
   static ByteSize dcp_cpuid4_offset() { return byte_offset_of(CpuidInfo, dcp_cpuid4_eax); }
   static ByteSize sef_cpuid7_offset() { return byte_offset_of(CpuidInfo, sef_cpuid7_eax); }
   static ByteSize sefsl1_cpuid7_offset() { return byte_offset_of(CpuidInfo, sefsl1_cpuid7_eax); }
@@ -646,7 +689,7 @@ public:
 
   static void clean_cpuFeatures()   { _features = 0; }
   static void set_avx_cpuFeatures() { _features |= (CPU_SSE | CPU_SSE2 | CPU_AVX | CPU_VZEROUPPER ); }
-  static void set_evex_cpuFeatures() { _features |= (CPU_AVX512F | CPU_SSE | CPU_SSE2 | CPU_VZEROUPPER ); }
+  static void set_evex_cpuFeatures() { _features |= (CPU_AVX10_1 | EXTRA_CPU_AVX10_2 | CPU_AVX512F | CPU_SSE | CPU_SSE2 | CPU_VZEROUPPER ); }
   static void set_apx_cpuFeatures() { _features |= CPU_APX_F; }
   static void set_bmi_cpuFeatures() { _features |= (CPU_BMI1 | CPU_BMI2 | CPU_LZCNT | CPU_POPCNT); }
 
@@ -767,6 +810,12 @@ public:
   static bool supports_cet_ss()       { return (_features & CPU_CET_SS) != 0; }
   static bool supports_cet_ibt()      { return (_features & CPU_CET_IBT) != 0; }
   static bool supports_sha512()       { return (_features & CPU_SHA512) != 0; }
+
+  // Intel® AVX10 introduces a versioned approach for enumeration that is monotonically increasing, inclusive,
+  // and supporting all vector lengths. Feature set supported by an AVX10 vector ISA version is also supported
+  // by all the versions above it.
+  static bool supports_avx10_1()      { return (_features & CPU_AVX10_1) != 0;}
+  static bool supports_avx10_2()      { return (_extra_features & EXTRA_CPU_AVX10_2) != 0;}
 
   //
   // Feature identification not affected by VM flags

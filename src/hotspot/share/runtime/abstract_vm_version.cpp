@@ -33,6 +33,7 @@ const char* Abstract_VM_Version::_s_vm_release = Abstract_VM_Version::vm_release
 const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Version::internal_vm_info_string();
 
 uint64_t Abstract_VM_Version::_features = 0;
+uint64_t Abstract_VM_Version::_extra_features = 0;
 const char* Abstract_VM_Version::_features_string = "";
 uint64_t Abstract_VM_Version::_cpu_features = 0;
 
@@ -320,8 +321,7 @@ unsigned int Abstract_VM_Version::jvm_version() {
          (Abstract_VM_Version::vm_build_number() & 0xFF);
 }
 
-void Abstract_VM_Version::insert_features_names(char* buf, size_t buflen, const char* features_names[]) {
-  uint64_t features = _features;
+void Abstract_VM_Version::insert_features_names(uint64_t features, char* buf, size_t buflen, const char* features_names[]) {
   uint features_names_index = 0;
 
   while (features != 0) {
