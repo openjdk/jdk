@@ -94,7 +94,7 @@ public:
 
   static void initialize();
 
-  static void register_klass(Klass* k);
+  static KlassLUTEntry register_klass(Klass* k);
 
   static inline KlassLUTEntry get_entry(narrowKlass k);
 

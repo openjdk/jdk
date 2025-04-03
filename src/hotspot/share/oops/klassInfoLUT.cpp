@@ -25,6 +25,7 @@
 
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
+#include "cds/cdsConfig.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.hpp"
 #include "oops/klassInfoLUT.inline.hpp"
@@ -55,6 +56,10 @@ void KlassInfoLUT::initialize() {
     _entries = NEW_C_HEAP_ARRAY(uint32_t, num_entries(), mtClass);
     log_info(klut)("KLUT initialized (normal pages): " RANGEFMT, RANGEFMTARGS(_entries, memory_needed));
   }
+  // We need to zap the whole LUT if CDS is enabled or dumping, since we may need to late-register classes.
+  // We also do this in debug builds, unconditionally.
+  const bool do_zap = DEBUG_ONLY(true ||)
+      CDSConfig::is_using_archive() || CDSConfig::is_dumping_archive();
   for (unsigned i = 0; i < num_entries(); i++) {
     _entries[i] = KlassLUTEntry::invalid_entry;
   }
@@ -85,26 +90,52 @@ int KlassInfoLUT::try_register_perma_cld(ClassLoaderData* cld) {
   return 0;
 }
 
-void KlassInfoLUT::register_klass(Klass* k) {
+KlassLUTEntry KlassInfoLUT::register_klass(Klass* k) {
   assert(UseKLUT, "?");
-  const narrowKlass nk = CompressedKlassPointers::encode(const_cast<Klass*>(k)); // grr why is this nonconst
-  assert(nk < num_entries(), "oob");
-  KlassLUTEntry e(k); // This calculates the klute entry from Klass properties
-  _entries[nk] = e.value();
-  k->set_klute(e.value());   // also store in class itself
+  const narrowKlass nk = CompressedKlassPointers::encode(k);
+  assert(nk < num_entries(), "narrowKlass %u is OOB for LUT", nk);
+  uint32_t klute;
   char tmp[1024];
-  log_debug(klut)("registered Klass with KLUT: Klass*=" PTR_FORMAT ", nKlass %u, "
-                  "Klute: " INT32_FORMAT_X_0 ", %s",
-                  p2i(k), nk, e.value(), k->name()->as_C_string(tmp, sizeof(tmp)));
+
+  bool already_registered = false;
+  const KlassLUTEntry e_stored_in_klass(k->klute());
+  if (!e_stored_in_klass.is_invalid()) {
+    // The Klass may already carry the pre-computed klute if it was loaded
+    // from a shared archive; in that case, it would have been calculated when the
+    // Klass was originally (dynamically) loaded at dump time. In that case avoid
+    // recalculating it; just update the table value from that stored value.
+
+    if (e_stored_in_klass.value() == _entries[nk]) {
+      log_debug(klut)("Klass " PTR_FORMAT " (%s) already registered, nothing to do.",
+                      p2i(k), k->name()->as_C_string(tmp, sizeof(tmp)));
+    } else {
+      log_debug(klut)("Klass " PTR_FORMAT " (%s): updating table value already registered, nothing to do.",
+                      p2i(k), k->name()->as_C_string(tmp, sizeof(tmp)));
+    }
+
+    already_registered = (e_stored_in_klass.value() == _entries[nk]);
+    // Store Klute into table
+    _entries[nk] = e_stored_in_klass.value();
+
+    if ()
+    log_debug(klut)("registered Klass with KLUT: Klass*=" PTR_FORMAT ", nKlass %u, "
+                    "Klute: " INT32_FORMAT_X_0 ",%s%s %s",
+                    p2i(k), nk, klute,
+                    (k->is_shared() ? " shared," : ""),
+                    (already_registered ? " already registered," : ""),
+                    k->name()->as_C_string(tmp, sizeof(tmp)));
+  }
+
+
 #ifdef ASSERT
   // sanity checks
   {
-    // We use at(), not get_entry(), since we don't want to log or count stats
     KlassLUTEntry e2(at(nk));
-    assert(e2.value() == e.value(), "Sanity");
-    e2.verify_against(k);
+    assert(e2.value() == klute, "Sanity");
+    e2.verify_against_klass(k);
   }
 #endif // ASSERT
+
   // update register stats
   switch (k->kind()) {
   case Klass::InstanceKlassKind:             inc_registered_IK(); break;
@@ -119,6 +150,8 @@ void KlassInfoLUT::register_klass(Klass* k) {
   if (k->is_abstract() || k->is_interface()) {
     inc_registered_IK_for_abstract_or_interface();
   }
+
+  return KlassLUTEntry(klute);
 }
 
 KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
@@ -131,8 +164,10 @@ KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
   KlassLUTEntry e(k->klute());
   char tmp[1024];
   log_debug(klut)("late-register Klass with KLUT: Klass*=" PTR_FORMAT ", nKlass %u, "
-                  "Klute: " INT32_FORMAT_X_0 ", %s",
-                  p2i(k), nk, e.value(), k->name()->as_C_string(tmp, sizeof(tmp)));
+                  "Klute: " INT32_FORMAT_X_0 ",%s %s",
+                  p2i(k), nk, e.value(),
+                  (k->is_shared() ? " shared," : ""),
+                  k->name()->as_C_string(tmp, sizeof(tmp)));
   assert(!e.is_invalid(), "Cannot be");
   _entries[nk] = e.value();
   return e;

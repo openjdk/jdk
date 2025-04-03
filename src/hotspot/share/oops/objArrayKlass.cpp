@@ -36,7 +36,6 @@
 #include "oops/arrayKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/klassInfoLUT.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -151,9 +150,7 @@ ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name) : ArrayK
   assert(is_objArray_klass(), "sanity");
 
   // Add to KLUT
-  if (UseKLUT) {
-    KlassInfoLUT::register_klass(this);
-  }
+  register_with_klut();
 }
 
 size_t ObjArrayKlass::oop_size(oop obj) const {

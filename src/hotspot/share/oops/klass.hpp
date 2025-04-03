@@ -255,8 +255,9 @@ protected:
   enum class StaticLookupMode   { find, skip };
   enum class PrivateLookupMode  { find, skip };
 
+  // Klute handling
   uint32_t klute() const { return _klute; }
-  void set_klute(uint32_t v) { _klute = v; }
+  void register_with_klut();
 
   virtual bool is_klass() const { return true; }
 

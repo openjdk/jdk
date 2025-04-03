@@ -780,9 +780,11 @@ void ArchiveBuilder::make_klasses_shareable() {
       InstanceKlass::cast(k)->constants()->remove_unshareable_info();
     }
 #ifdef ASSERT
-    // every archived Klass shall carry a valid KLUTE.
-    KlassLUTEntry e(k->klute());
-    e.verify_against(k);
+    if (UseKLUT) {
+      // every archived Klass shall carry a valid KLUTE.
+      KlassLUTEntry e(k->klute());
+      e.verify_against_klass(k);
+    }
 #endif // ASSERT
   }
 

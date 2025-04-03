@@ -430,6 +430,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
       if (k != nullptr) {
         SharedClassLoadingMark slm(THREAD, k);
         k = find_or_define_instance_class(name, class_loader, k, CHECK_NULL);
+        k->register_with_klut();
       }
     }
   }

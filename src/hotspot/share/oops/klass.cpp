@@ -46,6 +46,8 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/klassInfoLUT.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -1351,4 +1353,12 @@ void Klass::on_secondary_supers_verification_failure(Klass* super, Klass* sub, b
   sub->print();
   fatal("%s: %s implements %s: linear_search: %d; table_lookup: %d",
         msg, sub->external_name(), super->external_name(), linear_result, table_result);
+}
+
+void Klass::register_with_klut() {
+  if (UseKLUT) {
+    _klute = KlassLUTEntry::invalid_entry;
+    KlassLUTEntry e = KlassInfoLUT::register_klass(this);
+    _klute = e.value();
+  }
 }

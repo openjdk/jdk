@@ -77,7 +77,7 @@ uint32_t KlassLUTEntry::build_from_ik(const InstanceKlass* ik, const char*& not_
 
   if (Klass::layout_helper_needs_slow_path(lh)) {
     if (ik->is_abstract() || ik->is_interface()) {
-      NOPE("Size not trivially computable (klass abstract or interface)");
+      NOPE("klass is abstract or interface");
       // Please note that we could represent abstract or interface classes, but atm there is not
       // much of a point.
     } else {
@@ -159,7 +159,7 @@ uint32_t KlassLUTEntry::build_from_ak(const ArrayKlass* ak) {
 
 }
 
-uint32_t KlassLUTEntry::build_from(const Klass* k) {
+KlassLUTEntry KlassLUTEntry::build_from_klass(const Klass* k) {
 
   uint32_t value = invalid_entry;
   if (k->is_array_klass()) {
@@ -169,16 +169,17 @@ uint32_t KlassLUTEntry::build_from(const Klass* k) {
     const char* not_encodable_reason = nullptr;
     value = build_from_ik(InstanceKlass::cast(k), not_encodable_reason);
     if (not_encodable_reason != nullptr) {
-      log_debug(klut)("klass klute register: %s cannot be encoded because: %s.", k->name()->as_C_string(), not_encodable_reason);
+      log_debug(klut)("InstanceKlass " PTR_FORMAT ": (%s) cannot encoded details: %s.", p2i(k),
+                      k->name()->as_C_string(), not_encodable_reason);
     }
   }
-  return value;
+  return KlassLUTEntry(value);
 
 }
 
 #ifdef ASSERT
 
-void KlassLUTEntry::verify_against(const Klass* k) const {
+void KlassLUTEntry::verify_against_klass(const Klass* k) const {
 
   // General static asserts that need access to private members, but I don't want
   // to place them in a header
@@ -284,9 +285,6 @@ void KlassLUTEntry::verify_against(const Klass* k) const {
 } // KlassLUTEntry::verify_against
 
 #endif // ASSERT
-
-KlassLUTEntry::KlassLUTEntry(const Klass* k) : _v(build_from(k)) {
-}
 
 void KlassLUTEntry::print(outputStream* st) const {
   st->print("%X (Kind: %d Loader: %d)", value(), kind(), loader_index());

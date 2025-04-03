@@ -161,8 +161,6 @@ class KlassLUTEntry {
   static uint32_t build_from_ik(const InstanceKlass* k, const char*& not_encodable_reason);
   static uint32_t build_from_ak(const ArrayKlass* k);
 
-  static uint32_t build_from(const Klass* k);
-
 public:
 
   // Invalid entries are entries that have not been set yet.
@@ -173,14 +171,14 @@ public:
   inline KlassLUTEntry(uint32_t v) : _v(v) {}
   inline KlassLUTEntry(const KlassLUTEntry& other) : _v(other._v) {}
 
-  KlassLUTEntry(const Klass* k);
-
   // Note: all entries should be valid. An invalid entry indicates
   // an error somewhere.
   bool is_invalid() const { return _v.raw == invalid_entry; }
 
+  static KlassLUTEntry build_from_klass(const Klass* k);
+
 #ifdef ASSERT
-  void verify_against(const Klass* k) const;
+  void verify_against_klass(const Klass* k) const;
 #endif
 
   uint32_t value() const { return _v.raw; }
