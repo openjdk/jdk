@@ -236,6 +236,7 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
             if (requestedStopSending) {
                 switchReceivingState(RESET_READ);
             }
+            increaseProcessedData(knownSize);
         } finally {
             // make sure the state is switched to reset received.
             // even if we're closing the connection
@@ -308,7 +309,6 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                 debug.log("Dropping frame on stream %d since state is %s",
                         streamId(), state);
             }
-            increaseProcessedData(knownSize);
             return;
         }
         if (requestedStopSending) {
