@@ -34,6 +34,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -168,6 +169,14 @@ final class StableFunctionTest {
             f0.apply(Value.FORTY_TWO);
             assertEquals(System.identityHashCode(f0), f0.hashCode());
         }
+    }
+
+    @Test
+    void nullKeys() {
+        Set<Value> inputs = new HashSet<>();
+        inputs.add(Value.FORTY_TWO);
+        inputs.add(null);
+        assertThrows(NullPointerException.class, () -> StableValue.function(inputs, MAPPER));
     }
 
     @Test

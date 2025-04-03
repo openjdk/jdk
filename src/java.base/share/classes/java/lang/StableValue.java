@@ -442,7 +442,9 @@ public sealed interface StableValue<T>
     // Principal methods
 
     /**
-     * Tries to set the content of this StableValue to the provided {@code content}.
+     * Tries to set the content of this StableValue to the provided {@code content}. The
+     * content of this StableValue can only be set once, implying this method only returns
+     * {@code true} once.
      * <p>
      * When this method returns, the content of this StableValue is always set.
      *
@@ -478,7 +480,9 @@ public sealed interface StableValue<T>
      *          content using the provided {@code supplier}}
      * <p>
      * The provided {@code supplier} is guaranteed to be invoked at most once if it
-     * completes without throwing an exception.
+     * completes without throwing an exception. If this method is invoked several times
+     * with different suppliers, only one of them will be invoked provided it completes
+     * without throwing an exception.
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
      * content is set. The most common usage is to construct a new object serving
@@ -650,6 +654,8 @@ public sealed interface StableValue<T>
      * @param original Function used to compute cached values
      * @param <T>      the type of the input to the returned Function
      * @param <R>      the type of results delivered by the returned Function
+     * @throws NullPointerException if the provided set of {@code inputs} contains a
+     *                              {@code null} element.
      */
     static <T, R> Function<T, R> function(Set<? extends T> inputs,
                                           Function<? super T, ? extends R> original) {
@@ -735,6 +741,8 @@ public sealed interface StableValue<T>
      *               (may return {@code null})
      * @param <K>    the type of keys maintained by the returned map
      * @param <V>    the type of mapped values in the returned map
+     * @throws NullPointerException if the provided set of {@code inputs} contains a
+     *                              {@code null} element.
      */
     static <K, V> Map<K, V> map(Set<K> keys,
                                 Function<? super K, ? extends V> mapper) {
