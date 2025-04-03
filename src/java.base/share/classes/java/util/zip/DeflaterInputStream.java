@@ -35,7 +35,7 @@ import java.util.Objects;
  * compression format.
  *
  * <h2 id="compressor-usage">Compressor Usage</h2>
- * A {@linkplain DeflaterInputStream} created without
+ * A {@code DeflaterInputStream} created without
  * specifying a {@linkplain Deflater compressor} will create a compressor
  * at construction time, and close the compressor when the input stream
  * is {@linkplain #close closed}.

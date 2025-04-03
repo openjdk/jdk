@@ -35,7 +35,7 @@ import java.util.Objects;
  * "deflate" compression format.
  *
  * <h2 id="decompressor-usage">Decompressor Usage</h2>
- * An {@linkplain InflaterOutputStream} created without
+ * An {@code InflaterOutputStream} created without
  * specifying a {@linkplain Inflater decompressor} will create a decompressor
  * at construction time, and close the decompressor when the output stream
  * is {@linkplain #close closed}.

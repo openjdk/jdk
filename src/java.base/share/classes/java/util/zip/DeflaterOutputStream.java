@@ -39,7 +39,7 @@ import java.io.IOException;
  * thrown.
  *
  * <h2 id="compressor-usage">Compressor Usage</h2>
- * A {@linkplain DeflaterOutputStream} created without
+ * A {@code DeflaterOutputStream} created without
  * specifying a {@linkplain Deflater compressor} will create a compressor
  * at construction time, and close the compressor when the output stream
  * is {@linkplain #close closed}.

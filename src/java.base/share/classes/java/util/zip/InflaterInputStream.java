@@ -40,7 +40,7 @@ import java.util.Objects;
  * thrown.
  *
  * <h2 id="decompressor-usage">Decompressor Usage</h2>
- * An {@linkplain InflaterInputStream} created without
+ * An {@code InflaterInputStream} created without
  * specifying a {@linkplain Inflater decompressor} will create a decompressor
  * at construction time, and close the decompressor when the input stream
  * is {@linkplain #close closed}.
