@@ -39,10 +39,12 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * The {@link #readln()} and {@link #readln(String)} methods in this class use internal
  * objects that decode bytes read from {@code System.in} into characters. The charset used
- * for decoding is XXXTODOXXX. These internal objects are created upon the first call to
- * either of the {@code readln} methods and are stored for subsequent reuse by these methods.
- * The result of interleaving calls to the {@code readln} methods with operations on
- * {@code System.in} is unspecified.
+ * for decoding is specified by the {@link System#getProperties stdin.encoding} property.
+ * If this property is not present, or if the charset it names cannot be loaded, then
+ * UTF-8 is used instead. These internal objects are created upon the first call to
+ * either of the {@code readln} methods and are stored for subsequent reuse by these
+ * methods. The result of interleaving calls to the {@code readln} methods with operations
+ * on {@code System.in} is unspecified.
  *
  * @since 25
  */
@@ -75,14 +77,6 @@ public final class IO {
      * isn't much point trying to make this conditional, for example, only if
      * stdout is connected to a terminal.
      */
-
-    /**
-     * TODO: What should be the encoding of the internal BufferedReader? Need to
-     * probe System.in and see what it's connected to, and possibly query some
-     * system properties to make a determination. The initialization of this field
-     * might be moved into the reader() method.
-     */
-    private static final Charset CHARSET = StandardCharsets.UTF_8;
 
     private IO() {
         throw new Error("no instances");
@@ -174,28 +168,24 @@ public final class IO {
         return readln();
     }
 
+    /**
+     * The BufferedReader used by readln(). Initialized under a class lock by
+     * the reader() method.
+     */
     static BufferedReader br;
 
     /**
-     * Returns the internal BufferedReader instance used for reading text from
-     * the standard input. The internal BufferedReader is created if necessary
-     * and is cached for future use. Subsequent calls to this method return the
-     * same BufferedReader instance.
-     * <p>
-     * The default charset used when creating the internal BufferedReader is UTF-8.
-     * A different charset maybe specified calling the {@link #setInputEncoding
-     * setInputEncoding} method prior to calling this method or other reading methods
-     * on this class.
-     * <p>
-     * The result of interleaving calls to methods on the internal BufferedReader
-     * (including other methods on this class) with operations on {@code System.in}
-     * is unspecified.
+     * On the first call, creates an InputStreamReader to decode characters from
+     * System.in, wraps it in a BufferedReader, and returns the BufferedReader.
+     * These objects are cached and returned by subsequent calls.
      *
      * @return the internal BufferedReader instance
      */
-    private static synchronized BufferedReader reader() {
+    static synchronized BufferedReader reader() {
         if (br == null) {
-            br = new BufferedReader(new InputStreamReader(System.in, CHARSET));
+            String enc = System.getProperty("stdin.encoding", "");
+            Charset cs = Charset.forName(enc, StandardCharsets.UTF_8);
+            br = new BufferedReader(new InputStreamReader(System.in, cs));
         }
         return br;
     }
