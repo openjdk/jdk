@@ -23,5 +23,33 @@
  */
 
 #include "cds/aotClassFilter.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/mutexLocker.hpp"
 
 AOTClassFilter::FilterMark* AOTClassFilter::_current_mark = nullptr;
+Thread* AOTClassFilter::_filtering_thread = nullptr;
+
+AOTClassFilter::FilterMark::FilterMark() {
+  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+  assert(_current_mark == nullptr &&_filtering_thread == nullptr,
+         "impl note: we support only a single AOTClassFilter used by a single thread");
+  _current_mark = this;
+  _filtering_thread = Thread::current();
+}
+
+AOTClassFilter::FilterMark::~FilterMark() {
+  MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+  assert(_current_mark == this && _filtering_thread == Thread::current(), "sanity");
+  _current_mark = nullptr;
+  _filtering_thread = nullptr;
+}
+
+// Is called only from SystemDictionaryShared::init_dumptime_info(), which holds DumpTimeTable_lock
+bool AOTClassFilter::is_aot_tooling_class(InstanceKlass* ik) {
+  assert_lock_strong(DumpTimeTable_lock);
+  if (_current_mark == nullptr || _filtering_thread != Thread::current()) {
+    return false;
+  } else {
+    return _current_mark->is_aot_tooling_class(ik);
+  }
+}
