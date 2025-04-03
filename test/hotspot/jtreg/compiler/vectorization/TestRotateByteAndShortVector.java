@@ -23,15 +23,16 @@
 
 /**
  * @test
- * @bug 8286847
+ * @bug 8286847 8353600
  * @key randomness
  * @summary Test vectorization of rotate byte and short
- * @library /test/lib
- * @run main/othervm -XX:-TieredCompilation -XX:CompileCommand=compileonly,TestRotateByteAndShortVector::testRotate* -Xbatch TestRotateByteAndShortVector
+ * @library /test/lib /
+ * @run main/othervm TestRotateByteAndShortVector
  */
 
 import java.util.Random;
 import jdk.test.lib.Utils;
+import compiler.lib.ir_framework.*;
 
 public class TestRotateByteAndShortVector {
     private static final Random random = Utils.getRandomInstance();
@@ -49,27 +50,7 @@ public class TestRotateByteAndShortVector {
     private static short   resShort = 0;
 
     public static void main(String[] args) {
-        System.out.println("warmup");
-        warmup();
-
-        System.out.println("Testing...");
-        runRotateLeftByteTest();
-        runRotateRightByteTest();
-        runRotateLeftShortTest();
-        runRotateRightShortTest();
-
-        System.out.println("PASSED");
-    }
-
-    static void warmup() {
-        random.nextBytes(arrByte);
-        randomShorts();
-        for (int i = 0; i < ITERS; i++) {
-            testRotateLeftByte(rolByte, arrByte, i);
-            testRotateRightByte(rorByte, arrByte, i);
-            testRotateLeftShort(rolShort, arrShort, i);
-            testRotateRightShort(rorShort, arrShort, i);
-        }
+        TestFramework.run();
     }
 
     static void randomShorts() {
@@ -78,6 +59,7 @@ public class TestRotateByteAndShortVector {
         }
     }
 
+    @Run(test = { "testRotateLeftByte" })
     static void runRotateLeftByteTest() {
         for (int shift = 0; shift < 64; shift++) {
             random.nextBytes(arrByte);
@@ -91,6 +73,7 @@ public class TestRotateByteAndShortVector {
         }
     }
 
+    @Run(test = { "testRotateRightByte" })
     static void runRotateRightByteTest() {
         for (int shift = 0; shift < 64; shift++) {
             random.nextBytes(arrByte);
@@ -104,6 +87,7 @@ public class TestRotateByteAndShortVector {
         }
     }
 
+    @Run(test = { "testRotateLeftShort" })
     static void runRotateLeftShortTest() {
         for (int shift = 0; shift < 64; shift++) {
             randomShorts();
@@ -117,6 +101,7 @@ public class TestRotateByteAndShortVector {
         }
     }
 
+    @Run(test = { "testRotateRightShort" })
     static void runRotateRightShortTest() {
         for (int shift = 0; shift < 64; shift++) {
             randomShorts();
@@ -130,24 +115,36 @@ public class TestRotateByteAndShortVector {
         }
     }
 
+    @Test
+    @IR(failOn = { IRNode.ROTATE_LEFT_V })
+    @IR(failOn = { IRNode.ROTATE_RIGHT_V })
     static void testRotateLeftByte(byte[] test, byte[] arr, int shift) {
         for (int i = 0; i < ARRLEN; i++) {
             test[i] = (byte) ((arr[i] << shift) | (arr[i] >>> -shift));
         }
     }
 
+    @Test
+    @IR(failOn = { IRNode.ROTATE_LEFT_V })
+    @IR(failOn = { IRNode.ROTATE_RIGHT_V })
     static void testRotateRightByte(byte[] test, byte[] arr, int shift) {
         for (int i = 0; i < ARRLEN; i++) {
             test[i] = (byte) ((arr[i] >>> shift) | (arr[i] << -shift));
         }
     }
 
+    @Test
+    @IR(failOn = { IRNode.ROTATE_LEFT_V })
+    @IR(failOn = { IRNode.ROTATE_RIGHT_V })
     static void testRotateLeftShort(short[] test, short[] arr, int shift) {
         for (int i = 0; i < ARRLEN; i++) {
             test[i] = (short) ((arr[i] << shift) | (arr[i] >>> -shift));
         }
     }
 
+    @Test
+    @IR(failOn = { IRNode.ROTATE_LEFT_V })
+    @IR(failOn = { IRNode.ROTATE_RIGHT_V })
     static void testRotateRightShort(short[] test, short[] arr, int shift) {
         for (int i = 0; i < ARRLEN; i++) {
             test[i] = (short) ((arr[i] >>> shift) | (arr[i] << -shift));
