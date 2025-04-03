@@ -27,23 +27,10 @@
 
 #define __ _masm->
 
-void ICacheStubGenerator::generate_icache_flush(const char* name, ICache::flush_icache_stub_t* flush_icache_stub) {
-  StubCodeMark mark(this, "ICache", name);
-
-  address start = __ pc();
-#ifdef AMD64
-
-  const Register addr  = c_rarg0;
-  const Register lines = c_rarg1;
-  const Register magic = c_rarg2;
-
-  Label flush_line, done;
-
-  __ testl(lines, lines);
-  __ jccb(Assembler::zero, done);
-
+void x86_generate_icache_fence(MacroAssembler* _masm) {
   switch (ICacheFlush) {
-    case 0: // fallthrough, initial stub
+    case -1: // fallthrough, initial stub
+    case 0:  // no flushes, just a fence
     case 1:
       __ mfence();
       break;
@@ -54,10 +41,11 @@ void ICacheStubGenerator::generate_icache_flush(const char* name, ICache::flush_
     default:
       ShouldNotReachHere();
   }
+}
 
-  __ bind(flush_line);
+void x86_generate_icache_flush_insn(MacroAssembler* _masm, Register addr) {
   switch (ICacheFlush) {
-    case 0: // fallthrough, initial stub
+    case -1: // fallthrough, initial stub
     case 1:
       __ clflush(Address(addr, 0));
       break;
@@ -70,29 +58,36 @@ void ICacheStubGenerator::generate_icache_flush(const char* name, ICache::flush_
     default:
       ShouldNotReachHere();
   }
-  __ addptr(addr, ICache::line_size);
-  __ decrementl(lines);
-  __ jcc(Assembler::notZero, flush_line);
+}
 
-  switch (ICacheFlush) {
-    case 0: // falltrough, initial stub
-    case 1:
-      __ mfence();
-      break;
-    case 2:
-    case 3:
-      __ sfence();
-      break;
-    default:
-      ShouldNotReachHere();
+void ICacheStubGenerator::generate_icache_flush(const char* name, ICache::flush_icache_stub_t* flush_icache_stub) {
+  StubCodeMark mark(this, "ICache", name);
+
+  address start = __ pc();
+
+  const Register addr  = c_rarg0;
+  const Register lines = c_rarg1;
+  const Register magic = c_rarg2;
+
+  Label flush_line, done;
+
+  __ testl(lines, lines);
+  __ jccb(Assembler::zero, done);
+
+  x86_generate_icache_fence(_masm);
+
+  if (ICacheFlush != 0) {
+    __ bind(flush_line);
+    x86_generate_icache_flush_insn(_masm, addr);
+    __ addptr(addr, ICache::line_size);
+    __ decrementl(lines);
+    __ jccb(Assembler::notZero, flush_line);
+
+    x86_generate_icache_fence(_masm);
   }
 
   __ bind(done);
 
-#else
-  const Address magic(rsp, 3*wordSize);
-  __ lock(); __ addl(Address(rsp, 0), 0);
-#endif // AMD64
   __ movptr(rax, magic); // Handshake with caller to make sure it happened!
   __ ret(0);
 

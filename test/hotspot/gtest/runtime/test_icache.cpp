@@ -37,7 +37,7 @@ TEST_VM(ICacheTest, flush_perf) {
 
   const int ITERS = 1000;
 
-  for (int size = 1; size <= 1024*1024; size *= 2) {
+  for (int size = 256; size <= 256*1024; size *= 2) {
     address p = (address)os::malloc(size, mtTest);
     EXPECT_NOT_NULL(p);
 

@@ -1089,23 +1089,23 @@ void VM_Version::get_processor_features() {
     _has_intel_jcc_erratum = IntelJccErratumMitigation;
   }
 
-  if (ICacheFlush == 0) {
+  if (ICacheFlush == -1) {
     // Requested auto-detection.
-    if (VM_Version::supports_clwb()) {
+    if (supports_clwb()) {
       FLAG_SET_ERGO(ICacheFlush, 3);
-    } else if (VM_Version::supports_clflushopt()) {
+    } else if (supports_clflushopt()) {
       FLAG_SET_ERGO(ICacheFlush, 2);
-    } else if (VM_Version::supports_clflush()) {
+    } else if (supports_clflush()) {
       FLAG_SET_ERGO(ICacheFlush, 1);
     }
   } else {
-    if (!VM_Version::supports_clflush() && (ICacheFlush == 1)) {
+    if (!supports_clflush() && (ICacheFlush == 1)) {
       vm_exit_during_initialization("CPU does not support CLFLUSH, unable to use ICacheFlush=1");
     }
-    if (!VM_Version::supports_clflushopt() && (ICacheFlush == 2)) {
+    if (!supports_clflushopt() && (ICacheFlush == 2)) {
       vm_exit_during_initialization("CPU does not support CLFLUSHOPT, unable to use ICacheFlush=2");
     }
-    if (!VM_Version::supports_clwb() && (ICacheFlush == 3)) {
+    if (!supports_clwb() && (ICacheFlush == 3)) {
       vm_exit_during_initialization("CPU does not support CLWB, unable to use ICacheFlush=3");
     }
   }
