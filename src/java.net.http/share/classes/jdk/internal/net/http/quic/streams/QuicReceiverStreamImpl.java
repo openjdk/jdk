@@ -78,7 +78,7 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
     private volatile long received;
     // maximum of offset+length across all received frames
     private volatile long maxReceivedData;
-    // the size of the stream, when known. Assuming 0 means unknown.
+    // the size of the stream, when known. Defaults to 0 when unknown.
     private volatile long knownSize;
     // the connected reader
     private volatile QuicStreamReaderImpl reader;
