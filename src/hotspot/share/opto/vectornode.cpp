@@ -266,6 +266,10 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_SignumVF;
   case Op_SignumD:
     return Op_SignumVD;
+  case Op_CopySignF:
+    return Op_CopySignVF;
+  case Op_CopySignD:
+    return Op_CopySignVD;
 
   default:
     assert(!VectorNode::is_convert_opcode(sopc),
@@ -719,6 +723,9 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
 
   case Op_SqrtVF: return new SqrtVFNode(n1, vt);
   case Op_SqrtVD: return new SqrtVDNode(n1, vt);
+
+  case Op_CopySignVF: return new CopySignVFNode(n1, n2, vt);
+  case Op_CopySignVD: return new CopySignVDNode(n1, n2, vt);
 
   case Op_RoundVF: return new RoundVFNode(n1, vt);
   case Op_RoundVD: return new RoundVDNode(n1, vt);
