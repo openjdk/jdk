@@ -76,7 +76,9 @@ public final class SystemProps {
 
         // Platform defined encoding cannot be overridden on the command line
         put(props, "sun.jnu.encoding", raw.propDefault(Raw._sun_jnu_encoding_NDX));
-        String nativeEncoding = raw.propDefault(Raw._native_encoding_NDX);
+
+        // TBD: this assumes that native.encoding provided by native code is always non-null
+        var nativeEncoding = raw.propDefault(Raw._native_encoding_NDX);
         put(props, "native.encoding", nativeEncoding);
 
         // "file.encoding" defaults to "UTF-8", unless specified in the command line
@@ -254,7 +256,7 @@ public final class SystemProps {
         @Native private static final int _user_name_NDX = 1 + _user_home_NDX;
         @Native private static final int FIXED_LENGTH = 1 + _user_name_NDX;
 
-        // Array of String properties returned from platform-specific native code
+        // Array of property values returned from platform-specific native code
         // The array is not used after initialization is complete.
         private final String[] platformProps;
 
