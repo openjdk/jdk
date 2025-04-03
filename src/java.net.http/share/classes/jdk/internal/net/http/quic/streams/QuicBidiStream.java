@@ -82,13 +82,6 @@ public non-sealed interface QuicBidiStream extends QuicStream, QuicReceiverStrea
         CLOSED;
 
         /**
-         * {@return true if this state indicates a half closed state}
-         */
-        public boolean isHalfClosed() {
-            return this == HALF_CLOSED_LOCAL || this == HALF_CLOSED_REMOTE;
-        }
-
-        /**
          * @inheritDoc
          * @apiNote
          * A bidirectional stream may be considered closed (which is a terminal state),
