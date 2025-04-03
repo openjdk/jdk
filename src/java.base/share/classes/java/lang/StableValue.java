@@ -407,7 +407,7 @@ import java.util.function.Supplier;
  * trusted meaning that such fields are <em>not</em> eligible for performance
  * optimizations by the JVM (such as constant folding).
  *
- * @implSpec Implementing classes of {@linkplain StableValue} are free to synchronize on
+ * @implSpec Implementing classes of {@code StableValue} are free to synchronize on
  *           {@code this} and consequently, care should be taken whenever
  *           (directly or indirectly) synchronizing on a {@code StableValue}. Failure to
  *           do this may lead to deadlock. Stable functions and collections on the
@@ -417,7 +417,7 @@ import java.util.function.Supplier;
  *           method parameters must be <em>non-null</em> or a {@link NullPointerException}
  *           will be thrown.
  *
- * @implNote A {@linkplain StableValue} is mainly intended to be a non-public field in
+ * @implNote A {@code StableValue} is mainly intended to be a non-public field in
  *           a class and is usually neither exposed directly via accessors nor passed as
  *           a method parameter.
  *           Stable functions and collections make all reasonable efforts to provide
@@ -430,7 +430,7 @@ import java.util.function.Supplier;
  *           {@linkplain java.lang.ref##reachability strongly reachable}. Clients are
  *           advised that {@linkplain java.lang.ref##reachability reachable} stable values
  *           will hold their set content until the stable value itself is collected.
- *           A {@linkplain StableValue} that has a type parameter {@code T} that is an array
+ *           A {@code StableValue} that has a type parameter {@code T} that is an array
  *           type (of arbitrary rank) will only allow the JVM to treat the <em>array reference</em>
  *           as a stable value but <em>not its components</em>. Clients can instead use
  *           {@linkplain #list(int, IntFunction) a stable list} of arbitrary depth, which
