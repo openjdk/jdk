@@ -979,7 +979,7 @@ private:
  private:
   static void get_opaque_template_assertion_predicate_nodes(ParsePredicateSuccessProj* parse_predicate_proj,
                                                             Unique_Node_List& list);
-  void update_main_loop_assertion_predicates(CountedLoopNode* main_loop_head);
+  void update_main_loop_assertion_predicates(CountedLoopNode* new_main_loop_head, int stride_con_before_unroll);
   void initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
                                                        CountedLoopNode* remaining_loop_head,
                                                        uint first_node_index_in_cloned_loop_body,
@@ -993,10 +993,11 @@ private:
   void initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
                                                      uint first_node_index_in_cloned_loop_body);
   void create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head, CountedLoopNode* target_loop_head,
-                                           const NodeInLoopBody& _node_in_loop_body, bool clone_template);
+                                           const NodeInLoopBody& _node_in_loop_body, bool kill_old_template);
   void create_assertion_predicates_at_main_or_post_loop(CountedLoopNode* source_loop_head,
                                                         CountedLoopNode* target_loop_head,
-                                                        const NodeInLoopBody& _node_in_loop_body, bool clone_template);
+                                                        const NodeInLoopBody& _node_in_loop_body,
+                                                        bool kill_old_template);
   void rewire_old_target_loop_entry_dependency_to_new_entry(LoopNode* target_loop_head,
                                                             const Node* old_target_loop_entry,
                                                             uint node_index_before_new_assertion_predicate_nodes);
