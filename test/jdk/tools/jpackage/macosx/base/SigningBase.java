@@ -64,10 +64,14 @@ import jdk.jpackage.test.TKit;
 public class SigningBase {
 
     public enum StandardCertificateRequest {
-        APP_IMAGE(cert().userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
-        INSTALLER(cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
-        APP_IMAGE_UNICODE(cert().userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()])),
-        INSTALLER_UNICODE(cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()]));
+        CODESIGN(cert().userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
+        CODESIGN_COPY(cert().days(100).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
+        PKG(cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
+        PKG_COPY(cert().type(CertificateType.INSTALLER).days(100).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
+        CODESIGN_UNICODE(cert().userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()])),
+        PKG_UNICODE(cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()])),
+        CODESIGN_EXPIRED(cert().expired().userName("expired jpackage test")),
+        PKG_EXPIRED(cert().expired().type(CertificateType.INSTALLER).userName("expired jpackage test"));
 
         StandardCertificateRequest(CertificateRequest.Builder specBuilder) {
             this.spec = specBuilder.create();
@@ -85,7 +89,21 @@ public class SigningBase {
     }
 
     public enum StandardKeychain {
-        MAIN(DEFAULT_KEYCHAIN, StandardCertificateRequest.values());
+        MAIN(DEFAULT_KEYCHAIN,
+                StandardCertificateRequest.CODESIGN,
+                StandardCertificateRequest.PKG,
+                StandardCertificateRequest.CODESIGN_UNICODE,
+                StandardCertificateRequest.PKG_UNICODE),
+        EXPIRED("jpackagerTest-expired.keychain",
+                StandardCertificateRequest.CODESIGN,
+                StandardCertificateRequest.PKG,
+                StandardCertificateRequest.CODESIGN_EXPIRED,
+                StandardCertificateRequest.PKG_EXPIRED),
+        DUPLICATE("jpackagerTest-duplicate.keychain",
+                StandardCertificateRequest.CODESIGN,
+                StandardCertificateRequest.PKG,
+                StandardCertificateRequest.CODESIGN_COPY,
+                StandardCertificateRequest.PKG_COPY);
 
         StandardKeychain(String keychainName, StandardCertificateRequest... certs) {
             this(keychainName, certs[0].spec(), Stream.of(certs).skip(1).map(StandardCertificateRequest::spec).toArray(CertificateRequest[]::new));
@@ -131,7 +149,7 @@ public class SigningBase {
     }
 
     private final class Inner {
-        private final static boolean SIGN_ENV_READY = MacSign.isDeployed(StandardKeychain.signingEnv());
+        private static final boolean SIGN_ENV_READY = MacSign.isDeployed(StandardKeychain.signingEnv());
     }
 
     enum CertIndex {
