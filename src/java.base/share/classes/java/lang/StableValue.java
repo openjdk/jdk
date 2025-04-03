@@ -432,6 +432,7 @@ import java.util.function.Supplier;
  *           {@linkplain #list(int, IntFunction) a stable list} of arbitrary depth, which
  *           provides stable components. More generally, a stable value can hold other
  *           stable values of arbitrary depth and still provide transitive constantness.
+ *           Stable values, functions and collections are not {@link Serializable}.
  *
  * @param <T> type of the content
  *
@@ -539,8 +540,6 @@ public sealed interface StableValue<T>
      * {@return a new unset stable value}
      * <p>
      * An unset stable value has no content.
-     * <p>
-     * The returned stable value is not {@link Serializable}.
      *
      * @param <T> type of the content
      */
@@ -550,8 +549,6 @@ public sealed interface StableValue<T>
 
     /**
      * {@return a new pre-set stable value with the provided {@code content}}
-     * <p>
-     * The returned stable value is not {@link Serializable}.
      *
      * @param content to set
      * @param <T>     type of the content
@@ -577,8 +574,6 @@ public sealed interface StableValue<T>
      * <p>
      * If the provided {@code original} supplier throws an exception, it is relayed
      * to the initial caller and no content is recorded.
-     * <p>
-     * The returned supplier is not {@link Serializable}.
      * <p>
      * If the provided {@code original} supplier recursively calls the returned
      * supplier, an {@linkplain IllegalStateException} will be thrown.
@@ -608,8 +603,6 @@ public sealed interface StableValue<T>
      * <p>
      * If the provided {@code original} function throws an exception, it is relayed
      * to the initial caller and no content is recorded.
-     * <p>
-     * The returned function is not {@link Serializable}.
      * <p>
      * If the provided {@code original} function recursively calls the returned
      * function for the same index, an {@linkplain IllegalStateException} will
@@ -645,8 +638,6 @@ public sealed interface StableValue<T>
      * <p>
      * If the provided {@code original} function throws an exception, it is relayed to
      * the initial caller and no content is recorded.
-     * <p>
-     * The returned function is not {@link Serializable}.
      * <p>
      * If the provided {@code original} function recursively calls the returned
      * function for the same input, an {@linkplain IllegalStateException} will
@@ -690,9 +681,9 @@ public sealed interface StableValue<T>
      * The returned list and its {@link List#subList(int, int) subList} or
      * {@link List#reversed()} views implement the {@link RandomAccess} interface.
      * <p>
-     * The returned list is not {@link Serializable} and, as it is unmodifiable, does
-     * not implement the {@linkplain Collection##optional-operation optional operations}
-     * in the {@linkplain List} interface.
+     * The returned list is unmodifiable and does not implement the
+     * {@linkplain Collection##optional-operation optional operations} in the
+     * {@linkplain List} interface.
      * <p>
      * If the provided {@code mapper} recursively calls the returned list for the
      * same index, an {@linkplain IllegalStateException} will be thrown.
@@ -731,9 +722,9 @@ public sealed interface StableValue<T>
      * Any direct {@link Map#values()} or {@link Map#entrySet()} views
      * of the returned map are also stable.
      * <p>
-     * The returned map is not {@link Serializable} and, as it is unmodifiable, does
-     * not implement the {@linkplain Collection##optional-operations optional operations}
-     * in the {@linkplain Map} interface.
+     * The returned map is unmodifiable and does not implement the
+     * {@linkplain Collection##optional-operations optional operations} in the
+     * {@linkplain Map} interface.
      * <p>
      * If the provided {@code mapper} recursively calls the returned map for
      * the same key, an {@linkplain IllegalStateException} will be thrown.
