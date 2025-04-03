@@ -25,7 +25,8 @@
 /*
  * @test
  * @summary "AOT" aliases for traditional CDS command-line options
- * @requires vm.cds & vm.compMode != "Xcomp"
+ * @requires vm.cds
+ * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build Hello
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
