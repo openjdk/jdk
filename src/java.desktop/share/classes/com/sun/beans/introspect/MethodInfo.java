@@ -31,13 +31,12 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedList;
+import java.util.Deque;
 import java.util.List;
-import java.util.Queue;
 import java.util.Set;
 
 import com.sun.beans.TypeResolver;
@@ -108,13 +107,13 @@ final class MethodInfo {
             }
 
             // Add methods inherited from interfaces
-            Queue<Class<?>> ifaceQueue = new LinkedList<>(List.of(type.getInterfaces()));
-            while (!ifaceQueue.isEmpty()) {
-                Class<?> iface = ifaceQueue.poll();
+            Deque<Class<?>> ifaceDeque = new ArrayDeque<>(List.of(type.getInterfaces()));
+            while (!ifaceDeque.isEmpty()) {
+                Class<?> iface = ifaceDeque.removeLast();
                 if (IGNORABLE_INTERFACES.contains(iface)) {
                     continue;
                 }
-                ifaceQueue.addAll(List.of(iface.getInterfaces()));
+                ifaceDeque.addAll(List.of(iface.getInterfaces()));
                 for (Method method : iface.getMethods()) {
                     if (!Modifier.isAbstract(method.getModifiers()) && !method.isBridge()) {
                         (list = createIfNeeded(list)).add(method);
