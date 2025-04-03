@@ -78,7 +78,7 @@ MemPointer MemPointerParser::parse(MemPointerParserCallback& callback
   canonicalize_summands();
   NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerSummand::print_on(tty, _con, _summands); } )
 
-  return MemPointer::make(pointer, _raw_summands, size NOT_PRODUCT(COMMA trace));
+  return MemPointer::make(pointer, _raw_summands, _con, _summands, size NOT_PRODUCT(COMMA trace));
 }
 
 void MemPointerParser::canonicalize_raw_summands() {

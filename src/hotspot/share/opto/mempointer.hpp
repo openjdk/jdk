@@ -822,10 +822,13 @@ public:
 //
 class MemPointer : public StackObj {
 public:
-  // We limit the number of summands to 10. This is just a best guess, and not at this
-  // point supported by evidence. But I think it is reasonable: usually, a pointer
-  // contains a base pointer (e.g. array pointer or null for native memory) and a few
-  // variables. It should be rare that we have more than 9 variables.
+  // We limit the number of summands to 10, and the raw summands to 16. This is just a
+  // best guess, and not at this point supported by evidence. But I think it is reasonable:
+  // usually, a pointer contains a base pointer (e.g. array pointer or null for native memory)
+  // and a few variables. It should be rare that we have more than 9 variables. We need
+  // a few more raw summands, especially because there can be multiple constants, one
+  // per ConvI2L "int group".
+  static const int RAW_SUMMANDS_SIZE = 16;
   static const int SUMMANDS_SIZE = 10;
 
   // A base can be:
@@ -974,15 +977,26 @@ public:
 
   static MemPointer make(Node* pointer,
                          const GrowableArray<MemPointerRawSummand>& raw_summands,
+                         const NoOverflowInt con,
+                         const GrowableArray<MemPointerSummand>& summands,
                          const jint size
                          NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
-    // TODO: continue here!
-    assert(false, "TODO wip");
-    // if (summands.length() <= SUMMANDS_SIZE) {
-    //   return MemPointer(pointer, summands, con, size NOT_PRODUCT(COMMA trace));
-    // } else {
+    if (raw_summands.length() <= RAW_SUMMANDS_SIZE &&
+        summands.length() <= SUMMANDS_SIZE &&
+        has_no_NaN_in_con_and_summands(con, summands)) {
+      return MemPointer(pointer, summands, con, size NOT_PRODUCT(COMMA trace));
+    } else {
       return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
-    //}
+    }
+  }
+
+  static bool has_no_NaN_in_con_and_summands(const NoOverflowInt con,
+                                             const GrowableArray<MemPointerSummand>& summands) {
+    if (con.is_NaN()) { return false; }
+    for (int i = 0; i < summands.length(); i++) {
+      if (summands.at(i).scale().is_NaN()) { return false; }
+    }
+    return true;
   }
 
   MemPointer make_with_size(const jint new_size) const {
