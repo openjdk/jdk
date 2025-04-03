@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Loongson Technology Co. Ltd. All rights reserved.
+ * Copyright (c) 2022, 2025 Loongson Technology Co. Ltd. All rights reserved.
+ * Copyright (c) 2025, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +116,9 @@ public class TestRotateByteAndShortVector {
         }
     }
 
+    // NOTE: currently, there is no platform supporting RotateLeftV/RotateRightV intrinsic.
+    // If there is some implementation, it could probably in a wrong way which is different
+    // from what java language spec expects.
     @Test
     @IR(failOn = { IRNode.ROTATE_LEFT_V })
     @IR(failOn = { IRNode.ROTATE_RIGHT_V })
