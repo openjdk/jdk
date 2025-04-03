@@ -880,6 +880,7 @@ public:
   };
 
 private:
+  MemPointerRawSummand _raw_summands[RAW_SUMMANDS_SIZE];
   MemPointerSummand _summands[SUMMANDS_SIZE];
   const NoOverflowInt _con;
   const Base _base;
@@ -902,6 +903,7 @@ private:
 
   // pointer = SUM(SUMMANDS) + con
   MemPointer(Node* pointer,
+             const GrowableArray<MemPointerRawSummand>& raw_summands,
              const GrowableArray<MemPointerSummand>& summands,
              const NoOverflowInt& con,
              const jint size
@@ -913,13 +915,24 @@ private:
   {
     assert(!_con.is_NaN(), "non-NaN constant");
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
+    assert(raw_summands.length() <= RAW_SUMMANDS_SIZE, "raw summands must fit");
 #ifdef ASSERT
     for (int i = 0; i < summands.length(); i++) {
       const MemPointerSummand& s = summands.at(i);
       assert(s.variable() != nullptr, "variable cannot be null");
       assert(!s.scale().is_NaN(), "non-NaN scale");
     }
+    for (int i = 0; i < raw_summands.length(); i++) {
+      const MemPointerRawSummand& s = raw_summands.at(i);
+      assert(!s.scaleI().is_NaN(), "non-NaN scale");
+      assert(!s.scaleL().is_NaN(), "non-NaN scale");
+    }
 #endif
+
+    // Copy raw summands in the same order.
+    for (int i = 0; i < raw_summands.length(); i++) {
+      _raw_summands[i] = raw_summands.at(i);
+    }
 
     // Put the base in the 0th summand.
     Node* base = _base.object_or_native_or_null();
@@ -984,7 +997,7 @@ public:
     if (raw_summands.length() <= RAW_SUMMANDS_SIZE &&
         summands.length() <= SUMMANDS_SIZE &&
         has_no_NaN_in_con_and_summands(con, summands)) {
-      return MemPointer(pointer, summands, con, size NOT_PRODUCT(COMMA trace));
+      return MemPointer(pointer, raw_summands, summands, con, size NOT_PRODUCT(COMMA trace));
     } else {
       return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
     }
