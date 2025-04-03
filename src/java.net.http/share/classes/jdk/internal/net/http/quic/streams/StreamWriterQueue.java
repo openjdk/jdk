@@ -329,10 +329,7 @@ public abstract class StreamWriterQueue {
      * is called concurrently by another thread.
      */
     public final boolean isProducerDone() {
-        long size = streamSize;
-        long produced = bytesProduced;
-        assert size == -1 || size >= produced;
-        return size >= 0 && size <= produced;
+        return streamSize >= 0;
     }
 
     /**
