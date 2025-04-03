@@ -214,12 +214,16 @@ public class TaskbarPositionTest implements ActionListener {
     }
 
     // for debugging purpose, saves screen capture when test fails.
-    private static void saveScreenCapture(Robot robot) {
-        BufferedImage image = robot.createScreenCapture(screenBounds);
-        try {
-            ImageIO.write(image, "png", new File("Screenshot.png"));
-        } catch (IOException e) {
-            e.printStackTrace();
+    private static void saveScreenCapture(Robot robot, GraphicsDevice[] screens) {
+        for (int i = 0; i < screens.length; i++) {
+            Rectangle bounds = screens[i].getDefaultConfiguration()
+                                         .getBounds();
+            BufferedImage image = robot.createScreenCapture(bounds);
+            try {
+                ImageIO.write(image, "png", new File("Screenshot.png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -457,7 +461,7 @@ public class TaskbarPositionTest implements ActionListener {
 
             robot.waitForIdle();
         } catch (Throwable t) {
-            saveScreenCapture(robot);
+            saveScreenCapture(robot, screens);
             throw t;
         } finally {
             SwingUtilities.invokeAndWait(() -> {
