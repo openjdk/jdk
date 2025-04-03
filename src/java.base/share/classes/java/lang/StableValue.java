@@ -596,7 +596,9 @@ public sealed interface StableValue<T>
      * The returned function is a caching function that, for each allowed {@code int}
      * input, records the values of the provided {@code original}
      * function upon being first accessed via the returned function's
-     * {@linkplain IntFunction#apply(int) apply()} method.
+     * {@linkplain IntFunction#apply(int) apply()} method. If the returned function is
+     * invoked with an input that is not allowed, an {@link IllegalArgumentException}
+     * will be thrown.
      * <p>
      * The provided {@code original} function is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
@@ -632,7 +634,9 @@ public sealed interface StableValue<T>
      * The returned function is a caching function that, for each allowed
      * input in the given set of {@code inputs}, records the values of the provided
      * {@code original} function upon being first accessed via the returned function's
-     * {@linkplain Function#apply(Object) apply()} method.
+     * {@linkplain Function#apply(Object) apply()} method. If the returned function is
+     * invoked with an input that is not allowed, an {@link IllegalArgumentException}
+     * will be thrown.
      * <p>
      * The provided {@code original} function is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
