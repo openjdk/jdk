@@ -964,6 +964,12 @@ private:
     NOT_PRODUCT(COMMA _trace(old._trace))
   {
     assert(!_con.is_NaN(), "non-NaN constant");
+
+    // TODO: how to adjust com?
+    for (int i = 0; i < RAW_SUMMANDS_SIZE; i++) {
+      _raw_summands[i] = old.raw_summands_at(i);
+    }
+
     for (int i = 0; i < SUMMANDS_SIZE; i++) {
       _summands[i] = old.summands_at(i);
     }
@@ -1043,9 +1049,33 @@ public:
     return _summands[i];
   }
 
+  const MemPointerRawSummand& raw_summands_at(const uint i) const {
+    assert(i < RAW_SUMMANDS_SIZE, "in bounds");
+    return _raw_summands[i];
+  }
+
   const NoOverflowInt con() const { return _con; }
   const Base& base() const { return _base; }
   jint size() const { return _size; }
+
+  int max_int_group() const {
+    int n = 0;
+    for (int i = 0; i < RAW_SUMMANDS_SIZE; i++) {
+      const MemPointerRawSummand& s = _raw_summands[i];
+      if (!s.is_valid()) { continue; }
+      n = MAX2(n, s.int_group());
+    }
+    return n;
+  }
+
+  template<typename Callback>
+  void for_each_raw_summand_of_int_group(int int_group, Callback callback) const {
+    for (int i = 0; i < RAW_SUMMANDS_SIZE; i++) {
+      const MemPointerRawSummand& s = _raw_summands[i];
+      if (!s.is_valid() || s.int_group() != int_group) { continue; }
+      callback(s);
+    }
+  }
 
   static int cmp_summands(const MemPointer& a, const MemPointer& b) {
     for (int i = 0; i < SUMMANDS_SIZE; i++) {
@@ -1088,13 +1118,54 @@ public:
     }
   }
 
-  void print_on(outputStream* st, bool end_with_cr = true) const {
+  void print_on(outputStream* st) const {
     st->print("MemPointer[size: %2d, base: ", size());
     _base.print_on(st);
     st->print(", form: ");
     print_form_on(st);
     st->print("]");
-    if (end_with_cr) { st->cr(); }
+    st->cr();
+
+    st->print("  raw: ");
+
+    int long_count = 0;
+    for_each_raw_summand_of_int_group(0, [&] (const MemPointerRawSummand& s) {
+      if (long_count > 0) { st->print(" + "); }
+      long_count++;
+      if (s.is_con()) {
+        // Long constant.
+        NoOverflowInt con = s.scaleI() * s.scaleL();
+        con.print_on(st);
+        st->print("L");
+      } else {
+        // Long variable.
+        assert(s.scaleI().is_one(), "must be long variable");
+        s.scaleL().print_on(st);
+        st->print("L * [%d %s]", s.variable()->_idx, s.variable()->Name());
+      }
+    });
+
+    // Int groups, i.e. "ConvI2L(...)"
+    for (int int_group = 1; int_group <= max_int_group(); int_group++) {
+      if (long_count > 0) { st->print(" + "); }
+      long_count++;
+      int int_count = 0;
+      for_each_raw_summand_of_int_group(int_group, [&] (const MemPointerRawSummand& s) {
+        if (int_count == 0) {
+          s.scaleL().print_on(st);
+          st->print("L * ConvI2L(");
+        } else {
+          st->print(" + ");
+        }
+        int_count++;
+        s.scaleI().print_on(st);
+        if (!s.is_con()) {
+          st->print(" * [%d %s]", s.variable()->_idx, s.variable()->Name());
+        }
+      });
+      st->print(")");
+    }
+    st->cr();
   }
 #endif
 };
