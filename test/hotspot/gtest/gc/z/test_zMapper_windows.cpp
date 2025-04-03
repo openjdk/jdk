@@ -46,7 +46,7 @@ private:
 
   static ZVirtualMemoryManager* _vmm;
 
-  bool _has_unreserved;
+  static bool _has_unreserved;
 
 public:
   bool reserve_for_test() {
@@ -105,7 +105,7 @@ public:
     os::free(_vmm);
   }
 
-  void test_unreserve() {
+  static void test_unreserve() {
     zoffset bottom = _va->alloc_low_address(ZGranuleSize);
     zoffset top    = _va->alloc_high_address(ZGranuleSize);
 
@@ -189,6 +189,7 @@ public:
 bool ZMapperTest::_initialized   = false;
 ZMemoryManager* ZMapperTest::_va = nullptr;
 ZVirtualMemoryManager* ZMapperTest::_vmm = nullptr;
+bool ZMapperTest::_has_unreserved;
 
 TEST_VM_F(ZMapperTest, test_unreserve) {
   test_unreserve();
