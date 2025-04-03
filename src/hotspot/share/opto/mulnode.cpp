@@ -950,11 +950,9 @@ LShiftNode* LShiftNode::make(Node* in1, Node* in2, BasicType bt) {
   return nullptr;
 }
 
-//=============================================================================
-
 // Returns whether the shift amount is constant. If so, sets count.
-static bool const_shift_count(PhaseGVN* phase, const Node* shiftNode, int* count) {
-  const TypeInt* tcount = phase->type(shiftNode->in(2))->isa_int();
+static bool const_shift_count(PhaseGVN* phase, const Node* shift_node, int* count) {
+  const TypeInt* tcount = phase->type(shift_node->in(2))->isa_int();
   if (tcount != nullptr && tcount->is_con()) {
     *count = tcount->get_con();
     return true;
@@ -963,8 +961,8 @@ static bool const_shift_count(PhaseGVN* phase, const Node* shiftNode, int* count
 }
 
 // Returns whether the shift amount is constant. If so, sets real_shift and masked_shift.
-static bool mask_shift_amount(PhaseGVN* phase, const Node* shiftNode, uint nBits, int& real_shift, int& masked_shift) {
-  if (const_shift_count(phase, shiftNode, &real_shift)) {
+static bool mask_shift_amount(PhaseGVN* phase, const Node* shift_node, uint nBits, int& real_shift, int& masked_shift) {
+  if (const_shift_count(phase, shift_node, &real_shift)) {
     masked_shift = real_shift & (nBits - 1);
     return true;
   }
@@ -972,17 +970,17 @@ static bool mask_shift_amount(PhaseGVN* phase, const Node* shiftNode, uint nBits
 }
 
 // Convenience for when we don't care about the real amount
-static bool mask_shift_amount(PhaseGVN* phase, const Node* shiftNode, uint nBits, int& masked_shift) {
+static bool mask_shift_amount(PhaseGVN* phase, const Node* shift_node, uint nBits, int& masked_shift) {
   int real_shift;
-  return mask_shift_amount(phase, shiftNode, nBits, real_shift, masked_shift);
+  return mask_shift_amount(phase, shift_node, nBits, real_shift, masked_shift);
 }
 
 // Use this in ::Ideal only with shiftNode == this!
 // Returns the masked shift amount if constant or 0 if not constant.
-static int mask_and_replace_shift_amount(PhaseGVN* phase, Node* shiftNode, uint nBits) {
+static int mask_and_replace_shift_amount(PhaseGVN* phase, Node* shift_node, uint nBits) {
   int real_shift;
   int masked_shift;
-  if (mask_shift_amount(phase, shiftNode, nBits, real_shift, masked_shift)) {
+  if (mask_shift_amount(phase, shift_node, nBits, real_shift, masked_shift)) {
     if (masked_shift == 0) {
       // Let Identity() handle 0 shift count.
       return 0;
@@ -991,9 +989,9 @@ static int mask_and_replace_shift_amount(PhaseGVN* phase, Node* shiftNode, uint 
     if (real_shift != masked_shift) {
       PhaseIterGVN* igvn = phase->is_IterGVN();
       if (igvn != nullptr) {
-        igvn->rehash_node_delayed(shiftNode);
+        igvn->_worklist.push(shift_node);
       }
-      shiftNode->set_req(2, phase->intcon(masked_shift)); // Replace shift count with masked value.
+      shift_node->set_req(2, phase->intcon(masked_shift)); // Replace shift count with masked value.
     }
     return masked_shift;
   }
@@ -1002,18 +1000,18 @@ static int mask_and_replace_shift_amount(PhaseGVN* phase, Node* shiftNode, uint 
 }
 
 // Called with
-//   outer_shift = (_ << rhs0)
+//   outer_shift = (_ << rhs_outer)
 // We are looking for the pattern:
-//   outer_shift = ((X << rhs1) << rhs0)
-//   where rhs0 and rhs1 are constant
-//   we denote inner_shift the nested expression (X << rhs1)
-//   con0 = rhs1 % nbits and con0 = rhs1 % nbits
+//   outer_shift = ((X << rhs_inner) << rhs_outer)
+//   where rhs_outer and rhs_inner are constant
+//   we denote inner_shift the nested expression (X << rhs_inner)
+//   con_inner = rhs_inner % nbits and con_outer = rhs_outer % nbits
 //   where nbits is the number of bits of the shifts
 //
 // There are 2 cases:
-// if con0 + con1 >= nbits => 0
-// if con0 + con1 < nbits => X << (con1 + con0)
-static Node* collapse_nested_shift_left(PhaseGVN* phase, const Node* outer_shift, int con0, BasicType bt) {
+// if con_outer + con_inner >= nbits => 0
+// if con_outer + con_inner < nbits => X << (con_outer + con_inner)
+static Node* collapse_nested_shift_left(PhaseGVN* phase, const Node* outer_shift, int con_outer, BasicType bt) {
   assert(bt == T_LONG || bt == T_INT, "Unexpected type");
   const Node* inner_shift = outer_shift->in(1);
   if (inner_shift->Opcode() != Op_LShift(bt)) {
@@ -1021,17 +1019,17 @@ static Node* collapse_nested_shift_left(PhaseGVN* phase, const Node* outer_shift
   }
 
   int nbits = static_cast<int>(bits_per_java_integer(bt));
-  int con1;
-  if (!mask_shift_amount(phase, inner_shift, nbits, con1)) {
+  int con_inner;
+  if (!mask_shift_amount(phase, inner_shift, nbits, con_inner)) {
     return nullptr;
   }
 
-  if (con1 == 0) {
+  if (con_inner == 0) {
     // We let the Identity() of the inner shift do its job.
     return nullptr;
   }
 
-  if (con0 + con1 >= nbits) {
+  if (con_outer + con_inner >= nbits) {
     // While it might be tempting to use
     // phase->zerocon(bt);
     // it would be incorrect: zerocon caches nodes, while Ideal is only allowed
@@ -1040,7 +1038,7 @@ static Node* collapse_nested_shift_left(PhaseGVN* phase, const Node* outer_shift
   }
 
   // con0 + con1 < nbits ==> actual shift happens now
-  Node* con0_plus_con1 = phase->intcon(con0 + con1);
+  Node* con0_plus_con1 = phase->intcon(con_outer + con_inner);
   return LShiftNode::make(inner_shift->in(1), con0_plus_con1, bt);
 }
 
