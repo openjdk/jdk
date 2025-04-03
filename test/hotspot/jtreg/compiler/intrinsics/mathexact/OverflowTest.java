@@ -29,8 +29,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
- *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:+WhiteBoxAPI
- *      -Xcomp -Xbatch -XX:-TieredCompilation
+ *      -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:+WhiteBoxAPI
+ *      -Xcomp -XX:-TieredCompilation
  *      -XX:CompileCommand=compileonly,compiler.intrinsics.mathexact.OverflowTest::comp_*
  *      -XX:CompileCommand=dontinline,compiler.intrinsics.mathexact.OverflowTest::*
  *      compiler.intrinsics.mathexact.OverflowTest
@@ -45,7 +45,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:+WhiteBoxAPI
- *      -Xcomp -Xbatch -XX:-TieredCompilation
+ *      -Xcomp -XX:-TieredCompilation
  *      -XX:CompileCommand=compileonly,compiler.intrinsics.mathexact.OverflowTest::comp_*
  *      -XX:CompileCommand=dontinline,compiler.intrinsics.mathexact.OverflowTest::*
  *      -XX:+ProfileTraps -XX:+StackTraceInThrowable -XX:+OmitStackTraceInFastThrow
@@ -61,7 +61,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:+WhiteBoxAPI
- *      -Xcomp -Xbatch -XX:-TieredCompilation
+ *      -Xcomp -XX:-TieredCompilation
  *      -XX:CompileCommand=compileonly,compiler.intrinsics.mathexact.OverflowTest::comp_*
  *      -XX:CompileCommand=dontinline,compiler.intrinsics.mathexact.OverflowTest::*
  *      -XX:-ProfileTraps
@@ -77,7 +77,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:+WhiteBoxAPI
- *      -Xcomp -Xbatch -XX:-TieredCompilation
+ *      -Xcomp -XX:-TieredCompilation
  *      -XX:CompileCommand=compileonly,compiler.intrinsics.mathexact.OverflowTest::comp_*
  *      -XX:CompileCommand=dontinline,compiler.intrinsics.mathexact.OverflowTest::*
  *      -XX:+ProfileTraps -XX:+StackTraceInThrowable -XX:-OmitStackTraceInFastThrow
@@ -93,7 +93,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:+WhiteBoxAPI
- *      -Xcomp -Xbatch -XX:-TieredCompilation
+ *      -Xcomp -XX:-TieredCompilation
  *      -XX:CompileCommand=compileonly,compiler.intrinsics.mathexact.OverflowTest::comp_*
  *      -XX:CompileCommand=dontinline,compiler.intrinsics.mathexact.OverflowTest::*
  *      -XX:+ProfileTraps -XX:-StackTraceInThrowable -XX:+OmitStackTraceInFastThrow
@@ -109,7 +109,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:+WhiteBoxAPI
- *      -Xcomp -Xbatch -XX:-TieredCompilation
+ *      -Xcomp -XX:-TieredCompilation
  *      -XX:CompileCommand=compileonly,compiler.intrinsics.mathexact.OverflowTest::comp_*
  *      -XX:CompileCommand=dontinline,compiler.intrinsics.mathexact.OverflowTest::*
  *      -XX:+ProfileTraps -XX:-StackTraceInThrowable -XX:-OmitStackTraceInFastThrow
@@ -124,8 +124,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
- *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:+WhiteBoxAPI
- *      -Xcomp -Xbatch -XX:-TieredCompilation
+ *      -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:+WhiteBoxAPI
+ *      -Xcomp -XX:-TieredCompilation
  *      -XX:CompileCommand=compileonly,compiler.intrinsics.mathexact.OverflowTest::comp_*
  *      -XX:CompileCommand=dontinline,compiler.intrinsics.mathexact.OverflowTest::*
  *      -XX:DisableIntrinsic=_addExactI,_incrementExactI,_addExactL,_incrementExactL,_subtractExactI,_decrementExactI,_subtractExactL,_decrementExactL,_negateExactI,_negateExactL,_multiplyExactI,_multiplyExactL
