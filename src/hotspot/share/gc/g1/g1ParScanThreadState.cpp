@@ -250,6 +250,7 @@ void G1ParScanThreadState::start_partial_objarray(oop from_obj,
     // The source array is unused when processing states.
     _partial_array_splitter.start(_task_queue, nullptr, to_array, array_length);
 
+  assert(_scanner.skip_card_enqueue_set(), "must be");
   // Process the initial chunk.  No need to process the type in the
   // klass, as it will already be handled by processing the built-in
   // module.
@@ -450,6 +451,7 @@ void G1ParScanThreadState::do_iterate_object(oop const obj,
       _string_dedup_requests.add(old);
     }
 
+    assert(_scanner.skip_card_enqueue_set(), "must be");
     obj->oop_iterate_backwards(&_scanner, klass);
 }
 
@@ -545,7 +547,6 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       // equal: successfully allocated young regions must be survivor regions.
       assert(dest_attr.is_young() == _g1h->heap_region_containing(obj)->is_survivor(), "must be");
       G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
-
       do_iterate_object(obj, old, klass, region_attr, dest_attr, age);
     }
 
