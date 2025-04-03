@@ -77,6 +77,21 @@ public class QuicPacketEncoder {
     }
 
     /**
+     * Computes the packet's header byte, which also encodes
+     * the packetNumber length.
+     *
+     * @param packetTypeTag quic-dependent packet type encoding
+     * @param pnsize  the number of bytes needed to encode the packet number
+     * @return the packet's header byte
+     */
+    private static byte headers(byte packetTypeTag, int pnsize) {
+        int pnprefix = pnsize - 1;
+        assert pnprefix >= 0;
+        assert pnprefix <= 3;
+        return (byte)(packetTypeTag | pnprefix);
+    }
+
+    /**
      * Returns the headers tag for the given packet type.
      * Returns 0 if the packet type is NONE or unknown.
      * <p>
@@ -151,7 +166,7 @@ public class QuicPacketEncoder {
         assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
         int pnprefix = encodedLength - 1;
 
-        byte headers = OutgoingOneRttPacket.headers(packetHeadersTag(packet.packetType()),
+        byte headers = headers(packetHeadersTag(packet.packetType()),
                 packet.encodedPacketNumber.length);
         assert (headers & 0x03) == pnprefix : "incorrect packet number prefix in headers: " + headers;
 
@@ -206,7 +221,7 @@ public class QuicPacketEncoder {
         assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
         int pnprefix = encodedLength - 1;
 
-        byte headers = OutgoingZeroRttPacket.headers(packetHeadersTag(packet.packetType()),
+        byte headers = headers(packetHeadersTag(packet.packetType()),
                 packet.encodedPacketNumber.length);
         assert (headers & 0x03) == pnprefix : headers;
 
@@ -335,7 +350,7 @@ public class QuicPacketEncoder {
         assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
         int pnprefix = encodedLength - 1;
 
-        byte headers = OutgoingHandshakePacket.headers(packetHeadersTag(packet.packetType()),
+        byte headers = headers(packetHeadersTag(packet.packetType()),
                 packet.encodedPacketNumber.length);
         assert (headers & 0x03) == pnprefix : headers;
 
@@ -395,7 +410,7 @@ public class QuicPacketEncoder {
         assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
         int pnprefix = encodedLength - 1;
 
-        byte headers = OutgoingInitialPacket.headers(packetHeadersTag(packet.packetType()),
+        byte headers = headers(packetHeadersTag(packet.packetType()),
                 packet.encodedPacketNumber.length);
         assert (headers & 0x03) == pnprefix : headers;
 
@@ -589,22 +604,6 @@ public class QuicPacketEncoder {
             this.size = computeSize(length);
         }
 
-        /**
-         * Computes the packet's header byte, which also encodes
-         * the packetNumber length.
-         *
-         * @param packetTypeTag quic-dependent packet type encoding
-         * @param pnsize  the number of bytes needed to encode the
-         *                packet number
-         * @return the packet's header byte
-         */
-        private static byte headers(byte packetTypeTag, int pnsize) {
-            int pnprefix = pnsize - 1;
-            assert pnprefix >= 0;
-            assert pnprefix <= 3;
-            return (byte)(packetTypeTag | pnprefix);
-        }
-
         @Override
         public int length() {
             return length;
@@ -709,21 +708,6 @@ public class QuicPacketEncoder {
                     .reduce(0, Math::addExact);
             this.length = computeLength(payloadSize, encodedPacketNumber.length, tagSize);
             this.size = computeSize(length);
-        }
-
-        /**
-         * Computes the packet's header byte, which also encodes
-         * the packetNumber length.
-         *
-         * @param packetTypeTag quic-dependent packet type encoding
-         * @param pnsize  the number of bytes needed to encode the packet number.
-         * @return the packet's header byte
-         */
-        private static byte headers(byte packetTypeTag, int pnsize) {
-            int pnprefix = pnsize - 1;
-            assert pnprefix >= 0;
-            assert pnprefix <= 3;
-            return (byte)(packetTypeTag | pnprefix);
         }
 
         @Override
@@ -834,21 +818,6 @@ public class QuicPacketEncoder {
             this.size = computeSize(payloadSize, encodedPacketNumber.length, tagSize);
         }
 
-        /**
-         * Computes the packet's header byte, which also encodes
-         * the packetNumber length.
-         *
-         * @param packetTypeTag quic-dependent packet type encoding
-         * @param pnsize  the number of bytes needed to encode the packet number
-         * @return the packet's header byte
-         */
-        private static byte headers(byte packetTypeTag, int pnsize) {
-            int pnprefix = pnsize - 1;
-            assert pnprefix >= 0;
-            assert pnprefix <= 3;
-            return (byte)(packetTypeTag | pnprefix);
-        }
-
         public long packetNumber() {
             return packetNumber;
         }
@@ -948,21 +917,6 @@ public class QuicPacketEncoder {
             this.length = computeLength(payloadSize, encodedPacketNumber.length, tagSize);
             this.size = computePacketSize(new InitialPacketVariableComponents(length, token, sourceId,
                     destinationId));
-        }
-
-        /**
-         * Computes the packet's header byte, which also encodes
-         * the packetNumber length.
-         *
-         * @param packetTypeTag quic-dependent packet type encoding
-         * @param pnsize  the number of bytes needed to encode the packet number
-         * @return the packet's header byte
-         */
-        private static byte headers(byte packetTypeTag, int pnsize) {
-            int pnprefix = pnsize - 1;
-            assert pnprefix >= 0;
-            assert pnprefix <= 3;
-            return (byte)(packetTypeTag | pnprefix);
         }
 
         @Override
