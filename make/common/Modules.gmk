@@ -180,7 +180,7 @@ ifeq ($(GENERATE_MODULE_DEPS_FILE), true)
 	$(call MakeTargetDir)
 	$(RM) $@
 	$(foreach m, $(MODULE_INFOS), \
-	    ( $(PRINTF) "DEPS_$(call GetModuleNameFromModuleInfo, $m) := " && \
+	    ( $(PRINTF) "DEPS_%s := " "$(call GetModuleNameFromModuleInfo, $m)" && \
 	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) ' \
 	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
 	          /^ *requires/ { sub(/;/, ""); \
@@ -194,7 +194,7 @@ ifeq ($(GENERATE_MODULE_DEPS_FILE), true)
 	                          gsub(/\r/, ""); \
 	                          printf(" %s", $$0) } \
 	          END           { printf("\n") }' $m && \
-	      $(PRINTF) "TRANSITIVE_MODULES_$(call GetModuleNameFromModuleInfo, $m) := " && \
+	      $(PRINTF) "TRANSITIVE_MODULES_%s := " "$(call GetModuleNameFromModuleInfo, $m)" && \
 	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) ' \
 	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
 	          /^ *requires  *transitive/ { \
