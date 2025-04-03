@@ -42,6 +42,12 @@ include MakeFileStart.gmk
 include $(TOPDIR)/make/MainSupport.gmk
 
 include FindTests.gmk
+
+ifneq ($(NO_RECIPES), )
+  # If we are being called in a preparatory mode, update module-deps.gmk
+  GENERATE_MODULE_DEPS_FILE := true
+endif
+
 include Modules.gmk
 
 # Are we requested to ignore dependencies?
