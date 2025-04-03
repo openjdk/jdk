@@ -2666,8 +2666,8 @@ var hljs = (function () {
   function java(hljs) {
     const regex = hljs.regex;
     const JAVA_IDENT_RE = '[\u00C0-\u02B8a-zA-Z_$][\u00C0-\u02B8a-zA-Z_$0-9]*';
-    const GENERIC_RE= recurRegex('(?:<(?:\\?(?:\\s+(?:extends|super)\\s+' + JAVA_IDENT_RE + ')?)|(?:'
-      + JAVA_IDENT_RE + ')~~~(?:\\s*,\\s*' + JAVA_IDENT_RE + '~~~)*>)?', /~~~/g, 2);
+    const TYPE_ARG_RE = '(?:(?:' + JAVA_IDENT_RE + '~~~)|(?:\\?\\s+(?:extends|super)\\s+' + JAVA_IDENT_RE + '~~~)|(?:\\?))';
+    const GENERIC_RE = recurRegex('(?:<' + TYPE_ARG_RE + '(?:\\s*,\\s*' + TYPE_ARG_RE + ')*>)?', /~~~/g, 2);
     const ARRAY_RE = '(?:(?:\\[])+)?';
     const MAIN_KEYWORDS = [
       'synchronized',
