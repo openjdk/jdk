@@ -722,9 +722,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     }
 
                     internalProcessIncoming(datagram.source(),
-                            datagram.destConnId,
-                            datagram.headersType,
-                            datagram.buffer);
+                            datagram.destConnId(),
+                            datagram.headersType(),
+                            datagram.buffer());
                 } catch (Throwable t) {
                     if (Log.errors() || debug.on()) {
                         String msg = "Failed to process datagram: " + t;
