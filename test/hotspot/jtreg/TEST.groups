@@ -547,6 +547,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/jvmti \
  -runtime/cds/appcds/LambdaProxyClasslist.java \
  -runtime/cds/appcds/loaderConstraints/LoaderConstraintsTest.java \
+ -runtime/cds/appcds/methodHandles \
  -runtime/cds/appcds/NestHostOldInf.java \
  -runtime/cds/appcds/OldClassTest.java \
  -runtime/cds/appcds/OldClassWithjsr.java \
