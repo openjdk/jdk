@@ -177,13 +177,13 @@ import java.util.function.Supplier;
  *                return StrictMath.sqrt(a);
  *           }
  *      }
- *
- *      public static void computeSomeValues() {
- *          double sqrt9 = sqrt(9);   // May eventually constant fold to 3.0 at runtime
- *          double sqrt81 = sqrt(81); // Will not constant fold
- *      }
- *
  *  }
+ *
+ *  public static void computeSomeValues() {
+ *      double sqrt9 = sqrt(9);   // May eventually constant fold to 3.0 at runtime
+ *      double sqrt81 = sqrt(81); // Will not constant fold
+ *  }
+ *
  *}
  * <p>
  * A <em>stable function</em> is a function that takes a parameter (of type {@code T}) and
@@ -195,31 +195,34 @@ import java.util.function.Supplier;
  * stable function will act like a cache for the original {@linkplain Function}:
  *
  * {@snippet lang = java:
- * public final class SqrtUtil {
+ * class Log2Util {
  *
- *     private SqrtUtil() {}
+ *     private Log2Util() {}
  *
- *     private static final Set<Integer> CACHED_KEYS = Set.of(1, 2, 4, 8, 16, 32);
+ *     private static final Set<Integer> CACHED_KEYS =
+ *             Set.of(1, 2, 4, 8, 16, 32);
+ *     private static final UnaryOperator<Integer> LOG2_ORIGINAL =
+ *             i -> 31 - Integer.numberOfLeadingZeros(i);
  *
- *     private static final Function<Integer, Double> SQRT =
+ *     private static final Function<Integer, Integer> LOG2_CACHED =
  *             // @link substring="function" target="#function(Set,Function)" :
- *             StableValue.function(CACHED_KEYS, StrictMath::sqrt);
+ *             StableValue.function(CACHED_KEYS, LOG2_ORIGINAL);
  *
- *     public static double sqrt(int a) {
- *          if (CACHED_KEYS.contains(a)) {
- *              return SQRT.apply(a);
- *          } else {
- *              return StrictMath.sqrt(a);
- *          }
- *     }
- *
- *     public static double computeSomeValues() {
- *         double sqrt16 = sqrt(16); // May eventually constant fold to 4.0 at runtime
- *         double sqrt81 = sqrt(81); // Will not constant fold
+ *     public static double log2(int a) {
+ *         if (CACHED_KEYS.contains(a)) {
+ *             return LOG2_CACHED.apply(a);
+ *         } else {
+ *             return LOG2_ORIGINAL.apply(a);
+ *         }
  *     }
  *
  * }
- *}
+ *
+ * public static double computeSomeValues() {
+ *     double log16  = Log2Util.log2(16); // May eventually constant fold to 4 at runtime
+ *     double log256 = Log2Util.log2(81); // Will not constant fold
+ * }
+ * }
  *
  * <h2 id="stable-collections">Stable Collections</h2>
  * Stable values can also be used as backing storage for
@@ -232,11 +235,11 @@ import java.util.function.Supplier;
  *
  *      private static final int CACHED_SIZE = 10;
  *
- *     private SqrtUtil() {}
+ *      private SqrtUtil() {}
  *
- *     private static final List<Double> SQRT =
- *             // @link substring="list" target="#list(int,IntFunction)" :
- *             StableValue.list(CACHED_SIZE, StrictMath::sqrt);
+ *      private static final List<Double> SQRT =
+ *              // @link substring="list" target="#list(int,IntFunction)" :
+ *              StableValue.list(CACHED_SIZE, StrictMath::sqrt);
  *
  *      public static double sqrt(int a) {
  *           if (a < CACHED_SIZE) {
@@ -245,41 +248,44 @@ import java.util.function.Supplier;
  *                return StrictMath.sqrt(a);
  *           }
  *      }
+ *  }
  *
- *      public static void computeSomeValues() {
- *          double sqrt9 = sqrt(9);   // May eventually constant fold to 3.0 at runtime
- *          double sqrt81 = sqrt(81); // Will not constant fold
- *      }
+ *  public static void computeSomeValues() {
+ *       double sqrt9 = SqrtUtil.sqrt(9);   // May eventually constant fold to 3.0 at runtime
+ *       double sqrt81 = SqrtUtil.sqrt(81); // Will not constant fold
+ *  }
  *
  * }
- *}
  * <p>
  * Similarly, a <em>stable map</em> is an unmodifiable map whose keys are known at
  * construction. The stable map values are computed when they are first accessed,
  * using a provided {@linkplain Function}:
  *
  * {@snippet lang = java:
- * public final class SqrtUtil {
+ * class Log2Util {
  *
- *     private SqrtUtil() {}
+ *     private Log2Util() {}
  *
- *     private static final Set<Integer> CACHED_KEYS = Set.of(1, 2, 4, 8, 16, 32);
+ *     private static final Set<Integer> CACHED_KEYS =
+ *             Set.of(1, 2, 4, 8, 16, 32);
+ *     private static final UnaryOperator<Integer> LOG2_ORIGINAL =
+ *             i -> 31 - Integer.numberOfLeadingZeros(i);
  *
- *     private static final Map<Integer, Double> SQRT =
+ *     private static final Map<Integer, INTEGER> LOG2_CACHED =
  *             // @link substring="map" target="#map(Set,Function)" :
- *             StableValue.map(CACHED_KEYS, StrictMath::sqrt);
+ *             StableValue.map(CACHED_KEYS, LOG2_ORIGINAL);
  *
- *     public static double sqrt(int a) {
+ *     public static double log2(int a) {
  *          if (CACHED_KEYS.contains(a)) {
- *              return SQRT.get(a);
+ *              return LOG2_CACHED.get(a);
  *          } else {
- *              return StrictMath.sqrt(a);
+ *              return LOG2_ORIGINAL.apply(a);
  *          }
  *     }
  *
  *     public static double computeSomeValues() {
- *         double sqrt16 = sqrt(16); // May eventually constant fold to 4.0 at runtime
- *         double sqrt81 = sqrt(81); // Will not constant fold
+ *         double log16 = Log2Util.log2(16);   // May eventually constant fold to 4 at runtime
+ *         double log256 = Log2Util.log2(256); // Will not constant fold
  *     }
  *
  * }

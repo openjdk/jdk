@@ -33,12 +33,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -206,6 +210,68 @@ final class StableValueTest {
                     return 1;
                 })
         );
+    }
+
+    @Test
+    void intFunctionExample() {
+        final class SqrtUtil {
+
+            private SqrtUtil() {}
+
+            private static final int CACHED_SIZE = 10;
+
+            private static final IntFunction<Double> SQRT =
+                    // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
+                    StableValue.intFunction(CACHED_SIZE, StrictMath::sqrt);
+
+            public static double sqrt(int a) {
+                if (a < CACHED_SIZE) {
+                    return SQRT.apply(a);
+                } else {
+                    return StrictMath.sqrt(a);
+                }
+            }
+        }
+
+
+        double sqrt9 = SqrtUtil.sqrt(9);   // May eventually constant fold to 3.0 at runtime
+        double sqrt81 = SqrtUtil.sqrt(81); // Will not constant fold
+
+        assertEquals(3, sqrt9);
+        assertEquals(9, sqrt81);
+    }
+
+    @Test
+    void functionExample() {
+
+        class Log2Util {
+
+            private Log2Util() {}
+
+            private static final Set<Integer> CACHED_KEYS =
+                    Set.of(1, 2, 4, 8, 16, 32);
+            private static final UnaryOperator<Integer> LOG2_ORIGINAL =
+                    i -> 31 - Integer.numberOfLeadingZeros(i);
+
+            private static final Function<Integer, Integer> LOG2_CACHED =
+                    // @link substring="function" target="#function(Set,Function)" :
+                    StableValue.function(CACHED_KEYS, LOG2_ORIGINAL);
+
+            public static double log2(int a) {
+                if (CACHED_KEYS.contains(a)) {
+                    return LOG2_CACHED.apply(a);
+                } else {
+                    return LOG2_ORIGINAL.apply(a);
+                }
+            }
+
+        }
+
+        double log16 = Log2Util.log2(16); // May eventually constant fold to 4.0 at runtime
+        double log256 = Log2Util.log2(256); // Will not constant fold
+
+        assertEquals(4, log16);
+        assertEquals(8, log256);
     }
 
     private static final BiPredicate<StableValue<Integer>, Integer> TRY_SET = StableValue::trySet;
