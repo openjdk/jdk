@@ -71,6 +71,7 @@ import static org.testng.Assert.*;
  */
 public class MaxRequestTimeTest {
     static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
+    static final String LOCALE_OPT = "-J-Duser.language=en -J-Duser.country=US";
     static final String JWEBSERVER = getJwebserver(JAVA_HOME);
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
     static final Path TEST_DIR = CWD.resolve("MaxRequestTimeTest");
@@ -174,7 +175,7 @@ public class MaxRequestTimeTest {
     static Process startProcess(String name, StringBuffer sb) throws Throwable {
         // starts the process, parses the port and awaits startup line before sending requests
         return ProcessTools.startProcess(name,
-                new ProcessBuilder(JWEBSERVER, "-p", "0").directory(TEST_DIR.toFile()),
+                new ProcessBuilder(JWEBSERVER, LOCALE_OPT, "-p", "0").directory(TEST_DIR.toFile()),
                 line -> {
                     if (line.startsWith(REGULAR_STARTUP_LINE_STRING_2)) { parseAndSetPort(line); }
                     sb.append(line + "\n");

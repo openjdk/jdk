@@ -27,8 +27,6 @@ package sun.net.httpserver.simpleserver;
 
 import java.io.PrintWriter;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 /**
  * Programmatic entry point to start the jwebserver tool.
  */
@@ -65,7 +63,7 @@ public class JWebServer {
         setMaxReqTime();
         setMaxConnectionsIfNotSet();
 
-        int ec = SimpleFileServerImpl.start(new PrintWriter(System.out, true, UTF_8), "jwebserver", args);
+        int ec = SimpleFileServerImpl.start(new PrintWriter(System.out, true), "jwebserver", args);
         if (ec != 0) {
             System.exit(ec);
         }  // otherwise, the server has either been started successfully and

@@ -47,6 +47,7 @@ import static java.lang.System.out;
 public class CommandLinePortNotSpecifiedTest {
 
     static final Path JAVA_HOME = Path.of(System.getProperty("java.home"));
+    static final String LOCALE_OPT = "-Duser.language=en -Duser.country=US";
     static final String JAVA = getJava(JAVA_HOME);
     static final Path CWD = Path.of(".").toAbsolutePath().normalize();
     static final Path TEST_DIR = CWD.resolve("CommandLinePortNotSpecifiedTest");
@@ -84,7 +85,7 @@ public class CommandLinePortNotSpecifiedTest {
     @Test
     public void testPortNotSpecified() throws Throwable {
         out.println("\n--- testPortNotSpecified");
-        simpleserver(JAVA, "-m", "jdk.httpserver")
+        simpleserver(JAVA, LOCALE_OPT, "-m", "jdk.httpserver")
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Binding to loopback by default. For all interfaces use \"-b 0.0.0.0\" or \"-b ::\".")
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on " + LOOPBACK_ADDR + " port")
