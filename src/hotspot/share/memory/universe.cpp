@@ -863,11 +863,6 @@ jint universe_init() {
 
   TraceTime timer("Genesis", TRACETIME_LOG(Info, startuptime));
 
-  // Initialize KLUT before starting to create any Klass
-  if (UseKLUT) {
-    KlassInfoLUT::initialize();
-  }
-
   initialize_global_behaviours();
 
   GCLogPrecious::initialize();
@@ -891,6 +886,11 @@ jint universe_init() {
   Universe::initialize_tlab();
 
   Metaspace::global_initialize();
+
+  // Initialize KLUT before starting to create any Klass
+  if (UseKLUT) {
+    KlassInfoLUT::initialize();
+  }
 
   // Initialize performance counters for metaspaces
   MetaspaceCounters::initialize_performance_counters();

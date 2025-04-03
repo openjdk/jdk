@@ -36,33 +36,39 @@
 
 ClassLoaderData* KlassInfoLUT::_common_loaders[4] = { nullptr };
 uint32_t* KlassInfoLUT::_entries = nullptr;
+unsigned KlassInfoLUT::_num_entries = -1;
 
 void KlassInfoLUT::initialize() {
   assert(UseKLUT, "?");
-  assert(CompressedKlassPointers::narrow_klass_pointer_bits() <= 22, "sanity");
-  const size_t memory_needed = sizeof(uint32_t) * num_entries();
+  assert(CompressedKlassPointers::fully_initialized(), "Too early");
+  assert(CompressedKlassPointers::narrow_klass_pointer_bits() <= 22, "Use only for COH");
+  assert(CompressedKlassPointers::shift() == 10, "must be (for density)");
+
+  const narrowKlass highest_nk = CompressedKlassPointers::highest_valid_narrow_klass_id();
+  _num_entries = highest_nk;
+
+  const size_t memory_needed = sizeof(uint32_t) * _num_entries;
   if (UseLargePages) {
     const size_t large_page_size = os::large_page_size();
     if (is_aligned(memory_needed, large_page_size)) {
       char* memory = os::reserve_memory_special(memory_needed, large_page_size, large_page_size, nullptr, false);
       if (memory != nullptr) {
         _entries = (uint32_t*)memory;
-        log_info(klut)("KLUT initialized (large pages): " RANGEFMT, RANGEFMTARGS(_entries, memory_needed));
+        log_info(klut)("KLUT initialized (%u entries, using large pages): " RANGEFMT,
+                        _num_entries, RANGEFMTARGS(_entries, memory_needed));
       }
     }
   }
   if (_entries == nullptr) {
     // Fallback, just use C-heap.
     _entries = NEW_C_HEAP_ARRAY(uint32_t, num_entries(), mtClass);
-    log_info(klut)("KLUT initialized (normal pages): " RANGEFMT, RANGEFMTARGS(_entries, memory_needed));
+    log_info(klut)("KLUT initialized (%u entries, using normal pages): " RANGEFMT,
+                    _num_entries, RANGEFMTARGS(_entries, memory_needed));
   }
+
   // We need to zap the whole LUT if CDS is enabled or dumping, since we may need to late-register classes.
-  // We also do this in debug builds, unconditionally.
-  const bool do_zap = DEBUG_ONLY(true ||)
-      CDSConfig::is_using_archive() || CDSConfig::is_dumping_archive();
-  for (unsigned i = 0; i < num_entries(); i++) {
-    _entries[i] = KlassLUTEntry::invalid_entry;
-  }
+  memset(_entries, 0xff, _num_entries * sizeof(uint32_t));
+  assert(_entries[0] == KlassLUTEntry::invalid_entry, "Sanity"); // must be 0xffffffff
 }
 
 int KlassInfoLUT::try_register_perma_cld(ClassLoaderData* cld) {
@@ -90,46 +96,42 @@ int KlassInfoLUT::try_register_perma_cld(ClassLoaderData* cld) {
   return 0;
 }
 
+static void log_klass_registration(const Klass* k, narrowKlass nk, uint32_t klute, const char* message) {
+  char tmp[1024];
+  log_debug(klut)("Klass " PTR_FORMAT ", nk %u, klute: " INT32_FORMAT_X_0 ": %s %s%s",
+                  p2i(k), nk, klute,
+                  message,
+                  (k->is_shared() ? "(shared) " : ""),
+                  k->name()->as_C_string(tmp, sizeof(tmp)));
+}
+
 KlassLUTEntry KlassInfoLUT::register_klass(Klass* k) {
   assert(UseKLUT, "?");
   const narrowKlass nk = CompressedKlassPointers::encode(k);
   assert(nk < num_entries(), "narrowKlass %u is OOB for LUT", nk);
-  uint32_t klute;
-  char tmp[1024];
 
-  bool already_registered = false;
-  const KlassLUTEntry e_stored_in_klass(k->klute());
-  if (!e_stored_in_klass.is_invalid()) {
-    // The Klass may already carry the pre-computed klute if it was loaded
-    // from a shared archive; in that case, it would have been calculated when the
-    // Klass was originally (dynamically) loaded at dump time. In that case avoid
-    // recalculating it; just update the table value from that stored value.
-
-    if (e_stored_in_klass.value() == _entries[nk]) {
-      log_debug(klut)("Klass " PTR_FORMAT " (%s) already registered, nothing to do.",
-                      p2i(k), k->name()->as_C_string(tmp, sizeof(tmp)));
+  uint32_t klute = k->klute();
+  if (KlassLUTEntry(klute).is_invalid()) {
+    // Calculate klute from Klass properties and update the table value.
+    klute = KlassLUTEntry::build_from_klass(k);
+    _entries[nk] = klute;
+    log_klass_registration(k, nk, klute, "registered");
+  } else {
+    // The Klass may already carry the pre-computed klute. That can happen if it was loaded from a shared
+    // archive, in which case it contains the klute computed at (dynamic) load time when dumping. In that
+    // case just reuse that value.
+    if (klute == _entries[nk]) {
+      log_klass_registration(k, nk, klute, "already registered");
     } else {
-      log_debug(klut)("Klass " PTR_FORMAT " (%s): updating table value already registered, nothing to do.",
-                      p2i(k), k->name()->as_C_string(tmp, sizeof(tmp)));
+      _entries[nk] = klute;
+      log_klass_registration(k, nk, klute, "updated table value for");
     }
 
-    already_registered = (e_stored_in_klass.value() == _entries[nk]);
-    // Store Klute into table
-    _entries[nk] = e_stored_in_klass.value();
-
-    if ()
-    log_debug(klut)("registered Klass with KLUT: Klass*=" PTR_FORMAT ", nKlass %u, "
-                    "Klute: " INT32_FORMAT_X_0 ",%s%s %s",
-                    p2i(k), nk, klute,
-                    (k->is_shared() ? " shared," : ""),
-                    (already_registered ? " already registered," : ""),
-                    k->name()->as_C_string(tmp, sizeof(tmp)));
   }
 
-
 #ifdef ASSERT
-  // sanity checks
   {
+    // sanity checks
     KlassLUTEntry e2(at(nk));
     assert(e2.value() == klute, "Sanity");
     e2.verify_against_klass(k);
@@ -161,16 +163,11 @@ KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
   // Note: we cannot calculate the klute here, since at this point the Klass has no associated
   // class loader data...
   assert(k->is_shared(), "Only for CDS classes");
-  KlassLUTEntry e(k->klute());
-  char tmp[1024];
-  log_debug(klut)("late-register Klass with KLUT: Klass*=" PTR_FORMAT ", nKlass %u, "
-                  "Klute: " INT32_FORMAT_X_0 ",%s %s",
-                  p2i(k), nk, e.value(),
-                  (k->is_shared() ? " shared," : ""),
-                  k->name()->as_C_string(tmp, sizeof(tmp)));
-  assert(!e.is_invalid(), "Cannot be");
-  _entries[nk] = e.value();
-  return e;
+  const uint32_t klute = k->klute();
+  assert(!KlassLUTEntry(klute).is_invalid(), "Must be a valid klute");
+  _entries[nk] = klute;
+  log_klass_registration(k, nk, klute, "late-registered");
+  return KlassLUTEntry(klute);
 }
 
 // Counters and incrementors

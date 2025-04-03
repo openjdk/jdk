@@ -44,7 +44,9 @@ class KlassInfoLUT : public AllStatic {
   static ClassLoaderData* _common_loaders[4]; // See "loader" bits in Klute
   static uint32_t* _entries;
 
-  static inline unsigned num_entries();
+  static unsigned _num_entries;
+
+  static inline unsigned num_entries() { return _num_entries; }
 
   static inline uint32_t at(unsigned index);
 

@@ -159,7 +159,7 @@ uint32_t KlassLUTEntry::build_from_ak(const ArrayKlass* ak) {
 
 }
 
-KlassLUTEntry KlassLUTEntry::build_from_klass(const Klass* k) {
+uint32_t KlassLUTEntry::build_from_klass(const Klass* k) {
 
   uint32_t value = invalid_entry;
   if (k->is_array_klass()) {
@@ -169,12 +169,11 @@ KlassLUTEntry KlassLUTEntry::build_from_klass(const Klass* k) {
     const char* not_encodable_reason = nullptr;
     value = build_from_ik(InstanceKlass::cast(k), not_encodable_reason);
     if (not_encodable_reason != nullptr) {
-      log_debug(klut)("InstanceKlass " PTR_FORMAT ": (%s) cannot encoded details: %s.", p2i(k),
+      log_debug(klut)("InstanceKlass " PTR_FORMAT ": (%s) cannot encode details: %s.", p2i(k),
                       k->name()->as_C_string(), not_encodable_reason);
     }
   }
-  return KlassLUTEntry(value);
-
+  return value;
 }
 
 #ifdef ASSERT
