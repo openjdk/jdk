@@ -73,6 +73,10 @@ MemPointer MemPointerParser::parse(MemPointerParserCallback& callback
   canonicalize_raw_summands();
   NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerRawSummand::print_on(tty, _raw_summands); } )
 
+  create_summands();
+  NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerSummand::print_on(tty, _con, _summands); } )
+  canonicalize_summands();
+  NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerSummand::print_on(tty, _con, _summands); } )
 
   return MemPointer::make(pointer, _raw_summands, size NOT_PRODUCT(COMMA trace));
 }
@@ -113,6 +117,24 @@ void MemPointerParser::canonicalize_raw_summands() {
     }
   }
   _raw_summands.trunc_to(pos_put);
+}
+
+void MemPointerParser::create_summands() {
+  assert(_con.is_zero(), "no prior parsing");
+  assert(_summands.is_empty(), "no prior parsing");
+
+  for (int i = 0; i < _raw_summands.length(); i++) {
+    const MemPointerRawSummand& raw_summand = _raw_summands.at(i);
+    if (raw_summand.is_con()) {
+      _con = _con + raw_summand.to_con();
+    } else {
+      _summands.push(raw_summand.to_summand());
+    }
+  }
+}
+
+void MemPointerParser::canonicalize_summands() {
+
 }
 
 // Parse a sub-expression of the pointer, starting at the current summand. We parse the

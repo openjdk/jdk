@@ -646,6 +646,17 @@ public:
     _scale.print_on(st);
     st->print(" * [%d %s]", _variable->_idx, _variable->Name());
   }
+
+  static void print_on(outputStream* st, NoOverflowInt con, const GrowableArray<MemPointerSummand>& summands) {
+    st->print("Summands (%d): con(", summands.length());
+    con.print_on(st);
+    st->print(")");
+    for (int i = 0; i < summands.length(); i++) {
+      st->print(" + ");
+      summands.at(i).print_on(tty);
+    }
+    st->cr();
+  }
 #endif
 };
 
@@ -730,7 +741,7 @@ public:
   }
 
   NoOverflowInt to_con() const {
-    assert(!is_con(), "must be variable");
+    assert(is_con(), "must be constant");
     return scaleL() * scaleI();
   }
 
@@ -1070,10 +1081,13 @@ class MemPointerParser : public StackObj {
 private:
   const MemNode* _mem;
 
-  // Internal data-structures for parsing.
+  // Internal data-structures for parsing raw summands.
   int _next_int_group = 1;
   GrowableArray<MemPointerRawSummand> _worklist;
   GrowableArray<MemPointerRawSummand> _raw_summands;
+
+  // Internal data-structures for parsing "regular" summands.
+  NoOverflowInt _con = NoOverflowInt(0);
   GrowableArray<MemPointerSummand> _summands;
 
   // Resulting decomposed-form.
@@ -1119,6 +1133,8 @@ private:
   bool is_safe_to_decompose_op(const int opc, const NoOverflowInt& scale) const;
 
   void canonicalize_raw_summands();
+  void create_summands();
+  void canonicalize_summands();
 };
 
 #endif // SHARE_OPTO_MEMPOINTER_HPP
