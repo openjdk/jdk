@@ -22,6 +22,7 @@
  */
 
 #include "opto/vtransform.hpp"
+#include "opto/addnode.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
@@ -255,6 +256,14 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
   }
 }
 
+Node* make_a_plus_b_leq_c(Node* a, jint b, Node* c, PhaseIdealLoop* phase) {
+  Node* b_con = phase->igvn().longcon(b);
+  Node* a_plus_b = new AddLNode(a, b_con);
+  Node* cmp = CmpNode::make(a_plus_b, c, T_INT, true);
+  Node* bol = new BoolNode(cmp, BoolTest::le);
+  return bol;
+}
+
 void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPointer& vp2) {
   assert(!vp1.always_overlaps_with(vp2), "check would always be false");
   assert(!vp1.never_overlaps_with(vp2), "check would always be true");
@@ -393,10 +402,19 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
 
   if (vp1.iv_scale() == vp2.iv_scale()) {
     // p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)
+    // -------- condition1 --------      ------- condition2 ---------
     Node* p1_init = vp1.make_pointer_expression(init);
     Node* p2_init = vp2.make_pointer_expression(init);
     tty->print("p1(init) "); p1_init->dump();
     tty->print("p2(init) "); p2_init->dump();
+    Node* condition1 = make_a_plus_b_leq_c(p1_init, vp1.size(), p2_init, phase());
+    Node* condition2 = make_a_plus_b_leq_c(p2_init, vp2.size(), p1_init, phase());
+    tty->print("condition1 "); condition1->dump();
+    tty->print("condition2 "); condition2->dump();
+
+    Node* c1_or_c2 = new OrINode(condition1, condition2);
+    tty->print("c1_or_c2 "); c1_or_c2->dump();
+
     assert(false, "TODO");
   } else {
     // TODO: check if iv_stride >=, ...

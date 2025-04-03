@@ -26,6 +26,7 @@
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 
@@ -461,6 +462,56 @@ void VLoopDependencyGraph::PredsIterator::next() {
     _current = nullptr; // done
     _is_current_unknown_aliasing_edge = false;
   }
+}
+
+Node* VPointer::make_pointer_expression(Node* iv_value) const {
+  assert(is_valid(), "must be valid");
+
+  PhaseIdealLoop* phase = _vloop.phase();
+  PhaseIterGVN& igvn = phase->igvn();
+  Node* iv = _vloop.iv();
+
+  tty->print_cr("VPointer::make_pointer_expression");
+  tty->print("iv_value "); iv_value->dump();
+  print_on(tty);
+
+  Node* expression = nullptr;
+  mem_pointer().for_each_raw_summand_of_int_group(0, [&] (const MemPointerRawSummand& s) {
+    Node* node = nullptr;
+    if (s.is_con()) {
+      // Long constant.
+      NoOverflowInt con = s.scaleI() * s.scaleL();
+      node = igvn.longcon(con.value());
+    } else {
+      // Long variable.
+      assert(s.scaleI().is_one(), "must be long variable");
+      Node* scaleL = igvn.longcon(s.scaleL().value());
+      Node* variable = (s.variable() == iv) ? iv_value : s.variable();
+      node = new MulLNode(scaleL, variable);
+    }
+    expression = (expression == nullptr) ? node : new AddLNode(expression, node);
+  });
+
+  int max_int_group = mem_pointer().max_int_group();
+  for (int int_group = 1; int_group <= max_int_group; int_group++) {
+    Node* int_expression = nullptr;
+    mem_pointer().for_each_raw_summand_of_int_group(int_group, [&] (const MemPointerRawSummand& s) {
+      Node* node = nullptr;
+      if (s.is_con()) {
+        node = igvn.longcon(s.scaleI().value());
+      } else {
+        Node* scaleI = igvn.intcon(s.scaleI().value());
+        Node* variable = (s.variable() == iv) ? iv_value : s.variable();
+        node = new MulINode(scaleI, variable);
+      }
+      int_expression = (int_expression == nullptr) ? node : new AddINode(int_expression, node);
+    });
+    assert(int_expression != nullptr, "no empty int group");
+    int_expression = new ConvI2LNode(int_expression);
+    expression = (expression == nullptr) ? int_expression : new AddLNode(expression, int_expression);
+  }
+
+  return expression;
 }
 
 #ifndef PRODUCT

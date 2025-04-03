@@ -962,10 +962,7 @@ public:
     return mem_pointer().always_overlaps_with(other.mem_pointer());
   }
 
-  Node* make_pointer_expression(Node* iv_value) const {
-    assert(is_valid(), "must be valid");
-    return mem_pointer().make_pointer_expression(_vloop.iv(), iv_value);
-  }
+  Node* make_pointer_expression(Node* iv_value) const;
 
   NOT_PRODUCT( void print_on(outputStream* st, bool end_with_cr = true) const; )
 
