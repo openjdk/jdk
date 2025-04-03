@@ -26,6 +26,7 @@
 #define SHARE_CDS_AOTCLASSFILTER_HPP
 
 #include "memory/allStatic.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
 class InstanceKlass;
@@ -43,12 +44,12 @@ public:
   class FilterMark {
   public:
     FilterMark() {
-      assert(_current_mark == nullptr, "sanity");
-      _current_mark = this;
+      FilterMark* old_mark = Atomic::cmpxchg(&_current_mark, (FilterMark*)nullptr, this);
+      assert(old_mark == nullptr, "impl note: we support only a single AOTClassFilter used by a single thread");
     }
     ~FilterMark() {
-      assert(_current_mark == this, "sanity");
-      _current_mark = nullptr;
+      FilterMark* old_mark = Atomic::cmpxchg(&_current_mark, this, (FilterMark*)nullptr);
+      assert(old_mark == this, "sanity");
     }
 
     virtual bool is_aot_tooling_class(InstanceKlass* ik) = 0;
