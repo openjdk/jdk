@@ -146,20 +146,11 @@ Java_jdk_internal_util_SystemProps_00024Raw_platformProperties(JNIEnv *env, jcla
     PUTPROP(propArray, _path_separator_NDX, sprops->path_separator);
     PUTPROP(propArray, _line_separator_NDX, sprops->line_separator);
 
-    /*
-     * TBD
-     * Assume that sprops->encoding and sprops->sun_jnu_encoding
-     * are always set non-NULL by platform-specific code.
-     * Is this a valid assumption, or should we do a null-check
-     * here and do something like default to UTF-8?
-     */
-
+    /* basic encoding properties, always non-NULL */
     PUTPROP(propArray, _native_encoding_NDX, sprops->encoding);
     PUTPROP(propArray, _sun_jnu_encoding_NDX, sprops->sun_jnu_encoding);
 
-    /*
-     * file encoding for stdout and stderr
-     */
+    /* encodings for standard streams, may be NULL */
     PUTPROP(propArray, _stdout_encoding_NDX, sprops->stdout_encoding);
     PUTPROP(propArray, _stderr_encoding_NDX, sprops->stderr_encoding);
 

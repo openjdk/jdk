@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #endif
+#include <assert.h>
 #include <pwd.h>
 #include <locale.h>
 #ifndef ARCHPROPNAME
@@ -295,6 +296,7 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
         /* return same result nl_langinfo would return for en_UK,
          * in order to use optimizations. */
         *std_encoding = (*p != '\0') ? p : "ISO8859-1";
+   /* XXX TODO is this really what we want? ^^^^^^^^^ */
 
 #ifdef __linux__
         /*
@@ -453,6 +455,8 @@ GetJavaProperties(JNIEnv *env)
     } else {
         sprops.display_language = "en";
         sprops.encoding = "ISO8859-1";
+   /*                      ^^^^^^^^^
+      XXX TODO is this really what we want? */
     }
 
     /* ParseLocale failed with OOME */
@@ -465,6 +469,10 @@ GetJavaProperties(JNIEnv *env)
 #else
     sprops.sun_jnu_encoding = sprops.encoding;
 #endif
+
+    assert(sprops.encoding != NULL);
+    assert(sprops.sun_jnu_encoding != NULL);
+
     if (isatty(STDOUT_FILENO) == 1) {
         sprops.stdout_encoding = sprops.encoding;
     }
