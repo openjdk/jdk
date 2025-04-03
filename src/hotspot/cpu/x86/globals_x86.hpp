@@ -192,8 +192,8 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
              "Turn off JVM mitigations related to Intel micro code "        \
              "mitigations for the Intel JCC erratum")                       \
                                                                             \
-  product(int, ICacheFlush, -1, DIAGNOSTIC,                                 \
-             "Select the ICache flushing mechanism: -1 = auto-select; "     \
+  product(int, X86ICacheFlush, -1, DIAGNOSTIC,                              \
+             "Select the X86 ICache flushing mechanism: -1 = auto-select; " \
              "0 = none (dangerous); 1 = CLFLUSH; 2 = CLFLUSHOPT; 3 = CLWB.")\
              range(-1, 3)                                                   \
                                                                             \

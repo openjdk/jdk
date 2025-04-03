@@ -1089,24 +1089,22 @@ void VM_Version::get_processor_features() {
     _has_intel_jcc_erratum = IntelJccErratumMitigation;
   }
 
-  if (ICacheFlush == -1) {
-    // Requested auto-detection.
+  if (X86ICacheFlush == -1) {
+    // Auto-detect, choosing the best performant one.
     if (supports_clwb()) {
-      FLAG_SET_ERGO(ICacheFlush, 3);
+      FLAG_SET_ERGO(X86ICacheFlush, 3);
     } else if (supports_clflushopt()) {
-      FLAG_SET_ERGO(ICacheFlush, 2);
+      FLAG_SET_ERGO(X86ICacheFlush, 2);
     } else if (supports_clflush()) {
-      FLAG_SET_ERGO(ICacheFlush, 1);
+      FLAG_SET_ERGO(X86ICacheFlush, 1);
     }
   } else {
-    if (!supports_clflush() && (ICacheFlush == 1)) {
-      vm_exit_during_initialization("CPU does not support CLFLUSH, unable to use ICacheFlush=1");
+    assert(supports_clflush(), "Always present");
+    if ((X86ICacheFlush == 2) && !supports_clflushopt()) {
+      vm_exit_during_initialization("CPU does not support CLFLUSHOPT, unable to use X86ICacheFlush=2");
     }
-    if (!supports_clflushopt() && (ICacheFlush == 2)) {
-      vm_exit_during_initialization("CPU does not support CLFLUSHOPT, unable to use ICacheFlush=2");
-    }
-    if (!supports_clwb() && (ICacheFlush == 3)) {
-      vm_exit_during_initialization("CPU does not support CLWB, unable to use ICacheFlush=3");
+    if ((X86ICacheFlush == 3) && !supports_clwb()) {
+      vm_exit_during_initialization("CPU does not support CLWB, unable to use X86ICacheFlush=3");
     }
   }
 

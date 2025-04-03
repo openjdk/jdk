@@ -28,7 +28,7 @@
 #define __ _masm->
 
 void x86_generate_icache_fence(MacroAssembler* _masm) {
-  switch (ICacheFlush) {
+  switch (X86ICacheFlush) {
     case 0:  // no flushes, just a fence
     case 1:
       __ mfence();
@@ -43,7 +43,7 @@ void x86_generate_icache_fence(MacroAssembler* _masm) {
 }
 
 void x86_generate_icache_flush_insn(MacroAssembler* _masm, Register addr) {
-  switch (ICacheFlush) {
+  switch (X86ICacheFlush) {
     case 1:
       __ clflush(Address(addr, 0));
       break;
@@ -74,7 +74,7 @@ void ICacheStubGenerator::generate_icache_flush(const char* name, ICache::flush_
 
   x86_generate_icache_fence(_masm);
 
-  if (ICacheFlush != 0) {
+  if (X86ICacheFlush != 0) {
     __ bind(flush_line);
     x86_generate_icache_flush_insn(_masm, addr);
     __ addptr(addr, ICache::line_size);
