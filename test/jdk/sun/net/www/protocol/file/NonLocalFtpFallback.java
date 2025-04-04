@@ -121,9 +121,9 @@ public class NonLocalFtpFallback {
     @Test
     public void verifyNonLocalFtpFallback() throws Exception {
         URL localURL = file.toUri().toURL();
-        URL nonLocalURL = new URL("file",
-                InetAddress.getLoopbackAddress().getHostAddress(),
-                localURL.getFile());
+        // We can use a fake host name here, no actual FTP request will be made
+        String hostname = "remotehost";
+        URL nonLocalURL = new URL("file", hostname, localURL.getFile());
 
         // Open the non-local file: URL connection using a proxy
         Proxy proxy = new Proxy(Proxy.Type.HTTP,
@@ -139,7 +139,7 @@ public class NonLocalFtpFallback {
 
         // Assert that the expected FTP URI was requested in the HTTP proxy
         assertEquals(1, uris.size());
-        URL ftpURL = new URL("ftp", "127.0.0.1", localURL.getFile());
+        URL ftpURL = new URL("ftp", hostname, localURL.getFile());
         assertEquals(ftpURL.toURI(), uris.iterator().next());
     }
 }
