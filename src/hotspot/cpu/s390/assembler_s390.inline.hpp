@@ -415,10 +415,13 @@ inline void Assembler::z_rosbg( Register r1, Register r2, int64_t spos3, int64_t
 }
 inline void Assembler::z_risbg( Register r1, Register r2, int64_t spos3, int64_t epos4, int64_t nrot5, bool zero_rest) { // Rotate then INS selected bits.  -- z196
   const int64_t len = 48;
-  assert(Immediate::is_uimm(spos3, 6), "range start out of range");   // Could just trim to 6bits wide w/o assertion.
-  assert(Immediate::is_uimm(epos4, 6), "range end   out of range");   // Could just trim to 6bits wide w/o assertion.
-  assert(Immediate::is_uimm(nrot5, 6), "rotate amount out of range"); // Could just leave it as is. leftmost 2 bits are ignored by instruction.
-  emit_48( RISBG_ZOPC | regt(r1, 8, len) | regt(r2, 12, len) | uimm6(spos3, 16+2, len) | uimm6(epos4, 24+2, len) | uimm6(nrot5, 32+2, len) | u_field(zero_rest ? 1 : 0, len-24-1, len-24-1));
+  assert(Immediate::is_uimm(spos3, 8), "range start out of range");   // Could just trim to 6bits wide w/o assertion.
+  assert(Immediate::is_uimm(epos4, 8), "range end   out of range");   // Could just trim to 6bits wide w/o assertion.
+  assert(Immediate::is_uimm(nrot5, 8), "rotate amount out of range"); // Could just leave it as is. leftmost 2 bits are ignored by instruction.
+  assert((spos3 & 192) == 0, "bits 0, 1 of I3 field are reserved");
+  assert((epos4 & 64) == 0, "bit 1 of I4 field is reserved");
+  assert((nrot5 & 192) == 0, "bits 0, 1 of I5 field are ignored by instruction, make sure that will not cause trouble");
+  emit_48( RISBG_ZOPC | regt(r1, 8, len) | regt(r2, 12, len) | uimm8(spos3, 16, len) | uimm8(epos4, 24, len) | uimm8(nrot5, 32, len) | u_field(zero_rest ? 1 : 0, len-24-1, len-24-1));
 }
 
 
