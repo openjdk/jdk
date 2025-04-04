@@ -147,9 +147,9 @@ public class WriteJPEGThumbnailTest {
     private static ImageReader getJPEGImageReader() {
         Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName("jpeg");
         ImageReader reader;
-        while(readers.hasNext()) {
+        while (readers.hasNext()) {
             reader = readers.next();
-            if(reader.canReadRaster()) {
+            if (reader.canReadRaster()) {
                 return reader;
             }
         }
