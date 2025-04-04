@@ -143,9 +143,9 @@ public class LocalExecutionControl extends DirectExecutionControl {
         });
 
         final Object[] res = new Object[1];
-        Thread snippetThread = new Thread(execThreadGroup, decorateExecution(() -> {
+        Thread snippetThread = new Thread(execThreadGroup, () -> {
             try {
-                res[0] = doitMethod.invoke(null, new Object[0]);
+                res[0] = doInvoke(doitMethod);
             } catch (InvocationTargetException e) {
                 if (e.getCause() instanceof ThreadDeath) {
                     stopped.set(true);
@@ -157,7 +157,7 @@ public class LocalExecutionControl extends DirectExecutionControl {
             } catch (ThreadDeath e) {
                 stopped.set(true);
             }
-        }));
+        });
 
         snippetThread.start();
         Thread[] threadList = new Thread[execThreadGroup.activeCount()];
@@ -225,17 +225,24 @@ public class LocalExecutionControl extends DirectExecutionControl {
     }
 
     /**
-     * Decorate the task that executes the snippet within the execution thread.
+     * Execute the snippet.
      *
      * <p>
-     * Subclasses may configure thread-specific context for snippet execution here.
-     * The implementation in {@link LocalExecutionControl} just returns {@code task}.
+     * This method is invoked within the snippet execution thread to actually execute snippets.
+     * The given method is a static method that takes zero parameters.
      *
-     * @param task the task to be performed in the snippet execution thread
-     * @return the possibly decorated task
+     * <p>
+     * The implementation in {@link LocalExecutionControl} just invokes {@code method}.
+     * Subclasses may override this method to configure thread-specific context during snippet
+     * execution, etc.
+     *
+     * @param method static method to be invoked taking zero parameters
+     * @return the return value from {@code method}, or null if {@code method} returns void
+     * @throws IllegalAccessException if {@code method} is inaccessible
+     * @throws InvocationTargetException if {@code method} itself throws an exception
      * @since 25
      */
-    protected Runnable decorateExecution(Runnable task) {
-        return task;
+    protected Object doInvoke(Method method) throws IllegalAccessException, InvocationTargetException {
+        return method.invoke(null);
     }
 }

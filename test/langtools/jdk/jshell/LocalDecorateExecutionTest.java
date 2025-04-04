@@ -33,6 +33,8 @@
  * @run testng/othervm LocalDecorateExecutionTest
  */
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -116,15 +118,13 @@ public class LocalDecorateExecutionTest extends LocalExecutionTestSupport {
             final String contextString = parameters.get(CONTEXT_PARAM);
             return new LocalExecutionControl(Thread.currentThread().getContextClassLoader()) {
                 @Override
-                protected Runnable decorateExecution(Runnable task) {
-                    return () -> {
-                        CONTEXT_VALUE.set(contextString);
-                        try {
-                            task.run();
-                        } finally {
-                            CONTEXT_VALUE.set(null);
-                        }
-                    };
+                protected Object doInvoke(Method method) throws IllegalAccessException, InvocationTargetException {
+                    CONTEXT_VALUE.set(contextString);
+                    try {
+                        return method.invoke(null);
+                    } finally {
+                        CONTEXT_VALUE.set(null);
+                    }
                 }
             };
         }
