@@ -32,7 +32,7 @@ import java.util.Enumeration;
 /**
  * The {@code AllPermission} is a permission that implies all other permissions.
  *
- * @apiNote
+ * @deprecated
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
@@ -46,6 +46,7 @@ import java.util.Enumeration;
  * @serial exclude
  */
 
+@Deprecated(since="25", forRemoval=true)
 public final class AllPermission extends Permission {
 
     @java.io.Serial
@@ -91,6 +92,7 @@ public final class AllPermission extends Permission {
      * @return true if {@code obj} is an {@code AllPermission}, false otherwise.
      */
     @Override
+    @SuppressWarnings("removal")
     public boolean equals(Object obj) {
         return (obj instanceof AllPermission);
     }
@@ -177,6 +179,7 @@ final class AllPermissionCollection
      *                                object has been marked readonly
      */
 
+    @SuppressWarnings("removal")
     public void add(Permission permission) {
         if (! (permission instanceof AllPermission))
             throw new IllegalArgumentException("invalid permission: "+

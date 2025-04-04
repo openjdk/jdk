@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ implements java.io.Serializable
      * of the same type.
      * Not serialized; see serialization section at end of class.
      */
+    @SuppressWarnings("removal")
     private transient ConcurrentHashMap<String, List<UnresolvedPermission>> perms;
 
     /**
@@ -75,6 +76,7 @@ implements java.io.Serializable
      * @param permission the Permission object to add.
      */
     @Override
+    @SuppressWarnings("removal")
     public void add(Permission permission) {
         if (!(permission instanceof UnresolvedPermission unresolvedPermission))
             throw new IllegalArgumentException("invalid permission: "+
@@ -98,6 +100,7 @@ implements java.io.Serializable
      * get any unresolved permissions of the same type as p,
      * and return the List containing them.
      */
+    @SuppressWarnings("removal")
     List<UnresolvedPermission> getUnresolvedPermissions(Permission p) {
         return perms.get(p.getClass().getName());
     }
@@ -118,6 +121,7 @@ implements java.io.Serializable
      * @return an enumeration of all the UnresolvedPermission objects.
      */
     @Override
+    @SuppressWarnings("removal")
     public Enumeration<Permission> elements() {
         List<Permission> results =
             new ArrayList<>(); // where results are stored
@@ -156,6 +160,7 @@ implements java.io.Serializable
      * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
+    @SuppressWarnings("removal")
     private void writeObject(ObjectOutputStream out) throws IOException {
         // Don't call out.defaultWriteObject()
 
@@ -189,6 +194,7 @@ implements java.io.Serializable
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
+    @SuppressWarnings("removal")
     private void readObject(ObjectInputStream in) throws IOException,
     ClassNotFoundException {
         // Don't call defaultReadObject()

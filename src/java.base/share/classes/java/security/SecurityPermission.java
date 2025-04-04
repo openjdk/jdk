@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ package java.security;
  * <p>
  * The target name is the name of a security configuration parameter.
  *
- * @apiNote
+ * @deprecated
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
@@ -46,7 +46,8 @@ package java.security;
  * @author Roland Schemers
  * @since 1.2
  */
-
+ 
+@Deprecated(since="25", forRemoval=true)
 public final class SecurityPermission extends BasicPermission {
 
     @java.io.Serial

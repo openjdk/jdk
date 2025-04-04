@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,6 +186,7 @@ public final class MethodUtil extends SecureClassLoader {
         return defineClass(name, b, 0, b.length, cs);
     }
 
+    @SuppressWarnings("removal")
     protected PermissionCollection getPermissions(CodeSource codesource) {
         PermissionCollection perms = super.getPermissions(codesource);
         perms.add(new AllPermission());
