@@ -148,6 +148,7 @@ public class BulkLoaderTest {
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
             if (isAOTWorkflow() && runMode == RunMode.TRAINING) {
                 out.shouldContain("Skipping BadOldClassA: Unlinked class not supported by AOTConfiguration");
+                out.shouldContain("Skipping SimpleCusty: Duplicated unregistered class");
             }
 
             if (isDumping(runMode)) {
@@ -292,8 +293,10 @@ class BulkLoaderTestApp {
 
 
     static void checkCustomLoader() throws Exception {
-        Object o = initFromCustomLoader();
-        System.out.println(o);
+        for (int i = 0; i < 2; i++) {
+            Object o = initFromCustomLoader();
+            System.out.println(o);
+        }
     }
 
     static Object initFromCustomLoader() throws Exception {
