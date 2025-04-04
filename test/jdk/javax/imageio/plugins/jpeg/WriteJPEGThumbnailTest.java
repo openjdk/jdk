@@ -62,8 +62,10 @@ public class WriteJPEGThumbnailTest {
         // for a JPEG segment. Now we clip the thumbnail to make it fit. (Previously
         // we wrote a corrupt JPEG file.)
         boolean b2 = new WriteJPEGThumbnailTest(100, 219).run();
-        if (!(b1 && b2))
+        if (!(b1 && b2)) {
             System.err.println("Test failed");
+            throw new Error("Test failed");
+        }
     }
 
     final int thumbWidth, thumbHeight;
