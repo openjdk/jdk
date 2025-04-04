@@ -95,9 +95,7 @@ abstract class HttpConnection implements Closeable {
      * <p>
      * This label helps with associating multiple components participating in a
      * connection. For instance, an {@link AsyncSSLConnection} and the
-     * {@link PlainHttpConnection} it wraps will share the same label. As a
-     * result, compared to {@link #id}, this label does not give a total order
-     * among instances.
+     * {@link PlainHttpConnection} it wraps will share the same label.
      * </p>
      */
     private final String label;
