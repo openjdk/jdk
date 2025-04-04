@@ -45,7 +45,7 @@ package java.util.logging;
  *
  */
 
-@Deprecated(forRemoval = true, since="25")
+@Deprecated(since="25", forRemoval=true)
 public final class LoggingPermission extends java.security.BasicPermission {
 
     private static final long serialVersionUID = 63564341580231582L;

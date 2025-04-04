@@ -199,7 +199,6 @@ public class FileURLConnection extends URLConnection {
         return is;
     }
 
-    @SuppressWarnings("removal")
     Permission permission;
 
     /* since getOutputStream isn't supported, only read permission is

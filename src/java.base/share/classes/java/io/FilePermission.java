@@ -84,7 +84,6 @@ import sun.security.util.SecurityConstants;
  */
 
 @Deprecated(since="25", forRemoval=true)
-@SuppressWarnings("removal")
 public final class FilePermission extends Permission implements Serializable {
 
     /**
