@@ -242,10 +242,7 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
       )
 
   JDK_SYMBOLS_BUNDLE_FILES := \
-      $(filter-out \
-          %.stripped.pdb, \
-          $(call FindFiles, $(SYMBOLS_IMAGE_DIR)) \
-      )
+      $(call FindFiles, $(SYMBOLS_IMAGE_DIR))
 
   TEST_DEMOS_BUNDLE_FILES := $(filter $(JDK_DEMOS_IMAGE_HOMEDIR)/demo/%, \
       $(ALL_JDK_DEMOS_FILES))
