@@ -108,13 +108,13 @@ class AixFileStore
         }
         return super.supportsFileAttributeView(type);
 
-   }
+    }
 
-   @Override
-   public boolean supportsFileAttributeView(String name) {
+    @Override
+    public boolean supportsFileAttributeView(String name) {
        if (name.equals("user"))
            return supportsFileAttributeView(UserDefinedFileAttributeView.class);
        return super.supportsFileAttributeView(name);
-   }
+    }
 
 }
