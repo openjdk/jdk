@@ -90,30 +90,30 @@ class AixFileStore
 
     @Override
     public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
-       // support UserDefinedAttributeView if extended attributes enabled
-       if (type == UserDefinedFileAttributeView.class) {
-           // lookup fstypes.properties
-           FeatureStatus status = checkIfFeaturePresent("user_xattr");
-           if (status == FeatureStatus.PRESENT)
-               return true;
-           if (status == FeatureStatus.NOT_PRESENT)
-               return false;
+        // support UserDefinedAttributeView if extended attributes enabled
+        if (type == UserDefinedFileAttributeView.class) {
+            // lookup fstypes.properties
+            FeatureStatus status = checkIfFeaturePresent("user_xattr");
+            if (status == FeatureStatus.PRESENT)
+                return true;
+            if (status == FeatureStatus.NOT_PRESENT)
+                return false;
 
-           // typical AIX file system types that support xattr (JFS2 with EA enabled)
-           String fstype = entry().fstype();
-           if ("jfs2".equals(fstype)) {
-               UnixPath dir = new UnixPath(file().getFileSystem(), entry().dir());
-               return isExtendedAttributesEnabled(dir);
-           }
+            // typical AIX file system types that support xattr (JFS2 with EA enabled)
+            String fstype = entry().fstype();
+            if ("jfs2".equals(fstype)) {
+                UnixPath dir = new UnixPath(file().getFileSystem(), entry().dir());
+                return isExtendedAttributesEnabled(dir);
+            }
         }
         return super.supportsFileAttributeView(type);
     }
 
     @Override
     public boolean supportsFileAttributeView(String name) {
-       if (name.equals("user"))
-           return supportsFileAttributeView(UserDefinedFileAttributeView.class);
-       return super.supportsFileAttributeView(name);
+        if (name.equals("user"))
+            return supportsFileAttributeView(UserDefinedFileAttributeView.class);
+        return super.supportsFileAttributeView(name);
     }
 
 }
