@@ -52,21 +52,20 @@ public class bug6178004 {
     private static final int SIZE = 300;
 
     private static final String INSTRUCTIONS = """
-            You can change Look And Feel using the menu "LaF"
-            for Windows, Metal or Motif LaF:
+            You can change Look And Feel using the menu "Change LaF".
 
             Make sure that Frame2 or instruction window is active.
             Move mouse over the button inside "Frame 1".
             If tooltip is NOT shown or Frame 1 jumped on top of
             the Frame2, press FAIL.
 
-            For LaFs other than Motif/GTK/Nimbus:
+            For Metal/Windows LaF:
             Tooltips are shown only if one of the frames (or the instruction
             window) is active. To test it click on any other application to
             make frames and instruction window inactive and then verify that
             tooltips are not shown any more.
 
-            For Motif/GTK/Nimbus LaF:
+            For Motif/GTK/Nimbus/Aqua LaF:
             Tooltips should be shown for all frames irrespective of whether
             the application is active or inactive.
 
