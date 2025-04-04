@@ -25,8 +25,8 @@
  * @summary High arity invocations
  * @compile BigArityTest.java
  * @comment The reduced maximum node limit below avoids, in combination with
- *          -Xcomp, excessive C2 memory consumption during compilation of
- *          some methods that both
+ *          -Xcomp, timeouts and excessive C2 memory consumption during
+ *          compilation of some methods that both
  *            (1) have a large number of parameters, and
  *            (2) use JSR292 methods internally (which increases the
  *                MaxNodeLimit with a factor of 3)
