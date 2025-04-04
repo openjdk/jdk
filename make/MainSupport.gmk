@@ -109,7 +109,7 @@ define Clean-java
 	$(RM) -r $(JDK_OUTPUTDIR)/modules/$(strip $1)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/special_classes/$(strip $1)
 	$(ECHO) " done"
-	$(ECHO) -n "Cleaning headers %s..." "$(if $1,for $(strip $1) )"
+	$(ECHO) -n "Cleaning headers $(if $1,for $(strip $1) )..."
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/headers/$(strip $1)
 	@$(ECHO) " done"
 endef
