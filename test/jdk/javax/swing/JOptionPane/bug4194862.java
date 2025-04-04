@@ -68,8 +68,9 @@ public class bug4194862 {
 
         JButton b = new JButton("Show JOption dialog");
         b.addActionListener(e -> {
-            int retVal = JOptionPane.showInternalConfirmDialog(jInternalFrame,
-                                                      "Am I centered?");
+            int retVal = JOptionPane.showInternalConfirmDialog(
+                                      jInternalFrame, "Am I centered?",
+                                      "bug4194862 JOptionPane", JOptionPane.YES_NO_OPTION);
             switch (retVal) {
                 case JOptionPane.YES_OPTION -> PassFailJFrame.forcePass();
                 case JOptionPane.NO_OPTION ->
