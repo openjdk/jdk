@@ -25,10 +25,11 @@
 package java.net.http;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.PushPromiseHandler;
-import java.time.Duration;
 import java.util.Objects;
 
 /**
@@ -61,15 +62,17 @@ public final class StreamLimitException extends IOException {
     private static final long serialVersionUID = 2614981180406031159L;
 
     /**
-     * The version of the HTTP protocol on which the stream limit exception occurred
+     * The version of the HTTP protocol on which the stream limit exception occurred.
+     * Must not be null.
      * @serial
      */
     private final Version version;
 
     /**
      * Creates a new {@code StreamLimitException}
-     * @param version the version of the protocol on which the stream limit exception occurred
-     * @param message the detailed exception message
+     * @param version the version of the protocol on which the stream limit exception
+     *                occurred. Must not be null.
+     * @param message the detailed exception message, which can be null.
      */
     public StreamLimitException(final Version version, final String message) {
         super(message);
@@ -81,5 +84,21 @@ public final class StreamLimitException extends IOException {
      */
     public final Version version() {
         return version;
+    }
+
+    /**
+     * Restores the state of a {@code StreamLimitException} from the stream
+     * @param in the input stream
+     * @throws IOException if the class of a serialized object could not be found.
+     * @throws ClassNotFoundException if an I/O error occurs.
+     * @throws InvalidObjectException if {@code version} is null.
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream in)
+            throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        if (version == null) {
+            throw new InvalidObjectException("version must not be null");
+        }
     }
 }

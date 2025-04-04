@@ -604,6 +604,7 @@ public abstract class HttpClient implements AutoCloseable {
 
         /**
          * HTTP version 3
+         * @since TBD
          */
         HTTP_3
     }

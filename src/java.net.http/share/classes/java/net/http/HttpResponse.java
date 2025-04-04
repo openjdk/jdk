@@ -894,7 +894,7 @@ public interface HttpResponse<T> {
         );
 
         /**
-         * Notification of the first occurrence of a HTTP/3 incoming push promise.
+         * Notification of the first occurrence of an HTTP/3 incoming push promise.
          *
          * Subsequent promises of the same resource (with the same PushId) are notified
          * using {@link #notifyAdditionalPromise(HttpRequest, PushId)
@@ -940,7 +940,8 @@ public interface HttpResponse<T> {
          * Invoked for each additional HTTP/3 Push Promise. The {@code pushid} links the promise to the
          * original promised {@link HttpRequest} and {@link HttpResponse}. Additional promises
          * generally result from different client initiated requests.
-         * <p>
+         *
+         * @implSpec
          * The default implementation of this method does nothing.
          *
          * @param initiatingRequest the client initiated request which resulted in the push
