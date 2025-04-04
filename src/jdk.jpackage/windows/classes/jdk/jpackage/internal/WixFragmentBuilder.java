@@ -120,7 +120,7 @@ abstract class WixFragmentBuilder {
         Util;
     }
 
-    final protected Map<WixNamespace, String> getWixNamespaces() {
+    protected final Map<WixNamespace, String> getWixNamespaces() {
         switch (wixType) {
             case Wix3 -> {
                 return Map.of(WixNamespace.Default,
@@ -145,24 +145,24 @@ abstract class WixFragmentBuilder {
         return Architecture.is64bit();
     }
 
-    final protected Path getConfigRoot() {
+    protected final Path getConfigRoot() {
         return configRoot;
     }
 
     protected abstract Collection<XmlConsumer> getFragmentWriters();
 
-    final protected void defineWixVariable(String variableName) {
+    protected final void defineWixVariable(String variableName) {
         setWixVariable(variableName, "yes");
     }
 
-    final protected void setWixVariable(String variableName, String variableValue) {
+    protected final void setWixVariable(String variableName, String variableValue) {
         if (wixVariables == null) {
             wixVariables = new WixVariables();
         }
         wixVariables.setWixVariable(variableName, variableValue);
     }
 
-    final protected void addResource(OverridableResource resource, String saveAsName) {
+    protected final void addResource(OverridableResource resource, String saveAsName) {
         if (additionalResources == null) {
             additionalResources = new ResourceGroup(getWixType());
         }

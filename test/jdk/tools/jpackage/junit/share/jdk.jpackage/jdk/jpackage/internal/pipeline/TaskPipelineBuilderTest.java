@@ -128,7 +128,7 @@ final class TaskPipelineBuilderTest {
             Objects.requireNonNull(dependencies);
         }
 
-        final static class Builder {
+        static final class Builder {
 
             Builder(TestTask task) {
                 this.task = Objects.requireNonNull(task);
@@ -168,7 +168,7 @@ final class TaskPipelineBuilderTest {
             Objects.requireNonNull(expectedAnyFailures);
         }
 
-        final static class Builder {
+        static final class Builder {
 
             Builder taskSpecs(TaskSpec ...specs) {
                 taskSpecs.addAll(List.of(specs));
@@ -484,13 +484,13 @@ final class TaskPipelineBuilderTest {
         }, String.format("only %s", List.of(chars)));
     }
 
-    private final static TestTask A = TestTask.A;
-    private final static TestTask B = TestTask.B;
-    private final static TestTask C = TestTask.C;
-    private final static TestTask D = TestTask.D;
-    private final static TestTask K = TestTask.K;
-    private final static TestTask L = TestTask.L;
-    private final static TestTask M = TestTask.M;
-    private final static TestTask N = TestTask.N;
-    private final static TestTask THROW_1 = TestTask.THROW_1;
+    private static final TestTask A = TestTask.A;
+    private static final TestTask B = TestTask.B;
+    private static final TestTask C = TestTask.C;
+    private static final TestTask D = TestTask.D;
+    private static final TestTask K = TestTask.K;
+    private static final TestTask L = TestTask.L;
+    private static final TestTask M = TestTask.M;
+    private static final TestTask N = TestTask.N;
+    private static final TestTask THROW_1 = TestTask.THROW_1;
 }

@@ -58,7 +58,7 @@ public record FixedDAG<T>(BinaryMatrix edgeMatrix, Nodes<T> nodes) {
         return new Builder<>();
     }
 
-    public final static class Builder<U> {
+    public static final class Builder<U> {
 
         public Builder<U> addNode(U node) {
             Objects.requireNonNull(node);

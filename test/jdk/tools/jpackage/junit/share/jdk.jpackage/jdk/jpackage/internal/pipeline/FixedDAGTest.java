@@ -425,14 +425,14 @@ final class FixedDAGTest {
         return DirectedEdge.create(tail, head);
     }
 
-    private final static String A = "A";
-    private final static String B = "B";
-    private final static String C = "C";
-    private final static String D = "D";
-    private final static String K = "K";
-    private final static String L = "L";
-    private final static String M = "M";
-    private final static String N = "N";
-    private final static String O = "O";
-    private final static String P = "P";
+    private static final String A = "A";
+    private static final String B = "B";
+    private static final String C = "C";
+    private static final String D = "D";
+    private static final String K = "K";
+    private static final String L = "L";
+    private static final String M = "M";
+    private static final String N = "N";
+    private static final String O = "O";
+    private static final String P = "P";
 }

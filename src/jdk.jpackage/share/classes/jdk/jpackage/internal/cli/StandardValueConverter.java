@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 
 
 final class StandardValueConverter {
-    final static ValueConverter<String> IDENTITY_CONV = new ValueConverter<>() {
+    static final ValueConverter<String> IDENTITY_CONV = new ValueConverter<>() {
         @Override
         public String convert(String value) {
             return Objects.requireNonNull(value);
@@ -44,7 +44,7 @@ final class StandardValueConverter {
         }
     };
 
-    final static ValueConverter<Path> PATH_CONV = new ValueConverter<>() {
+    static final ValueConverter<Path> PATH_CONV = new ValueConverter<>() {
         @Override
         public Path convert(String value) {
             return Path.of(value);
@@ -56,7 +56,7 @@ final class StandardValueConverter {
         }
     };
 
-    final static ValueConverter<String[]> STRING_ARRAY_CONV = new ValueConverter<>() {
+    static final ValueConverter<String[]> STRING_ARRAY_CONV = new ValueConverter<>() {
         @Override
         public String[] convert(String value) {
             return value.split("[,\\s]");
@@ -68,7 +68,7 @@ final class StandardValueConverter {
         }
     };
 
-    final static ValueConverter<Path[]> PATH_ARRAY_CONV = new ValueConverter<>() {
+    static final ValueConverter<Path[]> PATH_ARRAY_CONV = new ValueConverter<>() {
         @Override
         public Path[] convert(String value) {
             return Stream.of(value.split(File.pathSeparator)).map(Path::of).toArray(Path[]::new);

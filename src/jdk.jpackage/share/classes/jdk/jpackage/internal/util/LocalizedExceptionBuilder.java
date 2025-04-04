@@ -57,7 +57,7 @@ public class LocalizedExceptionBuilder<T extends LocalizedExceptionBuilder<T>> {
      * @param exceptionCtor the exception constructor
      * @return the exception
      */
-    final public <U extends Exception> U create(BiFunction<String, Throwable, U> exceptionCtor) {
+    public final <U extends Exception> U create(BiFunction<String, Throwable, U> exceptionCtor) {
         return exceptionCtor.apply(msg, cause);
     }
 
@@ -75,7 +75,7 @@ public class LocalizedExceptionBuilder<T extends LocalizedExceptionBuilder<T>> {
      *
      * @see #noformat()
      */
-    final public T format(boolean v) {
+    public final T format(boolean v) {
         format = v;
         return thiz();
     }
@@ -87,7 +87,7 @@ public class LocalizedExceptionBuilder<T extends LocalizedExceptionBuilder<T>> {
      *
      * @see #format(boolean)
      */
-    final public T noformat() {
+    public final T noformat() {
         return format(false);
     }
 
@@ -99,7 +99,7 @@ public class LocalizedExceptionBuilder<T extends LocalizedExceptionBuilder<T>> {
      * @param args  the arguments for formatting message
      * @return this
      */
-    final public T message(String msgId, Object... args) {
+    public final T message(String msgId, Object... args) {
         msg = formatString(msgId, args);
         return thiz();
     }
@@ -111,7 +111,7 @@ public class LocalizedExceptionBuilder<T extends LocalizedExceptionBuilder<T>> {
      *          is nonexistent or unknown.
      * @return this
      */
-    final public T cause(Throwable v) {
+    public final T cause(Throwable v) {
         cause = v;
         return thiz();
     }
@@ -123,12 +123,12 @@ public class LocalizedExceptionBuilder<T extends LocalizedExceptionBuilder<T>> {
      * @param t the cause. Must not be null.
      * @return this
      */
-    final public T causeAndMessage(Throwable t) {
+    public final T causeAndMessage(Throwable t) {
         boolean oldformat = format;
         return noformat().message(t.getMessage()).cause(t).format(oldformat);
     }
 
-    final protected String formatString(String keyId, Object... args) {
+    protected final String formatString(String keyId, Object... args) {
         if (format) {
             return i18n.format(keyId, args);
         } else if (args.length == 0) {

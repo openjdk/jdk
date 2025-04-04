@@ -37,5 +37,5 @@ public final class AppImagePackageType implements PackageType {
     /**
      * Singleton
      */
-    public final static AppImagePackageType APP_IMAGE = new AppImagePackageType();
+    public static final AppImagePackageType APP_IMAGE = new AppImagePackageType();
 }

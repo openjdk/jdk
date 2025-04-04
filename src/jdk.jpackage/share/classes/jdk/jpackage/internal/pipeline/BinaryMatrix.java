@@ -169,12 +169,12 @@ public final class BinaryMatrix {
         }
 
         @Override
-        final public boolean hasNext() {
+        public final boolean hasNext() {
             return index < limit;
         }
 
         @Override
-        final public Cursor next() {
+        public final Cursor next() {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }

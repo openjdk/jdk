@@ -244,6 +244,6 @@ final class PackageBuilder {
     private Path predefinedAppImage;
     private Path installDir;
 
-    final private PackageType type;
-    final private Application app;
+    private final PackageType type;
+    private final Application app;
 }

@@ -28,7 +28,7 @@ import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface MacFileAssociation extends FileAssociation, MacFileAssociationMixin {
 
-    static public MacFileAssociation create(FileAssociation fa, MacFileAssociationMixin mixin) {
+    public static MacFileAssociation create(FileAssociation fa, MacFileAssociationMixin mixin) {
         return CompositeProxy.create(MacFileAssociation.class, fa, mixin);
     }
 }

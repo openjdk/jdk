@@ -425,6 +425,6 @@ final class MacPackagingPipeline {
         }
     }
 
-    final static MacApplicationLayout APPLICATION_LAYOUT = MacApplicationLayout.create(
+    static final MacApplicationLayout APPLICATION_LAYOUT = MacApplicationLayout.create(
             ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT, Path.of("Contents/runtime"));
 }

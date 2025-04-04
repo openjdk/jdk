@@ -39,7 +39,7 @@ import java.util.stream.Stream;
 
 public final class Codesign {
 
-    public final static class CodesignException extends Exception {
+    public static final class CodesignException extends Exception {
 
         CodesignException(String[] output) {
             this.output = output;
@@ -54,7 +54,7 @@ public final class Codesign {
         private static final long serialVersionUID = 1L;
     }
 
-    public final static class Builder {
+    public static final class Builder {
 
         private Builder(Supplier<List<String>> args) {
             this.args = Objects.requireNonNull(args);

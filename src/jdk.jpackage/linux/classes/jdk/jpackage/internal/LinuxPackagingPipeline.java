@@ -81,6 +81,6 @@ final class LinuxPackagingPipeline {
         }
     }
 
-    final static LinuxApplicationLayout APPLICATION_LAYOUT = LinuxApplicationLayout.create(
+    static final LinuxApplicationLayout APPLICATION_LAYOUT = LinuxApplicationLayout.create(
             ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT, Path.of("lib/libapplauncher.so"));
 }

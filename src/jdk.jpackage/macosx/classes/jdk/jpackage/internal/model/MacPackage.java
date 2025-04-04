@@ -46,5 +46,5 @@ public interface MacPackage extends Package, MacPackageMixin {
         return CompositeProxy.create(MacPackage.class, pkg, mixin);
     }
 
-    public final static RuntimeLayout RUNTIME_PACKAGE_LAYOUT = RuntimeLayout.create(Path.of("Contents/Home"));
+    public static final RuntimeLayout RUNTIME_PACKAGE_LAYOUT = RuntimeLayout.create(Path.of("Contents/Home"));
 }

@@ -81,5 +81,5 @@ final class WinPackagingPipeline {
         }
     }
 
-    final static ApplicationLayout APPLICATION_LAYOUT = ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT;
+    static final ApplicationLayout APPLICATION_LAYOUT = ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT;
 }

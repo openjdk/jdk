@@ -161,7 +161,7 @@ final class WixSourceConverter {
         return buf.toByteArray();
     }
 
-    final static class ResourceGroup {
+    static final class ResourceGroup {
 
         ResourceGroup(WixToolsetType wixToolsetType) {
             this.wixToolsetType = wixToolsetType;
@@ -416,7 +416,7 @@ final class WixSourceConverter {
     private final XMLOutputFactory outputFactory;
 
     // The list of WiX v3 namespaces this converter can handle
-    private final static Set<String> KNOWN_NAMESPACES = Set.of(
+    private static final Set<String> KNOWN_NAMESPACES = Set.of(
             "http://schemas.microsoft.com/wix/2006/localization",
             "http://schemas.microsoft.com/wix/2006/wi");
 }

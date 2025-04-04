@@ -237,7 +237,7 @@ final class AppImageFile {
         return PLATFORM_LABELS.get(OperatingSystem.current());
     }
 
-    private final static class AppImageProperties {
+    private static final class AppImageProperties {
         private AppImageProperties(Map<String, String> data, Set<String> stdKeys) {
             this.data = data;
             this.stdKeys = stdKeys;

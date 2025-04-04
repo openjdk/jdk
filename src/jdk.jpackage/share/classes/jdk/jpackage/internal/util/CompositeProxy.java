@@ -117,7 +117,7 @@ public final class CompositeProxy {
     /**
      * Builder of {@link CompositeProxy} instances.
      */
-    public final static class Builder {
+    public static final class Builder {
 
         /**
          * Returns a proxy instance for the specified interface that dispatches method

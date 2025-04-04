@@ -86,7 +86,7 @@ record Keychain(String name) {
         }).map(Keychain::new).toList();
     }
 
-    final static class KeychainException extends RuntimeException {
+    static final class KeychainException extends RuntimeException {
 
         KeychainException(String msg) {
             super(msg);

@@ -31,16 +31,16 @@ import jdk.jpackage.internal.model.ApplicationLayout;
 
 final class ApplicationLayoutUtils {
 
-    public final static ApplicationLayout PLATFORM_APPLICATION_LAYOUT;
+    public static final ApplicationLayout PLATFORM_APPLICATION_LAYOUT;
 
-    private final static ApplicationLayout WIN_APPLICATION_LAYOUT = ApplicationLayout.build()
+    private static final ApplicationLayout WIN_APPLICATION_LAYOUT = ApplicationLayout.build()
             .setAll("")
             .appDirectory("app")
             .runtimeDirectory("runtime")
             .appModsDirectory(Path.of("app", "mods"))
             .create();
 
-    private final static ApplicationLayout MAC_APPLICATION_LAYOUT = ApplicationLayout.build()
+    private static final ApplicationLayout MAC_APPLICATION_LAYOUT = ApplicationLayout.build()
             .launchersDirectory("Contents/MacOS")
             .appDirectory("Contents/app")
             .runtimeDirectory("Contents/runtime/Contents/Home")
@@ -49,7 +49,7 @@ final class ApplicationLayoutUtils {
             .contentDirectory("Contents")
             .create();
 
-    private final static ApplicationLayout LINUX_APPLICATION_LAYOUT = ApplicationLayout.build()
+    private static final ApplicationLayout LINUX_APPLICATION_LAYOUT = ApplicationLayout.build()
             .launchersDirectory("bin")
             .appDirectory("lib/app")
             .runtimeDirectory("lib/runtime")
