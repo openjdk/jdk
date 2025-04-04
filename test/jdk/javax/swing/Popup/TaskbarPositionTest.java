@@ -213,20 +213,6 @@ public class TaskbarPositionTest implements ActionListener {
         }
     }
 
-    // for debugging purpose, saves screen capture when test fails.
-    private static void saveScreenCapture(Robot robot, GraphicsDevice[] screens) {
-        for (int i = 0; i < screens.length; i++) {
-            Rectangle bounds = screens[i].getDefaultConfiguration()
-                                         .getBounds();
-            BufferedImage image = robot.createScreenCapture(bounds);
-            try {
-                ImageIO.write(image, "png", new File("Screenshot.png"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
     /**
      * Tests if the popup is on the screen.
      */
@@ -327,6 +313,19 @@ public class TaskbarPositionTest implements ActionListener {
     private static void hidePopup(Robot robot) {
         robot.keyPress(KeyEvent.VK_ESCAPE);
         robot.keyRelease(KeyEvent.VK_ESCAPE);
+    }
+
+    private static void saveScreenCapture(Robot robot, GraphicsDevice[] screens) {
+        for (int i = 0; i < screens.length; i++) {
+            Rectangle bounds = screens[i].getDefaultConfiguration()
+                    .getBounds();
+            BufferedImage image = robot.createScreenCapture(bounds);
+            try {
+                ImageIO.write(image, "png", new File("Screenshot.png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public static void main(String[] args) throws Throwable {
