@@ -2704,7 +2704,6 @@ public final class Class<T> implements java.io.Serializable,
     private transient final ProtectionDomain protectionDomain;
 
     /** Holder for the protection domain returned when the internal domain is null */
-    @SuppressWarnings("removal")
     private static class Holder {
         private static final ProtectionDomain allPermDomain;
         static {

@@ -53,7 +53,6 @@ import sun.security.util.ResourcesMgr;
  *
  * @since 1.4
  */
-
 @Deprecated(since="25", forRemoval=true)
 public final class PrivateCredentialPermission extends Permission {
 

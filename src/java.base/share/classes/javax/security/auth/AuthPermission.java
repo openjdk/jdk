@@ -36,7 +36,6 @@ package javax.security.auth;
  *
  * @since 1.4
  */
-
 @Deprecated(since="25", forRemoval=true)
 public final class AuthPermission extends
 java.security.BasicPermission {
