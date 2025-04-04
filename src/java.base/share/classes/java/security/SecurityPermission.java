@@ -46,7 +46,7 @@ package java.security;
  * @author Roland Schemers
  * @since 1.2
  */
- 
+
 @Deprecated(since="25", forRemoval=true)
 public final class SecurityPermission extends BasicPermission {
 
