@@ -550,7 +550,8 @@ public:
     assert(_offset == rm._offset, "offset mismatch");
     assert(valid_watermarks() && rm.valid_watermarks(), "sanity");
 
-    // Case 1 (very common): _rm_up overlap
+    // Very common overlap case: _rm_up overlap. Check first to reduce
+    // execution time.
     unsigned hwm = MIN2(_hwm, rm._hwm);
     unsigned lwm = MAX2(_lwm, rm._lwm);
     for (unsigned i = lwm; i <= hwm; i++) {
@@ -559,12 +560,14 @@ public:
       }
     }
 
-    // Case 2 (very rare): we are both all-stack
+    // Very rare overlap cases below.
+
+    // We are both all-stack
     if (is_AllStack() && rm.is_AllStack()) {
       return true;
     }
 
-    // Case 3 (very rare): we are all-stack and rm _hwm is bigger than us
+    // We are all-stack and rm _hwm is bigger than us
     if (is_AllStack() && rm._hwm >= _rm_size) {
       for (unsigned i = MAX2(rm._lwm, _rm_size); i <= rm._hwm; i++) {
         if (rm._rm_up(i)) {
@@ -573,7 +576,7 @@ public:
       }
     }
 
-    // Case 4 (very rare): rm is all-stack and our _hwm is bigger than rm
+    // rm is all-stack and our _hwm is bigger than rm
     if (rm.is_AllStack() && _hwm >= rm._rm_size) {
       for (unsigned i = MAX2(_lwm, rm._rm_size); i <= _hwm; i++) {
         if (_rm_up(i)) {
@@ -582,6 +585,7 @@ public:
       }
     }
 
+    // No overlap (also very common)
     return false;
   }
 
