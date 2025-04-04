@@ -55,12 +55,14 @@ public class VMDeprecatedOptions {
         // optionally added.
         ArrayList<String[]> deprecated = new ArrayList(
           Arrays.asList(new String[][] {
+            // { <flag name> , <expected default value> }
             // deprecated non-alias flags:
             {"AllowRedefinitionToAddDeleteMethods", "true"},
             {"LockingMode", "1"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
-            {"CreateMinidumpOnCrash", "false"}
+            {"CreateMinidumpOnCrash", "false"},
+            {"UseCompressedClassPointers", "false"},
           }
         ));
         if (Platform.isLinux()) {
