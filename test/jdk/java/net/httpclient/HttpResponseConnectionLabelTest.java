@@ -36,7 +36,7 @@ import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AutoClose;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -79,7 +79,6 @@ class HttpResponseConnectionLabelTest {
     private static final SSLContext SSL_CONTEXT = createSslContext();
 
     // Start with a fresh client having no connections in the pool
-    @AutoClose
     private final HttpClient client = HttpClient.newBuilder().sslContext(SSL_CONTEXT).proxy(NO_PROXY).build();
 
     // Primary server-client pairs
@@ -221,6 +220,11 @@ class HttpResponseConnectionLabelTest {
         if (exceptionRef[0] != null) {
             throw new RuntimeException("failed closing one or more server-request pairs", exceptionRef[0]);
         }
+    }
+
+    @AfterEach
+    void closeClient() {
+        client.close();
     }
 
     static ServerRequestPair[] testParallelRequestsToSameServer() {
