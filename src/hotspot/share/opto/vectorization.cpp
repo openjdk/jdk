@@ -496,7 +496,7 @@ Node* VPointer::make_pointer_expression(Node* iv_value) const {
       assert(s.scaleI().is_one(), "must be long variable");
       Node* scaleL = igvn.longcon(s.scaleL().value());
       Node* variable = (s.variable() == iv) ? iv_value : s.variable();
-      if (variable->bottom_type()->is_ptr() != nullptr) {
+      if (variable->bottom_type()->isa_ptr() != nullptr) {
         variable = new CastP2XNode(nullptr, variable);
         phase->register_new_node(variable, ctrl);
       }
@@ -512,7 +512,7 @@ Node* VPointer::make_pointer_expression(Node* iv_value) const {
     mem_pointer().for_each_raw_summand_of_int_group(int_group, [&] (const MemPointerRawSummand& s) {
       Node* node = nullptr;
       if (s.is_con()) {
-        node = igvn.longcon(s.scaleI().value());
+        node = igvn.intcon(s.scaleI().value());
       } else {
         Node* scaleI = igvn.intcon(s.scaleI().value());
         Node* variable = (s.variable() == iv) ? iv_value : s.variable();
