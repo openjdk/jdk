@@ -39,10 +39,16 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * The {@link #readln()} and {@link #readln(String)} methods in this class use internal
  * objects that decode bytes read from {@code System.in} into characters. The charset used
- * for decoding is XXXTODOXXX. These internal objects are created upon the first call to
- * either of the {@code readln} methods and are stored for subsequent reuse by these methods.
- * The result of interleaving calls to the {@code readln} methods with operations on
- * {@code System.in} is unspecified.
+ * for decoding is specified by the {@link System#getProperties stdin.encoding} property.
+ * If this property is not present, or if the charset it names cannot be loaded, then
+ * UTF-8 is used instead. These internal objects are created upon the first call to
+ * either of the {@code readln} methods and are stored for subsequent reuse by these
+ * methods.
+ * <p>
+ * The internal objects used by the {@code readln} methods may buffer additional bytes
+ * beyond those that have been decoded to characters returned to the application. The
+ * result of interleaving calls to the {@code readln} methods with other operations
+ * on {@code System.in} is unspecified.
  *
  * @since 25
  */
@@ -60,28 +66,28 @@ public final class IO {
      * so it's best not be saddled with this unnecessarily.
      */
 
-    /**
-     * TODO: should output be flushed automatically? Need to probe System.out to
-     * see what it's connected to and make a determination based on that.
+    /*
+     * Notes on flushing. We want flushing to occur after every call to println
+     * and print, so that the user can see output immediately. This could be
+     * important if the user calls print() to issue a prompt before calling
+     * readln() instead of the readln(prompt) overload. It's also important to
+     * flush after print() in case the user is relying on print() to emit output
+     * as sort of a progress indicator.
+     *
+     * We rely on System.out to have autoflush enabled, which flushes after every
+     * println() call, so we needn't flush again. We flush unconditionally after
+     * calls to print(). Since System.out is doing a lot of flushing anyway, there
+     * isn't much point trying to make this conditional, for example, only if
+     * stdout is connected to a terminal.
      */
-    private static final boolean AUTOFLUSH = true;
-
-    /**
-     * TODO: What should be the encoding of the internal BufferedReader? Need to
-     * probe System.in and see what it's connected to, and possibly query some
-     * system properties to make a determination. The initialization of this field
-     * might be moved into the reader() method.
-     */
-    private static final Charset CHARSET = StandardCharsets.UTF_8;
 
     private IO() {
         throw new Error("no instances");
     }
 
     /**
-     * Writes a string representation of the specified object and then
-     * terminates the current line on the standard output.
-     * standard output.
+     * Writes a string representation of the specified object and then writes
+     * a line separator to the standard output.
      *
      * <p> The effect is as if {@link java.io.PrintStream#println(Object) println(obj)}
      * had been called on {@code System.out}.
@@ -90,22 +96,16 @@ public final class IO {
      */
     public static void println(Object obj) {
         System.out.println(obj);
-        if (AUTOFLUSH) {
-            System.out.flush();
-        }
     }
 
     /**
-     * Terminates the current line on the standard output.
+     * Writes a line separator to the standard output.
      *
      * <p> The effect is as if {@link java.io.PrintStream#println() println()}
      * had been called on {@code System.out}.
      */
     public static void println() {
         System.out.println();
-        if (AUTOFLUSH) {
-            System.out.flush();
-        }
     }
 
     /**
@@ -119,27 +119,22 @@ public final class IO {
      */
     public static void print(Object obj) {
         System.out.print(obj);
-        if (AUTOFLUSH) {
-            System.out.flush();
-        }
+        System.out.flush();
     }
 
     /**
      * Reads a single line of text from the standard input.
      * <p>
-     * If necessary, this method first creates an internal
-     * {@link java.nio.charset.CharsetDecoder CharsetDecoder}
-     * to decode the bytes read from the standard input into characters.
-     * It is then wrapped within a {@link java.io.Reader Reader} to
-     * provide character input. These objects are retained for
-     * subsequent use by this method.
+     * If necessary, this method first creates internal objects that decode
+     * the bytes read from the standard input into characters. These objects
+     * are retained for subsequent reuse by this method.
      * <p>
-     * One line is read as if by
+     * One line is read from the decoded input as if by
      * {@link java.io.BufferedReader#readLine() BufferedReader.readLine()}
      * and then the result is returned.
      *
      * @return a string containing the line read from the standard input, not
-     * including any line-termination characters. Returns {@code null} if an
+     * including any line separator characters. Returns {@code null} if an
      * end of stream has been reached without having read any characters.
      *
      * @throws IOError if an I/O error occurs
@@ -162,7 +157,7 @@ public final class IO {
      * @param prompt the prompt string, may be {@code null}
      *
      * @return a string containing the line read from the standard input, not
-     * including any line-termination characters. Returns {@code null} if an
+     * including any line separator characters. Returns {@code null} if an
      * end of stream has been reached without having read any characters.
      *
      * @throws IOError if an I/O error occurs
@@ -172,28 +167,24 @@ public final class IO {
         return readln();
     }
 
+    /**
+     * The BufferedReader used by readln(). Initialized under a class lock by
+     * the reader() method.
+     */
     static BufferedReader br;
 
     /**
-     * Returns the internal BufferedReader instance used for reading text from
-     * the standard input. The internal BufferedReader is created if necessary
-     * and is cached for future use. Subsequent calls to this method return the
-     * same BufferedReader instance.
-     * <p>
-     * The default charset used when creating the internal BufferedReader is UTF-8.
-     * A different charset maybe specified calling the {@link #setInputEncoding
-     * setInputEncoding} method prior to calling this method or other reading methods
-     * on this class.
-     * <p>
-     * The result of interleaving calls to methods on the internal BufferedReader
-     * (including other methods on this class) with operations on {@code System.in}
-     * is unspecified.
+     * On the first call, creates an InputStreamReader to decode characters from
+     * System.in, wraps it in a BufferedReader, and returns the BufferedReader.
+     * These objects are cached and returned by subsequent calls.
      *
      * @return the internal BufferedReader instance
      */
-    private static synchronized BufferedReader reader() {
+    static synchronized BufferedReader reader() {
         if (br == null) {
-            br = new BufferedReader(new InputStreamReader(System.in, CHARSET));
+            String enc = System.getProperty("stdin.encoding", "");
+            Charset cs = Charset.forName(enc, StandardCharsets.UTF_8);
+            br = new BufferedReader(new InputStreamReader(System.in, cs));
         }
         return br;
     }
