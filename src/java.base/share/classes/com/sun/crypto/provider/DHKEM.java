@@ -71,6 +71,7 @@ import sun.security.util.NamedCurve;
 import sun.security.util.SliceableSecretKey;
 
 // Implementing DHKEM defined inside https://www.rfc-editor.org/rfc/rfc9180.html,
+// without the AuthEncap and AuthDecap functions
 public class DHKEM implements KEMSpi {
 
     private static final byte[] KEM = new byte[]
@@ -90,8 +91,7 @@ public class DHKEM implements KEMSpi {
     private static final byte[] EMPTY = new byte[0];
 
     private record Handler(Params params, SecureRandom secureRandom,
-                           PrivateKey skS, PublicKey pkS, // sender keys
-                           PrivateKey skR, PublicKey pkR) // receiver keys
+                           PrivateKey skR, PublicKey pkR)
                 implements EncapsulatorSpi, DecapsulatorSpi {
 
         @Override
@@ -103,18 +103,10 @@ public class DHKEM implements KEMSpi {
             PublicKey pkE = kpE.getPublic();
             byte[] pkEm = params.SerializePublicKey(pkE);
             byte[] pkRm = params.SerializePublicKey(pkR);
+            byte[] kem_context = concat(pkEm, pkRm);
             try {
-                SecretKey key;
-                if (skS == null) {
-                    byte[] kem_context = concat(pkEm, pkRm);
-                    key = params.deriveKey(algorithm, from, to, kem_context,
-                            params.DH(skE, pkR));
-                } else {
-                    byte[] pkSm = params.SerializePublicKey(pkS);
-                    byte[] kem_context = concat(pkEm, pkRm, pkSm);
-                    key = params.deriveKey(algorithm, from, to, kem_context,
-                            params.DH(skE, pkR), params.DH(skS, pkR));
-                }
+                SecretKey key = params.deriveKey(algorithm, from, to, kem_context,
+                        params.DH(skE, pkR));
                 return new KEM.Encapsulated(key, pkEm, null);
             } catch (UnsupportedOperationException e) {
                 throw e;
@@ -135,16 +127,9 @@ public class DHKEM implements KEMSpi {
             try {
                 PublicKey pkE = params.DeserializePublicKey(encapsulation);
                 byte[] pkRm = params.SerializePublicKey(pkR);
-                if (pkS == null) {
-                    byte[] kem_context = concat(encapsulation, pkRm);
-                    return params.deriveKey(algorithm, from, to, kem_context,
-                            params.DH(skR, pkE));
-                } else {
-                    byte[] pkSm = params.SerializePublicKey(pkS);
-                    byte[] kem_context = concat(encapsulation, pkRm, pkSm);
-                    return params.deriveKey(algorithm, from, to, kem_context,
-                            params.DH(skR, pkE), params.DH(skR, pkS));
-                }
+                byte[] kem_context = concat(encapsulation, pkRm);
+                return params.deriveKey(algorithm, from, to, kem_context,
+                        params.DH(skR, pkE));
             } catch (UnsupportedOperationException e) {
                 throw e;
             } catch (IOException | InvalidKeyException e) {
@@ -294,14 +279,14 @@ public class DHKEM implements KEMSpi {
         // or the decapsulator. The key slicing is implemented inside.
         // Throws UOE if a slice of the key cannot be found.
         private SecretKey deriveKey(String alg, int from, int to,
-                byte[] kem_context, SecretKey... dhs)
+                byte[] kem_context, SecretKey dh)
                 throws NoSuchAlgorithmException {
             if (from == 0 && to == Nsecret) {
-                return ExtractAndExpand(kem_context, alg, dhs);
+                return ExtractAndExpand(kem_context, alg, dh);
             } else {
                 // First get shared secrets in "Generic" and then get a slice
                 // of it in the requested algorithm.
-                var fullKey = ExtractAndExpand(kem_context, "Generic", dhs);
+                var fullKey = ExtractAndExpand(kem_context, "Generic", dh);
                 if ("RAW".equalsIgnoreCase(fullKey.getFormat())) {
                     byte[] km = fullKey.getEncoded();
                     if (km == null) {
@@ -318,11 +303,11 @@ public class DHKEM implements KEMSpi {
             }
         }
 
-        private SecretKey ExtractAndExpand(byte[] kem_context, String alg, SecretKey... dhs)
+        private SecretKey ExtractAndExpand(byte[] kem_context, String alg, SecretKey dh)
                 throws NoSuchAlgorithmException {
             var kdf = KDF.getInstance(hkdfAlgorithm);
             var builder = labeledExtract(suiteId, EAE_PRK);
-            for (var dh : dhs) builder.addIKM(dh);
+            builder.addIKM(dh);
             try {
                 return kdf.deriveKey(alg,
                         labeledExpand(builder, suiteId, SHARED_SECRET, kem_context, Nsecret));
@@ -408,22 +393,7 @@ public class DHKEM implements KEMSpi {
             throw new InvalidAlgorithmParameterException("no spec needed");
         }
         Params params = paramsFromKey(pk);
-        return new Handler(params, getSecureRandom(secureRandom), null, null, null, pk);
-    }
-
-    // AuthEncap is not public KEM API
-    public EncapsulatorSpi engineNewAuthEncapsulator(PublicKey pkR, PrivateKey skS,
-            AlgorithmParameterSpec spec, SecureRandom secureRandom)
-            throws InvalidAlgorithmParameterException, InvalidKeyException {
-        if (pkR == null || skS == null) {
-            throw new InvalidKeyException("input key is null");
-        }
-        if (spec != null) {
-            throw new InvalidAlgorithmParameterException("no spec needed");
-        }
-        Params params = paramsFromKey(pkR);
-        return new Handler(params, getSecureRandom(secureRandom),
-                skS, params.getPublicKey(skS), null, pkR);
+        return new Handler(params, getSecureRandom(secureRandom), null, pk);
     }
 
     @Override
@@ -436,21 +406,7 @@ public class DHKEM implements KEMSpi {
             throw new InvalidAlgorithmParameterException("no spec needed");
         }
         Params params = paramsFromKey(sk);
-        return new Handler(params, null, null, null, sk, params.getPublicKey(sk));
-    }
-
-    // AuthDecap is not public KEM API
-    public DecapsulatorSpi engineNewAuthDecapsulator(
-            PrivateKey skR, PublicKey pkS, AlgorithmParameterSpec spec)
-            throws InvalidAlgorithmParameterException, InvalidKeyException {
-        if (skR == null || pkS == null) {
-            throw new InvalidKeyException("input key is null");
-        }
-        if (spec != null) {
-            throw new InvalidAlgorithmParameterException("no spec needed");
-        }
-        Params params = paramsFromKey(skR);
-        return new Handler(params, null, null, pkS, skR, params.getPublicKey(skR));
+        return new Handler(params, null, sk, params.getPublicKey(sk));
     }
 
     private Params paramsFromKey(AsymmetricKey k) throws InvalidKeyException {
