@@ -25,29 +25,40 @@
  * @test
  * @bug 8340321
  * @summary Disable SHA-1 in TLS/DTLS 1.2 signatures.
- *          This test only covers DTLS 1.2.
+ *          This test only covers TLS 1.3.
  * @library /javax/net/ssl/templates
  *          /test/lib
- * @run main/othervm DisableSHA1inHandshakeSignatureDTLS12
+ * @run main/othervm DisableSHA1inHandshakeSignatureTLS13
  */
 
-public class DisableSHA1inHandshakeSignatureDTLS12 extends
+import java.util.List;
+
+public class DisableSHA1inHandshakeSignatureTLS13 extends
         DisableSHA1inHandshakeSignatureTLS12 {
 
-    protected DisableSHA1inHandshakeSignatureDTLS12() throws Exception {
+    protected DisableSHA1inHandshakeSignatureTLS13() throws Exception {
         super();
     }
 
     public static void main(String[] args) throws Exception {
-        new DisableSHA1inHandshakeSignatureDTLS12().run();
+        new DisableSHA1inHandshakeSignatureTLS13().run();
     }
 
     @Override
     protected String getProtocol() {
-        return "DTLSv1.2";
+        return "TLSv1.3";
     }
 
-    // No CertificateRequest in DTLS server flight.
+    // Returns SHA-1 signature schemes supported for TLSv1.3 handshake
+    @Override
+    protected List<String> getDisabledSignatureSchemes() {
+        return List.of("ecdsa_sha1");
+    }
+
+    // TLSv1.3 sends CertificateRequest signature schemes in
+    // signature_algorithms and signature_algorithms_cert extensions. Same as
+    // ClientHello, but they are encrypted. So we skip CertificateRequest
+    // signature schemes verification for TLSv1.3.
     @Override
     protected void checkCertificateRequest() {
     }

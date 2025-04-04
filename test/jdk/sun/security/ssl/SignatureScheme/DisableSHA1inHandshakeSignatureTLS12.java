@@ -34,17 +34,10 @@
 import static jdk.test.lib.Asserts.assertFalse;
 import static jdk.test.lib.Asserts.assertTrue;
 
-import java.lang.Override;
 import java.util.List;
 
 public class DisableSHA1inHandshakeSignatureTLS12 extends
         AbstractCheckSignatureSchemes {
-
-    protected static final List<String> DISABLED_SIGNATURE_SCHEMES = List.of(
-            "ecdsa_sha1",
-            "rsa_pkcs1_sha1",
-            "dsa_sha1"
-    );
 
     protected DisableSHA1inHandshakeSignatureTLS12() throws Exception {
         super();
@@ -79,6 +72,15 @@ public class DisableSHA1inHandshakeSignatureTLS12 extends
         checkCertificateRequest();
     }
 
+    // Returns SHA-1 signature schemes supported for TLSv1.2 handshake
+    protected List<String> getDisabledSignatureSchemes() {
+        return List.of(
+                "ecdsa_sha1",
+                "rsa_pkcs1_sha1",
+                "dsa_sha1"
+        );
+    }
+
     protected void checkClientHello() throws Exception {
         // Get signature_algorithms extension signature schemes.
         List<String> sigAlgsSS = getSigSchemesCliHello(
@@ -86,7 +88,7 @@ public class DisableSHA1inHandshakeSignatureTLS12 extends
                 SIG_ALGS_EXT);
 
         // Should not be present in signature_algorithms extension.
-        DISABLED_SIGNATURE_SCHEMES.forEach(ss ->
+        getDisabledSignatureSchemes().forEach(ss ->
                 assertFalse(sigAlgsSS.contains(ss),
                         "Signature Scheme " + ss
                         + " present in ClientHello's signature_algorithms extension"));
@@ -97,7 +99,7 @@ public class DisableSHA1inHandshakeSignatureTLS12 extends
                 SIG_ALGS_CERT_EXT);
 
         // Should be present in signature_algorithms_cert extension.
-        DISABLED_SIGNATURE_SCHEMES.forEach(ss ->
+        getDisabledSignatureSchemes().forEach(ss ->
                 assertTrue(sigAlgsCertSS.contains(ss),
                         "Signature Scheme " + ss
                         + " isn't present in ClientHello's"
@@ -110,7 +112,7 @@ public class DisableSHA1inHandshakeSignatureTLS12 extends
                 extractHandshakeMsg(sTOc, TLS_HS_CERT_REQ));
 
         // Should not be present in CertificateRequest message.
-        DISABLED_SIGNATURE_SCHEMES.forEach(ss ->
+        getDisabledSignatureSchemes().forEach(ss ->
                 assertFalse(sigAlgsCertSS.contains(ss),
                         "Signature Scheme " + ss
                         + " present in CertificateRequest"));
