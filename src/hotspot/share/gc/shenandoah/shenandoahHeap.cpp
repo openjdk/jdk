@@ -2475,7 +2475,7 @@ private:
       // HeapWord* update_watermark = MAX2(r->top(), r->get_update_watermark());
       HeapWord* update_watermark = r->get_update_watermark();
       assert (update_watermark >= r->bottom(), "sanity");
-      if (r->is_active() || r->has_evacuation_failures()) {
+      if ((r->is_active() && !r->is_cset()) || r->has_evacuation_failures()) {
         // TODO: Some of the marked objects we iterate might be evacuated, would rather not update them
         _heap->marked_object_oop_iterate(r, &cl, update_watermark);
         if (ShenandoahPacing) {
