@@ -1332,6 +1332,7 @@ public:
     float _cl_prob;
     Node* _sfpt;
     jlong _final_correction;
+    Node* _trunc1;
 
    public:
     CountedLoopConverter(PhaseIdealLoop* phase, Node* head, IdealLoopTree* loop, const BasicType iv_bt)
@@ -1346,6 +1347,11 @@ public:
 
     bool is_counted_loop();
     IdealLoopTree* convert();
+
+#ifdef ASSERT
+    bool should_stress_long_counted_loop() const;
+    bool stress_long_counted_loop() const;
+#endif
   };
 
   Node* exact_limit( IdealLoopTree *loop );
