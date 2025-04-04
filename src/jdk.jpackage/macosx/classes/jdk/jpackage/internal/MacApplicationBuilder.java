@@ -34,7 +34,7 @@ import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacApplicationMixin;
-import jdk.jpackage.internal.model.SigningConfig;
+import jdk.jpackage.internal.model.AppImageSigningConfig;
 
 final class MacApplicationBuilder {
 
@@ -83,7 +83,7 @@ final class MacApplicationBuilder {
         return this;
     }
 
-    MacApplicationBuilder signingBuilder(SigningConfigBuilder v) {
+    MacApplicationBuilder signingBuilder(AppImageSigningConfigBuilder v) {
         signingBuilder = v;
         return this;
     }
@@ -154,7 +154,7 @@ final class MacApplicationBuilder {
         }
     }
 
-    private Optional<SigningConfig> createSigningConfig() throws ConfigException {
+    private Optional<AppImageSigningConfig> createSigningConfig() throws ConfigException {
         if (signingBuilder != null) {
             return signingBuilder.create();
         } else {
@@ -224,7 +224,7 @@ final class MacApplicationBuilder {
     private String category;
     private boolean appStore;
     private Path externalInfoPlistFile;
-    private SigningConfigBuilder signingBuilder;
+    private AppImageSigningConfigBuilder signingBuilder;
 
     private final Application app;
 

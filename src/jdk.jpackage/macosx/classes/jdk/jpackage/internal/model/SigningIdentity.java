@@ -25,11 +25,8 @@
 
 package jdk.jpackage.internal.model;
 
-import java.util.Optional;
-
 public interface SigningIdentity {
 
     String id();
 
-    Optional<String> prefix();
 }

@@ -25,12 +25,13 @@
 
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.util.CollectionUtils.toCollectionUBW;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -51,7 +52,7 @@ public final class MacCertificateUtils {
         args.add("-p"); // PEM format
         keychain.map(Keychain::asCliArg).ifPresent(args::add);
 
-        return toCollectionUBW(toSupplier(() -> {
+        return toSupplier(() -> {
             final var output = Executor.of(args.toArray(String[]::new))
                     .setQuiet(true).saveOutput(true).executeExpectSuccess()
                     .getOutput();
@@ -61,11 +62,24 @@ public final class MacCertificateUtils {
                             MacCertificateUtils::append,
                             MacCertificateUtils::append).toString().getBytes(StandardCharsets.US_ASCII);
 
-            try (var in = new ByteArrayInputStream(pemCertificatesBuffer)) {
-                final var cf = CertificateFactory.getInstance("X.509");
-                return cf.generateCertificates(in);
+            final var cf = CertificateFactory.getInstance("X.509");
+
+            Collection<X509Certificate> certs = new ArrayList<>();
+
+            try (var in = new BufferedInputStream(new ByteArrayInputStream(pemCertificatesBuffer))) {
+                while (in.available() > 0) {
+                    final X509Certificate cert;
+                    try {
+                        cert = (X509Certificate)cf.generateCertificate(in);
+                    } catch (CertificateException ex) {
+                        // Not a valid X505 certificate, silently ignore.
+                        continue;
+                    }
+                    certs.add(cert);
+                }
             }
-        }).get());
+            return certs;
+        }).get();
     }
 
     record CertificateHash(byte[] value) {

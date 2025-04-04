@@ -69,7 +69,7 @@ import jdk.jpackage.internal.model.MacFileAssociation;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.PackagerException;
-import jdk.jpackage.internal.model.SigningConfig;
+import jdk.jpackage.internal.model.AppImageSigningConfig;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 final class MacPackagingPipeline {
@@ -287,9 +287,9 @@ final class MacPackagingPipeline {
         final var codesignConfigBuilder = CodesignConfig.build();
         app.signingConfig().ifPresent(codesignConfigBuilder::from);
 
-        if (app.sign() && app.signingConfig().flatMap(SigningConfig::entitlements).isEmpty()) {
+        if (app.sign() && app.signingConfig().flatMap(AppImageSigningConfig::entitlements).isEmpty()) {
             final var entitlementsDefaultResource = app.signingConfig().map(
-                    SigningConfig::entitlementsResourceName).orElseThrow();
+                    AppImageSigningConfig::entitlementsResourceName).orElseThrow();
 
             final var entitlementsFile = env.env().configDir().resolve(app.name() + ".entitlements");
 
@@ -305,7 +305,7 @@ final class MacPackagingPipeline {
             AppImageSigner.createSigner(app, codesignConfigBuilder.create()).accept(appImageDir);
         };
 
-        app.signingConfig().flatMap(SigningConfig::keychain).map(Keychain::new).ifPresentOrElse(keychain -> {
+        app.signingConfig().flatMap(AppImageSigningConfig::keychain).map(Keychain::new).ifPresentOrElse(keychain -> {
             toBiConsumer(TempKeychain::withKeychain).accept(keychain, unused -> signAction.run());
         }, signAction);
     }

@@ -25,20 +25,14 @@
 
 package jdk.jpackage.internal.model;
 
-import java.nio.file.Path;
 import java.util.Optional;
 
-public interface SigningConfig {
+public interface PkgSigningConfig {
 
-    Optional<SigningIdentity> identity();
-
-    Optional<Path> entitlements();
-
-    String entitlementsResourceName();
+    SigningIdentity identity();
 
     Optional<String> keychain();
 
-    record Stub(Optional<SigningIdentity> identity, Optional<Path> entitlements,
-            Optional<String> keychain, String entitlementsResourceName) implements SigningConfig {
+    record Stub(SigningIdentity identity, Optional<String> keychain) implements PkgSigningConfig {
     }
 }

@@ -28,8 +28,8 @@ import java.util.Optional;
 
 public interface MacPkgPackageMixin {
 
-    Optional<SigningConfig> signingConfig();
+    Optional<PkgSigningConfig> signingConfig();
 
-    record Stub(Optional<SigningConfig> signingConfig) implements MacPkgPackageMixin {
+    record Stub(Optional<PkgSigningConfig> signingConfig) implements MacPkgPackageMixin {
     }
 }

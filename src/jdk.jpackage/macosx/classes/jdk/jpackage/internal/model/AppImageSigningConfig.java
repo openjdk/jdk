@@ -22,40 +22,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal;
 
-import java.util.Objects;
+package jdk.jpackage.internal.model;
+
+import java.nio.file.Path;
 import java.util.Optional;
-import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.MacPkgPackage;
-import jdk.jpackage.internal.model.MacPkgPackageMixin;
-import jdk.jpackage.internal.model.PkgSigningConfig;
 
-final class MacPkgPackageBuilder {
+public interface AppImageSigningConfig {
 
-    MacPkgPackageBuilder(MacPackageBuilder pkgBuilder) {
-        this.pkgBuilder = Objects.requireNonNull(pkgBuilder);
+    SigningIdentity identity();
+
+    String identifierPrefix();
+
+    Optional<Path> entitlements();
+
+    String entitlementsResourceName();
+
+    Optional<String> keychain();
+
+    record Stub(SigningIdentity identity, String identifierPrefix, Optional<Path> entitlements,
+            Optional<String> keychain, String entitlementsResourceName) implements AppImageSigningConfig {
     }
-
-    MacPkgPackageBuilder signingBuilder(SigningIdentityBuilder v) {
-        signingBuilder = v;
-        return this;
-    }
-
-    MacPkgPackage create() throws ConfigException {
-        return MacPkgPackage.create(pkgBuilder.create(), new MacPkgPackageMixin.Stub(createSigningConfig()));
-    }
-
-    private Optional<PkgSigningConfig> createSigningConfig() throws ConfigException {
-        if (signingBuilder != null) {
-            return signingBuilder.create().map(cfg -> {
-                return new PkgSigningConfig.Stub(cfg.identity(), cfg.keychain().map(Keychain::name));
-            });
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    private final MacPackageBuilder pkgBuilder;
-    private SigningIdentityBuilder signingBuilder;
 }
