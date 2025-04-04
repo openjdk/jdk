@@ -640,7 +640,7 @@ public class AVA implements DerEncoder {
      */
     public String toString() {
         return toKeywordValueString
-            (toKeyword(DEFAULT, Collections.emptyMap()), Boolean.TRUE);
+            (toKeyword(DEFAULT, Collections.emptyMap()), true);
     }
 
     /**
@@ -659,7 +659,7 @@ public class AVA implements DerEncoder {
      * OID/keyword map.
      */
     public String toRFC1779String(Map<String, String> oidMap) {
-        return toKeywordValueString(toKeyword(RFC1779, oidMap), Boolean.FALSE);
+        return toKeywordValueString(toKeyword(RFC1779, oidMap), false);
     }
 
     /**
