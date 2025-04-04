@@ -81,11 +81,8 @@ public class WriteJPEGThumbnailTest {
             byte[] jpegData;
             BufferedImage thumbnail;
             try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream()) {
-                try {
-                    thumbnail = writeImage(byteOut);
-                } finally {
-                    jpegData = byteOut.toByteArray();
-                }
+                thumbnail = writeImage(byteOut);
+                jpegData = byteOut.toByteArray();
             }
 
             ImageReader reader = getJPEGImageReader();
