@@ -85,6 +85,11 @@ public class MethodFinder {
         Method mainMethod = JLA.findMethod(cls, true, "main", String[].class);
 
         if (mainMethod == null) {
+            //if not public method, try to lookup a non-public one
+            mainMethod = JLA.findMethod(cls, false, "main", String[].class);
+        }
+
+        if (mainMethod == null) {
             mainMethod = JLA.findMethod(cls, false, "main");
         }
 
