@@ -31,6 +31,7 @@
  * @run main/othervm DisableSHA1inHandshakeSignatureTLS13
  */
 
+import java.security.Security;
 import java.util.List;
 
 public class DisableSHA1inHandshakeSignatureTLS13 extends
@@ -41,6 +42,9 @@ public class DisableSHA1inHandshakeSignatureTLS13 extends
     }
 
     public static void main(String[] args) throws Exception {
+        // SHA-1 algorithm MUST NOT be used in any TLSv1.3 handshake signatures.
+        // This is regardless of jdk.tls.disabledAlgorithms configuration.
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
         new DisableSHA1inHandshakeSignatureTLS13().run();
     }
 
@@ -49,10 +53,11 @@ public class DisableSHA1inHandshakeSignatureTLS13 extends
         return "TLSv1.3";
     }
 
-    // Returns SHA-1 signature schemes supported for TLSv1.3 handshake
+    // Returns SHA-1 signature schemes NOT supported for TLSv1.3 handshake
+    // signatures, but supported for TLSv1.3 certificate signatures.
     @Override
     protected List<String> getDisabledSignatureSchemes() {
-        return List.of("ecdsa_sha1");
+        return List.of("ecdsa_sha1", "rsa_pkcs1_sha1");
     }
 
     // TLSv1.3 sends CertificateRequest signature schemes in
