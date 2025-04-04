@@ -55,9 +55,9 @@ public class TestUnexported extends JavadocTester {
         new ModuleBuilder(tb, "ma")
                 .classes("""
                            package pa;
-                           
+
                            import pa.internal.*;
-                           
+
                            /**
                             * Class with unexported super types.
                             */
@@ -65,7 +65,7 @@ public class TestUnexported extends JavadocTester {
                            """,
                         """
                              package pa.internal;
-                             
+
                              /**
                               * Conditionally exported class.
                               */
@@ -78,7 +78,7 @@ public class TestUnexported extends JavadocTester {
                              """,
                         """
                             package pa.internal;
-                            
+
                             /**
                              * Conditionally exported interface.
                              */
@@ -94,11 +94,11 @@ public class TestUnexported extends JavadocTester {
                 .write(src);
 
         new ModuleBuilder(tb, "mb")
-                .classes("""                       
+                .classes("""
                            package pb;
-                           
+
                            import pa.internal.*;
-                           
+
                            /**
                             * Class with conditionally exported super types.
                             */
@@ -106,9 +106,9 @@ public class TestUnexported extends JavadocTester {
                            """,
                        """
                            package pb;
-                           
+
                            import pa.internal.*;
-                           
+
                            /**
                             * Interface with conditionally exported super interface.
                             */
