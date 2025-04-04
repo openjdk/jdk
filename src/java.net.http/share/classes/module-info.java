@@ -137,9 +137,11 @@
  * {@code quic:control:retransmit}.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout}</b> (default: 30)<br>
- * The number of seconds to keep idle HTTP connections alive in the keep alive cache. This
- * property applies to both HTTP/1.1 and HTTP/2. The value for HTTP/2 can be overridden
- * with the {@code jdk.httpclient.keepalive.timeout.h2 property}.
+ * The number of seconds to keep idle HTTP connections alive in the keep alive cache.
+ * By default this property applies to HTTP/1.1, HTTP/2 and HTTP/3.
+ * The value for HTTP/2 and HTTP/3 can be overridden with the
+ * {@code jdk.httpclient.keepalive.timeout.h2} and {@code jdk.httpclient.keepalive.timeout.h3}
+ * properties respectively. The value specified for HTTP/2 acts as default value for HTTP/3.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout.h2}</b> (default: see
  * below)<br>The number of seconds to keep idle HTTP/2 connections alive. If not set, then the
