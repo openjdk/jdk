@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4785160
+ * @bug 4193062
  * @summary Tests that when a TextField first gets focus, if modelToView fails
  *          (null is returned) that the caret will start to blink again.
  * @library /java/awt/regtesthelpers
