@@ -786,7 +786,7 @@ public class Utils {
                 if (!visited.add(e)) {
                     continue; // seen it before
                 }
-                if (isPublic(e) || isLinkable(e)) {
+                if ((isPublic(e) || isLinkable(e)) && !isHidden(e)) {
                     results.add(t);
                 }
                 addSuperInterfaces(t, results, visited);

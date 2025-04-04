@@ -162,7 +162,7 @@ public class Signatures {
                     boolean isFirst = true;
                     for (TypeMirror type : interfaces) {
                         TypeElement tDoc = utils.asTypeElement(type);
-                        if (!(utils.isPublic(tDoc) || utils.isLinkable(tDoc))) {
+                        if (!(utils.isPublic(tDoc) || utils.isLinkable(tDoc)) || utils.isHidden(tDoc)) {
                             continue;
                         }
                         if (isFirst) {
