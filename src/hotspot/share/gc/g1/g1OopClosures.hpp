@@ -109,7 +109,7 @@ public:
   }
 
 #ifdef ASSERT
-  bool skip_card_enqueue_set() const { return _skip_card_enqueue != Uninitialized; }
+  bool skip_card_mark_set() const { return _skip_card_mark != Uninitialized; }
 #endif
 };
 
