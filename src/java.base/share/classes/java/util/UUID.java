@@ -467,8 +467,6 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         buf[18] = '-';
         buf[23] = '-';
 
-//        Unsafe UNSAFE = Unsafe.getUnsafe();
-
         long x  = mostSigBits,
              x0 = hex8(x >>> 32),
              x1 = hex8(x);
