@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,84 @@
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.io.File;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TestMHApp {
+import jdk.test.lib.cds.CDSAppTester;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Platform;
+
+import org.junit.Test;
+
+// This class is for running the ../../../../../../jdk/java/lang/invoke/MethodHandles*java tests
+// using CDSAppTester
+public class JDKMethodHandlesTestRunner {
+    private static final String classDir = System.getProperty("test.classes");
+    private static final String mainClass = "TestMHApp";
+    private static final String javaClassPath = System.getProperty("java.class.path");
+    private static final String ps = System.getProperty("path.separator");
+    private static final String testPackageName = "test.java.lang.invoke";
+
+    public static void test(String testClassName) throws Exception {
+        String appJar = JarBuilder.build("MH", new File(classDir), null);
+        String classList = testClassName + ".list";
+        String archiveName = testClassName + ".jsa";
+        // Disable VerifyDpendencies when running with debug build because
+        // the test requires a lot more time to execute with the option enabled.
+        String verifyOpt =
+            Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "-showversion";
+
+        String junitJar = Path.of(Test.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
+
+        String jars = appJar + ps + junitJar;
+
+        CDSAppTester tester = new CDSAppTester(testClassName) {
+                @Override
+                public String classpath(RunMode runMode) {
+                    return jars;
+                }
+
+                @Override
+                public String[] vmArgs(RunMode runMode) {
+                    if (runMode.isProductionRun()) {
+                        return new String[] {
+                            "-Xlog:class+load,cds=debug",
+                            verifyOpt,
+                        };
+                    } else {
+                        return new String[] {
+                            verifyOpt,
+                        };
+                    }
+                }
+
+                @Override
+                public String[] appCommandLine(RunMode runMode) {
+                    return new String[] {
+                        mainClass,
+                        testPackageName + "." + testClassName,
+                    };
+                }
+
+                @Override
+                public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
+                    out.shouldHaveExitValue(0);
+                    if (runMode.isProductionRun()) {
+                        out.shouldMatch(".class.load. test.java.lang.invoke." + testClassName +
+                                        "[$][$]Lambda.*/0x.*source:.*shared.*objects.*file");
+                    }
+                }
+            };
+
+        String workflow = System.getProperty("cds.app.tester.workflow");
+        tester.run(workflow);
+    }
+}
+
+class TestMHApp {
     public static void main(String args[]) throws Exception {
         try {
             Class<?> testClass = Class.forName(args[0]);
@@ -37,7 +110,6 @@ public class TestMHApp {
             Object obj = testClass.newInstance();
             final List<Method> allMethods = new ArrayList<Method>(Arrays.asList(testClass.getDeclaredMethods()));
             for (final Method method : allMethods) {
-                //System.out.println(method.toString());
                 method.setAccessible(true);
                 Annotation[] annotations = null;
                 try {
@@ -63,7 +135,6 @@ public class TestMHApp {
                         System.out.println(iae.getCause());
                     } catch (InvocationTargetException ite) {
                         System.out.println("Got InvocationTargetException!!!");
-                        //System.out.println(ite.getCause());
                         throw ite;
                     }
                }
