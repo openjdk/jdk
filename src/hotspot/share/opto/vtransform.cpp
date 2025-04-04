@@ -23,6 +23,7 @@
 
 #include "opto/vtransform.hpp"
 #include "opto/addnode.hpp"
+#include "opto/movenode.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
@@ -257,11 +258,11 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
   }
 }
 
-Node* make_a_plus_b_leq_c(Node* a, jint b, Node* c, PhaseIdealLoop* phase) {
+BoolNode* make_a_plus_b_leq_c(Node* a, jint b, Node* c, PhaseIdealLoop* phase) {
   Node* b_con = phase->igvn().longcon(b);
   Node* a_plus_b = new AddLNode(a, b_con);
   Node* cmp = CmpNode::make(a_plus_b, c, T_LONG, true);
-  Node* bol = new BoolNode(cmp, BoolTest::le);
+  BoolNode* bol = new BoolNode(cmp, BoolTest::le);
   phase->register_new_node_with_ctrl_of(a_plus_b, a);
   phase->register_new_node_with_ctrl_of(cmp, a);
   phase->register_new_node_with_ctrl_of(bol, a);
@@ -432,14 +433,21 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
     Node* p2_init = vp2.make_pointer_expression(init);
     tty->print("p1(init) "); p1_init->dump();
     tty->print("p2(init) "); p2_init->dump();
-    Node* condition1 = make_a_plus_b_leq_c(p1_init, vp1.size(), p2_init, phase());
-    Node* condition2 = make_a_plus_b_leq_c(p2_init, vp2.size(), p1_init, phase());
+    BoolNode* condition1 = make_a_plus_b_leq_c(p1_init, vp1.size(), p2_init, phase());
+    BoolNode* condition2 = make_a_plus_b_leq_c(p2_init, vp2.size(), p1_init, phase());
     tty->print("condition1 "); condition1->dump();
     tty->print("condition2 "); condition2->dump();
 
-    Node* c1_or_c2 = new OrINode(condition1, condition2);
-    tty->print("c1_or_c2 "); c1_or_c2->dump();
+    // Convert bol back to int value that we can OR.
     Node* zero = _vloop.phase()->igvn().intcon(0);
+    Node* one  = _vloop.phase()->igvn().intcon(1);
+    Node* cmov1 = new CMoveINode(condition1, zero, one, TypeInt::INT);
+    Node* cmov2 = new CMoveINode(condition2, zero, one, TypeInt::INT);
+    _vloop.phase()->register_new_node_with_ctrl_of(cmov1, init);
+    _vloop.phase()->register_new_node_with_ctrl_of(cmov2, init);
+
+    Node* c1_or_c2 = new OrINode(cmov1, cmov2);
+    tty->print("c1_or_c2 "); c1_or_c2->dump();
     Node* cmp = CmpNode::make(c1_or_c2, zero, T_INT);
     BoolNode* bol = new BoolNode(cmp, BoolTest::ne);
     _vloop.phase()->register_new_node_with_ctrl_of(c1_or_c2, init);
