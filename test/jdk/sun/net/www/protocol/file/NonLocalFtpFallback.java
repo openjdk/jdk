@@ -37,6 +37,8 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -119,7 +121,9 @@ public class NonLocalFtpFallback {
     @Test
     public void verifyNonLocalFtpFallback() throws Exception {
         URL localURL = file.toUri().toURL();
-        URL nonLocalURL = new URL("file", "127.0.0.1", localURL.getFile());
+        URL nonLocalURL = new URL("file",
+                InetAddress.getLoopbackAddress().getHostAddress(),
+                localURL.getFile());
 
         // Open the non-local file: URL connection using a proxy
         Proxy proxy = new Proxy(Proxy.Type.HTTP,
