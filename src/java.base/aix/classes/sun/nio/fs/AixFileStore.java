@@ -107,7 +107,6 @@ class AixFileStore
            }
         }
         return super.supportsFileAttributeView(type);
-
     }
 
     @Override
