@@ -58,8 +58,8 @@ public class bug4250178 {
         JButton button = new JButton("Button");
         button.setToolTipText("ToolTip");
         ToolTipManager.sharedInstance().setLightWeightPopupEnabled(true);
-        fr.getContentPane().add(button);
-        fr.pack();
+        fr.add(button);
+        fr.setSize(250, 100);
         return fr;
     }
 }
