@@ -45,7 +45,6 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -64,10 +63,6 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
  */
 public class JRTArchive implements Archive {
 
-    // Set of files in java.base that are allowed to be upgradable.
-    private static final Set<String> UPGRADEABLE_FILES = Set.of("lib/tzdb.dat",
-                                                                "lib/security/cacerts");
-    private static final String JAVA_BASE = "java.base";
     private final String module;
     private final Path path;
     private final ModuleReference ref;
@@ -81,7 +76,6 @@ public class JRTArchive implements Archive {
     private final Map<String, ResourceDiff> resDiff;
     private final boolean errorOnModifiedFile;
     private final TaskHelper taskHelper;
-    private final Set<String> upgradeableFiles;
 
     /**
      * JRTArchive constructor
@@ -92,15 +86,12 @@ public class JRTArchive implements Archive {
      *        install aborts the link.
      * @param perModDiff The lib/modules (a.k.a jimage) diff for this module,
      *                   possibly an empty list if there are no differences.
-     * @param taskHelper The task helper instance.
-     * @param upgradeableFiles The set of files that are allowed for upgrades.
      */
     JRTArchive(String module,
                Path path,
                boolean errorOnModifiedFile,
                List<ResourceDiff> perModDiff,
-               TaskHelper taskHelper,
-               Set<String> upgradeableFiles) {
+               TaskHelper taskHelper) {
         this.module = module;
         this.path = path;
         this.ref = ModuleFinder.ofSystem()
@@ -114,7 +105,6 @@ public class JRTArchive implements Archive {
         this.resDiff = Objects.requireNonNull(perModDiff).stream()
                             .collect(Collectors.toMap(ResourceDiff::getName, Function.identity()));
         this.taskHelper = taskHelper;
-        this.upgradeableFiles = upgradeableFiles;
     }
 
     @Override
@@ -227,18 +217,9 @@ public class JRTArchive implements Archive {
 
                         // Read from the base JDK image.
                         Path path = BASE.resolve(m.resPath);
-                        if (!isUpgradeableFile(m.resPath) &&
-                                shaSumMismatch(path, m.hashOrTarget, m.symlink)) {
+                        if (shaSumMismatch(path, m.hashOrTarget, m.symlink)) {
                             if (errorOnModifiedFile) {
                                 String msg = taskHelper.getMessage("err.runtime.link.modified.file", path.toString());
-                                // Add hint for upgradeable files
-                                if (JAVA_BASE.equals(module) &&
-                                        UPGRADEABLE_FILES.contains(m.resPath)) {
-                                    msg += System.lineSeparator();
-                                    msg += taskHelper.getMessage("err.runtime.link.modified.file.upgrade.hint",
-                                                                 module,
-                                                                 m.resPath);
-                                }
                                 IOException cause = new IOException(msg);
                                 throw new UncheckedIOException(cause);
                             } else {
@@ -256,19 +237,6 @@ public class JRTArchive implements Archive {
                  })
                  .toList());
         }
-    }
-
-    /**
-     * Certain files in the java.base module are considered upgradeable. That is,
-     * their hash sums aren't checked if so permitted with a CLI switch.
-     *
-     * @param resPath The resource path of the file to check for upgradeability.
-     * @return {@code true} iff the file is upgradeable. {@code false} otherwise.
-     */
-    private boolean isUpgradeableFile(String resPath) {
-        return JAVA_BASE.equals(module) &&
-                upgradeableFiles.contains(resPath) &&
-                UPGRADEABLE_FILES.contains(resPath);
     }
 
     static boolean shaSumMismatch(Path res, String expectedSha, boolean isSymlink) {

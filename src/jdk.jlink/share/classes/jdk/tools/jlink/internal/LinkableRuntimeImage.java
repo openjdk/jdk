@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Red Hat, Inc.
+ * Copyright (c) 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
 
@@ -69,7 +67,7 @@ public class LinkableRuntimeImage {
 
     public static Archive newArchive(String module,
                                      Path path,
-                                     Config config,
+                                     boolean ignoreModifiedRuntime,
                                      TaskHelper taskHelper) {
         assert isLinkableRuntime();
         // Here we retrieve the per module difference file, which is
@@ -83,15 +81,8 @@ public class LinkableRuntimeImage {
             throw new AssertionError("Failure to retrieve resource diff for " +
                                      "module " + module, e);
         }
-        return new JRTArchive(module,
-                              path,
-                              !config.ignoreModifiedRuntime,
-                              perModuleDiff,
-                              taskHelper,
-                              // Empty set if no upgradable files for the module
-                              config.upgradeableFiles.computeIfAbsent(module, k -> Set.of()));
+        return new JRTArchive(module, path, !ignoreModifiedRuntime, perModuleDiff, taskHelper);
     }
 
-    static record Config(boolean ignoreModifiedRuntime,
-                         Map<String, Set<String>> upgradeableFiles) {}
+
 }

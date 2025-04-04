@@ -403,17 +403,6 @@ public class JLinkTest {
                 throw new RuntimeException("bug8240349 directory not deleted");
             }
         }
-
-        // Basic upgrade-files option parsing test
-        {
-            String imageDir = "bug8353185";
-            JImageGenerator.getJLinkTask()
-                    .output(helper.createNewImageDir(imageDir))
-                    .addMods("java.base")
-                    .option("--upgrade-files=java.base/foo/bar,java.base/lib/security/cacerts")
-                    .option("--upgrade-files=java.base/lib/tzdb.dat")
-                    .call().assertSuccess();
-        }
     }
 
     private static void testCompress(Helper helper, String moduleName, String... userOptions) throws IOException {
