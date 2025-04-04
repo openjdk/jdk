@@ -347,10 +347,12 @@ public class URLClassPath {
      * @return the Resource, or null if not found
      */
     public Resource getResource(String name, URL url) {
-        final String urlNoFragString = URLUtil.urlNoFragString(url);
+        final String urlKey = URLUtil.urlNoFragString(url);
         Loader loader;
-        // Open available URLs until we reach the requested one
-        while ((loader = lmap.get(urlNoFragString)) == null && getLoader(loaders.size()) != null) {}
+        synchronized (this) {
+            // Open available URLs until we reach the requested one
+            while ((loader = lmap.get(urlKey)) == null && getLoader(loaders.size()) != null) {}
+        }
         // loader == null if either the URL is not in the path or it cannot be opened
         return loader != null ? loader.getResource(name) : null;
     }
