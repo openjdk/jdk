@@ -318,7 +318,7 @@ public class TaskbarPositionTest implements ActionListener {
     private static void saveScreenCapture(Robot robot, GraphicsDevice[] screens) {
         for (int i = 0; i < screens.length; i++) {
             Rectangle bounds = screens[i].getDefaultConfiguration()
-                    .getBounds();
+                                         .getBounds();
             BufferedImage image = robot.createScreenCapture(bounds);
             try {
                 ImageIO.write(image, "png", new File("Screenshot.png"));
