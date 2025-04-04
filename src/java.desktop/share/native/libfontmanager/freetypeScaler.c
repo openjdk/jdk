@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #if !defined(_WIN32) && !defined(__APPLE_)
 #include <dlfcn.h>
+#include "jvm.h"
 #endif
 #include <math.h>
 #include "ft2build.h"
@@ -298,6 +299,21 @@ static void setInterpreterVersion(FT_Library library) {
 #if defined(_WIN32) || defined(__APPLE__)
     FT_Property_Set(library, module, property, (void*)(&version));
 #else
+
+    FT_Prop_Set_Func func = NULL;
+    if (JVM_IsStaticallyLinked()) {
+      // The bundled libfreetype may be statically linked with
+      // the launcher.
+      func = (FT_Prop_Set_Func)dlsym(RTLD_DEFAULT, "FT_Property_Set");
+      if (func != NULL) {
+        func(library, module, property, (void*)(&version));
+        return;
+      }
+
+      // libfreetype is not statically linked with the executable,
+      // fall through to find the system provided library dynamically.
+    }
+
     void *lib = dlopen("libfreetype.so", RTLD_LOCAL|RTLD_LAZY);
     if (lib == NULL) {
         lib = dlopen("libfreetype.so.6", RTLD_LOCAL|RTLD_LAZY);
@@ -305,7 +321,7 @@ static void setInterpreterVersion(FT_Library library) {
             return;
         }
     }
-    FT_Prop_Set_Func func = (FT_Prop_Set_Func)dlsym(lib, "FT_Property_Set");
+    func = (FT_Prop_Set_Func)dlsym(lib, "FT_Property_Set");
     if (func != NULL) {
         func(library, module, property, (void*)(&version));
     }

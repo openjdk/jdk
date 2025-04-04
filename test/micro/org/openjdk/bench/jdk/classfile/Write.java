@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ package org.openjdk.bench.jdk.classfile;
 import java.lang.reflect.AccessFlag;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.attribute.SourceFileAttribute;
-import jdk.internal.org.objectweb.asm.*;
 import org.openjdk.jmh.annotations.*;
 import java.io.FileOutputStream;
 import static java.lang.classfile.ClassFile.ACC_PUBLIC;
@@ -57,8 +56,6 @@ import static org.openjdk.bench.jdk.classfile.TestConstants.*;
 @Warmup(iterations = 3)
 @Measurement(iterations = 5)
 @Fork(value = 1, jvmArgs = {
-        "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED"})
 public class Write {
     static final int REPEATS = 40;
@@ -70,75 +67,8 @@ public class Write {
         }
         METHOD_NAMES = names;
     }
-    static String checkFileAsm = "/tmp/asw/MyClass.class";
     static String checkFileBc = "/tmp/byw/MyClass.class";
-    static boolean writeClassAsm = Files.exists(Paths.get(checkFileAsm).getParent());
     static boolean writeClassBc = Files.exists(Paths.get(checkFileBc).getParent());
-
-
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    public byte[] asmStream() {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        cw.visit(Opcodes.V12, Opcodes.ACC_PUBLIC, "MyClass", null, "java/lang/Object", null);
-        cw.visitSource("MyClass.java", null);
-
-        {
-            MethodVisitor mv = cw.visitMethod(0, INIT_NAME, "()V", null, null);
-            mv.visitCode();
-            Label startLabel = new Label();
-            Label endLabel = new Label();
-            mv.visitLabel(startLabel);
-            mv.visitVarInsn(Opcodes.ALOAD, 0);
-            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", INIT_NAME, "()V", false);
-            mv.visitInsn(Opcodes.RETURN);
-            mv.visitLabel(endLabel);
-            mv.visitLocalVariable("this", "LMyClass;", null, startLabel, endLabel, 1);
-            mv.visitMaxs(-1, -1);
-            mv.visitEnd();
-        }
-
-        for (int xi = 0; xi < REPEATS; ++xi) {
-            MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC+Opcodes.ACC_STATIC, METHOD_NAMES[xi], "([Ljava/lang/String;)V", null, null);
-            mv.visitCode();
-            Label loopTop = new Label();
-            Label loopEnd = new Label();
-            Label startLabel = new Label();
-            Label endLabel = new Label();
-            Label iStart = new Label();
-            mv.visitLabel(startLabel);
-            mv.visitInsn(Opcodes.ICONST_1);
-            mv.visitVarInsn(Opcodes.ISTORE, 1);
-            mv.visitLabel(iStart);
-            mv.visitInsn(Opcodes.ICONST_1);
-            mv.visitVarInsn(Opcodes.ISTORE, 2);
-            mv.visitLabel(loopTop);
-            mv.visitVarInsn(Opcodes.ILOAD, 2);
-            mv.visitIntInsn(Opcodes.BIPUSH, 10);
-            mv.visitJumpInsn(Opcodes.IF_ICMPGE, loopEnd);
-            mv.visitVarInsn(Opcodes.ILOAD, 1);
-            mv.visitVarInsn(Opcodes.ILOAD, 2);
-            mv.visitInsn(Opcodes.IMUL);
-            mv.visitVarInsn(Opcodes.ISTORE, 1);
-            mv.visitIincInsn(2, 1);
-            mv.visitJumpInsn(Opcodes.GOTO, loopTop);
-            mv.visitLabel(loopEnd);
-            mv.visitFieldInsn(Opcodes.GETSTATIC,"java/lang/System", "out", "Ljava/io/PrintStream;");
-            mv.visitVarInsn(Opcodes.ILOAD, 1);
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(I)V", false);
-            mv.visitLabel(endLabel);
-            mv.visitInsn(Opcodes.RETURN);
-            mv.visitLocalVariable("fac", "I", null, startLabel, endLabel, 1);
-            mv.visitLocalVariable("i",   "I", null, iStart, loopEnd, 2);
-            mv.visitMaxs(-1, -1);
-            mv.visitEnd();
-        }
-        cw.visitEnd();
-
-        byte[] bytes = cw.toByteArray();
-        if (writeClassAsm) writeClass(bytes, checkFileAsm);
-        return bytes;
-    }
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)

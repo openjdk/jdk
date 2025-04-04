@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 Red Hat, Inc.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
@@ -41,7 +40,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jni.h"
@@ -3790,11 +3788,12 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   // be set in order for the Safepoint code to deal with it correctly.
   thread->set_thread_state(_thread_in_vm);
   thread->record_stack_base_and_size();
-  thread->register_thread_stack_with_NMT();
   thread->initialize_thread_current();
+  thread->register_thread_stack_with_NMT();
   MACOS_AARCH64_ONLY(thread->init_wx());
 
   if (!os::create_attached_thread(thread)) {
+    thread->unregister_thread_stack_with_NMT();
     thread->smr_delete();
     return JNI_ERR;
   }
@@ -3804,6 +3803,10 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   thread->initialize_tlab();
 
   thread->cache_global_variables();
+
+  // Set the _monitor_owner_id to the next thread_id temporarily while initialization runs.
+  // Do it now before we make this thread visible in Threads::add().
+  thread->set_monitor_owner_id(ThreadIdentifier::next());
 
   // This thread will not do a safepoint check, since it has
   // not been added to the Thread list yet.
@@ -3839,8 +3842,13 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   if (attach_failed) {
     // Added missing cleanup
     thread->cleanup_failed_attach_current_thread(daemon);
+    thread->unregister_thread_stack_with_NMT();
+    thread->smr_delete();
     return JNI_ERR;
   }
+
+  // Update the _monitor_owner_id with the tid value.
+  thread->set_monitor_owner_id(java_lang_Thread::thread_id(thread->threadObj()));
 
   // Want this inside 'attaching via jni'.
   JFR_ONLY(Jfr::on_thread_start(thread);)
@@ -3935,6 +3943,7 @@ jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
   // (platform-dependent) methods where we do alternate stack
   // maintenance work?)
   thread->exit(false, JavaThread::jni_detach);
+  thread->unregister_thread_stack_with_NMT();
   thread->smr_delete();
 
   // Go to the execute mode, the initial state of the thread on creation.

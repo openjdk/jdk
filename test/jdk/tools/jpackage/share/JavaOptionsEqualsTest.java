@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.HelloApp;
-import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.TKit;
 
 /*
@@ -36,7 +35,7 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage create image with --java-options test
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile JavaOptionsEqualsTest.java
+ * @compile -Xlint:all -Werror JavaOptionsEqualsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=JavaOptionsEqualsTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useExecutableByDefault
@@ -47,7 +46,7 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage create image with --java-options test
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile JavaOptionsEqualsTest.java
+ * @compile -Xlint:all -Werror JavaOptionsEqualsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=JavaOptionsEqualsTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault
@@ -55,19 +54,19 @@ import jdk.jpackage.test.TKit;
 
 public class JavaOptionsEqualsTest {
 
-    private final static String OPTION1 =
+    private static final String OPTION1 =
         "--add-exports=java.base/sun.util=me.mymodule.foo,ALL-UNNAMED";
-    private final static String OPTION2 =
+    private static final String OPTION2 =
         "--add-exports=java.base/sun.security.util=other.mod.bar,ALL-UNNAMED";
-    private final static String WARNING1 =
+    private static final String WARNING1 =
         "WARNING: Unknown module: me.mymodule.foo";
-    private final static String WARNING2 =
+    private static final String WARNING2 =
         "WARNING: Unknown module: other.mod.bar";
 
     private final JPackageCommand cmd;
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         return List.of(new Object[][]{
             {"Hello", new String[]{"--java-options", OPTION1,
                                    "--java-options", OPTION2 },
@@ -76,17 +75,13 @@ public class JavaOptionsEqualsTest {
     }
 
     public JavaOptionsEqualsTest(String javaAppDesc, String[] jpackageArgs) {
-        cmd = JPackageCommand.helloAppImage(javaAppDesc);
-        if (jpackageArgs != null) {
-            cmd.addArguments(jpackageArgs);
-        }
+        cmd = JPackageCommand.helloAppImage(javaAppDesc).addArguments(jpackageArgs).ignoreFakeRuntime();
     }
 
     @Test
     public void test() {
         cmd.executeAndAssertHelloAppImageCreated();
         List<String> output = HelloApp.executeLauncher(cmd).getOutput();
-        TKit.assertNotNull(output, "output is null");
         TKit.assertTextStream(WARNING1).apply(output.stream());
         TKit.assertTextStream(WARNING2).apply(output.stream());
     }

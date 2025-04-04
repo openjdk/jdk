@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,21 @@
 
 /*
  * @test
- * @bug 6936350
+ * @bug 6936350 8347841 8347955
  * @summary Test case for TimeZone.observesDaylightTime()
  */
 
+import java.time.ZoneId;
 import java.util.*;
+import java.util.function.Predicate;
 import static java.util.GregorianCalendar.*;
 
 public class DaylightTimeTest {
     private static final int ONE_HOUR = 60 * 60 * 1000; // one hour
     private static final int INTERVAL = 24 * ONE_HOUR;  // one day
-    private static final String[] ZONES = TimeZone.getAvailableIDs();
+    private static final String[] ZONES = TimeZone.availableIDs()
+            .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
+            .toArray(String[]::new);
     private static int errors = 0;
 
     public static void main(String[] args) {

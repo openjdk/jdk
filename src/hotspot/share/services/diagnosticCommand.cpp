@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cds_globals.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -317,7 +316,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
       char *opt = (char *)os::malloc(opt_len, mtInternal);
       if (opt == nullptr) {
         output()->print_cr("JVMTI agent attach failed: "
-                           "Could not allocate " SIZE_FORMAT " bytes for argument.",
+                           "Could not allocate %zu bytes for argument.",
                            opt_len);
         return;
       }
@@ -1146,16 +1145,17 @@ void VThreadPollersDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* output, bool heap) :
     DCmdWithParser(output, heap),
-  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
-  _minsize("-s", "Minimum memory size", "MEMORY SIZE", false, "0") {
-  _dcmdparser.add_dcmd_option(&_human_readable);
+  _verbose("verbose", "Print detailed information", "BOOLEAN", false, "false"),
+  _legend("legend", "Table mode: print legend", "BOOLEAN", false, "false"),
+  _minsize("minsize", "Minimum memory size", "MEMORY SIZE", false, "0") {
+  _dcmdparser.add_dcmd_option(&_verbose);
   _dcmdparser.add_dcmd_option(&_minsize);
+  _dcmdparser.add_dcmd_option(&_legend);
 }
 
 void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
-  const bool human_readable = _human_readable.value();
   const size_t minsize = _minsize.has_value() ? _minsize.value()._size : 0;
-  CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
+  CompilationMemoryStatistic::print_jcmd_report(output(), _verbose.value(), _legend.value(), minsize);
 }
 
 #if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)

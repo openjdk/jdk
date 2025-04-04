@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,8 @@ import sun.security.util.Debug;
  * following standard {@code KeyGenerator} algorithms with the keysizes in
  * parentheses:
  * <ul>
- * <li>{@code AES} (128)</li>
+ * <li>{@code AES} (128, 256)</li>
+ * <li>{@code ChaCha20}</li>
  * <li>{@code DESede} (168)</li>
  * <li>{@code HmacSHA1}</li>
  * <li>{@code HmacSHA256}</li>
@@ -108,6 +109,7 @@ import sun.security.util.Debug;
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Jan Luehe
  *
  * @see SecretKey
@@ -225,6 +227,7 @@ public class KeyGenerator {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyGenerator} object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
@@ -261,6 +264,7 @@ public class KeyGenerator {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyGenerator} object
      *
      * @throws IllegalArgumentException if the {@code provider}
@@ -304,6 +308,7 @@ public class KeyGenerator {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyGenerator} object
      *
      * @throws IllegalArgumentException if the {@code provider}

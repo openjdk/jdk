@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/chains/edgeStore.hpp"
@@ -257,7 +256,7 @@ void StackTraceBlobInstaller::install(ObjectSample* sample) {
   writer.write_type(TYPE_STACKTRACE);
   writer.write_count(1);
   ObjectSampleCheckpoint::write_stacktrace(stack_trace, writer);
-  blob = writer.copy();
+  blob = stack_trace->should_write() ? writer.copy() : writer.move();
   _cache.put(sample, blob);
   sample->set_stacktrace(blob);
 }
@@ -363,9 +362,17 @@ static void write_thread_blob(const ObjectSample* sample, JfrCheckpointWriter& w
   }
 }
 
+static GrowableArray<traceid>* _stacktrace_ids = nullptr;
+
 static void write_stacktrace_blob(const ObjectSample* sample, JfrCheckpointWriter& writer) {
+  assert(_stacktrace_ids != nullptr, "invariant");
   if (sample->has_stacktrace()) {
     write_blob(sample->stacktrace(), writer);
+    return;
+  }
+  const traceid stacktrace_id = sample->stack_trace_id();
+  if (stacktrace_id != 0) {
+    _stacktrace_ids->append(stacktrace_id);
   }
 }
 
@@ -403,7 +410,15 @@ void ObjectSampleCheckpoint::write(const ObjectSampler* sampler, EdgeStore* edge
   assert(sampler != nullptr, "invariant");
   assert(edge_store != nullptr, "invariant");
   assert(thread != nullptr, "invariant");
-  write_sample_blobs(sampler, emit_all, thread);
+  {
+    ResourceMark rm(thread);
+    _stacktrace_ids = new GrowableArray<traceid>(JfrOptionSet::old_object_queue_size());
+    write_sample_blobs(sampler, emit_all, thread);
+    if (_stacktrace_ids->is_nonempty()) {
+      _stacktrace_ids->sort(sort_traceid);
+      JfrStackTraceRepository::write_leak_profiler(_stacktrace_ids, thread);
+    }
+  }
   // write reference chains
   if (!edge_store->is_empty()) {
     JfrCheckpointWriter writer(thread);

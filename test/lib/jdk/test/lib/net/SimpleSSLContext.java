@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,6 @@ import javax.net.ssl.*;
  * Creates a simple usable SSLContext for SSLSocketFactory
  * or a HttpsServer using either a given keystore or a default
  * one in the test tree.
- *
- * Using this class with a security manager requires the following
- * permissions to be granted:
- *
- * permission "java.util.PropertyPermission" "test.src.path", "read";
- * permission java.io.FilePermission "/path/to/test/lib/jdk/test/lib/testkeys", "read";
- * The exact path above depends on the location of the test.
  */
 public class SimpleSSLContext {
 
@@ -54,47 +47,19 @@ public class SimpleSSLContext {
         this(() -> "TLS");
     }
 
-    @SuppressWarnings("removal")
     private SimpleSSLContext(Supplier<String> protocols) throws IOException {
-        try {
-            final String proto = protocols.get();
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                @Override
-                public Void run() throws Exception {
-                    String paths = System.getProperty("test.src.path");
-                    StringTokenizer st = new StringTokenizer(paths, File.pathSeparator);
-                    boolean securityExceptions = false;
-                    while (st.hasMoreTokens()) {
-                        String path = st.nextToken();
-                        try {
-                            File f = new File(path, "jdk/test/lib/net/testkeys");
-                            if (f.exists()) {
-                                try (FileInputStream fis = new FileInputStream(f)) {
-                                    init(fis, proto);
-                                    return null;
-                                }
-                            }
-                        } catch (SecurityException e) {
-                            // catch and ignore because permission only required
-                            // for one entry on path (at most)
-                            securityExceptions = true;
-                        }
-                    }
-                    if (securityExceptions) {
-                        System.err.println("SecurityExceptions thrown on loading testkeys");
-                    }
-                    return null;
+        String proto = protocols.get();
+        String paths = System.getProperty("test.src.path");
+        StringTokenizer st = new StringTokenizer(paths, File.pathSeparator);
+        while (st.hasMoreTokens()) {
+            String path = st.nextToken();
+            File f = new File(path, "jdk/test/lib/net/testkeys");
+            if (f.exists()) {
+                try (FileInputStream fis = new FileInputStream(f)) {
+                    init(fis, proto);
+                    break;
                 }
-            });
-        } catch (PrivilegedActionException pae) {
-            Throwable t = pae.getCause() != null ? pae.getCause() : pae;
-            if (t instanceof IOException)
-                throw (IOException)t;
-            if (t instanceof RuntimeException)
-                throw (RuntimeException)t;
-            if (t instanceof Error)
-                throw (Error)t;
-            throw new RuntimeException(t);
+            }
         }
     }
 

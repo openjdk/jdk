@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -702,8 +701,6 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       value.load_item();
       LIR_Opr dst = rlock_result(x);
       LIR_Opr tmp = new_register(T_FLOAT);
-      // f2hf treats tmp as live_in. Workaround: initialize to some value.
-      __ move(LIR_OprFact::floatConst(-0.0), tmp); // just to satisfy LinearScan
       __ f2hf(value.result(), dst, tmp);
       break;
     }
@@ -1129,6 +1126,12 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   __ instanceof(out_reg, obj.result(), x->klass(), tmp1, tmp2, tmp3,
                 x->direct_compare(), patching_info,
                 x->profiled_method(), x->profiled_bci());
+}
+
+
+// Intrinsic for Class::isInstance
+address LIRGenerator::isInstance_entry() {
+  return Runtime1::entry_for(C1StubId::is_instance_of_id);
 }
 
 

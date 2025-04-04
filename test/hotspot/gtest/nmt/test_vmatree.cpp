@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
@@ -724,4 +723,20 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
       }
     }
   }
+}
+
+TEST_VM_F(NMTVMATreeTest, SummaryAccountingWhenUseFlagInplace) {
+  Tree tree;
+  VMATree::RegionData rd1(si[0], mtTest);
+  VMATree::RegionData rd2(si[1], mtNone);
+  tree.reserve_mapping(0, 100, rd1);
+  VMATree::SummaryDiff diff = tree.commit_mapping(0, 50, rd2, true);
+  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  diff = tree.commit_mapping(60, 10, rd2, true);
+  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(10, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  diff = tree.uncommit_mapping(0, 50, rd2);
+  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
 }

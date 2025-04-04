@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "register_aarch64.hpp"
 
 Register::RegisterImpl           all_RegisterImpls     [Register::number_of_declared_registers + 1];
@@ -58,4 +57,24 @@ const char* PRegister::PRegisterImpl::name() const {
     "p8", "p9", "p10", "p11", "p12", "p13", "p14", "p15"
   };
   return is_valid() ? names[encoding()] : "pnoreg";
+}
+
+// convenience methods for splitting 8-way vector register sequences
+// in half -- needed because vector operations can normally only be
+// benefit from 4-way instruction parallelism
+
+VSeq<4> vs_front(const VSeq<8>& v) {
+  return VSeq<4>(v.base(), v.delta());
+}
+
+VSeq<4> vs_back(const VSeq<8>& v) {
+  return VSeq<4>(v.base() + 4 * v.delta(), v.delta());
+}
+
+VSeq<4> vs_even(const VSeq<8>& v) {
+  return VSeq<4>(v.base(), v.delta() * 2);
+}
+
+VSeq<4> vs_odd(const VSeq<8>& v) {
+  return VSeq<4>(v.base() + 1, v.delta() * 2);
 }

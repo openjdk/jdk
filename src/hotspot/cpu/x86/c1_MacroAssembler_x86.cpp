@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "code/compiledIC.hpp"
@@ -333,12 +332,6 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   if (PreserveFramePointer) {
     mov(rbp, rsp);
   }
-#if !defined(_LP64) && defined(COMPILER2)
-  if (UseSSE < 2 && !CompilerConfig::is_c1_only_no_jvmci()) {
-    // c2 leaves fpu stack dirty. Clean it on entry
-    empty_FPU_stack();
-  }
-#endif // !_LP64 && COMPILER2
   decrement(rsp, frame_size_in_bytes); // does not emit code for frame_size == 0
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();

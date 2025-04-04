@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
@@ -152,7 +151,6 @@ bool SafepointSynchronize::thread_not_running(ThreadSafepointState *cur_state) {
     // Robustness: asserted in the caller, but handle/tolerate it for release bits.
     LogTarget(Error, safepoint) lt;
     if (lt.is_enabled()) {
-      ResourceMark rm;
       LogStream ls(lt);
       ls.print("Illegal initial state detected: ");
       cur_state->print_on(&ls);
@@ -165,7 +163,6 @@ bool SafepointSynchronize::thread_not_running(ThreadSafepointState *cur_state) {
   }
   LogTarget(Trace, safepoint) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     cur_state->print_on(&ls);
   }
@@ -409,9 +406,6 @@ void SafepointSynchronize::begin() {
   }
 #endif // ASSERT
 
-  // Update the count of active JNI critical regions
-  GCLocker::set_jni_lock_count(_current_jni_active_count);
-
   post_safepoint_synchronize_event(sync_event,
                                    _safepoint_id,
                                    initial_running,
@@ -472,6 +466,8 @@ void SafepointSynchronize::disarm_safepoint() {
 // operation has been carried out
 void SafepointSynchronize::end() {
   assert(Threads_lock->owned_by_self(), "must hold Threads_lock");
+  SafepointTracing::leave();
+
   EventSafepointEnd event;
   assert(Thread::current()->is_VM_thread(), "Only VM thread can execute a safepoint");
 
@@ -866,6 +862,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
 jlong SafepointTracing::_last_safepoint_begin_time_ns = 0;
 jlong SafepointTracing::_last_safepoint_sync_time_ns = 0;
+jlong SafepointTracing::_last_safepoint_leave_time_ns = 0;
 jlong SafepointTracing::_last_safepoint_end_time_ns = 0;
 jlong SafepointTracing::_last_app_time_ns = 0;
 int SafepointTracing::_nof_threads = 0;
@@ -967,6 +964,10 @@ void SafepointTracing::synchronized(int nof_threads, int nof_running, int traps)
   RuntimeService::record_safepoint_synchronized(_last_safepoint_sync_time_ns - _last_safepoint_begin_time_ns);
 }
 
+void SafepointTracing::leave() {
+  _last_safepoint_leave_time_ns = os::javaTimeNanos();
+}
+
 void SafepointTracing::end() {
   _last_safepoint_end_time_ns = os::javaTimeNanos();
 
@@ -985,12 +986,17 @@ void SafepointTracing::end() {
      "Time since last: " JLONG_FORMAT " ns, "
      "Reaching safepoint: " JLONG_FORMAT " ns, "
      "At safepoint: " JLONG_FORMAT " ns, "
-     "Total: " JLONG_FORMAT " ns",
+     "Leaving safepoint: " JLONG_FORMAT " ns, "
+     "Total: " JLONG_FORMAT " ns, "
+     "Threads: %d runnable, %d total",
       VM_Operation::name(_current_type),
       _last_app_time_ns,
-      _last_safepoint_sync_time_ns    - _last_safepoint_begin_time_ns,
-      _last_safepoint_end_time_ns     - _last_safepoint_sync_time_ns,
-      _last_safepoint_end_time_ns     - _last_safepoint_begin_time_ns
+      _last_safepoint_sync_time_ns  - _last_safepoint_begin_time_ns,
+      _last_safepoint_leave_time_ns - _last_safepoint_sync_time_ns,
+      _last_safepoint_end_time_ns   - _last_safepoint_leave_time_ns,
+      _last_safepoint_end_time_ns   - _last_safepoint_begin_time_ns,
+      _nof_running,
+      _nof_threads
      );
 
   RuntimeService::record_safepoint_end(_last_safepoint_end_time_ns - _last_safepoint_sync_time_ns);

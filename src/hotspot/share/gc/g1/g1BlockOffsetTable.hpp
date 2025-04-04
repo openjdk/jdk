@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ private:
 
   void check_offset(size_t offset, const char* msg) const {
     assert(offset < CardTable::card_size_in_words(),
-           "%s - offset: " SIZE_FORMAT ", N_words: %u",
+           "%s - offset: %zu, N_words: %u",
            msg, offset, CardTable::card_size_in_words());
   }
 

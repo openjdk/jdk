@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "code/codeBlob.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "runtime/stubRoutines.hpp"
 
 // Stub Code definitions
 
@@ -87,29 +88,29 @@ class StubGenerator: public StubCodeGenerator {
   address generate_d2i_fixup();
   address generate_d2l_fixup();
 
-  address generate_count_leading_zeros_lut(const char *stub_name);
-  address generate_popcount_avx_lut(const char *stub_name);
-  address generate_iota_indices(const char *stub_name);
-  address generate_vector_reverse_bit_lut(const char *stub_name);
+  address generate_count_leading_zeros_lut();
+  address generate_popcount_avx_lut();
+  address generate_iota_indices();
+  address generate_vector_reverse_bit_lut();
 
-  address generate_vector_reverse_byte_perm_mask_long(const char *stub_name);
-  address generate_vector_reverse_byte_perm_mask_int(const char *stub_name);
-  address generate_vector_reverse_byte_perm_mask_short(const char *stub_name);
-  address generate_vector_byte_shuffle_mask(const char *stub_name);
+  address generate_vector_reverse_byte_perm_mask_long();
+  address generate_vector_reverse_byte_perm_mask_int();
+  address generate_vector_reverse_byte_perm_mask_short();
+  address generate_vector_byte_shuffle_mask();
 
-  address generate_fp_mask(const char *stub_name, int64_t mask);
+  address generate_fp_mask(StubGenStubId stub_id, int64_t mask);
 
-  address generate_compress_perm_table(const char *stub_name, int32_t esize);
+  address generate_compress_perm_table(StubGenStubId stub_id);
 
-  address generate_expand_perm_table(const char *stub_name, int32_t esize);
+  address generate_expand_perm_table(StubGenStubId stub_id);
 
-  address generate_vector_mask(const char *stub_name, int64_t mask);
+  address generate_vector_mask(StubGenStubId stub_id, int64_t mask);
 
-  address generate_vector_byte_perm_mask(const char *stub_name);
+  address generate_vector_byte_perm_mask();
 
-  address generate_vector_fp_mask(const char *stub_name, int64_t mask);
+  address generate_vector_fp_mask(StubGenStubId stub_id, int64_t mask);
 
-  address generate_vector_custom_i32(const char *stub_name, Assembler::AvxVectorLen len,
+  address generate_vector_custom_i32(StubGenStubId stub_id, Assembler::AvxVectorLen len,
                                      int32_t val0, int32_t val1, int32_t val2, int32_t val3,
                                      int32_t val4 = 0, int32_t val5 = 0, int32_t val6 = 0, int32_t val7 = 0,
                                      int32_t val8 = 0, int32_t val9 = 0, int32_t val10 = 0, int32_t val11 = 0,
@@ -179,12 +180,10 @@ class StubGenerator: public StubCodeGenerator {
   // - If user sets AVX3Threshold=0, then special cases for small blocks sizes operate over
   //   64 byte vector registers (ZMMs).
 
-  address generate_disjoint_copy_avx3_masked(address* entry, const char *name, int shift,
-                                             bool aligned, bool is_oop, bool dest_uninitialized);
+  address generate_disjoint_copy_avx3_masked(StubGenStubId stub_id, address* entry);
 
-  address generate_conjoint_copy_avx3_masked(address* entry, const char *name, int shift,
-                                             address nooverlap_target, bool aligned, bool is_oop,
-                                             bool dest_uninitialized);
+  address generate_conjoint_copy_avx3_masked(StubGenStubId stub_id, address* entry,
+                                             address nooverlap_target);
 
   void arraycopy_avx3_special_cases(XMMRegister xmm, KRegister mask, Register from,
                                     Register to, Register count, int shift,
@@ -225,27 +224,21 @@ class StubGenerator: public StubCodeGenerator {
                          Register temp, int shift = Address::times_1, int offset = 0);
 #endif // COMPILER2_OR_JVMCI
 
-  address generate_disjoint_byte_copy(bool aligned, address* entry, const char *name);
+  address generate_disjoint_byte_copy(address* entry);
 
-  address generate_conjoint_byte_copy(bool aligned, address nooverlap_target,
-                                      address* entry, const char *name);
+  address generate_conjoint_byte_copy(address nooverlap_target, address* entry);
 
-  address generate_disjoint_short_copy(bool aligned, address *entry, const char *name);
+  address generate_disjoint_short_copy(address *entry);
 
-  address generate_fill(BasicType t, bool aligned, const char *name);
+  address generate_fill(StubGenStubId stub_id);
 
-  address generate_conjoint_short_copy(bool aligned, address nooverlap_target,
-                                       address *entry, const char *name);
-  address generate_disjoint_int_oop_copy(bool aligned, bool is_oop, address* entry,
-                                         const char *name, bool dest_uninitialized = false);
-  address generate_conjoint_int_oop_copy(bool aligned, bool is_oop, address nooverlap_target,
-                                         address *entry, const char *name,
-                                         bool dest_uninitialized = false);
-  address generate_disjoint_long_oop_copy(bool aligned, bool is_oop, address *entry,
-                                          const char *name, bool dest_uninitialized = false);
-  address generate_conjoint_long_oop_copy(bool aligned, bool is_oop,
-                                          address nooverlap_target, address *entry,
-                                          const char *name, bool dest_uninitialized = false);
+  address generate_conjoint_short_copy(address nooverlap_target, address *entry);
+  address generate_disjoint_int_oop_copy(StubGenStubId stub_id, address* entry);
+  address generate_conjoint_int_oop_copy(StubGenStubId stub_id, address nooverlap_target,
+                                         address *entry);
+  address generate_disjoint_long_oop_copy(StubGenStubId stub_id, address* entry);
+  address generate_conjoint_long_oop_copy(StubGenStubId stub_id, address nooverlap_target,
+                                          address *entry);
 
   // Helper for generating a dynamic type check.
   // Smashes no registers.
@@ -255,8 +248,7 @@ class StubGenerator: public StubCodeGenerator {
                            Label& L_success);
 
   // Generate checkcasting array copy stub
-  address generate_checkcast_copy(const char *name, address *entry,
-                                  bool dest_uninitialized = false);
+  address generate_checkcast_copy(StubGenStubId stub_id, address *entry);
 
   // Generate 'unsafe' array copy stub
   // Though just as safe as the other stubs, it takes an unscaled
@@ -264,8 +256,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // Examines the alignment of the operands and dispatches
   // to a long, int, short, or byte copy loop.
-  address generate_unsafe_copy(const char *name,
-                               address byte_copy_entry, address short_copy_entry,
+  address generate_unsafe_copy(address byte_copy_entry, address short_copy_entry,
                                address int_copy_entry, address long_copy_entry);
 
   // Generate 'unsafe' set memory stub
@@ -274,7 +265,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // Examines the alignment of the operands and dispatches
   // to an int, short, or byte copy loop.
-  address generate_unsafe_setmemory(const char *name, address byte_copy_entry);
+  address generate_unsafe_setmemory(address byte_copy_entry);
 
   // Perform range checks on the proposed arraycopy.
   // Kills temp, but nothing else.
@@ -288,8 +279,7 @@ class StubGenerator: public StubCodeGenerator {
                               Label& L_failed);
 
   // Generate generic array copy stubs
-  address generate_generic_copy(const char *name,
-                                address byte_copy_entry, address short_copy_entry,
+  address generate_generic_copy(address byte_copy_entry, address short_copy_entry,
                                 address int_copy_entry, address oop_copy_entry,
                                 address long_copy_entry, address checkcast_copy_entry);
 
@@ -304,19 +294,19 @@ class StubGenerator: public StubCodeGenerator {
 
   // ofs and limit are use for multi-block byte array.
   // int com.sun.security.provider.MD5.implCompress(byte[] b, int ofs)
-  address generate_md5_implCompress(bool multi_block, const char *name);
+  address generate_md5_implCompress(StubGenStubId stub_id);
 
 
   // SHA stubs
 
   // ofs and limit are use for multi-block byte array.
   // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
-  address generate_sha1_implCompress(bool multi_block, const char *name);
+  address generate_sha1_implCompress(StubGenStubId stub_id);
 
   // ofs and limit are use for multi-block byte array.
   // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
-  address generate_sha256_implCompress(bool multi_block, const char *name);
-  address generate_sha512_implCompress(bool multi_block, const char *name);
+  address generate_sha256_implCompress(StubGenStubId stub_id);
+  address generate_sha512_implCompress(StubGenStubId stub_id);
 
   // Mask for byte-swapping a couple of qwords in an XMM register using (v)pshufb.
   address generate_pshuffle_byte_flip_mask_sha512();
@@ -499,7 +489,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // SHA3 stubs
   void generate_sha3_stubs();
-  address generate_sha3_implCompress(bool multiBlock, const char *name);
+  address generate_sha3_implCompress(StubGenStubId stub_id);
 
   // BASE64 stubs
 
@@ -595,7 +585,7 @@ class StubGenerator: public StubCodeGenerator {
   void generate_string_indexof(address *fnptrs);
 #endif
 
-  address generate_cont_thaw(const char* label, Continuation::thaw_kind kind);
+  address generate_cont_thaw(StubGenStubId stub_id);
   address generate_cont_thaw();
 
   // TODO: will probably need multiple return barriers depending on return type
@@ -604,6 +594,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_cont_preempt_stub();
 
+  // TODO -- delete this as it is not implemented?
+  //
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
   // oop and initiates normal exception dispatching in this
@@ -629,7 +621,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_upcall_stub_load_target();
 
   // Specialized stub implementations for UseSecondarySupersTable.
-  address generate_lookup_secondary_supers_table_stub(u1 super_klass_index);
+  void generate_lookup_secondary_supers_table_stub();
 
   // Slow path implementation for UseSecondarySupersTable.
   address generate_lookup_secondary_supers_table_slow_path_stub();
@@ -642,8 +634,8 @@ class StubGenerator: public StubCodeGenerator {
   void generate_compiler_stubs();
   void generate_final_stubs();
 
- public:
-  StubGenerator(CodeBuffer* code, StubsKind kind);
+public:
+  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id);
 };
 
 #endif // CPU_X86_STUBGENERATOR_X86_64_HPP

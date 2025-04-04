@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,7 @@ implements Serializable
     // checked
     private transient boolean hasUnresolved = false;
 
+    /** @serial */
     // optimization. keep track of the AllPermission collection
     // - package private for ProtectionDomain optimization
     PermissionCollection allPermission;
