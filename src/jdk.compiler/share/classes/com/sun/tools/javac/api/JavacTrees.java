@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,9 +361,14 @@ public class JavacTrees extends DocTrees {
                         new Log.DeferredDiagnosticHandler(log);
                 try {
                     Env<AttrContext> env = getAttrContext(path.getTreePath());
-                    Type t = attr.attribType(dcReference.qualifierExpression, env);
-                    if (t != null && !t.isErroneous()) {
-                        return t;
+                    JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
+                    try {
+                        Type t = attr.attribType(dcReference.qualifierExpression, env);
+                        if (t != null && !t.isErroneous()) {
+                            return t;
+                        }
+                    } finally {
+                        log.useSource(prevSource);
                     }
                 } catch (Abort e) { // may be thrown by Check.completionError in case of bad class file
                     return null;
@@ -390,6 +395,7 @@ public class JavacTrees extends DocTrees {
         }
         Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
                 new Log.DeferredDiagnosticHandler(log);
+        JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
         try {
             final TypeSymbol tsym;
             final Name memberName;
@@ -511,6 +517,7 @@ public class JavacTrees extends DocTrees {
         } catch (Abort e) { // may be thrown by Check.completionError in case of bad class file
             return null;
         } finally {
+            log.useSource(prevSource);
             log.popDiagnosticHandler(deferredDiagnosticHandler);
         }
     }
