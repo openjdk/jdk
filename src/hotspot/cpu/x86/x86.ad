@@ -1754,6 +1754,9 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
     case Op_MulVHF:
     case Op_SubVHF:
     case Op_SqrtVHF:
+      if (size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
+        return false;
+      }
       if (!VM_Version::supports_avx512_fp16()) {
         return false;
       }
