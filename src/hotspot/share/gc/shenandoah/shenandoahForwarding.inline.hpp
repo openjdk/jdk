@@ -105,8 +105,13 @@ inline oop ShenandoahForwarding::try_forward_to_self(oop obj) {
     }
   }
 
-  obj->forward_to_self_atomic(old_mark);
-  return obj;
+  markWord new_mark = markWord::from_pointer(obj).set_self_forwarded();
+  markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
+  if (prev_mark == old_mark) {
+    return obj;
+  } else {
+    return prev_mark.forwardee();
+  }
 }
 
 inline Klass* ShenandoahForwarding::klass(oop obj) {
