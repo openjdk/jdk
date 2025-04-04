@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.model;
 
 import java.math.BigInteger;
 import java.text.MessageFormat;
 
 
-final class MsiVersion {
+public final class MsiVersion {
     /**
      * Parse the given string as Windows MSI Product version.
      * https://msdn.microsoft.com/en-us/library/aa370859%28v=VS.85%29.aspx The
@@ -39,8 +39,8 @@ final class MsiVersion {
      * 65,535.
      * @throws IllegalArgumentException
      */
-    static DottedVersion of(String value) {
-        DottedVersion ver = new DottedVersion(value);
+    public static DottedVersion of(String value) {
+        DottedVersion ver = DottedVersion.greedy(value);
 
         BigInteger[] components = ver.getComponents();
 

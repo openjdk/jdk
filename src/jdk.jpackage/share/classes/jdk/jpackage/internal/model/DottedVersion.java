@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.model;
 
 import java.math.BigInteger;
 import java.text.MessageFormat;
@@ -34,11 +34,7 @@ import java.util.stream.Stream;
 /**
  * Dotted numeric version string. E.g.: 1.0.37, 10, 0.5
  */
-final class DottedVersion {
-
-    DottedVersion(String version) {
-        this(version, true);
-    }
+public final class DottedVersion {
 
     private DottedVersion(String version, boolean greedy) {
         this.value = version;
@@ -156,15 +152,15 @@ final class DottedVersion {
         private final String input;
     }
 
-    static DottedVersion greedy(String version) {
-        return new DottedVersion(version);
+    public static DottedVersion greedy(String version) {
+        return new DottedVersion(version, true);
     }
 
-    static DottedVersion lazy(String version) {
+    public static DottedVersion lazy(String version) {
         return new DottedVersion(version, false);
     }
 
-    static int compareComponents(DottedVersion a, DottedVersion b) {
+    public static int compareComponents(DottedVersion a, DottedVersion b) {
         int result = 0;
         BigInteger[] aComponents = a.getComponents();
         BigInteger[] bComponents = b.getComponents();
@@ -224,11 +220,11 @@ final class DottedVersion {
         return suffix;
     }
 
-    String toComponentsString() {
+    public String toComponentsString() {
         return Stream.of(components).map(BigInteger::toString).collect(Collectors.joining("."));
     }
 
-    BigInteger[] getComponents() {
+    public BigInteger[] getComponents() {
         return components;
     }
 
