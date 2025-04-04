@@ -24,35 +24,38 @@
 /* @test
  * @bug 8349890
  * @summary Make sure debug with AVA option does not interfere with parsing special characters.
- * @modules java.base/sun.security.x509
  * @library /test/lib
- * @run main/othervm -Djava.security.debug=x509:ava PrintX500NameInDebugModeWithAvaOption
+ * @run main/othervm -Djava.security.debug=x509:ava PrintX500PrincipalInDebugModeWithAvaOption
  */
 
 import jdk.test.lib.Asserts;
-import sun.security.x509.X500Name;
+import javax.security.auth.x500.X500Principal;
 
-public class PrintX500NameInDebugModeWithAvaOption {
+public class PrintX500PrincipalInDebugModeWithAvaOption {
 
     public static void main(String[] args) throws Exception {
 
-        X500Name name = new X500Name("cn=john doe + l=ca\\+lifornia + l =sf, O=Ñ");
+        X500Principal name = new X500Principal("cn=john doe + l=ca\\+lifornia + l =sf, O=Ñ");
 
         //Test the name in default String format. This will perform the hex conversion to
         //"\\C3\\91" for special character "Ñ"
-        Asserts.assertTrue(name.toString().contains("\\C3\\91"),"String does not contain expected value");
+        Asserts.assertTrue(name.toString().contains("\\C3\\91"),
+                "String does not contain expected value");
 
         //Test the name in RFC2253 format. This should skip the hex conversion to return
         //"\u00d1" for special character "Ñ"
-        Asserts.assertTrue(name.getRFC2253Name().contains("\u00d1"), "String does not contain expected value");
+        Asserts.assertTrue(name.getName().contains("\u00d1"),
+                "String does not contain expected value");
 
         //Test the name in canonical name in RFC2253 format. This should skip the hex conversion to return
         //"n\u0303" for special character "Ñ"
-        Asserts.assertTrue(name.getRFC2253CanonicalName().contains("n\u0303"),"String does not contain expected value");
+        Asserts.assertTrue(name.getName(X500Principal.CANONICAL).contains("n\u0303"),
+                "String does not contain expected value");
 
 
         //Test to print name in RFC1779 format. This should skip the hex conversion to print
         //"\u00d1" for special character "Ñ"
-        Asserts.assertTrue(name.getRFC1779Name().contains("\u00d1"),"String does not contain expected value");
+        Asserts.assertTrue(name.getName(X500Principal.RFC1779).contains("\u00d1"),
+                "String does not contain expected value");
     }
 }
