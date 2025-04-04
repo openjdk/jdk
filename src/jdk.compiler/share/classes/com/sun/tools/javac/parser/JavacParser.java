@@ -3856,6 +3856,7 @@ public class JavacParser implements Parser {
         JCVariableDecl result = toP(F.at(pos).VarDef(mods, name, type, init, declaredUsingVar));
         attach(result, dc);
         result.startPos = startPos;
+        storeEnd(result, S.prevToken().endPos);
         return result;
     }
 
