@@ -1581,12 +1581,12 @@ public class IRNode {
 
     public static final String LOOP_LIMIT_CHECK_PARSE_PREDICATE = PREFIX + "LOOP_LIMIT_CHECK_PARSE_PREDICATE" + POSTFIX;
     static {
-        parsePredicateNodes(LOOP_LIMIT_CHECK_PARSE_PREDICATE, "Loop Limit Check");
+        parsePredicateNodes(LOOP_LIMIT_CHECK_PARSE_PREDICATE, "Loop_Limit_Check");
     }
 
     public static final String PROFILED_LOOP_PARSE_PREDICATE = PREFIX + "PROFILED_LOOP_PARSE_PREDICATE" + POSTFIX;
     static {
-        parsePredicateNodes(PROFILED_LOOP_PARSE_PREDICATE, "Profiled Loop");
+        parsePredicateNodes(PROFILED_LOOP_PARSE_PREDICATE, "Profiled_Loop");
     }
 
     public static final String AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE = PREFIX + "AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE" + POSTFIX;
@@ -2837,7 +2837,7 @@ public class IRNode {
     }
 
     private static void parsePredicateNodes(String irNodePlaceholder, String label) {
-        String regex = START + "ParsePredicate" + MID + "#" + label + "[ ]*!jvms:" + END;
+        String regex = START + "ParsePredicate" + MID + "#" + label + " " + END;
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.AFTER_PARSING, regex,
                                                                           CompilePhase.AFTER_PARSING,
                                                                           CompilePhase.PHASEIDEALLOOP_ITERATIONS));
