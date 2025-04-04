@@ -71,7 +71,10 @@ public class WebSocketEndiannessTest {
                         0x18, 0x19,
                         0x1a, 0x1b,
                         0x1c, 0x1d,
-                        0x1e, 0x1f
+                        0x1e, 0x1f,
+                        // negative ones
+                        -1, -2, -3, 4,
+                        -5, -6
                 });
         assertEndiannessAgnosticTransfer(bufferSupplier.get().order(LITTLE_ENDIAN));
         assertEndiannessAgnosticTransfer(bufferSupplier.get().order(BIG_ENDIAN));
@@ -113,7 +116,14 @@ public class WebSocketEndiannessTest {
     private static void assertSuccessfulMasking(ByteOrder srcOrder, ByteOrder dstOrder) {
 
         // Create the masker
-        Frame.Masker masker = new Frame.Masker().setMask(0x0A0B0C0D);
+        Frame.Masker masker = new Frame.Masker()
+                // `0xB0` and `0xD0` is used instead of `0x0B` and `0x0D` to cover the negative `byte` range:
+                //
+                //     (byte) 0x0A ->  10
+                //     (byte) 0xB0 -> -80
+                //     (byte) 0x0C ->  12
+                //     (byte) 0xD0 -> -48
+                .setMask(0x0AB00CD0);
 
         // Perform dummy masking to advance `Frame::offset` 1 byte, and effectively make it non-zero.
         // A non-zero `Frame::offset` will trigger `Frame::initVectorMask` invocation.
@@ -124,11 +134,16 @@ public class WebSocketEndiannessTest {
                 .wrap(new byte[]{
                         // `initVectorMask` will mask 3 bytes to position the `offset` back to 0.
                         // It is 3 bytes, because of the 1 byte dummy advancement above.
-                        0x1, 0x2, 0x3,
+                        -0x1, -0x2, 0x3,
                         // `applyVectorMask` will make a single 8-byte pass
-                        0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8,
-                        // `applyPlainMask` will mask 1 byte
-                        0x1
+                        0x1, 0x2, 0x3, 0x4, -0x5, 0x6, -0x7, -0x8,
+                        // `applyPlainMask` will mask 3 bytes
+                        0x1, -0x2, -0x3
+                        // Note minus signs sprinkled above to cover the negative `byte` range in a certain structure:
+                        // Some will get masked with a positive number, some with a negative.
+                        // For instance, for `applyPlainMask`:
+                        // - `0x1` will be masked with `0xA`
+                        // - `-0x2` will be masked with `0xB0`
                 })
                 .order(srcOrder);
         ByteBuffer dst = ByteBuffer.allocate(src.capacity()).order(dstOrder);
@@ -139,20 +154,22 @@ public class WebSocketEndiannessTest {
                 new byte[]{
                         // 3 bytes for `initVectorMask`.
                         // Remember 0xA is consumed by the initial dummy masking.
-                        0x1 ^ 0xB,
-                        0x2 ^ 0xC,
-                        0x3 ^ 0xD,
+                        (byte) (-0x1 ^ 0xB0),
+                        -0x2 ^ 0xC,
+                        (byte) (0x3 ^ 0xD0),
                         // 8 bytes for `applyVectorMask`
                         0x1 ^ 0xA,
-                        0x2 ^ 0xB,
+                        (byte) (0x2 ^ 0xB0),
                         0x3 ^ 0xC,
-                        0x4 ^ 0xD,
-                        0x5 ^ 0xA,
-                        0x6 ^ 0xB,
-                        0x7 ^ 0xC,
-                        0x8 ^ 0xD,
-                        // 1 byte for `applyPlainMask`
-                        0x1 ^ 0xA
+                        (byte) (0x4 ^ 0xD0),
+                        -0x5 ^ 0xA,
+                        (byte) (0x6 ^ 0xB0),
+                        -0x7 ^ 0xC,
+                        (byte) (-0x8 ^ 0xD0),
+                        // 3 bytes for `applyPlainMask`
+                        0x1 ^ 0xA,
+                        (byte) (-0x2 ^ 0xB0),
+                        -0x3 ^ 0xC
                 },
                 dst.array());
 
