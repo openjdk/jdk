@@ -135,6 +135,10 @@ public class CK_MECHANISM {
         init(mechanism, params);
     }
 
+    public CK_MECHANISM(long mechanism, CK_KEY_EXTRACT_FROM_KEY params) {
+        init(mechanism, params);
+    }
+
     public CK_MECHANISM(long mechanism, CK_ECDH1_DERIVE_PARAMS params) {
         init(mechanism, params);
     }

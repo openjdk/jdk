@@ -875,6 +875,40 @@ cleanup:
     return NULL;
 }
 
+CK_EXTRACT_PARAMS_PTR
+jKeyExtractKeyFromKeyToExtractKeyFromKeyPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
+{
+    CK_EXTRACT_PARAMS_PTR ckParamPtr = NULL;
+    jclass jKeyDerivationStringDataClass;
+    jfieldID fieldID;
+    jint jpData;
+
+    if (pLength != NULL) {
+        *pLength = 0L;
+    }
+
+    jKeyDerivationStringDataClass = (*env)->FindClass(env, CLASS_KEY_EXTRACT_FROM_KEY);
+    if (jKeyDerivationStringDataClass == NULL) {
+        return NULL;
+    }
+    fieldID = (*env)->GetFieldID(env, jKeyDerivationStringDataClass, "fromBit", "I");
+    if (fieldID == NULL) {
+        return NULL;
+    }
+    jpData = (*env)->GetIntField(env, jParam, fieldID);
+    ckParamPtr = calloc(1, sizeof(CK_EXTRACT_PARAMS));
+    if (ckParamPtr == NULL) {
+        p11ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
+    *ckParamPtr = jpData;
+
+    if (pLength != NULL) {
+        *pLength = sizeof(CK_EXTRACT_PARAMS);
+    }
+    return ckParamPtr;
+}
+
 void keyMatParamToCKKeyMatParam(JNIEnv *env, jobject jParam,
         jclass jKeyMatParamClass,
         CK_ULONG* cKKeyMatParamUlMacSizeInBits,
@@ -1648,6 +1682,10 @@ CK_VOID_PTR jMechParamToCKMechParamPtrSlow(JNIEnv *env, jobject jParam,
         case CKM_CONCATENATE_BASE_AND_DATA:
         case CKM_CONCATENATE_DATA_AND_BASE:
             ckpParamPtr = jKeyDerivationStringDataToCKKeyDerivationStringDataPtr(env, jParam,
+                    ckpLength);
+            break;
+        case CKM_EXTRACT_KEY_FROM_KEY:
+            ckpParamPtr = jKeyExtractKeyFromKeyToExtractKeyFromKeyPtr(env, jParam,
                     ckpLength);
             break;
         case CKM_AES_CTR:
