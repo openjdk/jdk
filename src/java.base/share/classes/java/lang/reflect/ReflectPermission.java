@@ -38,7 +38,7 @@ package java.lang.reflect;
  *
  * @since 1.2
  */
-@Deprecated(forRemoval = true, since="25")
+@Deprecated(since="25", forRemoval=true)
 public final
 class ReflectPermission extends java.security.BasicPermission {
 

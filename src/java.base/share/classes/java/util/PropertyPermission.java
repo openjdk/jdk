@@ -70,7 +70,7 @@ import sun.security.util.SecurityConstants;
  * @serial exclude
  */
 
-@Deprecated(forRemoval = true, since="25")
+@Deprecated(since="25", forRemoval=true)
 public final class PropertyPermission extends BasicPermission {
 
     /**

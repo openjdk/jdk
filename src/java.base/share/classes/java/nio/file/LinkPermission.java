@@ -36,7 +36,7 @@ import java.security.BasicPermission;
  *
  * @since 1.7
  */
-@Deprecated(forRemoval = true, since="25")
+@Deprecated(since="25", forRemoval=true)
 public final class LinkPermission extends BasicPermission {
     @java.io.Serial
     static final long serialVersionUID = -1441492453772213220L;

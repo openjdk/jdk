@@ -83,7 +83,7 @@ import sun.security.util.SecurityConstants;
  * @serial exclude
  */
 
-@Deprecated(forRemoval = true, since="25")
+@Deprecated(since="25", forRemoval=true)
 @SuppressWarnings("removal")
 public final class FilePermission extends Permission implements Serializable {
 

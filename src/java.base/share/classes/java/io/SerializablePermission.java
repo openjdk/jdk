@@ -51,7 +51,7 @@ import java.util.StringTokenizer;
 
 /* code was borrowed originally from java.lang.RuntimePermission. */
 
-@Deprecated(forRemoval = true, since="25")
+@Deprecated(since="25", forRemoval=true)
 public final class SerializablePermission extends BasicPermission {
 
     @java.io.Serial
