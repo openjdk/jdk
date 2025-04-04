@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @bug 4943900
+ * @summary Tests that FileFilter combo box is shown in FileChooser
+ * @library /java/awt/regtesthelpers /test/lib
+ * @build PassFailJFrame jtreg.SkippedException
+ * @run main/manual bug4943900
+ */
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.io.File;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JPanel;
+import javax.swing.UIManager;
+import javax.swing.filechooser.FileFilter;
+import jtreg.SkippedException;
+
+public class bug4943900 {
+    private static final String INSTRUCTIONS = """
+        1. Click "Show FileChooser" button below, FileChooser dialog must
+           appear.
+
+        2. Ensure that there is a Filter combo box with these two items:
+         - Text Files (*.txt)  [must be selected when the dialog opens]
+         - All Files
+
+        3. Leave the "Text files" item selected and check that the
+        filter works: only *.txt files can appear in the files list
+        You can navigate directories in the FileChooser and find one
+        that contains some *.txt files to ensure they are shown in
+        the file list.
+
+        4. Try switching the filters and ensure that the file list
+        is updated properly.
+
+        If the FileFilter works correctly, press PASS else press FAIL.
+        """;
+
+    public static void main(String[] args) throws Exception {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            throw new SkippedException("LaF not supported", e);
+        }
+
+        PassFailJFrame.builder()
+                .title("bug4943900 Test Instructions")
+                .instructions(INSTRUCTIONS)
+                .rows(20)
+                .columns(65)
+                .splitUIBottom(bug4943900::createAndShowUI)
+                .build()
+                .awaitAndCheck();
+    }
+
+    public static JPanel createAndShowUI() {
+        JButton button = new JButton("Show JFileChooser");
+
+        button.addActionListener(e -> {
+            JFileChooser fc = new JFileChooser();
+            TextFileFilter filter = new TextFileFilter();
+            fc.setFileFilter(filter);
+            fc.showOpenDialog(null);
+        });
+
+        JPanel p = new JPanel();
+        p.setLayout(new BorderLayout());
+        p.setPreferredSize(new Dimension(200, 50));
+        p.add(button);
+        return p;
+    }
+
+    private static final class TextFileFilter extends FileFilter {
+        public boolean accept(File f) {
+            if (f != null) {
+                if (f.isDirectory()) {
+                    return true;
+                }
+                String extension = getExtension(f);
+                return extension != null && extension.equals("txt");
+            }
+            return false;
+        }
+
+        public String getDescription() {
+            return "Text Files (*.txt)";
+        }
+
+        public String getExtension(File f) {
+            if (f != null) {
+                String filename = f.getName();
+                int i = filename.lastIndexOf('.');
+                if (i > 0 && i < filename.length() - 1) {
+                    return filename.substring(i + 1).toLowerCase();
+                }
+            }
+            return null;
+        }
+    }
+}
