@@ -44,7 +44,7 @@ abstract class AbstractVector<E> extends Vector<E> {
     /**
      * The order of vector bytes when stored in natural,
      * array elements of the same lane type.
-     * This is the also the behavior of the
+     * This is also the behavior of the
      * VectorSupport load/store instructions.
      * If these instructions gain the capability to do
      * byte swapping on the fly, add a bit to those
@@ -302,8 +302,9 @@ abstract class AbstractVector<E> extends Vector<E> {
     Vector<F> convert(Conversion<E,F> conv, int part) {
         // Shape invariance is simple to implement.
         // It's part of the API because shape invariance
-        // is the default mode of operation, and shape
-        // shifting operations must advertise themselves.
+        // is the default mode of operation, and
+        // shape-shifting operations must advertise
+        // themselves.
         ConversionImpl<E,F> c = (ConversionImpl<E,F>) conv;
         @SuppressWarnings("unchecked")
         VectorSpecies<F> rsp = (VectorSpecies<F>)

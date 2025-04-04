@@ -75,9 +75,6 @@ endif
 
 # This is the JDK that we will test
 JDK_UNDER_TEST := $(JDK_IMAGE_DIR)
-# The JDK used to compile jtreg test code. By default it is the same as
-# JDK_UNDER_TEST.
-JDK_FOR_COMPILE := $(JDK_IMAGE_DIR)
 
 TEST_RESULTS_DIR := $(OUTPUTDIR)/test-results
 TEST_SUPPORT_DIR := $(OUTPUTDIR)/test-support
@@ -543,8 +540,8 @@ define SetupRunGtestTestBody
 	            print arr[0]; \
 	            found=1; \
 	          } \
-	          if (!found) { print 0; } \
-	      }' \
+	       } \
+	       END { if (!found) print 0; }' \
 	      $$($1_RESULT_FILE))) \
 	  $$(eval $1_FAILED := $$(shell $$(AWK) '/\[  FAILED  \] .* tests?, \
 	      listed below/ { print $$$$4 }' $$($1_RESULT_FILE))) \
@@ -732,14 +729,16 @@ endef
 #
 SetupAOT = $(NamedParamsMacroTemplate)
 define SetupAOTBody
-  $1_AOT_JDK_CONF := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotconf
-  $1_AOT_JDK_CACHE := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotcache
-  $1_AOT_JDK_LOG := $$($1_TEST_SUPPORT_DIR)/aot/TestSetupAOT.log
+  $1_AOT_JDK_OUTPUT_DIR := $$($1_TEST_SUPPORT_DIR)/aot
+  $1_AOT_JDK_CONF := $$($1_AOT_JDK_OUTPUT_DIR)/jdk.aotconf
+  $1_AOT_JDK_CACHE := $$($1_AOT_JDK_OUTPUT_DIR)/jdk.aotcache
+  $1_AOT_JDK_LOG := $$($1_AOT_JDK_OUTPUT_DIR)/TestSetupAOT.log
 
-  # We execute the training run with $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.class
+  # We execute the training run with the TestSetupAOT class from $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar
   # to touch a fair number of classes inside the JDK. Note that we can't specify a classpath,
   # or else the AOT cache cannot be used with jtreg test cases that use a different value
-  # for their classpaths. Instead, we run in the $(TEST_IMAGE_DIR)/setup_aot/ directory.
+  # for their classpaths. Instead, we cd in the $$($1_AOT_JDK_OUTPUT_DIR) directory,
+  # extract the TestSetupAOT.jar there, and run in that directory without specifying a classpath.
   # The "java" launcher will have an implicit classpath of ".", so it can pick up the TestSetupAOT
   # class from the JVM's current directory.
   #
@@ -748,19 +747,20 @@ define SetupAOTBody
   # only classes from the JDK.
 
   $$($1_AOT_JDK_CACHE): $$(JDK_IMAGE_DIR)/release
-	$$(call MakeDir, $$($1_TEST_SUPPORT_DIR)/aot)
+	$$(call MakeDir, $$($1_AOT_JDK_OUTPUT_DIR))
 
 	$$(call LogWarn, AOT: Create cache configuration) \
-	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot, ( \
-	    $(CD) $(TEST_IMAGE_DIR)/setup_aot; \
+	$$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
+            cd $$($1_AOT_JDK_OUTPUT_DIR); \
+	    $(JAR) --extract --file $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar; \
 	    $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
-	        -Xlog:cds,cds+class=debug:file=$$($1_AOT_JDK_CONF).log  -Xlog:cds*=error \
+	        -Xlog:class+load,cds,cds+class=debug:file=$$($1_AOT_JDK_CONF).log  -Xlog:cds*=error \
 	        -XX:AOTMode=record -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) \
-	        TestSetupAOT > $$($1_AOT_JDK_LOG) \
+	        TestSetupAOT $$($1_AOT_JDK_OUTPUT_DIR) > $$($1_AOT_JDK_LOG) \
 	))
 
 	$$(call LogWarn, AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
-	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot, ( \
+	$$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), ( \
 	    $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java \
 	        $$($1_VM_OPTIONS) -Xlog:cds,cds+class=debug:file=$$($1_AOT_JDK_CACHE).log -Xlog:cds*=error \
 	        -XX:ExtraSharedClassListFile=$(JDK_UNDER_TEST)/lib/classlist \
@@ -942,6 +942,11 @@ define SetupRunJtregTestBody
     $1_JTREG_BASIC_OPTIONS += -e:JIB_HOME=$$(JIB_HOME)
   endif
 
+  ifneq ($$(JDK_FOR_COMPILE), )
+    # Allow overriding the JDK used for compilation from the command line
+    $1_JTREG_BASIC_OPTIONS += -compilejdk:$$(JDK_FOR_COMPILE)
+  endif
+
   $1_JTREG_BASIC_OPTIONS += -e:TEST_IMAGE_DIR=$(TEST_IMAGE_DIR)
 
   $1_JTREG_BASIC_OPTIONS += -e:DOCS_JDK_IMAGE_DIR=$$(DOCS_JDK_IMAGE_DIR)
@@ -994,7 +999,6 @@ define SetupRunJtregTestBody
       $$(JTREG_JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
           -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
           $$($1_JTREG_BASIC_OPTIONS) \
-          -compilejdk:$$(JDK_FOR_COMPILE) \
           -testjdk:$$(JDK_UNDER_TEST) \
           -dir:$$(JTREG_TOPDIR) \
           -reportDir:$$($1_TEST_RESULTS_DIR) \

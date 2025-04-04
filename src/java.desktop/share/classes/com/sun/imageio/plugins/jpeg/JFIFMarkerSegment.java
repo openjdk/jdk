@@ -1243,7 +1243,7 @@ class JFIFMarkerSegment extends MarkerSegment {
             return retval;
         }
 
-        private static class ThumbnailReadListener
+        static class ThumbnailReadListener
             implements IIOReadProgressListener {
             JPEGImageReader reader = null;
             ThumbnailReadListener (JPEGImageReader reader) {

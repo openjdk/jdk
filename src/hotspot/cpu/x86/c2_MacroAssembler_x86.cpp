@@ -134,21 +134,19 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
   if (!is_stub) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
  #ifdef _LP64
-    if (BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
-      // We put the non-hot code of the nmethod entry barrier out-of-line in a stub.
-      Label dummy_slow_path;
-      Label dummy_continuation;
-      Label* slow_path = &dummy_slow_path;
-      Label* continuation = &dummy_continuation;
-      if (!Compile::current()->output()->in_scratch_emit_size()) {
-        // Use real labels from actual stub when not emitting code for the purpose of measuring its size
-        C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
-        Compile::current()->output()->add_stub(stub);
-        slow_path = &stub->entry();
-        continuation = &stub->continuation();
-      }
-      bs->nmethod_entry_barrier(this, slow_path, continuation);
+    // We put the non-hot code of the nmethod entry barrier out-of-line in a stub.
+    Label dummy_slow_path;
+    Label dummy_continuation;
+    Label* slow_path = &dummy_slow_path;
+    Label* continuation = &dummy_continuation;
+    if (!Compile::current()->output()->in_scratch_emit_size()) {
+      // Use real labels from actual stub when not emitting code for the purpose of measuring its size
+      C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+      Compile::current()->output()->add_stub(stub);
+      slow_path = &stub->entry();
+      continuation = &stub->continuation();
     }
+    bs->nmethod_entry_barrier(this, slow_path, continuation);
 #else
     // Don't bother with out-of-line nmethod entry barrier stub for x86_32.
     bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */);
@@ -414,8 +412,6 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // Despite our balanced locking property we still check that m->_owner == Self
   // as java routines or native JNI code called by this thread might
   // have released the lock.
-  // Refer to the comments in synchronizer.cpp for how we might encode extra
-  // state in _succ so we can avoid fetching EntryList|cxq.
   //
   // If there's no contention try a 1-0 exit.  That is, exit without
   // a costly MEMBAR or CAS.  See synchronizer.cpp for details on how
@@ -447,9 +443,8 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // StoreLoad achieves this.
   membar(StoreLoad);
 
-  // Check if the entry lists are empty (EntryList first - by convention).
-  movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-  orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
+  // Check if the entry_list is empty.
+  cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(entry_list)), NULL_WORD);
   jccb(Assembler::zero, LSuccess);    // If so we are done.
 
   // Check if there is a successor.
@@ -767,9 +762,8 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     }
     const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
     const Address recursions_address{monitor, ObjectMonitor::recursions_offset() - monitor_tag};
-    const Address cxq_address{monitor, ObjectMonitor::cxq_offset() - monitor_tag};
     const Address succ_address{monitor, ObjectMonitor::succ_offset() - monitor_tag};
-    const Address EntryList_address{monitor, ObjectMonitor::EntryList_offset() - monitor_tag};
+    const Address entry_list_address{monitor, ObjectMonitor::entry_list_offset() - monitor_tag};
     const Address owner_address{monitor, ObjectMonitor::owner_offset() - monitor_tag};
 
     Label recursive;
@@ -785,9 +779,8 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     // StoreLoad achieves this.
     membar(StoreLoad);
 
-    // Check if the entry lists are empty (EntryList first - by convention).
-    movptr(reg_rax, EntryList_address);
-    orptr(reg_rax, cxq_address);
+    // Check if the entry_list is empty.
+    cmpptr(entry_list_address, NULL_WORD);
     jccb(Assembler::zero, unlocked);    // If so we are done.
 
     // Check if there is a successor.
@@ -6687,8 +6680,6 @@ void C2_MacroAssembler::efp16sh(int opcode, XMMRegister dst, XMMRegister src1, X
     case Op_SubHF: vsubsh(dst, src1, src2); break;
     case Op_MulHF: vmulsh(dst, src1, src2); break;
     case Op_DivHF: vdivsh(dst, src1, src2); break;
-    case Op_MaxHF: vmaxsh(dst, src1, src2); break;
-    case Op_MinHF: vminsh(dst, src1, src2); break;
     default: assert(false, "%s", NodeClassNames[opcode]); break;
   }
 }
@@ -6862,7 +6853,7 @@ void C2_MacroAssembler::vpsign_extend_dq(BasicType elem_bt, XMMRegister dst, XMM
 
 void C2_MacroAssembler::vpgenmax_value(BasicType elem_bt, XMMRegister dst, XMMRegister allones, int vlen_enc, bool compute_allones) {
   if (compute_allones) {
-    if (vlen_enc == Assembler::AVX_512bit) {
+    if (VM_Version::supports_avx512vl() || vlen_enc == Assembler::AVX_512bit) {
       vpternlogd(allones, 0xff, allones, allones, vlen_enc);
     } else {
       vpcmpeqq(allones, allones, allones, vlen_enc);
@@ -6878,7 +6869,7 @@ void C2_MacroAssembler::vpgenmax_value(BasicType elem_bt, XMMRegister dst, XMMRe
 
 void C2_MacroAssembler::vpgenmin_value(BasicType elem_bt, XMMRegister dst, XMMRegister allones, int vlen_enc, bool compute_allones) {
   if (compute_allones) {
-    if (vlen_enc == Assembler::AVX_512bit) {
+    if (VM_Version::supports_avx512vl() || vlen_enc == Assembler::AVX_512bit) {
       vpternlogd(allones, 0xff, allones, allones, vlen_enc);
     } else {
       vpcmpeqq(allones, allones, allones, vlen_enc);
@@ -7096,5 +7087,50 @@ void C2_MacroAssembler::vector_saturating_op(int ideal_opc, BasicType elem_bt, X
     vector_saturating_unsigned_op(ideal_opc, elem_bt, dst, src1, src2, vlen_enc);
   } else {
     vector_saturating_op(ideal_opc, elem_bt, dst, src1, src2, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                          KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc) {
+  if (opcode == Op_MaxHF) {
+    // Move sign bits of src2 to mask register.
+    evpmovw2m(ktmp, src2, vlen_enc);
+    // xtmp1 = src2 < 0 ? src2 : src1
+    evpblendmw(xtmp1, ktmp, src1, src2, true, vlen_enc);
+    // xtmp2 = src2 < 0 ? ? src1 : src2
+    evpblendmw(xtmp2, ktmp, src2, src1, true, vlen_enc);
+    // Idea behind above swapping is to make seconds source operand a +ve value.
+    // As per instruction semantic, if the values being compared are both 0.0s (of either sign), the value in
+    // the second source operand is returned. If only one value is a NaN (SNaN or QNaN) for this instruction,
+    // the second source operand, either a NaN or a valid floating-point value, is returned
+    // dst = max(xtmp1, xtmp2)
+    vmaxsh(dst, xtmp1, xtmp2);
+    // isNaN = is_unordered_quiet(xtmp1)
+    evcmpsh(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q);
+    // Final result is same as first source if its a NaN value,
+    // in case second operand holds a NaN value then as per above semantics
+    // result is same as second operand.
+    Assembler::evmovdquw(dst, ktmp, xtmp1, true, vlen_enc);
+  } else {
+    assert(opcode == Op_MinHF, "");
+    // Move sign bits of src1 to mask register.
+    evpmovw2m(ktmp, src1, vlen_enc);
+    // xtmp1 = src1 < 0 ? src2 : src1
+    evpblendmw(xtmp1, ktmp, src1, src2, true, vlen_enc);
+    // xtmp2 = src1 < 0 ? src1 : src2
+    evpblendmw(xtmp2, ktmp, src2, src1, true, vlen_enc);
+    // Idea behind above swapping is to make seconds source operand a -ve value.
+    // As per instruction semantics, if the values being compared are both 0.0s (of either sign), the value in
+    // the second source operand is returned.
+    // If only one value is a NaN (SNaN or QNaN) for this instruction, the second source operand, either a NaN
+    // or a valid floating-point value, is written to the result.
+    // dst = min(xtmp1, xtmp2)
+    vminsh(dst, xtmp1, xtmp2);
+    // isNaN = is_unordered_quiet(xtmp1)
+    evcmpsh(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q);
+    // Final result is same as first source if its a NaN value,
+    // in case second operand holds a NaN value then as per above semantics
+    // result is same as second operand.
+    Assembler::evmovdquw(dst, ktmp, xtmp1, true, vlen_enc);
   }
 }

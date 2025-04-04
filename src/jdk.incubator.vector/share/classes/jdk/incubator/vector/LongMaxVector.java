@@ -511,6 +511,7 @@ final class LongMaxVector extends LongVector {
         return laneHelper(i);
     }
 
+    @ForceInline
     public long laneHelper(int i) {
         return (long) VectorSupport.extract(
                                 VCLASS, ETYPE, VLENGTH,
@@ -530,6 +531,7 @@ final class LongMaxVector extends LongVector {
         return withLaneHelper(i, e);
     }
 
+    @ForceInline
     public LongMaxVector withLaneHelper(int i, long e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
