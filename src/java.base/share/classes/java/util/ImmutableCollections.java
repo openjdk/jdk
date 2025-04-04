@@ -32,6 +32,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -685,6 +686,24 @@ class ImmutableCollections {
             }
             return array;
         }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void forEach(Consumer<? super E> action) {
+            action.accept(e0); // implicit null check
+            if (e1 != EMPTY) {
+                action.accept((E) e1);
+            }
+        }
+
+        @Override
+        public Spliterator<E> spliterator() {
+            if (e1 == EMPTY) {
+                return Collections.singletonSpliterator(e0);
+            } else {
+                return super.spliterator();
+            }
+        }
     }
 
     @jdk.internal.ValueBased
@@ -1007,6 +1026,26 @@ class ImmutableCollections {
             }
             return array;
         }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void forEach(Consumer<? super E> action) {
+            if (e1 == EMPTY) {
+                action.accept(e0); // implicit null check
+            } else {
+                action.accept(REVERSE ? (E)e1 : e0); // implicit null check
+                action.accept(REVERSE ? e0 : (E)e1);
+            }
+        }
+
+        @Override
+        public Spliterator<E> spliterator() {
+            if (e1 == EMPTY) {
+                return Collections.singletonSpliterator(e0);
+            } else {
+                return super.spliterator();
+            }
+        }
     }
 
 
@@ -1269,6 +1308,11 @@ class ImmutableCollections {
         @Override
         public int hashCode() {
             return k0.hashCode() ^ v0.hashCode();
+        }
+
+        @Override
+        public void forEach(BiConsumer<? super K, ? super V> action) {
+            action.accept(k0, v0); // implicit null check
         }
     }
 
