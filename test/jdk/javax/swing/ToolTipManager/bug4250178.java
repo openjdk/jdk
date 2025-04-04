@@ -21,7 +21,8 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @bug 4250178
  * @summary Tooltip in incorrect location on ToolBar
  * @library /java/awt/regtesthelpers
