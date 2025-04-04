@@ -73,7 +73,8 @@ public class bug4194862 {
             switch (retVal) {
                 case JOptionPane.YES_OPTION -> PassFailJFrame.forcePass();
                 case JOptionPane.NO_OPTION ->
-                        PassFailJFrame.forceFail("User pressed the NO button");
+                        PassFailJFrame.forceFail("JOptionPane isn't centered"
+                                + " within JInternalFrame \"Main\"");
             }
         });
         jInternalFrame.add(b);

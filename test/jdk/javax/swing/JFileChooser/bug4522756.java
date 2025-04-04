@@ -32,6 +32,7 @@
  */
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
@@ -69,7 +70,7 @@ public class bug4522756 {
         });
         JPanel p = new JPanel();
         p.setLayout(new BorderLayout());
-        p.setSize(200, 200);
+        p.setPreferredSize(new Dimension(200, 50));
         p.add(button);
         return p;
     }

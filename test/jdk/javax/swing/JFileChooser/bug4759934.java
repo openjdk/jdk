@@ -31,13 +31,10 @@
  * @run main bug4759934
  */
 
-import java.awt.Component;
 import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -52,6 +49,7 @@ public class bug4759934 {
 
     private static JButton frameBtn;
     private static JButton dialogBtn;
+
     public static void main(String[] args) throws Exception {
         try {
             Robot robot = new Robot();
@@ -71,14 +69,10 @@ public class bug4759934 {
             robot.mouseMove(dlgBtnLoc.x , dlgBtnLoc.y);
             robot.mousePress(MouseEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(MouseEvent.BUTTON1_DOWN_MASK);
-            robot.delay(1000);
+            robot.delay(500);
 
-            Rectangle jfcBounds = Util.invokeOnEDT(() ->
-                                        getComponentBounds(jfc));
-            robot.mouseMove(jfcBounds.x + jfcBounds.width - 50,
-                            jfcBounds.y + jfcBounds.height - 25);
-            robot.mousePress(MouseEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(MouseEvent.BUTTON1_DOWN_MASK);
+            robot.keyPress(KeyEvent.VK_ESCAPE);
+            robot.keyRelease(KeyEvent.VK_ESCAPE);
             robot.delay(500);
 
             SwingUtilities.invokeAndWait(() -> {
@@ -101,10 +95,8 @@ public class bug4759934 {
 
     private static void createTestUI() {
         fr = new JFrame("bug4759934 - JFrame");
-        fr.setLayout(new FlowLayout());
 
         frameBtn = new JButton("Show Dialog");
-        frameBtn.setActionCommand("Show Dialog");
         fr.add(frameBtn);
 
         frameBtn.addActionListener(e -> createDialog());
@@ -115,10 +107,8 @@ public class bug4759934 {
 
     private static void createDialog() {
         dlg = new JDialog(fr, "bug4759934 - JDialog");
-        dlg.setLayout(new FlowLayout());
 
         dialogBtn = new JButton("Show FileChooser");
-        dialogBtn.setActionCommand("Show FileChooser");
         dlg.add(dialogBtn);
 
         dialogBtn.addActionListener(e -> {
@@ -129,11 +119,5 @@ public class bug4759934 {
         dlg.setSize(300, 200);
         dlg.setLocation(fr.getX() + fr.getWidth() + 10, fr.getY());
         dlg.setVisible(true);
-    }
-
-    private static Rectangle getComponentBounds(Component component) {
-        Point locationOnScreen = component.getLocationOnScreen();
-        Dimension size = component.getSize();
-        return new Rectangle(locationOnScreen, size);
     }
 }
