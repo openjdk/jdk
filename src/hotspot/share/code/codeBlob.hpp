@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,18 +61,20 @@ enum class CodeBlobType {
 //   RuntimeStub         : Call to VM runtime methods
 //   SingletonBlob       : Super-class for all blobs that exist in only one instance
 //    DeoptimizationBlob : Used for deoptimization
-//    ExceptionBlob      : Used for stack unrolling
 //    SafepointBlob      : Used to handle illegal instruction exceptions
+//    ExceptionBlob      : Used for stack unrolling
 //    UncommonTrapBlob   : Used to handle uncommon traps
 //   UpcallStub  : Used for upcalls from native code
 //
 //
-// Layout : continuous in the CodeCache
+// Layout in the CodeCache:
 //   - header
-//   - relocation
 //   - content space
 //     - instruction space
-//   - data space
+// Outside of the CodeCache:
+//   - mutable_data
+//     - relocation info
+//     - additional data for subclasses
 
 enum class CodeBlobKind : u1 {
   None,
@@ -80,12 +82,14 @@ enum class CodeBlobKind : u1 {
   Buffer,
   Adapter,
   Vtable,
-  MH_Adapter,
-  Runtime_Stub,
+  MHAdapter,
+  RuntimeStub,
   Deoptimization,
-  Exception,
   Safepoint,
-  Uncommon_Trap,
+#ifdef COMPILER2
+  Exception,
+  UncommonTrap,
+#endif
   Upcall,
   Number_Of_Kinds
 };
@@ -102,14 +106,15 @@ protected:
   // order fields from large to small to minimize padding between fields
   ImmutableOopMapSet* _oop_maps;   // OopMap for this CodeBlob
   const char*         _name;
+  address             _mutable_data;
 
   int      _size;                  // total size of CodeBlob in bytes
   int      _relocation_size;       // size of relocation (could be bigger than 64Kb)
   int      _content_offset;        // offset to where content region begins (this includes consts, insts, stubs)
   int      _code_offset;           // offset to where instructions region begins (this includes insts, stubs)
-
   int      _data_offset;           // offset to where data region begins
   int      _frame_size;            // size of stack frame in words (NOT slots. On x64 these are 64bit words)
+  int      _mutable_data_size;
 
   S390_ONLY(int _ctable_offset;)
 
@@ -128,8 +133,20 @@ protected:
   DbgStrings _dbg_strings;
 #endif
 
+  void print_on_impl(outputStream* st) const;
+  void print_value_on_impl(outputStream* st) const;
+
+  class Vptr {
+   public:
+    virtual void print_on(const CodeBlob* instance, outputStream* st) const = 0;
+    virtual void print_value_on(const CodeBlob* instance, outputStream* st) const = 0;
+  };
+
+  const Vptr* vptr() const;
+
   CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
-           int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
+           int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
+           int mutable_data_size);
 
   // Simple CodeBlob used for simple BufferBlob.
   CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size);
@@ -138,7 +155,7 @@ protected:
 
 public:
 
-  virtual ~CodeBlob() {
+  ~CodeBlob() {
     assert(_oop_maps == nullptr, "Not flushed");
   }
 
@@ -152,40 +169,50 @@ public:
   // Typing
   bool is_nmethod() const                     { return _kind == CodeBlobKind::Nmethod; }
   bool is_buffer_blob() const                 { return _kind == CodeBlobKind::Buffer; }
-  bool is_runtime_stub() const                { return _kind == CodeBlobKind::Runtime_Stub; }
+  bool is_runtime_stub() const                { return _kind == CodeBlobKind::RuntimeStub; }
   bool is_deoptimization_stub() const         { return _kind == CodeBlobKind::Deoptimization; }
-  bool is_uncommon_trap_stub() const          { return _kind == CodeBlobKind::Uncommon_Trap; }
+#ifdef COMPILER2
+  bool is_uncommon_trap_stub() const          { return _kind == CodeBlobKind::UncommonTrap; }
   bool is_exception_stub() const              { return _kind == CodeBlobKind::Exception; }
+#else
+  bool is_uncommon_trap_stub() const          { return false; }
+  bool is_exception_stub() const              { return false; }
+#endif
   bool is_safepoint_stub() const              { return _kind == CodeBlobKind::Safepoint; }
   bool is_adapter_blob() const                { return _kind == CodeBlobKind::Adapter; }
   bool is_vtable_blob() const                 { return _kind == CodeBlobKind::Vtable; }
-  bool is_method_handles_adapter_blob() const { return _kind == CodeBlobKind::MH_Adapter; }
+  bool is_method_handles_adapter_blob() const { return _kind == CodeBlobKind::MHAdapter; }
   bool is_upcall_stub() const                 { return _kind == CodeBlobKind::Upcall; }
 
   // Casting
-  nmethod* as_nmethod_or_null()               { return is_nmethod() ? (nmethod*) this : nullptr; }
-  nmethod* as_nmethod()                       { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
-  CodeBlob* as_codeblob_or_null() const       { return (CodeBlob*) this; }
+  nmethod* as_nmethod_or_null() const         { return is_nmethod() ? (nmethod*) this : nullptr; }
+  nmethod* as_nmethod() const                 { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
+  CodeBlob* as_codeblob() const               { return (CodeBlob*) this; }
   UpcallStub* as_upcall_stub() const          { assert(is_upcall_stub(), "must be upcall stub"); return (UpcallStub*) this; }
   RuntimeStub* as_runtime_stub() const        { assert(is_runtime_stub(), "must be runtime blob"); return (RuntimeStub*) this; }
 
   // Boundaries
   address    header_begin() const             { return (address)    this; }
   address    header_end() const               { return ((address)   this) + _header_size; }
-  relocInfo* relocation_begin() const         { return (relocInfo*) header_end(); }
-  relocInfo* relocation_end() const           { return (relocInfo*)(header_end()   + _relocation_size); }
   address    content_begin() const            { return (address)    header_begin() + _content_offset; }
   address    content_end() const              { return (address)    header_begin() + _data_offset; }
   address    code_begin() const               { return (address)    header_begin() + _code_offset; }
-  // code_end == content_end is true for all types of blobs for now, it is also checked in the constructor
   address    code_end() const                 { return (address)    header_begin() + _data_offset; }
   address    data_begin() const               { return (address)    header_begin() + _data_offset; }
   address    data_end() const                 { return (address)    header_begin() + _size; }
+  address    blob_end() const                 { return (address)    header_begin() + _size; }
+  // code_end == content_end is true for all types of blobs for now, it is also checked in the constructor
+
+  int mutable_data_size() const               { return _mutable_data_size; }
+  address mutable_data_begin() const          { return _mutable_data; }
+  address mutable_data_end() const            { return _mutable_data + _mutable_data_size; }
+
+  relocInfo* relocation_begin() const         { return (relocInfo*)_mutable_data; }
+  relocInfo* relocation_end() const           { return (relocInfo*)((address)relocation_begin() + _relocation_size); }
 
   // Offsets
   int content_offset() const                  { return _content_offset; }
   int code_offset() const                     { return _code_offset; }
-  int data_offset() const                     { return _data_offset; }
 
   // This field holds the beginning of the const section in the old code buffer.
   // It is needed to fix relocations of pc-relative loads when resizing the
@@ -203,11 +230,11 @@ public:
   // Only used from CodeCache::free_unused_tail() after the Interpreter blob was trimmed
   void adjust_size(size_t used) {
     _size = (int)used;
-    _data_offset = (int)used;
+    _data_offset = _size;
   }
 
   // Containment
-  bool blob_contains(address addr) const         { return header_begin()       <= addr && addr < data_end();       }
+  bool blob_contains(address addr) const         { return header_begin()       <= addr && addr < blob_end();       }
   bool code_contains(address addr) const         { return code_begin()         <= addr && addr < code_end();       }
   bool contains(address addr) const              { return content_begin()      <= addr && addr < content_end();    }
   bool is_frame_complete_at(address addr) const  { return _frame_complete_offset != CodeOffsets::frame_never_safe &&
@@ -233,21 +260,16 @@ public:
   void set_name(const char* name)                { _name = name; }
 
   // Debugging
-  virtual void verify() = 0;
-  virtual void print() const;
-  virtual void print_on(outputStream* st) const;
-  virtual void print_value_on(outputStream* st) const;
+  void verify();
+  void print() const;
+  void print_on(outputStream* st) const;
+  void print_value_on(outputStream* st) const;
+
   void dump_for_addr(address addr, outputStream* st, bool verbose) const;
   void print_code_on(outputStream* st);
 
   // Print to stream, any comments associated with offset.
-  virtual void print_block_comment(outputStream* stream, address block_begin) const {
-#ifndef PRODUCT
-    ptrdiff_t offset = block_begin - code_begin();
-    assert(offset >= 0, "Expecting non-negative offset!");
-    _asm_remarks.print(uint(offset), stream);
-#endif
-  }
+  void print_block_comment(outputStream* stream, address block_begin) const;
 
 #ifndef PRODUCT
   AsmRemarks &asm_remarks() { return _asm_remarks; }
@@ -290,6 +312,9 @@ class RuntimeBlob : public CodeBlob {
 
   // Deal with Disassembler, VTune, Forte, JvmtiExport, MemoryService.
   static void trace_new_stub(RuntimeBlob* blob, const char* name1, const char* name2 = "");
+
+  class Vptr : public CodeBlob::Vptr {
+  };
 };
 
 class WhiteBox;
@@ -318,11 +343,19 @@ class BufferBlob: public RuntimeBlob {
 
   static void free(BufferBlob* buf);
 
-  // Verification support
-  void verify() override;
+  void print_on_impl(outputStream* st) const;
+  void print_value_on_impl(outputStream* st) const;
 
-  void print_on(outputStream* st) const override;
-  void print_value_on(outputStream* st) const override;
+  class Vptr : public RuntimeBlob::Vptr {
+    void print_on(const CodeBlob* instance, outputStream* st) const override {
+      ((const BufferBlob*)instance)->print_on_impl(st);
+    }
+    void print_value_on(const CodeBlob* instance, outputStream* st) const override {
+      ((const BufferBlob*)instance)->print_value_on_impl(st);
+    }
+  };
+
+  static const Vptr _vpntr;
 };
 
 
@@ -355,7 +388,7 @@ public:
 
 class MethodHandlesAdapterBlob: public BufferBlob {
 private:
-  MethodHandlesAdapterBlob(int size): BufferBlob("MethodHandles adapters", CodeBlobKind::MH_Adapter, size) {}
+  MethodHandlesAdapterBlob(int size): BufferBlob("MethodHandles adapters", CodeBlobKind::MHAdapter, size) {}
 
 public:
   // Creation
@@ -396,13 +429,21 @@ class RuntimeStub: public RuntimeBlob {
 
   static void free(RuntimeStub* stub) { RuntimeBlob::free(stub); }
 
-  address entry_point() const                    { return code_begin(); }
+  address entry_point() const         { return code_begin(); }
 
-  // Verification support
-  void verify() override;
+  void print_on_impl(outputStream* st) const;
+  void print_value_on_impl(outputStream* st) const;
 
-  void print_on(outputStream* st) const override;
-  void print_value_on(outputStream* st) const override;
+  class Vptr : public RuntimeBlob::Vptr {
+    void print_on(const CodeBlob* instance, outputStream* st) const override {
+      instance->as_runtime_stub()->print_on_impl(st);
+    }
+    void print_value_on(const CodeBlob* instance, outputStream* st) const override {
+      instance->as_runtime_stub()->print_value_on_impl(st);
+    }
+  };
+
+  static const Vptr _vpntr;
 };
 
 
@@ -413,7 +454,7 @@ class SingletonBlob: public RuntimeBlob {
   friend class VMStructs;
 
  protected:
-  void* operator new(size_t s, unsigned size) throw();
+  void* operator new(size_t s, unsigned size, bool alloc_fail_is_fatal=true) throw();
 
  public:
    SingletonBlob(
@@ -430,11 +471,19 @@ class SingletonBlob: public RuntimeBlob {
 
   address entry_point()                          { return code_begin(); }
 
-  // Verification support
-  void verify() override; // does nothing
+  void print_on_impl(outputStream* st) const;
+  void print_value_on_impl(outputStream* st) const;
 
-  void print_on(outputStream* st) const override;
-  void print_value_on(outputStream* st) const override;
+  class Vptr : public RuntimeBlob::Vptr {
+    void print_on(const CodeBlob* instance, outputStream* st) const override {
+      ((const SingletonBlob*)instance)->print_on_impl(st);
+    }
+    void print_value_on(const CodeBlob* instance, outputStream* st) const override {
+      ((const SingletonBlob*)instance)->print_value_on_impl(st);
+    }
+  };
+
+  static const Vptr _vpntr;
 };
 
 
@@ -479,9 +528,6 @@ class DeoptimizationBlob: public SingletonBlob {
     int         frame_size
   );
 
-  // Printing
-  void print_value_on(outputStream* st) const override;
-
   address unpack() const                         { return code_begin() + _unpack_offset;           }
   address unpack_with_exception() const          { return code_begin() + _unpack_with_exception;   }
   address unpack_with_reexecution() const        { return code_begin() + _unpack_with_reexecution; }
@@ -511,6 +557,16 @@ class DeoptimizationBlob: public SingletonBlob {
   }
   address implicit_exception_uncommon_trap() const { return code_begin() + _implicit_exception_uncommon_trap_offset; }
 #endif // INCLUDE_JVMCI
+
+  void print_value_on_impl(outputStream* st) const;
+
+  class Vptr : public SingletonBlob::Vptr {
+    void print_value_on(const CodeBlob* instance, outputStream* st) const override {
+      ((const DeoptimizationBlob*)instance)->print_value_on_impl(st);
+    }
+  };
+
+  static const Vptr _vpntr;
 };
 
 
@@ -623,13 +679,22 @@ class UpcallStub: public RuntimeBlob {
 
   JavaFrameAnchor* jfa_for_frame(const frame& frame) const;
 
-  // GC/Verification support
+  // GC support
   void oops_do(OopClosure* f, const frame& frame);
-  void verify() override;
 
-  // Misc.
-  void print_on(outputStream* st) const override;
-  void print_value_on(outputStream* st) const override;
+  void print_on_impl(outputStream* st) const;
+  void print_value_on_impl(outputStream* st) const;
+
+  class Vptr : public RuntimeBlob::Vptr {
+    void print_on(const CodeBlob* instance, outputStream* st) const override {
+      instance->as_upcall_stub()->print_on_impl(st);
+    }
+    void print_value_on(const CodeBlob* instance, outputStream* st) const override {
+      instance->as_upcall_stub()->print_value_on_impl(st);
+    }
+  };
+
+  static const Vptr _vpntr;
 };
 
 #endif // SHARE_CODE_CODEBLOB_HPP

@@ -39,12 +39,6 @@ static size_t address_space_limit() {
   return SIZE_MAX;
 }
 
-size_t ZAddressSpaceLimit::mark_stack() {
-  // Allow mark stacks to occupy 10% of the address space
-  const size_t limit = address_space_limit() / 10;
-  return align_up(limit, ZMarkStackSpaceExpandSize);
-}
-
 size_t ZAddressSpaceLimit::heap() {
   // Allow the heap to occupy 50% of the address space
   const size_t limit = address_space_limit() / MaxVirtMemFraction;

@@ -23,19 +23,14 @@
 # questions.
 #
 
-# This makefile creates a jdk image overlaid with statically linked core
-# libraries.
-
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
-
-include CopyFiles.gmk
+include MakeFileStart.gmk
 
 ################################################################################
+# This makefile creates a jdk image overlaid with statically linked core
+# libraries.
+################################################################################
 
-TARGETS :=
+include CopyFiles.gmk
 
 $(eval $(call SetupCopyFiles, COPY_JDK_IMG, \
       SRC := $(JDK_IMAGE_DIR)/, \
@@ -54,6 +49,4 @@ TARGETS += $(COPY_STATIC_LIBS)
 
 ################################################################################
 
-all: $(TARGETS)
-
-.PHONY: all
+include MakeFileEnd.gmk

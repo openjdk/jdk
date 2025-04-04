@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -435,7 +435,7 @@ static char *matchJavaTZ(const char *java_home_dir, char *tzName)
     strcpy(mapFileName, java_home_dir);
     strcat(mapFileName, MAPPINGS_FILE);
 
-    if ((fp = fopen(mapFileName, "r")) == NULL) {
+    if (fopen_s(&fp, mapFileName, "rt") != 0) {
         jio_fprintf(stderr, "can't open %s.\n", mapFileName);
         free((void *) mapFileName);
         return NULL;

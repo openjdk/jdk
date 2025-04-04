@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
+ * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -508,8 +508,16 @@ Node *Node::clone() const {
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
     n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
   }
+  if (for_merge_stores_igvn()) {
+    // Don't add cloned node to Compile::_for_merge_stores_igvn list automatically.
+    // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
+    n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
+  }
   if (n->is_ParsePredicate()) {
     C->add_parse_predicate(n->as_ParsePredicate());
+  }
+  if (n->is_OpaqueTemplateAssertionPredicate()) {
+    C->add_template_assertion_predicate_opaque(n->as_OpaqueTemplateAssertionPredicate());
   }
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -607,13 +615,16 @@ void Node::destruct(PhaseValues* phase) {
     compile->remove_expensive_node(this);
   }
   if (is_OpaqueTemplateAssertionPredicate()) {
-    compile->remove_template_assertion_predicate_opaq(this);
+    compile->remove_template_assertion_predicate_opaque(as_OpaqueTemplateAssertionPredicate());
   }
   if (is_ParsePredicate()) {
     compile->remove_parse_predicate(as_ParsePredicate());
   }
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
+  }
+  if (for_merge_stores_igvn()) {
+    compile->remove_from_merge_stores_igvn(this);
   }
 
   if (is_SafePoint()) {
@@ -664,55 +675,45 @@ void Node::destruct(PhaseValues* phase) {
   }
 }
 
-//------------------------------grow-------------------------------------------
-// Grow the input array, making space for more edges
-void Node::grow(uint len) {
+// Resize input or output array to grow it to the next larger power-of-2 bigger
+// than len.
+void Node::resize_array(Node**& array, node_idx_t& max_size, uint len, bool needs_clearing) {
   Arena* arena = Compile::current()->node_arena();
-  uint new_max = _max;
-  if( new_max == 0 ) {
-    _max = 4;
-    _in = (Node**)arena->Amalloc(4*sizeof(Node*));
-    Node** to = _in;
-    to[0] = nullptr;
-    to[1] = nullptr;
-    to[2] = nullptr;
-    to[3] = nullptr;
+  uint new_max = max_size;
+  if (new_max == 0) {
+    max_size = 4;
+    array = (Node**)arena->Amalloc(4 * sizeof(Node*));
+    if (needs_clearing) {
+      array[0] = nullptr;
+      array[1] = nullptr;
+      array[2] = nullptr;
+      array[3] = nullptr;
+    }
     return;
   }
   new_max = next_power_of_2(len);
-  // Trimming to limit allows a uint8 to handle up to 255 edges.
-  // Previously I was using only powers-of-2 which peaked at 128 edges.
-  //if( new_max >= limit ) new_max = limit-1;
-  _in = (Node**)arena->Arealloc(_in, _max*sizeof(Node*), new_max*sizeof(Node*));
-  Copy::zero_to_bytes(&_in[_max], (new_max-_max)*sizeof(Node*)); // null all new space
-  _max = new_max;               // Record new max length
+  assert(needs_clearing || (array != nullptr && array != NO_OUT_ARRAY), "out must have sensible value");
+  array = (Node**)arena->Arealloc(array, max_size * sizeof(Node*), new_max * sizeof(Node*));
+  if (needs_clearing) {
+    Copy::zero_to_bytes(&array[max_size], (new_max - max_size) * sizeof(Node*)); // null all new space
+  }
+  max_size = new_max;               // Record new max length
   // This assertion makes sure that Node::_max is wide enough to
   // represent the numerical value of new_max.
-  assert(_max == new_max && _max > len, "int width of _max is too small");
+  assert(max_size > len, "int width of _max or _outmax is too small");
+}
+
+//------------------------------grow-------------------------------------------
+// Grow the input array, making space for more edges
+void Node::grow(uint len) {
+  resize_array(_in, _max, len, true);
 }
 
 //-----------------------------out_grow----------------------------------------
 // Grow the input array, making space for more edges
-void Node::out_grow( uint len ) {
+void Node::out_grow(uint len) {
   assert(!is_top(), "cannot grow a top node's out array");
-  Arena* arena = Compile::current()->node_arena();
-  uint new_max = _outmax;
-  if( new_max == 0 ) {
-    _outmax = 4;
-    _out = (Node **)arena->Amalloc(4*sizeof(Node*));
-    return;
-  }
-  new_max = next_power_of_2(len);
-  // Trimming to limit allows a uint8 to handle up to 255 edges.
-  // Previously I was using only powers-of-2 which peaked at 128 edges.
-  //if( new_max >= limit ) new_max = limit-1;
-  assert(_out != nullptr && _out != NO_OUT_ARRAY, "out must have sensible value");
-  _out = (Node**)arena->Arealloc(_out,_outmax*sizeof(Node*),new_max*sizeof(Node*));
-  //Copy::zero_to_bytes(&_out[_outmax], (new_max-_outmax)*sizeof(Node*)); // null all new space
-  _outmax = new_max;               // Record new max length
-  // This assertion makes sure that Node::_max is wide enough to
-  // represent the numerical value of new_max.
-  assert(_outmax == new_max && _outmax > len, "int width of _outmax is too small");
+  resize_array(_out, _outmax, len, false);
 }
 
 #ifdef ASSERT
@@ -1452,6 +1453,8 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
             // The restriction (outcnt() <= 2) is the same as in set_req_X()
             // and remove_globally_dead_node().
             igvn->add_users_to_worklist( n );
+          } else if (dead->is_data_proj_of_pure_function(n)) {
+            igvn->_worklist.push(n);
           } else {
             BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn, n);
           }
@@ -1589,6 +1592,13 @@ jdouble Node::getd() const {
 jfloat Node::getf() const {
   assert( Opcode() == Op_ConF, "" );
   return ((ConFNode*)this)->type()->is_float_constant()->getf();
+}
+
+// Get a half float constant from a ConstNode.
+// Returns the constant if it is a float ConstNode
+jshort Node::geth() const {
+  assert( Opcode() == Op_ConH, "" );
+  return ((ConHNode*)this)->type()->is_half_float_constant()->geth();
 }
 
 #ifndef PRODUCT
@@ -2418,9 +2428,9 @@ void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   bool is_new = C->node_arena()->contains(this);
   if (align) { // print prefix empty spaces$
     // +1 for leading digit, +1 for "o"
-    uint max_width = static_cast<uint>(log10(static_cast<double>(C->unique()))) + 2;
+    uint max_width = (C->unique() == 0 ? 0 : static_cast<uint>(log10(static_cast<double>(C->unique())))) + 2;
     // +1 for leading digit, maybe +1 for "o"
-    uint width = static_cast<uint>(log10(static_cast<double>(_idx))) + 1 + (is_new ? 0 : 1);
+    uint width = (_idx == 0 ? 0 : static_cast<uint>(log10(static_cast<double>(_idx)))) + 1 + (is_new ? 0 : 1);
     while (max_width > width) {
       st->print(" ");
       width++;
@@ -2923,6 +2933,25 @@ bool Node::is_dead_loop_safe() const {
 
 bool Node::is_div_or_mod(BasicType bt) const { return Opcode() == Op_Div(bt) || Opcode() == Op_Mod(bt) ||
                                                       Opcode() == Op_UDiv(bt) || Opcode() == Op_UMod(bt); }
+
+bool Node::is_pure_function() const {
+  switch (Opcode()) {
+  case Op_ModD:
+  case Op_ModF:
+    return true;
+  default:
+    return false;
+  }
+}
+
+// `maybe_pure_function` is assumed to be the input of `this`. This is a bit redundant,
+// but we already have and need maybe_pure_function in all the call sites, so
+// it makes it obvious that the `maybe_pure_function` is the same node as in the caller,
+// while it takes more thinking to realize that a locally computed in(0) must be equal to
+// the local in the caller.
+bool Node::is_data_proj_of_pure_function(const Node* maybe_pure_function) const {
+  return Opcode() == Op_Proj && as_Proj()->_con == TypeFunc::Parms && maybe_pure_function->is_pure_function();
+}
 
 //=============================================================================
 //------------------------------yank-------------------------------------------

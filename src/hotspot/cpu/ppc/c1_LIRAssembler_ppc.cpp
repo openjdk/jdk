@@ -1203,7 +1203,7 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
 }
 
 
-void LIR_Assembler::reg2stack(LIR_Opr from_reg, LIR_Opr dest, BasicType type, bool pop_fpu_stack) {
+void LIR_Assembler::reg2stack(LIR_Opr from_reg, LIR_Opr dest, BasicType type) {
   Address addr;
   if (dest->is_single_word()) {
     addr = frame_map()->address_for_slot(dest->single_stack_ix());
@@ -1246,7 +1246,7 @@ void LIR_Assembler::reg2reg(LIR_Opr from_reg, LIR_Opr to_reg) {
 
 
 void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
-                            LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack,
+                            LIR_PatchCode patch_code, CodeEmitInfo* info,
                             bool wide) {
   assert(type != T_METADATA, "store of metadata ptr not supported");
   LIR_Address* addr = dest->as_address_ptr();
@@ -1617,7 +1617,7 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
 
 
 void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest,
-                             CodeEmitInfo* info, bool pop_fpu_stack) {
+                             CodeEmitInfo* info) {
   assert(info == nullptr, "unused on this code path");
   assert(left->is_register(), "wrong items state");
   assert(dest->is_register(), "wrong items state");
@@ -2839,25 +2839,28 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {
 
 void LIR_Assembler::rt_call(LIR_Opr result, address dest,
                             const LIR_OprList* args, LIR_Opr tmp, CodeEmitInfo* info) {
-  // Stubs: Called via rt_call, but dest is a stub address (no function descriptor).
+  // Stubs: Called via rt_call, but dest is a stub address (no FunctionDescriptor).
   if (dest == Runtime1::entry_for(C1StubId::register_finalizer_id) ||
-      dest == Runtime1::entry_for(C1StubId::new_multi_array_id   )) {
+      dest == Runtime1::entry_for(C1StubId::new_multi_array_id   ) ||
+      dest == Runtime1::entry_for(C1StubId::is_instance_of_id    )) {
+    assert(CodeCache::contains(dest), "simplified call is only for special C1 stubs");
     //__ load_const_optimized(R0, dest);
     __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(dest));
     __ mtctr(R0);
     __ bctrl();
-    assert(info != nullptr, "sanity");
-    add_call_info_here(info);
-    __ post_call_nop();
+    if (info != nullptr) {
+      add_call_info_here(info);
+      __ post_call_nop();
+    }
     return;
   }
 
   __ call_c(dest, relocInfo::runtime_call_type);
+  assert(__ last_calls_return_pc() == __ pc(), "pcn not at return pc");
   if (info != nullptr) {
     add_call_info_here(info);
+    __ post_call_nop();
   }
-  assert(__ last_calls_return_pc() == __ pc(), "pcn not at return pc");
-  __ post_call_nop();
 }
 
 
