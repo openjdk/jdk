@@ -65,7 +65,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SuppressWarnings("OptionalGetWithoutIsPresent")
 class HttpResponseConnectionLabelTest {
 
     private static final Logger LOGGER =
@@ -439,4 +438,5 @@ class HttpResponseConnectionLabelTest {
         assertEquals(label1, label2);
 
     }
+
 }
