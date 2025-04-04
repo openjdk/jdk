@@ -390,8 +390,9 @@ import java.util.function.Supplier;
  * A successful read operation can be either:
  * <ul>
  *     <li>a {@link #orElseThrow()} that does not throw,</li>
- *     <li>a {@link #orElse(Object) orElse(other)} that does not return the {@code other} value, or</li>
- *     <li>an {@link #orElseSet(Supplier)} that does not {@code throw}</li>
+ *     <li>a {@link #orElse(Object) orElse(other)} that does not return the {@code other} value</li>
+ *     <li>an {@link #orElseSet(Supplier)} that does not {@code throw}, or</li>
+ *     <li>an {@link #isSet()} that returns {@code true}</li>
  * </ul>
  * <p>
  * The method {@linkplain StableValue#orElseSet(Supplier) orElseSet()} guarantees that
@@ -401,17 +402,13 @@ import java.util.function.Supplier;
  * thread safe and guarantee at-most-once-per-input invocation.
  *
  * <h2 id="performance">Performance</h2>
- * A stable value that is <em>set</em> is treated as a constant by the JVM, enabling the
- * same performance optimizations that are available for {@code final} fields.
- * As such, stable values can be used to replace {@code final} fields in cases where
- * <em>at-most-once</em> update semantics is crucial, but where the eager initialization
- * semantics associated with {@code final} fields is too restrictive.
+ * The _content_ of a set stable value is treated as a constant by the JVM, provided that
+ * the reference to the stable value is also constant (e.g. in cases where the
+ * stable value itself is stored in a `static final` field).
  * <p>
- * In JDK 24, {@code final} instance fields in records and hidden classes (such as classes
- * spun from method references) are trusted by the JVM, allowing them to be treated as
- * constants. However, {@code final} instance fields in regular classes are <em>not</em>
- * trusted meaning that such fields are <em>not</em> eligible for performance
- * optimizations by the JVM (such as constant folding).
+ * This means that, at least in some cases, access to the content of a stable value
+ * enjoys the same constant-folding optimizations that are available when accessing
+ * `static final` fields.
  *
  * @implSpec Implementing classes of {@code StableValue} are free to synchronize on
  *           {@code this} and consequently, care should be taken whenever
