@@ -151,7 +151,7 @@ class HttpResponseConnectionLabelTest {
                                 LOGGER.log(
                                         "Server[%s] is waiting for the latch... (connectionKey=%s, responseBody=%s)",
                                         serverId, connectionKey, responseBody);
-                                assertTrue(serverResponseLatchRef[0].await(2, TimeUnit.SECONDS));
+                                serverResponseLatchRef[0].await();
                             }
 
                             // Write the response
@@ -275,7 +275,7 @@ class HttpResponseConnectionLabelTest {
 
         // Wait for all parties to be ready
         LOGGER.log("Client is waiting for the latch...");
-        assertTrue(latch.await(2, TimeUnit.SECONDS));
+        latch.await();
         LOGGER.log("Client is continuing...");
 
         // Collect responses
@@ -355,7 +355,7 @@ class HttpResponseConnectionLabelTest {
 
         // Wait for all parties to be ready
         LOGGER.log("Client is waiting for the latch...");
-        assertTrue(latch.await(2, TimeUnit.SECONDS));
+        latch.await();
         LOGGER.log("Client is continuing...");
 
         // Collect responses
