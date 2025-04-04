@@ -456,8 +456,12 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
 
     add_speculative_check(bol);
   } else {
-    // TODO: check if iv_stride >=, ...
-    assert(false, "different slopes not implemented yet");
+    // TODO: this
+    Node* zero = _vloop.phase()->igvn().intcon(0);
+    BoolNode* bol = new BoolNode(zero, BoolTest::ne);
+    _vloop.phase()->register_new_node_with_ctrl_of(bol, init);
+    add_speculative_check(bol);
+    assert(false, "scale not equal, not implemented");
   }
 }
 
