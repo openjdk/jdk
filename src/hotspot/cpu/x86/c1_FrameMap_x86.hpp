@@ -112,8 +112,6 @@
 
   static LIR_Opr long0_opr;
   static LIR_Opr long1_opr;
-  static LIR_Opr fpu0_float_opr;
-  static LIR_Opr fpu0_double_opr;
   static LIR_Opr xmm0_float_opr;
   static LIR_Opr xmm0_double_opr;
 

@@ -656,7 +656,7 @@ class MemStatStore : public CHeapObj<mtCompiler> {
     assert_lock_strong(NMTCompilationCostHistory_lock);
     const unsigned stop_after = max_num_printed == -1 ? UINT_MAX : (unsigned)max_num_printed;
     result.num = result.num_c1 = result.num_c2 = result.num_filtered_out = 0;
-    for (int i = 0; _entries[i].e != nullptr && i < max_entries && result.num < stop_after; i++) {
+    for (int i = 0; i < max_entries && _entries[i].e != nullptr && result.num < stop_after; i++) {
       if (_entries[i].s >= minsize) {
         f(_entries[i].e);
         result.num++;
