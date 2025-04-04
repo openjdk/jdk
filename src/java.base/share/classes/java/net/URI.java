@@ -3435,7 +3435,7 @@ public final class URI
             int significantDigitsNum = q - i;
 
             // If no significant digits (all zeros), the value is 0
-            if (significantDigitsNum == 0)  return q;
+            if (significantDigitsNum < 3)  return q; // definitely < 255
 
             // If more than 3 significant digits, it's definitely > 255
             if (significantDigitsNum > 3) return p;
