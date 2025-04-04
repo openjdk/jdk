@@ -297,7 +297,7 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   for variant in $JVM_VARIANTS; do
     features_var_name=JVM_FEATURES_$variant
     JVM_FEATURES_FOR_VARIANT=${!features_var_name}
-    $ECHO -n "$variant: \'$JVM_FEATURES_FOR_VARIANT\' "
+    $ECHO -n "$variant: '$JVM_FEATURES_FOR_VARIANT' "
   done
   $ECHO ""
 
