@@ -233,19 +233,17 @@ bool oopDesc::is_stackChunk()  const { return klass()->is_stack_chunk_instance_k
 bool oopDesc::is_array()       const { return klass()->is_array_klass();                }
 
 bool oopDesc::is_objArray() const {
-  if (UseKLUT) {
-    const KlassLUTEntry klute = KlassInfoLUT::get_entry(mark().narrow_klass());
-    return klute.is_obj_array();
-  }
-  return klass()->is_objArray_klass();
+  const KlassLUTEntry klute = UseKLUT ?
+      KlassInfoLUT::get_entry(mark().narrow_klass()) :
+      KlassLUTEntry(klass()->klute());
+  return klute.is_obj_array();
 }
 
 bool oopDesc::is_typeArray() const {
-  if (UseKLUT) {
-    const KlassLUTEntry klute = KlassInfoLUT::get_entry(mark().narrow_klass());
-    return klute.is_type_array();
-  }
-  return klass()->is_typeArray_klass();
+  const KlassLUTEntry klute = UseKLUT ?
+      KlassInfoLUT::get_entry(mark().narrow_klass()) :
+      KlassLUTEntry(klass()->klute());
+  return klute.is_type_array();
 }
 
 template<typename T>

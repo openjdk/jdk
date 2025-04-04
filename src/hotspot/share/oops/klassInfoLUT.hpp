@@ -50,6 +50,8 @@ class KlassInfoLUT : public AllStatic {
 
   static inline uint32_t at(unsigned index);
 
+  static void allocate_lookup_table();
+
   // register stats are not expensive
 #define REGISTER_STATS_DO(f)    \
   f(registered_IK)              \

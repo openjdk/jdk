@@ -149,7 +149,7 @@ class KlassLUTEntry {
     U(uint32_t v) : raw(v) {}
   };
 
-  const U _v;
+  U _v;
 
   // The limits to what we can numerically represent in an (InstanceKlass) Entry
   static constexpr size_t ik_wordsize_limit = nth_bit(bits_ik_wordsize);
@@ -170,6 +170,9 @@ public:
 
   inline KlassLUTEntry(uint32_t v) : _v(v) {}
   inline KlassLUTEntry(const KlassLUTEntry& other) : _v(other._v) {}
+
+  inline KlassLUTEntry& operator=(uint32_t v)                       { _v = v; return *this; }
+  inline KlassLUTEntry& KlassLUTEntry(const KlassLUTEntry& other)   { _v = other._v; return *this; }
 
   // Note: all entries should be valid. An invalid entry indicates
   // an error somewhere.

@@ -39,8 +39,11 @@ uint32_t* KlassInfoLUT::_entries = nullptr;
 unsigned KlassInfoLUT::_num_entries = -1;
 
 void KlassInfoLUT::initialize() {
-  assert(UseKLUT, "?");
   assert(CompressedKlassPointers::fully_initialized(), "Too early");
+
+  // We allocate a lookup table only if we can use the narrowKlass for a lookup reasonably well.
+  // We can do this only if the nKlass is small enough - we allow it for COH (22 bit nKlass with
+  // 10 bit shift means we have a small and condensed table). We don't bother for -COH,
   assert(CompressedKlassPointers::narrow_klass_pointer_bits() <= 22, "Use only for COH");
   assert(CompressedKlassPointers::shift() == 10, "must be (for density)");
 
