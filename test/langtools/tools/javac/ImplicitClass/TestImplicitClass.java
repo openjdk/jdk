@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8315458
- * @enablePreview
  * @build Implicit TestImplicitClass
  * @run main TestImplicitClass
  * @summary Basic checks of java.lang.Class support for implicit classes

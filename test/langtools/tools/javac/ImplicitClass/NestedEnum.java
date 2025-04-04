@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary enums: ensure unnamed class is visible to java.lang.Enum<unnamed_class>
- * @enablePreview
  * @compile NestedEnum.java
  */
 

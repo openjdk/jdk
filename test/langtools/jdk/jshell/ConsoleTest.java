@@ -25,7 +25,6 @@
  * @test
  * @bug 8298425
  * @summary Verify behavior of System.console()
- * @enablePreview
  * @build KullaTesting TestingInputStream
  * @run testng ConsoleTest
  */

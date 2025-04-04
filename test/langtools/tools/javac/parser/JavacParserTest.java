@@ -2304,7 +2304,7 @@ public class JavacParserTest extends TestCase {
                       """;
         DiagnosticCollector<JavaFileObject> coll =
                 new DiagnosticCollector<>();
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, List.of("--enable-preview", "--source", System.getProperty("java.specification.version")),
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, null,
                 null, Arrays.asList(new MyFileObject(code)));
         Trees trees = Trees.instance(ct);
         SourcePositions sp = trees.getSourcePositions();

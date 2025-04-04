@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8315458
- * @enablePreview
  * @summary Make sure nesting classes don't create symbol conflicts with implicit name.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -77,7 +76,7 @@ public class NestedClasses {
         String output = new JavacTask(TOOLBOX)
                 .files(List.of(path))
                 .classpath(".")
-                .options("-encoding", "utf8", "--enable-preview", "-source", JAVA_VERSION)
+                .options("-encoding", "utf8")
                 .run()
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
@@ -96,7 +95,7 @@ public class NestedClasses {
         String output = new JavacTask(TOOLBOX)
                 .files(List.of(path))
                 .classpath(".")
-                .options("-XDrawDiagnostics", "-encoding", "utf8", "--enable-preview", "-source", JAVA_VERSION)
+                .options("-XDrawDiagnostics", "-encoding", "utf8")
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);

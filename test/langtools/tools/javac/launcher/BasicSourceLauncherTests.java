@@ -32,7 +32,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 /*
  * @test
- * @enablePreview
  * @bug 8304400
  * @summary Test basic features of javac's source-code launcher
  * @modules jdk.compiler/com.sun.tools.javac.launcher
@@ -98,7 +97,7 @@ class BasicSourceLauncherTests {
                 }
                 """);
 
-        var run = Run.of(hi, List.of("--enable-preview"), List.of());
+        var run = Run.of(hi, List.of(), List.of());
         assertAll("# " + run,
                 () -> assertLinesMatch(
                         """
