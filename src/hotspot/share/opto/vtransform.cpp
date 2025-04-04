@@ -405,20 +405,20 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   Node* init_main = _vloop.cl()->init_trip();
   Node* limit_main = _vloop.cl()->limit();
 
-  tty->print_cr("init_pre");
-  init_pre->dump_bfs(100,nullptr,"#dC");
-  tty->print_cr("init_main");
-  init_main->dump_bfs(100,nullptr,"#dC");
-  tty->print_cr("limit_main");
-  limit_main->dump_bfs(100,nullptr,"#dC");
+  //tty->print_cr("init_pre");
+  //init_pre->dump_bfs(100,nullptr,"#dC");
+  //tty->print_cr("init_main");
+  //init_main->dump_bfs(100,nullptr,"#dC");
+  //tty->print_cr("limit_main");
+  //limit_main->dump_bfs(100,nullptr,"#dC");
 
   Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
   Node* limit_pre = pre_opaq->in(1);
-  tty->print_cr("limit_pre");
-  limit_pre->dump_bfs(100,nullptr,"#dC");
+  //tty->print_cr("limit_pre");
+  //limit_pre->dump_bfs(100,nullptr,"#dC");
   Node* limit_orig = pre_opaq->original_loop_limit();
-  tty->print_cr("limit_orig");
-  limit_orig->dump_bfs(100,nullptr,"#dC");
+  //tty->print_cr("limit_orig");
+  //limit_orig->dump_bfs(100,nullptr,"#dC");
 
   // init: cannot take the main-init, because it depends on the pre-loop
   //       trip-count. But the limit_pre should be independent, and we
@@ -431,12 +431,12 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
     // -------- condition1 --------      ------- condition2 ---------
     Node* p1_init = vp1.make_pointer_expression(init);
     Node* p2_init = vp2.make_pointer_expression(init);
-    tty->print("p1(init) "); p1_init->dump();
-    tty->print("p2(init) "); p2_init->dump();
+    //tty->print("p1(init) "); p1_init->dump();
+    //tty->print("p2(init) "); p2_init->dump();
     BoolNode* condition1 = make_a_plus_b_leq_c(p1_init, vp1.size(), p2_init, phase());
     BoolNode* condition2 = make_a_plus_b_leq_c(p2_init, vp2.size(), p1_init, phase());
-    tty->print("condition1 "); condition1->dump();
-    tty->print("condition2 "); condition2->dump();
+    //tty->print("condition1 "); condition1->dump();
+    //tty->print("condition2 "); condition2->dump();
 
     // Convert bol back to int value that we can OR.
     Node* zero = _vloop.phase()->igvn().intcon(0);
@@ -447,7 +447,7 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
     _vloop.phase()->register_new_node_with_ctrl_of(cmov2, init);
 
     Node* c1_or_c2 = new OrINode(cmov1, cmov2);
-    tty->print("c1_or_c2 "); c1_or_c2->dump();
+    //tty->print("c1_or_c2 "); c1_or_c2->dump();
     Node* cmp = CmpNode::make(c1_or_c2, zero, T_INT);
     BoolNode* bol = new BoolNode(cmp, BoolTest::ne);
     _vloop.phase()->register_new_node_with_ctrl_of(c1_or_c2, init);

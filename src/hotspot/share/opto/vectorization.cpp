@@ -480,9 +480,10 @@ Node* VPointer::make_pointer_expression(Node* iv_value) const {
     return add;
   };
 
-  tty->print_cr("VPointer::make_pointer_expression");
-  tty->print("iv_value "); iv_value->dump();
-  print_on(tty);
+  // TODO: better printing?
+  //tty->print_cr("VPointer::make_pointer_expression");
+  //tty->print("iv_value "); iv_value->dump();
+  //print_on(tty);
 
   Node* expression = nullptr;
   mem_pointer().for_each_raw_summand_of_int_group(0, [&] (const MemPointerRawSummand& s) {
