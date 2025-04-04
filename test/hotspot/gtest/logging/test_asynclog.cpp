@@ -73,17 +73,21 @@ LOG_LEVEL_LIST
   // We would observe missing loglines if we interleaved buffers.
   // Emit all logs between constructor and destructor of BufferUpdater.
   void test_asynclog_drop_messages() {
-    const size_t sz = 2000;
+    const size_t sz = AsyncLogBufferSize / 2;
+    const char* str = "a lot of log...";
+    const size_t str_size = strlen(str);
 
-    // shrink async buffer.
-    AsyncLogWriter::BufferUpdater saver(1024);
     test_asynclog_ls(); // roughly 200 bytes.
     LogMessage(logging) lm;
 
     // write more messages than its capacity in burst
-    for (size_t i = 0; i < sz; ++i) {
-      lm.debug("a lot of log...");
+    for (size_t i = 0; i < (sz / str_size); ++i) {
+      lm.debug("%s", "a lot of log...");
     }
+    lm.debug("%s","a lot of log...");
+    lm.debug("%s","a lot of log...");
+    lm.debug("%s","a lot of log...");
+    lm.debug("%s","a lot of log...");
     lm.flush();
   }
 
