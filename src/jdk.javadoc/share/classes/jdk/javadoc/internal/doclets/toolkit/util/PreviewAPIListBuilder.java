@@ -72,14 +72,19 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
         this.previewNoteTag = configuration.getOptions().previewNoteTag();
         // retrieve preview JEPs
         buildPreviewFeatureInfo();
-        // map elements to preview JEPs and preview tags
-        buildSummaryAPIInfo();
-        // remove unused preview JEPs
-        jeps.entrySet().removeIf(e -> !elementJeps.containsValue(e.getValue()));
+        if (!jeps.isEmpty()) {
+            // map elements to preview JEPs and preview tags
+            buildSummaryAPIInfo();
+            // remove unused preview JEPs
+            jeps.entrySet().removeIf(e -> !elementJeps.containsValue(e.getValue()));
+        }
     }
 
     private void buildPreviewFeatureInfo() {
         TypeElement featureType = utils.elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.Feature");
+        if (featureType == null) {
+            return;
+        }
         TypeElement jepType = utils.elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.JEP");
         featureType.getEnclosedElements().forEach(elem -> {
             for (AnnotationMirror anno : elem.getAnnotationMirrors()) {
