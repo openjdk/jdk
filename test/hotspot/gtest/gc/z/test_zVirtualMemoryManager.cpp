@@ -114,7 +114,7 @@ public:
     // used to fail because the memory was already split into two placeholders.
 
     if (_vmm->reserved() < 4 * ZGranuleSize || !_va->free_is_contiguous()) {
-      GTEST_SKIP() << "Fixture fail to reserve adequate memory, reserved "
+      GTEST_SKIP() << "Fixture failed to reserve adequate memory, reserved "
           << (_vmm->reserved() >> ZGranuleSizeShift) << " * ZGranuleSize";
     }
 
@@ -186,7 +186,7 @@ public:
   }
 
   void test_alloc_low_address() {
-    // Verify that we get placeholder for first granule
+    // Verify that we get a placeholder for the first granule
     zoffset bottom = _va->alloc_low_address(ZGranuleSize);
     ASSERT_ALLOC_OK(bottom);
 
@@ -210,7 +210,7 @@ public:
   }
 
   void test_alloc_high_address() {
-    // Verify that we get placeholder for last granule
+    // Verify that we get a placeholder for the last granule
     zoffset high = _va->alloc_high_address(ZGranuleSize);
     ASSERT_ALLOC_OK(high);
 

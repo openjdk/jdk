@@ -62,8 +62,8 @@ void ZMemoryManager::grow_from_back(ZMemory* area, size_t size) {
 }
 
 ZMemoryManager::Callbacks::Callbacks()
-  : _insert(nullptr),
-    _remove(nullptr),
+  : _prepare_for_hand_out(nullptr),
+    _prepare_for_hand_back(nullptr),
     _grow(nullptr),
     _shrink(nullptr) {}
 
@@ -122,8 +122,8 @@ zoffset ZMemoryManager::alloc_low_address(size_t size) {
         shrink_from_front(area, size);
       }
 
-      if (_callbacks._remove != nullptr) {
-        _callbacks._remove(ZMemory(start, size));
+      if (_callbacks._prepare_for_hand_out != nullptr) {
+        _callbacks._prepare_for_hand_out(ZMemory(start, size));
       }
 
       return start;
@@ -152,8 +152,8 @@ zoffset ZMemoryManager::alloc_low_address_at_most(size_t size, size_t* allocated
       *allocated = size;
     }
 
-    if (_callbacks._remove != nullptr) {
-      _callbacks._remove(ZMemory(start, *allocated));
+    if (_callbacks._prepare_for_hand_out != nullptr) {
+      _callbacks._prepare_for_hand_out(ZMemory(start, *allocated));
     }
 
     return start;
@@ -183,8 +183,8 @@ zoffset ZMemoryManager::alloc_high_address(size_t size) {
         start = to_zoffset(area->end());
       }
 
-      if (_callbacks._remove != nullptr) {
-        _callbacks._remove(ZMemory(start, size));
+      if (_callbacks._prepare_for_hand_out != nullptr) {
+        _callbacks._prepare_for_hand_out(ZMemory(start, size));
       }
 
       return start;
@@ -243,20 +243,26 @@ void ZMemoryManager::move_into(zoffset start, size_t size) {
 void ZMemoryManager::free(zoffset start, size_t size) {
   ZLocker<ZLock> locker(&_lock);
 
-  if (_callbacks._insert != nullptr) {
-    _callbacks._insert(ZMemory(start, size));
+  if (_callbacks._prepare_for_hand_back != nullptr) {
+    _callbacks._prepare_for_hand_back(ZMemory(start, size));
   }
 
   move_into(start, size);
 }
 
 void ZMemoryManager::register_range(zoffset start, size_t size) {
+  // Note that there's no need to call the _prepare_for_hand_back when memory
+  // is added the first time. We don't have to undo the effects of a previous
+  // _prepare_for_hand_out callback.
+
+  // No need to lock during initialization.
+
   move_into(start, size);
 }
 
 bool ZMemoryManager::unregister_first(zoffset* start_out, size_t* size_out) {
-  // This intentionally does not call the "remove" callback.
-  // This call is typically used to unregister memory before unreserving a surplus.
+  // Note that this doesn't hand out memory to be used, so we don't call the
+  // _prepare_for_hand_out callback.
 
   ZLocker<ZLock> locker(&_lock);
 
@@ -264,7 +270,7 @@ bool ZMemoryManager::unregister_first(zoffset* start_out, size_t* size_out) {
     return false;
   }
 
-  // Don't invoke the "remove" callback
+  // Don't invoke the _prepare_for_hand_out callback
 
   ZMemory* const area = _freelist.remove_first();
 

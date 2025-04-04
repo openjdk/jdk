@@ -81,26 +81,26 @@ private:
 
     // Callback implementations
 
-    // Called when a memory area is returned to the memory manager.
-    //
-    // Makes sure this area is covered by a single placeholder.
-    static void insert_callback(const ZMemory& area) {
-      assert(is_aligned(area.size(), ZGranuleSize), "Must be granule aligned");
-
-      coalesce_into_one_placeholder(area.start(), area.size());
-    }
-
     // Called when a memory area is going to be handed out to be used.
     //
-    // Splits the memory area into granule sized placeholders.
-    static void remove_callback(const ZMemory& area) {
+    // Splits the memory area into granule-sized placeholders.
+    static void prepare_for_hand_out_callback(const ZMemory& area) {
       assert(is_aligned(area.size(), ZGranuleSize), "Must be granule aligned");
 
       split_into_granule_sized_placeholders(area.start(), area.size());
     }
 
-    // Called when inserting a memory area and it can be merged at the start of
-    // an existing area.
+    // Called when a memory area is handed back to the memory manager.
+    //
+    // Combines the granule-sized placeholders into one placeholder.
+    static void prepare_for_hand_back_callback(const ZMemory& area) {
+      assert(is_aligned(area.size(), ZGranuleSize), "Must be granule aligned");
+
+      coalesce_into_one_placeholder(area.start(), area.size());
+    }
+
+    // Called when inserting a memory area and it can be merged with an
+    // existing, adjacent memory area.
     //
     // Coalesces the underlying placeholders into one.
     static void grow_callback(const ZMemory& from, const ZMemory& to) {
@@ -112,10 +112,10 @@ private:
       coalesce_into_one_placeholder(to.start(), to.size());
     }
 
-    // Called when a memory area is removed at the front of an existing memory
-    // area.
+    // Called when a memory area is removed from the front or back of an existing
+    // memory area.
     //
-    // Turns the first part of the memory area into granule-sized placeholders.
+    // Splits the memory into two placeholders.
     static void shrink_callback(const ZMemory& from, const ZMemory& to) {
       assert(is_aligned(from.size(), ZGranuleSize), "Must be granule aligned");
       assert(is_aligned(to.size(), ZGranuleSize), "Must be granule aligned");
@@ -135,18 +135,18 @@ private:
       // that whenever a memory area changes, the corresponding placeholder
       // is adjusted.
       //
-      // The insert callback is called when virtual memory is returned to the
-      // memory manager. The returned memory area is then covered by a new
-      // single placeholder.
-      //
-      // The remove callback is called when virtual memory is removed and
+      // The prepare_for_hand_out callback is called when virtual memory is
       // handed out to callers. The memory area is split into granule-sized
       // placeholders.
+      //
+      // The prepare_for_hand_back callback is called when previously handed
+      // out virtual memory is handed back  to the memory manager. The
+      // returned memory area is then covered by a new single placeholder.
       //
       // The grow callback is called when a virtual memory area grows. The
       // resulting memory area is then covered by a single placeholder.
       //
-      // The split callback is called when a virtual memory area is split into
+      // The shrink callback is called when a virtual memory area is split into
       // two parts. The two resulting memory areas are then covered by two
       // separate placeholders.
       //
@@ -155,8 +155,8 @@ private:
 
       ZMemoryManager::Callbacks callbacks;
 
-      callbacks._insert = &insert_callback;
-      callbacks._remove = &remove_callback;
+      callbacks._prepare_for_hand_out = &prepare_for_hand_out_callback;
+      callbacks._prepare_for_hand_back = &prepare_for_hand_back_callback;
       callbacks._grow = &grow_callback;
       callbacks._shrink = &shrink_callback;
 

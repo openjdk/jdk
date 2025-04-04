@@ -59,16 +59,14 @@ class ZMemoryManager {
   friend class ZVirtualMemoryManagerTest;
 
 public:
-  typedef void (*CallbackInsert)(const ZMemory& area);
-  typedef void (*CallbackRemove)(const ZMemory& area);
-  typedef void (*CallbackGrow)(const ZMemory& from, const ZMemory& to);
-  typedef void (*CallbackShrink)(const ZMemory& from, const ZMemory& to);
+  typedef void (*CallbackPrepare)(const ZMemory& area);
+  typedef void (*CallbackResize)(const ZMemory& from, const ZMemory& to);
 
   struct Callbacks {
-    CallbackInsert _insert;
-    CallbackRemove _remove;
-    CallbackGrow   _grow;
-    CallbackShrink _shrink;
+    CallbackPrepare _prepare_for_hand_out;
+    CallbackPrepare _prepare_for_hand_back;
+    CallbackResize  _grow;
+    CallbackResize  _shrink;
 
     Callbacks();
   };
