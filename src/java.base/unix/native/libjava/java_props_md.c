@@ -296,7 +296,6 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
         /* return same result nl_langinfo would return for en_UK,
          * in order to use optimizations. */
         *std_encoding = (*p != '\0') ? p : "ISO8859-1";
-   /* XXX TODO is this really what we want? ^^^^^^^^^ */
 
 #ifdef __linux__
         /*
@@ -455,14 +454,10 @@ GetJavaProperties(JNIEnv *env)
     } else {
         sprops.display_language = "en";
         sprops.encoding = "ISO8859-1";
-   /*                      ^^^^^^^^^
-      XXX TODO is this really what we want? */
     }
 
     /* ParseLocale failed with OOME */
     JNU_CHECK_EXCEPTION_RETURN(env, NULL);
-
-    /* At this point, sprops.encoding is always non-NULL. */
 
 #ifdef MACOSX
     sprops.sun_jnu_encoding = "UTF-8";

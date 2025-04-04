@@ -74,10 +74,8 @@ public final class SystemProps {
         putIfAbsent(props, "user.dir", raw.propDefault(Raw._user_dir_NDX));
         putIfAbsent(props, "user.name", raw.propDefault(Raw._user_name_NDX));
 
-        // Platform defined encoding cannot be overridden on the command line
+        // Platform defined encodings cannot be overridden on the command line
         put(props, "sun.jnu.encoding", raw.propDefault(Raw._sun_jnu_encoding_NDX));
-
-        // TBD: this assumes that native.encoding provided by native code is always non-null
         var nativeEncoding = raw.propDefault(Raw._native_encoding_NDX);
         put(props, "native.encoding", nativeEncoding);
 
@@ -209,11 +207,11 @@ public final class SystemProps {
     }
 
     /**
-     * Read raw properties values from JVM command line and from platform-
-     * specific code using native methods in System.c.
+     * Read raw property values from the JVM command line and from
+     * platform-specific code using native methods in System.c.
      */
     public static class Raw {
-        // Array indices written by native platformProperties()
+        // Indexes of array elements written by native platformProperties()
         // The order is arbitrary (but alphabetic for convenience)
         @Native private static final int _display_country_NDX = 0;
         @Native private static final int _display_language_NDX = 1 + _display_country_NDX;
@@ -265,7 +263,7 @@ public final class SystemProps {
         }
 
         /**
-         * Return property value obtained from platform-specific native code.
+         * Returns a property value obtained from platform-specific native code.
          * @param index the index of the property
          * @return the property value, may be null
          */
@@ -275,7 +273,7 @@ public final class SystemProps {
 
         /**
          * Returns a HashMap containing properties obtained from the command line
-         * and from the JVM. The HashMap is sized to include the fixed properties.
+         * and from the JVM. The HashMap is sized to include the platform properties.
          *
          * @return return a HashMap containing command line and JVM properties
          */
