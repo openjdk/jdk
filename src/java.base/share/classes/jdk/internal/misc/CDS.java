@@ -31,18 +31,18 @@ import java.io.InputStreamReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.loader.Resource;
-import jdk.internal.loader.URLClassPath;
 import jdk.internal.util.StaticProperty;
 
 public class CDS {
@@ -353,10 +353,69 @@ public class CDS {
             registerAsParallelCapable();
         }
 
-        /**
-         * Collection of all sources used so far.
-         */
-        private final URLClassPath ucp = new URLClassPath(new URL[0]);
+        static interface Source {
+            public byte[] readClassFile(String className) throws IOException;
+        }
+
+        static class JarSource implements Source {
+            private final JarFile jar;
+
+            JarSource(File file) throws IOException {
+                jar = new JarFile(file);
+            }
+
+            @Override
+            public byte[] readClassFile(String className) throws IOException {
+                final var entryName = className.replace('.', '/').concat(".class");
+                final var entry = jar.getEntry(entryName);
+                if (entry == null) {
+                    throw new IOException("No such entry: " + entryName + " in " + jar.getName());
+                }
+                try (final var in = jar.getInputStream(entry)) {
+                    return in.readAllBytes();
+                }
+            }
+        }
+
+        static class DirSource implements Source {
+            private final String basePath;
+
+            DirSource(File dir) {
+                assert dir.isDirectory();
+                basePath = dir.toString();
+            }
+
+            @Override
+            public byte[] readClassFile(String className) throws IOException {
+                final var subPath = className.replace('.', File.separatorChar).concat(".class");
+                final var fullPath = Path.of(basePath, subPath);
+                return Files.readAllBytes(fullPath);
+            }
+        }
+
+        private final HashMap<String, Source> sources = new HashMap<>();
+
+        private Source resolveSource(String path) throws IOException {
+            Source source = sources.get(path);
+            if (source != null) {
+                return source;
+            }
+
+            final var file = new File(path);
+            if (!file.exists()) {
+                throw new IOException("No such file: " + path);
+            }
+            if (file.isFile()) {
+                source = new JarSource(file);
+            } else if (file.isDirectory()) {
+                source = new DirSource(file);
+            } else {
+                throw new IOException("Not a normal file: " + path);
+            }
+            sources.put(path, source);
+
+            return source;
+        }
 
         /**
          * Load the class of the given <code>name</code> from the given <code>source</code>.
@@ -368,41 +427,15 @@ public class CDS {
          * @param source path to a directory or a JAR file from which the named class should be
          *               loaded.
          */
-        private Class<?> load(String name, String source) throws ClassNotFoundException {
-            final URL sourceUrl;
-            try {
-                sourceUrl = Path.of(source).toRealPath().toUri().toURL(); // toRealPath also checks existance
-            } catch (IOException e) {
-                throw new IllegalArgumentException("Invalid class source: " + source, e);
-            }
-            ucp.addURL(sourceUrl);
-
-            final String path = name.replace('.', '/').concat(".class");
-            final Resource res = ucp.getResource(path, sourceUrl);
-            if (res == null) {
-                throw new ClassNotFoundException(name + ": cannot get " + path + " from " + source);
-            }
-            try {
-                final var buf = res.getByteBuffer();
-                // While executing this VM may invoke loadClass() to load supers and interfaces of
-                // this unregistered class. This should only happen for registered supers and
-                // interfaces because all unregistered ones should have already been loaded by this
-                // class loader. Thus it is safe to delegate their loading to system class loader
-                // (our parent) - this is what the default implementation of loadClass() will do.
-                if (buf != null) {
-                    return defineClass(name, buf, null);
-                } else {
-                    final byte[] bytes = res.getBytes();
-                    return defineClass(name, bytes, 0, bytes.length);
-                }
-            } catch (IOException e) {
-                throw new ClassNotFoundException(name, e);
-            } catch (ClassFormatError e) {
-                if (res.getDataError() != null) {
-                    e.addSuppressed(res.getDataError());
-                }
-                throw e;
-            }
+        private Class<?> load(String name, String source) throws IOException {
+            final Source resolvedSource = resolveSource(source);
+            final byte[] bytes = resolvedSource.readClassFile(name);
+            // While executing this VM may invoke loadClass() to load supers and interfaces of
+            // this unregistered class. This should only happen for registered supers and
+            // interfaces because all unregistered ones should have already been loaded by this
+            // class loader. Thus it is safe to delegate their loading to system class loader
+            // (our parent) - this is what the default implementation of loadClass() will do.
+            return defineClass(name, bytes, 0, bytes.length);
         }
 
         @Override

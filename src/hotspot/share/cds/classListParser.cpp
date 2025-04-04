@@ -139,15 +139,6 @@ void ClassListParser::parse(TRAPS) {
   }
 }
 
-// getCause does not always return cause field so using this is more accurate.
-static oop get_exception_cause(Handle exception, TRAPS) {
-  JavaValue cause(T_OBJECT);
-  JavaCalls::call_virtual(&cause, exception, exception->klass(),
-                          vmSymbols::getCause_name(), vmSymbols::void_throwable_signature(),
-                          CHECK_AND_CLEAR_NULL); // Ignore possible new exceptions
-  return cause.get_oop();
-}
-
 void ClassListParser::parse_class_name_and_attributes(TRAPS) {
   read_class_name_and_attributes();
 
@@ -165,24 +156,16 @@ void ClassListParser::parse_class_name_and_attributes(TRAPS) {
       return; // THROW
     }
 
-    Handle ex(THREAD, PENDING_EXCEPTION);
-    CLEAR_PENDING_EXCEPTION;
-    {
-      ResourceMark rm(THREAD);
-      const oop msg = java_lang_Throwable::message(ex());
-      log_warning(cds)("%s: %s", ex->klass()->external_name(),
-                       msg != nullptr ? java_lang_String::as_utf8_string(msg) : "");
+    ResourceMark rm(THREAD);
+    char* ex_msg = (char*)"";
+    oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
+    if (message != nullptr) {
+      ex_msg = java_lang_String::as_utf8_string(message);
     }
-    for (oop cause = get_exception_cause(ex, THREAD); cause != nullptr;
-         ex.replace(cause), cause = get_exception_cause(ex, THREAD)) {
-      ResourceMark rm(THREAD);
-      const oop msg = java_lang_Throwable::message(cause);
-      log_warning(cds)("\tCaused by: %s: %s", cause->klass()->external_name(),
-                       msg != nullptr ? java_lang_String::as_utf8_string(msg) : "");
-    }
-
+    log_warning(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(), ex_msg);
     // We might have an invalid class name or an bad class. Warn about it
     // and keep going to the next line.
+    CLEAR_PENDING_EXCEPTION;
     log_warning(cds)("Preload Warning: Cannot find %s", _class_name);
     return;
   }

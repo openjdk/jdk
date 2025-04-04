@@ -338,26 +338,6 @@ public class URLClassPath {
     }
 
     /**
-     * Finds the Resource with the specified name on the specified URL. Returns
-     * null if no Resource could be found, including the case when the URL is
-     * not in the search path.
-     *
-     * @param name the name of the Resource
-     * @param url  the URL to look in
-     * @return the Resource, or null if not found
-     */
-    public Resource getResource(String name, URL url) {
-        final String urlKey = URLUtil.urlNoFragString(url);
-        Loader loader;
-        synchronized (this) {
-            // Open available URLs until we reach the requested one
-            while ((loader = lmap.get(urlKey)) == null && getLoader(loaders.size()) != null) {}
-        }
-        // loader == null if either the URL is not in the path or it cannot be opened
-        return loader != null ? loader.getResource(name) : null;
-    }
-
-    /**
      * Finds all resources on the URL search path with the given name.
      * Returns an enumeration of the Resource objects.
      *
