@@ -93,6 +93,11 @@ bool VM_GC_Operation::skip_operation() const {
   return skip;
 }
 
+static bool should_use_gclocker() {
+  // Only Serial and Parallel use GCLocker to synchronize with threads in JNI critical-sections, in order to handle pinned objects.
+  return UseSerialGC || UseParallelGC;
+}
+
 bool VM_GC_Operation::doit_prologue() {
   assert(((_gc_cause != GCCause::_no_gc) &&
           (_gc_cause != GCCause::_no_cause_specified)), "Illegal GCCause");
@@ -106,10 +111,8 @@ bool VM_GC_Operation::doit_prologue() {
               proper_unit_for_byte_size(NewSize)));
   }
 
-  // For Serial and Parallel, call block() before acquiring Heap_lock in
-  // doit_prologue(), because block() can potentially block the calling thread,
-  // and blocking while holding Heap_lock can result in deadlock.
-  if (UseSerialGC || UseParallelGC) {
+
+  if (should_use_gclocker()) {
     GCLocker::block();
   }
   VM_GC_Sync_Operation::doit_prologue();
@@ -118,7 +121,7 @@ bool VM_GC_Operation::doit_prologue() {
   if (skip_operation()) {
     // skip collection
     Heap_lock->unlock();
-    if (UseSerialGC || UseParallelGC) {
+    if (should_use_gclocker()) {
       GCLocker::unblock();
     }
     _prologue_succeeded = false;
@@ -137,7 +140,7 @@ void VM_GC_Operation::doit_epilogue() {
     Heap_lock->notify_all();
   }
   VM_GC_Sync_Operation::doit_epilogue();
-  if (UseSerialGC || UseParallelGC) {
+  if (should_use_gclocker()) {
     GCLocker::unblock();
   }
 }
