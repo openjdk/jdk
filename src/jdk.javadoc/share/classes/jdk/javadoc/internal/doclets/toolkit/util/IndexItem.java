@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,73 @@ public class IndexItem {
     }
 
     /**
+     * The kind of index item. Index items can represent program elements,
+     * various doc comment tags, or other resources such as summary pages.
+     *
+     * Values in this enum must match elements in array itemDesc in
+     * JavaScript file search.js.template!
+     */
+    public enum Kind {
+        // Members
+        ENUM_CONSTANT,
+        FIELD,
+        STATIC_FIELD,
+        CONSTRUCTOR,
+        ANNOTATION_ELEMENT,
+        METHOD,
+        STATIC_METHOD,
+        RECORD_COMPONENT,
+        // Types
+        ANNOTATION_TYPE,
+        ENUM,
+        INTERFACE,
+        RECORD,
+        CLASS,
+        EXCEPTION_CLASS,
+        // Tags
+        SEARCH_ITEM,
+        SYSTEM_PROPERTY,
+        SECTION,
+        EXTERNAL_SPEC,
+        // Other
+        SUMMARY_PAGE;
+
+        /**
+         * {@return the kind of index item for a program element}
+         */
+        public static Kind ofElement(Element elem, Utils utils) {
+            return switch (elem.getKind()) {
+                case ENUM_CONSTANT -> ENUM_CONSTANT;
+                case FIELD -> utils.isStatic(elem) ? STATIC_FIELD : FIELD;
+                case CONSTRUCTOR -> CONSTRUCTOR;
+                case METHOD -> utils.isAnnotationInterface(elem.getEnclosingElement())
+                        ? ANNOTATION_ELEMENT
+                        : utils.isStatic(elem) ? STATIC_METHOD : METHOD;
+                case RECORD_COMPONENT -> RECORD_COMPONENT;
+                case ANNOTATION_TYPE -> ANNOTATION_TYPE;
+                case ENUM -> ENUM;
+                case CLASS -> utils.isThrowable((TypeElement) elem) ? EXCEPTION_CLASS : CLASS;
+                case INTERFACE -> INTERFACE;
+                case RECORD -> RECORD;
+                default -> throw new IllegalArgumentException(elem.toString());
+            };
+        }
+
+        /**
+         * {@return the kind of index item for a doc comment tag}
+         */
+        public static Kind ofDocTree(DocTree tree) {
+            return switch (tree.getKind()) {
+                case DocTree.Kind.INDEX -> SEARCH_ITEM;
+                case DocTree.Kind.SYSTEM_PROPERTY -> SYSTEM_PROPERTY;
+                case DocTree.Kind.SPEC -> EXTERNAL_SPEC;
+                case DocTree.Kind.START_ELEMENT -> SECTION;
+                default -> throw new IllegalArgumentException(tree.getKind().toString());
+            };
+        }
+    }
+
+    /**
      * The presentation string for the item. It must be non-empty.
      */
     private final String label;
@@ -125,6 +192,11 @@ public class IndexItem {
     private String containingClass = "";
 
     /**
+     * The kind of the item.
+     */
+    private final Kind kind;
+
+    /**
      * Creates an index item for a module element.
      *
      * @param moduleElement the element
@@ -133,7 +205,7 @@ public class IndexItem {
      * @return the item
      */
     public static IndexItem of(ModuleElement moduleElement, Utils utils) {
-        return new IndexItem(moduleElement, utils.getFullyQualifiedName(moduleElement));
+        return new IndexItem(moduleElement, utils.getFullyQualifiedName(moduleElement), null);
     }
 
     /**
@@ -145,7 +217,7 @@ public class IndexItem {
      * @return the item
      */
     public static IndexItem of(PackageElement packageElement, Utils utils) {
-        return new IndexItem(packageElement, utils.getPackageName(packageElement));
+        return new IndexItem(packageElement, utils.getPackageName(packageElement), null);
     }
 
     /**
@@ -158,7 +230,7 @@ public class IndexItem {
      * @return the item
      */
     public static IndexItem of(TypeElement typeElement, Utils utils) {
-        return new IndexItem(typeElement, utils.getSimpleName(typeElement));
+        return new IndexItem(typeElement, utils.getSimpleName(typeElement), Kind.ofElement(typeElement, utils));
     }
 
     /**
@@ -178,9 +250,9 @@ public class IndexItem {
         String name = utils.getSimpleName(member);
         if (utils.isExecutableElement(member)) {
             ExecutableElement ee = (ExecutableElement)member;
-            name += utils.flatSignature(ee, typeElement);
+            name += utils.makeSignature(ee, typeElement, false, true);
         }
-        return new IndexItem(member, name) {
+        return new IndexItem(member, name, Kind.ofElement(member, utils)) {
             @Override
             public TypeElement getContainingTypeElement() {
                 return typeElement;
@@ -205,7 +277,6 @@ public class IndexItem {
                                String holder, String description, DocLink link) {
         Objects.requireNonNull(element);
         Objects.requireNonNull(holder);
-        Objects.requireNonNull(description);
         Objects.requireNonNull(link);
 
         switch (docTree.getKind()) {
@@ -213,7 +284,7 @@ public class IndexItem {
             default -> throw new IllegalArgumentException(docTree.getKind().toString());
         }
 
-        return new IndexItem(element, label, link.toString()) {
+        return new IndexItem(element, label, Kind.ofDocTree(docTree), link.toString()) {
             @Override
             public DocTree getDocTree() {
                 return docTree;
@@ -245,11 +316,7 @@ public class IndexItem {
      */
     public static IndexItem of(Category category, String label, DocPath path) {
         Objects.requireNonNull(category);
-        return new IndexItem(null, label, path.getPath()) {
-            @Override
-            public DocTree getDocTree() {
-                return null;
-            }
+        return new IndexItem(null, label, Kind.SUMMARY_PAGE, path.getPath()) {
             @Override
             public Category getCategory() {
                 return category;
@@ -258,14 +325,10 @@ public class IndexItem {
             public String getHolder() {
                 return "";
             }
-            @Override
-            public String getDescription() {
-                return "";
-            }
         };
     }
 
-    private IndexItem(Element element, String label) {
+    private IndexItem(Element element, String label, Kind kind) {
         if (label.isEmpty()) {
             throw new IllegalArgumentException();
         }
@@ -275,10 +338,11 @@ public class IndexItem {
 
         this.element = element;
         this.label = label;
+        this.kind = kind;
     }
 
-    private IndexItem(Element element, String label, String url) {
-        this(element, label);
+    private IndexItem(Element element, String label, Kind kind, String url) {
+        this(element, label, kind);
         setUrl(url);
     }
 
@@ -495,13 +559,22 @@ public class IndexItem {
     }
 
     /**
-     * Returns a description of the tag for this item or {@code null} if this is not a item
-     * for a tag for an item in a documentation tag.
+     * Returns the kind of this item.
+     *
+     * @return the item kind
+     */
+    public Kind getKind() {
+        return kind;
+    }
+
+    /**
+     * Returns a description of the tag for this item or an empty string if no
+     * description is available for this item.
      *
      * @return the description of the tag
      */
     public String getDescription() {
-        return null;
+        return "";
     }
 
     /**
@@ -511,76 +584,98 @@ public class IndexItem {
      */
     public String toJSON() {
         // TODO: Additional processing is required, see JDK-8238495
-        StringBuilder item = new StringBuilder();
+        JSONBuilder builder = new JSONBuilder();
         Category category = getCategory();
         switch (category) {
             case MODULES:
-                item.append("{")
-                        .append("\"l\":\"").append(label).append("\"")
-                        .append("}");
+                builder.append("l", label);
                 break;
 
             case PACKAGES:
-                item.append("{");
                 if (!containingModule.isEmpty()) {
-                    item.append("\"m\":\"").append(containingModule).append("\",");
+                    builder.append("m", containingModule);
                 }
-                item.append("\"l\":\"").append(label).append("\"");
+                builder.append("l", label);
                 if (!url.isEmpty()) {
-                    item.append(",\"u\":\"").append(url).append("\"");
+                    builder.append("u", url);
                 }
-                item.append("}");
+                if (kind != null) {
+                    builder.append("k", kind.ordinal());
+                }
                 break;
 
             case TYPES:
-                item.append("{");
                 if (!containingPackage.isEmpty()) {
-                    item.append("\"p\":\"").append(containingPackage).append("\",");
+                    builder.append("p", containingPackage);
                 }
                 if (!containingModule.isEmpty()) {
-                    item.append("\"m\":\"").append(containingModule).append("\",");
+                    builder.append("m", containingModule);
                 }
-                item.append("\"l\":\"").append(label).append("\"");
+                builder.append("l", label);
                 if (!url.isEmpty()) {
-                    item.append(",\"u\":\"").append(url).append("\"");
+                    builder.append("u", url);
                 }
-                item.append("}");
+                if (kind != null && kind != Kind.CLASS) {
+                    builder.append("k", kind.ordinal());
+                }
                 break;
 
             case MEMBERS:
-                item.append("{");
                 if (!containingModule.isEmpty()) {
-                    item.append("\"m\":\"").append(containingModule).append("\",");
+                    builder.append("m", containingModule);
                 }
-                item.append("\"p\":\"").append(containingPackage).append("\",")
-                        .append("\"c\":\"").append(containingClass).append("\",")
-                        .append("\"l\":\"").append(label).append("\"");
+                builder.append("p", containingPackage)
+                        .append("c", containingClass)
+                        .append("l", label);
                 if (!url.isEmpty()) {
-                    item.append(",\"u\":\"").append(url).append("\"");
+                    builder.append("u", url);
                 }
-                item.append("}");
+                if (kind != null && kind != Kind.METHOD) {
+                    builder.append("k", kind.ordinal());
+                }
                 break;
 
             case TAGS:
                 String holder = getHolder();
                 String description = getDescription();
-                item.append("{")
-                        .append("\"l\":\"").append(escapeQuotes(label)).append("\",")
-                        .append("\"h\":\"").append(holder).append("\",");
+                builder.append("l", escapeQuotes(label))
+                       .append("h", holder);
                 if (!description.isEmpty()) {
-                    item.append("\"d\":\"").append(escapeQuotes(description)).append("\",");
+                    builder.append("d", escapeQuotes(description));
                 }
-                item.append("\"u\":\"").append(escapeQuotes(url)).append("\"")
-                        .append("}");
+                if (kind != null && kind != Kind.SEARCH_ITEM) {
+                    builder.append("k", kind.ordinal());
+                }
+                builder.append("u", escapeQuotes(url));
                 break;
 
             default:
                 throw new AssertionError("Unexpected category: " + category);
         }
-        return item.toString();
+        return builder.toString();
     }
 
-    private String escapeQuotes(String s) {
+    private static String escapeQuotes(String s) {
         return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    // Simple JSON object string builder class
+    private static class JSONBuilder {
+
+        StringBuilder b = new StringBuilder("{");
+
+        public JSONBuilder append(String name, Object value) {
+            if (b.length() > 1) {
+                b.append(",");
+            }
+            b.append("\"").append(name).append("\":\"").append(value).append("\"");
+            return this;
+        }
+
+        @Override
+        public String toString() {
+            b.append("}");
+            return b.toString();
+        }
     }
  }

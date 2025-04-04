@@ -30,6 +30,8 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/macros.hpp"
 
+#define ShenandoahMinCardSizeInBytes 128
+
 class ShenandoahCardTable: public CardTable {
   friend class VMStructs;
 
@@ -68,8 +70,22 @@ public:
 
   size_t last_valid_index();
 
+  CardValue* swap_read_and_write_tables() {
+    swap(_read_byte_map, _write_byte_map);
+    swap(_read_byte_map_base, _write_byte_map_base);
+
+    _byte_map = _write_byte_map;
+    _byte_map_base = _write_byte_map_base;
+
+    return _byte_map_base;
+  }
+
   CardValue* read_byte_map() {
     return _read_byte_map;
+  }
+
+  CardValue* read_byte_map_base() {
+    return _read_byte_map_base;
   }
 
   CardValue* write_byte_map() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ public interface MatchResultVisitor {
     void visitTestClass(AcceptChildren acceptChildren);
     void visitIRMethod(AcceptChildren acceptChildren, Method method, int failedIRRules);
     void visitMethodNotCompiled(Method method, int failedIRRules);
+    void visitMethodNotCompilable(Method method, int failedIRRules);
     void visitIRRule(AcceptChildren acceptChildren, int irRuleId, IR irAnno);
     void visitCompilePhaseIRRule(AcceptChildren acceptChildren, CompilePhase compilePhase, String compilationOutput);
     void visitNoCompilePhaseCompilation(CompilePhase compilePhase);

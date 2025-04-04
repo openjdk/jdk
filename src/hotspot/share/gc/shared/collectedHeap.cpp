@@ -29,7 +29,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/gcTrace.hpp"
@@ -350,36 +350,10 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
       return result;
     }
 
-    if (GCLocker::is_active_and_needs_gc()) {
-      // If the GCLocker is active, just expand and allocate.
-      // If that does not succeed, wait if this thread is not
-      // in a critical section itself.
-      result = loader_data->metaspace_non_null()->expand_and_allocate(word_size, mdtype);
-      if (result != nullptr) {
-        return result;
-      }
-      JavaThread* jthr = JavaThread::current();
-      if (!jthr->in_critical()) {
-        // Wait for JNI critical section to be exited
-        GCLocker::stall_until_clear();
-        // The GC invoked by the last thread leaving the critical
-        // section will be a young collection and a full collection
-        // is (currently) needed for unloading classes so continue
-        // to the next iteration to get a full GC.
-        continue;
-      } else {
-        if (CheckJNICalls) {
-          fatal("Possible deadlock due to allocating while"
-                " in jni critical section");
-        }
-        return nullptr;
-      }
-    }
-
     {  // Need lock to get self consistent gc_count's
       MutexLocker ml(Heap_lock);
-      gc_count      = Universe::heap()->total_collections();
-      full_gc_count = Universe::heap()->total_full_collections();
+      gc_count      = total_collections();
+      full_gc_count = total_full_collections();
     }
 
     // Generate a VM operation
@@ -389,13 +363,8 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
                                        gc_count,
                                        full_gc_count,
                                        GCCause::_metadata_GC_threshold);
-    VMThread::execute(&op);
 
-    // If GC was locked out, try again. Check before checking success because the
-    // prologue could have succeeded and the GC still have been locked out.
-    if (op.gc_locked()) {
-      continue;
-    }
+    VMThread::execute(&op);
 
     if (op.prologue_succeeded()) {
       return op.result();
@@ -591,7 +560,6 @@ void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {
   LogTarget(Trace, gc, classhisto) lt;
   if (lt.is_enabled()) {
     GCTraceTime(Trace, gc, classhisto) tm(before ? "Class Histogram (before full gc)" : "Class Histogram (after full gc)", timer);
-    ResourceMark rm;
     LogStream ls(lt);
     VM_GC_HeapInspection inspector(&ls, false /* ! full gc */);
     inspector.doit();

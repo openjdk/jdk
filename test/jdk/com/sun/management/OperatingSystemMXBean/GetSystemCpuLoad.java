@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,46 @@
  * @test
  * @bug     7028071
  * @summary Basic unit test of OperatingSystemMXBean.getProcessCpuLoad()
- *
+ * @library /test/lib
  * @run main GetSystemCpuLoad
  */
 
-import java.lang.management.*;
 import com.sun.management.OperatingSystemMXBean;
+import java.lang.management.*;
+import jdk.test.lib.Platform;
 
 public class GetSystemCpuLoad {
     public static void main(String[] argv) throws Exception {
         OperatingSystemMXBean mbean = (com.sun.management.OperatingSystemMXBean)
             ManagementFactory.getOperatingSystemMXBean();
+
+        Exception ex = null;
         double load;
-        for(int i=0; i<10; i++) {
+
+        for (int i = 0; i < 10; i++) {
             load = mbean.getSystemCpuLoad();
-            if((load<0.0 || load>1.0) && load != -1.0) {
+            if (load == -1.0 && Platform.isWindows()) {
+                // Some Windows 2019 systems can return -1 for the first few reads.
+                // Remember a -1 in case it never gets better.
+                ex = new RuntimeException("getSystemCpuLoad() returns " + load
+                         + " which is not in the [0.0,1.0] interval");
+
+            } else if (load < 0.0 || load > 1.0) {
                 throw new RuntimeException("getSystemCpuLoad() returns " + load
-                       +  " which is not in the [0.0,1.0] interval");
+                           + " which is not in the [0.0,1.0] interval");
+            } else {
+                // A good reading: forget any previous -1.
+                ex = null;
             }
             try {
                 Thread.sleep(200);
             } catch(InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+
+        if (ex != null) {
+            throw ex;
         }
     }
 }

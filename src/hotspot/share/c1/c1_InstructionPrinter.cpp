@@ -779,12 +779,6 @@ void InstructionPrinter::do_ExceptionObject(ExceptionObject* x) {
   output()->print("incoming exception");
 }
 
-
-void InstructionPrinter::do_RoundFP(RoundFP* x) {
-  output()->print("round_fp ");
-  print_value(x->input());
-}
-
 void InstructionPrinter::do_UnsafeGet(UnsafeGet* x) {
   print_unsafe_op(x, x->is_raw() ? "UnsafeGet (raw)" : "UnsafeGet");
   output()->put(')');
