@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
  * questions.
  */
 
-package com.sun.org.apache.xalan.internal.utils;
+package jdk.xml.internal;
 
 import javax.xml.XMLConstants;
-import jdk.xml.internal.JdkConstants;
 
 /**
  * This class manages security related properties
@@ -39,6 +38,8 @@ public final class XMLSecurityPropertyManager extends FeaturePropertyBase {
      */
     public static enum Property {
         ACCESS_EXTERNAL_DTD(XMLConstants.ACCESS_EXTERNAL_DTD,
+                JdkConstants.EXTERNAL_ACCESS_DEFAULT),
+        ACCESS_EXTERNAL_SCHEMA(XMLConstants.ACCESS_EXTERNAL_SCHEMA,
                 JdkConstants.EXTERNAL_ACCESS_DEFAULT),
         ACCESS_EXTERNAL_STYLESHEET(XMLConstants.ACCESS_EXTERNAL_STYLESHEET,
                 JdkConstants.EXTERNAL_ACCESS_DEFAULT);
@@ -55,11 +56,13 @@ public final class XMLSecurityPropertyManager extends FeaturePropertyBase {
             return (propertyName == null) ? false : name.equals(propertyName);
         }
 
+        public String propertyName() {
+            return name;
+        }
         String defaultValue() {
             return defaultValue;
         }
     }
-
 
     /**
      * Default constructor. Establishes default values
@@ -71,6 +74,20 @@ public final class XMLSecurityPropertyManager extends FeaturePropertyBase {
         }
         //read system properties or jaxp.properties
         readSystemProperties();
+    }
+
+    /**
+     * Finds the property with the given name.
+     * @param propertyName the property name specified
+     * @return the property name if found, null otherwise
+     */
+    public String find(String propertyName) {
+        for (Property property : Property.values()) {
+            if (property.equalsName(propertyName)) {
+                return property.propertyName();
+            }
+        }
+        return null;
     }
 
     /**
@@ -89,11 +106,38 @@ public final class XMLSecurityPropertyManager extends FeaturePropertyBase {
     }
 
     /**
+     * Set the value for a specific property.
+     *
+     * @param property the property
+     * @param state the state of the property
+     * @param value the value of the property
+     */
+    public void setValue(Property property, State state, String value) {
+        //only update if it shall override
+        if (state.compareTo(states[property.ordinal()]) >= 0) {
+            values[property.ordinal()] = value;
+            states[property.ordinal()] = state;
+        }
+    }
+
+    /**
+     * Return the value of the specified property
+     *
+     * @param property the property
+     * @return the value of the property
+     */
+    public String getValue(Property property) {
+        return values[property.ordinal()];
+    }
+
+    /**
      * Read from system properties, or those in jaxp.properties
      */
     private void readSystemProperties() {
         getSystemProperty(Property.ACCESS_EXTERNAL_DTD,
                 JdkConstants.SP_ACCESS_EXTERNAL_DTD);
+        getSystemProperty(Property.ACCESS_EXTERNAL_SCHEMA,
+                JdkConstants.SP_ACCESS_EXTERNAL_SCHEMA);
         getSystemProperty(Property.ACCESS_EXTERNAL_STYLESHEET,
                 JdkConstants.SP_ACCESS_EXTERNAL_STYLESHEET);
     }
