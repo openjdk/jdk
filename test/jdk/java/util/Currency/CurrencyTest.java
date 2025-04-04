@@ -93,14 +93,13 @@ public class CurrencyTest {
         }
 
         // Provide 3 length code, but first 2 chars should not be able to index
-        // the main table
+        // the main table, thus resulting as incorrect country code
         @Test
         void invalidCountryInCodeTest() {
-            var badCode = "..A";
             IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                    Currency.getInstance(badCode), "getInstance() did not throw IAE");
+                    Currency.getInstance("..A"), "getInstance() did not throw IAE");
             assertEquals("The country code: \"%s\" is not a valid ISO 3166 code"
-                    .formatted(badCode.substring(0,2)), ex.getMessage());
+                    .formatted(".."), ex.getMessage());
         }
 
         // Calling getInstance() with a currency code not 3 characters long should throw
