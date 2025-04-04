@@ -1370,7 +1370,7 @@ public final class Main {
                 if (nullStream) {
                     keyStore.store(null, pass);
                 } else {
-                    ByteArrayOutputStream bout = ByteArrayOutputStream.unsynchronizedInstance();
+                    ByteArrayOutputStream bout = new ByteArrayOutputStream();
                     keyStore.store(bout, pass);
                     try (FileOutputStream fout = new FileOutputStream(ksfname)) {
                         fout.write(bout.toByteArray());

@@ -1597,7 +1597,7 @@ public final class ObjectStreamClass implements Serializable {
         }
 
         try {
-            ByteArrayOutputStream bout = ByteArrayOutputStream.unsynchronizedInstance();
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
             DataOutputStream dout = new DataOutputStream(bout);
 
             dout.writeUTF(cl.getName());

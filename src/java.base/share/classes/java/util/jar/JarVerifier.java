@@ -103,7 +103,7 @@ class JarVerifier {
         verifiedSigners = new Hashtable<>();
         sigFileData = new Hashtable<>(11);
         pendingBlocks = new ArrayList<>();
-        baos = ByteArrayOutputStream.unsynchronizedInstance();
+        baos = new ByteArrayOutputStream();
         manifestDigests = new ArrayList<>();
         signersToAlgs = new HashMap<>();
     }

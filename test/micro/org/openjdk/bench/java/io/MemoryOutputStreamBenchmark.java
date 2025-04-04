@@ -25,6 +25,7 @@ package micro.org.openjdk.bench.java.io;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.MemoryOutputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
@@ -78,12 +79,12 @@ public class MemoryOutputStreamBenchmark {
 
     public OutputStream noopOut;
 
-    public ByteArrayOutputStream out;
+    public OutputStream out;
 
-    @Param(value = { "base", "unsync", "memory" })
+    @Param(value = { "base", "memory" })
     public String outputStreamType;
 
-    public ByteArrayOutputStream populatedOutputStream;
+    public OutputStream populatedOutputStream;
 
     @Param(value = { "4096", "" + (1024 * 1024), "" + (16 * 1024 * 1024), "" + (512 * 1024 * 1024) })
     public long responseSize;
@@ -92,17 +93,19 @@ public class MemoryOutputStreamBenchmark {
 
     @Benchmark
     public Object toByteArray() throws IOException {
-        return populatedOutputStream.toByteArray();
+        if (populatedOutputStream instanceof ByteArrayOutputStream) {
+            return ((ByteArrayOutputStream) populatedOutputStream).toByteArray();
+        } else {
+            return ((MemoryOutputStream) populatedOutputStream).toByteArray();
+        }
     }
 
-    private ByteArrayOutputStream getNewOutputStream() {
+    private OutputStream getNewOutputStream() {
         switch (outputStreamType) {
         case "base":
-            return ByteArrayOutputStream.synchronizedInstance();
-        case "unsync":
-            return ByteArrayOutputStream.unsynchronizedInstance();
+            return new ByteArrayOutputStream();
         case "memory":
-            return ByteArrayOutputStream.memoryOptimizedInstance();
+            return new MemoryOutputStream();
         default:
             throw new RuntimeException("Unrecognized type parameter: " + outputStreamType);
         }
@@ -127,8 +130,10 @@ public class MemoryOutputStreamBenchmark {
         }
 
         populatedOutputStream = getNewOutputStream();
-        while (populatedOutputStream.size() < responseSize) {
+        long size = 0;
+        while (size < responseSize) {
             populatedOutputStream.write(inputBytes);
+            size += inputBytes.length;
         }
 
     }
@@ -160,6 +165,12 @@ public class MemoryOutputStreamBenchmark {
 
     @Benchmark
     public void writeTo() throws IOException {
-        populatedOutputStream.writeTo(noopOut);
+        if (populatedOutputStream instanceof ByteArrayOutputStream) {
+            ((ByteArrayOutputStream) populatedOutputStream).writeTo(noopOut);
+
+        } else {
+            ((MemoryOutputStream) populatedOutputStream).writeTo(noopOut);
+
+        }
     }
 }
