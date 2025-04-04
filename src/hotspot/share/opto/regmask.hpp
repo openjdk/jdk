@@ -241,10 +241,9 @@ class RegMask {
   // Grow the register mask to ensure it can fit at least min_size words.
   void _grow(unsigned int min_size, bool init = true) {
     if (min_size > _rm_size) {
-      assert(min_size <= round_up_power_of_2(_RM_SIZE_MAX),
-             "unexpected register mask growth");
+      assert(min_size <= _RM_SIZE_MAX, "unexpected register mask growth");
       assert(_arena != nullptr, "register mask not growable");
-      min_size = round_up_power_of_2(min_size);
+      min_size = MIN2(_RM_SIZE_MAX, round_up_power_of_2(min_size));
       unsigned int old_size = _rm_size;
       unsigned int old_ext_size = old_size - _RM_SIZE;
       unsigned int new_ext_size = min_size - _RM_SIZE;
