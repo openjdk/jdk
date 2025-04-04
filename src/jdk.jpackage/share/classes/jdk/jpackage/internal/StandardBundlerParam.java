@@ -26,7 +26,6 @@
 package jdk.jpackage.internal;
 
 
-import jdk.jpackage.internal.model.ConfigException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -41,11 +40,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.ConfigException;
 import static jdk.jpackage.internal.ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT;
-import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.resources.ResourceLocator;
 import static jdk.jpackage.internal.model.RuntimeBuilder.getDefaultModulePath;
-import static jdk.jpackage.internal.util.function.ThrowingBiFunction.toBiFunction;
 
 /**
  * Standard bundler parameters.

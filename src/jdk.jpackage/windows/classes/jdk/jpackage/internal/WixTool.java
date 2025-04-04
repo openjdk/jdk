@@ -24,8 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.DottedVersion;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;

@@ -24,8 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.WinMsiPackage;
-import jdk.jpackage.internal.model.DottedVersion;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -44,6 +42,7 @@ import jdk.internal.util.Architecture;
 import jdk.jpackage.internal.WixSourceConverter.ResourceGroup;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.model.WinMsiPackage;
 import jdk.jpackage.internal.util.XmlUtils;
 
 /**

@@ -24,7 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.DottedVersion;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;

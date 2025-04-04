@@ -1,9 +1,5 @@
 /*
-<<<<<<<< HEAD:src/jdk.jpackage/macosx/classes/jdk/jpackage/internal/SigningIdentityImpl.java
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
-========
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
->>>>>>>> master:src/jdk.jpackage/share/classes/jdk/jpackage/internal/model/ConfigException.java
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +23,7 @@
  * questions.
  */
 
-package jdk.jpackage.internal.model;
+package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.CodesignConfig.ADHOC_SIGNING_IDENTITY;
 

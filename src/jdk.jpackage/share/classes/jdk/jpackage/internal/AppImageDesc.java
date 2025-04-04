@@ -1,10 +1,5 @@
 /*
-<<<<<<<< HEAD:src/jdk.jpackage/share/classes/jdk/jpackage/internal/AppImageDesc.java
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
-========
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
->>>>>>>> master:src/jdk.jpackage/share/classes/jdk/jpackage/internal/model/PackagerException.java
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -27,7 +22,7 @@
  * questions.
  */
 
-package jdk.jpackage.internal.model;
+package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.util.Objects;
