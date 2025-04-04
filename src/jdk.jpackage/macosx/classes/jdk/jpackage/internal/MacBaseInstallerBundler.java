@@ -25,7 +25,6 @@
 
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;

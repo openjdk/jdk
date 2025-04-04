@@ -24,13 +24,7 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.PackagerException;
-import jdk.jpackage.internal.model.LauncherStartupInfo;
-import jdk.jpackage.internal.model.LauncherModularStartupInfo;
-import jdk.jpackage.internal.model.RuntimeBuilder;
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.module.Configuration;
@@ -52,9 +46,13 @@ import java.util.jar.JarFile;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import jdk.internal.module.ModulePath;
 import jdk.jpackage.internal.model.AppImageLayout;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.LauncherModularStartupInfo;
+import jdk.jpackage.internal.model.LauncherStartupInfo;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.RuntimeBuilder;
 
 final class JLinkRuntimeBuilder implements RuntimeBuilder {
 

@@ -26,7 +26,6 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.MacCertificateUtils.findCertificates;
 
-import java.nio.file.Path;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
@@ -217,6 +216,4 @@ final class SigningIdentityBuilder {
     private String signingIdentity;
     private CertificateSelector certificateSelector;
     private String keychain;
-    private Path entitlements;
-    private String entitlementsResourceName;
 }

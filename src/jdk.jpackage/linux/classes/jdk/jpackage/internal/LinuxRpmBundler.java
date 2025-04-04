@@ -25,12 +25,6 @@
 
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.LinuxPackage;
-import jdk.jpackage.internal.model.PackagerException;
-import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.LinuxRpmPackage;
-import jdk.jpackage.internal.model.DottedVersion;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -38,13 +32,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.LinuxRpmPackage;
+import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackagerException;
 
 
