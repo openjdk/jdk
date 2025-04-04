@@ -400,10 +400,30 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   // TODO: check if limit is really ok, or if we have to adjust slightly.
   //       also we have to check that we don't create cycles ...
 
-  Node* init = _vloop.pre_loop_head()->init_trip();
-  Node* limit = _vloop.cl()->limit();
-  tty->print("init  "); init->dump();
-  tty->print("limit "); limit->dump();
+  Node* init_pre = _vloop.pre_loop_head()->init_trip();
+  Node* init_main = _vloop.cl()->init_trip();
+  Node* limit_main = _vloop.cl()->limit();
+
+  tty->print_cr("init_pre");
+  init_pre->dump_bfs(100,nullptr,"#dC");
+  tty->print_cr("init_main");
+  init_main->dump_bfs(100,nullptr,"#dC");
+  tty->print_cr("limit_main");
+  limit_main->dump_bfs(100,nullptr,"#dC");
+
+  Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
+  Node* limit_pre = pre_opaq->in(1);
+  tty->print_cr("limit_pre");
+  limit_pre->dump_bfs(100,nullptr,"#dC");
+  Node* limit_orig = pre_opaq->original_loop_limit();
+  tty->print_cr("limit_orig");
+  limit_orig->dump_bfs(100,nullptr,"#dC");
+
+  // init: cannot take the main-init, because it depends on the pre-loop
+  //       trip-count. But the limit_pre should be independent, and we
+  //       know that the main-init >= limit_pre. TODO: details.
+  Node* init = limit_pre;
+  Node* limit = limit_main;
 
   if (vp1.iv_scale() == vp2.iv_scale()) {
     // p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)
