@@ -54,10 +54,10 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& re
   const GCCause::Cause cause = is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_allocation_failure;
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  if (heap->cancel_gc(cause)) {
-    log_info(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req.size() * HeapWordSize));
-    request_gc(cause);
-  }
+  // if (heap->cancel_gc(cause)) {
+  // }
+  log_info(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req.size() * HeapWordSize));
+  request_gc(cause);
 
   if (block) {
     MonitorLocker ml(&_alloc_failure_waiters_lock);
@@ -73,9 +73,9 @@ void ShenandoahController::handle_alloc_failure_evac(size_t words) {
   const bool is_humongous = ShenandoahHeapRegion::requires_humongous(words);
   const GCCause::Cause cause = is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_shenandoah_allocation_failure_evac;
 
-  if (heap->cancel_gc(cause)) {
-    log_info(gc)("Failed to allocate " PROPERFMT " for evacuation", PROPERFMTARGS(words * HeapWordSize));
-  }
+  // if (heap->cancel_gc(cause)) {
+  // }
+  log_info(gc)("Failed to allocate " PROPERFMT " for evacuation", PROPERFMTARGS(words * HeapWordSize));
 }
 
 void ShenandoahController::notify_alloc_failure_waiters() {
