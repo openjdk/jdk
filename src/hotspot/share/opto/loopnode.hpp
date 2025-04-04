@@ -1290,14 +1290,11 @@ public:
   static LoopIvStride loop_iv_stride(const Node* incr);
   static PhiNode* loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* x);
 
-  bool try_convert_to_counted_loop_old(Node* head, IdealLoopTree*& loop, const BasicType iv_bt);
   bool try_convert_to_counted_loop(Node* head, IdealLoopTree*&loop, const BasicType iv_bt);
 
   Node* loop_nest_replace_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head, BasicType bt);
   bool create_loop_nest(IdealLoopTree* loop, Node_List &old_new);
-#ifdef ASSERT
-  bool convert_to_long_loop(Node* cmp, const Node* phi, const IdealLoopTree* loop);
-#endif
+
   void add_parse_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop, SafePointNode* sfpt);
   SafePointNode* find_safepoint(Node* back_control, const Node* x, const IdealLoopTree* loop);
   IdealLoopTree* insert_outer_loop(IdealLoopTree* loop, LoopNode* outer_l, Node* outer_ift);
@@ -1340,6 +1337,7 @@ public:
         _head(head),
         _loop(loop),
         _iv_bt(iv_bt) {
+      assert(phase != nullptr, "");
       assert(head != nullptr, "");
       assert(loop != nullptr, "");
       assert(iv_bt == T_INT || iv_bt == T_LONG, "");
