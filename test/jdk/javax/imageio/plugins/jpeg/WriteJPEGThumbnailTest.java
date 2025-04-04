@@ -132,14 +132,14 @@ public class WriteJPEGThumbnailTest {
         double sx = ((double)width) / 1000.0;
         double sy = ((double)height) / 1000.0;
         g.transform(AffineTransform.getScaleInstance(sx, sy));
-        g.setColor(Color.red);
-        g.fillRect(0,0,100,100);
-        g.setColor(Color.green);
-        g.fillRect(900,0,900,100);
-        g.setColor(Color.orange);
-        g.fillRect(0,900,100,100);
-        g.setColor(Color.magenta);
-        g.fillRect(900,900,100,100);
+        g.setColor(Color.RED);
+        g.fillRect(0, 0, 100, 100);
+        g.setColor(Color.GREEN);
+        g.fillRect(900, 0, 900, 100);
+        g.setColor(Color.ORANGE);
+        g.fillRect(0, 900, 100, 100);
+        g.setColor(Color.MAGENTA);
+        g.fillRect(900, 900, 100, 100);
         g.dispose();
         return bi;
     }
