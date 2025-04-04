@@ -31,10 +31,7 @@ import java.io.InputStreamReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -351,39 +348,15 @@ public class CDS {
      * be loaded by custom class loaders during runtime.
      * See src/hotspot/share/cds/unregisteredClasses.cpp.
      */
-    private static class UnregisteredClassLoader extends URLClassLoader {
-        /** Class<?> URLClassLoader::defineClass(String name, Resource res) */
-        private static final Method DEFINE_CLASS;
+    private static class UnregisteredClassLoader extends ClassLoader {
         static {
-            try {
-                DEFINE_CLASS = URLClassLoader.class.getDeclaredMethod(
-                    "defineClass", String.class, Resource.class
-                );
-            } catch (NoSuchMethodException e) {
-                throw new InternalError(e);
-            }
-            assert DEFINE_CLASS.getReturnType() == Class.class;
-            DEFINE_CLASS.setAccessible(true);
+            registerAsParallelCapable();
         }
 
         /**
          * Collection of all sources used so far.
-         * <p>
-         * URLClassLoader also has this but we use it in a different way: we
-         * request resources from specific sources rather than from the first
-         * source in the list that has a resource with the requested name.
          */
         private final URLClassPath ucp = new URLClassPath(new URL[0]);
-
-        /**
-         * Used only by native code. Construct an UnregisteredClassLoader for loading
-         * unregistered classes.
-         */
-        private UnregisteredClassLoader() {
-            // Parent is not set to null: we will delegate to system class loader to load registered
-            // supers and interfaces of unregistered classes
-            super(new URL[0]);
-        }
 
         /**
          * Load the class of the given <code>name</code> from the given <code>source</code>.
@@ -404,39 +377,31 @@ public class CDS {
             }
             ucp.addURL(sourceUrl);
 
-            // Almost like URLClassLoader.findClass(...), the main difference is that we request
-            // .class file from the specific source
             final String path = name.replace('.', '/').concat(".class");
             final Resource res = ucp.getResource(path, sourceUrl);
             if (res == null) {
                 throw new ClassNotFoundException(name + ": cannot get " + path + " from " + source);
             }
             try {
+                final var buf = res.getByteBuffer();
                 // While executing this VM may invoke loadClass() to load supers and interfaces of
                 // this unregistered class. This should only happen for registered supers and
                 // interfaces because all unregistered ones should have already been loaded by this
                 // class loader. Thus it is safe to delegate their loading to system class loader
                 // (our parent) - this is what the default implementation of loadClass() will do.
-                return (Class<?>) DEFINE_CLASS.invoke(this, name, res);
-            } catch (IllegalAccessException e) {
-                throw new AssertionError("defineClass not accessible", e); // Should not happen
-            } catch (InvocationTargetException ite) {
-                final Throwable cause = ite.getCause();
-                switch (cause) {
-                    // Special handling as in URLClassLoader.findClass(...)
-                    case IOException e -> throw new ClassNotFoundException(name, e);
-                    case ClassFormatError e -> {
-                        if (res.getDataError() != null) {
-                            e.addSuppressed(res.getDataError());
-                        }
-                        throw e;
-                    }
-                    // Other
-                    case Error e -> throw e;
-                    case RuntimeException e -> throw e;
-                    case null -> throw new ClassNotFoundException(name, ite);
-                    default -> throw new ClassNotFoundException(name, cause);
+                if (buf != null) {
+                    return defineClass(name, buf, null);
+                } else {
+                    final byte[] bytes = res.getBytes();
+                    return defineClass(name, bytes, 0, bytes.length);
                 }
+            } catch (IOException e) {
+                throw new ClassNotFoundException(name, e);
+            } catch (ClassFormatError e) {
+                if (res.getDataError() != null) {
+                    e.addSuppressed(res.getDataError());
+                }
+                throw e;
             }
         }
 
