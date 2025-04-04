@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMethodData.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileLog.hpp"
@@ -1096,33 +1095,16 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
 #endif
 }
 
-void Parse::modf() {
-  Node *f2 = pop();
-  Node *f1 = pop();
-  Node* c = make_runtime_call(RC_LEAF, OptoRuntime::modf_Type(),
-                              CAST_FROM_FN_PTR(address, SharedRuntime::frem),
-                              "frem", nullptr, //no memory effects
-                              f1, f2);
-  Node* res = _gvn.transform(new ProjNode(c, TypeFunc::Parms + 0));
+Node* Parse::floating_point_mod(Node* a, Node* b, BasicType type) {
+  assert(type == BasicType::T_FLOAT || type == BasicType::T_DOUBLE, "only float and double are floating points");
+  CallNode* mod = type == BasicType::T_DOUBLE ? static_cast<CallNode*>(new ModDNode(C, a, b)) : new ModFNode(C, a, b);
 
-  push(res);
-}
-
-void Parse::modd() {
-  Node *d2 = pop_pair();
-  Node *d1 = pop_pair();
-  Node* c = make_runtime_call(RC_LEAF, OptoRuntime::Math_DD_D_Type(),
-                              CAST_FROM_FN_PTR(address, SharedRuntime::drem),
-                              "drem", nullptr, //no memory effects
-                              d1, top(), d2, top());
-  Node* res_d   = _gvn.transform(new ProjNode(c, TypeFunc::Parms + 0));
-
-#ifdef ASSERT
-  Node* res_top = _gvn.transform(new ProjNode(c, TypeFunc::Parms + 1));
-  assert(res_top == top(), "second value must be top");
-#endif
-
-  push_pair(res_d);
+  Node* prev_mem = set_predefined_input_for_runtime_call(mod);
+  mod = _gvn.transform(mod)->as_Call();
+  set_predefined_output_for_runtime_call(mod, prev_mem, TypeRawPtr::BOTTOM);
+  Node* result = _gvn.transform(new ProjNode(mod, TypeFunc::Parms + 0));
+  record_for_igvn(mod);
+  return result;
 }
 
 void Parse::l2f() {
@@ -2080,19 +2062,19 @@ void Parse::do_one_bytecode() {
 
   // double stores
   case Bytecodes::_dstore_0:
-    set_pair_local( 0, dprecision_rounding(pop_pair()) );
+    set_pair_local( 0, pop_pair() );
     break;
   case Bytecodes::_dstore_1:
-    set_pair_local( 1, dprecision_rounding(pop_pair()) );
+    set_pair_local( 1, pop_pair() );
     break;
   case Bytecodes::_dstore_2:
-    set_pair_local( 2, dprecision_rounding(pop_pair()) );
+    set_pair_local( 2, pop_pair() );
     break;
   case Bytecodes::_dstore_3:
-    set_pair_local( 3, dprecision_rounding(pop_pair()) );
+    set_pair_local( 3, pop_pair() );
     break;
   case Bytecodes::_dstore:
-    set_pair_local( iter().get_index(), dprecision_rounding(pop_pair()) );
+    set_pair_local( iter().get_index(), pop_pair() );
     break;
 
   case Bytecodes::_pop:  dec_sp(1);   break;
@@ -2274,47 +2256,35 @@ void Parse::do_one_bytecode() {
     b = pop();
     a = pop();
     c = _gvn.transform( new SubFNode(a,b) );
-    d = precision_rounding(c);
-    push( d );
+    push(c);
     break;
 
   case Bytecodes::_fadd:
     b = pop();
     a = pop();
     c = _gvn.transform( new AddFNode(a,b) );
-    d = precision_rounding(c);
-    push( d );
+    push(c);
     break;
 
   case Bytecodes::_fmul:
     b = pop();
     a = pop();
     c = _gvn.transform( new MulFNode(a,b) );
-    d = precision_rounding(c);
-    push( d );
+    push(c);
     break;
 
   case Bytecodes::_fdiv:
     b = pop();
     a = pop();
     c = _gvn.transform( new DivFNode(nullptr,a,b) );
-    d = precision_rounding(c);
-    push( d );
+    push(c);
     break;
 
   case Bytecodes::_frem:
-    if (Matcher::has_match_rule(Op_ModF)) {
-      // Generate a ModF node.
-      b = pop();
-      a = pop();
-      c = _gvn.transform( new ModFNode(nullptr,a,b) );
-      d = precision_rounding(c);
-      push( d );
-    }
-    else {
-      // Generate a call.
-      modf();
-    }
+    // Generate a ModF node.
+    b = pop();
+    a = pop();
+    push(floating_point_mod(a, b, BasicType::T_FLOAT));
     break;
 
   case Bytecodes::_fcmpl:
@@ -2357,8 +2327,6 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_d2f:
     a = pop_pair();
     b = _gvn.transform( new ConvD2FNode(a));
-    // This breaks _227_mtrt (speed & correctness) and _222_mpegaudio (speed)
-    //b = _gvn.transform(new RoundFloatNode(nullptr, b) );
     push( b );
     break;
 
@@ -2366,11 +2334,6 @@ void Parse::do_one_bytecode() {
     if (Matcher::convL2FSupported()) {
       a = pop_pair();
       b = _gvn.transform( new ConvL2FNode(a));
-      // For x86_32.ad, FILD doesn't restrict precision to 24 or 53 bits.
-      // Rather than storing the result into an FP register then pushing
-      // out to memory to round, the machine instruction that implements
-      // ConvL2D is responsible for rounding.
-      // c = precision_rounding(b);
       push(b);
     } else {
       l2f();
@@ -2380,8 +2343,6 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_l2d:
     a = pop_pair();
     b = _gvn.transform( new ConvL2DNode(a));
-    // For x86_32.ad, rounding is always necessary (see _l2f above).
-    // c = dprecision_rounding(b);
     push_pair(b);
     break;
 
@@ -2401,32 +2362,28 @@ void Parse::do_one_bytecode() {
     b = pop_pair();
     a = pop_pair();
     c = _gvn.transform( new SubDNode(a,b) );
-    d = dprecision_rounding(c);
-    push_pair( d );
+    push_pair(c);
     break;
 
   case Bytecodes::_dadd:
     b = pop_pair();
     a = pop_pair();
     c = _gvn.transform( new AddDNode(a,b) );
-    d = dprecision_rounding(c);
-    push_pair( d );
+    push_pair(c);
     break;
 
   case Bytecodes::_dmul:
     b = pop_pair();
     a = pop_pair();
     c = _gvn.transform( new MulDNode(a,b) );
-    d = dprecision_rounding(c);
-    push_pair( d );
+    push_pair(c);
     break;
 
   case Bytecodes::_ddiv:
     b = pop_pair();
     a = pop_pair();
     c = _gvn.transform( new DivDNode(nullptr,a,b) );
-    d = dprecision_rounding(c);
-    push_pair( d );
+    push_pair(c);
     break;
 
   case Bytecodes::_dneg:
@@ -2436,20 +2393,10 @@ void Parse::do_one_bytecode() {
     break;
 
   case Bytecodes::_drem:
-    if (Matcher::has_match_rule(Op_ModD)) {
-      // Generate a ModD node.
-      b = pop_pair();
-      a = pop_pair();
-      // a % b
-
-      c = _gvn.transform( new ModDNode(nullptr,a,b) );
-      d = dprecision_rounding(c);
-      push_pair( d );
-    }
-    else {
-      // Generate a call.
-      modd();
-    }
+    // Generate a ModD node.
+    b = pop_pair();
+    a = pop_pair();
+    push_pair(floating_point_mod(a, b, BasicType::T_DOUBLE));
     break;
 
   case Bytecodes::_dcmpl:
@@ -2621,8 +2568,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_i2f:
     a = pop();
     b = _gvn.transform( new ConvI2FNode(a) ) ;
-    c = precision_rounding(b);
-    push (b);
+    push(b);
     break;
 
   case Bytecodes::_i2d:

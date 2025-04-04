@@ -90,7 +90,6 @@ class CodeCache : AllStatic {
   friend class JVMCIVMStructs;
   template <class T, class Filter, bool is_relaxed> friend class CodeBlobIterator;
   friend class WhiteBox;
-  friend class CodeCacheLoader;
   friend class ShenandoahParallelCodeHeapIterator;
  private:
   // CodeHeaps of the cache

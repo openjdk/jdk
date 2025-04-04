@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
@@ -579,7 +578,7 @@ void TemplateInterpreterGenerator::lock_method() {
 
   #ifdef ASSERT
     { Label L;
-      __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+      __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
       __ tbnz(Rtemp, JVM_ACC_SYNCHRONIZED_BIT, L);
       __ stop("method doesn't need synchronization");
       __ bind(L);
@@ -588,7 +587,7 @@ void TemplateInterpreterGenerator::lock_method() {
 
   // get synchronization object
   { Label done;
-    __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+    __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
     __ tst(Rtemp, JVM_ACC_STATIC);
     __ ldr(R0, Address(Rlocals, Interpreter::local_offset_in_bytes(0)), eq); // get receiver (assume this is frequent case)
     __ b(done, eq);
@@ -795,10 +794,6 @@ address TemplateInterpreterGenerator::generate_currentThread() { return nullptr;
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
@@ -851,7 +846,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // make sure method is native & not abstract
 #ifdef ASSERT
-  __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+  __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
   {
     Label L;
     __ tbnz(Rtemp, JVM_ACC_NATIVE_BIT, L);
@@ -893,7 +888,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // no synchronization necessary
 #ifdef ASSERT
       { Label L;
-        __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+        __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
         __ tbz(Rtemp, JVM_ACC_SYNCHRONIZED_BIT, L);
         __ stop("method needs synchronization");
         __ bind(L);
@@ -975,7 +970,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Pass JNIEnv and mirror for static methods
   {
     Label L;
-    __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+    __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
     __ add(R0, Rthread, in_bytes(JavaThread::jni_environment_offset()));
     __ tbz(Rtemp, JVM_ACC_STATIC_BIT, L);
     __ load_mirror(Rtemp, Rmethod, Rtemp);
@@ -1204,7 +1199,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // make sure method is not native & not abstract
 #ifdef ASSERT
-  __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+  __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
   {
     Label L;
     __ tbz(Rtemp, JVM_ACC_NATIVE_BIT, L);
@@ -1249,7 +1244,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     // no synchronization necessary
 #ifdef ASSERT
       { Label L;
-        __ ldr_u32(Rtemp, Address(Rmethod, Method::access_flags_offset()));
+        __ ldrh(Rtemp, Address(Rmethod, Method::access_flags_offset()));
         __ tbz(Rtemp, JVM_ACC_SYNCHRONIZED_BIT, L);
         __ stop("method needs synchronization");
         __ bind(L);

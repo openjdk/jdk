@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,6 @@ final class JVMUpcalls {
                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for " + clazz.getName() + " since container support is missing");
                     return oldBytes;
                 }
-                EventWriterKey.ensureEventWriterFactory();
                 EventConfiguration configuration = JVMSupport.getConfiguration(clazz.asSubclass(jdk.internal.event.Event.class));
                 if (configuration == null) {
                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "No event configuration found for " + clazz.getName() + ". Ignoring instrumentation request.");
@@ -124,13 +123,12 @@ final class JVMUpcalls {
                     return oldBytes;
                 }
             }
-            EventWriterKey.ensureEventWriterFactory();
             Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Adding " + (forceInstrumentation ? "forced " : "") + "instrumentation for event type " + eventName + " during initial class load");
             byte[] bytes = ei.buildInstrumented();
             Bytecode.log(ei.getClassName() + "(" + traceId + ")", bytes);
             return bytes;
         } catch (Throwable t) {
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Unexpected error when adding instrumentation for event type " + eventName);
+            Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Unexpected error when adding instrumentation for event type " + eventName + ". " + t.getMessage());
             return oldBytes;
         }
     }
@@ -155,6 +153,8 @@ final class JVMUpcalls {
      * @return a new thread
      */
     static Thread createRecorderThread(ThreadGroup systemThreadGroup, ClassLoader contextClassLoader) {
-        return SecuritySupport.createRecorderThread(systemThreadGroup, contextClassLoader);
+        Thread thread = new Thread(systemThreadGroup, "JFR Recorder Thread");
+        thread.setContextClassLoader(contextClassLoader);
+        return thread;
     }
 }

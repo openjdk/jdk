@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 4023247 4027685 4032037 4072029 4073003 4118010 4120606 4133833 4136916 6274757 6314387
+ * @bug 4023247 4027685 4032037 4072029 4073003 4118010 4120606 4133833
+ *      4136916 6274757 6314387 8347841
  * @run junit DateRegression
  */
 
@@ -106,7 +107,7 @@ public class DateRegression {
         TimeZone saveZone = TimeZone.getDefault();
 
         try {
-            TimeZone.setDefault(TimeZone.getTimeZone("PST"));
+            TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
             Date now = new Date();
             String s = now.toString();
             Date now2 = new Date(now.toString());

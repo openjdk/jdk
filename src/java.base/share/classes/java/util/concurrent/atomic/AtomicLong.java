@@ -63,6 +63,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
     private static final long VALUE
         = U.objectFieldOffset(AtomicLong.class, "value");
 
+    /** @serial */
     private volatile long value;
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/basicLock.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/synchronizer.hpp"
 
-void BasicLock::print_on(outputStream* st, oop owner) const {
+void BasicLock::print_on(outputStream* st, oop owner) {
   st->print("monitor");
   if (UseObjectMonitorTable) {
     ObjectMonitor* mon = object_monitor_cache();

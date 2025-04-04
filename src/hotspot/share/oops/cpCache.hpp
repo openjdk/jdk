@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,6 @@ class ConstantPoolCache: public MetaspaceObj {
   MetaspaceObj::Type type() const         { return ConstantPoolCacheType; }
 
   oop  archived_references() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  void set_archived_references(int root_index) NOT_CDS_JAVA_HEAP_RETURN;
   void clear_archived_references() NOT_CDS_JAVA_HEAP_RETURN;
 
   inline objArrayOop resolved_references();

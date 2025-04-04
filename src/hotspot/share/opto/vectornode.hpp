@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,12 +88,16 @@ class VectorNode : public TypeNode {
   static bool is_convert_opcode(int opc);
   static bool is_minmax_opcode(int opc);
 
+  bool should_swap_inputs_to_help_global_value_numbering();
+
   static bool is_vshift_cnt_opcode(int opc);
 
   static bool is_rotate_opcode(int opc);
 
   static int opcode(int sopc, BasicType bt);         // scalar_opc -> vector_opc
   static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc
+
+  static int shift_count_opcode(int opc);
 
   // Limits on vector size (number of elements) for auto-vectorization.
   static bool vector_size_supported_auto_vectorization(const BasicType bt, int size);
@@ -1764,7 +1768,7 @@ class VectorCastNode : public VectorNode {
   VectorCastNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
   virtual int Opcode() const;
 
-  static VectorCastNode* make(int vopc, Node* n1, BasicType bt, uint vlen);
+  static VectorNode* make(int vopc, Node* n1, BasicType bt, uint vlen);
   static int  opcode(int opc, BasicType bt, bool is_signed = true);
   static bool implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type);
 

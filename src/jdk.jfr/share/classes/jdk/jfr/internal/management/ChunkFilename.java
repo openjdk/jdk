@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
 package jdk.jfr.internal.management;
 
 import java.nio.file.Paths;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.io.IOException;
 
-import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.util.ValueFormatter;
-import jdk.jfr.internal.consumer.FileAccess;
 
 // Allows a remote streaming client to create chunk files
 // with same naming scheme as the JVM.
@@ -40,23 +39,12 @@ public final class ChunkFilename {
    private static final String FILE_EXTENSION = ".jfr";
 
    private final Path directory;
-   private final FileAccess fileAcess;
 
    private Path lastPath;
    private int counter;
 
-   public static ChunkFilename newUnpriviliged(Path directory) {
-       return new ChunkFilename(directory, FileAccess.UNPRIVILEGED);
-   }
-
-   public static ChunkFilename newPriviliged(Path directory) {
-       return new ChunkFilename(directory, SecuritySupport.PRIVILEGED);
-   }
-
-   private ChunkFilename(Path directory, FileAccess fileAccess) {
-       // Avoid malicious implementations of Path interface
-       this.directory = Paths.get(directory.toString());
-       this.fileAcess = fileAccess;
+   public ChunkFilename(Path directory) {
+       this.directory = directory;
    }
 
    public String next(LocalDateTime time) throws IOException {
@@ -65,7 +53,7 @@ public final class ChunkFilename {
 
        // If less than one file per second (typically case)
        if (lastPath == null || !p.equals(lastPath)) {
-           if (!fileAcess.exists(p)) {
+           if (!Files.exists(p)) {
                counter = 1; // reset counter
                lastPath = p;
                return p.toString();
@@ -77,7 +65,7 @@ public final class ChunkFilename {
            String extendedName = makeExtendedName(filename, counter);
            p = directory.resolve(extendedName);
            counter++;
-           if (!fileAcess.exists(p)) {
+           if (!Files.exists(p)) {
                return p.toString();
            }
        }

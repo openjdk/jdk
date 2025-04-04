@@ -1133,6 +1133,15 @@ public class Utils {
     }
 
     /**
+     * Replaces each group of one or more whitespace characters with a single canonical space
+     * @param s the string to be normalized
+     * @return normalized string
+     */
+    public String normalizeWhitespace(String s) {
+        return s.replaceAll("\\s+", " ");
+    }
+
+    /**
      * Returns a locale independent lower cased String. That is, it
      * always uses US locale, this is a clone of the one in StringUtils.
      * @param s to convert

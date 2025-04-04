@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1CardSetMemory.inline.hpp"
@@ -779,6 +778,15 @@ G1AddCardResult G1CardSet::add_card(uintptr_t card) {
   uint card_region;
   uint card_within_region;
   split_card(card, card_region, card_within_region);
+
+#ifdef ASSERT
+  {
+    uint region_idx = card_region >> config()->log2_card_regions_per_heap_region();
+    G1HeapRegion* r = G1CollectedHeap::heap()->region_at(region_idx);
+    assert(!r->rem_set()->is_added_to_cset_group() ||
+           r->rem_set()->cset_group()->card_set() != this, "Should not be sharing a cardset");
+  }
+#endif
 
   return add_card(card_region, card_within_region, true /* increment_total */);
 }

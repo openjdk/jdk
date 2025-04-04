@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public sealed class TextComponent extends Component implements Accessible
     int selectionEnd;
 
     /**
-     * A flag used to tell whether the background has been set by
+     * @serial A flag used to tell whether the background has been set by
      * developer code (as opposed to AWT code).  Used to determine
      * the background color of non-editable TextComponents.
      */
@@ -1207,7 +1207,7 @@ public sealed class TextComponent extends Component implements Accessible
     }  // end of AccessibleAWTTextComponent
 
     /**
-     * Whether support of input methods should be checked or not.
+     * @serial Whether support of input methods should be checked or not.
      */
     private boolean checkForEnableIM = true;
 }

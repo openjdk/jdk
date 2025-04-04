@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,40 @@
  */
 package java.lang.classfile.constantpool;
 
+import java.io.DataInput;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.MethodModel;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.invoke.TypeDescriptor;
+
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
- * Models a {@code CONSTANT_UTF8_info} constant in the constant pool of a
- * classfile.
- * @jvms 4.4.7 The CONSTANT_Utf8_info Structure
+ * Models a {@code CONSTANT_UTF8_info} constant, representing strings, in the
+ * constant pool of a {@code class} file.  This describes strings in the
+ * {@linkplain DataInput##modified-utf-8 Modified UTF-8} format.
+ * <p>
+ * The use of a {@code Utf8Entry} is represented by a {@link String}.
+ * Conversions are through {@link ConstantPoolBuilder#utf8Entry(String)} and
+ * {@link #stringValue()}.
+ * <p>
+ * Some uses of {@code Utf8Entry} represent field or method {@linkplain
+ * TypeDescriptor#descriptorString() descriptor strings}, symbolically
+ * represented as {@link ClassDesc} or {@link MethodTypeDesc}, depending on
+ * where a {@code Utf8Entry} appear.  Entries representing such uses are created
+ * with {@link ConstantPoolBuilder#utf8Entry(ClassDesc)} and {@link
+ * ConstantPoolBuilder#utf8Entry(MethodTypeDesc)}, and they can be converted to
+ * symbolic descriptors on a per-use-site basis, such as in {@link
+ * AnnotationValue.OfClass#classSymbol()} and {@link MethodModel#methodTypeSymbol()}.
+ * <p>
+ * Unlike most constant pool entries, a UTF-8 entry is of flexible length: it is
+ * represented as an array structure, with an {@code u2} for the data length in
+ * bytes, followed by that number of bytes of Modified UTF-8 data.  It can
+ * represent at most 65535 bytes of data due to the physical restrictions.
  *
+ * @jvms 4.4.7 The {@code CONSTANT_Utf8_info} Structure
+ * @see DataInput##modified-utf-8 Modified UTF-8
  * @since 24
  */
 public sealed interface Utf8Entry
@@ -39,6 +66,15 @@ public sealed interface Utf8Entry
 
     /**
      * {@return the string value for this entry}
+     *
+     * @apiNote
+     * A {@code Utf8Entry} can be used directly as a {@link CharSequence} if
+     * {@code String} functionalities are not strictly desired.  If only string
+     * equivalence is desired, {@link #equalsString(String) equalsString} should
+     * be used.  Reduction of string processing can significantly improve {@code
+     * class} file reading performance.
+     *
+     * @see ConstantPoolBuilder#utf8Entry(String)
      */
     String stringValue();
 

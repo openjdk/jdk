@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,6 @@
 
 package jdk.internal.foreign.abi;
 
-import java.lang.classfile.Annotation;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.Label;
-import java.lang.classfile.Opcode;
-import java.lang.classfile.TypeKind;
-
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.Utils;
@@ -51,12 +44,23 @@ import jdk.internal.foreign.abi.Binding.VMStore;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.io.IOException;
+import java.lang.classfile.Annotation;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodTypeDesc;
-import java.lang.foreign.*;
+import java.lang.foreign.AddressLayout;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -69,9 +73,10 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 
-import static java.lang.constant.ConstantDescs.*;
 import static java.lang.classfile.ClassFile.*;
-import static java.lang.classfile.TypeKind.*;
+import static java.lang.classfile.TypeKind.LONG;
+import static java.lang.classfile.TypeKind.REFERENCE;
+import static java.lang.constant.ConstantDescs.*;
 import static jdk.internal.constant.ConstantUtils.*;
 
 public class BindingSpecializer {

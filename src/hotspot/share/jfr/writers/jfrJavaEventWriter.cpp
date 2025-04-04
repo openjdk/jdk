@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "jni.h"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -32,6 +30,7 @@
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
+#include "jni.h"
 #include "memory/iterator.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -119,7 +118,7 @@ bool JfrJavaEventWriter::initialize() {
 }
 
 void JfrJavaEventWriter::flush(jobject writer, jint used, jint requested, JavaThread* jt) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt));
   assert(writer != nullptr, "invariant");
   JfrBuffer* const current = jt->jfr_thread_local()->java_buffer();
   assert(current != nullptr, "invariant");
@@ -131,9 +130,6 @@ void JfrJavaEventWriter::flush(jobject writer, jint used, jint requested, JavaTh
   const bool is_valid = buffer->free_size() >= (size_t)(used + requested);
   u1* const new_current_position = is_valid ? buffer->pos() + used : buffer->pos();
   assert(start_pos_offset != invalid_offset, "invariant");
-  // can safepoint here
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
-  ThreadInVMfromNative transition(jt);
   oop const w = JNIHandles::resolve_non_null(writer);
   assert(w != nullptr, "invariant");
   w->long_field_put(start_pos_offset, (jlong)buffer->pos());
@@ -148,11 +144,10 @@ void JfrJavaEventWriter::flush(jobject writer, jint used, jint requested, JavaTh
   }
 }
 
-jlong JfrJavaEventWriter::commit(jlong next_position) {
+jlong JfrJavaEventWriter::commit(jlong next_position, JavaThread* jt) {
   assert(next_position != 0, "invariant");
-  JavaThread* const jt = JavaThread::current();
   assert(jt != nullptr, "invariant");
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt));
   JfrThreadLocal* const tl = jt->jfr_thread_local();
   assert(tl != nullptr, "invariant");
   assert(tl->has_java_event_writer(), "invariant");
@@ -168,12 +163,11 @@ jlong JfrJavaEventWriter::commit(jlong next_position) {
   }
   // set_pos() has release semantics
   current->set_pos(next);
-  if (!current->lease()) {
-    return next_position;
+  if (current->lease()) {
+    flush(tl->java_event_writer(), 0, 0, jt);
+    return 0; // signals that the buffer lease was returned.
   }
-  assert(current->lease(), "invariant");
-  flush(tl->java_event_writer(), 0, 0, jt);
-  return 0; // signals that the buffer lease was returned.
+  return next_position;
 }
 
 class JfrJavaEventWriterNotificationClosure : public ThreadClosure {

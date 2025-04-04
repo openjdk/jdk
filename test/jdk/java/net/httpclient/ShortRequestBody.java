@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,6 +176,23 @@ public class ShortRequestBody {
                 "Expected 200, got ", resp.statusCode());
     }
 
+    static void checkCause(Throwable cause) {
+        Throwable t = cause;
+        boolean found = false;
+        while (t != null && !found) {
+            check(t instanceof IOException, t,
+                    "Expected cause IOException, but got: ", t);
+            String msg = t.getMessage();
+            found =  (msg != null && (msg.contains("Too many") || msg.contains("Too few")));
+            t = t.getCause();
+        }
+        if (!found) {
+            String msg = cause.getMessage();
+            check(msg.contains("Too many") || msg.contains("Too few"),
+                    cause, "Expected Too many|Too few, got: ", cause);
+        }
+    }
+
     static void failureNonBlocking(Supplier<HttpClient> clientSupplier,
                                    URI uri,
                                    HttpRequest.BodyPublisher publisher)
@@ -194,12 +211,7 @@ public class ShortRequestBody {
             throw new RuntimeException("Unexpected timeout", x);
         } catch (ExecutionException expected) {
             err.println("Caught expected: " + expected);
-            Throwable t = expected.getCause();
-            check(t instanceof IOException, t,
-                  "Expected cause IOException, but got: ", t);
-            String msg = t.getMessage();
-            check(msg.contains("Too many") || msg.contains("Too few"),
-                    t, "Expected Too many|Too few, got: ", t);
+            checkCause(expected.getCause());
         }
     }
 
@@ -219,9 +231,7 @@ public class ShortRequestBody {
             throw new RuntimeException("Unexpected timeout", x);
         } catch (IOException expected) {
             err.println("Caught expected: " + expected);
-            String msg = expected.getMessage();
-            check(msg.contains("Too many") || msg.contains("Too few"),
-                    expected,"Expected Too many|Too few, got: ", expected);
+            checkCause(expected);
         }
     }
 

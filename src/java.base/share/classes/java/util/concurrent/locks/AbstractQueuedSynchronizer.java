@@ -532,7 +532,7 @@ public abstract class AbstractQueuedSynchronizer
     private transient volatile Node tail;
 
     /**
-     * The synchronization state.
+     * @serial The synchronization state.
      */
     private volatile int state;
 
