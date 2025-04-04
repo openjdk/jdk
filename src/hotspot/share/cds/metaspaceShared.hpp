@@ -71,7 +71,6 @@ class MetaspaceShared : AllStatic {
     n_regions = 4              // total number of regions
   };
 
-  static void prepare_for_dumping() NOT_CDS_RETURN;
   static void preload_and_dump(TRAPS) NOT_CDS_RETURN;
 #ifdef _LP64
   static void adjust_heap_sizes_for_dumping() NOT_CDS_JAVA_HEAP_RETURN;
