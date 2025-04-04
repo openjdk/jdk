@@ -1635,6 +1635,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * Permission required for callers of methods that may start or
      * kill threads. Lazily constructed.
      */
+    @SuppressWarnings("removal")
     static volatile RuntimePermission modifyThreadPermission;
 
     /**
