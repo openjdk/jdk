@@ -57,6 +57,7 @@ public interface HotSpotJVMCIBackendFactory {
                     Class<CPUFeatureType> enumType,
                     Map<String, Long> constants,
                     long features,
+                    long extra_features,
                     Map<String, String> renaming) {
         EnumSet<CPUFeatureType> outFeatures = EnumSet.noneOf(enumType);
         List<String> missing = new ArrayList<>();
@@ -68,6 +69,17 @@ public interface HotSpotJVMCIBackendFactory {
                 try {
                     CPUFeatureType feature = Enum.valueOf(enumType, renaming.getOrDefault(name, name));
                     if ((features & bitMask) != 0) {
+                        outFeatures.add(feature);
+                    }
+                } catch (IllegalArgumentException iae) {
+                    missing.add(name);
+                }
+            }
+            if (key.startsWith("VM_Version::EXTRA_CPU_")) {
+                String name = key.substring("VM_Version::EXTRA_CPU_".length());
+                try {
+                    CPUFeatureType feature = Enum.valueOf(enumType, renaming.getOrDefault(name, name));
+                    if ((extra_features & bitMask) != 0) {
                         outFeatures.add(feature);
                     }
                 } catch (IllegalArgumentException iae) {
