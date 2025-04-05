@@ -69,6 +69,8 @@ public interface SpeculationLog {
      * format is determined by the implementation of this interface.
      */
     public interface SpeculationReasonEncoding {
+        void setId(byte id, String name);
+
         void addByte(int value);
 
         void addShort(int value);
