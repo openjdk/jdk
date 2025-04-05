@@ -284,7 +284,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
 
         JavaKind returnKind = returnType == null ? JavaKind.Void : returnType.getJavaKind();
         AllocatableValue returnLocation = returnKind == JavaKind.Void ? Value.ILLEGAL : getReturnRegister(returnKind).asValue(valueKindFactory.getValueKind(returnKind.getStackKind()));
-        return new CallingConvention(currentStackOffset, returnLocation, locations);
+        return new CallingConvention(currentStackOffset, returnLocation, List.of(locations), callerSaved.asList().stream().map(Register::asValue).toList());
     }
 
     @Override
