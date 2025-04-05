@@ -448,8 +448,7 @@ public enum KnownOIDs {
         } else if (debug != null) {
             debug.println(o.oid + " => " + o.name());
         }
-        // only register the stdName and aliases if o.registerNames
-        // returns true
+        // only register the stdName and aliases if o.registerNames is true
         if (o.registerNames) {
             String stdNameUpper = o.stdName.toUpperCase(Locale.ENGLISH);
             if (Objects.nonNull(name2enum.put(stdNameUpper, o))) {
@@ -483,15 +482,15 @@ public enum KnownOIDs {
     KnownOIDs(String oid, String stdName, String... aliases) {
         this.oid = oid;
         this.stdName = stdName;
-        this.registerNames = true;
         this.aliases = aliases;
+        this.registerNames = true;
     }
 
     KnownOIDs(String oid, String stdName, boolean registerNames) {
         this.oid = oid;
         this.stdName = stdName;
-        this.registerNames = registerNames;
         this.aliases = new String[0];
+        this.registerNames = registerNames;
     }
 
     // returns the oid string associated with this enum
