@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,8 @@
 class NativeCallStackStorage : public CHeapObjBase {
 public:
   using StackIndex = int;
-
-private:
   constexpr static const StackIndex invalid = std::numeric_limits<StackIndex>::max() - 1;
 
-public:
   static bool equals(const StackIndex a, const StackIndex b) {
     return a == b;
   }

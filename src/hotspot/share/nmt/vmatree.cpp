@@ -52,6 +52,21 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       IntervalState{StateType::Released, empty_regiondata}
   };
 
+  bool is_reserve_operation = state == StateType::Reserved && !use_tag_inplace;
+  bool is_uncommit_operation = state == StateType::Reserved && use_tag_inplace;
+  bool is_commit_operation = state == StateType::Committed;
+  if (is_reserve_operation) {
+    stA.out.set_reserve_stack(metadata.stack_idx);
+    stB.in.set_reserve_stack(metadata.stack_idx);
+    stA.out.set_commit_stack(NativeCallStackStorage::invalid);
+    stA.in.set_commit_stack(NativeCallStackStorage::invalid);
+  }
+  if (is_commit_operation) {
+    stA.out.set_commit_stack(metadata.stack_idx);
+    stB.in.set_commit_stack(metadata.stack_idx);
+    stA.out.set_reserve_stack(NativeCallStackStorage::invalid);
+    stB.in.set_reserve_stack(NativeCallStackStorage::invalid);
+  }
   // First handle A.
   // Find closest node that is LEQ A
   bool LEQ_A_found = false;
@@ -86,6 +101,15 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 
     // Direct address match.
     if (leqA_n->key() == A) {
+      if (is_commit_operation) {
+        if (leqA_n->val().out.has_reserved_stack()) {
+          stA.out.set_reserve_stack(leqA_n->val().out.reserved_stack());
+        }
+      }
+      if (is_uncommit_operation) {
+        stA.out.set_reserve_stack(leqA_n->val().out.reserved_stack());
+        stA.out.set_commit_stack(NativeCallStackStorage::invalid);
+      }
       // Take over in state from old address.
       stA.in = in_state(leqA_n);
 
@@ -109,6 +133,10 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     } else {
       // The address must be smaller.
       assert(A > leqA_n->key(), "must be");
+      if (is_commit_operation) {
+        stA.out.set_reserve_stack(leqA_n->val().out.reserved_stack());
+        stB.in.set_reserve_stack(leqA_n->val().out.reserved_stack());
+      }
 
       // We add a new node, but only if there would be a state change. If there would not be a
       // state change, we just omit the node.
@@ -268,7 +296,7 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
   SummaryDiff diff;
   // Ignore any released ranges, these must be mtNone and have no stack
   if (type != StateType::Released) {
-    RegionData new_data = RegionData(out.stack(), tag);
+    RegionData new_data = RegionData(out.reserved_stack(), tag);
     SummaryDiff result = register_mapping(from, end, type, new_data);
     diff.add(result);
   }
@@ -289,7 +317,7 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
     StateType type = out.type();
 
     if (type != StateType::Released) {
-      RegionData new_data = RegionData(out.stack(), tag);
+      RegionData new_data = RegionData(out.reserved_stack(), tag);
       SummaryDiff result = register_mapping(from, end, type, new_data);
       diff.add(result);
     }
