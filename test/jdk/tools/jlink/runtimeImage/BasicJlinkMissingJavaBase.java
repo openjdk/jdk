@@ -34,7 +34,6 @@ import tests.Helper;
  *          but java.xml.jmod present. It should link from the run-time image without errors.
  * @requires (jlink.packagedModules & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
- * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin
