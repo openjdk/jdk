@@ -22,6 +22,8 @@
  */
 
 #include "opto/vtransform.hpp"
+#include "opto/addnode.hpp"
+#include "opto/movenode.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
@@ -57,7 +59,7 @@ bool VTransformGraph::schedule() {
   VectorSet pre_visited;
   VectorSet post_visited;
 
-  collect_nodes_without_req_or_dependency(stack);
+  collect_nodes_without_strong_dependency(stack);
 
   // We create a reverse-post-visit order. This gives us a linearization, if there are
   // no cycles. Then, we simply reverse the order, and we have a schedule.
@@ -72,8 +74,8 @@ bool VTransformGraph::schedule() {
       //   No  -> we are mid-visit.
       bool all_uses_already_visited = true;
 
-      for (int i = 0; i < vtn->outs(); i++) {
-        VTransformNode* use = vtn->out(i);
+      for (uint i = 0; i < vtn->out_strongs(); i++) {
+        VTransformNode* use = vtn->out_strong(i);
         if (post_visited.test(use->_idx)) { continue; }
         if (pre_visited.test(use->_idx)) {
           // Cycle detected!
@@ -109,11 +111,11 @@ bool VTransformGraph::schedule() {
   return true;
 }
 
-// Push all "root" nodes, i.e. those that have no inputs (req or dependency):
-void VTransformGraph::collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const {
+// Push all "root" nodes, i.e. those that have no strong input dependencies (req or strong memory dependency):
+void VTransformGraph::collect_nodes_without_strong_dependency(GrowableArray<VTransformNode*>& stack) const {
   for (int i = 0; i < _vtnodes.length(); i++) {
     VTransformNode* vtn = _vtnodes.at(i);
-    if (!vtn->has_req_or_dependency()) {
+    if (!vtn->has_strong_dependency()) {
       stack.push(vtn);
     }
   }
@@ -144,11 +146,11 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 }
 #endif
 
-void VTransform::apply_speculative_runtime_checks() {
+void VTransform::apply_speculative_alignment_runtime_checks() {
   if (VLoop::vectors_should_be_aligned()) {
 #ifdef ASSERT
     if (_trace._align_vector || _trace._speculative_runtime_checks) {
-      tty->print_cr("\nVTransform::apply_speculative_runtime_checks: native memory alignment");
+      tty->print_cr("\nVTransform::apply_speculative_alignment_runtime_checks: native memory alignment");
     }
 #endif
 
@@ -214,6 +216,253 @@ void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
   TRACE_SPECULATIVE_ALIGNMENT_CHECK(bol_alignment);
 
   add_speculative_check(bol_alignment);
+}
+
+void VTransform::apply_speculative_aliasing_runtime_checks() {
+
+  if (_vloop.are_speculative_checks_possible()) {
+
+#ifdef ASSERT
+    if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
+      tty->print_cr("\nVTransform::apply_speculative_aliasing_runtime_checks: speculative aliasing analysis runtime checks");
+    }
+#endif
+
+    // TODO: ResourceMark, collides with resource allocation in PhaseIdealLoop::set_idom
+    //ResourceMark rm;
+    VectorSet visited;
+
+    const GrowableArray<VTransformNode*>& schedule = _graph.get_schedule();
+    for (int i = 0; i < schedule.length(); i++) {
+      VTransformNode* vtn = schedule.at(i);
+      for (uint i = 0; i < vtn->out_weaks(); i++) {
+        VTransformNode* use = vtn->out_weak(i);
+        if (visited.test(use->_idx)) {
+          // The use node was already visited, i.e. is higher up in the schedule.
+          // The "out" edge thus points backward, i.e. it is violated.
+#ifdef ASSERT
+          if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
+            tty->print_cr("\nViolated Weak Edge:");
+            vtn->print();
+            use->print();
+          }
+#endif
+          // TODO: optimize so that we do not have too many checks!
+          const VPointer& p1 = vtn->vpointer(_vloop_analyzer);
+          const VPointer& p2 = use->vpointer(_vloop_analyzer);
+          add_speculative_aliasing_check(p1, p2);
+        }
+      }
+      visited.set(vtn->_idx);
+    }
+  }
+}
+
+BoolNode* make_a_plus_b_leq_c(Node* a, jint b, Node* c, PhaseIdealLoop* phase) {
+  Node* b_con = phase->igvn().longcon(b);
+  Node* a_plus_b = new AddLNode(a, b_con);
+  Node* cmp = CmpNode::make(a_plus_b, c, T_LONG, true);
+  BoolNode* bol = new BoolNode(cmp, BoolTest::le);
+  phase->register_new_node_with_ctrl_of(a_plus_b, a);
+  phase->register_new_node_with_ctrl_of(cmp, a);
+  phase->register_new_node_with_ctrl_of(bol, a);
+  return bol;
+}
+
+void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPointer& vp2) {
+  assert(!vp1.always_overlaps_with(vp2), "check would always be false");
+  assert(!vp1.never_overlaps_with(vp2), "check would always be true");
+
+  // We have two VPointer vp1 and vp2, and would like to create a runtime check that
+  // guarantees that the corresponding pointers p1 and p2 do not overlap (alias) for
+  // any iv value in the strided range r = [init, init + iv_stride, .. limit].
+  //
+  //   for all iv in r: p1(iv) + size1 <= p2(iv) OR p2(iv) + size2 <= p1(iv)
+  //
+  // This would allow situations where for some iv p1 is lower than p2, and for
+  // other iv p1 is higher than p2. This is not very useful inpractice. We can
+  // the condition, which will make the check simpler later:
+  //
+  //   for all iv in r: p1(iv) + size1 <= p2(iv)                    (P1-BEFORE-P2)
+  //   OR
+  //   for all iv in r: p2(iv) + size2 <= p1(iv)                    (P1-AFTER-P2)
+  //
+  //
+  // We apply the "MemPointer Linearity Corrolary" to VPointer vp and the corresponding
+  // pointer p:
+  //   (C0) is given by the construction of VPointer vp, which simply wraps a MemPointer mp.
+  //   (c1) with v = iv and scale_v = iv_scale
+  //   (C2) with r = [init, init + stride_iv, .. limit] which is the set of possible
+  //        iv values in the loop.
+  //   (C3) the memory accesses for every iv value in the loop must be in bounds, otherwise
+  //        the program has undefined behaviour already.
+  //   (C4) abs(iv_scale * stride_iv) < 2^31 is given by the checks in
+  //        VPointer::init_are_scale_and_stride_not_too_large.
+  //
+  // Hence, it follows that we can see p and vp as linear functions of iv in r, i.e. for
+  // all iv values in the loop:
+  //   p(iv)  = p(init)  - init * iv_scale + iv * iv_scale
+  //   vp(iv) = vp(init) - init * iv_scale + iv * iv_scale
+  //
+  // Hence, p1 and p2 have the linear form:
+  //   p1(iv)  = p1(init) - init * iv_scale1 + iv * iv_scale1
+  //   p2(iv)  = p2(init) - init * iv_scale2 + iv * iv_scale2
+  //
+  // With the (Alternative Corrolary P) we get the alternative linar form:
+  //   p1(iv)  = p1(limit) - limit * iv_scale1 + iv * iv_scale1
+  //   p2(iv)  = p2(limit) - limit * iv_scale2 + iv * iv_scale2
+  //
+  //
+  // We can now use this linearity to construct aliasing runtime checks, depending on the
+  // different "geometry" of the two VPointer over their iv, i.e. the "slopes" of the linear
+  // functions. In the following graphs, the x-axis denotes the values of iv, from init to
+  // limit. And the y-axis denotes the pointer position p(iv). Intuitively, this problem
+  // can be seen as having two bands that should not overlap.
+  //
+  //       Case 1                     Case 2                     Case 3
+  //       parallel lines             same sign slope            different sign slope
+  //                                  but not parallel
+  //
+  //       +---------+                +---------+                +---------+
+  //       |         |                |        #|                |#        |
+  //       |         |                |       # |                |  #      |
+  //       |        #|                |      #  |                |    #    |
+  //       |      #  |                |     #   |                |      #  |
+  //       |    #    |                |    #    |                |        #|
+  //       |  # ^    |                |   #     |                |        ^|
+  //       |#   |   #|                |  #      |                |        ||
+  //       |    v #  |                | #       |                |        v|
+  //       |    #    |                |#       #|                |        #|
+  //       |  #      |                |^     #  |                |      #  |
+  //       |#        |                ||   #    |                |    #    |
+  //       |         |                |v #      |                |  #      |
+  //       |         |                |#        |                |#        |
+  //       +---------+                +---------+                +---------+
+  //
+  //
+  // Case 1: parallel lines, i.e. iv_scale = iv_scale1 = iv_scale2
+  //
+  //   p1(iv)  = p1(init)  - init * iv_scale + iv * iv_scale
+  //   p2(iv)  = p2(init)  - init * iv_scale + iv * iv_scale
+  //
+  //   Given this, it follows:
+  //     p1(iv) + size1 <= p2(iv)      <==>      p1(init) + size1 <= p2(init)
+  //     p2(iv) + size2 <= p1(iv)      <==>      p2(init) + size2 <= p1(init)
+  //
+  //   Hence, we do not have to check the condition for every iv, but only for init.
+  //
+  //   p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)
+  //   ----------------------------      ----------------------------
+  //         (P1-BEFORE-P2)          OR        (P1-AFTER-P2)
+  //
+  //
+  // Case 2 and 3: different slopes, i.e. iv_scale1 != iv_scale2
+  //
+  //   Without loss of generality, we assume iv_scale1 < iv_scale2.
+  //
+  //   If iv_stride >= 0, i.e. init <= iv <= limit:
+  //     (iv - init ) * scale_1 <= (iv - init ) * iv_scale
+  //     (iv - limit) * scale_1 >= (iv - limit) * iv_scale                   (POS-STRIDE)
+  //   If iv_stride <= 0, i.e. limit <= iv <= init:
+  //     (iv - init ) * scale_1 >= (iv - init ) * iv_scale
+  //     (iv - limit) * scale_1 <= (iv - limit) * iv_scale                   (NEG-STRIDE)
+  //
+  //   Below, we show that these conditions are equivalent:
+  //
+  //   p1(init)  + size1 <= p2(init)   OR  p2(limit) + size2 <= p1(limit)    (if iv_stride >= 0)
+  //   p1(limit) + size1 <= p2(limit)  OR  p2(init) + size2 <= p1(init)      (if iv_stride <= 0)
+  //   ------------------------------      ------------------------------
+  //         (P1-BEFORE-P2)            OR         (P1-AFTER-P2)
+  //
+  //   Proof:
+  //     Assume: (P1-BEFORE-P2):
+  //       for all iv in r: p1(iv) + size1 <= p2(iv)
+  //       => And since init and limit in r =>
+  //       p1(init)  + size1 <= p2(init)
+  //       p1(limit) + size1 <= p2(limit)
+  //
+  //     Assume: p1(init) + size1 <= p2(init)  AND  iv_stride >= 0
+  //       p1(iv) + size1  = p1(init) - init * iv_scale1 + iv * iv_scale1 + size1
+  //                                  ------ apply (POS-STRIDE) ---------
+  //                      <= p1(init) - init * iv_scale2 + iv * iv_scale2 + size1
+  //                      <= p2(init) - init * iv_scale2 + iv * iv_scale2
+  //                       = p2(iv)
+  //
+  //     Assume: p1(limit) + size1 <= p2(limit)  AND  iv_stride <= 0
+  //       We use the alternative linear form.
+  //       p1(iv) + size1  = p1(limit) - limit * iv_scale1 + iv * iv_scale1 + size1
+  //                                   ------ apply (NEG-STRIDE) ---------
+  //                      <= p1(limit) - limit * iv_scale2 + iv * iv_scale2 + size1
+  //                      <= p2(limit) - limit * iv_scale2 + iv * iv_scale2
+  //                       = p2(iv)
+  //
+  //     The proof for (P1-AFTER-P2) can be done symmetrically.
+
+  // TODO: check if limit is really ok, or if we have to adjust slightly.
+  //       also we have to check that we don't create cycles ...
+
+  Node* init_pre = _vloop.pre_loop_head()->init_trip();
+  Node* init_main = _vloop.cl()->init_trip();
+  Node* limit_main = _vloop.cl()->limit();
+
+  //tty->print_cr("init_pre");
+  //init_pre->dump_bfs(100,nullptr,"#dC");
+  //tty->print_cr("init_main");
+  //init_main->dump_bfs(100,nullptr,"#dC");
+  //tty->print_cr("limit_main");
+  //limit_main->dump_bfs(100,nullptr,"#dC");
+
+  Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
+  Node* limit_pre = pre_opaq->in(1);
+  //tty->print_cr("limit_pre");
+  //limit_pre->dump_bfs(100,nullptr,"#dC");
+  Node* limit_orig = pre_opaq->original_loop_limit();
+  //tty->print_cr("limit_orig");
+  //limit_orig->dump_bfs(100,nullptr,"#dC");
+
+  // init: cannot take the main-init, because it depends on the pre-loop
+  //       trip-count. But the limit_pre should be independent, and we
+  //       know that the main-init >= limit_pre. TODO: details.
+  Node* init = limit_pre;
+  Node* limit = limit_main;
+
+  if (vp1.iv_scale() == vp2.iv_scale()) {
+    // p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)
+    // -------- condition1 --------      ------- condition2 ---------
+    Node* p1_init = vp1.make_pointer_expression(init);
+    Node* p2_init = vp2.make_pointer_expression(init);
+    //tty->print("p1(init) "); p1_init->dump();
+    //tty->print("p2(init) "); p2_init->dump();
+    BoolNode* condition1 = make_a_plus_b_leq_c(p1_init, vp1.size(), p2_init, phase());
+    BoolNode* condition2 = make_a_plus_b_leq_c(p2_init, vp2.size(), p1_init, phase());
+    //tty->print("condition1 "); condition1->dump();
+    //tty->print("condition2 "); condition2->dump();
+
+    // Convert bol back to int value that we can OR.
+    Node* zero = _vloop.phase()->igvn().intcon(0);
+    Node* one  = _vloop.phase()->igvn().intcon(1);
+    Node* cmov1 = new CMoveINode(condition1, zero, one, TypeInt::INT);
+    Node* cmov2 = new CMoveINode(condition2, zero, one, TypeInt::INT);
+    _vloop.phase()->register_new_node_with_ctrl_of(cmov1, init);
+    _vloop.phase()->register_new_node_with_ctrl_of(cmov2, init);
+
+    Node* c1_or_c2 = new OrINode(cmov1, cmov2);
+    //tty->print("c1_or_c2 "); c1_or_c2->dump();
+    Node* cmp = CmpNode::make(c1_or_c2, zero, T_INT);
+    BoolNode* bol = new BoolNode(cmp, BoolTest::ne);
+    _vloop.phase()->register_new_node_with_ctrl_of(c1_or_c2, init);
+    _vloop.phase()->register_new_node_with_ctrl_of(cmp, init);
+    _vloop.phase()->register_new_node_with_ctrl_of(bol, init);
+
+    add_speculative_check(bol);
+  } else {
+    // TODO: this
+    Node* zero = _vloop.phase()->igvn().intcon(0);
+    BoolNode* bol = new BoolNode(zero, BoolTest::ne);
+    _vloop.phase()->register_new_node_with_ctrl_of(bol, init);
+    add_speculative_check(bol);
+    assert(false, "scale not equal, not implemented");
+  }
 }
 
 void VTransform::add_speculative_check(BoolNode* bol) {
@@ -494,7 +743,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
 }
 
 Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  Node* n = vnode_idx_to_transformed_node.at(in(i)->_idx);
+  Node* n = vnode_idx_to_transformed_node.at(in_req(i)->_idx);
   assert(n != nullptr, "must find input IR node");
   return n;
 }
@@ -611,7 +860,7 @@ VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop
   BasicType bt = vloop_analyzer.types().velt_basic_type(first);
 
   // Cmp + Bool -> VectorMaskCmp
-  VTransformElementWiseVectorNode* vtn_cmp = in(1)->isa_ElementWiseVector();
+  VTransformElementWiseVectorNode* vtn_cmp = in_req(1)->isa_ElementWiseVector();
   assert(vtn_cmp != nullptr && vtn_cmp->nodes().at(0)->is_Cmp(),
          "bool vtn expects cmp vtn as input");
 
@@ -745,14 +994,26 @@ void VTransformNode::print() const {
     print_node_idx(_in.at(i));
   }
   if ((uint)_in.length() > _req) {
-    tty->print(" |");
-    for (int i = _req; i < _in.length(); i++) {
+    tty->print(" | strong:");
+    for (uint i = _req; i < _in_strong_dep; i++) {
+      print_node_idx(_in.at(i));
+    }
+  }
+  if ((uint)_in.length() > _in_strong_dep) {
+    tty->print(" | weak:");
+    for (uint i = _in_strong_dep; i < (uint)_in.length(); i++) {
       print_node_idx(_in.at(i));
     }
   }
   tty->print(") [");
-  for (int i = 0; i < _out.length(); i++) {
+  for (uint i = 0; i < _out_strong_dep; i++) {
     print_node_idx(_out.at(i));
+  }
+  if ((uint)_out.length() > _out_strong_dep) {
+    tty->print(" | weak:");
+    for (uint i = _out_strong_dep; i < (uint)_out.length(); i++) {
+      print_node_idx(_out.at(i));
+    }
   }
   tty->print("] ");
   print_spec();
