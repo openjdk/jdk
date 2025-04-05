@@ -32,7 +32,7 @@ void ZVirtualMemoryManager::pd_initialize_before_reserve() {
   // Does nothing
 }
 
-void ZVirtualMemoryManager::pd_initialize_after_reserve() {
+void ZVirtualMemoryManager::pd_register_callbacks(ZMemoryManager* manager) {
   // Does nothing
 }
 

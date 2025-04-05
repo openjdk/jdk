@@ -42,6 +42,8 @@ public:
   static void initialize();
 
   static void reserve(zaddress_unsafe start, size_t size);
+  static void unreserve(zaddress_unsafe start, size_t size);
+
   static void commit(zoffset offset, size_t size);
   static void uncommit(zoffset offset, size_t size);
 
