@@ -122,7 +122,7 @@ define SetupCompilerFlags
     $1_EXTRA_CXXFLAGS += $$($1_CXXFLAGS_$(OPENJDK_TARGET_OS)_release)
   endif
   ifeq ($(STATIC_LIBS), true)
-    $1_EXTRA_CXXFLAGS += -DSTATIC_BUILD=1
+    $1_EXTRA_CXXFLAGS += $$(STATIC_LIB_CFLAGS)
   endif
 
   # If no C++ flags are explicitly set, default to using the C flags.

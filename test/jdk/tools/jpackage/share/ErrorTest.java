@@ -41,7 +41,6 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.TokenReplace;
-import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
@@ -119,13 +118,71 @@ public final class ErrorTest {
         private final TokenReplace tokenReplace = new TokenReplace(token());
     }
 
-    public record TestSpec(Optional<PackageType> type, Optional<String> appDesc, List<String> addArgs,
+    record PackageTypeSpec(Optional<PackageType> type, boolean anyNativeType) implements CannedFormattedString.CannedArgument {
+        PackageTypeSpec {
+            Objects.requireNonNull(type);
+            if (type.isPresent() && anyNativeType) {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        PackageTypeSpec(PackageType type) {
+            this(Optional.of(type), false);
+        }
+
+        boolean isSupported() {
+            if (anyNativeType) {
+                return NATIVE_TYPE.isPresent();
+            } else {
+                return type.orElseThrow().isSupported();
+            }
+        }
+
+        PackageType resolvedType() {
+            return type.or(() -> NATIVE_TYPE).orElseThrow(PackageType::throwSkippedExceptionIfNativePackagingUnavailable);
+        }
+
+        @Override
+        public String value() {
+            return resolvedType().getType();
+        }
+
+        @Override
+        public final String toString() {
+            if (anyNativeType) {
+                return "NATIVE";
+            } else {
+                return type.orElseThrow().toString();
+            }
+        }
+
+        private static Optional<PackageType> defaultNativeType() {
+            final Collection<PackageType> nativeTypes;
+            if (TKit.isLinux()) {
+                nativeTypes = PackageType.LINUX;
+            } else if (TKit.isOSX()) {
+                nativeTypes = PackageType.MAC;
+            } else if (TKit.isWindows()) {
+                nativeTypes = List.of(PackageType.WIN_MSI);
+            } else {
+                throw TKit.throwUnknownPlatformError();
+            }
+
+            return nativeTypes.stream().filter(PackageType::isSupported).findFirst();
+        }
+
+        static final PackageTypeSpec NATIVE = new PackageTypeSpec(Optional.empty(), true);
+
+        private static final Optional<PackageType> NATIVE_TYPE = defaultNativeType();
+    }
+
+    public record TestSpec(Optional<PackageTypeSpec> type, Optional<String> appDesc, List<String> addArgs,
             List<String> removeArgs, List<CannedFormattedString> expectedErrors) {
 
         static final class Builder {
 
             Builder type(PackageType v) {
-                type = v;
+                type = Optional.ofNullable(v).map(PackageTypeSpec::new).orElse(null);
                 return this;
             }
 
@@ -134,7 +191,8 @@ public final class ErrorTest {
             }
 
             Builder nativeType() {
-                return type(NATIVE_TYPE);
+                type = PackageTypeSpec.NATIVE;
+                return this;
             }
 
             Builder appDesc(String v) {
@@ -207,7 +265,8 @@ public final class ErrorTest {
             }
 
             Builder invalidTypeArg(String arg, String... otherArgs) {
-                return addArgs(arg).addArgs(otherArgs).error("ERR_InvalidTypeOption", arg, type.getType());
+                Objects.requireNonNull(type);
+                return addArgs(arg).addArgs(otherArgs).error("ERR_InvalidTypeOption", arg, type);
             }
 
             Builder unsupportedPlatformOption(String arg, String ... otherArgs) {
@@ -219,7 +278,7 @@ public final class ErrorTest {
                         List.copyOf(addArgs), List.copyOf(removeArgs), List.copyOf(expectedErrors));
             }
 
-            private PackageType type = PackageType.IMAGE;
+            private PackageTypeSpec type = new PackageTypeSpec(PackageType.IMAGE);
             private String appDesc = DEFAULT_APP_DESC;
             private List<String> addArgs = new ArrayList<>();
             private List<String> removeArgs = new ArrayList<>();
@@ -242,9 +301,13 @@ public final class ErrorTest {
             test(Map.of());
         }
 
+        boolean isSupported() {
+            return type.map(PackageTypeSpec::isSupported).orElse(true);
+        }
+
         void test(Map<Token, Function<JPackageCommand, Object>> tokenValueSuppliers) {
             final var cmd = appDesc.map(JPackageCommand::helloAppImage).orElseGet(JPackageCommand::new);
-            type.ifPresent(cmd::setPackageType);
+            type.map(PackageTypeSpec::resolvedType).ifPresent(cmd::setPackageType);
 
             removeArgs.forEach(cmd::removeArgumentWithValue);
             cmd.addArguments(addArgs);
@@ -407,6 +470,7 @@ public final class ErrorTest {
 
     @Test
     @ParameterSupplier("basic")
+    @ParameterSupplier("testRuntimeInstallerInvalidOptions")
     @ParameterSupplier(value="testWindows", ifOS = WINDOWS)
     @ParameterSupplier(value="testMac", ifOS = MACOS)
     @ParameterSupplier(value="testLinux", ifOS = LINUX)
@@ -418,19 +482,27 @@ public final class ErrorTest {
         spec.test();
     }
 
-    @Test
-    @Parameter({"--input", "foo"})
-    @Parameter({"--module-path", "dir"})
-    @Parameter({"--add-modules", "java.base"})
-    @Parameter({"--main-class", "Hello"})
-    @Parameter({"--arguments", "foo"})
-    @Parameter({"--java-options", "-Dfoo.bar=10"})
-    @Parameter({"--add-launcher", "foo=foo.properties"})
-    @Parameter({"--app-content", "dir"})
-    @Parameter(value="--win-console", ifOS = WINDOWS)
-    public static void testRuntimeInstallerInvalidOptions(String... args) {
-        testSpec().noAppDesc().nativeType().addArgs("--runtime-image", Token.JAVA_HOME.token()).addArgs(args)
-                .error("ERR_NoInstallerEntryPoint", args[0]).create().test();
+    public static Collection<Object[]> testRuntimeInstallerInvalidOptions() {
+        Stream<List<String>> argsStream = Stream.of(
+                List.of("--input", "foo"),
+                List.of("--module-path", "dir"),
+                List.of("--add-modules", "java.base"),
+                List.of("--main-class", "Hello"),
+                List.of("--arguments", "foo"),
+                List.of("--java-options", "-Dfoo.bar=10"),
+                List.of("--add-launcher", "foo=foo.properties"),
+                List.of("--app-content", "dir"));
+
+        if (TKit.isWindows()) {
+            argsStream = Stream.concat(argsStream, Stream.of(List.of("--win-console")));
+        }
+
+        return fromTestSpecBuilders(argsStream.map(args -> {
+            return testSpec().noAppDesc().nativeType()
+                    .addArgs("--runtime-image", Token.JAVA_HOME.token())
+                    .addArgs(args)
+                    .error("ERR_NoInstallerEntryPoint", args.getFirst());
+        }));
     }
 
     @Test
@@ -567,9 +639,7 @@ public final class ErrorTest {
                 testSpec().type(PackageType.LINUX_RPM).addArgs("--linux-package-name", "#")
                         .error("error.rpm-invalid-value-for-package-name", "#")
                         .error("error.rpm-invalid-value-for-package-name.advice")
-        ).map(TestSpec.Builder::create).filter(spec -> {
-            return spec.type().orElseThrow().isSupported();
-        }).toList());
+        ).map(TestSpec.Builder::create).toList());
 
         return toTestArgs(testCases.stream());
     }
@@ -669,20 +739,14 @@ public final class ErrorTest {
         cmd.validateOutput(expectedErrors.toArray(CannedFormattedString[]::new));
     }
 
-    private static PackageType defaultNativeType() {
-        if (TKit.isLinux()) {
-            return PackageType.LINUX.stream().filter(PackageType::isSupported).findFirst().orElseThrow();
-        } else if (TKit.isOSX()) {
-            return PackageType.MAC_DMG;
-        } else if (TKit.isWindows()) {
-            return PackageType.WIN_MSI;
-        } else {
-            throw new UnsupportedOperationException();
-        }
-    }
-
     private static <T> Collection<Object[]> toTestArgs(Stream<T> stream) {
-        return stream.map(v -> {
+        return stream.filter(v -> {
+            if (v instanceof TestSpec ts) {
+                return ts.isSupported();
+            } else {
+                return true;
+            }
+        }).map(v -> {
             return new Object[] {v};
         }).toList();
     }
@@ -696,6 +760,4 @@ public final class ErrorTest {
     }
 
     private static final Pattern LINE_SEP_REGEXP = Pattern.compile("\\R");
-
-    private static final PackageType NATIVE_TYPE = defaultNativeType();
 }
