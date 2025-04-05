@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package sun.security.ec;
 
+import sun.security.pkcs.PKCS8Key;
+
+import java.io.IOException;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
@@ -217,19 +220,23 @@ public final class ECKeyFactory extends KeyFactorySpi {
 
     // internal implementation of generatePublic. See JCA doc
     private PublicKey implGeneratePublic(KeySpec keySpec)
-            throws GeneralSecurityException {
+        throws GeneralSecurityException {
         if (keySpec instanceof X509EncodedKeySpec) {
-            X509EncodedKeySpec x509Spec = (X509EncodedKeySpec)keySpec;
-            return new ECPublicKeyImpl(x509Spec.getEncoded());
-        } else if (keySpec instanceof ECPublicKeySpec) {
-            ECPublicKeySpec ecSpec = (ECPublicKeySpec)keySpec;
-            return new ECPublicKeyImpl(
-                ecSpec.getW(),
-                ecSpec.getParams()
-            );
+            return new ECPublicKeyImpl(((X509EncodedKeySpec)keySpec).getEncoded());
+
+        } else if (keySpec instanceof ECPublicKeySpec ecSpec) {
+            return new ECPublicKeyImpl(ecSpec.getW(), ecSpec.getParams());
+
+        } else if (keySpec instanceof PKCS8EncodedKeySpec p8) {
+            PKCS8Key p8key = new ECPrivateKeyImpl(p8.getEncoded());
+            if (p8key.hasPublicKey()) {
+                throw new InvalidKeySpecException("No public key found.");
+            }
+            return new ECPublicKeyImpl(p8key.getPubKeyEncoded());
+
         } else {
-            throw new InvalidKeySpecException("Only ECPublicKeySpec "
-                + "and X509EncodedKeySpec supported for EC public keys");
+            throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                " not supported.");
         }
     }
 
@@ -237,19 +244,20 @@ public final class ECKeyFactory extends KeyFactorySpi {
     private PrivateKey implGeneratePrivate(KeySpec keySpec)
             throws GeneralSecurityException {
         if (keySpec instanceof PKCS8EncodedKeySpec) {
-            PKCS8EncodedKeySpec pkcsSpec = (PKCS8EncodedKeySpec)keySpec;
-            byte[] encoded = pkcsSpec.getEncoded();
+            byte[] encoded = ((PKCS8EncodedKeySpec) keySpec).getEncoded();
             try {
                 return new ECPrivateKeyImpl(encoded);
             } finally {
                 Arrays.fill(encoded, (byte) 0);
             }
-        } else if (keySpec instanceof ECPrivateKeySpec) {
-            ECPrivateKeySpec ecSpec = (ECPrivateKeySpec)keySpec;
+
+        } else if (keySpec instanceof ECPrivateKeySpec ecSpec) {
             return new ECPrivateKeyImpl(ecSpec.getS(), ecSpec.getParams());
+
         } else {
-            throw new InvalidKeySpecException("Only ECPrivateKeySpec "
-                + "and PKCS8EncodedKeySpec supported for EC private keys");
+            throw new InvalidKeySpecException("Only ECPrivateKeySpec " +
+                "and PKCS8EncodedKeySpec supported for EC private keys. " +
+                keySpec.getClass().getName() + " provided.");
         }
     }
 

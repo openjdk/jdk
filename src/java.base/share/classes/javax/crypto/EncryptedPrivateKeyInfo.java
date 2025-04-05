@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,18 @@
 
 package javax.crypto;
 
-import java.io.*;
+import jdk.internal.javac.PreviewFeature;
+
+import sun.security.jca.JCAUtil;
+import sun.security.pkcs.PKCS8Key;
+import sun.security.util.*;
+import sun.security.x509.AlgorithmId;
+
+import javax.crypto.spec.PBEKeySpec;
+import java.io.IOException;
 import java.security.*;
 import java.security.spec.*;
-import sun.security.x509.AlgorithmId;
-import sun.security.util.DerValue;
-import sun.security.util.DerInputStream;
-import sun.security.util.DerOutputStream;
+import java.util.Objects;
 
 /**
  * This class implements the {@code EncryptedPrivateKeyInfo} type
@@ -55,14 +60,14 @@ import sun.security.util.DerOutputStream;
  * @since 1.4
  */
 
-public class EncryptedPrivateKeyInfo {
+public final class EncryptedPrivateKeyInfo implements DEREncodable {
 
     // The "encryptionAlgorithm" is stored in either the algid or
     // the params field. Precisely, if this object is created by
     // {@link #EncryptedPrivateKeyInfo(AlgorithmParameters, byte[])}
     // with an uninitialized AlgorithmParameters, the AlgorithmParameters
     // object is stored in the params field and algid is set to null.
-    // In all other cases, algid is non null and params is null.
+    // In all other cases, algid is non-null and params is null.
     private final AlgorithmId algid;
     private final AlgorithmParameters params;
 
@@ -73,19 +78,14 @@ public class EncryptedPrivateKeyInfo {
     private final byte[] encoded;
 
     /**
-     * Constructs (i.e., parses) an {@code EncryptedPrivateKeyInfo} from
-     * its ASN.1 encoding.
-     * @param encoded the ASN.1 encoding of this object. The contents of
-     * the array are copied to protect against subsequent modification.
-     * @exception NullPointerException if the {@code encoded} is
-     * {@code null}.
-     * @exception IOException if error occurs when parsing the ASN.1 encoding.
+     * Constructs an {@code EncryptedPrivateKeyInfo} from a given Encrypted
+     * PKCS#8 ASN.1 encoding.
+     * @param encoded the ASN.1 encoding which is cloned and then parsed.
+     * @throws NullPointerException if {@code encoded} is {@code null}.
+     * @throws IOException if error occurs when parsing the ASN.1 encoding.
      */
     public EncryptedPrivateKeyInfo(byte[] encoded) throws IOException {
-        if (encoded == null) {
-            throw new NullPointerException("the encoded parameter " +
-                "must be non-null");
-        }
+        Objects.requireNonNull(encoded);
 
         this.encoded = encoded.clone();
         DerValue val = DerValue.wrap(this.encoded);
@@ -188,6 +188,7 @@ public class EncryptedPrivateKeyInfo {
         if (algParams == null) {
             throw new NullPointerException("algParams must be non-null");
         }
+
         AlgorithmId tmp;
         try {
             tmp = AlgorithmId.get(algParams);
@@ -201,7 +202,7 @@ public class EncryptedPrivateKeyInfo {
             tmp = null;
         }
 
-        // one and only one is non null
+        // one and only one is non-null
         this.algid = tmp;
         this.params = this.algid != null ? null : algParams;
 
@@ -217,6 +218,17 @@ public class EncryptedPrivateKeyInfo {
         // delay the generation of ASN.1 encoding until
         // getEncoded() is called
         this.encoded = null;
+    }
+
+    /**
+     * Create an EncryptedPrivateKeyInfo object from the given components
+     */
+    private EncryptedPrivateKeyInfo(byte[] encoded, byte[] eData,
+        AlgorithmId id, AlgorithmParameters p) {
+        this.encoded = encoded;
+        encryptedData = eData;
+        algid = id;
+        params = p;
     }
 
     /**
@@ -309,14 +321,276 @@ public class EncryptedPrivateKeyInfo {
     }
 
     /**
+     * Creates and encrypts an {@code EncryptedPrivateKeyInfo} from a given
+     * PrivateKey.  A valid password-based encryption (PBE) algorithm and
+     * password must be specified.
+     *
+     * {@link AlgorithmParameterSpec} will use the provider default if
+     * {@code params} is {@code null}.  The {@link Provider} will be selected
+     * through the default provider list if {@code provider} is {@code null}
+     *
+     * The PBE algorithm string format details can be found in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
+     * Cipher section</a> of the Java Security Standard Algorithm Names
+     * Specification.
+     *
+     * @param key the PrivateKey object to encrypt.
+     * @param password the password used for generating the PBE key.
+     * @param algorithm the PBE encryption algorithm.
+     * @param params the parameters used with the PBE encryption.
+     * @param provider the Provider that will perform the encryption.
+     * @return an EncryptedPrivateKeyInfo.
+     * @throws IllegalArgumentException when an argument causes an
+     * initialization error.
+     * @throws SecurityException on a cryptographic errors.
+     * @throws NullPointerException if the key, password, or algorithm are null.
+     * null.
+     *
+     * @implNote The encryption uses the algorithm set by
+     * `jdk.epkcs8.defaultAlgorithm` Security Property
+     *  and default the {@code AlgorithmParameterSpec} of that provider.
+     *
+     * @since 25
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+    public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
+        char[] password, String algorithm, AlgorithmParameterSpec params,
+        Provider provider) {
+
+        PBEKeySpec keySpec = new PBEKeySpec(password);
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(algorithm);
+        SecretKey skey;
+
+        try {
+            SecretKeyFactory factory;
+            if (provider == null) {
+                factory = SecretKeyFactory.getInstance(algorithm);
+            } else {
+                factory = SecretKeyFactory.getInstance(algorithm, provider);
+            }
+            skey = factory.generateSecret(keySpec);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new IllegalArgumentException(e);
+        }
+        return encryptKeyImpl(key, algorithm, skey, params, provider, null);
+    }
+
+    /**
+     * Creates and encrypts an {@code EncryptedPrivateKeyInfo} from a given
+     * {@code PrivateKey} and password.  Default algorithm and parameters are
+     * used.
+     *
+     * @param key The {@code PrivateKey} object to encrypt.
+     * @param password the password used in the PBE encryption.  This array is
+     *                 cloned before being used.
+     * @return an {@code EncryptedPrivateKeyInfo}.
+     * @throws IllegalArgumentException on initialization errors based on the
+     * arguments passed to the method.
+     * @throws SecurityException on a encryption errors.
+     * @throws NullPointerException when the password is null.
+     *
+     * @implNote The `jdk.epkcs8.defaultAlgorithm` Security Property defines
+     * the default encryption algorithm and the {@code AlgorithmParameterSpec}
+     * are the provider's algorithm defaults.
+     *
+     * @since 25
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+    public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
+        char[] password) {
+        char[] pass = password.clone();
+        if (Pem.DEFAULT_ALGO == null || Pem.DEFAULT_ALGO.length() == 0) {
+            throw new SecurityException("Security property " +
+                "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
+                "valid algorithm.  Operation cannot be performed.");
+        }
+        return encryptKey(key, pass, Pem.DEFAULT_ALGO,
+            null, null);
+    }
+
+    /**
+     * Creates and encrypts an {@code EncryptedPrivateKeyInfo} from a given
+     * {@link PrivateKey} using the {@code encKey} and given parameters.
+     *
+     * If {@code algorithm} is {@code null} the default algorithm will be used.
+     * {@code params} is null, the provider default will be used.
+     * {@code params} is {@code null}.  The {@code provider} or {@code random} will
+     * be selected through the default provider list if set to {@code null}.
+     *
+     * @param key the {@code PrivateKey} object to encrypt.
+     * @param encKey the encryption {@code Key}
+     * @param algorithm the password-based encryption (PBE) algorithm used to
+     *                  encrypt the key encoding.
+     * @param params the {@code AlgorithmParameterSpec} to be used with
+     *               encryption.
+     * @param random the {@code SecureRandom} instance used during
+     *               encryption.
+     * @param provider the {@code Provider} is used for KeyFactory and
+     *                 encryption operations.
+     * @return an {@code EncryptedPrivateKeyInfo}.
+     * @throws IllegalArgumentException on initialization errors based on the
+     *                                  arguments passed to the method.
+     * @throws SecurityException on a encryption errors.
+     * @throws NullPointerException when the {@code key} or {@code encKey} are
+     * null.
+     *
+     * @implNote The encryption uses the algorithm set by
+     * `jdk.epkcs8.defaultAlgorithm` Security Property by the default provider
+     * and default the {@code AlgorithmParameterSpec} of that provider.
+     * @since 25
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+    public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key, Key encKey,
+        String algorithm, AlgorithmParameterSpec params, Provider provider,
+        SecureRandom random) {
+        if (Pem.DEFAULT_ALGO == null || Pem.DEFAULT_ALGO.length() == 0) {
+            throw new SecurityException("Security property " +
+                "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
+                "valid algorithm.  Operation cannot be performed.");
+        }
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(encKey);
+        return encryptKeyImpl(key,
+            (algorithm == null ? Pem.DEFAULT_ALGO : algorithm), encKey, params,
+            provider, random);
+    }
+
+
+    private static EncryptedPrivateKeyInfo encryptKeyImpl(PrivateKey key,
+        String algorithm, Key encryptKey, AlgorithmParameterSpec params,
+        Provider provider, SecureRandom random) {
+        AlgorithmId algId;
+        byte[] encryptedData;
+        Cipher c;
+        DerOutputStream out;
+
+        if (random == null) {
+            random = JCAUtil.getDefSecureRandom();
+        }
+        try {
+            if (provider == null) {
+                c = Cipher.getInstance(algorithm);
+            } else {
+                c = Cipher.getInstance(algorithm, provider);
+            }
+            c.init(Cipher.ENCRYPT_MODE, encryptKey, params, random);
+            encryptedData = c.doFinal(key.getEncoded());
+            algId = new AlgorithmId(Pem.getPBEID(algorithm), c.getParameters());
+            out = new DerOutputStream();
+            algId.encode(out);
+            out.putOctetString(encryptedData);
+        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException |
+                 NoSuchPaddingException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IllegalBlockSizeException | BadPaddingException |
+                 InvalidKeyException e) {
+            throw new SecurityException(e);
+        }
+        return new EncryptedPrivateKeyInfo(
+            DerValue.wrap(DerValue.tag_Sequence, out).toByteArray(),
+            encryptedData, algId, c.getParameters());
+    }
+
+    /**
+     * Returns a {@code PrivateKey} from the encrypted data in this instance.
+     *
+     * @param password this array is cloned and used for PBE decryption.
+     *                 {@code null} may be used.
+     * @return a {@code PrivateKey}
+     * @throws InvalidKeyException if an error occurs during parsing of the
+     * encrypted data or creation of the key object.
+     *
+     * @since 25
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+    public PrivateKey getKey(char[] password) throws InvalidKeyException {
+        return getKey(password, null);
+    }
+
+    /**
+     * Returns a {@code PrivateKey} from the encrypted data in this instance.
+     * using the given provider.
+     *
+     * @param password this array is cloned and used for PBE decryption.
+     *                 {@code null} may be used.
+     * @param provider this {@code Provider} is used for all key generations.
+     *                 It is used when generating the PBE encryption key,
+     *                 {@code SecretKeyFactory}, and the {@code PrivateKey},
+     *                 {@code KeyFactory}.  A {@code null} value will use the default
+     *                 provider configuration.
+     * @return a {@code PrivateKey}
+     * @throws InvalidKeyException if an error occurs during parsing of the
+     * encrypted data or creation of the key object.
+     *
+     * @since 25
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+    public PrivateKey getKey(char[] password, Provider provider)
+        throws InvalidKeyException {
+        return getKeyImpl(new PBEKeySpec(password), provider);
+    }
+
+    private PrivateKey getKeyImpl(PBEKeySpec keySpec, Provider provider)
+        throws InvalidKeyException {
+        SecretKeyFactory skf;
+        PKCS8EncodedKeySpec p8KeySpec;
+        try {
+            if (provider == null) {
+                skf = SecretKeyFactory.getInstance(getAlgName());
+                p8KeySpec = getKeySpec(skf.generateSecret(keySpec));
+            } else {
+                skf = SecretKeyFactory.getInstance(getAlgName(), provider);
+                p8KeySpec = getKeySpec(skf.generateSecret(keySpec), provider);
+            }
+
+            return PKCS8Key.parseKey(p8KeySpec.getEncoded(), provider);
+        } catch (GeneralSecurityException e) {
+            throw new InvalidKeyException(e);
+        }
+    }
+
+    /**
+     * Returns a {@code PrivateKey} from the encrypted data in this instance.
+     * using the given provider.
+     *
+     * @param decryptKey this is the decryption key and cannot be {@code null}.
+     * @param provider this {@code Provider} is used for all key generations.
+     *                 It is used when generating the PBE encryption key,
+     *                 {@code SecretKeyFactory}, and the {@code PrivateKey},
+     *                 {@code KeyFactory}.  A {@code null} value will use the default
+     *                 provider configuration.
+     * @return a {@code PrivateKey}
+     * @throws InvalidKeyException if an error occurs during parsing of the
+     * encrypted data or creation of the key object.
+     * @throws NullPointerException if {@code key} is null.
+     *
+     * @since 25
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+    public PrivateKey getKey(Key decryptKey, Provider provider)
+        throws InvalidKeyException {
+        try {
+            PKCS8EncodedKeySpec p = getKeySpecImpl(decryptKey, provider);
+            if (provider == null) {
+                return KeyFactory.getInstance(p.getAlgorithm())
+                    .generatePrivate(p);
+            }
+            return KeyFactory.getInstance(p.getAlgorithm(),
+                provider).generatePrivate(p);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new InvalidKeyException(e);
+        }
+    }
+
+    /**
      * Extract the enclosed PKCS8EncodedKeySpec object from the
      * encrypted data and return it.
      * @param decryptKey key used for decrypting the encrypted data.
      * @return the PKCS8EncodedKeySpec object.
-     * @exception NullPointerException if {@code decryptKey}
-     * is {@code null}.
-     * @exception NoSuchAlgorithmException if cannot find appropriate
-     * cipher to decrypt the encrypted data.
+     * @exception NullPointerException if {@code decryptKey} is {@code null}.
+     * @exception NoSuchAlgorithmException if cannot find appropriate cipher to
+     * decrypt.
      * @exception InvalidKeyException if {@code decryptKey}
      * cannot be used to decrypt the encrypted data or the decryption
      * result is not a valid PKCS8KeySpec.

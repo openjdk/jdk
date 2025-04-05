@@ -25,6 +25,8 @@
 
 package java.security.spec;
 
+import java.security.DEREncodable;
+
 /**
  * This class represents the ASN.1 encoding of a private key,
  * encoded according to the ASN.1 type {@code PrivateKeyInfo}.
@@ -36,13 +38,21 @@ package java.security.spec;
  *   version Version,
  *   privateKeyAlgorithm PrivateKeyAlgorithmIdentifier,
  *   privateKey PrivateKey,
- *   attributes [0] IMPLICIT Attributes OPTIONAL }
+ *   attributes       [0] IMPLICIT Attributes OPTIONAL,
+ *   ...,
+ *   [[2: publicKey  [1] PublicKey OPTIONAL ]],
+ *   ...
+ * }
  *
- * Version ::= INTEGER
+ * PrivateKeyInfo ::= OneAsymmetricKey
+ *
+ * Version ::= INTEGER { v1(0), v2(1) }
  *
  * PrivateKeyAlgorithmIdentifier ::= AlgorithmIdentifier
  *
  * PrivateKey ::= OCTET STRING
+ *
+ * PublicKey ::= BIT STRING
  *
  * Attributes ::= SET OF Attribute
  * </pre>
@@ -56,10 +66,13 @@ package java.security.spec;
  * @see EncodedKeySpec
  * @see X509EncodedKeySpec
  *
+ * @spec https://www.rfc-editor.org/info/rfc5958
+ *     RFC 5958: Asymmetric Key Packages
+ *
  * @since 1.2
  */
 
-public class PKCS8EncodedKeySpec extends EncodedKeySpec {
+public final class PKCS8EncodedKeySpec extends EncodedKeySpec implements DEREncodable {
 
     /**
      * Creates a new {@code PKCS8EncodedKeySpec} with the given encoded key.
@@ -101,9 +114,9 @@ public class PKCS8EncodedKeySpec extends EncodedKeySpec {
     }
 
     /**
-     * Returns the key bytes, encoded according to the PKCS #8 standard.
+     * Returns the private key bytes, encoded according to the PKCS #8 standard.
      *
-     * @return the PKCS #8 encoding of the key. Returns a new array
+     * @return the PKCS #8 encoding of the private key. Returns a new array
      * each time this method is called.
      */
     public byte[] getEncoded() {
