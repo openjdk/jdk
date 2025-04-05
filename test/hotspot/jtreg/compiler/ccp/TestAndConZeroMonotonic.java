@@ -25,7 +25,7 @@
  * @test
  * @bug 8350563
  * @summary Test we don't prematurely optimize and later unoptimize unprocessed nodes.
- * @run main/othervm -XX:RepeatCompilation=300 -XX:+StressIGVN -XX:+StressCCP -Xcomp -XX:CompileOnly=java.lang.Integer::parseInt compiler.ccp.TestAndConZeroMonotonic
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:RepeatCompilation=300 -XX:+StressIGVN -XX:+StressCCP -Xcomp -XX:CompileOnly=java.lang.Integer::parseInt compiler.ccp.TestAndConZeroMonotonic
  * @run main compiler.ccp.TestAndConZeroMonotonic
  */
 package compiler.ccp;
