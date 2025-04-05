@@ -97,6 +97,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use simplest and shortest implementation for array equals")  \
   product(bool, UseSIMDForBigIntegerShiftIntrinsics, true,              \
           "Use SIMD instructions for left/right shift of BigInteger")   \
+  product(bool, UseSIMDForSHA3Intrinsic, true,                          \
+          "Use SIMD SHA3 instructions for SHA3 intrinsic")              \
   product(bool, AvoidUnalignedAccesses, false,                          \
           "Avoid generating unaligned memory accesses")                 \
   product(bool, UseLSE, false,                                          \
