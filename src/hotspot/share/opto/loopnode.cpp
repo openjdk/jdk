@@ -3892,9 +3892,7 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
         } else if (n->Opcode() == Op_SafePoint) {
           if (_phase->get_loop(n) == this) {
             has_local_ncsfpt = true;
-            break;
-          }
-          if (nonlocal_ncsfpt == nullptr) {
+          } else if (nonlocal_ncsfpt == nullptr) {
             nonlocal_ncsfpt = n; // save the one closest to the tail
           }
         } else {
