@@ -112,6 +112,13 @@ const Type* OpaqueNotNullNode::Value(PhaseGVN* phase) const {
   return phase->type(in(1));
 }
 
+OpaqueTemplateAssertionPredicateNode::OpaqueTemplateAssertionPredicateNode(BoolNode* bol,  CountedLoopNode* loop_node)
+    : Node(nullptr, bol),
+      _loop_node(loop_node),
+      _predicate_state(PredicateState::Useful) {
+  init_class_id(Class_OpaqueTemplateAssertionPredicate);
+}
+
 Node* OpaqueTemplateAssertionPredicateNode::Identity(PhaseGVN* phase) {
   if (!phase->C->post_loop_opts_phase()) {
     // Record Template Assertion Predicates for post loop opts IGVN. We can remove them when there is no more loop
@@ -123,7 +130,9 @@ Node* OpaqueTemplateAssertionPredicateNode::Identity(PhaseGVN* phase) {
 }
 
 const Type* OpaqueTemplateAssertionPredicateNode::Value(PhaseGVN* phase) const {
-  if (_useless || phase->C->post_loop_opts_phase()) {
+  assert(_predicate_state != PredicateState::MaybeUseful, "should only be MaybeUseful when eliminating useless "
+                                                          "predicates during loop opts");
+  if (is_useless() || phase->C->post_loop_opts_phase()) {
     // Template Assertion Predicates only serve as templates to create Initialized Assertion Predicates when splitting
     // a loop during loop opts. They are not used anymore once loop opts are over and can then be removed. They feed
     // into the bool input of an If node and can thus be replaced by the success path to let the Template Assertion
@@ -135,13 +144,14 @@ const Type* OpaqueTemplateAssertionPredicateNode::Value(PhaseGVN* phase) const {
 }
 
 void OpaqueTemplateAssertionPredicateNode::mark_useless(PhaseIterGVN& igvn) {
-  _useless = true;
+  _predicate_state = PredicateState::Useless;
   igvn._worklist.push(this);
 }
 
 #ifndef PRODUCT
 void OpaqueTemplateAssertionPredicateNode::dump_spec(outputStream* st) const {
-  if (_useless) {
+  st->print("loop_idx=%d ", _loop_node->_idx);
+  if (is_useless()) {
     st->print("#useless ");
   }
 }
