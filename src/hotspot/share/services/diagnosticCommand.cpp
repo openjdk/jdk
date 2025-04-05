@@ -28,6 +28,8 @@
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaThreadStatus.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
@@ -48,12 +50,15 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiAgentList.hpp"
+#include "prims/jvmtiThreadState.hpp" // for JvmtiVTMSTransitionDisabler
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/jniHandles.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/synchronizer.inline.hpp"
+#include "runtime/vframe.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/diagnosticArgument.hpp"
@@ -127,6 +132,7 @@ void DCmd::register_dcmds(){
 #endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpToFileDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<AsyncThreadDumpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadSchedulerDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadPollersDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
@@ -1102,6 +1108,294 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
   typeArrayOop ba = typeArrayOop(res);
   jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
   output()->print_raw((const char*)addr, ba->length());
+}
+
+class AsyncThreadDumpClosure : public HandshakeClosure {
+private:
+  outputStream* _output;
+  JavaThread* _target_jt;
+  Handle _target_h;
+  bool _is_virtual;
+
+  javaVFrame* get_top_frame() {
+    if (_is_virtual && _target_jt == nullptr) {
+      // unmounted vthread
+      oop cont = java_lang_VirtualThread::continuation(_target_h());
+      vframeStream vfs(cont);
+      return vfs.at_end() ? nullptr : vfs.asJavaVFrame();
+    }
+    if (!_target_jt->has_last_Java_frame()) {
+      return nullptr;
+    }
+
+    RegisterMap reg_map(_target_jt,
+        RegisterMap::UpdateMap::include,
+        RegisterMap::ProcessFrames::include,
+        RegisterMap::WalkContinuation::skip);
+
+    if (_is_virtual) {
+      return _target_jt->last_java_vframe(&reg_map);
+    }
+    return _target_jt->is_vthread_mounted()
+           ? _target_jt->carrier_last_java_vframe(&reg_map)
+           : _target_jt->platform_thread_last_java_vframe(&reg_map);
+  }
+
+  JavaThreadStatus get_thread_status() {
+    if (_is_virtual) {
+      int state = java_lang_VirtualThread::state(_target_h());
+      return java_lang_VirtualThread::map_state_to_thread_status(state);
+    }
+    return java_lang_Thread::get_thread_status(_target_h());
+  }
+
+  void print_name() {
+    _output->print("Thread #" INT64_FORMAT " ", (int64_t)java_lang_Thread::thread_id(_target_h()));
+    // name of the thread (platform or virtual)
+    Handle name_h = Handle(Thread::current(), java_lang_Thread::name(_target_h()));
+    const char* name = name_h() != nullptr ? java_lang_String::as_utf8_string(name_h()) : "";
+    _output->print_raw("\"");
+    _output->print_raw(name);
+    _output->print_raw("\"");
+    if (_is_virtual) {
+      _output->print_raw((_target_jt != nullptr) ? " mounted" : " unmounted");
+      _output->print_raw(" virtual");
+    }
+    JavaThreadStatus status = get_thread_status();
+    _output->print(" %s", java_lang_Thread::thread_status_name(status));
+
+    _output->cr();
+  }
+
+  void print_stack_trace(javaVFrame* jvf) {
+    Method* method = jvf->method();
+    Handle mirror(Thread::current(), method->method_holder()->java_mirror());
+    int method_id = method->orig_method_idnum();
+    int version = method->constants()->version();
+
+    InstanceKlass* holder = InstanceKlass::cast(java_lang_Class::as_Klass(mirror()));
+
+    // something like "java.base/java.lang.Object.wait(Object.java:389)"
+    _output->print_raw("\t");
+
+    ModuleEntry* module = holder->module();
+    if (module->is_named()) {
+      _output->print("%s/", module->name()->as_C_string());
+    }
+
+    const char* klass_name = holder->external_name();
+    const char* method_name = method->name()->as_C_string();
+    _output->print("%s.%s(", klass_name, method_name);
+
+    Symbol* source = Backtrace::get_source_file_name(holder, version);
+    int line_number = Backtrace::get_line_number(method, jvf->bci());
+    if (method->constants()->version() != version) {
+      _output->print_raw("Redefined Method");
+    } else if (line_number == -2) {
+      _output->print_raw("Native Method");
+    } else if (source == nullptr) {
+      _output->print_raw("Unknown Source");
+    } else {
+      _output->print_raw(source->as_C_string());
+      if (line_number != -1) {
+        _output->print(":%d", line_number);
+      }
+    }
+    _output->print_raw_cr(")");
+  }
+
+  void print_lock(const char* msg, const char* obj, Klass* k) {
+    _output->print_cr("\t- %s <%s> (a %s)", msg, obj, k->external_name());
+  }
+
+  void print_lock(const char* msg, Handle obj) {
+    Klass * k = obj->klass();
+    _output->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", msg, p2i(obj()), k->external_name());
+  }
+
+  // based on javaVFrame::print_lock_info_on
+  void print_lock_info(javaVFrame* jvf, bool is_top_frame) {
+    Thread* current = Thread::current();
+
+    if (is_top_frame) {
+      oop park_blocker = java_lang_Thread::park_blocker(_target_h());
+      if (park_blocker != nullptr) {
+        print_lock("parking to wait for", Handle(current, park_blocker));
+      }
+    }
+
+    GrowableArray<MonitorInfo*>* mons = jvf->monitors();
+    if (!mons->is_empty()) {
+      bool found_first_monitor = false;
+      for (int index = (mons->length() - 1); index >= 0; index--) {
+        MonitorInfo* monitor = mons->at(index);
+        if (monitor->eliminated() && jvf->is_compiled_frame()) { // Eliminated in compiled code
+          if (monitor->owner_is_scalar_replaced()) {
+            Klass* k = java_lang_Class::as_Klass(monitor->owner_klass());
+            print_lock("eliminated", "owner is scalar replaced", k);
+          } else {
+            Handle obj(current, monitor->owner());
+            if (obj() != nullptr) {
+              print_lock("eliminated", obj);
+            }
+          }
+          continue;
+        }
+        if (monitor->owner() != nullptr) {
+          // the monitor is associated with an object, i.e., it is locked
+          const char* lock_msg = "locked"; // assume we have the monitor locked
+
+          if (!found_first_monitor && is_top_frame) {
+            ObjectMonitor* pending_moninor = _is_virtual
+                                             ? java_lang_VirtualThread::current_pending_monitor(_target_h())
+                                             : _target_jt->current_pending_monitor();
+
+            markWord mark = monitor->owner()->mark();
+            // The first stage of async deflation does not affect any field
+            // used by this comparison so the ObjectMonitor* is usable here.
+            if (mark.has_monitor()) {
+              ObjectMonitor* mon = ObjectSynchronizer::read_monitor(current, monitor->owner(), mark);
+              if (// if the monitor is null we must be in the process of locking
+                  mon == nullptr ||
+                  // we have marked ourself as pending on this monitor
+                  mon == pending_moninor ||
+                  // we are not the owner of this monitor
+                  false/*!mon->is_entered(thread())*/) {
+                lock_msg = "waiting to lock";
+              }
+            }
+          }
+          print_lock(lock_msg,  Handle(current, monitor->owner()));
+
+          found_first_monitor = true;
+        }
+      }
+    }
+  }
+
+public:
+  AsyncThreadDumpClosure(outputStream* output, JavaThread* target_jt, Handle target_h, bool is_virtual)
+      : HandshakeClosure("AsyncThreadDump"),
+        _output(output), _target_jt(target_jt), _target_h(target_h), _is_virtual(is_virtual) {}
+  void do_thread(Thread* target) override {
+    Thread* current = Thread::current();
+    ResourceMark rm(current);
+    HandleMark hm(current);
+
+    print_name();
+
+    javaVFrame* jvf = get_top_frame();
+    bool is_top_frame = true;
+    for (; jvf != nullptr; jvf = jvf->java_sender()) {
+      if (_is_virtual && jvf->is_vthread_entry()) {
+        break;
+      }
+      print_stack_trace(jvf);
+      print_lock_info(jvf, is_top_frame);
+
+      is_top_frame = false;
+    }
+  }
+};
+
+AsyncThreadDumpDCmd::AsyncThreadDumpDCmd(outputStream* output, bool heap) :
+    DCmdWithParser(output, heap),
+    _overwrite("-overwrite", "May overwrite existing file", "BOOLEAN", false, "false"),
+    _format("-format", "Output format (\"plain\" or \"json\")", "STRING", false, "plain"),
+    _filepath("filepath", "The file path to the output file", "FILE", true) {
+  _dcmdparser.add_dcmd_option(&_overwrite);
+  _dcmdparser.add_dcmd_option(&_format);
+  _dcmdparser.add_dcmd_argument(&_filepath);
+}
+
+void AsyncThreadDumpDCmd::execute(DCmdSource source, TRAPS) {
+  bool json = (_format.value() != nullptr) && (strcmp(_format.value(), "json") == 0);
+  char* path = _filepath.value();
+  bool overwrite = _overwrite.value();
+
+  Symbol* sym = vmSymbols::jdk_internal_vm_ThreadDumper();
+  Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK);
+
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result,
+      k,
+      vmSymbols::getThreadIterator_name(),
+      vmSymbols::getThreadIterator_signature(),
+      THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+      java_lang_Throwable::print(PENDING_EXCEPTION, output());
+      output()->cr();
+      CLEAR_PENDING_EXCEPTION;
+      return;
+  }
+
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  Handle iter_obj = Handle(THREAD, cast_to_oop(result.get_jobject()));
+  while (true) {
+    JavaValue result(T_OBJECT);
+    JavaCallArguments args;
+    args.push_oop(iter_obj);
+    JavaCalls::call_static(&result,
+        k,
+        vmSymbols::getNextThread_name(),
+        vmSymbols::getNextThread_signature(),
+        &args,
+        THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      java_lang_Throwable::print(PENDING_EXCEPTION, output());
+      output()->cr();
+      CLEAR_PENDING_EXCEPTION;
+      return;
+    }
+    Handle res(THREAD, result.get_oop());
+    jthread thread = JNIHandles::make_local(THREAD, res(), AllocFailStrategy::RETURN_NULL);
+    if (thread == nullptr) {
+      break;
+    }
+    dump_thread(thread, CHECK);
+    JNIHandles::destroy_local(thread);
+  }
+}
+
+void AsyncThreadDumpDCmd::dump_thread(jthread jthread, TRAPS) {
+  JavaThread* current = JavaThread::current();
+  HandleMark hm(current);
+  JvmtiVTMSTransitionDisabler disabler(jthread);
+  ThreadsListHandle tlh(current);
+
+  oop thread_obj = JNIHandles::resolve_external_guard(jthread);
+  if (thread_obj == nullptr) {
+    // null jthread, GC'ed jthread or a bad JNI handle.
+    return;
+  }
+
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_obj);
+  JavaThread* java_thread = nullptr;
+  if (is_virtual) {
+    oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_obj);
+    if (carrier_thread != nullptr) {
+      java_thread = java_lang_Thread::thread(carrier_thread);
+    }
+  } else {
+    java_thread = java_lang_Thread::thread(thread_obj);
+  }
+
+  if (java_thread == nullptr && !is_virtual) {
+    // not yet run or it has died.
+    return;
+  }
+
+  Handle target_h(current, thread_obj);
+
+  AsyncThreadDumpClosure cl(output(), java_thread, target_h, is_virtual);
+  if (java_thread == nullptr) {
+    // unmounted vthread: execute on the current thread
+    cl.do_thread(nullptr);
+  } else {
+    Handshake::execute(&cl, &tlh, java_thread);
+  }
 }
 
 // Calls a static no-arg method on jdk.internal.vm.JcmdVThreadCommands that returns a byte[] with
