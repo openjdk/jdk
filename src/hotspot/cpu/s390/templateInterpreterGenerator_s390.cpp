@@ -1134,7 +1134,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ z_agr(Z_locals, Z_esp);
   // z_ijava_state->locals - i*BytesPerWord points to i-th Java local (i starts at 0)
   // z_ijava_state->locals = Z_esp + parameter_count bytes
-  __ z_stg(Z_locals, _z_ijava_state_neg(locals), fp);
+
+  __ z_sgrk(Z_R0, Z_locals, fp); // Z_R0 = Z_locals - fp();
+  __ z_srlg(Z_R0, Z_R0, Interpreter::logStackElementSize);
+  // Store relativized Z_locals, see frame::interpreter_frame_locals().
+  __ z_stg(Z_R0, _z_ijava_state_neg(locals), fp);
 
   // z_ijava_state->oop_temp = nullptr;
   __ store_const(Address(fp, oop_tmp_offset), 0);
