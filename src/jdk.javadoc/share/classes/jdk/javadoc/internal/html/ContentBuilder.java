@@ -106,6 +106,15 @@ public class ContentBuilder extends Content {
     }
 
     @Override
+    public Content stripTags() {
+        var text = new ContentBuilder();
+        for (Content c : contents) {
+            text.add(c.stripTags());
+        }
+        return text;
+    }
+
+    @Override
     public boolean isPhrasingContent() {
         return contents.stream().allMatch(Content::isPhrasingContent);
     }
