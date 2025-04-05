@@ -25,7 +25,6 @@
 
 package java.io;
 
-import java.nio.CharBuffer;
 import java.util.Objects;
 
 /**
