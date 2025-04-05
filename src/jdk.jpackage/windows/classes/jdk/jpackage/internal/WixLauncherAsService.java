@@ -24,12 +24,13 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.WinLauncher;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.function.Function;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.Source;
@@ -38,7 +39,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import static jdk.jpackage.internal.OverridableResource.createResource;
 import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -47,12 +47,12 @@ import org.xml.sax.SAXException;
 
 class WixLauncherAsService extends LauncherAsService {
 
-    WixLauncherAsService(String name, Map<String, ? super Object> mainParams) {
-        super(name, mainParams,
-                createResource("service-install.wxi", mainParams).setCategory(
+    WixLauncherAsService(WinLauncher launcher, Function<String, OverridableResource> createResource) {
+        super(launcher,
+                createResource.apply("service-install.wxi").setCategory(
                         I18N.getString("resource.launcher-as-service-wix-file")));
 
-        serviceConfigResource = createResource("service-config.wxi", mainParams).setCategory(
+        serviceConfigResource = createResource.apply("service-config.wxi").setCategory(
                 I18N.getString("resource.launcher-as-service-wix-file"));
 
         addSubstitutionDataEntry("SERVICE_NAME", getName());

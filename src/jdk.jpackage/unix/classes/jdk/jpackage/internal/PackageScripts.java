@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import jdk.jpackage.internal.resources.ResourceLocator;
 
 /**
  * Shell scripts of a package.
@@ -83,7 +84,8 @@ final class PackageScripts<T extends Enum<T> & Supplier<OverridableResource>> {
         }
 
         OverridableResource createResource() {
-            var resource = new OverridableResource(defaultName).setCategory(category);
+            var resource = new OverridableResource(defaultName,
+                    ResourceLocator.class).setCategory(category);
             return getDefaultPublicName().map(resource::setPublicName).orElse(
                     resource);
         }
