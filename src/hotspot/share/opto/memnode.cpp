@@ -1923,6 +1923,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         for (int i = 0; i < 10 && ctl != nullptr; i++) {
           ctl = IfNode::up_one_dom(ctl);
           if (ctl == use->in(0)) {
+            phase->is_IterGVN()->rehash_node_delayed(this);
             set_req(0, use->in(0));
             return this;
           }
@@ -1957,6 +1958,9 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // just return a prior value, which is done by Identity calls.
     if (can_see_stored_value(prev_mem, phase)) {
       // Make ready for step (d):
+      if (phase->is_IterGVN()) {
+        phase->is_IterGVN()->rehash_node_delayed(this);
+      }
       set_req_X(MemNode::Memory, prev_mem, phase);
       return this;
     }
