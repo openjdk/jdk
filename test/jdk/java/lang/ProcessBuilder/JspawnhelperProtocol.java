@@ -49,14 +49,21 @@ public class JspawnhelperProtocol {
     private static final String[] CMD = { "pwd" };
     private static final String ENV_KEY = "JTREG_JSPAWNHELPER_PROTOCOL_TEST";
 
+    private static final String SPAWNHELPER_FAILURE_MSG = "Possible reasons:";
+
     private static void parentCode(String arg) throws IOException, InterruptedException {
         System.out.println("Recursively executing 'JspawnhelperProtocol " + arg + "'");
         Process p = null;
         try {
             p = Runtime.getRuntime().exec(CMD);
         } catch (Exception e) {
+            // Check that exception contains rich message on failure.
             e.printStackTrace(System.out);
-            System.exit(ERROR);
+            if (e instanceof IOException && e.getMessage().contains(SPAWNHELPER_FAILURE_MSG)) {
+                System.exit(ERROR);
+            } else {
+                System.exit(ERROR + 3);
+            }
         }
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
             System.out.println("Child process timed out");
