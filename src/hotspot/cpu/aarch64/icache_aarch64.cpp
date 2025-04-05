@@ -25,10 +25,10 @@
 
 #include "runtime/icache.hpp"
 
-void ICacheStubGenerator::generate_icache_flush(
+void ICacheStubGenerator::generate_icache_flush(const char* name,
                 ICache::flush_icache_stub_t* flush_icache_stub) {
   // Give anyone who calls this a surprise
   *flush_icache_stub = nullptr;
 }
 
-void ICache::initialize() {}
+void ICache::initialize(int phase) {}
