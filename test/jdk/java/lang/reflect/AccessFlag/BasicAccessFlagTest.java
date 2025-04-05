@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,6 +154,21 @@ public class BasicAccessFlagTest {
             try {
                 flag.locations(null);
                 throw new RuntimeException("Did not get NPE on " + flag + ".location(null)");
+            } catch (NullPointerException npe ) {
+                ; // Expected
+            }
+        }
+
+        for (var location : AccessFlag.Location.values()) {
+            try {
+                location.flags(null);
+                throw new RuntimeException("Did not get NPE on " + location + ".flags(null)");
+            } catch (NullPointerException npe ) {
+                ; // Expected
+            }
+            try {
+                location.flagsMask(null);
+                throw new RuntimeException("Did not get NPE on " + location + ".flagsMask(null)");
             } catch (NullPointerException npe ) {
                 ; // Expected
             }
