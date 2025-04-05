@@ -30,13 +30,13 @@ public class DialogToFrontModelessTest {
     private volatile Frame parent;
 
     private static final int delay = 500;
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     private boolean isModeless;
 
     public DialogToFrontModelessTest(boolean modeless) throws Exception {
         isModeless = modeless;
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeLater(this::createGUI);
     }
 

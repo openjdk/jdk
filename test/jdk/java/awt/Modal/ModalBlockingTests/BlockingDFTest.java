@@ -34,12 +34,12 @@ public class BlockingDFTest {
     private TestFrame  frame;
 
     private static final int delay = 500;
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     private BlockingDFTest(Dialog.ModalityType modalityType,
                            boolean             setModal) throws Exception {
 
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeLater(() -> { createGUI(modalityType, setModal); });
     }
 

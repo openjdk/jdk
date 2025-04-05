@@ -61,7 +61,7 @@ import java.awt.image.BufferedImage;
 public class TrayIconPopupTest {
 
     TrayIcon icon;
-    ExtendedRobot robot;
+    Robot robot;
 
     volatile boolean actionPerformed = false;
     final Object actionLock = new Object();
@@ -94,7 +94,7 @@ public class TrayIconPopupTest {
     }
 
     TrayIconPopupTest() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait(this::initializeGUI);
         robot.waitForIdle(1000);
         EventQueue.invokeAndWait( () ->  window.setLocation(100, 100));

@@ -24,6 +24,7 @@
 import java.awt.EventQueue;
 import java.awt.Image;
 import java.awt.Point;
+import java.awt.Robot;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.event.InputEvent;
@@ -43,7 +44,7 @@ import java.awt.image.BufferedImage;
  * @library /java/awt/patchlib
  * @library /lib/client ../
  * @build java.desktop/java.awt.Helper
- * @build ExtendedRobot SystemTrayIconHelper
+ * @build SystemTrayIconHelper
  * @run main TrayIconEventModifiersTest
  */
 
@@ -52,7 +53,7 @@ public class TrayIconEventModifiersTest {
     Image image;
 
     TrayIcon icon;
-    ExtendedRobot robot;
+    Robot robot;
 
     Object mouseLock = new Object();
 
@@ -121,7 +122,7 @@ public class TrayIconEventModifiersTest {
     }
 
     public TrayIconEventModifiersTest() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait(this::initializeGUI);
     }
 
