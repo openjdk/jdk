@@ -2201,8 +2201,13 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
 
 // Returns a lower bound on the number of trailing zeros in expr.
 static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, BasicType bt) {
-  expr = expr->uncast();
   const TypeInteger* type = phase->type(expr)->isa_integer(bt);
+  if (type == nullptr) {
+    return 0;
+  }
+
+  expr = expr->uncast();
+  type = phase->type(expr)->isa_integer(bt);
   if (type == nullptr) {
     return 0;
   }
