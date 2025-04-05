@@ -275,8 +275,8 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
   assert(_from_region != nullptr, "must set before work");
   assert((_from_region->bottom() <= cast_from_oop<HeapWord*>(p)) && (cast_from_oop<HeapWord*>(p) < _from_region->top()),
          "Object must reside in _from_region");
-  assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
-  assert(!_heap->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
+  assert(_heap->global_generation()->complete_marking_context()->is_marked(p), "must be marked");
+  assert(!_heap->global_generation()->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
 
   size_t obj_size = p->size();
   uint from_region_age = _from_region->age();
