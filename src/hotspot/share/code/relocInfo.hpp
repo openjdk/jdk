@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -451,6 +451,8 @@ class relocInfo {
     length_limit       = 1 + 1 + (3*BytesPerWord/BytesPerShort) + 1,
     have_format        = format_width > 0
   };
+
+  static const char* type_name(relocInfo::relocType t);
 };
 
 #define FORWARD_DECLARE_EACH_CLASS(name)              \
@@ -638,11 +640,11 @@ class RelocIterator : public StackObj {
   bool   addr_in_const()      const;
 
   address section_start(int n) const {
-    assert(_section_start[n], "must be initialized");
+    assert(_section_start[n], "section %d must be initialized", n);
     return _section_start[n];
   }
   address section_end(int n) const {
-    assert(_section_end[n], "must be initialized");
+    assert(_section_end[n], "section %d must be initialized", n);
     return _section_end[n];
   }
 
@@ -658,11 +660,9 @@ class RelocIterator : public StackObj {
   // generic relocation accessor; switches on type to call the above
   Relocation* reloc();
 
-#ifndef PRODUCT
  public:
-  void print();
-  void print_current();
-#endif
+  void print_on(outputStream* st);
+  void print_current_on(outputStream* st);
 };
 
 
@@ -672,6 +672,7 @@ class RelocIterator : public StackObj {
 
 class Relocation {
   friend class RelocIterator;
+  friend class AOTCodeReader;
 
  private:
   // When a relocation has been created by a RelocIterator,
@@ -1287,6 +1288,24 @@ class trampoline_stub_Relocation : public Relocation {
 
   void pack_data_to(CodeSection * dest) override;
   void unpack_data() override;
+#if defined(AARCH64)
+  address    pd_destination     ();
+  void       pd_set_destination (address x);
+  address  destination() {
+    return pd_destination();
+  }
+  void     set_destination(address x) {
+    pd_set_destination(x);
+  }
+#else
+  address  destination() {
+    fatal("trampoline_stub_Relocation::destination() unimplemented");
+    return (address)-1;
+  }
+  void     set_destination(address x) {
+    fatal("trampoline_stub_Relocation::set_destination() unimplemented");
+  }
+#endif
 
   // Find the trampoline stub for a call.
   static address get_trampoline_for(address call, nmethod* code);
