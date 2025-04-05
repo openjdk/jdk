@@ -171,14 +171,17 @@ public:
   inline KlassLUTEntry(uint32_t v) : _v(v) {}
   inline KlassLUTEntry(const KlassLUTEntry& other) : _v(other._v) {}
 
-  inline KlassLUTEntry& operator=(uint32_t v)                       { _v = v; return *this; }
-  inline KlassLUTEntry& KlassLUTEntry(const KlassLUTEntry& other)   { _v = other._v; return *this; }
+  inline KlassLUTEntry& operator=(uint32_t v)                   { _v = v; return *this; }
+  inline KlassLUTEntry& operator=(const KlassLUTEntry& other)   { _v = other._v; return *this; }
+
+  inline bool operator==(const KlassLUTEntry& other) const          { return _v.raw == other._v.raw; }
+  inline bool operator!=(const KlassLUTEntry& other) const          { return _v.raw != other._v.raw; }
 
   // Note: all entries should be valid. An invalid entry indicates
   // an error somewhere.
   bool is_invalid() const { return _v.raw == invalid_entry; }
 
-  static uint32_t build_from_klass(const Klass* k);
+  static KlassLUTEntry build_from_klass(const Klass* k);
 
 #ifdef ASSERT
   void verify_against_klass(const Klass* k) const;

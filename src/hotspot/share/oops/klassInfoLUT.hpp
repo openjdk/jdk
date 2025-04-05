@@ -101,7 +101,7 @@ public:
 
   static void initialize();
 
-  static KlassLUTEntry register_klass(Klass* k);
+  static KlassLUTEntry register_klass(const Klass* k);
 
   static inline KlassLUTEntry get_entry(narrowKlass k);
 
