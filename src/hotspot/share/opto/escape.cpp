@@ -2826,7 +2826,7 @@ int ConnectionGraph::find_init_values_null(JavaObjectNode* pta, PhaseValues* pha
           // This AddP may reference non existing field because it is on a
           // dead branch of bimorphic call which is not eliminated yet.
           if (store != nullptr && store->is_Store() &&
-              store->as_Store()->memory_type() == ft) {
+              store->as_Store()->value_basic_type() == ft) {
             value = store->in(MemNode::ValueIn);
 #ifdef ASSERT
             if (VerifyConnectionGraph) {

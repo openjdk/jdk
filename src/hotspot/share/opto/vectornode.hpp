@@ -1017,7 +1017,7 @@ class LoadVectorNode : public LoadNode {
   virtual int Opcode() const;
 
   virtual uint ideal_reg() const  { return Matcher::vector_ideal_reg(memory_size()); }
-  virtual BasicType memory_type() const { return T_VOID; }
+  virtual BasicType value_basic_type() const { return T_VOID; }
   virtual int memory_size() const { return vect_type()->length_in_bytes(); }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
@@ -1090,7 +1090,7 @@ class StoreVectorNode : public StoreNode {
   virtual int Opcode() const;
 
   virtual uint ideal_reg() const  { return Matcher::vector_ideal_reg(memory_size()); }
-  virtual BasicType memory_type() const { return T_VOID; }
+  virtual BasicType value_basic_type() const { return T_VOID; }
   virtual int memory_size() const { return vect_type()->length_in_bytes(); }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
