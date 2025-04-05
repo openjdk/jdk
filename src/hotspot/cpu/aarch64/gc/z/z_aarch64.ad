@@ -106,6 +106,11 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
   match(Set dst (LoadP mem));
   predicate(UseZGC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   effect(TEMP dst, KILL cr);
+  // The vast majority of memory operands seen in practice are of indOffL8 type.
+  // By construction, these memory operands do not lead to out-of-range offsets
+  // (see definition of immLoffset8), so ldr is guaranteed to be the first
+  // instruction emitted.
+  ins_has_initial_implicit_null_check_candidate(opnd_array(1)->opcode() == INDOFFL8);
 
   ins_cost(4 * INSN_COST);
 
@@ -113,6 +118,9 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
 
   ins_encode %{
     Address ref_addr = mem2address($mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
+    assert(!this->has_initial_implicit_null_check_candidate() ||
+           Address::offset_ok_for_immed(ref_addr.offset(), exact_log2(8)),
+           "an instruction that can be used for implicit null checking should emit the candidate memory access first");
     if (ref_addr.getMode() == Address::base_plus_offset) {
       // Fix up any out-of-range offsets.
       assert_different_registers(rscratch2, as_Register($mem$$base));
