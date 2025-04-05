@@ -89,17 +89,17 @@ public class bug8077409Test extends Frame {
   public static void main(String[] args) throws AWTException, InterruptedException {
     final bug8077409Test obj = new bug8077409Test();
     try {
-    obj.setLocationRelativeTo(null);
-    Toolkit.getDefaultToolkit().addAWTEventListener(e -> {
-      KeyEvent keyEvent = (KeyEvent) e;
-      if(keyEvent.getID() == KeyEvent.KEY_RELEASED) {
+      obj.setLocationRelativeTo(null);
+      Toolkit.getDefaultToolkit().addAWTEventListener(e -> {
+        KeyEvent keyEvent = (KeyEvent) e;
+        if (keyEvent.getID() == KeyEvent.KEY_RELEASED) {
           if (keyEvent.getKeyCode() == KeyEvent.VK_1) {
             System.out.println(obj.pane.toString());
             System.out.println("obj.myCanvas.pos: " + obj.myCanvas.getBounds());
             System.out.println(obj.myCanvas.toString());
-          }  else if (keyEvent.getKeyCode() == KeyEvent.VK_2) {
+          } else if (keyEvent.getKeyCode() == KeyEvent.VK_2) {
             obj.repaint();
-         } else if (keyEvent.getKeyCode() == KeyEvent.VK_DOWN) {
+          } else if (keyEvent.getKeyCode() == KeyEvent.VK_DOWN) {
             Point scrollPosition = obj.pane.getScrollPosition();
             scrollPosition.translate(0, 1);
             obj.pane.setScrollPosition(scrollPosition);
@@ -126,13 +126,13 @@ public class bug8077409Test extends Frame {
       obj.pane.validate();
       robot.waitForIdle();
       robot.delay(300);
-      if(y != obj.pane.getComponent(0).getLocation().y){
-          throw new RuntimeException("Wrong position of component in ScrollPane");
+      if (y != obj.pane.getComponent(0).getLocation().y) {
+        throw new RuntimeException("Wrong position of component in ScrollPane");
       } else {
-          System.out.println("Passed.....");
+        System.out.println("Passed.....");
       }
     } finally {
-        obj.dispose();
+      obj.dispose();
     }
   }
 
