@@ -63,8 +63,8 @@ typedef struct {
     char *display_country;
     char *format_variant;
     char *display_variant;
-    char *encoding;
-    char *sun_jnu_encoding;
+    char *encoding;             /* always set non-NULL by platform code */
+    char *sun_jnu_encoding;     /* always set non-NULL by platform code */
     char *stdout_encoding;
     char *stderr_encoding;
 

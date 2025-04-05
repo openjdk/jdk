@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #endif
+#include <assert.h>
 #include <pwd.h>
 #include <locale.h>
 #ifndef ARCHPROPNAME
@@ -463,6 +464,10 @@ GetJavaProperties(JNIEnv *env)
 #else
     sprops.sun_jnu_encoding = sprops.encoding;
 #endif
+
+    assert(sprops.encoding != NULL);
+    assert(sprops.sun_jnu_encoding != NULL);
+
     if (isatty(STDOUT_FILENO) == 1) {
         sprops.stdout_encoding = sprops.encoding;
     }
