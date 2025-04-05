@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,21 @@
  *
  */
 
-#ifndef SHARE_JFR_SUPPORT_JFRKLASSUNLOADING_HPP
-#define SHARE_JFR_SUPPORT_JFRKLASSUNLOADING_HPP
+#ifndef SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACEREPOSITORY_INLINE_HPP
+#define SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACEREPOSITORY_INLINE_HPP
 
-#include "jfr/utilities/jfrTypes.hpp"
-#include "memory/allStatic.hpp"
+#include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 
-class Klass;
+template <typename Callback>
+inline void JfrStackTraceRepository::iterate_leakprofiler(Callback& cb) {
+  JfrStackTraceRepository& repo = leak_profiler_instance();
+  for (u4 i = 0; i < TABLE_SIZE; ++i) {
+    const JfrStackTrace* stacktrace = repo._table[i];
+    while (stacktrace != nullptr) {
+      cb(stacktrace);
+      stacktrace = stacktrace->next();
+    }
+  }
+}
 
-class JfrKlassUnloading : AllStatic {
- public:
-  static bool on_unload(const Klass* k);
-  static int64_t event_class_count();
-  static bool is_unloaded(traceid klass_id, bool previous_epoch = false);
-  static void clear();
-};
-
-#endif // SHARE_JFR_SUPPORT_JFRKLASSUNLOADING_HPP
+#endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACEREPOSITORY_INLINE_HPP

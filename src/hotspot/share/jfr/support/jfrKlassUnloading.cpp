@@ -26,54 +26,46 @@
 #include "jfr/periodic/jfrFinalizerStatisticsEvent.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
-#include "jfr/utilities/jfrPredicate.hpp"
-#include "jfr/utilities/jfrRelation.hpp"
+#include "jfr/utilities/jfrSet.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/macros.hpp"
 
-static const int initial_array_size = 64;
+static const int initial_size = 1009;
 
-template <typename T>
-static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
-  return new (mtTracing) GrowableArray<T>(size, mtTracing);
+static JfrCHeapTraceIdSet* c_heap_allocate_set(int size = initial_size) {
+  return new JfrCHeapTraceIdSet(size);
 }
 
 // Track the set of unloaded klasses during a chunk / epoch.
-static GrowableArray<traceid>* _unload_set_epoch_0 = nullptr;
-static GrowableArray<traceid>* _unload_set_epoch_1 = nullptr;
+static JfrCHeapTraceIdSet* _unload_set_epoch_0 = nullptr;
+static JfrCHeapTraceIdSet* _unload_set_epoch_1 = nullptr;
 
 static s8 event_klass_unloaded_count = 0;
 
-static GrowableArray<traceid>* unload_set_epoch_0() {
+static JfrCHeapTraceIdSet* unload_set_epoch_0() {
   if (_unload_set_epoch_0 == nullptr) {
-    _unload_set_epoch_0 = c_heap_allocate_array<traceid>(initial_array_size);
+    _unload_set_epoch_0 = c_heap_allocate_set();
   }
   return _unload_set_epoch_0;
 }
 
-static GrowableArray<traceid>* unload_set_epoch_1() {
+static JfrCHeapTraceIdSet* unload_set_epoch_1() {
   if (_unload_set_epoch_1 == nullptr) {
-    _unload_set_epoch_1 = c_heap_allocate_array<traceid>(initial_array_size);
+    _unload_set_epoch_1 = c_heap_allocate_set();
   }
   return _unload_set_epoch_1;
 }
 
-static GrowableArray<traceid>* get_unload_set(u1 epoch) {
+static JfrCHeapTraceIdSet* get_unload_set(u1 epoch) {
   return epoch == 0 ? unload_set_epoch_0() : unload_set_epoch_1();
 }
 
-static GrowableArray<traceid>* get_unload_set() {
+static JfrCHeapTraceIdSet* get_unload_set() {
   return get_unload_set(JfrTraceIdEpoch::current());
 }
 
-static GrowableArray<traceid>* get_unload_set_previous_epoch() {
+static JfrCHeapTraceIdSet* get_unload_set_previous_epoch() {
   return get_unload_set(JfrTraceIdEpoch::previous());
-}
-
-static void sort_set(GrowableArray<traceid>* set) {
-  assert(set != nullptr, "invariant");
-  assert(set->is_nonempty(), "invariant");
-  set->sort(sort_traceid);
 }
 
 static bool is_nonempty_set(u1 epoch) {
@@ -81,16 +73,6 @@ static bool is_nonempty_set(u1 epoch) {
     return _unload_set_epoch_0 != nullptr && _unload_set_epoch_0->is_nonempty();
   }
   return _unload_set_epoch_1 != nullptr && _unload_set_epoch_1->is_nonempty();
-}
-
-void JfrKlassUnloading::sort(bool previous_epoch) {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  if (is_nonempty_set(JfrTraceIdEpoch::current())) {
-    sort_set(get_unload_set());
-  }
-  if (previous_epoch && is_nonempty_set(JfrTraceIdEpoch::previous())) {
-    sort_set(get_unload_set_previous_epoch());
-  }
 }
 
 void JfrKlassUnloading::clear() {
@@ -102,10 +84,9 @@ void JfrKlassUnloading::clear() {
 
 static void add_to_unloaded_klass_set(traceid klass_id) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  GrowableArray<traceid>* const unload_set = get_unload_set();
+  JfrCHeapTraceIdSet* const unload_set = get_unload_set();
   assert(unload_set != nullptr, "invariant");
-  assert(unload_set->find(klass_id) == -1, "invariant");
-  unload_set->append(klass_id);
+  unload_set->add(klass_id);
 }
 
 #if INCLUDE_MANAGEMENT
@@ -131,14 +112,19 @@ bool JfrKlassUnloading::on_unload(const Klass* k) {
   return USED_THIS_EPOCH(k);
 }
 
+static inline bool is_unloaded(const JfrCHeapTraceIdSet* set, const traceid& id) {
+  assert(set != nullptr, "invariant");
+  return set->contains(id);
+}
+
 bool JfrKlassUnloading::is_unloaded(traceid klass_id, bool previous_epoch /* false */) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   if (previous_epoch) {
-    if (JfrPredicate<traceid, compare_traceid>::test(get_unload_set_previous_epoch(), klass_id)) {
+    if (::is_unloaded(get_unload_set_previous_epoch(), klass_id)) {
       return true;
     }
   }
-  return JfrPredicate<traceid, compare_traceid>::test(get_unload_set(), klass_id);
+  return ::is_unloaded(get_unload_set(), klass_id);
 }
 
 int64_t JfrKlassUnloading::event_class_count() {
