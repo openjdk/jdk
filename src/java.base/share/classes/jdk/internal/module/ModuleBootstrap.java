@@ -56,6 +56,7 @@ import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.CDS;
 import jdk.internal.perf.PerfCounter;
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * Initializes/boots the module system.
@@ -820,6 +821,7 @@ public final class ModuleBootstrap {
         DENY
     }
 
+    @ForceInline
     public static IllegalNativeAccess illegalNativeAccess() {
         return ILLEGAL_NATIVE_ACCESS;
     }
@@ -887,6 +889,7 @@ public final class ModuleBootstrap {
     /**
      * Process the --illegal-native-access option (and its default).
      */
+    @ForceInline
     private static IllegalNativeAccess addIllegalNativeAccess() {
         String value = getAndRemoveProperty("jdk.module.illegal.native.access");
         // don't use a switch: bootstrapping issues!
