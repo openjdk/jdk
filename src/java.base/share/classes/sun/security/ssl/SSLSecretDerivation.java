@@ -89,9 +89,8 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
     }
 
     @Override
-    public SecretKey deriveKey(String algorithm,
-            AlgorithmParameterSpec params) throws IOException {
-        SecretSchedule ks = SecretSchedule.valueOf(algorithm);
+    public SecretKey deriveKey(String type) throws IOException {
+        SecretSchedule ks = SecretSchedule.valueOf(type);
         try {
             byte[] expandContext;
             if (ks == SecretSchedule.TlsSaltSecret) {
@@ -104,7 +103,7 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
                     // get supported in the future.
                     throw new SSLHandshakeException(
                             "Unexpected unsupported hash algorithm: " +
-                            algorithm);
+                            hashAlg);
                 }
             } else {
                 expandContext = transcriptHash;
@@ -112,7 +111,7 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
             KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg.name));
             byte[] hkdfInfo = createHkdfInfo(ks.label,
                     expandContext, hashAlg.hashLength);
-            return hkdf.deriveKey(algorithm, HKDFParameterSpec.expandOnly(
+            return hkdf.deriveKey(type, HKDFParameterSpec.expandOnly(
                     secret, hkdfInfo, hashAlg.hashLength));
         } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not generate secret", gse);

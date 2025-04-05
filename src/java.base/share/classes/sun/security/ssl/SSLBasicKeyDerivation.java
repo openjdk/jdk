@@ -38,22 +38,22 @@ final class SSLBasicKeyDerivation implements SSLKeyDerivation {
     private final String hashAlg;
     private final SecretKey secret;
     private final byte[] hkdfInfo;
+    private final int keyLen;
 
     SSLBasicKeyDerivation(SecretKey secret, String hashAlg,
             byte[] label, byte[] context, int length) {
         this.hashAlg = hashAlg.replace("-", "");
         this.secret = secret;
         this.hkdfInfo = createHkdfInfo(label, context, length);
+        this.keyLen = length;
     }
 
     @Override
-    public SecretKey deriveKey(String algorithm,
-            AlgorithmParameterSpec keySpec) throws IOException {
+    public SecretKey deriveKey(String type) throws IOException {
         try {
             KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg));
-            return hkdf.deriveKey(algorithm,
-                    HKDFParameterSpec.expandOnly(secret, hkdfInfo,
-                    ((SecretSizeSpec)keySpec).length));
+            return hkdf.deriveKey(type,
+                    HKDFParameterSpec.expandOnly(secret, hkdfInfo, keyLen));
         } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not generate secret", gse);
         }
@@ -71,13 +71,5 @@ final class SSLBasicKeyDerivation implements SSLKeyDerivation {
             // unlikely
         }
         return info;
-    }
-
-    static class SecretSizeSpec implements AlgorithmParameterSpec {
-        final int length;
-
-        SecretSizeSpec(int length) {
-            this.length = length;
-        }
     }
 }

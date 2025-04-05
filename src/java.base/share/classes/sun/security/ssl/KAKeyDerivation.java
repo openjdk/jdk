@@ -57,29 +57,25 @@ public class KAKeyDerivation implements SSLKeyDerivation {
     }
 
     @Override
-    public SecretKey deriveKey(String algorithm,
-            AlgorithmParameterSpec params) throws IOException {
+    public SecretKey deriveKey(String type) throws IOException {
         if (!context.negotiatedProtocol.useTLS13PlusSpec()) {
-            return t12DeriveKey(algorithm, params);
+            return t12DeriveKey();
         } else {
-            return t13DeriveKey(algorithm, params);
+            return t13DeriveKey(type);
         }
     }
 
     /**
      * Handle the TLSv1-1.2 objects, which don't use the HKDF algorithms.
      */
-    private SecretKey t12DeriveKey(String algorithm,
-            AlgorithmParameterSpec params) throws IOException {
+    private SecretKey t12DeriveKey() throws IOException {
         try {
             KeyAgreement ka = KeyAgreement.getInstance(algorithmName);
             ka.init(localPrivateKey);
             ka.doPhase(peerPublicKey, true);
-            SecretKey preMasterSecret
-                    = ka.generateSecret("TlsPremasterSecret");
-            SSLMasterKeyDerivation mskd
-                    = SSLMasterKeyDerivation.valueOf(
-                            context.negotiatedProtocol);
+            SecretKey preMasterSecret = ka.generateSecret("TlsPremasterSecret");
+            SSLMasterKeyDerivation mskd =
+                    SSLMasterKeyDerivation.valueOf(context.negotiatedProtocol);
             if (mskd == null) {
                 // unlikely
                 throw new SSLHandshakeException(
@@ -88,7 +84,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             }
             SSLKeyDerivation kd = mskd.createKeyDerivation(
                     context, preMasterSecret);
-            return kd.deriveKey("MasterSecret", params);
+            return kd.deriveKey("MasterSecret");
         } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not generate secret", gse);
         }
@@ -97,8 +93,8 @@ public class KAKeyDerivation implements SSLKeyDerivation {
     /**
      * Handle the TLSv1.3 objects, which use the HKDF algorithms.
      */
-    private SecretKey t13DeriveKey(String algorithm,
-            AlgorithmParameterSpec params) throws IOException {
+    private SecretKey t13DeriveKey(String type)
+            throws IOException {
         try {
             KeyAgreement ka = KeyAgreement.getInstance(algorithmName);
             ka.init(localPrivateKey);
@@ -116,18 +112,16 @@ public class KAKeyDerivation implements SSLKeyDerivation {
                 SecretKeySpec ikm
                         = new SecretKeySpec(zeros, "TlsPreSharedSecret");
                 SecretKey earlySecret = hkdf.deriveKey("TlsEarlySecret",
-                        HKDFParameterSpec.ofExtract().addSalt(zeros)
-                        .addIKM(ikm).extractOnly());
+                        HKDFParameterSpec.ofExtract().addIKM(ikm).extractOnly());
                 kd = new SSLSecretDerivation(context, earlySecret);
             }
 
             // derive salt secret
-            SecretKey saltSecret = kd.deriveKey("TlsSaltSecret", null);
+            SecretKey saltSecret = kd.deriveKey("TlsSaltSecret");
 
             // derive handshake secret
-            return hkdf.deriveKey(algorithm, HKDFParameterSpec.ofExtract()
+            return hkdf.deriveKey(type, HKDFParameterSpec.ofExtract()
                     .addSalt(saltSecret).addIKM(sharedSecret).extractOnly());
-
         } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not generate secret", gse);
         }

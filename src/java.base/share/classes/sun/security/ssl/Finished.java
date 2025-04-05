@@ -49,7 +49,6 @@ import jdk.internal.event.TLSHandshakeEvent;
 import sun.security.internal.spec.TlsPrfParameterSpec;
 import sun.security.ssl.CipherSuite.HashAlg;
 import static sun.security.ssl.CipherSuite.HashAlg.H_NONE;
-import sun.security.ssl.SSLBasicKeyDerivation.SecretSizeSpec;
 import sun.security.ssl.SSLCipher.SSLReadCipher;
 import sun.security.ssl.SSLCipher.SSLWriteCipher;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
@@ -342,10 +341,7 @@ final class Finished {
             SSLBasicKeyDerivation kdf = new SSLBasicKeyDerivation(
                     secret, hashAlg.name,
                     hkdfLabel, hkdfContext, hashAlg.hashLength);
-            AlgorithmParameterSpec keySpec =
-                    new SecretSizeSpec(hashAlg.hashLength);
-            SecretKey finishedSecret =
-                    kdf.deriveKey("TlsFinishedSecret", keySpec);
+            SecretKey finishedSecret = kdf.deriveKey("TlsFinishedSecret");
 
             String hmacAlg =
                 "Hmac" + hashAlg.name.replace("-", "");
@@ -719,17 +715,14 @@ final class Finished {
 
             try {
                 // update the application traffic read keys.
-                SecretKey writeSecret = kd.deriveKey(
-                        "TlsClientAppTrafficSecret", null);
+                SecretKey writeSecret =
+                        kd.deriveKey("TlsClientAppTrafficSecret");
 
                 SSLKeyDerivation writeKD =
                         kdg.createKeyDerivation(chc, writeSecret);
-                SecretKey writeKey = writeKD.deriveKey(
-                        "TlsKey", null);
-                SecretKey writeIvSecret = writeKD.deriveKey(
-                        "TlsIv", null);
+                SecretKey writeKey = writeKD.deriveKey("TlsKey");
                 IvParameterSpec writeIv =
-                        new IvParameterSpec(writeIvSecret.getEncoded());
+                        new IvParameterSpec(writeKD.deriveData("TlsIv"));
                 SSLWriteCipher writeCipher =
                         chc.negotiatedCipherSuite.bulkCipher.createWriteCipher(
                                 Authenticator.valueOf(chc.negotiatedProtocol),
@@ -756,7 +749,7 @@ final class Finished {
             // it can be used after the handshake is completed.
             SSLSecretDerivation sd = ((SSLSecretDerivation) kd).forContext(chc);
             SecretKey resumptionMasterSecret = sd.deriveKey(
-                    "TlsResumptionMasterSecret", null);
+                    "TlsResumptionMasterSecret");
             chc.handshakeSession.setResumptionMasterSecret(
                     resumptionMasterSecret);
 
@@ -807,7 +800,7 @@ final class Finished {
 
             // derive salt secret
             try {
-                SecretKey saltSecret = kd.deriveKey("TlsSaltSecret", null);
+                SecretKey saltSecret = kd.deriveKey("TlsSaltSecret");
 
                 // derive application secrets
                 HashAlg hashAlg = shc.negotiatedCipherSuite.hashAlg;
@@ -819,21 +812,17 @@ final class Finished {
                         HKDFParameterSpec.ofExtract()
                                          .addSalt(saltSecret)
                                          .addIKM(sharedSecret).extractOnly());
-
                 SSLKeyDerivation secretKD =
                         new SSLSecretDerivation(shc, masterSecret);
 
                 // update the handshake traffic write keys.
                 SecretKey writeSecret = secretKD.deriveKey(
-                        "TlsServerAppTrafficSecret", null);
+                        "TlsServerAppTrafficSecret");
                 SSLKeyDerivation writeKD =
                         kdg.createKeyDerivation(shc, writeSecret);
-                SecretKey writeKey = writeKD.deriveKey(
-                        "TlsKey", null);
-                SecretKey writeIvSecret = writeKD.deriveKey(
-                        "TlsIv", null);
+                SecretKey writeKey = writeKD.deriveKey("TlsKey");
                 IvParameterSpec writeIv =
-                        new IvParameterSpec(writeIvSecret.getEncoded());
+                        new IvParameterSpec(writeKD.deriveData("TlsIv"));
                 SSLWriteCipher writeCipher =
                         shc.negotiatedCipherSuite.bulkCipher.createWriteCipher(
                                 Authenticator.valueOf(shc.negotiatedProtocol),
@@ -967,7 +956,7 @@ final class Finished {
 
             // derive salt secret
             try {
-                SecretKey saltSecret = kd.deriveKey("TlsSaltSecret", null);
+                SecretKey saltSecret = kd.deriveKey("TlsSaltSecret");
 
                 // derive application secrets
                 HashAlg hashAlg = chc.negotiatedCipherSuite.hashAlg;
@@ -979,20 +968,18 @@ final class Finished {
                         HKDFParameterSpec.ofExtract()
                                          .addSalt(saltSecret)
                                          .addIKM(sharedSecret).extractOnly());
+
                 SSLKeyDerivation secretKD =
                         new SSLSecretDerivation(chc, masterSecret);
 
                 // update the handshake traffic read keys.
                 SecretKey readSecret = secretKD.deriveKey(
-                        "TlsServerAppTrafficSecret", null);
+                        "TlsServerAppTrafficSecret");
                 SSLKeyDerivation writeKD =
                         kdg.createKeyDerivation(chc, readSecret);
-                SecretKey readKey = writeKD.deriveKey(
-                        "TlsKey", null);
-                SecretKey readIvSecret = writeKD.deriveKey(
-                        "TlsIv", null);
+                SecretKey readKey = writeKD.deriveKey("TlsKey");
                 IvParameterSpec readIv =
-                        new IvParameterSpec(readIvSecret.getEncoded());
+                        new IvParameterSpec(writeKD.deriveData("TlsIv"));
                 SSLReadCipher readCipher =
                         chc.negotiatedCipherSuite.bulkCipher.createReadCipher(
                                 Authenticator.valueOf(chc.negotiatedProtocol),
@@ -1089,16 +1076,13 @@ final class Finished {
             try {
                 // update the application traffic read keys.
                 SecretKey readSecret = kd.deriveKey(
-                        "TlsClientAppTrafficSecret", null);
+                        "TlsClientAppTrafficSecret");
 
                 SSLKeyDerivation readKD =
                         kdg.createKeyDerivation(shc, readSecret);
-                SecretKey readKey = readKD.deriveKey(
-                        "TlsKey", null);
-                SecretKey readIvSecret = readKD.deriveKey(
-                        "TlsIv", null);
+                SecretKey readKey = readKD.deriveKey("TlsKey");
                 IvParameterSpec readIv =
-                        new IvParameterSpec(readIvSecret.getEncoded());
+                        new IvParameterSpec(readKD.deriveData("TlsIv"));
                 SSLReadCipher readCipher =
                         shc.negotiatedCipherSuite.bulkCipher.createReadCipher(
                                 Authenticator.valueOf(shc.negotiatedProtocol),
@@ -1120,8 +1104,8 @@ final class Finished {
                 shc.handshakeHash.update();
                 SSLSecretDerivation sd =
                         ((SSLSecretDerivation)kd).forContext(shc);
-                SecretKey resumptionMasterSecret = sd.deriveKey(
-                "TlsResumptionMasterSecret", null);
+                SecretKey resumptionMasterSecret =
+                        sd.deriveKey("TlsResumptionMasterSecret");
                 shc.handshakeSession.setResumptionMasterSecret(
                         resumptionMasterSecret);
             } catch (GeneralSecurityException gse) {

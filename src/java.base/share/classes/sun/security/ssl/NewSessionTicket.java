@@ -34,6 +34,7 @@ import java.util.Locale;
 import javax.crypto.KDF;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.HKDFParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLHandshakeException;
 import sun.security.ssl.PskKeyExchangeModesExtension.PskKeyExchangeMode;
 import sun.security.ssl.PskKeyExchangeModesExtension.PskKeyExchangeModesSpec;
@@ -291,9 +292,12 @@ final class NewSessionTicket {
             KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg.name));
             byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
                     "tls13 resumption".getBytes(), nonce, hashAlg.hashLength);
-            return hkdf.deriveKey("TlsPreSharedKey",
+            // SSLSessionImpl.write() uses the PreSharedKey encoding for
+            // the stateless session ticket; use SecretKeySpec instead of opaque
+            // Key objects
+            return new SecretKeySpec(hkdf.deriveData(
                     HKDFParameterSpec.expandOnly(resumptionMasterSecret,
-                    hkdfInfo, hashAlg.hashLength));
+                    hkdfInfo, hashAlg.hashLength)), "TlsPreSharedKey");
         } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not derive PSK", gse);
         }
