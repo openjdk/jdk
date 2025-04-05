@@ -83,6 +83,8 @@ final class Print extends Command {
         stream.println();
         stream.println("  --stack-depth <depth>   Number of frames in stack traces, by default 5");
         stream.println();
+        stream.println("  --exact                 Pretty print numbers and timestamps in full precision.");
+        stream.println();
         stream.println("  <file>                  Location of the recording file (.jfr)");
         stream.println();
         stream.println();
@@ -108,6 +110,7 @@ final class Print extends Command {
         int stackDepth = 5;
         EventPrintWriter eventWriter = null;
         int optionCount = options.size();
+        boolean exact = false;
         boolean foundEventFilter = false;
         boolean foundCategoryFilter = false;
         while (optionCount > 0) {
@@ -140,6 +143,9 @@ final class Print extends Command {
                     throw new UserSyntaxException("not a valid value for --stack-depth");
                 }
             }
+            if (acceptSwitch(options, "--exact")) {
+                exact = true;
+            }
             if (acceptFormatterOption(options, eventWriter, "--json")) {
                 eventWriter = new JSONWriter(pw);
             }
@@ -155,7 +161,7 @@ final class Print extends Command {
             optionCount = options.size();
         }
         if (eventWriter == null) {
-            eventWriter = new PrettyWriter(pw); // default to pretty printer
+            eventWriter = new PrettyWriter(pw, exact); // default to pretty printer
         }
         eventWriter.setStackDepth(stackDepth);
         if (!eventFilters.isEmpty()) {
