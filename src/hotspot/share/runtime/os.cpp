@@ -1534,6 +1534,56 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   return false;
 }
 
+static char* _image_release_file_content = nullptr;
+
+void os::read_image_release_file() {
+  const char* home = Arguments::get_java_home();
+  int rfile_len = (int)strlen(home) + 10;
+
+  char* release_file = (char*) os::malloc(rfile_len, mtInternal);
+  if (release_file) {
+    os::snprintf(release_file, rfile_len, "%s/release", home);
+
+    if (_image_release_file_content == nullptr) {
+      FILE *file = fopen(release_file, "rb");
+      if (!file) {
+        free(release_file);
+        return;
+      }
+      fseek(file, 0, SEEK_END);
+      long sz = ftell(file);
+      if (sz == -1) {
+        free(release_file);
+        return;
+      }
+      fseek(file, 0, SEEK_SET);
+
+      _image_release_file_content = (char*) os::malloc(sz + 1, mtInternal);
+      if (!_image_release_file_content) {
+        fclose(file);
+        free(release_file);
+        return;
+      }
+
+      size_t elements_read = fread(_image_release_file_content, 1, sz, file);
+      if (elements_read < (size_t)sz) _image_release_file_content[elements_read] = '\0';
+      _image_release_file_content[sz] = '\0';
+      // issues with \r in line endings on Windows, so better replace those
+      for (size_t i=0; i < elements_read; i++) {
+        if (_image_release_file_content[i] == '\r') { _image_release_file_content[i] = ' '; }
+      }
+      fclose(file);
+    }
+    free(release_file);
+  }
+}
+
+void os::print_image_release_file(outputStream* st) {
+  if (_image_release_file_content != nullptr) {
+    st->print_cr("%s", _image_release_file_content);
+  }
+}
+
 bool os::file_exists(const char* filename) {
   struct stat statbuf;
   if (filename == nullptr || strlen(filename) == 0) {
