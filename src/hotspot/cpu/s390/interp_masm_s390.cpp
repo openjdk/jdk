@@ -104,7 +104,15 @@ void InterpreterMacroAssembler::dispatch_base(TosState state, address* table, bo
   }
   { Label OK;
     // check if the locals pointer in Z_locals is correct
-    z_cg(Z_locals, _z_ijava_state_neg(locals), Z_fp);
+
+    // _z_ijava_state_neg(locals)) is fp relativized, so we need to
+    // extract the pointer.
+
+    z_lg(Z_R1_scratch, Address(Z_fp, _z_ijava_state_neg(locals)));
+    z_sllg(Z_R1_scratch, Z_R1_scratch, Interpreter::logStackElementSize);
+    z_agr(Z_R1_scratch, Z_fp);
+
+    z_cgr(Z_locals, Z_R1_scratch);
     z_bre(OK);
     reentry = stop_chain_static(reentry, "invalid locals pointer Z_locals: " FILE_AND_LINE);
     bind(OK);
@@ -568,7 +576,10 @@ void InterpreterMacroAssembler::prepare_to_jump_from_interpreted(Register method
   // Satisfy interpreter calling convention (see generate_normal_entry()).
   z_lgr(Z_R10, Z_SP); // Set sender sp (aka initial caller sp, aka unextended sp).
   // Record top_frame_sp, because the callee might modify it, if it's compiled.
-  z_stg(Z_SP, _z_ijava_state_neg(top_frame_sp), Z_fp);
+  assert_different_registers(Z_R1, method);
+  z_sgrk(Z_R1, Z_SP, Z_fp);
+  z_srag(Z_R1, Z_R1, Interpreter::logStackElementSize);
+  z_stg(Z_R1, _z_ijava_state_neg(top_frame_sp), Z_fp);
   save_bcp();
   save_esp();
   z_lgr(Z_method, method); // Set Z_method (kills Z_fp!).
@@ -684,6 +695,8 @@ void InterpreterMacroAssembler::save_mdp(Register mdp) {
 void InterpreterMacroAssembler::restore_locals() {
   asm_assert_ijava_state_magic(Z_locals);
   z_lg(Z_locals, Address(Z_fp, _z_ijava_state_neg(locals)));
+  z_sllg(Z_locals, Z_locals, Interpreter::logStackElementSize);
+  z_agr(Z_locals, Z_fp);
 }
 
 void InterpreterMacroAssembler::get_method(Register reg) {
