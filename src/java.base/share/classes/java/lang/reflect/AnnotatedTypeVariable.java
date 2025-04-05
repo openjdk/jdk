@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,36 +27,54 @@ package java.lang.reflect;
 
 /**
  * {@code AnnotatedTypeVariable} represents the potentially annotated use of a
- * type variable, whose declaration may have bounds which themselves represent
- * annotated uses of types.
+ * type variable.  Its {@linkplain #getType() underlying} {@code TypeVariable}
+ * represents the type parameter declaration.
+ * <p>
+ * For example, an annotated use {@code @TA T} has an annotation {@code @TA}
+ * and represents the type variable {@code T}.
+ * <p>
+ * Two {@code AnnotatedTypeVariable} objects should be compared using the {@link
+ * Object#equals equals} method.
  *
+ * @see TypeVariable
  * @jls 4.4 Type Variables
  * @since 1.8
  */
 public interface AnnotatedTypeVariable extends AnnotatedType {
 
     /**
-     * Returns the potentially annotated bounds of this type variable.
-     * If no bound is explicitly declared, the bound is unannotated
-     * {@code Object}.
+     * {@return the potentially annotated use of upper bounds of the underlying
+     * type parameter declaration}
+     * <p>
+     * Given an {@code AnnotatedTypeVariable tv}, the call {@code
+     * tv.getAnnotatedBounds()} is equivalent to:
+     * {@snippet lang=java :
+     * // @link substring="getAnnotatedBounds" target="TypeVariable#getAnnotatedBounds()" :
+     * ((TypeVariable<?>) tv.getType()).getAnnotatedBounds() // @link substring="getType" target="#getType()"
+     * }
      *
-     * @return the potentially annotated bounds of this type variable
+     * @throws TypeNotPresentException if any of the bounds refers to a
+     *     non-existent type declaration
+     * @throws MalformedParameterizedTypeException if any of the bounds refer to
+     *     a parameterized type that cannot be instantiated for any reason
+     * @jls 4.9 Intersection Types
+     * @see TypeVariable#getAnnotatedBounds()
      * @see TypeVariable#getBounds()
      */
     AnnotatedType[] getAnnotatedBounds();
 
     /**
-     * Returns the potentially annotated type that this type is a member of, if
-     * this type represents a nested type. For example, if this type is
-     * {@code @TA O<T>.I<S>}, return a representation of {@code @TA O<T>}.
-     *
-     * <p>Returns {@code null} for an {@code AnnotatedType} that is an instance
-     *     of {@code AnnotatedTypeVariable}.
-     *
-     * @return {@code null}
+     * {@return {@code null}}  A type variable is not a member class or interface.
      *
      * @since 9
      */
     @Override
     AnnotatedType getAnnotatedOwnerType();
+
+    /**
+     * {@return the type variable that this potentially annotated use
+     * represents}  Returns a {@link TypeVariable}.
+     */
+    @Override
+    Type getType();
 }

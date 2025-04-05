@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,32 +30,47 @@ package java.lang.reflect;
  * {@code AnnotatedArrayType} represents the potentially annotated use of an
  * array type, whose component type may itself represent the annotated use of a
  * type.
+ * <p>
+ * For example, an annotated use {@code @TC int @TA [] @TB []} has an annotation
+ * {@code @TA} and represents the array type {@code int[][]}.  Its component
+ * type is the use {@code @TC int @TB []}, with an annotation {@code @TB},
+ * representing the array type {@code int[]}.  Its element type is the use
+ * {@code @TC int}, with an annotation {@code @TC}, representing the primitive
+ * type {@code int}.
+ * <p>
+ * Two {@code AnnotatedArrayType} objects should be compared using the {@link
+ * Object#equals equals} method.
  *
+ * @see Class
+ * @see GenericArrayType
  * @jls 10.1 Array Types
  * @since 1.8
  */
 public interface AnnotatedArrayType extends AnnotatedType {
 
     /**
-     * Returns the potentially annotated generic component type of this array type.
+     * {@return the potentially annotated use of the component type of the array
+     * type}
      *
-     * @return the potentially annotated generic component type of this array type
+     * @see Class#componentType() Class::componentType
      * @see GenericArrayType#getGenericComponentType()
+     *      GenericArrayType::getGenericComponentType
      */
-    AnnotatedType  getAnnotatedGenericComponentType();
+    AnnotatedType getAnnotatedGenericComponentType();
 
     /**
-     * Returns the potentially annotated type that this type is a member of, if
-     * this type represents a nested class or interface. For example, if this
-     * type is {@code @TA O<T>.I<S>}, return a representation of {@code @TA O<T>}.
-     *
-     * <p>Returns {@code null} for an {@code AnnotatedType} that is an instance
-     *     of {@code AnnotatedArrayType}.
-     *
-     * @return {@code null}
+     * {@return {@code null}}  An array type is not a member class or interface.
      *
      * @since 9
      */
     @Override
     AnnotatedType getAnnotatedOwnerType();
+
+    /**
+     * {@return the array type that this potentially annotated use represents}
+     * Returns a {@link Class} representing an array type or a {@link
+     * GenericArrayType}.
+     */
+    @Override
+    Type getType();
 }
