@@ -55,8 +55,8 @@ double G1HeapSizingPolicy::scale_with_heap(double pause_time_threshold) {
   // If the heap is at less than half its maximum size, scale the threshold down,
   // to a limit of 1%. Thus the smaller the heap is, the more likely it is to expand,
   // though the scaling code will likely keep the increase small.
-  if (_g1h->capacity() <= _g1h->max_capacity() / 2) {
-    threshold *= (double)_g1h->capacity() / (double)(_g1h->max_capacity() / 2);
+  if (_g1h->capacity() <= _g1h->soft_max_capacity() / 2) {
+    threshold *= (double)_g1h->capacity() / (double)(_g1h->soft_max_capacity() / 2);
     threshold = MAX2(threshold, 0.01);
   }
 
@@ -91,8 +91,9 @@ size_t G1HeapSizingPolicy::young_collection_expansion_amount() {
   double threshold = scale_with_heap(pause_time_threshold);
 
   size_t expand_bytes = 0;
+  size_t soft_max_capacity = _g1h->soft_max_capacity();
 
-  if (_g1h->capacity() == _g1h->max_capacity()) {
+  if (_g1h->capacity() >= soft_max_capacity) {
     log_expansion(short_term_pause_time_ratio, long_term_pause_time_ratio,
                   threshold, pause_time_threshold, true, 0);
     clear_ratio_check_data();
@@ -123,9 +124,8 @@ size_t G1HeapSizingPolicy::young_collection_expansion_amount() {
   if ((_ratio_over_threshold_count == MinOverThresholdForGrowth) ||
       (filled_history_buffer && (long_term_pause_time_ratio > threshold))) {
     size_t min_expand_bytes = G1HeapRegion::GrainBytes;
-    size_t reserved_bytes = _g1h->max_capacity();
     size_t committed_bytes = _g1h->capacity();
-    size_t uncommitted_bytes = reserved_bytes - committed_bytes;
+    size_t uncommitted_bytes = soft_max_capacity - committed_bytes;
     size_t expand_bytes_via_pct =
       uncommitted_bytes * G1ExpandByPercentOfAvailable / 100;
     double scale_factor = 1.0;
@@ -243,14 +243,14 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand) {
          "maximum_desired_capacity = %zu",
          minimum_desired_capacity, maximum_desired_capacity);
 
-  // Should not be greater than the heap max size. No need to adjust
+  size_t soft_max_capacity = _g1h->soft_max_capacity();
+  // Should not be greater than the soft max capacity. No need to adjust
   // it with respect to the heap min size as it's a lower bound (i.e.,
   // we'll try to make the capacity larger than it, not smaller).
-  minimum_desired_capacity = MIN2(minimum_desired_capacity, MaxHeapSize);
-  // Should not be less than the heap min size. No need to adjust it
-  // with respect to the heap max size as it's an upper bound (i.e.,
-  // we'll try to make the capacity smaller than it, not greater).
-  maximum_desired_capacity =  MAX2(maximum_desired_capacity, MinHeapSize);
+  minimum_desired_capacity = MIN2(minimum_desired_capacity, soft_max_capacity);
+  // Should not be less than the heap min size, and should not exceed
+  // the soft max capacity.
+  maximum_desired_capacity = clamp(maximum_desired_capacity, MinHeapSize, soft_max_capacity);
 
   // Don't expand unless it's significant; prefer expansion to shrinking.
   if (capacity_after_gc < minimum_desired_capacity) {
