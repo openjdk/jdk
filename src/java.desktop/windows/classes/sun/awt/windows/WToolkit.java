@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -593,7 +593,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     @Override
     public FontPeer getFontPeer(String name, int style) {
-        FontPeer retval = null;
+        FontPeer retval;
         String lcName = name.toLowerCase();
         if (null != cacheFontPeer) {
             retval = cacheFontPeer.get(lcName + style);
@@ -602,13 +602,11 @@ public final class WToolkit extends SunToolkit implements Runnable {
             }
         }
         retval = new WFontPeer(name, style);
-        if (retval != null) {
-            if (null == cacheFontPeer) {
-                cacheFontPeer = new Hashtable<>(5, 0.9f);
-            }
-            if (null != cacheFontPeer) {
-                cacheFontPeer.put(lcName + style, retval);
-            }
+        if (null == cacheFontPeer) {
+            cacheFontPeer = new Hashtable<>(5, 0.9f);
+        }
+        if (null != cacheFontPeer) {
+            cacheFontPeer.put(lcName + style, retval);
         }
         return retval;
     }
