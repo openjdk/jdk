@@ -60,6 +60,7 @@ public class WindowsTreeUI extends BasicTreeUI {
       * Ensures that the rows identified by beginRow through endRow are
       * visible.
       */
+    @Override
     protected void ensureRowsAreVisible(int beginRow, int endRow) {
         if(tree != null && beginRow >= 0 && endRow < getRowCount(tree)) {
             Rectangle visRect = tree.getVisibleRect();
@@ -108,6 +109,7 @@ public class WindowsTreeUI extends BasicTreeUI {
      * Returns the default cell renderer that is used to do the
      * stamping of each node.
      */
+    @Override
     protected TreeCellRenderer createDefaultCellRenderer() {
         return new WindowsTreeCellRenderer();
     }
@@ -127,6 +129,7 @@ public class WindowsTreeUI extends BasicTreeUI {
             return (xp != null) ? xp.getSkin(c, Part.TVP_GLYPH) : null;
         }
 
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             Skin skin = getSkin(c);
             if (skin != null) {
@@ -147,11 +150,13 @@ public class WindowsTreeUI extends BasicTreeUI {
             g.drawLine(x + 2, y + HALF_SIZE, x + (SIZE - 3), y + HALF_SIZE);
         }
 
+        @Override
         public int getIconWidth() {
             Skin skin = getSkin(null);
             return (skin != null) ? skin.getWidth() : SIZE;
         }
 
+        @Override
         public int getIconHeight() {
             Skin skin = getSkin(null);
             return (skin != null) ? skin.getHeight() : SIZE;
@@ -162,11 +167,12 @@ public class WindowsTreeUI extends BasicTreeUI {
      * The plus sign button icon
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public static class CollapsedIcon extends ExpandedIcon {
+    public static final class CollapsedIcon extends ExpandedIcon {
         public static Icon createCollapsedIcon() {
             return new CollapsedIcon();
         }
 
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             Skin skin = getSkin(c);
             if (skin != null) {
@@ -179,7 +185,7 @@ public class WindowsTreeUI extends BasicTreeUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public class WindowsTreeCellRenderer extends DefaultTreeCellRenderer {
+    public final class WindowsTreeCellRenderer extends DefaultTreeCellRenderer {
 
         /**
          * Configures the renderer based on the passed in components.
@@ -189,6 +195,7 @@ public class WindowsTreeUI extends BasicTreeUI {
          * The foreground color is set based on the selection and the icon
          * is set based on on leaf and expanded.
          */
+        @Override
         public Component getTreeCellRendererComponent(JTree tree, Object value,
                                                       boolean sel,
                                                       boolean expanded,

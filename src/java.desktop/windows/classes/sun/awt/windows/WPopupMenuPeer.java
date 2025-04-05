@@ -70,6 +70,7 @@ final class WPopupMenuPeer extends WMenuPeer implements PopupMenuPeer {
 
     private native void createMenu(WComponentPeer parent);
 
+    @Override
     @SuppressWarnings("deprecation")
     public void show(Event e) {
         Component origin = (Component)e.target;

@@ -30,4 +30,4 @@ import javax.swing.plaf.basic.*;
 /**
  * Windows Separator.
  */
-public class WindowsSeparatorUI extends BasicSeparatorUI { }
+public final class WindowsSeparatorUI extends BasicSeparatorUI { }
