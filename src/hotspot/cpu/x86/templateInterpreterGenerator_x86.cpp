@@ -654,7 +654,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 
   // Load the value of the referent field.
   const Address field_address(rax, referent_offset);
-  __ load_heap_oop(rax, field_address, /*tmp1*/ rbx, /*tmp_thread*/ rdx, ON_WEAK_OOP_REF);
+  __ load_heap_oop(rax, field_address, /*tmp1*/ rbx, ON_WEAK_OOP_REF);
 
   // _areturn
   __ pop(rdi);                // get return address
