@@ -53,7 +53,6 @@ COMPILECREATESYMBOLS_ADD_EXPORTS := \
     --add-exports jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED \
     --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
     --add-exports jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED \
-    --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED \
     #
 
 # TODO: Unify with jdk.javadoc-gendata. Should only compile this once and share.
