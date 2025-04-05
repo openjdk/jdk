@@ -68,6 +68,9 @@ public final class TestProcess implements AutoCloseable {
             };
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
         process = ProcessTools.startProcess(name, pb);
+
+        // give the process a chance to awake (and to be seen from other threads)
+        takeLongNap();
     }
 
     public static void main(String... args) throws Exception {
@@ -97,6 +100,14 @@ public final class TestProcess implements AutoCloseable {
 
     public Path getRepository() throws Exception {
         return StreamingUtils.getJfrRepository(process);
+    }
+
+    private static void takeLongNap() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ie) {
+            // ignore
+        }
     }
 
     private static void takeNap() {
