@@ -376,6 +376,15 @@ class JFIFMarkerSegment extends MarkerSegment {
             }
             thumbWidth = Math.min(thumbWidth, MAX_THUMB_WIDTH);
             thumbHeight = Math.min(thumbHeight, MAX_THUMB_HEIGHT);
+
+            int maxArea = (0xffff - DATA_SIZE - LENGTH_SIZE) / thumb.getSampleModel().getNumBands();
+            if (thumbWidth * thumbHeight > maxArea) {
+                writer.warningOccurred(JPEGImageWriter.WARNING_THUMB_CLIPPED);
+                double scale = Math.sqrt( ((double)maxArea) / (double)(thumbWidth * thumbHeight) );
+                thumbWidth = (int) (scale * thumbWidth);
+                thumbHeight = (int) (scale * thumbHeight);
+            }
+
             thumbData = thumb.getRaster().getPixels(0, 0,
                                                     thumbWidth, thumbHeight,
                                                     (int []) null);
