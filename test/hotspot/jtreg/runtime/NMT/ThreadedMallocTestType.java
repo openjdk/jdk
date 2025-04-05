@@ -61,7 +61,7 @@ public class ThreadedMallocTestType {
     // Run 'jcmd <pid> VM.native_memory summary'
     NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
             "Test (reserved=896KB, committed=896KB)",
-            "(malloc=896KB #3) (at peak)"
+            "(malloc=896KB tag=Test #3) (at peak)"
     );
 
     Thread freeThread = new Thread() {
@@ -78,7 +78,7 @@ public class ThreadedMallocTestType {
 
     NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
             "Test (reserved=0KB, committed=0KB)",
-            "(malloc=0KB) (peak=896KB #3)"
+            "(malloc=0KB tag=Test) (peak=896KB #3)"
     );
   }
 }

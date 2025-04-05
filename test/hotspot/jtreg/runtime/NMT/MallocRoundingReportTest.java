@@ -57,7 +57,7 @@ public class MallocRoundingReportTest {
                 // NMT does not track memory allocations less than 1KB, and rounds to the nearest KB
                 NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
                         "Test (reserved=" + numKB + "KB, committed=" + numKB + "KB)",
-                        "(malloc=" + numKB + "KB #1) (at peak)"
+                        "(malloc=" + numKB + "KB tag=Test #1) (at peak)" // (malloc=1KB tag=Test #1) (at peak)
                 );
 
                 wb.NMTFree(mallocd_total);
@@ -65,7 +65,7 @@ public class MallocRoundingReportTest {
                 // Run 'jcmd <pid> VM.native_memory summary', check for expected output
                 NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
                         "Test (reserved=0KB, committed=0KB)",
-                        "(malloc=0KB) (peak=" + numKB + "KB #1)"
+                        "(malloc=0KB tag=Test) (peak=" + numKB + "KB #1)"
                 );
             }
         }
