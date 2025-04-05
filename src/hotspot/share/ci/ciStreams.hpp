@@ -245,8 +245,7 @@ public:
            cur_bc() == Bytecodes::_ldc2_w, "not supported: %s", Bytecodes::name(cur_bc()));
 
     constantTag tag = get_raw_pool_tag();
-    return tag.is_dynamic_constant() ||
-           tag.is_dynamic_constant_in_error();
+    return tag.is_dynamic_constant_or_error();
   }
 
   bool is_string_constant() const {
@@ -265,10 +264,7 @@ public:
 
     int index = get_constant_pool_index();
     constantTag tag = get_constant_pool_tag(index);
-    return tag.is_unresolved_klass_in_error() ||
-           tag.is_method_handle_in_error()    ||
-           tag.is_method_type_in_error()      ||
-           tag.is_dynamic_constant_in_error();
+    return tag.is_in_error();
   }
 
   // If this bytecode is one of get_field, get_static, put_field,
