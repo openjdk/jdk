@@ -101,7 +101,7 @@ public final class CPrinterJob extends RasterPrinterJob {
      * selected by the user.
      * @return {@code true} if the user does not cancel the dialog;
      * {@code false} otherwise.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -143,7 +143,7 @@ public final class CPrinterJob extends RasterPrinterJob {
      *            is cancelled; a new {@code PageFormat} object
      *          containing the format indicated by the user if the
      *          dialog is acknowledged.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since     1.2
