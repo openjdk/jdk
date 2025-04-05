@@ -476,7 +476,7 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
         return true;          // Found 1st use!
       }
     }
-    if (n->out_RegMask().is_NotEmpty()) {
+    if (!n->out_RegMask().is_Empty()) {
       return false;
     }
   }
@@ -1126,7 +1126,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                 // If this node is already a SpillCopy, just patch the edge
                 // except the case of spilling to stack.
                 if( n->is_SpillCopy() ) {
-                  RegMask tmp_rm(umask);
+                  ResourceMark rm(C->regmask_arena());
+                  RegMask tmp_rm(umask, C->regmask_arena());
                   tmp_rm.SUBTRACT(Matcher::STACK_ONLY_mask);
                   if( dmask.overlap(tmp_rm) ) {
                     if( def != n->in(inpidx) ) {

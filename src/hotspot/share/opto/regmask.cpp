@@ -28,7 +28,6 @@
 #include "opto/matcher.hpp"
 #include "opto/node.hpp"
 #include "opto/regmask.hpp"
-#include "utilities/population_count.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 //------------------------------dump-------------------------------------------
@@ -52,10 +51,9 @@ const RegMask RegMask::Empty;
 
 const RegMask RegMask::All(
 # define BODY(I) -1,
-  FORALL_BODY
+    FORALL_BODY
 # undef BODY
-  0
-);
+    true);
 
 //=============================================================================
 bool RegMask::is_vector(uint ireg) {
@@ -119,10 +117,10 @@ static const uintptr_t low_bits[5] = { fives, // 0x5555..55
 void RegMask::clear_to_pairs() {
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    uintptr_t bits = _RM_UP[i];
+    uintptr_t bits = _rm_up(i);
     bits &= ((bits & fives) << 1U); // 1 hi-bit set for each pair
     bits |= (bits >> 1U);          // Smear 1 hi-bit into a pair
-    _RM_UP[i] = bits;
+    _rm_up(i) = bits;
   }
   assert(is_aligned_pairs(), "mask is not aligned, adjacent pairs");
 }
@@ -135,7 +133,7 @@ bool RegMask::is_aligned_pairs() const {
   // Assert that the register mask contains only bit pairs.
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    uintptr_t bits = _RM_UP[i];
+    uintptr_t bits = _rm_up(i);
     while (bits) {              // Check bits for pairing
       uintptr_t bit = uintptr_t(1) << find_lowest_bit(bits); // Extract low bit
       // Low bit is not odd means its mis-aligned.
@@ -154,7 +152,7 @@ bool RegMask::is_bound1() const {
   if (is_AllStack()) return false;
 
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    uintptr_t v = _RM_UP[i];
+    uintptr_t v = _rm_up(i);
     if (v != 0) {
       // Only one bit allowed -> v must be a power of two
       if (!is_power_of_2(v)) {
@@ -163,7 +161,7 @@ bool RegMask::is_bound1() const {
 
       // A single bit was found - check there are no bits in the rest of the mask
       for (i++; i <= _hwm; i++) {
-        if (_RM_UP[i] != 0) {
+        if (_rm_up(i) != 0) {
           return false;
         }
       }
@@ -181,24 +179,24 @@ bool RegMask::is_bound_pair() const {
 
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    if (_RM_UP[i] != 0) {               // Found some bits
-      unsigned int bit_index = find_lowest_bit(_RM_UP[i]);
+    if (_rm_up(i) != 0) {               // Found some bits
+      unsigned int bit_index = find_lowest_bit(_rm_up(i));
       if (bit_index != _WordBitMask) {   // Bit pair stays in same word?
         uintptr_t bit = uintptr_t(1) << bit_index; // Extract lowest bit from mask
-        if ((bit | (bit << 1U)) != _RM_UP[i]) {
+        if ((bit | (bit << 1U)) != _rm_up(i)) {
           return false;            // Require adjacent bit pair and no more bits
         }
       } else {                     // Else its a split-pair case
-        assert(is_power_of_2(_RM_UP[i]), "invariant");
+        assert(is_power_of_2(_rm_up(i)), "invariant");
         i++;                       // Skip iteration forward
-        if (i > _hwm || _RM_UP[i] != 1) {
+        if (i > _hwm || _rm_up(i) != 1) {
           return false; // Require 1 lo bit in next word
         }
       }
 
       // A matching pair was found - check there are no bits in the rest of the mask
       for (i++; i <= _hwm; i++) {
-        if (_RM_UP[i] != 0) {
+        if (_rm_up(i) != 0) {
           return false;
         }
       }
@@ -244,9 +242,10 @@ OptoReg::Name RegMask::find_first_set(LRG &lrg, const int size) const {
   }
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    if (_RM_UP[i]) {                // Found some bits
+    if (_rm_up(i)) {                // Found some bits
       // Convert to bit number, return hi bit in pair
-      return OptoReg::Name((i<<_LogWordBits) + find_lowest_bit(_RM_UP[i]) + (size - 1));
+      return OptoReg::Name(offset_bits() + (i << _LogWordBits) +
+                           find_lowest_bit(_rm_up(i)) + (size - 1));
     }
   }
   return OptoReg::Bad;
@@ -260,7 +259,7 @@ void RegMask::clear_to_sets(const unsigned int size) {
   assert(valid_watermarks(), "sanity");
   uintptr_t low_bits_mask = low_bits[size >> 2U];
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    uintptr_t bits = _RM_UP[i];
+    uintptr_t bits = _rm_up(i);
     uintptr_t sets = (bits & low_bits_mask);
     for (unsigned j = 1U; j < size; j++) {
       sets = (bits & (sets << 1U)); // filter bits which produce whole sets
@@ -275,7 +274,7 @@ void RegMask::clear_to_sets(const unsigned int size) {
         }
       }
     }
-    _RM_UP[i] = sets;
+    _rm_up(i) = sets;
   }
   assert(is_aligned_sets(size), "mask is not aligned, adjacent sets");
 }
@@ -288,7 +287,7 @@ void RegMask::smear_to_sets(const unsigned int size) {
   assert(valid_watermarks(), "sanity");
   uintptr_t low_bits_mask = low_bits[size >> 2U];
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    uintptr_t bits = _RM_UP[i];
+    uintptr_t bits = _rm_up(i);
     uintptr_t sets = 0;
     for (unsigned j = 0; j < size; j++) {
       sets |= (bits & low_bits_mask);  // collect partial bits
@@ -304,7 +303,7 @@ void RegMask::smear_to_sets(const unsigned int size) {
         }
       }
     }
-    _RM_UP[i] = sets;
+    _rm_up(i) = sets;
   }
   assert(is_aligned_sets(size), "mask is not aligned, adjacent sets");
 }
@@ -317,7 +316,7 @@ bool RegMask::is_aligned_sets(const unsigned int size) const {
   uintptr_t low_bits_mask = low_bits[size >> 2U];
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    uintptr_t bits = _RM_UP[i];
+    uintptr_t bits = _rm_up(i);
     while (bits) {              // Check bits for pairing
       uintptr_t bit = uintptr_t(1) << find_lowest_bit(bits);
       // Low bit is not odd means its mis-aligned.
@@ -344,31 +343,31 @@ bool RegMask::is_bound_set(const unsigned int size) const {
   assert(1 <= size && size <= 16, "update low bits table");
   assert(valid_watermarks(), "sanity");
   for (unsigned i = _lwm; i <= _hwm; i++) {
-    if (_RM_UP[i] != 0) {       // Found some bits
-      unsigned bit_index = find_lowest_bit(_RM_UP[i]);
+    if (_rm_up(i) != 0) {       // Found some bits
+      unsigned bit_index = find_lowest_bit(_rm_up(i));
       uintptr_t bit = uintptr_t(1) << bit_index;
       if (bit_index + size <= BitsPerWord) { // Bit set stays in same word?
         uintptr_t hi_bit = bit << (size - 1);
         uintptr_t set = hi_bit + ((hi_bit-1) & ~(bit-1));
-        if (set != _RM_UP[i]) {
+        if (set != _rm_up(i)) {
           return false;         // Require adjacent bit set and no more bits
         }
       } else {                  // Else its a split-set case
         // All bits from bit to highest bit in the word must be set
-        if ((all & ~(bit-1)) != _RM_UP[i]) {
+        if ((all & ~(bit - 1)) != _rm_up(i)) {
           return false;
         }
         i++;                    // Skip iteration forward and check high part
         // The lower bits should be 1 since it is split case.
         uintptr_t set = (bit >> (BitsPerWord - size)) - 1;
-        if (i > _hwm || _RM_UP[i] != set) {
+        if (i > _hwm || _rm_up(i) != set) {
           return false; // Require expected low bits in next word
         }
       }
 
       // A matching set found - check there are no bits in the rest of the mask
       for (i++; i <= _hwm; i++) {
-        if (_RM_UP[i] != 0) {
+        if (_rm_up(i) != 0) {
           return false;
         }
       }
@@ -392,21 +391,30 @@ bool RegMask::is_UP() const {
   return true;
 }
 
-// Compute size of register mask in bits
-uint RegMask::Size() const {
-  uint sum = 0;
-  assert(valid_watermarks(), "sanity");
-  for (unsigned i = _lwm; i <= _hwm; i++) {
-    sum += population_count(_RM_UP[i]);
+#ifndef PRODUCT
+bool RegMask::_dump_end_run(outputStream* st, OptoReg::Name start,
+                            OptoReg::Name last) const {
+  bool last_is_end = last == (int)offset_bits() + (int)rm_size_bits() - 1;
+  if (is_AllStack() && last_is_end) {
+    st->print("-...");
+    return true;
   }
-  return sum;
+  if (start == last) { // 1-register run; no special printing
+  } else if (start + 1 == last) {
+    st->print(","); // 2-register run; print as "rX,rY"
+    OptoReg::dump(last, st);
+  } else { // Multi-register run; print as "rX-rZ"
+    st->print("-");
+    OptoReg::dump(last, st);
+  }
+  return false;
 }
 
-#ifndef PRODUCT
 void RegMask::dump(outputStream *st) const {
   st->print("[");
 
   RegMaskIterator rmi(*this);
+  bool printed_all_stack = false;
   if (rmi.has_next()) {
     OptoReg::Name start = rmi.next();
 
@@ -423,30 +431,38 @@ void RegMask::dump(outputStream *st) const {
         // Adjacent registers just collect into long runs, no printing.
         last = reg;
       } else {                  // Ending some kind of run
-        if (start == last) {    // 1-register run; no special printing
-        } else if (start+1 == last) {
-          st->print(",");       // 2-register run; print as "rX,rY"
-          OptoReg::dump(last, st);
-        } else {                // Multi-register run; print as "rX-rZ"
-          st->print("-");
-          OptoReg::dump(last, st);
-        }
+        printed_all_stack = _dump_end_run(st, start, last);
+        assert(!printed_all_stack, "");
         st->print(",");         // Separate start of new run
         start = last = reg;     // Start a new register run
         OptoReg::dump(start, st); // Print register
       } // End of if ending a register run or not
     } // End of while regmask not empty
-
-    if (start == last) {        // 1-register run; no special printing
-    } else if (start+1 == last) {
-      st->print(",");           // 2-register run; print as "rX,rY"
-      OptoReg::dump(last, st);
-    } else {                    // Multi-register run; print as "rX-rZ"
-      st->print("-");
-      OptoReg::dump(last, st);
+    printed_all_stack = _dump_end_run(st, start, last);
+    // Print all-stack if not already done.
+    if (is_AllStack() && !printed_all_stack) {
+      st->print(",");
+      OptoReg::dump(offset_bits() + rm_size_bits(), st);
+      st->print("-...");
     }
-    if (is_AllStack()) st->print("...");
+  } else {
+    // Mask is all-stack only.
+    if (is_AllStack() && !printed_all_stack) {
+      OptoReg::dump(offset_bits() + rm_size_bits(), st);
+      st->print("-...");
+    }
   }
   st->print("]");
+}
+
+void RegMask::dump_hex(outputStream* st) const {
+  st->print("...%x|", is_AllStack() ? 0xf : 0x0);
+  for (int i = _rm_max(); i >= 0; i--) {
+    st->print(LP64_ONLY("%0*lx") NOT_LP64("%0*x"),
+              (int)sizeof(uintptr_t) * CHAR_BIT / 4, _rm_up(i));
+    if (i != 0) {
+      st->print("|");
+    }
+  }
 }
 #endif

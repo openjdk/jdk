@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,10 +162,13 @@ bool   RegisterForm::verify() {
   return  valid;
 }
 
+// Compute the least number of words required for registers in register masks.
+int RegisterForm::words_for_regs() {
+  return (_reg_ctr + 31) >> 5;
+}
+
 // Compute RegMask size
 int RegisterForm::RegMask_Size() {
-  // Need at least this many words
-  int words_for_regs = (_reg_ctr + 31)>>5;
   // The array of Register Mask bits should be large enough to cover
   // all the machine registers and all parameters that need to be passed
   // on the stack (stack registers) up to some interesting limit.  Methods
@@ -177,7 +180,7 @@ int RegisterForm::RegMask_Size() {
   // - Add one more word to accommodate a reasonable number of stack locations
   //   in the register mask regardless of how much slack is created by rounding.
   //   This was found necessary after adding 16 new registers for APX.
-  return (words_for_regs + 3 + 1 + 1) & ~1;
+  return (words_for_regs() + 3 + 1 + 1) & ~1;
 }
 
 void RegisterForm::dump() {                  // Debug printer
@@ -369,14 +372,14 @@ void RegClass::build_register_masks(FILE* fp) {
   for(i = 0; i < len - 1; i++) {
     fprintf(fp," 0x%x,", regs_in_word(i, false));
   }
-  fprintf(fp," 0x%x );\n", regs_in_word(i, false));
+  fprintf(fp, " 0x%x, false );\n", regs_in_word(i, false));
 
   if (_stack_or_reg) {
     fprintf(fp, "const RegMask _%sSTACK_OR_%s_mask(", prefix, rc_name_to_upper);
     for(i = 0; i < len - 1; i++) {
       fprintf(fp," 0x%x,", regs_in_word(i, true));
     }
-    fprintf(fp," 0x%x );\n", regs_in_word(i, true));
+    fprintf(fp, " 0x%x, true );\n", regs_in_word(i, true));
   }
   delete[] rc_name_to_upper;
 }
