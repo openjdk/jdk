@@ -24,22 +24,19 @@
 
 #include "cds/cdsConfig.hpp"
 #include "cds/unregisteredClasses.hpp"
-#include "classfile/classFileStream.hpp"
-#include "classfile/classLoader.inline.hpp"
-#include "classfile/classLoaderExt.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "memory/oopFactory.hpp"
-#include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/oopHandle.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "services/threadService.hpp"
 
 InstanceKlass* UnregisteredClasses::_UnregisteredClassLoader_klass = nullptr;
+static OopHandle _unregistered_class_loader;
 
 void UnregisteredClasses::initialize(TRAPS) {
   if (_UnregisteredClassLoader_klass == nullptr) {
@@ -47,14 +44,19 @@ void UnregisteredClasses::initialize(TRAPS) {
     Symbol* klass_name = SymbolTable::new_symbol("jdk/internal/misc/CDS$UnregisteredClassLoader");
     Klass* k = SystemDictionary::resolve_or_fail(klass_name, true, CHECK);
     _UnregisteredClassLoader_klass = InstanceKlass::cast(k);
+
+    precond(_unregistered_class_loader.is_empty());
+    HandleMark hm(THREAD);
+    const Handle cl = JavaCalls::construct_new_instance(UnregisteredClassLoader_klass(),
+                                                        vmSymbols::void_method_signature(), CHECK);
+    _unregistered_class_loader = OopHandle(Universe::vm_global(), cl());
   }
 }
 
 // Load the class of the given name from the location given by path. The path is specified by
 // the "source:" in the class list file (see classListParser.cpp), and can be a directory or
 // a JAR file.
-InstanceKlass* UnregisteredClasses::load_class(Symbol* name, const char* path,
-                                               Handle super_class, objArrayHandle interfaces, TRAPS) {
+InstanceKlass* UnregisteredClasses::load_class(Symbol* name, const char* path, TRAPS) {
   assert(name != nullptr, "invariant");
   assert(CDSConfig::is_dumping_static_archive(), "this function is only used with -Xshare:dump");
 
@@ -62,59 +64,28 @@ InstanceKlass* UnregisteredClasses::load_class(Symbol* name, const char* path,
                              THREAD->get_thread_stat()->perf_timers_addr(),
                              PerfClassTraceTime::CLASS_LOAD);
 
-  // Call CDS$UnregisteredClassLoader::load(String name, Class<?> superClass, Class<?>[] interfaces)
-  Symbol* methodName = SymbolTable::new_symbol("load");
-  Symbol* methodSignature = SymbolTable::new_symbol("(Ljava/lang/String;Ljava/lang/Class;[Ljava/lang/Class;)Ljava/lang/Class;");
-  Symbol* path_symbol = SymbolTable::new_symbol(path);
-  Handle classloader = get_classloader(path_symbol, CHECK_NULL);
-  Handle ext_class_name = java_lang_String::externalize_classname(name, CHECK_NULL);
+  assert(!_unregistered_class_loader.is_empty(), "not initialized");
+  Handle classloader(THREAD, _unregistered_class_loader.resolve());
 
-  JavaValue result(T_OBJECT);
-  JavaCallArguments args(3);
-  args.set_receiver(classloader);
-  args.push_oop(ext_class_name);
-  args.push_oop(super_class);
-  args.push_oop(interfaces);
-  JavaCalls::call_virtual(&result,
-                          UnregisteredClassLoader_klass(),
-                          methodName,
-                          methodSignature,
-                          &args,
-                          CHECK_NULL);
-  assert(result.get_type() == T_OBJECT, "just checking");
-  oop obj = result.get_oop();
+  oop obj;
+  { // Call CDS$UnregisteredClassLoader::load(String name, String source)
+    Symbol* methodName = SymbolTable::new_symbol("load");
+    Symbol* methodSignature = SymbolTable::new_symbol("(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Class;");
+    Handle ext_class_name = java_lang_String::externalize_classname(name, CHECK_NULL);
+    Handle path_string = java_lang_String::create_from_str(path, CHECK_NULL);
+
+    JavaValue result(T_OBJECT);
+    JavaCalls::call_virtual(&result,
+                            classloader,
+                            UnregisteredClassLoader_klass(),
+                            methodName,
+                            methodSignature,
+                            ext_class_name,
+                            path_string,
+                            CHECK_NULL);
+    assert(result.get_type() == T_OBJECT, "just checking");
+    obj = result.get_oop();
+  }
+
   return InstanceKlass::cast(java_lang_Class::as_Klass(obj));
-}
-
-class UnregisteredClasses::ClassLoaderTable : public ResourceHashtable<
-  Symbol*, OopHandle,
-  137, // prime number
-  AnyObj::C_HEAP> {};
-
-static UnregisteredClasses::ClassLoaderTable* _classloader_table = nullptr;
-
-Handle UnregisteredClasses::create_classloader(Symbol* path, TRAPS) {
-  ResourceMark rm(THREAD);
-  JavaValue result(T_OBJECT);
-  Handle path_string = java_lang_String::create_from_str(path->as_C_string(), CHECK_NH);
-  Handle classloader = JavaCalls::construct_new_instance(
-                           UnregisteredClassLoader_klass(),
-                           vmSymbols::string_void_signature(),
-                           path_string, CHECK_NH);
-  return classloader;
-}
-
-Handle UnregisteredClasses::get_classloader(Symbol* path, TRAPS) {
-  if (_classloader_table == nullptr) {
-    _classloader_table = new (mtClass)ClassLoaderTable();
-  }
-  OopHandle* classloader_ptr = _classloader_table->get(path);
-  if (classloader_ptr != nullptr) {
-    return Handle(THREAD, (*classloader_ptr).resolve());
-  } else {
-    Handle classloader = create_classloader(path, CHECK_NH);
-    _classloader_table->put(path, OopHandle(Universe::vm_global(), classloader()));
-    path->increment_refcount();
-    return classloader;
-  }
 }
