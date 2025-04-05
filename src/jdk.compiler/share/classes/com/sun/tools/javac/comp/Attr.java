@@ -1709,12 +1709,12 @@ public class Attr extends JCTree.Visitor {
             boolean intSwitch = types.isAssignable(seltype, syms.intType);
             boolean patternSwitch;
             if (seltype.isPrimitive() && !intSwitch) {
-                preview.checkSourceLevel(selector.pos(), Feature.PRIMITIVE_PATTERNS);
+                preview.checkSourceLevel(env.info.lint, selector.pos(), Feature.PRIMITIVE_PATTERNS);
                 patternSwitch = true;
             }
             if (!enumSwitch && !stringSwitch && !errorEnumSwitch &&
                 !intSwitch) {
-                preview.checkSourceLevel(selector.pos(), Feature.PATTERN_SWITCH);
+                preview.checkSourceLevel(env.info.lint, selector.pos(), Feature.PATTERN_SWITCH);
                 patternSwitch = true;
             } else {
                 patternSwitch = cases.stream()
@@ -1749,7 +1749,7 @@ public class Attr extends JCTree.Visitor {
                     if (label instanceof JCConstantCaseLabel constLabel) {
                         JCExpression expr = constLabel.expr;
                         if (TreeInfo.isNull(expr)) {
-                            preview.checkSourceLevel(expr.pos(), Feature.CASE_NULL);
+                            preview.checkSourceLevel(env.info.lint, expr.pos(), Feature.CASE_NULL);
                             if (hasNullPattern) {
                                 log.error(label.pos(), Errors.DuplicateCaseLabel);
                             }
@@ -1829,7 +1829,7 @@ public class Attr extends JCTree.Visitor {
                         Type primaryType = TreeInfo.primaryPatternType(pat);
 
                         if (primaryType.isPrimitive()) {
-                            preview.checkSourceLevel(pat.pos(), Feature.PRIMITIVE_PATTERNS);
+                            preview.checkSourceLevel(env.info.lint, pat.pos(), Feature.PRIMITIVE_PATTERNS);
                         } else if (!primaryType.hasTag(TYPEVAR)) {
                             primaryType = chk.checkClassOrArrayType(pat.pos(), primaryType);
                         }
@@ -4115,7 +4115,7 @@ public class Attr extends JCTree.Visitor {
     public void visitTypeTest(JCInstanceOf tree) {
         Type exprtype = attribExpr(tree.expr, env);
         if (exprtype.isPrimitive()) {
-            preview.checkSourceLevel(tree.expr.pos(), Feature.PRIMITIVE_PATTERNS);
+            preview.checkSourceLevel(env.info.lint, tree.expr.pos(), Feature.PRIMITIVE_PATTERNS);
         } else {
             exprtype = chk.checkNullOrRefType(
                     tree.expr.pos(), exprtype);
@@ -4141,7 +4141,7 @@ public class Attr extends JCTree.Visitor {
             chk.validate(typeTree, env, false);
         }
         if (clazztype.isPrimitive()) {
-            preview.checkSourceLevel(tree.pattern.pos(), Feature.PRIMITIVE_PATTERNS);
+            preview.checkSourceLevel(env.info.lint, tree.pattern.pos(), Feature.PRIMITIVE_PATTERNS);
         } else {
             if (!clazztype.hasTag(TYPEVAR)) {
                 clazztype = chk.checkClassOrArrayType(typeTree.pos(), clazztype);
@@ -4178,7 +4178,7 @@ public class Attr extends JCTree.Visitor {
             return false;
         } else if ((exprType.isPrimitive() || pattType.isPrimitive()) &&
                 (!exprType.isPrimitive() || !pattType.isPrimitive() || !types.isSameType(exprType, pattType))) {
-            preview.checkSourceLevel(pos, Feature.PRIMITIVE_PATTERNS);
+            preview.checkSourceLevel(env.info.lint, pos, Feature.PRIMITIVE_PATTERNS);
             return true;
         } else if (warner.hasLint(LintCategory.UNCHECKED)) {
             log.error(pos,
@@ -4218,6 +4218,13 @@ public class Attr extends JCTree.Visitor {
             annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var);
         }
         annotate.flush();
+        Lint lint = env.info.lint.augment(tree.var.sym);
+        Lint prevLint = chk.setLint(lint);
+        try {
+            deferredLintHandler.flush(tree.var, lint);
+        } finally {
+            chk.setLint(prevLint);
+        }
         result = tree.type;
         if (v.isUnnamedVariable()) {
             matchBindings = MatchBindingsComputer.EMPTY;
