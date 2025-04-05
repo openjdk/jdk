@@ -27,7 +27,6 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
-#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -66,7 +65,10 @@ double G1RemSetSummary::rs_thread_vtime(uint thread) const {
 }
 
 G1RemSetSummary::G1RemSetSummary(bool should_update) :
-  _num_vtimes(G1ConcRefinementThreads),
+   // worker threads plus refinement control thread; this is not completely correct if
+   // G1ConcRefinementThreads == 0 but in that case we do not care about the extra
+   // entry.
+  _num_vtimes(G1ConcRefinementThreads + 1),
   _rs_threads_vtimes(NEW_C_HEAP_ARRAY(double, _num_vtimes, mtGC)) {
 
   memset(_rs_threads_vtimes, 0, sizeof(double) * _num_vtimes);

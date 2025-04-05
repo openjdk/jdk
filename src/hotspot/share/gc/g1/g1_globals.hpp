@@ -161,9 +161,10 @@
           "When expanding, % of uncommitted space to claim.")               \
           range(0, 100)                                                     \
                                                                             \
-  product(size_t, G1UpdateBufferSize, 256,                                  \
-          "Size of an update buffer")                                       \
-          constraint(G1UpdateBufferSizeConstraintFunc, AtParse)             \
+  product(size_t, G1PerThreadPendingCardThreshold, 256, DIAGNOSTIC,         \
+          "Amount of pending cards allowed on the card table per GC "       \
+          "worker thread before considering starting refinement.")          \
+          range(0, UINT_MAX)                                                \
                                                                             \
   product(uint, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \

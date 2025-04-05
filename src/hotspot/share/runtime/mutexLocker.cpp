@@ -71,6 +71,7 @@ Monitor* CGC_lock                     = nullptr;
 Monitor* STS_lock                     = nullptr;
 Monitor* G1OldGCCount_lock            = nullptr;
 Mutex*   G1RareEvent_lock             = nullptr;
+Mutex*   G1ReviseYoungLength_lock     = nullptr;
 Mutex*   G1DetachedRefinementStats_lock = nullptr;
 Mutex*   MarkStackFreeList_lock       = nullptr;
 Mutex*   MarkStackChunkList_lock      = nullptr;
@@ -328,6 +329,7 @@ void mutex_init() {
   if (UseG1GC) {
     MUTEX_DEFL(G1OldGCCount_lock            , PaddedMonitor, Threads_lock, true);
     MUTEX_DEFL(G1RareEvent_lock             , PaddedMutex  , Threads_lock, true);
+    MUTEX_DEFL(G1ReviseYoungLength_lock     , PaddedMutex  , Threads_lock, true);
   }
 
   MUTEX_DEFL(CompileTaskAlloc_lock          , PaddedMutex  ,  MethodCompileQueue_lock);
