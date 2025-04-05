@@ -175,7 +175,13 @@ oop ResolvedMethodTable::find_method(const Method* method) {
 
   ResolvedMethodTableLookup lookup(thread, method_hash(method), method);
   ResolvedMethodGet rmg(thread, method);
-  _local_table->get(thread, lookup, rmg);
+  bool rehash_warning = false;
+  _local_table->get(thread, lookup, rmg, &rehash_warning);
+  if (rehash_warning) {
+    // if load factor is low but we need to rehash that's a problem with the hash function.
+    log_info(membername, table)("Rehash warning, load factor %g", get_load_factor());
+    trigger_concurrent_work();
+  }
 
   return rmg.get_res_oop();
 }
