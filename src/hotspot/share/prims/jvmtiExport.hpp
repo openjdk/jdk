@@ -309,7 +309,7 @@ class JvmtiExport : public AllStatic {
   // If the jvmti_thread_state is absent and any thread filtered event
   // is enabled globally then it is created.
   // Otherwise, the thread->jvmti_thread_state() is returned.
-  static JvmtiThreadState* get_jvmti_thread_state(JavaThread *thread);
+  static JvmtiThreadState* get_jvmti_thread_state(JavaThread *thread, bool allow_suspend = true);
 
   // single stepping management methods
   static void at_single_stepping_point(JavaThread *thread, Method* method, address location) NOT_JVMTI_RETURN;
