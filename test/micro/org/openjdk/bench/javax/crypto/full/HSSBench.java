@@ -21,12 +21,11 @@
  * questions.
  */
 
-package org.openjdk.bench.java.security;
+package org.openjdk.bench.javax.crypto.full;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -35,29 +34,27 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-
-import java.io.IOException;
-import java.util.HexFormat;
-import java.security.ProviderException;
-import java.security.PublicKey;
-import java.security.Security;
-import java.security.Provider;
-import java.security.KeyFactory;
-import java.security.Signature;
-import java.util.concurrent.TimeUnit;
-
 import sun.security.util.RawKeySpec;
+
+import java.security.KeyFactory;
+import java.security.Security;
+import java.security.Signature;
+import java.util.HexFormat;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Benchmark measuring HSS/LMS
  */
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Warmup(iterations = 5, time = 1)
-@Measurement(iterations = 5, time = 1)
-@Fork(value = 3, jvmArgs = {"--add-exports", "java.base/sun.security.util=ALL-UNNAMED"})
+@Warmup(iterations = 3, time = 3)
+@Measurement(iterations = 8, time = 2)
+@Fork(value = 5, jvmArgs = {"-XX:+AlwaysPreTouch", "--add-exports", "java.base/sun.security.util=ALL-UNNAMED"})
+@OutputTimeUnit(TimeUnit.SECONDS)
+@State(Scope.Thread)
+@BenchmarkMode(Mode.Throughput)
+public class HSSBench {
 
-public class HSS {
+    @Param({"HSS/LMS"})
+    private String algorithm;  // do not change. Added for visibility
 
     static byte[] decode(String s) {
         return HexFormat.of().parseHex(s
@@ -74,7 +71,7 @@ public class HSS {
         return vv;
     }
 
-    public static void verify(Signature v, byte[] pk, byte[] msg, byte[] sig)
+    public static void verify(Signature v, byte[] msg, byte[] sig)
             throws Exception {
         v.update(msg);
         if (!v.verify(sig)) {
@@ -82,30 +79,20 @@ public class HSS {
         }
     }
 
-    @State(Scope.Benchmark)
-    public static class test01 {
-        byte[] pk;
-        byte[] msg;
-        byte[] sig;
-
-        @Param({"Test 1"})
-        private String test;
-
-        @Setup
-        public void setup() throws Exception {
-            pk = decode("""
+    public static class TestData01 {
+        static final byte[] pk = decode("""
                 00000002
                 00000005
                 00000004
                 0e975b10a6b33473d01baa138c155e81d7b7156b389b2a6a09d49f42c1ac4984
                 2d977e65fceb6bc80e06eace38ce0116
                 """);
-            msg = decode("""
+        static final byte[] msg = decode("""
                 312e20546869732069732061207465737420666f72204853532f4c4d53207768
                 6963682069732076657279206c6f6e6720616e64206e6f74206d65616e742074
                 6f207265616420627920612068756d616e206265696e672e
                 """);
-            sig = decode("""
+        static final byte[] sig = decode("""
                 00000001
                 00000005
                 00000004
@@ -198,33 +185,22 @@ public class HSS {
                 85f294d491c47fb90d3ce9046d2f05da6a723ac342a32154d1c18b465b49308f
                 41ca2f0475adf5ed46413766a6057bc810aeb6dd593691b84752b883c8a1a422
                 """);
-        }
     }
 
-    @State(Scope.Benchmark)
-    public static class test02 {
-        byte[] pk;
-        byte[] msg;
-        byte[] sig;
-
-        @Param({"Test 2"})
-        private String test;
-
-        @Setup
-        public void setup() throws Exception {
-            pk = decode("""
+    public static class TestData02 {
+        static final byte[] pk = decode("""
                 00000002
                 00000006
                 00000003
                 ff466afe664c2581845b2c6af92aeb6e5c4dd15affc86c82ef4e807ad3c648a6
                 4561666c975fd9cb150d6c7acd6e577f
                 """);
-            msg = decode("""
+        static final byte[] msg = decode("""
                 322e20546869732069732061207465737420666f72204853532f4c4d53207768
                 6963682069732076657279206c6f6e6720616e64206e6f74206d65616e742074
                 6f207265616420627920612068756d616e206265696e672e
                 """);
-            sig = decode("""
+        static final byte[] sig = decode("""
                 00000001
                 00000003
                 00000003
@@ -355,34 +331,33 @@ public class HSS {
                 b4a0bb3b72197d2d5b2111da8647be1675983e8ed1c0d8ec7cada282dc698656
                 95f1e8806c7892b65fc17103ee3b5366b3fe31e57e653336be283962f488eaa5
                 """);
-        }
     }
 
     @State(Scope.Thread)
-    public static class verifier01 {
+    public static class Verifier01 {
         Signature v;
 
         @Setup
-        public void setup(test01 test) throws Exception {
-            v = getVerifier(test.pk);
+        public void setup() throws Exception {
+            v = getVerifier(TestData01.pk);
         }
     }
     @State(Scope.Thread)
-    public static class verifier02 {
+    public static class Verifier02 {
         Signature v;
 
         @Setup
-        public void setup(test02 test) throws Exception {
-            v = getVerifier(test.pk);
+        public void setup() throws Exception {
+            v = getVerifier(TestData02.pk);
         }
     }
 
     @Benchmark
-    public void verify01(test01 test, verifier01 v) throws Exception {
-        HSS.verify(v.v, test.pk, test.msg, test.sig);
+    public void verify01(Verifier01 v) throws Exception {
+        verify(v.v, TestData01.msg, TestData01.sig);
     }
     @Benchmark
-    public void verify02(test02 test, verifier02 v) throws Exception {
-        HSS.verify(v.v, test.pk, test.msg, test.sig);
+    public void verify02(Verifier02 v) throws Exception {
+        verify(v.v, TestData02.msg, TestData02.sig);
     }
 }
