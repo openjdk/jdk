@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,21 +26,10 @@
  * @bug 7029048 8217340 8217216
  * @summary Ensure that the launcher defends against user settings of the
  *          LD_LIBRARY_PATH environment variable on Unixes
- * @requires os.family != "windows" & os.family != "mac" & !vm.musl & os.family != "aix"
+ * @requires os.family != "windows" & os.family != "mac"
  * @library /test/lib
- * @compile -XDignore.symbol.file ExecutionEnvironment.java Test7029048.java
- * @run main/othervm -DexpandedLdLibraryPath=false Test7029048
- */
-
-/**
- * @test
- * @bug 7029048 8217340 8217216
- * @summary Ensure that the launcher defends against user settings of the
- *          LD_LIBRARY_PATH environment variable on Unixes
- * @requires os.family == "aix" | vm.musl
- * @library /test/lib
- * @compile -XDignore.symbol.file ExecutionEnvironment.java Test7029048.java
- * @run main/othervm -DexpandedLdLibraryPath=true Test7029048
+ * @compile ExecutionEnvironment.java Test7029048.java
+ * @run main/othervm Test7029048
  */
 
 import java.io.File;
@@ -51,13 +40,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import jdk.test.lib.Platform;
+
 public class Test7029048 extends TestHelper {
 
     private static final String LIBJVM = ExecutionEnvironment.LIBJVM;
     private static final String LD_LIBRARY_PATH =
             ExecutionEnvironment.LD_LIBRARY_PATH;
-    private static final String LD_LIBRARY_PATH_64 =
-            ExecutionEnvironment.LD_LIBRARY_PATH_64;
 
     private static final File libDir =
             new File(System.getProperty("sun.boot.library.path"));
@@ -70,9 +59,6 @@ public class Test7029048 extends TestHelper {
 
     private static final File dstClientDir = new File(dstLibDir, "client");
     private static final File dstClientLibjvm = new File(dstClientDir, LIBJVM);
-
-    static final boolean IS_EXPANDED_LD_LIBRARY_PATH =
-            Boolean.getBoolean("expandedLdLibraryPath");
 
     static String getValue(String name, List<String> in) {
         for (String x : in) {
@@ -134,7 +120,7 @@ public class Test7029048 extends TestHelper {
     private static enum TestCase {
         NO_DIR(0),                      // Directory does not exist
         NO_LIBJVM(0),                   // Directory exists, but no libjvm.so
-        LIBJVM(3);                      // Directory exists, with a libjvm.so
+        LIBJVM(2);                      // Directory exists, with a libjvm.so
         private final int value;
         TestCase(int i) {
             this.value = i;
@@ -170,7 +156,7 @@ public class Test7029048 extends TestHelper {
                     }
 
                     desc = "LD_LIBRARY_PATH should not be set (no libjvm.so)";
-                    if (IS_EXPANDED_LD_LIBRARY_PATH) {
+                    if (Platform.isAix() || Platform.isMusl()) {
                         printSkipMessage(desc);
                         continue;
                     }
@@ -180,7 +166,7 @@ public class Test7029048 extends TestHelper {
                         recursiveDelete(dstLibDir);
                     }
                     desc = "LD_LIBRARY_PATH should not be set (no directory)";
-                    if (IS_EXPANDED_LD_LIBRARY_PATH) {
+                    if (Platform.isAix() || Platform.isMusl()) {
                         printSkipMessage(desc);
                         continue;
                     }
