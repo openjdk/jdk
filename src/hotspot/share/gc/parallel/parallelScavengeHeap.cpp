@@ -673,7 +673,13 @@ void ParallelScavengeHeap::print_on(outputStream* st) const {
 }
 
 void ParallelScavengeHeap::print_on_error(outputStream* st) const {
-  this->CollectedHeap::print_on_error(st);
+  print_on(st);
+  st->cr();
+
+  BarrierSet* bs = BarrierSet::barrier_set();
+  if (bs != nullptr) {
+    bs->print_on(st);
+  }
 
   st->cr();
   PSParallelCompact::print_on_error(st);

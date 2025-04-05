@@ -188,17 +188,6 @@ void CollectedHeap::print_heap_after_gc() {
 
 void CollectedHeap::print() const { print_on(tty); }
 
-void CollectedHeap::print_on_error(outputStream* st) const {
-  st->print_cr("Heap:");
-  print_extended_on(st);
-  st->cr();
-
-  BarrierSet* bs = BarrierSet::barrier_set();
-  if (bs != nullptr) {
-    bs->print_on(st);
-  }
-}
-
 void CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
   const GCHeapSummary& heap_summary = create_heap_summary();
   gc_tracer->report_gc_heap_summary(when, heap_summary);

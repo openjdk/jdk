@@ -359,33 +359,7 @@ void ZCollectedHeap::print_on(outputStream* st) const {
 }
 
 void ZCollectedHeap::print_on_error(outputStream* st) const {
-  st->print_cr("ZGC Globals:");
-  st->print_cr(" Young Collection:   %s/%u", ZGeneration::young()->phase_to_string(), ZGeneration::young()->seqnum());
-  st->print_cr(" Old Collection:     %s/%u", ZGeneration::old()->phase_to_string(), ZGeneration::old()->seqnum());
-  st->print_cr(" Offset Max:         " EXACTFMT " (" PTR_FORMAT ")", EXACTFMTARGS(ZAddressOffsetMax), ZAddressOffsetMax);
-  st->print_cr(" Page Size Small:    %zuM", ZPageSizeSmall / M);
-  st->print_cr(" Page Size Medium:   %zuM", ZPageSizeMedium / M);
-  st->cr();
-  st->print_cr("ZGC Metadata Bits:");
-  st->print_cr(" LoadGood:           " PTR_FORMAT, ZPointerLoadGoodMask);
-  st->print_cr(" LoadBad:            " PTR_FORMAT, ZPointerLoadBadMask);
-  st->print_cr(" MarkGood:           " PTR_FORMAT, ZPointerMarkGoodMask);
-  st->print_cr(" MarkBad:            " PTR_FORMAT, ZPointerMarkBadMask);
-  st->print_cr(" StoreGood:          " PTR_FORMAT, ZPointerStoreGoodMask);
-  st->print_cr(" StoreBad:           " PTR_FORMAT, ZPointerStoreBadMask);
-  st->print_cr(" ------------------- ");
-  st->print_cr(" Remapped:           " PTR_FORMAT, ZPointerRemapped);
-  st->print_cr(" RemappedYoung:      " PTR_FORMAT, ZPointerRemappedYoungMask);
-  st->print_cr(" RemappedOld:        " PTR_FORMAT, ZPointerRemappedOldMask);
-  st->print_cr(" MarkedYoung:        " PTR_FORMAT, ZPointerMarkedYoung);
-  st->print_cr(" MarkedOld:          " PTR_FORMAT, ZPointerMarkedOld);
-  st->print_cr(" Remembered:         " PTR_FORMAT, ZPointerRemembered);
-  st->cr();
-  CollectedHeap::print_on_error(st);
-}
-
-void ZCollectedHeap::print_extended_on(outputStream* st) const {
-  _heap.print_extended_on(st);
+  _heap.print_on_error(st);
 }
 
 void ZCollectedHeap::print_tracing_info() const {

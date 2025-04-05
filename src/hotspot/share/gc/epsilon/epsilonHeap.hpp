@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -132,6 +132,7 @@ public:
   HeapWord* allocate_loaded_archive_space(size_t size) override;
 
   void print_on(outputStream* st) const override;
+  void print_on_error(outputStream* st) const override;
   void print_tracing_info() const override;
   bool print_location(outputStream* st, void* addr) const override;
 
