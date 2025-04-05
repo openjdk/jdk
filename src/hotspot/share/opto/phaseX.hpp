@@ -424,7 +424,9 @@ public:
   bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, true); }
 
   // Helper to call Node::Ideal() and BarrierSetC2::ideal_node().
-  Node* apply_ideal(Node* i, bool can_reshape);
+  virtual Node* apply_ideal(Node* i, bool can_reshape);
+
+  virtual Node* apply_identity(Node* i);
 
 #ifdef ASSERT
   void dump_infinite_loop_info(Node* n, const char* where);
@@ -696,6 +698,28 @@ public:
 
   static void print_statistics();
 #endif
+};
+
+// Phase for lowering common Ideal nodes into machine-specific Ideal nodes and identifying complex patterns before
+// the platform matcher.
+class PhaseLowering : public PhaseIterGVN {
+public:
+  PhaseLowering(PhaseIterGVN* igvn) : PhaseIterGVN(igvn) {};
+
+  virtual Node* apply_ideal(Node* i, bool can_reshape);
+
+  virtual Node* apply_identity(Node* i);
+
+  // Return a lowered version of the input node, or nullptr if no lowering took place.
+  Node* lower_node(Node* in);
+
+  // Version of lower_node implemented by backends, called by lower_node.
+  Node* lower_node_platform(Node* in);
+
+  bool should_lower();
+
+  // Main function to lower all nodes in the graph.
+  void lower();
 };
 
 #endif // SHARE_OPTO_PHASEX_HPP
