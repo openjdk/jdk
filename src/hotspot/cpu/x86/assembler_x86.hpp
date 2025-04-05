@@ -808,7 +808,10 @@ private:
                              InstructionAttr *attributes, bool src_is_gpr = false, bool nds_is_ndd = false, bool no_flags = false);
 
   int  evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                  InstructionAttr *attributes, bool no_flags = false);
+                                  InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
+
+  int  evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, VexSimdPrefix pre, VexOpcode opc,
+                                  InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
 
   int  evex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                  InstructionAttr *attributes, bool no_flags = false);
@@ -820,6 +823,8 @@ private:
                              VexOpcode opc, InstructionAttr *attributes, bool src_is_gpr = false);
 
   // Helper functions for groups of instructions
+  bool is_demotable(bool no_flags, int dst_enc, int nds_enc, int src_enc);
+  bool is_demotable(bool no_flags, int dst_enc, int nds_enc);
   void emit_arith_b(int op1, int op2, Register dst, int imm8);
 
   void emit_arith(int op1, int op2, Register dst, int32_t imm32);
@@ -1922,6 +1927,7 @@ private:
 #endif
   void btq(Register dst, Register src);
 
+  void orw(Register dst, Register src);
   void eorw(Register dst, Register src1, Register src2, bool no_flags);
 
   void orl(Address dst, int32_t imm32);
