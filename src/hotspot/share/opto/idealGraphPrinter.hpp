@@ -91,6 +91,10 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   static const char *METHOD_BCI_PROPERTY;
   static const char *METHOD_SHORT_NAME_PROPERTY;
   static const char *ASSEMBLY_ELEMENT;
+  static const char *LIVEOUT_ELEMENT;
+  static const char *LIVE_RANGE_ELEMENT;
+  static const char *LIVE_RANGE_ID_PROPERTY;
+  static const char *LIVE_RANGES_ELEMENT;
 
   static int _file_count;
   networkStream *_network_stream;
@@ -114,6 +118,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   ciField* get_field(const Node* node);
   ciField* find_source_field_of_array_access(const Node* node, uint& depth);
   static Node* get_load_node(const Node* node);
+  bool has_liveness_info() const;
   void walk_nodes(Node* start, bool edges);
   void begin_elem(const char *s);
   void end_elem();

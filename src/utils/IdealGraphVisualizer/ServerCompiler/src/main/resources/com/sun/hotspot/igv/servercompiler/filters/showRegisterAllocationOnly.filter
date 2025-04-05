@@ -1,0 +1,5 @@
+// Remove all nodes except those that affect register allocation.
+remove(and([matches("lrg", "0"),
+            not(hasProperty("uses")),
+            not(hasProperty("joins")),
+            not(hasProperty("kills"))]));
