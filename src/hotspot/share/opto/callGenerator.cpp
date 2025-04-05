@@ -470,7 +470,7 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
   virtual void do_late_inline();
 
   virtual void set_callee_method(ciMethod* m) {
-    assert(_callee == nullptr, "repeated inlining attempt");
+    assert(_callee == nullptr || _callee == m, "repeated inline attempt with different callee");
     _callee = m;
   }
 
@@ -988,7 +988,11 @@ CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* c
   bool should_delay = C->should_delay_inlining();
   if (cg != nullptr) {
     if (should_delay) {
-      return CallGenerator::for_late_inline(callee, cg);
+      if (IncrementalInlineMH) {
+        CallGenerator::for_mh_late_inline(caller, callee, input_not_const);
+      } else {
+        CallGenerator::for_late_inline(callee, cg);
+      }
     } else {
       return cg;
     }
