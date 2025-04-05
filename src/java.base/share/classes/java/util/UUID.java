@@ -467,19 +467,15 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         buf[18] = '-';
         buf[23] = '-';
 
-        long x  = mostSigBits,
-             x0 = hex8(x >>> 32),
-             x1 = hex8(x);
-        ByteArrayLittleEndian.setLong(buf, 0, x0);
-        ByteArrayLittleEndian.setInt(buf, 9, (int) x1);
-        ByteArrayLittleEndian.setInt(buf, 14, (int) (x1 >>> 32));
+        ByteArrayLittleEndian.setLong(buf, 0, hex8(mostSigBits >>> 32));
+        long x0 = hex8(mostSigBits);
+        ByteArrayLittleEndian.setInt(buf, 9, (int) x0);
+        ByteArrayLittleEndian.setInt(buf, 14, (int) (x0 >>> 32));
 
-        x  = leastSigBits;
-        x0 = hex8(x >>> 32);
-        x1 = hex8(x);
-        ByteArrayLittleEndian.setInt(buf, 19, (int) (x0));
-        ByteArrayLittleEndian.setInt(buf, 24, (int) (x0 >>> 32));
-        ByteArrayLittleEndian.setLong(buf, 28, x1);
+        long x1 = hex8(leastSigBits >>> 32);
+        ByteArrayLittleEndian.setInt(buf, 19, (int) (x1));
+        ByteArrayLittleEndian.setInt(buf, 24, (int) (x1 >>> 32));
+        ByteArrayLittleEndian.setLong(buf, 28, hex8(leastSigBits));
 
         try {
             return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
