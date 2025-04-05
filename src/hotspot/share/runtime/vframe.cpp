@@ -97,7 +97,7 @@ vframe* vframe::sender() const {
   if (_fr.is_empty()) return nullptr;
   if (_fr.is_entry_frame() && _fr.is_first_frame()) return nullptr;
 
-  RegisterMap temp_map = *register_map();
+  RegisterMap temp_map = register_map_actual();
   frame s = _fr.real_sender(&temp_map);
   if (s.is_first_frame()) return nullptr;
   return vframe::new_vframe(&s, &temp_map, thread());
