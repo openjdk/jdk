@@ -28,6 +28,7 @@
  * @compile TestDeadIrreducibleLoops.jasm
  * @summary Irreducible loops have many entries, only when the last entry loses
  *          control from the outside does the loop die, and have to disappear.
+ * @requires vm.compiler2.enabled
  * @run main/othervm
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoopsMain::test*
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoops::test*
@@ -41,6 +42,7 @@
  * @compile TestDeadIrreducibleLoops.jasm
  * @summary Irreducible loops have many entries, only when the last entry loses
  *          control from the outside does the loop die, and have to disappear.
+ * @requires vm.compiler2.enabled
  * @run main/othervm
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoopsMain::test*
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoops::test*
@@ -55,6 +57,7 @@
  * @compile TestDeadIrreducibleLoops.jasm
  * @summary Irreducible loops have many entries, only when the last entry loses
  *          control from the outside does the loop die, and have to disappear.
+ * @requires vm.compiler2.enabled
  * @run main/othervm
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoopsMain::test*
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoops::test*
@@ -69,6 +72,7 @@
  * @compile TestDeadIrreducibleLoops.jasm
  * @summary Irreducible loops have many entries, only when the last entry loses
  *          control from the outside does the loop die, and have to disappear.
+ * @requires vm.compiler2.enabled
  * @run main/othervm
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoopsMain::test*
  *      -XX:CompileCommand=compileonly,TestDeadIrreducibleLoops::test*

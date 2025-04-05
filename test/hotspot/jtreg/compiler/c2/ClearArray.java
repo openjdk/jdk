@@ -25,6 +25,7 @@
 /*
  * @test ClearArray.java
  * @bug 8284883
+ * @requires vm.compiler2.enabled
  * @compile ClearArray.java
  * @summary ClearArray instruction overflows scratch buffer
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -Xbatch

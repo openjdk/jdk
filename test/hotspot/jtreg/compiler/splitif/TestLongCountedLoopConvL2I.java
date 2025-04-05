@@ -25,6 +25,7 @@
  * @test
  * @bug 8331575
  * @summary C2: crash when ConvL2I is split thru phi at LongCountedLoop
+ * @requires vm.compiler2.enabled
  * @run main/othervm -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:-UseOnStackReplacement
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=92643864 TestLongCountedLoopConvL2I
  * @run main/othervm -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:-UseOnStackReplacement

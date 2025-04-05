@@ -29,6 +29,7 @@ import jdk.incubator.vector.VectorSpecies;
 /*
  * @test
  * @bug 8244675
+ * @requires vm.compiler2.enabled
  * @modules jdk.incubator.vector
  *
  * @run main/othervm -Xbatch -XX:-Inline            compiler.vectorapi.TestNoInline

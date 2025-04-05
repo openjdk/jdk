@@ -33,6 +33,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8351468
  * @summary Test replacement of array-filling loops with intrinsic calls in the
  *          face of matching and mismatching stores.
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.loopopts.TestArrayFillIntrinsic
  */

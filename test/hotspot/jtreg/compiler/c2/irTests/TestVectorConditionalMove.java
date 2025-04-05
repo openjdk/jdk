@@ -34,6 +34,7 @@ import jdk.test.lib.Utils;
  * @bug 8289422 8306088 8313720
  * @key randomness
  * @summary Auto-vectorization enhancement to support vector conditional move.
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestVectorConditionalMove
  */

@@ -26,6 +26,7 @@
  * @bug JDK-8310130
  * @summary Special test cases for PhaseIdealLoop::move_unordered_reduction_out_of_loop
  *          Here a case with partial vectorization of the reduction.
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestUnorderedReductionPartialVectorization
  */

@@ -25,6 +25,7 @@
  * @test
  * @bug 8303279
  * @summary C2: crash in SubTypeCheckNode::sub() at IGVN split if
+ * @requires vm.compiler2.enabled
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:StressSeed=598200189 TestCrashAtIGVNSplitIfSubType
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN TestCrashAtIGVNSplitIfSubType
  */

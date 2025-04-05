@@ -53,6 +53,7 @@ import java.util.Random;
  * @test
  * @bug 8318446 8331054 8331311 8335392 8348959 8351414
  * @summary Test merging of consecutive stores
+ * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run main compiler.c2.TestMergeStores StressIGVN
