@@ -305,10 +305,6 @@ public:
 
   /* special case: stub employs array of entries */
 
-  // Vector Math Routines
-  static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
-  static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
-
   static bool is_stub_code(address addr)                   { return contains(addr); }
 
   // generate code to implement method contains

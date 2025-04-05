@@ -628,6 +628,7 @@ void VM_Version::initialize() {
   if (_model2) {
     os::snprintf_checked(buf + buf_used_len, sizeof(buf) - buf_used_len, "(0x%03x)", _model2);
   }
+  int features_offset = strnlen(buf, sizeof(buf));
 #define ADD_FEATURE_IF_SUPPORTED(id, name, bit)                 \
   do {                                                          \
     if (VM_Version::supports_##name()) strcat(buf, ", " #name); \
@@ -635,7 +636,11 @@ void VM_Version::initialize() {
   CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)
 #undef ADD_FEATURE_IF_SUPPORTED
 
-  _features_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf);
+
+  _features_string = extract_features_string(_cpu_info_string,
+                                             strnlen(_cpu_info_string, sizeof(buf)),
+                                             features_offset);
 }
 
 #if defined(LINUX)
