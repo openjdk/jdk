@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ public interface JavaIOFilePermissionAccess {
      * @return the new FilePermission plus the alt path (as npath2)
      *         or the input itself if no alt path is available.
      */
+    @SuppressWarnings("removal")
     FilePermission newPermPlusAltPath(FilePermission input);
 
     /**
@@ -44,5 +45,6 @@ public interface JavaIOFilePermissionAccess {
      * @return the new FilePermission using the alt path (as npath)
      *         or null if no alt path is available
      */
+    @SuppressWarnings("removal")
     FilePermission newPermUsingAltPath(FilePermission input);
 }
