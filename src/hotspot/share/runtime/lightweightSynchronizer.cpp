@@ -115,15 +115,16 @@ class ObjectMonitorTable : AllStatic {
   };
 
   static void inc_items_count() {
-    Atomic::inc(&_items_count);
+    Atomic::inc(&_items_count, memory_order_relaxed);
   }
 
   static void dec_items_count() {
-    Atomic::dec(&_items_count);
+    Atomic::dec(&_items_count, memory_order_relaxed);
   }
 
   static double get_load_factor() {
-    return (double)_items_count / (double)_table_size;
+    size_t count = Atomic::load(&_items_count);
+    return (double)count / (double)_table_size;
   }
 
   static size_t table_size(Thread* current = Thread::current()) {
