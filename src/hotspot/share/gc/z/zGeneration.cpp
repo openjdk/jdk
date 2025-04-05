@@ -131,10 +131,6 @@ ZGeneration::ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocato
     _stat_relocation(),
     _gc_timer(nullptr) {}
 
-bool ZGeneration::is_initialized() const {
-  return _mark.is_initialized();
-}
-
 ZWorkers* ZGeneration::workers() {
   return &_workers;
 }
@@ -151,8 +147,8 @@ void ZGeneration::threads_do(ThreadClosure* tc) const {
   _workers.threads_do(tc);
 }
 
-void ZGeneration::mark_flush_and_free(Thread* thread) {
-  _mark.flush_and_free(thread);
+void ZGeneration::mark_flush(Thread* thread) {
+  _mark.flush(thread);
 }
 
 void ZGeneration::mark_free() {
@@ -186,9 +182,9 @@ static double fragmentation_limit(ZGenerationId generation) {
   }
 }
 
-void ZGeneration::select_relocation_set(ZGenerationId generation, bool promote_all) {
+void ZGeneration::select_relocation_set(bool promote_all) {
   // Register relocatable pages with selector
-  ZRelocationSetSelector selector(fragmentation_limit(generation));
+  ZRelocationSetSelector selector(fragmentation_limit(_id));
   {
     ZGenerationPagesIterator pt_iter(_page_table, _id, _page_allocator);
     for (ZPage* page; pt_iter.next(&page);) {
@@ -242,7 +238,7 @@ void ZGeneration::select_relocation_set(ZGenerationId generation, bool promote_a
   // Selecting tenuring threshold must be done after select
   // which produces the liveness data, but before install,
   // which consumes the tenuring threshold.
-  if (generation == ZGenerationId::young) {
+  if (is_young()) {
     ZGeneration::young()->select_tenuring_threshold(selector.stats(), promote_all);
   }
 
@@ -815,7 +811,7 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
 void ZGenerationYoung::concurrent_select_relocation_set() {
   ZStatTimerYoung timer(ZPhaseConcurrentSelectRelocationSetYoung);
   const bool promote_all = type() == ZYoungType::major_full_preclean;
-  select_relocation_set(_id, promote_all);
+  select_relocation_set(promote_all);
 }
 
 class VM_ZRelocateStartYoung : public VM_ZYoungOperation {
@@ -1157,7 +1153,7 @@ void ZGenerationOld::pause_verify() {
 
 void ZGenerationOld::concurrent_select_relocation_set() {
   ZStatTimerOld timer(ZPhaseConcurrentSelectRelocationSetOld);
-  select_relocation_set(_id, false /* promote_all */);
+  select_relocation_set(false /* promote_all */);
 }
 
 class VM_ZRelocateStartOld : public VM_ZOperation {

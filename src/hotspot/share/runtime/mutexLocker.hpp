@@ -44,7 +44,6 @@ extern Mutex*   CompiledIC_lock;                 // a lock used to guard compile
 extern Mutex*   VMStatistic_lock;                // a lock used to guard statistics count increment
 extern Mutex*   JmethodIdCreation_lock;          // a lock on creating JNI method identifiers
 extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI static field identifiers
-extern Monitor* JNICritical_lock;                // a lock used while entering and exiting JNI critical regions, allows GC to sometimes get in
 extern Mutex*   JvmtiThreadState_lock;           // a lock on modification of JVMTI thread data
 extern Monitor* EscapeBarrier_lock;              // a lock to sync reallocating and relocking objects because of JVMTI access
 extern Monitor* JvmtiVTMSTransition_lock;        // a lock for Virtual Thread Mount State transition (VTMS transition) management
@@ -123,7 +122,7 @@ extern Mutex*   NmtVirtualMemory_lock;           // guards NMT virtual memory up
 extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti
 #endif
 extern Mutex*   DumpTimeTable_lock;              // SystemDictionaryShared::_dumptime_table
-extern Mutex*   CDSLambda_lock;                  // SystemDictionaryShared::get_shared_lambda_proxy_class
+extern Mutex*   CDSLambda_lock;                  // LambdaProxyClassDictionary::find_lambda_proxy_class
 extern Mutex*   DumpRegion_lock;                 // Symbol::operator new(size_t sz, int len)
 extern Mutex*   ClassListFile_lock;              // ClassListWriter()
 extern Mutex*   UnregisteredClassesTable_lock;   // UnregisteredClassesTableTable

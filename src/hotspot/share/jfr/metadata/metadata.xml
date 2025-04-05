@@ -110,10 +110,25 @@
     <Field type="ulong" contentType="address" name="address" label="Monitor Address" description="Address of object waited on" relation="JavaMonitorAddress" />
   </Event>
 
+  <Event name="JavaMonitorNotify" category="Java Application" label="Java Monitor Notify" description="Notifying a Java monitor" thread="true" stackTrace="true">
+    <Field type="Class" name="monitorClass" label="Monitor Class" description="Class of object waited on" />
+    <Field type="uint" name="notifiedCount" label="Notified Threads" description="Number of actually notified threads" />
+    <Field type="ulong" contentType="address" name="address" label="Monitor Address" description="Address of object waited on" relation="JavaMonitorAddress" />
+  </Event>
+
   <Event name="JavaMonitorInflate" category="Java Application" label="Java Monitor Inflated" thread="true" stackTrace="true">
     <Field type="Class" name="monitorClass" label="Monitor Class" />
     <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" />
     <Field type="InflateCause" name="cause" label="Monitor Inflation Cause" description="Cause of inflation" />
+  </Event>
+
+  <Event name="JavaMonitorDeflate" category="Java Application" label="Java Monitor Deflated">
+    <Field type="Class" name="monitorClass" label="Monitor Class" description="Class of the object deflated. If null or N/A, the object has been garbage collected." />
+    <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" description="Address of the object deflated. If null or N/A, the object has been garbage collected."/>
+  </Event>
+
+  <Event name="JavaMonitorStatistics" category="Java Application, Statistics" label="Java Monitor Statistics" period="everyChunk">
+    <Field type="ulong" name="count" label="Monitors in Use" description="Current number of in-use monitors" />
   </Event>
 
   <Event name="SyncOnValueBasedClass" category="Java Virtual Machine, Diagnostics" label="Value Based Class Synchronization" thread="true" stackTrace="true" startTime="false" experimental="true">
@@ -1239,11 +1254,6 @@
     <Field type="boolean" name="onOutOfMemoryError" label="Heap Dump on Out of Memory Error" />
     <Field type="boolean" name="overwrite" label="Overwrite" description="Heap dump overwrites previous file location if it exists" />
     <Field type="int" name="compression" label="Compression Level" description="Compression level of the dump, if larger than 0 we use gzip compression with this level" />
-  </Event>
-
-  <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" label="GC Locker" startTime="true" thread="true" stackTrace="true">
-    <Field type="uint" name="lockCount" label="Lock Count" description="The number of Java threads in a critical section when the GC locker is started" />
-    <Field type="uint" name="stallCount" label="Stall Count" description="The number of Java threads stalled by the GC locker" />
   </Event>
 
   <Event name="FinalizerStatistics" category="Java Application, Statistics" label="Finalizer Statistics" description="Per class statistics about finalizers" thread="false" startTime="false" period="endChunk">

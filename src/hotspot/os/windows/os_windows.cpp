@@ -2589,38 +2589,6 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
-#if defined(_M_AMD64)
-//-----------------------------------------------------------------------------
-static bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  // handle exception caused by native method modifying control word
-  DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
-
-  switch (exception_code) {
-  case EXCEPTION_FLT_DENORMAL_OPERAND:
-  case EXCEPTION_FLT_DIVIDE_BY_ZERO:
-  case EXCEPTION_FLT_INEXACT_RESULT:
-  case EXCEPTION_FLT_INVALID_OPERATION:
-  case EXCEPTION_FLT_OVERFLOW:
-  case EXCEPTION_FLT_STACK_CHECK:
-  case EXCEPTION_FLT_UNDERFLOW: {
-    PCONTEXT ctx = exceptionInfo->ContextRecord;
-    // On Windows, the mxcsr control bits are non-volatile across calls
-    // See also CR 6192333
-    //
-    jint MxCsr = INITIAL_MXCSR;
-    // we can't use StubRoutines::x86::addr_mxcsr_std()
-    // because in Win64 mxcsr is not saved there
-    if (MxCsr != ctx->MxCsr) {
-      ctx->MxCsr = MxCsr;
-      return true;
-    }
-  }
-  }
-
-  return false;
-}
-#endif
-
 static inline void report_error(Thread* t, DWORD exception_code,
                                 address addr, void* siginfo, void* context) {
   VMError::report_and_die(t, exception_code, addr, siginfo, context);
@@ -2805,6 +2773,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     }
 
 #if defined(_M_AMD64)
+    extern bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo);
     if ((in_java || in_native) && handle_FLT_exception(exceptionInfo)) {
       return EXCEPTION_CONTINUE_EXECUTION;
     }
@@ -3440,8 +3409,8 @@ static char* find_aligned_address(size_t size, size_t alignment) {
 }
 
 static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exec) {
-  log_debug(pagesize)("Reserving large pages at an aligned address, alignment=%zu%s",
-                      byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
+  log_debug(pagesize)("Reserving large pages at an aligned address, alignment=" EXACTFMT,
+                      EXACTFMTARGS(alignment));
 
   // Will try to find a suitable address at most 20 times. The reason we need to try
   // multiple times is that between finding the aligned address and trying to commit

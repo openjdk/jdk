@@ -32,6 +32,9 @@ inputs:
   debug-suffix:
     description: 'File name suffix denoting debug level, possibly empty'
     required: false
+  bundle-suffix:
+    description: 'Bundle name suffix, possibly empty'
+    required: false
 
 runs:
   using: composite
@@ -75,7 +78,7 @@ runs:
     - name: 'Upload bundles artifact'
       uses: actions/upload-artifact@v4
       with:
-        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}
+        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.bundle-suffix }}
         path: bundles
         retention-days: 1
       if: steps.bundles.outputs.bundles-found == 'true'

@@ -39,7 +39,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.hpp"
-#include "runtime/perfData.inline.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/synchronizer.inline.hpp"
@@ -369,7 +368,11 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
                                        const oop obj,
                                        ObjectSynchronizer::InflateCause cause) {
   assert(event != nullptr, "invariant");
-  event->set_monitorClass(obj->klass());
+  const Klass* monitor_klass = obj->klass();
+  if (ObjectMonitor::is_jfr_excluded(monitor_klass)) {
+    return;
+  }
+  event->set_monitorClass(monitor_klass);
   event->set_address((uintptr_t)(void*)obj);
   event->set_cause((u1)cause);
   event->commit();
@@ -384,9 +387,6 @@ ObjectMonitor* LightweightSynchronizer::get_or_insert_monitor(oop object, JavaTh
   ObjectMonitor* monitor = get_or_insert_monitor_from_table(object, current, &inserted);
 
   if (inserted) {
-    // Hopefully the performance counters are allocated on distinct
-    // cache lines to avoid false sharing on MP systems ...
-    OM_PERFDATA_OP(Inflations, inc());
     log_inflate(current, object, cause);
     if (event.should_commit()) {
       post_monitor_inflate_event(&event, object, cause);
@@ -633,7 +633,7 @@ void LightweightSynchronizer::enter_for(Handle obj, BasicLock* lock, JavaThread*
   } else {
     do {
       // It is assumed that enter_for must enter on an object without contention.
-      monitor = inflate_and_enter(obj(), ObjectSynchronizer::inflate_cause_monitor_enter, locking_thread, current);
+      monitor = inflate_and_enter(obj(), lock, ObjectSynchronizer::inflate_cause_monitor_enter, locking_thread, current);
       // But there may still be a race with deflation.
     } while (monitor == nullptr);
   }
@@ -689,7 +689,7 @@ void LightweightSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* cur
       spin_yield.wait();
     }
 
-    ObjectMonitor* monitor = inflate_and_enter(obj(), ObjectSynchronizer::inflate_cause_monitor_enter, current, current);
+    ObjectMonitor* monitor = inflate_and_enter(obj(), lock, ObjectSynchronizer::inflate_cause_monitor_enter, current, current);
     if (monitor != nullptr) {
       cache_setter.set_monitor(monitor);
       return;
@@ -703,7 +703,7 @@ void LightweightSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* cur
   }
 }
 
-void LightweightSynchronizer::exit(oop object, JavaThread* current) {
+void LightweightSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) {
   assert(LockingMode == LM_LIGHTWEIGHT, "must be");
   assert(current == Thread::current(), "must be");
 
@@ -738,7 +738,18 @@ void LightweightSynchronizer::exit(oop object, JavaThread* current) {
 
   assert(mark.has_monitor(), "must be");
   // The monitor exists
-  ObjectMonitor* monitor = ObjectSynchronizer::read_monitor(current, object, mark);
+  ObjectMonitor* monitor;
+  if (UseObjectMonitorTable) {
+    monitor = lock->object_monitor_cache();
+    if (monitor == nullptr) {
+      monitor = current->om_get_from_monitor_cache(object);
+      if (monitor == nullptr) {
+        monitor = get_monitor_from_table(current, object);
+      }
+    }
+  } else {
+    monitor = ObjectSynchronizer::read_monitor(mark);
+  }
   if (monitor->has_anonymous_owner()) {
     assert(current->lock_stack().contains(object), "current must have object on its lock stack");
     monitor->set_owner_from_anonymous(current);
@@ -874,9 +885,6 @@ ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(oop object, O
         // with the ObjectMonitor, it is safe to allow async deflation:
         ObjectSynchronizer::_in_use_list.add(monitor);
 
-        // Hopefully the performance counters are allocated on distinct
-        // cache lines to avoid false sharing on MP systems ...
-        OM_PERFDATA_OP(Inflations, inc());
         log_inflate(current, object, cause);
         if (event.should_commit()) {
           post_monitor_inflate_event(&event, object, cause);
@@ -915,9 +923,6 @@ ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(oop object, O
     // with the ObjectMonitor, it is safe to allow async deflation:
     ObjectSynchronizer::_in_use_list.add(m);
 
-    // Hopefully the performance counters are allocated on distinct
-    // cache lines to avoid false sharing on MP systems ...
-    OM_PERFDATA_OP(Inflations, inc());
     log_inflate(current, object, cause);
     if (event.should_commit()) {
       post_monitor_inflate_event(&event, object, cause);
@@ -983,7 +988,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_fast_locked_object(oop object, O
   return monitor;
 }
 
-ObjectMonitor* LightweightSynchronizer::inflate_and_enter(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current) {
+ObjectMonitor* LightweightSynchronizer::inflate_and_enter(oop object, BasicLock* lock, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used for lightweight");
   VerifyThreadState vts(locking_thread, current);
 
@@ -1009,18 +1014,20 @@ ObjectMonitor* LightweightSynchronizer::inflate_and_enter(oop object, ObjectSync
 
   NoSafepointVerifier nsv;
 
-  // Lightweight monitors require that hash codes are installed first
-  ObjectSynchronizer::FastHashCode(locking_thread, object);
-
   // Try to get the monitor from the thread-local cache.
   // There's no need to use the cache if we are locking
   // on behalf of another thread.
   if (current == locking_thread) {
-    monitor = current->om_get_from_monitor_cache(object);
+    monitor = lock->object_monitor_cache();
+    if (monitor == nullptr) {
+      monitor = current->om_get_from_monitor_cache(object);
+    }
   }
 
   // Get or create the monitor
   if (monitor == nullptr) {
+    // Lightweight monitors require that hash codes are installed first
+    ObjectSynchronizer::FastHashCode(locking_thread, object);
     monitor = get_or_insert_monitor(object, current, cause);
   }
 
@@ -1168,9 +1175,6 @@ bool LightweightSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread* 
   assert(obj != nullptr, "must be");
   NoSafepointVerifier nsv;
 
-  // If quick_enter succeeds with entering, the cache should be in a valid initialized state.
-  CacheSetter cache_setter(current, lock);
-
   LockStack& lock_stack = current->lock_stack();
   if (lock_stack.is_full()) {
     // Always go into runtime if the lock stack is full.
@@ -1197,17 +1201,28 @@ bool LightweightSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread* 
 #endif
 
   if (mark.has_monitor()) {
-    ObjectMonitor* const monitor = UseObjectMonitorTable ? current->om_get_from_monitor_cache(obj) :
-                                                           ObjectSynchronizer::read_monitor(mark);
+    ObjectMonitor* monitor;
+    if (UseObjectMonitorTable) {
+      // C2 fast-path may have put the monitor in the cache in the BasicLock.
+      monitor = lock->object_monitor_cache();
+      if (monitor == nullptr) {
+        // Otherwise look up the monitor in the thread's OMCache.
+        monitor = current->om_get_from_monitor_cache(obj);
+      }
+    } else {
+      monitor = ObjectSynchronizer::read_monitor(mark);
+    }
 
     if (monitor == nullptr) {
       // Take the slow-path on a cache miss.
       return false;
     }
 
-    if (monitor->try_enter(current)) {
-      // ObjectMonitor enter successful.
-      cache_setter.set_monitor(monitor);
+    if (UseObjectMonitorTable) {
+      lock->set_object_monitor_cache(monitor);
+    }
+
+    if (monitor->spin_enter(current)) {
       return true;
     }
   }

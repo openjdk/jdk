@@ -238,7 +238,7 @@
           "Force counted loops to keep a safepoint")                        \
                                                                             \
   product(bool, UseLoopPredicate, true,                                     \
-          "Generate a predicate to select fast/slow loop versions")         \
+          "Move checks with uncommon trap out of loops.")                   \
                                                                             \
   develop(bool, TraceLoopPredicate, false,                                  \
           "Trace generation of loop predicates")                            \
@@ -345,6 +345,12 @@
                                                                             \
   develop(bool, TraceLoopUnswitching, false,                                \
           "Trace loop unswitching")                                         \
+                                                                            \
+  product(bool, LoopMultiversioning, true, DIAGNOSTIC,                      \
+          "Enable loop multiversioning (for speculative compilation)")      \
+                                                                            \
+  develop(bool, TraceLoopMultiversioning, false,                            \
+          "Trace loop multiversioning")                                     \
                                                                             \
   product(bool, AllowVectorizeOnDemand, true,                               \
           "Globally suppress vectorization set in VectorizeMethod")         \
@@ -789,7 +795,9 @@
           range(0, max_juint)                                               \
                                                                             \
   product(bool, UseProfiledLoopPredicate, true,                             \
-          "Move predicates out of loops based on profiling data")           \
+          "Move checks with an uncommon trap out of loops based on "        \
+          "profiling data. "                                                \
+          "Requires UseLoopPredicate to be turned on (default).")           \
                                                                             \
   develop(uintx, StressLongCountedLoop, 0,                                  \
           "if > 0, convert int counted loops to long counted loops"         \

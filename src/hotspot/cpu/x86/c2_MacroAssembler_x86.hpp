@@ -510,6 +510,7 @@ public:
   void vector_rearrange_int_float(BasicType bt, XMMRegister dst, XMMRegister shuffle,
                                   XMMRegister src, int vlen_enc);
 
+  void efp16sh(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
   void vgather_subword(BasicType elem_ty, XMMRegister dst,  Register base, Register idx_base, Register offset,
                        Register mask, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
@@ -588,4 +589,6 @@ public:
 
   void select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
 
+  void scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                           KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP
