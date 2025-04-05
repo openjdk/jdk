@@ -161,9 +161,11 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
            p0->is_CMove() ||
            VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc) ||
            VectorNode::is_convert_opcode(opc) ||
+           VectorNode::is_reinterpret_opcode(opc) ||
            VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(opc) ||
-           opc == Op_FmaD ||
-           opc == Op_FmaF ||
+           opc == Op_FmaD  ||
+           opc == Op_FmaF  ||
+           opc == Op_FmaHF ||
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "pack type must be in this list");
