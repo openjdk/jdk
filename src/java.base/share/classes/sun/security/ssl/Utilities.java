@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.ssl;
 
 import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.regex.Pattern;
 import javax.net.ssl.*;
@@ -141,6 +142,19 @@ final class Utilities {
             throw new RuntimeException("Value of " + propName
                 + " must either be 'true' or 'false'");
         }
+    }
+
+    static String digestAlgToKDFAlg(String digestAlg) throws SSLHandshakeException {
+        String sanitizedAlg = digestAlg.replace("-", "");
+        return switch (sanitizedAlg) {
+            case "SHA256" -> "HKDF-" + sanitizedAlg;
+            case "SHA384" -> "HKDF-" + sanitizedAlg;
+            case "SHA512" -> "HKDF-" + sanitizedAlg;
+            default -> throw new SSLHandshakeException(
+                    digestAlg + " cannot be converted to a valid KDF algorithm",
+                    new NoSuchAlgorithmException(
+                    digestAlg + " cannot be converted to a valid KDF algorithm"));
+        };
     }
 
     static String indent(String source) {
