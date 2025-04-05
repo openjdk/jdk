@@ -829,7 +829,6 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
   // C2 uses the value of ZF to determine the continuation.
 }
 
-#ifdef ASSERT
 static void abort_checked_cast_int(jint val, jint lo, jint hi) {
   fatal("Invalid CastII, val: %d, lo: %d, hi: %d", val, lo, hi);
 }
@@ -907,7 +906,6 @@ void C2_MacroAssembler::checked_cast_long(const TypeLong* type, Register val, Re
   bind(succeed);
   BLOCK_COMMENT("} // CastLL");
 }
-#endif // ASSERT
 
 //-------------------------------------------------------------------------------------------
 // Generic instructions support for use in .ad files C2 code generation

@@ -669,7 +669,7 @@
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \
                                                                             \
-  develop(uint, VerifyConstraintCasts, 0,                                   \
+  product(uint, VerifyConstraintCasts, 0, DIAGNOSTIC,                       \
           "Perform runtime checks to verify the value of a "                \
           "ConstraintCast lies inside its type"                             \
           "0 = does not perform any verification, "                         \

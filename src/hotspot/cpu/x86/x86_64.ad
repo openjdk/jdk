@@ -7623,7 +7623,7 @@ instruct castII_checked(rRegI dst, rFlagsReg cr)
   effect(KILL cr);
   format %{ "# checked_cast_II $dst" %}
   ins_encode %{
-    DEBUG_ONLY(__ checked_cast_int(bottom_type()->is_int(), $dst$$Register));
+    __ checked_cast_int(bottom_type()->is_int(), $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -7650,7 +7650,7 @@ instruct castLL_checked_L32(rRegL dst, rFlagsReg cr)
   effect(KILL cr);
   format %{ "# checked_cast_LL $dst" %}
   ins_encode %{
-    DEBUG_ONLY(__ checked_cast_long(bottom_type()->is_long(), $dst$$Register, noreg));
+    __ checked_cast_long(bottom_type()->is_long(), $dst$$Register, noreg);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -7665,7 +7665,7 @@ instruct castLL_checked(rRegL dst, rRegL tmp, rFlagsReg cr)
   effect(KILL cr, TEMP tmp);
   format %{ "# checked_cast_LL $dst\tusing $tmp as TEMP" %}
   ins_encode %{
-    DEBUG_ONLY(__ checked_cast_long(bottom_type()->is_long(), $dst$$Register, $tmp$$Register));
+    __ checked_cast_long(bottom_type()->is_long(), $dst$$Register, $tmp$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
