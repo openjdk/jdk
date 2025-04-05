@@ -3097,6 +3097,8 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
       result |= CPU_LZCNT;
     if (ext_cpuid1_ecx.bits.sse4a != 0)
       result |= CPU_SSE4A;
+    if (sef_cpuid7_ebx.bits.clwb != 0)
+      result |= CPU_CLWB;
   }
 
   // Intel features.
