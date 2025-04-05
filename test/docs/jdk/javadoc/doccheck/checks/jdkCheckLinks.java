@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8337109
+ * @bug 8337109 8349369
  * @summary Check Links in the generated documentation
  * @library /test/langtools/tools/lib ../../doccheck /test/lib ../../../../tools/tester
  * @build DocTester toolbox.TestRunner
