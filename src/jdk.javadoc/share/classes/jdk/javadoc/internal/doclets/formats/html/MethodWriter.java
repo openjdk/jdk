@@ -243,7 +243,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
                     utils.isLinkable(holder))) {
                 writer.addInlineComment(method, methodContent);
             } else {
-                if (!utils.hasHiddenTag(holder) && !utils.hasHiddenTag(method)) {
+                if (!utils.isHidden(holder) && !utils.isHidden(method)) {
                     Content link =
                             writer.getDocLink(HtmlLinkInfo.Kind.PLAIN,
                                     holder, method,
@@ -358,7 +358,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
             //is not visible so don't document this.
             return;
         }
-        if (utils.hasHiddenTag(holder) || utils.hasHiddenTag(method)) {
+        if (utils.isHidden(holder) || utils.isHidden(method)) {
             return;
         }
 

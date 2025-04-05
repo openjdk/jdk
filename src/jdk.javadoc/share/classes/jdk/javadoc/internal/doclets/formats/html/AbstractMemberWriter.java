@@ -272,7 +272,7 @@ public abstract class AbstractMemberWriter {
             if (Objects.equals(inheritedClass, typeElement)) {
                 continue;
             }
-            if (utils.hasHiddenTag(inheritedClass)) {
+            if (utils.isHidden(inheritedClass)) {
                 continue;
             }
 
