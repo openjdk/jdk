@@ -792,10 +792,6 @@ bool HandshakeState::suspend() {
 
 bool HandshakeState::resume() {
   if (!is_suspended()) {
-    return false;
-  }
-  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-  if (!is_suspended()) {
     assert(!_handshakee->is_suspended(), "cannot be suspended without a suspend request");
     return false;
   }
