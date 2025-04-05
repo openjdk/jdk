@@ -662,7 +662,7 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
 }
 
 void SystemDictionaryShared::finish_exclusion_checks() {
-  if (CDSConfig::is_dumping_dynamic_archive()) {
+  if (CDSConfig::is_dumping_dynamic_archive() || CDSConfig::is_dumping_preimage_static_archive()) {
     // Do this first -- if a base class is excluded due to duplication,
     // all of its subclasses will also be excluded.
     ResourceMark rm;
