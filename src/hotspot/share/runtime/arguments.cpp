@@ -390,7 +390,9 @@ void Arguments::init_system_properties() {
   PropertyList_add(&_system_properties, new SystemProperty("jdk.debug", VM_Version::jdk_debug_level(),  false));
 
   // Initialize the vm.info now, but it will need updating after argument parsing.
-  _vm_info = new SystemProperty("java.vm.info", VM_Version::vm_info_string(), true);
+  const char* vm_info = VM_Version::vm_info_string();
+  _vm_info = new SystemProperty("java.vm.info", vm_info, true);
+  FREE_C_HEAP_ARRAY(char, vm_info);
 
   // Following are JVMTI agent writable properties.
   // Properties values are set to nullptr and they are
@@ -1325,8 +1327,10 @@ void Arguments::set_mode_flags(Mode mode) {
 
   // Ensure Agent_OnLoad has the correct initial values.
   // This may not be the final mode; mode may change later in onload phase.
+  const char* vm_info = VM_Version::vm_info_string();
   PropertyList_unique_add(&_system_properties, "java.vm.info",
-                          VM_Version::vm_info_string(), AddProperty, UnwriteableProperty, ExternalProperty);
+                          vm_info, AddProperty, UnwriteableProperty, ExternalProperty);
+  FREE_C_HEAP_ARRAY(char, vm_info);
 
   UseInterpreter             = true;
   UseCompiler                = true;
