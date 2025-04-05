@@ -40,6 +40,7 @@ private:
   Tuple<Ts...> _remaining;
 
 public:
+  constexpr Tuple() noexcept {}
   constexpr Tuple(const T& first, const Ts&... remaining) noexcept
     : _first(first), _remaining(remaining...) {}
 
