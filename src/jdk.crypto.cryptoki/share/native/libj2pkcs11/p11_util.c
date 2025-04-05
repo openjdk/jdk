@@ -416,6 +416,7 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
                  case CKM_AES_CTR:
                  case CKM_RSA_PKCS_PSS:
                  case CKM_CAMELLIA_CTR:
+                 case CKM_EXTRACT_KEY_FROM_KEY:
                      // params do not contain pointers
                      break;
                  case CKM_PKCS5_PBKD2:

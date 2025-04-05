@@ -49,9 +49,11 @@ import static sun.security.pkcs11.TemplateManager.O_GENERATE;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 import sun.security.util.DerValue;
+import sun.security.util.InternalPrivateKey;
 import sun.security.util.Length;
 import sun.security.util.ECUtil;
 import sun.security.jca.JCAUtil;
+import sun.security.util.SliceableSecretKey;
 
 /**
  * Key implementation classes.
@@ -399,6 +401,13 @@ abstract class P11Key implements Key, Length {
 
     static PrivateKey privateKey(Session session, long keyID, String algorithm,
             int keyLength, CK_ATTRIBUTE[] attrs) {
+        return privateKey(session, keyID, algorithm, keyLength, attrs, null);
+    }
+
+    // Create a PrivateKey with an optional PublicKey. The PublicKey is only
+    // added to EC keys at the moment.
+    static PrivateKey privateKey(Session session, long keyID, String algorithm,
+            int keyLength, CK_ATTRIBUTE[] attrs, PublicKey pk) {
         attrs = getAttributes(session, keyID, attrs, new CK_ATTRIBUTE[] {
                     new CK_ATTRIBUTE(CKA_TOKEN),
                     new CK_ATTRIBUTE(CKA_SENSITIVE),
@@ -417,7 +426,7 @@ abstract class P11Key implements Key, Length {
             case "DH" -> P11DHPrivateKeyInternal.of(session, keyID, algorithm,
                     keyLength, attrs, keySensitive);
             case "EC" -> P11ECPrivateKeyInternal.of(session, keyID, algorithm,
-                    keyLength, attrs, keySensitive);
+                    keyLength, attrs, keySensitive, pk);
             default -> throw new ProviderException
                     ("Unknown private key algorithm " + algorithm);
         };
@@ -446,7 +455,7 @@ abstract class P11Key implements Key, Length {
         }
     }
 
-    static class P11SecretKey extends P11Key implements SecretKey {
+    static class P11SecretKey extends P11Key implements SecretKey, SliceableSecretKey {
         @Serial
         private static final long serialVersionUID = -7828241727014329084L;
 
@@ -485,6 +494,42 @@ abstract class P11Key implements Key, Length {
                 }
             }
             return b;
+        }
+
+        @Override
+        public P11SecretKey slice(String alg, int from, int to) {
+            Objects.checkFromToIndex(from, to, length() / 8);
+            try {
+                CK_MECHANISM mechanism = new CK_MECHANISM(CKM_EXTRACT_KEY_FROM_KEY,
+                        new CK_KEY_EXTRACT_FROM_KEY(from * 8));
+
+                P11SecretKeyFactory.KeyInfo ki = P11SecretKeyFactory.getKeyInfo(alg);
+                if (ki == null) {
+                    throw new UnsupportedOperationException("A PKCS #11 key " +
+                            "type (CKK_*) was not found for a key of the algorithm '" +
+                            alg + "'.");
+                }
+                CK_ATTRIBUTE[] attrs = new CK_ATTRIBUTE[] {
+                        new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
+                        new CK_ATTRIBUTE(CKA_KEY_TYPE, ki.keyType),
+                        new CK_ATTRIBUTE(CKA_VALUE_LEN, to - from),
+                };
+
+                var session = token.getOpSession();
+                attrs = token.getAttributes(O_GENERATE, CKO_SECRET_KEY,
+                        ki.keyType, attrs);
+                long newKeyHandle = token.p11.C_DeriveKey(
+                        session.id(),
+                        mechanism,
+                        getKeyID(),
+                        attrs
+                );
+
+                return (P11Key.P11SecretKey) P11Key.secretKey(session,
+                        newKeyHandle, alg, (to - from) * 8, null);
+            } catch (PKCS11Exception e) {
+                throw new UnsupportedOperationException(e);
+            }
         }
     }
 
@@ -1201,28 +1246,31 @@ abstract class P11Key implements Key, Length {
         }
     }
 
-    static class P11ECPrivateKeyInternal extends P11PrivateKey {
+    static class P11ECPrivateKeyInternal extends P11PrivateKey
+            implements ECKey, InternalPrivateKey {
 
         @Serial
         private static final long serialVersionUID = 1L;
 
+        private final PublicKey pk;
         protected transient ECParameterSpec params;
 
         static P11ECPrivateKeyInternal of(Session session, long keyID,
                 String algorithm, int keyLength, CK_ATTRIBUTE[] attrs,
-                boolean keySensitive) {
+                boolean keySensitive, PublicKey pk) {
             if (keySensitive) {
                 return new P11ECPrivateKeyInternal(session, keyID, algorithm,
-                        keyLength, attrs);
+                        keyLength, attrs, pk);
             } else {
                 return new P11ECPrivateKey(session, keyID, algorithm,
-                        keyLength, attrs);
+                        keyLength, attrs, pk);
             }
         }
 
         private P11ECPrivateKeyInternal(Session session, long keyID,
-                String algorithm, int keyLength, CK_ATTRIBUTE[] attrs) {
+                String algorithm, int keyLength, CK_ATTRIBUTE[] attrs, PublicKey pk) {
             super(session, keyID, algorithm, keyLength, attrs);
+            this.pk = pk;
         }
 
         private synchronized void fetchValues() {
@@ -1245,6 +1293,11 @@ abstract class P11Key implements Key, Length {
             fetchValues();
             return params;
         }
+
+        @Override
+        public PublicKey calculatePublicKey() {
+            return pk;
+        }
     }
 
     private static final class P11ECPrivateKey extends P11ECPrivateKeyInternal
@@ -1255,8 +1308,8 @@ abstract class P11Key implements Key, Length {
         private transient BigInteger s; // params in P11ECPrivateKeyInternal
 
         P11ECPrivateKey(Session session, long keyID, String algorithm,
-                int keyLength, CK_ATTRIBUTE[] attrs) {
-            super(session, keyID, algorithm, keyLength, attrs);
+                int keyLength, CK_ATTRIBUTE[] attrs, PublicKey pk) {
+            super(session, keyID, algorithm, keyLength, attrs, pk);
         }
 
         private synchronized void fetchValues() {
