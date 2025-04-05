@@ -262,16 +262,24 @@ public final class Security {
             }
         }
 
+        private static Path normalize(Path path, boolean isRegularFile)
+                throws IOException {
+            if (isRegularFile) {
+                try {
+                    return path.toRealPath();
+                } catch (IOException ingore) {
+                    // Can fail due to lack of permissions in parent directories
+                }
+            } else if (Files.isDirectory(path)) {
+                throw new IOException("Is a directory");
+            }
+            return path.toAbsolutePath();
+        }
+
         private static void loadFromPath(Path path, LoadingMode mode)
                 throws IOException {
             boolean isRegularFile = Files.isRegularFile(path);
-            if (isRegularFile) {
-                path = path.toRealPath();
-            } else if (Files.isDirectory(path)) {
-                throw new IOException("Is a directory");
-            } else {
-                path = path.toAbsolutePath();
-            }
+            path = normalize(path, isRegularFile);
             if (activePaths.contains(path)) {
                 throw new InternalError("Cyclic include of '" + path + "'");
             }
