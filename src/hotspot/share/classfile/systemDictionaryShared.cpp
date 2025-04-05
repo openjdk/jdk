@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotClassFilter.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
@@ -34,6 +35,7 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
+#include "cds/lambdaFormInvokers.inline.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "cds/unregisteredClasses.hpp"
@@ -484,7 +486,10 @@ void SystemDictionaryShared::initialize() {
 void SystemDictionaryShared::init_dumptime_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   assert(SystemDictionaryShared::class_loading_may_happen(), "sanity");
-  _dumptime_table->allocate_info(k);
+  DumpTimeClassInfo* info = _dumptime_table->allocate_info(k);
+  if (AOTClassFilter::is_aot_tooling_class(k)) {
+    info->set_is_aot_tooling_class();
+  }
 }
 
 void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
@@ -1056,10 +1061,7 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
   if (DynamicArchive::is_mapped()) {
     // Use the regenerated holder classes in the dynamic archive as they
     // have more methods than those in the base archive.
-    if (name == vmSymbols::java_lang_invoke_Invokers_Holder() ||
-        name == vmSymbols::java_lang_invoke_DirectMethodHandle_Holder() ||
-        name == vmSymbols::java_lang_invoke_LambdaForm_Holder() ||
-        name == vmSymbols::java_lang_invoke_DelegatingMethodHandle_Holder()) {
+    if (LambdaFormInvokers::may_be_regenerated_class(name)) {
       record = dynamic_dict->lookup(name, hash, 0);
       if (record != nullptr) {
         return record;
