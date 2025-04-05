@@ -360,17 +360,11 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     }
     assert(_obj != noreg, "must be a valid register");
     Register tmp = rax;
-    Register tmp2 = rbx;
     __ push(tmp);
-    __ push(tmp2);
-    // Load without verification to keep code size small. We need it because
-    // begin_initialized_entry_offset has to fit in a byte. Also, we know it's not null.
-    __ movptr(tmp2, Address(_obj, java_lang_Class::klass_offset()));
-    __ get_thread(tmp);
-    __ cmpptr(tmp, Address(tmp2, InstanceKlass::init_thread_offset()));
-    __ pop(tmp2);
-    __ pop(tmp);
-    __ jcc(Assembler::notEqual, call_patch);
+    __ movptr(tmp, Address(_obj, java_lang_Class::klass_offset()));
+    __ cmpptr(r15_thread, Address(tmp, InstanceKlass::init_thread_offset()));
+    __ pop(tmp); // pop it right away, no matter which path we take
+    __ jccb(Assembler::notEqual, call_patch);
 
     // access_field patches may execute the patched code before it's
     // copied back into place so we need to jump back into the main
