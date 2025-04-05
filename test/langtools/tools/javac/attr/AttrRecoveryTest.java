@@ -84,7 +84,7 @@ public class AttrRecoveryTest extends TestRunner {
                          """,
                          "java.lang.Deprecated",
                          "Test.java:2:30: compiler.err.dot.class.expected",
-                         "Test.java:2:51: compiler.err.expected4: class, interface, enum, record",
+                         "Test.java:2:51: compiler.err.class.method.or.field.expected",
                          "Test.java:2:26: compiler.err.unexpected.type: kindname.value, kindname.class",
                          "3 errors"),
             new TestCase("b",
@@ -95,7 +95,7 @@ public class AttrRecoveryTest extends TestRunner {
                          """,
                          null,
                          "Test.java:2:30: compiler.err.dot.class.expected",
-                         "Test.java:2:39: compiler.err.expected4: class, interface, enum, record",
+                         "Test.java:2:39: compiler.err.class.method.or.field.expected",
                          "Test.java:2:26: compiler.err.unexpected.type: kindname.value, kindname.class",
                          "3 errors")
         };

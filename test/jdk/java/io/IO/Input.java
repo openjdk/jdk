@@ -23,7 +23,7 @@
 
 import java.io.IOException;
 
-import static java.io.IO.readln;
+import static java.lang.IO.readln;
 
 public class Input {
 
