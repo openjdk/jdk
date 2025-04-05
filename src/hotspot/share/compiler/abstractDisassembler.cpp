@@ -43,6 +43,18 @@ bool AbstractDisassembler::_show_offset        = false;
 bool AbstractDisassembler::_show_structs       = true;
 bool AbstractDisassembler::_show_comment       = true;
 bool AbstractDisassembler::_show_block_comment = true;
+bool AbstractDisassembler::_print_platform_asm = true;
+
+// Default values for "typical" platform assembler
+PlatformDepAsmStrings AbstractDisassembler::_pd_strings = PlatformDepAsmStrings {
+  /*_hex_prefix*/ "0x",
+  /*_comment_prefix*/ "#",
+  /*_inline_comment_open*/ "/* ",
+  /*_inline_comment_close*/ "*/ ",
+  /*_origin_command*/ ".org",
+  /*_start_text_command*/ ".text",
+  /*_insns_start*/ ".byte",
+};
 
 // set "true" to see what's in memory bit by bit
 // might prove cumbersome on platforms where instr_len is hard to find out
@@ -345,6 +357,11 @@ void AbstractDisassembler::decode_range_abstract(address range_start, address ra
 // it respects the actual instruction length where possible.
 void AbstractDisassembler::decode_abstract(address start, address end, outputStream* ost,
                                            const int max_instr_size_in_bytes) {
+  if (AbstractDisassembler::print_platform_asm()) {
+    decode_platform(start, end, ost);
+    return;
+  }
+
   int     idx = 0;
   address pos = start;
 
@@ -359,4 +376,38 @@ void AbstractDisassembler::decode_abstract(address start, address end, outputStr
   //---<  Close the output (Marker for post-mortem disassembler)  >---
   st->bol();
   st->print_cr("[/MachCode]");
+}
+
+// As decode_abstract(), but in a platform-assembler-compatible format.
+void AbstractDisassembler::decode_platform(address start, address end, outputStream* ost) {
+  address p = start;
+  //---<  Open the output (Marker for post-mortem disassembler)  >---
+  ost->print_cr("[MachCode]");
+  ost->move_to(28);
+  ost->print("%s ", AbstractDisassembler::pd_start_text_command());
+  ost->bol();
+  ost->move_to(28);
+  // Set the origin the last 4 digits of the address. This allows a
+  // reader easily to see the correspondence between a memory dump and
+  // the corresponding instructions.
+  ost->print("%s 0x0%04lx", AbstractDisassembler::pd_origin_command(),
+             (unsigned long)(p2i(p) & 0x0ffff));
+  ost->bol();
+  while ((p < end) && (p != nullptr)) {
+    if (ost->position() == 0) {
+      ost->print("%s ", AbstractDisassembler::pd_inline_comment_open());
+      ost->print(PTR_FORMAT, p2i(p));
+      ost->print(" %s  ", AbstractDisassembler::pd_inline_comment_close());
+      ost->print("%s ", AbstractDisassembler::pd_insns_start());
+    } else {
+      ost->print(", ");
+    }
+    ost->print("%s%02x", AbstractDisassembler::pd_hex_prefix(), *p++);
+    if (ost->position() >= 80) {
+      ost->bol();
+    }
+  }
+  //---<  Close the output (Marker for post-mortem disassembler)  >---
+  ost->bol();
+  ost->print_cr("[/MachCode]");
 }
