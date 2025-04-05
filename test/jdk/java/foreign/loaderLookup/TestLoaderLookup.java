@@ -28,8 +28,8 @@
  * @run main/othervm/native --enable-native-access=ALL-UNNAMED TestLoaderLookup
  */
 
-import java.lang.foreign.*;
-import java.lang.reflect.*;
+import java.lang.foreign.MemorySegment;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;

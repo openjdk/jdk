@@ -26,14 +26,14 @@
  * @run junit/othervm/native --enable-native-access=ALL-UNNAMED TestSymbolLookupFindOrThrow
  */
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.util.NoSuchElementException;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThrows;
 
 final class TestSymbolLookupFindOrThrow {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,15 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestIllegalLink
  */
 
+import jdk.internal.foreign.CABI;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
 import java.lang.foreign.Arena;
-import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySegment;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -41,12 +45,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.internal.foreign.CABI;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
-import static java.lang.foreign.ValueLayout.*;
-
+import static java.lang.foreign.ValueLayout.ADDRESS;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 

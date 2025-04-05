@@ -27,6 +27,8 @@
  * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestAddressDereference
  */
 
+import org.testng.annotations.*;
+
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
@@ -40,8 +42,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.testng.annotations.*;
 
 import static org.testng.Assert.*;
 
