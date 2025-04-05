@@ -207,7 +207,7 @@ class WindowsLinkSupport {
         char c1 = path.charAt(1);
         if ((c0 <= 'z' && c0 >= 'a' || c0 <= 'Z' && c0 >= 'A') &&
             c1 == ':' && path.charAt(2) == '\\') {
-            // Driver specifier
+            // Drive specifier
             sb.append(Character.toUpperCase(c0));
             sb.append(":\\");
             start = 3;
@@ -306,21 +306,22 @@ class WindowsLinkSupport {
             /*
              * typedef struct _REPARSE_DATA_BUFFER {
              *     ULONG  ReparseTag;
-             *     USHORT  ReparseDataLength;
-             *     USHORT  Reserved;
+             *     USHORT ReparseDataLength;
+             *     USHORT Reserved;
              *     union {
              *         struct {
-             *             USHORT  SubstituteNameOffset;
-             *             USHORT  SubstituteNameLength;
-             *             USHORT  PrintNameOffset;
-             *             USHORT  PrintNameLength;
+             *             USHORT SubstituteNameOffset;
+             *             USHORT SubstituteNameLength;
+             *             USHORT PrintNameOffset;
+             *             USHORT PrintNameLength;
+             *             ULONG  Flags;
              *             WCHAR  PathBuffer[1];
              *         } SymbolicLinkReparseBuffer;
              *         struct {
-             *             USHORT  SubstituteNameOffset;
-             *             USHORT  SubstituteNameLength;
-             *             USHORT  PrintNameOffset;
-             *             USHORT  PrintNameLength;
+             *             USHORT SubstituteNameOffset;
+             *             USHORT SubstituteNameLength;
+             *             USHORT PrintNameOffset;
+             *             USHORT PrintNameLength;
              *             WCHAR  PathBuffer[1];
              *         } MountPointReparseBuffer;
              *         struct {
@@ -330,15 +331,22 @@ class WindowsLinkSupport {
              * } REPARSE_DATA_BUFFER
              */
             final short OFFSETOF_REPARSETAG = 0;
-            final short OFFSETOF_PATHOFFSET = 8;
-            final short OFFSETOF_PATHLENGTH = 10;
-            final short OFFSETOF_PATHBUFFER = 16 + 4;   // check this
 
             int tag = (int)unsafe.getLong(buffer.address() + OFFSETOF_REPARSETAG);
-            if (tag != IO_REPARSE_TAG_SYMLINK) {
+            if (!(tag == IO_REPARSE_TAG_SYMLINK ||
+                  tag == IO_REPARSE_TAG_MOUNT_POINT)) {
                 String pathname = path.getPathForExceptionMessage();
                 throw new NotLinkException(pathname, null, "Reparse point is not a symbolic link");
             }
+
+            final short OFFSETOF_PATHOFFSET = 8;
+            final short OFFSETOF_PATHLENGTH = 10;
+            final short OFFSETOF_PATHBUFFER;
+            if (tag == IO_REPARSE_TAG_SYMLINK)
+                // add 4 for SymbolicLinkReparseBuffer.Flags
+                OFFSETOF_PATHBUFFER = 16 + 4;
+            else // IO_REPARSE_TAG_MOUNT_POINT
+                OFFSETOF_PATHBUFFER = 16;
 
             // get offset and length of target
             short nameOffset = unsafe.getShort(buffer.address() + OFFSETOF_PATHOFFSET);
@@ -356,6 +364,21 @@ class WindowsLinkSupport {
             if (target.isEmpty()) {
                 throw new IOException("Symbolic link target is invalid");
             }
+
+            if (tag == IO_REPARSE_TAG_MOUNT_POINT) {
+                // check that target specifies an absolute path but not
+                // whether it resolves to a directory. if it is not a
+                // directory junction then it is likely a volume junction
+                // which we do not treat as equivalent to a symbolic link
+                char c0 = target.charAt(0);
+                if (!(c0 <= 'z' && c0 >= 'a' || c0 <= 'Z' && c0 >= 'A') ||
+                    target.charAt(1) != ':' || target.charAt(2) != '\\') {
+                    String pathname = path.getPathForExceptionMessage();
+                    throw new NotLinkException(pathname, target,
+                        "Reparse point is not a directory junction");
+                }
+            }
+
             return target;
         }
     }
