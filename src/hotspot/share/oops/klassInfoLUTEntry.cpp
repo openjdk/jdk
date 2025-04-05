@@ -159,7 +159,7 @@ uint32_t KlassLUTEntry::build_from_ak(const ArrayKlass* ak) {
 
 }
 
-uint32_t KlassLUTEntry::build_from_klass(const Klass* k) {
+KlassLUTEntry KlassLUTEntry::build_from_klass(const Klass* k) {
 
   uint32_t value = invalid_entry;
   if (k->is_array_klass()) {
@@ -173,7 +173,7 @@ uint32_t KlassLUTEntry::build_from_klass(const Klass* k) {
                       k->name()->as_C_string(), not_encodable_reason);
     }
   }
-  return value;
+  return KlassLUTEntry(value);
 }
 
 #ifdef ASSERT

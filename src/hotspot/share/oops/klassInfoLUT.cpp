@@ -99,44 +99,45 @@ int KlassInfoLUT::try_register_perma_cld(ClassLoaderData* cld) {
   return 0;
 }
 
-static void log_klass_registration(const Klass* k, narrowKlass nk, uint32_t klute, const char* message) {
+static void log_klass_registration(const Klass* k, narrowKlass nk, KlassLUTEntry klute, const char* message) {
   char tmp[1024];
   log_debug(klut)("Klass " PTR_FORMAT ", nk %u, klute: " INT32_FORMAT_X_0 ": %s %s%s",
-                  p2i(k), nk, klute,
+                  p2i(k), nk, klute.value(),
                   message,
                   (k->is_shared() ? "(shared) " : ""),
                   k->name()->as_C_string(tmp, sizeof(tmp)));
 }
 
-KlassLUTEntry KlassInfoLUT::register_klass(Klass* k) {
+KlassLUTEntry KlassInfoLUT::register_klass(const Klass* k) {
   assert(UseKLUT, "?");
-  const narrowKlass nk = CompressedKlassPointers::encode(k);
+  const narrowKlass nk = CompressedKlassPointers::encode(const_cast<Klass*>(k)); // TODO CompressedKlassPointers should support correct constness
   assert(nk < num_entries(), "narrowKlass %u is OOB for LUT", nk);
 
-  uint32_t klute = k->klute();
-  if (KlassLUTEntry(klute).is_invalid()) {
-    // Calculate klute from Klass properties and update the table value.
-    klute = KlassLUTEntry::build_from_klass(k);
-    _entries[nk] = klute;
-    log_klass_registration(k, nk, klute, "registered");
-  } else {
-    // The Klass may already carry the pre-computed klute. That can happen if it was loaded from a shared
-    // archive, in which case it contains the klute computed at (dynamic) load time when dumping. In that
-    // case just reuse that value.
-    if (klute == _entries[nk]) {
+  KlassLUTEntry klute(k->klute());
+  if (!klute.is_invalid()) {
+    // The Klass already carries the pre-computed klute. That can happen if it was loaded from a shared
+    // archive, in which case it contains the klute computed at (dynamic) load time when dumping.
+    if (klute.value() == _entries[nk]) {
       log_klass_registration(k, nk, klute, "already registered");
     } else {
-      _entries[nk] = klute;
+      // Copy the klute value from the Klass to the table slot. This saves some cycles but, more importantly,
+      // makes the coding more robust when using it on Klasses that are not fully initialized yet (during CDS
+      // initialization we encounter Klasses with no associated CLD, for instance).
+      _entries[nk] = klute.value();
       log_klass_registration(k, nk, klute, "updated table value for");
     }
-
+  } else {
+    // Calculate klute from Klass properties and update the table value.
+    klute = KlassLUTEntry::build_from_klass(k);
+    _entries[nk] = klute.value();
+    log_klass_registration(k, nk, klute, "registered");
   }
 
 #ifdef ASSERT
   {
     // sanity checks
     KlassLUTEntry e2(at(nk));
-    assert(e2.value() == klute, "Sanity");
+    assert(e2 == klute, "Sanity");
     e2.verify_against_klass(k);
   }
 #endif // ASSERT
@@ -156,17 +157,18 @@ KlassLUTEntry KlassInfoLUT::register_klass(Klass* k) {
     inc_registered_IK_for_abstract_or_interface();
   }
 
-  return KlassLUTEntry(klute);
+  return klute;
 }
 
 #if INCLUDE_CDS
-// We only tolerate this for CDS. In that case, we expect the original class - during dumptime -
-// to be registered already, so it should have a valid KLUTE entry set which we only need to copy.
-// Note: we cannot calculate the klute here, since at this point the Klass has no associated
-// class loader data...
+// We only tolerate this for CDS.
 KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
   const Klass* k = CompressedKlassPointers::decode(nk);
   assert(k->is_shared(), "Only for CDS classes");
+  // In the CDS case, we expect the original class to have been registered during dumptime; so
+  // it should carry a valid KLUTE entry. We cannot calculate the KLUTE from the Klass here, since
+  // the Klass may not yet been fully initialized (CDS calls functions like oopDesc methods on
+  // oops that have Klasses that are not loaded yet, and therefore, e.g., have no associated CLD).
   const KlassLUTEntry klute(k->klute());
   assert(!klute.is_invalid(), "Must be a valid klute");
   _entries[nk] = klute.value();
