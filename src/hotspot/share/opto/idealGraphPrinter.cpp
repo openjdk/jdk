@@ -667,6 +667,15 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       print_prop("lrg", lrg_id);
     }
 
+    if (node->is_MachSafePoint()) {
+      const OopMap* oopmap = node->as_MachSafePoint()->oop_map();
+      if (oopmap != nullptr) {
+        stringStream oopmap_stream;
+        oopmap->print_on(&oopmap_stream);
+        print_prop("oopmap", oopmap_stream.freeze());
+      }
+    }
+
     Compile::current()->_in_dump_cnt--;
 
     tail(PROPERTIES_ELEMENT);
