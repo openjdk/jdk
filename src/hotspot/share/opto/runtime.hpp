@@ -180,6 +180,13 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _vectorizedMismatch_Type;
   static const TypeFunc* _ghash_processBlocks_Type;
   static const TypeFunc* _chacha20Block_Type;
+  static const TypeFunc* _kyberNtt_Type;
+  static const TypeFunc* _kyberInverseNtt_Type;
+  static const TypeFunc* _kyberNttMult_Type;
+  static const TypeFunc* _kyberAddPoly_2_Type;
+  static const TypeFunc* _kyberAddPoly_3_Type;
+  static const TypeFunc* _kyber12To16_Type;
+  static const TypeFunc* _kyberBarrettReduce_Type;
   static const TypeFunc* _dilithiumAlmostNtt_Type;
   static const TypeFunc* _dilithiumAlmostInverseNtt_Type;
   static const TypeFunc* _dilithiumNttMult_Type;
@@ -468,6 +475,10 @@ private:
     return _unsafe_setmemory_Type;
   }
 
+//  static const TypeFunc* digestBase_implCompress_Type(bool is_sha3);
+//  static const TypeFunc* digestBase_implCompressMB_Type(bool is_sha3);
+//  static const TypeFunc* double_keccak_Type();
+
   static inline const TypeFunc* array_fill_Type() {
     assert(_array_fill_Type != nullptr, "should be initialized");
     return _array_fill_Type;
@@ -582,6 +593,41 @@ private:
   static inline const TypeFunc* chacha20Block_Type() {
     assert(_chacha20Block_Type != nullptr, "should be initialized");
     return _chacha20Block_Type;
+  }
+
+  static const TypeFunc* kyberNtt_Type() {
+    assert(_kyberNtt_Type != nullptr, "should be initialized");
+    return _kyberNtt_Type;
+  }
+
+  static const TypeFunc* kyberInverseNtt_Type() {
+    assert(_kyberInverseNtt_Type != nullptr, "should be initialized");
+    return _kyberInverseNtt_Type;
+  }
+
+  static const TypeFunc* kyberNttMult_Type() {
+    assert(_kyberNttMult_Type != nullptr, "should be initialized");
+    return _kyberNttMult_Type;
+  }
+
+  static const TypeFunc* kyberAddPoly_2_Type() {
+    assert(_kyberAddPoly_2_Type != nullptr, "should be initialized");
+    return _kyberAddPoly_2_Type;
+  }
+
+  static const TypeFunc* kyberAddPoly_3_Type() {
+    assert(_kyberAddPoly_3_Type != nullptr, "should be initialized");
+    return _kyberAddPoly_3_Type;
+  }
+
+  static const TypeFunc* kyber12To16_Type() {
+    assert(_kyber12To16_Type != nullptr, "should be initialized");
+    return _kyber12To16_Type;
+  }
+
+  static const TypeFunc* kyberBarrettReduce_Type() {
+    assert(_kyberBarrettReduce_Type != nullptr, "should be initialized");
+    return _kyberBarrettReduce_Type;
   }
 
   static inline const TypeFunc* dilithiumAlmostNtt_Type() {
