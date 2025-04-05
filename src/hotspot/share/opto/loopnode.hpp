@@ -258,9 +258,13 @@ public:
   int   stride_con() const;
 
   // Match increment with optional truncation
-  static Node*
-  match_incr_with_optional_truncation(Node* expr, Node** trunc1, Node** trunc2, const TypeInteger** trunc_type,
-                                      BasicType bt);
+  struct TruncatedIncrement {
+    Node* incr = nullptr;
+    Node* trunc1 = nullptr;
+    Node* trunc2 = nullptr;
+    const TypeInteger* trunc_type = nullptr;
+  };
+  static TruncatedIncrement match_incr_with_optional_truncation(Node* expr, BasicType bt);
 
   // A 'main' loop has a pre-loop and a post-loop.  The 'main' loop
   // can run short a few iterations and may start a few iterations in.
@@ -1001,7 +1005,7 @@ private:
   void rewire_old_target_loop_entry_dependency_to_new_entry(LoopNode* target_loop_head,
                                                             const Node* old_target_loop_entry,
                                                             uint node_index_before_new_assertion_predicate_nodes);
-  void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
+  void insert_loop_limit_check_predicate(const ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
   void log_loop_tree();
 
@@ -1215,7 +1219,7 @@ public:
   void recompute_dom_depth();
 
   // Is safept not required by an outer loop?
-  bool is_deleteable_safept(Node* sfpt);
+  bool is_deleteable_safept(Node* sfpt) const;
 
   // Replace parallel induction variable (parallel to trip counter)
   void replace_parallel_iv(IdealLoopTree *loop);
@@ -1266,25 +1270,88 @@ public:
   // Per-Node transform
   virtual Node* transform(Node* n) { return nullptr; }
 
-  Node* loop_exit_control(Node* x, IdealLoopTree* loop);
-  Node* loop_exit_test(Node* back_control, IdealLoopTree* loop, Node*& incr, Node*& limit, BoolTest::mask& bt, float& cl_prob);
-  Node* loop_iv_incr(Node* incr, Node* x, IdealLoopTree* loop, Node*& phi_incr);
-  Node* loop_iv_stride(Node* incr, IdealLoopTree* loop, Node*& xphi);
-  PhiNode* loop_iv_phi(Node* xphi, Node* phi_incr, Node* x, IdealLoopTree* loop);
+  Node* loop_exit_control(const Node* x, const IdealLoopTree* loop) const;
+  struct LoopExitTest {
+    Node* cmp = nullptr;
+    Node* incr = nullptr;
+    Node* limit = nullptr;
+    const BoolTest::mask mask = BoolTest::illegal;
+    const float cl_prob = 0.0f;
+  };
+  LoopExitTest loop_exit_test(const Node* back_control, const IdealLoopTree* loop);
+  struct LoopIVIncr {
+    Node* incr = nullptr;
+    Node* phi_incr = nullptr;
+  };
+  LoopIVIncr loop_iv_incr(Node* old_incr, const Node* x, const IdealLoopTree* loop);
+  struct LoopIvStride {
+    Node* stride = nullptr;
+    Node* xphi = nullptr;
+  };
+  static LoopIvStride loop_iv_stride(const Node* incr);
+  static PhiNode* loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* x);
 
-  bool is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt);
+  bool try_convert_to_counted_loop(Node* head, IdealLoopTree*&loop, const BasicType iv_bt);
 
   Node* loop_nest_replace_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head, BasicType bt);
   bool create_loop_nest(IdealLoopTree* loop, Node_List &old_new);
-#ifdef ASSERT
-  bool convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* loop);
-#endif
+
   void add_parse_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop, SafePointNode* sfpt);
-  SafePointNode* find_safepoint(Node* back_control, Node* x, IdealLoopTree* loop);
+  SafePointNode* find_safepoint(Node* back_control, const Node* x, const IdealLoopTree* loop);
   IdealLoopTree* insert_outer_loop(IdealLoopTree* loop, LoopNode* outer_l, Node* outer_ift);
-  IdealLoopTree* create_outer_strip_mined_loop(BoolNode *test, Node *cmp, Node *init_control,
+  IdealLoopTree* create_outer_strip_mined_loop(Node *init_control,
                                                IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                Node*& entry_control, Node*& iffalse);
+
+  // FIXME: move to somewhere more sensible
+  class CountedLoopConverter {
+    PhaseIdealLoop* _phase;
+    Node* _head;
+    IdealLoopTree* _loop;
+    const BasicType _iv_bt;
+
+    // TODO: better naming for these flags?
+    bool _insert_stride_overflow_limit_check = false;
+    bool _insert_init_trip_limit_check = false;
+
+#ifdef ASSERT
+    bool _checked_for_counted_loop = false;
+#endif
+
+    Node* _limit;
+    jlong _stride_con;
+    Node* _phi;
+    Node* _phi_incr;
+    Node* _stride;
+    bool _includes_limit;
+    BoolTest::mask _bt;
+    Node* _increment;
+    Node* _cmp;
+    float _cl_prob;
+    Node* _sfpt;
+    jlong _final_correction;
+    Node* _trunc1;
+
+   public:
+    CountedLoopConverter(PhaseIdealLoop* phase, Node* head, IdealLoopTree* loop, const BasicType iv_bt)
+      : _phase(phase),
+        _head(head),
+        _loop(loop),
+        _iv_bt(iv_bt) {
+      assert(phase != nullptr, "");
+      assert(head != nullptr, "");
+      assert(loop != nullptr, "");
+      assert(iv_bt == T_INT || iv_bt == T_LONG, "");
+    }
+
+    bool is_counted_loop();
+    IdealLoopTree* convert();
+
+#ifdef ASSERT
+    bool should_stress_long_counted_loop() const;
+    bool stress_long_counted_loop() const;
+#endif
+  };
 
   Node* exact_limit( IdealLoopTree *loop );
 
@@ -1825,7 +1892,6 @@ public:
 
   ConNode* zerocon(BasicType bt);
 };
-
 
 class AutoNodeBudget : public StackObj
 {
