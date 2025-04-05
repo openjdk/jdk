@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,17 +66,16 @@ static int init_jvm(int argc, char **argv, bool disable_error_handling, JavaVM**
   argc--;
   argv++;
 
-  int extra_jvm_args = disable_error_handling ? 4 : 2;
+  int extra_jvm_args = disable_error_handling ? 3 : 1;
   int num_jvm_options = argc + extra_jvm_args;
 
   JavaVMOption* options = new JavaVMOption[num_jvm_options];
-  options[0].optionString = (char*) "-Dsun.java.launcher.is_altjvm=true";
-  options[1].optionString = (char*) "-XX:+ExecutingUnitTests";
+  options[0].optionString = (char*) "-XX:+ExecutingUnitTests";
 
   if (disable_error_handling) {
     // don't create core files or hs_err files executing assert tests
-    options[2].optionString = (char*) "-XX:+SuppressFatalErrorMessage";
-    options[3].optionString = (char*) "-XX:-CreateCoredumpOnCrash";
+    options[1].optionString = (char*) "-XX:+SuppressFatalErrorMessage";
+    options[2].optionString = (char*) "-XX:-CreateCoredumpOnCrash";
   }
 
   for (int i = 0; i < argc; i++) {
