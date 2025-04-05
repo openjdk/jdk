@@ -103,7 +103,7 @@ class ciMetadata: public ciBaseObject {
 
   Metadata* constant_encoding() { return _metadata; }
 
-  bool equals(ciMetadata* obj) const { return (this == obj); }
+  bool equals(const ciMetadata* obj) const { return (this == obj); }
 
   uint hash() { return ident() * 31; } // ???
 
