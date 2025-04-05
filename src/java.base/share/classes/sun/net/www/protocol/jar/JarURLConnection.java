@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import static jdk.internal.util.Exceptions.filterJarName;
+import static jdk.internal.util.Exceptions.throwException;
+
 
 /**
  * @author Benjamin Renaud
@@ -126,9 +129,10 @@ public class JarURLConnection extends java.net.JarURLConnection {
                         factory.closeIfNotCached(url, jarFile);
                     } catch (Exception e) {
                     }
-                    throw new FileNotFoundException("JAR entry " + entryName +
-                            " not found in " +
-                            jarFile.getName());
+                    throwException(FileNotFoundException.class,
+                                   "JAR entry %s not found in jar file %s",
+                                   filterJarName(entryName),
+                                   filterJarName(jarFile.getName()));
                 }
             }
 
@@ -166,9 +170,10 @@ public class JarURLConnection extends java.net.JarURLConnection {
             throw new IOException("no entry name specified");
         } else {
             if (jarEntry == null) {
-                throw new FileNotFoundException("JAR entry " + entryName +
-                                                " not found in " +
-                                                jarFile.getName());
+                throwException(FileNotFoundException.class,
+                               "JAR entry %s not found in jar file %s",
+                               filterJarName(entryName),
+                               filterJarName(jarFile.getName()));
             }
             result = new JarURLInputStream (jarFile.getInputStream(jarEntry));
         }
