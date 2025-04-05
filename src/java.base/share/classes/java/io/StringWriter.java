@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,10 @@ import java.util.Objects;
  * Closing a {@code StringWriter} has no effect. The methods in this class
  * can be called after the stream has been closed without generating an
  * {@code IOException}.
+ *
+ * @apiNote
+ * {@link Writer#of(StringBuilder)} provides a method to write into an existing
+ * {@link StringBuilder} that may be more efficient than {@code StringWriter}.
  *
  * @author      Mark Reinhold
  * @since       1.1

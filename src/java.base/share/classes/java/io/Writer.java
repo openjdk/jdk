@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,6 +140,97 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
             @Override
             public void close() throws IOException {
                 closed = true;
+            }
+        };
+    }
+
+    /**
+     * Returns a {@code Writer} that writes characters into a
+     * {@code StringBuilder}. The writer is initially open and writing appends
+     * after the last character in the string builder.
+     *
+     * <p> The resulting writer is not safe for use by multiple
+     * concurrent threads. If the writer is to be used by more than one
+     * thread it should be controlled by appropriate synchronization.
+     *
+     * <p> If the string builder changes while the writer is open, e.g. the length
+     * changes, the behavior is undefined.
+     *
+     * @param sb {@code StringBuilder} consuming the character stream.
+     * @return a {@code Writer} which writes characters into {@code sb}.
+     * @throws NullPointerException if {@code sb} is {@code null}
+     *
+     * @since 25
+     */
+    public static Writer of(final StringBuilder sb) {
+        Objects.requireNonNull(sb);
+
+        return new Writer() {
+            private boolean isClosed;
+
+            /** Check to make sure that the stream has not been closed */
+            private void ensureOpen() throws IOException {
+                if (isClosed)
+                    throw new IOException("Stream closed");
+            }
+
+            @Override
+            public void write(int c) throws IOException {
+                ensureOpen();
+                sb.append((char) c);
+            }
+
+            @Override
+            public void write(char[] cbuf, int off, int len) throws IOException {
+                ensureOpen();
+                Objects.checkFromIndexSize(off, len, cbuf.length);
+                if (len == 0) {
+                    return;
+                }
+                sb.append(cbuf, off, len);
+            }
+
+            @Override
+            public void write(String str) throws IOException {
+                ensureOpen();
+                sb.append(str);
+            }
+
+            @Override
+            public void write(String str, int off, int len) throws IOException {
+                ensureOpen();
+                sb.append(str, off, off + len);
+            }
+
+            @Override
+            public Writer append(CharSequence csq) throws IOException {
+                ensureOpen();
+                sb.append(csq);
+                return this;
+            }
+
+            @Override
+            public Writer append(CharSequence csq, int start, int end) throws IOException {
+                ensureOpen();
+                sb.append(csq, start, end);
+                return this;
+            }
+
+            @Override
+            public Writer append(char c) throws IOException {
+                ensureOpen();
+                sb.append(c);
+                return this;
+            }
+
+            @Override
+            public void flush() throws IOException {
+                ensureOpen();
+            }
+
+            @Override
+            public void close() throws IOException {
+                isClosed = true;
             }
         };
     }
