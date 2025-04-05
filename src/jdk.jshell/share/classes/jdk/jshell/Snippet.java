@@ -28,7 +28,6 @@ package jdk.jshell;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A Snippet represents a snippet of Java source code as passed to
@@ -219,9 +218,8 @@ public abstract class Snippet {
          * Import Module Declaration.
          * An import declaration of a module.
          * @jls 7.5.5 Import Module Declarations
-         * @since 23
+         * @since 25
          */
-        @PreviewFeature(feature=PreviewFeature.Feature.MODULE_IMPORTS, reflective=true)
         MODULE_IMPORT_SUBKIND(Kind.IMPORT),
 
         /**
