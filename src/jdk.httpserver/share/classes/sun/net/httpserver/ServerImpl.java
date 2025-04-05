@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -233,12 +234,9 @@ class ServerImpl {
         terminating = true;
         try { schan.close(); } catch (IOException e) {}
         selector.wakeup();
-        long latest = System.currentTimeMillis() + delay * 1000;
-        while (System.currentTimeMillis() < latest) {
+        long latest = System.nanoTime() + Duration.ofSeconds(delay).toNanos();
+        while (activeExchanges() > 0 && System.nanoTime() < latest) {
             delay();
-            if (finished) {
-                break;
-            }
         }
         finished = true;
         selector.wakeup();
@@ -256,6 +254,7 @@ class ServerImpl {
         }
         if (dispatcherThread != null && dispatcherThread != Thread.currentThread()) {
             try {
+                dispatcherThread.interrupt();
                 dispatcherThread.join();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -933,6 +932,10 @@ class ServerImpl {
     }
 
     private int exchangeCount = 0;
+
+    synchronized int activeExchanges () {
+        return exchangeCount;
+    }
 
     synchronized void startExchange () {
         exchangeCount ++;
