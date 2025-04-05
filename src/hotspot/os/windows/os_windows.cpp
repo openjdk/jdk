@@ -2600,6 +2600,7 @@ static inline void report_error(Thread* t, DWORD exception_code,
 //-----------------------------------------------------------------------------
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
+  PreserveLastError ple;
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
   PEXCEPTION_RECORD exception_record = exceptionInfo->ExceptionRecord;
   DWORD exception_code = exception_record->ExceptionCode;
