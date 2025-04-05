@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/oopMap.hpp"
 #include "memory/allocation.inline.hpp"
@@ -367,8 +366,8 @@ void PhaseChaitin::Register_Allocate() {
   _alternate = 0;
   _matcher._allocation_started = true;
 
-  ResourceArea split_arena(mtCompiler);     // Arena for Split local resources
-  ResourceArea live_arena(mtCompiler);      // Arena for liveness & IFG info
+  ResourceArea split_arena(mtCompiler, Arena::Tag::tag_regsplit);     // Arena for Split local resources
+  ResourceArea live_arena(mtCompiler, Arena::Tag::tag_reglive);     // Arena for liveness & IFG info
   ResourceMark rm(&live_arena);
 
   // Need live-ness for the IFG; need the IFG for coalescing.  If the

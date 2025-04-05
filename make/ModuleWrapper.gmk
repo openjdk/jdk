@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,29 @@
 # questions.
 #
 
+include MakeFileStart.gmk
+
 ################################################################################
 # This makefile is called from Main.gmk, through a macro in MakeHelpers.gmk
 # and wraps calls to makefiles for specific modules and build phases. Having
 # this wrapper reduces the need for boilerplate code. It also provides
 # opportunity for automatic copying of files to an interim exploded runnable
 # image.
-
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
 
 include CopyFiles.gmk
 
 MODULE_SRC := $(TOPDIR)/src/$(MODULE)
 
-# All makefiles should add the targets to be built to this variable.
-TARGETS :=
+# Define the snippet for MakeSnippetStart/End
+THIS_SNIPPET := modules/$(MODULE)/$(MAKEFILE_PREFIX).gmk
+
+include MakeSnippetStart.gmk
 
 # Include the file being wrapped.
-include $(MAKEFILE_PREFIX).gmk
+include $(THIS_SNIPPET)
+
+include MakeSnippetEnd.gmk
 
 ifeq ($(MAKEFILE_PREFIX), Lib)
   # We need to keep track of what libraries are generated/needed by this
@@ -128,8 +130,12 @@ $(eval $(call SetupCopyFiles, COPY_CONF, \
 ))
 
 ifeq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
-  all: $(filter $(MAKESUPPORT_OUTPUTDIR)/compile-commands/%, $(TARGETS))
+  TARGETS := $(filter $(MAKESUPPORT_OUTPUTDIR)/compile-commands/%, $(TARGETS))
 else
-  all: $(TARGETS) $(COPY_LIBS_TO_BIN) $(COPY_LIBS_TO_LIB) \
+  TARGETS += $(COPY_LIBS_TO_BIN) $(COPY_LIBS_TO_LIB) \
       $(COPY_INCLUDE) $(COPY_CMDS) $(COPY_MAN) $(COPY_CONF) $(LINK_LIBS_TO_LIB)
 endif
+
+################################################################################
+
+include MakeFileEnd.gmk

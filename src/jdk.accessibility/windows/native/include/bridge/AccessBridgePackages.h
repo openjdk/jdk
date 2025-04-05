@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1108,6 +1108,8 @@ typedef long ABHWND64;
 #define ACCESSIBLE_CONTROLCODE_KEYSTROKE        512  // Control code key pressed, character contains control code.
 
 // The supported control code keys are:
+#define ACCESSIBLE_VK_TAB           9
+#define ACCESSIBLE_VK_SPACE         32
 #define ACCESSIBLE_VK_BACK_SPACE    8
 #define ACCESSIBLE_VK_DELETE        127
 #define ACCESSIBLE_VK_DOWN          40

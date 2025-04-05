@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Intel Corporation. All rights reserved.
+ * Copyright (c) 2016, 2024, Intel Corporation. All rights reserved.
  * Intel Math Library (LIBM) Source Code
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
 
@@ -181,7 +180,8 @@ ATTRIBUTE_ALIGNED(8) static const juint _ALL_ONES[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmSin() {
-  StubCodeMark mark(this, "StubRoutines", "libmSin");
+  StubGenStubId stub_id = StubGenStubId::dsin_id;
+  StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
   Label L_2TAG_PACKET_0_0_1, L_2TAG_PACKET_1_0_1, L_2TAG_PACKET_2_0_1, L_2TAG_PACKET_3_0_1;

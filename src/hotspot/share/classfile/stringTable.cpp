@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/compactHashtable.hpp"
@@ -311,7 +309,7 @@ public:
 void StringTable::create_table() {
   size_t start_size_log_2 = log2i_ceil(StringTableSize);
   _current_size = ((size_t)1) << start_size_log_2;
-  log_trace(stringtable)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
+  log_trace(stringtable)("Start size: %zu (%zu)",
                          _current_size, start_size_log_2);
   _local_table = new StringTableHash(start_size_log_2, END_SIZE, REHASH_LEN, true);
   _oop_storage = OopStorageSet::create_weak("StringTable Weak", mtSymbol);
@@ -582,7 +580,7 @@ void StringTable::grow(JavaThread* jt) {
   }
   gt.done(jt);
   _current_size = table_size();
-  log_debug(stringtable)("Grown to size:" SIZE_FORMAT, _current_size);
+  log_debug(stringtable)("Grown to size:%zu", _current_size);
 }
 
 struct StringTableDoDelete : StackObj {
@@ -631,7 +629,7 @@ void StringTable::clean_dead_entries(JavaThread* jt) {
 }
 
 void StringTable::gc_notification(size_t num_dead) {
-  log_trace(stringtable)("Uncleaned items:" SIZE_FORMAT, num_dead);
+  log_trace(stringtable)("Uncleaned items:%zu", num_dead);
 
   if (has_work()) {
     return;
@@ -746,13 +744,29 @@ struct SizeFunc : StackObj {
 TableStatistics StringTable::get_table_statistics() {
   static TableStatistics ts;
   SizeFunc sz;
-  ts = _local_table->statistics_get(Thread::current(), sz, ts);
+
+  Thread* jt = Thread::current();
+  StringTableHash::StatisticsTask sts(_local_table);
+  if (!sts.prepare(jt)) {
+    return ts;  // return old table statistics
+  }
+  {
+    TraceTime timer("GetStatistics", TRACETIME_LOG(Debug, stringtable, perf));
+    while (sts.do_task(jt, sz)) {
+      sts.pause(jt);
+      if (jt->is_Java_thread()) {
+        ThreadBlockInVM tbivm(JavaThread::cast(jt));
+      }
+      sts.cont(jt);
+    }
+  }
+  ts = sts.done(jt);
   return ts;
 }
 
 void StringTable::print_table_statistics(outputStream* st) {
-  SizeFunc sz;
-  _local_table->statistics_to(Thread::current(), sz, st, "StringTable");
+  TableStatistics ts = get_table_statistics();
+  ts.print(st, "StringTable");
 #if INCLUDE_CDS_JAVA_HEAP
   if (!_shared_table.empty()) {
     _shared_table.print_table_statistics(st, "Shared String Table");
@@ -1012,20 +1026,14 @@ void StringTable::verify_secondary_array_index_bits() {
 // For each shared string:
 // [1] Store it into _shared_strings_array. Encode its position as a 32-bit index.
 // [2] Store the index and hashcode into _shared_table.
-oop StringTable::init_shared_table(const DumpedInternedStrings* dumped_interned_strings) {
-  assert(HeapShared::can_write(), "must be");
+oop StringTable::init_shared_strings_array(const DumpedInternedStrings* dumped_interned_strings) {
+  assert(CDSConfig::is_dumping_heap(), "must be");
   objArrayOop array = (objArrayOop)(_shared_strings_array.resolve());
 
   verify_secondary_array_index_bits();
 
-  _shared_table.reset();
-  CompactHashtableWriter writer((int)_items_count, ArchiveBuilder::string_stats());
-
   int index = 0;
   auto copy_into_array = [&] (oop string, bool value_ignored) {
-    unsigned int hash = java_lang_String::hash_code(string);
-    writer.add(hash, index);
-
     if (!_is_two_dimensional_shared_strings_array) {
       assert(index < array->length(), "no strings should have been added");
       array->obj_at_put(index, string);
@@ -1045,9 +1053,22 @@ oop StringTable::init_shared_table(const DumpedInternedStrings* dumped_interned_
   };
   dumped_interned_strings->iterate_all(copy_into_array);
 
-  writer.dump(&_shared_table, "string");
-
   return array;
+}
+
+void StringTable::write_shared_table(const DumpedInternedStrings* dumped_interned_strings) {
+  _shared_table.reset();
+  CompactHashtableWriter writer((int)_items_count, ArchiveBuilder::string_stats());
+
+  int index = 0;
+  auto copy_into_shared_table = [&] (oop string, bool value_ignored) {
+    unsigned int hash = java_lang_String::hash_code(string);
+    writer.add(hash, index);
+    index ++;
+  };
+  dumped_interned_strings->iterate_all(copy_into_shared_table);
+
+  writer.dump(&_shared_table, "string");
 }
 
 void StringTable::set_shared_strings_array_index(int root_index) {

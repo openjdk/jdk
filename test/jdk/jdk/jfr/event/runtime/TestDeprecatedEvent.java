@@ -40,7 +40,7 @@ import static jdk.test.lib.Asserts.assertNotNull;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,8 +220,8 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
     }
   }
 
-  assert(s > 0, "Oop size must be greater than zero, not " SIZE_FORMAT, s);
-  assert(is_object_aligned(s), "Oop size is not properly aligned: " SIZE_FORMAT, s);
+  assert(s > 0, "Oop size must be greater than zero, not %zu", s);
+  assert(is_object_aligned(s), "Oop size is not properly aligned: %zu", s);
   return s;
 }
 

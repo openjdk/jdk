@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 class GraphKit;
 
 class ArrayCopyNode : public CallNode {
+  static const TypeFunc* _arraycopy_type_Type;
 private:
 
   // What kind of arraycopy variant is this?
@@ -65,7 +66,15 @@ private:
 
   bool _arguments_validated;
 
+public:
+
   static const TypeFunc* arraycopy_type() {
+    assert(_arraycopy_type_Type != nullptr, "should be initialized");
+    return _arraycopy_type_Type;
+  }
+
+  static void initialize_arraycopy_Type() {
+    assert(_arraycopy_type_Type == nullptr, "should be");
     const Type** fields = TypeTuple::fields(ParmLimit - TypeFunc::Parms);
     fields[Src]       = TypeInstPtr::BOTTOM;
     fields[SrcPos]    = TypeInt::INT;
@@ -83,9 +92,10 @@ private:
 
     const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
 
-    return TypeFunc::make(domain, range);
+    _arraycopy_type_Type =  TypeFunc::make(domain, range);
   }
 
+private:
   ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard);
 
   intptr_t get_length_if_constant(PhaseGVN *phase) const;

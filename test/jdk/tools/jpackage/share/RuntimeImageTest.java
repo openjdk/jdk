@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import jdk.jpackage.test.Executor;
  * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @compile RuntimeImageTest.java
+ * @compile -Xlint:all -Werror RuntimeImageTest.java
  * @run main/othervm/timeout=1400 jdk.jpackage.test.Main
  *  --jpt-run=RuntimeImageTest
  */
@@ -44,7 +44,6 @@ public class RuntimeImageTest {
 
     @Test
     public static void test() throws Exception {
-        final Path jmods = Path.of(System.getProperty("java.home"), "jmods");
         final Path workDir = TKit.createTempDirectory("runtime").resolve("data");
         final Path jlinkOutputDir = workDir.resolve("temp.runtime");
         Files.createDirectories(jlinkOutputDir.getParent());
@@ -54,8 +53,7 @@ public class RuntimeImageTest {
         .dumpOutput()
         .addArguments(
                 "--output", jlinkOutputDir.toString(),
-                "--add-modules", "ALL-MODULE-PATH",
-                "--module-path", jmods.toString(),
+                "--add-modules", "java.desktop",
                 "--strip-debug",
                 "--no-header-files",
                 "--no-man-pages",

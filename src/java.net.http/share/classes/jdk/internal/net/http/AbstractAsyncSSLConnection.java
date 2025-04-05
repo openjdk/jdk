@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.internal.net.http;
 
 import java.net.InetSocketAddress;
+import java.net.http.HttpClient;
 import java.util.Arrays;
 import java.util.ArrayDeque;
 import java.util.List;
@@ -75,7 +76,7 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
                                ServerName serverName, int port,
                                String[] alpn) {
         super(addr, client);
-        this.sniServerNames = formSNIServerNames(serverName);
+        this.sniServerNames = formSNIServerNames(serverName, client);
         SSLContext context = client.theSSLContext();
         sslParameters = createSSLParameters(client, this.sniServerNames, alpn);
         Log.logParams(sslParameters);
@@ -102,6 +103,20 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
         return false;
     }
 
+    /**
+     * Returns the {@link SSLParameters} to be used by the {@link SSLEngine} for this connection.
+     * <p>
+     * The returned {@code SSLParameters} will have its {@link SNIServerName}s set to the given
+     * {@code sniServerNames}. If {@code alpn} is non-null then the returned {@code SSLParameters}
+     * will have its {@linkplain SSLParameters#getApplicationProtocols() application layer protocols}
+     * set to this value. All other parameters in the returned {@code SSLParameters} will be
+     * copied over from {@link HttpClient#sslParameters()} of the given {@code client}.
+     *
+     * @param client         the HttpClient
+     * @param sniServerNames the SNIServerName(s)
+     * @param alpn           the application layer protocols
+     * @return the SSLParameters to be set on the SSLEngine used by this connection.
+     */
     private static SSLParameters createSSLParameters(HttpClientImpl client,
                                                      List<SNIServerName> sniServerNames,
                                                      String[] alpn) {
@@ -132,22 +147,39 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
         return sslParameters;
     }
 
-    private static List<SNIServerName> formSNIServerNames(final ServerName serverName) {
-        if (serverName == null) {
-            return List.of();
-        }
-        if (!serverName.isLiteral()) {
-            String name = serverName.name();
-            if (name != null && name.length() > 0) {
+    /**
+     * Returns a list of {@link SNIServerName}s that are expected to be used to
+     * configure the {@link SSLEngine} used by this connection.
+     * <p>
+     * The given {@code serverName} is given preference, and if it is not null and
+     * is not an IP address literal, then the returned list will contain only one
+     * {@code SNIServerName} formed out of the {@code serverName}. If {@code serverName}
+     * is null or is an IP address literal then the {@code SNIServerName}(s)
+     * configured through {@link HttpClient#sslParameters()} will be returned. If none have
+     * been configured, then an empty list is returned.
+     *
+     * @param serverName the {@link ServerName}, typically computed based on the request URI
+     * @param client     the {@code HttpClient}
+     * @return a list of {@code SNIServerName}s to be used by the {@code SSLEngine}
+     *         of this connection.
+     */
+    private static List<SNIServerName> formSNIServerNames(final ServerName serverName,
+                                                          final HttpClientImpl client) {
+        if (serverName != null && !serverName.isLiteral()) {
+            final String name = serverName.name();
+            if (name != null && !name.isEmpty()) {
                 return List.of(new SNIHostName(name));
             }
         }
-        return List.of();
+        // fallback on any SNIServerName(s) configured through HttpClient.sslParameters()
+        final SSLParameters clientSSLParams = client.sslParameters();
+        final List<SNIServerName> clientConfigured = clientSSLParams.getServerNames();
+        return clientConfigured != null ? clientConfigured : List.of();
     }
 
-    private static SSLEngine createEngine(SSLContext context, String serverName, int port,
+    private static SSLEngine createEngine(SSLContext context, String peerHost, int port,
                                           SSLParameters sslParameters) {
-        SSLEngine engine = context.createSSLEngine(serverName, port);
+        SSLEngine engine = context.createSSLEngine(peerHost, port);
         engine.setUseClientMode(true);
 
         engine.setSSLParameters(sslParameters);

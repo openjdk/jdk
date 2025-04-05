@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
@@ -301,13 +300,13 @@ JVM_ENTRY_NO_ENV(jobject, jfr_new_event_writer(JNIEnv* env, jclass jvm))
   return JfrJavaEventWriter::new_event_writer(thread);
 JVM_END
 
-NO_TRANSITION(void, jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size))
-  JfrJavaEventWriter::flush(writer, used_size, requested_size, JavaThread::current());
-NO_TRANSITION_END
+JVM_ENTRY_NO_ENV(void, jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size))
+  JfrJavaEventWriter::flush(writer, used_size, requested_size, thread);
+JVM_END
 
-NO_TRANSITION(jlong, jfr_commit(JNIEnv* env, jclass jvm, jlong next_position))
-  return JfrJavaEventWriter::commit(next_position);
-NO_TRANSITION_END
+JVM_ENTRY_NO_ENV(jlong, jfr_commit(JNIEnv* env, jclass jvm, jlong next_position))
+  return JfrJavaEventWriter::commit(next_position, thread);
+JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_flush(JNIEnv* env, jclass jvm))
   JfrRepository::flush(thread);
@@ -429,4 +428,12 @@ JVM_END
 
 NO_TRANSITION(jlong, jfr_nanos_now(JNIEnv* env, jclass jvm))
   return JfrChunk::nanos_now();
+NO_TRANSITION_END
+
+NO_TRANSITION(jboolean, jfr_is_product(JNIEnv* env, jclass jvm))
+#ifdef PRODUCT
+  return true;
+#else
+  return false;
+#endif
 NO_TRANSITION_END

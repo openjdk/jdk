@@ -383,11 +383,9 @@ protected:
   void increment_total_collections(bool full = false) {
     _total_collections++;
     if (full) {
-      increment_total_full_collections();
+      _total_full_collections++;
     }
   }
-
-  void increment_total_full_collections() { _total_full_collections++; }
 
   // Return the SoftRefPolicy for the heap;
   SoftRefPolicy* soft_ref_policy() { return &_soft_ref_policy; }

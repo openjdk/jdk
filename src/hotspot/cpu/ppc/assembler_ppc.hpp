@@ -294,6 +294,8 @@ class Assembler : public AbstractAssembler {
     CLRRWI_OPCODE = RLWINM_OPCODE,
     CLRLWI_OPCODE = RLWINM_OPCODE,
 
+    RLWNM_OPCODE  = (23u << OPCODE_SHIFT),
+
     RLWIMI_OPCODE = (20u << OPCODE_SHIFT),
 
     SLW_OPCODE    = (31u << OPCODE_SHIFT |  24u << 1),
@@ -424,6 +426,9 @@ class Assembler : public AbstractAssembler {
     RLDIC_OPCODE  = (30u << OPCODE_SHIFT |   2u << XO_27_29_SHIFT), // MD-FORM
     RLDIMI_OPCODE = (30u << OPCODE_SHIFT |   3u << XO_27_29_SHIFT), // MD-FORM
 
+    RLDCL_OPCODE  = (30u << OPCODE_SHIFT |   8u << 1),
+    RLDCR_OPCODE  = (30u << OPCODE_SHIFT |   9u << 1),
+
     SRADI_OPCODE  = (31u << OPCODE_SHIFT | 413u << XO_21_29_SHIFT), // XS-FORM
 
     SLD_OPCODE    = (31u << OPCODE_SHIFT |  27u << 1),              // X-FORM
@@ -539,6 +544,7 @@ class Assembler : public AbstractAssembler {
     MTVSRDD_OPCODE = (31u << OPCODE_SHIFT |  435u << 1),
     MTVSRWZ_OPCODE = (31u << OPCODE_SHIFT |  243u << 1),
     MFVSRD_OPCODE  = (31u << OPCODE_SHIFT |   51u << 1),
+    MFVSRLD_OPCODE = (31u << OPCODE_SHIFT |  307u << 1),
     MTVSRWA_OPCODE = (31u << OPCODE_SHIFT |  211u << 1),
     MFVSRWZ_OPCODE = (31u << OPCODE_SHIFT |  115u << 1),
     XXPERMDI_OPCODE= (60u << OPCODE_SHIFT |   10u << 3),
@@ -731,6 +737,14 @@ class Assembler : public AbstractAssembler {
     VPOPCNTH_OPCODE= (4u  << OPCODE_SHIFT | 1859u     ),
     VPOPCNTW_OPCODE= (4u  << OPCODE_SHIFT | 1923u     ),
     VPOPCNTD_OPCODE= (4u  << OPCODE_SHIFT | 1987u     ),
+    VCLZB_OPCODE   = (4u  << OPCODE_SHIFT | 1794u     ),
+    VCLZH_OPCODE   = (4u  << OPCODE_SHIFT | 1858u     ),
+    VCLZW_OPCODE   = (4u  << OPCODE_SHIFT | 1922u     ),
+    VCLZD_OPCODE   = (4u  << OPCODE_SHIFT | 1986u     ),
+    VCTZB_OPCODE   = (4u  << OPCODE_SHIFT | 28u << 16 | 1538u),
+    VCTZH_OPCODE   = (4u  << OPCODE_SHIFT | 29u << 16 | 1538u),
+    VCTZW_OPCODE   = (4u  << OPCODE_SHIFT | 30u << 16 | 1538u),
+    VCTZD_OPCODE   = (4u  << OPCODE_SHIFT | 31u << 16 | 1538u),
 
     // Vector Floating-Point
     // not implemented yet
@@ -1696,6 +1710,14 @@ class Assembler : public AbstractAssembler {
   inline void insrdi(  Register a, Register s, int n,   int b);
   inline void insrwi(  Register a, Register s, int n,   int b);
 
+  // Rotate variable
+  inline void rlwnm( Register a, Register s, Register b, int mb, int me);
+  inline void rlwnm_(Register a, Register s, Register b, int mb, int me);
+  inline void rldcl( Register a, Register s, Register b, int mb);
+  inline void rldcl_(Register a, Register s, Register b, int mb);
+  inline void rldcr( Register a, Register s, Register b, int me);
+  inline void rldcr_(Register a, Register s, Register b, int me);
+
   // PPC 1, section 3.3.2 Fixed-Point Load Instructions
   // 4 bytes
   inline void lwzx( Register d, Register s1, Register s2);
@@ -2321,6 +2343,14 @@ class Assembler : public AbstractAssembler {
   inline void vpopcnth( VectorRegister d, VectorRegister b);
   inline void vpopcntw( VectorRegister d, VectorRegister b);
   inline void vpopcntd( VectorRegister d, VectorRegister b);
+  inline void vclzb(    VectorRegister d, VectorRegister b);
+  inline void vclzh(    VectorRegister d, VectorRegister b);
+  inline void vclzw(    VectorRegister d, VectorRegister b);
+  inline void vclzd(    VectorRegister d, VectorRegister b);
+  inline void vctzb(    VectorRegister d, VectorRegister b);
+  inline void vctzh(    VectorRegister d, VectorRegister b);
+  inline void vctzw(    VectorRegister d, VectorRegister b);
+  inline void vctzd(    VectorRegister d, VectorRegister b);
   // Vector Floating-Point not implemented yet
   inline void mtvscr(   VectorRegister b);
   inline void mfvscr(   VectorRegister d);
@@ -2345,6 +2375,7 @@ class Assembler : public AbstractAssembler {
   inline void xxmrglw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void mtvsrd(   VectorSRegister d, Register a);
   inline void mfvsrd(   Register        d, VectorSRegister a);
+  inline void mfvsrld(  Register        d, VectorSRegister a); // Requires Power9.
   inline void mtvsrdd(  VectorSRegister d, Register a, Register b);
   inline void mtvsrwz(  VectorSRegister d, Register a);
   inline void mfvsrwz(  Register        d, VectorSRegister a);

@@ -26,7 +26,7 @@ import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test The test verifies that options can only be specified once with --XX:StartFlightRecording
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main jdk.jfr.startupargs.TestStartupOptionSpecifiedOnce
