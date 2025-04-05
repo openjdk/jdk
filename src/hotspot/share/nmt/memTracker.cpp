@@ -26,7 +26,6 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metaspaceUtils.hpp"
-#include "nmt/mallocLimit.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memBaseline.hpp"
 #include "nmt/memReporter.hpp"
@@ -79,6 +78,9 @@ void MemTracker::initialize() {
     if (MallocLimit != nullptr) {
       warning("MallocLimit will be ignored since NMT is disabled.");
     }
+    if (MmapLimit != nullptr) {
+      warning("MmapLimit will be ignored since NMT is disabled.");
+    }
   }
 
   NMTPreInit::pre_to_post(level == NMT_off);
@@ -92,7 +94,7 @@ void MemTracker::initialize() {
     ls.print_cr("NMT initialized: %s", NMTUtil::tracking_level_to_string(_tracking_level));
     ls.print_cr("Preinit state: ");
     NMTPreInit::print_state(&ls);
-    MallocLimitHandler::print_on(&ls);
+    NMemLimitHandler::print_on(&ls);
   }
 }
 
@@ -102,7 +104,7 @@ void MemTracker::error_report(outputStream* output) {
     report(true, output, MemReporterBase::default_scale); // just print summary for error case.
     output->print("Preinit state:");
     NMTPreInit::print_state(output);
-    MallocLimitHandler::print_on(output);
+    NMemLimitHandler::print_on(output);
   }
 }
 
@@ -160,6 +162,6 @@ void MemTracker::tuning_statistics(outputStream* out) {
   }
   out->print_cr("Preinit state:");
   NMTPreInit::print_state(out);
-  MallocLimitHandler::print_on(out);
+  NMemLimitHandler::print_on(out);
   out->cr();
 }

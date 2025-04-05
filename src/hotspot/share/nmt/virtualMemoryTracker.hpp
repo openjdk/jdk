@@ -34,6 +34,7 @@
 #include "utilities/linkedlist.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
+#include "nmt/nMemLimit.hpp"
 
 /*
  * Virtual memory counter
@@ -169,6 +170,11 @@ class VirtualMemorySummary : AllStatic {
   static VirtualMemorySnapshot* as_snapshot() {
     return &_snapshot;
   }
+
+  // MmapLimt: Given an allocation size s, check if mmaping this much
+  // for MemTag would hit either the global limit or the limit for MemTag.
+  static inline bool check_exceeds_limit(size_t s, MemTag mem_tag);
+
 
  private:
   static VirtualMemorySnapshot _snapshot;
@@ -402,6 +408,8 @@ class VirtualMemoryTracker : AllStatic {
 
   // Snapshot current thread stacks
   static void snapshot_thread_stacks();
+
+  static bool check_exceeds_limit(size_t s, MemTag mem_tag);
 
  private:
   static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* _reserved_regions;

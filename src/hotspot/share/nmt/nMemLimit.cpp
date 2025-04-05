@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2023 SAP SE. All rights reserved.
  * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Amazon.com Inc and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +24,7 @@
  *
  */
 
-#include "nmt/mallocLimit.hpp"
+#include "nmt/nMemLimit.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/java.hpp"
@@ -31,17 +32,19 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/parseInteger.hpp"
 #include "utilities/ostream.hpp"
+#include "logging/log.hpp"
 
-MallocLimitSet MallocLimitHandler::_limits;
-bool MallocLimitHandler::_have_limit = false;
+NMemLimitSet NMemLimitHandler::_malloc_limits;
+NMemLimitSet NMemLimitHandler::_mmap_limits;
+bool NMemLimitHandler::_have_limit_map[2] = {false, false};
 
 static const char* const MODE_OOM = "oom";
 static const char* const MODE_FATAL = "fatal";
 
-static const char* mode_to_name(MallocLimitMode m) {
+static const char* mode_to_name(NMemLimitMode m) {
   switch (m) {
-  case MallocLimitMode::trigger_fatal: return MODE_FATAL;
-  case MallocLimitMode::trigger_oom: return MODE_OOM;
+  case NMemLimitMode::trigger_fatal: return MODE_FATAL;
+  case NMemLimitMode::trigger_oom: return MODE_OOM;
   default: ShouldNotReachHere();
   };
   return nullptr;
@@ -61,16 +64,16 @@ public:
 
   // Check if string at position matches a malloclimit_mode_t.
   // Advance position on match.
-  bool match_mode_flag(MallocLimitMode* out) {
+  bool match_mode_flag(NMemLimitMode* out) {
     if (eof()) {
       return false;
     }
     if (strncasecmp(_p, MODE_OOM, strlen(MODE_OOM)) == 0) {
-      *out = MallocLimitMode::trigger_oom;
+      *out = NMemLimitMode::trigger_oom;
       _p += 3;
       return true;
     } else if (strncasecmp(_p, MODE_FATAL, strlen(MODE_FATAL)) == 0) {
-      *out = MallocLimitMode::trigger_fatal;
+      *out = NMemLimitMode::trigger_fatal;
       _p += 5;
       return true;
     }
@@ -122,52 +125,53 @@ public:
   }
 };
 
-MallocLimitSet::MallocLimitSet() {
+NMemLimitSet::NMemLimitSet() {
   reset();
 }
 
-void MallocLimitSet::set_global_limit(size_t s, MallocLimitMode flag) {
+void NMemLimitSet::set_global_limit(size_t s, NMemLimitMode flag) {
   _glob.sz = s; _glob.mode = flag;
 }
 
-void MallocLimitSet::set_category_limit(MemTag mem_tag, size_t s, MallocLimitMode flag) {
+void NMemLimitSet::set_category_limit(MemTag mem_tag, size_t s, NMemLimitMode flag) {
   const int i = NMTUtil::tag_to_index(mem_tag);
   _cat[i].sz = s; _cat[i].mode = flag;
 }
 
-void MallocLimitSet::reset() {
-  set_global_limit(0, MallocLimitMode::trigger_fatal);
-  _glob.sz = 0; _glob.mode = MallocLimitMode::trigger_fatal;
+void NMemLimitSet::reset() {
+  set_global_limit(0, NMemLimitMode::trigger_fatal);
+  _glob.sz = 0; _glob.mode = NMemLimitMode::trigger_fatal;
   for (int i = 0; i < mt_number_of_tags; i++) {
-    set_category_limit(NMTUtil::index_to_tag(i), 0, MallocLimitMode::trigger_fatal);
+    set_category_limit(NMTUtil::index_to_tag(i), 0, NMemLimitMode::trigger_fatal);
   }
 }
 
-void MallocLimitSet::print_on(outputStream* st) const {
+void NMemLimitSet::print_on(outputStream* st, const char* type_str) const {
   static const char* flagnames[] = { MODE_FATAL, MODE_OOM };
   if (_glob.sz > 0) {
-    st->print_cr("MallocLimit: total limit: " PROPERFMT " (%s)", PROPERFMTARGS(_glob.sz),
+    st->print_cr("%sLimit: total limit: " PROPERFMT " (%s)", type_str, PROPERFMTARGS(_glob.sz),
                  mode_to_name(_glob.mode));
   } else {
     for (int i = 0; i < mt_number_of_tags; i++) {
       if (_cat[i].sz > 0) {
-        st->print_cr("MallocLimit: category \"%s\" limit: " PROPERFMT " (%s)",
-                     NMTUtil::tag_to_enum_name(NMTUtil::index_to_tag(i)),
+        st->print_cr("%sLimit: category \"%s\" limit: " PROPERFMT " (%s)",
+                     type_str, NMTUtil::tag_to_enum_name(NMTUtil::index_to_tag(i)),
                      PROPERFMTARGS(_cat[i].sz), mode_to_name(_cat[i].mode));
       }
     }
   }
 }
 
-bool MallocLimitSet::parse_malloclimit_option(const char* v, const char** err) {
+bool NMemLimitSet::parse_n_mem_limit_option(const char* v, const char** err) {
 
 #define BAIL_UNLESS(condition, errormessage) if (!(condition)) { *err = errormessage; return false; }
 
   // Global form:
-  // MallocLimit=<size>[:flag]
+  // MallocLimit=<size>[:flag] or MmapLimit=<size>[:flag]
 
   // Category-specific form:
   // MallocLimit=<category>:<size>[:flag][,<category>:<size>[:flag]...]
+  // or, MmapLimit=<category>:<size>[:flag][,<category>:<size>[:flag]...]
 
   reset();
 
@@ -192,7 +196,7 @@ bool MallocLimitSet::parse_malloclimit_option(const char* v, const char** err) {
       BAIL_UNLESS(sst.match_category(&mem_tag), "Expected category name");
       BAIL_UNLESS(sst.match_char(':'), "Expected colon following category");
 
-      malloclimit* const modified_limit = &_cat[NMTUtil::tag_to_index(mem_tag)];
+      nMemlimit* const modified_limit = &_cat[NMTUtil::tag_to_index(mem_tag)];
 
       // Match size
       BAIL_UNLESS(sst.match_size(&modified_limit->sz), "Expected size");
@@ -211,21 +215,51 @@ bool MallocLimitSet::parse_malloclimit_option(const char* v, const char** err) {
   return true;
 }
 
-void MallocLimitHandler::initialize(const char* options) {
-  _have_limit = false;
+void NMemLimitHandler::initialize(const char* options, NMemType type) {
+  log_info(nmt)("in NMemLimitHandler initialize. type: %s", NMemLimitHandler::nmem_type_to_str(type));
+  _have_limit_map[nmemtype_to_int(type)] = false;
+  NMemLimitSet* limits = get_mem_limit_set(type);
+
   if (options != nullptr && options[0] != '\0') {
     const char* err = nullptr;
-    if (!_limits.parse_malloclimit_option(options, &err)) {
+    if (!limits->parse_n_mem_limit_option(options, &err)) {
       vm_exit_during_initialization("Failed to parse MallocLimit", err);
     }
-    _have_limit = true;
+    _have_limit_map[nmemtype_to_int(type)] = true;
   }
 }
 
-void MallocLimitHandler::print_on(outputStream* st) {
-  if (have_limit()) {
-    _limits.print_on(st);
+void NMemLimitHandler::print_on(outputStream* st) {
+  NMemLimitHandler::print_on_by_type(st, NMemType::Malloc);
+  NMemLimitHandler::print_on_by_type(st, NMemType::Mmap);
+}
+
+void NMemLimitHandler::print_on_by_type(outputStream* st, NMemType type) {
+  NMemLimitSet* limits = get_mem_limit_set(type);
+
+  if (have_limit(type)) {
+    limits->print_on(st, NMemLimitHandler::nmem_type_to_str(type));
   } else {
-    st->print_cr("MallocLimit: unset");
+    st->print_cr("%sLimit: unset", NMemLimitHandler::nmem_type_to_str(type));
   }
 }
+
+int NMemLimitHandler::nmemtype_to_int(NMemType type) {
+  if (NMemType::Malloc == type) {
+    return 0;
+  } else if (NMemType::Mmap == type) {
+    return 1;
+  } else {
+    ShouldNotReachHere();
+  }
+}
+
+const char* NMemLimitHandler::nmem_type_to_str(NMemType type) { // TODO: use snake name
+  switch (type) {
+    case NMemType::Malloc: return "Malloc";
+    case NMemType::Mmap: return "Mmap";
+    default: ShouldNotReachHere();
+  }
+  ShouldNotReachHere();
+}
+
