@@ -29,6 +29,7 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "memory/iterator.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
@@ -82,6 +83,17 @@ void RunTimeLambdaProxyClassInfo::print_on(outputStream* st) const {
   _key.print_on(st);
 }
 #endif
+
+// Iterate over all proxy classes
+void RunTimeLambdaProxyClassInfo::iterate_klasses(ConstKlassClosure* cl) const {
+  const Klass* k = proxy_klass_head();
+  if (k != nullptr && k->lambda_proxy_is_available()) {
+    while (k != nullptr) {
+      cl->do_klass(k);
+      k = k->next_link();
+    }
+  }
+}
 
 void RunTimeLambdaProxyClassInfo::init(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
   _key = RunTimeLambdaProxyClassKey::init_for_dumptime(key);
@@ -487,35 +499,21 @@ void LambdaProxyClassDictionary::cleanup_dumptime_table() {
   _dumptime_table->unlink(&cleanup_proxy_classes);
 }
 
-class SharedLambdaDictionaryPrinter : StackObj {
-  outputStream* _st;
-  int _index;
-public:
-  SharedLambdaDictionaryPrinter(outputStream* st, int idx) : _st(st), _index(idx) {}
-
-  void do_value(const RunTimeLambdaProxyClassInfo* record) {
-    if (record->proxy_klass_head()->lambda_proxy_is_available()) {
-      ResourceMark rm;
-      Klass* k = record->proxy_klass_head();
-      while (k != nullptr) {
-        _st->print_cr("%4d: %s %s", _index++, k->external_name(),
-                      SystemDictionaryShared::loader_type_for_shared_class(k));
-        k = k->next_link();
-      }
+// iterate all klasses of all lambdas
+void LambdaProxyClassDictionary::iterate_klasses(ConstKlassClosure* cl, bool is_static_archive) {
+  // Needed for RunTimeLambdaProxyClassInfo->Klass translation
+  struct ValueIterator {
+    ConstKlassClosure* const _cl;
+    ValueIterator(ConstKlassClosure* cl) : _cl(cl) {}
+    void do_value(const RunTimeLambdaProxyClassInfo* record) {
+      record->iterate_klasses(_cl);
     }
-  }
-};
+  } vit(cl);
 
-void LambdaProxyClassDictionary::print_on(const char* prefix,
-                                          outputStream* st,
-                                          int start_index,
-                                          bool is_static_archive) {
-  LambdaProxyClassDictionary* dictionary = is_static_archive ? &_runtime_static_table : &_runtime_dynamic_table;
-  if (!dictionary->empty()) {
-    st->print_cr("%sShared Lambda Dictionary", prefix);
-    SharedLambdaDictionaryPrinter ldp(st, start_index);
-    dictionary->iterate(&ldp);
-  }
+  const LambdaProxyClassDictionary* const dictionary =
+      is_static_archive ? &_runtime_static_table : &_runtime_dynamic_table;
+
+  dictionary->iterate(&vit);
 }
 
 void LambdaProxyClassDictionary::print_statistics(outputStream* st,

@@ -55,6 +55,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
+#include "memory/iterator.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/oopFactory.hpp"
@@ -1104,11 +1105,10 @@ void SystemDictionaryShared::update_shared_entry(InstanceKlass* k, int id) {
   info->_id = id;
 }
 
-const char* SystemDictionaryShared::loader_type_for_shared_class(Klass* k) {
+const char* SystemDictionaryShared::loader_type_for_shared_class(const Klass* k) {
   assert(k != nullptr, "Sanity");
-  assert(k->is_shared(), "Must be");
-  assert(k->is_instance_klass(), "Must be");
-  InstanceKlass* ik = InstanceKlass::cast(k);
+  assert(k->is_shared(), "Must be (%s)", k->external_name());
+  const InstanceKlass* ik = InstanceKlass::cast(k);
   if (ik->is_shared_boot_class()) {
     return "boot_loader";
   } else if (ik->is_shared_platform_class()) {
@@ -1122,22 +1122,26 @@ const char* SystemDictionaryShared::loader_type_for_shared_class(Klass* k) {
   }
 }
 
-class SharedDictionaryPrinter : StackObj {
+class SharedDictionaryPrinter : public ConstKlassClosure {
   outputStream* _st;
   int _index;
+  const char* _next_header;
 public:
-  SharedDictionaryPrinter(outputStream* st) : _st(st), _index(0) {}
+  SharedDictionaryPrinter(outputStream* st) :
+    _st(st), _index(0), _next_header(nullptr) {}
 
-  void do_value(const RunTimeClassInfo* record) {
+  void do_klass(const Klass* k) override {
     ResourceMark rm;
-    _st->print_cr("%4d: %s %s", _index++, record->klass()->external_name(),
-        SystemDictionaryShared::loader_type_for_shared_class(record->klass()));
-    if (record->klass()->array_klasses() != nullptr) {
-      record->klass()->array_klasses()->cds_print_value_on(_st);
-      _st->cr();
+    if (k->is_instance_klass()) {
+      _st->print_cr("%4d: %s %s", _index++, k->external_name(),
+          SystemDictionaryShared::loader_type_for_shared_class(k));
+    } else if (k->is_array_klass()) {
+      _st->print_cr("      - array: %s", k->internal_name());
+    } else {
+      // We should see either IK or OAK; TAKs are instantiated by the JVM.
+      ShouldNotReachHere();
     }
   }
-  int index() const { return _index; }
 };
 
 void SystemDictionaryShared::ArchiveInfo::print_on(const char* prefix,
@@ -1146,10 +1150,16 @@ void SystemDictionaryShared::ArchiveInfo::print_on(const char* prefix,
   st->print_cr("%sShared Dictionary", prefix);
   SharedDictionaryPrinter p(st);
   st->print_cr("%sShared Builtin Dictionary", prefix);
-  _builtin_dictionary.iterate(&p);
+  _builtin_dictionary.iterate_klasses(&p);
   st->print_cr("%sShared Unregistered Dictionary", prefix);
-  _unregistered_dictionary.iterate(&p);
-  LambdaProxyClassDictionary::print_on(prefix, st, p.index(), is_static_archive);
+  _unregistered_dictionary.iterate_klasses(&p);
+  st->print_cr("%sShared Lambda Dictionary", prefix);
+  LambdaProxyClassDictionary::iterate_klasses(&p, is_static_archive);
+}
+
+void SystemDictionaryShared::ArchiveInfo::iterate_klasses(ConstKlassClosure* cl) const {
+  _builtin_dictionary.iterate_klasses(cl);
+  _unregistered_dictionary.iterate_klasses(cl);
 }
 
 void SystemDictionaryShared::ArchiveInfo::print_table_statistics(const char* prefix,
@@ -1171,6 +1181,19 @@ void SystemDictionaryShared::print_shared_archive(outputStream* st, bool is_stat
       }
     }
   }
+}
+
+void SystemDictionaryShared::iterate_klasses_in_shared_archive(ConstKlassClosure* cl, bool is_static) {
+  if (CDSConfig::is_using_archive()) {
+    if (is_static) {
+      _static_archive.iterate_klasses(cl);
+    } else {
+      if (DynamicArchive::is_mapped()) {
+        _dynamic_archive.iterate_klasses(cl);
+      }
+    }
+  }
+  LambdaProxyClassDictionary::iterate_klasses(cl, is_static);
 }
 
 void SystemDictionaryShared::print_on(outputStream* st) {
