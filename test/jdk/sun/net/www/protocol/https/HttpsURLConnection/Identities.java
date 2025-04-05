@@ -893,7 +893,7 @@ public class Identities {
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
         tmf.init(ks);
 
-        SSLContext ctx = SSLContext.getInstance("TLS");
+        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
 
         if (keyCertStr != null) {
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
