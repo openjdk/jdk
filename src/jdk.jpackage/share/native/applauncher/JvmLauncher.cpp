@@ -196,7 +196,7 @@ void Jvm::launch() {
     JvmlLauncherAPI* api = jvmLauncherGetAPI();
 
     AutoJvmlLauncherData jld(jvmLauncherCreateJvmlLauncherData(api,
-                                                        jlh.release(), 0));
+                                                        jlh.release(), NULL));
 
     LOG_TRACE(tstrings::any() << "JVM library: \"" << jvmPath << "\"");
 
@@ -226,7 +226,7 @@ struct JliLaunchData {
     tstring_array envVarValues;
 
     int initJvmlLauncherData(JvmlLauncherData* ptr, int bufferSize) const {
-        int minimalBufferSize = initJvmlLauncherData(0);
+        int minimalBufferSize = initJvmlLauncherData(NULL);
         if (minimalBufferSize <= bufferSize) {
             initJvmlLauncherData(ptr);
         }
@@ -237,7 +237,7 @@ private:
     template <class T>
     static char* copyStrings(const std::vector<T>& src,
                 JvmlLauncherData* ptr, const size_t offset, char* curPtr) {
-        char** strArray = 0;
+        char** strArray = NULL;
         if (ptr) {
             strArray = *reinterpret_cast<char***>(
                                     reinterpret_cast<char*>(ptr) + offset);
@@ -276,7 +276,7 @@ private:
             ptr->jliLaunchArgv = reinterpret_cast<char**>(curPtr);
             ptr->jliLaunchArgc = (int)args.size();
             // Add terminal '0' arg.
-            ptr->jliLaunchArgv[ptr->jliLaunchArgc] = 0;
+            ptr->jliLaunchArgv[ptr->jliLaunchArgc] = NULL;
         }
         // Skip memory occupied by JvmlLauncherData::jliLaunchArgv array.
         curPtr += sizeof(char*) * (args.size() + 1 /* terminal '0' arg */);
@@ -362,7 +362,7 @@ int getJvmlLauncherDataSize(JvmlLauncherHandle h) {
     JP_TRY;
 
     const JliLaunchData* data = static_cast<const JliLaunchData*>(h);
-    return data->initJvmlLauncherData(0, 0);
+    return data->initJvmlLauncherData(NULL, 0);
 
     JP_CATCH_ALL;
 
@@ -383,7 +383,7 @@ JvmlLauncherData* initJvmlLauncherData(JvmlLauncherHandle h,
 
     JP_CATCH_ALL;
 
-    return 0;
+    return NULL;
 }
 
 class Impl : public JvmlLauncherAPI {

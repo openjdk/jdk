@@ -55,5 +55,5 @@ Java_jdk_internal_jimage_NativeImageBuffer_getNativeMap(JNIEnv *env,
         return env->NewDirectByteBuffer(reader->get_index_address(), (jlong)reader->map_size());
     }
 
-    return 0;
+    return NULL;
 }
