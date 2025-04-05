@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,28 +29,31 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.spec.AlgorithmParameterSpec;
+import javax.crypto.KDF;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.net.ssl.SSLHandshakeException;
 
 final class SSLBasicKeyDerivation implements SSLKeyDerivation {
     private final String hashAlg;
     private final SecretKey secret;
     private final byte[] hkdfInfo;
+    private final int keyLen;
 
     SSLBasicKeyDerivation(SecretKey secret, String hashAlg,
             byte[] label, byte[] context, int length) {
         this.hashAlg = hashAlg.replace("-", "");
         this.secret = secret;
         this.hkdfInfo = createHkdfInfo(label, context, length);
+        this.keyLen = length;
     }
 
     @Override
-    public SecretKey deriveKey(String algorithm,
-            AlgorithmParameterSpec keySpec) throws IOException {
+    public SecretKey deriveKey(String type) throws IOException {
         try {
-            HKDF hkdf = new HKDF(hashAlg);
-            return hkdf.expand(secret, hkdfInfo,
-                    ((SecretSizeSpec)keySpec).length, algorithm);
+            KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg));
+            return hkdf.deriveKey(type,
+                    HKDFParameterSpec.expandOnly(secret, hkdfInfo, keyLen));
         } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not generate secret", gse);
         }
@@ -68,13 +71,5 @@ final class SSLBasicKeyDerivation implements SSLKeyDerivation {
             // unlikely
         }
         return info;
-    }
-
-    static class SecretSizeSpec implements AlgorithmParameterSpec {
-        final int length;
-
-        SecretSizeSpec(int length) {
-            this.length = length;
-        }
     }
 }
