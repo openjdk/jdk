@@ -63,8 +63,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 
   if (LockingMode == LM_LIGHTWEIGHT) {
 #ifdef _LP64
-    const Register thread = r15_thread;
-    lightweight_lock(disp_hdr, obj, hdr, thread, tmp, slow_case);
+    lightweight_lock(disp_hdr, obj, hdr, tmp, slow_case);
 #else
     // Implicit null check.
     movptr(hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
@@ -136,7 +135,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
 
   if (LockingMode == LM_LIGHTWEIGHT) {
 #ifdef _LP64
-    lightweight_unlock(obj, disp_hdr, r15_thread, hdr, slow_case);
+    lightweight_unlock(obj, disp_hdr, hdr, slow_case);
 #else
     // Lacking registers and thread on x86_32. Always take slow path.
     jmp(slow_case);

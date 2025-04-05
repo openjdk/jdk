@@ -51,35 +51,26 @@
 
 int StubAssembler::call_RT(Register oop_result1, Register metadata_result, address entry, int args_size) {
   // setup registers
-  const Register thread = NOT_LP64(rdi) LP64_ONLY(r15_thread); // is callee-saved register (Visual C++ calling conventions)
+  const Register thread = r15_thread;
   assert(!(oop_result1->is_valid() || metadata_result->is_valid()) || oop_result1 != metadata_result, "registers must be different");
   assert(oop_result1 != thread && metadata_result != thread, "registers must be different");
   assert(args_size >= 0, "illegal args_size");
   bool align_stack = false;
-#ifdef _LP64
+
   // At a method handle call, the stack may not be properly aligned
   // when returning with an exception.
   align_stack = (stub_id() == (int)C1StubId::handle_exception_from_callee_id);
-#endif
 
-#ifdef _LP64
   mov(c_rarg0, thread);
   set_num_rt_args(0); // Nothing on stack
-#else
-  set_num_rt_args(1 + args_size);
-
-  // push java thread (becomes first argument of C function)
-  get_thread(thread);
-  push(thread);
-#endif // _LP64
 
   int call_offset = -1;
   if (!align_stack) {
-    set_last_Java_frame(thread, noreg, rbp, nullptr, rscratch1);
+    set_last_Java_frame(noreg, rbp, nullptr, rscratch1);
   } else {
     address the_pc = pc();
     call_offset = offset();
-    set_last_Java_frame(thread, noreg, rbp, the_pc, rscratch1);
+    set_last_Java_frame(noreg, rbp, the_pc, rscratch1);
     andptr(rsp, -(StackAlignmentInBytes));    // Align stack
   }
 
@@ -93,7 +84,7 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   guarantee(thread != rax, "change this code");
   push(rax);
   { Label L;
-    get_thread(rax);
+    get_thread_slow(rax);
     cmpptr(thread, rax);
     jcc(Assembler::equal, L);
     int3();
@@ -102,10 +93,7 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   }
   pop(rax);
 #endif
-  reset_last_Java_frame(thread, true);
-
-  // discard thread and arguments
-  NOT_LP64(addptr(rsp, num_rt_args()*BytesPerWord));
+  reset_last_Java_frame(true);
 
   // check for pending exceptions
   { Label L;
@@ -132,10 +120,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   }
   // get oop results if there are any and reset the values in the thread
   if (oop_result1->is_valid()) {
-    get_vm_result(oop_result1, thread);
+    get_vm_result(oop_result1);
   }
   if (metadata_result->is_valid()) {
-    get_vm_result_2(metadata_result, thread);
+    get_vm_result_2(metadata_result);
   }
 
   assert(call_offset >= 0, "Should be set");
@@ -905,19 +893,10 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
 
   OopMap* oop_map = save_live_registers(sasm, num_rt_args);
 
-#ifdef _LP64
   const Register thread = r15_thread;
   // No need to worry about dummy
   __ mov(c_rarg0, thread);
-#else
-  __ push(rax); // push dummy
-
-  const Register thread = rdi; // is callee-saved register (Visual C++ calling conventions)
-  // push java thread (becomes first argument of C function)
-  __ get_thread(thread);
-  __ push(thread);
-#endif // _LP64
-  __ set_last_Java_frame(thread, noreg, rbp, nullptr, rscratch1);
+  __ set_last_Java_frame(noreg, rbp, nullptr, rscratch1);
   // do the call
   __ call(RuntimeAddress(target));
   OopMapSet* oop_maps = new OopMapSet();
@@ -927,7 +906,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   guarantee(thread != rax, "change this code");
   __ push(rax);
   { Label L;
-    __ get_thread(rax);
+    __ get_thread_slow(rax);
     __ cmpptr(thread, rax);
     __ jcc(Assembler::equal, L);
     __ stop("StubAssembler::call_RT: rdi/r15 not callee saved?");
@@ -935,11 +914,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   }
   __ pop(rax);
 #endif
-  __ reset_last_Java_frame(thread, true);
-#ifndef _LP64
-  __ pop(rcx); // discard thread arg
-  __ pop(rcx); // discard dummy
-#endif // _LP64
+  __ reset_last_Java_frame(true);
 
   // check for pending exceptions
   { Label L;
