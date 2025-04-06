@@ -591,6 +591,8 @@
   do_entry(initial, dtan, dtan, dtan)                                   \
   do_stub(initial, dtanh)                                               \
   do_entry(initial, dtanh, dtanh, dtanh)                                \
+  do_stub(initial, dcbrt)                                               \
+  do_entry(initial, dcbrt, dcbrt, dcbrt)                                \
   do_stub(initial, fmod)                                                \
   do_entry(initial, fmod, fmod, fmod)                                   \
   /* following generic entries should really be x86_32 only */          \
