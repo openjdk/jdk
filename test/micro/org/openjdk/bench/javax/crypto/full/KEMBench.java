@@ -66,7 +66,7 @@ public class KEMBench extends CryptoBase {
     @Benchmark
     @OperationsPerInvocation(SET_SIZE)
     public void encapsulate(Blackhole bh) throws InvalidKeyException {
-        for(KeyPair kp : keys) {
+        for (KeyPair kp : keys) {
             bh.consume(kem.newEncapsulator(kp.getPublic()).encapsulate().encapsulation());
         }
     }
