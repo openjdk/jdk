@@ -791,7 +791,16 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     // Ignore Template Assertion Predicates with OpaqueTemplateAssertionPredicate nodes.
     return nullptr;
   }
-  assert(bol->Opcode() == Op_Bool, "Unexpected node");
+  if (bol->is_OpaqueMultiversioning()) {
+    assert(bol->as_OpaqueMultiversioning()->is_useless(), "Must be useless, i.e. fast main loop has already disappeared.");
+    // Ignore multiversion_if that just lost its loops. The OpaqueMultiversioning is marked useless,
+    // and will make the multiversion_if constant fold in the next IGVN round.
+    return nullptr;
+  }
+  if (!bol->is_Bool()) {
+    assert(false, "Expected Bool, but got %s", NodeClassNames[bol->Opcode()]);
+    return nullptr;
+  }
   int cmp_op = bol->in(1)->Opcode();
   if (cmp_op == Op_SubTypeCheck) { // SubTypeCheck expansion expects an IfNode
     return nullptr;
@@ -834,10 +843,9 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
         break;
       }
     }
-    if (phi == nullptr || _igvn.type(phi) == Type::TOP) {
+    if (phi == nullptr || _igvn.type(phi) == Type::TOP || !CMoveNode::supported(_igvn.type(phi))) {
       break;
     }
-    if (PrintOpto && VerifyLoopOptimizations) { tty->print_cr("CMOV"); }
     // Move speculative ops
     wq.push(phi);
     while (wq.size() > 0) {
@@ -845,12 +853,6 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
       for (uint j = 1; j < n->req(); j++) {
         Node* m = n->in(j);
         if (m != nullptr && !is_dominator(get_ctrl(m), cmov_ctrl)) {
-#ifndef PRODUCT
-          if (PrintOpto && VerifyLoopOptimizations) {
-            tty->print("  speculate: ");
-            m->dump();
-          }
-#endif
           set_ctrl(m, cmov_ctrl);
           wq.push(m);
         }
@@ -1482,7 +1484,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
     // Now split the IF
     C->print_method(PHASE_BEFORE_SPLIT_IF, 4, iff);
-    if ((PrintOpto && VerifyLoopOptimizations) || TraceLoopOpts) {
+    if (TraceLoopOpts) {
       tty->print_cr("Split-If");
     }
     do_split_if(iff);
@@ -4482,7 +4484,7 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   return AutoVectorizeStatus::Success;
 }
 
-// Just before insert_pre_post_loops, we can multi-version the loop:
+// Just before insert_pre_post_loops, we can multiversion the loop:
 //
 //              multiversion_if
 //               |       |

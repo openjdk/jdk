@@ -56,7 +56,6 @@ abstract public class CDSAppTester {
             throw new SkippedException("Tests based on CDSAppTester should be excluded when -Dtest.dynamic.cds.archive is specified");
         }
 
-        // Old workflow
         this.name = name;
         classListFile = name() + ".classlist";
         classListFileLog = classListFile + ".log";
@@ -89,7 +88,7 @@ abstract public class CDSAppTester {
         TRAINING,       // -XX:DumpLoadedClassList OR {-XX:AOTMode=create -XX:AOTConfiguration}
         DUMP_STATIC,    // -Xshare:dump
         DUMP_DYNAMIC,   // -XX:ArchiveClassesArExit
-        ASSEMBLY,       // JEP 483
+        ASSEMBLY,       // JEP 483 (assembly phase, app logic not executed)
         PRODUCTION;     // Running with the CDS archive produced from the above steps
 
         public boolean isStaticDump() {
@@ -97,6 +96,24 @@ abstract public class CDSAppTester {
         }
         public boolean isProductionRun() {
             return this == PRODUCTION;
+        }
+
+        // When <code>CDSAppTester::checkExecution(out, runMode)</code> is called, has the application been
+        // executed? If so, <code>out</code> should contain logs printed by the application's own logic.
+        public boolean isApplicationExecuted() {
+            return (this != ASSEMBLY) && (this != DUMP_STATIC);
+        }
+    }
+
+    public boolean isDumping(RunMode runMode) {
+        if (isStaticWorkflow()) {
+            return runMode == RunMode.DUMP_STATIC;
+        } else if (isDynamicWorkflow()) {
+            return runMode == RunMode.DUMP_DYNAMIC;
+        } else if (isAOTWorkflow()) {
+            return runMode == RunMode.TRAINING || runMode == RunMode.ASSEMBLY;
+        } else {
+            return false;
         }
     }
 
@@ -111,6 +128,11 @@ abstract public class CDSAppTester {
 
     // optional
     public String classpath(RunMode runMode) {
+        return null;
+    }
+
+    // optional
+    public String modulepath(RunMode runMode) {
         return null;
     }
 
@@ -177,14 +199,31 @@ abstract public class CDSAppTester {
         return output;
     }
 
+    private String[] addClassOrModulePath(RunMode runMode, String[] cmdLine) {
+        String cp = classpath(runMode);
+        if (cp == null) {
+            // Override the "-cp ...." added by Jtreg
+            cmdLine = StringArrayUtils.concat(cmdLine, "-Djava.class.path=");
+        } else {
+            cmdLine = StringArrayUtils.concat(cmdLine, "-cp", cp);
+        }
+        String mp = modulepath(runMode);
+        if (mp != null) {
+            cmdLine = StringArrayUtils.concat(cmdLine, "--module-path", mp);
+        }
+        return cmdLine;
+    }
+
     private OutputAnalyzer recordAOTConfiguration() throws Exception {
         RunMode runMode = RunMode.TRAINING;
         String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
                                                    "-XX:AOTMode=record",
                                                    "-XX:AOTConfiguration=" + aotConfigurationFile,
-                                                   "-cp", classpath(runMode),
                                                    logToFile(aotConfigurationFileLog,
-                                                             "class+load=debug"));
+                                                             "class+load=debug",
+                                                             "cds=debug",
+                                                             "cds+class=debug"));
+        cmdLine = addClassOrModulePath(runMode, cmdLine);
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         return executeAndCheck(cmdLine, runMode, aotConfigurationFile, aotConfigurationFileLog);
     }
@@ -194,9 +233,9 @@ abstract public class CDSAppTester {
         String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
                                                    "-Xshare:off",
                                                    "-XX:DumpLoadedClassList=" + classListFile,
-                                                   "-cp", classpath(runMode),
                                                    logToFile(classListFileLog,
                                                              "class+load=debug"));
+        cmdLine = addClassOrModulePath(runMode, cmdLine);
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         return executeAndCheck(cmdLine, runMode, classListFile, classListFileLog);
     }
@@ -209,12 +248,13 @@ abstract public class CDSAppTester {
                                                    "-Xshare:dump",
                                                    "-XX:SharedArchiveFile=" + staticArchiveFile,
                                                    "-XX:SharedClassListFile=" + classListFile,
-                                                   "-cp", classpath(runMode),
                                                    logToFile(staticArchiveFileLog,
                                                              "cds=debug",
                                                              "cds+class=debug",
                                                              "cds+heap=warning",
                                                              "cds+resolve=debug"));
+        cmdLine = addClassOrModulePath(runMode, cmdLine);
+        cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         return executeAndCheck(cmdLine, runMode, staticArchiveFile, staticArchiveFileLog);
     }
 
@@ -226,12 +266,13 @@ abstract public class CDSAppTester {
                                                    "-XX:AOTMode=create",
                                                    "-XX:AOTConfiguration=" + aotConfigurationFile,
                                                    "-XX:AOTCache=" + aotCacheFile,
-                                                   "-cp", classpath(runMode),
                                                    logToFile(aotCacheFileLog,
                                                              "cds=debug",
                                                              "cds+class=debug",
                                                              "cds+heap=warning",
                                                              "cds+resolve=debug"));
+        cmdLine = addClassOrModulePath(runMode, cmdLine);
+        cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         return executeAndCheck(cmdLine, runMode, aotCacheFile, aotCacheFileLog);
     }
 
@@ -271,12 +312,12 @@ abstract public class CDSAppTester {
           cmdLine = StringArrayUtils.concat(vmArgs(runMode),
                                             "-Xlog:cds",
                                             "-XX:ArchiveClassesAtExit=" + dynamicArchiveFile,
-                                            "-cp", classpath(runMode),
                                             logToFile(dynamicArchiveFileLog,
                                                       "cds=debug",
                                                       "cds+class=debug",
                                                       "cds+resolve=debug",
                                                       "class+load=debug"));
+          cmdLine = addClassOrModulePath(runMode, cmdLine);
         }
         if (baseArchive != null) {
             cmdLine = StringArrayUtils.concat(cmdLine, "-XX:SharedArchiveFile=" + baseArchive);
@@ -300,8 +341,8 @@ abstract public class CDSAppTester {
         String[] cmdLine = StringArrayUtils.concat(vmArgs(runMode),
                                                    "-XX:+UnlockDiagnosticVMOptions",
                                                    "-XX:VerifyArchivedFields=2", // make sure archived heap objects are good.
-                                                   "-cp", classpath(runMode),
                                                    logToFile(productionRunLog(), "cds"));
+        cmdLine = addClassOrModulePath(runMode, cmdLine);
 
         if (isStaticWorkflow()) {
             cmdLine = StringArrayUtils.concat(cmdLine, "-Xshare:on", "-XX:SharedArchiveFile=" + staticArchiveFile);
@@ -326,7 +367,7 @@ abstract public class CDSAppTester {
         return out;
     }
 
-    public void run(String args[]) throws Exception {
+    public void run(String... args) throws Exception {
         String err = "Must have exactly one command line argument of the following: ";
         String prefix = "";
         for (Workflow wf : Workflow.values()) {
@@ -349,21 +390,21 @@ abstract public class CDSAppTester {
         }
     }
 
-    private void runStaticWorkflow() throws Exception {
+    public void runStaticWorkflow() throws Exception {
         this.workflow = Workflow.STATIC;
         createClassList();
         dumpStaticArchive();
         productionRun();
     }
 
-    private void runDynamicWorkflow() throws Exception {
+    public void runDynamicWorkflow() throws Exception {
         this.workflow = Workflow.DYNAMIC;
         dumpDynamicArchive();
         productionRun();
     }
 
-    // See JEP 485
-    private void runAOTWorkflow() throws Exception {
+    // See JEP 483
+    public void runAOTWorkflow() throws Exception {
         this.workflow = Workflow.AOT;
         recordAOTConfiguration();
         createAOTCache();

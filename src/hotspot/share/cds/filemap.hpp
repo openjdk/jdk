@@ -140,7 +140,6 @@ private:
                                         // some expensive operations.
   bool   _has_aot_linked_classes;       // Was the CDS archive created with -XX:+AOTClassLinking
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
-  bool   _has_archived_invokedynamic;   // Does the archive have aot-linked invokedynamic CP entries?
   HeapRootSegments _heap_root_segments; // Heap root segments info
   size_t _heap_oopmap_start_pos;        // The first bit in the oopmap corresponds to this position in the heap.
   size_t _heap_ptrmap_start_pos;        // The first bit in the ptrmap corresponds to this position in the heap.
@@ -400,7 +399,7 @@ public:
   // The offset of the (exclusive) end of the last core region in this archive, relative to SharedBaseAddress
   size_t mapping_end_offset()  const { return last_core_region()->mapping_end_offset(); }
 
-  char* mapped_base()    const { return first_core_region()->mapped_base(); }
+  char* mapped_base()    const { return header()->mapped_base_address();    }
   char* mapped_end()     const { return last_core_region()->mapped_end();   }
 
   // Non-zero if the archive needs to be mapped a non-default location due to ASLR.

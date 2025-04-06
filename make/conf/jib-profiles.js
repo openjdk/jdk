@@ -391,8 +391,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "23";
-    common.boot_jdk_build_number = "37";
+    common.boot_jdk_version = "24";
+    common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -1237,7 +1237,7 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             revision: "9.0.0+1.0",
-            module: "graphviz-" + input.target_platform,
+            module: "graphviz-" + input.build_platform,
             configure_args: "DOT=" + input.get("graphviz", "install_path") + "/dot",
             environment_path: input.get("graphviz", "install_path")
         },

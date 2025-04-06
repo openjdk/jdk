@@ -47,7 +47,6 @@ bool CDSConfig::_is_using_optimized_module_handling = true;
 bool CDSConfig::_is_dumping_full_module_graph = true;
 bool CDSConfig::_is_using_full_module_graph = true;
 bool CDSConfig::_has_aot_linked_classes = false;
-bool CDSConfig::_has_archived_invokedynamic = false;
 bool CDSConfig::_old_cds_flags_used = false;
 bool CDSConfig::_new_aot_flags_used = false;
 bool CDSConfig::_disable_heap_dumping = false;
@@ -61,6 +60,7 @@ JavaThread* CDSConfig::_dumper_thread = nullptr;
 int CDSConfig::get_status() {
   assert(Universe::is_fully_initialized(), "status is finalized only after Universe is initialized");
   return (is_dumping_archive()              ? IS_DUMPING_ARCHIVE : 0) |
+         (is_dumping_method_handles()       ? IS_DUMPING_METHOD_HANDLES : 0) |
          (is_dumping_static_archive()       ? IS_DUMPING_STATIC_ARCHIVE : 0) |
          (is_logging_lambda_form_invokers() ? IS_LOGGING_LAMBDA_FORM_INVOKERS : 0) |
          (is_using_archive()                ? IS_USING_ARCHIVE : 0);
@@ -562,7 +562,7 @@ bool CDSConfig::is_dumping_final_static_archive() {
 
 bool CDSConfig::allow_only_single_java_thread() {
   // See comments in JVM_StartThread()
-  return is_dumping_static_archive();
+  return is_dumping_classic_static_archive() || is_dumping_final_static_archive();
 }
 
 bool CDSConfig::is_using_archive() {
@@ -648,11 +648,15 @@ void CDSConfig::log_reasons_for_not_dumping_heap() {
   log_info(cds)("Archived java heap is not supported: %s", reason);
 }
 
+// This is *Legacy* optimization for lambdas before JEP 483. May be removed in the future.
+bool CDSConfig::is_dumping_lambdas_in_legacy_mode() {
+  return !is_dumping_method_handles();
+}
+
 #if INCLUDE_CDS_JAVA_HEAP
 bool CDSConfig::are_vm_options_incompatible_with_dumping_heap() {
   return check_options_incompatible_with_dumping_heap() != nullptr;
 }
-
 
 bool CDSConfig::is_dumping_heap() {
   if (!(is_dumping_classic_static_archive() || is_dumping_final_static_archive())
@@ -738,8 +742,13 @@ bool CDSConfig::is_dumping_invokedynamic() {
   return AOTInvokeDynamicLinking && is_dumping_aot_linked_classes() && is_dumping_heap();
 }
 
-bool CDSConfig::is_loading_invokedynamic() {
-  return UseSharedSpaces && is_using_full_module_graph() && _has_archived_invokedynamic;
+// When we are dumping aot-linked classes and we are able to write archived heap objects, we automatically
+// enable the archiving of MethodHandles. This will in turn enable the archiving of MethodTypes and hidden
+// classes that are used in the implementation of MethodHandles.
+// Archived MethodHandles are required for higher-level optimizations such as AOT resolution of invokedynamic
+// and dynamic proxies.
+bool CDSConfig::is_dumping_method_handles() {
+  return is_initing_classes_at_dump_time();
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP
