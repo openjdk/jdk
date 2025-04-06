@@ -74,7 +74,6 @@ final class MethodTypeForm {
             LF_NEWINVSPECIAL           =  3,
             LF_INVINTERFACE            =  4,
             LF_INVSTATIC_INIT          =  5,  // DMH invokeStatic with <clinit> barrier
-            LF_INTERPRET               =  6,  // LF interpreter
             LF_REBIND                  =  7,  // BoundMethodHandle
             LF_DELEGATE                =  8,  // DelegatingMethodHandle
             LF_DELEGATE_BLOCK_INLINING =  9,  // Counting DelegatingMethodHandle w/ @DontInline
