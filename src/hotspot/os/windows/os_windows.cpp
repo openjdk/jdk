@@ -2206,18 +2206,20 @@ void os::jvm_path(char *buf, jint buflen) {
   }
 
   buf[0] = '\0';
-  char* java_home_var = ::getenv("JAVA_HOME");
-  if (java_home_var != nullptr && java_home_var[0] != 0 &&
-      strlen(java_home_var) < (size_t)buflen) {
-    strncpy(buf, java_home_var, buflen);
+  if (Arguments::executing_unit_tests()) {
+    char* java_home_var = ::getenv("JAVA_HOME");
+    if (java_home_var != nullptr && java_home_var[0] != 0 &&
+        strlen(java_home_var) < (size_t)buflen) {
+      strncpy(buf, java_home_var, buflen);
 
-    // modules image doesn't have "jre" subdirectory
-    size_t len = strlen(buf);
-    char* jrebin_p = buf + len;
-    jio_snprintf(jrebin_p, buflen-len, "\\bin\\");
-    len = strlen(buf);
-    jio_snprintf(buf + len, buflen-len, "%s\\jvm%s",
-                 Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+      // modules image doesn't have "jre" subdirectory
+      size_t len = strlen(buf);
+      char* bin_p = buf + len;
+      jio_snprintf(bin_p, buflen-len, "\\bin\\");
+      len = strlen(buf);
+      jio_snprintf(buf + len, buflen-len, "%s\\jvm%s",
+                   Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+    }
   }
 
   if (buf[0] == '\0') {

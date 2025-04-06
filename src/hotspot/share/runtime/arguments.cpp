@@ -91,6 +91,7 @@ size_t Arguments::_conservative_max_heap_alignment = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
 const char*  Arguments::_java_vendor_url_bug    = nullptr;
 const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
+bool   Arguments::_executing_unit_tests         = false;
 
 // These parameters are reset in method parse_vm_init_args()
 bool   Arguments::_AlwaysCompileLoopMethods     = AlwaysCompileLoopMethods;
@@ -363,6 +364,10 @@ void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
 
     if (match_option(option, "-Dsun.java.launcher=", &tail)) {
       process_java_launcher_argument(tail, option->extraInfo);
+      continue;
+    }
+    if (match_option(option, "-XX:+ExecutingUnitTests")) {
+      _executing_unit_tests = true;
       continue;
     }
   }
@@ -1750,6 +1755,10 @@ void Arguments::process_java_launcher_argument(const char* launcher, void* extra
 bool Arguments::created_by_java_launcher() {
   assert(_sun_java_launcher != nullptr, "property must have value");
   return strcmp(DEFAULT_JAVA_LAUNCHER, _sun_java_launcher) != 0;
+}
+
+bool Arguments::executing_unit_tests() {
+  return _executing_unit_tests;
 }
 
 //===========================================================================================================

@@ -1502,48 +1502,50 @@ void os::jvm_path(char *buf, jint buflen) {
     return;
   }
 
-  // Look for JAVA_HOME in the environment.
-  char* java_home_var = ::getenv("JAVA_HOME");
-  if (java_home_var != nullptr && java_home_var[0] != 0) {
-    int len;
+  if (Arguments::executing_unit_tests()) {
+    // Look for JAVA_HOME in the environment.
+    char* java_home_var = ::getenv("JAVA_HOME");
+    if (java_home_var != nullptr && java_home_var[0] != 0) {
+      int len;
 
-    // Check the current module name "libjvm"
-    const char* p = strrchr(buf, '/');
-    assert(strstr(p, "/libjvm") == p, "invalid library name");
+      // Check the current module name "libjvm"
+      const char* p = strrchr(buf, '/');
+      assert(strstr(p, "/libjvm") == p, "invalid library name");
 
-    rp = os::realpath(java_home_var, buf, buflen);
-    if (rp == nullptr) {
-      return;
-    }
-
-    // modules image doesn't have "jre" subdirectory
-    len = strlen(buf);
-    assert(len < buflen, "Ran out of buffer space");
-    char* lib_p = buf + len;
-
-    // Add the appropriate library subdir
-    snprintf(lib_p, buflen-len, "/lib");
-
-    // Add the appropriate JVM variant subdir
-    len = strlen(buf);
-    lib_p = buf + len;
-    snprintf(lib_p, buflen-len, "/%s", Abstract_VM_Version::vm_variant());
-    if (0 != access(buf, F_OK)) {
-      snprintf(lib_p, buflen-len, "%s", "");
-    }
-
-    // If the path exists within JAVA_HOME, add the JVM library name
-    // to complete the path to JVM being overridden.  Otherwise fallback
-    // to the path to the current library.
-    if (0 == access(buf, F_OK)) {
-      // Use current module name "libjvm"
-      len = strlen(buf);
-      snprintf(buf + len, buflen-len, "/libjvm%s", JNI_LIB_SUFFIX);
-    } else {
-      // Fall back to path of current library
-      rp = os::realpath(dli_fname, buf, buflen);
+      rp = os::realpath(java_home_var, buf, buflen);
       if (rp == nullptr) {
         return;
+      }
+
+      // modules image doesn't have "jre" subdirectory
+      len = strlen(buf);
+      assert(len < buflen, "Ran out of buffer space");
+      char* lib_p = buf + len;
+
+      // Add the appropriate library subdir
+      snprintf(lib_p, buflen-len, "/lib");
+
+      // Add the appropriate JVM variant subdir
+      len = strlen(buf);
+      lib_p = buf + len;
+      snprintf(lib_p, buflen-len, "/%s", Abstract_VM_Version::vm_variant());
+      if (0 != access(buf, F_OK)) {
+        snprintf(lib_p, buflen-len, "%s", "");
+      }
+
+      // If the path exists within JAVA_HOME, add the JVM library name
+      // to complete the path to JVM being overridden.  Otherwise fallback
+      // to the path to the current library.
+      if (0 == access(buf, F_OK)) {
+        // Use current module name "libjvm"
+        len = strlen(buf);
+        snprintf(buf + len, buflen-len, "/libjvm%s", JNI_LIB_SUFFIX);
+      } else {
+        // Fall back to path of current library
+        rp = os::realpath(dli_fname, buf, buflen);
+        if (rp == nullptr) {
+          return;
+        }
       }
     }
   }
