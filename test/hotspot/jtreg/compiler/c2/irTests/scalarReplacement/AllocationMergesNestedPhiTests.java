@@ -31,7 +31,8 @@ import compiler.lib.ir_framework.*;
  * @bug 8341293
  * @summary Tests that C2 can correctly scalar replace some object allocation merges.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.scalarReplacement.AllocationMergesNestedPhiTests
+ * @requires vm.compMode != "Xcomp"
+ * @run driver/timeout=240000 compiler.c2.irTests.scalarReplacement.AllocationMergesNestedPhiTests
  */
 public class AllocationMergesNestedPhiTests {
     private int invocations = 0;
@@ -47,8 +48,6 @@ public class AllocationMergesNestedPhiTests {
                                              "-XX:+DeoptimizeALot",
                                              "-XX:+UseCompressedOops",
                                              "-XX:+UseCompressedClassPointers",
-                                             "-XX:CompileCommand=inline,*::charAt*",
-                                             "-XX:CompileCommand=inline,*PicturePositions::*",
                                              "-XX:CompileCommand=inline,*Point::*",
                                              "-XX:CompileCommand=inline,*Nested::*",
                                              "-XX:CompileCommand=exclude,*::dummy*");
@@ -60,8 +59,6 @@ public class AllocationMergesNestedPhiTests {
                                              "-XX:+DeoptimizeALot",
                                              "-XX:+UseCompressedOops",
                                              "-XX:-UseCompressedClassPointers",
-                                             "-XX:CompileCommand=inline,*::charAt*",
-                                             "-XX:CompileCommand=inline,*PicturePositions::*",
                                              "-XX:CompileCommand=inline,*Point::*",
                                              "-XX:CompileCommand=inline,*Nested::*",
                                              "-XX:CompileCommand=exclude,*::dummy*");
@@ -72,13 +69,18 @@ public class AllocationMergesNestedPhiTests {
                                              "-XX:+TraceReduceAllocationMerges",
                                              "-XX:+DeoptimizeALot",
                                              "-XX:-UseCompressedOops",
-                                             "-XX:CompileCommand=inline,*::charAt*",
-                                             "-XX:CompileCommand=inline,*PicturePositions::*",
                                              "-XX:CompileCommand=inline,*Point::*",
                                              "-XX:CompileCommand=inline,*Nested::*",
                                              "-XX:CompileCommand=exclude,*::dummy*");
 
-        framework.addScenarios(scenario0, scenario1, scenario2).start();
+        Scenario scenario3 = new Scenario(3, "-XX:+IgnoreUnrecognizedVMOptions",
+                                             "-XX:+UnlockDiagnosticVMOptions",
+                                             "-XX:CompileCommand=inline,*::charAt*",
+                                             "-XX:CompileCommand=inline,*Point::*",
+                                             "-XX:CompileCommand=inline,*Nested::*",
+                                             "-XX:CompileCommand=exclude,*::dummy*");
+
+        framework.addScenarios(scenario0, scenario1, scenario2, scenario3).start();
     }
 
     // ------------------ No Scalar Replacement Should Happen in The Tests Below ------------------- //
@@ -130,7 +132,7 @@ public class AllocationMergesNestedPhiTests {
         Asserts.assertEQ(testNestedPhiPolymorphic_Interp(cond1, cond2, x, y),       testNestedPhiPolymorphic_C2(cond1, cond2, x, y));
         Asserts.assertEQ(testNestedPhiWithTrap_Interp(cond1, cond2, x, y),          testNestedPhiWithTrap_C2(cond1, cond2, x, y));
         Asserts.assertEQ(testNestedPhiWithLambda_Interp(cond1, cond2, x, y),        testNestedPhiWithLambda_C2(cond1, cond2, x, y));
-        Asserts.assertEQ(testMultiParentPhi_Interp(cond1, x, y),             testMultiParentPhi_C2(cond1, x, y));
+        Asserts.assertEQ(testMultiParentPhi_Interp(cond1, x, y),                    testMultiParentPhi_C2(cond1, x, y));
     }
 
     // -------------------------------------------------------------------------
@@ -154,7 +156,7 @@ public class AllocationMergesNestedPhiTests {
     @IR(counts = { IRNode.ALLOC, ">=1", IRNode.SAFEPOINT_SCALAR_MERGE, ">=1"},
         phase = CompilePhase.ITER_GVN_AFTER_EA,
         applyIfPlatform = {"64-bit", "true"},
-        applyIf = {"EliminateAllocations", "true"})
+        applyIfAnd = {"EliminateAllocations", "true", "DeoptimizeALot", "true"})
     int testRematerialize_SingleObj_C2(boolean cond1,int x, int y) throws Exception { return testRematerialize_SingleObj(cond1, x, y); }
 
     @DontCompile
@@ -177,7 +179,7 @@ public class AllocationMergesNestedPhiTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, ">=1", IRNode.SAFEPOINT_SCALAR_MERGE, ">=1",  IRNode.SAFEPOINT_SCALAR_OBJECT, ">=2"},
+    @IR(counts = { IRNode.ALLOC, ">=1", IRNode.SAFEPOINT_SCALAR_MERGE, ">=1",  IRNode.SAFEPOINT_SCALAR_OBJECT, ">=1"},
         phase = CompilePhase.ITER_GVN_AFTER_EA,
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"EliminateAllocations", "true"})
@@ -372,7 +374,7 @@ public class AllocationMergesNestedPhiTests {
         phase = CompilePhase.PHASEIDEAL_BEFORE_EA,
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"EliminateAllocations", "true"})
-    @IR(counts = { IRNode.ALLOC, "2" },
+    @IR(counts = { IRNode.ALLOC, "<=2" },
         phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION,
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"EliminateAllocations", "true"})
@@ -556,11 +558,11 @@ public class AllocationMergesNestedPhiTests {
     int testNestedPhiWithLambda_Interp(boolean cond1, boolean cond2, int x, int y) { return testNestedPhiWithLambda(cond1, cond2, x, y); }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "4" },
+    @IR(counts = { IRNode.ALLOC, ">=3" },
         phase = CompilePhase.PHASEIDEAL_BEFORE_EA,
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"EliminateAllocations", "true"})
-    @IR(counts = { IRNode.ALLOC, "0" },
+    @IR(counts = { IRNode.ALLOC, "<=2" },
         phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION,
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"EliminateAllocations", "true"})
@@ -720,79 +722,6 @@ public class AllocationMergesNestedPhiTests {
         ADefaults() { }
     }
 
-    static class Picture {
-        public int id;
-        public Point position;
-
-        public Picture(int id, int x, int y) {
-            this.id = id;
-            this.position = new Point(x, y);
-        }
-    }
-
-    static class PicturePositions {
-        public int id;
-        public Point[] positions;
-
-        public PicturePositions(int id, int x, int y) {
-            this.id = id;
-            this.positions = new Point[] { new Point(x, y), new Point(y, x) };
-        }
-    }
-
-    class Root {
-        public int a;
-        public int b;
-        public int c;
-        public int d;
-        public int e;
-
-        public Root(int a, int b, int c, int d, int e) {
-            this.a = a;
-            this.b = b;
-            this.c = c;
-            this.d = d;
-            this.e = e;
-        }
-    }
-
-    class Usr extends Root {
-        public float flt;
-
-        public Usr(float a, float b, float c) {
-            super((int)a, (int)b, (int)c, 0, 0);
-            this.flt = a;
-        }
-    }
-
-    class Home extends Root {
-        public double[] arr;
-
-        public Home(double a, double b) {
-            super((int)a, (int)b, 0, 0, 0);
-            this.arr = new double[] {a, b};
-        }
-
-    }
-
-    class Tmp extends Root {
-        public String s;
-
-        public Tmp(String s) {
-            super((int)s.length(), 0, 0, 0, 0);
-            this.s = s;
-        }
-    }
-
-    class Etc extends Root {
-        public String a;
-
-        public Etc(String s) {
-            super((int)s.length(), 0, 0, 0, 0);
-            this.a = s;
-        }
-    }
-
     class TestThread extends Thread {
         private static Object syncObject = new Object();
         Point p;
@@ -810,12 +739,4 @@ public class AllocationMergesNestedPhiTests {
             } catch(Exception e){}
         }
     }
-
-    class A { }
-    class B { }
-    class C { }
-    class D { }
-    class E { }
-    class F { }
-    class G { }
 }

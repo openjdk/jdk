@@ -4521,6 +4521,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         continue;
       }
       Node* addp_base = get_addp_base(n);
+      // Nested phi node, this Addp will go away when phi node is reduced
+      if (addp_base->is_Phi()) {
+        assert(reducible_merges.member(addp_base), "nestedphi node must be part of reduce merge list");
+        continue;
+      }
       JavaObjectNode* jobj = unique_java_object(addp_base);
       if (jobj == nullptr || jobj == phantom_obj) {
 #ifdef ASSERT
