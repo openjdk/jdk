@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,9 +69,9 @@ public final class SchemaFactoryConfigurationError extends Error {
      * Create a new <code>SchemaFactoryConfigurationError</code> with the
      * given <code>Throwable</code> base cause and detail message.
      *
+     * @param message The detail message.
      * @param cause The exception or error to be encapsulated in a
      * SchemaFactoryConfigurationError.
-     * @param message The detail message.
      */
     public SchemaFactoryConfigurationError(String message, Throwable cause) {
         super(message, cause);

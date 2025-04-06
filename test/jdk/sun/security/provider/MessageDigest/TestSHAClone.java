@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,8 @@ public class TestSHAClone {
 
 
     public static void main(String[] argv) throws Exception {
-        Provider p = Security.getProvider("SUN");
+        Provider p = Security.getProvider(
+                System.getProperty("test.provider.name", "SUN"));
         for (int i=0; i<ALGOS.length; i++) {
             TestSHAClone test = new TestSHAClone(ALGOS[i], p);
             test.run();

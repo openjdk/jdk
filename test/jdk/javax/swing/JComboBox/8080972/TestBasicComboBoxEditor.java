@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,14 @@ import javax.swing.plaf.basic.BasicComboBoxEditor;
 /*
  * @test
  * @bug 8080972
- * @run main/othervm -Djava.security.manager=allow TestBasicComboBoxEditor
+ * @run main TestBasicComboBoxEditor
  * @summary Audit Core Reflection in module java.desktop for places that will
  *          require changes to work with modules
- * @author Alexander Scherbatiy
  */
 
 public class TestBasicComboBoxEditor {
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(TestBasicComboBoxEditor::testBasicComboBoxEditor);
-        System.setSecurityManager(new SecurityManager());
         SwingUtilities.invokeAndWait(TestBasicComboBoxEditor::testBasicComboBoxEditor);
     }
 
@@ -50,7 +47,7 @@ public class TestBasicComboBoxEditor {
         UserComboBoxEditorType item = (UserComboBoxEditorType) comboBoxEditor.getItem();
 
         if (!item.str.equals("200")) {
-            throw new RuntimeException("Wrong itme value!");
+            throw new RuntimeException("Wrong item value!");
         }
     }
 

@@ -25,6 +25,7 @@
  * @test
  * @library /test/lib /
  * @requires vm.flagless
+ * @requires ! vm.opt.final.UnlockExperimentalVMOptions
  * @requires vm.compMode != "Xint"
  * @run driver compiler.blackhole.BlackholeExperimentalUnlockTest
  */

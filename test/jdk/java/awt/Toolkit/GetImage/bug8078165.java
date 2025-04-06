@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,18 @@
  */
 
 
-import java.awt.*;
+import java.awt.Toolkit;
 import java.net.URL;
-import java.security.Permission;
 
-
-/**
+/*
  * @test
  * @bug 8078165
- * @run main/othervm -Djava.security.manager=allow bug8078165
+ * @run main bug8078165
  * @summary NPE when attempting to get image from toolkit
- * @author Anton Nashatyrev
  */
 public final class bug8078165 {
 
     public static void main(final String[] args) throws Exception {
-        // Mac only
-        System.setSecurityManager(new SecurityManager() {
-            @Override
-            public void checkPermission(Permission permission) {
-                // Just allows everything
-            }
-        });
         // The method shouldn't throw NPE
         Toolkit.getDefaultToolkit().getImage(new URL("file://./dummyImage@2x.png"));
         Toolkit.getDefaultToolkit().getImage("./dummyImage@2x.png");

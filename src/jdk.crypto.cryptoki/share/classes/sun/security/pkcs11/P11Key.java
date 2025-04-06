@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,12 +108,9 @@ abstract class P11Key implements Key, Length {
      *
      */
     static {
-        PrivilegedAction<String> getKeyExtractionProp =
-                () -> System.getProperty(
-                        "sun.security.pkcs11.disableKeyExtraction", "false");
-        @SuppressWarnings("removal")
         String disableKeyExtraction =
-                AccessController.doPrivileged(getKeyExtractionProp);
+                System.getProperty(
+                        "sun.security.pkcs11.disableKeyExtraction", "false");
         DISABLE_NATIVE_KEYS_EXTRACTION =
                 "true".equalsIgnoreCase(disableKeyExtraction);
     }
@@ -238,6 +235,19 @@ abstract class P11Key implements Key, Length {
                     ", and NSS token keys" : "keys"));
         }
         return new KeyRep(type, getAlgorithm(), format, getEncodedInternal());
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException("P11Key not directly deserializable");
     }
 
     public String toString() {
@@ -436,7 +446,7 @@ abstract class P11Key implements Key, Length {
         }
     }
 
-    private static class P11SecretKey extends P11Key implements SecretKey {
+    static class P11SecretKey extends P11Key implements SecretKey {
         @Serial
         private static final long serialVersionUID = -7828241727014329084L;
 

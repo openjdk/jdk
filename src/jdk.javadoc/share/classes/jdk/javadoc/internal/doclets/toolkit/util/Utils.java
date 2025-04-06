@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1130,6 +1130,15 @@ public class Utils {
         }
         result.append(text, pos, textLength);
         return result.toString();
+    }
+
+    /**
+     * Replaces each group of one or more whitespace characters with a single canonical space
+     * @param s the string to be normalized
+     * @return normalized string
+     */
+    public String normalizeWhitespace(String s) {
+        return s.replaceAll("\\s+", " ");
     }
 
     /**
@@ -2485,7 +2494,6 @@ public class Utils {
                     usedInDeclaration.addAll(types2Classes(tpe.getBounds()));
                 }
                 usedInDeclaration.addAll(types2Classes(List.of(te.getSuperclass())));
-                usedInDeclaration.addAll(types2Classes(te.getInterfaces()));
                 usedInDeclaration.addAll(types2Classes(te.getPermittedSubclasses()));
                 usedInDeclaration.addAll(types2Classes(te.getRecordComponents().stream().map(Element::asType).toList())); //TODO: annotations on record components???
             }

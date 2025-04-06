@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class ECDSAPrvGreaterThanOrder {
             KeyAgreement ka = null;
             try {
                 sig = Signature.getInstance("SHA256withECDSA",
-                        "SunEC");
+                        System.getProperty("test.provider.name", "SunEC"));
                 sig.initSign(ecPrivKey);
                 throw new RuntimeException("Expected exception for " +
                         "ECDSA/" + sig.getAlgorithm() + "/" + curveName +
@@ -66,7 +66,8 @@ public class ECDSAPrvGreaterThanOrder {
 
             // Next, try starting a ECDH operation
             try {
-                ka = KeyAgreement.getInstance("ECDH", "SunEC");
+                ka = KeyAgreement.getInstance("ECDH",
+                            System.getProperty("test.provider.name", "SunEC"));
                 ka.init(ecPrivKey);
                 throw new RuntimeException("Expected exception for ECDH/" +
                         curveName + " not thrown.");
@@ -83,7 +84,7 @@ public class ECDSAPrvGreaterThanOrder {
             System.out.println("Creating private key for curve " + curveName);
 
             AlgorithmParameters params = AlgorithmParameters.getInstance(
-                    "EC", "SunEC");
+                    "EC", System.getProperty("test.provider.name", "SunEC"));
             params.init(new ECGenParameterSpec(curveName));
             ECParameterSpec ecParameters = params.getParameterSpec(
                     ECParameterSpec.class);
@@ -96,7 +97,8 @@ public class ECDSAPrvGreaterThanOrder {
             System.out.println("Modified d Value is: " + dVal);
 
             // Create the private key
-            KeyFactory kf = KeyFactory.getInstance("EC", "SunEC");
+            KeyFactory kf = KeyFactory.getInstance("EC",
+                                System.getProperty("test.provider.name", "SunEC"));
             return (ECPrivateKey)kf.generatePrivate(
                     new ECPrivateKeySpec(dVal, ecParameters));
         } catch (GeneralSecurityException gse) {

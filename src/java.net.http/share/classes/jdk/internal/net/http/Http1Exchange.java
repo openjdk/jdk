@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
+import jdk.internal.net.http.HttpClientImpl.DelegatingExecutor;
 import jdk.internal.net.http.common.Demand;
 import jdk.internal.net.http.common.HttpBodySubscriberWrapper;
 import jdk.internal.net.http.common.Log;
@@ -63,14 +64,15 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     private volatile Http1Response<T> response;
     final HttpConnection connection;
     final HttpClientImpl client;
-    final Executor executor;
+    final DelegatingExecutor executor;
     private final Http1AsyncReceiver asyncReceiver;
     private volatile boolean upgraded;
 
     /** Records a possible cancellation raised before any operation
      * has been initiated, or an error received while sending the request. */
     private final AtomicReference<Throwable> failedRef = new AtomicReference<>();
-    private final List<CompletableFuture<?>> operations; // used for cancel
+    private final ConcurrentLinkedDeque<CompletableFuture<?>> operations =
+            new ConcurrentLinkedDeque<>(); // used for cancel
 
     /** Must be held when operating on any internal state or data. */
     private final ReentrantLock lock = new ReentrantLock();
@@ -236,7 +238,6 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         this.request = exchange.request();
         this.client = exchange.client();
         this.executor = exchange.executor();
-        this.operations = new LinkedList<>();
         operations.add(headersSentCF);
         operations.add(bodySentCF);
         if (connection != null) {
@@ -256,7 +257,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
 
     private void connectFlows(HttpConnection connection) {
         FlowTube tube =  connection.getConnectionFlow();
-        if (debug.on()) debug.log("%s connecting flows", tube);
+        if (debug.on()) debug.log("%s connecting flows %s", tube, writePublisher);
 
         // Connect the flow to our Http1TubeSubscriber:
         //   asyncReceiver.subscriber().
@@ -359,7 +360,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                         if (debug.on()) debug.log("Failed to send headers: %s", t);
                         headersSentCF.completeExceptionally(t);
                         bodySentCF.completeExceptionally(t);
-                        connection.close();
+                        connection.close(t);
                         cf.completeExceptionally(t);
                         return cf;
                     } })
@@ -418,7 +419,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         lock.lock();
         try {
             operations.add(cf);
-            cause = failedRef.compareAndExchange(failedRef.get(), null);
+            cause = failedRef.get();
         } finally {
             lock.unlock();
         }
@@ -526,7 +527,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     private void cancelImpl(Throwable cause) {
         LinkedList<CompletableFuture<?>> toComplete = null;
         int count = 0;
-        Throwable error = null;
+        Throwable error;
         BodySubscriber<?> subscriber;
         lock.lock();
         try {
@@ -598,7 +599,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
             }
         } finally {
             if (!upgraded)
-                connection.close();
+                connection.close(error);
         }
     }
 
@@ -655,10 +656,9 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     }
 
     private void cancelUpstreamSubscription() {
-        final Executor exec = client.theExecutor();
         if (debug.on()) debug.log("cancelling upstream publisher");
         if (bodySubscriber != null) {
-            exec.execute(bodySubscriber::cancelSubscription);
+            executor.execute(bodySubscriber::cancelSubscription);
         } else if (debug.on()) {
             debug.log("bodySubscriber is null");
         }
@@ -668,7 +668,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     // ALL tasks should execute off the Selector-Manager thread
     /** Returns the next portion of the HTTP request, or the error. */
     private DataPair getOutgoing() {
-        final Executor exec = client.theExecutor();
+        final Executor exec = executor;
         final DataPair dp = outgoing.pollFirst();
 
         if (writePublisher.cancelled) {
@@ -686,7 +686,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
             exec.execute(() -> {
                 headersSentCF.completeExceptionally(dp.throwable);
                 bodySentCF.completeExceptionally(dp.throwable);
-                connection.close();
+                connection.close(dp.throwable);
             });
             return dp;
         }
@@ -799,7 +799,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
             @Override
             public void run() {
                 assert state != State.COMPLETED : "Unexpected state:" + state;
-                if (debug.on()) debug.log("WriteTask");
+                if (debug.on()) debug.log("WriteTask for " + request);
 
                 if (cancelled) {
                     if (debug.on()) debug.log("handling cancellation");
@@ -859,16 +859,16 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                 demand.increase(n);
                 if (debug.on())
                     debug.log("subscription request(%d), demand=%s", n, demand);
-                writeScheduler.runOrSchedule(client.theExecutor());
+                writeScheduler.runOrSchedule(executor);
             }
 
             @Override
             public void cancel() {
-                if (debug.on()) debug.log("subscription cancelled");
+                if (debug.on()) debug.log("subscription cancelled for " + request);
                 if (cancelled)
                     return;  //no-op
                 cancelled = true;
-                writeScheduler.runOrSchedule(client.theExecutor());
+                writeScheduler.runOrSchedule(executor);
             }
         }
     }

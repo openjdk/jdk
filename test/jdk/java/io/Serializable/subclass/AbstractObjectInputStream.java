@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,6 @@
  */
 
 import java.io.*;
-import java.util.Vector;
-import java.util.Stack;
-import java.util.Hashtable;
-import java.lang.Math;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
 /**
  * This abstract class enables one to subclass ObjectInputStream
@@ -43,9 +36,7 @@ import java.lang.reflect.Modifier;
  * Since serialization must override java access rules in order to
  * access private, protected and package accessible Serializable fields,
  * only trusted classes are allowed to subclass AbstractObjectInputStream.
- * Subclasses of AbstractObjectInputStream must define SerializablePermission
- * "enableAbstractSubclass" within a security policy file or this
- * constructor will throw a SecurityException. Implementations of this
+ * Implementations of this
  * class should protect themselves from being subclassed in a way that will
  * provide access to object references and other sensitive info.
  * Specifically, readObjectOverride() should be made final.
@@ -149,17 +140,8 @@ public abstract class AbstractObjectInputStream extends ObjectInputStream
     /**
      * Create an ObjectInputStream that reads from the specified InputStream.<p>
      *
-     * Add the following line to the security policy file to enable
-     * subclassing.
-     *
-     * <PRE>
-     *     permission SerializablePermission "enableAbstractSubclass" ;
-     * </PRE><p>
-     *
      * @exception StreamCorruptedException The version or magic number are incorrect.
      * @exception IOException An exception occurred in the underlying stream.
-     * @exception SecurityException if subclass does not have SerializablePermiision
-     *            "enableAbstractSubclass".
      */
     public AbstractObjectInputStream(InputStream in)
         throws IOException, StreamCorruptedException
@@ -286,7 +268,7 @@ public abstract class AbstractObjectInputStream extends ObjectInputStream
     public abstract ObjectInputStream.GetField readFields()
         throws IOException, ClassNotFoundException, NotActiveException;
 
-    protected abstract boolean enableResolveObject(boolean enable) throws SecurityException;
+    protected abstract boolean enableResolveObject(boolean enable);
 
     public abstract void registerValidation(ObjectInputValidation obj,
                                             int prio)

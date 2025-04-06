@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,12 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.security.CodeSource;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -36,7 +30,6 @@ import java.util.Queue;
 import java.util.ResourceBundle;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Handler;
 import java.util.logging.LogManager;
@@ -46,30 +39,17 @@ import java.util.logging.Logger;
 import sun.util.logging.PlatformLogger;
 import sun.util.logging.internal.LoggingProviderImpl;
 
-/**
+/*
  * @test
- * @bug     8140364
+ * @bug 8140364
  * @summary Tests all PlatformLogger methods with the default LoggerFinder JUL backend.
  * @modules java.base/sun.util.logging java.logging/sun.util.logging.internal
- * @run  main/othervm -Djava.security.manager=allow DefaultPlatformLoggerTest
- * @author danielfuchs
+ * @run  main/othervm DefaultPlatformLoggerTest
  */
 public class DefaultPlatformLoggerTest {
 
     final static AtomicLong sequencer = new AtomicLong();
     final static boolean VERBOSE = false;
-    static final ThreadLocal<AtomicBoolean> allowControl = new ThreadLocal<AtomicBoolean>() {
-        @Override
-        protected AtomicBoolean initialValue() {
-            return  new AtomicBoolean(false);
-        }
-    };
-    static final ThreadLocal<AtomicBoolean> allowAll = new ThreadLocal<AtomicBoolean>() {
-        @Override
-        protected AtomicBoolean initialValue() {
-            return  new AtomicBoolean(false);
-        }
-    };
 
     public static final Queue<LogEvent> eventQueue = new ArrayBlockingQueue<>(128);
 
@@ -256,15 +236,11 @@ public class DefaultPlatformLoggerTest {
         test(provider, true, appSink, sysSink);
         System.out.println("Tetscase count: " + sequencer.get());
 
-        Policy.setPolicy(new SimplePolicy(allowAll, allowControl));
-        System.setSecurityManager(new SecurityManager());
-
         System.out.println("\n*** With Security Manager, without permissions\n");
         test(provider, false, appSink, sysSink);
         System.out.println("Tetscase count: " + sequencer.get());
 
         System.out.println("\n*** With Security Manager, with control permission\n");
-        allowControl.get().set(true);
         test(provider, true, appSink, sysSink);
 
         System.out.println("\nPASSED: Tested " + sequencer.get() + " cases.");
@@ -325,13 +301,7 @@ public class DefaultPlatformLoggerTest {
     }
 
     static void setLevel(java.util.logging.Logger sink, java.util.logging.Level loggerLevel) {
-        boolean before = allowAll.get().get();
-        try {
-            allowAll.get().set(true);
-            sink.setLevel(loggerLevel);
-        } finally {
-            allowAll.get().set(before);
-        }
+        sink.setLevel(loggerLevel);
     }
 
     // Calls the methods defined on LogProducer and verify the
@@ -464,83 +434,6 @@ public class DefaultPlatformLoggerTest {
                     checkLogEvent(provider, desc2, expected, expected.isLoggable);
                 }
             }
-        }
-
-    }
-
-    final static class PermissionsBuilder {
-        final Permissions perms;
-        public PermissionsBuilder() {
-            this(new Permissions());
-        }
-        public PermissionsBuilder(Permissions perms) {
-            this.perms = perms;
-        }
-        public PermissionsBuilder add(Permission p) {
-            perms.add(p);
-            return this;
-        }
-        public PermissionsBuilder addAll(PermissionCollection col) {
-            if (col != null) {
-                for (Enumeration<Permission> e = col.elements(); e.hasMoreElements(); ) {
-                    perms.add(e.nextElement());
-                }
-            }
-            return this;
-        }
-        public Permissions toPermissions() {
-            final PermissionsBuilder builder = new PermissionsBuilder();
-            builder.addAll(perms);
-            return builder.perms;
-        }
-    }
-
-    public static class SimplePolicy extends Policy {
-        public static final RuntimePermission LOGGERFINDER_PERMISSION =
-                new RuntimePermission("loggerFinder");
-
-        static final Policy DEFAULT_POLICY = Policy.getPolicy();
-
-        final Permissions permissions;
-        final Permissions withControlPermissions;
-        final Permissions allPermissions;
-        final ThreadLocal<AtomicBoolean> allowAll;
-        final ThreadLocal<AtomicBoolean> allowControl;
-        public SimplePolicy(ThreadLocal<AtomicBoolean> allowAll,
-                ThreadLocal<AtomicBoolean> allowControl) {
-            this.allowAll = allowAll;
-            this.allowControl = allowControl;
-            permissions = new Permissions();
-
-            withControlPermissions = new Permissions();
-            withControlPermissions.add(LOGGERFINDER_PERMISSION);
-
-            // these are used for configuring the test itself...
-            allPermissions = new Permissions();
-            allPermissions.add(new java.security.AllPermission());
-        }
-
-        @Override
-        public boolean implies(ProtectionDomain domain, Permission permission) {
-            if (allowAll.get().get()) return allPermissions.implies(permission);
-            if (allowControl.get().get()) return withControlPermissions.implies(permission);
-            return permissions.implies(permission) || DEFAULT_POLICY.implies(domain, permission);
-        }
-
-        @Override
-        public PermissionCollection getPermissions(CodeSource codesource) {
-            return new PermissionsBuilder().addAll(
-                    allowAll.get().get() ? allPermissions :
-                    allowControl.get().get()
-                    ? withControlPermissions : permissions).toPermissions();
-        }
-
-        @Override
-        public PermissionCollection getPermissions(ProtectionDomain domain) {
-            return new PermissionsBuilder().addAll(
-                    allowAll.get().get() ? allPermissions :
-                    allowControl.get().get()
-                    ? withControlPermissions : permissions).toPermissions();
         }
     }
 }

@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,10 @@
 # questions.
 #
 
-ifeq (,$(_MAKEBASE_GMK))
-  $(error You must include MakeBase.gmk prior to including ProcessMarkdown.gmk)
-endif
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
 
 include TextFileProcessing.gmk
 
@@ -92,7 +93,7 @@ define ProcessMarkdown
 	    -t $$($1_FORMAT) --eol=lf --standalone \
 	    $$($1_$2_CSS_OPTION) $$($1_$2_OPTIONS_FROM_SRC) $$($1_$2_OPTIONS) \
 	    '$$($1_$2_PANDOC_INPUT)' -o '$$($1_$2_PANDOC_OUTPUT)')
-        ifneq ($$(findstring $$(LOG_LEVEL), debug trace),)
+        ifneq ($$(findstring $$(LOG_LEVEL), debug trace), )
 	  TOO_LONG_LINES=`$$(GREP) -E -e '^.{80}.+$$$$' $$<` || true ; \
 	  if [ "x$$$$TOO_LONG_LINES" != x ]; then \
 	    $$(ECHO) "Warning: Unsuitable markdown in $$<:" ; \
@@ -181,3 +182,8 @@ define SetupProcessMarkdownBody
     )
   endif
 endef
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

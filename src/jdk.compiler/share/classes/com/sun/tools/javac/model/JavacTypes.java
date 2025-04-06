@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,10 +193,14 @@ public class JavacTypes implements javax.lang.model.util.Types {
     public ArrayType getArrayType(TypeMirror componentType) {
         switch (componentType.getKind()) {
         case VOID:
+        case NONE:
+        case NULL:
         case EXECUTABLE:
         case WILDCARD:  // heh!
         case PACKAGE:
         case MODULE:
+        case UNION:
+        case INTERSECTION:
             throw new IllegalArgumentException(componentType.toString());
         }
         return new Type.ArrayType((Type) componentType, syms.arrayClass);

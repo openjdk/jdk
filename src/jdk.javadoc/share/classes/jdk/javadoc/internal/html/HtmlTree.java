@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+
+import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 
 /**
  * A tree node representing an HTML element, containing the name of the element,
@@ -83,7 +85,17 @@ public class HtmlTree extends Content {
      *
      * @param tag the name
      */
-    public HtmlTree(HtmlTag tag) {
+    public static HtmlTree of(HtmlTag tag) {
+        return new HtmlTree(tag);
+    }
+
+    /**
+     * Creates an {@code HTMLTree} object representing an HTML element
+     * with the given name.
+     *
+     * @param tag the name
+     */
+    HtmlTree(HtmlTag tag) {
         this.tag = Objects.requireNonNull(tag);
     }
 
@@ -366,6 +378,46 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code BODY} element with the given style.
+     *
+     * @param style the style
+     * @return the element
+     */
+    public static HtmlTree BODY(HtmlStyle style) {
+        return new HtmlTree(HtmlTag.BODY)
+                .setStyle(style);
+    }
+
+    private static final HtmlTree BR_INSTANCE = unmodifiableTree(HtmlTag.BR);
+
+    /**
+     * {@return an HTML {@code BR} element}
+     */
+    public static HtmlTree BR() {
+        return BR_INSTANCE;
+    }
+
+    /**
+     * Creates an HTML {@code BUTTON} element with the given id.
+     *
+     * @param id the id
+     * @return the element
+     */
+    public static HtmlTree BUTTON(HtmlId id) {
+        return new HtmlTree(HtmlTag.BUTTON).setId(id);
+    }
+
+    /**
+     * Creates an HTML {@code BUTTON} element with the given style.
+     *
+     * @param style the style
+     * @return the element
+     */
+    public static HtmlTree BUTTON(HtmlStyle style) {
+        return new HtmlTree(HtmlTag.BUTTON).setStyle(style);
+    }
+
+    /**
      * Creates an HTML {@code CAPTION} element with the given content.
      *
      * @param body content for the element
@@ -377,6 +429,15 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an empty HTML {@code CODE} element.
+     *
+     * @return the element
+     */
+    public static HtmlTree CODE() {
+        return new HtmlTree(HtmlTag.CODE);
+    }
+
+    /**
      * Creates an HTML {@code CODE} element with the given content.
      *
      * @param body content for the element
@@ -385,6 +446,15 @@ public class HtmlTree extends Content {
     public static HtmlTree CODE(Content body) {
         return new HtmlTree(HtmlTag.CODE)
                 .add(body);
+    }
+
+    /**
+     * Creates an empty HTML {@code DD} element.
+     *
+     * @return the element
+     */
+    public static HtmlTree DD() {
+        return new HtmlTree(HtmlTag.DD);
     }
 
     /**
@@ -418,27 +488,14 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Creates an HTML {@code DL} element with the given style.
+     * Creates an HTML {@code DIV} element with the given id.
      *
-     * @param style the style
+     * @param id the id
      * @return the element
      */
-    public static HtmlTree DL(HtmlStyle style) {
-        return new HtmlTree(HtmlTag.DL)
-                .setStyle(style);
-    }
-
-    /**
-     * Creates an HTML {@code DL} element with the given style and content.
-     *
-     * @param style the style
-     * @param body  the content
-     * @return the element
-     */
-    public static HtmlTree DL(HtmlStyle style, Content body) {
-        return new HtmlTree(HtmlTag.DL)
-                .setStyle(style)
-                .add(body);
+    public static HtmlTree DIV(HtmlId id) {
+        return new HtmlTree(HtmlTag.DIV)
+                .setId(id);
     }
 
     /**
@@ -477,6 +534,30 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code DL} element with the given style.
+     *
+     * @param style the style
+     * @return the element
+     */
+    public static HtmlTree DL(HtmlStyle style) {
+        return new HtmlTree(HtmlTag.DL)
+                .setStyle(style);
+    }
+
+    /**
+     * Creates an HTML {@code DL} element with the given style and content.
+     *
+     * @param style the style
+     * @param body  the content
+     * @return the element
+     */
+    public static HtmlTree DL(HtmlStyle style, Content body) {
+        return new HtmlTree(HtmlTag.DL)
+                .setStyle(style)
+                .add(body);
+    }
+
+    /**
      * Creates an HTML {@code DT} element with the given content.
      *
      * @param body the content
@@ -484,6 +565,17 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree DT(Content body) {
         return new HtmlTree(HtmlTag.DT)
+                .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code EM} element with the given content.
+     *
+     * @param body content for the element
+     * @return the element
+     */
+    public static HtmlTree EM(String body) {
+        return new HtmlTree(HtmlTag.EM)
                 .add(body);
     }
 
@@ -573,6 +665,15 @@ public class HtmlTree extends Content {
         };
     }
 
+    private static final HtmlTree HR_INSTANCE = unmodifiableTree(HtmlTag.HR);
+
+    /**
+     * {@return an HTML {@code HR} element}
+     */
+    public static HtmlTree HR() {
+        return HR_INSTANCE;
+    }
+
     /**
      * Creates an HTML {@code HTML} element with the given {@code lang} attribute,
      * and {@code HEAD} and {@code BODY} contents.
@@ -617,6 +718,17 @@ public class HtmlTree extends Content {
                 .setStyle(style)
                 .put(HtmlAttr.DISABLED, "");
     }
+
+    /**
+     * Creates a {@code KBD} element with the given content.
+     *
+     * @param body the content
+     * @return the element
+     */
+    public static HtmlTree KBD(Content body) {
+        return new HtmlTree(HtmlTag.KBD).add(body);
+    }
+
     /**
      * Creates an HTML {@code LABEL} element with the given content.
      *
@@ -628,6 +740,27 @@ public class HtmlTree extends Content {
         return new HtmlTree(HtmlTag.LABEL)
                 .put(HtmlAttr.FOR, forLabel)
                 .add(body);
+    }
+
+    /**
+     * Creates an empty HTML {@code LI} element.
+     *
+     * @return the element
+     */
+    public static HtmlTree LI() {
+        return new HtmlTree(HtmlTag.LI);
+    }
+
+
+    /**
+     * Creates an HTML {@code LI} element with the given style.
+     *
+     * @param style the style
+     * @return the element
+     */
+    public static HtmlTree LI(HtmlStyle style) {
+        return new HtmlTree(HtmlTag.LI)
+                .setStyle(style);
     }
 
     /**
@@ -659,15 +792,13 @@ public class HtmlTree extends Content {
      * @param rel   the relevance of the link: the {@code rel} attribute
      * @param type  the type of link: the {@code type} attribute
      * @param href  the path for the link: the {@code href} attribute
-     * @param title title for the link: the {@code title} attribute
      * @return the element
      */
-    public static HtmlTree LINK(String rel, String type, String href, String title) {
+    public static HtmlTree LINK(String rel, String type, String href) {
         return new HtmlTree(HtmlTag.LINK)
                 .put(HtmlAttr.REL, rel)
                 .put(HtmlAttr.TYPE, type)
-                .put(HtmlAttr.HREF, href)
-                .put(HtmlAttr.TITLE, title);
+                .put(HtmlAttr.HREF, href);
     }
 
     /**
@@ -774,6 +905,25 @@ public class HtmlTree extends Content {
     public static HtmlTree P(HtmlStyle style, Content body) {
         return P(body)
                 .setStyle(style);
+    }
+
+    /**
+     * Creates an empty HTML {@code PRE} element.
+     *
+     * @return the element
+     */
+    public static HtmlTree PRE() {
+        return new HtmlTree(HtmlTag.PRE);
+    }
+
+    /**
+     * Creates an HTML {@code PRE} element with the given style
+     *
+     * @param style  the style
+     * @return the element
+     */
+    public static HtmlTree PRE(HtmlStyle style) {
+        return new HtmlTree(HtmlTag.PRE).setStyle(style);
     }
 
     /**
@@ -909,54 +1059,15 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Creates an HTML {@code SUP} element with the given content.
+     * Creates an HTML {@code SUP} element with the given style and content.
      *
+     * @param style the style
      * @param body  the content
      * @return the element
      */
-    public static HtmlTree SUP(Content body) {
+    public static HtmlTree SUP(HtmlStyle style, Content body) {
         return new HtmlTree(HtmlTag.SUP)
-                .add(body);
-    }
-
-    /**
-     * Creates an HTML {@code TD} element with the given style and some content.
-     *
-     * @param style the style
-     * @param body  the content
-     * @return the element
-     */
-    public static HtmlTree TD(HtmlStyle style, Content body) {
-        return new HtmlTree(HtmlTag.TD)
                 .setStyle(style)
-                .add(body);
-    }
-
-    /**
-     * Creates an HTML {@code TH} element with the given style and scope, and some content.
-     *
-     * @param style the style
-     * @param scope the value for the {@code scope} attribute
-     * @param body  the content
-     * @return the element
-     */
-    public static HtmlTree TH(HtmlStyle style, String scope, Content body) {
-        return new HtmlTree(HtmlTag.TH)
-                .setStyle(style)
-                .put(HtmlAttr.SCOPE, scope)
-                .add(body);
-    }
-
-    /**
-     * Creates an HTML {@code TH} element with the given scope, and some content.
-     *
-     * @param scope the value for the {@code scope} attribute
-     * @param body  the content
-     * @return the element
-     */
-    public static HtmlTree TH(String scope, Content body) {
-        return new HtmlTree(HtmlTag.TH)
-                .put(HtmlAttr.SCOPE, scope)
                 .add(body);
     }
 
@@ -972,6 +1083,15 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an empty HTML {@code UL} element.
+     *
+     * @return the element
+     */
+    public static HtmlTree UL() {
+        return new HtmlTree(HtmlTag.UL);
+    }
+
+    /**
      * Creates an HTML {@code UL} element with the given style.
      *
      * @param style the style
@@ -979,6 +1099,19 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree UL(HtmlStyle style) {
         return new HtmlTree(HtmlTag.UL)
+                .setStyle(style);
+    }
+
+    /**
+     * Creates an HTML {@code UL} element with the given id and style.
+     *
+     * @param id the id
+     * @param style the style
+     * @return the element
+     */
+    public static HtmlTree UL(HtmlId id, HtmlStyle style) {
+        return new HtmlTree(HtmlTag.UL)
+                .setId(id)
                 .setStyle(style);
     }
 
@@ -1013,6 +1146,27 @@ public class HtmlTree extends Content {
         return new HtmlTree(HtmlTag.UL)
                 .setStyle(style)
                 .addAll(items, mapper);
+    }
+
+    private static final HtmlTree WBR_INSTANCE = unmodifiableTree(HtmlTag.WBR);
+
+    /**
+     * {@return an HTML {@code WBR} element}
+     */
+    public static HtmlTree WBR() {
+        return WBR_INSTANCE;
+    }
+
+    /**
+     * {@return an HTML {@code IMG} element}
+     *
+     * @param src the path of the image
+     * @param alt alternate text for the image
+     */
+    public static HtmlTree IMG(DocPath src, String alt) {
+        return new HtmlTree(HtmlTag.IMG)
+                .put(HtmlAttr.SRC, src.getPath())
+                .put(HtmlAttr.ALT, alt);
     }
 
     @Override
@@ -1078,7 +1232,7 @@ public class HtmlTree extends Content {
      */
     public boolean isInline() {
         return switch (tag) {
-            case A, BUTTON, BR, CODE, EM, I, IMG, LABEL, SMALL, SPAN, STRONG, SUB, SUP, WBR -> true;
+            case A, BUTTON, BR, CODE, EM, I, IMG, INPUT, LABEL, SELECT, SMALL, SPAN, STRONG, SUB, SUP, WBR -> true;
             default -> false;
         };
     }
@@ -1151,5 +1305,18 @@ public class HtmlTree extends Content {
         rawString = rawString.replaceAll("\\b\\s{2,}\\b", " ");
         // remove extra whitespaces
         return rawString.trim();
+    }
+
+    private static HtmlTree unmodifiableTree(HtmlTag tag) {
+        return new HtmlTree(tag) {
+            @Override
+            public HtmlTree add(Content c) {
+                throw new UnsupportedOperationException(this.tag + " add");
+            }
+            @Override
+            public HtmlTree put(HtmlAttr attrName, String attrValue) {
+                throw new UnsupportedOperationException(this.tag + " put");
+            }
+        };
     }
 }

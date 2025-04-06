@@ -32,7 +32,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test
  * @key cgroups
  * @summary Test JDK Metrics class when running inside docker container
- * @requires docker.support
+ * @requires container.support
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build MetricsMemoryTester

@@ -60,10 +60,16 @@ class VM_ForceSafepoint: public VM_EmptyOperation {
   VMOp_Type type() const { return VMOp_ForceSafepoint; }
 };
 
-// empty vm op, when forcing a safepoint due to inline cache buffers being full
-class VM_ICBufferFull: public VM_EmptyOperation {
- public:
-  VMOp_Type type() const { return VMOp_ICBufferFull; }
+// used by whitebox API to emulate VM issues
+// when VM can't operate and doesn't respond to jcmd
+class VM_HangInSafepoint: public VM_Operation {
+public:
+  VMOp_Type type() const { return VMOp_ForceSafepoint; }
+  void doit() {
+    while(true) {
+      os::naked_short_sleep(10);
+    }
+  }
 };
 
 class VM_ClearICs: public VM_Operation {

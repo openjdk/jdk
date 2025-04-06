@@ -119,6 +119,11 @@ public class JNIMonitor {
             "-Xlog:jni=debug",
             // Enable thread termination logging as a visual cross-check
             "-Xlog:thread+os=info",
+            // We only count monitors in LM_LEGACY mode
+            "-XX:LockingMode=1",
+            // Disable compact headers since that switches locking mode to LM_LIGHTWEIGHT
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:-UseCompactObjectHeaders",
             "JNIMonitor$" + test,
         };
         OutputAnalyzer oa = ProcessTools.executeTestJava(cmdArgs);
@@ -219,12 +224,16 @@ public class JNIMonitor {
         }
 
         static void runTest(int nThreads, boolean skipUnlock, boolean throwOnExit) throws Throwable {
-            final Object monitor = new Object();
+            final Object[] monitors = new Object[nThreads];
+            for (int i = 0; i < nThreads; i++) {
+                monitors[i] = new Object();
+            }
             final AtomicReference<Throwable> exception = new AtomicReference();
             // Ensure all our VT's operate of the same carrier, sequentially.
             ExecutorService scheduler = Executors.newSingleThreadExecutor();
             ThreadFactory factory = virtualThreadBuilder(scheduler).factory();
             for (int i = 0 ; i < nThreads; i++) {
+                Object monitor = skipUnlock ? monitors[i] : monitors[0];
                 Thread th = factory.newThread(() -> {
                         try {
                             int res = monitorEnter(monitor);

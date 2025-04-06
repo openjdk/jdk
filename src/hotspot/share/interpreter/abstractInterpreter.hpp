@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_sin,                                         // implementation of java.lang.Math.sin   (x)
     java_lang_math_cos,                                         // implementation of java.lang.Math.cos   (x)
     java_lang_math_tan,                                         // implementation of java.lang.Math.tan   (x)
+    java_lang_math_tanh,                                        // implementation of java.lang.Math.tanh  (x)
     java_lang_math_abs,                                         // implementation of java.lang.Math.abs   (x)
     java_lang_math_sqrt,                                        // implementation of java.lang.Math.sqrt  (x)
     java_lang_math_sqrt_strict,                                 // implementation of java.lang.StrictMath.sqrt(x)
@@ -87,12 +88,8 @@ class AbstractInterpreter: AllStatic {
     java_util_zip_CRC32_updateByteBuffer,                       // implementation of java.util.zip.CRC32.updateByteBuffer()
     java_util_zip_CRC32C_updateBytes,                           // implementation of java.util.zip.CRC32C.updateBytes(crc, b[], off, end)
     java_util_zip_CRC32C_updateDirectByteBuffer,                // implementation of java.util.zip.CRC32C.updateDirectByteBuffer(crc, address, off, end)
-    java_lang_Float_intBitsToFloat,                             // implementation of java.lang.Float.intBitsToFloat()
-    java_lang_Float_floatToRawIntBits,                          // implementation of java.lang.Float.floatToRawIntBits()
     java_lang_Float_float16ToFloat,                             // implementation of java.lang.Float.float16ToFloat()
     java_lang_Float_floatToFloat16,                             // implementation of java.lang.Float.floatToFloat16()
-    java_lang_Double_longBitsToDouble,                          // implementation of java.lang.Double.longBitsToDouble()
-    java_lang_Double_doubleToRawLongBits,                       // implementation of java.lang.Double.doubleToRawLongBits()
     java_lang_Thread_currentThread,                             // implementation of java.lang.Thread.currentThread()
     number_of_method_entries,
     invalid = -1
@@ -125,6 +122,8 @@ class AbstractInterpreter: AllStatic {
 
   static address    _rethrow_exception_entry;                   // rethrows an activation in previous frame
 
+  static bool       _should_print_instructions;                 // only with PrintInterpreter and when printing all InterpreterCodelet
+
   friend class      AbstractInterpreterGenerator;
   friend class      InterpreterMacroAssembler;
 
@@ -132,6 +131,7 @@ class AbstractInterpreter: AllStatic {
   // Initialization/debugging
   static void       initialize();
   static StubQueue* code()                                      { return _code; }
+  static bool       should_print_instructions()                 { return _should_print_instructions; }
 
 
   // Method activation
@@ -151,6 +151,7 @@ class AbstractInterpreter: AllStatic {
       case vmIntrinsics::_dsin  : // fall thru
       case vmIntrinsics::_dcos  : // fall thru
       case vmIntrinsics::_dtan  : // fall thru
+      case vmIntrinsics::_dtanh : // fall thru
       case vmIntrinsics::_dabs  : // fall thru
       case vmIntrinsics::_dsqrt : // fall thru
       case vmIntrinsics::_dsqrt_strict : // fall thru

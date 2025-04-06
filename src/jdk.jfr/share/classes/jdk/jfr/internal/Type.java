@@ -38,6 +38,7 @@ import jdk.jfr.AnnotationElement;
 import jdk.jfr.Event;
 import jdk.jfr.SettingControl;
 import jdk.jfr.ValueDescriptor;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Internal data structure that describes a type,
@@ -185,14 +186,9 @@ public class Type implements Comparable<Type> {
                 Type type = PrivateAccess.getInstance().getType(subField);
                 return type.getField(post);
             }
-        } else {
-            for (ValueDescriptor v : getFields()) {
-                if (name.equals(v.getName())) {
-                    return v;
-                }
-            }
+            return null;
         }
-        return null;
+        return Utils.findField(getFields(), name);
     }
 
     public List<ValueDescriptor> getFields() {

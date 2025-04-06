@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,67 +38,14 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * The {@code UnresolvedPermission} class is used to hold Permissions that
- * were "unresolved" when the Policy was initialized.
- * An unresolved permission is one whose actual Permission class
- * does not yet exist at the time the Policy is initialized (see below).
- *
- * <p>The policy for a Java runtime (specifying
- * which permissions are available for code from various principals)
- * is represented by a Policy object.
- * Whenever a Policy is initialized or refreshed, Permission objects of
- * appropriate classes are created for all permissions
- * allowed by the Policy.
- *
- * <p>Many permission class types
- * referenced by the policy configuration are ones that exist
- * locally (i.e., ones that can be found on CLASSPATH).
- * Objects for such permissions can be instantiated during
- * Policy initialization. For example, it is always possible
- * to instantiate a java.io.FilePermission, since the
- * FilePermission class is found on the CLASSPATH.
- *
- * <p>Other permission classes may not yet exist during Policy
- * initialization. For example, a referenced permission class may
- * be in a JAR file that will later be loaded.
- * For each such class, an {@code UnresolvedPermission} is instantiated.
- * Thus, an {@code UnresolvedPermission} is essentially a "placeholder"
- * containing information about the permission.
- *
- * <p>Later, when code calls {@link AccessController#checkPermission}
- * on a permission of a type that was previously unresolved,
- * but whose class has since been loaded, previously-unresolved
- * permissions of that type are "resolved". That is,
- * for each such {@code UnresolvedPermission}, a new object of
- * the appropriate class type is instantiated, based on the
- * information in the {@code UnresolvedPermission}.
- *
- * <p> To instantiate the new class, {@code UnresolvedPermission} assumes
- * the class provides a zero, one, and/or two-argument constructor.
- * The zero-argument constructor would be used to instantiate
- * a permission without a name and without actions.
- * A one-arg constructor is assumed to take a {@code String}
- * name as input, and a two-arg constructor is assumed to take a
- * {@code String} name and {@code String} actions
- * as input.  {@code UnresolvedPermission} may invoke a
- * constructor with a {@code null} name and/or actions.
- * If an appropriate permission constructor is not available,
- * the {@code UnresolvedPermission} is ignored and the relevant permission
- * will not be granted to executing code.
- *
- * <p> The newly created permission object replaces the
- * {@code UnresolvedPermission}, which is removed.
- *
- * <p> Note that the {@code getName} method for an
- * {@code UnresolvedPermission} returns the
- * {@code type} (class name) for the underlying permission
- * that has not been resolved.
+ * The {@code UnresolvedPermission} class used to hold Permissions that were
+ * "unresolved" when the {@code Policy} was initialized. Installing a
+ * system-wide {@code Policy} object is no longer supported.
  *
  * @see java.security.Permission
  * @see java.security.Permissions
  * @see java.security.PermissionCollection
  * @see java.security.Policy
- *
  *
  * @author Roland Schemers
  * @since 1.2

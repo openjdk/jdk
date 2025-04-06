@@ -86,6 +86,7 @@ NOT_PRODUCT(option(PrintIdeal, "PrintIdeal", Bool))  \
 NOT_PRODUCT(option(PrintIdealPhase, "PrintIdealPhase", Ccstrlist)) \
 NOT_PRODUCT(option(IGVPrintLevel, "IGVPrintLevel", Intx)) \
 NOT_PRODUCT(option(TraceAutoVectorization, "TraceAutoVectorization", Ccstrlist)) \
+NOT_PRODUCT(option(TraceMergeStores, "TraceMergeStores", Ccstrlist)) \
   option(Vectorize, "Vectorize", Bool) \
   option(CloneMapDebug, "CloneMapDebug", Bool) \
   option(IncrementalInlineForceCleanup, "IncrementalInlineForceCleanup", Bool) \
@@ -165,7 +166,6 @@ class CompilerOracle : AllStatic {
 
   // Tells whether there are any methods to (collect|collect+print) memory statistics for
   static bool should_collect_memstat();
-  static bool should_print_final_memstat_report();
 
   // Tags the method as blackhole candidate, if possible.
   static void tag_blackhole_if_possible(const methodHandle& method);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -31,8 +30,8 @@
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
-#include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
+#include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "logging/log.hpp"
@@ -1008,7 +1007,7 @@ static void _fatal() {
     }
   }
   intx current_thread_id = os::current_thread_id();
-  fatal("thread " INTX_FORMAT ": Fatal error in JVMCI shared library", current_thread_id);
+  fatal("thread %zd: Fatal error in JVMCI shared library", current_thread_id);
 }
 
 JVMCIRuntime::JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker) :
@@ -1570,7 +1569,7 @@ bool JVMCIRuntime::destroy_shared_library_javavm() {
   guarantee(_num_attached_threads == cannot_be_attached,
       "cannot destroy JavaVM for JVMCI runtime %d with %d attached threads", _id, _num_attached_threads);
   JavaVM* javaVM;
-  int javaVM_id = _shared_library_javavm_id;
+  jlong javaVM_id = _shared_library_javavm_id;
   {
     // Exactly one thread can destroy the JavaVM
     // and release the handle to it.
@@ -1589,9 +1588,9 @@ bool JVMCIRuntime::destroy_shared_library_javavm() {
       result = javaVM->DestroyJavaVM();
     }
     if (result == JNI_OK) {
-      JVMCI_event_1("destroyed JavaVM[%d]@" PTR_FORMAT " for JVMCI runtime %d", javaVM_id, p2i(javaVM), _id);
+      JVMCI_event_1("destroyed JavaVM[" JLONG_FORMAT "]@" PTR_FORMAT " for JVMCI runtime %d", javaVM_id, p2i(javaVM), _id);
     } else {
-      warning("Non-zero result (%d) when calling JNI_DestroyJavaVM on JavaVM[%d]@" PTR_FORMAT, result, javaVM_id, p2i(javaVM));
+      warning("Non-zero result (%d) when calling JNI_DestroyJavaVM on JavaVM[" JLONG_FORMAT "]@" PTR_FORMAT, result, javaVM_id, p2i(javaVM));
     }
     return true;
   }
@@ -1678,14 +1677,12 @@ Klass* JVMCIRuntime::get_klass_by_name_impl(Klass*& accessing_klass,
   }
 
   Handle loader;
-  Handle domain;
   if (accessing_klass != nullptr) {
     loader = Handle(THREAD, accessing_klass->class_loader());
-    domain = Handle(THREAD, accessing_klass->protection_domain());
   }
 
   Klass* found_klass = require_local ?
-                         SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader, domain) :
+                         SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader) :
                          SystemDictionary::find_constrained_instance_or_array_klass(THREAD, sym, loader);
 
   // If we fail to find an array klass, look again for its element type.
@@ -2198,8 +2195,8 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
               char *method_name = method->name_and_sig_as_C_string();
               tty->print_cr("Replacing method %s", method_name);
             }
-            if (old != nullptr ) {
-              old->make_not_entrant();
+            if (old != nullptr) {
+              old->make_not_entrant("JVMCI register method");
             }
 
             LogTarget(Info, nmethod, install) lt;

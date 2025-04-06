@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "jvm.h"
+#include "jvmci/jvmci.hpp"
 #include "jvmci/jvmci_globals.hpp"
 #include "logging/log.hpp"
 #include "runtime/arguments.hpp"
@@ -80,20 +80,25 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   CHECK_NOT_SET(LibJVMCICompilerThreadHidden, UseJVMCICompiler)
 
   if (UseJVMCICompiler) {
-    if (FLAG_IS_DEFAULT(UseJVMCINativeLibrary) && !UseJVMCINativeLibrary) {
-      char path[JVM_MAXPATHLEN];
-      if (os::dll_locate_lib(path, sizeof(path), Arguments::get_dll_dir(), JVMCI_SHARED_LIBRARY_NAME)) {
-        // If a JVMCI native library is present,
-        // we enable UseJVMCINativeLibrary by default.
-        FLAG_SET_DEFAULT(UseJVMCINativeLibrary, true);
-      }
-    }
     if (!FLAG_IS_DEFAULT(EnableJVMCI) && !EnableJVMCI) {
       jio_fprintf(defaultStream::error_stream(),
           "Improperly specified VM option UseJVMCICompiler: EnableJVMCI cannot be disabled\n");
       return false;
     }
     FLAG_SET_DEFAULT(EnableJVMCI, true);
+  }
+
+  if (EnableJVMCI) {
+    if (FLAG_IS_DEFAULT(UseJVMCINativeLibrary) && !UseJVMCINativeLibrary) {
+      if (JVMCI::shared_library_exists()) {
+        // If a JVMCI native library is present,
+        // we enable UseJVMCINativeLibrary by default.
+        FLAG_SET_DEFAULT(UseJVMCINativeLibrary, true);
+      }
+    }
+  }
+
+  if (UseJVMCICompiler) {
     if (BootstrapJVMCI && UseJVMCINativeLibrary) {
       jio_fprintf(defaultStream::error_stream(), "-XX:+BootstrapJVMCI is not compatible with -XX:+UseJVMCINativeLibrary\n");
       return false;

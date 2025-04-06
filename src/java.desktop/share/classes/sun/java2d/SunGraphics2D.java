@@ -974,7 +974,6 @@ public final class SunGraphics2D
         } else if (comp == null) {
             throw new IllegalArgumentException("null Composite");
         } else {
-            surfaceData.checkCustomComposite();
             newCompState = COMP_CUSTOM;
             newCompType = CompositeType.General;
         }

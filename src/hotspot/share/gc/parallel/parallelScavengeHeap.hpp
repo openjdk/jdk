@@ -44,6 +44,7 @@ class MemoryPool;
 class PSAdaptiveSizePolicy;
 class PSCardTable;
 class PSHeapSummary;
+class ReservedSpace;
 
 // ParallelScavengeHeap is the implementation of CollectedHeap for Parallel GC.
 //
@@ -93,8 +94,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   HeapWord* allocate_old_gen_and_record(size_t word_size);
 
   void update_parallel_worker_threads_cpu_time();
-
-  void collect_at_safepoint(bool full);
 
   bool must_clear_all_soft_refs();
 
@@ -197,7 +196,7 @@ public:
   // Support for System.gc()
   void collect(GCCause::Cause cause) override;
 
-  void try_collect_at_safepoint(bool full);
+  void collect_at_safepoint(bool full);
 
   void ensure_parsability(bool retire_tlabs) override;
   void resize_all_tlabs() override;
@@ -246,7 +245,7 @@ public:
   }
 
   // Support for loading objects from CDS archive into the heap
-  bool can_load_archived_objects() const override { return UseCompressedOops; }
+  bool can_load_archived_objects() const override { return true; }
   HeapWord* allocate_loaded_archive_space(size_t size) override;
   void complete_loaded_archive_space(MemRegion archive_space) override;
 

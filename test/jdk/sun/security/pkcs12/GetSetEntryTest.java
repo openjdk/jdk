@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
  * @test
  * @bug 8327461
  * @summary engineGetEntry in PKCS12KeyStore should be thread-safe
- * @library /test/lib ../../../java/security/testlibrary
+ * @library /test/lib
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
- * @build CertificateBuilder
  * @run main GetSetEntryTest
  */
 
@@ -42,7 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.TimeUnit;
 import java.util.Date;
 
-import sun.security.testlibrary.CertificateBuilder;
+import jdk.test.lib.security.CertificateBuilder;
 
 public class GetSetEntryTest {
 

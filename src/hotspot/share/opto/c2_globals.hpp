@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,9 @@
   product(bool, StressMacroExpansion, false, DIAGNOSTIC,                    \
           "Randomize macro node expansion order")                           \
                                                                             \
+  product(bool, StressUnstableIfTraps, false, DIAGNOSTIC,                   \
+          "Randomly take unstable if traps")                                \
+                                                                            \
   product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
           "Seed for randomized stress testing (if unset, a random one is "  \
           "generated). The seed is recorded in the compilation log, if "    \
@@ -66,6 +69,14 @@
                                                                             \
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
           "Stress inlining through method handle linkers")                  \
+                                                                            \
+  develop(bool, StressBailout, false,                                       \
+          "Perform bailouts randomly at C2 failing() checks")               \
+                                                                            \
+  develop(uint, StressBailoutMean, 100000,                                  \
+          "The expected number of failing() checks made until "             \
+          "a random bailout.")                                              \
+          range(1, max_juint)                                               \
                                                                             \
   develop(intx, OptoPrologueNops, 0,                                        \
           "Insert this many extra nop instructions "                        \
@@ -227,7 +238,7 @@
           "Force counted loops to keep a safepoint")                        \
                                                                             \
   product(bool, UseLoopPredicate, true,                                     \
-          "Generate a predicate to select fast/slow loop versions")         \
+          "Move checks with uncommon trap out of loops.")                   \
                                                                             \
   develop(bool, TraceLoopPredicate, false,                                  \
           "Trace generation of loop predicates")                            \
@@ -335,6 +346,12 @@
   develop(bool, TraceLoopUnswitching, false,                                \
           "Trace loop unswitching")                                         \
                                                                             \
+  product(bool, LoopMultiversioning, true, DIAGNOSTIC,                      \
+          "Enable loop multiversioning (for speculative compilation)")      \
+                                                                            \
+  develop(bool, TraceLoopMultiversioning, false,                            \
+          "Trace loop multiversioning")                                     \
+                                                                            \
   product(bool, AllowVectorizeOnDemand, true,                               \
           "Globally suppress vectorization set in VectorizeMethod")         \
                                                                             \
@@ -343,6 +360,12 @@
                                                                             \
   product(bool, SuperWordReductions, true,                                  \
           "Enable reductions support in superword.")                        \
+                                                                            \
+  product_pd(uint, SuperWordStoreToLoadForwardingFailureDetection, DIAGNOSTIC, \
+          "if >0, auto-vectorization detects possible store-to-load "       \
+          "forwarding failures. The number specifies over how many "        \
+          "loop iterations this detection spans.")                          \
+          range(0, 4096)                                                    \
                                                                             \
   product(bool, UseCMoveUnconditionally, false,                             \
           "Use CMove (scalar and vector) ignoring profitability test.")     \
@@ -355,9 +378,6 @@
                                                                             \
   product(bool, MergeStores, true, DIAGNOSTIC,                              \
           "Optimize stores by combining values into larger store")          \
-                                                                            \
-  develop(bool, TraceMergeStores, false,                                    \
-          "Trace creation of merged stores")                                \
                                                                             \
   product_pd(bool, OptoBundling,                                            \
           "Generate nops to fill i-cache lines")                            \
@@ -411,7 +431,7 @@
                                                                             \
   product(intx, LoopOptsCount, 43,                                          \
           "Set level of loop optimization for tier 1 compiles")             \
-          range(5, 43)                                                      \
+          range(5, max_jint)                                                \
                                                                             \
   product(bool, OptimizeUnstableIf, true, DIAGNOSTIC,                       \
           "Optimize UnstableIf traps")                                      \
@@ -619,6 +639,9 @@
   develop(bool, VerifyLoopOptimizations, false,                             \
           "verify major loop optimizations")                                \
                                                                             \
+  develop(bool, VerifyNoNewIrreducibleLoops, false,                         \
+          "Verify that no new irreducible loops are created after parsing") \
+                                                                            \
   product(bool, ProfileDynamicTypes, true, DIAGNOSTIC,                      \
           "do extra type profiling and use it more aggressively")           \
                                                                             \
@@ -762,7 +785,9 @@
           range(0, max_juint)                                               \
                                                                             \
   product(bool, UseProfiledLoopPredicate, true,                             \
-          "Move predicates out of loops based on profiling data")           \
+          "Move checks with an uncommon trap out of loops based on "        \
+          "profiling data. "                                                \
+          "Requires UseLoopPredicate to be turned on (default).")           \
                                                                             \
   develop(uintx, StressLongCountedLoop, 0,                                  \
           "if > 0, convert int counted loops to long counted loops"         \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ public class TestSerialGCWithCDS {
         String execGC = execWithSerial ? Serial : G1;
         String small1 = useSmallRegions ? "-Xmx256m" : DUMMY;
         String small2 = useSmallRegions ? "-XX:ObjectAlignmentInBytes=64" : DUMMY;
+        String errMsg = "Cannot use CDS heap data. Selected GC not compatible -XX:-UseCompressedOops";
         String coops;
         if (Platform.is64bit()) {
             coops = useCompressedOops ? "-XX:+UseCompressedOops" : "-XX:-UseCompressedOops";
@@ -125,18 +126,18 @@ public class TestSerialGCWithCDS {
                               coops,
                               "-Xlog:cds",
                               "Hello");
-        checkExecOutput(dumpWithSerial, execWithSerial, out);
+        out.shouldNotContain(errMsg);
 
-        System.out.println("2. Exec with " + execGC + " and test ArchiveRelocationMode");
+        System.out.println("2. Exec with " + execGC + " and test ArchiveRelocationMode=0");
         out = TestCommon.exec(helloJar,
                               execGC,
                               small1,
                               small2,
                               coops,
                               "-Xlog:cds,cds+heap",
-                              "-XX:ArchiveRelocationMode=1", // always relocate shared metadata
+                              "-XX:ArchiveRelocationMode=0", // may relocate shared metadata
                               "Hello");
-        checkExecOutput(dumpWithSerial, execWithSerial, out);
+        out.shouldNotContain(errMsg);
 
         int n = 2;
         if (dumpWithSerial == false && execWithSerial == true) {
@@ -160,32 +161,12 @@ public class TestSerialGCWithCDS {
                                       "-Xlog:cds",
                                       "Hello");
                 if (out.getExitValue() == 0) {
-                    checkExecOutput(dumpWithSerial, execWithSerial, out);
+                    out.shouldNotContain(errMsg);
                 } else {
-                    String output = out.getStdout() + out.getStderr();
-                    String exp1 = "Too small maximum heap";
-                    String exp2 = "GC triggered before VM initialization completed";
-                    if (!output.contains(exp1) && !output.contains(exp2)) {
-                        throw new RuntimeException("Either '" + exp1 + "' or '" + exp2 + "' must be in stdout/stderr \n");
-                    }
+                    out.shouldNotHaveFatalError();
                 }
                 n++;
             }
-        }
-    }
-
-    static void checkExecOutput(boolean dumpWithSerial, boolean execWithSerial, OutputAnalyzer out) {
-        String errMsg = "Cannot use CDS heap data. UseG1GC is required for -XX:-UseCompressedOops";
-        if (Platform.is64bit() &&
-            !Platform.isWindows() && // archive heap not supported on Windows.
-            !dumpWithSerial && // Dumped with G1, so we have an archived heap
-            execWithSerial && // Running with serial
-            !useCompressedOops) { // ArchiveHeapLoader::can_load() always returns false when COOP is disabled
-            out.shouldContain(errMsg);
-        }
-        if (!execWithSerial) {
-            // We should never see this message with G1
-            out.shouldNotContain(errMsg);
         }
     }
 }

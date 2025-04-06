@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
@@ -33,6 +32,7 @@
 #include "memory/resourceArea.hpp"
 #include "opto/phasetype.hpp"
 #include "opto/traceAutoVectorizationTag.hpp"
+#include "opto/traceMergeStoresTag.hpp"
 #include "runtime/globals_extension.hpp"
 
 CompilerDirectives::CompilerDirectives() : _next(nullptr), _match(nullptr), _ref_count(0) {
@@ -302,7 +302,8 @@ DirectiveSet::DirectiveSet(CompilerDirectives* d) :
   _inlinematchers(nullptr),
   _directive(d),
   _ideal_phase_name_set(PHASE_NUM_TYPES, mtCompiler),
-  _trace_auto_vectorization_tags(TRACE_AUTO_VECTORIZATION_TAG_NUM, mtCompiler)
+  _trace_auto_vectorization_tags(TRACE_AUTO_VECTORIZATION_TAG_NUM, mtCompiler),
+  _trace_merge_stores_tags(TraceMergeStores::TAG_NUM, mtCompiler)
 {
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
   compilerdirectives_common_flags(init_defaults_definition)
@@ -432,7 +433,6 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
     compilerdirectives_c1_flags(init_default_cc)
 #undef init_default_cc
 
-    // Parse PrintIdealPhaseName and create a lookup set
 #ifndef PRODUCT
 #ifdef COMPILER2
     if (!_modified[TraceAutoVectorizationIndex]) {
@@ -445,6 +445,17 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
         }
       }
     }
+    if (!_modified[TraceMergeStoresIndex]) {
+      // Parse ccstr and create mask
+      ccstrlist option;
+      if (CompilerOracle::has_option_value(method, CompileCommandEnum::TraceMergeStores, option)) {
+        TraceMergeStores::TagValidator validator(option, false);
+        if (validator.is_valid()) {
+          set.cloned()->set_trace_merge_stores_tags(validator.tags());
+        }
+      }
+    }
+    // Parse PrintIdealPhaseName and create a lookup set
     if (!_modified[PrintIdealPhaseIndex]) {
       // Parse ccstr and create set
       ccstrlist option;

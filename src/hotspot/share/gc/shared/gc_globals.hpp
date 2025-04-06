@@ -43,7 +43,7 @@
 #include "gc/shenandoah/shenandoah_globals.hpp"
 #endif
 #if INCLUDE_ZGC
-#include "gc/z/shared/z_shared_globals.hpp"
+#include "gc/z/z_globals.hpp"
 #endif
 
 #define GC_FLAGS(develop,                                                   \
@@ -93,7 +93,7 @@
     range,                                                                  \
     constraint))                                                            \
                                                                             \
-  ZGC_ONLY(GC_Z_SHARED_FLAGS(                                               \
+  ZGC_ONLY(GC_Z_FLAGS(                                                      \
     develop,                                                                \
     develop_pd,                                                             \
     product,                                                                \
@@ -117,9 +117,6 @@
                                                                             \
   product(bool, UseZGC, false,                                              \
           "Use the Z garbage collector")                                    \
-                                                                            \
-  product(bool, ZGenerational, true,                                        \
-          "Use the generational version of ZGC")                            \
                                                                             \
   product(bool, UseShenandoahGC, false,                                     \
           "Use the Shenandoah garbage collector")                           \
@@ -157,11 +154,6 @@
   product(bool, ExplicitGCInvokesConcurrent, false,                         \
           "A System.gc() request invokes a concurrent collection; "         \
           "(effective only when using concurrent collectors)")              \
-                                                                            \
-  product(uintx, GCLockerRetryAllocationCount, 2, DIAGNOSTIC,               \
-          "Number of times to retry allocations when "                      \
-          "blocked by the GC locker")                                       \
-          range(0, max_uintx)                                               \
                                                                             \
   product(uint, ParallelGCBufferWastePct, 10,                               \
           "Wasted fraction of parallel allocation buffer")                  \

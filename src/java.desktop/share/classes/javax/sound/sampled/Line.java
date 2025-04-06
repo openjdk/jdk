@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,6 @@ package javax.sound.sampled;
  * event, what type of event it was ({@code OPEN}, {@code CLOSE}, {@code START},
  * or {@code STOP}), and how many sample frames the line had processed at the
  * time the event occurred.
- * <p>
- * Certain line operations, such as open and close, can generate security
- * exceptions if invoked by unprivileged code when the line is a shared audio
- * resource.
  *
  * @author Kara Kytle
  * @see LineEvent
@@ -108,8 +104,6 @@ public interface Line extends AutoCloseable {
      *         instance
      * @throws LineUnavailableException if the line cannot be opened due to
      *         resource restrictions
-     * @throws SecurityException if the line cannot be opened due to security
-     *         restrictions
      * @see #close
      * @see #isOpen
      * @see LineEvent
@@ -124,8 +118,6 @@ public interface Line extends AutoCloseable {
      * can be released. If this operation succeeds, the line is marked closed
      * and a {@code CLOSE} event is dispatched to the line's listeners.
      *
-     * @throws SecurityException if the line cannot be closed due to security
-     *         restrictions
      * @see #open
      * @see #isOpen
      * @see LineEvent

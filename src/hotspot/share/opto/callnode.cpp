@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "compiler/oopMap.hpp"
@@ -714,11 +713,35 @@ void CallNode::dump_spec(outputStream *st) const {
   if (_cnt != COUNT_UNKNOWN)  st->print(" C=%f",_cnt);
   if (jvms() != nullptr)  jvms()->dump_spec(st);
 }
+
+void AllocateNode::dump_spec(outputStream* st) const {
+  st->print(" ");
+  if (tf() != nullptr) {
+    tf()->dump_on(st);
+  }
+  if (_cnt != COUNT_UNKNOWN) {
+    st->print(" C=%f", _cnt);
+  }
+  const Node* const klass_node = in(KlassNode);
+  if (klass_node != nullptr) {
+    const TypeKlassPtr* const klass_ptr = klass_node->bottom_type()->isa_klassptr();
+
+    if (klass_ptr != nullptr && klass_ptr->klass_is_exact()) {
+      st->print(" allocationKlass:");
+      klass_ptr->exact_klass()->print_name_on(st);
+    }
+  }
+  if (jvms() != nullptr) {
+    jvms()->dump_spec(st);
+  }
+}
 #endif
 
 const Type *CallNode::bottom_type() const { return tf()->range(); }
 const Type* CallNode::Value(PhaseGVN* phase) const {
-  if (phase->type(in(0)) == Type::TOP)  return Type::TOP;
+  if (in(0) == nullptr || phase->type(in(0)) == Type::TOP) {
+    return Type::TOP;
+  }
   return tf()->range();
 }
 
@@ -755,7 +778,7 @@ Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
 
     if (Opcode() == Op_CallLeafVector) {
       // If the return is in vector, compute appropriate regmask taking into account the whole range
-      if(ideal_reg >= Op_VecS && ideal_reg <= Op_VecZ) {
+      if(ideal_reg >= Op_VecA && ideal_reg <= Op_VecZ) {
         if(OptoReg::is_valid(regs.second())) {
           for (OptoReg::Name r = regs.first(); r <= regs.second(); r = OptoReg::add(r, 1)) {
             rm.Insert(r);
@@ -1615,8 +1638,14 @@ void AllocateNode::compute_MemBar_redundancy(ciMethod* initializer)
 }
 Node *AllocateNode::make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem) {
   Node* mark_node = nullptr;
-  // For now only enable fast locking for non-array types
-  mark_node = phase->MakeConX(markWord::prototype().value());
+  if (UseCompactObjectHeaders) {
+    Node* klass_node = in(AllocateNode::KlassNode);
+    Node* proto_adr = phase->transform(new AddPNode(klass_node, klass_node, phase->MakeConX(in_bytes(Klass::prototype_header_offset()))));
+    mark_node = LoadNode::make(*phase, control, mem, proto_adr, TypeRawPtr::BOTTOM, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
+  } else {
+    // For now only enable fast locking for non-array types
+    mark_node = phase->MakeConX(markWord::prototype().value());
+  }
   return mark_node;
 }
 
@@ -1660,6 +1689,8 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseValu
 }
 
 //=============================================================================
+const TypeFunc* LockNode::_lock_type_Type = nullptr;
+
 uint LockNode::size_of() const { return sizeof(*this); }
 
 // Redundant lock elimination

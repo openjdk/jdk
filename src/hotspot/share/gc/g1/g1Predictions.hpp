@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,9 @@
 
 // Utility class containing various helper methods for prediction.
 class G1Predictions {
- private:
-  double _sigma;
+private:
+  // Scale factor indicating to which degree stddev should be taking into account in predictions.
+  double _stddev_scale;
 
   // This function is used to estimate the stddev of sample sets. There is some
   // special consideration of small sample sets: the actual stddev for them is
@@ -46,16 +47,14 @@ class G1Predictions {
     }
     return estimate;
   }
- public:
-  G1Predictions(double sigma) : _sigma(sigma) {
-    assert(sigma >= 0.0, "Confidence must be larger than or equal to zero");
+
+public:
+  G1Predictions(double stddev_scale) : _stddev_scale(stddev_scale) {
+    assert(stddev_scale >= 0.0, "must be");
   }
 
-  // Confidence factor.
-  double sigma() const { return _sigma; }
-
   double predict(TruncatedSeq const* seq) const {
-    return seq->davg() + _sigma * stddev_estimate(seq);
+    return seq->davg() + _stddev_scale * stddev_estimate(seq);
   }
 
   double predict_in_unit_interval(TruncatedSeq const* seq) const {

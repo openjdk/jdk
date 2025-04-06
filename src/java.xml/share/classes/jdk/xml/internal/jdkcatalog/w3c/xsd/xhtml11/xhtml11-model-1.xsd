@@ -1,0 +1,716 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+    elementFormDefault="qualified" >
+    <xs:import
+        namespace="http://www.w3.org/1999/xhtml/datatypes/"
+        schemaLocation="http://www.w3.org/MarkUp/SCHEMA/xhtml-datatypes-1.xsd"/>
+    <xs:annotation>
+        <xs:documentation> 
+            This is the XML Schema module of common content models for XHTML11 
+            
+            $Id: xhtml11-model-1.xsd,v 1.9 2009/02/03 15:14:49 ahby Exp $ 
+        </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+    </xs:annotation>
+    <xs:annotation>
+        <xs:documentation> 
+            XHTML Document Model 
+            This module describes the groupings of elements/attributes 
+            that make up common content models for XHTML elements. 
+            XHTML has following basic content models: 
+               xhtml.Inline.mix; character-level elements
+               xhtml.Block.mix; block-like elements, e.g., paragraphs and lists
+               xhtml.Flow.mix; any block or inline elements 
+               xhtml.HeadOpts.mix; Head Elements 
+               xhtml.InlinePre.mix; Special class for pre content model 
+               xhtml.InlineNoAnchor.mix; Content model for Anchor 
+            
+            Any groups declared in this module may be used to create 
+            element content models, but the above are considered 'global' 
+            (insofar as that term applies here). XHTML has the
+            following Attribute Groups 
+               xhtml.Core.extra.attrib 
+               xhtml.I18n.extra.attrib
+               xhtml.Common.extra 
+            
+            The above attribute Groups are considered Global 
+        </xs:documentation>
+    </xs:annotation>
+    <xs:attributeGroup
+        name="xhtml.I18n.extra.attrib">
+        <xs:annotation>
+            <xs:documentation> Extended I18n attribute </xs:documentation>
+        </xs:annotation>
+        <xs:attributeGroup
+            ref="xhtml.dir.attrib">
+            <xs:annotation>
+                <xs:documentation> 
+                "dir" Attribute from Bi Directional Text (bdo) Module
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attributeGroup>
+        <xs:attribute name="lang" type="xh11d:LanguageCode" />
+    </xs:attributeGroup>
+    <xs:attributeGroup
+        name="xhtml.Common.extra">
+        <xs:annotation>
+            <xs:documentation> Extended Common Attributes </xs:documentation>
+        </xs:annotation>
+        <xs:attributeGroup
+            ref="xhtml.style.attrib">
+            <xs:annotation>
+                <xs:documentation> 
+                "style" attribute from Inline Style Module 
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attributeGroup>
+    	<xs:attributeGroup ref="xhtml.Events.attrib">
+			<xs:annotation>
+				<xs:documentation> 
+				Attributes from Events Module
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attributeGroup>
+	</xs:attributeGroup>
+    <xs:attributeGroup
+        name="xhtml.Core.extra.attrib">
+        <xs:annotation>
+            <xs:documentation> Extend Core Attributes </xs:documentation>
+        </xs:annotation>
+    </xs:attributeGroup>
+    <xs:attributeGroup
+        name="xhtml.Global.core.extra.attrib">
+        <xs:annotation>
+            <xs:documentation> Extended Global Core Attributes </xs:documentation>
+        </xs:annotation>
+    </xs:attributeGroup>
+    <xs:attributeGroup
+        name="xhtml.Global.I18n.extra.attrib">
+        <xs:annotation>
+            <xs:documentation> Extended Global I18n attributes </xs:documentation>
+        </xs:annotation>
+    </xs:attributeGroup>
+    <xs:attributeGroup
+        name="xhtml.Global.Common.extra">
+        <xs:annotation>
+            <xs:documentation> Extended Global Common Attributes </xs:documentation>
+        </xs:annotation>
+    </xs:attributeGroup>
+    <xs:group
+        name="xhtml.Head.extra">
+        <xs:sequence/>
+    </xs:group>
+    <xs:group
+        name="xhtml.HeadOpts.mix">
+        <xs:choice>
+            <xs:element
+                name="script"
+                type="xhtml.script.type"/>
+            <xs:element
+                name="style"
+                type="xhtml.style.type"/>
+            <xs:element
+                name="meta"
+                type="xhtml.meta.type"/>
+            <xs:element
+                name="link"
+                type="xhtml.link.type"/>
+            <xs:element
+                name="object"
+                type="xhtml.object.type"/>
+            <xs:group
+                ref="xhtml.Head.extra"/>
+        </xs:choice>
+    </xs:group>
+    <xs:group
+        name="xhtml.head.content">
+        <xs:sequence>
+            <xs:group
+                ref="xhtml.HeadOpts.mix"
+                minOccurs="0"
+                maxOccurs="unbounded"/>
+            <xs:choice>
+                <xs:sequence>
+                    <xs:element
+                        name="title"
+                        minOccurs="1"
+                        maxOccurs="1"
+                        type="xhtml.title.type"/>
+                    <xs:group
+                        ref="xhtml.HeadOpts.mix"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/>
+                    <xs:sequence
+                        minOccurs="0">
+                        <xs:element
+                            name="base"
+                            type="xhtml.base.type"/>
+                        <xs:group
+                            ref="xhtml.HeadOpts.mix"
+                            minOccurs="0"
+                            maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:sequence>
+                <xs:sequence>
+                    <xs:element
+                        name="base"
+                        type="xhtml.base.type"
+                        minOccurs="1"
+                        maxOccurs="1"/>
+                    <xs:group
+                        ref="xhtml.HeadOpts.mix"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/>
+                    <xs:element
+                        name="title"
+                        minOccurs="1"
+                        maxOccurs="1"
+                        type="xhtml.title.type"/>
+                    <xs:group
+                        ref="xhtml.HeadOpts.mix"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:choice>
+        </xs:sequence>
+    </xs:group>
+    <!--
+    ins and del are used to denote editing changes
+  -->
+    <xs:group
+        name="xhtml.Edit.class">
+        <xs:choice>
+            <xs:element
+                name="ins"
+                type="xhtml.edit.type"/>
+            <xs:element
+                name="del"
+                type="xhtml.edit.type"/>
+        </xs:choice>
+    </xs:group>
+    <!--
+    script and noscript are used to contain scripts
+    and alternative content
+  -->
+    <xs:group
+        name="xhtml.Script.class">
+        <xs:choice>
+            <xs:element
+                name="script"
+                type="xhtml.script.type"/>
+            <xs:element
+                name="noscript"
+                type="xhtml.noscript.type"/>
+        </xs:choice>
+    </xs:group>
+    <xs:group
+        name="xhtml.Misc.extra">
+        <xs:sequence/>
+    </xs:group>
+    <!--
+    These elements are neither block nor inline, and can
+    essentially be used anywhere in the document body.
+  -->
+    <xs:group
+        name="xhtml.Misc.class">
+        <xs:choice>
+            <xs:group
+                ref="xhtml.Edit.class"/>
+            <xs:group
+                ref="xhtml.Script.class"/>
+            <xs:group
+                ref="xhtml.Misc.extra"/>
+        </xs:choice>
+    </xs:group>
+    <!-- Inline Elements -->
+    <xs:group
+        name="xhtml.InlStruct.class">
+        <xs:choice>
+            <xs:element
+                name="br"
+                type="xhtml.br.type"/>
+            <xs:element
+                name="span"
+                type="xhtml.span.type"/>
+        </xs:choice>
+    </xs:group>
+    <xs:group
+        name="xhtml.InlPhras.class">
+        <xs:choice>
+            <xs:element
+                name="em"
+                type="xhtml.em.type"/>
+            <xs:element
+                name="strong"
+                type="xhtml.strong.type"/>
+            <xs:element
+                name="dfn"
+                type="xhtml.dfn.type"/>
+            <xs:element
+                name="code"
+                type="xhtml.code.type"/>
+            <xs:element
+                name="samp"
+                type="xhtml.samp.type"/>
+            <xs:element
+                name="kbd"
+                type="xhtml.kbd.type"/>
+            <xs:element
+                name="var"
+                type="xhtml.var.type"/>
+            <xs:element
+                name="cite"
+                type="xhtml.cite.type"/>
+            <xs:element
+                name="abbr"
+                type="xhtml.abbr.type"/>
+            <xs:element
+                name="acronym"
+                type="xhtml.acronym.type"/>
+            <xs:element
+                name="q"
+                type="xhtml.q.type"/>
+        </xs:choice>
+    </xs:group>
+    <xs:group
+        name="xhtml.InlPres.class">
+        <xs:choice>
+            <xs:element
+                name="tt"
+                type="xhtml.InlPres.type"/>
+            <xs:element
+                name="i"
+                type="xhtml.InlPres.type"/>
+            <xs:element
+                name="b"
+                type="xhtml.InlPres.type"/>
+            <xs:element
+                name="big"
+                type="xhtml.InlPres.type"/>
+            <xs:element
+                name="small"
+                type="xhtml.InlPres.type"/>
+            <xs:element
+                name="sub"
+                type="xhtml.InlPres.type"/>
+            <xs:element
+                name="sup"
+                type="xhtml.InlPres.type"/>
+        </xs:choice>
+    </xs:group>
+    <xs:group
+        name="xhtml.I18n.class">
+        <xs:sequence>
+            <xs:element
+                name="bdo"
+                type="xhtml.bdo.type"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:group
+        name="xhtml.Anchor.class">
+        <xs:sequence>
+            <xs:element
+                name="a"
+                type="xhtml.a.type"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:group
+        name="xhtml.InlSpecial.class">
+        <xs:choice>
+            <xs:element
+                name="img"
+                type="xhtml.img.type"/>
+            <xs:element
+                name="map"
+                type="xhtml.map.type"/>
+            <xs:element
+                name="object"
+                type="xhtml.object.type"/>
+        </xs:choice>
+    </xs:group>
+    <xs:group
+        name="xhtml.InlForm.class">
+        <xs:choice>
+            <xs:element
+                name="input"
+                type="xhtml.input.type"/>
+            <xs:element
+                name="select"
+                type="xhtml.select.type"/>
+            <xs:element
+                name="textarea"
+                type="xhtml.textarea.type"/>
+            <xs:element
+                name="label"
+                type="xhtml.label.type"/>
+            <xs:element
+                name="button"
+                type="xhtml.button.type"/>
+        </xs:choice>
+    </xs:group>
+    <xs:group
+        name="xhtml.Inline.extra">
+        <xs:sequence/>
+    </xs:group>
+    <xs:group
+        name="xhtml.Ruby.class">
+        <xs:sequence>
+            <xs:element
+                name="ruby"
+                type="xhtml.ruby.type"/>
+        </xs:sequence>
+    </xs:group>
+    <!--
+    Inline.class includes all inline elements,
+    used as a component in mixes
+  -->
+    <xs:group
+        name="xhtml.Inline.class">
+        <xs:choice>
+            <xs:group
+                ref="xhtml.InlStruct.class"/>
+            <xs:group
+                ref="xhtml.InlPhras.class"/>
+            <xs:group
+                ref="xhtml.InlPres.class"/>
+            <xs:group
+                ref="xhtml.I18n.class"/>
+            <xs:group
+                ref="xhtml.Anchor.class"/>
+            <xs:group
+                ref="xhtml.InlSpecial.class"/>
+            <xs:group
+                ref="xhtml.InlForm.class"/>
+            <xs:group
+                ref="xhtml.Ruby.class"/>
+            <xs:group
+                ref="xhtml.Inline.extra"/>
+        </xs:choice>
+    </xs:group>
+    <!--
+     InlNoRuby.class includes all inline elements
+     except ruby
+  -->
+    <xs:group
+        name="xhtml.InlNoRuby.class">
+        <xs:choice>
+            <xs:group
+                ref="xhtml.InlStruct.class"/>
+            <xs:group
+                ref="xhtml.InlPhras.class"/>
+            <xs:group
+                ref="xhtml.InlPres.class"/>
+            <xs:group
+                ref="xhtml.I18n.class"/>
+            <xs:group
+                ref="xhtml.Anchor.class"/>
+            <xs:group
+                ref="xhtml.InlSpecial.class"/>
+            <xs:group
+                ref="xhtml.InlForm.class"/>
+            <xs:group
+                ref="xhtml.Inline.extra"/>
+        </xs:choice>
+    </xs:group>
+    <!--
+    InlinePre.mix
+    Used as a component in pre model
+  -->
+    <xs:group
+        name="xhtml.InlinePre.mix">
+        <xs:choice>
+            <xs:group
+                ref="xhtml.InlStruct.class"/>
+            <xs:group
+                ref="xhtml.InlPhras.class"/>
+            <xs:element
+                name="tt"
+                type="xhtml.InlPres.type"/>
+            <xs:element
+                name="i"
+                type="xhtml.InlPres.type"/>
+            <xs:element
+                name="b"
+                type="xhtml.InlPres.type"/>
+            <xs:group
+                ref="xhtml.I18n.class"/>
+            <xs:group
+                ref="xhtml.Anchor.class"/>
+            <xs:group
+                ref="xhtml.Misc.class"/>
+            <xs:element
+                name="map"
+                type="xhtml.map.type"/>
+            <xs:group
+                ref="xhtml.Inline.extra"/>
+        </xs:choice>
+    </xs:group>
+    <!--
+    InlNoAnchor.class includes all non-anchor inlines,
+    used as a component in mixes
+  -->
+    <xs:group
+        name="xhtml.InlNoAnchor.class">
+        <xs:choice>
+            <xs:group
+                ref="xhtml.InlStruct.class"/>
+            <xs:group
+                ref="xhtml.InlPhras.class"/>
+            <xs:group
+                ref="xhtml.InlPres.class"/>
+            <xs:group
+                ref="xhtml.I18n.class"/>
+            <xs:group
+                ref="xhtml.InlSpecial.class"/>
+            <xs:group
+                ref="xhtml.InlForm.class"/>
+            <xs:group
+                ref="xhtml.Ruby.class"/>
+            <xs:group
+                ref="xhtml.Inline.extra"/>
+        </xs:choice>
+    </xs:group>
+    <!--
+    InlNoAnchor.mix includes all non-anchor inlines
+  -->
+    <xs:group
+        name="xhtml.InlNoAnchor.mix">
+        <xs:choice>
+            <xs:group
+                ref="xhtml.InlNoAnchor.class"/>
+            <xs:group
+                ref="xhtml.Misc.class"/>
+        </xs:choice>
+    </xs:group>
+    <!--
+    Inline.mix includes all inline elements, including Misc.class
+  -->
+    <xs:group
+        name="xhtml.Inline.mix">
+        <xs:choice>
+            <xs:group
+                ref="xhtml.Inline.class"/>
+            <xs:group
+                ref="xhtml.Misc.class"/>
+        </xs:choice>
+    </xs:group>
+    <!--
+   InlNoRuby.mix includes all of inline.mix elements
+   except ruby
+  -->
+    <xs:group
+        name="xhtml.InlNoRuby.mix">
+        <xs:choice>
+            <xs:group
+                ref="xhtml.InlNoRuby.class"/>
+            <xs:group
+                ref="xhtml.Misc.class"/>
+        </xs:choice>
+    </xs:group>
+    <!--
+    In the HTML 4 DTD, heading and list elements were included
+    in the block group. The Heading.class and
+    List.class groups must now be included explicitly
+    on element declarations where desired.
+  -->
+    <xs:group
+        name="xhtml.Heading.class">
+        <xs:choice>
+            <xs:element
+                name="h1"
+                type="xhtml.h1.type"/>
+            <xs:element
+                name="h2"
+                type="xhtml.h2.type"/>
+            <xs:element
+                name="h3"
+                type="xhtml.h3.type"/>
+            <xs:element
+                name="h4"
+                type="xhtml.h4.type"/>
+            <xs:element
+                name="h5"
+                type="xhtml.h5.type"/>
+            <xs:element
+                name="h6"
+                type="xhtml.h6.type"/>
+        </xs:choice>
+    </xs:group>
+    <xs:group
+        name="xhtml.List.class">
+        <xs:choice>
+            <xs:element
+                name="ul"
+                type="xhtml.ul.type"/>
+            <xs:element
+                name="ol"
+                type="xhtml.ol.type"/>
+            <xs:element
+                name="dl"
+                type="xhtml.dl.type"/>
+        </xs:choice>
+    </xs:group>
+    <xs:group
+        name="xhtml.Table.class">
+        <xs:choice>
+            <xs:element
+                name="table"
+                type="xhtml.table.type"/>
+        </xs:choice>
+    </xs:group>
+    <xs:group
+        name="xhtml.Form.class">
+        <xs:choice>
+            <xs:element
+                name="form"
+                type="xhtml.form.type"/>
+        </xs:choice>
+    </xs:group>
+    <xs:group
+        name="xhtml.Fieldset.class">
+        <xs:choice>
+            <xs:element
+                name="fieldset"
+                type="xhtml.fieldset.type"/>
+        </xs:choice>
+    </xs:group>
+    <xs:group
+        name="xhtml.BlkStruct.class">
+        <xs:choice>
+            <xs:element
+                name="p"
+                type="xhtml.p.type"/>
+            <xs:element
+                name="div"
+                type="xhtml.div.type"/>
+        </xs:choice>
+    </xs:group>
+    <xs:group
+        name="xhtml.BlkPhras.class">
+        <xs:choice>
+            <xs:element
+                name="pre"
+                type="xhtml.pre.type"/>
+            <xs:element
+                name="blockquote"
+                type="xhtml.blockquote.type"/>
+            <xs:element
+                name="address"
+                type="xhtml.address.type"/>
+        </xs:choice>
+    </xs:group>
+    <xs:group
+        name="xhtml.BlkPres.class">
+        <xs:sequence>
+            <xs:element
+                name="hr"
+                type="xhtml.hr.type"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:group
+        name="xhtml.BlkSpecial.class">
+        <xs:choice>
+            <xs:group
+                ref="xhtml.Table.class"/>
+            <xs:group
+                ref="xhtml.Form.class"/>
+            <xs:group
+                ref="xhtml.Fieldset.class"/>
+        </xs:choice>
+    </xs:group>
+    <xs:group
+        name="xhtml.Block.extra">
+        <xs:sequence/>
+    </xs:group>
+    <!--
+    Block.class includes all block elements,
+    used as an component in mixes
+  -->
+    <xs:group
+        name="xhtml.Block.class">
+        <xs:choice>
+            <xs:group
+                ref="xhtml.BlkStruct.class"/>
+            <xs:group
+                ref="xhtml.BlkPhras.class"/>
+            <xs:group
+                ref="xhtml.BlkPres.class"/>
+            <xs:group
+                ref="xhtml.BlkSpecial.class"/>
+            <xs:group
+                ref="xhtml.Block.extra"/>
+        </xs:choice>
+    </xs:group>
+    <!--
+   Block.mix includes all block elements plus %Misc.class;
+  -->
+    <xs:group
+        name="xhtml.Block.mix">
+        <xs:choice>
+            <xs:group
+                ref="xhtml.Heading.class"/>
+            <xs:group
+                ref="xhtml.List.class"/>
+            <xs:group
+                ref="xhtml.Block.class"/>
+            <xs:group
+                ref="xhtml.Misc.class"/>
+        </xs:choice>
+    </xs:group>
+    <!--
+    All Content Elements
+    Flow.mix includes all text content, block and inline
+    Note that the "any" element included here allows us
+    to add data from any other namespace, a necessity
+    for compound document creation.
+    Note however that it is not possible to add
+    to any head level element without further
+    modification. To add RDF metadata to the head
+    of a document, modify the structure module.
+  -->
+    <xs:group
+        name="xhtml.Flow.mix">
+        <xs:choice>
+            <xs:group
+                ref="xhtml.Heading.class"/>
+            <xs:group
+                ref="xhtml.List.class"/>
+            <xs:group
+                ref="xhtml.Block.class"/>
+            <xs:group
+                ref="xhtml.Inline.class"/>
+            <xs:group
+                ref="xhtml.Misc.class"/>
+        </xs:choice>
+    </xs:group>
+    <!--
+    BlkNoForm.mix includes all non-form block elements,
+    plus Misc.class
+  -->
+    <xs:group
+        name="xhtml.BlkNoForm.mix">
+        <xs:choice>
+            <xs:group
+                ref="xhtml.Heading.class"/>
+            <xs:group
+                ref="xhtml.List.class"/>
+            <xs:group
+                ref="xhtml.BlkStruct.class"/>
+            <xs:group
+                ref="xhtml.BlkPhras.class"/>
+            <xs:group
+                ref="xhtml.BlkPres.class"/>
+            <xs:group
+                ref="xhtml.Table.class"/>
+            <xs:group
+                ref="xhtml.Block.extra"/>
+            <xs:group
+                ref="xhtml.Misc.class"/>
+        </xs:choice>
+    </xs:group>
+    <xs:element
+        name="html"
+        type="xhtml.html.type"/>
+</xs:schema>

@@ -29,9 +29,12 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.InetSocketAddress;
 import java.net.http.HttpHeaders;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiPredicate;
 import javax.net.ssl.SSLSession;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
+import jdk.internal.net.http.frame.Http2Frame;
 
 public interface Http2TestExchange {
 
@@ -53,6 +56,12 @@ public interface Http2TestExchange {
 
     void sendResponseHeaders(int rCode, long responseLength) throws IOException;
 
+    default void sendResponseHeaders(int rCode, long responseLength,
+                                     BiPredicate<CharSequence, CharSequence> insertionPolicy)
+            throws IOException {
+        sendResponseHeaders(rCode, responseLength);
+    }
+
     InetSocketAddress getRemoteAddress();
 
     int getResponseCode();
@@ -64,6 +73,10 @@ public interface Http2TestExchange {
     boolean serverPushAllowed();
 
     void serverPush(URI uri, HttpHeaders headers, InputStream content);
+
+    default void sendFrames(List<Http2Frame> frames) throws IOException {
+        throw new UnsupportedOperationException("not implemented");
+    }
 
     /**
      * Send a PING on this exchanges connection, and completes the returned CF

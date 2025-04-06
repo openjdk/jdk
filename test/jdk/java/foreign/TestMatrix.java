@@ -35,7 +35,7 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
- * @run testng/othervm/native/manual
+ * @run testng/othervm/native
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false

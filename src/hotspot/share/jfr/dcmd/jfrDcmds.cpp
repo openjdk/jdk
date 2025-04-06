@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/jfr.hpp"
@@ -292,10 +291,10 @@ static const char* get_as_dcmd_arena_string(oop string) {
   char* str = nullptr;
   const typeArrayOop value = java_lang_String::value(string);
   if (value != nullptr) {
-    const size_t length = static_cast<size_t>(java_lang_String::utf8_length(string, value)) + 1;
+    const size_t length = java_lang_String::utf8_length(string, value) + 1;
     str = dcmd_arena_allocate(length);
     assert(str != nullptr, "invariant");
-    java_lang_String::as_utf8_string(string, value, str, static_cast<int>(length));
+    java_lang_String::as_utf8_string(string, value, str, length);
   }
   return str;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /* @test
  * @bug 8272746
+ * @modules java.base/jdk.internal.util
  * @summary Verify that ZipFile rejects a ZIP with a CEN size which does not fit in a Java byte array
  * @run junit CenSizeTooLarge
  */
 
+import jdk.internal.util.ArraysSupport;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,9 +36,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -46,8 +46,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CenSizeTooLarge {
+
+    // Entry names produced in this test are fixed-length
+    public static final int NAME_LENGTH = 10;
+
     // Maximum allowed CEN size allowed by the ZipFile implementation
-    static final int MAX_CEN_SIZE = Integer.MAX_VALUE - ZipFile.ENDHDR - 1;
+    static final int MAX_CEN_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
     /**
      * From the APPNOTE.txt specification:
@@ -59,11 +63,10 @@ public class CenSizeTooLarge {
      *        fields respectively.  The combined length of any
      *        directory record and these three fields SHOULD NOT
      *        generally exceed 65,535 bytes.
-     *
-     *  Since ZipOutputStream does not enforce the 'combined length' clause,
-     *  we simply use 65,535 (0xFFFF) for the purpose of this test.
+     *.
+     * Create a maximum extra field which does not exceed 65,535 bytes
      */
-    static final int MAX_EXTRA_FIELD_SIZE = 65_535;
+    static final int MAX_EXTRA_FIELD_SIZE = 65_535 - ZipFile.CENHDR - NAME_LENGTH;
 
     // Data size (unsigned short)
     // Field size minus the leading header 'tag' and 'data size' fields (2 bytes each)
@@ -71,9 +74,6 @@ public class CenSizeTooLarge {
 
     // Tag for the 'unknown' field type, specified in APPNOTE.txt 'Third party mappings'
     static final short UNKNOWN_ZIP_TAG = (short) 0x9902;
-
-    // Entry names produced in this test are fixed-length
-    public static final int NAME_LENGTH = 10;
 
     // Use a shared LocalDateTime on all entries to save processing time
     static final LocalDateTime TIME_LOCAL = LocalDateTime.now();
@@ -84,15 +84,15 @@ public class CenSizeTooLarge {
     // The number of entries needed to exceed the MAX_CEN_SIZE
     static final int NUM_ENTRIES = (MAX_CEN_SIZE / CEN_HEADER_SIZE) + 1;
 
-    // Helps SparseOutputStream detect write of the last CEN entry
-    private static final String LAST_CEN_COMMENT = "LastCEN";
-    private static final byte[] LAST_CEN_COMMENT_BYTES = LAST_CEN_COMMENT.getBytes(StandardCharsets.UTF_8);
-
     // Expected ZipException message when the CEN does not fit in a Java byte array
     private static final String CEN_TOO_LARGE_MESSAGE = "invalid END header (central directory size too large)";
 
     // Zip file to create for testing
     private File hugeZipFile;
+
+    private static final byte[] EXTRA_BYTES = makeLargeExtraField();
+    // Helps SparseOutputStream detect write of the last CEN entry
+    private static final byte[] LAST_EXTRA_BYTES = makeLargeExtraField();
 
     /**
      * Create a zip file with a CEN size which does not fit within a Java byte array
@@ -125,23 +125,18 @@ public class CenSizeTooLarge {
                 // Set the time/date field for faster processing
                 entry.setTimeLocal(TIME_LOCAL);
 
-                if (i == NUM_ENTRIES -1) {
-                    // Help SparseOutputStream detect the last CEN entry write
-                    entry.setComment(LAST_CEN_COMMENT);
-                }
                 // Add the entry
                 zip.putNextEntry(entry);
-
-
             }
             // Finish writing the last entry
             zip.closeEntry();
 
             // Before the CEN headers are written, set the extra data on each entry
-            byte[] extra = makeLargeExtraField();
             for (ZipEntry entry : entries) {
-                entry.setExtra(extra);
+                entry.setExtra(EXTRA_BYTES);
             }
+            // Help SparseOutputSream detect the last entry
+            entries[entries.length-1].setExtra(LAST_EXTRA_BYTES);
         }
     }
 
@@ -165,7 +160,7 @@ public class CenSizeTooLarge {
      * Data Size  (Two byte short)
      * Data Block (Contents depend on field type)
      */
-    private byte[] makeLargeExtraField() {
+    private static byte[] makeLargeExtraField() {
         // Make a maximally sized extra field
         byte[] extra = new byte[MAX_EXTRA_FIELD_SIZE];
         // Little-endian ByteBuffer for updating the header fields
@@ -203,7 +198,7 @@ public class CenSizeTooLarge {
                 // but instead simply advance the position, creating a sparse file
                 channel.position(position);
                 // Check for last CEN record
-                if (Arrays.equals(LAST_CEN_COMMENT_BYTES, 0, LAST_CEN_COMMENT_BYTES.length, b, off, len)) {
+                if (b == LAST_EXTRA_BYTES) {
                     // From here on, write actual bytes
                     sparse = false;
                 }

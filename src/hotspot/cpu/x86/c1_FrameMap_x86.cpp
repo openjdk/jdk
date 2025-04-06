@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_LIR.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -109,8 +108,6 @@ LIR_Opr FrameMap::rcx_metadata_opr;
 
 LIR_Opr FrameMap::long0_opr;
 LIR_Opr FrameMap::long1_opr;
-LIR_Opr FrameMap::fpu0_float_opr;
-LIR_Opr FrameMap::fpu0_double_opr;
 LIR_Opr FrameMap::xmm0_float_opr;
 LIR_Opr FrameMap::xmm0_double_opr;
 
@@ -195,8 +192,6 @@ void FrameMap::initialize() {
   long0_opr = LIR_OprFact::double_cpu(3 /*eax*/, 4 /*edx*/);
   long1_opr = LIR_OprFact::double_cpu(2 /*ebx*/, 5 /*ecx*/);
 #endif // _LP64
-  fpu0_float_opr   = LIR_OprFact::single_fpu(0);
-  fpu0_double_opr  = LIR_OprFact::double_fpu(0);
   xmm0_float_opr   = LIR_OprFact::single_xmm(0);
   xmm0_double_opr  = LIR_OprFact::double_xmm(0);
 

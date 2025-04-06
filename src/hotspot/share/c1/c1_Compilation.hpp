@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
-#include "memory/resourceArea.hpp"
 #include "runtime/deoptimization.hpp"
 
 class CompilationFailureInfo;
@@ -73,7 +72,6 @@ class Compilation: public StackObj {
   ciMethod*          _method;
   int                _osr_bci;
   IR*                _hir;
-  int                _max_spills;
   FrameMap*          _frame_map;
   C1_MacroAssembler* _masm;
   bool               _has_exception_handlers;
@@ -151,7 +149,6 @@ class Compilation: public StackObj {
   int osr_bci() const                            { return _osr_bci; }
   bool is_osr_compile() const                    { return osr_bci() >= 0; }
   IR* hir() const                                { return _hir; }
-  int max_spills() const                         { return _max_spills; }
   FrameMap* frame_map() const                    { return _frame_map; }
   CodeBuffer* code()                             { return &_code; }
   C1_MacroAssembler* masm() const                { return _masm; }

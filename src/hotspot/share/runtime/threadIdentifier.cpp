@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,23 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/threadIdentifier.hpp"
 
-static volatile int64_t next_thread_id = 2; // starting at 2, excluding the primordial thread id
+// starting at 3, excluding reserved values defined in ObjectMonitor.hpp
+static const int64_t INITIAL_TID = 3;
+static volatile int64_t next_thread_id = INITIAL_TID;
+
+int64_t ThreadIdentifier::initial() {
+  return INITIAL_TID;
+}
 
 int64_t ThreadIdentifier::unsafe_offset() {
   return reinterpret_cast<int64_t>(&next_thread_id);
+}
+
+int64_t ThreadIdentifier::current() {
+  return Atomic::load(&next_thread_id);
 }
 
 int64_t ThreadIdentifier::next() {
@@ -39,3 +48,10 @@ int64_t ThreadIdentifier::next() {
   } while (Atomic::cmpxchg(&next_thread_id, next_tid, next_tid + 1) != next_tid);
   return next_tid;
 }
+
+#ifdef ASSERT
+void ThreadIdentifier::verify_id(int64_t id) {
+  int64_t current_id = current();
+  assert(id >= initial() && id < current_id, "invalid id, " INT64_FORMAT " and current is " INT64_FORMAT, id, current_id);
+}
+#endif

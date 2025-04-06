@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,36 +24,39 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.internal.util.OperatingSystem;
-
+import java.text.MessageFormat;
+import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
+import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.util.MultiResourceBundle;
 
 class I18N {
 
     static String getString(String key) {
-        if (PLATFORM.containsKey(key)) {
-            return PLATFORM.getString(key);
-        }
-        return SHARED.getString(key);
+        return BUNDLE.getString(key);
     }
 
-    private static final ResourceBundle SHARED = ResourceBundle.getBundle(
-            "jdk.jpackage.internal.resources.MainResources");
+    static String format(String key, Object ... args) {
+        var str = getString(key);
+        if (args.length != 0) {
+            return MessageFormat.format(str, args);
+        } else {
+            return str;
+        }
+    }
 
-    private static final ResourceBundle PLATFORM;
+    private static final ResourceBundle BUNDLE;
 
     static {
-        if (OperatingSystem.isLinux()) {
-            PLATFORM = ResourceBundle.getBundle(
-                    "jdk.jpackage.internal.resources.LinuxResources");
-        } else if (OperatingSystem.isWindows()) {
-            PLATFORM = ResourceBundle.getBundle(
-                    "jdk.jpackage.internal.resources.WinResources");
-        } else if (OperatingSystem.isMacOS()) {
-            PLATFORM = ResourceBundle.getBundle(
-                    "jdk.jpackage.internal.resources.MacResources");
-        } else {
-            throw new IllegalStateException("Unknown platform");
-        }
+        var prefix = "jdk.jpackage.internal.resources.";
+        BUNDLE = MultiResourceBundle.create(
+                prefix + "MainResources",
+                Map.of(
+                        OperatingSystem.LINUX, List.of(prefix + "LinuxResources"),
+                        OperatingSystem.MACOS, List.of(prefix + "MacResources"),
+                        OperatingSystem.WINDOWS, List.of(prefix + "WinResources", prefix + "WinResourcesNoL10N")
+                )
+        );
     }
 }

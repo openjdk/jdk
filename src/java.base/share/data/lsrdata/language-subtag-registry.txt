@@ -1,4 +1,4 @@
-File-Date: 2024-06-14
+File-Date: 2024-11-19
 %%
 Type: language
 Subtag: aa
@@ -47989,6 +47989,16 @@ Subtag: kkcor
 Description: Common Cornish orthography of Revived Cornish
 Added: 2008-10-14
 Prefix: kw
+%%
+Type: variant
+Subtag: kleinsch
+Description: Kleinschmidt orthography
+Description: Allattaasitaamut
+Added: 2024-07-20
+Prefix: kl
+Prefix: kl-tunumiit
+Comments: Orthography for Greenlandic designed by Samuel Kleinschmidt,
+  used from 1851 to 1973.
 %%
 Type: variant
 Subtag: kociewie

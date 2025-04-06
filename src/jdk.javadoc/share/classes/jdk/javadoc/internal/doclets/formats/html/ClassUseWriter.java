@@ -106,7 +106,6 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             pkgToPackageAnnotations = new TreeSet<>(comparators.classUseComparator());
             pkgToPackageAnnotations.addAll(mapper.classToPackageAnnotations.get(typeElement));
         }
-        configuration.currentTypeElement = typeElement;
         this.pkgSet = new TreeSet<>(comparators.packageComparator());
         this.pkgToClassTypeParameter = pkgDivide(mapper.classToClassTypeParam);
         this.pkgToSubclassTypeParameter = pkgDivide(mapper.classToSubclassTypeParam);
@@ -423,7 +422,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         HtmlTree body = getBody(getWindowTitle(title));
         ContentBuilder headingContent = new ContentBuilder();
         headingContent.add(contents.getContent("doclet.ClassUse_Title", cltype));
-        headingContent.add(new HtmlTree(HtmlTag.BR));
+        headingContent.add(HtmlTree.BR());
         headingContent.add(clname);
         var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyles.title, headingContent);

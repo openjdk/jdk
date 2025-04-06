@@ -77,9 +77,27 @@ class FloatRegister(Register):
     def __str__(self):
         return self.astr("v")
 
+    def generate(self):
+        self.number = random.randint(0, 31)
+        return self
+
     def nextReg(self):
         next = FloatRegister()
         next.number = (self.number + 1) % 32
+        return next
+
+class LowFloatRegister(Register):
+
+    def __str__(self):
+        return self.astr("v")
+
+    def generate(self):
+        self.number = random.randint(0, 15)
+        return self
+
+    def nextReg(self):
+        next = FloatRegister()
+        next.number = (self.number + 1) % 16
         return next
 
 class GeneralRegister(Register):
@@ -1271,6 +1289,75 @@ class CommonNEONInstruction(Instruction):
     def aname(self):
         return self._name
 
+class VectorScalarNEONInstruction(Instruction):
+    def __init__(self, args):
+        self._name, self.insname, self.arrangement = args
+
+    def generate(self):
+        vectorLength = {"8B" : 8, "16B" : 16, "4H" : 4, "8H" : 8, "2S" : 2, "4S" : 4, "1D" : 1, "2D" : 2} [self.arrangement]
+        self.elemIndex = random.randrange(0, vectorLength)
+        self.elemSizeSpecifier = self.arrangement[len(self.arrangement) - 1:]
+        self._firstSIMDreg = LowFloatRegister().generate()
+        self.numRegs = 3
+        return self
+
+    def cstr(self):
+        buf = Instruction.cstr(self) + str(self._firstSIMDreg)
+        buf = '%s, __ T%s' % (buf, self.arrangement)
+        current = self._firstSIMDreg
+        for cnt in range(1, self.numRegs - 1):
+            buf = '%s, %s' % (buf, current.nextReg())
+            current = current.nextReg()
+        buf = '%s, %s, %d' % (buf, current.nextReg(), self.elemIndex)
+        return '%s);' % (buf)
+
+    def astr(self):
+        buf = '%s\t%s.%s' % (self.insname, self._firstSIMDreg, self.arrangement)
+        current = self._firstSIMDreg
+        for cnt in range(1, self.numRegs - 1):
+            buf = '%s, %s.%s' % (buf, current.nextReg(), self.arrangement)
+            current = current.nextReg()
+        buf = '%s, %s.%s[%d]' % (buf, current.nextReg(), self.elemSizeSpecifier, self.elemIndex)
+        return buf
+
+    def aname(self):
+        return self._name
+
+class WideningNEONInstruction(Instruction):
+    def __init__(self, args):
+        self._name, self.insname, self.widerArrangement, self.narrowerArrangement = args
+
+    def generate(self):
+        self._firstSIMDreg = FloatRegister().generate()
+        return self
+
+    def cstr(self):
+        buf = Instruction.cstr(self) + str(self._firstSIMDreg)
+        current = self._firstSIMDreg
+        for cnt in range(1, self.numWiderRegs):
+            buf = '%s, %s' % (buf, current.nextReg())
+            current = current.nextReg()
+        buf = '%s, __ T%s' % (buf, self.widerArrangement)
+        for cnt in range(0, self.numNarrowerRegs):
+            buf = '%s, %s' % (buf, current.nextReg())
+            current = current.nextReg()
+        buf = '%s, __ T%s' % (buf, self.narrowerArrangement)
+        return '%s);' % (buf)
+
+    def astr(self):
+        buf = '%s\t%s.%s' % (self.insname, self._firstSIMDreg, self.widerArrangement)
+        current = self._firstSIMDreg
+        for cnt in range(1, self.numWiderRegs):
+            buf = '%s, %s.%s' % (buf, current.nextReg(), self.widerArrangement)
+            current = current.nextReg()
+        for cnt in range(0, self.numNarrowerRegs):
+            buf = '%s, %s.%s' % (buf, current.nextReg(), self.narrowerArrangement)
+            current = current.nextReg()
+        return buf
+
+    def aname(self):
+        return self._name
+
 class SHA512SIMDOp(Instruction):
 
     def generate(self):
@@ -1389,6 +1476,10 @@ class TwoRegNEONOp(CommonNEONInstruction):
 
 class ThreeRegNEONOp(TwoRegNEONOp):
     numRegs = 3
+
+class AddWideNEONOp(WideningNEONInstruction):
+    numWiderRegs = 2
+    numNarrowerRegs = 1
 
 class NEONFloatCompareWithZero(TwoRegNEONOp):
     def __init__(self, args):
@@ -1701,12 +1792,28 @@ generate(ThreeRegNEONOp,
           ["addv", "add", "4H"], ["addv", "add", "8H"],
           ["addv", "add", "2S"], ["addv", "add", "4S"],
           ["addv", "add", "2D"],
+          ["sqaddv", "sqadd", "8B"], ["sqaddv", "sqadd", "16B"],
+          ["sqaddv", "sqadd", "4H"], ["sqaddv", "sqadd", "8H"],
+          ["sqaddv", "sqadd", "2S"], ["sqaddv", "sqadd", "4S"],
+          ["sqaddv", "sqadd", "2D"],
+          ["uqaddv", "uqadd", "8B"], ["uqaddv", "uqadd", "16B"],
+          ["uqaddv", "uqadd", "4H"], ["uqaddv", "uqadd", "8H"],
+          ["uqaddv", "uqadd", "2S"], ["uqaddv", "uqadd", "4S"],
+          ["uqaddv", "uqadd", "2D"],
           ["fadd", "fadd", "2S"], ["fadd", "fadd", "4S"],
           ["fadd", "fadd", "2D"],
           ["subv", "sub", "8B"], ["subv", "sub", "16B"],
           ["subv", "sub", "4H"], ["subv", "sub", "8H"],
           ["subv", "sub", "2S"], ["subv", "sub", "4S"],
           ["subv", "sub", "2D"],
+          ["sqsubv", "sqsub", "8B"], ["sqsubv", "sqsub", "16B"],
+          ["sqsubv", "sqsub", "4H"], ["sqsubv", "sqsub", "8H"],
+          ["sqsubv", "sqsub", "2S"], ["sqsubv", "sqsub", "4S"],
+          ["sqsubv", "sqsub", "2D"],
+          ["uqsubv", "uqsub", "8B"], ["uqsubv", "uqsub", "16B"],
+          ["uqsubv", "uqsub", "4H"], ["uqsubv", "uqsub", "8H"],
+          ["uqsubv", "uqsub", "2S"], ["uqsubv", "uqsub", "4S"],
+          ["uqsubv", "uqsub", "2D"],
           ["fsub", "fsub", "2S"], ["fsub", "fsub", "4S"],
           ["fsub", "fsub", "2D"],
           ["mulv", "mul", "8B"], ["mulv", "mul", "16B"],
@@ -1731,6 +1838,9 @@ generate(ThreeRegNEONOp,
           ["maxv", "smax", "8B"], ["maxv", "smax", "16B"],
           ["maxv", "smax", "4H"], ["maxv", "smax", "8H"],
           ["maxv", "smax", "2S"], ["maxv", "smax", "4S"],
+          ["umaxv", "umax", "8B"], ["umaxv", "umax", "16B"],
+          ["umaxv", "umax", "4H"], ["umaxv", "umax", "8H"],
+          ["umaxv", "umax", "2S"], ["umaxv", "umax", "4S"],
           ["smaxp", "smaxp", "8B"], ["smaxp", "smaxp", "16B"],
           ["smaxp", "smaxp", "4H"], ["smaxp", "smaxp", "8H"],
           ["smaxp", "smaxp", "2S"], ["smaxp", "smaxp", "4S"],
@@ -1739,13 +1849,32 @@ generate(ThreeRegNEONOp,
           ["minv", "smin", "8B"], ["minv", "smin", "16B"],
           ["minv", "smin", "4H"], ["minv", "smin", "8H"],
           ["minv", "smin", "2S"], ["minv", "smin", "4S"],
+          ["uminv", "umin", "8B"], ["uminv", "umin", "16B"],
+          ["uminv", "umin", "4H"], ["uminv", "umin", "8H"],
+          ["uminv", "umin", "2S"], ["uminv", "umin", "4S"],
           ["sminp", "sminp", "8B"], ["sminp", "sminp", "16B"],
           ["sminp", "sminp", "4H"], ["sminp", "sminp", "8H"],
           ["sminp", "sminp", "2S"], ["sminp", "sminp", "4S"],
+          ["sqdmulh", "sqdmulh", "4H"], ["sqdmulh", "sqdmulh", "8H"],
+          ["sqdmulh", "sqdmulh", "2S"], ["sqdmulh", "sqdmulh", "4S"],
+          ["shsubv", "shsub", "8B"], ["shsubv", "shsub", "16B"],
+          ["shsubv", "shsub", "4H"], ["shsubv", "shsub", "8H"],
+          ["shsubv", "shsub", "2S"], ["shsubv", "shsub", "4S"],
           ["fmin", "fmin", "2S"], ["fmin", "fmin", "4S"],
           ["fmin", "fmin", "2D"],
           ["facgt", "facgt", "2S"], ["facgt", "facgt", "4S"],
           ["facgt", "facgt", "2D"],
+          ])
+
+generate(VectorScalarNEONInstruction,
+         [["fmlavs", "fmla", "2S"], ["mulvs", "mul", "4S"],
+          ["fmlavs", "fmla", "2D"],
+          ["fmlsvs", "fmls", "2S"], ["mulvs", "mul", "4S"],
+          ["fmlsvs", "fmls", "2D"],
+          ["fmulxvs", "fmulx", "2S"], ["mulvs", "mul", "4S"],
+          ["fmulxvs", "fmulx", "2D"],
+          ["mulvs", "mul", "4H"], ["mulvs", "mul", "8H"],
+          ["mulvs", "mul", "2S"], ["mulvs", "mul", "4S"],
           ])
 
 neonVectorCompareInstructionPrefix = ['cm', 'fcm']
@@ -2024,6 +2153,10 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["fadd", "ZZZ"],
                        ["fmul", "ZZZ"],
                        ["fsub", "ZZZ"],
+                       ["sqadd", "ZZZ"],
+                       ["sqsub", "ZZZ"],
+                       ["uqadd", "ZZZ"],
+                       ["uqsub", "ZZZ"],
                        ["abs", "ZPZ", "m"],
                        ["add", "ZPZ", "m", "dn"],
                        ["and", "ZPZ", "m", "dn"],
@@ -2042,6 +2175,8 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["revb", "ZPZ", "m"],
                        ["smax", "ZPZ", "m", "dn"],
                        ["smin", "ZPZ", "m", "dn"],
+                       ["umax", "ZPZ", "m", "dn"],
+                       ["umin", "ZPZ", "m", "dn"],
                        ["sub", "ZPZ", "m", "dn"],
                        ["fabs", "ZPZ", "m"],
                        ["fadd", "ZPZ", "m", "dn"],
@@ -2076,10 +2211,23 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["bext", "ZZZ"],
                        ["bdep", "ZZZ"],
                        ["eor3", "ZZZ"],
+                       ["sqadd", "ZPZ", "m", "dn"],
+                       ["sqsub", "ZPZ", "m", "dn"],
+                       ["uqadd", "ZPZ", "m", "dn"],
+                       ["uqsub", "ZPZ", "m", "dn"],
                       ])
 
 generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],
                           ["fminv", 2], ["fmaxv", 2], ["fadda", 2], ["uaddv", 0]])
+
+generate(AddWideNEONOp,
+         [["saddwv", "saddw", "8H", "8B"], ["saddwv2", "saddw2", "8H", "16B"],
+          ["saddwv", "saddw", "4S", "4H"], ["saddwv2", "saddw2", "4S", "8H"],
+          ["saddwv", "saddw", "2D", "2S"], ["saddwv2", "saddw2", "2D", "4S"],
+          ["uaddwv", "uaddw", "8H", "8B"], ["uaddwv2", "uaddw2", "8H", "16B"],
+          ["uaddwv", "uaddw", "4S", "4H"], ["uaddwv2", "uaddw2", "4S", "8H"],
+          ["uaddwv", "uaddw", "2D", "2S"], ["uaddwv2", "uaddw2", "2D", "4S"],
+          ])
 
 print "\n    __ bind(forth);"
 outfile.write("forth:\n")

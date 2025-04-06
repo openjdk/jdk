@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,11 +103,6 @@ public final class CGLGraphicsConfig extends CGraphicsConfig
         // CGLGraphicsConfigInfo data when this object goes away
         Disposer.addRecord(disposerReferent,
                            new CGLGCDisposerRecord(pConfigInfo));
-    }
-
-    @Override
-    public Object getProxyKey() {
-        return this;
     }
 
     @Override

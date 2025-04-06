@@ -1,3 +1,0 @@
-grant codebase "file:${test.classes}" {
-  permission java.util.PropertyPermission "java.runtime.version", "read";
-};

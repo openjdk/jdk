@@ -30,7 +30,6 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestSymmCiphers
- * @run main/othervm -Djava.security.manager=allow TestSymmCiphers sm
  */
 
 import java.io.ByteArrayOutputStream;
@@ -103,7 +102,7 @@ public class TestSymmCiphers extends PKCS11Test {
                     SecretKey key = kg.generateKey();
                     Cipher c1 = Cipher.getInstance(currTest.transformation, p);
                     Cipher c2 = Cipher.getInstance(currTest.transformation,
-                            "SunJCE");
+                            System.getProperty("test.provider.name", "SunJCE"));
 
                     byte[] plainTxt = new byte[currTest.dataSize];
                     random.nextBytes(plainTxt);

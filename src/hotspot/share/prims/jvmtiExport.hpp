@@ -371,6 +371,7 @@ class JvmtiExport : public AllStatic {
   }
   static bool is_early_phase() NOT_JVMTI_RETURN_(false);
   static bool has_early_class_hook_env() NOT_JVMTI_RETURN_(false);
+  static bool has_early_vmstart_env() NOT_JVMTI_RETURN_(false);
   // Return true if the class was modified by the hook.
   static bool post_class_file_load_hook(Symbol* h_name, Handle class_loader,
                                         Handle h_protection_domain,
@@ -397,6 +398,7 @@ class JvmtiExport : public AllStatic {
   static void post_monitor_contended_entered(JavaThread *thread, ObjectMonitor *obj_mntr) NOT_JVMTI_RETURN;
   static void post_monitor_wait(JavaThread *thread, oop obj, jlong timeout) NOT_JVMTI_RETURN;
   static void post_monitor_waited(JavaThread *thread, ObjectMonitor *obj_mntr, jboolean timed_out) NOT_JVMTI_RETURN;
+  static void vthread_post_monitor_waited(JavaThread *current, ObjectMonitor *obj_mntr, jboolean timed_out) NOT_JVMTI_RETURN;
   static void post_object_free(JvmtiEnv* env, GrowableArray<jlong>* objects) NOT_JVMTI_RETURN;
   static void post_resource_exhausted(jint resource_exhausted_flags, const char* detail) NOT_JVMTI_RETURN;
   static void record_vm_internal_object_allocation(oop object) NOT_JVMTI_RETURN;

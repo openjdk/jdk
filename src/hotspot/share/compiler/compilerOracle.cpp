@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
@@ -36,6 +35,7 @@
 #include "oops/symbol.hpp"
 #include "opto/phasetype.hpp"
 #include "opto/traceAutoVectorizationTag.hpp"
+#include "opto/traceMergeStoresTag.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -121,7 +121,6 @@ class TypedMethodOptionMatcher;
 
 static TypedMethodOptionMatcher* option_list = nullptr;
 static bool any_set = false;
-static bool print_final_memstat_report = false;
 
 // A filter for quick lookup if an option is set
 static bool option_filter[static_cast<int>(CompileCommandEnum::Unknown) + 1] = { 0 };
@@ -235,10 +234,10 @@ void TypedMethodOptionMatcher::print() {
   enum OptionType type = option2type(_option);
   switch (type) {
     case OptionType::Intx:
-    tty->print_cr(" intx %s = " INTX_FORMAT, name, value<intx>());
+    tty->print_cr(" intx %s = %zd", name, value<intx>());
     break;
     case OptionType::Uintx:
-    tty->print_cr(" uintx %s = " UINTX_FORMAT, name, value<uintx>());
+    tty->print_cr(" uintx %s = %zu", name, value<uintx>());
     break;
     case OptionType::Bool:
     tty->print_cr(" bool %s = %s", name, value<bool>() ? "true" : "false");
@@ -482,10 +481,6 @@ bool CompilerOracle::should_collect_memstat() {
   return has_command(CompileCommandEnum::MemStat) || has_command(CompileCommandEnum::MemLimit);
 }
 
-bool CompilerOracle::should_print_final_memstat_report() {
-  return print_final_memstat_report;
-}
-
 bool CompilerOracle::should_log(const methodHandle& method) {
   if (!LogCompilation) return false;
   if (!has_command(CompileCommandEnum::Log)) {
@@ -711,7 +706,6 @@ static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* 
   });
   IF_ENUM_STRING("print", {
     value = (uintx)MemStatAction::print;
-    print_final_memstat_report = true;
   });
 #undef IF_ENUM_STRING
 
@@ -735,7 +729,7 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
       success = parseMemLimit(line, value, bytes_read, errorbuf, buf_size);
     } else {
       // Is it a raw number?
-      success = sscanf(line, "" INTX_FORMAT "%n", &value, &bytes_read) == 1;
+      success = sscanf(line, "%zd%n", &value, &bytes_read) == 1;
     }
     if (success) {
       total_bytes_read += bytes_read;
@@ -753,7 +747,7 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
       success = parseMemStat(line, value, bytes_read, errorbuf, buf_size);
     } else {
       // parse as raw number
-      success = sscanf(line, "" UINTX_FORMAT "%n", &value, &bytes_read) == 1;
+      success = sscanf(line, "%zu%n", &value, &bytes_read) == 1;
     }
     if (success) {
       total_bytes_read += bytes_read;
@@ -801,6 +795,12 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
 #if !defined(PRODUCT) && defined(COMPILER2)
       else if (option == CompileCommandEnum::TraceAutoVectorization) {
         TraceAutoVectorizationTagValidator validator(value, true);
+
+        if (!validator.is_valid()) {
+          jio_snprintf(errorbuf, buf_size, "Unrecognized tag name in %s: %s", option2name(option), validator.what());
+        }
+      } else if (option == CompileCommandEnum::TraceMergeStores) {
+        TraceMergeStores::TagValidator validator(value, true);
 
         if (!validator.is_valid()) {
           jio_snprintf(errorbuf, buf_size, "Unrecognized tag name in %s: %s", option2name(option), validator.what());

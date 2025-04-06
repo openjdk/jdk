@@ -464,52 +464,6 @@ public class FutureTaskTest extends JSR166TestCase {
     }
 
     /**
-     * cancel(true) tries to interrupt a running task, but
-     * Thread.interrupt throws (simulating a restrictive security
-     * manager)
-     */
-    public void testCancelInterrupt_ThrowsSecurityException() {
-        final CountDownLatch pleaseCancel = new CountDownLatch(1);
-        final CountDownLatch cancelled = new CountDownLatch(1);
-        final PublicFutureTask task =
-            new PublicFutureTask(new CheckedRunnable() {
-                public void realRun() {
-                    pleaseCancel.countDown();
-                    await(cancelled);
-                    assertFalse(Thread.interrupted());
-                }});
-
-        final Thread t = new Thread(task) {
-            // Simulate a restrictive security manager.
-            @Override public void interrupt() {
-                throw new SecurityException();
-            }};
-        t.setDaemon(true);
-        t.start();
-
-        await(pleaseCancel);
-        try {
-            task.cancel(true);
-            shouldThrow();
-        } catch (SecurityException success) {}
-
-        // We failed to deliver the interrupt, but the world retains
-        // its sanity, as if we had done task.cancel(false)
-        assertTrue(task.isCancelled());
-        assertTrue(task.isDone());
-        assertEquals(1, task.runCount());
-        assertEquals(1, task.doneCount());
-        assertEquals(0, task.setCount());
-        assertEquals(0, task.setExceptionCount());
-        cancelled.countDown();
-        awaitTermination(t);
-        assertEquals(1, task.setCount());
-        assertEquals(0, task.setExceptionCount());
-        tryToConfuseDoneTask(task);
-        checkCancelled(task);
-    }
-
-    /**
      * cancel(true) interrupts a running task that subsequently throws
      */
     public void testCancelInterrupt_taskFails() {

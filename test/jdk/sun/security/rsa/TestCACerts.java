@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,8 @@ import java.security.cert.*;
 
 public class TestCACerts {
 
-    private final static String PROVIDER = "SunRsaSign";
+    private final static String PROVIDER =
+            System.getProperty("test.provider.name", "SunRsaSign");
 
     private final static char SEP = File.separatorChar;
 

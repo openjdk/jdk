@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@ package org.w3c.dom.ptests;
 
 import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static jaxp.library.JAXPTestUtilities.tryRunWithTmpPermission;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
@@ -45,7 +44,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -57,11 +55,9 @@ import org.w3c.dom.NodeList;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.NodeTest
  * @run testng/othervm org.w3c.dom.ptests.NodeTest
  * @summary Test Node interface
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class NodeTest {
     @DataProvider(name = "feature-supported")
     public Object[][] getFeatureSupportedList() throws Exception {
@@ -160,7 +156,7 @@ public class NodeTest {
 
         String outputfile = USER_DIR + "InsertBefore.out";
         String goldfile = GOLDEN_DIR + "InsertBeforeGF.out";
-        tryRunWithTmpPermission(() -> outputXml(document, outputfile), new PropertyPermission("user.dir", "read"));
+        outputXml(document, outputfile);
         assertTrue(compareWithGold(goldfile, outputfile));
     }
 
@@ -178,7 +174,7 @@ public class NodeTest {
 
         String outputfile = USER_DIR + "ReplaceChild3.out";
         String goldfile = GOLDEN_DIR + "ReplaceChild3GF.out";
-        tryRunWithTmpPermission(() -> outputXml(document, outputfile), new PropertyPermission("user.dir", "read"));
+        outputXml(document, outputfile);
         assertTrue(compareWithGold(goldfile, outputfile));
     }
 

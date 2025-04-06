@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *          necessary barriers. The tests use volatile memory accesses and
  *          blackholes to prevent C2 from simply optimizing them away.
  * @library /test/lib /
- * @requires vm.gc.ZGenerational
+ * @requires vm.gc.Z
  * @run driver compiler.gcbarriers.TestZGCBarrierElision test-correctness
  */
 
@@ -43,7 +43,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * @summary Test that the ZGC barrier elision optimization elides unnecessary
  *          barriers following simple allocation and domination rules.
  * @library /test/lib /
- * @requires vm.gc.ZGenerational & (vm.simpleArch == "x64" | vm.simpleArch == "aarch64")
+ * @requires vm.gc.Z & (vm.simpleArch == "x64" | vm.simpleArch == "aarch64")
  * @run driver compiler.gcbarriers.TestZGCBarrierElision test-effectiveness
  */
 
@@ -99,7 +99,7 @@ public class TestZGCBarrierElision {
         }
         String commonName = Common.class.getName();
         TestFramework test = new TestFramework(testClass);
-        test.addFlags("-XX:+UseZGC", "-XX:+ZGenerational", "-XX:+UnlockExperimentalVMOptions",
+        test.addFlags("-XX:+UseZGC", "-XX:+UnlockExperimentalVMOptions",
                       "-XX:CompileCommand=blackhole," + commonName + "::blackhole",
                       "-XX:CompileCommand=dontinline," + commonName + "::nonInlinedMethod",
                       "-XX:LoopMaxUnroll=0");

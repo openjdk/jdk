@@ -42,7 +42,7 @@ import jdk.management.jfr.RemoteRecordingStream;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @summary Tests that chunks arrive in the same order they were committed
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk

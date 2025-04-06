@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ class JfrThreadLocal {
   friend class Jfr;
   friend class JfrIntrinsicSupport;
   friend class JfrJavaSupport;
-  friend class JfrRecorder;
   friend class JVMCIVMStructs;
  private:
   jobject _java_event_writer;
@@ -65,7 +64,7 @@ class JfrThreadLocal {
   jlong _wallclock_time;
   mutable u4 _stackdepth;
   volatile jint _entering_suspend_flag;
-  mutable volatile int _critical_section;
+  int32_t _non_reentrant_nesting;
   u2 _vthread_epoch;
   bool _vthread_excluded;
   bool _jvm_thread_excluded;
@@ -78,17 +77,21 @@ class JfrThreadLocal {
   JfrStackFrame* install_stackframes() const;
   void release(Thread* t);
   static void release(JfrThreadLocal* tl, Thread* t);
+  static void initialize_main_thread(JavaThread* jt);
 
   static void set(bool* excluded_field, bool state);
   static traceid assign_thread_id(const Thread* t, JfrThreadLocal* tl);
   static traceid vthread_id(const Thread* t);
-  static void set_vthread_epoch(const JavaThread* jt, traceid id, u2 epoch);
+  static void set_vthread_epoch(const JavaThread* jt, traceid tid, u2 epoch);
+  static void set_vthread_epoch_checked(const JavaThread* jt, traceid tid, u2 epoch);
+  static traceid jvm_thread_id(const JfrThreadLocal* tl);
   bool is_vthread_excluded() const;
   static void exclude_vthread(const JavaThread* jt);
   static void include_vthread(const JavaThread* jt);
   static bool is_jvm_thread_excluded(const Thread* t);
   static void exclude_jvm_thread(const Thread* t);
   static void include_jvm_thread(const Thread* t);
+  static bool is_non_reentrant();
 
  public:
   JfrThreadLocal();
@@ -175,7 +178,6 @@ class JfrThreadLocal {
 
   // Non-volatile thread id, for Java carrier threads and non-java threads.
   static traceid jvm_thread_id(const Thread* t);
-  static traceid jvm_thread_id(const Thread* t, JfrThreadLocal* tl);
 
   // To impersonate is to temporarily masquerade as another thread.
   // For example, when writing an event that should be attributed to some other thread.
@@ -266,6 +268,9 @@ class JfrThreadLocal {
   bool is_dead() const {
     return _dead;
   }
+
+  static int32_t make_non_reentrant(Thread* thread);
+  static void make_reentrant(Thread* thread, int32_t previous_nesting);
 
   bool is_excluded() const;
   bool is_included() const;

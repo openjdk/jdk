@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ class UnixFileAttributes
     private long    st_ctime_nsec;
     private long    st_birthtime_sec;
     private long    st_birthtime_nsec;
+    private boolean birthtime_available;
 
     // created lazily
     private volatile UserPrincipal owner;
@@ -163,10 +164,10 @@ class UnixFileAttributes
 
     @Override
     public FileTime creationTime() {
-        if (UnixNativeDispatcher.birthtimeSupported()) {
+        if (UnixNativeDispatcher.birthtimeSupported() && birthtime_available) {
             return toFileTime(st_birthtime_sec, st_birthtime_nsec);
         } else {
-            // return last modified when birth time not supported
+            // return last modified when birth time unsupported or unavailable
             return lastModifiedTime();
         }
     }

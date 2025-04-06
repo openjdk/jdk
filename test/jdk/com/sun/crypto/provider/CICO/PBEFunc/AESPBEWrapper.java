@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,9 +69,10 @@ public class AESPBEWrapper extends AbstractPBEWrapper {
      */
     @Override
     protected Cipher initCipher(int mode) throws GeneralSecurityException {
-        Provider provider = Security.getProvider("SunJCE");
+        String providerName = System.getProperty("test.provider.name", "SunJCE");
+        Provider provider = Security.getProvider(providerName);
         if (provider == null) {
-            throw new RuntimeException("SunJCE provider does not exist.");
+            throw new RuntimeException(providerName + ": provider does not exist.");
         }
         // get Cipher instance
         Cipher ci = Cipher.getInstance(transformation, provider);

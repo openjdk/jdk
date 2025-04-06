@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-// no precompiled headers
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -641,9 +640,6 @@ void BytecodeInterpreter::run(interpreterState istate) {
               success = false;
             }
           }
-          if (success) {
-            THREAD->inc_held_monitor_count();
-          }
         }
         if (!success) {
             CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
@@ -744,9 +740,6 @@ void BytecodeInterpreter::run(interpreterState istate) {
           } else {
             success = false;
           }
-        }
-        if (success) {
-          THREAD->inc_held_monitor_count();
         }
       }
       if (!success) {
@@ -1680,9 +1673,6 @@ run:
                 success = false;
               }
             }
-            if (success) {
-              THREAD->inc_held_monitor_count();
-            }
           }
           if (!success) {
             CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
@@ -1719,9 +1709,6 @@ run:
                   most_recent->set_obj(lockee);
                   success = false;
                 }
-              }
-              if (success) {
-                THREAD->dec_held_monitor_count();
               }
             }
             if (!success) {
@@ -2021,10 +2008,15 @@ run:
               }
 
               // Initialize header, mirrors MemAllocator.
-              oopDesc::set_mark(result, markWord::prototype());
-              oopDesc::set_klass_gap(result, 0);
-              oopDesc::release_set_klass(result, ik);
-
+              if (UseCompactObjectHeaders) {
+                oopDesc::release_set_mark(result, ik->prototype_header());
+              } else {
+                oopDesc::set_mark(result, markWord::prototype());
+                if (oopDesc::has_klass_gap()) {
+                  oopDesc::set_klass_gap(result, 0);
+                }
+                oopDesc::release_set_klass(result, ik);
+              }
               oop obj = cast_to_oop(result);
 
               // Must prevent reordering of stores for object initialization
@@ -3163,9 +3155,6 @@ run:
                 success = false;
               }
             }
-            if (success) {
-              THREAD->dec_held_monitor_count();
-            }
           }
           if (!success) {
             InterpreterRuntime::monitorexit(end);
@@ -3241,9 +3230,6 @@ run:
                   THREAD->clear_pending_exception();
                 }
               }
-            }
-            if (dec_monitor_count) {
-              THREAD->dec_held_monitor_count();
             }
           }
         }

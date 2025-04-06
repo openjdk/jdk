@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4358979
  * @summary Tests BasicStroke encoding
- * @run main/othervm -Djava.security.manager=allow java_awt_BasicStroke
+ * @run main/othervm java_awt_BasicStroke
  * @author Sergey Malenkov
  */
 
@@ -33,7 +33,7 @@ import java.awt.BasicStroke;
 
 public final class java_awt_BasicStroke extends AbstractTest<BasicStroke> {
     public static void main(String[] args) {
-        new java_awt_BasicStroke().test(true);
+        new java_awt_BasicStroke().test();
     }
 
     protected BasicStroke getObject() {

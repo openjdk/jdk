@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,9 +67,9 @@ public class TransformerConfigurationException extends TransformerException {
      * Create a new <code>TransformerConfigurationException</code> with the
      * given <code>Exception</code> base cause and detail message.
      *
+     * @param msg The detail message.
      * @param e The exception to be encapsulated in a
      *      TransformerConfigurationException
-     * @param msg The detail message.
      */
     public TransformerConfigurationException(String msg, Throwable e) {
         super(msg, e);

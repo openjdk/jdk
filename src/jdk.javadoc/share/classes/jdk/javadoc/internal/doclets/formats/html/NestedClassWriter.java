@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public class NestedClassWriter extends AbstractMemberWriter {
 
     @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content content) {
-        Content classLink = writer.getPreQualifiedClassLink(HtmlLinkInfo.Kind.PLAIN, typeElement);
+        Content classLink = getMemberSummaryLinkOrFQN(typeElement, VisibleMemberTable.Kind.NESTED_CLASSES);
         Content label;
         if (options.summarizeOverriddenMethods()) {
             label = Text.of(utils.isPlainInterface(typeElement)
@@ -135,7 +135,7 @@ public class NestedClassWriter extends AbstractMemberWriter {
     @Override
     protected void addInheritedSummaryLink(TypeElement typeElement, Element member, Content target) {
         target.add(
-                writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS,
+                writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS,
                         (TypeElement)member)));
     }
 

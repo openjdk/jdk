@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "tstrings.h"
 
 class Jvm;
+class CfgFile;
 
 class AppLauncher {
 public:
@@ -70,14 +71,21 @@ public:
         return *this;
     }
 
+    AppLauncher& setCfgFile(const CfgFile* v) {
+        externalCfgFile = v;
+        return *this;
+    }
+
     bool libEnvVariableContainsAppDir() const;
 
     Jvm* createJvmLauncher() const;
 
     void launch() const;
 
+    CfgFile* createCfgFile() const;
+
 private:
-  tstring getCfgFilePath() const;
+    tstring getCfgFilePath() const;
 
 private:
     tstring_array args;
@@ -89,6 +97,7 @@ private:
     tstring_array jvmLibNames;
     tstring_array cfgFileLookupDirs;
     bool initJvmFromCmdlineOnly;
+    const CfgFile* externalCfgFile;
 };
 
 #endif // AppLauncher_h

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classLoader.hpp"
@@ -44,14 +44,6 @@
 InstanceKlass* vmClasses::_klasses[static_cast<int>(vmClassID::LIMIT)]
                                                  =  { nullptr /*, nullptr...*/ };
 InstanceKlass* vmClasses::_box_klasses[T_VOID+1] =  { nullptr /*, nullptr...*/ };
-
-
-// CDS: scan and relocate all classes referenced by _klasses[].
-void vmClasses::metaspace_pointers_do(MetaspaceClosure* it) {
-  for (auto id : EnumRange<vmClassID>{}) {
-    it->push(klass_addr_at(id));
-  }
-}
 
 bool vmClasses::is_loaded(InstanceKlass* klass) {
   return klass != nullptr && klass->is_loaded();
@@ -205,8 +197,6 @@ void vmClasses::resolve_all(TRAPS) {
   _box_klasses[T_SHORT]   = vmClasses::Short_klass();
   _box_klasses[T_INT]     = vmClasses::Integer_klass();
   _box_klasses[T_LONG]    = vmClasses::Long_klass();
-  //_box_klasses[T_OBJECT]  = vmClasses::object_klass();
-  //_box_klasses[T_ARRAY]   = vmClasses::object_klass();
 
 #ifdef ASSERT
   if (CDSConfig::is_using_archive()) {
@@ -220,6 +210,9 @@ void vmClasses::resolve_all(TRAPS) {
 #endif
 
   InstanceStackChunkKlass::init_offset_of_stack();
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    AOTLinkedClassBulkLoader::load_javabase_classes(THREAD);
+  }
 }
 
 #if INCLUDE_CDS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,20 +22,19 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/mallocSiteTable.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
-// The malloc header, as well as the coming VMATree implementation, rely on MEMFLAGS
+// The malloc header, as well as the coming VMATree implementation, rely on MemTag
 // fitting into eight bits.
-STATIC_ASSERT(sizeof(MEMFLAGS) == sizeof(uint8_t));
+STATIC_ASSERT(sizeof(MemTag) == sizeof(uint8_t));
 
 void MallocHeader::print_block_on_error(outputStream* st, address bad_address) const {
   assert(bad_address >= (address)this, "sanity");

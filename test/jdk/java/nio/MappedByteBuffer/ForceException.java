@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class ForceException {
         int numberOfBlocks = 200;
         int fileLength = numberOfBlocks * blockSize;
 
-        File file = new File(System.getProperty("test.src", "."), "test.dat");
+        File file = new File(".", "test.dat");
         file.deleteOnExit();
         try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
             raf.setLength(fileLength);

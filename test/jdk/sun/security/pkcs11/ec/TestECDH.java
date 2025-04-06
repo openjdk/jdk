@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,8 @@
  * @summary Basic known answer test for ECDH
  * @author Andreas Sterbenz
  * @library /test/lib ..
- * @library ../../../../java/security/testlibrary
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestECDH
- * @run main/othervm -Djava.security.manager=allow TestECDH sm policy
  */
 
 import java.security.KeyFactory;
@@ -44,6 +42,8 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import javax.crypto.KeyAgreement;
+import jdk.test.lib.security.Providers;
+
 
 public class TestECDH extends PKCS11Test {
 

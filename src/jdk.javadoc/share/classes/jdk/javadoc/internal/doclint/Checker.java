@@ -678,7 +678,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     // <editor-fold defaultstate="collapsed" desc="HTML attributes">
 
-    @Override @DefinedBy(Api.COMPILER_TREE) @SuppressWarnings("fallthrough")
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitAttribute(AttributeTree tree, Void ignore) {
         // for now, ensure we're in an HTML StartElementTree;
         // in time, we might check uses of attributes in other tree nodes

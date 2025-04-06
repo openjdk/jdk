@@ -32,7 +32,7 @@ import org.openjdk.jmh.annotations.*;
 @State(Scope.Thread)
 @Warmup(iterations = 3, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 1, jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
+@Fork(value = 1, jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class LoadMaskedIOOBEBenchmark {
     @Param({"1026"})
     private int inSize;

@@ -73,27 +73,15 @@ package gc;
  */
 
 /**
- * @test id=ZGenerational
+ * @test id=Z
  * @summary tests AlwaysPreTouch
- * @requires vm.gc.ZGenerational
+ * @requires vm.gc.Z
  * @requires os.maxMemory > 2G
  * @requires os.family != "aix"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseZGC -XX:+ZGenerational -Xmx512m -Xms512m -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
- */
-
-/**
- * @test id=ZSinglegen
- * @summary tests AlwaysPreTouch
- * @requires vm.gc.ZSinglegen
- * @requires os.maxMemory > 2G
- * @requires os.family != "aix"
- * @library /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseZGC -XX:-ZGenerational -Xmx512m -Xms512m -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseZGC -Xmx512m -Xms512m -XX:+AlwaysPreTouch gc.TestAlwaysPreTouchBehavior
  */
 
 /**

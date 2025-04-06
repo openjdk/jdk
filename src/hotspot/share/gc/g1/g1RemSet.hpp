@@ -112,11 +112,15 @@ public:
 
   // Do work for regions in the current increment of the collection set, scanning
   // non-card based (heap) roots.
-  void scan_collection_set_regions(G1ParScanThreadState* pss,
-                                   uint worker_id,
-                                   G1GCPhaseTimes::GCParPhases scan_phase,
-                                   G1GCPhaseTimes::GCParPhases coderoots_phase,
-                                   G1GCPhaseTimes::GCParPhases objcopy_phase);
+  void scan_collection_set_code_roots(G1ParScanThreadState* pss,
+                                      uint worker_id,
+                                      G1GCPhaseTimes::GCParPhases coderoots_phase,
+                                      G1GCPhaseTimes::GCParPhases objcopy_phase);
+
+  void scan_collection_set_optional_roots(G1ParScanThreadState* pss,
+                                          uint worker_id,
+                                          G1GCPhaseTimes::GCParPhases scan_phase,
+                                          G1GCPhaseTimes::GCParPhases objcopy_phase);
 
   // Two methods for concurrent refinement support, executed concurrently to
   // the mutator:

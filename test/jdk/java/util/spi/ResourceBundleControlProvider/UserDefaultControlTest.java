@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,10 @@
  * @library test
  * @build test/*
  * @build com.foo.UserControlProvider
- * @run main/othervm UserDefaultControlTest false
- * @run main/othervm -Djava.security.manager=allow UserDefaultControlTest true
+ * @run main/othervm UserDefaultControlTest
  */
 
-import java.io.*;
-import java.lang.reflect.*;
-import java.net.*;
+import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 
@@ -41,16 +38,8 @@ import jdk.test.*;
 
 public class UserDefaultControlTest {
     public static void main(String... args) throws Exception {
-        boolean smExists = Boolean.valueOf(args[0]);
         initServices();
-        if (smExists) {
-            System.out.println("test with security manager present:");
-            System.setSecurityManager(new SecurityManager());
-        } else {
-            System.out.println("test without security manager present:");
-        }
-
-        test(smExists);
+        test();
     }
 
     private static void initServices() throws IOException {
@@ -68,24 +57,8 @@ public class UserDefaultControlTest {
             StandardCopyOption.REPLACE_EXISTING);
     }
 
-    private static void test(boolean smExists) {
-        ResourceBundle rb;
-
-        try {
-            rb = ResourceBundle.getBundle("com.foo.XmlRB", Locale.ROOT);
-            if (smExists) {
-                throw new RuntimeException("getBundle did not throw " +
-                    "MissingResourceException with a security manager");
-            }
-        } catch (MissingResourceException e) {
-            if (smExists) {
-                // failed successfully
-                return;
-            } else {
-                throw e;
-            }
-        }
-
+    private static void test() {
+        ResourceBundle rb = ResourceBundle.getBundle("com.foo.XmlRB", Locale.ROOT);
         String type = rb.getString("type");
         if (!type.equals("XML")) {
             throw new RuntimeException("Root Locale: type: got " + type

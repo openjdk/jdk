@@ -22,7 +22,7 @@
  */
 
 /*
- * @test id=checkDecoder
+ * @test
  * @bug 8242181
  * @library / /test/lib
  * @summary Test DWARF parser with various crashes if debug symbols are available. If the libjvm debug symbols are not
@@ -30,15 +30,7 @@
  *          by the environment variable _JVM_DWARF_PATH, then no verification of the hs_err_file is done for libjvm.so.
  * @requires vm.debug == true & vm.flagless & vm.compMode != "Xint" & os.family == "linux" & !vm.graal.enabled & vm.gc.G1
  * @modules java.base/jdk.internal.misc
- * @run main/native/othervm -Xbootclasspath/a:. -XX:-CreateCoredumpOnCrash -DcheckDecoder=true TestDwarf
- */
-
-/*
- * @test id=dontCheckDecoder
- * @library / /test/lib
- * @requires vm.debug == true & vm.flagless & vm.compMode != "Xint" & os.family == "linux" & !vm.graal.enabled & vm.gc.G1
- * @modules java.base/jdk.internal.misc
- * @run main/native/othervm -Xbootclasspath/a:. -XX:-CreateCoredumpOnCrash -DcheckDecoder=false TestDwarf
+ * @run main/native/othervm -Xbootclasspath/a:. -XX:-CreateCoredumpOnCrash TestDwarf
  */
 
 import jdk.test.lib.Asserts;
@@ -62,8 +54,6 @@ public class TestDwarf {
     static {
         System.loadLibrary("TestDwarf");
     }
-
-    static boolean checkDecoder = Boolean.getBoolean("checkDecoder");
 
     public static void main(String[] args) throws Exception {
         if (args.length != 0) {
@@ -127,11 +117,11 @@ public class TestDwarf {
                     new DwarfConstraint(0, "dereference_null", "libTestDwarfHelper.h", 46));
     }
 
-    // The full pattern accepts lines like:
+    // A full pattern could check for lines like:
     //  V [libjvm.so+0x8f4ed8] report_fatal(VMErrorType, char const*, int, char const*, ...)+0x78 (debug.cpp:212)
-    // but if the decoder is not available we only get
+    // but the decoder is not reliably working at the moment (see JDK-8305489). We therefore use a pattern that only
+    // checks that lines have the following structure with source information:
     //  V [libjvm.so+0x8f4ed8] (debug.cpp:212)
-    private static final String FULL_PATTERN ="[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+][\\s\\t]+.*\\+0x.+[\\s\\t]+\\([a-zA-Z0-9_.]+\\.[a-z]+:[1-9][0-9]*\\)";
     private static final String NO_DECODER_PATTERN ="[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+].*\\([a-zA-Z0-9_.]+\\.[a-z]+:[1-9][0-9]*\\)";
 
     private static void runAndCheck(Flags flags, DwarfConstraint... constraints) throws Exception {
@@ -149,7 +139,7 @@ public class TestDwarf {
             int matches = 0;
             int frameIdx = 0;
 
-            Pattern pattern = Pattern.compile(checkDecoder ? FULL_PATTERN : NO_DECODER_PATTERN);
+            Pattern pattern = Pattern.compile(NO_DECODER_PATTERN);
 
             // Check all stack entries after the line starting with "Native frames" in the hs_err_file until an empty line
             // is found which denotes the end of the stack frames.
@@ -202,14 +192,6 @@ public class TestDwarf {
         pattern = Pattern.compile("Failed to load DWARF file for library.*" + library + ".*or find DWARF sections directly inside it");
         matcher = pattern.matcher(crashOutputString);
         if (!matcher.find()) {
-            // Symbols were fine so check if we expected decoder output and didn't find it.
-            if (checkDecoder) {
-                pattern = Pattern.compile(NO_DECODER_PATTERN);
-                matcher = pattern.matcher(line);
-                if (matcher.find()) {
-                    Asserts.fail("Could not find decoded method signature in \"" + line + "\"");
-                }
-            }
             bailoutIfUnsupportedDwarfVersion(crashOutputString);
             Asserts.fail("Could not find filename or line number in \"" + line + "\"");
         }

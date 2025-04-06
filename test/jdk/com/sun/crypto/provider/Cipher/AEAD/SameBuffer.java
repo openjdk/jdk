@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import jdk.test.lib.Convert;
  */
 public class SameBuffer {
 
-    private static final String PROVIDER = "SunJCE";
+    private static final String PROVIDER = System.getProperty("test.provider.name", "SunJCE");
     private static final String AES = "AES";
     private static final String GCM = "GCM";
     private static final String PADDING = "NoPadding";

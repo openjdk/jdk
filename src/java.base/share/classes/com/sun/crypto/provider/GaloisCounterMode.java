@@ -72,7 +72,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     // data size when buffer is divided up to aid in intrinsics
     private static final int TRIGGERLEN = 65536;  // 64k
     // x86-64 parallel intrinsic data size
-    private static final int PARALLEL_LEN = 7680;
+    private static final int PARALLEL_LEN = 512;
     // max data size for x86-64 intrinsic
     private static final int SPLIT_LEN = 1048576;  // 1MB
 
@@ -241,7 +241,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             params.init(spec);
             return params;
         } catch (NoSuchAlgorithmException | InvalidParameterSpecException e) {
-            throw new RuntimeException(e);
+            throw new ProviderException(e);
         }
     }
 
@@ -781,7 +781,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         int mergeBlock(byte[] buffer, int bufOfs, int bufLen, byte[] in,
             int inOfs, int inLen, byte[] block) {
             if (bufLen > blockSize) {
-                throw new RuntimeException("mergeBlock called on an ibuffer " +
+                throw new ProviderException("mergeBlock called on an ibuffer " +
                     "too big:  " + bufLen + " bytes");
             }
 

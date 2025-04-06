@@ -39,6 +39,9 @@ class CompilerToVM {
     friend class JVMCIVMStructs;
 
    private:
+    static int oopDesc_klass_offset_in_bytes;
+    static int arrayOopDesc_length_offset_in_bytes;
+
     static int Klass_vtable_start_offset;
     static int Klass_vtable_length_offset;
 
@@ -116,6 +119,7 @@ class CompilerToVM {
     static address dsin;
     static address dcos;
     static address dtan;
+    static address dtanh;
     static address dexp;
     static address dlog;
     static address dlog10;

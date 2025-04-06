@@ -51,7 +51,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_Secmod_nssGetLibraryHandle
 {
     const char *libName = (*env)->GetStringUTFChars(env, jLibName, NULL);
     HMODULE hModule = GetModuleHandle(libName);
-    dprintf2("-handle for %s: %d\n", libName, hModule);
+    debug_printf("-handle for %s: %d\n", libName, hModule);
     (*env)->ReleaseStringUTFChars(env, jLibName, libName);
     return (jlong)hModule;
 }
@@ -63,7 +63,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_Secmod_nssLoadLibrary
     LPVOID lpMsgBuf;
 
     const char *libName = (*env)->GetStringUTFChars(env, jName, NULL);
-    dprintf1("-lib %s\n", libName);
+    debug_printf("-lib %s\n", libName);
 
     hModule = LoadLibrary(libName);
     (*env)->ReleaseStringUTFChars(env, jName, libName);
@@ -80,11 +80,11 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_Secmod_nssLoadLibrary
             0,
             NULL
         );
-        dprintf1("-error: %s\n", lpMsgBuf);
+        debug_printf("-error: %s\n", lpMsgBuf);
         p11ThrowIOException(env, (char*)lpMsgBuf);
         LocalFree(lpMsgBuf);
         return 0;
     }
-    dprintf2("-handle: %d (0X%X)\n", hModule, hModule);
+    debug_printf("-handle: %d (0X%X)\n", hModule, hModule);
     return (jlong)hModule;
 }

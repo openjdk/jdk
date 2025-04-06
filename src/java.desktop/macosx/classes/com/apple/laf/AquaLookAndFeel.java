@@ -28,7 +28,6 @@ package com.apple.laf;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.KeyboardFocusManager;
-import java.security.PrivilegedAction;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -154,22 +153,10 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * @see #uninitialize
      * @see UIManager#setLookAndFeel
      */
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     public void initialize() {
-        java.security.AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("osxui");
-                    return null;
-                }
-            });
-
-        java.security.AccessController.doPrivileged(new PrivilegedAction<Void>(){
-            @Override
-            public Void run() {
-                JRSUIControl.initJRSUI();
-                return null;
-            }
-        });
+        System.loadLibrary("osxui");
+        JRSUIControl.initJRSUI();
 
         super.initialize();
         final ScreenPopupFactory spf = new ScreenPopupFactory();

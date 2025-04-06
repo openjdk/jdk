@@ -32,7 +32,7 @@ import jdk.test.whitebox.WhiteBox;
 
 /**
  * @test id=Serial
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @requires vm.gc.Serial
  * @library /test/lib /test/jdk
@@ -43,7 +43,7 @@ import jdk.test.whitebox.WhiteBox;
 
 /**
  * @test id=Parallel
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @requires vm.gc.Parallel
  * @library /test/lib /test/jdk
@@ -54,7 +54,7 @@ import jdk.test.whitebox.WhiteBox;
 
 /**
  * @test id=G1
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @requires vm.gc.G1
  * @library /test/lib /test/jdk

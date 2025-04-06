@@ -1001,6 +1001,11 @@ class ConsoleIOContext extends IOContext {
         return doReadUserLine(prompt, null);
     }
 
+    @Override
+    public String readUserLine() throws IOException {
+        return readUserLine("");
+    }
+
     private synchronized String doReadUserLine(String prompt, Character mask) throws IOException {
         History prevHistory = in.getHistory();
         boolean prevDisableCr = Display.DISABLE_CR;

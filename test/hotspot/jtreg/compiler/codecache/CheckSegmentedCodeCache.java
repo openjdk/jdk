@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,9 @@ public class CheckSegmentedCodeCache {
         // Fails if code heap sizes do not add up
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+SegmentedCodeCache",
                                                               "-XX:ReservedCodeCacheSize=10M",
-                                                              "-XX:NonNMethodCodeHeapSize=5M",
+                                                              // After fixing a round_down issue with large page sizes (JDK-8334564),
+                                                              // 5M is a bit too small for NonNMethodCodeHeap
+                                                              "-XX:NonNMethodCodeHeapSize=6M",
                                                               "-XX:ProfiledCodeHeapSize=5M",
                                                               "-XX:NonProfiledCodeHeapSize=5M",
                                                               "-version");

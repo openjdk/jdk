@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.StackWalker.StackFrame;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.MissingResourceException;
@@ -39,7 +37,6 @@ import java.util.function.Function;
 import java.lang.System.Logger;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import sun.security.action.GetPropertyAction;
 import sun.util.logging.PlatformLogger;
 import sun.util.logging.PlatformLogger.ConfigurableBridge.LoggerConfiguration;
 
@@ -56,8 +53,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
             PlatformLogger.toPlatformLevel(DEFAULT_LEVEL);
 
     static Level getDefaultLevel() {
-        String levelName = GetPropertyAction
-                .privilegedGetProperty("jdk.system.logger.level", "INFO");
+        String levelName = System.getProperty("jdk.system.logger.level", "INFO");
         try {
             return Level.valueOf(levelName);
         } catch (IllegalArgumentException iae) {
@@ -202,18 +198,9 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     /*
      * CallerFinder is a stateful predicate.
      */
-    @SuppressWarnings("removal")
     static final class CallerFinder implements Predicate<StackWalker.StackFrame> {
-        private static final StackWalker WALKER;
-        static {
-            final PrivilegedAction<StackWalker> action = new PrivilegedAction<>() {
-                @Override
-                public StackWalker run() {
-                    return StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-                }
-            };
-            WALKER = AccessController.doPrivileged(action);
-        }
+        private static final StackWalker WALKER =
+                StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
 
         /**
          * Returns StackFrame of the caller's frame.
@@ -439,8 +426,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
         // Make it easier to wrap Logger...
         private static final String[] skips;
         static {
-            String additionalPkgs =
-                    GetPropertyAction.privilegedGetProperty("jdk.logger.packages");
+            String additionalPkgs = System.getProperty("jdk.logger.packages");
             skips = additionalPkgs == null ? new String[0] : additionalPkgs.split(",");
         }
 
@@ -499,7 +485,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
             //    jdk/test/java/lang/invoke/lambda/LogGeneratedClassesTest.java
             // to fail - because that test has a testcase which somehow references
             // PlatformLogger and counts the number of generated lambda classes.
-            String format = GetPropertyAction.privilegedGetProperty(key);
+            String format = System.getProperty(key);
 
             if (format == null && defaultPropertyGetter != null) {
                 format = defaultPropertyGetter.apply(key);

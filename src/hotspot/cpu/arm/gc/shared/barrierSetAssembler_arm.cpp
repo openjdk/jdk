@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -30,6 +29,10 @@
 #include "memory/universe.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/stubRoutines.hpp"
+
+#ifdef COMPILER2
+#include "gc/shared/c2/barrierSetC2.hpp"
+#endif // COMPILER2
 
 #define __ masm->
 
@@ -166,10 +169,6 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   Register tmp0 = Rtemp;
   Register tmp1 = R5; // must be callee-save register
 
-  if (bs_nm == nullptr) {
-    return;
-  }
-
   // The are no GCs that require memory barrier on arm32 now
 #ifdef ASSERT
   NMethodPatchingType patching_type = nmethod_patching_type();
@@ -206,7 +205,57 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
 #ifdef COMPILER2
 
 OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
-  Unimplemented(); // This must be implemented to support late barrier expansion.
+  if (!OptoReg::is_reg(opto_reg)) {
+    return OptoReg::Bad;
+  }
+
+  const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+  if (!vm_reg->is_valid()){
+    // skip APSR and FPSCR
+    return OptoReg::Bad;
+  }
+
+  return opto_reg;
 }
 
+void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
+  // Record registers that needs to be saved/restored
+  RegMaskIterator rmi(stub->preserve_set());
+  while (rmi.has_next()) {
+    const OptoReg::Name opto_reg = rmi.next();
+    if (OptoReg::is_reg(opto_reg)) {
+      const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+      if (vm_reg->is_Register()) {
+        gp_regs += RegSet::of(vm_reg->as_Register());
+      } else if (vm_reg->is_FloatRegister()) {
+        fp_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
+      } else {
+        fatal("Unknown register type");
+      }
+    }
+  }
+  // Remove C-ABI SOE registers that will be updated
+  gp_regs -= RegSet::range(R4, R11) + RegSet::of(R13, R15);
+
+  // Remove C-ABI SOE fp registers
+  fp_regs -= FloatRegSet::range(S16, S31);
+}
+
+SaveLiveRegisters::SaveLiveRegisters(MacroAssembler* masm, BarrierStubC2* stub)
+  : masm(masm),
+    gp_regs(),
+    fp_regs() {
+  // Figure out what registers to save/restore
+  initialize(stub);
+
+  // Save registers
+  if (gp_regs.size() > 0) __ push(RegisterSet::from(gp_regs));
+  if (fp_regs.size() > 0) __ fpush(FloatRegisterSet::from(fp_regs));
+}
+
+SaveLiveRegisters::~SaveLiveRegisters() {
+  // Restore registers
+  if (fp_regs.size() > 0) __ fpop(FloatRegisterSet::from(fp_regs));
+  if (gp_regs.size() > 0) __ pop(RegisterSet::from(gp_regs));
+}
 #endif // COMPILER2

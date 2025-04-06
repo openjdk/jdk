@@ -187,7 +187,7 @@ class BuilderTryCatchTest {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
                     ACC_PUBLIC | ACC_STATIC, mb -> {
                         mb.withCode(xb -> {
-                            int stringSlot = xb.allocateLocal(TypeKind.ReferenceType);
+                            int stringSlot = xb.allocateLocal(TypeKind.REFERENCE);
                             xb.loadConstant("S");
                             xb.astore(stringSlot);
 
@@ -218,12 +218,12 @@ class BuilderTryCatchTest {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
                     ACC_PUBLIC | ACC_STATIC, mb -> {
                         mb.withCode(xb -> {
-                            int stringSlot = xb.allocateLocal(TypeKind.ReferenceType);
+                            int stringSlot = xb.allocateLocal(TypeKind.REFERENCE);
                             xb.loadConstant("S");
                             xb.astore(stringSlot);
 
                             xb.trying(tb -> {
-                                int intSlot = tb.allocateLocal(TypeKind.IntType);
+                                int intSlot = tb.allocateLocal(TypeKind.INT);
 
                                 tb.aload(0);
                                 tb.loadConstant(0);
@@ -240,7 +240,7 @@ class BuilderTryCatchTest {
                                 catchBuilder.catching(CD_IOOBE, tb -> {
                                     tb.pop();
 
-                                    int doubleSlot = tb.allocateLocal(TypeKind.DoubleType);
+                                    int doubleSlot = tb.allocateLocal(TypeKind.DOUBLE);
                                     tb.loadConstant(Math.PI);
                                     tb.dstore(doubleSlot);
 
@@ -250,7 +250,7 @@ class BuilderTryCatchTest {
                                 }).catchingAll(tb -> {
                                     tb.pop();
 
-                                    int refSlot = tb.allocateLocal(TypeKind.ReferenceType);
+                                    int refSlot = tb.allocateLocal(TypeKind.REFERENCE);
                                     tb.loadConstant("REF");
                                     tb.astore(refSlot);
 
@@ -281,7 +281,7 @@ class BuilderTryCatchTest {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
                     ACC_PUBLIC | ACC_STATIC, mb -> {
                         mb.withCode(xb -> {
-                            int stringSlot = xb.allocateLocal(TypeKind.ReferenceType);
+                            int stringSlot = xb.allocateLocal(TypeKind.REFERENCE);
                             xb.loadConstant("S");
                             xb.astore(stringSlot);
 

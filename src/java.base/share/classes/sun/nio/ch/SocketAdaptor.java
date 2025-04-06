@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,8 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
+import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Set;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -63,16 +61,10 @@ class SocketAdaptor
         this.sc = sc;
     }
 
-    @SuppressWarnings("removal")
     static Socket create(SocketChannelImpl sc) {
         try {
-            if (System.getSecurityManager() == null) {
-                return new SocketAdaptor(sc);
-            } else {
-                PrivilegedExceptionAction<Socket> pa = () -> new SocketAdaptor(sc);
-                return AccessController.doPrivileged(pa);
-            }
-        } catch (SocketException | PrivilegedActionException e) {
+            return new SocketAdaptor(sc);
+        } catch (SocketException e) {
             throw new InternalError(e);
         }
     }
@@ -94,6 +86,14 @@ class SocketAdaptor
     public void connect(SocketAddress remote, int timeout) throws IOException {
         if (remote == null)
             throw new IllegalArgumentException("connect: The address can't be null");
+        if (remote instanceof InetSocketAddress isa && isa.isUnresolved()) {
+            if (!sc.isOpen())
+                throw new SocketException("Socket is closed");
+            if (sc.isConnected())
+                throw new SocketException("Already connected");
+            close();
+            throw new UnknownHostException(remote.toString());
+        }
         if (timeout < 0)
             throw new IllegalArgumentException("connect: timeout can't be negative");
         try {
@@ -104,7 +104,7 @@ class SocketAdaptor
                 sc.blockingConnect(remote, Long.MAX_VALUE);
             }
         } catch (Exception e) {
-            Net.translateException(e, true);
+            Net.translateException(e);
         }
     }
 
@@ -132,7 +132,7 @@ class SocketAdaptor
         if (sc.isOpen()) {
             InetSocketAddress local = localAddress();
             if (local != null) {
-                return Net.getRevealedLocalAddress(local).getAddress();
+                return local.getAddress();
             }
         }
         return new InetSocketAddress(0).getAddress();
@@ -165,7 +165,7 @@ class SocketAdaptor
 
     @Override
     public SocketAddress getLocalSocketAddress() {
-        return Net.getRevealedLocalAddress(sc.localAddress());
+        return sc.localAddress();
     }
 
     @Override

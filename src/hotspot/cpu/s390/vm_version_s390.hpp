@@ -48,8 +48,8 @@ class VM_Version: public Abstract_VM_Version {
 #define  StoreFacilityListExtendedMask  0x0100000000000000UL  // z9
 #define  ETF2Mask                       0x0000800000000000UL  // z900
 #define  CryptoFacilityMask             0x0000400000000000UL  // z990 (aka message-security assist)
-#define  LongDispFacilityMask           0x0000200000000000UL  // z900 with microcode update
-#define  LongDispFacilityHighPerfMask   0x0000300000000000UL  // z990
+#define  LongDispFacilityMask           0x0000200000000000UL  // z900 with microcode update, Bit: 18
+#define  LongDispFacilityHighPerfMask   0x0000100000000000UL  // z990, Bit: 19
 #define  HFPMultiplyAndAddMask          0x0000080000000000UL  // z990
 #define  ExtImmedFacilityMask           0x0000040000000000UL  // z9
 #define  ETF3Mask                       0x0000020000000000UL  // z990/z9 (?)
@@ -64,7 +64,8 @@ class VM_Version: public Abstract_VM_Version {
 #define  ExecuteExtensionsMask          0x0000000010000000UL  // z10
 #define  FPExtensionsMask               0x0000000004000000UL  // z196
 #define  FPSupportEnhancementsMask      0x0000000000400000UL  // z10
-#define  DecimalFloatingPointMask       0x0000000000300000UL  // z10
+#define  DecimalFloatingPointMask       0x0000000000200000UL  // z10, Bit: 42
+#define  DecimalFloatingPointHighPerfMask 0x0000000000100000UL  // z10, Bit: 43
 // z196 begin
 #define  DistinctOpndsMask              0x0000000000040000UL  // z196
 #define  FastBCRSerializationMask       DistinctOpndsMask
@@ -114,6 +115,12 @@ class VM_Version: public Abstract_VM_Version {
 #define  VectorPackedDecimalEnhMask     0x0000008000000000UL  // z15
 #define  CryptoExtension9Mask           0x0000001000000000UL  // z15 (aka message-security assist extension 9)
 #define  DeflateMask                    0x0000010000000000UL  // z15
+#define NNPAssistFacilityMask           0x0000000004000000UL  // z16, Neural-network-processing-assist facility, Bit: 165
+
+// ----------------------------------------------
+// --- FeatureBitString Bits 193..200 (DW[3]) ---
+// ----------------------------------------------
+#define  BEAREnhFacilityMask            0x4000000000000000UL  // z16, BEAR-enhancement facility, Bit: 193
 
   enum {
     _max_cache_levels = 8,    // As limited by ECAG instruction.
@@ -179,9 +186,10 @@ class VM_Version: public Abstract_VM_Version {
   static bool is_z10()  { return has_GnrlInstrExtensions()    && !has_DistinctOpnds(); }
   static bool is_z196() { return has_DistinctOpnds()          && !has_MiscInstrExt(); }
   static bool is_ec12() { return has_MiscInstrExt()           && !has_CryptoExt5(); }
-  static bool is_z13()  { return has_CryptoExt5()             && !has_MiscInstrExt2();}
-  static bool is_z14()  { return has_MiscInstrExt2()          && !has_MiscInstrExt3();}
-  static bool is_z15()  { return has_MiscInstrExt3();}
+  static bool is_z13()  { return has_CryptoExt5()             && !has_MiscInstrExt2(); }
+  static bool is_z14()  { return has_MiscInstrExt2()          && !has_MiscInstrExt3(); }
+  static bool is_z15()  { return has_MiscInstrExt3()          && !has_BEAR_Enh_Facility(); }
+  static bool is_z16()  { return has_BEAR_Enh_Facility(); }
 
   // Need to use nested class with unscoped enum.
   // C++11 declaration "enum class Cipher { ... } is not supported.
@@ -455,6 +463,7 @@ class VM_Version: public Abstract_VM_Version {
   static bool has_FPExtensions()              { return  (_features[0] & FPExtensionsMask)              == FPExtensionsMask; }
   static bool has_FPSupportEnhancements()     { return  (_features[0] & FPSupportEnhancementsMask)     == FPSupportEnhancementsMask; }
   static bool has_DecimalFloatingPoint()      { return  (_features[0] & DecimalFloatingPointMask)      == DecimalFloatingPointMask; }
+  static bool has_DecimalFloatingPointHighPerf() { return  (_features[0] & DecimalFloatingPointHighPerfMask) == DecimalFloatingPointHighPerfMask; }
   static bool has_InterlockedAccessV1()       { return  (_features[0] & InterlockedAccess1Mask)        == InterlockedAccess1Mask; }
   static bool has_LoadAndALUAtomicV1()        { return  (_features[0] & InterlockedAccess1Mask)        == InterlockedAccess1Mask; }
   static bool has_PopCount()                  { return  (_features[0] & PopulationCountMask)           == PopulationCountMask; }
@@ -486,6 +495,9 @@ class VM_Version: public Abstract_VM_Version {
   static bool has_VectorPackedDecimal()       { return  (_features[2] & VectorPackedDecimalMask)       == VectorPackedDecimalMask; }
   static bool has_VectorPackedDecimalEnh()    { return  (_features[2] & VectorPackedDecimalEnhMask)    == VectorPackedDecimalEnhMask; }
 
+  static bool has_BEAR_Enh_Facility()         { return  (_features[3] & BEAREnhFacilityMask)           == BEAREnhFacilityMask; }
+  static bool has_NNP_Assist_Facility()       { return  (_features[2] & NNPAssistFacilityMask)         == NNPAssistFacilityMask; }
+
   // Crypto features query functions.
   static bool has_Crypto_AES_GCM128()         { return has_Crypto() && test_feature_bit(&_cipher_features_KMA[0], Cipher::_AES128, Cipher::_featureBits); }
   static bool has_Crypto_AES_GCM192()         { return has_Crypto() && test_feature_bit(&_cipher_features_KMA[0], Cipher::_AES192, Cipher::_featureBits); }
@@ -508,6 +520,7 @@ class VM_Version: public Abstract_VM_Version {
 
   // CPU feature setters (to force model-specific behaviour). Test/debugging only.
   static void set_has_DecimalFloatingPoint()      { _features[0] |= DecimalFloatingPointMask; }
+  static void set_has_DecimalFloatingPointHighPerf() { _features[0] |= DecimalFloatingPointHighPerfMask; }
   static void set_has_FPSupportEnhancements()     { _features[0] |= FPSupportEnhancementsMask; }
   static void set_has_ExecuteExtensions()         { _features[0] |= ExecuteExtensionsMask; }
   static void set_has_MemWithImmALUOps()          { _features[0] |= GnrlInstrExtFacilityMask; }
@@ -558,6 +571,8 @@ class VM_Version: public Abstract_VM_Version {
   static void set_has_VectorEnhancements2()       { _features[2] |= VectorEnhancements2Mask; }
   static void set_has_VectorPackedDecimal()       { _features[2] |= VectorPackedDecimalMask; }
   static void set_has_VectorPackedDecimalEnh()    { _features[2] |= VectorPackedDecimalEnhMask; }
+  static void set_has_BEAR_Enh_Facility()         { _features[3] |= BEAREnhFacilityMask;}
+  static void set_has_NNP_Assist_Facility()       { _features[2] |= NNPAssistFacilityMask;}
 
   static void reset_has_VectorFacility()          { _features[2] &= ~VectorFacilityMask; }
 

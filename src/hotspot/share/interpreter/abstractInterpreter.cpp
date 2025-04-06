@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -74,7 +73,9 @@ void AbstractInterpreter::print() {
     tty->print_cr("avg codelet size = %6d bytes", _code->used_space() / _code->number_of_stubs());
     tty->cr();
   }
+  _should_print_instructions = PrintInterpreter;
   _code->print();
+  _should_print_instructions = false;
   tty->print_cr("----------------------------------------------------------------------");
   tty->cr();
 }
@@ -90,6 +91,8 @@ address    AbstractInterpreter::_rethrow_exception_entry                    = nu
 address    AbstractInterpreter::_slow_signature_handler;
 address    AbstractInterpreter::_entry_table            [AbstractInterpreter::number_of_method_entries];
 address    AbstractInterpreter::_native_abi_to_tosca    [AbstractInterpreter::number_of_result_handlers];
+
+bool       AbstractInterpreter::_should_print_instructions = false;
 
 //------------------------------------------------------------------------------------------------------------------------
 // Generation of complete interpreter
@@ -127,10 +130,6 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       // Use optimized stub code for CRC32C methods.
       case vmIntrinsics::_updateBytesCRC32C: return java_util_zip_CRC32C_updateBytes;
       case vmIntrinsics::_updateDirectByteBufferCRC32C: return java_util_zip_CRC32C_updateDirectByteBuffer;
-      case vmIntrinsics::_intBitsToFloat:    return java_lang_Float_intBitsToFloat;
-      case vmIntrinsics::_floatToRawIntBits: return java_lang_Float_floatToRawIntBits;
-      case vmIntrinsics::_longBitsToDouble:  return java_lang_Double_longBitsToDouble;
-      case vmIntrinsics::_doubleToRawLongBits: return java_lang_Double_doubleToRawLongBits;
       case vmIntrinsics::_float16ToFloat:    return java_lang_Float_float16ToFloat;
       case vmIntrinsics::_floatToFloat16:    return java_lang_Float_floatToFloat16;
       case vmIntrinsics::_currentThread:     return java_lang_Thread_currentThread;
@@ -138,6 +137,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dsin:              return java_lang_math_sin;
       case vmIntrinsics::_dcos:              return java_lang_math_cos;
       case vmIntrinsics::_dtan:              return java_lang_math_tan;
+      case vmIntrinsics::_dtanh:             return java_lang_math_tanh;
       case vmIntrinsics::_dabs:              return java_lang_math_abs;
       case vmIntrinsics::_dlog:              return java_lang_math_log;
       case vmIntrinsics::_dlog10:            return java_lang_math_log10;
@@ -198,6 +198,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_sin         : return vmIntrinsics::_dsin;
   case java_lang_math_cos         : return vmIntrinsics::_dcos;
   case java_lang_math_tan         : return vmIntrinsics::_dtan;
+  case java_lang_math_tanh        : return vmIntrinsics::_dtanh;
   case java_lang_math_abs         : return vmIntrinsics::_dabs;
   case java_lang_math_log         : return vmIntrinsics::_dlog;
   case java_lang_math_log10       : return vmIntrinsics::_dlog10;
@@ -219,14 +220,6 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
                                   : return vmIntrinsics::_updateDirectByteBufferCRC32C;
   case java_lang_Thread_currentThread
                                   : return vmIntrinsics::_currentThread;
-  case java_lang_Float_intBitsToFloat
-                                  : return vmIntrinsics::_intBitsToFloat;
-  case java_lang_Float_floatToRawIntBits
-                                  : return vmIntrinsics::_floatToRawIntBits;
-  case java_lang_Double_longBitsToDouble
-                                  : return vmIntrinsics::_longBitsToDouble;
-  case java_lang_Double_doubleToRawLongBits
-                                  : return vmIntrinsics::_doubleToRawLongBits;
   case java_lang_Float_float16ToFloat
                                   : return vmIntrinsics::_float16ToFloat;
   case java_lang_Float_floatToFloat16
@@ -309,6 +302,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_sin     : tty->print("java_lang_math_sin"     ); break;
     case java_lang_math_cos     : tty->print("java_lang_math_cos"     ); break;
     case java_lang_math_tan     : tty->print("java_lang_math_tan"     ); break;
+    case java_lang_math_tanh    : tty->print("java_lang_math_tanh"    ); break;
     case java_lang_math_abs     : tty->print("java_lang_math_abs"     ); break;
     case java_lang_math_log     : tty->print("java_lang_math_log"     ); break;
     case java_lang_math_log10   : tty->print("java_lang_math_log10"   ); break;
@@ -325,10 +319,6 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_util_zip_CRC32C_updateDirectByteBuffer: tty->print("java_util_zip_CRC32C_updateDirectByteByffer"); break;
     case java_lang_ref_reference_get          : tty->print("java_lang_ref_reference_get"); break;
     case java_lang_Thread_currentThread       : tty->print("java_lang_Thread_currentThread"); break;
-    case java_lang_Float_intBitsToFloat       : tty->print("java_lang_Float_intBitsToFloat"); break;
-    case java_lang_Float_floatToRawIntBits    : tty->print("java_lang_Float_floatToRawIntBits"); break;
-    case java_lang_Double_longBitsToDouble    : tty->print("java_lang_Double_longBitsToDouble"); break;
-    case java_lang_Double_doubleToRawLongBits : tty->print("java_lang_Double_doubleToRawLongBits"); break;
     case java_lang_Float_float16ToFloat       : tty->print("java_lang_Float_float16ToFloat"); break;
     case java_lang_Float_floatToFloat16       : tty->print("java_lang_Float_floatToFloat16"); break;
     default:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,9 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.MethodRefEntry;
+
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
-import jdk.internal.constant.ReferenceClassDescImpl;
 import sun.invoke.util.Wrapper;
 
 import static java.lang.constant.ConstantDescs.*;
@@ -69,14 +70,14 @@ class TypeConvertingMethodAdapter {
     }
 
     private static TypeKind primitiveTypeKindFromClass(Class<?> type) {
-        if (type == Integer.class)   return TypeKind.IntType;
-        if (type == Long.class)      return TypeKind.LongType;
-        if (type == Boolean.class)   return TypeKind.BooleanType;
-        if (type == Short.class)     return TypeKind.ShortType;
-        if (type == Byte.class)      return TypeKind.ByteType;
-        if (type == Character.class) return TypeKind.CharType;
-        if (type == Float.class)     return TypeKind.FloatType;
-        if (type == Double.class)    return TypeKind.DoubleType;
+        if (type == Integer.class)   return TypeKind.INT;
+        if (type == Long.class)      return TypeKind.LONG;
+        if (type == Boolean.class)   return TypeKind.BOOLEAN;
+        if (type == Short.class)     return TypeKind.SHORT;
+        if (type == Byte.class)      return TypeKind.BYTE;
+        if (type == Character.class) return TypeKind.CHAR;
+        if (type == Float.class)     return TypeKind.FLOAT;
+        if (type == Double.class)    return TypeKind.DOUBLE;
         return null;
     }
 
@@ -94,27 +95,27 @@ class TypeConvertingMethodAdapter {
 
     static void box(CodeBuilder cob, TypeKind tk) {
         switch (tk) {
-            case BooleanType -> cob.invokestatic(BoxHolder.BOX_BOOLEAN);
-            case ByteType    -> cob.invokestatic(BoxHolder.BOX_BYTE);
-            case CharType    -> cob.invokestatic(BoxHolder.BOX_CHAR);
-            case DoubleType  -> cob.invokestatic(BoxHolder.BOX_DOUBLE);
-            case FloatType   -> cob.invokestatic(BoxHolder.BOX_FLOAT);
-            case IntType     -> cob.invokestatic(BoxHolder.BOX_INT);
-            case LongType    -> cob.invokestatic(BoxHolder.BOX_LONG);
-            case ShortType   -> cob.invokestatic(BoxHolder.BOX_SHORT);
+            case BOOLEAN -> cob.invokestatic(BoxHolder.BOX_BOOLEAN);
+            case BYTE -> cob.invokestatic(BoxHolder.BOX_BYTE);
+            case CHAR -> cob.invokestatic(BoxHolder.BOX_CHAR);
+            case DOUBLE -> cob.invokestatic(BoxHolder.BOX_DOUBLE);
+            case FLOAT -> cob.invokestatic(BoxHolder.BOX_FLOAT);
+            case INT -> cob.invokestatic(BoxHolder.BOX_INT);
+            case LONG -> cob.invokestatic(BoxHolder.BOX_LONG);
+            case SHORT -> cob.invokestatic(BoxHolder.BOX_SHORT);
         }
     }
 
     static void unbox(CodeBuilder cob, TypeKind to) {
         switch (to) {
-            case BooleanType -> cob.invokevirtual(BoxHolder.UNBOX_BOOLEAN);
-            case ByteType    -> cob.invokevirtual(BoxHolder.UNBOX_BYTE);
-            case CharType    -> cob.invokevirtual(BoxHolder.UNBOX_CHAR);
-            case DoubleType  -> cob.invokevirtual(BoxHolder.UNBOX_DOUBLE);
-            case FloatType   -> cob.invokevirtual(BoxHolder.UNBOX_FLOAT);
-            case IntType     -> cob.invokevirtual(BoxHolder.UNBOX_INT);
-            case LongType    -> cob.invokevirtual(BoxHolder.UNBOX_LONG);
-            case ShortType   -> cob.invokevirtual(BoxHolder.UNBOX_SHORT);
+            case BOOLEAN -> cob.invokevirtual(BoxHolder.UNBOX_BOOLEAN);
+            case BYTE -> cob.invokevirtual(BoxHolder.UNBOX_BYTE);
+            case CHAR -> cob.invokevirtual(BoxHolder.UNBOX_CHAR);
+            case DOUBLE -> cob.invokevirtual(BoxHolder.UNBOX_DOUBLE);
+            case FLOAT -> cob.invokevirtual(BoxHolder.UNBOX_FLOAT);
+            case INT -> cob.invokevirtual(BoxHolder.UNBOX_INT);
+            case LONG -> cob.invokevirtual(BoxHolder.UNBOX_LONG);
+            case SHORT -> cob.invokevirtual(BoxHolder.UNBOX_SHORT);
         }
     }
 
@@ -202,6 +203,6 @@ class TypeConvertingMethodAdapter {
         return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).basicClassDescriptor()
              : cls == Object.class ? CD_Object
              : cls == String.class ? CD_String
-             : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
+             : ConstantUtils.referenceClassDesc(cls.descriptorString());
     }
 }

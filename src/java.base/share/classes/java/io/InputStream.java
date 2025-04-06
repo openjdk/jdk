@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.io;
+
+import jdk.internal.util.ArraysSupport;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -305,12 +307,9 @@ public abstract class InputStream implements Closeable {
     }
 
     /**
-     * The maximum size of array to allocate.
-     * Some VMs reserve some header words in an array.
-     * Attempts to allocate larger arrays may result in
-     * OutOfMemoryError: Requested array size exceeds VM limit
+     * The maximum size of array to allocate
      */
-    private static final int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
+    private static final int MAX_BUFFER_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
     /**
      * Reads all remaining bytes from the input stream. This method blocks until

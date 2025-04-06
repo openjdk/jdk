@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -833,7 +833,7 @@ public final class Collectors {
      * The {@code reducing()} collectors are most useful when used in a
      * multi-level reduction, downstream of {@code groupingBy} or
      * {@code partitioningBy}.  To perform a simple reduction on a stream,
-     * use {@link Stream#reduce(Object, BinaryOperator)}} instead.
+     * use {@link Stream#reduce(Object, BinaryOperator)} instead.
      *
      * @param <T> element type for the input and output of the reduction
      * @param identity the identity value for the reduction (also, the value
@@ -1088,13 +1088,13 @@ public final class Collectors {
      *
      * @param <T> the type of the input elements
      * @param <K> the type of the keys
-     * @param <A> the intermediate accumulation type of the downstream collector
      * @param <D> the result type of the downstream reduction
+     * @param <A> the intermediate accumulation type of the downstream collector
      * @param <M> the type of the resulting {@code Map}
      * @param classifier a classifier function mapping input elements to keys
-     * @param downstream a {@code Collector} implementing the downstream reduction
      * @param mapFactory a supplier providing a new empty {@code Map}
      *                   into which the results will be inserted
+     * @param downstream a {@code Collector} implementing the downstream reduction
      * @return a {@code Collector} implementing the cascaded group-by operation
      *
      * @see #groupingBy(Function, Collector)
@@ -1250,9 +1250,9 @@ public final class Collectors {
      * @param <D> the result type of the downstream reduction
      * @param <M> the type of the resulting {@code ConcurrentMap}
      * @param classifier a classifier function mapping input elements to keys
-     * @param downstream a {@code Collector} implementing the downstream reduction
      * @param mapFactory a supplier providing a new empty {@code ConcurrentMap}
      *                   into which the results will be inserted
+     * @param downstream a {@code Collector} implementing the downstream reduction
      * @return a concurrent, unordered {@code Collector} implementing the cascaded group-by operation
      *
      * @see #groupingByConcurrent(Function)
@@ -1347,8 +1347,8 @@ public final class Collectors {
      * applying the finisher function.
      *
      * @param <T> the type of the input elements
-     * @param <A> the intermediate accumulation type of the downstream collector
      * @param <D> the result type of the downstream reduction
+     * @param <A> the intermediate accumulation type of the downstream collector
      * @param predicate a predicate used for classifying input elements
      * @param downstream a {@code Collector} implementing the downstream
      *                   reduction

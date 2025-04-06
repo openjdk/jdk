@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
  * questions.
  */
 package java.util.stream;
-
-import jdk.internal.javac.PreviewFeature;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1096,9 +1094,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @param <R> The element type of the new stream
      * @param gatherer a gatherer
      * @return the new stream
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.STREAM_GATHERERS)
     default <R> Stream<R> gather(Gatherer<? super T, ?, R> gatherer) {
         return StreamSupport.stream(spliterator(), isParallel())
                             .gather(gatherer)

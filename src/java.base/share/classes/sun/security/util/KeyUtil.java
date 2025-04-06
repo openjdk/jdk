@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,24 +175,19 @@ public final class KeyUtil {
     }
 
     /**
-     * Returns the algorithm name of the given key object. If an EC key is
-     * specified, returns the algorithm name and its named curve.
-     *
-     * @param key the key object, cannot be null
-     * @return the algorithm name of the given key object, or return in the
-     *       form of "EC (named curve)" if the given key object is an EC key
+     * If the key is a sub-algorithm of a larger group of algorithms, this
+     * method will return that sub-algorithm.  For example, key.getAlgorithm()
+     * returns "EdDSA", but the underlying key may be "Ed448".  For
+     * DisabledAlgorithmConstraints (DAC), this distinction is important.
+     * "EdDSA" means all curves for DAC, but when using it with
+     * KeyPairGenerator, "EdDSA" means "Ed25519".
      */
-    public static final String fullDisplayAlgName(Key key) {
-        String result = key.getAlgorithm();
-        if (key instanceof ECKey) {
-            ECParameterSpec paramSpec = ((ECKey) key).getParams();
-            if (paramSpec instanceof NamedCurve nc) {
-                result += " (" + nc.getNameAndAliases()[0] + ")";
-            }
-        } else if (key instanceof EdECKey) {
-            result = ((EdECKey) key).getParams().getName();
+    public static String getAlgorithm(Key key) {
+        if (key instanceof AsymmetricKey ak &&
+            ak.getParams() instanceof NamedParameterSpec nps) {
+            return nps.getName();
         }
-        return result;
+        return key.getAlgorithm();
     }
 
     /**
@@ -424,7 +419,7 @@ public final class KeyUtil {
         try {
             DerValue val = new DerValue(publicKey.getEncoded());
             val.data.getDerValue();
-            byte[] rawKey = new DerValue(val.data.getBitString()).getOctetString();
+            byte[] rawKey = val.data.getBitString();
             // According to https://www.rfc-editor.org/rfc/rfc8554.html:
             // Section 6.1: HSS public key is u32str(L) || pub[0], where pub[0]
             // is the LMS public key for the top-level tree.
@@ -444,6 +439,11 @@ public final class KeyUtil {
         } catch (IOException e) {
             throw new NoSuchAlgorithmException("Cannot decode public key", e);
         }
+    }
+
+    public static boolean isSupportedKeyAgreementOutputAlgorithm(String alg) {
+        return alg.equalsIgnoreCase("TlsPremasterSecret")
+                || alg.equalsIgnoreCase("Generic");
     }
 }
 

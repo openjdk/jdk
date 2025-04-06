@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.spi.FileSystemProvider;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -317,17 +314,9 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     }
 
     //////////////////////////////////////////////////////////////
-    @SuppressWarnings("removal")
     void removeFileSystem(Path zfpath, ZipFileSystem zfs) throws IOException {
         synchronized (filesystems) {
-            Path tempPath = zfpath;
-            PrivilegedExceptionAction<Path> action = tempPath::toRealPath;
-            try {
-                zfpath = AccessController.doPrivileged(action);
-            } catch (PrivilegedActionException e) {
-                throw (IOException) e.getException();
-            }
-            filesystems.remove(zfpath, zfs);
+            filesystems.remove(zfpath.toRealPath(), zfs);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 
 package jdk.jfr.internal.util;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
@@ -48,6 +50,7 @@ import jdk.internal.module.Checks;
 import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.RecordingState;
+import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
@@ -437,5 +440,23 @@ public final class Utils {
         } catch (ArithmeticException ae) {
             return defaultValue;
         }
+    }
+
+    public static ValueDescriptor findField(List<ValueDescriptor> fields, String name) {
+        for (ValueDescriptor v : fields) {
+            if (v.getName().equals(name)) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    public static Path getPathInProperty(String prop, String subPath) {
+        String path = System.getProperty(prop);
+        if (path == null) {
+            return null;
+        }
+        File file = subPath == null ? new File(path) : new File(path, subPath);
+        return file.toPath().toAbsolutePath();
     }
 }

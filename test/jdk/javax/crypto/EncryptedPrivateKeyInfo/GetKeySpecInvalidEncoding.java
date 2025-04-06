@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
  * methods with scenarios where the decrypted bytes are not
  * encoded correctly per PKCS#8 standard.
  * @author Valerie Peng
+ * @run main/othervm -DcipherAlg=PBEWithMD5AndDES GetKeySpecInvalidEncoding
+ * @run main/othervm -DcipherAlg=PBEWithSHA1AndDESede GetKeySpecInvalidEncoding
  */
 import java.util.*;
 import java.nio.*;
@@ -39,16 +41,17 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 public class GetKeySpecInvalidEncoding {
-    private static final String cipherAlg = "PBEWithMD5AndDES";
+    private static String cipherAlg;
     private static final char[] passwd = { 'p','a','s','s', 'w', 'd' };
     private static AlgorithmParameters GOOD_PARAMS;
 
     static {
         try {
+            cipherAlg = System.getProperty("cipherAlg");
             PBEParameterSpec goodParamSpec =
                 new PBEParameterSpec(new byte[8], 6);
             GOOD_PARAMS = AlgorithmParameters.getInstance
-                (cipherAlg, "SunJCE");
+                    (cipherAlg, System.getProperty("test.provider.name", "SunJCE"));
             GOOD_PARAMS.init(goodParamSpec);
         } catch (Exception ex) {
             // should never happen
@@ -101,7 +104,7 @@ public class GetKeySpecInvalidEncoding {
         }
         byte[] encryptedData = parse(encryptedPKCS8);
 
-        Provider p = Security.getProvider("SunJCE");
+        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
 
         // generate encrypted data and EncryptedPrivateKeyInfo object
         EncryptedPrivateKeyInfo epki =

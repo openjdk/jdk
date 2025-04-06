@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package validation;
 import javax.xml.validation.SchemaFactory;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
@@ -35,12 +34,10 @@ import org.xml.sax.SAXNotSupportedException;
  * @test
  * @bug 4969695
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4969695
  * @run testng/othervm validation.Bug4969695
  * @summary Test SchemaFactory.get/setProperty() throw NullPointerException
  * instead of SAXNotRecognizedException in case the "property name" parameter is null.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug4969695 {
 
     SchemaFactory schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");

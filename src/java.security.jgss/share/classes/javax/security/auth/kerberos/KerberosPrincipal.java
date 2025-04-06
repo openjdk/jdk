@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,24 +119,12 @@ public final class KerberosPrincipal
      * or change the default realm by setting the java.security.krb5.realm
      * system property may be ignored.
      *
-     * <p>Additionally, if a security manager is
-     * installed, a {@link ServicePermission} must be granted and the service
-     * principal of the permission must minimally be inside the
-     * {@code KerberosPrincipal}'s realm. For example, if the result of
-     * {@code new KerberosPrincipal("user")} is {@code user@EXAMPLE.COM},
-     * then a {@code ServicePermission} with service principal
-     * {@code host/www.example.com@EXAMPLE.COM} (and any action)
-     * must be granted.
-     *
      * @param name the principal name
      * @throws IllegalArgumentException if name is improperly
      * formatted, if name is null, or if name does not contain
      * the realm to use and the default realm is not specified
      * in either a Kerberos configuration file or via the
      * java.security.krb5.realm system property.
-     * @throws SecurityException if a security manager is installed and
-     * {@code name} does not contain the realm to use, and a proper
-     * {@link ServicePermission} as described above is not granted.
      */
     public KerberosPrincipal(String name) {
         this(name, KRB_NT_PRINCIPAL);
@@ -168,15 +156,6 @@ public final class KerberosPrincipal
      * or change the default realm by setting the java.security.krb5.realm
      * system property may be ignored.
      *
-     * <p>Additionally, if a security manager is
-     * installed, a {@link ServicePermission} must be granted and the service
-     * principal of the permission must minimally be inside the
-     * {@code KerberosPrincipal}'s realm. For example, if the result of
-     * {@code new KerberosPrincipal("user")} is {@code user@EXAMPLE.COM},
-     * then a {@code ServicePermission} with service principal
-     * {@code host/www.example.com@EXAMPLE.COM} (and any action)
-     * must be granted.
-     *
      * @param name the principal name
      * @param nameType the name type of the principal
      * @throws IllegalArgumentException if name is improperly
@@ -184,9 +163,6 @@ public final class KerberosPrincipal
      * or if name does not contain the realm to use and the default
      * realm is not specified in either a Kerberos configuration
      * file or via the java.security.krb5.realm system property.
-     * @throws SecurityException if a security manager is installed and
-     * {@code name} does not contain the realm to use, and a proper
-     * {@link ServicePermission} as described above is not granted.
      */
 
     public KerberosPrincipal(String name, int nameType) {
@@ -200,19 +176,6 @@ public final class KerberosPrincipal
             throw new IllegalArgumentException(e.getMessage());
         }
 
-        if (krb5Principal.isRealmDeduced() && !Realm.AUTODEDUCEREALM) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                try {
-                    sm.checkPermission(new ServicePermission(
-                            "@" + krb5Principal.getRealmAsString(), "-"));
-                } catch (SecurityException se) {
-                    // Swallow the actual exception to hide info
-                    throw new SecurityException("Cannot read realm info");
-                }
-            }
-        }
         this.nameType = nameType;
         fullName = krb5Principal.toString();
         realm = krb5Principal.getRealmString();

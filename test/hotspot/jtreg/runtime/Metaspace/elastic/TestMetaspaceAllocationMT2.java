@@ -26,7 +26,7 @@
 /*
  * This is a stress test for allocating from a single MetaspaceArena from
  *  multiple threads, optionally with reserve limit (mimicking the non-expandable CompressedClassSpace)
- * or commit limit (mimimcking MaxMetaspaceSize).
+ * or commit limit (mimicking MaxMetaspaceSize).
  *
  * The test threads will start to allocate from the Arena, and occasionally deallocate.
  * The threads run with a safety allocation max; if reached (or, if the underlying arena
@@ -34,7 +34,7 @@
  * kind of float at the allocation ceiling, alternating between allocation and deallocation.
  *
  * We test with various flags, to exercise all 3 reclaim policies (none, balanced (default)
- * and aggessive) as well as one run with allocation guards enabled.
+ * and aggressive) as well as one run with allocation guards enabled.
  *
  * We also set MetaspaceVerifyInterval very low to trigger many verifications in debug vm.
  *
@@ -90,20 +90,22 @@
  *      TestMetaspaceAllocationMT2 3
  */
 
+import jdk.test.lib.Unit;
+
 public class TestMetaspaceAllocationMT2 {
 
     public static void main(String[] args) throws Exception {
 
-        final long testAllocationCeiling = 1024 * 1024 * 6; // 8m words = 64M on 64bit
+        final long testAllocationCeiling = 48L * Unit.M.size();
         final int numThreads = 4;
         final int seconds = Integer.parseInt(args[0]);
 
         for (int i = 0; i < 3; i ++) {
 
-            long commitLimit = (i == 1) ? 1024 * 256 : 0;
+            long commitLimit = (i == 1) ? 2L * Unit.M.size() : 0;
 
             // Note: reserve limit must be a multiple of Metaspace::reserve_alignment_words()
-            long reserveLimit = (i == 2) ? Settings.rootChunkWordSize * 2 : 0;
+            long reserveLimit = (i == 2) ? Settings.ROOT_CHUNK_WORD_SIZE * 16: 0;
 
             System.out.println("#### Test: ");
             System.out.println("#### testAllocationCeiling: " + testAllocationCeiling);

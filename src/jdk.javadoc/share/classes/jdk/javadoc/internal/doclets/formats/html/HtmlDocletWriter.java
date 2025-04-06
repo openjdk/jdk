@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,7 @@ public abstract class HtmlDocletWriter {
         this.pathToRoot = path.parent().invert();
         this.docPaths = configuration.docPaths;
         this.mainBodyScript = new Script();
-        this.tableOfContents = new TableOfContents(this);
+        this.tableOfContents = createTableOfContents();
 
         if (generating) {
             writeGenerating();
@@ -685,7 +685,7 @@ public abstract class HtmlDocletWriter {
         return (bottom == null || bottom.isEmpty())
                 ? null
                 : HtmlTree.FOOTER()
-                    .add(new HtmlTree(HtmlTag.HR))
+                    .add(HtmlTree.HR())
                     .add(HtmlTree.P(HtmlStyles.legalCopy,
                             HtmlTree.SMALL(
                                     RawHtml.of(replaceDocRootDir(bottom)))));
@@ -791,19 +791,16 @@ public abstract class HtmlDocletWriter {
         }
         if (targetLink != null) {
             if (flags.contains(ElementFlag.PREVIEW)) {
-                return new ContentBuilder(
-                    links.createLink(targetLink, label),
-                    HtmlTree.SUP(links.createLink(targetLink.withFragment(htmlIds.forPreviewSection(packageElement).name()),
-                                                  contents.previewMark))
-                );
+                return new ContentBuilder(links.createLink(targetLink, label),
+                        HtmlTree.SUP(HtmlStyles.previewMark,
+                                links.createLink(targetLink.withFragment(htmlIds.forPreviewSection(packageElement).name()),
+                                        contents.previewMark)));
             }
             return links.createLink(targetLink, label);
         } else {
             if (flags.contains(ElementFlag.PREVIEW)) {
-                return new ContentBuilder(
-                    label,
-                    HtmlTree.SUP(contents.previewMark)
-                );
+                return new ContentBuilder(label,
+                        HtmlTree.SUP(HtmlStyles.previewMark, contents.previewMark));
             }
             return label;
         }
@@ -835,19 +832,16 @@ public abstract class HtmlDocletWriter {
             targetLink = new DocLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)), fragment);
             Content link = links.createLink(targetLink, label, "");
             if (flags.contains(ElementFlag.PREVIEW) && label != contents.moduleLabel) {
-                link = new ContentBuilder(
-                        link,
-                        HtmlTree.SUP(links.createLink(targetLink.withFragment(htmlIds.forPreviewSection(mdle).name()),
-                                                      contents.previewMark))
-                );
+                link = new ContentBuilder(link,
+                        HtmlTree.SUP(HtmlStyles.previewMark,
+                                links.createLink(targetLink.withFragment(htmlIds.forPreviewSection(mdle).name()),
+                                                      contents.previewMark)));
             }
             return link;
         }
         if (flags.contains(ElementFlag.PREVIEW)) {
-            return new ContentBuilder(
-                label,
-                HtmlTree.SUP(contents.previewMark)
-            );
+            return new ContentBuilder(label,
+                    HtmlTree.SUP(HtmlStyles.previewMark, contents.previewMark));
         }
         return label;
     }
@@ -1030,11 +1024,10 @@ public abstract class HtmlDocletWriter {
     }
 
     /**
-     * Return the main type element of the current page or null for pages that don't have one.
-     *
-     * @return the type element of the current page.
+     * {@return the type element documented by this writer if it is a {@code ClassWriter},
+     * or null for any other kind of writer}
      */
-    public TypeElement getCurrentPageElement() {
+    public TypeElement getCurrentTypeElement() {
         return null;
     }
 
@@ -1570,7 +1563,8 @@ public abstract class HtmlDocletWriter {
                             super.visit(text);
                         }
                     }.visit(heading);
-                    tableOfContents.addLink(id, Text.of(headingContent));
+                    tableOfContents.addLink(id, Text.of(headingContent),
+                            TableOfContents.Level.forHeading(htag));
                 }
             }
 
@@ -1840,6 +1834,16 @@ public abstract class HtmlDocletWriter {
                  .findFirst();
     }
 
+    /**
+     * Creates table of contents for this writer. Can be overridden to return {@code null} in
+     * subclasses that don't require a table of contents.
+     *
+     * @return a table of contents
+     */
+    protected TableOfContents createTableOfContents() {
+        return new TableOfContents(this);
+    }
+
     private void createSectionIdAndIndex(StartElementTree node, List<? extends DocTree> trees, Content attrs,
                                          Element element, TagletWriter.Context context) {
         // Use existing id attribute if available
@@ -1886,23 +1890,22 @@ public abstract class HtmlDocletWriter {
         }
         // Generate index item
         if (!headingContent.isEmpty() && configuration.indexBuilder != null) {
-            String tagText = headingContent.replaceAll("\\s+", " ");
+            String tagText = utils.normalizeWhitespace(headingContent);
             IndexItem item = IndexItem.of(element, node, tagText,
                     getTagletWriterInstance(context).getHolderName(element),
-                    resources.getText("doclet.Section"),
+                    "",
                     new DocLink(path, id));
             configuration.indexBuilder.add(item);
         }
-        if (includeHeadingInTableOfContents(node.getName())) {
-            tableOfContents.addLink(HtmlId.of(id), Text.of(headingContent));
+        if (includeHeadingInTableOfContents(tagName)) {
+            tableOfContents.addLink(HtmlId.of(id), Text.of(headingContent),
+                    TableOfContents.Level.forHeading(tagName));
         }
     }
 
-    private boolean includeHeadingInTableOfContents(CharSequence tag) {
-        // Record second-level headings for use in table of contents
-        // TODO: maybe extend this to all headings up to a given level
-        return tableOfContents != null
-                && tag.toString().equalsIgnoreCase("h2");
+    private boolean includeHeadingInTableOfContents(String tag) {
+        // Record second- and third-level headings for use in table of contents
+        return tableOfContents != null &&  ("h2".equals(tag) || "h3".equals(tag));
     }
 
     /**
@@ -1918,7 +1921,7 @@ public abstract class HtmlDocletWriter {
         // Retrieve the element of this writer if it is a "primary" writer for an element.
         // Note: It would be nice to have getCurrentPageElement() return package and module elements
         // in their respective writers, but other uses of the method are only interested in TypeElements.
-        Element currentPageElement = getCurrentPageElement();
+        Element currentPageElement = getCurrentTypeElement();
         if (currentPageElement == null) {
             if (this instanceof PackageWriter packageWriter) {
                 currentPageElement = packageWriter.packageElement;
@@ -1957,7 +1960,7 @@ public abstract class HtmlDocletWriter {
      */
     private boolean inSamePackage(Element element) {
         Element currentPageElement = (this instanceof PackageWriter packageWriter)
-                ? packageWriter.packageElement : getCurrentPageElement();
+                ? packageWriter.packageElement : getCurrentTypeElement();
         return currentPageElement != null && !utils.isModule(element)
                 && Objects.equals(utils.containingPackage(currentPageElement),
                 utils.containingPackage(element));
@@ -2405,7 +2408,7 @@ public abstract class HtmlDocletWriter {
      * @return an HtmlTree for the BODY tag
      */
     public HtmlTree getBody(String title) {
-        var body = new HtmlTree(HtmlTag.BODY).setStyle(getBodyStyle());
+        var body = HtmlTree.BODY(getBodyStyle());
 
         this.winTitle = title;
         // Don't print windowtitle script for overview-frame, allclasses-frame
@@ -2601,7 +2604,7 @@ public abstract class HtmlDocletWriter {
                 });
         return contents.getContent(key,
                                    HtmlTree.CODE(Text.of(className)),
-                                   new HtmlTree(HtmlTag.EM).add(featureName),
+                                   HtmlTree.EM(featureName),
                                    featureCodes);
     }
 
@@ -2642,19 +2645,31 @@ public abstract class HtmlDocletWriter {
             //in Java platform:
             var restrictedDiv = HtmlTree.DIV(HtmlStyles.restrictedBlock);
             restrictedDiv.setId(htmlIds.forRestrictedSection(forWhat));
-            String name = forWhat.getSimpleName().toString();
+            var name = forWhat.getSimpleName().toString();
             var nameCode = HtmlTree.CODE(Text.of(name));
-            String leadingNoteKey = "doclet.RestrictedLeadingNote";
-            Content leadingNote =
-                    contents.getContent(leadingNoteKey, nameCode);
-            restrictedDiv.add(HtmlTree.SPAN(HtmlStyles.restrictedLabel,
-                    leadingNote));
-            Content note1 = contents.getContent("doclet.RestrictedTrailingNote1", nameCode);
+            var restrictedMethodLink = getRestrictedMethodDocLink();
+            var leadingNoteKey = "doclet.RestrictedLeadingNote";
+            var leadingNote = contents.getContent(leadingNoteKey, nameCode, restrictedMethodLink);
+            restrictedDiv.add(HtmlTree.SPAN(HtmlStyles.restrictedLabel, leadingNote));
+            var note1 = contents.getContent("doclet.RestrictedTrailingNote1", nameCode);
             restrictedDiv.add(HtmlTree.DIV(HtmlStyles.restrictedComment, note1));
-            Content note2 = contents.getContent("doclet.RestrictedTrailingNote2", nameCode);
+            var note2 = contents.getContent("doclet.RestrictedTrailingNote2", nameCode);
             restrictedDiv.add(HtmlTree.DIV(HtmlStyles.restrictedComment, note2));
             target.add(restrictedDiv);
         }
+    }
+
+    private Content getRestrictedMethodDocLink() {
+        var restrictedMethodLabel = contents.getContent("doclet.RestrictedMethod");
+        var javaLang = utils.elementUtils.getPackageElement("java.lang");
+        if (utils.isIncluded(javaLang)) {
+            var restrictedDocPath = pathToRoot
+                    .resolve(docPaths.forPackage(javaLang))
+                    .resolve(DocPaths.DOC_FILES)
+                    .resolve(DocPaths.RESTRICTED_DOC);
+            return links.createLink(restrictedDocPath, restrictedMethodLabel);
+        }
+        return restrictedMethodLabel;
     }
 
 }

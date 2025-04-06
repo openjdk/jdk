@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-import java.security.*;
+import java.security.Provider;
 
 public class GetInstanceProvider extends Provider {
 
@@ -30,12 +30,6 @@ public class GetInstanceProvider extends Provider {
                 "1",
                 "GetInstanceProvider: Configuration.GetInstanceConfigSpi");
 
-        AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                put("Configuration.GetInstanceConfigSpi",
-                        "GetInstanceConfigSpi");
-                return null;
-            }
-        });
+        put("Configuration.GetInstanceConfigSpi", "GetInstanceConfigSpi");
     }
 }

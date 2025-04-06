@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,6 @@ public class FileImageInputStream extends ImageInputStreamImpl {
      *
      * @throws IllegalArgumentException if {@code f} is
      * {@code null}.
-     * @throws SecurityException if a security manager exists
-     * and does not allow read access to the file.
      * @throws FileNotFoundException if {@code f} is a
      * directory or cannot be opened for reading for any other reason.
      * @throws IOException if an I/O error occurs.
@@ -91,6 +89,10 @@ public class FileImageInputStream extends ImageInputStreamImpl {
             throw new IllegalArgumentException("raf == null!");
         }
         this.raf = raf;
+        try {
+            this.streamPos = raf.getFilePointer();
+        } catch (IOException ignored) {
+        }
 
         disposerRecord = new CloseableDisposerRecord(raf);
         if (getClass() == FileImageInputStream.class) {

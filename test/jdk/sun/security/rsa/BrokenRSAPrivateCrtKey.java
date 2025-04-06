@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4503229 8220016
+ * @library /test/lib
  * @summary default RSA KeyFactory can return broken RSAPrivateCrtKey objects
  *      This test was taken directly from the bug report, which
  *      was fixed in the crippled JSAFE provider, and needed
@@ -35,12 +36,15 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 import java.math.BigInteger;
+import jdk.test.lib.security.SecurityUtils;
 
 public class BrokenRSAPrivateCrtKey {
     public static void main(String[] args) throws Exception {
+        String kpgAlgorithm = "RSA";
         KeyPairGenerator generator =
-                KeyPairGenerator.getInstance("RSA", "SunRsaSign");
-        generator.initialize(512);
+                KeyPairGenerator.getInstance(kpgAlgorithm,
+                        System.getProperty("test.provider.name", "SunRsaSign"));
+        generator.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
 
         KeyPair pair = generator.generateKeyPair();
 
@@ -55,7 +59,8 @@ public class BrokenRSAPrivateCrtKey {
                 privatekey.getPrimeExponentQ(),
                 privatekey.getCrtCoefficient());
 
-        KeyFactory factory = KeyFactory.getInstance("RSA", "SunRsaSign");
+        KeyFactory factory = KeyFactory.getInstance("RSA",
+                System.getProperty("test.provider.name", "SunRsaSign"));
 
         PrivateKey privatekey2 = factory.generatePrivate(spec);
 

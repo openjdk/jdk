@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public final class ThreadMXBeanTool {
                 + Integer.toHexString(System.identityHashCode(object));
         ThreadMXBean tmx = ManagementFactory.getThreadMXBean();
         while (thread.isAlive()) {
-            ThreadInfo ti = tmx.getThreadInfo(thread.getId());
+            ThreadInfo ti = tmx.getThreadInfo(thread.threadId());
             if (ti.getThreadState() == state
                     && (want == null || want.equals(ti.getLockName()))) {
                 return;
@@ -60,7 +60,7 @@ public final class ThreadMXBeanTool {
     public static void waitUntilInNative(Thread thread) throws InterruptedException {
         ThreadMXBean tmx = ManagementFactory.getThreadMXBean();
         while (thread.isAlive()) {
-            ThreadInfo ti = tmx.getThreadInfo(thread.getId());
+            ThreadInfo ti = tmx.getThreadInfo(thread.threadId());
             if (ti.isInNative()) {
                 return;
             }

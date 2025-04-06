@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,12 +117,20 @@ AWT_ASSERT_APPKIT_THREAD;
     // don't install the EAWT delegate if another kind of NSApplication is installed, like say, Safari
     BOOL shouldInstall = NO;
     BOOL overrideDelegate = (getenv("AWT_OVERRIDE_NSDELEGATE") != NULL);
+    BOOL isApplicationOwner = NO;
     if (NSApp != nil) {
         if ([NSApp isMemberOfClass:[NSApplication class]] && overrideDelegate) shouldInstall = YES;
-        if ([NSApp isKindOfClass:[NSApplicationAWT class]]) shouldInstall = YES;
+        if ([NSApp isKindOfClass:[NSApplicationAWT class]]) {
+            shouldInstall = YES;
+            isApplicationOwner = YES;
+        }
     }
     checked = YES;
-    if (!shouldInstall) return nil;
+    if (!shouldInstall) {
+        [ThreadUtilities setApplicationOwner:NO];
+        return nil;
+    }
+    [ThreadUtilities setApplicationOwner:isApplicationOwner];
 
     sApplicationDelegate = [[ApplicationDelegate alloc] init];
     return sApplicationDelegate;

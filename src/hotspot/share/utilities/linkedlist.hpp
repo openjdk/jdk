@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ template <class E> class LinkedList : public AnyObj {
 // A linked list implementation.
 // The linked list can be allocated in various type of memory: C heap, arena and resource area, etc.
 template <class E, AnyObj::allocation_type T = AnyObj::C_HEAP,
-  MEMFLAGS F = mtNMT, AllocFailType alloc_failmode = AllocFailStrategy::RETURN_NULL>
+  MemTag MT = mtNMT, AllocFailType alloc_failmode = AllocFailStrategy::RETURN_NULL>
   class LinkedListImpl : public LinkedList<E> {
  protected:
   Arena*                 _arena;
@@ -342,9 +342,9 @@ template <class E, AnyObj::allocation_type T = AnyObj::C_HEAP,
          }
        case AnyObj::C_HEAP: {
          if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
-           return new(std::nothrow, F) LinkedListNode<E>(e);
+           return new(std::nothrow, MT) LinkedListNode<E>(e);
          } else {
-           return new(F) LinkedListNode<E>(e);
+           return new(MT) LinkedListNode<E>(e);
          }
        }
        default:
@@ -365,14 +365,14 @@ template <class E, AnyObj::allocation_type T = AnyObj::C_HEAP,
 // function
 template <class E, int (*FUNC)(const E&, const E&),
   AnyObj::allocation_type T = AnyObj::C_HEAP,
-  MEMFLAGS F = mtNMT, AllocFailType alloc_failmode = AllocFailStrategy::RETURN_NULL>
-  class SortedLinkedList : public LinkedListImpl<E, T, F, alloc_failmode> {
+  MemTag MT = mtNMT, AllocFailType alloc_failmode = AllocFailStrategy::RETURN_NULL>
+  class SortedLinkedList : public LinkedListImpl<E, T, MT, alloc_failmode> {
  public:
   SortedLinkedList() { }
-  SortedLinkedList(Arena* a) : LinkedListImpl<E, T, F, alloc_failmode>(a) { }
+  SortedLinkedList(Arena* a) : LinkedListImpl<E, T, MT, alloc_failmode>(a) { }
 
   virtual LinkedListNode<E>* add(const E& e) {
-    return LinkedListImpl<E, T, F, alloc_failmode>::add(e);
+    return LinkedListImpl<E, T, MT, alloc_failmode>::add(e);
   }
 
   virtual void move(LinkedList<E>* list) {
@@ -409,7 +409,7 @@ template <class E, int (*FUNC)(const E&, const E&),
   }
 
   virtual bool add(const LinkedList<E>* list) {
-    return LinkedListImpl<E, T, F, alloc_failmode>::add(list);
+    return LinkedListImpl<E, T, MT, alloc_failmode>::add(list);
   }
 
   virtual LinkedListNode<E>* find_node(const E& e) {

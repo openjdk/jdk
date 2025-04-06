@@ -31,7 +31,7 @@
 // A flat array of elements E, backed by C-heap, growing on-demand. It allows for
 // returning arbitrary elements and keeps them in a freelist. Elements can be uniquely
 // identified via array index.
-template<typename E, MEMFLAGS flag>
+template<typename E, MemTag MT>
 class ArrayWithFreeList {
 
   // An E must be trivially copyable and destructible, but it may be constructed
@@ -52,7 +52,7 @@ private:
     E e;
   };
 
-  GrowableArrayCHeap<BackingElement, flag> _backing_storage;
+  GrowableArrayCHeap<BackingElement, MT> _backing_storage;
   I _free_start;
 
   bool is_in_bounds(I i) {

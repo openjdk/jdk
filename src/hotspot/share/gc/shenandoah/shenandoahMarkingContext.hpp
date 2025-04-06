@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +33,7 @@
 #include "oops/oopsHierarchy.hpp"
 
 class ShenandoahObjToScanQueueSet;
+class ShenandoahHeapRegion;
 
 /**
  * Encapsulate a marking bitmap with the top-at-mark-start and top-bitmaps array.
@@ -47,12 +49,8 @@ private:
 
   ShenandoahSharedFlag _is_complete;
 
-  // Marking task queues
-  ShenandoahObjToScanQueueSet* _task_queues;
-
 public:
-  ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions, uint max_queues);
-  ~ShenandoahMarkingContext();
+  ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions);
 
   /*
    * Marks the object. Returns true if the object has not been marked before and has
@@ -68,29 +66,30 @@ public:
   inline bool is_marked_strong(oop obj) const;
   inline bool is_marked_strong(HeapWord* raw_obj) const;
   inline bool is_marked_weak(oop obj) const;
+  inline bool is_marked_or_old(oop obj) const;
+  inline bool is_marked_strong_or_old(oop obj) const;
 
-  inline HeapWord* get_next_marked_addr(HeapWord* addr, HeapWord* limit) const;
+  inline HeapWord* get_next_marked_addr(const HeapWord* addr, const HeapWord* limit) const;
 
-  inline bool allocated_after_mark_start(oop obj) const;
-  inline bool allocated_after_mark_start(HeapWord* addr) const;
+  inline bool allocated_after_mark_start(const oop obj) const;
+  inline bool allocated_after_mark_start(const HeapWord* addr) const;
 
-  inline HeapWord* top_at_mark_start(ShenandoahHeapRegion* r) const;
+  inline HeapWord* top_at_mark_start(const ShenandoahHeapRegion* r) const;
   inline void capture_top_at_mark_start(ShenandoahHeapRegion* r);
   inline void reset_top_at_mark_start(ShenandoahHeapRegion* r);
   void initialize_top_at_mark_start(ShenandoahHeapRegion* r);
+
+  HeapWord* top_bitmap(ShenandoahHeapRegion* r);
 
   inline void reset_top_bitmap(ShenandoahHeapRegion *r);
   void clear_bitmap(ShenandoahHeapRegion *r);
 
   bool is_bitmap_clear() const;
-  bool is_bitmap_clear_range(HeapWord* start, HeapWord* end) const;
+  bool is_bitmap_range_within_region_clear(const HeapWord* start, const HeapWord* end) const;
 
   bool is_complete();
   void mark_complete();
   void mark_incomplete();
-
-  // Task queues
-  ShenandoahObjToScanQueueSet* task_queues() const { return _task_queues; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_HPP

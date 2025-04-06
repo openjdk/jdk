@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
@@ -75,7 +74,7 @@ public:
         ++values_changed;
       }
     }
-    tty->print_cr("reader iterations: " SIZE_FORMAT ", changes: " SIZE_FORMAT,
+    tty->print_cr("reader iterations: %zu, changes: %zu",
                   iterations, values_changed);
   }
 };
@@ -102,7 +101,7 @@ public:
       _synchronizer->synchronize();
       { ThreadBlockInVM tbiv(this); } // Safepoint check.
     }
-    tty->print_cr("writer iterations: " UINTX_FORMAT, *_synchronized_value);
+    tty->print_cr("writer iterations: %zu", *_synchronized_value);
   }
 };
 

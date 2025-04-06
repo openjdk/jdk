@@ -58,7 +58,6 @@ import java.awt.image.FilteredImageSource;
 import java.awt.image.ImageFilter;
 import java.awt.image.ImageProducer;
 import java.awt.image.RGBImageFilter;
-import java.security.AccessController;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -90,7 +89,6 @@ import sun.awt.OSInfo;
 import sun.awt.SunToolkit;
 import sun.awt.shell.ShellFolder;
 import sun.font.FontUtilities;
-import sun.security.action.GetPropertyAction;
 import sun.swing.DefaultLayoutStyle;
 import sun.swing.ImageIconUIResource;
 import sun.swing.MnemonicHandler;
@@ -184,9 +182,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         // performance and compatibility issues, so allow this feature
         // to be switched off either at runtime or programmatically
         //
-        @SuppressWarnings("removal")
-        String systemFonts = java.security.AccessController.doPrivileged(
-               new GetPropertyAction("swing.useSystemFontSettings"));
+        String systemFonts = System.getProperty("swing.useSystemFontSettings");
         useSystemFontSettings = systemFonts == null || Boolean.parseBoolean(systemFonts);
 
         if (useSystemFontSettings) {
@@ -596,8 +592,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         if (!(this instanceof WindowsClassicLookAndFeel) &&
                 (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
                 OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_XP) >= 0)) {
-            @SuppressWarnings("removal")
-            String prop = AccessController.doPrivileged(new GetPropertyAction("swing.noxp"));
+            String prop = System.getProperty("swing.noxp");
             if (prop == null) {
 
                 // These desktop properties are not used directly, but are needed to

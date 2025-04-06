@@ -88,15 +88,12 @@ public class AbstractBoundLocalVariable
             return false;
         }
         int length = endBci - startBci;
-        b.writeU2(startBci);
-        b.writeU2(length);
+        b.writeU2U2(startBci, length);
         if (b.canWriteDirect(code.constantPool())) {
-            b.writeU2(nameIndex());
-            b.writeU2(secondaryIndex());
+            b.writeU2U2(nameIndex(), secondaryIndex());
         }
         else {
-            b.writeIndex(name());
-            b.writeIndex(secondaryEntry());
+            b.writeU2U2(b.cpIndex(name()), b.cpIndex(secondaryEntry()));
         }
         b.writeU2(slot());
         return true;

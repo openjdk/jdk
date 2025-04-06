@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_CFGPrinter.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_IR.hpp"
-#include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_LinearScan.hpp"
+#include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_RangeCheckElimination.hpp"
 #include "c1/c1_ValueMap.hpp"
@@ -35,11 +34,10 @@
 #include "code/debugInfoRec.hpp"
 #include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
-#include "compiler/compilerDirectives.hpp"
 #include "compiler/compileLog.hpp"
-#include "compiler/compileTask.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "compiler/compileTask.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/timerTrace.hpp"
@@ -274,8 +272,6 @@ void Compilation::emit_lir() {
     // Assign physical registers to LIR operands using a linear scan algorithm.
     allocator->do_linear_scan();
     CHECK_BAILOUT();
-
-    _max_spills = allocator->max_spills();
   }
 
   if (BailoutAfterLIR) {
@@ -412,6 +408,8 @@ int Compilation::compile_java_method() {
   if (_directive->DumpReplayOption) {
     env()->dump_replay_data(env()->compile_id());
   }
+
+  DEBUG_ONLY(CompilationMemoryStatistic::do_test_allocations();)
 
   {
     PhaseTraceTime timeit(_t_codeemit);
@@ -568,7 +566,6 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _method(method)
 , _osr_bci(osr_bci)
 , _hir(nullptr)
-, _max_spills(-1)
 , _frame_map(nullptr)
 , _masm(nullptr)
 , _has_exception_handlers(false)

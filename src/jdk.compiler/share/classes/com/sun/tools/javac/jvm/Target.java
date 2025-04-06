@@ -107,6 +107,9 @@ public enum Target {
 
     /** JDK 24. */
     JDK1_24("24", 68, 0),
+
+    /** JDK 25. */
+    JDK1_25("25", 69, 0),
     ; // Reduce code churn when appending new constants
 
     private static final Context.Key<Target> targetKey = new Context.Key<>();
@@ -234,5 +237,12 @@ public enum Target {
      */
     public boolean usesReferenceOnlySelectorTypes() {
         return compareTo(Target.JDK1_23) < 0;
+    }
+
+    /**
+     * Should we emit a null check against incoming outer this argument by default?
+     */
+    public boolean nullCheckOuterThisByDefault() {
+        return compareTo(JDK1_25) >= 0;
     }
 }

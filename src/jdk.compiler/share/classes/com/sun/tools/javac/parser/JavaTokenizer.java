@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,13 @@ import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.EndPosTable;
-import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.*;
 
 import java.nio.CharBuffer;
-import java.util.Iterator;
 import java.util.Set;
 
 import static com.sun.tools.javac.parser.Tokens.*;
@@ -220,15 +219,14 @@ public class JavaTokenizer extends UnicodeReader {
     }
 
     /**
-     * Report an error at the given position using the provided arguments.
+     * Report a warning at the given position using the provided arguments.
      *
-     * @param lc     lint category.
      * @param pos    position in input buffer.
      * @param key    error key to report.
      */
-    protected void lexWarning(LintCategory lc, int pos, JCDiagnostic.Warning key) {
+    protected void lexWarning(int pos, JCDiagnostic.LintWarning key) {
         DiagnosticPosition dp = new SimpleDiagnosticPosition(pos) ;
-        log.warning(lc, dp, key);
+        log.warning(dp, key);
     }
 
     /**
@@ -1075,12 +1073,12 @@ public class JavaTokenizer extends UnicodeReader {
                         Set<TextBlockSupport.WhitespaceChecks> checks =
                                 TextBlockSupport.checkWhitespace(string);
                         if (checks.contains(TextBlockSupport.WhitespaceChecks.INCONSISTENT)) {
-                            lexWarning(LintCategory.TEXT_BLOCKS, pos,
-                                    Warnings.InconsistentWhiteSpaceIndentation);
+                            lexWarning(pos,
+                                    LintWarnings.InconsistentWhiteSpaceIndentation);
                         }
                         if (checks.contains(TextBlockSupport.WhitespaceChecks.TRAILING)) {
-                            lexWarning(LintCategory.TEXT_BLOCKS, pos,
-                                    Warnings.TrailingWhiteSpaceWillBeRemoved);
+                            lexWarning(pos,
+                                    LintWarnings.TrailingWhiteSpaceWillBeRemoved);
                         }
                     }
                     // Remove incidental indentation.
@@ -1267,6 +1265,21 @@ public class JavaTokenizer extends UnicodeReader {
             return null;
         }
 
+        /**
+         * Return a version of this comment with incidental whitespace removed,
+         * or this comment if the operation is not supported.
+         *
+         * @return comment with removed whitespace or this comment
+         */
+        public Comment stripIndent() {
+            return this;
+        }
+
+        /**
+         * Return the diagnostic position of this comment.
+         *
+         * @return diagnostic position
+         */
         public DiagnosticPosition getPos() {
             return pos;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,7 @@ import sun.security.jca.GetInstance.Instance;
  * Consult the release documentation for your implementation to see if any
  * other types or encodings are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Hemma Prafullchandra
  * @author Jan Luehe
  * @author Sean Mullan
@@ -176,6 +177,7 @@ public class CertificateFactory {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard certificate types.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a certificate factory object for the specified type
      *
      * @throws CertificateException if no {@code Provider} supports a
@@ -219,6 +221,7 @@ public class CertificateFactory {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a certificate factory object for the specified type
      *
      * @throws CertificateException if a {@code CertificateFactorySpi}
@@ -265,6 +268,7 @@ public class CertificateFactory {
      * for information about standard certificate types.
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a certificate factory object for the specified type
      *
      * @throws CertificateException if a {@code CertificateFactorySpi}
@@ -369,6 +373,7 @@ public class CertificateFactory {
      * {@code remove} method result in an
      * {@code UnsupportedOperationException}.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return an {@code Iterator} over the names of the supported
      *         {@code CertPath} encodings (as {@code String}s)
      * @since 1.4
@@ -407,6 +412,7 @@ public class CertificateFactory {
      *
      * @param inStream an {@code InputStream} containing the data
      * @param encoding the encoding used for the data
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code CertPath} initialized with the data from the
      *   {@code InputStream}
      * @throws    CertificateException if an exception occurs while decoding or

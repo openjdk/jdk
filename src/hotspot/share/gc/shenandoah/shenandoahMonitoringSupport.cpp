@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/hSpaceCounters.hpp"
@@ -37,7 +36,7 @@ public:
   ShenandoahYoungGenerationCounters() :
           GenerationCounters("Young", 0, 0, 0, (size_t)0, (size_t)0) {};
 
-  void update_all() override {
+  void update_all() {
     // no update
   }
 };
@@ -51,8 +50,8 @@ public:
           _heap(heap)
   {};
 
-  void update_all() override {
-    _current_size->set_value(_heap->capacity());
+  void update_all() {
+    GenerationCounters::update_all(_heap->capacity());
   }
 };
 

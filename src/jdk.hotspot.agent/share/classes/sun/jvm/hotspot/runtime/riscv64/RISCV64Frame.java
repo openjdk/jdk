@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019, Red Hat Inc.
  * Copyright (c) 2021, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -284,7 +284,7 @@ public class RISCV64Frame extends Frame {
     }
 
     if (cb != null) {
-      return senderForCompiledFrame(map, cb);
+      return cb.isUpcallStub() ? senderForUpcallStub(map, (UpcallStub)cb) : senderForCompiledFrame(map, cb);
     }
 
     // Must be native-compiled frame, i.e. the marshaling code for native
@@ -311,6 +311,34 @@ public class RISCV64Frame extends Frame {
       fr = new RISCV64Frame(jcw.getLastJavaSP(), jcw.getLastJavaFP(), jcw.getLastJavaPC());
     } else {
       fr = new RISCV64Frame(jcw.getLastJavaSP(), jcw.getLastJavaFP());
+    }
+    map.clear();
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(map.getIncludeArgumentOops(), "should be set by clear");
+    }
+    return fr;
+  }
+
+  private Frame senderForUpcallStub(RISCV64RegisterMap map, UpcallStub stub) {
+    if (DEBUG) {
+      System.out.println("senderForUpcallStub");
+    }
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(map != null, "map must be set");
+    }
+
+    var lastJavaFP = stub.getLastJavaFP(this);
+    var lastJavaSP = stub.getLastJavaSP(this);
+    var lastJavaPC = stub.getLastJavaPC(this);
+
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(lastJavaSP.greaterThan(getSP()), "must be above this frame on stack");
+    }
+    RISCV64Frame fr;
+    if (lastJavaPC != null) {
+      fr = new RISCV64Frame(lastJavaSP, lastJavaFP, lastJavaPC);
+    } else {
+      fr = new RISCV64Frame(lastJavaSP, lastJavaFP);
     }
     map.clear();
     if (Assert.ASSERTS_ENABLED) {

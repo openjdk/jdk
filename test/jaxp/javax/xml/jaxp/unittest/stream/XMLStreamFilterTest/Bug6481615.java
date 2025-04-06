@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,15 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 6481615
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamFilterTest.Bug6481615
  * @run testng/othervm stream.XMLStreamFilterTest.Bug6481615
  * @summary Test Filtered XMLStreamReader can return the event type if current state is START_ELEMENT.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug6481615 {
 
     static final String XML = "<?xml version=\"1.0\"?>" + "<S:Envelope foo=\"bar\" xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"></S:Envelope>";

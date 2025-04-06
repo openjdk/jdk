@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,9 @@ public class NewLineTest {
                 .options("-J-Dline.separator='@'")
                 .run(Task.Expect.FAIL);
 
-        List<String> lines = Files.readAllLines(javacOutput.toPath(),
-                Charset.defaultCharset());
+        String encoding = System.getProperty("native.encoding");
+        Charset cs = (encoding != null) ? Charset.forName(encoding) : Charset.defaultCharset();
+        List<String> lines = Files.readAllLines(javacOutput.toPath(), cs);
         if (lines.size() != 1) {
             throw new AssertionError("The compiler output should have one line only");
         }

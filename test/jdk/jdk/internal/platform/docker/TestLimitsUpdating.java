@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Red Hat, Inc.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,7 +29,7 @@
  * @bug 8308090
  * @key cgroups
  * @summary Test container limits updating as they get updated at runtime without restart
- * @requires docker.support
+ * @requires container.support
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build LimitUpdateChecker

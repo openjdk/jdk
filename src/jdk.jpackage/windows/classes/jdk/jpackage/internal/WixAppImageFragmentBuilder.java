@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -56,7 +55,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.AppImageFile.LauncherInfo;
-import jdk.jpackage.internal.IOUtils.XmlConsumer;
+import jdk.jpackage.internal.util.XmlConsumer;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
@@ -65,6 +64,10 @@ import static jdk.jpackage.internal.WinMsiBundler.MSI_SYSTEM_WIDE;
 import static jdk.jpackage.internal.WinMsiBundler.SERVICE_INSTALLER;
 import static jdk.jpackage.internal.WinMsiBundler.WIN_APP_IMAGE;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.util.PathGroup;
+import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.NodeList;
 
 /**
@@ -202,7 +205,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     }
 
     private static Path addExeSuffixToPath(Path path) {
-        return IOUtils.addSuffix(path, ".exe");
+        return PathUtils.addSuffix(path, ".exe");
     }
 
     private Path getInstalledFaIcoPath(FileAssociation fa) {
@@ -524,7 +527,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             throw throwInvalidPathException(launcherPath);
         }
 
-        String launcherBasename = IOUtils.replaceSuffix(
+        String launcherBasename = PathUtils.replaceSuffix(
                 IOUtils.getFileName(launcherPath), "").toString();
 
         Path shortcutPath = folder.getPath(this).resolve(launcherBasename);
@@ -774,7 +777,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         }
 
         try {
-            var buffer = new DOMResult(IOUtils.initDocumentBuilder().newDocument());
+            var buffer = new DOMResult(XmlUtils.initDocumentBuilder().newDocument());
             var bufferWriter = XMLOutputFactory.newInstance().createXMLStreamWriter(
                     buffer);
 

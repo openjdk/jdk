@@ -192,6 +192,16 @@ Java_GetThreadStateMountedTest_getErrorCount(JNIEnv* jni, jclass clazz) {
 static std::atomic<bool> time_to_exit(false);
 
 extern "C" JNIEXPORT void JNICALL
+Java_GetThreadStateMountedTest_runFromNative(JNIEnv* jni, jclass clazz, jobject runnable) {
+  jmethodID mid = jni->GetStaticMethodID(clazz, "runUpcall", "(Ljava/lang/Runnable;)V");
+  if (mid == nullptr) {
+    jni->FatalError("failed to get runUpcall method");
+    return;
+  }
+  jni->CallStaticVoidMethod(clazz, mid, runnable);
+}
+
+extern "C" JNIEXPORT void JNICALL
 Java_GetThreadStateMountedTest_waitInNative(JNIEnv* jni, jclass clazz) {
   // Notify main thread that we are ready
   jfieldID fid = jni->GetStaticFieldID(clazz, "waitInNativeReady", "Z");

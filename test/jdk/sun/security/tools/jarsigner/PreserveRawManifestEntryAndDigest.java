@@ -243,9 +243,8 @@ public class PreserveRawManifestEntryAndDigest {
      * @see "concise_jarsigner.sh"
      */
     String[] getExpectedJarSignerOutputUpdatedContentNotValidatedBySignerA(
-            String jarFilename, String digestalg,
             String firstAddedFilename, String secondAddedFilename) {
-        final String TS = ".{28,29}"; // matches a timestamp
+        final String TS = ".{28,34}"; // matches a timestamp
         List<String> expLines = new ArrayList<>();
         expLines.add("s k   *\\d+ " + TS + " META-INF/MANIFEST[.]MF");
         expLines.add("      *\\d+ " + TS + " META-INF/B[.]SF");
@@ -347,7 +346,6 @@ public class PreserveRawManifestEntryAndDigest {
         assertMatchByLines(
                 fromFirstToSecondEmptyLine(o.getStdout().split("\\R")),
                 getExpectedJarSignerOutputUpdatedContentNotValidatedBySignerA(
-                        jarFilename4, digestalg,
                         firstAddedFilename, secondAddedFilename));
 
         // double-check reading the files with a verifying JarFile

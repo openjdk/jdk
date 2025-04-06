@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Make sure IAE is not thrown on `int` overflow, turning negative
  *          size. The test should either not throw any Throwable, or an OOME
  *          with real Java heap space error (not "exceeds VM limit").
+ * @modules java.base/jdk.internal.util
  * @requires sun.arch.data.model == "64"
  * @run junit/othervm XcodeOverflow
  */
@@ -37,6 +38,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
+import jdk.internal.util.ArraysSupport;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.Arguments;
@@ -44,8 +46,8 @@ import org.junit.jupiter.params.provider.Arguments;
 public class XcodeOverflow {
     private static Stream<Arguments> sizes() {
         return Stream.of(
-            // SOFT_MAX_ARRAY_LENGTH: copied from ArraysSupport. No overflow; no OOME.
-            Arguments.of(Integer.MAX_VALUE - 8),
+            // No overflow; no OOME.
+            Arguments.of(ArraysSupport.SOFT_MAX_ARRAY_LENGTH),
 
             // overflow case: OOME w/ "Java heap space" is thrown on decoding
             Arguments.of(Integer.MAX_VALUE - 1000000)

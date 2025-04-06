@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -128,7 +128,7 @@ public:
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
   // Support for loading objects from CDS archive into the heap
-  bool can_load_archived_objects() const override { return UseCompressedOops; }
+  bool can_load_archived_objects() const override { return true; }
   HeapWord* allocate_loaded_archive_space(size_t size) override;
 
   void print_on(outputStream* st) const override;

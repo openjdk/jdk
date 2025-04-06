@@ -21,8 +21,9 @@ There are three modes for the SA debugger:
 <ul>
 <li>attaching to a local process
 <li>opening a core file
-<li>attaching to a remote "debug server"
+<li>attaching to a remote "debug server" (deprecated)
 </ul>
+<p><strong>WARNING: <b>jhsdb debugd</b> is deprecated and will be removed in a future release.</strong></p>
 <p>
 The remote case requires running the debug server on the remote machine. This
 is done by running "jhsdb debugd", and also adding arguments specifying the core
@@ -38,12 +39,6 @@ More details on the command line interface can be found in the "jhsdb" man page 
 <li><a href="clhsdb.html">clhsdb.html</a>
 </ul>
 </p>
-
-<h3>Compilation Replay</h3>
-<p>
-When a java process crashes in a compiled method, usually a core file is saved.
-The compiler replay function can reproduce the compiling process in the core.
-See <a href="cireplay.html">cireplay.html</a>
 
 <h3>Debugging transported core dumps</h3>
 <p>

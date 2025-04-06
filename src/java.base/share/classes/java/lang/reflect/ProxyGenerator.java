@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,10 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
-import jdk.internal.constant.ReferenceClassDescImpl;
-import sun.security.action.GetBooleanAction;
 
 import static java.lang.classfile.ClassFile.*;
 import java.lang.classfile.attribute.StackMapFrameInfo;
@@ -64,18 +64,18 @@ final class ProxyGenerator {
             ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS);
 
     private static final ClassDesc
-            CD_ClassLoader = ReferenceClassDescImpl.ofValidated("Ljava/lang/ClassLoader;"),
-            CD_Class_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Class;"),
-            CD_ClassNotFoundException = ReferenceClassDescImpl.ofValidated("Ljava/lang/ClassNotFoundException;"),
-            CD_NoClassDefFoundError = ReferenceClassDescImpl.ofValidated("Ljava/lang/NoClassDefFoundError;"),
-            CD_IllegalAccessException = ReferenceClassDescImpl.ofValidated("Ljava/lang/IllegalAccessException;"),
-            CD_InvocationHandler = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/InvocationHandler;"),
-            CD_Method = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/Method;"),
-            CD_NoSuchMethodError = ReferenceClassDescImpl.ofValidated("Ljava/lang/NoSuchMethodError;"),
-            CD_NoSuchMethodException = ReferenceClassDescImpl.ofValidated("Ljava/lang/NoSuchMethodException;"),
-            CD_Object_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;"),
-            CD_Proxy = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/Proxy;"),
-            CD_UndeclaredThrowableException = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/UndeclaredThrowableException;");
+            CD_ClassLoader = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/ClassLoader;"),
+            CD_Class_array = CD_Class.arrayType(),
+            CD_ClassNotFoundException = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/ClassNotFoundException;"),
+            CD_NoClassDefFoundError = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/NoClassDefFoundError;"),
+            CD_IllegalAccessException = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/IllegalAccessException;"),
+            CD_InvocationHandler = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/reflect/InvocationHandler;"),
+            CD_Method = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/reflect/Method;"),
+            CD_NoSuchMethodError = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/NoSuchMethodError;"),
+            CD_NoSuchMethodException = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/NoSuchMethodException;"),
+            CD_Object_array = ConstantUtils.CD_Object_array,
+            CD_Proxy = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/reflect/Proxy;"),
+            CD_UndeclaredThrowableException = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/reflect/UndeclaredThrowableException;");
 
     private static final MethodTypeDesc
             MTD_boolean = MethodTypeDescImpl.ofValidated(CD_boolean),
@@ -103,22 +103,27 @@ final class ProxyGenerator {
     /**
      * debugging flag for saving generated class files
      */
-    @SuppressWarnings("removal")
     private static final boolean SAVE_GENERATED_FILES =
-            java.security.AccessController.doPrivileged(
-                    new GetBooleanAction(
-                            "jdk.proxy.ProxyGenerator.saveGeneratedFiles"));
+            Boolean.getBoolean("jdk.proxy.ProxyGenerator.saveGeneratedFiles");
+
 
     /* Preloaded ProxyMethod objects for methods in java.lang.Object */
     private static final Method OBJECT_HASH_CODE_METHOD;
     private static final Method OBJECT_EQUALS_METHOD;
     private static final Method OBJECT_TO_STRING_METHOD;
 
+    private static final String OBJECT_HASH_CODE_SIG;
+    private static final String OBJECT_EQUALS_SIG;
+    private static final String OBJECT_TO_STRING_SIG;
+
     static {
         try {
             OBJECT_HASH_CODE_METHOD = Object.class.getMethod("hashCode");
+            OBJECT_HASH_CODE_SIG = OBJECT_HASH_CODE_METHOD.toShortSignature();
             OBJECT_EQUALS_METHOD = Object.class.getMethod("equals", Object.class);
+            OBJECT_EQUALS_SIG = OBJECT_EQUALS_METHOD.toShortSignature();
             OBJECT_TO_STRING_METHOD = Object.class.getMethod("toString");
+            OBJECT_TO_STRING_SIG = OBJECT_TO_STRING_METHOD.toShortSignature();
         } catch (NoSuchMethodException e) {
             throw new NoSuchMethodError(e.getMessage());
         }
@@ -197,7 +202,6 @@ final class ProxyGenerator {
      * @param interfaces  proxy interfaces
      * @param accessFlags access flags of the proxy class
      */
-    @SuppressWarnings("removal")
     static byte[] generateProxyClass(ClassLoader loader,
                                      final String name,
                                      List<Class<?>> interfaces,
@@ -207,27 +211,21 @@ final class ProxyGenerator {
         final byte[] classFile = gen.generateClassFile();
 
         if (SAVE_GENERATED_FILES) {
-            java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Void>() {
-                        public Void run() {
-                            try {
-                                int i = name.lastIndexOf('.');
-                                Path path;
-                                if (i > 0) {
-                                    Path dir = Path.of(name.substring(0, i).replace('.', '/'));
-                                    Files.createDirectories(dir);
-                                    path = dir.resolve(name.substring(i + 1) + ".class");
-                                } else {
-                                    path = Path.of(name + ".class");
-                                }
-                                Files.write(path, classFile);
-                                return null;
-                            } catch (IOException e) {
-                                throw new InternalError(
-                                        "I/O exception saving generated file: " + e);
-                            }
-                        }
-                    });
+            try {
+                int i = name.lastIndexOf('.');
+                Path path;
+                if (i > 0) {
+                    Path dir = Path.of(name.substring(0, i).replace('.', '/'));
+                    Files.createDirectories(dir);
+                    path = dir.resolve(name.substring(i + 1) + ".class");
+                } else {
+                    path = Path.of(name + ".class");
+                }
+                Files.write(path, classFile);
+                return null;
+            } catch (IOException e) {
+                throw new InternalError("I/O exception saving generated file: " + e);
+            }
         }
 
         return classFile;
@@ -446,9 +444,9 @@ final class ProxyGenerator {
          * java.lang.Object take precedence over duplicate methods in the
          * proxy interfaces.
          */
-        addProxyMethod(new ProxyMethod(OBJECT_HASH_CODE_METHOD, "m0"));
-        addProxyMethod(new ProxyMethod(OBJECT_EQUALS_METHOD, "m1"));
-        addProxyMethod(new ProxyMethod(OBJECT_TO_STRING_METHOD, "m2"));
+        addProxyMethod(new ProxyMethod(OBJECT_HASH_CODE_METHOD, OBJECT_HASH_CODE_SIG, "m0"));
+        addProxyMethod(new ProxyMethod(OBJECT_EQUALS_METHOD, OBJECT_EQUALS_SIG, "m1"));
+        addProxyMethod(new ProxyMethod(OBJECT_TO_STRING_METHOD, OBJECT_TO_STRING_SIG, "m2"));
 
         /*
          * Accumulate all of the methods from the proxy interfaces.
@@ -526,7 +524,7 @@ final class ProxyGenerator {
                 return;
             }
         }
-        sigmethods.add(new ProxyMethod(m, sig, m.getSharedParameterTypes(), returnType,
+        sigmethods.add(new ProxyMethod(m, sig, returnType,
                 exceptionTypes, fromClass, "m" + proxyMethodCount++));
     }
 
@@ -557,11 +555,6 @@ final class ProxyGenerator {
 
     /**
      * Generate the class initializer.
-     * Discussion: Currently, for Proxy to work with SecurityManager,
-     * we rely on the parameter classes of the methods to be computed
-     * from Proxy instead of via user code paths like bootstrap method
-     * lazy evaluation. That might change if we can pass in the live
-     * Method objects directly..
      */
     private void generateStaticInitializer(ClassBuilder clb) {
         clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
@@ -617,11 +610,11 @@ final class ProxyGenerator {
                             Label failLabel = cob.newLabel();
                             ClassEntry mhl = cp.classEntry(CD_MethodHandles_Lookup);
                             ClassEntry iae = cp.classEntry(CD_IllegalAccessException);
-                            cob.aload(cob.parameterSlot(0))
+                            cob.aload(0)
                                .invokevirtual(cp.methodRefEntry(mhl, cp.nameAndTypeEntry("lookupClass", MTD_Class)))
                                .ldc(proxyCE)
                                .if_acmpne(failLabel)
-                               .aload(cob.parameterSlot(0))
+                               .aload(0)
                                .invokevirtual(cp.methodRefEntry(mhl, cp.nameAndTypeEntry("hasFullPrivilegeAccess", MTD_boolean)))
                                .ifeq(failLabel)
                                .invokestatic(CD_MethodHandles, "lookup", MTD_MethodHandles$Lookup)
@@ -629,7 +622,7 @@ final class ProxyGenerator {
                                .labelBinding(failLabel)
                                .new_(iae)
                                .dup()
-                               .aload(cob.parameterSlot(0))
+                               .aload(0)
                                .invokevirtual(cp.methodRefEntry(mhl, cp.nameAndTypeEntry("toString", MTD_String)))
                                .invokespecial(cp.methodRefEntry(iae, exInit))
                                .athrow()
@@ -650,18 +643,16 @@ final class ProxyGenerator {
         private final Method method;
         private final String shortSignature;
         private final Class<?> fromClass;
-        private final Class<?>[] parameterTypes;
         private final Class<?> returnType;
         private final String methodFieldName;
         private Class<?>[] exceptionTypes;
         private final FieldRefEntry methodField;
 
-        private ProxyMethod(Method method, String sig, Class<?>[] parameterTypes,
+        private ProxyMethod(Method method, String sig,
                             Class<?> returnType, Class<?>[] exceptionTypes,
                             Class<?> fromClass, String methodFieldName) {
             this.method = method;
             this.shortSignature = sig;
-            this.parameterTypes = parameterTypes;
             this.returnType = returnType;
             this.exceptionTypes = exceptionTypes;
             this.fromClass = fromClass;
@@ -670,14 +661,17 @@ final class ProxyGenerator {
                 cp.nameAndTypeEntry(methodFieldName, CD_Method));
         }
 
+        private Class<?>[] parameterTypes() {
+            return method.getSharedParameterTypes();
+        }
+
         /**
          * Create a new specific ProxyMethod with a specific field name
          *
          * @param method          The method for which to create a proxy
          */
-        private ProxyMethod(Method method, String methodFieldName) {
-            this(method, method.toShortSignature(),
-                 method.getSharedParameterTypes(), method.getReturnType(),
+        private ProxyMethod(Method method, String sig, String methodFieldName) {
+            this(method, sig, method.getReturnType(),
                  method.getSharedExceptionTypes(), method.getDeclaringClass(), methodFieldName);
         }
 
@@ -685,17 +679,18 @@ final class ProxyGenerator {
          * Generate this method, including the code and exception table entry.
          */
         private void generateMethod(ClassBuilder clb) {
-            var desc = methodTypeDesc(returnType, parameterTypes);
+            var desc = methodTypeDesc(returnType, parameterTypes());
             int accessFlags = (method.isVarArgs()) ? ACC_VARARGS | ACC_PUBLIC | ACC_FINAL
                                                    : ACC_PUBLIC | ACC_FINAL;
-            var catchList = computeUniqueCatchList(exceptionTypes);
             clb.withMethod(method.getName(), desc, accessFlags, mb ->
                   mb.with(ExceptionsAttribute.of(toClassEntries(cp, List.of(exceptionTypes))))
                     .withCode(cob -> {
+                        var catchList = computeUniqueCatchList(exceptionTypes);
                         cob.aload(cob.receiverSlot())
                            .getfield(handlerField)
                            .aload(cob.receiverSlot())
                            .getstatic(methodField);
+                        Class<?>[] parameterTypes = parameterTypes();
                         if (parameterTypes.length > 0) {
                             // Create an array and fill with the parameters converting primitives to wrappers
                             cob.loadConstant(parameterTypes.length)
@@ -776,14 +771,12 @@ final class ProxyGenerator {
          * Generate code for initializing the static field that stores
          * the Method object for this proxy method. A class loader is
          * anticipated at local variable index 0.
-         * The generated code must be run in an AccessController.doPrivileged
-         * block if a SecurityManager is present, as otherwise the code
-         * cannot pass {@code null} ClassLoader to forName.
          */
         private void codeFieldInitialization(CodeBuilder cob) {
             var cp = cob.constantPool();
             codeClassForName(cob, fromClass);
 
+            Class<?>[] parameterTypes = parameterTypes();
             cob.ldc(method.getName())
                .loadConstant(parameterTypes.length)
                .anewarray(classCE);
@@ -817,10 +810,14 @@ final class ProxyGenerator {
          * loader is anticipated at local variable index 0.
          */
         private void codeClassForName(CodeBuilder cob, Class<?> cl) {
-            cob.ldc(cl.getName())
-               .iconst_0() // false
-               .aload(0)// classLoader
-               .invokestatic(classForName);
+            if (cl == Object.class) {
+                cob.ldc(objectCE);
+            } else {
+                cob.ldc(cl.getName())
+                        .iconst_0() // false
+                        .aload(0)// classLoader
+                        .invokestatic(classForName);
+            }
         }
 
         @Override

@@ -62,7 +62,7 @@ class OptionsTest {
     @MethodSource("corpus")
     void testAttributesProcessingOptionOnTransform(Path path) throws Exception {
         testNoUnstable(path, ClassFile.of().parse(
-                ClassFile.of(ClassFile.AttributesProcessingOption.DROP_UNSTABLE_ATRIBUTES).transformClass(
+                ClassFile.of(ClassFile.AttributesProcessingOption.DROP_UNSTABLE_ATTRIBUTES).transformClass(
                             ClassFile.of().parse(path),
                             ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL))));
     }

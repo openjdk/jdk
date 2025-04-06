@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,15 +37,40 @@
  * @run driver TestEpsilonGCWithCDS
  */
 
+// Below is exactly the same as above, except:
+// - requires vm.bits == "64"
+// - extra argument "false"
+
+/*
+ * @test Loading CDS archived heap objects into EpsilonGC
+ * @bug 8234679 8341371
+ * @requires vm.cds
+ * @requires vm.gc.Epsilon
+ * @requires vm.gc.G1
+ * @requires vm.bits == "64"
+ *
+ * @comment don't run this test if any -XX::+Use???GC options are specified, since they will
+ *          interfere with the test.
+ * @requires vm.gc == null
+ *
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
+ * @compile test-classes/Hello.java
+ * @run driver TestEpsilonGCWithCDS false
+ */
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestEpsilonGCWithCDS {
     public final static String HELLO = "Hello World";
     static String helloJar;
+    static boolean useCompressedOops = true;
 
     public static void main(String... args) throws Exception {
         helloJar = JarBuilder.build("hello", "Hello");
+
+        if (args.length > 0 && args[0].equals("false")) {
+            useCompressedOops = false;
+        }
 
         // Check if we can use EpsilonGC during dump time, or run time, or both.
         test(false, true);
@@ -70,6 +95,8 @@ public class TestEpsilonGCWithCDS {
         String execGC = execWithEpsilon ? Epsilon : G1;
         String small1 = useSmallRegions ? "-Xmx256m" : "-showversion";
         String small2 = useSmallRegions ? "-XX:ObjectAlignmentInBytes=64" : "-showversion";
+        String errMsg = "Cannot use CDS heap data. Selected GC not compatible -XX:-UseCompressedOops";
+        String coops = useCompressedOops ? "-XX:+UseCompressedOops" : "-XX:-UseCompressedOops";
         OutputAnalyzer out;
 
         System.out.println("0. Dump with " + dumpGC);
@@ -79,6 +106,7 @@ public class TestEpsilonGCWithCDS {
                               dumpGC,
                               small1,
                               small2,
+                              coops,
                               "-Xlog:cds");
         out.shouldContain("Dumping shared data to file:");
         out.shouldHaveExitValue(0);
@@ -89,9 +117,11 @@ public class TestEpsilonGCWithCDS {
                               execGC,
                               small1,
                               small2,
+                              coops,
                               "-Xlog:cds",
                               "Hello");
         out.shouldContain(HELLO);
+        out.shouldNotContain(errMsg);
         out.shouldHaveExitValue(0);
     }
 }

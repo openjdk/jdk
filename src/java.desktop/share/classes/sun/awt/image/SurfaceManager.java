@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,11 @@ import java.awt.Image;
 import java.awt.ImageCapabilities;
 import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
+import java.lang.ref.WeakReference;
+import java.util.Collections;
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import sun.java2d.InvalidPipeException;
 import sun.java2d.SurfaceData;
@@ -89,47 +92,14 @@ public abstract class SurfaceManager {
         imgaccessor.setSurfaceManager(img, mgr);
     }
 
-    private volatile ConcurrentHashMap<Object,Object> cacheMap;
-
     /**
-     * Return an arbitrary cached object for an arbitrary cache key.
-     * Other objects can use this mechanism to store cached data about
-     * the source image that will let them save time when using or
-     * manipulating the image in the future.
-     * <p>
-     * Note that the cache is maintained as a simple Map with no
-     * attempts to keep it up to date or invalidate it so any data
-     * stored here must either not be dependent on the state of the
-     * image or it must be individually tracked to see if it is
-     * outdated or obsolete.
-     * <p>
-     * The SurfaceData object of the primary (destination) surface
-     * has a StateTracker mechanism which can help track the validity
-     * and "currentness" of any data stored here.
-     * For convenience and expediency an object stored as cached
-     * data may implement the FlushableCacheData interface specified
-     * below so that it may be notified immediately if the flush()
-     * method is ever called.
+     * This map holds references to SurfaceDataProxy per given ProxyCache.
+     * Unlike ProxyCache, which contains SurfaceDataProxy objects per given SurfaceManager,
+     * this map does not prevent contained proxies from being garbage collected.
+     * Therefore, ProxyCache can be considered an "owning" container for the SurfaceDataProxy objects,
+     * and this map is just a weak mapping for the bookkeeping purposes.
      */
-    public Object getCacheData(Object key) {
-        return (cacheMap == null) ? null : cacheMap.get(key);
-    }
-
-    /**
-     * Store an arbitrary cached object for an arbitrary cache key.
-     * See the getCacheData() method for notes on tracking the
-     * validity of data stored using this mechanism.
-     */
-    public void setCacheData(Object key, Object value) {
-        if (cacheMap == null) {
-            synchronized (this) {
-                if (cacheMap == null) {
-                    cacheMap = new ConcurrentHashMap<>(2);
-                }
-            }
-        }
-        cacheMap.put(key, value);
-    }
+    private final Map<ProxyCache, WeakReference<SurfaceDataProxy>> weakCache = new WeakHashMap<>(2);
 
     /**
      * Returns the main SurfaceData object that "owns" the pixels for
@@ -202,12 +172,10 @@ public abstract class SurfaceManager {
                 tmpGc = GraphicsEnvironment.getLocalGraphicsEnvironment().
                     getDefaultScreenDevice().getDefaultConfiguration();
             }
-            if (tmpGc instanceof ProxiedGraphicsConfig) {
-                Object proxyKey =
-                    ((ProxiedGraphicsConfig) tmpGc).getProxyKey();
-                if (proxyKey != null) {
-                    SurfaceDataProxy sdp =
-                        (SurfaceDataProxy) getCacheData(proxyKey);
+            if (tmpGc instanceof ProxiedGraphicsConfig pgc) {
+                ProxyCache cache = pgc.getSurfaceDataProxyCache();
+                if (cache != null) {
+                    SurfaceDataProxy sdp = cache.get(SurfaceManager.this);
                     return (sdp != null && sdp.isAccelerated());
                 }
             }
@@ -222,13 +190,51 @@ public abstract class SurfaceManager {
      * Implementing this interface facilitates the default
      * implementation of getImageCapabilities() above.
      */
-    public static interface ProxiedGraphicsConfig {
+    public interface ProxiedGraphicsConfig {
+
         /**
-         * Return the key that destination surfaces created on the
+         * Return the cache that destination surfaces created on the
          * given GraphicsConfiguration use to store SurfaceDataProxy
          * objects for their cached copies.
          */
-        public Object getProxyKey();
+        ProxyCache getSurfaceDataProxyCache();
+    }
+
+    public static class ProxyCache {
+        private final Map<SurfaceManager, SurfaceDataProxy> map = Collections.synchronizedMap(new WeakHashMap<>());
+
+        /**
+         * Return a cached SurfaceDataProxy object for a given SurfaceManager.
+         * <p>
+         * Note that the cache is maintained as a simple Map with no
+         * attempts to keep it up to date or invalidate it so any data
+         * stored here must either not be dependent on the state of the
+         * image or it must be individually tracked to see if it is
+         * outdated or obsolete.
+         * <p>
+         * The SurfaceData object of the primary (destination) surface
+         * has a StateTracker mechanism which can help track the validity
+         * and "currentness" of any data stored here.
+         * For convenience and expediency an object stored as cached
+         * data may implement the FlushableCacheData interface specified
+         * below so that it may be notified immediately if the flush()
+         * method is ever called.
+         */
+        public SurfaceDataProxy get(SurfaceManager manager) {
+            return map.get(manager);
+        }
+
+        /**
+         * Store a cached SurfaceDataProxy object for a given SurfaceManager.
+         * See the get() method for notes on tracking the
+         * validity of data stored using this mechanism.
+         */
+        public void put(SurfaceManager manager, SurfaceDataProxy proxy) {
+            synchronized (manager.weakCache) { // Synchronize on weakCache first!
+                manager.weakCache.put(this, new WeakReference<>(proxy));
+                map.put(manager, proxy);
+            }
+        }
     }
 
     /**
@@ -244,15 +250,13 @@ public abstract class SurfaceManager {
         flush(false);
     }
 
-    synchronized void flush(boolean deaccelerate) {
-        if (cacheMap != null) {
-            Iterator<Object> i = cacheMap.values().iterator();
+    void flush(boolean deaccelerate) {
+        synchronized (weakCache) {
+            Iterator<WeakReference<SurfaceDataProxy>> i = weakCache.values().iterator();
             while (i.hasNext()) {
-                Object o = i.next();
-                if (o instanceof FlushableCacheData) {
-                    if (((FlushableCacheData) o).flush(deaccelerate)) {
-                        i.remove();
-                    }
+                SurfaceDataProxy sdp = i.next().get();
+                if (sdp == null || sdp.flush(deaccelerate)) {
+                    i.remove();
                 }
             }
         }

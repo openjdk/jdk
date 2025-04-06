@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,15 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
+#include "jfr/utilities/jfrPredicate.hpp"
+#include "jfr/utilities/jfrRelation.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "utilities/growableArray.hpp"
 
 /*
  * There are two separate repository instances.
@@ -93,13 +95,9 @@ void JfrStackTraceRepository::destroy() {
   _leak_profiler_instance = nullptr;
 }
 
-bool JfrStackTraceRepository::is_modified() const {
-  return _last_entries != _entries;
-}
-
 size_t JfrStackTraceRepository::write(JfrChunkWriter& sw, bool clear) {
   MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
-  if (_entries == 0) {
+  if ((_entries == _last_entries) && !clear) {
     return 0;
   }
   int count = 0;
@@ -246,4 +244,37 @@ size_t JfrStackTraceRepository::clear() {
 traceid JfrStackTraceRepository::next_id() {
   MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
   return ++_next_id;
+}
+
+static inline bool should_write(const JfrStackTrace* stacktrace, GrowableArray<traceid>* leakp_set) {
+  assert(stacktrace != nullptr, "invariant");
+  return stacktrace->should_write() && JfrPredicate<traceid, compare_traceid>::test(leakp_set, stacktrace->id());
+}
+
+void JfrStackTraceRepository::write_leak_profiler(GrowableArray<traceid>* leakp_set, Thread* t) {
+  assert(leakp_set != nullptr, "invariant");
+  assert(leakp_set->is_nonempty(), "invariant");
+  assert(t != nullptr, "invariant");
+
+  JfrCheckpointWriter writer(t);
+  writer.write_type(TYPE_STACKTRACE);
+  const int64_t count_offset = writer.reserve(sizeof(u4)); // Don't know how many yet
+
+  int count = 0;
+  const JfrStackTraceRepository& repo = leak_profiler_instance();
+
+  for (u4 i = 0; i < TABLE_SIZE; ++i) {
+    const JfrStackTrace* stacktrace = repo._table[i];
+    while (stacktrace != nullptr) {
+      if (should_write(stacktrace, leakp_set)) {
+        stacktrace->write(writer);
+        ++count;
+      }
+      stacktrace = stacktrace->next();
+    }
+  }
+
+  assert(count > 0, "invariant");
+  assert(count <= leakp_set->length(), "invariant");
+  writer.write_count(count, count_offset);
 }

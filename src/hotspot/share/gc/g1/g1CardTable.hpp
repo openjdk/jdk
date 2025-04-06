@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,10 +107,7 @@ public:
 
   inline uint region_idx_for(CardValue* p);
 
-  static size_t compute_size(size_t mem_region_size_in_words) {
-    size_t number_of_slots = (mem_region_size_in_words / _card_size_in_words);
-    return ReservedSpace::allocation_align_size_up(number_of_slots);
-  }
+  static size_t compute_size(size_t mem_region_size_in_words);
 
   // Returns how many bytes of the heap a single byte of the Card Table corresponds to.
   static size_t heap_map_factor() { return _card_size; }

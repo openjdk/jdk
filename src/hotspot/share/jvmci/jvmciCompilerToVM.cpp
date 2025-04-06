@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
@@ -184,7 +183,8 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   JVMCI_VM_ENTRY_MARK;                                     \
   ResourceMark rm;                                         \
   bool __is_hotspot = env == thread->jni_environment();    \
-  CompilerThreadCanCallJava ccj(thread, __is_hotspot);     \
+  bool __block_can_call_java = __is_hotspot || !thread->is_Compiler_thread() || CompilerThread::cast(thread)->can_call_java(); \
+  CompilerThreadCanCallJava ccj(thread, __block_can_call_java); \
   JVMCIENV_FROM_JNI(JVMCI::compilation_tick(thread), env); \
 
 // Entry to native method implementation that transitions
@@ -401,6 +401,11 @@ C2V_VMENTRY_NULL(jobject, asResolvedJavaMethod, (JNIEnv* env, jobject, jobject e
   return JVMCIENV->get_jobject(result);
 }
 
+C2V_VMENTRY_PREFIX(jboolean, updateCompilerThreadCanCallJava, (JNIEnv* env, jobject, jboolean newState))
+  return CompilerThreadCanCallJava::update(thread, newState) != nullptr;
+C2V_END
+
+
 C2V_VMENTRY_NULL(jobject, getResolvedJavaMethod, (JNIEnv* env, jobject, jobject base, jlong offset))
   Method* method = nullptr;
   JVMCIObject base_object = JVMCIENV->wrap(base);
@@ -607,10 +612,8 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
   JVMCIKlassHandle resolved_klass(THREAD);
   Klass* accessing_klass = UNPACK_PAIR(Klass, accessing_klass);
   Handle class_loader;
-  Handle protection_domain;
   if (accessing_klass != nullptr) {
     class_loader = Handle(THREAD, accessing_klass->class_loader());
-    protection_domain = Handle(THREAD, accessing_klass->protection_domain());
   } else {
     switch (accessing_klass_loader) {
       case 0: break; // class_loader is already null, the boot loader
@@ -623,23 +626,21 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
   }
 
   if (resolve) {
-    resolved_klass = SystemDictionary::resolve_or_fail(class_name, class_loader, protection_domain, true, CHECK_NULL);
+    resolved_klass = SystemDictionary::resolve_or_fail(class_name, class_loader, true, CHECK_NULL);
   } else {
     if (Signature::has_envelope(class_name)) {
       // This is a name from a signature.  Strip off the trimmings.
       // Call recursive to keep scope of strippedsym.
       TempNewSymbol strippedsym = Signature::strip_envelope(class_name);
       resolved_klass = SystemDictionary::find_instance_klass(THREAD, strippedsym,
-                                                             class_loader,
-                                                             protection_domain);
+                                                             class_loader);
     } else if (Signature::is_array(class_name)) {
       SignatureStream ss(class_name, false);
       int ndim = ss.skip_array_prefix();
       if (ss.type() == T_OBJECT) {
         Symbol* strippedsym = ss.as_symbol();
         resolved_klass = SystemDictionary::find_instance_klass(THREAD, strippedsym,
-                                                               class_loader,
-                                                               protection_domain);
+                                                               class_loader);
         if (!resolved_klass.is_null()) {
           resolved_klass = resolved_klass->array_klass(ndim, CHECK_NULL);
         }
@@ -648,8 +649,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
       }
     } else {
       resolved_klass = SystemDictionary::find_instance_klass(THREAD, class_name,
-                                                             class_loader,
-                                                             protection_domain);
+                                                             class_loader);
     }
   }
   JVMCIObject result = JVMCIENV->get_jvmci_type(resolved_klass, JVMCI_CHECK_NULL);
@@ -999,7 +999,7 @@ C2V_VMENTRY_NULL(jobject, resolveFieldInPool, (JNIEnv* env, jobject, ARGUMENT_PA
   if (info.is_null() || JVMCIENV->get_length(info) != 4) {
     JVMCI_ERROR_NULL("info must not be null and have a length of 4");
   }
-  JVMCIENV->put_int_at(info, 0, fd.access_flags().as_int());
+  JVMCIENV->put_int_at(info, 0, fd.access_flags().as_field_flags());
   JVMCIENV->put_int_at(info, 1, fd.offset());
   JVMCIENV->put_int_at(info, 2, fd.index());
   JVMCIENV->put_int_at(info, 3, fd.field_flags().as_uint());
@@ -1369,14 +1369,15 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
 
   nmethod* code = method->code();
   if (code != nullptr) {
-    code->make_not_entrant();
+    code->make_not_entrant("JVMCI reprofile");
   }
 
   MethodData* method_data = method->method_data();
   if (method_data == nullptr) {
     method_data = get_profiling_method_data(method, CHECK);
   } else {
-    method_data->initialize();
+    CompilerThreadCanCallJava canCallJava(THREAD, true);
+    method_data->reinitialize();
   }
 C2V_END
 
@@ -1808,7 +1809,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
     if (!fst.current()->is_compiled_frame()) {
       JVMCI_THROW_MSG(IllegalStateException, "compiled stack frame expected");
     }
-    fst.current()->cb()->as_nmethod()->make_not_entrant();
+    fst.current()->cb()->as_nmethod()->make_not_entrant("JVMCI materialize virtual objects");
   }
   Deoptimization::deoptimize(thread, *fst.current(), Deoptimization::Reason_none);
   // look for the frame again as it has been updated by deopt (pc, deopt state...)
@@ -2178,7 +2179,7 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredConstructors, (JNIEnv* env, jobject, A
   GrowableArray<Method*> constructors_array;
   for (int i = 0; i < iklass->methods()->length(); i++) {
     Method* m = iklass->methods()->at(i);
-    if (m->is_initializer() && !m->is_static()) {
+    if (m->is_object_initializer()) {
       constructors_array.append(m);
     }
   }
@@ -2205,7 +2206,7 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredMethods, (JNIEnv* env, jobject, ARGUME
   GrowableArray<Method*> methods_array;
   for (int i = 0; i < iklass->methods()->length(); i++) {
     Method* m = iklass->methods()->at(i);
-    if (!m->is_initializer() && !m->is_overpass()) {
+    if (!m->is_object_initializer() && !m->is_static_initializer() && !m->is_overpass()) {
       methods_array.append(m);
     }
   }
@@ -2571,9 +2572,7 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
       stringStream st;
       char* pure_name = NativeLookup::pure_jni_name(method);
       guarantee(pure_name != nullptr, "Illegal native method name encountered");
-      os::print_jni_name_prefix_on(&st, args_size);
       st.print_raw(pure_name);
-      os::print_jni_name_suffix_on(&st, args_size);
       char* jni_name = st.as_string();
 
       address entry = (address) os::dll_lookup(sl_handle, jni_name);
@@ -2582,10 +2581,8 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
         st.reset();
         char* long_name = NativeLookup::long_jni_name(method);
         guarantee(long_name != nullptr, "Illegal native method name encountered");
-        os::print_jni_name_prefix_on(&st, args_size);
         st.print_raw(pure_name);
         st.print_raw(long_name);
-        os::print_jni_name_suffix_on(&st, args_size);
         char* jni_long_name = st.as_string();
         entry = (address) os::dll_lookup(sl_handle, jni_long_name);
         if (entry == nullptr) {
@@ -2727,7 +2724,7 @@ C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jb
     if (res == JNI_OK) {
       guarantee(peerJNIEnv != nullptr, "must be");
       runtime->init_JavaVM_info(javaVM_info, JVMCI_CHECK_0);
-      JVMCI_event_1("attached to JavaVM[%d] for JVMCI runtime %d", runtime->get_shared_library_javavm_id(), runtime->id());
+      JVMCI_event_1("attached to JavaVM[" JLONG_FORMAT "] for JVMCI runtime %d", runtime->get_shared_library_javavm_id(), runtime->id());
       return true;
     }
     JVMCI_THROW_MSG_0(InternalError, err_msg("Error %d while attaching %s", res, attach_args.name));
@@ -2760,7 +2757,7 @@ C2V_VMENTRY_PREFIX(jboolean, detachCurrentThread, (JNIEnv* env, jobject c2vm, jb
     if (res != JNI_OK) {
       JVMCI_THROW_MSG_0(InternalError, err_msg("Error %d while attaching %s", res, thread->name()));
     }
-    JVMCI_event_1("detached from JavaVM[%d] for JVMCI runtime %d",
+    JVMCI_event_1("detached from JavaVM[" JLONG_FORMAT "] for JVMCI runtime %d",
         runtime->get_shared_library_javavm_id(), runtime->id());
     if (release) {
       return runtime->detach_thread(thread, "user thread detach");
@@ -2921,12 +2918,11 @@ C2V_VMENTRY_NULL(jobject, asReflectionExecutable, (JNIEnv* env, jobject, ARGUMEN
   requireInHotSpot("asReflectionExecutable", JVMCI_CHECK_NULL);
   methodHandle m(THREAD, UNPACK_PAIR(Method, method));
   oop executable;
-  if (m->is_initializer()) {
-    if (m->is_static_initializer()) {
-      JVMCI_THROW_MSG_NULL(IllegalArgumentException,
-          "Cannot create java.lang.reflect.Method for class initializer");
-    }
+  if (m->is_object_initializer()) {
     executable = Reflection::new_constructor(m, CHECK_NULL);
+  } else if (m->is_static_initializer()) {
+    JVMCI_THROW_MSG_NULL(IllegalArgumentException,
+        "Cannot create java.lang.reflect.Method for class initializer");
   } else {
     executable = Reflection::new_method(m, false, CHECK_NULL);
   }
@@ -3226,6 +3222,10 @@ C2V_VMENTRY(void, getOopMapAt, (JNIEnv* env, jobject, ARGUMENT_PAIR(method),
   JVMCIENV->copy_longs_from((jlong*)oop_map_buf, oop_map, 0, nwords);
 C2V_END
 
+C2V_VMENTRY_0(jint, getCompilationActivityMode, (JNIEnv* env, jobject))
+  return CompileBroker::get_compilation_activity_mode();
+}
+
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &(c2v_ ## f))
 
@@ -3387,6 +3387,8 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "notifyCompilerPhaseEvent",                     CC "(JIII)V",                                                                         FN_PTR(notifyCompilerPhaseEvent)},
   {CC "notifyCompilerInliningEvent",                  CC "(I" HS_METHOD2 HS_METHOD2 "ZLjava/lang/String;I)V",                               FN_PTR(notifyCompilerInliningEvent)},
   {CC "getOopMapAt",                                  CC "(" HS_METHOD2 "I[J)V",                                                            FN_PTR(getOopMapAt)},
+  {CC "updateCompilerThreadCanCallJava",              CC "(Z)Z",                                                                            FN_PTR(updateCompilerThreadCanCallJava)},
+  {CC "getCompilationActivityMode",                   CC "()I",                                                                             FN_PTR(getCompilationActivityMode)},
 };
 
 int CompilerToVM::methods_count() {
