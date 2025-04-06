@@ -35,7 +35,7 @@
 TEST_VM_ASSERT_MSG(vmErrorTest, fatalWithError,
                    "fatal error: GetLastError should be 6 - actually: 6") {
   SetLastError(6);
-  fatal("GetLastError should be 6 - actually: %d", (int)GetLastError());
+  fatal("GetLastError should be 6 - actually: %lu", GetLastError());
 }
 #endif // WINDOWS
 
