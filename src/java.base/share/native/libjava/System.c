@@ -150,7 +150,7 @@ Java_jdk_internal_util_SystemProps_00024Raw_platformProperties(JNIEnv *env, jcla
 #ifdef MACOSX
     /*
      * Since sun_jnu_encoding is now hard-coded to UTF-8 on Mac, we don't
-     * want to use it to overwrite file.encoding
+     * want to use it to overwrite native.encoding
      */
     PUTPROP(propArray, _native_encoding_NDX, sprops->encoding);
 #else
