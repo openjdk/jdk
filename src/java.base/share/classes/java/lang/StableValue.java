@@ -218,7 +218,7 @@ import java.util.function.Supplier;
  *}
  *
  * The {@code Log2Util.log2()} function is a <em>partial function</em> that only allows
- * a subset ({@code {1, 2, 4, 8, 16, 32}}) of the original function's
+ * a subset {@code {1, 2, 4, 8, 16, 32}} of the original function's
  * {@code LOG2_ORIGINAL} input range.
  *
  * <h2 id="stable-collections">Stable Collections</h2>
