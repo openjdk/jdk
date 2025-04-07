@@ -177,7 +177,9 @@ void MemPointerParser::parse_sub_expression(const MemPointerRawSummand& summand,
         // Terminal summand.
         NoOverflowInt con = (opc == Op_ConI) ? NoOverflowInt(n->get_int())
                                              : NoOverflowInt(n->get_long());
-        _raw_summands.push(MemPointerRawSummand::make_con(scaleI * con, scaleL, int_group));
+        NoOverflowInt conI = (int_group == 0) ? scaleI : scaleI * con;
+        NoOverflowInt conL = (int_group == 0) ? scaleL * con : scaleL;
+        _raw_summands.push(MemPointerRawSummand::make_con(conI, conL, int_group));
         return;
       }
       case Op_AddP:
