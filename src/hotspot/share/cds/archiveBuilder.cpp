@@ -782,8 +782,7 @@ void ArchiveBuilder::make_klasses_shareable() {
 #ifdef ASSERT
     if (UseKLUT) {
       // every archived Klass shall carry a valid KLUTE.
-      KlassLUTEntry e(k->klute());
-      e.verify_against_klass(k);
+      k->klute().verify_against_klass(k);
     }
 #endif // ASSERT
   }

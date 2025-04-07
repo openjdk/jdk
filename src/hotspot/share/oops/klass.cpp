@@ -293,7 +293,7 @@ static markWord make_prototype(const Klass* kls) {
   return prototype;
 }
 
-Klass::Klass() : _klute(KlassLUTEntry::invalid_entry), _kind(UnknownKlassKind) {
+Klass::Klass() : _kind(UnknownKlassKind) {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for cds");
 }
 
@@ -301,8 +301,7 @@ Klass::Klass() : _klute(KlassLUTEntry::invalid_entry), _kind(UnknownKlassKind) {
 // which zeros out memory - calloc equivalent.
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
-Klass::Klass(KlassKind kind) : _klute(KlassLUTEntry::invalid_entry),
-                               _kind(kind),
+Klass::Klass(KlassKind kind) : _kind(kind),
                                _prototype_header(make_prototype(this)),
                                _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
@@ -1357,8 +1356,7 @@ void Klass::on_secondary_supers_verification_failure(Klass* super, Klass* sub, b
 
 void Klass::register_with_klut() {
   if (UseKLUT) {
-    _klute = KlassLUTEntry::invalid_entry;
-    KlassLUTEntry e = KlassInfoLUT::register_klass(this);
-    _klute = e.value();
+    _klute = KlassInfoLUT::register_klass(this);
+    assert(_klute.is_valid(), "Must be valid");
   }
 }

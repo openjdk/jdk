@@ -198,7 +198,7 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
   ALL_KLASS_KINDS_DO(XX)
 #undef XX
 
-  assert(!is_invalid(), "Entry should be valid (%x)", _v.raw);
+  assert(is_valid(), "klute should be valid (%x)", _v.raw);
 
   // kind
   const unsigned real_kind = (unsigned)k->kind();

@@ -113,8 +113,8 @@ KlassLUTEntry KlassInfoLUT::register_klass(const Klass* k) {
   const narrowKlass nk = CompressedKlassPointers::encode(const_cast<Klass*>(k)); // TODO CompressedKlassPointers should support correct constness
   assert(nk < num_entries(), "narrowKlass %u is OOB for LUT", nk);
 
-  KlassLUTEntry klute(k->klute());
-  if (!klute.is_invalid()) {
+  KlassLUTEntry klute = k->klute();
+  if (klute.is_valid()) {
     // The Klass already carries the pre-computed klute. That can happen if it was loaded from a shared
     // archive, in which case it contains the klute computed at (dynamic) load time when dumping.
     if (klute.value() == _entries[nk]) {
@@ -169,8 +169,8 @@ KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
   // it should carry a valid KLUTE entry. We cannot calculate the KLUTE from the Klass here, since
   // the Klass may not yet been fully initialized (CDS calls functions like oopDesc methods on
   // oops that have Klasses that are not loaded yet, and therefore, e.g., have no associated CLD).
-  const KlassLUTEntry klute(k->klute());
-  assert(!klute.is_invalid(), "Must be a valid klute");
+  const KlassLUTEntry klute = k->klute();
+  assert(klute.is_valid(), "Must be a valid klute");
   _entries[nk] = klute.value();
   log_klass_registration(k, nk, klute.value(), "late-registered");
   return klute;
@@ -255,8 +255,8 @@ void KlassInfoLUT::print_statistics(outputStream* st) {
     int n = 0;
     for (int j = 0; j < slots_per_cacheline; j++) {
       KlassLUTEntry e(at((i * slots_per_cacheline) + j));
-      const bool valid = !e.is_invalid() && (e.is_array() || e.ik_carries_infos());
-      if (valid) {
+      const bool fully_valid = e.is_valid() && (e.is_array() || e.ik_carries_infos());
+      if (fully_valid) {
         n++;
       }
     }

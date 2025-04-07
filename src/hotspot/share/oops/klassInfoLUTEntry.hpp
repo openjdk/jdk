@@ -26,13 +26,16 @@
 #ifndef SHARE_OOPS_KLASSINFOLUTENTRY_HPP
 #define SHARE_OOPS_KLASSINFOLUTENTRY_HPP
 
-// Included by oop.hpp, keep it short and sweet here
+// Included by oop.hpp and klass.hpp, keep includes short
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class OopMapBlock;
 class Klass;
+class InstanceKlass;
+class ArrayKlass;
 class outputStream;
+class oop;
 
 //                                     msb                                       lsb
 //
@@ -168,6 +171,7 @@ public:
   // We use kind=7=0b111 (invalid), and set the rest of the bits also to 1
   static constexpr uint32_t invalid_entry = 0xFFFFFFFF;
 
+  inline KlassLUTEntry() : _v(invalid_entry) {}
   inline KlassLUTEntry(uint32_t v) : _v(v) {}
   inline KlassLUTEntry(const KlassLUTEntry& other) : _v(other._v) {}
 
@@ -179,7 +183,7 @@ public:
 
   // Note: all entries should be valid. An invalid entry indicates
   // an error somewhere.
-  bool is_invalid() const { return _v.raw == invalid_entry; }
+  bool is_valid() const   { return _v.raw != invalid_entry; }
 
   static KlassLUTEntry build_from_klass(const Klass* k);
 
