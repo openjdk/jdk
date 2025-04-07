@@ -42,6 +42,14 @@ public class TestConv2BExpansion {
         TestFramework.run();
     }
 
+    // These IR checks do not apply on riscv64, as riscv64 supports Conv2B, e.g. for `return x == 0`,
+    // the graph looks like:
+    //      Return (XorI (Conv2B ConI(#int: 1)))
+    // On other platforms, e.g. x86_64 which does not supports Conv2B, the graph looks like:
+    //      Return (CMoveI (Bool (CompI (Param1 ConI(#int: 0))) ConI(#int: 1) ConI(#int: 0)))
+    // On riscv64, current graph is more efficient than `CMoveI`, as it
+    //      1. generates less code
+    //      2. even when zicond is not supported, it does not introduce branches.
     @Test
     @IR(counts = {IRNode.CMOVE_I, "1"}, failOn = {IRNode.XOR})
     public boolean testIntEquals0(int x) {
