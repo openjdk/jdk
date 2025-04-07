@@ -189,6 +189,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private String certProtectionAlgorithm = null;
     private int certPbeIterationCount = -1;
     private String macAlgorithm = null;
+    private String pbmac1Hmac = null;
+    private String pbmac1KdfHmac = null;
     private int macIterationCount = -1;
 
     // the source of randomness
@@ -869,15 +871,15 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
     /*
      * Invoke the PKCS#5 PBKDF2 algorithm
-     */                                 
+     */
     private static SecretKey PBKDF2(String hmac, char[] secret, byte[] salt,
-        int count, int keyLength) throws GeneralSecurityException {     
-    
+        int count, int keyLength) throws GeneralSecurityException {
+
         PBEKeySpec keySpec = new PBEKeySpec(secret, salt, count, keyLength);
         SecretKeyFactory skf =
-                SecretKeyFactory.getInstance("PBKDF2With" +hmac, "SunJCE");     
+                SecretKeyFactory.getInstance("PBKDF2With" +hmac, "SunJCE");
         return skf.generateSecret(keySpec);
-    }   
+    }
 
     /*
      * Encrypt private key or secret key using Password-based encryption (PBE)
@@ -1278,6 +1280,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             macIterationCount = defaultMacIterationCount();
         }
         if (password != null && !macAlgorithm.equalsIgnoreCase("NONE")) {
+            macAlgorithm = defaultMacAlgorithm();
             byte[] macData = calculateMac(password, authenticatedSafe);
             pfx.write(macData);
         }
@@ -1503,35 +1506,66 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         throws IOException
     {
         byte[] mData;
-        String algName = macAlgorithm.substring(7);
 
-        algName = "PBMAC1";
-        try {
-            // Generate a random salt.
-            byte[] salt = getSalt();
-
-            // generate MAC (MAC key is generated within JCE)
-            Mac m = Mac.getInstance("HmacSHA256");
-            SecretKey key = getPBEKey(passwd);
-            SecretKey derivedKey = PBKDF2("HmacSHA256",
-                    (new String(key.getEncoded(),
-                    UTF_8)).toCharArray(), salt, macIterationCount, 256);
+        if (macAlgorithm.equals("PBMAC1")) {
+            // PBMAC1
             try {
-                m.init(derivedKey);
-            } finally {
-                destroyPBEKey(key);
-            }
-            m.update(data);
-            byte[] macResult = m.doFinal();
+                // Generate a random salt.
+                byte[] salt = getSalt();
 
-            // encode as MacData
-            MacData macData = new MacData(algName, macResult, salt,
-                    macIterationCount, "HmacSHA256", "HmacSHA256", 256);
-            DerOutputStream bytes = new DerOutputStream();
-            bytes.write(macData.getEncoded());
-            mData = bytes.toByteArray();
-        } catch (Exception e) {
-            throw new IOException("calculateMac failed: " + e, e);
+                // generate MAC (MAC key is generated within JCE)
+                Mac m = Mac.getInstance(pbmac1Hmac);
+                SecretKey key = getPBEKey(passwd);
+                SecretKey derivedKey = PBKDF2(pbmac1KdfHmac,
+                        (new String(key.getEncoded(),
+                        UTF_8)).toCharArray(), salt, macIterationCount, 256);
+                try {
+                    m.init(derivedKey);
+                } finally {
+                    destroyPBEKey(key);
+                }
+                m.update(data);
+                byte[] macResult = m.doFinal();
+
+                // encode as MacData
+                MacData macData = new MacData("PBMAC1", macResult, salt,
+                        macIterationCount, pbmac1KdfHmac, pbmac1Hmac, 256);
+                DerOutputStream bytes = new DerOutputStream();
+                bytes.write(macData.getEncoded());
+                mData = bytes.toByteArray();
+            } catch (Exception e) {
+                throw new IOException("calculateMac failed: " + e, e);
+            }
+        } else {
+            // The old (original) way of computing the MAC.
+            String algName = macAlgorithm.substring(7);
+
+            try {
+                 // Generate a random salt.
+                 byte[] salt = getSalt();
+     
+                 // generate MAC (MAC key is generated within JCE)
+                 Mac m = Mac.getInstance(macAlgorithm);
+                 PBEParameterSpec params =
+                             new PBEParameterSpec(salt, macIterationCount);
+                 SecretKey key = getPBEKey(passwd);
+                 try {
+                     m.init(key, params);
+                 } finally {
+                     destroyPBEKey(key);
+                 }
+                 m.update(data);
+                 byte[] macResult = m.doFinal();
+     
+                 // encode as MacData
+                 MacData macData = new MacData(algName, macResult, salt,
+                         macIterationCount);
+                 DerOutputStream bytes = new DerOutputStream();
+                 bytes.write(macData.getEncoded());
+                 mData = bytes.toByteArray();
+            } catch (Exception e) {
+                throw new IOException("calculateMac failed: " + e, e);
+            }
         }
         return mData;
     }
@@ -2182,6 +2216,10 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                             }
                             return (Void) null;
                         }, password);
+                        macAlgorithm = algName;
+                        pbmac1Hmac = macData.getHmac();
+                        pbmac1KdfHmac = macData.getkdfHmac();
+                        macIterationCount = macData.getIterations();
                     } else {
 
                         // Change SHA-1 to SHA1
