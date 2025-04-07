@@ -36,17 +36,19 @@ using NCS = NativeCallStackStorage;
 class NMTVMATreeTest : public testing::Test {
 public:
   NCS ncs;
-  constexpr static const int si_len = 3;
+  constexpr static const int si_len = 4;
   NCS::StackIndex si[si_len];
   NativeCallStack stacks[si_len];
 
   NMTVMATreeTest() : ncs(true) {
     stacks[0] = make_stack(0xA);
     stacks[1] = make_stack(0xB);
-    stacks[1] = make_stack(0xC);
+    stacks[2] = make_stack(0xC);
+    stacks[3] = make_stack(0xD);
     si[0] = ncs.push(stacks[0]);
     si[1] = ncs.push(stacks[1]);
     si[2] = ncs.push(stacks[2]);
+    si[3] = ncs.push(stacks[3]);
   }
 
   // Utilities
@@ -754,101 +756,291 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccountingWhenUseFlagInplace) {
   EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
 }
 
+template<int NodeCount> struct ExpectedTree {
+  int nodes[NodeCount];
+  MemTag tags[NodeCount + 1];
+  VMATree::StateType states[NodeCount + 1];
+  NativeCallStackStorage::StackIndex res_si[NodeCount + 1];
+  NativeCallStackStorage::StackIndex com_si[NodeCount + 1];
+};
+template <int N>
+void check_tree(Tree& tree,const ExpectedTree<N>& et, int line_no) {
+  using Node = VMATree::TreapNode;
+  auto left_released = [&](Node n) -> bool {
+    return n.val().in.type() == VMATree::StateType::Released and
+           n.val().in.mem_tag() == mtNone;
+  };
+  auto right_released = [&](Node n) -> bool {
+    return n.val().out.type() == VMATree::StateType::Released and
+           n.val().out.mem_tag() == mtNone;
+  };
+  char for_this_node[50];
+  for (int i = 0; i < N; i++) {
+    VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(et.nodes[i]);
+    ASSERT_TRUE(r.start != nullptr);
+    Node node = *r.start;
+    if (i == (N -1)) { // last node
+      EXPECT_TRUE(right_released(node)) << "right-of last node is not Released";
+      break;
+    }
+    if (i == 0) { // first node
+      EXPECT_TRUE(left_released(node)) << "left-of first node is not Released";
+    }
+
+    sprintf(for_this_node, "test at line: %d, for node: %d", line_no, et.nodes[i]);
+    EXPECT_EQ(node.val().out.type(), et.states[i+1]) << for_this_node;
+    EXPECT_EQ(node.val().out.mem_tag(), et.tags[i+1]) << for_this_node;
+    if (et.res_si[i+1] >= 0) {
+      EXPECT_EQ(node.val().out.reserved_stack(), et.res_si[i+1]) << for_this_node;
+      EXPECT_EQ(r.end->val().in.reserved_stack(), et.res_si[i+1]) << for_this_node;
+    } else {
+      EXPECT_FALSE(node.val().out.has_reserved_stack()) << for_this_node;
+      EXPECT_FALSE(r.end->val().in.has_reserved_stack()) << for_this_node;
+    }
+    if (et.com_si[i+1] >= 0) {
+      EXPECT_EQ(node.val().out.committed_stack(), et.com_si[i+1]) << for_this_node;
+      EXPECT_EQ(r.end->val().in.committed_stack(), et.com_si[i+1]) << for_this_node;
+    } else {
+      EXPECT_FALSE(node.val().out.has_committed_stack()) << for_this_node;
+      EXPECT_FALSE(r.end->val().in.has_committed_stack()) << for_this_node;
+    }
+  }
+}
+
 TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
   using SIndex = NativeCallStackStorage::StackIndex;
+  using State = VMATree::StateType;
   SIndex si_1 = si[0];
   SIndex si_2 = si[1];
 
+  const State Rs = State::Reserved;
+  const State Rl = State::Released;
+  const State C = State::Committed;
   VMATree::RegionData call_stack_1(si_1, mtTest);
   VMATree::RegionData call_stack_2(si_2, mtNone);
-  auto expected =  [&](Tree& tree, int p, SIndex reserve_stack, SIndex commit_stack, int line_no = __LINE__) {
-    VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(p);
-    const char* at_line = " at line: ";
-    if (reserve_stack >= 0) {
-      EXPECT_EQ(r.start->val().out.reserved_stack(), reserve_stack) << at_line << line_no;
-      EXPECT_EQ(r.end->val().in.reserved_stack(), reserve_stack) << at_line << line_no;
-    } else {
-      EXPECT_FALSE(r.start->val().out.has_reserved_stack()) << at_line << line_no;
-      EXPECT_FALSE(r.end->val().in.has_reserved_stack()) << at_line << line_no;
-    }
-    if (commit_stack >= 0) {
-      EXPECT_EQ(r.start->val().out.committed_stack(), commit_stack) << at_line << line_no;
-      EXPECT_EQ(r.end->val().in.committed_stack(), commit_stack) << at_line << line_no;
-    } else {
-      EXPECT_FALSE(r.start->val().out.has_committed_stack()) << at_line << line_no;
-      EXPECT_FALSE(r.end->val().in.has_committed_stack()) << at_line << line_no;
-    }
-  };
+
+  // Visualization guide
+  // Nodes in the tree are shown in ascending order as:
+  // A....B-----C*****D---E... means:
+  //   [A,B) is released
+  //   [B,C) is reserved, same as [D,E)
+  //   [C,D) is committed
+  // Each node A in the tree has this metada (MemTag, State, Reserve Call-Stack, Commit Call-Stack);
+  //  one for the region to its left (called 'in'), and one for the region to its right (called 'out').
+  // For every adjacent nodes of [A,B), always A.out == B.in (required).
+  // In visualizations, we can avoid repeating metadata of A.out for B.in and write them once.
+  // So for example, we write:
+  //                     A....B-----C*****D-----E...
+  // MemTag:               mt1   mt2   mt3  mt4
+  // State:                Rl    Rs    C    Rs
+  // Reserve Call-Stack:   -     CS2   CS3  CS4
+  // Commit Call-Stack:    -     CS2   CS5  CS4
+  //
+  // where Rl = Released, Rs = Reserved and C = Committed.
+  // '-' for call-stack means 'empty'
+
+
 
   {// Check committing into a reserved region inherits the call stacks
     Tree tree;
-    tree.reserve_mapping(0, 100, call_stack_1);
-    expected(tree,  0, si_1,   -1, __LINE__);
+    tree.reserve_mapping(0, 100, call_stack_1); // reserve in an empty tree
+    // Pre: empty tree.
+    // Post: .........0---------100.........
+    //        mtNone    mtTest       mtNone
+    //        Rl        Rs           Rl
+    //        -         si_1         -
+    //        -         -            -
+    ExpectedTree<2> et1 = {{      0  , 100        },
+                           {mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    },
+                           {-1    , -1    , -1    }};
+    check_tree(tree, et1, __LINE__);
 
     tree.commit_mapping(25, 25, call_stack_2, true); // commit at the middle of the region
-    expected(tree,  0, si_1,   -1, __LINE__);
-    expected(tree, 25, si_1, si_2, __LINE__);
-    expected(tree, 50, si_1,   -1, __LINE__);
+    // Pre: post of previous
+    // Post: .........0---------25*********50--------100.........
+    //        mtNone    mtTest       mtTest   mtTest     mtNone
+    //        Rl        Rs           C        Rs         Rl
+    //        -         si_1         si_1     si_1       -
+    //        -         -            si_2     -          -
+    ExpectedTree<4> et2 = {{      0  , 25,      50,    100        },
+                           {mtNone, mtTest, mtTest, mtTest, mtNone},
+                           {Rl    , Rs    , C     , Rs    , Rl    },
+                           {-1    , si_1  , si_1  , si_1  , -1    },
+                           {-1    , -1    , si_2  , -1    , -1    }};
+    check_tree(tree, et2, __LINE__);
 
     tree.commit_mapping(0, 20, call_stack_2, true); // commit at the begin of the region
-    expected(tree, 0, si_1, si_2, __LINE__);
+    // Pre: post of previous
+    // Post: .........0********20---------25********50--------100.........
+    //        mtNone    mtTest    mtTest      mtTest   mtTest     mtNone
+    //        Rl        C         Rs          C        Rs         Rl
+    //        -         si_1      si_1        si_1     si_1       -
+    //        -         si_2      -           si_2     -          -
+    ExpectedTree<5> et3 = {{     0,     20,     25,     50,    100        },
+                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone},
+                           {Rl    , C     , Rs    , C     , Rs    , Rl    },
+                           {-1    , si_1  , si_1  , si_1  , si_1  , -1    },
+                           {-1    , si_2  , -1    , si_2  , -1    , -1    }};
+    check_tree(tree, et3, __LINE__);
 
     tree.commit_mapping(80, 20, call_stack_2, true); // commit at the end of the region
-    expected(tree, 80, si_1, si_2, __LINE__);
+    // Pre: post of previous
+    // Post: .........0********20---------25********50--------80********100.........
+    //        mtNone    mtTest    mtTest      mtTest   mtTest     mtTest    mtNone
+    //        Rl        C         Rs          C        Rs         C         Rl
+    //        -         si_1      si_1        si_1     si_1       si_1      -
+    //        -         si_2      -           si_2     -          si_2      -
+    ExpectedTree<6> et4 = {{     0,     20,     25,     50,     80,    100        },
+                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
+                           {Rl    , C     , Rs    , C     , Rs    , C     , Rl    },
+                           {-1    , si_1  , si_1  , si_1  , si_1  , si_1  , -1    },
+                           {-1    , si_2  , -1    , si_2  , -1    , si_2  , -1    }};
+    check_tree(tree, et4, __LINE__);
   }
   {// committing overlapped regions does not destroy the old call-stacks
     Tree tree;
-    tree.reserve_mapping(0, 100, call_stack_1); // Nodes: 0 - 100
-    expected(tree, 0, si_1, -1, __LINE__);
+    tree.reserve_mapping(0, 100, call_stack_1); // reserving in an empty tree
+    // Pre: empty tree.
+    // Post: .........0---------100.........
+    //        mtNone    mtTest       mtNone
+    //        Rl        Rs           Rl
+    //        -         si_1         -
+    //        -         -            -
+    ExpectedTree<2> et1 = {{      0  , 100        },
+                           {mtNone, mtTest, mtNone},
+                           {Rl    , Rs    , Rl    },
+                           {-1    , si_1  , -1    },
+                           {-1    , -1    , -1    }};
+    check_tree(tree, et1, __LINE__);
 
-    tree.commit_mapping(20, 20, call_stack_2, true); // Nodes: 0 - 20 - 40 - 100
-    expected(tree,  0, si_1,   -1, __LINE__);
-    expected(tree, 20, si_1, si_2, __LINE__);
+    tree.commit_mapping(20, 20, call_stack_2, true);
+    // Pre: post of previous
+    // Post: .........0---------20********40-------100.........
+    //        mtNone    mtTest     mtTest    mtTest    mtNone
+    //        Rl        Rs           C       Rs        Rl
+    //        -         si_1         si_1    si_1      -
+    //        -         -            si_2     -        -
+    ExpectedTree<4> et2 = {{     0,     20,     40,    100        },
+                           {mtNone, mtTest, mtTest, mtTest, mtNone},
+                           {Rl    , Rs    , C     , Rs    , Rl    },
+                           {-1    , si_1  , si_1  , si_1  , -1    },
+                           {-1    , -1    , si_2  , -1    , -1    }};
+    check_tree(tree, et2, __LINE__);
 
     SIndex si_3 = si[2];
     VMATree::RegionData call_stack_3(si_3, mtTest);
     // commit with overlap at the region's start
-    tree.commit_mapping(10, 20, call_stack_3); // Nodes: 0 - 10 - 40 - 100
-    expected(tree, 10, si_1, si_3, __LINE__);
+    tree.commit_mapping(10, 20, call_stack_3);
+    // Pre: post of previous
+    // Post: .........0---------10********30********40-------100.........
+    //        mtNone    mtTest     mtTest    mtTest    mtTest    mtNone
+    //        Rl        Rs           C       C         Rs        Rl
+    //        -         si_1         si_1    si_1      si_1      -
+    //        -         -            si_3    si_2        -       -
+    ExpectedTree<5> et3 = {{     0,     10,     30,     40,    100        },
+                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone},
+                           {Rl    , Rs    , C     , C     , Rs    , Rl    },
+                           {-1    , si_1  , si_1  , si_1  , si_1  , -1    },
+                           {-1    , -1    , si_3  , si_2  , -1    , -1    }};
+    check_tree(tree, et3, __LINE__);
 
+    SIndex si_4 = si[3];
+    VMATree::RegionData call_stack_4(si_4, mtTest);
     // commit with overlap at the region's end
-    tree.commit_mapping(30, 20, call_stack_3); // Nodes: 0 - 10 - 50 - 100
-    expected(tree, 30, si_1, si_3, __LINE__);
+    tree.commit_mapping(30, 20, call_stack_4);
+    // Pre: post of previous
+    // Post: .........0---------10********30********50-------100.........
+    //        mtNone    mtTest     mtTest    mtTest    mtTest    mtNone
+    //        Rl        Rs           C       C         Rs        Rl
+    //        -         si_1         si_1    si_1      si_1      -
+    //        -         -            si_3    si_4        -       -
+    ExpectedTree<5> et4 = {{     0,     10,     30,     50,    100        },
+                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone},
+                           {Rl    , Rs    , C     , C     , Rs    , Rl    },
+                           {-1    , si_1  , si_1  , si_1  , si_1  , -1    },
+                           {-1    , -1    , si_3  , si_4  , -1    , -1    }};
+    check_tree(tree, et4, __LINE__);
   }
   {// uncommit should not store any call-stack
     Tree tree;
     tree.reserve_mapping(0, 100, call_stack_1);
-    expected(tree, 0, si_1, -1, __LINE__);
 
     tree.commit_mapping(20, 20, call_stack_2, true);
-    expected(tree,  0, si_1,   -1, __LINE__);
-    expected(tree, 20, si_1, si_2, __LINE__);
 
     tree.commit_mapping(0, 10, call_stack_2, true);
-    expected(tree, 0, si_1, si_2, __LINE__);
 
     tree.uncommit_mapping(0, 5, call_stack_2);
-    expected(tree, 0, si_1, -1, __LINE__);
+    // Pre:  .........0********10--------20********40-------100.........
+    //        mtNone    mtTest    mtTest    mtTest    mtTest    mtNone
+    //        Rl        C         Rs        C         Rs        Rl
+    //        -         si_1      si_1      si_1      si_1      -
+    //        -         si_2      -         si_2      -         -
+    // Post: .........0--------5********10--------20********40-------100.........
+    //        mtNone    mtTest   mtTest    mtTest    mtTest    mtTest    mtNone
+    //        Rl        Rs       C         Rs        C         Rs        Rl
+    //        -         si_1     si_1      si_1      si_1      si_1      -
+    //        -         -        si_2      -         si_2      -         -
+    ExpectedTree<6> et1 = {{     0,     5,      10,     20,     40,    100        },
+                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
+                           {Rl    , Rs    , C     , Rs    , C     , Rs    , Rl    },
+                           {-1    , si_1  , si_1  , si_1  , si_1  , si_1  , -1    },
+                           {-1    , -1    , si_2  , -1    , si_2  , -1    , -1    }};
+    check_tree(tree, et1, __LINE__);
 
     tree.uncommit_mapping(20, 10, call_stack_2);
-    expected(tree, 20, si_1, -1, __LINE__);
+    // Pre: post of previous
+    // Post: .........0--------5********10--------30********40-------100.........
+    //        mtNone    mtTest   mtTest    mtTest    mtTest    mtTest    mtNone
+    //        Rl        Rs       C         Rs        C         Rs        Rl
+    //        -         si_1     si_1      si_1      si_1      si_1      -
+    //        -         -        si_2      -         si_2      -         -
+    ExpectedTree<6> et2 = {{     0,     5,      10,     30,     40,    100        },
+                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
+                           {Rl    , Rs    , C     , Rs    , C     , Rs    , Rl    },
+                           {-1    , si_1  , si_1  , si_1  , si_1  , si_1  , -1    },
+                           {-1    , -1    , si_2  , -1    , si_2  , -1    , -1    }};
+    check_tree(tree, et2, __LINE__);
   }
-  {// reserve after reserve
+  {// reserve after reserve, but only different call-stacks
+    SIndex si_4 = si[3];
+    VMATree::RegionData call_stack_4(si_4, mtTest);
+
     Tree tree;
     tree.reserve_mapping(0, 100, call_stack_1);
-    tree.reserve_mapping(10, 10, call_stack_2);
-    expected(tree,  0, si_1, -1, __LINE__);
-    expected(tree, 10, si_2, -1, __LINE__);
+    tree.reserve_mapping(10, 10, call_stack_4);
+    // Post: .........0--------10--------20--------100.........
+    //        mtNone   mtTest    mtTest    mtTest    mtNone
+    //        Rl       Rs        Rs         Rs       Rl
+    //        -        si_1      si_2      si_1      -
+    //        -        -         -         -         -
+    ExpectedTree<4> et1 = {{     0,     10,     20,     100       },
+                           {mtNone, mtTest, mtTest, mtTest, mtNone},
+                           {Rl    , Rs    , Rs    , Rs    , Rl    },
+                           {-1    , si_1  , si_4  , si_1  , -1    },
+                           {-1    , -1    , -1    , -1    , -1    }};
+    check_tree(tree, et1, __LINE__);
   }
   {// commit without reserve
     Tree tree;
     tree.commit_mapping(0, 100, call_stack_1);
-    expected(tree, 0, -1, si_1, __LINE__);
+    ExpectedTree<2> et = {{     0,     100       },
+                          {mtNone, mtTest, mtNone},
+                          {Rl    , C     , Rl    },
+                          {-1    , si_1  , -1    },
+                          {-1    , si_1  , -1    }};
+    check_tree(tree, et, __LINE__);
   }
   {// reserve after commit
     Tree tree;
-    tree.commit_mapping(0, 100, call_stack_1);
-    tree.reserve_mapping(0, 100, call_stack_2);
-    expected(tree, 0, si_2, -1, __LINE__);
+    tree.commit_mapping(0, 100, call_stack_2);
+    tree.reserve_mapping(0, 100, call_stack_1);
+    ExpectedTree<2> et = {{     0,     100       },
+                          {mtNone, mtTest, mtNone},
+                          {Rl    , Rs    , Rl    },
+                          {-1    , si_1  , -1    },
+                          {-1    , -1    , -1    }};
+    check_tree(tree, et, __LINE__);
   }
 }

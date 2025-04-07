@@ -77,6 +77,9 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     if (use_tag_inplace) {
       log_debug(nmt)("Cannot use the tag inplace if no pre-existing tag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
     }
+    stA.out.set_reserve_stack(metadata.stack_idx);
+    stB.in.set_reserve_stack(metadata.stack_idx);
+
     // No match. We add the A node directly, unless it would have no effect.
     if (!stA.is_noop()) {
       _tree.upsert(A, stA);
@@ -136,6 +139,12 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       if (is_commit_operation) {
         stA.out.set_reserve_stack(leqA_n->val().out.reserved_stack());
         stB.in.set_reserve_stack(leqA_n->val().out.reserved_stack());
+      }
+      if (is_uncommit_operation) {
+        stA.out.set_reserve_stack(leqA_n->val().out.reserved_stack());
+        stB.in.set_reserve_stack(leqA_n->val().out.reserved_stack());
+        stA.out.set_commit_stack(NativeCallStackStorage::invalid);
+        stB.in.set_commit_stack(NativeCallStackStorage::invalid);
       }
 
       // We add a new node, but only if there would be a state change. If there would not be a
