@@ -382,7 +382,7 @@ void VLoopDependencyGraph::print() const {
   tty->cr();
 
   // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
-  bool with_unknown_aliasing_edges = !_vloop.are_speculative_checks_possible();
+  bool with_unknown_aliasing_edges = !_vloop.use_speculative_aliasing_checks();
   if (with_unknown_aliasing_edges) {
     tty->print_cr(" Complete dependency graph (with unknown aliasing edges, because we cannot speculate):");
   } else {

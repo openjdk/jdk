@@ -31,6 +31,7 @@ import jdk.internal.misc.Unsafe;
 import java.util.Random;
 import java.util.Arrays;
 import java.nio.ByteOrder;
+import java.util.List;
 
 /*
  * @test
@@ -50,19 +51,18 @@ public class TestVectorizationMismatchedAccess {
     private final static WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
-        // Cross-product: +-AlignVector and +-UseCompactObjectHeaders
-        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                   "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders",
-                                   "-XX:-AlignVector");
-        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                   "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders",
-                                   "-XX:+AlignVector");
-        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                   "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders",
-                                   "-XX:-AlignVector");
-        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                   "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders",
-                                   "-XX:+AlignVector");
+        // Cross-product:
+        //   +-AlignVector
+        //   +-UseCompactObjectHeaders
+        //   +-UseAutoVectorizationSpeculativeAliasingChecks
+        for (String av : List.of("-XX:-AlignVector", "-XX:+AlignVector")) {
+            for (String coh : List.of("-XX:-UseCompactObjectHeaders", "-XX:+UseCompactObjectHeaders")) {
+                for (String sac : List.of("-XX:-UseAutoVectorizationSpeculativeAliasingChecks", "-XX:+UseAutoVectorizationSpeculativeAliasingChecks")) {
+                    TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                               "-XX:+UnlockExperimentalVMOptions", av, coh, sac);
+                }
+            }
+        }
     }
 
     static int size = 1024;
@@ -126,7 +126,7 @@ public class TestVectorizationMismatchedAccess {
             }
         }
         for (; i < Math.min(byteArray.length + offset, byteArray.length); i++) {
-            int val = offset > 0 ? verifyByteArray[(i-offset) % 8] : verifyByteArray[i-offset];
+            int val = offset >=1 ? verifyByteArray[(i-offset) % 8] : verifyByteArray[i-offset];
             if (byteArray[i] != val) {
                 throw new RuntimeException("Incorrect result at " + i + " " + byteArray[i] + " != " + verifyByteArray[i-offset]);
             }
@@ -479,7 +479,14 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
+    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR },
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"})
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1", ".*multiversion.*", ">=1"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"})
+    // We have unknown aliasing. At runtime "dest == src", so the AutoVectorization Predicate fails, and recompiles with Multiversioning.
     public static void testByteByte3a(byte[] dest, byte[] src) {
         for (int i = 0; i < src.length / 8 - 1; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + 1), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
@@ -487,7 +494,14 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
+    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR },
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"})
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1", ".*multiversion.*", ">=1"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"})
+    // We have unknown aliasing. At runtime "dest == src", so the AutoVectorization Predicate fails, and recompiles with Multiversioning.
     public static void testByteByte3b(byte[] dest, byte[] src) {
         for (int i = 0; i < src.length / 8 - 1; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * (i + 1), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * i));
@@ -501,7 +515,14 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
+    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR },
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"})
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1", ".*multiversion.*", ">=1"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"})
+    // We have unknown aliasing. At runtime "dest == src", so the AutoVectorization Predicate fails, and recompiles with Multiversioning.
     public static void testByteByte4a(byte[] dest, byte[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
             UNSAFE.putLongUnaligned(dest, 8 * i + baseOffset, UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
@@ -509,7 +530,14 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
+    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR },
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"})
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1", ".*multiversion.*", ">=1"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"})
+    // We have unknown aliasing. At runtime "dest == src", so the AutoVectorization Predicate fails, and recompiles with Multiversioning.
     public static void testByteByte4b(byte[] dest, byte[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
             UNSAFE.putLongUnaligned(dest, 8L * i + baseOffset, UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * i));
@@ -524,7 +552,14 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
+    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR },
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"})
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1", ".*multiversion.*", ">=1"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"})
+    // We have unknown aliasing. At runtime "dest == src", so the AutoVectorization Predicate fails, and recompiles with Multiversioning.
     public static void testByteByte5a(byte[] dest, byte[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + baseOffset), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
@@ -532,7 +567,14 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR })
+    @IR(failOn = { IRNode.LOAD_VECTOR_L, IRNode.STORE_VECTOR },
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"})
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1", ".*multiversion.*", ">=1"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true", "rvv", "true"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"})
+    // We have unknown aliasing. At runtime "dest == src", so the AutoVectorization Predicate fails, and recompiles with Multiversioning.
     public static void testByteByte5b(byte[] dest, byte[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * (i + baseOffset), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8L * i));

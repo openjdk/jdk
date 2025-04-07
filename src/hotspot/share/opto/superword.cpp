@@ -833,7 +833,7 @@ bool VLoopDependencyGraph::independent(Node* s1, Node* s2) const {
   int min_d = MIN2(d1, d2); // prune traversal at min_d
 
   // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
-  bool with_unknown_aliasing_edges = !_vloop.are_speculative_checks_possible();
+  bool with_unknown_aliasing_edges = !_vloop.use_speculative_aliasing_checks();
 
   ResourceMark rm;
   Unique_Node_List worklist;
@@ -874,7 +874,7 @@ bool VLoopDependencyGraph::mutually_independent(const Node_List* nodes) const {
   }
 
   // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
-  bool with_unknown_aliasing_edges = !_vloop.are_speculative_checks_possible();
+  bool with_unknown_aliasing_edges = !_vloop.use_speculative_aliasing_checks();
 
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);

@@ -355,6 +355,9 @@
   product(bool, UseAutoVectorizationPredicate, true, DIAGNOSTIC,            \
           "Use AutoVectorization predicate (for speculative compilation)")  \
                                                                             \
+  product(bool, UseAutoVectorizationSpeculativeAliasingChecks, true, DIAGNOSTIC, \
+          "Use Multiversioning or Predicate to add aliasing runtime checks") \
+                                                                            \
   product(bool, AllowVectorizeOnDemand, true,                               \
           "Globally suppress vectorization set in VectorizeMethod")         \
                                                                             \

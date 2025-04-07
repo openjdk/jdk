@@ -220,7 +220,7 @@ void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
 
 void VTransform::apply_speculative_aliasing_runtime_checks() {
 
-  if (_vloop.are_speculative_checks_possible()) {
+  if (_vloop.use_speculative_aliasing_checks()) {
 
 #ifdef ASSERT
     if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
