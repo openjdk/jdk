@@ -59,10 +59,10 @@ public class VMDeprecatedOptions {
             // deprecated non-alias flags:
             {"AllowRedefinitionToAddDeleteMethods", "true"},
             {"LockingMode", "1"},
+            {"UseCompressedClassPointers", "false"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
-            {"CreateMinidumpOnCrash", "false"},
-            {"UseCompressedClassPointers", "false"},
+            {"CreateMinidumpOnCrash", "false"}
           }
         ));
         if (Platform.isLinux()) {
