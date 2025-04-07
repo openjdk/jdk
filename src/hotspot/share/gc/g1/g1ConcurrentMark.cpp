@@ -1273,7 +1273,8 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
         // The liveness of this humongous obj decided by either its allocation
         // time (allocated after conc-mark-start, i.e. live) or conc-marking.
         const bool is_live = _cm->top_at_mark_start(hr) == hr->bottom()
-                             || _cm->contains_live_object(hr->hrm_index());
+                          || _cm->contains_live_object(hr->hrm_index())
+                          || hr->has_pinned_objects();
         if (is_live) {
           const bool selected_for_rebuild = tracker->update_humongous_before_rebuild(hr);
           auto on_humongous_region = [&] (G1HeapRegion* hr) {
@@ -1288,9 +1289,12 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
           reclaim_empty_humongous_region(hr);
         }
       } else if (hr->is_old()) {
-        hr->note_end_of_marking(_cm->top_at_mark_start(hr), _cm->live_bytes(hr->hrm_index()));
+        uint region_idx = hr->hrm_index();
+        hr->note_end_of_marking(_cm->top_at_mark_start(hr), _cm->live_bytes(region_idx), _cm->incoming_refs(region_idx));
 
-        if (hr->live_bytes() != 0) {
+        const bool is_live = hr->live_bytes() != 0
+                          || hr->has_pinned_objects();
+        if (is_live) {
           if (tracker->update_old_before_rebuild(hr)) {
             _num_selected_for_rebuild++;
           }
