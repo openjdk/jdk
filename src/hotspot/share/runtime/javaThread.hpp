@@ -1327,15 +1327,7 @@ private:
   };
   volatile CPUTimeLockState _cpu_time_jfr_locked = UNLOCKED;
   volatile bool _has_cpu_time_jfr_requests = false;
-  static const u4 CPU_TIME_QUEUE_CAPACITY = 1000;
-
   JfrCPUTimeTraceQueue _cpu_time_jfr_queue{0};
-
-  void ensure_cpu_time_jfr_queue_capacity(u4 capacity) {
-    if (_cpu_time_jfr_queue.capacity() != capacity) {
-      _cpu_time_jfr_queue.set_capacity(capacity);
-    }
-  }
 
 public:
 
@@ -1365,12 +1357,8 @@ public:
 
   JfrCPUTimeTraceQueue& cpu_time_jfr_queue() { return _cpu_time_jfr_queue; }
 
-  void enable_cpu_time_jfr_queue() {
-    ensure_cpu_time_jfr_queue_capacity(CPU_TIME_QUEUE_CAPACITY);
-  }
-
   void disable_cpu_time_jfr_queue() {
-    ensure_cpu_time_jfr_queue_capacity(0);
+    cpu_time_jfr_queue().ensure_capacity(0);
   }
 
 #else

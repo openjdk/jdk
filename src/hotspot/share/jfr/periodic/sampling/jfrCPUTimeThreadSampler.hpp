@@ -39,13 +39,17 @@ class NonJavaThread;
 // Fixed size async-signal-safe SPSC linear queue backed by an array.
 // Designed to be only used under lock and read linearly
 class JfrCPUTimeTraceQueue {
+
+  // the default queue capacity, scaled if the sampling period is smaller than 10ms
+  // when the thread is started
+  static const u4 CPU_TIME_QUEUE_CAPACITY = 1000;
+
   JfrSampleRequest* _data;
   u4 _capacity;
   // next unfilled index
   volatile u4 _head;
 
-  volatile u4 _lost_samples;
-  JfrTicks _lost_samples_start;
+  volatile s4 _lost_samples;
 
 public:
   JfrCPUTimeTraceQueue(u4 capacity);
@@ -65,17 +69,21 @@ public:
   // deletes all samples in the queue
   void set_capacity(u4 capacity);
 
-  u4 is_full() const;
+  bool is_full() const;
 
-  u4 is_empty() const;
+  bool is_empty() const;
 
-  u4 lost_samples() const;
+  s4 lost_samples() const;
 
   void increment_lost_samples();
 
   void reset_lost_samples();
 
-  JfrTicks lost_samples_start() const;
+  void ensure_capacity(u4 capacity);
+
+  void ensure_capacity_for_period(u4 period_millis);
+
+  void clear();
 };
 
 
@@ -107,8 +115,8 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   void handle_timer_signal(siginfo_t* info, void* context);
 
   static void send_empty_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid tid, Tickspan cpu_time_period);
-  static void send_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid sid, traceid tid, Tickspan cpu_time_period);
-  static void send_lost_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid tid, u4 lost_samples);
+  static void send_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased);
+  static void send_lost_event(const JfrTicks& time, traceid tid, s4 lost_samples);
 };
 
 #else
@@ -130,7 +138,7 @@ private:
   static void on_javathread_terminate(JavaThread* thread);
 
   static void send_empty_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid tid, Tickspan cpu_time_period);
-  static void send_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid sid, traceid tid, Tickspan cpu_time_period);
+  static void send_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased);
 };
 
 #endif // defined(LINUX)

@@ -969,6 +969,7 @@
     <Field type="Thread" name="eventThread" label="Thread" />
     <Field type="boolean" name="failed" label="Failed" description="Failed to obtain the stack trace" />
     <Field type="Tickspan" name="samplingPeriod" label="CPU Time Sampling Period"/>
+    <Field type="boolean" name="biased" label="Biased" description="The sample is biased towards the frame at safepoint" />
   </Event>
 
   <Event name="CPUTimeSampleLoss" category="Java Virtual Machine, Profiling" label="CPU Time Method Profiling Lost Samples" description="Records that the CPU time sampler lost samples because of internal throttling"
