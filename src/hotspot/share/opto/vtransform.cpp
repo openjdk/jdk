@@ -24,6 +24,7 @@
 #include "opto/vtransform.hpp"
 #include "opto/addnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
@@ -258,9 +259,8 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
   }
 }
 
-BoolNode* make_a_plus_b_leq_c(Node* a, jint b, Node* c, PhaseIdealLoop* phase) {
-  Node* b_con = phase->igvn().longcon(b);
-  Node* a_plus_b = new AddLNode(a, b_con);
+BoolNode* make_a_plus_b_leq_c(Node* a, Node* b, Node* c, PhaseIdealLoop* phase) {
+  Node* a_plus_b = new AddLNode(a, b);
   Node* cmp = CmpNode::make(a_plus_b, c, T_LONG, true);
   BoolNode* bol = new BoolNode(cmp, BoolTest::le);
   phase->register_new_node_with_ctrl_of(a_plus_b, a);
@@ -352,7 +352,7 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   //   Hence, we do not have to check the condition for every iv, but only for init.
   //
   //   p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)
-  //   ----------------------------      ----------------------------
+  //   ---------- for -------------      ---------- for -------------
   //         (P1-BEFORE-P2)          OR        (P1-AFTER-P2)
   //
   //
@@ -367,11 +367,21 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   //     (iv - init ) * scale_1 >= (iv - init ) * iv_scale
   //     (iv - limit) * scale_1 <= (iv - limit) * iv_scale                   (NEG-STRIDE)
   //
+  //   We define:
+  //     span1 = p1(limit) - p1(init) = (limit - init) * iv_scale1
+  //     span2 = p2(limit) - p2(init) = (limit - init) * iv_scale2
+  //
   //   Below, we show that these conditions are equivalent:
+  //
+  //   p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
+  //   p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
+  //   ------------------- for --------------------      ------------------ for ---------------------
+  //              (P1-BEFORE-P2)                     OR                 (P1-AFTER-P2)
+  //
   //
   //   p1(init)  + size1 <= p2(init)   OR  p2(limit) + size2 <= p1(limit)    (if iv_stride >= 0)
   //   p1(limit) + size1 <= p2(limit)  OR  p2(init) + size2 <= p1(init)      (if iv_stride <= 0)
-  //   ------------------------------      ------------------------------
+  //   ------------ for -------------      ----------- for --------------
   //         (P1-BEFORE-P2)            OR         (P1-AFTER-P2)
   //
   //   Proof:
@@ -379,7 +389,8 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   //       for all iv in r: p1(iv) + size1 <= p2(iv)
   //       => And since init and limit in r =>
   //       p1(init)  + size1 <= p2(init)
-  //       p1(limit) + size1 <= p2(limit)
+  //       p1(limit) + size1 <= p2(limit)  =>   p1(init) + span1 + size1 <= p2(init) + span2
+  //
   //
   //     Assume: p1(init) + size1 <= p2(init)  AND  iv_stride >= 0
   //       p1(iv) + size1  = p1(init) - init * iv_scale1 + iv * iv_scale1 + size1
@@ -388,7 +399,8 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   //                      <= p2(init) - init * iv_scale2 + iv * iv_scale2
   //                       = p2(iv)
   //
-  //     Assume: p1(limit) + size1 <= p2(limit)  AND  iv_stride <= 0
+  //     Assume: p1(init) + span1 + size1 <= p2(init) + span2  AND  iv_stride <= 0
+  //       It follows:  p1(limit) + size1 <= p2(limit)
   //       We use the alternative linear form.
   //       p1(iv) + size1  = p1(limit) - limit * iv_scale1 + iv * iv_scale1 + size1
   //                                   ------ apply (NEG-STRIDE) ---------
@@ -426,43 +438,72 @@ void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPoin
   Node* init = limit_pre;
   Node* limit = limit_main;
 
+  Node* p1_init = vp1.make_pointer_expression(init);
+  Node* p2_init = vp2.make_pointer_expression(init);
+  Node* size1 = igvn().longcon(vp1.size());
+  Node* size2 = igvn().longcon(vp2.size());
+
+  BoolNode* condition1 = nullptr;
+  BoolNode* condition2 = nullptr;
   if (vp1.iv_scale() == vp2.iv_scale()) {
     // p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)
     // -------- condition1 --------      ------- condition2 ---------
-    Node* p1_init = vp1.make_pointer_expression(init);
-    Node* p2_init = vp2.make_pointer_expression(init);
-    //tty->print("p1(init) "); p1_init->dump();
-    //tty->print("p2(init) "); p2_init->dump();
-    BoolNode* condition1 = make_a_plus_b_leq_c(p1_init, vp1.size(), p2_init, phase());
-    BoolNode* condition2 = make_a_plus_b_leq_c(p2_init, vp2.size(), p1_init, phase());
-    //tty->print("condition1 "); condition1->dump();
-    //tty->print("condition2 "); condition2->dump();
-
-    // Convert bol back to int value that we can OR.
-    Node* zero = _vloop.phase()->igvn().intcon(0);
-    Node* one  = _vloop.phase()->igvn().intcon(1);
-    Node* cmov1 = new CMoveINode(condition1, zero, one, TypeInt::INT);
-    Node* cmov2 = new CMoveINode(condition2, zero, one, TypeInt::INT);
-    _vloop.phase()->register_new_node_with_ctrl_of(cmov1, init);
-    _vloop.phase()->register_new_node_with_ctrl_of(cmov2, init);
-
-    Node* c1_or_c2 = new OrINode(cmov1, cmov2);
-    //tty->print("c1_or_c2 "); c1_or_c2->dump();
-    Node* cmp = CmpNode::make(c1_or_c2, zero, T_INT);
-    BoolNode* bol = new BoolNode(cmp, BoolTest::ne);
-    _vloop.phase()->register_new_node_with_ctrl_of(c1_or_c2, init);
-    _vloop.phase()->register_new_node_with_ctrl_of(cmp, init);
-    _vloop.phase()->register_new_node_with_ctrl_of(bol, init);
-
-    add_speculative_check(bol);
+    condition1 = make_a_plus_b_leq_c(p1_init, size1, p2_init, phase());
+    condition2 = make_a_plus_b_leq_c(p2_init, size2, p1_init, phase());
   } else {
-    // TODO: this
-    Node* zero = _vloop.phase()->igvn().intcon(0);
-    BoolNode* bol = new BoolNode(zero, BoolTest::ne);
-    _vloop.phase()->register_new_node_with_ctrl_of(bol, init);
-    add_speculative_check(bol);
-    assert(false, "scale not equal, not implemented");
+    // p1(init)         + size1 <= p2(init)          OR  p2(init) + span2 + size2 <= p1(init) + span1    (if iv_stride >= 0)
+    // p1(init) + span1 + size1 <= p2(init) + span2  OR  p2(init)         + size2 <= p1(init)            (if iv_stride <= 0)
+    // ---------------- condition1 ----------------      --------------- condition2 -----------------
+    Node* initL = new ConvI2LNode(init);
+    Node* limitL = new ConvI2LNode(limit);
+    Node* limit_minus_init = new SubLNode(limitL, initL);
+    Node* iv_scale1 = igvn().longcon(vp1.iv_scale());
+    Node* iv_scale2 = igvn().longcon(vp2.iv_scale());
+    Node* span1 = new MulLNode(limit_minus_init, iv_scale1);
+    Node* span2 = new MulLNode(limit_minus_init, iv_scale2);
+    phase()->register_new_node_with_ctrl_of(initL, init);
+    phase()->register_new_node_with_ctrl_of(limitL, init);
+    phase()->register_new_node_with_ctrl_of(limit_minus_init, init);
+    phase()->register_new_node_with_ctrl_of(span1, init);
+    phase()->register_new_node_with_ctrl_of(span2, init);
+
+    // In the proof, we assumend: iv_scale1 < iv_scale2.
+    if (vp1.iv_scale() > vp2.iv_scale()) {
+      swap(p1_init, p2_init);
+      swap(size1, size2);
+      swap(span1, span2);
+    }
+
+    Node* p1_init_plus_span1 = new AddLNode(p1_init, span1);
+    Node* p2_init_plus_span2 = new AddLNode(p2_init, span2);
+    phase()->register_new_node_with_ctrl_of(p1_init_plus_span1, init);
+    phase()->register_new_node_with_ctrl_of(p2_init_plus_span2, init);
+    if (iv_stride() >= 0) {
+      condition1 = make_a_plus_b_leq_c(p1_init,            size1, p2_init,            phase());
+      condition2 = make_a_plus_b_leq_c(p2_init_plus_span2, size2, p1_init_plus_span1, phase());
+    } else {
+      condition1 = make_a_plus_b_leq_c(p1_init_plus_span1, size1, p2_init_plus_span2, phase());
+      condition2 = make_a_plus_b_leq_c(p2_init,            size2, p1_init,            phase());
+    }
   }
+
+  // Convert bol back to int value that we can OR.
+  Node* zero = _vloop.phase()->igvn().intcon(0);
+  Node* one  = _vloop.phase()->igvn().intcon(1);
+  Node* cmov1 = new CMoveINode(condition1, zero, one, TypeInt::INT);
+  Node* cmov2 = new CMoveINode(condition2, zero, one, TypeInt::INT);
+  _vloop.phase()->register_new_node_with_ctrl_of(cmov1, init);
+  _vloop.phase()->register_new_node_with_ctrl_of(cmov2, init);
+
+  Node* c1_or_c2 = new OrINode(cmov1, cmov2);
+  //tty->print("c1_or_c2 "); c1_or_c2->dump();
+  Node* cmp = CmpNode::make(c1_or_c2, zero, T_INT);
+  BoolNode* bol = new BoolNode(cmp, BoolTest::ne);
+  _vloop.phase()->register_new_node_with_ctrl_of(c1_or_c2, init);
+  _vloop.phase()->register_new_node_with_ctrl_of(cmp, init);
+  _vloop.phase()->register_new_node_with_ctrl_of(bol, init);
+
+  add_speculative_check(bol);
 }
 
 void VTransform::add_speculative_check(BoolNode* bol) {
