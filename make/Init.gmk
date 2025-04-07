@@ -37,11 +37,9 @@ include MakeFileStart.gmk
 include $(TOPDIR)/make/InitSupport.gmk
 include LogUtils.gmk
 
-# Force early generation of module-deps.gmk and find-tests.gmk
+# Force early generation of module-deps.gmk
 GENERATE_MODULE_DEPS_FILE := true
 include Modules.gmk
-GENERATE_FIND_TESTS_FILE := true
-include FindTests.gmk
 
 # Inclusion of this pseudo-target will cause make to execute this file
 # serially, regardless of -j.

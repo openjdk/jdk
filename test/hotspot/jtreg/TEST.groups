@@ -139,6 +139,7 @@ serviceability_ttf_virtual = \
   -serviceability/jvmti/negative
 
 tier1_common = \
+  sources \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \
   gtest/LockStackGtests.java \
@@ -546,6 +547,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/jvmti \
  -runtime/cds/appcds/LambdaProxyClasslist.java \
  -runtime/cds/appcds/loaderConstraints/LoaderConstraintsTest.java \
+ -runtime/cds/appcds/methodHandles \
  -runtime/cds/appcds/NestHostOldInf.java \
  -runtime/cds/appcds/OldClassTest.java \
  -runtime/cds/appcds/OldClassWithjsr.java \
@@ -623,16 +625,12 @@ tier1_serviceability = \
   -serviceability/sa/TestJmapCore.java \
   -serviceability/sa/TestJmapCoreMetaspace.java
 
-tier1_sources = \
-   sources
-
 tier1 = \
   :tier1_common \
   :tier1_compiler \
   :tier1_gc \
   :tier1_runtime \
   :tier1_serviceability \
-  :tier1_sources
 
 tier2 = \
   :hotspot_tier2_runtime \

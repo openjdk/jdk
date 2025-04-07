@@ -1539,6 +1539,21 @@ public class IRNode {
                                                                        CompilePhase.BEFORE_MATCHING));
     }
 
+    public static final String LOOP_PARSE_PREDICATE = PREFIX + "LOOP_PARSE_PREDICATE" + POSTFIX;
+    static {
+        parsePredicateNodes(LOOP_PARSE_PREDICATE, "Loop");
+    }
+
+    public static final String LOOP_LIMIT_CHECK_PARSE_PREDICATE = PREFIX + "LOOP_LIMIT_CHECK_PARSE_PREDICATE" + POSTFIX;
+    static {
+        parsePredicateNodes(LOOP_LIMIT_CHECK_PARSE_PREDICATE, "Loop Limit Check");
+    }
+
+    public static final String PROFILED_LOOP_PARSE_PREDICATE = PREFIX + "PROFILED_LOOP_PARSE_PREDICATE" + POSTFIX;
+    static {
+        parsePredicateNodes(PROFILED_LOOP_PARSE_PREDICATE, "Profiled Loop");
+    }
+
     public static final String PREDICATE_TRAP = PREFIX + "PREDICATE_TRAP" + POSTFIX;
     static {
         trapNodes(PREDICATE_TRAP, "predicate");
@@ -2759,6 +2774,13 @@ public class IRNode {
     private static void trapNodes(String irNodePlaceholder, String trapReason) {
         String regex = START + "CallStaticJava" + MID + "uncommon_trap.*" + trapReason + END;
         beforeMatching(irNodePlaceholder, regex);
+    }
+
+    private static void parsePredicateNodes(String irNodePlaceholder, String label) {
+        String regex = START + "ParsePredicate" + MID + "#" + label + "[ ]*!jvms:" + END;
+        IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.AFTER_PARSING, regex,
+                                                                          CompilePhase.AFTER_PARSING,
+                                                                          CompilePhase.PHASEIDEALLOOP_ITERATIONS));
     }
 
     private static void loadOfNodes(String irNodePlaceholder, String irNodeRegex) {

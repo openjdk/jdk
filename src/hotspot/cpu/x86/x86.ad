@@ -1461,11 +1461,14 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_MaxHF:
+    case Op_MinHF:
+      if (!VM_Version::supports_avx512vlbw()) {
+        return false;
+      }  // fallthrough
     case Op_AddHF:
     case Op_DivHF:
     case Op_FmaHF:
-    case Op_MaxHF:
-    case Op_MinHF:
     case Op_MulHF:
     case Op_ReinterpretS2HF:
     case Op_ReinterpretHF2S:
@@ -10935,8 +10938,6 @@ instruct scalar_binOps_HF_reg(regF dst, regF src1, regF src2)
 %{
   match(Set dst (AddHF src1 src2));
   match(Set dst (DivHF src1 src2));
-  match(Set dst (MaxHF src1 src2));
-  match(Set dst (MinHF src1 src2));
   match(Set dst (MulHF src1 src2));
   match(Set dst (SubHF src1 src2));
   format %{ "scalar_binop_fp16 $dst, $src1, $src2" %}
@@ -10945,6 +10946,20 @@ instruct scalar_binOps_HF_reg(regF dst, regF src1, regF src2)
     __ efp16sh(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
+%}
+
+instruct scalar_minmax_HF_reg(regF dst, regF src1, regF src2, kReg ktmp, regF xtmp1, regF xtmp2)
+%{
+  match(Set dst (MaxHF src1 src2));
+  match(Set dst (MinHF src1 src2));
+  effect(TEMP_DEF dst, TEMP ktmp, TEMP xtmp1, TEMP xtmp2);
+  format %{ "scalar_min_max_fp16 $dst, $src1, $src2\t using $ktmp, $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    __ scalar_max_min_fp16(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $ktmp$$KRegister,
+                           $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, Assembler::AVX_128bit);
+  %}
+  ins_pipe( pipe_slow );
 %}
 
 instruct scalar_fma_HF_reg(regF dst, regF src1, regF src2)

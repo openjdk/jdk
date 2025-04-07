@@ -41,14 +41,12 @@
 #include "utilities/globalDefinitions.hpp"
 
 inline int64_t ObjectMonitor::owner_id_from(JavaThread* thread) {
-  int64_t id = thread->monitor_owner_id();
-  assert(id >= ThreadIdentifier::initial() && id < ThreadIdentifier::current(), "must be reasonable");
-  return id;
+  return thread->monitor_owner_id();
 }
 
 inline int64_t ObjectMonitor::owner_id_from(oop vthread) {
   int64_t id = java_lang_Thread::thread_id(vthread);
-  assert(id >= ThreadIdentifier::initial() && id < ThreadIdentifier::current(), "must be reasonable");
+  ThreadIdentifier::verify_id(id);
   return id;
 }
 

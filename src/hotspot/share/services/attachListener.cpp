@@ -138,6 +138,7 @@ public:
     if (is_streaming()) {
       if (!_error) {
         _error = !_reply_writer->write_fully(str, (int)len);
+        update_position(str, len);
       }
     } else {
       bufferedStream::write(str, len);

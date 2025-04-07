@@ -91,7 +91,7 @@ protected:
 
   void mark_free();
 
-  void select_relocation_set(ZGenerationId generation, bool promote_all);
+  void select_relocation_set(bool promote_all);
   void reset_relocation_set();
 
   ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator);

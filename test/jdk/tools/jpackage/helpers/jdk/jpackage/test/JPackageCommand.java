@@ -42,7 +42,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -1174,16 +1173,20 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public static Stream<String> stripTimestamps(Stream<String> stream) {
-        // [HH:mm:ss.SSS]
-        final Pattern timestampRegexp = Pattern.compile(
-                "^\\[\\d\\d:\\d\\d:\\d\\d.\\d\\d\\d\\] ");
-        return stream.map(str -> {
-            Matcher m = timestampRegexp.matcher(str);
-            if (m.find()) {
-                str = str.substring(m.end());
-            }
+        return stream.map(JPackageCommand::stripTimestamp);
+    }
+
+    public static String stripTimestamp(String str) {
+        final var m = TIMESTAMP_REGEXP.matcher(str);
+        if (m.find()) {
+            return str.substring(m.end());
+        } else {
             return str;
-        });
+        }
+    }
+
+    public static boolean withTimestamp(String str) {
+        return TIMESTAMP_REGEXP.matcher(str).find();
     }
 
     @Override
@@ -1279,4 +1282,8 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }).get();
 
     private static final String UNPACKED_PATH_ARGNAME = "jpt-unpacked-folder";
+
+    // [HH:mm:ss.SSS]
+    private static final Pattern TIMESTAMP_REGEXP = Pattern.compile(
+            "^\\[\\d\\d:\\d\\d:\\d\\d.\\d\\d\\d\\] ");
 }

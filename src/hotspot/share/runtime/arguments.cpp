@@ -3797,6 +3797,13 @@ jint Arguments::apply_ergo() {
   }
 #endif // COMPILER2_OR_JVMCI
 
+#ifdef COMPILER2
+  if (!FLAG_IS_DEFAULT(UseLoopPredicate) && !UseLoopPredicate && UseProfiledLoopPredicate) {
+    warning("Disabling UseProfiledLoopPredicate since UseLoopPredicate is turned off.");
+    FLAG_SET_ERGO(UseProfiledLoopPredicate, false);
+  }
+#endif // COMPILER2
+
   if (log_is_enabled(Info, perf, class, link)) {
     if (!UsePerfData) {
       warning("Disabling -Xlog:perf+class+link since UsePerfData is turned off.");

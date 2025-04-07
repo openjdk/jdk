@@ -22,32 +22,34 @@
  */
 
 
+import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import jdk.jpackage.test.TKit;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CannedFormattedString;
+import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.JavaAppDesc;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.HelloApp;
-import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JavaTool;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
-import jdk.jpackage.test.Annotations.ParameterSupplier;
-import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.TKit;
 import jdk.tools.jlink.internal.LinkableRuntimeImage;
-import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
 
 /*
  * @test
@@ -226,6 +228,29 @@ public final class BasicTest {
             TKit.assertTextStream(str).label("verbose output")
                     .apply(verboseOutput[0].stream());
         });
+    }
+
+    @Test
+    @Parameter("false")
+    @Parameter("true")
+    public void testErrorsAlwaysPrinted(boolean verbose) {
+        final var cmd = JPackageCommand.helloAppImage()
+                .ignoreDefaultVerbose(true)
+                .useToolProvider(false)
+                .removeArgumentWithValue("--main-class");
+
+        if (verbose) {
+            cmd.addArgument("--verbose");
+        }
+
+        final var textVerifier = Stream.of(
+                List.of("error.no-main-class-with-main-jar", "hello.jar"),
+                List.of("error.no-main-class-with-main-jar.advice", "hello.jar")
+        ).map(args -> {
+            return JPackageStringBundle.MAIN.cannedFormattedString(args.getFirst(), args.subList(1, args.size()).toArray());
+        }).map(CannedFormattedString::getValue).map(TKit::assertTextStream).reduce(TKit.TextStreamVerifier::andThen).orElseThrow();
+
+        textVerifier.apply(cmd.saveConsoleOutput(true).execute(1).getOutput().stream().filter(Predicate.not(JPackageCommand::withTimestamp)));
     }
 
     @Test

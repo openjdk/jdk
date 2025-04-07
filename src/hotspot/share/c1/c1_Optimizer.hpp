@@ -25,8 +25,8 @@
 #ifndef SHARE_C1_C1_OPTIMIZER_HPP
 #define SHARE_C1_C1_OPTIMIZER_HPP
 
-#include "c1/c1_IR.hpp"
 #include "c1/c1_Instruction.hpp"
+#include "c1/c1_IR.hpp"
 
 class Optimizer {
  private:

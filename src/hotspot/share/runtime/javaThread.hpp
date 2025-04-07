@@ -170,10 +170,14 @@ class JavaThread: public Thread {
 
  public:
   void set_monitor_owner_id(int64_t id) {
-    assert(id >= ThreadIdentifier::initial() && id < ThreadIdentifier::current(), "");
+    ThreadIdentifier::verify_id(id);
     _monitor_owner_id = id;
   }
-  int64_t monitor_owner_id() const { return _monitor_owner_id; }
+  int64_t monitor_owner_id() const {
+    int64_t id = _monitor_owner_id;
+    ThreadIdentifier::verify_id(id);
+    return id;
+  }
 
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {

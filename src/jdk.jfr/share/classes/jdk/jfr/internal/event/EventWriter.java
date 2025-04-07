@@ -234,14 +234,14 @@ public final class EventWriter {
 
     public boolean beginEvent(EventConfiguration configuration, long typeId) {
         // This check makes sure the event type matches what was added by instrumentation.
-        if (configuration.getId() != typeId) {
+        if (configuration.id() != typeId) {
             throw new InternalError("Unexpected type id " + typeId);
         }
         if (excluded) {
             // thread is excluded from writing events
             return false;
         }
-        this.eventType = configuration.getPlatformEventType();
+        this.eventType = configuration.platformEventType();
         reserveEventSizeField();
         putLong(eventType.getId());
         return true;
