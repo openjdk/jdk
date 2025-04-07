@@ -1617,6 +1617,9 @@ public:
           FloatRegister (&secondElem)[4], FloatRegister (&result)[4]);
   void cc20_qr_lrot4(FloatRegister (&sourceReg)[4],
           FloatRegister (&destReg)[4], int bits, FloatRegister table);
+  void cc20_set_qr_registers(FloatRegister (&vectorSet)[4],
+          const FloatRegister (&stateVectors)[16], int idx1, int idx2,
+          int idx3, int idx4);
 
   // Place an ISB after code may have been modified due to a safepoint.
   void safepoint_isb();

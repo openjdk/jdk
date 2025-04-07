@@ -4512,9 +4512,9 @@ class StubGenerator: public StubCodeGenerator {
     // QUARTERROUND(1, 5, 9, 13)
     // QUARTERROUND(2, 6, 10, 14)
     // QUARTERROUND(3, 7, 11, 15)
-    bSet[0] = v16; bSet[1] = v17; bSet[2] = v18; bSet[3] = v19;
-    cSet[0] = v20; cSet[1] = v21; cSet[2] = v22; cSet[3] = v23;
-    dSet[0] = v24; dSet[1] = v25; dSet[2] = v26; dSet[3] = v27;
+    __ cc20_set_qr_registers(bSet, workSt, 4, 5, 6, 7);
+    __ cc20_set_qr_registers(cSet, workSt, 8, 9, 10, 11);
+    __ cc20_set_qr_registers(dSet, workSt, 12, 13, 14, 15);
 
     __ cc20_qr_add4(aSet, bSet);                    // a += b
     __ cc20_qr_xor4(dSet, aSet, dSet);              // d ^= a
@@ -4537,9 +4537,9 @@ class StubGenerator: public StubCodeGenerator {
     // QUARTERROUND(1, 6, 11, 12)
     // QUARTERROUND(2, 7, 8, 13)
     // QUARTERROUND(3, 4, 9, 14)
-    bSet[0] = v17; bSet[1] = v18; bSet[2] = v19; bSet[3] = v16;
-    cSet[0] = v22; cSet[1] = v23; cSet[2] = v20; cSet[3] = v21;
-    dSet[0] = v27; dSet[1] = v24; dSet[2] = v25; dSet[3] = v26;
+    __ cc20_set_qr_registers(bSet, workSt, 5, 6, 7, 4);
+    __ cc20_set_qr_registers(cSet, workSt, 10, 11, 8, 9);
+    __ cc20_set_qr_registers(dSet, workSt, 15, 12, 13, 14);
 
     __ cc20_qr_add4(aSet, bSet);                    // a += b
     __ cc20_qr_xor4(dSet, aSet, dSet);              // d ^= a

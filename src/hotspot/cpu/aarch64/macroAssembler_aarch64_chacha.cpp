@@ -114,3 +114,33 @@ void MacroAssembler::cc20_qr_lrot4(FloatRegister (&sourceReg)[4],
     ShouldNotReachHere();
   }
 }
+
+/**
+ * Set the FloatRegisters for a 4-vector register set.  These will be used
+ * during various quarter round transformations (adds, xors and left-rotations).
+ * This method itself does not result in the output of any assembly
+ * instructions.  It just organizes the vectors so they can be in columnar or
+ * diagonal alignments.
+ *
+ * @param vectorSet a 4-vector array to be altered into a new alignment
+ * @param stateVectors the 16-vector array that represents the current
+ *        working state.  The indices of this array match up with the
+ *        organization of the ChaCha20 state per RFC 7539 (e.g. stateVectors[12]
+ *        would contain the vector that holds the 32-bit counter, etc.)
+ * @param idx1 the index of the stateVectors array to be assigned to the
+ *        first vectorSet element.
+ * @param idx2 the index of the stateVectors array to be assigned to the
+ *        second vectorSet element.
+ * @param idx3 the index of the stateVectors array to be assigned to the
+ *        third vectorSet element.
+ * @param idx4 the index of the stateVectors array to be assigned to the
+ *        fourth vectorSet element.
+ */
+void MacroAssembler::cc20_set_qr_registers(FloatRegister (&vectorSet)[4],
+    const FloatRegister (&stateVectors)[16], int idx1, int idx2,
+    int idx3, int idx4) {
+  vectorSet[0] = stateVectors[idx1];
+  vectorSet[1] = stateVectors[idx2];
+  vectorSet[2] = stateVectors[idx3];
+  vectorSet[3] = stateVectors[idx4];
+}
