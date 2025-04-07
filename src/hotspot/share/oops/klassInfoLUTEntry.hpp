@@ -30,12 +30,12 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class OopMapBlock;
-class Klass;
-class InstanceKlass;
 class ArrayKlass;
+class InstanceKlass;
+class Klass;
+class oopDesc;
+class OopMapBlock;
 class outputStream;
-class oop;
 
 //                                     msb                                       lsb
 //
@@ -206,7 +206,7 @@ public:
 
   // Calculates the object size. Note, introduces a branch (is_array or not).
   // If possible, use either ik_wordsize() or ak_calculate_wordsize_given_oop() instead.
-  inline unsigned calculate_wordsize_given_oop(oop obj) const;
+  inline unsigned calculate_wordsize_given_oop(oopDesc* obj) const;
 
   // Following methods only if IK:
 
@@ -243,7 +243,7 @@ public:
   inline unsigned ak_layouthelper_hsz() const { return _v.ake.lh_hsz; }
 
   // calculates word size given header size, element size, and array length
-  inline unsigned ak_calculate_wordsize_given_oop(oop obj) const;
+  inline unsigned ak_calculate_wordsize_given_oop(oopDesc* obj) const;
 
   // Helper function, prints current limits
   static void print_limits(outputStream* st);
