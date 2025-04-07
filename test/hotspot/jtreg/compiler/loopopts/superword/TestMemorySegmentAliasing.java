@@ -209,7 +209,8 @@ class TestMemorySegmentAliasingImpl {
 
     public TestMemorySegmentAliasingImpl () {
         // Add all tests to list
-        tests.put("test1",            () -> test1(A, B));
+        tests.put("test_byte_incr_noaliasing",     () -> test_byte_incr_noaliasing(A, B));
+        tests.put("test_byte_incr_aliasing",       () -> test_byte_incr_aliasing(A, A));
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -322,7 +323,8 @@ class TestMemorySegmentAliasingImpl {
         return new Object[]{A, B, C};
     }
 
-    @Run(test = {"test1"})
+    @Run(test = {"test_byte_incr_noaliasing",
+                 "test_byte_incr_aliasing"})
     void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -330,10 +332,15 @@ class TestMemorySegmentAliasingImpl {
             // Recall gold value from before compilation
             Object gold = golds.get(name);
             // Compute new result
+            init();
             test.run();
             Object result = snapshot();
             // Compare gold and new result
-            Verify.checkEQ(gold, result);
+            try {
+                Verify.checkEQ(gold, result);
+            } catch (VerifyException e) {
+                throw new RuntimeException("Verify failed for " + name, e);
+            }
         }
     }
 
@@ -341,12 +348,28 @@ class TestMemorySegmentAliasingImpl {
     @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
                   IRNode.ADD_VB,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0",
-                  ".*multiversion.*",   "= 0"}, // AutoVectorization Predicate suffices
+                  ".*multiversion.*",   "= 0"}, // AutoVectorization Predicate SUFFICES
         phase = CompilePhase.PRINT_IDEAL,
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static void test1(MemorySegment a, MemorySegment b) {
+    static void test_byte_incr_noaliasing(MemorySegment a, MemorySegment b) {
+        for (long i = 0; i < a.byteSize(); i++) {
+            byte v = a.get(ValueLayout.JAVA_BYTE, i);
+            b.set(ValueLayout.JAVA_BYTE, i, (byte)(v + 1));
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0",
+                  ".*multiversion.*",   "> 0"}, // AutoVectorization Predicate FAILS
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static void test_byte_incr_aliasing(MemorySegment a, MemorySegment b) {
         for (long i = 0; i < a.byteSize(); i++) {
             byte v = a.get(ValueLayout.JAVA_BYTE, i);
             b.set(ValueLayout.JAVA_BYTE, i, (byte)(v + 1));
