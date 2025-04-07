@@ -360,7 +360,7 @@ void print_statistics() {
 
   ThreadsSMRSupport::log_statistics();
 
-  if (UseKLUT && PrintKLUTStatistics) {
+  if (PrintKLUTStatistics) {
     KlassInfoLUT::print_statistics(tty);
   }
 

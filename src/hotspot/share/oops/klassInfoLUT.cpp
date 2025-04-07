@@ -161,14 +161,19 @@ KlassLUTEntry KlassInfoLUT::register_klass(const Klass* k) {
 }
 
 #if INCLUDE_CDS
-// We only tolerate this for CDS.
+// We only tolerate this for CDS. I hope to find a better solution that allows me to
+// safely register all Klass structures *before* anyone calls any methods on them. CDS
+// makes that very difficult.
+// The problem with late_register_class is that it imposes an overhead on every lookup, since
+// a lookup table entry may potentially be still invalid.
 KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
   const Klass* k = CompressedKlassPointers::decode(nk);
   assert(k->is_shared(), "Only for CDS classes");
   // In the CDS case, we expect the original class to have been registered during dumptime; so
-  // it should carry a valid KLUTE entry. We cannot calculate the KLUTE from the Klass here, since
-  // the Klass may not yet been fully initialized (CDS calls functions like oopDesc methods on
-  // oops that have Klasses that are not loaded yet, and therefore, e.g., have no associated CLD).
+  // it should carry a valid KLUTE entry. We just copy the klute into the lookup table. Note that
+  // we cannot calculate the KLUTE from the Klass here even if we wanted, since the Klass may not
+  // yet been fully initialized (CDS calls Klass functions on Klass structures that are not yet
+  // fully initialized, e.g. have no associated CLD).
   const KlassLUTEntry klute = k->klute();
   assert(klute.is_valid(), "Must be a valid klute");
   _entries[nk] = klute.value();
@@ -191,8 +196,14 @@ HIT_STATS_DO(XX)
 
 void KlassInfoLUT::print_statistics(outputStream* st) {
 
-  assert(UseKLUT, "?");
-  st->print_cr("KLUT stats:");
+  if (!UseKLUT) {
+    st->print_cr("KLUT is not used.");
+    return;
+  }
+
+  st->print_cr("KLUT statistics:");
+
+  st->print_cr("Lookup Table Size: %u slots (%zu bytes)", _num_entries, _num_entries * sizeof(uint32_t));
 
   const uint64_t registered_all = counter_registered_IK + counter_registered_IRK + counter_registered_IMK +
       counter_registered_ICLK + counter_registered_ISCK + counter_registered_TAK + counter_registered_OAK;
