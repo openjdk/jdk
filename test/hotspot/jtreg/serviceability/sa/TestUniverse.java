@@ -79,6 +79,9 @@ public class TestUniverse {
 
         case Z:
             expStrings.add("ZHeap");
+            expStrings.add("used");
+            expStrings.add(" capacity ");
+            expStrings.add("max capacity");
             break;
 
         case Shenandoah:

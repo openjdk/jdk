@@ -22,21 +22,16 @@
  */
 
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zVirtualMemory.hpp"
+#include "gc/z/zVirtualMemoryManager.hpp"
 #include "logging/log.hpp"
 
 #include <sys/mman.h>
-#include <sys/types.h>
 
-void ZVirtualMemoryManager::pd_initialize_before_reserve() {
+void ZVirtualMemoryReserver::pd_register_callbacks(ZVirtualMemoryRegistry* registry) {
   // Does nothing
 }
 
-void ZVirtualMemoryManager::pd_register_callbacks(ZMemoryManager* manager) {
-  // Does nothing
-}
-
-bool ZVirtualMemoryManager::pd_reserve(zaddress_unsafe addr, size_t size) {
+bool ZVirtualMemoryReserver::pd_reserve(zaddress_unsafe addr, size_t size) {
   void* const res = mmap((void*)untype(addr), size, PROT_NONE, MAP_ANONYMOUS|MAP_PRIVATE|MAP_NORESERVE, -1, 0);
   if (res == MAP_FAILED) {
     // Failed to reserve memory
@@ -53,7 +48,7 @@ bool ZVirtualMemoryManager::pd_reserve(zaddress_unsafe addr, size_t size) {
   return true;
 }
 
-void ZVirtualMemoryManager::pd_unreserve(zaddress_unsafe addr, size_t size) {
+void ZVirtualMemoryReserver::pd_unreserve(zaddress_unsafe addr, size_t size) {
   const int res = munmap((void*)untype(addr), size);
   assert(res == 0, "Failed to unmap memory");
 }

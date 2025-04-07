@@ -83,7 +83,7 @@ public class TestZNMT {
                 .errorTo(System.out)
                 .shouldHaveExitValue(0);
         if (zForceDiscontiguousHeapReservations > 1) {
-            oa.shouldContain("Address Space Type: Discontiguous");
+            oa.shouldContain("Reserved Space Type: Discontiguous");
         }
         // We expect to have a report of this type.
         oa.shouldMatch("ZGC heap backing file");

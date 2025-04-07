@@ -31,7 +31,7 @@ private:
   uintptr_t _base;
   bool      _initialized;
 
-  bool commit_inner(zoffset offset, size_t length) const;
+  bool commit_inner(zbacking_offset offset, size_t length) const;
 
 public:
   ZPhysicalMemoryBacking(size_t max_capacity);
@@ -40,10 +40,10 @@ public:
 
   void warn_commit_limits(size_t max_capacity) const;
 
-  size_t commit(zoffset offset, size_t length) const;
-  size_t uncommit(zoffset offset, size_t length) const;
+  size_t commit(zbacking_offset offset, size_t length, uint32_t numa_id) const;
+  size_t uncommit(zbacking_offset offset, size_t length) const;
 
-  void map(zaddress_unsafe addr, size_t size, zoffset offset) const;
+  void map(zaddress_unsafe addr, size_t size, zbacking_offset offset) const;
   void unmap(zaddress_unsafe addr, size_t size) const;
 };
 

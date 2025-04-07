@@ -32,9 +32,49 @@
 
 #include <type_traits>
 
+template<typename T> class ZArray;
 class ZLock;
 
-template <typename T> using ZArray = GrowableArrayCHeap<T, mtGC>;
+template <typename T>
+class ZArraySlice : public GrowableArrayView<T> {
+  friend class ZArray<T>;
+  friend class ZArray<std::remove_const_t<T>>;
+  friend class ZArraySlice<std::remove_const_t<T>>;
+  friend class ZArraySlice<const T>;
+
+private:
+  ZArraySlice(T* data, int len);
+
+public:
+  ZArraySlice<T> slice_front(int end);
+  ZArraySlice<const T> slice_front(int end) const;
+
+  ZArraySlice<T> slice_back(int start);
+  ZArraySlice<const T> slice_back(int start) const;
+
+  ZArraySlice<T> slice(int start, int end);
+  ZArraySlice<const T> slice(int start, int end) const;
+
+  operator ZArraySlice<const T>() const;
+};
+
+template <typename T>
+class ZArray : public GrowableArrayCHeap<T, mtGC> {
+public:
+  using GrowableArrayCHeap<T, mtGC>::GrowableArrayCHeap;
+
+  ZArraySlice<T> slice_front(int end);
+  ZArraySlice<const T> slice_front(int end) const;
+
+  ZArraySlice<T> slice_back(int start);
+  ZArraySlice<const T> slice_back(int start) const;
+
+  ZArraySlice<T> slice(int start, int end);
+  ZArraySlice<const T> slice(int start, int end) const;
+
+  operator ZArraySlice<T>();
+  operator ZArraySlice<const T>() const;
+};
 
 template <typename T, bool Parallel>
 class ZArrayIteratorImpl : public StackObj {

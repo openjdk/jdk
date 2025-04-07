@@ -101,6 +101,17 @@ inline void ZGranuleMap<T>::release_put(zoffset offset, size_t size, T value) {
   put(offset, size, value);
 }
 
+template <typename T>
+inline const T* ZGranuleMap<T>::addr(zoffset offset) const {
+  const size_t index = index_for_offset(offset);
+  return _map + index;
+}
+
+template <typename T>
+inline T* ZGranuleMap<T>::addr(zoffset offset) {
+  return const_cast<T*>(const_cast<const ZGranuleMap<T>*>(this)->addr(offset));
+}
+
 template <typename T, bool Parallel>
 inline ZGranuleMapIterator<T, Parallel>::ZGranuleMapIterator(const ZGranuleMap<T>* granule_map)
   : ZArrayIteratorImpl<T, Parallel>(granule_map->_map, granule_map->_size) {}

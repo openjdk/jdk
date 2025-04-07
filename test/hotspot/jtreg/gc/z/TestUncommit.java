@@ -28,14 +28,14 @@ package gc.z;
  * @requires vm.gc.Z
  * @summary Test ZGC uncommit unused memory
  * @library /test/lib
- * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit
+ * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=5 gc.z.TestUncommit
  */
 
 import java.util.ArrayList;
 import jdk.test.lib.Utils;
 
 public class TestUncommit {
-    private static final int delay = 10 * 1000; // milliseconds
+    private static final int delay = 5 * 1000; // milliseconds
     private static final int allocSize = 200 * 1024 * 1024; // 200M
     private static final int smallObjectSize = 4 * 1024; // 4K
     private static final int mediumObjectSize = 2 * 1024 * 1024; // 2M

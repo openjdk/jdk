@@ -56,7 +56,7 @@ public class TestZForceDiscontiguousHeapReservations {
                 .errorTo(System.out)
                 .shouldHaveExitValue(0);
         if (n > 1) {
-            oa.shouldContain("Address Space Type: Discontiguous");
+            oa.shouldContain("Reserved Space Type: Discontiguous");
         }
     }
 

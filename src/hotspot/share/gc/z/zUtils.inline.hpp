@@ -69,4 +69,35 @@ inline void ZUtils::object_copy_conjoint(zaddress from, zaddress to, size_t size
   }
 }
 
+template <typename T>
+inline void ZUtils::copy_disjoint(T* dest, const T* src, size_t count) {
+  memcpy(dest, src, sizeof(T) * count);
+}
+
+template <typename T>
+inline void ZUtils::copy_disjoint(T* dest, const T* src, int count) {
+  assert(count >= 0, "must be positive %d", count);
+
+  copy_disjoint(dest, src, static_cast<size_t>(count));
+}
+
+template <typename T, typename Comparator>
+inline void ZUtils::sort(T* array, size_t count, Comparator comparator) {
+  using SortType = int(const void*, const void*);
+  using ComparatorType = int(const T*, const T*);
+
+  static constexpr bool IsComparatorCompatible = std::is_assignable<ComparatorType*&, Comparator>::value;
+  static_assert(IsComparatorCompatible, "Incompatible Comparator, must decay to plain function pointer");
+
+  // We rely on ABI compatibility between ComparatorType and SortType
+  qsort(array, count, sizeof(T), reinterpret_cast<SortType*>(static_cast<ComparatorType*>(comparator)));
+}
+
+template <typename T, typename Comparator>
+inline void ZUtils::sort(T* array, int count, Comparator comparator) {
+  assert(count >= 0, "must be positive %d", count);
+
+  sort(array, static_cast<size_t>(count), comparator);
+}
+
 #endif // SHARE_GC_Z_ZUTILS_INLINE_HPP

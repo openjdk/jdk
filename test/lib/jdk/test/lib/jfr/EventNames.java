@@ -153,7 +153,6 @@ public class EventNames {
     public static final String ZRelocationSet = PREFIX + "ZRelocationSet";
     public static final String ZRelocationSetGroup = PREFIX + "ZRelocationSetGroup";
     public static final String ZUncommit = PREFIX + "ZUncommit";
-    public static final String ZUnmap = PREFIX + "ZUnmap";
     public static final String SystemGC = PREFIX + "SystemGC";
     public static final String GCCPUTime = PREFIX + "GCCPUTime";
 

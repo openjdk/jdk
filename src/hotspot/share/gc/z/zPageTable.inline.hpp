@@ -103,11 +103,9 @@ inline bool ZGenerationPagesIterator::next(ZPage** page) {
 template <typename Function>
 inline void ZGenerationPagesIterator::yield(Function function) {
   _page_allocator->disable_safe_destroy();
-  _page_allocator->disable_safe_recycle();
 
   function();
 
-  _page_allocator->enable_safe_recycle();
   _page_allocator->enable_safe_destroy();
 }
 

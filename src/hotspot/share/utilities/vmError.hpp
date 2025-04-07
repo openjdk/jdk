@@ -26,7 +26,9 @@
 #ifndef SHARE_UTILITIES_VMERROR_HPP
 #define SHARE_UTILITIES_VMERROR_HPP
 
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 class Decoder;
 class frame;
@@ -108,11 +110,7 @@ class VMError : public AllStatic {
   static void print_stack_trace(outputStream* st, JavaThread* jt,
                                 char* buf, int buflen, bool verbose = false);
 
-  static const char* get_filename_only() {
-    char separator = os::file_separator()[0];
-    const char* p = strrchr(_filename, separator);
-    return p ? p+1 : _filename;
-  }
+  static const char* get_filename_only();
 
   static bool should_report_bug(unsigned int id) {
     return (id != OOM_MALLOC_ERROR) && (id != OOM_MMAP_ERROR);

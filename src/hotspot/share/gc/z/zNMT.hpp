@@ -26,13 +26,10 @@
 
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "gc/z/zMemory.hpp"
-#include "gc/z/zVirtualMemory.hpp"
 #include "memory/allStatic.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/nativeCallStack.hpp"
 
 class ZNMT : public AllStatic {
 private:
@@ -44,10 +41,10 @@ public:
   static void reserve(zaddress_unsafe start, size_t size);
   static void unreserve(zaddress_unsafe start, size_t size);
 
-  static void commit(zoffset offset, size_t size);
-  static void uncommit(zoffset offset, size_t size);
+  static void commit(zbacking_offset offset, size_t size);
+  static void uncommit(zbacking_offset offset, size_t size);
 
-  static void map(zaddress_unsafe addr, size_t size, zoffset offset);
+  static void map(zaddress_unsafe addr, size_t size, zbacking_offset offset);
   static void unmap(zaddress_unsafe addr, size_t size);
 };
 

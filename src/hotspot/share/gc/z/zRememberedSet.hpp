@@ -114,7 +114,6 @@ public:
 
   bool is_initialized() const;
   void initialize(size_t page_size);
-  void delete_all();
 
   bool at_current(uintptr_t offset) const;
   bool at_previous(uintptr_t offset) const;
