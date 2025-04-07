@@ -242,7 +242,7 @@ import java.util.function.Supplier;
  *             StableValue.list(SIZE, ORIGINAL_POWER_OF_TWO);
  *
  *     public static int powerOfTwo(int a) {
- *         return POWER_OF_TWO.gety(a);
+ *         return POWER_OF_TWO.get(a);
  *     }
  * }
  *
