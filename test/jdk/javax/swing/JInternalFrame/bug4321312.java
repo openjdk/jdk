@@ -118,7 +118,7 @@ public class bug4321312 {
         protected void processMouseEvent(MouseEvent e) {
             try {
                 super.processMouseEvent(e);
-            } catch(Exception exc) {
+            } catch (Exception exc) {
                 setFails(exc);
             }
         }
