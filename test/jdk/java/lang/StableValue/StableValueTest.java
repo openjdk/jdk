@@ -225,20 +225,39 @@ final class StableValueTest {
                     StableValue.intFunction(CACHED_SIZE, StrictMath::sqrt);
 
             public static double sqrt(int a) {
-                if (a < CACHED_SIZE) {
-                    return SQRT.apply(a);
-                } else {
-                    return StrictMath.sqrt(a);
-                }
+                return SQRT.apply(a);
             }
         }
 
-
         double sqrt9 = SqrtUtil.sqrt(9);   // May eventually constant fold to 3.0 at runtime
-        double sqrt81 = SqrtUtil.sqrt(81); // Will not constant fold
 
         assertEquals(3, sqrt9);
-        assertEquals(9, sqrt81);
+        assertThrows(IllegalArgumentException.class, () -> SqrtUtil.sqrt(16));
+    }
+
+    @Test
+    void intFunctionExample2() {
+        final class HexUtil {
+
+            private HexUtil() {}
+
+            private static final int SIZE = 0x10;
+
+            private static final IntFunction<String> TO_HEX =
+                    // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
+                    StableValue.intFunction(SIZE, Integer::toHexString);
+
+            public static String toHex(int a) {
+                return TO_HEX.apply(a);
+            }
+        }
+
+        String hex10 = HexUtil.toHex(10);   // May eventually constant fold to "A" at runtime
+
+        assertEquals("0", HexUtil.toHex(0x0));
+        assertEquals("a", hex10);
+        assertEquals("f", HexUtil.toHex(0xf));
+        assertThrows(IllegalArgumentException.class, () -> HexUtil.toHex(0x10));
     }
 
     @Test
@@ -272,6 +291,34 @@ final class StableValueTest {
 
         assertEquals(4, log16);
         assertEquals(8, log256);
+    }
+
+    @Test
+    void functionExample2() {
+
+        class Log2Util {
+
+            private Log2Util() {}
+
+            private static final Set<Integer> KEYS =
+                    Set.of(1, 2, 4, 8);
+            private static final UnaryOperator<Integer> LOG2_ORIGINAL =
+                    i -> 31 - Integer.numberOfLeadingZeros(i);
+
+            private static final Function<Integer, Integer> LOG2 =
+                    // @link substring="function" target="#function(Set,Function)" :
+                    StableValue.function(KEYS, LOG2_ORIGINAL);
+
+            public static double log2(int a) {
+                return LOG2.apply(a);
+            }
+
+        }
+
+        double log16 = Log2Util.log2(8); // May eventually constant fold to 3.0 at runtime
+
+        assertEquals(3, log16);
+        assertThrows(IllegalArgumentException.class, () -> Log2Util.log2(3));
     }
 
     private static final BiPredicate<StableValue<Integer>, Integer> TRY_SET = StableValue::trySet;

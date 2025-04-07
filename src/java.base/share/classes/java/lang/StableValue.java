@@ -171,20 +171,18 @@ import java.util.function.Supplier;
  *              StableValue.intFunction(CACHED_SIZE, StrictMath::sqrt);
  *
  *      public static double sqrt(int a) {
- *           if (a < CACHED_SIZE) {
- *                return SQRT.apply(a);
- *           } else {
- *                return StrictMath.sqrt(a);
- *           }
+ *          return SQRT.apply(a);
  *      }
  *  }
  *
  *  public static void computeSomeValues() {
  *      double sqrt9 = sqrt(9);   // May eventually constant fold to 3.0 at runtime
- *      double sqrt81 = sqrt(81); // Will not constant fold
  *  }
  *
  *}
+ * The {@code SqrtUtil.sqrt()} function is a <em>partial function</em> that only allows a
+ * subset {@code [0, 9]} of the original function's {@code StrictMath::sqrt} input range.
+ *
  * <p>
  * A <em>stable function</em> is a function that takes a parameter (of type {@code T}) and
  * uses it to compute a result (of type {@code R}) that is then cached by the backing
@@ -199,34 +197,29 @@ import java.util.function.Supplier;
  *
  *     private Log2Util() {}
  *
- *     private static final Set<Integer> CACHED_KEYS =
+ *     private static final Set<Integer> KEYS =
  *             Set.of(1, 2, 4, 8, 16, 32);
  *     private static final UnaryOperator<Integer> LOG2_ORIGINAL =
  *             i -> 31 - Integer.numberOfLeadingZeros(i);
  *
- *     private static final Function<Integer, Integer> LOG2_CACHED =
+ *     private static final Function<Integer, Integer> LOG2 =
  *             // @link substring="function" target="#function(Set,Function)" :
- *             StableValue.function(CACHED_KEYS, LOG2_ORIGINAL);
+ *             StableValue.function(KEYS, LOG2_ORIGINAL);
  *
  *     public static double log2(int a) {
- *         if (CACHED_KEYS.contains(a)) {
- *             return LOG2_CACHED.apply(a);
- *         } else {
- *             return LOG2_ORIGINAL.apply(a);
- *         }
+ *         return LOG2.apply(a);
  *     }
  *
  * }
  *
  * public static double computeSomeValues() {
  *     double log16  = Log2Util.log2(16); // May eventually constant fold to 4 at runtime
- *     double log256 = Log2Util.log2(81); // Will not constant fold
  * }
- * }
- * Note: The {@code LOG2_CACHED} function is a <em>partial function</em> that only has
- *       a small number of allowed inputs whereas {@code Log2Util.log2} is a
- *       <em>total function</em> that allows the same input set that the original function
- *       is defined for.
+ *}
+ *
+ * The {@code Log2Util.log2()} function is a <em>partial function</em> that only allows
+ * a subset ({@code {1, 2, 4, 8, 16, 32}}) of the original function's
+ * {@code LOG2_ORIGINAL} input range.
  *
  * <h2 id="stable-collections">Stable Collections</h2>
  * Stable values can also be used as backing storage for
@@ -246,17 +239,12 @@ import java.util.function.Supplier;
  *              StableValue.list(CACHED_SIZE, StrictMath::sqrt);
  *
  *      public static double sqrt(int a) {
- *           if (a < CACHED_SIZE) {
- *                return SQRT.get(a);
- *           } else {
- *                return StrictMath.sqrt(a);
- *           }
+ *          return SQRT.get(a);
  *      }
  *  }
  *
  *  public static void computeSomeValues() {
  *       double sqrt9 = SqrtUtil.sqrt(9);   // May eventually constant fold to 3.0 at runtime
- *       double sqrt81 = SqrtUtil.sqrt(81); // Will not constant fold
  *  }
  *
  * }
@@ -270,26 +258,21 @@ import java.util.function.Supplier;
  *
  *     private Log2Util() {}
  *
- *     private static final Set<Integer> CACHED_KEYS =
+ *     private static final Set<Integer> KEYS =
  *             Set.of(1, 2, 4, 8, 16, 32);
  *     private static final UnaryOperator<Integer> LOG2_ORIGINAL =
  *             i -> 31 - Integer.numberOfLeadingZeros(i);
  *
- *     private static final Map<Integer, INTEGER> LOG2_CACHED =
+ *     private static final Map<Integer, INTEGER> LOG2 =
  *             // @link substring="map" target="#map(Set,Function)" :
  *             StableValue.map(CACHED_KEYS, LOG2_ORIGINAL);
  *
  *     public static double log2(int a) {
- *          if (CACHED_KEYS.contains(a)) {
- *              return LOG2_CACHED.get(a);
- *          } else {
- *              return LOG2_ORIGINAL.apply(a);
- *          }
+ *          return LOG2.get(a);
  *     }
  *
  *     public static double computeSomeValues() {
  *         double log16 = Log2Util.log2(16);   // May eventually constant fold to 4 at runtime
- *         double log256 = Log2Util.log2(256); // Will not constant fold
  *     }
  *
  * }
