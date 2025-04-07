@@ -888,9 +888,7 @@ jint universe_init() {
   Metaspace::global_initialize();
 
   // Initialize KLUT before starting to create any Klass
-  if (UseKLUT) {
-    KlassInfoLUT::initialize();
-  }
+  KlassInfoLUT::initialize();
 
   // Initialize performance counters for metaspaces
   MetaspaceCounters::initialize_performance_counters();

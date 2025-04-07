@@ -98,6 +98,8 @@ class KlassInfoLUT : public AllStatic {
   static KlassLUTEntry late_register_klass(narrowKlass nk);
 #endif
 
+  static bool use_lookup_table() { return _entries != nullptr; }
+
 public:
 
   static void initialize();
