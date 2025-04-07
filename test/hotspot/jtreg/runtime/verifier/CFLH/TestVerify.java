@@ -101,7 +101,6 @@ public class TestVerify {
 
                     if (DEBUG) Files.write(Path.of("bad.class"), bytes);
                 } catch (Throwable e) {
-                    System.out.println(e);
                     throw new AssertionError(e);
                 }
                 return bytes;
