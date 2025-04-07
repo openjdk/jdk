@@ -117,8 +117,9 @@ public final class IO {
      * @param obj the object to print, may be {@code null}
      */
     public static void print(Object obj) {
-        System.out.print(obj);
-        System.out.flush();
+        var out = System.out;
+        out.print(obj);
+        out.flush();
     }
 
     /**
