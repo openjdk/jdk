@@ -656,10 +656,6 @@ void ShenandoahRegionPartitions::assert_bounds(bool old_trash_not_in_bounds) {
 
   for (idx_t i = 0; i < _max; i++) {
     ShenandoahFreeSetPartitionId partition = membership(i);
-#define KELVIN_BOUNDS
-#ifdef KELVIN_BOUNDS
-    log_info(gc)("ab[%zd] from partition %s", i, partition_name(partition));
-#endif
     switch (partition) {
       case ShenandoahFreeSetPartitionId::NotFree:
         break;
@@ -807,13 +803,18 @@ void ShenandoahRegionPartitions::assert_bounds(bool old_trash_not_in_bounds) {
   beg_off = empty_leftmosts[int(ShenandoahFreeSetPartitionId::OldCollector)];
   end_off = empty_rightmosts[int(ShenandoahFreeSetPartitionId::OldCollector)];
   assert (beg_off >= _leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-          "free empty region (%zd) before the leftmost bound %zd, old_trash_not_in_bounds: %s",
+          "free empty region (%zd) before the leftmost bound %zd, old_trash_not_in_bounds: %s, region %s trash",
           beg_off, _leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-	  old_trash_not_in_bounds? "yes": "no");
+	  old_trash_not_in_bounds? "yes": "no",
+	  (ShenandoahHeap::heap()->get_region(_leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)])->is_trash()?
+	   "is": "is not"));
   assert (end_off <= _rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-          "free empty region (%zd) past the rightmost bound %zd, old_trash_not_in_bounds: %s",
+          "free empty region (%zd) past the rightmost bound %zd, old_trash_not_in_bounds: %s, region %s trash",
           end_off, _rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-	  old_trash_not_in_bounds? "yes": "no");
+	  old_trash_not_in_bounds? "yes": "no",
+	  (ShenandoahHeap::heap()->get_region(_rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)])->is_trash()?
+	   "is": "is not"));
+
 }
 #endif
 
@@ -1101,13 +1102,10 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   }
   HeapWord* result = nullptr;
   r->try_recycle_under_lock();
-  if (r->is_trash()) {		// try_recycle_under_lock() failed.  We cannot yet allocate in this region.
-    return nullptr;
-  }
 #ifdef ASSERT
   // Note: if assertions are not enforced, there's no rush to adjust this interval.  We'll adjust the
   // interval when we eventually rebuild the free set.
-  if (req.is_old() && _old_trash_not_in_bounds && (r->free() == ShenandoahHeapRegion::region_size_bytes())) {
+  if (r->is_old() && _old_trash_not_in_bounds && !r->is_trash() && (r->free() == ShenandoahHeapRegion::region_size_bytes())) {
     _partitions.adjust_interval_for_recycled_old_region_under_lock(r);
   }
 #endif
@@ -1247,13 +1245,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
         orig_partition = ShenandoahFreeSetPartitionId::Collector;
       }
     }
-
-#define KELVIN_BOUNDS
-#ifdef KELVIN_BOUNDS
-    log_info(gc)("try_allocate_in() retires region %zu from partition %s, _old_trash_not_in_bounds: %d",
-		 idx, partition_name(orig_partition), _old_trash_not_in_bounds);
-#endif
-
     _partitions.retire_from_partition(orig_partition, idx, r->used());
 #ifdef ASSERT
     _partitions.assert_bounds(_old_trash_not_in_bounds);
@@ -1400,9 +1391,6 @@ public:
     // Note: if assertions are not enforced, there's no rush to adjust this interval.  We'll adjust the
     // interval when we eventually rebuild the free set.
     if (r->is_old() && _old_trash_not_in_bounds && !r->is_trash() && (r->free() == ShenandoahHeapRegion::region_size_bytes())) {
-      shenandoah_assert_not_heaplocked();
-      ShenandoahHeap* heap = ShenandoahHeap::heap();
-      ShenandoahHeapLocker locker(heap->lock());
       _partitions->adjust_interval_for_recycled_old_region(r);
     }
 #endif
@@ -1416,13 +1404,15 @@ public:
 void ShenandoahFreeSet::recycle_trash() {
   // lock is not non-reentrant, check we don't have it
   shenandoah_assert_not_heaplocked();
-  _heap->assert_gc_workers(_heap->workers()->active_workers());
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  heap->assert_gc_workers(heap->workers()->active_workers());
 #ifdef ASSERT
   ShenandoahRecycleTrashedRegionClosure closure(&_partitions, _old_trash_not_in_bounds);
 #else
   ShenandoahRecycleTrashedRegionClosure closure(&_partitions);
 #endif
-  _heap->parallel_heap_region_iterate(&closure);
+  heap->parallel_heap_region_iterate(&closure);
 #ifdef ASSERT
   ShenandoahHeapLocker locker(_heap->lock());
   _old_trash_not_in_bounds = false;
