@@ -207,7 +207,7 @@ import java.util.function.Supplier;
  *             // @link substring="function" target="#function(Set,Function)" :
  *             StableValue.function(KEYS, ORIGINAL_LOG2);
  *
- *     public static double log2(int a) {
+ *     public static int log2(int a) {
  *         return LOG2.apply(a);
  *     }
  *
@@ -266,7 +266,7 @@ import java.util.function.Supplier;
  *             // @link substring="map" target="#map(Set,Function)" :
  *             StableValue.map(CACHED_KEYS, LOG2_ORIGINAL);
  *
- *     public static double log2(int a) {
+ *     public static int log2(int a) {
  *          return LOG2.get(a);
  *     }
  *
