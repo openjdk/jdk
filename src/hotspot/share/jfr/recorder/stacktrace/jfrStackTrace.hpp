@@ -57,7 +57,6 @@ class JfrStackTrace : public JfrCHeapObj {
 
   const JfrStackTrace* next() const { return _next; }
 
-  bool should_write() const { return !_written; }
   void write(JfrChunkWriter& cw) const;
   void write(JfrCheckpointWriter& cpw) const;
   bool equals(const JfrStackTrace& rhs) const;
@@ -86,6 +85,7 @@ class JfrStackTrace : public JfrCHeapObj {
 
   bool record(JavaThread* current_thread, int skip, int64_t stack_filter_id);
   bool record(JavaThread* jt, const frame& frame, const JfrSampleRequest& request);
+  bool should_write() const { return !_written; }
 };
 
 #endif // SHARE_JFR_RECORDER_STACKTRACE_JFRSTACKTRACE_HPP
