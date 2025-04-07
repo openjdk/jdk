@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8351654
- * @summary Make sure --patch-module for java.base verifies the classfile.
+ * @summary Show that --patch-module for java.base does not verify the classfile.
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
