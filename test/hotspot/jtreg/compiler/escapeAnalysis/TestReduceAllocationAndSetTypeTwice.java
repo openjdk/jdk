@@ -27,6 +27,7 @@
  * @summary Check that RAM does not crash when split load through phi
  *          tries to register an old node twice with IGVN.
  * @run main/othervm -XX:CompileCommand=compileonly,*TestReduceAllocationAndSetTypeTwice*::*
+ *                   -XX:CompileCommand=dontinline,*TestReduceAllocationAndSetTypeTwice*::*
  *                   -Xcomp compiler.escapeAnalysis.TestReduceAllocationAndSetTypeTwice
  * @run main compiler.escapeAnalysis.TestReduceAllocationAndSetTypeTwice
  */

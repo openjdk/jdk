@@ -290,7 +290,7 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
         toop->is_instptr()->instance_klass()->is_java_lang_Object() &&
         toop->offset() == Type::OffsetBot)) {
     // IGVN _delay_transform may be set to true and if that is the case and mmem
-    // is already a registered then the validation inside transform will
+    // is already a registered node then the validation inside transform will
     // complain.
     Node* m = mmem;
     PhaseIterGVN* igvn = phase->is_IterGVN();
