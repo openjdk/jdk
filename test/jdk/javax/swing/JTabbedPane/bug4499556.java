@@ -139,7 +139,7 @@ public class bug4499556 {
         pane.setTabComponentAt(2, button);
         button.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if(pane.getTabCount() == 4) {
+                if (pane.getTabCount() == 4) {
                     pane.remove(1);
                     button.setText("Insert #1");
                 } else {
@@ -228,10 +228,10 @@ public class bug4499556 {
         JLabel comp = new JLabel("JLabel");
         testPanel.add(comp);
         JButton closeButton = new CloseButton();
-        closeButton.setPreferredSize(new Dimension(10,10));
+        closeButton.setPreferredSize(new Dimension(10, 10));
         testPanel.add(closeButton);
         testPanel.setOpaque(false);
-        pane.insertTab("Test", null,new JLabel(""), "", 1);
+        pane.insertTab("Test", null, new JLabel(""), "", 1);
         pane.setTabComponentAt(1, testPanel);
     }
 

@@ -44,8 +44,8 @@ public class bug6259533 {
         You should see a JTabbedPane with two tabs.
         The first tab uses a string and the second tab has a JLabel as a tabComponent
 
-        Select the each tab and notice that on selection the tab title
-        is moved a upwards slightly in comparison with the unselected tab
+        Select each tab and notice that on selection the tab title
+        is moved upwards slightly in comparison with the unselected tab
 
         If that is the observed behaviour, press PASS, press FAIL otherwise.
 
@@ -75,7 +75,7 @@ public class bug6259533 {
         JLabel label = new JLabel("JLabel Tab");
         pane.setTabComponentAt(1, label);
         frame.add(pane);
-        frame.setSize(400,200);
+        frame.setSize(400, 200);
         return frame;
     }
 
