@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,13 @@
  */
 
 #include "jni.h"
-#include "jni_util.h"
-#include "jlong.h"
 #include "jvm.h"
 
-#include "jdk_internal_vm_VMSupport.h"
+#include "jdk_internal_vm_ThreadSnapshot.h"
+
 
 JNIEXPORT jobject JNICALL
-Java_jdk_internal_vm_VMSupport_initAgentProperties(JNIEnv *env, jclass cls, jobject props)
+Java_jdk_internal_vm_ThreadSnapshot_create0(JNIEnv *env, jclass cls, jobject thread, jboolean withLocks)
 {
-    return JVM_InitAgentProperties(env, props);
-}
-
-JNIEXPORT jstring JNICALL
-Java_jdk_internal_vm_VMSupport_getVMTemporaryDirectory(JNIEnv *env, jclass cls)
-{
-    return JVM_GetTemporaryDirectory(env);
+  return JVM_CreateThreadSnapshot(env, thread, withLocks);
 }

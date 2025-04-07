@@ -1875,7 +1875,228 @@ oop java_lang_Thread::park_blocker(oop java_thread) {
   return java_thread->obj_field(_park_blocker_offset);
 }
 
-oop java_lang_Thread::async_get_stack_trace(oop java_thread, bool with_locks, oop* locks, TRAPS) {
+
+struct LockInfo {
+    enum { // should be synced with jdk.internal.vm.ThreadSnapshot.ThreadLock constants
+        PARKING_TO_WAIT = 1,
+        ELEMINATED_SCALAR_REPLACED = 2,
+        ELEMINATED_MONITOR = 3,
+        LOCKED = 4,
+        WAITING_TO_LOCK = 5,
+        WAITING_ON = 6,
+        WAITING_TO_RELOCK = 7,
+    };
+
+    int _depth;
+    int _type;
+    oop _obj;
+
+    LockInfo(int depth, int type, oop obj) : _depth(depth), _type(type), _obj(obj) {}
+    LockInfo() : _depth(0), _type(0), _obj(nullptr) {}
+};
+
+class GetThreadSnapshotClosure : public HandshakeClosure {
+public:
+  const Handle _java_thread;
+  const JavaThread* _thread;
+  int _depth;
+  bool _retry_handshake;
+  GrowableArray<Method*>* _methods;
+  GrowableArray<int>* _bcis;
+  JavaThreadStatus _thread_status;
+  oop _name;
+  bool _with_locks;
+  GrowableArray<LockInfo>* _locks;
+
+  GetThreadSnapshotClosure(Handle java_thread, JavaThread* thread, bool with_locks) :
+      HandshakeClosure("GetThreadSnapshotClosure"), _java_thread(java_thread), _thread(thread),
+      _depth(0), _retry_handshake(false),
+      _methods(nullptr), _bcis(nullptr),
+      _thread_status(), _name(nullptr),
+      _with_locks(with_locks), _locks(nullptr) { }
+  virtual ~GetThreadSnapshotClosure() {
+    delete _methods;
+    delete _bcis;
+    if (_locks != nullptr) {
+      delete _locks;
+    }
+  }
+
+  bool read_reset_retry() {
+    bool ret = _retry_handshake;
+    // If we re-execute the handshake this method need to return false
+    // when the handshake cannot be performed. (E.g. thread terminating)
+    _retry_handshake = false;
+    return ret;
+  }
+
+  void detect_locks(javaVFrame* jvf, int depth) {
+    Thread* current = Thread::current();
+
+    if (depth == 0) {
+      // See javaVFrame::print_lock_info_on() for some other cases:
+      // "waiting to re-lock in wait", "waiting on the Class initialization monitor".
+
+      // If this is the first frame and it is java.lang.Object.wait(...)
+      // then print out the receiver.
+      if (jvf->method()->name() == vmSymbols::wait_name() &&
+          jvf->method()->method_holder()->name() == vmSymbols::java_lang_Object()) {
+        StackValueCollection* locs = jvf->locals();
+        if (locs->is_empty()) {
+          _locks->push(LockInfo(depth, LockInfo::WAITING_ON, nullptr));
+        } else {
+          int type = LockInfo::WAITING_ON;
+          StackValue* sv = locs->at(0);
+          if (sv->type() == T_OBJECT) {
+            Handle o = locs->at(0)->get_obj();
+            if (java_lang_Thread::get_thread_status(_java_thread()) == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER) {
+              type = LockInfo::WAITING_TO_RELOCK;;
+            }
+            _locks->push(LockInfo(depth, type, o()));
+          }
+        }
+      } else {
+        oop park_blocker = java_lang_Thread::park_blocker(_java_thread());
+        if (park_blocker != nullptr) {
+          _locks->push(LockInfo(depth, LockInfo::PARKING_TO_WAIT, park_blocker));
+        }
+      }
+    }
+
+    GrowableArray<MonitorInfo*>* mons = jvf->monitors();
+    if (!mons->is_empty()) {
+      bool found_first_monitor = false;
+      for (int index = (mons->length() - 1); index >= 0; index--) {
+        MonitorInfo* monitor = mons->at(index);
+        if (monitor->eliminated() && jvf->is_compiled_frame()) { // Eliminated in compiled code
+          if (monitor->owner_is_scalar_replaced()) {
+            Klass* k = java_lang_Class::as_Klass(monitor->owner_klass());
+            _locks->push(LockInfo(depth, LockInfo::ELEMINATED_SCALAR_REPLACED, k->klass_holder()));
+          } else {
+            Handle obj(current, monitor->owner());
+            if (obj() != nullptr) {
+              _locks->push(LockInfo(depth, LockInfo::ELEMINATED_MONITOR, obj()));
+            }
+          }
+          continue;
+        }
+        if (monitor->owner() != nullptr) {
+          // the monitor is associated with an object, i.e., it is locked
+          int type = LockInfo::LOCKED;
+
+          if (!found_first_monitor && depth == 0) {
+            ObjectMonitor* pending_moninor = java_lang_VirtualThread::is_instance(_java_thread())
+                           ? java_lang_VirtualThread::current_pending_monitor(_java_thread())
+                           : jvf->thread()->current_pending_monitor();
+
+            markWord mark = monitor->owner()->mark();
+            // The first stage of async deflation does not affect any field
+            // used by this comparison so the ObjectMonitor* is usable here.
+            if (mark.has_monitor()) {
+              ObjectMonitor* mon = ObjectSynchronizer::read_monitor(current, monitor->owner(), mark);
+              if (// if the monitor is null we must be in the process of locking
+                  mon == nullptr ||
+                  // we have marked ourself as pending on this monitor
+                  mon == pending_moninor ||
+                  // we are not the owner of this monitor
+                  false/*!mon->is_entered(thread())*/) {
+                type = LockInfo::WAITING_TO_LOCK;
+              }
+            }
+          }
+          _locks->push(LockInfo(depth, type, monitor->owner()));
+
+           found_first_monitor = true;
+        }
+      }
+    }
+  }
+
+  void do_thread(Thread* th) override {
+    if (!Thread::current()->is_Java_thread()) {
+      _retry_handshake = true;
+      return;
+    }
+
+    JavaThread* thread = nullptr;
+    // ensure virtual thread was not mounted/unmounted
+    bool is_virtual = java_lang_VirtualThread::is_instance(_java_thread());
+    if (is_virtual) {
+      oop carrier_thread = java_lang_VirtualThread::carrier_thread(_java_thread());
+      if (carrier_thread != nullptr) {
+        thread = java_lang_Thread::thread(carrier_thread);
+      } else {
+        thread = nullptr;
+      }
+      if (thread != _thread) {
+        // carrier changed - retry
+        _retry_handshake = true;
+        return;
+      }
+    } else {
+      thread = java_lang_Thread::thread(_java_thread());
+    }
+
+    _thread_status = java_lang_Thread::get_thread_status(_java_thread());
+    _name = java_lang_Thread::name(_java_thread());
+
+    if (thread != nullptr && !thread->has_last_Java_frame()) {
+      return;
+    }
+
+    bool carrier = false;
+
+    if (is_virtual) {
+      if (thread != nullptr) {
+        // if (thread->vthread() != _java_thread()) // We might be inside a System.executeOnCarrierThread
+        const ContinuationEntry* ce = thread->vthread_continuation();
+        if (ce == nullptr || ce->cont_oop(thread) != java_lang_VirtualThread::continuation(_java_thread())) {
+          // TODO: handle
+        }
+      }
+    } else {
+      carrier = (thread->vthread_continuation() != nullptr);
+    }
+
+    ResourceMark rm(Thread::current());
+
+    const int max_depth = MaxJavaStackTraceDepth;
+    const bool skip_hidden = !ShowHiddenFrames;
+
+    // Pick minimum length that will cover most cases
+    int init_length = 64;
+    _methods = new (mtInternal) GrowableArray<Method*>(init_length, mtInternal);
+    _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
+
+    if (_with_locks) {
+      _locks = new (mtInternal) GrowableArray<LockInfo>(init_length, mtInternal);
+    }
+    int total_count = 0;
+
+    vframeStream vfst(thread != nullptr
+        ? vframeStream(thread, false, false, carrier)
+        : vframeStream(java_lang_VirtualThread::continuation(_java_thread())));
+
+    for (;
+        !vfst.at_end() && (max_depth == 0 || max_depth != total_count);
+        vfst.next()) {
+      if (_with_locks) {
+        detect_locks(vfst.asJavaVFrame(), total_count);
+      }
+      if (skip_hidden && (vfst.method()->is_hidden() ||
+        vfst.method()->is_continuation_enter_intrinsic())) {
+        continue;
+      }
+      _methods->push(vfst.method());
+      _bcis->push(vfst.bci());
+      total_count++;
+    }
+
+    _depth = total_count;
+  }
+};
+
+oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
   ThreadsListHandle tlh(JavaThread::current());
   JavaThread* thread;
   bool is_virtual = java_lang_VirtualThread::is_instance(java_thread);
@@ -1892,25 +2113,6 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, bool with_locks, oo
     return nullptr;
   }
 
-  struct LockInfo {
-    enum { // should be synced with jdk.internal.vm.ThreadLock constants
-      PARKING_TO_WAIT = 1,
-      ELEMINATED_SCALAR_REPLACED = 2,
-      ELEMINATED_MONITOR = 3,
-      LOCKED = 4,
-      WAITING_TO_LOCK = 5,
-      WAITING_ON = 6,
-      WAITING_TO_RELOCK = 7,
-    };
-
-    int _depth;
-    int _type;
-    oop _obj;
-
-    LockInfo(int depth, int type, oop obj) : _depth(depth), _type(type), _obj(obj) {}
-    LockInfo() : _depth(0), _type(0), _obj(nullptr) {}
-  };
-
   class GetStackTraceClosure : public HandshakeClosure {
   public:
     const Handle _java_thread;
@@ -1918,22 +2120,14 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, bool with_locks, oo
     bool _retry_handshake;
     GrowableArray<Method*>* _methods;
     GrowableArray<int>*     _bcis;
-    bool _with_locks;
-    //GrowableArray<LockInfo>* _locks;
-    LockInfo* _locks;
-    int _locks_size = 0;
 
-    GetStackTraceClosure(Handle java_thread, bool with_locks) :
+    GetStackTraceClosure(Handle java_thread) :
         HandshakeClosure("GetStackTraceClosure"), _java_thread(java_thread), _depth(0), _retry_handshake(false),
-        _methods(nullptr), _bcis(nullptr), _with_locks(with_locks), _locks(nullptr), _locks_size(0) {
+        _methods(nullptr), _bcis(nullptr) {
     }
     ~GetStackTraceClosure() {
       delete _methods;
       delete _bcis;
-      if (_locks != nullptr) {
-        //delete _locks;
-        delete[] _locks;
-      }
     }
 
     bool read_reset_retry() {
@@ -1944,94 +2138,8 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, bool with_locks, oo
       return ret;
     }
 
-    void detect_locks(javaVFrame* jvf, int depth) {
-      Thread* current = Thread::current();
-
-      if (depth == 0) {
-        // See javaVFrame::print_lock_info_on() for some other cases:
-        // "waiting to re-lock in wait", "waiting on the Class initialization monitor".
-
-        // If this is the first frame and it is java.lang.Object.wait(...)
-        // then print out the receiver.
-        if (jvf->method()->name() == vmSymbols::wait_name() &&
-          jvf->method()->method_holder()->name() == vmSymbols::java_lang_Object()) {
-          StackValueCollection* locs = jvf->locals();
-          if (locs->is_empty()) {
-            //_locks->push(LockInfo(depth, LockInfo::WAITING_ON, nullptr));
-            _locks[_locks_size++] = LockInfo(depth, LockInfo::WAITING_ON, nullptr);
-          } else {
-            int type = LockInfo::WAITING_ON;
-            StackValue* sv = locs->at(0);
-            if (sv->type() == T_OBJECT) {
-              Handle o = locs->at(0)->get_obj();
-              if (java_lang_Thread::get_thread_status(_java_thread()) == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER) {
-                type = LockInfo::WAITING_TO_RELOCK;;
-              }
-              //_locks->push(LockInfo(depth, type, o()));
-              _locks[_locks_size++] = LockInfo(depth, type, o());
-            }
-          }
-        } else {
-          oop park_blocker = java_lang_Thread::park_blocker(_java_thread());
-          if (park_blocker != nullptr) {
-            //_locks->push(LockInfo(depth, LockInfo::PARKING_TO_WAIT, park_blocker));
-            _locks[_locks_size++] = LockInfo(depth, LockInfo::PARKING_TO_WAIT, park_blocker);
-          }
-        }
-      }
-
-      GrowableArray<MonitorInfo*>* mons = jvf->monitors();
-      if (!mons->is_empty()) {
-        bool found_first_monitor = false;
-        for (int index = (mons->length() - 1); index >= 0; index--) {
-          MonitorInfo* monitor = mons->at(index);
-          if (monitor->eliminated() && jvf->is_compiled_frame()) { // Eliminated in compiled code
-            if (monitor->owner_is_scalar_replaced()) {
-              Klass* k = java_lang_Class::as_Klass(monitor->owner_klass());
-              //_locks->push(LockInfo(depth, LockInfo::ELEMINATED_SCALAR_REPLACED, k->klass_holder()));
               _locks[_locks_size++] = LockInfo(depth, LockInfo::ELEMINATED_SCALAR_REPLACED, k->klass_holder());
-            } else {
-              Handle obj(current, monitor->owner());
-              if (obj() != nullptr) {
-                //_locks->push(LockInfo(depth, LockInfo::ELEMINATED_MONITOR, obj()));
-                _locks[_locks_size++] = LockInfo(depth, LockInfo::ELEMINATED_MONITOR, obj());
-              }
-            }
-            continue;
-          }
-          if (monitor->owner() != nullptr) {
-            // the monitor is associated with an object, i.e., it is locked
-            int type = LockInfo::LOCKED;
-
-            if (!found_first_monitor && depth == 0) {
-              ObjectMonitor* pending_moninor = java_lang_VirtualThread::is_instance(_java_thread())
-                            ? java_lang_VirtualThread::current_pending_monitor(_java_thread())
-                            : jvf->thread()->current_pending_monitor();
-
-              markWord mark = monitor->owner()->mark();
               // The first stage of async deflation does not affect any field
-              // used by this comparison so the ObjectMonitor* is usable here.
-              if (mark.has_monitor()) {
-                ObjectMonitor* mon = ObjectSynchronizer::read_monitor(current, monitor->owner(), mark);
-                if (// if the monitor is null we must be in the process of locking
-                    mon == nullptr ||
-                    // we have marked ourself as pending on this monitor
-                    mon == pending_moninor ||
-                    // we are not the owner of this monitor
-                    false/*!mon->is_entered(thread())*/) {
-                  type = LockInfo::WAITING_TO_LOCK;
-                }
-              }
-            }
-            //_locks->push(LockInfo(depth, type, monitor->owner()));
-            _locks[_locks_size++] = LockInfo(depth, type, monitor->owner());
-
-            found_first_monitor = true;
-          }
-        }
-      }
-    }
-
     void do_thread(Thread* th) {
       if (!Thread::current()->is_Java_thread()) {
         _retry_handshake = true;
@@ -2049,14 +2157,11 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, bool with_locks, oo
         // if (thread->vthread() != _java_thread()) // We might be inside a System.executeOnCarrierThread
         const ContinuationEntry* ce = thread->vthread_continuation();
         if (ce == nullptr || ce->cont_oop(thread) != java_lang_VirtualThread::continuation(_java_thread())) {
-          // TODO: handle
           return; // not mounted
         }
       } else {
         carrier = (thread->vthread_continuation() != nullptr);
       }
-
-      ResourceMark rm(Thread::current());
 
       const int max_depth = MaxJavaStackTraceDepth;
       const bool skip_hidden = !ShowHiddenFrames;
@@ -2066,21 +2171,16 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, bool with_locks, oo
       _methods = new (mtInternal) GrowableArray<Method*>(init_length, mtInternal);
       _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
 
-      if (_with_locks) {
-        //_locks = new (mtInternal) GrowableArray<LockInfo>(init_length, mtInternal);
-        _locks = new LockInfo[init_length];
-      }
       int total_count = 0;
       for (vframeStream vfst(thread, false, false, carrier); // we don't process frames as we don't care about oops
            !vfst.at_end() && (max_depth == 0 || max_depth != total_count);
            vfst.next()) {
-        if (_with_locks) {
-          detect_locks(vfst.asJavaVFrame(), total_count);
-        }
+
         if (skip_hidden && (vfst.method()->is_hidden() ||
                             vfst.method()->is_continuation_enter_intrinsic())) {
           continue;
         }
+
         _methods->push(vfst.method());
         _bcis->push(vfst.bci());
         total_count++;
@@ -2093,8 +2193,7 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, bool with_locks, oo
   // Handshake with target
   ResourceMark rm(THREAD);
   HandleMark   hm(THREAD);
-  GetStackTraceClosure gstc(Handle(THREAD, java_thread), with_locks);
-
+  GetStackTraceClosure gstc(Handle(THREAD, java_thread));
   do {
    Handshake::execute(&gstc, &tlh, thread);
   } while (gstc.read_reset_retry());
@@ -2110,19 +2209,8 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, bool with_locks, oo
   if (k->should_be_initialized()) {
     k->initialize(CHECK_NULL);
   }
-
   objArrayHandle trace = oopFactory::new_objArray_handle(k, gstc._depth, CHECK_NULL);
 
-  InstanceKlass* lock_klass = nullptr;
-  if (with_locks) {
-    Symbol* sym = vmSymbols::jdk_internal_vm_ThreadLock();
-    Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK_NULL);
-    lock_klass = InstanceKlass::cast(k);
-  }
-
-  int lock_index = 0;
-  //int max_locks = gstc._locks != nullptr ? gstc._locks->length() : 0;
-  int max_locks = gstc._locks != nullptr ? gstc._locks_size : 0;
   for (int i = 0; i < gstc._depth; i++) {
     methodHandle method(THREAD, gstc._methods->at(i));
     oop element = java_lang_StackTraceElement::create(method,
@@ -2131,29 +2219,103 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, bool with_locks, oo
     trace->obj_at_put(i, element);
   }
 
-  if (with_locks && max_locks > 0) {
-    objArrayHandle locks_array = oopFactory::new_objArray_handle(lock_klass, max_locks, CHECK_NULL);
-    for (int n = 0; n < max_locks; n++) {
-      //LockInfo* lock_info = gstc._locks->adr_at(lock_index++);
-      LockInfo* lock_info = &(gstc._locks[lock_index++]);
-      oop o = lock_info->_obj;
-      Handle lock_object = Handle(THREAD, o);
+  return trace();
+}
 
-      JavaValue result(T_OBJECT);
-      JavaCallArguments args;
-      args.push_int(lock_info->_depth);
-      args.push_int(lock_info->_type);
-      args.push_oop(lock_object);
-      Handle lock = JavaCalls::construct_new_instance(lock_klass,
-                      vmSymbols::jdk_internal_vm_ThreadLock_ctor_signature(), &args, CHECK_NULL);
+oop java_lang_Thread::get_thread_snapshot(oop java_thread, bool with_locks, TRAPS) {
+  ThreadsListHandle tlh(JavaThread::current());
 
-      locks_array->obj_at_put(n, lock());
+  while (true) {
+    JavaThread* thread = nullptr;
+    bool is_virtual = java_lang_VirtualThread::is_instance(java_thread);
+    if (is_virtual) {
+      oop carrier_thread = java_lang_VirtualThread::carrier_thread(java_thread);
+      if (carrier_thread != nullptr) {
+        thread = java_lang_Thread::thread(carrier_thread);
+      } else {
+        // TODO: need to "suspend" the VT like VirtualThread.getStackTrace does
+      }
+    } else {
+      thread = java_lang_Thread::thread(java_thread);
     }
 
-    *locks = locks_array();
-  }
+    // Handshake with target
+    ResourceMark rm(THREAD);
+    HandleMark   hm(THREAD);
+    GetThreadSnapshotClosure cl(Handle(THREAD, java_thread), thread, with_locks);
 
-  return trace();
+    if (thread == nullptr) {
+      // unmounted vthread, execute on the current thread
+      cl.do_thread(nullptr);
+    } else {
+      Handshake::execute(&cl, &tlh, thread);
+    }
+    if (cl.read_reset_retry()) {
+      continue;
+    }
+
+    // Convert to StackTraceElement array
+    InstanceKlass* k = vmClasses::StackTraceElement_klass();
+    assert(k != nullptr, "must be loaded in 1.4+");
+    if (k->should_be_initialized()) {
+      k->initialize(CHECK_NULL);
+    }
+
+    objArrayHandle trace = oopFactory::new_objArray_handle(k, cl._depth, CHECK_NULL);
+
+    InstanceKlass* lock_klass = nullptr;
+    if (with_locks) {
+      Symbol* sym = vmSymbols::jdk_internal_vm_ThreadLock();
+      Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK_NULL);
+      lock_klass = InstanceKlass::cast(k);
+    }
+
+    int max_locks = cl._locks != nullptr ? cl._locks->length() : 0;
+    for (int i = 0; i < cl._depth; i++) {
+      methodHandle method(THREAD, cl._methods->at(i));
+      oop element = java_lang_StackTraceElement::create(method, cl._bcis->at(i), CHECK_NULL);
+      trace->obj_at_put(i, element);
+    }
+
+    objArrayHandle locks;
+    int lock_index = 0;
+    if (with_locks && max_locks > 0) {
+      locks = oopFactory::new_objArray_handle(lock_klass, max_locks, CHECK_NULL);
+      for (int n = 0; n < max_locks; n++) {
+        LockInfo* lock_info = cl._locks->adr_at(lock_index++);
+        oop o = lock_info->_obj;
+        Handle lock_object = Handle(THREAD, o);
+
+        // TODO: allocate and fill in the VM
+        JavaValue result(T_OBJECT);
+        JavaCallArguments args;
+        args.push_int(lock_info->_depth);
+        args.push_int(lock_info->_type);
+        args.push_oop(lock_object);
+        Handle lock = JavaCalls::construct_new_instance(lock_klass,
+            vmSymbols::jdk_internal_vm_ThreadLock_ctor_signature(), &args, CHECK_NULL);
+
+        locks->obj_at_put(n, lock());
+      }
+    }
+
+    Symbol* snapshot_name = vmSymbols::jdk_internal_vm_ThreadSnapshot();
+    Klass* snapshot_klass = SystemDictionary::resolve_or_fail(snapshot_name, true, CHECK_NULL);
+    if (snapshot_klass->should_be_initialized()) {
+      snapshot_klass->initialize(CHECK_NULL);
+    }
+
+    // TODO: allocate and fill in the VM
+    JavaValue result(T_OBJECT);
+    JavaCallArguments args;
+    args.push_oop(trace);
+    args.push_oop(locks);
+    args.push_oop(Handle(THREAD, cl._name));
+    args.push_int((int)cl._thread_status);
+    Handle snapshot = JavaCalls::construct_new_instance(InstanceKlass::cast(snapshot_klass),
+        vmSymbols::jdk_internal_vm_ThreadSnapshot_ctor_signature(), &args, CHECK_NULL);
+    return snapshot();
+  }
 }
 
 const char* java_lang_Thread::thread_status_name(oop java_thread) {
@@ -3525,6 +3687,51 @@ void java_lang_LiveStackFrameInfo::set_mode(oop obj, int value) {
   obj->int_field_put(_mode_offset, value);
 }
 
+/*
+// jdk_internal_vm_ThreadSnapshot
+
+int jdk_internal_vm_ThreadSnapshot::_name_offset;
+int jdk_internal_vm_ThreadSnapshot::_threadStatus_offset;
+int jdk_internal_vm_ThreadSnapshot::_ste_offset;
+int jdk_internal_vm_ThreadSnapshot::_locks_offset;
+
+#define VM_THREADSNAPSHOT_FIELDS_DO(macro) \
+  macro(_name_offset,           k, "name",          string_signature,       false); \
+  macro(_threadStatus_offset,   k, "threadStatus",  int_signature,          false); \
+  macro(_ste_offset,            k, "ste",           object_array_signature, false); \
+  macro(_locks_offset,          k, "locks",         object_array_signature, false)
+
+oop jdk_internal_vm_ThreadSnapshot::create(TRAPS) {
+
+}
+
+void jdk_internal_vm_ThreadSnapshot::set_name(oop obj, oop value) {
+  obj->obj_field_put(_name_offset, value);
+}
+
+void jdk_internal_vm_ThreadSnapshot::set_threadStatus(oop obj, int value) {
+  obj->int_field_put(_threadStatus_offset, value);
+}
+
+void jdk_internal_vm_ThreadSnapshot::set_ste(oop obj, oop value) {
+  obj->obj_field_put(_ste_offset, value);
+}
+
+void jdk_internal_vm_ThreadSnapshot::set_locks(oop obj, oop value) {
+  obj->obj_field_put(_locks_offset, value);
+}
+
+void jdk_internal_vm_ThreadSnapshot::compute_offsets() {
+  InstanceKlass* k = vmClasses:: reflect_AccessibleObject_klass();
+  VM_THREADSNAPSHOT_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void jdk_internal_vm_ThreadSnapshot::serialize_offsets(SerializeClosure* f) {
+  VM_THREADSNAPSHOT_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+*/
 
 // java_lang_AccessibleObject
 

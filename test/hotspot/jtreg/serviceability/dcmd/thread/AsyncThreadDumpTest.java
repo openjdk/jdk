@@ -36,15 +36,12 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringJoiner;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.thread.VThreadPinner;
 import jdk.test.lib.threaddump.ThreadDump;
-
 
 
 public class AsyncThreadDumpTest {
@@ -100,8 +97,8 @@ public class AsyncThreadDumpTest {
                 .terminator((thread) -> {
                     done.set(true);
                 })
-//                .expected(".*- locked .*\\W" + Pattern.quote(started.getClass().getName()) + "\\W.*",
-//                          ".*- locked .*\\W" + Pattern.quote(lock.getClass().getName()) + "\\W.*")
+                .expected(".*- locked .*\\W" + Pattern.quote(started.getClass().getName()) + "\\W.*",
+                          ".*- locked .*\\W" + Pattern.quote(lock.getClass().getName()) + "\\W.*")
             );
         }
 
@@ -131,8 +128,8 @@ public class AsyncThreadDumpTest {
                 .terminator((thread) -> {
                     sem.release();
                 })
-//                .expected(".*- locked .*\\W" + Pattern.quote(lock.getClass().getName()) + "\\W.*",
-//                          ".*- locked .*\\W" + Pattern.quote(lock2.getClass().getName()) + "\\W.*")
+                .expected(".*- locked .*\\W" + Pattern.quote(lock.getClass().getName()) + "\\W.*",
+                          ".*- locked .*\\W" + Pattern.quote(lock2.getClass().getName()) + "\\W.*")
             );
         }
 
@@ -237,16 +234,19 @@ public class AsyncThreadDumpTest {
                 System.out.println("- Thread.getStackTrace()):");
                 printThreadJava(test.thread);
 
-                //System.out.println("- jcmd Thread.async_dump:");
                 System.out.println("- jcmd Thread.dump_to_file:");
-System.out.println("=================");
-System.out.println(output.getStdout());
-System.out.println("=================");
-
                 System.out.println(getOutputForThread(output, test.thread).getStdout());
 
                 System.out.println("============================");
             }
+
+            {
+                String cmd1 = "Thread.print -l";
+                System.out.println("output for " + cmd1);
+                OutputAnalyzer o1 = new PidJcmdExecutor().execute(cmd1, true);
+                System.out.println(o1.getStdout());
+            }
+
 
         } finally {
             for (Test test: tests) {
@@ -292,41 +292,9 @@ System.out.println("=================");
     }
 
     private static OutputAnalyzer jcmdThreadDump() {
-//*
         boolean silent = true;
-        {
-        //String cmd1 = "Thread.dump_to_file";
-        String cmd1 = "Thread.print -l";
-//        for (String option : options) {
-//            cmd1 += " " + option;
-//        }
-        System.out.println("output for " + cmd1);
-        OutputAnalyzer o1 = new PidJcmdExecutor().execute(cmd1, silent);
-        o1.reportDiagnosticSummary();
-        }
-//*/
-/*
-        {
-        String cmd1 = "Thread.dump_to_file -";
-        System.out.println("output for " + cmd1);
-        OutputAnalyzer o1 = new PidJcmdExecutor().execute(cmd1, silent);
-        o1.reportDiagnosticSummary();
-        }
-*/
-
-
-        //String cmd = "Thread.async_dump -";
         String cmd = "Thread.dump_to_file -";
-//        for (String option : options) {
-//            cmd += " " + option;
-//        }
         return new PidJcmdExecutor().execute(cmd, !silent);
-    }
-
-    private static OutputAnalyzer jcmdJavaThreadDump() {
-        boolean silent = true;
-        String cmd = "Thread.dump_to_file -";
-        return new PidJcmdExecutor().execute(cmd, silent);
     }
 
     /**

@@ -460,7 +460,8 @@ class java_lang_Thread : AllStatic {
 
   // Fill in current stack trace, can cause GC
   // If locks != nullptr, fill lock info
-  static oop async_get_stack_trace(oop java_thread, bool with_locks, oop* locks, TRAPS);
+  static oop async_get_stack_trace(oop java_thread, TRAPS);
+  static oop get_thread_snapshot(oop java_thread, bool with_locks, TRAPS);
 
   JFR_ONLY(static u2 jfr_epoch(oop java_thread);)
   JFR_ONLY(static void set_jfr_epoch(oop java_thread, u2 epoch);)
@@ -1679,6 +1680,28 @@ class java_lang_LiveStackFrameInfo: AllStatic {
   friend class JavaClasses;
 };
 
+// Interface to jdk.internal.vm.ThreadSnapshot objects
+/*
+class jdk_internal_vm_ThreadSnapshot : AllStatic {
+  friend class JavaClasses;
+private:
+  static int _name_offset;
+  static int _threadStatus_offset;
+  static int _ste_offset;
+  static int _locks_offset;
+
+public:
+  static oop create(TRAPS);
+
+  static void set_name(oop obj, oop value);
+  static void set_threadStatus(oop obj, int value);
+  static void set_ste(oop obj, oop value);
+  static void set_locks(oop obj, oop value);
+
+  static void compute_offsets();
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+};
+*/
 // Interface to java.lang.reflect.RecordComponent objects
 
 class java_lang_reflect_RecordComponent: AllStatic {

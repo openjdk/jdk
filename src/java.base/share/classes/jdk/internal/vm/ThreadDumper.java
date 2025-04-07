@@ -163,18 +163,20 @@ public class ThreadDumper {
 
     private static void dumpThread(Thread thread, PrintStream ps) {
         String suffix = thread.isVirtual() ? " virtual" : "";
-        ps.println("Thread #" + thread.threadId() + " \"" + thread.getName() + "\"" + suffix + " " + thread.getState());
         // should be jcmd command arg
         boolean withLocks = true;
-        StackTraceInfo[] stackTrace = getStackTraceInfo(thread, withLocks);
-        for (StackTraceInfo sti: stackTrace) {
+		ThreadSnapshot snapshot = ThreadSnapshot.create(thread);
+		ps.println("Thread #" + thread.threadId() + " \"" + snapshot.getName() + "\"" + suffix + " " + snapshot.getState());
+		int depth = 0;
+        for (StackTraceElement st: snapshot.getStackTrace()) {
             ps.print("      ");
-            ps.println(sti.getStackTraceElement());
-            for (ThreadLock lock: sti.getLocks()) {
+            ps.println(st);
+            for (ThreadSnapshot.ThreadLock lock: snapshot.getLocks(depth)) {
                 ps.print("      - ");
                 ps.println(lock);
             }
-        }
+			depth++;
+		}
         ps.println();
     }
 
@@ -376,99 +378,4 @@ public class ThreadDumper {
             return -1L;
         }
     }
-
-    private static class ThreadLock {
-        private static final int PARKING_TO_WAIT = 1;
-        private static final int ELEMINATED_SCALAR_REPLACED = 2;
-        private static final int ELEMINATED_MONITOR = 3;
-        private static final int LOCKED = 4;
-        private static final int WAITING_TO_LOCK = 5;
-        private static final int WAITING_ON = 6;
-        private static final int WAITING_TO_RELOCK = 7;
-
-        public final int depth;
-        public final int lockType;
-        public final Object lock;
-
-        private ThreadLock(int depth, int type, Object lock) {
-            this.depth = depth;
-            this.lockType = type;
-            this.lock = lock;
-        }
-
-        public String toString() {
-            switch (lockType) {
-            case PARKING_TO_WAIT:
-                return "parking to wait for " + lockString(lock);
-            case ELEMINATED_SCALAR_REPLACED:
-                // lock is the klass
-                return "eliminated, owner is scalar replaced (" + ((Class)lock).getName() + ")";
-            case ELEMINATED_MONITOR:
-                return "eliminated " + lockString(lock);
-            case LOCKED:
-                return "locked " + lockString(lock);
-            case WAITING_TO_LOCK:
-                return "waiting to lock  " + lockString(lock);
-            case WAITING_ON:
-                // lock is null if there is no reference
-                return "waiting on  " + lockString(lock);
-            case WAITING_TO_RELOCK:
-                return "waiting to re-lock in wait " + lockString(lock);
-            }
-            return "Unknown lock (type " + lockType + "), lock=" + lockString(lock);
-        }
-
-        private String lockString(Object lock) {
-            if (lock == null) {
-                return "<no object reference available>";
-            }
-            // TODO: need to generate unique object id instead of hash
-            long id = lock.hashCode();
-            return "0x" + HexFormat.of().toHexDigits(id, 16)
-                    + " (" + lock.getClass().getName() + ")";
-        }
-    }
-
-    private static class StackTraceInfo {
-        private StackTraceElement ste;
-        private ThreadLock[] locks;
-        private static final ThreadLock[] EMPTY_LOCKS = new ThreadLock[0];
-        private static final StackTraceInfo[] EMPTY_STACK = new StackTraceInfo[0];
-
-        private StackTraceInfo(StackTraceElement ste, ThreadLock[] locks) {
-            this.ste = ste;
-            this.locks = locks;
-        }
-
-        // called by VM
-        private static StackTraceInfo[] createStackTraceInfo(StackTraceElement[] stes, ThreadLock[] locks) {
-            if (stes == null) {
-                return EMPTY_STACK;
-            }
-
-            StackTraceInfo[] result = new StackTraceInfo[stes.length];
-            int lockIndex = 0;
-            int maxLockIndex = locks != null ? locks.length : 0;
-            for (int depth = 0; depth < stes.length; depth++) {
-                int startLockIndex = lockIndex;
-                while (lockIndex < maxLockIndex && locks[lockIndex].depth == depth) {
-                    lockIndex++;
-                }
-                ThreadLock[] thisLocks = lockIndex - startLockIndex == 0
-                                        ? EMPTY_LOCKS
-                                        : Arrays.copyOfRange(locks, startLockIndex, lockIndex);
-                result[depth] = new StackTraceInfo(stes[depth], thisLocks);
-            }
-            return result;
-        }
-
-        public StackTraceElement getStackTraceElement() {
-            return ste;
-        }
-        public ThreadLock[] getLocks() {
-            return locks;
-        }
-    }
-
-    private static native StackTraceInfo[] getStackTraceInfo(Thread thread, boolean withLocks);
 }
