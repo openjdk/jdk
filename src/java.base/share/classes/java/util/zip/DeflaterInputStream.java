@@ -40,7 +40,7 @@ import java.util.Objects;
  * at construction time, and close the compressor when the input stream
  * is {@linkplain #close closed}.
  * <p>
- * If a compressor is specified when creating the {@code DeflaterInputStream}, it is the
+ * If a compressor is specified when creating a {@code DeflaterInputStream}, it is the
  * responsibility of the caller to {@linkplain Deflater#close close} the
  * compressor after closing the input stream.
  *

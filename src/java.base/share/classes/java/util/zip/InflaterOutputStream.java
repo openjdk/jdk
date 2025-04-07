@@ -40,7 +40,7 @@ import java.util.Objects;
  * at construction time, and close the decompressor when the output stream
  * is {@linkplain #close closed}.
  * <p>
- * If a decompressor is specified when creating the {@code InflaterOutputStream}, it is the
+ * If a decompressor is specified when creating a {@code InflaterOutputStream}, it is the
  * responsibility of the caller to {@linkplain Inflater#close close} the
  * decompressor after closing the output stream.
  *

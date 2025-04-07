@@ -44,7 +44,7 @@ import java.io.IOException;
  * at construction time, and close the compressor when the output stream
  * is {@linkplain #close closed}.
  * <p>
- * If a compressor is specified when creating the {@code DeflaterOutputStream}, it is the
+ * If a compressor is specified when creating a {@code DeflaterOutputStream}, it is the
  * responsibility of the caller to {@linkplain Deflater#close close} the
  * compressor after closing the output stream.
  *
