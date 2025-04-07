@@ -2537,10 +2537,20 @@ void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
         __ movq(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
         break;
       case Op_VecX:
-        __ movdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
+        if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
+          __ movdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
+        } else {
+          __ vpxor(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), 2);
+          __ vinsertf32x4(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset),0x0);
+        }
         break;
       case Op_VecY:
-        __ vmovdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
+        if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
+          __ vmovdqu(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset));
+        } else {
+          __ vpxor(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), 2);
+          __ vinsertf64x4(as_XMMRegister(Matcher::_regEncode[reg]), as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset),0x0);
+        }
         break;
       case Op_VecZ:
         __ evmovdquq(as_XMMRegister(Matcher::_regEncode[reg]), Address(rsp, stack_offset), 2);
@@ -2557,10 +2567,20 @@ void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
         __ movq(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
         break;
       case Op_VecX:
-        __ movdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
+        if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
+          __ movdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
+        }
+        else {
+          __ vextractf32x4(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]), 0x0);
+        }
         break;
       case Op_VecY:
-        __ vmovdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
+        if ((UseAVX < 3) || VM_Version::supports_avx512vl()) {
+          __ vmovdqu(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]));
+        }
+        else {
+          __ vextractf64x4(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]), 0x0);
+        }
         break;
       case Op_VecZ:
         __ evmovdquq(Address(rsp, stack_offset), as_XMMRegister(Matcher::_regEncode[reg]), 2);
