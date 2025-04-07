@@ -730,7 +730,7 @@ TEST_VM(os, show_mappings_small_range) {
 TEST_VM(os, show_mappings_full_range) {
   // Reserve a small range and fill it with a marker string, should show up
   // on implementations displaying range snippets
-  char* p = os::reserve_memory(1 * M, mtInternal);
+  char* p = os::reserve_memory(1 * M, mtTest);
   if (p != nullptr) {
     if (os::commit_memory(p, 1 * M, false)) {
       strcpy(p, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
