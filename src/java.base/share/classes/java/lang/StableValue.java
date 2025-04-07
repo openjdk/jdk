@@ -223,6 +223,9 @@ import java.util.function.Supplier;
  *     double log256 = Log2Util.log2(81); // Will not constant fold
  * }
  * }
+ * Note: The {@code LOG2_CACHED} function is a _partial function_ that only has a small
+ *       number of allowed inputs whereas {@code Log2Util.log2} is a _total function_ that
+ *       allows the same input set that the original function is defined for.
  *
  * <h2 id="stable-collections">Stable Collections</h2>
  * Stable values can also be used as backing storage for
