@@ -2138,8 +2138,6 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
       return ret;
     }
 
-              _locks[_locks_size++] = LockInfo(depth, LockInfo::ELEMINATED_SCALAR_REPLACED, k->klass_holder());
-              // The first stage of async deflation does not affect any field
     void do_thread(Thread* th) {
       if (!Thread::current()->is_Java_thread()) {
         _retry_handshake = true;
@@ -3686,52 +3684,6 @@ void java_lang_LiveStackFrameInfo::set_operands(oop obj, oop value) {
 void java_lang_LiveStackFrameInfo::set_mode(oop obj, int value) {
   obj->int_field_put(_mode_offset, value);
 }
-
-/*
-// jdk_internal_vm_ThreadSnapshot
-
-int jdk_internal_vm_ThreadSnapshot::_name_offset;
-int jdk_internal_vm_ThreadSnapshot::_threadStatus_offset;
-int jdk_internal_vm_ThreadSnapshot::_ste_offset;
-int jdk_internal_vm_ThreadSnapshot::_locks_offset;
-
-#define VM_THREADSNAPSHOT_FIELDS_DO(macro) \
-  macro(_name_offset,           k, "name",          string_signature,       false); \
-  macro(_threadStatus_offset,   k, "threadStatus",  int_signature,          false); \
-  macro(_ste_offset,            k, "ste",           object_array_signature, false); \
-  macro(_locks_offset,          k, "locks",         object_array_signature, false)
-
-oop jdk_internal_vm_ThreadSnapshot::create(TRAPS) {
-
-}
-
-void jdk_internal_vm_ThreadSnapshot::set_name(oop obj, oop value) {
-  obj->obj_field_put(_name_offset, value);
-}
-
-void jdk_internal_vm_ThreadSnapshot::set_threadStatus(oop obj, int value) {
-  obj->int_field_put(_threadStatus_offset, value);
-}
-
-void jdk_internal_vm_ThreadSnapshot::set_ste(oop obj, oop value) {
-  obj->obj_field_put(_ste_offset, value);
-}
-
-void jdk_internal_vm_ThreadSnapshot::set_locks(oop obj, oop value) {
-  obj->obj_field_put(_locks_offset, value);
-}
-
-void jdk_internal_vm_ThreadSnapshot::compute_offsets() {
-  InstanceKlass* k = vmClasses:: reflect_AccessibleObject_klass();
-  VM_THREADSNAPSHOT_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void jdk_internal_vm_ThreadSnapshot::serialize_offsets(SerializeClosure* f) {
-  VM_THREADSNAPSHOT_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
-}
-#endif
-*/
 
 // java_lang_AccessibleObject
 
