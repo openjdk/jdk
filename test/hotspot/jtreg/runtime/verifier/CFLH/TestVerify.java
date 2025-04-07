@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 
+ * @test
  * @summary Verifier should verify ClassFileLoadHook bytes even if on bootclasspath
  * @bug 8351654
  * @requires vm.jvmti
@@ -69,7 +69,7 @@ public class TestVerify {
 
         @Override
         public byte[] transform(Module module, ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
-          
+
             if (className.equals(INTERNAL_CLASS_TO_BREAK)) {
                 System.out.println("Instrumenting modular class " + INTERNAL_CLASS_TO_BREAK);
 
@@ -110,34 +110,10 @@ public class TestVerify {
     }
 
     static Instrumentation inst = null;
-    static boolean verifyErrorThrown = false;
 
     public static void premain(String args, Instrumentation instrumentation) throws Exception {
         System.out.println("Premain");
         inst = instrumentation;
-
-        // double check our class hasn't been loaded yet
-        for (Class clazz : inst.getAllLoadedClasses()) {
-            if (clazz.getName().equals(CLASS_TO_BREAK)) {
-                throw new AssertionError("Oops! Class " + CLASS_TO_BREAK + " is already loaded, the test can't work");
-            }
-        }
-
-        boolean retransform = Boolean.getBoolean("agent.retransform");
-        if (retransform) {
-            // for the bug the class we call must be already loaded, so that we retransform it
-            var clazz = Class.forName(CLASS_TO_BREAK);
-            try {
-                 inst.addTransformer(new BadTransformer(), true);
-                 inst.retransformClasses(clazz);
-             } catch (VerifyError ve) {
-                 System.out.println("Passed: threw VerifyError during retransform");
-                 verifyErrorThrown = true;
-             }
-        } else {
-            // no verify error, the class is used in TestMain
-            inst.addTransformer(new BadTransformer());
-        }
     }
 
     private static void buildAgent() {
@@ -164,18 +140,33 @@ public class TestVerify {
         }
     }
 
-    public static void main(String argv[]) {
+    public static void main(String argv[]) throws Exception {
         if (argv.length == 1 && argv[0].equals("buildAgent")) {
             buildAgent();
             return;
         }
 
-        try {
-            // Now load the class for the VerifyError.
-            System.out.println("1 hour is " + Duration.ofHours(1).getSeconds() + " seconds");
-            if (!verifyErrorThrown) {
-                throw new RuntimeException("Failed: Did not throw VerifyError");
+        // double check our class hasn't been loaded yet
+        for (Class clazz : inst.getAllLoadedClasses()) {
+            if (clazz.getName().equals(CLASS_TO_BREAK)) {
+                throw new AssertionError("Oops! Class " + CLASS_TO_BREAK + " is already loaded, the test can't work");
             }
+        }
+
+        boolean retransform = Boolean.getBoolean("agent.retransform");
+
+        try {
+            if (retransform) {
+                // Retransform the class for the VerifyError.
+                var clazz = Class.forName(CLASS_TO_BREAK);
+                inst.addTransformer(new BadTransformer(), true);
+                inst.retransformClasses(clazz);
+            } else {
+                // Load the class instrumented with CFLH for the VerifyError.
+                inst.addTransformer(new BadTransformer());
+                System.out.println("1 hour is " + Duration.ofHours(1).getSeconds() + " seconds");
+            }
+            throw new RuntimeException("Failed: Did not throw VerifyError");
         } catch (VerifyError e) {
             System.out.println("Passed: VerifyError " + e.getMessage());
         }
