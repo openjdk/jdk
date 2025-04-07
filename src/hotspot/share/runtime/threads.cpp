@@ -425,15 +425,15 @@ void Threads::initialize_jsr292_core_classes(TRAPS) {
   }
 }
 
-// One-shot PeriodicTask subclass for reading release file
+// One-shot PeriodicTask subclass for reading the release file
 class ReadReleaseFileTask : public PeriodicTask {
  public:
-  ReadReleaseFileTask(size_t interval_time) : PeriodicTask(interval_time) {}
+  ReadReleaseFileTask() : PeriodicTask(100) {}
 
   virtual void task() {
     os::read_image_release_file();
 
-    // Reclaim our storage and disenroll ourself
+    // Reclaim our storage and disenroll ourself.
     delete this;
   }
 };
@@ -593,7 +593,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     return status;
   }
 
-  ReadReleaseFileTask* read_task = new ReadReleaseFileTask(100);
+  // Have the WatcherThread read the release file in the background.
+  ReadReleaseFileTask* read_task = new ReadReleaseFileTask();
   read_task->enroll();
 
   // Create WatcherThread as soon as we can since we need it in case

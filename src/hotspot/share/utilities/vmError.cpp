@@ -1433,7 +1433,7 @@ void VMError::print_vm_info(outputStream* st) {
   LogConfiguration::describe(st);
   st->cr();
 
-  // printing release file content
+  // STEP("printing release file content")
   st->print_cr("Release file:");
   os::print_image_release_file(st);
 
