@@ -990,6 +990,18 @@ AC_DEFUN([JDKOPT_SETUP_SIGNING_HOOK],
 
 ################################################################################
 #
+# Setup how javac should handle warnings.
+#
+AC_DEFUN([JDKOPT_SETUP_JAVAC_WARNINGS],
+[
+  UTIL_ARG_ENABLE(NAME: javac-warnings-as-errors, DEFAULT: true,
+      RESULT: JAVAC_WARNINGS_AS_ERRORS,
+      DESC: [consider javac warnings to be an error])
+  AC_SUBST(JAVAC_WARNINGS_AS_ERRORS)
+])
+
+################################################################################
+#
 # fallback linker
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_FALLBACK_LINKER],
