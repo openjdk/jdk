@@ -138,7 +138,7 @@ public abstract class Handler {
      * <p>
      * The {@code Handler}  is responsible for formatting the message, when and
      * if necessary.  The formatting should include localization.
-     * <p>
+     *
      * @apiNote To avoid the risk of deadlock, implementations of this method
      * should avoid holding any locks while calling out to application code,
      * such as the formatting of {@code LogRecord}.
