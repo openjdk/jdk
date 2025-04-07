@@ -1363,6 +1363,7 @@ public:
 
 #else
 
+public:
   bool has_cpu_time_jfr_requests() {
     return false;
   }
