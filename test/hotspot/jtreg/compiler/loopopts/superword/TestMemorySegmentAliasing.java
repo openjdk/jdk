@@ -211,6 +211,11 @@ class TestMemorySegmentAliasingImpl {
         // Add all tests to list
         tests.put("test_byte_incr_noaliasing",     () -> test_byte_incr_noaliasing(A, B));
         tests.put("test_byte_incr_aliasing",       () -> test_byte_incr_aliasing(A, A));
+        tests.put("test_byte_incr_aliasing_fwd3",  () -> {
+            MemorySegment x = A.asSlice(0, BACKING_SIZE - 3);
+            MemorySegment y = A.asSlice(3, BACKING_SIZE - 3);
+            test_byte_incr_aliasing_fwd3(x, y);
+        });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -324,7 +329,8 @@ class TestMemorySegmentAliasingImpl {
     }
 
     @Run(test = {"test_byte_incr_noaliasing",
-                 "test_byte_incr_aliasing"})
+                 "test_byte_incr_aliasing",
+                 "test_byte_incr_aliasing_fwd3"})
     void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -370,6 +376,22 @@ class TestMemorySegmentAliasingImpl {
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test_byte_incr_aliasing(MemorySegment a, MemorySegment b) {
+        for (long i = 0; i < a.byteSize(); i++) {
+            byte v = a.get(ValueLayout.JAVA_BYTE, i);
+            b.set(ValueLayout.JAVA_BYTE, i, (byte)(v + 1));
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0",
+                  ".*multiversion.*",   "> 0"}, // AutoVectorization Predicate FAILS
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static void test_byte_incr_aliasing_fwd3(MemorySegment a, MemorySegment b) {
         for (long i = 0; i < a.byteSize(); i++) {
             byte v = a.get(ValueLayout.JAVA_BYTE, i);
             b.set(ValueLayout.JAVA_BYTE, i, (byte)(v + 1));
