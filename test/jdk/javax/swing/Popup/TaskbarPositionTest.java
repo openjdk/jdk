@@ -315,19 +315,6 @@ public class TaskbarPositionTest implements ActionListener {
         robot.keyRelease(KeyEvent.VK_ESCAPE);
     }
 
-    private static void saveScreenCapture(Robot robot, GraphicsDevice[] screens) {
-        for (int i = 0; i < screens.length; i++) {
-            Rectangle bounds = screens[i].getDefaultConfiguration()
-                                         .getBounds();
-            BufferedImage image = robot.createScreenCapture(bounds);
-            try {
-                ImageIO.write(image, "png", new File("Screenshot.png"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
     public static void main(String[] args) throws Throwable {
         GraphicsDevice mainScreen = GraphicsEnvironment.getLocalGraphicsEnvironment()
                                                        .getDefaultScreenDevice();
@@ -468,6 +455,19 @@ public class TaskbarPositionTest implements ActionListener {
                     frame.dispose();
                 }
             });
+        }
+    }
+
+    private static void saveScreenCapture(Robot robot, GraphicsDevice[] screens) {
+        for (int i = 0; i < screens.length; i++) {
+            Rectangle bounds = screens[i].getDefaultConfiguration()
+                    .getBounds();
+            BufferedImage image = robot.createScreenCapture(bounds);
+            try {
+                ImageIO.write(image, "png", new File("Screenshot.png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
