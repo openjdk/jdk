@@ -651,9 +651,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // is initially computed. See Abstract_VM_Version::vm_info_string().
   // This update must happen before we initialize the java classes, but
   // after any initialization logic that might modify the flags.
-  const char* vm_info = VM_Version::vm_info_string();
-  Arguments::update_vm_info_property(vm_info);
-  FREE_C_HEAP_ARRAY(char, vm_info);
+  Arguments::update_vm_info_property(VM_Version::vm_info_string());
 
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   HandleMark hm(THREAD);
@@ -1333,13 +1331,11 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   char buf[32];
   st->print_raw_cr(os::local_time_string(buf, sizeof(buf)));
 
-  const char* vm_info = VM_Version::vm_info_string();
   st->print_cr("Full thread dump %s (%s %s):",
                VM_Version::vm_name(),
                VM_Version::vm_release(),
-               vm_info);
+               VM_Version::vm_info_string());
   st->cr();
-  FREE_C_HEAP_ARRAY(char, vm_info);
 
 #if INCLUDE_SERVICES
   // Dump concurrent locks
