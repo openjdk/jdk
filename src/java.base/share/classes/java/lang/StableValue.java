@@ -47,7 +47,7 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A stable value is a holder of shallowly immutable content that can be lazily computed.
+ * A stable value is a holder of content that can be set at most once.
  * <p>
  * A {@code StableValue<T>} is typically created using the factory method
  * {@linkplain StableValue#of() {@code StableValue.of()}}. When created this way,
@@ -395,10 +395,12 @@ import java.util.function.Supplier;
  *     <li>an {@link #isSet()} that returns {@code true}</li>
  * </ul>
  * <p>
- * The method {@linkplain StableValue#orElseSet(Supplier) orElseSet()} guarantees that
- * the provided {@linkplain Supplier} is invoked successfully at most once even under
- * race. Since stable functions and stable collections are built on top of
- * {@linkplain StableValue#orElseSet(Supplier) orElseSet()} they too are
+ * The method {@link #orElseSet(Supplier)} guarantees that the provided
+ * {@linkplain Supplier} is invoked successfully at most once even under race.
+ * Invocations of {@link #setOrThrow(Object)} forms a total order of zero or more
+ * exceptional invocations followed by zero (if the content was already set) or one
+ * successful invocation. Since stable functions and stable collections are built on top
+ * of {@linkplain StableValue#orElseSet(Supplier) orElseSet()} they too are
  * thread safe and guarantee at-most-once-per-input invocation.
  *
  * <h2 id="performance">Performance</h2>
