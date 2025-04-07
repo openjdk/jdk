@@ -165,9 +165,9 @@ public class ThreadDumper {
         String suffix = thread.isVirtual() ? " virtual" : "";
         // should be jcmd command arg
         boolean withLocks = true;
-		ThreadSnapshot snapshot = ThreadSnapshot.create(thread);
-		ps.println("Thread #" + thread.threadId() + " \"" + snapshot.getName() + "\"" + suffix + " " + snapshot.getState());
-		int depth = 0;
+        ThreadSnapshot snapshot = ThreadSnapshot.create(thread);
+        ps.println("Thread #" + thread.threadId() + " \"" + snapshot.getName() + "\"" + suffix + " " + snapshot.getState());
+        int depth = 0;
         for (StackTraceElement st: snapshot.getStackTrace()) {
             ps.print("      ");
             ps.println(st);
@@ -175,8 +175,8 @@ public class ThreadDumper {
                 ps.print("      - ");
                 ps.println(lock);
             }
-			depth++;
-		}
+            depth++;
+        }
         ps.println();
     }
 

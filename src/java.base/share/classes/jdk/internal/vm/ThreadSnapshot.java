@@ -29,36 +29,36 @@ import java.util.HexFormat;
 import java.util.List;
 
 public class ThreadSnapshot {
-	
-	private String name;
-	private int threadStatus;
+
+    private String name;
+    private int threadStatus;
     private StackTraceElement[] ste;
-	private ThreadLock[] locks;
-    
+    private ThreadLock[] locks;
+
     private static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];
     private static final ThreadLock[] EMPTY_LOCKS = new ThreadLock[0];
-	
+
     private static native ThreadSnapshot create0(Thread thread, boolean withLocks);
 
     public static ThreadSnapshot create(Thread thread) {
-		ThreadSnapshot snapshot = create0(thread, true);
+        ThreadSnapshot snapshot = create0(thread, true);
 
-		if (snapshot.ste == null) {
-			snapshot.ste = EMPTY_STACK;
-		}
-		if (snapshot.locks == null) {
-			snapshot.locks = EMPTY_LOCKS;
-		}
-		return snapshot;
-	}
+        if (snapshot.ste == null) {
+            snapshot.ste = EMPTY_STACK;
+        }
+        if (snapshot.locks == null) {
+            snapshot.locks = EMPTY_LOCKS;
+        }
+        return snapshot;
+    }
 
-//    private ThreadSnapshot() {	}
+//    private ThreadSnapshot() {    }
 
     private ThreadSnapshot(StackTraceElement[] ste, ThreadLock[] locks, String name, int threadStatus) {
-		this.ste = ste;
-		this.locks = locks;
-		this.name = name;
-		this.threadStatus = threadStatus;
+        this.ste = ste;
+        this.locks = locks;
+        this.name = name;
+        this.threadStatus = threadStatus;
     }
 
     public String getName() {
@@ -69,23 +69,23 @@ public class ThreadSnapshot {
         return jdk.internal.misc.VM.toThreadState(threadStatus);
     }
 
-    List<StackTraceElement>	getStackTrace() {
-		return Arrays.asList(ste);
-	}
-	
-	List<ThreadLock> getLocks(int depth) {
-		return Arrays.stream(locks)
-			.filter(lock -> lock.depth == depth)
-			.toList();
-	}
+    List<StackTraceElement>    getStackTrace() {
+        return Arrays.asList(ste);
+    }
 
-	List<ThreadLock> getLocksFor(StackTraceElement element) {
-		int depth  = getStackTrace().indexOf(element);
-		if (depth < 0) {
-			throw new IllegalArgumentException();
-		}
-		return getLocks(depth);
-	}
+    List<ThreadLock> getLocks(int depth) {
+        return Arrays.stream(locks)
+            .filter(lock -> lock.depth == depth)
+            .toList();
+    }
+
+    List<ThreadLock> getLocksFor(StackTraceElement element) {
+        int depth  = getStackTrace().indexOf(element);
+        if (depth < 0) {
+            throw new IllegalArgumentException();
+        }
+        return getLocks(depth);
+    }
 
 
     public static class ThreadLock {
