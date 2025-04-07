@@ -166,12 +166,9 @@ class HttpResponseConnectionLabelTest {
                             exchange.getResponseBody().write(responseBodyBytes);
 
                         } catch (IOException ioe) {
-                            synchronized (ServerRequestPair.class) {
-                                LOGGER.log(
-                                        "Server[%s] has failed! (connectionKey=%s, responseBody=%s)",
-                                        serverId, connectionKey, responseBody);
-                                ioe.printStackTrace(System.out);
-                            }
+                            String message = "Server[%s] has failed! (connectionKey=%s, responseBody=%s)"
+                                    .formatted(serverId, connectionKey, responseBody);
+                            throw new RuntimeException(message, ioe);
                         } catch (InterruptedException _) {
                             Thread.currentThread().interrupt(); // Restore the interrupt
                         }
