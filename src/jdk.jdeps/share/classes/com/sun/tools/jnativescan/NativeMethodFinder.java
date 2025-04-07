@@ -43,13 +43,13 @@ class NativeMethodFinder {
     private static final String RESTRICTED_NAME = "Ljdk/internal/javac/Restricted+Annotation;";
 
     private final Map<MethodRef, Boolean> cache = new HashMap<>();
-    private final ClassResolver systemClassResolver;
+    private final SystemClassResolver systemClassResolver;
 
-    private NativeMethodFinder(ClassResolver systemClassResolver) {
+    private NativeMethodFinder(SystemClassResolver systemClassResolver) {
         this.systemClassResolver = systemClassResolver;
     }
 
-    public static NativeMethodFinder create(ClassResolver systemClassResolver) throws JNativeScanFatalError, IOException {
+    public static NativeMethodFinder create(SystemClassResolver systemClassResolver) throws JNativeScanFatalError, IOException {
         return new NativeMethodFinder(systemClassResolver);
     }
 

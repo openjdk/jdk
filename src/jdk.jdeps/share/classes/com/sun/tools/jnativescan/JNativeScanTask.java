@@ -31,7 +31,6 @@ import java.lang.constant.ClassDesc;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ResolvedModule;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -75,7 +74,7 @@ class JNativeScanTask {
 
         SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods
                 = new TreeMap<>(Comparator.comparing(ClassFileSource::path));
-        try(ClassResolver systemClassResolver = ClassResolver.forSystemModules(version)) {
+        try(SystemClassResolver systemClassResolver = SystemClassResolver.forRuntimeVersion(version)) {
             NativeMethodFinder finder = NativeMethodFinder.create(systemClassResolver);
 
             for (ClassFileSource source : toScan) {
