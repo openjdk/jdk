@@ -101,20 +101,17 @@ void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, Me
 // Klute variants
 template <typename T, typename OopClosureType>
 void ObjArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
-  ObjArrayKlass* const oak = ObjArrayKlass::cast_exact(obj->klass()); // TODO can this be made static? Why do we need Klass instance?
-  oak->oop_oop_iterate<T>(obj, closure);
+  oop_oop_iterate<T>(obj, closure);
 }
 
 template <typename T, typename OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute) {
-  ObjArrayKlass* const oak = ObjArrayKlass::cast_exact(obj->klass()); // TODO can this be made static? Why do we need Klass instance?
-  oak->oop_oop_iterate_bounded<T>(obj, closure, mr);
+  oop_oop_iterate_bounded<T>(obj, closure, mr);
 }
 
 template <typename T, typename OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
-  ObjArrayKlass* const oak = ObjArrayKlass::cast_exact(obj->klass()); // TODO can this be made static? Why do we need Klass instance?
-  oak->oop_oop_iterate_reverse<T>(obj, closure);
+  oop_oop_iterate_reverse<T>(obj, closure);
 }
 
 // Like oop_oop_iterate but only iterates over a specified range and only used
