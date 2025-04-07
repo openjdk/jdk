@@ -22,7 +22,8 @@
  */
 
 /*
- * @test Verifier should verify ClassFileLoadHook bytes even if on bootclasspath
+ * @test 
+ * @summary Verifier should verify ClassFileLoadHook bytes even if on bootclasspath
  * @bug 8351654
  * @requires vm.jvmti
  * @library /test/lib
