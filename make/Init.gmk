@@ -181,7 +181,13 @@ on-failure:
 	$(call PrintFailureReports)
 	$(call PrintBuildLogFailures)
 	$(call ReportProfileTimes)
-	$(PRINTF) "HELP: Run 'make doctor' to diagnose build problems.\n\n"
+        ifeq ($(BUILD_ENV), ci)
+	  $(ECHO) ""
+	  $(ECHO) "=== Running 'make doctor' [ci build] ==="
+	  $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk doctor
+        else
+	  $(PRINTF) "HELP: Run 'make doctor' to diagnose build problems.\n\n"
+        endif
         ifneq ($(COMPARE_BUILD), )
 	  $(call CleanupCompareBuild)
         endif
