@@ -28,6 +28,7 @@
 #include "code/nmethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
+#include "jfr/utilities/jfrTime.hpp"
 #include "memory/resourceArea.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
@@ -322,17 +323,31 @@ static void drain_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, Jav
     tl->clear_enqueued_requests();
   }
   assert(!tl->has_enqueued_requests(), "invariant");
+}
 
+
+static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl, JavaThread* jt, Thread* current) {
+  assert(tl != nullptr, "invariant");
+  assert(jt != nullptr, "invariant");
+  assert(current != nullptr, "invariant");
+  drain_enqueued_requests(now, tl, jt, current);
 #ifdef LINUX
   if (jt->has_cpu_time_jfr_requests()) {
-    jt->acquire_cpu_time_jfr_queue_lock();
-
+    JfrTicks now = JfrTicks::now();
+    jt->acquire_cpu_time_jfr_dequeue_lock();
     JfrSampleRequest* request;
-    while ((request = jt->cpu_time_jfr_queue().dequeue()) != nullptr) {
+    JfrCPUTimeTraceQueue& queue = jt->cpu_time_jfr_queue();
+    while ((request = queue.dequeue()) != nullptr) {
       record_cpu_time_thread(request, now, jt, current);
     }
-
+    assert(queue.is_empty(), "invariant");
     jt->set_has_cpu_time_jfr_requests(false);
+    if (queue.lost_samples() > 0) {
+      printf("Lost samples %ld %ld < %d", queue.lost_samples_start().value(), now.value(), queue.lost_samples_start().value() < now.value());
+      JfrCPUTimeThreadSampling::send_lost_event(queue.lost_samples_start(), now, JfrThreadLocal::thread_id(jt), queue.lost_samples());
+      queue.reset_lost_samples();
+    }
+
     jt->release_cpu_time_jfr_queue_lock();
   }
 #endif
@@ -424,5 +439,5 @@ void JfrThreadSampling::process_sample_request(JavaThread* jt) {
       break;
     }
   }
-  drain_enqueued_requests(now, tl, jt, jt);
+  drain_all_enqueued_requests(now, tl, jt, jt);
 }

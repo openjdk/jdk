@@ -310,7 +310,6 @@ class Thread: public ThreadShadow {
   virtual bool is_ConcurrentGC_thread() const        { return false; }
   virtual bool is_Named_thread() const               { return false; }
   virtual bool is_Worker_thread() const              { return false; }
-  virtual bool is_jfr_sampling() const               { return is_JfrSampler_thread(); }
   virtual bool is_JfrSampler_thread() const          { return false; }
   virtual bool is_JfrRecorder_thread() const         { return false; }
   virtual bool is_AttachListener_thread() const      { return false; }

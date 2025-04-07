@@ -1318,22 +1318,41 @@ public:
 
 #if INCLUDE_JFR && defined(LINUX)
 private:
-  volatile bool _cpu_time_jfr_locked = false;
+  enum CPUTimeLockState {
+    UNLOCKED,
+    // locked for enqueuing
+    ENQUEUE,
+    // locked for dequeuing
+    DEQUEUE
+  };
+  volatile CPUTimeLockState _cpu_time_jfr_locked = UNLOCKED;
   volatile bool _has_cpu_time_jfr_requests = false;
-  JfrTraceQueue _cpu_time_jfr_queue{500};
+  static const u4 CPU_TIME_QUEUE_CAPACITY = 1000;
+
+  JfrCPUTimeTraceQueue _cpu_time_jfr_queue{0};
+
+  void ensure_cpu_time_jfr_queue_capacity(u4 capacity) {
+    if (_cpu_time_jfr_queue.capacity() != capacity) {
+      _cpu_time_jfr_queue.set_capacity(capacity);
+    }
+  }
 
 public:
 
 
-  bool is_cpu_time_jfr_queue_locked() { return Atomic::load(&_cpu_time_jfr_locked); }
-  bool acquire_cpu_time_jfr_queue_lock() {
-    return Atomic::cmpxchg(&_cpu_time_jfr_locked, false, true) == false;
+  bool is_cpu_time_jfr_enqueue_locked() { return Atomic::load(&_cpu_time_jfr_locked) == ENQUEUE; }
+  bool is_cpu_time_jfr_dequeue_locked() { return Atomic::load(&_cpu_time_jfr_locked) == DEQUEUE; }
+
+  bool acquire_cpu_time_jfr_enqueue_lock() {
+    return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, ENQUEUE) == UNLOCKED;
   }
+
+  void acquire_cpu_time_jfr_dequeue_lock() {
+    while (Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE) != UNLOCKED);
+  }
+
   void release_cpu_time_jfr_queue_lock() {
-    Atomic::store(&_cpu_time_jfr_locked, false);
-  }
-  bool is_cpu_time_jfr_queue_lock_aquired() {
-    return Atomic::load(&_cpu_time_jfr_locked);
+    Atomic::store(&_cpu_time_jfr_locked, UNLOCKED);
   }
 
   void set_has_cpu_time_jfr_requests(bool has_events) {
@@ -1344,20 +1363,22 @@ public:
     return Atomic::load(&_has_cpu_time_jfr_requests);
   }
 
-  JfrTraceQueue& cpu_time_jfr_queue() { return _cpu_time_jfr_queue; }
-#else
-  bool is_cpu_time_jfr_queue_lock_aquired() {
-    return false;
+  JfrCPUTimeTraceQueue& cpu_time_jfr_queue() { return _cpu_time_jfr_queue; }
+
+  void enable_cpu_time_jfr_queue() {
+    ensure_cpu_time_jfr_queue_capacity(CPU_TIME_QUEUE_CAPACITY);
   }
+
+  void disable_cpu_time_jfr_queue() {
+    ensure_cpu_time_jfr_queue_capacity(0);
+  }
+
+#else
 
   bool has_cpu_time_jfr_requests() {
     return false;
   }
 #endif
-
-  bool is_jfr_sampling() const {
-    return JavaThread::current()->is_cpu_time_jfr_queue_lock_aquired();
-  }
 };
 
 inline JavaThread* JavaThread::current_or_null() {

@@ -36,69 +36,48 @@ class NonJavaThread;
 #include "memory/padded.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 
-// Fixed size async-signal-safe MPMC queue backed by an array.
-// Serves for passing traces from a thread being sampled (producer)
-// to a thread emitting JFR events (consumer).
-// Does not own any frames.
-//
-// _head and _tail of the queue are virtual (always increasing) positions modulo 2^32.
-// Actual index into the backing array is computed as (position % _capacity).
-// Generation G of an element at position P is the number of full wraps around the array:
-//   G = P / _capacity
-// Generation allows to disambiguate situations when _head and _tail point to the same element.
-//
-// Each element of the array is assigned a state, which encodes full/empty flag in bit 31
-// and the generation G of the element in bits 0..30:
-//   state (0,G): the element is empty and avaialble for enqueue() in generation G,
-//   state (1,G): the element is full and available for dequeue() in generation G.
-// Possible transitions are:
-//   (0,G) --enqueue--> (1,G) --dequeue--> (0,G+1)
-class JfrTraceQueue {
-
-  struct Element {
-    // Encodes full/empty flag along with generation of the element.
-    // Also, establishes happens-before relationship between producer and consumer.
-    // Update of this field "commits" enqueue/dequeue transaction.
-    u4 _state;
-    JfrSampleRequest* _sample_request;
-  };
-
-  Element* _data;
+// Fixed size async-signal-safe SPSC linear queue backed by an array.
+// Designed to be only used under lock and read linearly
+class JfrCPUTimeTraceQueue {
+  JfrSampleRequest* _data;
   u4 _capacity;
-
-  // Pad _head and _tail to avoid false sharing
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, sizeof(Element*) + sizeof(u4));
-
+  // next unfilled index
   volatile u4 _head;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(u4));
 
-  volatile u4 _tail;
-  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_PADDING_SIZE, sizeof(u4));
-
-  inline Element* element(u4 position) {
-    return &_data[position % _capacity];
-  }
-
-  inline u4 state_empty(u4 position) {
-    return (position / _capacity) & 0x7fffffff;
-  }
-
-  inline u4 state_full(u4 position) {
-    return (position / _capacity) | 0x80000000;
-  }
+  volatile u4 _lost_samples;
+  JfrTicks _lost_samples_start;
 
 public:
-  JfrTraceQueue(u4 capacity);
+  JfrCPUTimeTraceQueue(u4 capacity);
 
-  ~JfrTraceQueue();
+  ~JfrCPUTimeTraceQueue();
 
-  bool enqueue(JfrSampleRequest* trace);
+  // signal safe, but can't be interleaved with dequeue
+  bool enqueue(JfrSampleRequest& trace);
 
-  u4 _mark_count = 0;
-
+  // only usable if dequeue lock aquired
   JfrSampleRequest* dequeue();
 
+  u4 size() const;
+
+  u4 capacity() const;
+
+  // deletes all samples in the queue
+  void set_capacity(u4 capacity);
+
+  u4 is_full() const;
+
+  u4 is_empty() const;
+
+  u4 lost_samples() const;
+
+  void increment_lost_samples();
+
+  void reset_lost_samples();
+
+  JfrTicks lost_samples_start() const;
 };
+
 
 class JfrCPUTimeThreadSampler;
 
@@ -129,7 +108,7 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
 
   static void send_empty_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid tid, Tickspan cpu_time_period);
   static void send_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid sid, traceid tid, Tickspan cpu_time_period);
-
+  static void send_lost_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid tid, u4 lost_samples);
 };
 
 #else

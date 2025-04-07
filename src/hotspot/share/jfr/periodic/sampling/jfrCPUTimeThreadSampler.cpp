@@ -26,6 +26,9 @@
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/orderAccess.hpp"
+#include "utilities/ticks.hpp"
+#include "utilities/utf8.hpp"
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 
 #if defined(LINUX)
@@ -100,94 +103,84 @@ static JavaThread* get_java_thread_if_valid() {
   return jt;
 }
 
- JfrTraceQueue::JfrTraceQueue(u4 capacity) : _capacity(capacity), _head(0), _tail(0) {
-  _data = JfrCHeapObj::new_array<Element>(capacity);
-  memset(_data, 0, _capacity * sizeof(Element));
+ JfrCPUTimeTraceQueue::JfrCPUTimeTraceQueue(u4 capacity) : _capacity(capacity), _head(0) {
+  _data = JfrCHeapObj::new_array<JfrSampleRequest>(capacity);
 }
 
-JfrTraceQueue::~JfrTraceQueue() {
-  JfrCHeapObj::free(_data, _capacity * sizeof(Element));
+JfrCPUTimeTraceQueue::~JfrCPUTimeTraceQueue() {
+  JfrCHeapObj::free(_data, _capacity * sizeof(JfrSampleRequest));
 }
 
-bool JfrTraceQueue::enqueue(JfrSampleRequest* request) {
-  int count = 10000;
-  while (count -- > 0) {
-    u4 tail = Atomic::load_acquire(&_tail);
-    Element* e = element(tail);
-    u4 state = Atomic::load_acquire(&e->_state);
-    if (state == state_empty(tail)) {
-      if (Atomic::cmpxchg(&_tail, tail, tail + 1, memory_order_seq_cst) == tail) {
-          e->_sample_request = request;
-          // Mark element as full in current generation
-          Atomic::release_store(&e->_state, state_full(tail));
-          return true;
-      }
-    } else if (state == state_full(tail)) {
-      // Another thread has just filled the same position; retry operation
-    } else {
+bool JfrCPUTimeTraceQueue::enqueue(JfrSampleRequest& request) {
+  assert(JavaThread::current()->is_cpu_time_jfr_enqueue_locked(), "invariant");
+  u4 elementIndex;
+  do {
+    elementIndex = Atomic::load(&_head);
+    if (elementIndex >= _capacity) {
       return false;
     }
-  }
-  return false;
+  } while (Atomic::cmpxchg(&_head, elementIndex, elementIndex + 1) != elementIndex);
+  _data[elementIndex] = request;
+  return true;
 }
 
-JfrSampleRequest* JfrTraceQueue::dequeue() {
-  int count = 1000;
-  while (count-- > 0) {
-    u4 head = Atomic::load_acquire(&_head);
-    Element* e = element(head);
-    u4 state = Atomic::load_acquire(&e->_state);
-    if (state == state_full(head)) {
-      if (Atomic::cmpxchg(&_head, head, head + 1, memory_order_seq_cst) == head) {
-          JfrSampleRequest* request = e->_sample_request;
-          // After taking an element, mark it as empty in the next generation,
-          // so we can reuse it again after completing the full circle
-          Atomic::release_store(&e->_state, state_empty(head + _capacity));
-          return request;
-      }
-    } else if (state == state_empty(head)) {
-      return nullptr; // Queue is empty
-    } else {
-      // Producer has not yet completed transaction
-      // mark it as empty to prevent stalling
-      if (count < 500) {
-        Atomic::release_store(&e->_state, state_empty(head));
-      }
-    }
+JfrSampleRequest* JfrCPUTimeTraceQueue::dequeue() {
+  assert(Thread::current()->is_Java_thread(), "invariant");
+  assert(JavaThread::current()->is_cpu_time_jfr_dequeue_locked(), "invariant");
+  if (_head > 0) {
+    _head--;
+    return &_data[_head];
   }
-  return nullptr; // prevent hanging
+  return nullptr;
 }
 
-// Two queues for sampling, fresh and filled
-// at the start, all traces are in the fresh queue
-class JfrTraceQueues {
-  JfrSampleRequest* _sample_requests;
-  JfrTraceQueue _fresh;
-  u4 _max_traces;
-  u4 _max_frames_per_trace;
+volatile u4 _lost_samples_sum = 0;
 
-public:
-  JfrTraceQueues(u4 max_traces, u4 max_frames_per_trace):
-    _sample_requests(JfrCHeapObj::new_array<JfrSampleRequest>(max_traces)), _fresh(max_traces),
-    _max_traces(max_traces), _max_frames_per_trace(max_frames_per_trace) {
-    // create traces
-    for (u4 i = 0; i < max_traces; i++) {
-      _sample_requests[i] = JfrSampleRequest();
-    }
-    // initialize fresh queue
-    for (u4 i = 0; i < max_traces; i++) {
-      _fresh.enqueue(&_sample_requests[i]);
-    }
+u4 JfrCPUTimeTraceQueue::size() const {
+  return Atomic::load(&_head);
+}
+
+u4 JfrCPUTimeTraceQueue::capacity() const {
+  return _capacity;
+}
+
+void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
+  _head = 0;
+  JfrSampleRequest* new_data = JfrCHeapObj::new_array<JfrSampleRequest>(capacity);
+  JfrCHeapObj::free(_data, _capacity * sizeof(JfrSampleRequest));
+  _data = new_data;
+  _capacity = capacity;
+}
+
+u4 JfrCPUTimeTraceQueue::is_full() const {
+  return Atomic::load(&_head) >= _capacity;
+}
+
+u4 JfrCPUTimeTraceQueue::is_empty() const {
+  return Atomic::load(&_head) == 0;
+}
+
+u4 JfrCPUTimeTraceQueue::lost_samples() const {
+  return Atomic::load(&_lost_samples);
+}
+
+void JfrCPUTimeTraceQueue::increment_lost_samples() {
+  if (Atomic::load(&_lost_samples) == 0) {
+    _lost_samples_start = JfrTicks::now();
+    OrderAccess::storestore();
   }
+  Atomic::inc(&_lost_samples_sum);
+  Atomic::inc(&_lost_samples);
+}
 
-  ~JfrTraceQueues() {
-    JfrCHeapObj::free(_sample_requests, sizeof(JfrSampleRequest) * _max_traces);
-  }
+void JfrCPUTimeTraceQueue::reset_lost_samples() {
+  Atomic::store(&_lost_samples, (u4)0);
+  _lost_samples_start = JfrTicks::now();
+}
 
-  JfrTraceQueue& fresh() { return _fresh; }
-
-  u4 max_traces() const { return _max_traces; }
-};
+JfrTicks JfrCPUTimeTraceQueue::lost_samples_start() const {
+  return _lost_samples_start;
+}
 
 static int64_t compute_sampling_period(double rate);
 
@@ -196,23 +189,16 @@ class JfrCPUTimeThreadSampler : public NonJavaThread {
  private:
   Semaphore _sample;
   NonJavaThread* _sampler_thread;
-  JfrTraceQueues _queues;
   double _rate;
   bool _autoadapt;
   volatile int64_t _current_sampling_period_ns = -1;
-  const size_t _max_frames_per_trace;
   volatile bool _disenrolled;
   volatile bool _stop_signals = false;
   volatile int _active_signal_handlers;
-  JfrStackFrame *_jfrFrames;
-  volatile int _lossed_samples = 0;
-  volatile int _lossed_samples_sum = 0;
 
-  const JfrBuffer* get_enqueue_buffer(JavaThread* thread);
-  const JfrBuffer* renew_if_full(const JfrBuffer* enqueue_buffer, JavaThread* thread);
+  void reniew_enqueue_buffer_if_full();
 
-
-  JfrCPUTimeThreadSampler(double rate, bool autoadapt, u4 max_traces, u4 max_frames_per_trace);
+  JfrCPUTimeThreadSampler(double rate, bool autoadapt);
   ~JfrCPUTimeThreadSampler();
 
   void start_thread();
@@ -245,27 +231,24 @@ public:
 };
 
 
-JfrCPUTimeThreadSampler::JfrCPUTimeThreadSampler(double rate, bool autoadapt, u4 max_traces, u4 max_frames_per_trace) :
+JfrCPUTimeThreadSampler::JfrCPUTimeThreadSampler(double rate, bool autoadapt) :
   _sample(),
   _sampler_thread(nullptr),
-  _queues(max_traces, max_frames_per_trace),
   _rate(rate),
   _autoadapt(autoadapt),
   _current_sampling_period_ns(compute_sampling_period(rate)),
-  _max_frames_per_trace(max_frames_per_trace),
-  _disenrolled(true),
-  _jfrFrames(JfrCHeapObj::new_array<JfrStackFrame>(_max_frames_per_trace)) {
+  _disenrolled(true) {
   assert(rate >= 0, "invariant");
 }
 
 JfrCPUTimeThreadSampler::~JfrCPUTimeThreadSampler() {
-  JfrCHeapObj::free(_jfrFrames, sizeof(JfrStackFrame) * _max_frames_per_trace);
 }
 
 void JfrCPUTimeThreadSampler::on_javathread_create(JavaThread* thread) {
   if (thread->is_Compiler_thread()) {
     return;
   }
+  thread->enable_cpu_time_jfr_queue();
   if (thread->jfr_thread_local() != nullptr) {
     timer_t timerid;
     if (create_timer_for_thread(thread, timerid)) {
@@ -278,6 +261,7 @@ void JfrCPUTimeThreadSampler::on_javathread_terminate(JavaThread* thread) {
   if (thread->jfr_thread_local() != nullptr && thread->jfr_thread_local()->has_timerid()) {
     timer_delete(thread->jfr_thread_local()->timerid());
     thread->jfr_thread_local()->unset_timerid();
+    thread->disable_cpu_time_jfr_queue();
   }
 }
 
@@ -329,32 +313,14 @@ void JfrCPUTimeThreadSampler::run() {
       last_autoadapt_check = os::javaTimeNanos();
     }
 
-    int64_t period_nanos = get_sampling_period();
-    period_nanos = period_nanos == 0 ? max_jlong : period_nanos;
-    // If both periods are max_jlong, it implies the sampler is in the process of
-    // disenrolling. Loop back for graceful disenroll by means of the semaphore.
-    if (period_nanos == max_jlong) {
-      continue;
-    }
-    int ignored = Atomic::xchg(&_lossed_samples, 0);
-    if (ignored != 0) {
-      log_trace(jfr)("CPU thread sampler ignored %d elements because of full queue or locks (sum %d)\n", ignored, _lossed_samples_sum);
-      if (EventCPUTimeSampleLoss::is_enabled()) {
-        EventCPUTimeSampleLoss event;
-        event.set_starttime(JfrTicks::now());
-        event.set_lostSamples(ignored);
-        event.commit();
-      }
-    }
-
-    os::naked_sleep(20);
+    os::naked_sleep(10);
   }
 }
 
-static size_t count = 0;
+static volatile size_t count = 0;
 
 void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, const JfrTicks &end_time, traceid tid, Tickspan cpu_time_period) {
-  EventCPUTimeSample event;
+  EventCPUTimeSample event(UNTIMED);
   event.set_failed(true);
   event.set_starttime(start_time);
   event.set_endtime(end_time);
@@ -365,7 +331,7 @@ void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, cons
 }
 
 void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, const JfrTicks &end_time, traceid sid, traceid tid, Tickspan cpu_time_period) {
-  EventCPUTimeSample event;
+  EventCPUTimeSample event(UNTIMED);
   event.set_failed(false);
   event.set_starttime(start_time);
   event.set_endtime(end_time);
@@ -373,9 +339,19 @@ void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, const JfrT
   event.set_stackTrace(sid);
   event.set_samplingPeriod(cpu_time_period);
   event.commit();
-  count++;
-  // debug print event
-  printf("send_event(sid %ld, tid %ld)\n", sid, tid);
+  Atomic::inc(&count);
+  if (Atomic::load(&count) % 1000 == 0) {
+    log_info(jfr)("CPU thread sampler sent %ld events, lost %d\n", Atomic::load(&count), Atomic::load(&_lost_samples_sum));
+  }
+}
+
+void JfrCPUTimeThreadSampling::send_lost_event(const JfrTicks &start_time, const JfrTicks &end_time, traceid tid, u4 lost_samples) {
+  EventCPUTimeSampleLoss event(UNTIMED);
+  event.set_starttime(start_time);
+  event.set_endtime(end_time);
+  event.set_lostSamples(lost_samples);
+  event.set_eventThread(tid);
+  event.commit();
 }
 
 void JfrCPUTimeThreadSampler::post_run() {
@@ -383,14 +359,11 @@ void JfrCPUTimeThreadSampler::post_run() {
   delete this;
 }
 
-const JfrBuffer* JfrCPUTimeThreadSampler::get_enqueue_buffer(JavaThread* thread) {
-  const JfrBuffer* buffer = JfrTraceIdLoadBarrier::get_sampler_enqueue_buffer(thread);
-  return buffer != nullptr ? renew_if_full(buffer, thread) : JfrTraceIdLoadBarrier::renew_sampler_enqueue_buffer(thread);
-}
-
-const JfrBuffer* JfrCPUTimeThreadSampler::renew_if_full(const JfrBuffer* enqueue_buffer, JavaThread* thread) {
-  assert(enqueue_buffer != nullptr, "invariant");
-  return enqueue_buffer->free_size() < _max_frames_per_trace * 2 * wordSize ? JfrTraceIdLoadBarrier::renew_sampler_enqueue_buffer(thread) : enqueue_buffer;
+void JfrCPUTimeThreadSampler::reniew_enqueue_buffer_if_full() {
+  const JfrBuffer* buffer = JfrTraceIdLoadBarrier::get_sampler_enqueue_buffer(_sampler_thread);
+  if (buffer->free_size() < 100) {
+    JfrTraceIdLoadBarrier::renew_sampler_enqueue_buffer(_sampler_thread);
+  }
 }
 
 static JfrCPUTimeThreadSampling* _instance = nullptr;
@@ -422,24 +395,7 @@ JfrCPUTimeThreadSampling::~JfrCPUTimeThreadSampling() {
 
 void JfrCPUTimeThreadSampling::create_sampler(double rate, bool autoadapt) {
   assert(_sampler == nullptr, "invariant");
-  // factor of 20 seems to be a sweet spot between memory consumption
-  // and lost samples for 1ms interval, we additionally keep in a
-  // predetermined range to avoid adverse effects with too many
-  // or too little elements in the queue, as we only have
-  // one thread that processes the queue
-  int64_t period_millis = compute_sampling_period(rate) / 1000000;
-  int queue_size = 20 * os::processor_count() / (period_millis > 9 ? 2 : 1);
-  // the queue should not be larger a factor of 4 of the max chunk size
-  // so that it usually can be processed in one go without
-  // allocating a new chunk
-  long max_chunk_size = JfrOptionSet::max_chunk_size() == 0 ? 12 * 1024 * 1024 : JfrOptionSet::max_chunk_size() / 2;
-  int max_size = max_chunk_size / 2 / wordSize / JfrOptionSet::stackdepth();
-  if (queue_size < 20 * 4) {
-    queue_size = 20 * 4;
-  } else if (queue_size > max_size) {
-    queue_size = max_size;
-  }
-  _sampler = new JfrCPUTimeThreadSampler(rate, autoadapt, queue_size, JfrOptionSet::stackdepth());
+  _sampler = new JfrCPUTimeThreadSampler(rate, autoadapt);
   _sampler->start_thread();
   _sampler->enroll();
 }
@@ -513,38 +469,34 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
   if (jt == nullptr) {
     return;
   }
-  if (!jt->acquire_cpu_time_jfr_queue_lock()) {
-    Atomic::inc(&_lossed_samples);
-    Atomic::inc(&_lossed_samples_sum);
+  if (!jt->acquire_cpu_time_jfr_enqueue_lock()) {
+    jt->cpu_time_jfr_queue().increment_lost_samples();
     return;
   }
   NoResourceMark rm;
-  JfrSampleRequest* request = this->_queues.fresh().dequeue();
-  if (request != nullptr) {
-    // the sampling period might be too low for the current Linux configuration
-    // so samples might be skipped and we have to compute the actual period
-    int64_t period = get_sampling_period() * (info->si_overrun + 1);
-    request->_cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
+  if (jt->cpu_time_jfr_queue().is_full()) {
+    jt->cpu_time_jfr_queue().increment_lost_samples();
+  }
+  JfrSampleRequest request;
+  // the sampling period might be too low for the current Linux configuration
+  // so samples might be skipped and we have to compute the actual period
+  int64_t period = get_sampling_period() * (info->si_overrun + 1);
+  request._cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
 
-    bool success = false;
+  bool success = false;
 
-    if (thread_state_in_java(jt) || thread_state_in_non_java(jt)) {
-      sample_thread(*request, context, jt);
-      success = true;
-    }
+  if (thread_state_in_java(jt) || thread_state_in_non_java(jt)) {
+    sample_thread(request, context, jt);
+    success = true;
+  }
 
-    if (jt->cpu_time_jfr_queue().enqueue(request)) {
-      if (success) {
-        jt->set_has_cpu_time_jfr_requests(true);
-        SafepointMechanism::arm_local_poll_release(jt);
-      }
-    } else {
-      Atomic::inc(&_lossed_samples);
-      Atomic::inc(&_lossed_samples_sum);
+  if (jt->cpu_time_jfr_queue().enqueue(request)) {
+    if (success) {
+      jt->set_has_cpu_time_jfr_requests(true);
+      SafepointMechanism::arm_local_poll_release(jt);
     }
   } else {
-    Atomic::inc(&_lossed_samples);
-    Atomic::inc(&_lossed_samples_sum);
+    jt->cpu_time_jfr_queue().increment_lost_samples();
   }
   jt->release_cpu_time_jfr_queue_lock();
 }
@@ -634,6 +586,7 @@ class VM_CPUTimeSamplerThreadTerminator : public VM_Operation {
       JfrThreadLocal* jfr_thread_local = thread->jfr_thread_local();
       if (jfr_thread_local != nullptr && jfr_thread_local->has_timerid()) {
         timer_delete(jfr_thread_local->timerid());
+        thread->disable_cpu_time_jfr_queue();
         thread->jfr_thread_local()->unset_timerid();
       }
     }

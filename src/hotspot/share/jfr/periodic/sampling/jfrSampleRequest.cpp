@@ -292,4 +292,5 @@ void JfrSampleRequestBuilder::build_cpu_time_sample_request(JfrSampleRequest& re
       set_cpu_time_biased_sample(request, jt);
     }
   }
+  request._sample_ticks = JfrTicks::now();
 }
