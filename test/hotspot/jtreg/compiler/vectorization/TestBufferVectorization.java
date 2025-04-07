@@ -72,7 +72,7 @@ public class TestBufferVectorization {
                   IRNode.LOAD_VECTOR_I, ">0",
                   IRNode.ADD_VI,        ">0",
                   IRNode.STORE_VECTOR,  ">0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public static void testArray(int[] array) {
         for(int k = 0; k < array.length; k++) {
             array[k] += 1;
@@ -110,7 +110,7 @@ public class TestBufferVectorization {
                   IRNode.LOAD_VECTOR_I, ">0",
                   IRNode.ADD_VI,        ">0",
                   IRNode.STORE_VECTOR,  ">0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public static void testArrayOffset(int[] array, int offset) {
         int l = array.length - offset;
         for(int k = 0; k < l; k++) {
@@ -131,7 +131,7 @@ public class TestBufferVectorization {
                   IRNode.LOAD_VECTOR_I, ">0",
                   IRNode.ADD_VI,        ">0",
                   IRNode.STORE_VECTOR,  ">0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public static void testBuffer(IntBuffer buffer) {
         for (int k = 0; k < buffer.limit(); k++) {
             buffer.put(k, buffer.get(k) + 1);
@@ -151,7 +151,7 @@ public class TestBufferVectorization {
                   IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_ANY, ">0",
                   IRNode.ADD_VI,        IRNode.VECTOR_SIZE_ANY, ">0",
                   IRNode.STORE_VECTOR,                          ">0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"})
     // VECTOR_SIZE_ANY: Unrolling does not always seem to go far enough to reach maximum vector size.
@@ -226,7 +226,7 @@ public class TestBufferVectorization {
                   IRNode.LOAD_VECTOR_I, ">0",
                   IRNode.ADD_VI,        ">0",
                   IRNode.STORE_VECTOR,  ">0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     public static void testArrayView(byte[] b_arr) {
         for (int k = 0; k < b_arr.length; k += 4) {
             int v = (int) VH_arr_view.get(b_arr, k);

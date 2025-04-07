@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,10 @@
 #include "jfr/utilities/jfrTypes.hpp"
 
 class JavaThread;
-class JfrCheckpointWriter;
 class JfrChunkWriter;
+
+template <typename>
+class GrowableArray;
 
 class JfrStackTraceRepository : public JfrCHeapObj {
   friend class JfrDeprecatedEdge;
@@ -56,13 +58,13 @@ class JfrStackTraceRepository : public JfrCHeapObj {
   static void destroy();
   bool initialize();
 
-  bool is_modified() const;
   static size_t clear();
   static size_t clear(JfrStackTraceRepository& repo);
   size_t write(JfrChunkWriter& cw, bool clear);
 
   static const JfrStackTrace* lookup_for_leak_profiler(traceid hash, traceid id);
   static void record_for_leak_profiler(JavaThread* thread, int skip = 0);
+  static void write_leak_profiler(GrowableArray<traceid>* leakp_set, Thread* t);
   static void clear_leak_profiler();
 
   static traceid next_id();
