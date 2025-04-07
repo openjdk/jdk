@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ public class TestHeapDumpOnOutOfMemoryError {
             }
         }
         test(args[1]);
+        System.out.println("PASSED");
     }
 
     static void test(String type) throws Exception {
@@ -96,11 +97,28 @@ public class TestHeapDumpOnOutOfMemoryError {
         output.stdoutShouldNotBeEmpty();
         output.shouldContain("Dumping heap to " + type + ".hprof");
         File dump = new File(heapdumpFilename);
-        Asserts.assertTrue(dump.exists() && dump.isFile(),
-                "Could not find dump file " + dump.getAbsolutePath());
+        Asserts.assertTrue(dump.exists() && dump.isFile(), "Could not find dump file " + dump.getAbsolutePath());
 
         HprofParser.parse(new File(heapdumpFilename));
-        System.out.println("PASSED");
+
+        // Test again using %p pid substitution in HeapDumpPath:
+        heapdumpFilename = type + ".%p.hprof";
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+HeapDumpOnOutOfMemoryError",
+                "-XX:HeapDumpPath=" + heapdumpFilename,
+                "-XX:MaxMetaspaceSize=16m",
+                "-Xmx128m",
+                Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "-Dx",
+                TestHeapDumpOnOutOfMemoryError.class.getName(), type);
+
+        Process proc = pb.start();
+        output = new OutputAnalyzer(proc);
+        output.stdoutShouldNotBeEmpty();
+        long pid = proc.pid();
+        String actualHeapdumpFilename = type + "." + pid + ".hprof";
+        output.shouldContain("Dumping heap to " + actualHeapdumpFilename);
+        dump = new File(actualHeapdumpFilename);
+        Asserts.assertTrue(dump.exists() && dump.isFile(), "Could not find dump file " + dump.getAbsolutePath());
+        HprofParser.parse(new File(actualHeapdumpFilename));
     }
 
 }
