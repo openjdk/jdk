@@ -58,6 +58,7 @@
   f(mtMetaspace,      "Metaspace")                                                   \
   f(mtStringDedup,    "String Deduplication")                                        \
   f(mtObjectMonitor,  "Object Monitors")                                             \
+  f(mtKLUT,           "Class Metadata lookup table (KLUT)")                          \
   f(mtNone,           "Unknown")                                                     \
   //end
 

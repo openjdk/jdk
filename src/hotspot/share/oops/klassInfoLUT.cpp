@@ -48,26 +48,28 @@ void KlassInfoLUT::initialize() {
   assert(CompressedKlassPointers::shift() == 10, "must be (for density)");
 
   const narrowKlass highest_nk = CompressedKlassPointers::highest_valid_narrow_klass_id();
-  _num_entries = highest_nk;
-
-  const size_t memory_needed = sizeof(uint32_t) * _num_entries;
+  size_t table_size_in_bytes = sizeof(uint32_t) * highest_nk;
+  bool uses_large_pages = false;
   if (UseLargePages) {
     const size_t large_page_size = os::large_page_size();
-    if (is_aligned(memory_needed, large_page_size)) {
-      char* memory = os::reserve_memory_special(memory_needed, large_page_size, large_page_size, nullptr, false);
-      if (memory != nullptr) {
-        _entries = (uint32_t*)memory;
-        log_info(klut)("KLUT initialized (%u entries, using large pages): " RANGEFMT,
-                        _num_entries, RANGEFMTARGS(_entries, memory_needed));
+    if (large_page_size < 16 * M) { // not for freakishly large pages
+      table_size_in_bytes = align_up(table_size_in_bytes, large_page_size);
+      _entries = (uint32_t*) os::reserve_memory_special(table_size_in_bytes, large_page_size, large_page_size, nullptr, false);
+      if (_entries != nullptr) {
+        uses_large_pages = true;
+        _num_entries = table_size_in_bytes / sizeof(uint32_t);
       }
     }
   }
   if (_entries == nullptr) {
-    // Fallback, just use C-heap.
-    _entries = NEW_C_HEAP_ARRAY(uint32_t, num_entries(), mtClass);
-    log_info(klut)("KLUT initialized (%u entries, using normal pages): " RANGEFMT,
-                    _num_entries, RANGEFMTARGS(_entries, memory_needed));
+    table_size_in_bytes = align_up(table_size_in_bytes, os::vm_page_size());
+    _entries = (uint32_t*)os::reserve_memory(table_size_in_bytes, false, mtKLUT);
+    os::commit_memory_or_exit((char*)_entries, table_size_in_bytes, false, "KLUT");
+    _num_entries = table_size_in_bytes / sizeof(uint32_t);
   }
+
+  log_info(klut)("Lookup table initialized (%u entries, using %s pages): " RANGEFMT,
+                  _num_entries, (uses_large_pages ? "large" : "normal"), RANGEFMTARGS(_entries, table_size_in_bytes));
 
   // We need to zap the whole LUT if CDS is enabled or dumping, since we may need to late-register classes.
   memset(_entries, 0xff, _num_entries * sizeof(uint32_t));
