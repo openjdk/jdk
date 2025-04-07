@@ -62,7 +62,7 @@ public class bug4244536 {
         JFrame frame = new JFrame("bug4244536");
         JDesktopPane desktop = new JDesktopPane();
         JInternalFrame jif = new JInternalFrame("Internal Frame");
-        jif.setSize(150,150);
+        jif.setSize(150, 150);
         jif.setMaximizable(true);
         jif.setIconifiable(true);
         jif.setVisible(true);

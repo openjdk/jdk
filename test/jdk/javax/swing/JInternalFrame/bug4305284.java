@@ -63,7 +63,7 @@ public class bug4305284 {
             jif.setBounds(50, 50, 200, 200);
             jif.setMaximum(false);
             jif.setVisible(true);
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         frame.setSize(300, 300);
