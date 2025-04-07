@@ -237,27 +237,30 @@ final class StableValueTest {
 
     @Test
     void intFunctionExample2() {
-        final class HexUtil {
+        final class PowerOf2Util {
 
-            private HexUtil() {}
+            private PowerOf2Util() {}
 
-            private static final int SIZE = 0x10;
+            private static final int SIZE = 6;
+            private static final IntFunction<Integer> ORIGINAL_POWER_OF_TWO =
+                    v -> 1 << v;
 
-            private static final IntFunction<String> TO_HEX =
+            private static final IntFunction<Integer> POWER_OF_TWO =
                     // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
-                    StableValue.intFunction(SIZE, Integer::toHexString);
+                    StableValue.intFunction(SIZE, ORIGINAL_POWER_OF_TWO);
 
-            public static String toHex(int a) {
-                return TO_HEX.apply(a);
+            public static int powerOfTwo(int a) {
+                return POWER_OF_TWO.apply(a);
             }
         }
 
-        String hex10 = HexUtil.toHex(10);   // May eventually constant fold to "A" at runtime
+        int pwr4 = PowerOf2Util.powerOfTwo(4);   // May eventually constant fold to 16 at runtime
 
-        assertEquals("0", HexUtil.toHex(0x0));
-        assertEquals("a", hex10);
-        assertEquals("f", HexUtil.toHex(0xf));
-        assertThrows(IllegalArgumentException.class, () -> HexUtil.toHex(0x10));
+        assertEquals(16, pwr4);
+        assertEquals(1, PowerOf2Util.powerOfTwo(0));
+        assertEquals(8, PowerOf2Util.powerOfTwo(3));
+        assertEquals(32, PowerOf2Util.powerOfTwo(5));
+        assertThrows(IllegalArgumentException.class, () -> PowerOf2Util.powerOfTwo(10));
     }
 
     @Test

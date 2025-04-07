@@ -160,28 +160,29 @@ import java.util.function.Supplier;
  * {@linkplain IntFunction}:
  *
  * {@snippet lang = java:
- * public final class SqrtUtil {
+ * final class PowerOf2Util {
  *
- *      private SqrtUtil() {}
+ *     private PowerOf2Util() {}
  *
- *      private static final int CACHED_SIZE = 10;
+ *     private static final int SIZE = 6;
+ *     private static final IntFunction<Integer> ORIGINAL_POWER_OF_TWO =
+ *             v -> 1 << v;
  *
- *      private static final IntFunction<Double> SQRT =
- *              // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
- *              StableValue.intFunction(CACHED_SIZE, StrictMath::sqrt);
+ *     private static final IntFunction<Integer> POWER_OF_TWO =
+ *             // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
+ *             StableValue.intFunction(SIZE, ORIGINAL_POWER_OF_TWO);
  *
- *      public static double sqrt(int a) {
- *          return SQRT.apply(a);
- *      }
- *  }
+ *     public static int powerOfTwo(int a) {
+ *         return POWER_OF_TWO.apply(a);
+ *     }
+ * }
  *
- *  public static void computeSomeValues() {
- *      double sqrt9 = sqrt(9);   // May eventually constant fold to 3.0 at runtime
- *  }
+ * int pwr4 = PowerOf2Util.powerOfTwo(4);   // May eventually constant fold to 16 at runtime
  *
  *}
- * The {@code SqrtUtil.sqrt()} function is a <em>partial function</em> that only allows a
- * subset {@code [0, 9]} of the original function's {@code StrictMath::sqrt} input range.
+ * The {@code PowerOf2Util.powerOfTwo()} function is a <em>partial function</em> that only
+ * allows a subset {@code [0, 5]} of the original function's {@code ORIGINAL_POWER_OF_TWO}
+ * input range.
  *
  * <p>
  * A <em>stable function</em> is a function that takes a parameter (of type {@code T}) and
@@ -199,12 +200,12 @@ import java.util.function.Supplier;
  *
  *     private static final Set<Integer> KEYS =
  *             Set.of(1, 2, 4, 8, 16, 32);
- *     private static final UnaryOperator<Integer> LOG2_ORIGINAL =
+ *     private static final UnaryOperator<Integer> ORIGINAL_LOG2 =
  *             i -> 31 - Integer.numberOfLeadingZeros(i);
  *
  *     private static final Function<Integer, Integer> LOG2 =
  *             // @link substring="function" target="#function(Set,Function)" :
- *             StableValue.function(KEYS, LOG2_ORIGINAL);
+ *             StableValue.function(KEYS, ORIGINAL_LOG2);
  *
  *     public static double log2(int a) {
  *         return LOG2.apply(a);
@@ -219,7 +220,7 @@ import java.util.function.Supplier;
  *
  * The {@code Log2Util.log2()} function is a <em>partial function</em> that only allows
  * a subset {@code {1, 2, 4, 8, 16, 32}} of the original function's
- * {@code LOG2_ORIGINAL} input range.
+ * {@code ORIGINAL_LOG2} input range.
  *
  * <h2 id="stable-collections">Stable Collections</h2>
  * Stable values can also be used as backing storage for
@@ -228,24 +229,24 @@ import java.util.function.Supplier;
  * are computed when they are first accessed, using a provided {@linkplain IntFunction}:
  *
  * {@snippet lang = java:
- * public final class SqrtUtil {
+ * final class PowerOf2Util {
  *
- *      private static final int CACHED_SIZE = 10;
+ *     private PowerOf2Util() {}
  *
- *      private SqrtUtil() {}
+ *     private static final int SIZE = 6;
+ *     private static final IntFunction<Integer> ORIGINAL_POWER_OF_TWO =
+ *             v -> 1 << v;
  *
- *      private static final List<Double> SQRT =
- *              // @link substring="list" target="#list(int,IntFunction)" :
- *              StableValue.list(CACHED_SIZE, StrictMath::sqrt);
+ *     private static final List<Integer> POWER_OF_TWO =
+ *             // @link substring="list" target="#list(int,IntFunction)" :
+ *             StableValue.list(SIZE, ORIGINAL_POWER_OF_TWO);
  *
- *      public static double sqrt(int a) {
- *          return SQRT.get(a);
- *      }
- *  }
+ *     public static int powerOfTwo(int a) {
+ *         return POWER_OF_TWO.gety(a);
+ *     }
+ * }
  *
- *  public static void computeSomeValues() {
- *       double sqrt9 = SqrtUtil.sqrt(9);   // May eventually constant fold to 3.0 at runtime
- *  }
+ * int pwr4 = PowerOf2Util.powerOfTwo(4);   // May eventually constant fold to 16 at runtime
  *
  * }
  * <p>
