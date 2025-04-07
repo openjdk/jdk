@@ -1489,7 +1489,127 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* x, Basi
 }
 #endif
 
-//------------------------------try_convert_to_counted_loop--------------------------------
+//------------------------------CountedLoopConverter--------------------------------
+#ifdef ASSERT
+bool PhaseIdealLoop::CountedLoopConverter::should_stress_long_counted_loop() const {
+  assert(_checked_for_counted_loop, "must check for counted loop before conversion");
+
+  return StressLongCountedLoop > 0 &&
+      _iv_bt == T_INT &&
+      !_head->as_Loop()->is_loop_nest_inner_loop() &&
+      _trunc1 == nullptr;
+}
+
+// Convert an int counted loop to a long counted to stress handling of long counted loops. Returns true upon success.
+bool PhaseIdealLoop::CountedLoopConverter::stress_long_counted_loop() const {
+  assert(should_stress_long_counted_loop(), "stress condition not satisfied");
+
+  PhaseIterGVN* igvn = &_phase->_igvn;
+  Unique_Node_List iv_nodes;
+  Node_List old_new;
+  iv_nodes.push(_cmp);
+  bool failed = false;
+
+  for (uint i = 0; i < iv_nodes.size() && !failed; i++) {
+    Node* n = iv_nodes.at(i);
+    switch(n->Opcode()) {
+      case Op_Phi: {
+        Node* clone = new PhiNode(n->in(0), TypeLong::LONG);
+        old_new.map(n->_idx, clone);
+        break;
+      }
+      case Op_CmpI: {
+        Node* clone = new CmpLNode(nullptr, nullptr);
+        old_new.map(n->_idx, clone);
+        break;
+      }
+      case Op_AddI: {
+        Node* clone = new AddLNode(nullptr, nullptr);
+        old_new.map(n->_idx, clone);
+        break;
+      }
+      case Op_CastII: {
+        failed = true;
+        break;
+      }
+      default:
+        DEBUG_ONLY(n->dump());
+        fatal("unexpected");
+    }
+
+    for (uint j = 1; j < n->req(); j++) {
+      Node* in = n->in(j);
+      if (in == nullptr) {
+        continue;
+      }
+      if (_loop->is_member(_phase->get_loop(_phase->get_ctrl(in)))) {
+        iv_nodes.push(in);
+      }
+    }
+  }
+
+  if (failed) {
+    for (uint i = 0; i < iv_nodes.size(); i++) {
+      Node* n = iv_nodes.at(i);
+      Node* clone = old_new[n->_idx];
+      if (clone != nullptr) {
+        igvn->remove_dead_node(clone);
+      }
+    }
+    return false;
+  }
+
+  for (uint i = 0; i < iv_nodes.size(); i++) {
+    Node* n = iv_nodes.at(i);
+    Node* clone = old_new[n->_idx];
+    for (uint j = 1; j < n->req(); j++) {
+      Node* in = n->in(j);
+      if (in == nullptr) {
+        continue;
+      }
+      Node* in_clone = old_new[in->_idx];
+      if (in_clone == nullptr) {
+        assert(igvn->type(in)->isa_int(), "");
+        in_clone = new ConvI2LNode(in);
+        igvn->register_new_node_with_optimizer(in_clone);
+        _phase->set_subtree_ctrl(in_clone, false);
+      }
+      if (in_clone->in(0) == nullptr) {
+        in_clone->set_req(0, _phase->C->top());
+        clone->set_req(j, in_clone);
+        in_clone->set_req(0, nullptr);
+      } else {
+        clone->set_req(j, in_clone);
+      }
+    }
+    igvn->register_new_node_with_optimizer(clone);
+  }
+  _phase->set_ctrl(old_new[_phi->_idx], _phi->in(0));
+
+  for (uint i = 0; i < iv_nodes.size(); i++) {
+    Node* n = iv_nodes.at(i);
+    Node* clone = old_new[n->_idx];
+    _phase->set_subtree_ctrl(clone, false);
+    Node* m = n->Opcode() == Op_CmpI ? clone : nullptr;
+    for (DUIterator_Fast imax, j = n->fast_outs(imax); j < imax; j++) {
+      Node* u = n->fast_out(j);
+      if (iv_nodes.member(u)) {
+        continue;
+      }
+      if (m == nullptr) {
+        m = new ConvL2INode(clone);
+        igvn->register_new_node_with_optimizer(m);
+        _phase->set_subtree_ctrl(m, false);
+      }
+      igvn->rehash_node_delayed(u);
+      int nb = u->replace_edge(n, m, igvn);
+      --j, imax -= nb;
+    }
+  }
+  return true;
+}
+#endif
+
 bool PhaseIdealLoop::try_convert_to_counted_loop(Node* head, IdealLoopTree*& loop, const BasicType iv_bt) {
   CountedLoopConverter converter(this, head, loop, iv_bt);
   if (converter.is_counted_loop()) {
@@ -2264,126 +2384,6 @@ IdealLoopTree* PhaseIdealLoop::CountedLoopConverter::convert() {
 
   return _loop;
 }
-
-#ifdef ASSERT
-bool PhaseIdealLoop::CountedLoopConverter::should_stress_long_counted_loop() const {
-  assert(_checked_for_counted_loop, "must check for counted loop before conversion");
-
-  return StressLongCountedLoop > 0 &&
-      _iv_bt == T_INT &&
-      !_head->as_Loop()->is_loop_nest_inner_loop() &&
-      _trunc1 == nullptr;
-}
-
-// Convert an int counted loop to a long counted to stress handling of long counted loops. Returns true upon success.
-bool PhaseIdealLoop::CountedLoopConverter::stress_long_counted_loop() const {
-  assert(should_stress_long_counted_loop(), "stress condition not satisfied");
-
-  PhaseIterGVN* igvn = &_phase->_igvn;
-  Unique_Node_List iv_nodes;
-  Node_List old_new;
-  iv_nodes.push(_cmp);
-  bool failed = false;
-
-  for (uint i = 0; i < iv_nodes.size() && !failed; i++) {
-    Node* n = iv_nodes.at(i);
-    switch(n->Opcode()) {
-      case Op_Phi: {
-        Node* clone = new PhiNode(n->in(0), TypeLong::LONG);
-        old_new.map(n->_idx, clone);
-        break;
-      }
-      case Op_CmpI: {
-        Node* clone = new CmpLNode(nullptr, nullptr);
-        old_new.map(n->_idx, clone);
-        break;
-      }
-      case Op_AddI: {
-        Node* clone = new AddLNode(nullptr, nullptr);
-        old_new.map(n->_idx, clone);
-        break;
-      }
-      case Op_CastII: {
-        failed = true;
-        break;
-      }
-      default:
-        DEBUG_ONLY(n->dump());
-        fatal("unexpected");
-    }
-
-    for (uint j = 1; j < n->req(); j++) {
-      Node* in = n->in(j);
-      if (in == nullptr) {
-        continue;
-      }
-      if (_loop->is_member(_phase->get_loop(_phase->get_ctrl(in)))) {
-        iv_nodes.push(in);
-      }
-    }
-  }
-
-  if (failed) {
-    for (uint i = 0; i < iv_nodes.size(); i++) {
-      Node* n = iv_nodes.at(i);
-      Node* clone = old_new[n->_idx];
-      if (clone != nullptr) {
-        igvn->remove_dead_node(clone);
-      }
-    }
-    return false;
-  }
-
-  for (uint i = 0; i < iv_nodes.size(); i++) {
-    Node* n = iv_nodes.at(i);
-    Node* clone = old_new[n->_idx];
-    for (uint j = 1; j < n->req(); j++) {
-      Node* in = n->in(j);
-      if (in == nullptr) {
-        continue;
-      }
-      Node* in_clone = old_new[in->_idx];
-      if (in_clone == nullptr) {
-        assert(igvn->type(in)->isa_int(), "");
-        in_clone = new ConvI2LNode(in);
-        igvn->register_new_node_with_optimizer(in_clone);
-        _phase->set_subtree_ctrl(in_clone, false);
-      }
-      if (in_clone->in(0) == nullptr) {
-        in_clone->set_req(0, _phase->C->top());
-        clone->set_req(j, in_clone);
-        in_clone->set_req(0, nullptr);
-      } else {
-        clone->set_req(j, in_clone);
-      }
-    }
-    igvn->register_new_node_with_optimizer(clone);
-  }
-  _phase->set_ctrl(old_new[_phi->_idx], _phi->in(0));
-
-  for (uint i = 0; i < iv_nodes.size(); i++) {
-    Node* n = iv_nodes.at(i);
-    Node* clone = old_new[n->_idx];
-    _phase->set_subtree_ctrl(clone, false);
-    Node* m = n->Opcode() == Op_CmpI ? clone : nullptr;
-    for (DUIterator_Fast imax, j = n->fast_outs(imax); j < imax; j++) {
-      Node* u = n->fast_out(j);
-      if (iv_nodes.member(u)) {
-        continue;
-      }
-      if (m == nullptr) {
-        m = new ConvL2INode(clone);
-        igvn->register_new_node_with_optimizer(m);
-        _phase->set_subtree_ctrl(m, false);
-      }
-      igvn->rehash_node_delayed(u);
-      int nb = u->replace_edge(n, m, igvn);
-      --j, imax -= nb;
-    }
-  }
-  return true;
-}
-#endif
 
 // Check if there is a dominating loop limit check of the form 'init < limit' starting at the loop entry.
 // If there is one, then we do not need to create an additional Loop Limit Check Predicate.

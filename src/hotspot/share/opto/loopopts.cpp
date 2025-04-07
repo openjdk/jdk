@@ -2848,8 +2848,6 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
     Node* phi = cmp1;
     for (uint i = 1; i < phi->req(); i++) {
       Node* in = phi->in(i);
-//      Node* add = CountedLoopNode::match_incr_with_optional_truncation(in,
-//                                &trunc1, &trunc2, &ttype, T_INT);
       CountedLoopNode::TruncatedIncrement increment = CountedLoopNode::match_incr_with_optional_truncation(in, T_INT);
       if (increment.incr != nullptr && increment.incr->in(1) == phi) {
         add2 = increment.incr->in(2);
@@ -2859,8 +2857,6 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
   } else {
     // (If (Bool (CmpX addtrunc:(Optional-trunc((AddI (Phi ...addtrunc...) add2)) )))
     Node* addtrunc = cmp1;
-//    Node* add = CountedLoopNode::match_incr_with_optional_truncation(addtrunc,
-//                                &trunc1, &trunc2, &ttype, T_INT);
     CountedLoopNode::TruncatedIncrement increment = CountedLoopNode::match_incr_with_optional_truncation(addtrunc, T_INT);
     if (increment.incr != nullptr && increment.incr->in(1)->is_Phi()) {
       Node* phi = increment.incr->in(1);
@@ -4270,11 +4266,6 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       return false;
     }
 
-//    BoolTest::mask bt = BoolTest::illegal;
-//    float cl_prob = 0;
-//    Node* incr = nullptr;
-//    Node* limit = nullptr;
-//    Node* cmp = loop_exit_test(back_control, loop, incr, limit, bt, cl_prob);
     LoopExitTest loop_exit = loop_exit_test(back_control, loop);
     if (loop_exit.cmp == nullptr || loop_exit.cmp->Opcode() != Op_CmpI) {
       return false;
@@ -4294,19 +4285,11 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
     // if the extra phi is removed
     inner = 0;
     for (uint i = 1; i < loop_exit.incr->req(); ++i) {
-//      Node* in = incr->in(i);
-//      Node* trunc1 = nullptr;
-//      Node* trunc2 = nullptr;
-//      const TypeInteger* iv_trunc_t = nullptr;
-//      Node* orig_in = in;
       CountedLoopNode::TruncatedIncrement increment = CountedLoopNode::match_incr_with_optional_truncation(loop_exit.incr->in(i), T_INT);
-//      if (!(in = CountedLoopNode::match_incr_with_optional_truncation(in, &trunc1, &trunc2, &iv_trunc_t, T_INT))) {
       if (increment.incr == nullptr) {
         continue;
       }
       assert(increment.incr->Opcode() == Op_AddI, "wrong increment code");
-//      Node* xphi = nullptr;
-//      Node* stride = loop_iv_stride(increment.incr, xphi);
       LoopIvStride stride = loop_iv_stride(increment.incr);
 
       if (stride.stride == nullptr) {
