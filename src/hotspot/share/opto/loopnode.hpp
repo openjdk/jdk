@@ -1271,7 +1271,6 @@ public:
   virtual Node* transform(Node* n) { return nullptr; }
 
   Node* loop_exit_control(const Node* x, const IdealLoopTree* loop) const;
-
   struct LoopExitTest {
     Node* cmp = nullptr;
     Node* incr = nullptr;
@@ -1280,19 +1279,16 @@ public:
     const float cl_prob = 0.0f;
   };
   LoopExitTest loop_exit_test(const Node* back_control, const IdealLoopTree* loop);
-
   struct LoopIVIncr {
     Node* incr = nullptr;
     Node* phi_incr = nullptr;
   };
   LoopIVIncr loop_iv_incr(Node* old_incr, const Node* x, const IdealLoopTree* loop);
-
   struct LoopIvStride {
     Node* stride = nullptr;
     Node* xphi = nullptr;
   };
   static LoopIvStride loop_iv_stride(const Node* incr);
-
   static PhiNode* loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* x);
 
   bool try_convert_to_counted_loop(Node* head, IdealLoopTree*&loop, const BasicType iv_bt);
@@ -1307,12 +1303,14 @@ public:
                                                IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                Node*& entry_control, Node*& iffalse);
 
+  // FIXME: move to somewhere more sensible
   class CountedLoopConverter {
     PhaseIdealLoop* _phase;
     Node* _head;
     IdealLoopTree* _loop;
     const BasicType _iv_bt;
 
+    // TODO: better naming for these flags?
     bool _insert_stride_overflow_limit_check = false;
     bool _insert_init_trip_limit_check = false;
 
@@ -1320,7 +1318,6 @@ public:
     bool _checked_for_counted_loop = false;
 #endif
 
-    // To be assigned once a counted loop is confirmed.
     Node* _limit;
     jlong _stride_con;
     Node* _phi;
