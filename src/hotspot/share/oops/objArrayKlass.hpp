@@ -119,19 +119,19 @@ class ObjArrayKlass : public ArrayKlass {
 
   // Iterate over oop elements and metadata.
   template <typename T, typename OopClosureType>
-  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure);
 
   // Iterate over oop elements and metadata.
   template <typename T, typename OopClosureType>
-  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
 
   // Iterate over oop elements within mr, and metadata.
   template <typename T, typename OopClosureType>
-  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
   // Iterate over oop elements within [start, end), and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end);
+  static inline void oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end);
 
   // klute variants
   template <typename T, class OopClosureType>
@@ -144,12 +144,12 @@ class ObjArrayKlass : public ArrayKlass {
  public:
   // Iterate over all oop elements.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure);
+  static inline void oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure);
 
  private:
   // Iterate over all oop elements with indices within mr.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
+  static inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
 
  public:
   u2 compute_modifier_flags() const;
