@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,37 @@
  * questions.
  */
 
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.model;
 
-public class ConfigException extends Exception {
+import java.text.MessageFormat;
+import java.util.ResourceBundle;
+
+public class PackagerException extends Exception {
     private static final long serialVersionUID = 1L;
-    final String advice;
+    private static final ResourceBundle bundle = ResourceBundle.getBundle(
+            "jdk.jpackage.internal.resources.MainResources");
 
-    public ConfigException(String msg, String advice) {
-        super(msg);
-        this.advice = advice;
-    }
-
-    public ConfigException(String msg, String advice, Exception cause) {
-        super(msg, cause);
-        this.advice = advice;
-    }
-
-    public ConfigException(Exception cause) {
+    public PackagerException(Throwable cause) {
         super(cause);
-        this.advice = null;
     }
 
-    public String getAdvice() {
-        return advice;
+    public PackagerException(String key, Throwable cause) {
+        super(bundle.getString(key), cause);
     }
+
+    public PackagerException(String key) {
+        super(bundle.getString(key));
+    }
+
+    public PackagerException(String key, String ... arguments) {
+        super(MessageFormat.format(
+                bundle.getString(key), (Object[]) arguments));
+    }
+
+    public PackagerException(
+            Throwable cause, String key, String ... arguments) {
+        super(MessageFormat.format(bundle.getString(key),
+                (Object[]) arguments), cause);
+    }
+
 }
