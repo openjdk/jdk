@@ -1002,7 +1002,7 @@ private:
                                                         CountedLoopNode* target_loop_head,
                                                         const NodeInLoopBody& _node_in_loop_body,
                                                         bool kill_old_template);
-  void rewire_old_target_loop_entry_dependency_to_new_entry(LoopNode* target_loop_head,
+  void rewire_old_target_loop_entry_dependency_to_new_entry(CountedLoopNode* target_loop_head,
                                                             const Node* old_target_loop_entry,
                                                             uint node_index_before_new_assertion_predicate_nodes);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,

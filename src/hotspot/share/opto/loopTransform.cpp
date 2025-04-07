@@ -1796,8 +1796,8 @@ void PhaseIdealLoop::create_assertion_predicates_at_main_or_post_loop(CountedLoo
 // to do because these control dependent nodes on the old target loop entry created by clone_up_backedge_goo() were
 // pinned on the loop backedge before. The Assertion Predicates are not control dependent on these nodes in any way.
 void PhaseIdealLoop::rewire_old_target_loop_entry_dependency_to_new_entry(
-    CountedLoopNode* target_loop_head, const Node* old_target_loop_entry,
-    const uint node_index_before_new_assertion_predicate_nodes) {
+  CountedLoopNode* target_loop_head, const Node* old_target_loop_entry,
+  const uint node_index_before_new_assertion_predicate_nodes) {
   Node* new_main_loop_entry = target_loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
   if (new_main_loop_entry == old_target_loop_entry) {
     // No Assertion Predicates added.
