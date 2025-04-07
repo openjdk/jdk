@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -573,14 +573,8 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      *
      * @param codesource the {@code CodeSource}
      * @throws NullPointerException if {@code codesource} is {@code null}.
-     *
-     * @deprecated
-     * This method cannot be used for controlling access to resources
-     * as the Security Manager is no longer supported.
      */
     @Override
-    @Deprecated(since="25", forRemoval=true)
-    @SuppressWarnings("removal")
     protected PermissionCollection getPermissions(CodeSource codesource) {
         Objects.requireNonNull(codesource);
         return new Permissions();

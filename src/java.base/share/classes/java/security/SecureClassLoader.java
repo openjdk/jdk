@@ -173,11 +173,7 @@ public class SecureClassLoader extends ClassLoader {
      *
      * @return the permissions for the codesource.
      *
-     * @deprecated
-     * This method cannot be used for controlling access to resources
-     * as the Security Manager is no longer supported.
      */
-    @Deprecated(since="25", forRemoval=true)
     protected PermissionCollection getPermissions(CodeSource codesource)
     {
         return new Permissions(); // ProtectionDomain defers the binding
