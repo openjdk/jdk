@@ -52,7 +52,8 @@ class KlassInfoLUT : public AllStatic {
 
   static void allocate_lookup_table();
 
-  // register stats are not expensive
+  // Statistics about the distribution of Klasses registered. These
+  // are not expensive (counter hit per class)
 #define REGISTER_STATS_DO(f)    \
   f(registered_IK)              \
   f(registered_IRK)             \
@@ -66,7 +67,8 @@ class KlassInfoLUT : public AllStatic {
   REGISTER_STATS_DO(XX)
 #undef XX
 
-  // hit stats are expensive
+  // Statistics about the hit rate of the lookup table. These are
+  // very expensive.
 #ifdef KLUT_ENABLE_EXPENSIVE_STATS
 #define HIT_STATS_DO(f)    \
   f(hits_IK)           \
@@ -93,7 +95,6 @@ class KlassInfoLUT : public AllStatic {
 #endif
 
 #if INCLUDE_CDS
-  // only allowed (grudgingly) when built with CDS, until I figure out a better solution.
   static KlassLUTEntry late_register_klass(narrowKlass nk);
 #endif
 
