@@ -28,11 +28,9 @@
  *          /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
+ * @comment `othervm` usage is intentional since this test uses `ForkJoinPool.commonPool()`
  * @run junit/othervm HttpResponseConnectionLabelTest
  */
-
-// `othervm` in `@run` is intentionally introduced, don't remove it!
-// It helps with, in case `ForkJoinPool.commonPool()` gets corrupt by the test, reusing it again.
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.internal.net.http.common.Logger;
