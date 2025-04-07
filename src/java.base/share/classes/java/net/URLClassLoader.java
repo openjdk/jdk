@@ -580,6 +580,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      */
     @Override
     @Deprecated(since="25", forRemoval=true)
+    @SuppressWarnings("removal")
     protected PermissionCollection getPermissions(CodeSource codesource) {
         Objects.requireNonNull(codesource);
         return new Permissions();
