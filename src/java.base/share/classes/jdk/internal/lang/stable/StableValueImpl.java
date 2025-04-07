@@ -53,6 +53,10 @@ public final class StableValueImpl<T> implements StableValue<T> {
     private static final long CONTENT_OFFSET =
             UNSAFE.objectFieldOffset(StableValueImpl.class, "content");
 
+    // Used to indicate a holder value is `null` (see field `value` below)
+    // A wrapper method `nullSentinel()` is used for generic type conversion.
+    private static final Object NULL_SENTINEL = new Object();
+
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
     //
@@ -61,7 +65,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // | Value          |  Meaning      |
     // | -------------- |  ------------ |
     // | null           |  Unset        |
-    // | nullSentinel() |  Set(null)    |
+    // | NULL_SENTINEL  |  Set(null)    |
     // | other          |  Set(other)   |
     //
     @Stable
@@ -189,9 +193,6 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return false;
     }
 
-    // Used to indicate a holder value is `null` (see field `value` below)
-    // A wrapper method `nullSentinel()` is used for generic type conversion.
-    private static final Object NULL_SENTINEL = new Object();
 
     // Wraps `null` values into a sentinel value
     @ForceInline
