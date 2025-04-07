@@ -36,18 +36,20 @@ import java.nio.charset.StandardCharsets;
  * A collection of static methods that provide convenient access to {@link System#in}
  * and {@link System#out} for line-oriented input and output.
  * <p>
- * The {@link #readln()} and {@link #readln(String)} methods in this class use internal
- * objects that decode bytes read from {@code System.in} into characters. The charset used
- * for decoding is specified by the {@link System#getProperties stdin.encoding} property.
- * If this property is not present, or if the charset it names cannot be loaded, then
- * UTF-8 is used instead. These internal objects are created upon the first call to
- * either of the {@code readln} methods and are stored for subsequent reuse by these
- * methods.
+ * The {@link #readln()} and {@link #readln(String)} methods decode bytes read from
+ * {@code System.in} into characters. The charset used for decoding is specified by the
+ * {@link System#getProperties stdin.encoding} property. If this property is not present,
+ * or if the charset it names cannot be loaded, then UTF-8 is used instead.
  * <p>
- * The internal objects used by the {@code readln} methods may buffer additional bytes
- * beyond those that have been decoded to characters returned to the application. The
- * result of interleaving calls to the {@code readln} methods with other operations
- * on {@code System.in} is unspecified.
+ * Charset decoding is set up upon the first call to one of the {@code readln} methods.
+ * Decoding may buffer additional bytes beyond those that have been decoded to characters
+ * returned to the application. After the first call to one of the {@code readln} methods,
+ * any subsequent use of {@code System.in} results in unspecified behavior.
+ *
+ * @apiNote
+ * The expected use case is that certain applications will use only the {@code readln}
+ * methods to read from the standard input, and they will not mix these calls with
+ * other techniques for reading from {@code System.in}.
  *
  * @since 25
  */
@@ -125,13 +127,12 @@ public final class IO {
     /**
      * Reads a single line of text from the standard input.
      * <p>
-     * If necessary, this method first creates internal objects that decode
-     * the bytes read from the standard input into characters. These objects
-     * are retained for subsequent reuse by this method.
-     * <p>
      * One line is read from the decoded input as if by
      * {@link java.io.BufferedReader#readLine() BufferedReader.readLine()}
      * and then the result is returned.
+     * <p>
+     * If necessary, this method first sets up charset decoding, as described in
+     * above in the class specification.
      *
      * @return a string containing the line read from the standard input, not
      * including any line separator characters. Returns {@code null} if an
@@ -149,10 +150,12 @@ public final class IO {
 
     /**
      * Writes a prompt and then reads a line of input.
-     *
      * <p>
      * Writes a prompt as if by calling {@code print}, and then reads a single
      * line of text as if by calling {@link readln readln()}.
+     * <p>
+     * If necessary, this method first sets up charset decoding, as described in
+     * above in the class specification.
      *
      * @param prompt the prompt string, may be {@code null}
      *
