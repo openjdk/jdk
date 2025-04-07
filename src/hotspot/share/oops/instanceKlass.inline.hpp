@@ -209,11 +209,12 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType
 
 // Iterate over all oop fields and metadata.
 template <typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk) {
+ALWAYSINLINE void InstanceKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
   if (Devirtualizer::do_metadata(closure)) {
     const unsigned perma_cld_index = klute.loader_index();
-    ClassLoaderData* const cld = perma_cld_index > 0 ? KlassInfoLUT::get_perma_cld(perma_cld_index) :
-        CompressedKlassPointers::decode_not_null(nk)->class_loader_data();
+    ClassLoaderData* const cld = perma_cld_index > 0 ?
+        KlassInfoLUT::get_perma_cld(perma_cld_index) :
+        obj->klass()->class_loader_data(); // Rare path
     Devirtualizer::do_cld(closure, cld);
   }
 
@@ -226,16 +227,16 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate(oop obj, OopClosureType* closur
       }
     }
   } else {
+    // Rare path
     // Fall back to normal iteration: read OopMapBlocks from Klass
-    InstanceKlass* const this_ik = InstanceKlass::cast(CompressedKlassPointers::decode(nk));
-    assert(this_ik == obj->klass(), "sanity");
-    this_ik->oop_oop_iterate_oop_maps<T>(obj, closure);
+    InstanceKlass* const ik = InstanceKlass::cast(obj->klass());
+    ik->oop_oop_iterate_oop_maps<T>(obj, closure);
   }
 }
 
 // Iterate over all oop fields in the oop maps (no metadata traversal)
 template <typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk) {
+ALWAYSINLINE void InstanceKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
   assert(!Devirtualizer::do_metadata(closure),
       "Code to handle metadata is not implemented");
 
@@ -248,21 +249,22 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_reverse(oop obj, OopClosureType
       oop_oop_iterate_single_oop_map_reverse<T>(obj, closure, klute.ik_omb_offset_1() * sizeof(T), klute.ik_omb_count_1());
     }
   } else {
+    // Rare path
     // Fall back to normal iteration: read OopMapBlocks from Klass
-    InstanceKlass* const this_ik = InstanceKlass::cast(CompressedKlassPointers::decode(nk));
-    assert(this_ik == obj->klass(), "sanity");
-    this_ik->oop_oop_iterate_oop_maps_reverse<T>(obj, closure);
+    InstanceKlass* const ik = InstanceKlass::cast(obj->klass());
+    ik->oop_oop_iterate_oop_maps_reverse<T>(obj, closure);
   }
 }
 
 // Iterate over all oop fields and metadata.
 template <typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute, narrowKlass nk) {
+ALWAYSINLINE void InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute) {
   if (Devirtualizer::do_metadata(closure)) {
     if (mr.contains(obj)) {
       const unsigned perma_cld_index = klute.loader_index();
-      ClassLoaderData* const cld = perma_cld_index > 0 ? KlassInfoLUT::get_perma_cld(perma_cld_index) :
-          CompressedKlassPointers::decode_not_null(nk)->class_loader_data();
+      ClassLoaderData* const cld = perma_cld_index > 0 ?
+          KlassInfoLUT::get_perma_cld(perma_cld_index) :
+          obj->klass()->class_loader_data(); // Rare path
       Devirtualizer::do_cld(closure, cld);
     }
   }
@@ -276,9 +278,10 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType
       }
     }
   } else {
-    InstanceKlass* const this_ik = InstanceKlass::cast(CompressedKlassPointers::decode(nk));
-    assert(this_ik == obj->klass(), "sanity");
-    this_ik->oop_oop_iterate_oop_maps_bounded<T>(obj, closure, mr);
+    // Rare path
+    // Fall back to normal iteration: read OopMapBlocks from Klass
+    InstanceKlass* const ik = InstanceKlass::cast(obj->klass());
+    ik->oop_oop_iterate_oop_maps_bounded<T>(obj, closure, mr);
   }
 }
 

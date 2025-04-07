@@ -171,24 +171,27 @@ void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure,
 
 // klute variants
 template <typename T, class OopClosureType>
-void InstanceRefKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk) {
-  InstanceKlass::oop_oop_iterate<T>(obj, closure, klute, nk);
-  // Todo: for now just resolve the Klass. Maybe more parts can be made static.
-  narrow_klass_to_klass(nk)->oop_oop_iterate_ref_processing<T>(obj, closure);
+void InstanceRefKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
+  InstanceKlass::oop_oop_iterate<T>(obj, closure, klute);
+  // Todo: could oop_oop_iterate_ref_processing not be static?
+  InstanceRefKlass* const k = InstanceRefKlass::cast_exact(obj->klass());
+  k->oop_oop_iterate_ref_processing<T>(obj, closure);
 }
 
 template <typename T, class OopClosureType>
-void InstanceRefKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk) {
-  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure, klute, nk);
+void InstanceRefKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
+  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure, klute);
   // Todo: for now just resolve the Klass. Maybe more parts can be made static.
-  narrow_klass_to_klass(nk)->oop_oop_iterate_ref_processing<T>(obj, closure);
+  InstanceRefKlass* const k = InstanceRefKlass::cast_exact(obj->klass());
+  k->oop_oop_iterate_ref_processing<T>(obj, closure);
 }
 
 template <typename T, class OopClosureType>
-void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute, narrowKlass nk) {
-  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr, klute, nk);
+void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute) {
+  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr, klute);
   // Todo: for now just resolve the Klass. Maybe more parts can be made static.
-  narrow_klass_to_klass(nk)->oop_oop_iterate_ref_processing_bounded<T>(obj, closure, mr);
+  InstanceRefKlass* const k = InstanceRefKlass::cast_exact(obj->klass());
+  k->oop_oop_iterate_ref_processing_bounded<T>(obj, closure, mr);
 }
 
 #ifdef ASSERT

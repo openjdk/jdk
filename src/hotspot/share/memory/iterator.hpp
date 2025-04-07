@@ -320,11 +320,11 @@ class OopIteratorClosureDispatch {
   template <typename OopClosureType> static void oop_oop_iterate_backwards(OopClosureType* cl, oop obj, Klass* klass);
 
   // Note: we only need Klass* for later, in the Klass, to optionally do metadata iteration. However, this may hopefully change in the future.
-  template <typename OopClosureType> static void oop_oop_iterate          (oop obj, OopClosureType* cl, KlassLUTEntry klute, narrowKlass nk);
-  template <typename OopClosureType> static void oop_oop_iterate_reverse  (oop obj, OopClosureType* cl, KlassLUTEntry klute, narrowKlass nk);
-  template <typename OopClosureType> static void oop_oop_iterate_bounded  (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute, narrowKlass nk);
-  template <typename OopClosureType> static size_t oop_oop_iterate_size        (oop obj, OopClosureType* cl, KlassLUTEntry klute, narrowKlass nk);
-  template <typename OopClosureType> static size_t oop_oop_iterate_bounded_size(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute, narrowKlass nk);
+  template <typename OopClosureType> static void oop_oop_iterate          (oop obj, OopClosureType* cl, KlassLUTEntry klute);
+  template <typename OopClosureType> static void oop_oop_iterate_reverse  (oop obj, OopClosureType* cl, KlassLUTEntry klute);
+  template <typename OopClosureType> static void oop_oop_iterate_bounded  (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute);
+  template <typename OopClosureType> static size_t oop_oop_iterate_size        (oop obj, OopClosureType* cl, KlassLUTEntry klute);
+  template <typename OopClosureType> static size_t oop_oop_iterate_bounded_size(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute);
 
 };
 
