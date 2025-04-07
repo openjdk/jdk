@@ -234,8 +234,9 @@ class ServerImpl {
         terminating = true;
         try { schan.close(); } catch (IOException e) {}
         selector.wakeup();
-        long latest = System.nanoTime() + Duration.ofSeconds(delay).toNanos();
-        while (activeExchanges() > 0 && System.nanoTime() < latest) {
+        long delayNanos = Duration.ofSeconds(delay).toNanos();
+        long startTime = System.nanoTime();
+        while (activeExchanges() > 0 && System.nanoTime() - startTime < delayNanos) {
             delay();
         }
         finished = true;
