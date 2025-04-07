@@ -525,7 +525,7 @@ public class TestVerify {
         }
     }
 
-    public static class H1  {
+    public static class H1 {
         public boolean bool = true;
         public byte b = (byte)242;
         public short s = (short)24242;

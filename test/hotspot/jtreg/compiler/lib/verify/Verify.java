@@ -496,7 +496,7 @@ public final class Verify {
         // Boxed primitives are not guaranteed to be the same Object for the same primitive value.
         // Hence, we cannot use the mapping below. We test these boxed primitive types by value anyway,
         // and they are no recursive structures, so there is no point in optimizing here anyway.
-        switch(a) {
+        switch (a) {
             case Boolean _,
                  Byte _,
                  Short _,
