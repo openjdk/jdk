@@ -259,14 +259,17 @@ void VLoopVPointers::print() const {
 //    - No Load-Load edges.
 //    - Inside a slice, add all Store-Load, Load-Store, Store-Store edges,
 //      except if we can prove that the memory does not overlap.
+//    - Strong edge: must be respected.
+//    - Weak edge:   if we add a speculative aliasing check, we can violate
+//                   the edge, i.e. spaw the order.
 void VLoopDependencyGraph::construct() {
   const GrowableArray<PhiNode*>& mem_slice_heads = _memory_slices.heads();
   const GrowableArray<MemNode*>& mem_slice_tails = _memory_slices.tails();
 
   ResourceMark rm;
   GrowableArray<MemNode*> slice_nodes;
-  GrowableArray<int> known_overlap_edges;
-  GrowableArray<int> unknown_aliasing_edges;
+  GrowableArray<int> strong_edges;
+  GrowableArray<int> weak_edges;
 
   // For each memory slice, create the memory subgraph
   for (int i = 0; i < mem_slice_heads.length(); i++) {
@@ -278,8 +281,8 @@ void VLoopDependencyGraph::construct() {
     // In forward order (reverse of reverse), visit all memory nodes in the slice.
     for (int j = slice_nodes.length() - 1; j >= 0 ; j--) {
       MemNode* n1 = slice_nodes.at(j);
-      known_overlap_edges.clear();
-      unknown_aliasing_edges.clear();
+      strong_edges.clear();
+      weak_edges.clear();
 
       const VPointer& p1 = _vpointers.vpointer(n1);
       // For all memory nodes before it, check if we need to add a memory edge.
@@ -290,18 +293,23 @@ void VLoopDependencyGraph::construct() {
         if (n1->is_Load() && n2->is_Load()) { continue; }
 
         const VPointer& p2 = _vpointers.vpointer(n2);
+
+        // If we can prove that they will never overlap -> drop edge.
         if (!p1.never_overlaps_with(p2)) {
-          if (p1.always_overlaps_with(p2)) {
-            known_overlap_edges.append(_body.bb_idx(n2));
+          // If one is invalid -> we cannot formulate a speculative check -> must have strong edge.
+          // If they provably always overlap -> speculative check would always fail -> strong edge.
+          // Otherwise: a speculative check can fail and pass -> weak edge.
+          if (!p1.is_valid() || !p2.is_valid() || p1.always_overlaps_with(p2)) {
+            strong_edges.append(_body.bb_idx(n2));
           } else {
-            unknown_aliasing_edges.append(_body.bb_idx(n2));
+            weak_edges.append(_body.bb_idx(n2));
           }
         }
       }
-      if (known_overlap_edges.is_nonempty() || unknown_aliasing_edges.is_nonempty()) {
+      if (strong_edges.is_nonempty() || weak_edges.is_nonempty()) {
         // Data edges are taken implicitly from the C2 graph, thus we only add
         // a dependency node if we have memory edges.
-        add_node(n1, known_overlap_edges, unknown_aliasing_edges);
+        add_node(n1, strong_edges, weak_edges);
       }
     }
     slice_nodes.clear();
@@ -312,18 +320,18 @@ void VLoopDependencyGraph::construct() {
   NOT_PRODUCT( if (_vloop.is_trace_dependency_graph()) { print(); } )
 }
 
-void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& known_overlap_edges, GrowableArray<int>& unknown_aliasing_edges) {
+void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& strong_edges, GrowableArray<int>& weak_edges) {
   assert(_dependency_nodes.at_grow(_body.bb_idx(n), nullptr) == nullptr, "not yet created");
-  DependencyNode* dn = new (_arena) DependencyNode(n, known_overlap_edges, unknown_aliasing_edges, _arena);
+  DependencyNode* dn = new (_arena) DependencyNode(n, strong_edges, weak_edges, _arena);
   _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
 }
 
 int VLoopDependencyGraph::find_max_pred_depth(const Node* n) const {
   int max_pred_depth = 0;
   if (!n->is_Phi()) { // ignore backedge
-    // We must compute the dependence graph depth with all edges (including the unknown aliasing edges),
-    // so that the independence queries work correctly, no matter if we check independence with or without
-    // unknown aliasing edges.
+    // We must compute the dependence graph depth with all edges (including the weak edges), so that
+    // the independence queries work correctly, no matter if we check independence with or without
+    // weak edges.
     for (PredsIterator it(*this, n, true); !it.done(); it.next()) {
       Node* pred = it.current();
       if (_vloop.in_bb(pred)) {
@@ -367,13 +375,13 @@ void VLoopDependencyGraph::print() const {
     const DependencyNode* dn = dependency_node(n);
     if (dn != nullptr) {
       tty->print("  DependencyNode[%d %s:", n->_idx, n->Name());
-      for (uint j = 0; j < dn->num_known_overlap_edges(); j++) {
-        Node* pred = _body.body().at(dn->known_overlap_edge(j));
+      for (uint j = 0; j < dn->num_strong_edges(); j++) {
+        Node* pred = _body.body().at(dn->strong_edge(j));
         tty->print("  %d %s", pred->_idx, pred->Name());
       }
-      tty->print(" | unknown aliasing:");
-      for (uint j = 0; j < dn->num_unknown_aliasing_edges(); j++) {
-        Node* pred = _body.body().at(dn->unknown_aliasing_edge(j));
+      tty->print(" | weak:");
+      for (uint j = 0; j < dn->num_weak_edges(); j++) {
+        Node* pred = _body.body().at(dn->weak_edge(j));
         tty->print("  %d %s", pred->_idx, pred->Name());
       }
       tty->print_cr("]");
@@ -382,16 +390,16 @@ void VLoopDependencyGraph::print() const {
   tty->cr();
 
   // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
-  bool with_unknown_aliasing_edges = !_vloop.use_speculative_aliasing_checks();
-  if (with_unknown_aliasing_edges) {
-    tty->print_cr(" Complete dependency graph (with unknown aliasing edges, because we cannot speculate):");
+  bool with_weak_edges = !_vloop.use_speculative_aliasing_checks();
+  if (with_weak_edges) {
+    tty->print_cr(" Complete dependency graph (with weak edges, because we cannot speculate):");
   } else {
-    tty->print_cr(" Dependency graph without unknown aliasing edges (because we can speculate):");
+    tty->print_cr(" Dependency graph without weak edges (because we can speculate):");
   }
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
     tty->print("  d%02d Dependencies[%d %s:", depth(n), n->_idx, n->Name());
-    for (PredsIterator it(*this, n, with_unknown_aliasing_edges); !it.done(); it.next()) {
+    for (PredsIterator it(*this, n, with_weak_edges); !it.done(); it.next()) {
       Node* pred = it.current();
       tty->print("  %d %s", pred->_idx, pred->Name());
     }
@@ -401,40 +409,40 @@ void VLoopDependencyGraph::print() const {
 #endif
 
 VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
-                                                     GrowableArray<int>& known_overlap_edges,
-                                                     GrowableArray<int>& unknown_aliasing_edges,
+                                                     GrowableArray<int>& strong_edges,
+                                                     GrowableArray<int>& weak_edges,
                                                      Arena* arena) :
     _node(n),
-    _num_known_overlap_edges(known_overlap_edges.length()),
-    _num_unknown_aliasing_edges(unknown_aliasing_edges.length()),
+    _num_strong_edges(strong_edges.length()),
+    _num_weak_edges(weak_edges.length()),
     _memory_pred_edges(nullptr)
 {
-  assert(known_overlap_edges.is_nonempty() || unknown_aliasing_edges.is_nonempty(), "only generate DependencyNode if there are pred edges");
-  uint bytes_known = known_overlap_edges.length() * sizeof(int);
-  uint bytes_unknown = unknown_aliasing_edges.length() * sizeof(int);
-  uint bytes_total = bytes_known + bytes_unknown;
+  assert(strong_edges.is_nonempty() || weak_edges.is_nonempty(), "only generate DependencyNode if there are pred edges");
+  uint bytes_strong = strong_edges.length() * sizeof(int);
+  uint bytes_weak = weak_edges.length() * sizeof(int);
+  uint bytes_total = bytes_strong + bytes_weak;
   _memory_pred_edges = (int*)arena->Amalloc(bytes_total);
-  if (known_overlap_edges.length() > 0) {
-    memcpy(_memory_pred_edges, known_overlap_edges.adr_at(0), bytes_known);
+  if (strong_edges.length() > 0) {
+    memcpy(_memory_pred_edges, strong_edges.adr_at(0), bytes_strong);
   }
-  if (unknown_aliasing_edges.length() > 0) {
-    memcpy(_memory_pred_edges + known_overlap_edges.length(), unknown_aliasing_edges.adr_at(0), bytes_unknown);
+  if (weak_edges.length() > 0) {
+    memcpy(_memory_pred_edges + strong_edges.length(), weak_edges.adr_at(0), bytes_weak);
   }
 }
 
 VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& dependency_graph,
                                                    const Node* node,
-                                                   bool with_unknown_aliasing_edges) :
+                                                   bool with_weak_edges) :
     _dependency_graph(dependency_graph),
     _node(node),
     _dependency_node(dependency_graph.dependency_node(node)),
     _current(nullptr),
     _next_pred(0),
     _end_pred(node->req()),
-    _next_known_overlap_edge(0),
-    _end_known_overlap_edge((_dependency_node != nullptr) ? _dependency_node->num_known_overlap_edges() : 0),
-    _next_unknown_aliasing_edge(0),
-    _end_unknown_aliasing_edge((_dependency_node != nullptr && with_unknown_aliasing_edges) ? _dependency_node->num_unknown_aliasing_edges() : 0)
+    _next_strong_edge(0),
+    _end_strong_edge((_dependency_node != nullptr) ? _dependency_node->num_strong_edges() : 0),
+    _next_weak_edge(0),
+    _end_weak_edge((_dependency_node != nullptr && with_weak_edges) ? _dependency_node->num_weak_edges() : 0)
 {
   if (_node->is_Store() || _node->is_Load()) {
     // Load: address
@@ -450,18 +458,18 @@ VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& d
 void VLoopDependencyGraph::PredsIterator::next() {
   if (_next_pred < _end_pred) {
     _current = _node->in(_next_pred++);
-    _is_current_unknown_aliasing_edge = false;
-  } else if (_next_known_overlap_edge < _end_known_overlap_edge) {
-    int pred_bb_idx = _dependency_node->known_overlap_edge(_next_known_overlap_edge++);
+    _is_current_weak_edge = false;
+  } else if (_next_strong_edge < _end_strong_edge) {
+    int pred_bb_idx = _dependency_node->strong_edge(_next_strong_edge++);
     _current = _dependency_graph._body.body().at(pred_bb_idx);
-    _is_current_unknown_aliasing_edge = false;
-  } else if (_next_unknown_aliasing_edge < _end_unknown_aliasing_edge) {
-    int pred_bb_idx = _dependency_node->unknown_aliasing_edge(_next_unknown_aliasing_edge++);
+    _is_current_weak_edge = false;
+  } else if (_next_weak_edge < _end_weak_edge) {
+    int pred_bb_idx = _dependency_node->weak_edge(_next_weak_edge++);
     _current = _dependency_graph._body.body().at(pred_bb_idx);
-    _is_current_unknown_aliasing_edge = true;
+    _is_current_weak_edge = true;
   } else {
     _current = nullptr; // done
-    _is_current_unknown_aliasing_edge = false;
+    _is_current_weak_edge = false;
   }
 }
 
