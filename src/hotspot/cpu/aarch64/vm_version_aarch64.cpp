@@ -628,7 +628,7 @@ void VM_Version::initialize() {
   if (_model2) {
     os::snprintf_checked(buf + buf_used_len, sizeof(buf) - buf_used_len, "(0x%03x)", _model2);
   }
-  int features_offset = strnlen(buf, sizeof(buf));
+  size_t features_offset = strnlen(buf, sizeof(buf));
 #define ADD_FEATURE_IF_SUPPORTED(id, name, bit)                 \
   do {                                                          \
     if (VM_Version::supports_##name()) strcat(buf, ", " #name); \
