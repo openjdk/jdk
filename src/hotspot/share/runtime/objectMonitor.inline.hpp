@@ -27,6 +27,7 @@
 
 #include "runtime/objectMonitor.hpp"
 
+#include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/markWord.hpp"
@@ -40,14 +41,12 @@
 #include "utilities/globalDefinitions.hpp"
 
 inline int64_t ObjectMonitor::owner_id_from(JavaThread* thread) {
-  int64_t id = thread->monitor_owner_id();
-  assert(id >= ThreadIdentifier::initial() && id < ThreadIdentifier::current(), "must be reasonable");
-  return id;
+  return thread->monitor_owner_id();
 }
 
 inline int64_t ObjectMonitor::owner_id_from(oop vthread) {
   int64_t id = java_lang_Thread::thread_id(vthread);
-  assert(id >= ThreadIdentifier::initial() && id < ThreadIdentifier::current(), "must be reasonable");
+  ThreadIdentifier::verify_id(id);
   return id;
 }
 
@@ -284,6 +283,12 @@ inline bool ObjectMonitor::object_refers_to(oop obj) const {
     return false;
   }
   return _object.peek() == obj;
+}
+
+inline bool ObjectMonitor::is_jfr_excluded(const Klass* monitor_klass) {
+  assert(monitor_klass != nullptr, "invariant");
+  NOT_JFR_RETURN_(false);
+  JFR_ONLY(return vmSymbols::jdk_jfr_internal_management_HiddenWait() == monitor_klass->name();)
 }
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_INLINE_HPP

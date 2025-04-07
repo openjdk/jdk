@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -203,7 +203,7 @@ public:
   void initialize_serviceability() override;
 
   void print_on(outputStream* st)              const override;
-  void print_extended_on(outputStream *st)     const override;
+  void print_on_error(outputStream *st)        const override;
   void print_tracing_info()                    const override;
   void print_heap_regions_on(outputStream* st) const;
 
@@ -481,10 +481,13 @@ private:
   // Concurrent class unloading support
   void do_class_unloading();
   // Reference updating
-  void prepare_update_heap_references(bool concurrent);
+  void prepare_update_heap_references();
 
   // Retires LABs used for evacuation
   void concurrent_prepare_for_update_refs();
+
+  // Turn off weak roots flag, purge old satb buffers in generational mode
+  void concurrent_final_roots(HandshakeClosure* handshake_closure = nullptr);
 
   virtual void update_heap_references(bool concurrent);
   // Final update region states

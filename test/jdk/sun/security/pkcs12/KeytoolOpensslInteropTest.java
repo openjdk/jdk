@@ -56,7 +56,6 @@ import jdk.test.lib.SecurityTools;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.security.OpensslArtifactFetcher;
-import jtreg.SkippedException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -82,19 +81,9 @@ public class KeytoolOpensslInteropTest {
         boolean generatePKCS12 = Boolean.parseBoolean(args[0]);
         if (generatePKCS12) {
             String opensslPath = OpensslArtifactFetcher.getOpensslPath();
-            if (opensslPath != null) {
-                // if the current version of openssl is available, perform all
-                // keytool <-> openssl interop tests
-                generateInitialKeystores(opensslPath);
-                testWithJavaCommands();
-                testWithOpensslCommands(opensslPath);
-            } else {
-                String exMsg = "Can't find the version: "
-                        + OpensslArtifactFetcher.getTestOpensslBundleVersion()
-                        + " of openssl binary on this machine, please install"
-                        + " and set openssl path with property 'test.openssl.path'";
-                throw new SkippedException(exMsg);
-            }
+            generateInitialKeystores(opensslPath);
+            testWithJavaCommands();
+            testWithOpensslCommands(opensslPath);
         } else {
             // since this scenario is using preexisting PKCS12, skip all
             // openssl command dependent tests
