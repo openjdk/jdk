@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,37 +23,19 @@
  * questions.
  */
 
-package jdk.jpackage.internal;
+package sun.nio.fs;
 
-import java.text.MessageFormat;
-import java.util.ResourceBundle;
+class AixUserDefinedFileAttributeView
+    extends UnixUserDefinedFileAttributeView
+{
 
-public class PackagerException extends Exception {
-    private static final long serialVersionUID = 1L;
-    private static final ResourceBundle bundle = ResourceBundle.getBundle(
-            "jdk.jpackage.internal.resources.MainResources");
-
-    public PackagerException(Throwable cause) {
-        super(cause);
+    AixUserDefinedFileAttributeView(UnixPath file, boolean followLinks) {
+        super(file, followLinks);
     }
 
-    public PackagerException(String key, Throwable cause) {
-        super(bundle.getString(key), cause);
-    }
-
-    public PackagerException(String key) {
-        super(bundle.getString(key));
-    }
-
-    public PackagerException(String key, String ... arguments) {
-        super(MessageFormat.format(
-                bundle.getString(key), (Object[]) arguments));
-    }
-
-    public PackagerException(
-            Throwable cause, String key, String ... arguments) {
-        super(MessageFormat.format(bundle.getString(key),
-                (Object[]) arguments), cause);
+    @Override
+    protected int maxNameLength() {
+        return 255;
     }
 
 }
