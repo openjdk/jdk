@@ -1354,8 +1354,12 @@ ifeq ($(TEST_OPTS_JCOV), true)
 	$(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -stop -stoptimeout 3600
 
   JCOV_REPORT_TITLE := JDK code coverage report<br/>
+  ifneq ($(JCOV_MODULES), )
+    JCOV_REPORT_TITLE += Included modules: $(JCOV_MODULES)<br>
+  endif
   ifneq ($(JCOV_FILTERS), )
     JCOV_REPORT_TITLE += Code filters: $(JCOV_FILTERS)<br>
+    JCOV_MODULES_FILTER := --include-modules $(JCOV_MODULES)
   endif
   JCOV_REPORT_TITLE += Tests: $(TEST)
 
@@ -1363,7 +1367,7 @@ ifeq ($(TEST_OPTS_JCOV), true)
 	$(call LogWarn, Generating JCov report ...)
 	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar RepGen -sourcepath \
 	    `$(ECHO) $(TOPDIR)/src/*/share/classes/ | $(TR) ' ' ':'` -fmt html \
-	    $(JCOV_FILTERS) \
+	    $(JCOV_MODULES_FILTER) $(JCOV_FILTERS) \
 	    -mainReportTitle "$(JCOV_REPORT_TITLE)" \
 	    -o $(JCOV_REPORT) $(JCOV_RESULT_FILE)
 
