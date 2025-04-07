@@ -34,9 +34,12 @@
 
 class LRG;
 
-// To avoid unbounded RegMask growth, we need to set a limit on the number of
-// stack slots used by BoxLockNodes. We reach this limit by, e.g., deeply
-// nesting synchronized statements in Java.
+// To avoid unbounded RegMask growth and to be able to statically compute a
+// register mask size upper bound (see RM_SIZE_MAX below), we need to set some
+// form of limit on the number of stack slots used by BoxLockNodes. The limit
+// below is rather arbitrary but should be quite generous and cover all
+// practical cases. We reach this limit by, e.g., deeply nesting synchronized
+// statements in Java.
 const int BoxLockNode_slot_limit = 200;
 
 //-------------Non-zero bit search methods used by RegMask---------------------
