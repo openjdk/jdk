@@ -90,7 +90,7 @@ static const char* z_features[] = {"  ",
 
 void VM_Version::initialize() {
   determine_features();      // Get processor capabilities.
-  set_features_string();     // Set a descriptive feature indication.
+  set_cpu_info_string();     // Set a descriptive feature indication.
 
   if (Verbose || PrintAssembly || PrintStubCode) {
     print_features_internal("CPU Version as detected internally:", PrintAssembly || PrintStubCode);
@@ -388,9 +388,9 @@ int VM_Version::get_model_index() {
 }
 
 
-void VM_Version::set_features_string() {
-  // A note on the _features_string format:
-  //   There are jtreg tests checking the _features_string for various properties.
+void VM_Version::set_cpu_info_string() {
+  // A note on the _cpu_info_string format:
+  //   There are jtreg tests checking the _cpu_info_string for various properties.
   //   For some strange reason, these tests require the string to contain
   //   only _lowercase_ characters. Keep that in mind when being surprised
   //   about the unusual notation of features - and when adding new ones.
@@ -412,29 +412,29 @@ void VM_Version::set_features_string() {
     _model_string = "unknown model";
     strcpy(buf, "z/Architecture (ambiguous detection)");
   }
-  _features_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf);
 
   if (has_Crypto_AES()) {
-    assert(strlen(_features_string) + 3*8 < sizeof(buf), "increase buffer size");
+    assert(strlen(_cpu_info_string) + 3*8 < sizeof(buf), "increase buffer size");
     jio_snprintf(buf, sizeof(buf), "%s%s%s%s",
-                 _features_string,
+                 _cpu_info_string,
                  has_Crypto_AES128() ? ", aes128" : "",
                  has_Crypto_AES192() ? ", aes192" : "",
                  has_Crypto_AES256() ? ", aes256" : "");
-    os::free((void *)_features_string);
-    _features_string = os::strdup(buf);
+    os::free((void *)_cpu_info_string);
+    _cpu_info_string = os::strdup(buf);
   }
 
   if (has_Crypto_SHA()) {
-    assert(strlen(_features_string) + 6 + 2*8 + 7 < sizeof(buf), "increase buffer size");
+    assert(strlen(_cpu_info_string) + 6 + 2*8 + 7 < sizeof(buf), "increase buffer size");
     jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s",
-                 _features_string,
+                 _cpu_info_string,
                  has_Crypto_SHA1()   ? ", sha1"   : "",
                  has_Crypto_SHA256() ? ", sha256" : "",
                  has_Crypto_SHA512() ? ", sha512" : "",
                  has_Crypto_GHASH()  ? ", ghash"  : "");
-    os::free((void *)_features_string);
-    _features_string = os::strdup(buf);
+    os::free((void *)_cpu_info_string);
+    _cpu_info_string = os::strdup(buf);
   }
 }
 
@@ -464,7 +464,7 @@ bool VM_Version::test_feature_bit(unsigned long* featureBuffer, int featureNum, 
 }
 
 void VM_Version::print_features_internal(const char* text, bool print_anyway) {
-  tty->print_cr("%s %s", text, features_string());
+  tty->print_cr("%s %s", text, cpu_info_string());
   tty->cr();
 
   if (Verbose || print_anyway) {
@@ -906,7 +906,7 @@ void VM_Version::set_features_from(const char* march) {
       err = true;
     }
     if (!err) {
-      set_features_string();
+      set_cpu_info_string();
       if (prt || PrintAssembly) {
         print_features_internal("CPU Version as set by cmdline option:", prt);
       }
@@ -1542,6 +1542,6 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
   snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE, "s390 %s", VM_Version::get_model_string());
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "s390 %s", features_string());
+  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "s390 %s", cpu_info_string());
   _initialized = true;
 }
