@@ -218,23 +218,10 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
 
   if (UseCompactObjectHeaders) {
 
-    // In compact object header mode, with 22-bit narrowKlass, we don't attempt for
-    // zero-based mode. Instead, we set the base to the start of the klass range and
-    // then try for the smallest shift possible that still covers the whole range.
-    // The reason is that we want to avoid, if possible, shifts larger than
-    // a cacheline size.
+    // TODO: can this now merged with !COH?
     _base = addr;
+    _shift = max_shift();
 
-    if (UseKLUT) {
-      _shift = max_shift();
-    } else {
-      const int log_cacheline = exact_log2(DEFAULT_CACHE_LINE_SIZE);
-      int s = max_shift();
-      while (s > log_cacheline && ((size_t)nth_bit(narrow_klass_pointer_bits() + s - 1) > len)) {
-        s--;
-      }
-      _shift = s;
-    }
   } else {
 
     // Traditional (non-compact) header mode
