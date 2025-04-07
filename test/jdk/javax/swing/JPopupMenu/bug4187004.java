@@ -94,6 +94,4 @@ public class bug4187004 {
         m.setLabel("short");
         m.pack();
     }
-
-
 }

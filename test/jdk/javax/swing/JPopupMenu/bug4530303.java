@@ -26,7 +26,6 @@
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Tests JPopupMenu.pack()
- * @key headful
  * @run main/manual bug4530303
  */
 
@@ -44,7 +43,7 @@ public class bug4530303 {
         The test window has a menu bar.
         Open the menu "Menu" and place the mouse pointer over the first menu item, "Point here".
         The second menu item, "Ghost", should be replaced with another item, "Fixed!".
-        If it the item just disappears and no new item appears in the empty space, the test FAILS.
+        If the item just disappears and no new item appears in the empty space, the test FAILS.
     """;
 
     static volatile JMenu menu;

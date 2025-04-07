@@ -89,7 +89,7 @@ public class bug4119993 {
         for (int r = 0; r < 5; r ++) {
             cols[r] = "col " + r;
             for (int c = 0; c < 5; c ++) {
-               data[r][c]  = "(" + r + "," + c + ")";
+               data[r][c] = "(" + r + "," + c + ")";
             }
         }
 
@@ -99,7 +99,7 @@ public class bug4119993 {
         scrollpane.setPreferredSize(new Dimension(430, 200));
         p.add(scrollpane);
 
-        String[] s = {"1","2","3","4","5", "6", "7", "8", "9", "10"};
+        String[] s = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"};
         JList listView = new JList(s);
         JScrollPane scrollpane2 = new JScrollPane(listView);
         scrollpane2.setBorder(new BevelBorder(BevelBorder.LOWERED));
