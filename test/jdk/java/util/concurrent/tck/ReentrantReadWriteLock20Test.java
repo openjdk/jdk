@@ -48,10 +48,10 @@ public class ReentrantReadWriteLock20Test extends JSR166TestCase {
     public static Test suite() {
         return new TestSuite(ReentrantReadWriteLock20Test.class);
     }
-    public void test66kReadersFair()   { test66kReaders(true); }
-    public void test66kReadersUnfair() { test66kReaders(false); }
+    public void test66kReadersFair() throws InterruptedException   { test66kReaders(true); }
+    public void test66kReadersUnfair() throws InterruptedException { test66kReaders(false); }
 
-    private void test66kReaders(boolean fairness) {
+    private void test66kReaders(boolean fairness) throws InterruptedException {
         final var failure = new AtomicReference<Throwable>();
         final var lock = new ReentrantReadWriteLock(fairness);
         final var numThreads = 0x10000;
@@ -72,7 +72,9 @@ public class ReentrantReadWriteLock20Test extends JSR166TestCase {
                         while (latch.getCount() > 0) {
                             try {
                                 latch.await();
-                            } catch (InterruptedException ie) {}
+                            } catch (InterruptedException ie) {
+                                failure.compareAndSet(null, ie);
+                            }
                         }
                     }
                     finally {
@@ -84,14 +86,11 @@ public class ReentrantReadWriteLock20Test extends JSR166TestCase {
                 t.start();
             }
         } finally {
-            latch.countDown(); // Make sure waiters are
-            Thread next = null;
+            latch.countDown(); // Make sure waiters are signalled
+            Thread next;
             while ((next = threads.pollFirst()) != null) {
                 while (next.isAlive()) {
-                    try {
-                        next.join();
-                    } catch (InterruptedException ie) {
-                    }
+                    next.join();
                 }
             }
         }
