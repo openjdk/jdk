@@ -2061,8 +2061,7 @@ void ObjectMonitor::notify(TRAPS) {
   quick_notify(current);
 }
 
-void ObjectMonitor::quick_notify(TRAPS) {
-  JavaThread* current = THREAD;
+void ObjectMonitor::quick_notify(JavaThread* current) {
   assert(has_owner(current), "Precondition");
 
   EventJavaMonitorNotify event;
@@ -2090,8 +2089,7 @@ void ObjectMonitor::notifyAll(TRAPS) {
   quick_notifyAll(current);
 }
 
-void ObjectMonitor::quick_notifyAll(TRAPS) {
-  JavaThread* current = THREAD;
+void ObjectMonitor::quick_notifyAll(JavaThread* current) {
   assert(has_owner(current), "Precondition");
 
   EventJavaMonitorNotify event;
