@@ -2848,21 +2848,21 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
     Node* phi = cmp1;
     for (uint i = 1; i < phi->req(); i++) {
       Node* in = phi->in(i);
-      CountedLoopNode::TruncatedIncrement increment = CountedLoopNode::match_incr_with_optional_truncation(in, T_INT);
-      if (increment.incr != nullptr && increment.incr->in(1) == phi) {
-        add2 = increment.incr->in(2);
+      CountedLoopNode::TruncatedIncrement add = CountedLoopNode::match_incr_with_optional_truncation(in, T_INT);
+      if (add.incr != nullptr && add.incr->in(1) == phi) {
+        add2 = add.incr->in(2);
         break;
       }
     }
   } else {
     // (If (Bool (CmpX addtrunc:(Optional-trunc((AddI (Phi ...addtrunc...) add2)) )))
     Node* addtrunc = cmp1;
-    CountedLoopNode::TruncatedIncrement increment = CountedLoopNode::match_incr_with_optional_truncation(addtrunc, T_INT);
-    if (increment.incr != nullptr && increment.incr->in(1)->is_Phi()) {
-      Node* phi = increment.incr->in(1);
+    CountedLoopNode::TruncatedIncrement add = CountedLoopNode::match_incr_with_optional_truncation(addtrunc, T_INT);
+    if (add.incr != nullptr && add.incr->in(1)->is_Phi()) {
+      Node* phi = add.incr->in(1);
       for (uint i = 1; i < phi->req(); i++) {
         if (phi->in(i) == addtrunc) {
-          add2 = increment.incr->in(2);
+          add2 = add.incr->in(2);
           break;
         }
       }

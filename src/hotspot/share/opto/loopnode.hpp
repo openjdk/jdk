@@ -1323,7 +1323,7 @@ public:
     Node* _phi_incr;
     Node* _stride;
     bool _includes_limit;
-    BoolTest::mask _bt;
+    BoolTest::mask _mask;
     Node* _increment;
     Node* _cmp;
     float _cl_prob;
