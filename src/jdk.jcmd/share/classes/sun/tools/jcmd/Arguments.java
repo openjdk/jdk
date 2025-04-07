@@ -35,12 +35,14 @@ class Arguments {
     private boolean showUsage     = false;
     private String  command       = null;
     private String  processString = null;
+    private Boolean streamingOutput;
 
     public boolean isListProcesses() { return listProcesses; }
     public boolean isListCounters() { return listCounters; }
     public boolean isShowUsage() { return showUsage; }
     public String getCommand() { return command; }
     public String getProcessString() { return processString; }
+    public Boolean getStreamingOutput() { return streamingOutput; }
 
     public Arguments(String[] args) {
         if (args.length == 0 || args[0].equals("-l")) {
@@ -82,6 +84,19 @@ class Arguments {
                 }
             } else if (args[i].equals("PerfCounter.print")) {
                 listCounters = true;
+            } else if (args[i].startsWith("--streaming_output=")) {
+                // we know args[i] contains "="
+                String value = args[i].substring(args[i].indexOf("=") + 1);
+                switch (value) {
+                case "true":
+                    streamingOutput = Boolean.TRUE;
+                    break;
+                case "false":
+                    streamingOutput = Boolean.FALSE;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unexpected option value: " + args[i] + " (excepted true|false)");
+                }
             } else {
                 sb.append(args[i]).append(" ");
             }
@@ -108,7 +123,7 @@ class Arguments {
     }
 
     public static void usage() {
-        System.out.println("Usage: jcmd <pid | main class> <command ...|PerfCounter.print|-f file>");
+        System.out.println("Usage: jcmd <pid | main class> [--streaming_output=true|false] <command ...|PerfCounter.print|-f file>");
         System.out.println("   or: jcmd -l                                                    ");
         System.out.println("   or: jcmd -h                                                    ");
         System.out.println("                                                                  ");
@@ -123,5 +138,8 @@ class Arguments {
         System.out.println("  -f  read and execute commands from the file                     ");
         System.out.println("  -l  list JVM processes on the local machine                     ");
         System.out.println("  -? -h --help print this help message                            ");
+        System.out.println("                                                                  ");
+        System.out.println("  --streaming_output option sets streaming/buffered output mode   ");
+        System.out.println("    (if supported by the target JVM).                             ");
     }
 }

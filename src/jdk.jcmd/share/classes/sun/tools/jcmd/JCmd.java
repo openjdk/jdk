@@ -94,7 +94,7 @@ public class JCmd {
                 listCounters(pid);
             } else {
                 try {
-                    executeCommandForPid(pid, arg.getCommand());
+                    executeCommandForPid(pid, arg.getCommand(), arg);
                 } catch(AttachOperationFailedException ex) {
                     System.err.println(ex.getMessage());
                     success = false;
@@ -107,7 +107,7 @@ public class JCmd {
         System.exit(success ? 0 : 1);
     }
 
-    private static void executeCommandForPid(String pid, String command)
+    private static void executeCommandForPid(String pid, String command, Arguments arg)
         throws AttachNotSupportedException, IOException,
                UnsupportedEncodingException {
         VirtualMachine vm = VirtualMachine.attach(pid);
@@ -119,6 +119,17 @@ public class JCmd {
         for (String line : lines) {
             if (line.trim().equals("stop")) {
                 break;
+            }
+
+            if (arg.getStreamingOutput() != null) {
+                // set the option if supported by the VM
+                HotSpotVirtualMachine.OperationProperties props = hvm.getProperties();
+                if (props.containsOption(HotSpotVirtualMachine.OperationProperties.STREAMING)) {
+                    props.setOption(HotSpotVirtualMachine.OperationProperties.STREAMING,
+                                    arg.getStreamingOutput().booleanValue() ? "1" : "0");
+                } else {
+                    System.out.println("Streaming output is not supported by the target VM, ignoring");
+                }
             }
 
             InputStream is = hvm.executeJCmd(line);

@@ -43,7 +43,6 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     private static byte[] stub;
 
     private volatile long hProcess;     // handle to the process
-    private OperationProperties props = new OperationProperties(VERSION_1); // updated in ctor
 
     VirtualMachineImpl(AttachProvider provider, String id)
         throws AttachNotSupportedException, IOException
@@ -55,7 +54,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
         try {
             if (isAPIv2Enabled()) {
-                props = getDefaultProps();
+                detectProperties();
             } else {
                 // The target VM might be a pre-6.0 VM so we enqueue a "null" command
                 // which minimally tests that the enqueue function exists in the target
@@ -87,6 +86,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         String pipeprefix = "\\\\.\\pipe\\javatool";
         String pipename = pipeprefix + r;
         long hPipe;
+        OperationProperties props = getProperties();
         try {
             hPipe = createPipe(props.version(), pipename);
         } catch (IOException ce) {

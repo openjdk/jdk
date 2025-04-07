@@ -1,4 +1,4 @@
-Usage: jcmd <pid | main class> <command ...|PerfCounter.print|-f file>
+Usage: jcmd <pid | main class> [--streaming_output=true|false] <command ...|PerfCounter.print|-f file>
    or: jcmd -l                                                    
    or: jcmd -h                                                    
                                                                   
@@ -13,3 +13,6 @@ Usage: jcmd <pid | main class> <command ...|PerfCounter.print|-f file>
   -f  read and execute commands from the file                     
   -l  list JVM processes on the local machine                     
   -? -h --help print this help message                            
+                                                                  
+  --streaming_output option sets streaming/buffered output mode   
+    (if supported by the target JVM).                             

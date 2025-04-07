@@ -48,7 +48,6 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     // Any changes to this needs to be synchronized with HotSpot.
     private static final String tmpdir;
     String socket_path;
-    private OperationProperties props = new OperationProperties(VERSION_1); // updated in ctor
 
     /**
      * Attaches to the target VM
@@ -112,7 +111,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         checkPermissions(socket_path);
 
         if (isAPIv2Enabled()) {
-            props = getDefaultProps();
+            detectProperties();
         } else {
             // Check that we can connect to the process
             // - this ensures we throw the permission denied error now rather than
@@ -166,7 +165,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // connected - write request
         try {
             SocketOutputStream writer = new SocketOutputStream(s);
-            writeCommand(writer, props, cmd, args);
+            writeCommand(writer, cmd, args);
         } catch (IOException x) {
             ioe = x;
         }

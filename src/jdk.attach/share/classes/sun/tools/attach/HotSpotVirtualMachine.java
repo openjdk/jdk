@@ -337,11 +337,11 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
     }
 
     // Attach API version support
-    protected static final int VERSION_1 = 1;
-    protected static final int VERSION_2 = 2;
+    public static final int VERSION_1 = 1;
+    public static final int VERSION_2 = 2;
 
     // Attach operation properties.
-    protected static class OperationProperties {
+    public static class OperationProperties {
         public final static String STREAMING = "streaming";
 
         private int ver;
@@ -351,11 +351,15 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
             this.ver = ver;
         }
 
-        int version() {
+        public int version() {
             return ver;
         }
 
-        void setOption(String name, String value) {
+        public boolean containsOption(String name) {
+            return options.containsKey(name);
+        }
+
+        public void setOption(String name, String value) {
             options.put(name, value);
         }
 
@@ -366,10 +370,16 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         }
     }
 
+    private OperationProperties props = new OperationProperties(VERSION_1);
+
+    public OperationProperties getProperties() throws IOException {
+        return props;
+    }
+
     /*
      * Detects Attach API properties supported by target VM.
      */
-    protected OperationProperties getDefaultProps() throws IOException {
+    protected void detectProperties() throws IOException {
         try {
             InputStream reply = execute("getversion", "options");
             String message = readMessage(reply);
@@ -383,24 +393,24 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
 
             // VERSION_2 supports options.
             if (supportedVersion == VERSION_2) {
-                OperationProperties result = new OperationProperties(supportedVersion);
+                props = new OperationProperties(supportedVersion);
                 // Parse known options, ignore unknown.
                 String options = delimPos < 0 ? "" : message.substring(delimPos + 1);
                 String[] parts = options.split(",");
                 for (String s: parts) {
                     if (OperationProperties.STREAMING.equals(s)) {
-                        result.setOption(OperationProperties.STREAMING,
+                        props.setOption(OperationProperties.STREAMING,
                                          (isStreamingEnabled() ? "1" : "0"));
                     }
                 }
-                return result;
+                return;
             }
         } catch (AttachOperationFailedException | AgentLoadException ex) {
             // the command is not supported, the VM supports VERSION_1 only
         } catch (NumberFormatException nfe) {
             // bad version number - fallback to VERSION_1
         }
-        return new OperationProperties(VERSION_1);
+        props = new OperationProperties(VERSION_1);
     }
 
     /*
@@ -560,6 +570,10 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         for (int i = 0; i < argNumber; i++) {
             writeString(writer, i < args.length ? args[i] : null);
         }
+    }
+
+    protected void writeCommand(AttachOutputStream writer, String cmd, Object ... args) throws IOException {
+        writeCommand(writer, getProperties(), cmd, args);
     }
 
     /*
