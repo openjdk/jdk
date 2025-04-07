@@ -69,7 +69,7 @@ public class TestVerify {
 
         @Override
         public byte[] transform(Module module, ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
-            //System.out.println("Maybe transforming module class " + className);
+          
             if (className.equals(INTERNAL_CLASS_TO_BREAK)) {
                 System.out.println("Instrumenting modular class " + INTERNAL_CLASS_TO_BREAK);
 
