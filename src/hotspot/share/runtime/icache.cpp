@@ -121,8 +121,8 @@ void AbstractICache::invalidate_range(address start, int nbytes) {
 
 // For init.cpp
 void icache_init() {
-  // Initial stub that runs with most basic mechanism, until CPU feature
-  // detection code figures out a better one, or terminates.
+  // Initial stub that runs with most basic mechanism, until optimized
+  // final stub is generated.
 #if defined(X86) && !defined(ZERO)
   IntFlagSetting fs(X86ICacheFlush, 1);
 #endif
@@ -130,7 +130,7 @@ void icache_init() {
 }
 
 void icache_init2() {
-  // Final stub that uses the requested flush mechanism. Happens after
-  // CPU feature detection knows which mechanism to use.
+  // Final stub that uses the optimized flush mechanism. Happens after
+  // CPU feature detection determines which mechanism is usable.
   ICache::initialize(2);
 }
