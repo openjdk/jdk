@@ -987,12 +987,8 @@ CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* c
   Compile* C = Compile::current();
   bool should_delay = C->should_delay_inlining();
   if (cg != nullptr) {
-    if (should_delay) {
-      if (IncrementalInlineMH) {
-        CallGenerator::for_mh_late_inline(caller, callee, input_not_const);
-      } else {
-        CallGenerator::for_late_inline(callee, cg);
-      }
+    if (should_delay && IncrementalInlineMH) {
+      return CallGenerator::for_mh_late_inline(caller, callee, input_not_const);
     } else {
       return cg;
     }
