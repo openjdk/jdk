@@ -247,11 +247,11 @@ public class JRTArchive implements Archive {
     }
 
     /**
-     * Certain files in the a module are considered upgradeable. That is,
+     * Certain files in a module are considered upgradeable. That is,
      * their hash sums aren't checked.
      *
      * @param resPath The resource path of the file to check for upgradeability.
-     * @return {@code true} iff the file is upgradeable. {@code false} otherwise.
+     * @return {@code true} if the file is upgradeable. {@code false} otherwise.
      */
     private boolean isUpgradeableFile(String resPath) {
         return upgradeableFiles.contains(resPath);

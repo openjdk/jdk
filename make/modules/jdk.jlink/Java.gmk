@@ -25,7 +25,6 @@
 
 ################################################################################
 
-COPY += \
-  $(TOPDIR)/src/jdk.jlink/share/classes/jdk/tools/jlink/internal/runtimelink/upgrade_files_java.base
+COPY += upgrade_files_java.base
 
 ################################################################################

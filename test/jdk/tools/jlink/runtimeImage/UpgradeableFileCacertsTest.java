@@ -39,8 +39,8 @@ import tests.Helper;
 
 /*
  * @test
- * @summary Verify warnings are being produced when linking from the run-time
- *          image and files have been modified
+ * @summary Verify that no errors are reported for files the have been
+ *          upgraded when linking from the run-time image
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @modules java.base/jdk.internal.jimage
