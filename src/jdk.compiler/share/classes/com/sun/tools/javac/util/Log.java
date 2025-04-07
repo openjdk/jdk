@@ -699,6 +699,8 @@ public class Log extends AbstractLog {
         nwarnings = 0;
         nsuppressederrors = 0;
         nsuppressedwarns = 0;
+        while (diagnosticHandler.prev != null)
+            popDiagnosticHandler(diagnosticHandler);
     }
 
     /**
