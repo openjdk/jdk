@@ -26,6 +26,7 @@
 #define SHARE_OOPS_KLASS_HPP
 
 #include "oops/klassFlags.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
@@ -154,7 +155,7 @@ class Klass : public Metadata {
   jint _layout_helper;
 
   // KLUT entry
-  uint32_t _klute;
+  KlassLUTEntry _klute;
 
   // Klass kind used to resolve the runtime type of the instance.
   //  - Used to implement devirtualized oop closure dispatching.
@@ -258,7 +259,7 @@ protected:
   enum class PrivateLookupMode  { find, skip };
 
   // Klute handling
-  uint32_t klute() const { return _klute; }
+  KlassLUTEntry klute() const { return _klute; }
   void register_with_klut();
 
   virtual bool is_klass() const { return true; }
