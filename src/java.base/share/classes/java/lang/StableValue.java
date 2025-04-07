@@ -213,9 +213,7 @@ import java.util.function.Supplier;
  *
  * }
  *
- * public static double computeSomeValues() {
- *     double log16  = Log2Util.log2(16); // May eventually constant fold to 4 at runtime
- * }
+ * int log16 = Log2Util.log2(16);   // May eventually constant fold to 4 at runtime
  *}
  *
  * The {@code Log2Util.log2()} function is a <em>partial function</em> that only allows
@@ -272,11 +270,10 @@ import java.util.function.Supplier;
  *          return LOG2.get(a);
  *     }
  *
- *     public static double computeSomeValues() {
- *         double log16 = Log2Util.log2(16);   // May eventually constant fold to 4 at runtime
- *     }
- *
  * }
+ *
+ * int log16 = Log2Util.log2(16);   // May eventually constant fold to 4 at runtime
+ *
  *}
  *
  * <h2 id="composition">Composing stable values</h2>
