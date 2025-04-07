@@ -468,6 +468,10 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       assert(StubRoutines::dtanh() != nullptr, "not initialized");
       __ movdbl(xmm0, Address(rsp, wordSize));
       __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dtanh())));
+  } else if (kind == Interpreter::java_lang_math_cbrt) {
+    assert(StubRoutines::dcbrt() != nullptr, "not initialized");
+    __ movdbl(xmm0, Address(rsp, wordSize));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dcbrt())));
   } else if (kind == Interpreter::java_lang_math_abs) {
     assert(StubRoutines::x86::double_sign_mask() != nullptr, "not initialized");
     __ movdbl(xmm0, Address(rsp, wordSize));

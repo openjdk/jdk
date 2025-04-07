@@ -134,6 +134,7 @@
   static_field(CompilerToVM::Data,             dcos,                                   address)                                      \
   static_field(CompilerToVM::Data,             dtan,                                   address)                                      \
   static_field(CompilerToVM::Data,             dtanh,                                  address)                                      \
+  static_field(CompilerToVM::Data,             dcbrt,                                  address)                                      \
   static_field(CompilerToVM::Data,             dexp,                                   address)                                      \
   static_field(CompilerToVM::Data,             dlog,                                   address)                                      \
   static_field(CompilerToVM::Data,             dlog10,                                 address)                                      \
