@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,42 +22,15 @@
  */
 
 import static java.lang.IO.*;
-import java.util.function.Consumer;
 
-public class Output {
-
-    private static final Object[] OBJECTS = {
-            null,
-            false,
-            (byte) 1,
-            (short) 2,
-            'a',
-            3,
-            4L,
-            5f,
-            6d,
-            new Object(),
-            "%s", // to test that print(ln) does not interpret its argument as a format string
-            new char[]{'a'},
-    };
+public class Methods {
 
     public static void main(String[] args) {
         switch (args[0]) {
-            case "print" -> {
-                printObjects(obj -> System.console().format("%s", obj).flush());
-                printObjects(obj -> print(obj));
-            }
-            case "println" -> {
-                printObjects(obj -> System.console().format("%s%n", obj).flush());
-                printObjects(obj -> println(obj));
-            }
-            default -> throw new IllegalArgumentException();
-        }
-    }
-
-    private static void printObjects(Consumer<Object> printer) {
-        for (var obj : OBJECTS) {
-            printer.accept(obj);
+            case "println" -> println("hello");
+            case "print" -> print("hello");
+            case "input" -> readln("hello");
+            default -> throw new IllegalArgumentException(args[0]);
         }
     }
 }

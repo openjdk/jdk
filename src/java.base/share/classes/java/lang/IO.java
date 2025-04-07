@@ -31,7 +31,6 @@ import java.io.IOError;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A collection of static methods that provide convenient access to {@link System#in}
