@@ -451,16 +451,9 @@ size_t oopDesc::oop_iterate_size(OopClosureType* cl, MemRegion mr) {
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate_backwards(OopClosureType* cl) {
-  oop_iterate_backwards(cl, klass());
-}
-
-template <typename OopClosureType>
-void oopDesc::oop_iterate_backwards(OopClosureType* cl, Klass* k) {
-  // In this assert, we cannot safely access the Klass* with compact headers.
-  assert(k == klass(), "wrong klass");
 
   if (UseKLUT) {
-    const narrowKlass nk = CompressedKlassPointers::encode_not_null(k);
+    const narrowKlass nk = mark().narrow_klass();
     const KlassLUTEntry klute = KlassInfoLUT::lookup(nk);
     if (!klute.is_type_array()) { // no need to iterate TAK
       OopIteratorClosureDispatch::oop_oop_iterate_reverse(this, cl, klute);
@@ -468,6 +461,7 @@ void oopDesc::oop_iterate_backwards(OopClosureType* cl, Klass* k) {
     return;
   }
 
+  Klass* k = klass();
   OopIteratorClosureDispatch::oop_oop_iterate_backwards(cl, this, k);
 }
 

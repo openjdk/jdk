@@ -302,9 +302,6 @@ class oopDesc {
   template <typename OopClosureType>
   inline void oop_iterate_backwards(OopClosureType* cl);
 
-  template <typename OopClosureType>
-  inline void oop_iterate_backwards(OopClosureType* cl, Klass* klass);
-
   inline static bool is_instanceof_or_null(oop obj, Klass* klass);
 
   // identity hash; returns the identity hash key (computes it if necessary)
