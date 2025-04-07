@@ -418,7 +418,7 @@ VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
     memcpy(_memory_pred_edges, known_overlap_edges.adr_at(0), bytes_known);
   }
   if (unknown_aliasing_edges.length() > 0) {
-    memcpy(_memory_pred_edges + bytes_known, unknown_aliasing_edges.adr_at(0), bytes_unknown);
+    memcpy(_memory_pred_edges + known_overlap_edges.length(), unknown_aliasing_edges.adr_at(0), bytes_unknown);
   }
 }
 
