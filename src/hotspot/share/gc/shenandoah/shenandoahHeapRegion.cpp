@@ -459,6 +459,10 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|S %5zu%1s", byte_size_in_proper_unit(get_shared_allocs()),   proper_unit_for_byte_size(get_shared_allocs()));
   st->print("|L %5zu%1s", byte_size_in_proper_unit(get_live_data_bytes()), proper_unit_for_byte_size(get_live_data_bytes()));
   st->print("|CP %3zu", pin_count());
+
+  if (has_evacuation_failures()) {
+    st->print("|EF");
+  }
   st->cr();
 
 #undef SHR_PTR_FORMAT

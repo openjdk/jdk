@@ -1353,7 +1353,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     ShenandoahHeapRegion* r = heap_region_containing(p);
     r->set_has_evacuation_failures(true);
     _has_self_forwarded_objects = true;
-
+    log_debug(gc)("Could not evacuate " PTR_FORMAT " from region: %zu", p2i(p), r->index());
     return ShenandoahForwarding::try_forward_to_self(p);
   }
 

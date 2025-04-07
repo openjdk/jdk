@@ -108,8 +108,13 @@ inline oop ShenandoahForwarding::try_forward_to_self(oop obj) {
   markWord new_mark = markWord::from_pointer(obj).set_self_forwarded();
   markWord prev_mark = obj->cas_set_mark(new_mark, old_mark, memory_order_conservative);
   if (prev_mark == old_mark) {
+    log_debug(gc)("Set forwarding bit on " PTR_FORMAT ", mark = " PTR_FORMAT, p2i(obj), new_mark.value());
+    assert(obj->is_self_forwarded(), "Why is " PTR_FORMAT " not self forwarded?", p2i(obj));
     return obj;
   } else {
+    log_debug(gc)("Did not set forwarding bit on " PTR_FORMAT
+      ", old_mark: " PTR_FORMAT ", new_mark: " PTR_FORMAT ", prev_mark: " PTR_FORMAT,
+      p2i(obj), old_mark.value(), new_mark.value(), prev_mark.value());
     return prev_mark.forwardee();
   }
 }
