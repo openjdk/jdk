@@ -39,7 +39,7 @@ import tests.Helper;
 
 /*
  * @test
- * @summary Verify that no errors are reported for files the have been
+ * @summary Verify that no errors are reported for files that have been
  *          upgraded when linking from the run-time image
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
