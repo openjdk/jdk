@@ -1306,7 +1306,8 @@ void os::jvm_path(char *buf, jint buflen) {
   char* rp = os::realpath((char *)dlinfo.dli_fname, buf, buflen);
   assert(rp != nullptr, "error in realpath(): maybe the 'path' argument is too long?");
 
-  if(Arguments::executing_unit_tests()) {
+  // If executing unit tests we require JAVA_HOME to point to the real JDK.
+  if (Arguments::executing_unit_tests()) {
     // Look for JAVA_HOME in the environment.
     char* java_home_var = ::getenv("JAVA_HOME");
     if (java_home_var != nullptr && java_home_var[0] != 0) {
@@ -1324,16 +1325,15 @@ void os::jvm_path(char *buf, jint buflen) {
         return;
       }
 
-      // modules image doesn't have "jre" subdirectory
       len = strlen(buf);
       assert(len < buflen, "Ran out of buffer room");
       char* lib_p = buf + len;
-      snprintf(lib_p, buflen-len, "/lib");
+      snprintf(lib_p, buflen - len, "/lib");
 
       if (0 == access(buf, F_OK)) {
         // Use current module name "libjvm.so"
         len = strlen(buf);
-        snprintf(buf + len, buflen-len, "/%s/libjvm%s",
+        snprintf(buf + len, buflen - len, "/%s/libjvm%s",
                  Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
       } else {
         // Go back to path of .so

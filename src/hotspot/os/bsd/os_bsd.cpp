@@ -1502,6 +1502,7 @@ void os::jvm_path(char *buf, jint buflen) {
     return;
   }
 
+  // If executing unit tests we require JAVA_HOME to point to the real JDK.
   if (Arguments::executing_unit_tests()) {
     // Look for JAVA_HOME in the environment.
     char* java_home_var = ::getenv("JAVA_HOME");
@@ -1517,20 +1518,19 @@ void os::jvm_path(char *buf, jint buflen) {
         return;
       }
 
-      // modules image doesn't have "jre" subdirectory
       len = strlen(buf);
       assert(len < buflen, "Ran out of buffer space");
       char* lib_p = buf + len;
 
       // Add the appropriate library subdir
-      snprintf(lib_p, buflen-len, "/lib");
+      snprintf(lib_p, buflen - len, "/lib");
 
       // Add the appropriate JVM variant subdir
       len = strlen(buf);
       lib_p = buf + len;
-      snprintf(lib_p, buflen-len, "/%s", Abstract_VM_Version::vm_variant());
+      snprintf(lib_p, buflen - len, "/%s", Abstract_VM_Version::vm_variant());
       if (0 != access(buf, F_OK)) {
-        snprintf(lib_p, buflen-len, "%s", "");
+        snprintf(lib_p, buflen - len, "%s", "");
       }
 
       // If the path exists within JAVA_HOME, add the JVM library name
@@ -1539,7 +1539,7 @@ void os::jvm_path(char *buf, jint buflen) {
       if (0 == access(buf, F_OK)) {
         // Use current module name "libjvm"
         len = strlen(buf);
-        snprintf(buf + len, buflen-len, "/libjvm%s", JNI_LIB_SUFFIX);
+        snprintf(buf + len, buflen - len, "/libjvm%s", JNI_LIB_SUFFIX);
       } else {
         // Fall back to path of current library
         rp = os::realpath(dli_fname, buf, buflen);
