@@ -148,12 +148,6 @@ public class FPComparison {
     }
 
     @Benchmark
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public void equalDoubleSingle(Blackhole bh) {
-        bh.consume((d1[0] == d2[0]) ? 1 : 2);
-    }
-
-    @Benchmark
     public void lessFloat() {
         for (int i = 0; i < INVOCATIONS; i++) {
             res[i] = (f1[i] < f2[i]) ? 1 : 2;

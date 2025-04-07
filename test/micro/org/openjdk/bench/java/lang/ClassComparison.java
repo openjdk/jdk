@@ -98,32 +98,4 @@ public class ClassComparison {
             resLong[i] = (c1[i] != c2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
         }
     }
-
-    @Benchmark
-    public void equalClassResObj() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resObject[i] = (c1[i] == c2[i]) ? ro1 : ro2;
-        }
-    }
-
-    @Benchmark
-    public void notEqualClassResObj() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resObject[i] = (c1[i] != c2[i]) ? ro1 : ro2;
-        }
-    }
-
-    @Benchmark
-    public void equalClassResClass() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resClass[i] = (c1[i] == c2[i]) ? rc1 : rc2;
-        }
-    }
-
-    @Benchmark
-    public void notEqualClassResClass() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resClass[i] = (c1[i] != c2[i]) ? rc1 : rc2;
-        }
-    }
 }

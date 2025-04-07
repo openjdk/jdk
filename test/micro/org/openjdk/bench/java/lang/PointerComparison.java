@@ -98,32 +98,4 @@ public class PointerComparison {
             resLong[i] = (o1[i] != o2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
         }
     }
-
-    @Benchmark
-    public void equalObjectResObj() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resObject[i] = (o1[i] == o2[i]) ? ro1 : ro2;
-        }
-    }
-
-    @Benchmark
-    public void notEqualObjectResObj() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resObject[i] = (o1[i] != o2[i]) ? ro1 : ro2;
-        }
-    }
-
-    @Benchmark
-    public void equalObjectResClass() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resClass[i] = (o1[i] == o2[i]) ? rc1 : rc2;
-        }
-    }
-
-    @Benchmark
-    public void notEqualObjectResClass() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resClass[i] = (o1[i] != o2[i]) ? rc1 : rc2;
-        }
-    }
 }

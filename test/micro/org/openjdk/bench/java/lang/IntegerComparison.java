@@ -76,12 +76,6 @@ public class IntegerComparison {
     }
 
     @Benchmark
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public void equalIntegerSingle(Blackhole bh) {
-        bh.consume((i1[0] == i2[0]) ? 1 : 2);
-    }
-
-    @Benchmark
     public void notEqualInteger() {
         for (int i = 0; i < INVOCATIONS; i++) {
             res[i] = (i1[i] != i2[i]) ? 1 : 2;
@@ -154,100 +148,6 @@ public class IntegerComparison {
     public void greaterEqualIntegerResLong() {
         for (int i = 0; i < INVOCATIONS; i++) {
             resLong[i] = (i1[i] >= i2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
-        }
-    }
-
-    // --------- result: object ---------
-
-    @Benchmark
-    public void equalIntegerResObj() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resObject[i] = (i1[i] == i2[i]) ? ro1 : ro2;
-        }
-    }
-
-    @Benchmark
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public void equalIntegerResObjSingle(Blackhole bh) {
-        bh.consume((i1[0] == i2[0]) ? ro1 : ro2);
-    }
-
-    @Benchmark
-    public void notEqualIntegerResObj() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resObject[i] = (i1[i] != i2[i]) ? ro1 : ro2;
-        }
-    }
-
-    @Benchmark
-    public void lessIntegerResObj() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resObject[i] = (i1[i] < i2[i]) ? ro1 : ro2;
-        }
-    }
-
-    @Benchmark
-    public void lessEqualIntegerResObj() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resObject[i] = (i1[i] <= i2[i]) ? ro1 : ro2;
-        }
-    }
-
-    @Benchmark
-    public void greaterIntegerResObj() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resObject[i] = (i1[i] > i2[i]) ? ro1 : ro2;
-        }
-    }
-
-    @Benchmark
-    public void greaterEqualIntegerResObj() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resObject[i] = (i1[i] >= i2[i]) ? ro1 : ro2;
-        }
-    }
-
-    // --------- result: class ---------
-
-    @Benchmark
-    public void equalIntegerResClass() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resClass[i] = (i1[i] == i2[i]) ? rc1 : rc2;
-        }
-    }
-
-    @Benchmark
-    public void notEqualIntegerResClass() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resClass[i] = (i1[i] != i2[i]) ? rc1 : rc2;
-        }
-    }
-
-    @Benchmark
-    public void lessIntegerResClass() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resClass[i] = (i1[i] < i2[i]) ? rc1 : rc2;
-        }
-    }
-
-    @Benchmark
-    public void lessEqualIntegerResClass() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resClass[i] = (i1[i] <= i2[i]) ? rc1 : rc2;
-        }
-    }
-
-    @Benchmark
-    public void greaterIntegerResClass() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resClass[i] = (i1[i] > i2[i]) ? rc1 : rc2;
-        }
-    }
-
-    @Benchmark
-    public void greaterEqualIntegerResClass() {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            resClass[i] = (i1[i] >= i2[i]) ? rc1 : rc2;
         }
     }
 }
