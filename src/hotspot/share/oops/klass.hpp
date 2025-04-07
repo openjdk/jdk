@@ -84,6 +84,8 @@ class Klass : public Metadata {
 
   static const uint KLASS_KIND_COUNT = ObjArrayKlassKind + 1;
 
+  // TODO simplify cleanup
+
 #define DECLARE_EXACT_CAST_FUNCTIONS(TYPE)                               \
   static inline const TYPE* cast_exact(const Klass* k);                  \
   static inline       TYPE* cast_exact(      Klass* k);

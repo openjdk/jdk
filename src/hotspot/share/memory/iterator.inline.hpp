@@ -394,36 +394,36 @@ void OopIteratorClosureDispatch::ITERATION_FUNCTION ARGUMENT_DEFINITION {       
 DEFINE_DISPATCH_CLASS(
     OopOopIterateDispatchWithKlute,
     oop_oop_iterate,
-    (oop obj, OopClosureType* cl, KlassLUTEntry klute, narrowKlass nk),
-    (obj, cl, klute, nk)
+    (oop obj, OopClosureType* cl, KlassLUTEntry klute),
+    (obj, cl, klute)
 )
 
 DEFINE_DISPATCH_CLASS(
     OopOopIterateDispatchWithKluteReverse,
     oop_oop_iterate_reverse,
-    (oop obj, OopClosureType* cl, KlassLUTEntry klute, narrowKlass nk),
-    (obj, cl, klute, nk)
+    (oop obj, OopClosureType* cl, KlassLUTEntry klute),
+    (obj, cl, klute)
 )
 
 DEFINE_DISPATCH_CLASS(
     OopOopIterateDispatchWithKluteBounded,
     oop_oop_iterate_bounded,
-    (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute, narrowKlass nk),
-    (obj, cl, mr, klute, nk)
+    (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute),
+    (obj, cl, mr, klute)
 )
 
 // Same, but returns object size
 
 template <class KlassType>
-static inline size_t calculate_size_for_object(narrowKlass nk, KlassLUTEntry klute, oop obj) {
-  if (KlassType::Kind < Klass::TypeArrayKlassKind) {
+static inline size_t calculate_size_for_object(KlassLUTEntry klute, oop obj) {
+  if (KlassType::Kind < Klass::TypeArrayKlassKind) { // note: this is constexpr
     assert(klute.is_instance(), "Sanity");
     if (klute.ik_carries_infos()) {
       return klute.ik_wordsize();
     }
+    // Rare path.
     // Size not statically computable (e.g. MirrorKlass); calculate using Klass
-    Klass* k = CompressedKlassPointers::decode_not_null(nk);
-    return obj->size_given_klass(k);
+    return obj->size_given_klass(obj->klass());
   } else {
     assert(klute.is_array(), "Sanity");
     return klute.ak_calculate_wordsize_given_oop(obj);
@@ -442,7 +442,7 @@ class CLASSNAME {                                                               
     template <typename KlassType, typename T>                                                                   \
     static size_t invoke_real ARGUMENT_DEFINITION {                                                             \
       KlassType::template ITERATION_FUNCTION<T> ARGUMENTS;                                                      \
-      return calculate_size_for_object<KlassType>(nk, klute, obj);                                              \
+      return calculate_size_for_object<KlassType>(klute, obj);                                                  \
     }                                                                                                           \
                                                                                                                 \
     template <typename KlassType>                                                                               \
@@ -506,23 +506,23 @@ size_t OopIteratorClosureDispatch::ITERATION_FUNCTION ## _size ARGUMENT_DEFINITI
 DEFINE_DISPATCH_CLASS_RETURN_OBJ_SIZE(
     OopOopIterateDispatchWithKluteReturnSize,
     oop_oop_iterate,
-    (oop obj, OopClosureType* cl, KlassLUTEntry klute, narrowKlass nk),
-    (obj, cl, klute, nk)
+    (oop obj, OopClosureType* cl, KlassLUTEntry klute),
+    (obj, cl, klute)
 )
 
 /*
 DEFINE_DISPATCH_CLASS_RETURN_OBJ_SIZE(
     OopOopIterateDispatchWithKluteReverseReturnSize,
     oop_oop_iterate_reverse,
-    (oop obj, OopClosureType* cl, KlassLUTEntry klute, narrowKlass nk),
+    (oop obj, OopClosureType* cl, KlassLUTEntry klute),
     (obj, cl, klute, nk)
 )*/
 
 DEFINE_DISPATCH_CLASS_RETURN_OBJ_SIZE(
     OopOopIterateDispatchWithKluteBoundedReturnSize,
     oop_oop_iterate_bounded,
-    (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute, narrowKlass nk),
-    (obj, cl, mr, klute, nk)
+    (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute),
+    (obj, cl, mr, klute)
 )
 
 #endif // SHARE_MEMORY_ITERATOR_INLINE_HPP
