@@ -38,7 +38,7 @@ ALWAYSINLINE uint32_t KlassInfoLUT::at(unsigned index) {
   return _entries[index];
 }
 
-ALWAYSINLINE KlassLUTEntry KlassInfoLUT::get_entry(narrowKlass nk) {
+ALWAYSINLINE KlassLUTEntry KlassInfoLUT::lookup(narrowKlass nk) {
 
   const uint32_t v = at(nk);
   KlassLUTEntry e(v);

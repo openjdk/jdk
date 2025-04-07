@@ -103,7 +103,7 @@ public:
 
   static KlassLUTEntry register_klass(const Klass* k);
 
-  static inline KlassLUTEntry get_entry(narrowKlass k);
+  static inline KlassLUTEntry lookup(narrowKlass k);
 
   static int try_register_perma_cld(ClassLoaderData* cld);
   static inline ClassLoaderData* get_perma_cld(int index);
