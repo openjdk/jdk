@@ -2003,6 +2003,8 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
 
   const Predicates predicates(init_control);
   const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
+  const ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
+  Node* parse_predicate_entry = loop_limit_check_parse_predicate->in(0);
 
   if (sov < 0) {
     return false; // Bailout: integer overflow is certain.
@@ -2026,8 +2028,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
       return false;
     }
 
-    ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
-    if (!_phase->is_dominator(_phase->get_ctrl(exit_test.limit), loop_limit_check_parse_predicate->in(0))) {
+    if (!_phase->is_dominator(_phase->get_ctrl(exit_test.limit), parse_predicate_entry)) {
       return false;
     }
 
@@ -2070,8 +2071,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
       return false;
     }
 
-    ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
-    Node* parse_predicate_entry = loop_limit_check_parse_predicate->in(0);
+
     if (!_phase->is_dominator(_phase->get_ctrl(exit_test.limit), parse_predicate_entry) ||
         !_phase->is_dominator(_phase->get_ctrl(init_trip), parse_predicate_entry)) {
       return false;
