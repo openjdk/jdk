@@ -779,12 +779,8 @@ void ArchiveBuilder::make_klasses_shareable() {
     if (k->is_instance_klass()) {
       InstanceKlass::cast(k)->constants()->remove_unshareable_info();
     }
-#ifdef ASSERT
-    if (UseKLUT) {
-      // every archived Klass shall carry a valid KLUTE.
-      k->klute().verify_against_klass(k);
-    }
-#endif // ASSERT
+    // every archived Klass shall carry a valid KLUTE.
+    DEBUG_ONLY(k->klute().verify_against_klass(k);)
   }
 
   for (int i = 0; i < klasses()->length(); i++) {

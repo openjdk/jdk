@@ -1355,8 +1355,5 @@ void Klass::on_secondary_supers_verification_failure(Klass* super, Klass* sub, b
 }
 
 void Klass::register_with_klut() {
-  if (UseKLUT) {
-    _klute = KlassInfoLUT::register_klass(this);
-    assert(_klute.is_valid(), "Must be valid");
-  }
+  _klute = KlassInfoLUT::register_klass(this);
 }
