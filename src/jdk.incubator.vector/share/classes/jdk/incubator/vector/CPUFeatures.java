@@ -26,6 +26,7 @@ package jdk.incubator.vector;
 
 import jdk.internal.vm.vector.VectorSupport;
 
+import java.util.Locale;
 import java.util.Set;
 
 import static jdk.incubator.vector.Util.requires;
@@ -41,7 +42,7 @@ import static jdk.internal.vm.vector.Utils.debug;
     private static Set<String> getCPUFeatures() {
         String featuresString = VectorSupport.getCPUFeatures();
         debug(featuresString);
-        String[] features = featuresString.toLowerCase().split(", "); // ", " is used as a delimiter
+        String[] features = featuresString.toLowerCase(Locale.ROOT).split(", "); // ", " is used as a delimiter
         assert validateFeatures(features);
         return Set.of(features);
     }
@@ -54,7 +55,7 @@ import static jdk.internal.vm.vector.Utils.debug;
     }
 
     private static boolean hasFeature(String feature) {
-        return features.contains(feature.toLowerCase());
+        return features.contains(feature.toLowerCase(Locale.ROOT));
     }
 
     public static class X64 {

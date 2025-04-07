@@ -140,7 +140,8 @@ import static jdk.internal.vm.vector.Utils.debug;
         public String symbolName(Operator op, VectorSpecies<?> vspecies) {
             String suffix = suffix(vspecies);
             String elemType = (vspecies.elementType() == float.class ? "f" : "");
-            return String.format("__jsvml_%s%s%d_ha_%s", op.operatorName(), elemType, vspecies.length(), suffix);
+            int vlen = (vspecies == FloatVector.SPECIES_64 ? 4 : vspecies.length()); // reuse 128-bit variant for 64-bit float vectors
+            return String.format("__jsvml_%s%s%d_ha_%s", op.operatorName(), elemType, vlen, suffix);
         }
 
         @Override
@@ -153,18 +154,12 @@ import static jdk.internal.vm.vector.Utils.debug;
             if (vspecies.length() > maxLaneCount) {
                 return false; // lacking vector support
             }
-            if (vspecies.vectorBitSize() < 128) {
-                return false; // 64-bit vectors are not supported
-            } else if (vspecies.vectorBitSize() < 512) {
-                if (op == POW) {
-                    return false; // not supported
-                }
-            } else if (vspecies.vectorBitSize() == 512) {
+            if (vspecies.vectorBitSize() == 512) {
                 if (op == LOG || op == LOG10 || op == POW) {
                     return CPUFeatures.X64.SUPPORTS_AVX512DQ; // requires AVX512DQ CPU support
                 }
-            } else {
-                throw new InternalError("unsupported vector shape: " + vspecies);
+            } else if (op == POW) {
+                return false; // not supported
             }
             return true;
         }
@@ -255,11 +250,14 @@ import static jdk.internal.vm.vector.Utils.debug;
     Entry<T> constructEntry(Operator op, int opc, VectorSpecies<E> vspecies, IntFunction<T> implSupplier) {
         if (LIBRARY.isSupported(op, vspecies)) {
             String symbol = LIBRARY.symbolName(op, vspecies);
-            MemorySegment addr = LOOKUP.find(symbol)
-                                       .orElseThrow(() -> new InternalError("not supported: " + op + " " + vspecies + " " + symbol));
-            debug("%s %s => 0x%016x\n", op, symbol, addr.address());
-            T impl = implSupplier.apply(opc); // TODO: should call the very same native implementation eventually (once FFM API supports vectors)
-            return new Entry<>(symbol, addr, impl);
+            try {
+                MemorySegment addr = LOOKUP.findOrThrow(symbol);
+                debug("%s %s => 0x%016x\n", op, symbol, addr.address());
+                T impl = implSupplier.apply(opc); // TODO: should call the very same native implementation eventually (once FFM API supports vectors)
+                return new Entry<>(symbol, addr, impl);
+            } catch (RuntimeException e) {
+              throw new InternalError("not supported: " + op + " " + vspecies + " " + symbol, e);
+            }
         } else {
             return new Entry<>(null, MemorySegment.NULL, implSupplier.apply(opc));
         }
