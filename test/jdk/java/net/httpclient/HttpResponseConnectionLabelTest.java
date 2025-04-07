@@ -28,8 +28,15 @@
  *          /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
+ *
  * @comment `othervm` usage is intentional since this test uses `ForkJoinPool.commonPool()`
- * @run junit/othervm HttpResponseConnectionLabelTest
+ * @comment There is no guarantee that sequential requests will be executed immediately one after the other.
+ *          Internally, `HttpClient` uses idle timeouts to close idle connections.
+ *          In some setup (e.g., CI), two consecutive requests might execute so far apart from each other (-Xcomp?)
+ *          that the connection might have timed out in the meantime and closed.
+ *          Thus, the second request might end up using a different connection and violates certain assumptions.
+ *          To guard against that, the `jdk.httpclient.keepalive.timeout` default (30s) is increased.
+ * @run junit/othervm -Djdk.httpclient.keepalive.timeout=120 HttpResponseConnectionLabelTest
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
