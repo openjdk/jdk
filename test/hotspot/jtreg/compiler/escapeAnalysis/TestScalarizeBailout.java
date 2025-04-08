@@ -25,7 +25,7 @@
  * @test
  * @bug 8315916
  * @summary Test early bailout during the creation of graph nodes for the scalarization of array fields, rather than during code generation.
- * @run main/othervm/timeout=240000 
+ * @run main/othervm/timeout=240000
  *                   -Xcomp
  *                   -XX:-TieredCompilation
  *                   -XX:EliminateAllocationArraySizeLimit=60240
