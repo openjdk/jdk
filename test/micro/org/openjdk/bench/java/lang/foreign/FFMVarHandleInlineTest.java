@@ -188,7 +188,7 @@ public class FFMVarHandleInlineTest {
     }
 
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    //@Benchmark
+    @Benchmark
     public int t_level11() {
         var s = 0;
         for (long offset : offsets) {
@@ -198,7 +198,7 @@ public class FFMVarHandleInlineTest {
     }
 
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    //@Benchmark
+    @Benchmark
     public int t_level12() {
         var s = 0;
         for (long offset : offsets) {
