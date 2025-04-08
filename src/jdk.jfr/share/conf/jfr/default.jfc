@@ -205,6 +205,12 @@
       <setting name="enabled" control="method-sampling-enabled">true</setting>
       <setting name="period" control="method-sampling-native-interval">20 ms</setting>
     </event>
+    <event name="jdk.SafepointLatency">
+      <setting name="enabled" control="method-sampling-enabled">false</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="threshold">0 ms</setting>
+      <setting name="throttle">off</setting>
+    </event>
 
     <event name="jdk.SafepointBegin">
       <setting name="enabled">true</setting>

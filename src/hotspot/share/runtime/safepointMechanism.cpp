@@ -32,6 +32,9 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "utilities/globalDefinitions.hpp"
+#ifdef INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 uintptr_t SafepointMechanism::_poll_word_armed_value;
 uintptr_t SafepointMechanism::_poll_word_disarmed_value;
@@ -94,7 +97,7 @@ void SafepointMechanism::update_poll_values(JavaThread* thread) {
   assert(thread->thread_state() != _thread_in_native, "Must not be");
 
   for (;;) {
-    bool armed = global_poll() || thread->handshake_state()->has_operation();
+    bool armed = has_pending_safepoint(thread);
     uintptr_t stack_watermark = StackWatermarkSet::lowest_watermark(thread);
     uintptr_t poll_page = armed ? _poll_page_armed_value
                                 : _poll_page_disarmed_value;
@@ -120,7 +123,7 @@ void SafepointMechanism::update_poll_values(JavaThread* thread) {
     thread->poll_data()->set_polling_page(poll_page);
     thread->poll_data()->set_polling_word(poll_word);
     OrderAccess::fence();
-    if (!armed && (global_poll() || thread->handshake_state()->has_operation())) {
+    if (!armed && has_pending_safepoint(thread)) {
       // We disarmed an old safepoint, but a new one is synchronizing.
       // We need to arm the poll for the subsequent safepoint poll.
       continue;
@@ -129,16 +132,20 @@ void SafepointMechanism::update_poll_values(JavaThread* thread) {
   }
 }
 
+static inline bool has_handshake_operation(JavaThread* jt, bool allow_suspend, bool check_async) {
+  return jt->handshake_state()->has_operation() && jt->handshake_state()->process_by_self(allow_suspend, check_async);
+}
+
 void SafepointMechanism::process(JavaThread *thread, bool allow_suspend, bool check_async_exception) {
   DEBUG_ONLY(intptr_t* sp_before = thread->last_Java_sp();)
   // Read global poll and has_handshake after local poll
   OrderAccess::loadload();
 
   // local poll already checked, if used.
-  bool need_rechecking;
   do {
     JavaThreadState state = thread->thread_state();
     guarantee(state == _thread_in_vm, "Illegal threadstate encountered: %d", state);
+    JFR_ONLY(Jfr::check_and_process_sample_request(thread);)
     if (global_poll()) {
       // Any load in ::block() must not pass the global poll load.
       // Otherwise we might load an old safepoint counter (for example).
@@ -153,9 +160,7 @@ void SafepointMechanism::process(JavaThread *thread, bool allow_suspend, bool ch
     // 2) After a thread races with the disarming of the global poll and transitions from native/blocked
     // 3) Before the handshake code is run
     StackWatermarkSet::on_safepoint(thread);
-
-    need_rechecking = thread->handshake_state()->has_operation() && thread->handshake_state()->process_by_self(allow_suspend, check_async_exception);
-  } while (need_rechecking);
+  } while (has_handshake_operation(thread, allow_suspend, check_async_exception));
 
   update_poll_values(thread);
   assert(sp_before == thread->last_Java_sp(), "Anchor has changed");
