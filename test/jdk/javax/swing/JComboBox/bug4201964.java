@@ -54,6 +54,7 @@ public class bug4201964 {
 
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
+                .rows(50)
                 .columns(50)
                 .testUI(bug4201964::createTestUI)
                 .build()
