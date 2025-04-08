@@ -2769,7 +2769,7 @@ void HeapDumper::dump_heap(bool oome) {
     }
 
     // Set base path (name or directory, default or custom, without seq no), doing %p substitution.
-    const char *path_src = (HeapDumpPath && HeapDumpPath[0] != '\0') ? HeapDumpPath : dump_file_name;
+    const char *path_src = (HeapDumpPath != nullptr && HeapDumpPath[0] != '\0') ? HeapDumpPath : dump_file_name;
     if (!Arguments::copy_expand_pid(path_src, strlen(path_src), base_path, JVM_MAXPATHLEN)) {
       warning("Cannot create heap dump file.  HeapDumpPath is too long.");
       return;
@@ -2790,6 +2790,7 @@ void HeapDumper::dump_heap(bool oome) {
       // Path is a directory.  Append the default name, with %p substitution.  Use my_path temporarily.
       if (!Arguments::copy_expand_pid(dump_file_name, strlen(dump_file_name), my_path, JVM_MAXPATHLEN)) {
         warning("Cannot create heap dump file.  HeapDumpPath is too long.");
+        return;
       }
       const size_t dlen = strlen(base_path);
       jio_snprintf(&base_path[dlen], sizeof(base_path) - dlen, "%s", my_path);

@@ -98,7 +98,6 @@ public class TestHeapDumpOnOutOfMemoryError {
         output.shouldContain("Dumping heap to " + type + ".hprof");
         File dump = new File(heapdumpFilename);
         Asserts.assertTrue(dump.exists() && dump.isFile(), "Could not find dump file " + dump.getAbsolutePath());
-
         HprofParser.parse(new File(heapdumpFilename));
 
         // Test again using %p pid substitution in HeapDumpPath:
@@ -110,11 +109,9 @@ public class TestHeapDumpOnOutOfMemoryError {
                 Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "-Dx",
                 TestHeapDumpOnOutOfMemoryError.class.getName(), type);
 
-        Process proc = pb.start();
-        output = new OutputAnalyzer(proc);
+        output = new OutputAnalyzer(pb.start());
         output.stdoutShouldNotBeEmpty();
-        long pid = proc.pid();
-        String actualHeapdumpFilename = type + "." + pid + ".hprof";
+        String actualHeapdumpFilename = type + "." + output.pid() + ".hprof";
         output.shouldContain("Dumping heap to " + actualHeapdumpFilename);
         dump = new File(actualHeapdumpFilename);
         Asserts.assertTrue(dump.exists() && dump.isFile(), "Could not find dump file " + dump.getAbsolutePath());
