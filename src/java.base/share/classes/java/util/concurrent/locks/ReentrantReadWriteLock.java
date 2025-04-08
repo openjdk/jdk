@@ -207,8 +207,8 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *
  * <h2>Implementation Notes</h2>
  *
- * <p>This lock supports a maximum of 65535 recursive write locks
- * and 65535 read locks. Attempts to exceed these limits result in
+ * <p>This lock supports a maximum of {@link Integer#MAX_VALUE} recursive write locks
+ * and {@link Integer#MAX_VALUE} read locks. Attempts to exceed these limits result in
  * {@link Error} throws from locking methods.
  *
  * @since 1.5
