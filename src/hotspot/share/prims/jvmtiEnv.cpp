@@ -940,14 +940,14 @@ JvmtiEnv::SuspendThread(jthread thread) {
 
     // Do not use JvmtiVTMSTransitionDisabler in context of self suspend to avoid deadlocks.
     if (java_thread != current) {
-      err = suspend_thread(thread_oop, java_thread, /* single_suspend */ true, nullptr);
+      err = suspend_thread(thread_oop, java_thread, /* single_suspend */ true);
       return err;
     }
     // protect thread_oop as a safepoint can be reached in disabler destructor
     self_tobj = Handle(current, thread_oop);
   }
   // Do self suspend for current JavaThread.
-  err = suspend_thread(self_tobj(), current, /* single_suspend */ true, nullptr);
+  err = suspend_thread(self_tobj(), current, /* single_suspend */ true);
   return err;
 } /* end SuspendThread */
 
@@ -988,14 +988,14 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
         self_tobj = Handle(current, thread_oop);
         continue; // self suspend after all other suspends
       }
-      results[i] = suspend_thread(thread_oop, java_thread, /* single_suspend */ true, nullptr);
+      results[i] = suspend_thread(thread_oop, java_thread, /* single_suspend */ true);
     }
   }
   // Self suspend after all other suspends if necessary.
   // Do not use JvmtiVTMSTransitionDisabler in context of self suspend to avoid deadlocks.
   if (self_tobj() != nullptr) {
     // there should not be any error for current java_thread
-    results[self_idx] = suspend_thread(self_tobj(), current, /* single_suspend */ true, nullptr);
+    results[self_idx] = suspend_thread(self_tobj(), current, /* single_suspend */ true);
   }
   // per-thread suspend results returned via results parameter
   return JVMTI_ERROR_NONE;
@@ -1048,7 +1048,7 @@ JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list
           self_tobj = Handle(current, vt_oop);
           continue; // self suspend after all other suspends
         }
-        suspend_thread(vt_oop, java_thread, /* single_suspend */ false, nullptr);
+        suspend_thread(vt_oop, java_thread, /* single_suspend */ false);
       }
     }
     JvmtiVTSuspender::register_all_vthreads_suspend();
@@ -1065,7 +1065,7 @@ JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list
   // Self suspend after all other suspends if necessary.
   // Do not use JvmtiVTMSTransitionDisabler in context of self suspend to avoid deadlocks.
   if (self_tobj() != nullptr) {
-    suspend_thread(self_tobj(), current, /* single_suspend */ false, nullptr);
+    suspend_thread(self_tobj(), current, /* single_suspend */ false);
   }
   return JVMTI_ERROR_NONE;
 } /* end SuspendAllVirtualThreads */

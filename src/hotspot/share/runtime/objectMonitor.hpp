@@ -148,6 +148,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 #define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
 
 class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
+  friend class LightweightSynchronizer;
   friend class ObjectSynchronizer;
   friend class ObjectWaiter;
   friend class VMStructs;
@@ -402,6 +403,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      dequeue_specific_waiter(ObjectWaiter* waiter);
   void      enter_internal(JavaThread* current);
   void      reenter_internal(JavaThread* current, ObjectWaiter* current_node);
+  void      entry_list_build_dll(JavaThread* current);
   void      unlink_after_acquire(JavaThread* current, ObjectWaiter* current_node);
   ObjectWaiter* entry_list_tail(JavaThread* current);
 
