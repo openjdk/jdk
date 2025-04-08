@@ -995,23 +995,26 @@ define SetupRunJtregTestBody
 	$$(RM) -r $$($1_TEST_SUPPORT_DIR)
 	$$(RM) -r $$($1_TEST_RESULTS_DIR)
 
+  $1_JTREG_ARGUMENTS := \
+      $$($1_JTREG_LAUNCHER_OPTIONS) \
+      -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
+      $$($1_JTREG_BASIC_OPTIONS) \
+      -testjdk:$$(JDK_UNDER_TEST) \
+      -dir:$$(JTREG_TOPDIR) \
+      -reportDir:$$($1_TEST_RESULTS_DIR) \
+      -workDir:$$($1_TEST_SUPPORT_DIR) \
+      -report:$${JTREG_REPORT} \
+      $$$${JTREG_STATUS} \
+      $$(JTREG_OPTIONS) \
+      $$(JTREG_FAILURE_HANDLER_OPTIONS) \
+      $$(JTREG_COV_OPTIONS) \
+      $$($1_TEST_NAME) \
+      #
+
   $1_COMMAND_LINE := \
-      $$(JTREG_JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
-          -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
-          $$($1_JTREG_BASIC_OPTIONS) \
-          -testjdk:$$(JDK_UNDER_TEST) \
-          -dir:$$(JTREG_TOPDIR) \
-          -reportDir:$$($1_TEST_RESULTS_DIR) \
-          -workDir:$$($1_TEST_SUPPORT_DIR) \
-          -report:$${JTREG_REPORT} \
-          $$$${JTREG_STATUS} \
-          $$(JTREG_OPTIONS) \
-          $$(JTREG_FAILURE_HANDLER_OPTIONS) \
-          $$(JTREG_COV_OPTIONS) \
-          $$($1_TEST_NAME) \
+      cd $$($1_TEST_SUPPORT_DIR) && $$(JTREG_JAVA) $$($1_JTREG_ARGUMENTS) \
       && $$(ECHO) $$$$? > $$($1_EXITCODE) \
       || $$(ECHO) $$$$? > $$($1_EXITCODE)
-
 
   ifneq ($$(JTREG_RETRY_COUNT), 0)
     $1_COMMAND_LINE := \
