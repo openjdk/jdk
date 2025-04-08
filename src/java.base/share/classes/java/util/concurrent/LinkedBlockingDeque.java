@@ -894,6 +894,7 @@ public class LinkedBlockingDeque<E>
         }
         // Fall back to historic non-atomic implementation, failing
         // with IllegalStateException when the capacity is exceeded.
+        beg = end = null; // help GC
         return super.addAll(c);
     }
 
