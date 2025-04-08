@@ -496,11 +496,11 @@ public class DocCommentParser {
         if (lastNonWhite != -1)
             addPendingText(trees, lastNonWhite);
 
-        // Happens with unclosed <pre> element. Add content without normalizing, as an
-        // unclosed element is often caused by a start tag in place of an end tag.
+        // Happens with unclosed <pre> element. Add content without normalizing.
         if (mainTrees != null) {
             mainTrees.addAll(trees);
             trees = mainTrees;
+            mainTrees = null;
         }
 
         return (phase == Phase.INLINE)
@@ -1219,14 +1219,11 @@ public class DocCommentParser {
         return attrs.toList();
     }
 
-    /**
+    /*
      * Removes a newline character following a <code>, {@code or {@literal tag at the
      * beginning of <pre> element content, as well as any space/tabs between the pre
      * and code tags. The operation is only performed on traditional doc comments.
      * If conditions are not met the list is returned unchanged.
-     *
-     * @param trees contents of <pre> element
-     * @return normalized contents
      */
     ListBuffer<DCTree> normalizePreContent(ListBuffer<DCTree> trees) {
         // Do nothing if comment is not eligible for whitespace normalization.
@@ -1306,6 +1303,7 @@ public class DocCommentParser {
 
         for (var tree : trees) {
             var visited = visitor.visit(tree, cx);
+            // null return value means the tree should be dropped
             if (visited != null) {
                 normalized.add(visited);
             }
