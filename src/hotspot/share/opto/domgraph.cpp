@@ -239,7 +239,8 @@ uint Block_Stack::most_frequent_successor( Block *b ) {
     Node* succ = n->as_NeverBranch()->proj_out(0)->unique_ctrl_out();
     int succ_idx = 0; // normal case
     if (succ == b->_succs[1]->head()) {
-      // edges swapped, rare case
+      // Edges swapped, rare case. May happen due to an unusual matcher
+      // traversal order for peeled infinite loops.
       succ_idx = 1;
     } else {
       assert(succ == b->_succs[0]->head(), "succ not found");
