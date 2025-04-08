@@ -59,12 +59,18 @@ public class VMDeprecatedOptions {
             // deprecated non-alias flags:
             {"AllowRedefinitionToAddDeleteMethods", "true"},
             {"LockingMode", "1"},
-            {"UseCompressedClassPointers", "false"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
+        if (Platform.is64bit()) {
+          deprecated.addAll(
+            Arrays.asList(new String[][] {
+              {"UseCompressedClassPointers", "false"},
+            })
+          );
+        }
         if (Platform.isLinux()) {
           deprecated.addAll(
             Arrays.asList(new String[][] {
@@ -98,7 +104,8 @@ public class VMDeprecatedOptions {
         }
 
         OutputAnalyzer output = CommandLineOptionTest.startVMWithOptions(optionNames, expectedValues);
-
+        output.reportDiagnosticSummary();
+        
         // check for option deprecation messages:
         output.shouldHaveExitValue(0);
         for (String[] deprecated : optionInfo) {
