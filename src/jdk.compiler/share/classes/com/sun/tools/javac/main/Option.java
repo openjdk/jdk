@@ -497,7 +497,7 @@ public enum Option {
             log.printRawLines(WriterKind.STDOUT, log.localize(PrefixKind.JAVAC, "opt.help.lint.header"));
             log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
-                                            "all",
+                                            LINT_CUSTOM_ALL,
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.all")));
             for (LintCategory lc : LintCategory.values()) {
                 log.printRawLines(WriterKind.STDOUT,
@@ -508,7 +508,7 @@ public enum Option {
             }
             log.printRawLines(WriterKind.STDOUT,
                               String.format(LINT_KEY_FORMAT,
-                                            "none",
+                                            LINT_CUSTOM_NONE,
                                             log.localize(PrefixKind.JAVAC, "opt.Xlint.none")));
             super.process(helper, option);
         }
@@ -538,6 +538,8 @@ public enum Option {
 
     // treat warnings as errors
     WERROR("-Werror", "opt.Werror", STANDARD, BASIC),
+
+    WERROR_CUSTOM("-Werror:", "opt.arg.Werror", "opt.Werror.custom", STANDARD, BASIC, ANYOF, getXLintChoices()),
 
     // prompt after each error
     // new Option("-prompt",                                        "opt.prompt"),
@@ -842,6 +844,16 @@ public enum Option {
     };
 
     /**
+     * Special lint category key meaning "all lint categories".
+     */
+    public static final String LINT_CUSTOM_ALL = "all";
+
+    /**
+     * Special lint category key meaning "no lint categories".
+     */
+    public static final String LINT_CUSTOM_NONE = "none";
+
+    /**
      * This exception is thrown when an invalid value is given for an option.
      * The detail string gives a detailed, localized message, suitable for use
      * in error messages reported to the user.
@@ -1085,6 +1097,17 @@ public enum Option {
 
     public OptionKind getKind() {
         return kind;
+    }
+
+    /**
+     * If this option is named {@code FOO}, obtain the option named {@code FOO_CUSTOM}.
+     *
+     * @param option regular option
+     * @return corresponding custom option
+     * @throws IllegalArgumentException if no such option exists
+     */
+    public Option getCustom() {
+        return Option.valueOf(name() + "_CUSTOM");
     }
 
     public boolean isInBasicOptionGroup() {
@@ -1370,12 +1393,12 @@ public enum Option {
 
     private static Set<String> getXLintChoices() {
         Set<String> choices = new LinkedHashSet<>();
-        choices.add("all");
+        choices.add(LINT_CUSTOM_ALL);
         for (Lint.LintCategory c : Lint.LintCategory.values()) {
             choices.add(c.option);
             choices.add("-" + c.option);
         }
-        choices.add("none");
+        choices.add(LINT_CUSTOM_NONE);
         return choices;
     }
 

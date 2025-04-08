@@ -143,50 +143,29 @@ public class Lint {
 
     // Process command line options on demand to allow use of root Lint early during startup
     private void initializeRootIfNeeded() {
-
-        // Already initialized?
-        if (values != null)
-            return;
-
-        // Initialize enabled categories based on "-Xlint" flags
-        if (options.isSet(Option.XLINT) || options.isSet(Option.XLINT_CUSTOM, "all")) {
-            // If -Xlint or -Xlint:all is given, enable all categories by default
-            values = EnumSet.allOf(LintCategory.class);
-        } else if (options.isSet(Option.XLINT_CUSTOM, "none")) {
-            // if -Xlint:none is given, disable all categories by default
-            values = LintCategory.newEmptySet();
-        } else {
-            // otherwise, enable on-by-default categories
-            values = LintCategory.newEmptySet();
-
-            Source source = Source.instance(context);
-            if (source.compareTo(Source.JDK9) >= 0) {
-                values.add(LintCategory.DEP_ANN);
-            }
-            if (Source.Feature.REDUNDANT_STRICTFP.allowedInSource(source)) {
-                values.add(LintCategory.STRICTFP);
-            }
-            values.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);
-            values.add(LintCategory.OPENS);
-            values.add(LintCategory.MODULE);
-            values.add(LintCategory.REMOVAL);
-            if (!options.isSet(Option.PREVIEW)) {
-                values.add(LintCategory.PREVIEW);
-            }
-            values.add(LintCategory.SYNCHRONIZATION);
-            values.add(LintCategory.INCUBATING);
+        if (values == null) {
+            values = options.getLintCategories(Option.XLINT, this::populateDefaults);
+            suppressedValues = LintCategory.newEmptySet();
         }
+    }
 
-        // Look for specific overrides
-        for (LintCategory lc : LintCategory.values()) {
-            if (options.isSet(Option.XLINT_CUSTOM, lc.option)) {
-                values.add(lc);
-            } else if (options.isSet(Option.XLINT_CUSTOM, "-" + lc.option)) {
-                values.remove(lc);
-            }
+    private void populateDefaults(EnumSet<LintCategory> values) {
+        Source source = Source.instance(context);
+        if (source.compareTo(Source.JDK9) >= 0) {
+            values.add(LintCategory.DEP_ANN);
         }
-
-        suppressedValues = LintCategory.newEmptySet();
+        if (Source.Feature.REDUNDANT_STRICTFP.allowedInSource(source)) {
+            values.add(LintCategory.STRICTFP);
+        }
+        values.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);
+        values.add(LintCategory.OPENS);
+        values.add(LintCategory.MODULE);
+        values.add(LintCategory.REMOVAL);
+        if (!options.isSet(Option.PREVIEW)) {
+            values.add(LintCategory.PREVIEW);
+        }
+        values.add(LintCategory.SYNCHRONIZATION);
+        values.add(LintCategory.INCUBATING);
     }
 
     @Override
