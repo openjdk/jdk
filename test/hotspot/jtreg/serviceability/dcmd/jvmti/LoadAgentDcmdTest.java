@@ -40,6 +40,7 @@ import org.testng.annotations.Test;
  *
  * @test
  * @bug 8147388
+ * @requires !jdk.static
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
@@ -53,12 +54,6 @@ import org.testng.annotations.Test;
 public class LoadAgentDcmdTest {
 
     public String getLibInstrumentPath() throws FileNotFoundException {
-        if (Platform.isStatic()) {
-            // libinstrument is statically linked with the launcher. Don't
-            // locate the libinstrument shared library on static JDK.
-            return "libinstrument." + Platform.sharedLibraryExt();
-        }
-
         String jdkPath = System.getProperty("test.jdk");
 
         if (jdkPath == null) {
