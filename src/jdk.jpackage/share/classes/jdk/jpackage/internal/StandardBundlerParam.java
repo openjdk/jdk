@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.util.FileUtils;
 
 /**
