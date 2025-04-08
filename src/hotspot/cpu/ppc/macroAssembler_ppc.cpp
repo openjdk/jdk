@@ -774,10 +774,6 @@ void MacroAssembler::clobber_carg_stack_slots(Register tmp) {
   }
 }
 
-// Uses ordering which corresponds to ABI:
-//    _savegpr0_14:  std  r14,-144(r1)
-//    _savegpr0_15:  std  r15,-136(r1)
-//    _savegpr0_16:  std  r16,-128(r1)
 void MacroAssembler::save_nonvolatile_registers(Register dst, int offset, bool include_fp_regs, bool include_vector_regs) {
   for (int i = 14; i < 32; i++) {
     std(as_Register(i), offset, dst);
@@ -793,19 +789,22 @@ void MacroAssembler::save_nonvolatile_registers(Register dst, int offset, bool i
 
   if (include_vector_regs) {
     assert(is_aligned(offset, StackAlignmentInBytes), "should be");
-    Register spill_addr = R0;
-    for (int i = 20; i < 32; i++) {
-      addi(spill_addr, dst, offset);
-      stxvd2x(as_VectorRegister(i)->to_vsr(), spill_addr);
-      offset += 16;
+    if (PowerArchitecturePPC64 >= 10) {
+      for (int i = 20; i < 32; i += 2) {
+        stxvp(as_VectorRegister(i)->to_vsr(), offset, dst);
+        offset += 32;
+      }
+    } else {
+      Register spill_addr = R0;
+      for (int i = 20; i < 32; i++) {
+        addi(spill_addr, dst, offset);
+        stxvd2x(as_VectorRegister(i)->to_vsr(), spill_addr);
+        offset += 16;
+      }
     }
   }
 }
 
-// Uses ordering which corresponds to ABI:
-//    _restgpr0_14:  ld   r14,-144(r1)
-//    _restgpr0_15:  ld   r15,-136(r1)
-//    _restgpr0_16:  ld   r16,-128(r1)
 void MacroAssembler::restore_nonvolatile_registers(Register src, int offset, bool include_fp_regs, bool include_vector_regs) {
   for (int i = 14; i < 32; i++) {
     ld(as_Register(i), offset, src);
@@ -821,11 +820,18 @@ void MacroAssembler::restore_nonvolatile_registers(Register src, int offset, boo
 
   if (include_vector_regs) {
     assert(is_aligned(offset, StackAlignmentInBytes), "should be");
-    Register spill_addr = R0;
-    for (int i = 20; i < 32; i++) {
-      addi(spill_addr, src, offset);
-      lxvd2x(as_VectorRegister(i)->to_vsr(), spill_addr);
-      offset += 16;
+    if (PowerArchitecturePPC64 >= 10) {
+      for (int i = 20; i < 32; i += 2) {
+        lxvp(as_VectorRegister(i)->to_vsr(), offset, src);
+        offset += 32;
+      }
+    } else {
+      Register spill_addr = R0;
+      for (int i = 20; i < 32; i++) {
+        addi(spill_addr, src, offset);
+        lxvd2x(as_VectorRegister(i)->to_vsr(), spill_addr);
+        offset += 16;
+      }
     }
   }
 }

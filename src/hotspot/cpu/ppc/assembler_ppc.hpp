@@ -538,6 +538,8 @@ class Assembler : public AbstractAssembler {
     LXVL_OPCODE    = (31u << OPCODE_SHIFT |  269u << 1),
     STXV_OPCODE    = (61u << OPCODE_SHIFT |    5u     ),
     STXVL_OPCODE   = (31u << OPCODE_SHIFT |  397u << 1),
+    LXVP_OPCODE    = ( 6u << OPCODE_SHIFT             ),
+    STXVP_OPCODE   = ( 6u << OPCODE_SHIFT |    1u     ),
     LXVD2X_OPCODE  = (31u << OPCODE_SHIFT |  844u << 1),
     STXVD2X_OPCODE = (31u << OPCODE_SHIFT |  972u << 1),
     MTVSRD_OPCODE  = (31u << OPCODE_SHIFT |  179u << 1),
@@ -1243,6 +1245,11 @@ class Assembler : public AbstractAssembler {
   static int vsdm(      int         x)  { return  opp_u_field(x,            23, 22); }
   static int vsrs_dq(   int         x)  { return  opp_u_field(x & 0x1F,     10,  6) | opp_u_field((x & 0x20) >> 5, 28, 28); }
   static int vsrt_dq(   int         x)  { return  vsrs_dq(x); }
+  static int vsrtp(     int         x)  {
+    assert((x & 1) == 0, "must be even");
+    return opp_u_field((x & 0x1F) >> 1, 9, 6) | opp_u_field((x & 0x20) >> 5, 10, 10);
+  }
+  static int vsrsp(     int         x)  { return  vsrtp(x); }
 
   static int vsra(   VectorSRegister r)  { return  vsra(r->encoding());}
   static int vsrb(   VectorSRegister r)  { return  vsrb(r->encoding());}
@@ -1251,6 +1258,8 @@ class Assembler : public AbstractAssembler {
   static int vsrt(   VectorSRegister r)  { return  vsrt(r->encoding());}
   static int vsrs_dq(VectorSRegister r)  { return  vsrs_dq(r->encoding());}
   static int vsrt_dq(VectorSRegister r)  { return  vsrt_dq(r->encoding());}
+  static int vsrtp(  VectorSRegister r)  { return  vsrtp(r->encoding());}
+  static int vsrsp(  VectorSRegister r)  { return  vsrsp(r->encoding());}
 
   static int vsplt_uim( int        x)  { return  opp_u_field(x,             15, 12); } // for vsplt* instructions
   static int vsplti_sim(int        x)  { return  opp_u_field(x,             15, 11); } // for vsplti* instructions
@@ -2358,6 +2367,8 @@ class Assembler : public AbstractAssembler {
   // Vector-Scalar (VSX) instructions.
   inline void lxv(      VectorSRegister d, int si16, Register a);
   inline void stxv(     VectorSRegister d, int si16, Register a);
+  inline void lxvp(     VectorSRegister d, int si16, Register a);
+  inline void stxvp(    VectorSRegister d, int si16, Register a);
   inline void lxvl(     VectorSRegister d, Register a, Register b);
   inline void stxvl(    VectorSRegister d, Register a, Register b);
   inline void lxvd2x(   VectorSRegister d, Register a);
