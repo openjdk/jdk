@@ -1490,14 +1490,14 @@ class StubGenerator: public StubCodeGenerator {
       __ rotate_then_insert(byteVal, byteVal, 64 - 2 * 32, 63 - 32, 32, 0);
     }
 
-    __ z_risbg(tmp, size, 32, 128/* risbgz */ + 63, 64 - exact_log2(2 * elem_size), 0); // just do the right shift and set cc
+    __ z_risbg(tmp, size, 32, 63, 64 - exact_log2(2 * elem_size), /* zero_rest */ true); // just do the right shift and set cc
     __ z_bre(L_Tail);
 
-    __ align(16); // loop alignment
+    __ align(32); // loop alignment
     __ bind(L_Loop);
     __ store_sized_value(byteVal, Address(dest, 0), elem_size);
     __ store_sized_value(byteVal, Address(dest, elem_size), elem_size);
-    __ z_agfi(dest, 2 * elem_size);
+    __ z_aghi(dest, 2 * elem_size);
     __ z_brct(tmp, L_Loop);
 
     __ bind(L_Tail);
@@ -1526,7 +1526,7 @@ class StubGenerator: public StubCodeGenerator {
     // inc_counter_np(SharedRuntime::_unsafe_set_memory_ctr);
 
     {
-      NearLabel L_fill8Bytes, L_fill4Bytes, L_fillBytes, L_exit;
+      NearLabel L_fill8Bytes, L_fill4Bytes, L_fillBytes;
 
       const Register dest = Z_ARG1;
       const Register size = Z_ARG2;
@@ -1538,14 +1538,14 @@ class StubGenerator: public StubCodeGenerator {
       __ z_ogrk(rScratch1, dest, size);
 
       __ z_nill(rScratch1, 7);
-      __ z_bre(L_fill8Bytes); // branch if 0
+      __ z_braz(L_fill8Bytes); // branch if 0
 
 
       __ z_nill(rScratch1, 3);
-      __ z_bre(L_fill4Bytes); // branch if 0
+      __ z_braz(L_fill4Bytes); // branch if 0
 
       __ z_nill(rScratch1, 1);
-      __ z_brne(L_fillBytes); // branch if not 0
+      __ z_brnaz(L_fillBytes); // branch if not 0
 
       // Mark remaining code as such which performs Unsafe accesses.
       UnsafeMemoryAccessMark umam(this, true, false);
@@ -1554,19 +1554,16 @@ class StubGenerator: public StubCodeGenerator {
       // multiple of 2
       do_setmemory_atomic_loop(2, dest, size, byteVal, _masm);
 
-      __ align(16);
       __ bind(L_fill8Bytes);
       // At this point, we know the lower 3 bits of size are zero and a
       // multiple of 8
       do_setmemory_atomic_loop(8, dest, size, byteVal, _masm);
 
-      __ align(16);
       __ bind(L_fill4Bytes);
       // At this point, we know the lower 2 bits of size are zero and a
       // multiple of 4
       do_setmemory_atomic_loop(4, dest, size, byteVal, _masm);
 
-      __ align(16);
       __ bind(L_fillBytes);
       do_setmemory_atomic_loop(1, dest, size, byteVal, _masm);
     }
