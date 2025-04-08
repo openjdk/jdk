@@ -335,7 +335,6 @@ void G1GCPhaseTimes::debug_phase_merge_remset() const {
     return;
   }
 
-  ResourceMark rm;
   LogStream ls(lt);
 
   WorkerDataArray<double>* phase = _gc_par_phases[MergeRS];

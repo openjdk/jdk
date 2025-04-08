@@ -1284,13 +1284,7 @@ int MacroAssembler::ic_check(int end_alignment) {
     if (use_trap_based_null_check) {
       trap_null_check(receiver);
     }
-    if (UseCompactObjectHeaders) {
-      load_narrow_klass_compact(tmp1, receiver);
-    } else if (UseCompressedClassPointers) {
-      lwz(tmp1, oopDesc::klass_offset_in_bytes(), receiver);
-    } else {
-      ld(tmp1, oopDesc::klass_offset_in_bytes(), receiver);
-    }
+    load_klass_no_decode(tmp1, receiver); // 2 instructions with UseCompactObjectHeaders
     ld(tmp2, in_bytes(CompiledICData::speculated_klass_offset()), data);
     trap_ic_miss_check(tmp1, tmp2);
 
@@ -1306,11 +1300,7 @@ int MacroAssembler::ic_check(int end_alignment) {
       cmpdi(CR0, receiver, 0);
       beqctr(CR0);
     }
-    if (UseCompressedClassPointers) {
-      lwz(tmp1, oopDesc::klass_offset_in_bytes(), receiver);
-    } else {
-      ld(tmp1, oopDesc::klass_offset_in_bytes(), receiver);
-    }
+    load_klass_no_decode(tmp1, receiver); // 2 instructions with UseCompactObjectHeaders
     ld(tmp2, in_bytes(CompiledICData::speculated_klass_offset()), data);
     cmpd(CR0, tmp1, tmp2);
     bnectr(CR0);
@@ -3536,15 +3526,20 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   }
 }
 
-void MacroAssembler::load_klass(Register dst, Register src) {
+void MacroAssembler::load_klass_no_decode(Register dst, Register src) {
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(dst, src);
-    decode_klass_not_null(dst);
   } else if (UseCompressedClassPointers) {
     lwz(dst, oopDesc::klass_offset_in_bytes(), src);
-    decode_klass_not_null(dst);
   } else {
     ld(dst, oopDesc::klass_offset_in_bytes(), src);
+  }
+}
+
+void MacroAssembler::load_klass(Register dst, Register src) {
+  load_klass_no_decode(dst, src);
+  if (UseCompressedClassPointers) { // also true for UseCompactObjectHeaders
+    decode_klass_not_null(dst);
   }
 }
 
