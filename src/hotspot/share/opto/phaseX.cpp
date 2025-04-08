@@ -1342,6 +1342,8 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
                 }
                 assert(!(i < imax), "sanity");
               }
+            } else if (dead->is_data_proj_of_pure_function(in)) {
+              _worklist.push(in);
             } else {
               BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(this, in);
             }
@@ -1609,10 +1611,10 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     use->visit_uses(push_the_uses_to_worklist, is_boundary);
   }
   // If changed LShift inputs, check RShift users for useless sign-ext
-  if( use_op == Op_LShiftI ) {
+  if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_RShiftI)
+      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL)
         worklist.push(u);
     }
   }
@@ -2108,7 +2110,7 @@ Node *PhaseCCP::transform( Node *n ) {
   C->update_dead_node_list(useful);
   remove_useless_nodes(useful.member_set());
   _worklist.remove_useless_nodes(useful.member_set());
-  C->disconnect_useless_nodes(useful, _worklist);
+  C->disconnect_useless_nodes(useful, _worklist, &_root_and_safepoints);
 
   Node* new_root = node_map[n->_idx];
   assert(new_root->is_Root(), "transformed root node must be a root node");

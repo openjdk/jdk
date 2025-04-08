@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ class CallNode;
 class CallRuntimeNode;
 class CallStaticJavaNode;
 class CastFFNode;
+class CastHHNode;
 class CastDDNode;
 class CastVVNode;
 class CastIINode;
@@ -138,6 +139,7 @@ class NeverBranchNode;
 class Opaque1Node;
 class OpaqueLoopInitNode;
 class OpaqueLoopStrideNode;
+class OpaqueMultiversioningNode;
 class OpaqueNotNullNode;
 class OpaqueInitializedAssertionPredicateNode;
 class OpaqueTemplateAssertionPredicateNode;
@@ -239,7 +241,6 @@ typedef ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompi
 // whenever I have phase-specific information.
 
 class Node {
-  friend class VMStructs;
 
   // Lots of restrictions on cloning Nodes
   NONCOPYABLE(Node);
@@ -334,13 +335,14 @@ protected:
   void grow( uint len );
   // Grow the output array to the next larger power-of-2 bigger than len.
   void out_grow( uint len );
+  // Resize input or output array to grow it to the next larger power-of-2
+  // bigger than len.
+  void resize_array(Node**& array, node_idx_t& max_size, uint len, bool needs_clearing);
 
- public:
-  // Each Node is assigned a unique small/dense number.  This number is used
+public:
+  // Each Node is assigned a unique small/dense number. This number is used
   // to index into auxiliary arrays of data and bit vectors.
-  // The field _idx is declared constant to defend against inadvertent assignments,
-  // since it is used by clients as a naked field. However, the field's value can be
-  // changed using the set_idx() method.
+  // The value of _idx can be changed using the set_idx() method.
   //
   // The PhaseRenumberLive phase renumbers nodes based on liveness information.
   // Therefore, it updates the value of the _idx field. The parse-time _idx is
@@ -724,6 +726,7 @@ public:
         DEFINE_CLASS_ID(CastDD, ConstraintCast, 4)
         DEFINE_CLASS_ID(CastVV, ConstraintCast, 5)
         DEFINE_CLASS_ID(CastPP, ConstraintCast, 6)
+        DEFINE_CLASS_ID(CastHH, ConstraintCast, 7)
       DEFINE_CLASS_ID(CMove, Type, 3)
       DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
       DEFINE_CLASS_ID(DecodeNarrowPtr, Type, 5)
@@ -800,6 +803,7 @@ public:
     DEFINE_CLASS_ID(Opaque1,  Node, 16)
       DEFINE_CLASS_ID(OpaqueLoopInit, Opaque1, 0)
       DEFINE_CLASS_ID(OpaqueLoopStride, Opaque1, 1)
+      DEFINE_CLASS_ID(OpaqueMultiversioning, Opaque1, 2)
     DEFINE_CLASS_ID(OpaqueNotNull,  Node, 17)
     DEFINE_CLASS_ID(OpaqueInitializedAssertionPredicate,  Node, 18)
     DEFINE_CLASS_ID(OpaqueTemplateAssertionPredicate,  Node, 19)
@@ -829,8 +833,9 @@ public:
     Flag_is_expensive                = 1 << 13,
     Flag_is_predicated_vector        = 1 << 14,
     Flag_for_post_loop_opts_igvn     = 1 << 15,
-    Flag_is_removed_by_peephole      = 1 << 16,
-    Flag_is_predicated_using_blend   = 1 << 17,
+    Flag_for_merge_stores_igvn       = 1 << 16,
+    Flag_is_removed_by_peephole      = 1 << 17,
+    Flag_is_predicated_using_blend   = 1 << 18,
     _last_flag                       = Flag_is_predicated_using_blend
   };
 
@@ -908,6 +913,7 @@ public:
   DEFINE_CLASS_QUERY(CheckCastPP)
   DEFINE_CLASS_QUERY(CastII)
   DEFINE_CLASS_QUERY(CastLL)
+  DEFINE_CLASS_QUERY(CastFF)
   DEFINE_CLASS_QUERY(ConI)
   DEFINE_CLASS_QUERY(CastPP)
   DEFINE_CLASS_QUERY(ConstraintCast)
@@ -981,6 +987,7 @@ public:
   DEFINE_CLASS_QUERY(OpaqueTemplateAssertionPredicate)
   DEFINE_CLASS_QUERY(OpaqueLoopInit)
   DEFINE_CLASS_QUERY(OpaqueLoopStride)
+  DEFINE_CLASS_QUERY(OpaqueMultiversioning)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
   DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
   DEFINE_CLASS_QUERY(Parm)
@@ -1072,6 +1079,7 @@ public:
   bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }
 
   bool for_post_loop_opts_igvn() const { return (_flags & Flag_for_post_loop_opts_igvn) != 0; }
+  bool for_merge_stores_igvn() const { return (_flags & Flag_for_merge_stores_igvn) != 0; }
 
   // Is 'n' possibly a loop entry (i.e. a Parse Predicate projection)?
   static bool may_be_loop_entry(Node* n) {
@@ -1256,6 +1264,7 @@ public:
   intptr_t get_narrowcon() const;
   jdouble getd() const;
   jfloat getf() const;
+  jshort geth() const;
 
   // Nodes which are pinned into basic blocks
   virtual bool pinned() const { return false; }
@@ -1278,6 +1287,10 @@ public:
   bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
 
   bool is_div_or_mod(BasicType bt) const;
+
+  bool is_pure_function() const;
+
+  bool is_data_proj_of_pure_function(const Node* maybe_pure_function) const;
 
 //----------------- Printing, etc
 #ifndef PRODUCT
@@ -1610,7 +1623,6 @@ class SimpleDUIterator : public StackObj {
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
 class Node_Array : public AnyObj {
-  friend class VMStructs;
 protected:
   Arena* _a;                    // Arena to allocate in
   uint   _max;
@@ -1655,7 +1667,6 @@ public:
 };
 
 class Node_List : public Node_Array {
-  friend class VMStructs;
   uint _cnt;
 public:
   Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
@@ -1722,7 +1733,6 @@ void Node::visit_uses(Callback callback, Check is_boundary) const {
 
 //------------------------------Unique_Node_List-------------------------------
 class Unique_Node_List : public Node_List {
-  friend class VMStructs;
   VectorSet _in_worklist;
   uint _clock_index;            // Index in list where to pop from next
 public:
@@ -1735,7 +1745,7 @@ public:
   Unique_Node_List(Unique_Node_List&&) = default;
 
   void remove( Node *n );
-  bool member( Node *n ) { return _in_worklist.test(n->_idx) != 0; }
+  bool member(const Node* n) const { return _in_worklist.test(n->_idx) != 0; }
   VectorSet& member_set(){ return _in_worklist; }
 
   void push(Node* b) {
@@ -1862,7 +1872,6 @@ inline void Compile::remove_for_igvn(Node* n) {
 
 //------------------------------Node_Stack-------------------------------------
 class Node_Stack {
-  friend class VMStructs;
 protected:
   struct INode {
     Node *node; // Processed node
@@ -1938,7 +1947,6 @@ public:
 // Debugging or profiling annotations loosely and sparsely associated
 // with some nodes.  See Compile::node_notes_at for the accessor.
 class Node_Notes {
-  friend class VMStructs;
   JVMState* _jvms;
 
 public:
@@ -2056,6 +2064,7 @@ public:
 }
 
 Op_IL(Add)
+Op_IL(And)
 Op_IL(Sub)
 Op_IL(Mul)
 Op_IL(URShift)

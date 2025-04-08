@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,7 +276,9 @@ class VM_Version : public Abstract_VM_Version {
                  serialize : 1,
                            : 5,
                    cet_ibt : 1,
-                           : 11;
+                           : 2,
+              avx512_fp16  : 1,
+                           : 8;
     } bits;
   };
 
@@ -416,8 +418,9 @@ protected:
     decl(CET_SS,            "cet_ss",            57) /* Control Flow Enforcement - Shadow Stack */ \
     decl(AVX512_IFMA,       "avx512_ifma",       58) /* Integer Vector FMA instructions*/ \
     decl(AVX_IFMA,          "avx_ifma",          59) /* 256-bit VEX-coded variant of AVX512-IFMA*/ \
-    decl(APX_F,             "apx_f",             60) /* Intel Advanced Performance Extensions*/\
-    decl(SHA512,            "sha512",            61) /* SHA512 instructions*/
+    decl(APX_F,             "apx_f",             60) /* Intel Advanced Performance Extensions*/ \
+    decl(SHA512,            "sha512",            61) /* SHA512 instructions*/ \
+    decl(AVX512_FP16,       "avx512_fp16",       62) /* AVX512 FP16 ISA support*/
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1ULL << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -429,6 +432,8 @@ protected:
   enum Extended_Family {
     // AMD
     CPU_FAMILY_AMD_11H       = 0x11,
+    CPU_FAMILY_AMD_17H       = 0x17, /* Zen1 & Zen2 */
+    CPU_FAMILY_AMD_19H       = 0x19, /* Zen3 & Zen4 */
     // ZX
     CPU_FAMILY_ZX_CORE_F6    = 6,
     CPU_FAMILY_ZX_CORE_F7    = 7,
@@ -753,6 +758,7 @@ public:
   static bool supports_avx512_bitalg()  { return (_features & CPU_AVX512_BITALG) != 0; }
   static bool supports_avx512_vbmi()  { return (_features & CPU_AVX512_VBMI) != 0; }
   static bool supports_avx512_vbmi2() { return (_features & CPU_AVX512_VBMI2) != 0; }
+  static bool supports_avx512_fp16()  { return (_features & CPU_AVX512_FP16) != 0; }
   static bool supports_hv()           { return (_features & CPU_HV) != 0; }
   static bool supports_serialize()    { return (_features & CPU_SERIALIZE) != 0; }
   static bool supports_f16c()         { return (_features & CPU_F16C) != 0; }
@@ -766,6 +772,17 @@ public:
   // Feature identification not affected by VM flags
   //
   static bool cpu_supports_evex()     { return (_cpu_features & CPU_AVX512F) != 0; }
+
+  static bool supports_avx512_simd_sort() {
+    if (supports_avx512dq()) {
+      // Disable AVX512 version of SIMD Sort on AMD Zen4 Processors.
+      if (is_amd() && cpu_family() == CPU_FAMILY_AMD_19H) {
+        return false;
+      }
+      return true;
+    }
+    return false;
+  }
 
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
@@ -840,7 +857,7 @@ public:
 
   // For AVX CPUs only. f16c support is disabled if UseAVX == 0.
   static bool supports_float16() {
-    return supports_f16c() || supports_avx512vl();
+    return supports_f16c() || supports_avx512vl() || supports_avx512_fp16();
   }
 
   // Check intrinsic support

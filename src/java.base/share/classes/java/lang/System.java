@@ -2150,7 +2150,7 @@ public final class System {
             }
 
             public ProtectionDomain protectionDomain(Class<?> c) {
-                return c.protectionDomain();
+                return c.getProtectionDomain();
             }
 
             public MethodHandle stringConcatHelper(String name, MethodType methodType) {
@@ -2196,11 +2196,6 @@ public final class System {
             @Override
             public NativeLibraries nativeLibrariesFor(ClassLoader loader) {
                 return ClassLoader.nativeLibrariesFor(loader);
-            }
-
-            @Override
-            public void exit(int statusCode) {
-                Shutdown.exit(statusCode);
             }
 
             public Thread[] getAllThreads() {

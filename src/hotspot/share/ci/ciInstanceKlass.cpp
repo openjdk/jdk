@@ -31,10 +31,10 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/fieldStreams.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -89,14 +89,10 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   JavaThread *thread = JavaThread::current();
   if (ciObjectFactory::is_initialized()) {
     _loader = JNIHandles::make_local(thread, ik->class_loader());
-    _protection_domain = JNIHandles::make_local(thread,
-                                                ik->protection_domain());
     _is_shared = false;
   } else {
     Handle h_loader(thread, ik->class_loader());
-    Handle h_protection_domain(thread, ik->protection_domain());
     _loader = JNIHandles::make_global(h_loader);
-    _protection_domain = JNIHandles::make_global(h_protection_domain);
     _is_shared = true;
   }
 
@@ -118,7 +114,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
 
 // Version for unloaded classes:
 ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
-                                 jobject loader, jobject protection_domain)
+                                 jobject loader)
   : ciKlass(name, T_OBJECT)
 {
   assert(name->char_at(0) != JVM_SIGNATURE_ARRAY, "not an instance klass");
@@ -129,7 +125,6 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
   _is_hidden = false;
   _is_record = false;
   _loader = loader;
-  _protection_domain = protection_domain;
   _is_shared = false;
   _super = nullptr;
   _java_mirror = nullptr;
@@ -169,19 +164,6 @@ oop ciInstanceKlass::loader() {
 // ciInstanceKlass::loader_handle
 jobject ciInstanceKlass::loader_handle() {
   return _loader;
-}
-
-// ------------------------------------------------------------------
-// ciInstanceKlass::protection_domain
-oop ciInstanceKlass::protection_domain() {
-  ASSERT_IN_VM;
-  return JNIHandles::resolve(_protection_domain);
-}
-
-// ------------------------------------------------------------------
-// ciInstanceKlass::protection_domain_handle
-jobject ciInstanceKlass::protection_domain_handle() {
-  return _protection_domain;
 }
 
 // ------------------------------------------------------------------
@@ -418,9 +400,6 @@ ciField* ciInstanceKlass::get_field_by_offset(int field_offset, bool is_static) 
       int  field_off = field->offset_in_bytes();
       if (field_off == field_offset)
         return field;
-      if (field_off > field_offset)
-        break;
-      // could do binary search or check bins, but probably not worth it
     }
     return nullptr;
   }
@@ -448,11 +427,6 @@ ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature,
   return field;
 }
 
-
-static int sort_field_by_offset(ciField** a, ciField** b) {
-  return (*a)->offset_in_bytes() - (*b)->offset_in_bytes();
-  // (no worries about 32-bit overflow...)
-}
 
 // ------------------------------------------------------------------
 // ciInstanceKlass::compute_nonstatic_fields
@@ -494,9 +468,6 @@ int ciInstanceKlass::compute_nonstatic_fields() {
 
   int flen = fields->length();
 
-  // Now sort them by offset, ascending.
-  // (In principle, they could mix with superclass fields.)
-  fields->sort(sort_field_by_offset);
   _nonstatic_fields = fields;
   return flen;
 }

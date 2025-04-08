@@ -23,14 +23,15 @@
  */
 
 #include "compiler/compilationPolicy.hpp"
-#include "compiler/compileTask.hpp"
-#include "compiler/compileLog.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compileLog.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "compiler/compileTask.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"

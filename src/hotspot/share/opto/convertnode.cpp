@@ -26,8 +26,10 @@
 #include "opto/castnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/divnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
+#include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -179,16 +181,6 @@ const Type* ConvD2INode::Value(PhaseGVN* phase) const {
   return TypeInt::make( SharedRuntime::d2i( td->getd() ) );
 }
 
-//------------------------------Ideal------------------------------------------
-// If converting to an int type, skip any rounding nodes
-Node *ConvD2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (in(1)->Opcode() == Op_RoundDouble) {
-    set_req(1, in(1)->in(1));
-    return this;
-  }
-  return nullptr;
-}
-
 //------------------------------Identity---------------------------------------
 // Int's can be converted to doubles with no loss of bits.  Hence
 // converting an integer to a double and back to an integer is a NOP.
@@ -215,16 +207,6 @@ Node* ConvD2LNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Ideal------------------------------------------
-// If converting to an int type, skip any rounding nodes
-Node *ConvD2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (in(1)->Opcode() == Op_RoundDouble) {
-    set_req(1, in(1)->in(1));
-    return this;
-  }
-  return nullptr;
-}
-
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* ConvF2DNode::Value(PhaseGVN* phase) const {
@@ -248,6 +230,37 @@ const Type* ConvF2HFNode::Value(PhaseGVN* phase) const {
   return TypeInt::make( StubRoutines::f2hf(tf->getf()) );
 }
 
+//------------------------------Ideal------------------------------------------
+Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // Float16 instance encapsulates a short field holding IEEE 754
+  // binary16 value. On unboxing, this short field is loaded into a
+  // GPR register while FP operation operates over floating point
+  // registers. ConvHF2F converts incoming short value to a FP32 value
+  // to perform operation at FP32 granularity. However, if target
+  // support FP16 ISA we can save this redundant up casting and
+  // optimize the graph pallet using following transformation.
+  //
+  // ConvF2HF(FP32BinOp(ConvHF2F(x), ConvHF2F(y))) =>
+  //        ReinterpretHF2S(FP16BinOp(ReinterpretS2HF(x), ReinterpretS2HF(y)))
+  //
+  // Please note we need to inject appropriate reinterpretation
+  // IR to move the values b/w GPR and floating point register
+  // before and after FP16 operation.
+
+  if (Float16NodeFactory::is_float32_binary_oper(in(1)->Opcode()) &&
+      in(1)->in(1)->Opcode() == Op_ConvHF2F &&
+      in(1)->in(2)->Opcode() == Op_ConvHF2F) {
+    if (Matcher::match_rule_supported(Float16NodeFactory::get_float16_binary_oper(in(1)->Opcode())) &&
+        Matcher::match_rule_supported(Op_ReinterpretS2HF) &&
+        Matcher::match_rule_supported(Op_ReinterpretHF2S)) {
+      Node* in1 = phase->transform(new ReinterpretS2HFNode(in(1)->in(1)->in(1)));
+      Node* in2 = phase->transform(new ReinterpretS2HFNode(in(1)->in(2)->in(1)));
+      Node* binop = phase->transform(Float16NodeFactory::make(in(1)->Opcode(), in(1)->in(0), in1, in2));
+      return new ReinterpretHF2SNode(binop);
+    }
+  }
+  return nullptr;
+}
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* ConvF2INode::Value(PhaseGVN* phase) const {
@@ -267,16 +280,6 @@ Node* ConvF2INode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Ideal------------------------------------------
-// If converting to an int type, skip any rounding nodes
-Node *ConvF2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (in(1)->Opcode() == Op_RoundFloat) {
-    set_req(1, in(1)->in(1));
-    return this;
-  }
-  return nullptr;
-}
-
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* ConvF2LNode::Value(PhaseGVN* phase) const {
@@ -294,16 +297,6 @@ Node* ConvF2LNode::Identity(PhaseGVN* phase) {
      in(1)->in(1)->Opcode() == Op_ConvF2L )
   return in(1)->in(1);
   return this;
-}
-
-//------------------------------Ideal------------------------------------------
-// If converting to an int type, skip any rounding nodes
-Node *ConvF2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (in(1)->Opcode() == Op_RoundFloat) {
-    set_req(1, in(1)->in(1));
-    return this;
-  }
-  return nullptr;
 }
 
 //=============================================================================
@@ -832,52 +825,6 @@ Node *ConvL2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-
-
-//=============================================================================
-//------------------------------Identity---------------------------------------
-// Remove redundant roundings
-Node* RoundFloatNode::Identity(PhaseGVN* phase) {
-  assert(Matcher::strict_fp_requires_explicit_rounding, "should only generate for Intel");
-  // Do not round constants
-  if (phase->type(in(1))->base() == Type::FloatCon)  return in(1);
-  int op = in(1)->Opcode();
-  // Redundant rounding
-  if( op == Op_RoundFloat ) return in(1);
-  // Already rounded
-  if( op == Op_Parm ) return in(1);
-  if( op == Op_LoadF ) return in(1);
-  return this;
-}
-
-//------------------------------Value------------------------------------------
-const Type* RoundFloatNode::Value(PhaseGVN* phase) const {
-  return phase->type( in(1) );
-}
-
-//=============================================================================
-//------------------------------Identity---------------------------------------
-// Remove redundant roundings.  Incoming arguments are already rounded.
-Node* RoundDoubleNode::Identity(PhaseGVN* phase) {
-  assert(Matcher::strict_fp_requires_explicit_rounding, "should only generate for Intel");
-  // Do not round constants
-  if (phase->type(in(1))->base() == Type::DoubleCon)  return in(1);
-  int op = in(1)->Opcode();
-  // Redundant rounding
-  if( op == Op_RoundDouble ) return in(1);
-  // Already rounded
-  if( op == Op_Parm ) return in(1);
-  if( op == Op_LoadD ) return in(1);
-  if( op == Op_ConvF2D ) return in(1);
-  if( op == Op_ConvI2D ) return in(1);
-  return this;
-}
-
-//------------------------------Value------------------------------------------
-const Type* RoundDoubleNode::Value(PhaseGVN* phase) const {
-  return phase->type( in(1) );
-}
-
 //=============================================================================
 RoundDoubleModeNode* RoundDoubleModeNode::make(PhaseGVN& gvn, Node* arg, RoundDoubleModeNode::RoundingMode rmode) {
   ConINode* rm = gvn.intcon(rmode);
@@ -896,3 +843,75 @@ const Type* RoundDoubleModeNode::Value(PhaseGVN* phase) const {
   return Type::DOUBLE;
 }
 //=============================================================================
+
+const Type* ReinterpretS2HFNode::Value(PhaseGVN* phase) const {
+  const Type* type = phase->type(in(1));
+  // Convert short constant value to a Half Float constant value
+  if ((type->isa_int() && type->is_int()->is_con())) {
+     jshort hfval = type->is_int()->get_con();
+     return TypeH::make(hfval);
+  }
+  return Type::HALF_FLOAT;
+}
+
+Node* ReinterpretS2HFNode::Identity(PhaseGVN* phase) {
+  if (in(1)->Opcode() == Op_ReinterpretHF2S) {
+     assert(in(1)->in(1)->bottom_type()->isa_half_float(), "");
+     return in(1)->in(1);
+  }
+  return this;
+}
+
+const Type* ReinterpretHF2SNode::Value(PhaseGVN* phase) const {
+  const Type* type = phase->type(in(1));
+  // Convert Half float constant value to short constant value.
+  if (type->isa_half_float_constant()) {
+     jshort hfval = type->is_half_float_constant()->_f;
+     return TypeInt::make(hfval);
+  }
+  return TypeInt::SHORT;
+}
+
+bool Float16NodeFactory::is_float32_binary_oper(int opc) {
+  switch(opc) {
+    case Op_AddF:
+    case Op_SubF:
+    case Op_MulF:
+    case Op_DivF:
+    case Op_MaxF:
+    case Op_MinF:
+      return true;
+    default:
+      return false;
+  }
+}
+
+int Float16NodeFactory::get_float16_binary_oper(int opc) {
+  switch(opc) {
+    case Op_AddF:
+      return Op_AddHF;
+    case Op_SubF:
+      return Op_SubHF;
+    case Op_MulF:
+      return Op_MulHF;
+    case Op_DivF:
+      return Op_DivHF;
+    case Op_MaxF:
+      return Op_MaxHF;
+    case Op_MinF:
+      return Op_MinHF;
+    default: ShouldNotReachHere();
+  }
+}
+
+Node* Float16NodeFactory::make(int opc, Node* c, Node* in1, Node* in2) {
+  switch(opc) {
+    case Op_AddF: return new AddHFNode(in1, in2);
+    case Op_SubF: return new SubHFNode(in1, in2);
+    case Op_MulF: return new MulHFNode(in1, in2);
+    case Op_DivF: return new DivHFNode(c, in1, in2);
+    case Op_MaxF: return new MaxHFNode(in1, in2);
+    case Op_MinF: return new MinHFNode(in1, in2);
+    default: ShouldNotReachHere();
+  }
+}
