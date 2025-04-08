@@ -829,46 +829,53 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
   // C2 uses the value of ZF to determine the continuation.
 }
 
-static void abort_checked_cast_int(jint val, jint lo, jint hi) {
-  fatal("Invalid CastII, val: %d, lo: %d, hi: %d", val, lo, hi);
+static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
+  fatal("Invalid CastII, idx: %u, val: %d, lo: %d, hi: %d", idx, val, lo, hi);
 }
 
-void C2_MacroAssembler::checked_cast_int(const TypeInt* type, Register val) {
-  if (type == TypeInt::INT) {
+void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register val) {
+  jint lo = t->_lo;
+  jint hi = t->_hi;
+  assert(lo < hi, "type should not be empty or constant, idx: %u, lo: %d, hi: %d", idx, lo, hi);
+  if (t == TypeInt::INT) {
     return;
   }
 
   BLOCK_COMMENT("CastII {");
   Label fail;
   Label succeed;
-  if (type->_hi == max_jint) {
-    cmpl(val, type->_lo);
+  if (hi == max_jint) {
+    cmpl(val, lo);
     jccb(Assembler::greaterEqual, succeed);
   } else {
-    if (type->_lo != min_jint) {
-      cmpl(val, type->_lo);
+    if (lo != min_jint) {
+      cmpl(val, lo);
       jccb(Assembler::less, fail);
     }
-    cmpl(val, type->_hi);
+    cmpl(val, hi);
     jccb(Assembler::lessEqual, succeed);
   }
 
   bind(fail);
-  movl(c_rarg0, val);
-  movl(c_rarg1, type->_lo);
-  movl(c_rarg2, type->_hi);
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, abort_checked_cast_int)));
+  movl(c_rarg0, idx);
+  movl(c_rarg1, val);
+  movl(c_rarg2, lo);
+  movl(c_rarg3, hi);
+  call(RuntimeAddress(CAST_FROM_FN_PTR(address, abort_verify_int_in_range)));
   hlt();
   bind(succeed);
   BLOCK_COMMENT("} // CastII");
 }
 
-static void abort_checked_cast_long(jlong val, jlong lo, jlong hi) {
-  fatal("Invalid CastLL, val: %lld, lo: %lld, hi: %lld", (long long)val, (long long)lo, (long long)hi);
+static void abort_verify_long_in_range(uint idx, jlong val, jlong lo, jlong hi) {
+  fatal("Invalid CastLL, idx: %u, val: " JLONG_FORMAT ", lo: " JLONG_FORMAT ", hi: " JLONG_FORMAT, idx, val, lo, hi);
 }
 
-void C2_MacroAssembler::checked_cast_long(const TypeLong* type, Register val, Register tmp) {
-  if (type == TypeLong::LONG) {
+void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp) {
+  jlong lo = t->_lo;
+  jlong hi = t->_hi;
+  assert(lo < hi, "type should not be empty or constant, idx: %u, lo: " JLONG_FORMAT ", hi: " JLONG_FORMAT, idx, lo, hi);
+  if (t == TypeLong::LONG) {
     return;
   }
 
@@ -885,23 +892,24 @@ void C2_MacroAssembler::checked_cast_long(const TypeLong* type, Register val, Re
     }
   };
 
-  if (type->_hi == max_jlong) {
-    cmp_val(type->_lo);
+  if (hi == max_jlong) {
+    cmp_val(lo);
     jccb(Assembler::greaterEqual, succeed);
   } else {
-    if (type->_lo != min_jlong) {
-      cmp_val(type->_lo);
+    if (lo != min_jlong) {
+      cmp_val(lo);
       jccb(Assembler::less, fail);
     }
-    cmp_val(type->_hi);
+    cmp_val(hi);
     jccb(Assembler::lessEqual, succeed);
   }
 
   bind(fail);
-  movq(c_rarg0, val);
-  mov64(c_rarg1, type->_lo);
-  mov64(c_rarg2, type->_hi);
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, abort_checked_cast_long)));
+  movl(c_rarg0, idx);
+  movq(c_rarg1, val);
+  mov64(c_rarg2, lo);
+  mov64(c_rarg3, hi);
+  call(RuntimeAddress(CAST_FROM_FN_PTR(address, abort_verify_long_in_range)));
   hlt();
   bind(succeed);
   BLOCK_COMMENT("} // CastLL");

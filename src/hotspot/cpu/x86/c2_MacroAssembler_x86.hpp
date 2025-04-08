@@ -44,8 +44,8 @@ public:
                              Register t, Register thread);
   void fast_unlock_lightweight(Register obj, Register reg_rax, Register t, Register thread);
 
-  void checked_cast_int(const TypeInt* type, Register val);
-  void checked_cast_long(const TypeLong* type, Register val, Register tmp);
+  void verify_int_in_range(uint idx, const TypeInt* t, Register val);
+  void verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp);
 
   // Generic instructions support for use in .ad files C2 code generation
   void vabsnegd(int opcode, XMMRegister dst, XMMRegister src);

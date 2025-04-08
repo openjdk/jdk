@@ -28,14 +28,6 @@
  * @summary Run with -Xcomp to test -XX:+StressGCM -XX:VerifyConstraintCasts=1 in debug builds.
  *
  * @run main/othervm/timeout=300 -Xbatch -Xcomp -XX:+StressGCM -XX:VerifyConstraintCasts=1 compiler.c2.TestVerifyConstraintCasts
- */
-
-/*
- * @test
- * @bug 8346836
- * @requires vm.debug == true & vm.flavor == "server"
- * @summary Run with -Xcomp to test -XX:+StressGCM -XX:VerifyConstraintCasts=2 in debug builds.
- *
  * @run main/othervm/timeout=300 -Xbatch -Xcomp -XX:+StressGCM -XX:VerifyConstraintCasts=2 compiler.c2.TestVerifyConstraintCasts
  */
 package compiler.c2;

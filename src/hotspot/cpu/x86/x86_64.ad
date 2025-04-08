@@ -422,6 +422,17 @@ source_hpp %{
 
 #include "peephole_x86_64.hpp"
 
+bool castLL_is_imm32(const Node* n);
+
+%}
+
+source %{
+
+bool castLL_is_imm32(const Node* n) {
+  const TypeLong* t = n->bottom_type()->is_long();
+  return (t->_lo == min_jlong || Assembler::is_simm32(t->_lo)) && (t->_hi == max_jlong || Assembler::is_simm32(t->_hi));
+}
+
 %}
 
 // Register masks
@@ -7621,9 +7632,9 @@ instruct castII_checked(rRegI dst, rFlagsReg cr)
   match(Set dst (CastII dst));
 
   effect(KILL cr);
-  format %{ "# checked_cast_II $dst" %}
+  format %{ "# cast_checked_II $dst" %}
   ins_encode %{
-    __ checked_cast_int(bottom_type()->is_int(), $dst$$Register);
+    __ verify_int_in_range(_idx, bottom_type()->is_int(), $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -7642,30 +7653,26 @@ instruct castLL(rRegL dst)
 
 instruct castLL_checked_L32(rRegL dst, rFlagsReg cr)
 %{
-  predicate(VerifyConstraintCasts > 0 &&
-            Assembler::is_simm32(static_cast<const CastLLNode*>(n)->type()->is_long()->_lo) &&
-            Assembler::is_simm32(static_cast<const CastLLNode*>(n)->type()->is_long()->_hi));
+  predicate(VerifyConstraintCasts > 0 && castLL_is_imm32(n));
   match(Set dst (CastLL dst));
 
   effect(KILL cr);
-  format %{ "# checked_cast_LL $dst" %}
+  format %{ "# cast_checked_LL $dst" %}
   ins_encode %{
-    __ checked_cast_long(bottom_type()->is_long(), $dst$$Register, noreg);
+    __ verify_long_in_range(_idx, bottom_type()->is_long(), $dst$$Register, noreg);
   %}
   ins_pipe(pipe_slow);
 %}
 
 instruct castLL_checked(rRegL dst, rRegL tmp, rFlagsReg cr)
 %{
-  predicate(VerifyConstraintCasts > 0 &&
-            !(Assembler::is_simm32(static_cast<const CastLLNode*>(n)->type()->is_long()->_lo) &&
-              Assembler::is_simm32(static_cast<const CastLLNode*>(n)->type()->is_long()->_hi)));
+  predicate(VerifyConstraintCasts > 0 && !castLL_is_imm32(n));
   match(Set dst (CastLL dst));
 
   effect(KILL cr, TEMP tmp);
-  format %{ "# checked_cast_LL $dst\tusing $tmp as TEMP" %}
+  format %{ "# cast_checked_LL $dst\tusing $tmp as TEMP" %}
   ins_encode %{
-    __ checked_cast_long(bottom_type()->is_long(), $dst$$Register, $tmp$$Register);
+    __ verify_long_in_range(_idx, bottom_type()->is_long(), $dst$$Register, $tmp$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
