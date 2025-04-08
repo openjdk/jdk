@@ -229,7 +229,6 @@ public class Preview {
     public boolean isPreview(Feature feature) {
         return switch (feature) {
             case IMPLICIT_CLASSES -> true;
-            case FLEXIBLE_CONSTRUCTORS -> true;
             case PRIMITIVE_PATTERNS -> true;
             case MODULE_IMPORTS -> true;
             case JAVA_BASE_TRANSITIVE -> true;
