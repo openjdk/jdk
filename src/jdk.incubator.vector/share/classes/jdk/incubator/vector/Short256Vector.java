@@ -536,6 +536,7 @@ final class Short256Vector extends ShortVector {
         }
     }
 
+    @ForceInline
     public short laneHelper(int i) {
         return (short) VectorSupport.extract(
                                 VCLASS, ETYPE, VLENGTH,
@@ -570,6 +571,7 @@ final class Short256Vector extends ShortVector {
         }
     }
 
+    @ForceInline
     public Short256Vector withLaneHelper(int i, short e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
