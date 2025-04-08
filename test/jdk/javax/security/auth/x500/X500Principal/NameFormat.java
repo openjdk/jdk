@@ -125,7 +125,7 @@ public class NameFormat {
         testName("CN=Before\\0dAfter,DC=example,DC=net", "RFC2253",
                 "CN=Before\r" + "After,DC=example,DC=net", 24);
         testName("CN=Before\\0dAfter,DC=example,DC=net", "CANONICAL",
-                "cn=before\r" +"after,dc=#16076578616d706c65,dc=#16036e6574", 25);
+                "cn=before\r" + "after,dc=#16076578616d706c65,dc=#16036e6574", 25);
 
         testName("CN=Lu\\C4\\8Di\\C4\\87", "toString",
                 "CN=Lu\\C4\\8Di\\C4\\87", 26);
