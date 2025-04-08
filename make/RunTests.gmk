@@ -997,7 +997,7 @@ define SetupRunJtregTestBody
 
   $1_COMMAND_LINE := \
       cd $$($1_TEST_SUPPORT_DIR) && $$(JTREG_JAVA) \
-      $$($1_JTREG_LAUNCHER_OPTIONS) \
+          $$($1_JTREG_LAUNCHER_OPTIONS) \
           -Dprogram=jtreg -jar $$(JT_HOME)/lib/jtreg.jar \
           $$($1_JTREG_BASIC_OPTIONS) \
           -testjdk:$$(JDK_UNDER_TEST) \
