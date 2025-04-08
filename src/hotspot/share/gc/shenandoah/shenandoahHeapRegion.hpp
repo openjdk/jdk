@@ -276,6 +276,10 @@ public:
   // Return adjusted max heap size
   static size_t setup_sizes(size_t max_heap_size);
 
+  inline bool is_recycling() {
+    return _recycling.is_set();
+  }
+
   double empty_time() {
     return _empty_time;
   }

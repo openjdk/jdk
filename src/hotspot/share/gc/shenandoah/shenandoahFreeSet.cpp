@@ -348,9 +348,13 @@ inline void ShenandoahRegionPartitions::expand_interval_if_boundary_modified(She
 }
 
 inline void ShenandoahRegionPartitions::adjust_interval_for_recycled_old_region_under_lock(ShenandoahHeapRegion* r) {
-  assert(!r->is_trash() && (r->free() == _region_size_bytes) && r->is_old(), "Bad argument");
+  assert(!r->is_trash() && (r->free() == _region_size_bytes), "Bad argument");
+
   shenandoah_assert_heaplocked();
   idx_t idx = (idx_t) r->index();
+  ShenandoahFreeSetPartitionId old_partition = ShenandoahFreeSetPartitionId::OldCollector;
+  assert(_membership[int(old_partition)].is_set(idx), "Region should be in OldCollector reserve");
+
   // Note that a recycled old trashed region may be in any one of the free set partitions according to the following scenarios:
   //  1. The old region had already been retired, so it was NotFree, and we have not rebuilt free set, so region is still NotFree
   //  2. We recycled the region but we have not yet rebuilt the free set, so it is still in the OldCollector region.
@@ -361,24 +365,25 @@ inline void ShenandoahRegionPartitions::adjust_interval_for_recycled_old_region_
   //  5. During reserve_regions, we moved this region into the OldCollector set, and the act of placing this region into
   //     OldCollector set properly adjusts the interval for the OldCollector set.
   // Only case 2 needs to be fixed up here.
-  ShenandoahFreeSetPartitionId old_partition = ShenandoahFreeSetPartitionId::OldCollector;
-  if (_membership[int(old_partition)].is_set(idx)) {
-    assert(_leftmosts[int(old_partition)] <= idx && _rightmosts[int(old_partition)] >= idx, "sanity");
-    if (_leftmosts_empty[int(old_partition)] > idx) {
-      _leftmosts_empty[int(old_partition)] = idx;
-    }
-    if (_rightmosts_empty[int(old_partition)] < idx) {
-      _rightmosts_empty[int(old_partition)] = idx;
-    }
+  assert(_leftmosts[int(old_partition)] <= idx && _rightmosts[int(old_partition)] >= idx, "sanity");
+  if (_leftmosts_empty[int(old_partition)] > idx) {
+    _leftmosts_empty[int(old_partition)] = idx;
+  }
+  if (_rightmosts_empty[int(old_partition)] < idx) {
+    _rightmosts_empty[int(old_partition)] = idx;
   }
 }
 
-
 inline void ShenandoahRegionPartitions::adjust_interval_for_recycled_old_region(ShenandoahHeapRegion* r) {
-  assert(!r->is_trash() && (r->free() == _region_size_bytes) && r->is_old(), "Bad argument");
+  assert((!r->is_trash() || r->is_recycling()), "Bad argument");
+  assert(r->is_trash() || (r->free() == _region_size_bytes), "Recycled region should be empty");
+
   // lock is not non-reentrant, check we don't have it
   shenandoah_assert_not_heaplocked();
   idx_t idx = (idx_t) r->index();
+  ShenandoahFreeSetPartitionId old_partition = ShenandoahFreeSetPartitionId::OldCollector;
+  assert(_membership[int(old_partition)].is_set(idx), "Region should be in OldCollector reserve");
+
   // Note that a recycled old trashed region may be in any one of the free set partitions according to the following scenarios:
   //  1. The old region had already been retired, so it was NotFree, and we have not rebuilt free set, so region is still NotFree
   //  2. We recycled the region but we have not yet rebuilt the free set, so it is still in the OldCollector region.
@@ -389,17 +394,13 @@ inline void ShenandoahRegionPartitions::adjust_interval_for_recycled_old_region(
   //  5. During reserve_regions, we moved this region into the OldCollector set, and the act of placing this region into
   //     OldCollector set properly adjusts the interval for the OldCollector set.
   // Only case 2 needs to be fixed up here.
-
   ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock());
-  ShenandoahFreeSetPartitionId old_partition = ShenandoahFreeSetPartitionId::OldCollector;
-  if (_membership[int(old_partition)].is_set(idx)) {
-    assert(_leftmosts[int(old_partition)] <= idx && _rightmosts[int(old_partition)] >= idx, "sanity");
-    if (_leftmosts_empty[int(old_partition)] > idx) {
-      _leftmosts_empty[int(old_partition)] = idx;
-    }
-    if (_rightmosts_empty[int(old_partition)] < idx) {
-      _rightmosts_empty[int(old_partition)] = idx;
-    }
+  assert(_leftmosts[int(old_partition)] <= idx && _rightmosts[int(old_partition)] >= idx, "sanity");
+  if (_leftmosts_empty[int(old_partition)] > idx) {
+    _leftmosts_empty[int(old_partition)] = idx;
+  }
+  if (_rightmosts_empty[int(old_partition)] < idx) {
+    _rightmosts_empty[int(old_partition)] = idx;
   }
 }
 
@@ -815,18 +816,13 @@ void ShenandoahRegionPartitions::assert_bounds(bool old_trash_not_in_bounds) {
   beg_off = empty_leftmosts[int(ShenandoahFreeSetPartitionId::OldCollector)];
   end_off = empty_rightmosts[int(ShenandoahFreeSetPartitionId::OldCollector)];
   assert (beg_off >= _leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-          "free empty region (%zd) before the leftmost bound %zd, old_trash_not_in_bounds: %s, region %s trash",
+          "free empty region (%zd) before the leftmost bound %zd, old_trash_not_in_bounds: %s",
           beg_off, _leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-	  old_trash_not_in_bounds? "yes": "no",
-	  (ShenandoahHeap::heap()->get_region(_leftmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)])->is_trash()?
-	   "is": "is not"));
+	  old_trash_not_in_bounds? "yes": "no");
   assert (end_off <= _rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-          "free empty region (%zd) past the rightmost bound %zd, old_trash_not_in_bounds: %s, region %s trash",
+          "free empty region (%zd) past the rightmost bound %zd, old_trash_not_in_bounds: %s",
           end_off, _rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)],
-	  old_trash_not_in_bounds? "yes": "no",
-	  (ShenandoahHeap::heap()->get_region(_rightmosts_empty[int(ShenandoahFreeSetPartitionId::OldCollector)])->is_trash()?
-	   "is": "is not"));
-
+	  old_trash_not_in_bounds? "yes": "no");
 }
 #endif
 
@@ -1115,12 +1111,19 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     return nullptr;
   }
   HeapWord* result = nullptr;
-  r->try_recycle_under_lock();
+  if (r->is_trash()) {
 #ifdef ASSERT
-  // Note: if assertions are not enforced, there's no rush to adjust this interval.  We'll adjust the
-  // interval when we eventually rebuild the free set.
-  if (r->is_old() && _old_trash_not_in_bounds && !r->is_trash() && (r->free() == ShenandoahHeapRegion::region_size_bytes())) {
-    _partitions.adjust_interval_for_recycled_old_region_under_lock(r);
+    bool adjust_old_interval = _old_trash_not_in_bounds && r->is_old();
+#endif
+    r->try_recycle_under_lock();
+#ifdef ASSERT
+    assert(!r->is_trash(), "try_recycle_under_lock() should assure that region is recycled");
+    assert(r->free() == ShenandoahHeapRegion::region_size_bytes(), "recycled trash should be entirely free");
+    // Note: if assertions are not enforced, there's no rush to adjust this interval.  We'll adjust the
+    // interval when we eventually rebuild the free set.
+    if (adjust_old_interval) {
+      _partitions.adjust_interval_for_recycled_old_region_under_lock(r);
+    }
   }
 #endif
 
@@ -1129,6 +1132,12 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   if (in_new_region) {
     log_debug(gc, free)("Using new region (%zu) for %s (" PTR_FORMAT ").",
                         r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req));
+#define KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+    log_info(gc)("Using new region (%zu) for %s (" PTR_FORMAT "), region affiliation: %s, req affiliation: %s",
+		 r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req),
+		 r->affiliation_name(), req.affiliation_name());
+#endif
     assert(!r->is_affiliated(), "New region %zu should be unaffiliated", r->index());
 
     r->set_affiliation(req.affiliation());
@@ -1338,7 +1347,12 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   for (idx_t i = beg; i <= end; i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     assert(!r->is_old(), "Allocate contiguous only allocates in young");
-    r->try_recycle_under_lock();
+    if (r->is_trash()) {
+      r->try_recycle_under_lock();
+    }
+    assert(!r->is_trash(), "try_recycle_under_lock() should assure that region is recycled");
+    assert(r->free() == ShenandoahHeapRegion::region_size_bytes(),
+	   "recycled trash and contiguoush alloc regions should be entirely free");
 
     assert(i == beg || _heap->get_region(i - 1)->index() + 1 == r->index(), "Should be contiguous");
     assert(r->is_empty(), "Should be empty");
@@ -1400,12 +1414,19 @@ public:
 #endif
 
   void heap_region_do(ShenandoahHeapRegion* r) {
-    r->try_recycle();
+    if (r->is_trash()) {
 #ifdef ASSERT
-    // Note: if assertions are not enforced, there's no rush to adjust this interval.  We'll adjust the
-    // interval when we eventually rebuild the free set.
-    if (r->is_old() && _old_trash_not_in_bounds && !r->is_trash() && (r->free() == ShenandoahHeapRegion::region_size_bytes())) {
-      _partitions->adjust_interval_for_recycled_old_region(r);
+      bool adjust_old_interval = _old_trash_not_in_bounds && r->is_old();
+#endif
+      r->try_recycle();
+#ifdef ASSERT
+      assert(!r->is_trash() || r->is_recycling(), "try_recycle() should assure that region is recycled");
+      assert(r->free() == ShenandoahHeapRegion::region_size_bytes(), "recycled trash should be entirely free");
+      // Note: if assertions are not enforced, there's no rush to adjust this interval.  We'll adjust the
+      // interval when we eventually rebuild the free set.
+      if (adjust_old_interval) {
+	_partitions->adjust_interval_for_recycled_old_region(r);
+      }
     }
 #endif
   }
