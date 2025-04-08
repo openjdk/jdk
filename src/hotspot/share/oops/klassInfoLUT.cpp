@@ -80,6 +80,8 @@ void KlassInfoLUT::initialize() {
   }
 }
 
+static const char* common_loader_names[4] = { "other", "null", "system", "platform" };
+
 int KlassInfoLUT::try_register_perma_cld(ClassLoaderData* cld) {
   int index = 0;
   if (cld->is_permanent_class_loader_data()) {
@@ -95,20 +97,21 @@ int KlassInfoLUT::try_register_perma_cld(ClassLoaderData* cld) {
     ClassLoaderData* old_cld = Atomic::load(_common_loaders + index);
     if (old_cld == nullptr) {
       old_cld = Atomic::cmpxchg(&_common_loaders[index], (ClassLoaderData*)nullptr, cld);
-      if (old_cld == nullptr || old_cld == cld) {
-        return index;
+      if (old_cld == nullptr) {
+        log_debug(klut)("Registered CLD for %s loader at index %d: " PTR_FORMAT,
+                        common_loader_names[index], index, p2i(cld));
+      } else {
+        assert(old_cld == cld, "Different CLD??"); // There should only be one for each
       }
-    } else if (old_cld == cld) {
-      return index;
     }
   }
-  return 0;
+  return index;
 }
 
 static void log_klass_registration(const Klass* k, narrowKlass nk, KlassLUTEntry klute, const char* message) {
   char tmp[1024];
-  log_debug(klut)("Klass " PTR_FORMAT ", nk %u, klute: " INT32_FORMAT_X_0 ": %s %s%s",
-                  p2i(k), nk, klute.value(),
+  log_debug(klut)("Klass " PTR_FORMAT ", cld: %s, nk %u, klute: " INT32_FORMAT_X_0 ": %s %s%s",
+                  p2i(k), common_loader_names[klute.loader_index()], nk, klute.value(),
                   message,
                   (k->is_shared() ? "(shared) " : ""),
                   k->name()->as_C_string(tmp, sizeof(tmp)));
@@ -116,34 +119,32 @@ static void log_klass_registration(const Klass* k, narrowKlass nk, KlassLUTEntry
 
 KlassLUTEntry KlassInfoLUT::register_klass(const Klass* k) {
 
-
-
   const narrowKlass nk = UseCompressedClassPointers ? CompressedKlassPointers::encode(const_cast<Klass*>(k)) : 0;
 
-  KlassLUTEntry klute = k->klute();
-  if (klute.is_valid()) {
-    // The Klass already carries the pre-computed klute. That can happen if it was loaded from a shared
-    // archive, in which case it contains the klute computed at (dynamic) load time when dumping.
-    if (use_lookup_table()) {
-      assert(nk < num_entries(), "narrowKlass %u is OOB for LUT", nk);
-      if (klute.value() == _entries[nk]) {
-        log_klass_registration(k, nk, klute, "already registered");
-      } else {
-        // Copy the klute value from the Klass to the table slot. This saves some cycles but, more importantly,
-        // makes the coding more robust when using it on Klasses that are not fully initialized yet (during CDS
-        // initialization we encounter Klasses with no associated CLD, for instance).
-        _entries[nk] = klute.value();
-        log_klass_registration(k, nk, klute, "updated table value for");
-      }
-    }
-  } else {
+//  KlassLUTEntry klute = k->klute();
+//  if (klute.is_valid()) {
+//    // The Klass already carries the pre-computed klute. That can happen if it was loaded from a shared
+//    // archive, in which case it contains the klute computed at (dynamic) load time when dumping.
+//    if (use_lookup_table()) {
+//      assert(nk < num_entries(), "narrowKlass %u is OOB for LUT", nk);
+//      if (klute.value() == _entries[nk]) {
+//        log_klass_registration(k, nk, klute, "already registered");
+//      } else {
+//        // Copy the klute value from the Klass to the table slot. This saves some cycles but, more importantly,
+//        // makes the coding more robust when using it on Klasses that are not fully initialized yet (during CDS
+//        // initialization we encounter Klasses with no associated CLD, for instance).
+//        _entries[nk] = klute.value();
+//        log_klass_registration(k, nk, klute, "updated table value for");
+//      }
+//    }
+//  } else {
     // Calculate klute from Klass properties and update the table value.
-    klute = KlassLUTEntry::build_from_klass(k);
+  const KlassLUTEntry klute = KlassLUTEntry::build_from_klass(k);
     if (use_lookup_table()) {
       _entries[nk] = klute.value();
     }
-    log_klass_registration(k, nk, klute, "registered");
-  }
+//log_klass_registration(k, nk, klute, "registered");
+//  }
 
 #ifdef ASSERT
   klute.verify_against_klass(k);

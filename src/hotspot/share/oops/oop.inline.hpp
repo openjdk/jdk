@@ -233,6 +233,7 @@ bool oopDesc::is_stackChunk()  const { return klass()->is_stack_chunk_instance_k
 bool oopDesc::is_array()       const { return klass()->is_array_klass();                }
 
 bool oopDesc::is_objArray() const {
+
   if (UseKLUT) {
     const KlassLUTEntry klute = KlassInfoLUT::lookup(mark().narrow_klass());
     return klute.is_obj_array();
