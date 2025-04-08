@@ -33,11 +33,12 @@
  * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build InitiatingLoaderTester BadOldClassA BadOldClassB
- * @build BulkLoaderTest SimpleCusty
+ * @build jdk.test.whitebox.WhiteBox BulkLoaderTest SimpleCusty
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar BulkLoaderTestApp.jar BulkLoaderTestApp MyUtil InitiatingLoaderTester
  *                 BadOldClassA BadOldClassB
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar
  *                 SimpleCusty
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run driver BulkLoaderTest STATIC
  */
 
@@ -53,8 +54,8 @@
  *                 BadOldClassA BadOldClassB
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar
  *                 SimpleCusty
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. BulkLoaderTest DYNAMIC
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:WhiteBox.jar BulkLoaderTest DYNAMIC
  */
 
 /*
@@ -63,10 +64,11 @@
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- * @build InitiatingLoaderTester BadOldClassA BadOldClassB
+ * @build jdk.test.whitebox.WhiteBox InitiatingLoaderTester BadOldClassA BadOldClassB
  * @build BulkLoaderTest SimpleCusty
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar BulkLoaderTestApp.jar BulkLoaderTestApp MyUtil InitiatingLoaderTester
  *                 BadOldClassA BadOldClassB
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar
  *                 SimpleCusty
  * @run driver BulkLoaderTest AOT
@@ -84,6 +86,7 @@ import java.util.Set;
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.whitebox.WhiteBox;
 
 public class BulkLoaderTest {
     static final String appJar = ClassFileInstaller.getJarPath("BulkLoaderTestApp.jar");
@@ -122,6 +125,7 @@ public class BulkLoaderTest {
     static class Tester extends CDSAppTester {
         public Tester() {
             super(mainClass);
+            useWhiteBox(ClassFileInstaller.getJarPath("WhiteBox.jar"));
         }
 
         @Override
@@ -293,9 +297,23 @@ class BulkLoaderTestApp {
 
 
     static void checkCustomLoader() throws Exception {
+        WhiteBox wb = WhiteBox.getWhiteBox();
         for (int i = 0; i < 2; i++) {
             Object o = initFromCustomLoader();
             System.out.println(o);
+            Class c = o.getClass();
+            if (wb.isSharedClass(BulkLoaderTestApp.class)) {
+                // We are running with BulkLoaderTestApp from the AOT cache (or CDS achive)
+                if (i == 0) {
+                    if (!wb.isSharedClass(c)) {
+                        throw new RuntimeException("The first loader should load SimpleCusty from AOT cache (or CDS achive)");
+                    }
+                } else {
+                    if (wb.isSharedClass(c)) {
+                        throw new RuntimeException("The second loader should not load SimpleCusty from AOT cache (or CDS achive)");
+                    }
+                }
+            }
         }
     }
 
