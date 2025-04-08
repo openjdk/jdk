@@ -699,15 +699,19 @@ class Assembler : public AbstractAssembler {
     VMAXSB_OPCODE  = (4u  << OPCODE_SHIFT |  258u     ),
     VMAXSW_OPCODE  = (4u  << OPCODE_SHIFT |  386u     ),
     VMAXSH_OPCODE  = (4u  << OPCODE_SHIFT |  322u     ),
+    VMAXSD_OPCODE  = (4u  << OPCODE_SHIFT |  450u     ),
     VMAXUB_OPCODE  = (4u  << OPCODE_SHIFT |    2u     ),
     VMAXUW_OPCODE  = (4u  << OPCODE_SHIFT |  130u     ),
     VMAXUH_OPCODE  = (4u  << OPCODE_SHIFT |   66u     ),
+    VMAXUD_OPCODE  = (4u  << OPCODE_SHIFT |  194u     ),
     VMINSB_OPCODE  = (4u  << OPCODE_SHIFT |  770u     ),
     VMINSW_OPCODE  = (4u  << OPCODE_SHIFT |  898u     ),
     VMINSH_OPCODE  = (4u  << OPCODE_SHIFT |  834u     ),
+    VMINSD_OPCODE  = (4u  << OPCODE_SHIFT |  962u     ),
     VMINUB_OPCODE  = (4u  << OPCODE_SHIFT |  514u     ),
     VMINUW_OPCODE  = (4u  << OPCODE_SHIFT |  642u     ),
     VMINUH_OPCODE  = (4u  << OPCODE_SHIFT |  578u     ),
+    VMINUD_OPCODE  = (4u  << OPCODE_SHIFT |  706u     ),
 
     VCMPEQUB_OPCODE= (4u  << OPCODE_SHIFT |    6u     ),
     VCMPEQUH_OPCODE= (4u  << OPCODE_SHIFT |   70u     ),
@@ -2304,15 +2308,19 @@ class Assembler : public AbstractAssembler {
   inline void vmaxsb(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vmaxsw(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vmaxsh(   VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vmaxsd(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vmaxub(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vmaxuw(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vmaxuh(   VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vmaxud(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminsb(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminsw(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminsh(   VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vminsd(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminub(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminuw(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vminuh(   VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vminud(   VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vcmpequb( VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vcmpequh( VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vcmpequw( VectorRegister d, VectorRegister a, VectorRegister b);

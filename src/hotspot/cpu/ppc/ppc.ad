@@ -2404,6 +2404,8 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_SubVL:
     case Op_MulVI:
     case Op_RoundDoubleModeV:
+    case Op_MinV:
+    case Op_MaxV:
       return SuperwordUseVSX;
     case Op_PopCountVI:
     case Op_PopCountVL:
@@ -14246,6 +14248,52 @@ instruct vdiv2D_reg(vecX dst, vecX src1, vecX src2) %{
   size(4);
   ins_encode %{
     __ xvdivdp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Vector Min / Max Instructions
+
+instruct vminsw_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MinV src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VMINSW  $dst,$src1,$src2\t// max packed4I" %}
+  size(4);
+  ins_encode %{
+    __ vminsw($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmaxsw_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MaxV src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VMAXSW  $dst,$src1,$src2\t// max packed4I" %}
+  size(4);
+  ins_encode %{
+    __ vmaxsw($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vminsd_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MinV src1 src2));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "VMINSD  $dst,$src1,$src2\t// max packed2L" %}
+  size(4);
+  ins_encode %{
+    __ vminsd($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmaxsd_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MaxV src1 src2));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "VMAXSD  $dst,$src1,$src2\t// max packed2L" %}
+  size(4);
+  ins_encode %{
+    __ vmaxsd($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
   %}
   ins_pipe(pipe_class_default);
 %}
