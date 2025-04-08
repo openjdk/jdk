@@ -25,6 +25,8 @@ package jdk.test.whitebox;
 
 import java.lang.management.MemoryUsage;
 import java.lang.reflect.Executable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -555,6 +557,31 @@ public class WhiteBox {
 
   // Force Full GC
   public native void fullGC();
+
+  private static Method wfrp = null;
+  /* Wait for reference processing, via Reference.waitForReferenceProcessing().
+   * Callers of this method will need the
+   * @modules java.base/java.lang.ref:open
+   * jtreg tag.
+   *
+   * This method should usually be called after a call to WhiteBox.fullGC().
+   */
+  public static void waitForReferenceProcessing() {
+    try {
+      if (wfrp == null) {
+        Class refClass = Class.forName("java.lang.ref.Reference");
+        Method[] methods = refClass.getDeclaredMethods();
+        wfrp = Arrays.stream(methods).filter((m) -> m.getName().equals("waitForReferenceProcessing")).findFirst().get();
+        wfrp.setAccessible(true);
+      }
+      wfrp.invoke(null, new Object[0]);
+    } catch (IllegalAccessException iae) {
+      throw new RuntimeException("Need to add @modules java.base/java.lang.ref:open?",
+              iae);
+    } catch (ClassNotFoundException | InvocationTargetException e) {
+      throw new RuntimeException("Reflection problem", e);
+    }
+  }
 
   // Returns true if the current GC supports concurrent collection control.
   public native boolean supportsConcurrentGCBreakpoints();
