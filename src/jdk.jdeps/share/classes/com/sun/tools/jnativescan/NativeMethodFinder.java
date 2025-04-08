@@ -24,11 +24,11 @@
  */
 package com.sun.tools.jnativescan;
 
+import com.sun.tools.jnativescan.JNativeScanTask.Diagnostics;
 import com.sun.tools.jnativescan.RestrictedUse.NativeMethodDecl;
 import com.sun.tools.jnativescan.RestrictedUse.RestrictedMethodRefs;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.MethodModel;
@@ -45,19 +45,19 @@ class NativeMethodFinder {
     private static final String RESTRICTED_NAME = "Ljdk/internal/javac/Restricted+Annotation;";
 
     private final Map<MethodRef, Boolean> cache = new HashMap<>();
-    private final PrintWriter err;
+    private final Diagnostics diagnostics;
     private final ClassResolver classesToScan;
     private final ClassResolver systemClassResolver;
 
-    private NativeMethodFinder(PrintWriter err, ClassResolver classesToScan, ClassResolver systemClassResolver) {
-        this.err = err;
+    private NativeMethodFinder(Diagnostics diagnostics, ClassResolver classesToScan, ClassResolver systemClassResolver) {
+        this.diagnostics = diagnostics;
         this.classesToScan = classesToScan;
         this.systemClassResolver = systemClassResolver;
     }
 
-    public static NativeMethodFinder create(PrintWriter err, ClassResolver classesToScan,
+    public static NativeMethodFinder create(Diagnostics diagnostics, ClassResolver classesToScan,
                                             ClassResolver systemClassResolver) throws JNativeScanFatalError, IOException {
-        return new NativeMethodFinder(err, classesToScan, systemClassResolver);
+        return new NativeMethodFinder(diagnostics, classesToScan, systemClassResolver);
     }
 
     public SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> findAll() throws JNativeScanFatalError {
@@ -72,23 +72,22 @@ class NativeMethodFinder {
                 } else {
                     SortedSet<MethodRef> perMethod = new TreeSet<>(Comparator.comparing(MethodRef::toString));
                     methodModel.code().ifPresent(code -> {
-                         try {
-                             code.forEach(e -> {
-                                 switch (e) {
-                                     case InvokeInstruction invoke -> {
-                                         MethodRef ref = MethodRef.ofInvokeInstruction(invoke);
-                                         if (isRestrictedMethod(ref)) {
-                                             perMethod.add(ref);
-                                         }
-                                     }
-                                     default -> {
-                                     }
-                                 }
-                             });
-                         } catch (JNativeScanFatalError e) {
-                             err.println("Error while processing method: " +
-                                     MethodRef.ofModel(methodModel) + ": " + e.getMessage());
-                         }
+                        code.forEach(e -> {
+                            switch (e) {
+                                case InvokeInstruction invoke -> {
+                                    MethodRef ref = MethodRef.ofInvokeInstruction(invoke);
+                                    try {
+                                        if (isRestrictedMethod(ref)) {
+                                            perMethod.add(ref);
+                                        }
+                                    } catch (JNativeScanFatalError ex) {
+                                        diagnostics.error(MethodRef.ofModel(methodModel), ex);
+                                    }
+                                }
+                                default -> {
+                                }
+                            }
+                        });
                     });
                     if (!perMethod.isEmpty()) {
                         perClass.add(new RestrictedMethodRefs(MethodRef.ofModel(methodModel), perMethod));
