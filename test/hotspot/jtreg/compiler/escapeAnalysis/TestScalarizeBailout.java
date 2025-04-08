@@ -25,7 +25,9 @@
  * @test
  * @bug 8315916
  * @summary Test early bailout during the creation of graph nodes for the scalarization of array fields, rather than during code generation.
- * @run main/othervm -Xcomp
+ * @run main/othervm/timeout=240000 
+ *                   -Xcomp
+ *                   -XX:-TieredCompilation
  *                   -XX:EliminateAllocationArraySizeLimit=60240
  *                   compiler.escapeAnalysis.TestScalarizeBailout
  */
@@ -33,16 +35,23 @@
 package compiler.escapeAnalysis;
 
 public class TestScalarizeBailout {
-  static Object var1;
-  public static void main(String[] args) throws Exception {
-    var1 = new long[48 * 1024];
-    long[] a1 = new long[48 * 1024];
-    try {
-      // load the class to initialize the static object and trigger the EA
-      Class <?> Class37 = Class.forName("compiler.escapeAnalysis.TestScalarizeBailout");
-      for (int i = 0; i < a1.length; i++) {
-        a1[i] = (i + 0);
-      }
-    } catch (Exception e){throw new RuntimeException(e);}
-  }
+    static Object var1;
+
+    public static void main(String[] args) {
+        // The test is designed to trigger a bailout during the scalarization of array fields.
+        // The array size is set to 48K, which is below the threshold for scalarization.
+        var1 = new long[48 * 1024];
+        long[] a1 = new long[48 * 1024];
+        TestScalarizeBailout test = new TestScalarizeBailout();
+        test.initializeArray(a1);
+    }
+
+    // This method is used to initialize the array with values from 0 to length - 1.
+    // Esape analysis should be able to eliminate the allocation of the array as the size 48k is
+    // below the EliminateAllocationArraySizeLimit=60240.
+    private void initializeArray(long[] a1) {
+        for (int i = 0; i < a1.length; i++) {
+            a1[i] = i;
+        }
+    }
 }
