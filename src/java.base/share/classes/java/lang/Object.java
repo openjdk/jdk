@@ -25,7 +25,6 @@
 
 package java.lang;
 
-import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -41,7 +40,6 @@ public class Object {
     /**
      * Constructs a new object.
      */
-    @ForceInline
     @IntrinsicCandidate
     public Object() {}
 
