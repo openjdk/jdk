@@ -2750,27 +2750,15 @@ void HeapDumper::dump_heap(bool oome) {
   static uint dump_file_seq = 0;
   char my_path[JVM_MAXPATHLEN];
   const int max_digit_chars = 20;
-
   const char* dump_file_name = HeapDumpGzipLevel > 0 ? "java_pid%p.hprof.gz" : "java_pid%p.hprof";
 
   // The dump file defaults to java_pid<pid>.hprof in the current working
   // directory. HeapDumpPath=<file> can be used to specify an alternative
   // dump file name or a directory where dump file is created.
   if (dump_file_seq == 0) { // first time in, we initialize base_path
-    // Calculate potentially longest base path and check if we have enough
-    // allocated statically.
-    const size_t total_length =
-                      (HeapDumpPath == nullptr ? 0 : strlen(HeapDumpPath)) +
-                      strlen(os::file_separator()) + max_digit_chars +
-                      strlen(dump_file_name) + 1;
-    if (total_length > sizeof(base_path)) {
-      warning("Cannot create heap dump file.  HeapDumpPath is too long.");
-      return;
-    }
-
     // Set base path (name or directory, default or custom, without seq no), doing %p substitution.
     const char *path_src = (HeapDumpPath != nullptr && HeapDumpPath[0] != '\0') ? HeapDumpPath : dump_file_name;
-    if (!Arguments::copy_expand_pid(path_src, strlen(path_src), base_path, JVM_MAXPATHLEN)) {
+    if (!Arguments::copy_expand_pid(path_src, strlen(path_src), base_path, JVM_MAXPATHLEN - max_digit_chars)) {
       warning("Cannot create heap dump file.  HeapDumpPath is too long.");
       return;
     }
@@ -2778,7 +2766,7 @@ void HeapDumper::dump_heap(bool oome) {
     DIR* dir = os::opendir(base_path);
     if (dir != nullptr) {
       os::closedir(dir);
-      // Append a file separator (if needed).
+      // Path is a directory.  Append a file separator (if needed).
       size_t fs_len = strlen(os::file_separator());
       if (strlen(base_path) >= fs_len) {
         char* end = base_path;
@@ -2787,8 +2775,8 @@ void HeapDumper::dump_heap(bool oome) {
           strcat(base_path, os::file_separator());
         }
       }
-      // Path is a directory.  Append the default name, with %p substitution.  Use my_path temporarily.
-      if (!Arguments::copy_expand_pid(dump_file_name, strlen(dump_file_name), my_path, JVM_MAXPATHLEN)) {
+      // Then add the default name, with %p substitution.  Use my_path temporarily.
+      if (!Arguments::copy_expand_pid(dump_file_name, strlen(dump_file_name), my_path, JVM_MAXPATHLEN - max_digit_chars)) {
         warning("Cannot create heap dump file.  HeapDumpPath is too long.");
         return;
       }
