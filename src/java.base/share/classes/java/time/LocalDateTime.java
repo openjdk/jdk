@@ -96,6 +96,8 @@ import java.time.temporal.ValueRange;
 import java.time.zone.ZoneRules;
 import java.util.Objects;
 
+import jdk.internal.util.DateTimeHelper;
+
 /**
  * A date-time without a time-zone in the ISO-8601 calendar system,
  * such as {@code 2007-12-03T10:15:30}.
@@ -1966,18 +1968,10 @@ public final class LocalDateTime
     @Override
     public String toString() {
         var buf = new StringBuilder(29);
-        formatTo(buf);
+        DateTimeHelper.formatTo(buf, this);
         return buf.toString();
     }
 
-    /**
-     * Prints the toString result to the given buf, avoiding extra string allocations.
-     */
-    void formatTo(StringBuilder buf) {
-        date.formatTo(buf);
-        buf.append('T');
-        time.formatTo(buf);
-    }
 
     //-----------------------------------------------------------------------
     /**
@@ -2018,5 +2012,4 @@ public final class LocalDateTime
         LocalTime time = LocalTime.readExternal(in);
         return LocalDateTime.of(date, time);
     }
-
 }
