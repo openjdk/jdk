@@ -39,13 +39,14 @@ uint32_t* KlassInfoLUT::_entries = nullptr;
 unsigned KlassInfoLUT::_num_entries = -1;
 
 void KlassInfoLUT::initialize() {
-  assert(CompressedKlassPointers::fully_initialized(), "Too early");
 
   if (UseCompactObjectHeaders) {
+
     // Init Lookup Table
     // We allocate a lookup table only if we can use the narrowKlass for a lookup reasonably well.
     // We can do this only if the nKlass is small enough - we allow it for COH (22 bit nKlass with
     // 10 bit shift means we have a small and condensed table). We don't bother for -COH,
+    assert(CompressedKlassPointers::fully_initialized(), "Too early");
     assert(CompressedKlassPointers::narrow_klass_pointer_bits() <= 22, "Use only for COH");
     assert(CompressedKlassPointers::shift() == 10, "must be (for density)");
 
@@ -144,27 +145,13 @@ KlassLUTEntry KlassInfoLUT::register_klass(const Klass* k) {
   const narrowKlass nk = add_to_table ? CompressedKlassPointers::encode(const_cast<Klass*>(k)) : 0;
 
   KlassLUTEntry klute = k->klute();
-  if (klute.is_valid()) {
-    // The Klass already carries the pre-computed klute. That can happen if it was loaded from a shared
-    // archive, in which case it contains the klute computed at (dynamic) load time when dumping.
-    if (add_to_table) {
-      assert(nk < num_entries(), "narrowKlass %u is OOB for LUT", nk);
-      if (klute.value() == _entries[nk]) {
-        log_klass_registration(k, nk, false, klute, "already registered");
-      } else {
-        // Copy the klute value from the Klass to the table slot.
-        _entries[nk] = klute.value();
-        log_klass_registration(k, nk, true, klute, "updated table value for");
-      }
-    }
-  } else {
-    // Calculate klute from Klass properties and update the table value.
-    klute = KlassLUTEntry::build_from_klass(k);
-    if (add_to_table) {
-      _entries[nk] = klute.value();
-    }
-    log_klass_registration(k, nk, add_to_table, klute, "registered");
+
+  // Calculate klute from Klass properties and update the table value.
+  klute = KlassLUTEntry::build_from_klass(k);
+  if (add_to_table) {
+    _entries[nk] = klute.value();
   }
+  log_klass_registration(k, nk, add_to_table, klute, "registered");
 
 #ifdef ASSERT
   klute.verify_against_klass(k);
