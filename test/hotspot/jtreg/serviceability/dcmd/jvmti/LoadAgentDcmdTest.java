@@ -56,7 +56,7 @@ public class LoadAgentDcmdTest {
         if (Platform.isStatic()) {
             // libinstrument is statically linked with the launcher. Don't
             // locate the libinstrument shared library on static JDK.
-            return "libinstrument.so";
+            return "libinstrument." + Platform.sharedLibraryExt();
         }
 
         String jdkPath = System.getProperty("test.jdk");
