@@ -480,6 +480,8 @@ public:
 
   CENSUS_NOISE(void clear_youth() { _youth = 0; })
 
+  void clear_self_forwarded_mark_words();
+
   void set_has_evacuation_failures(bool value) {
     _has_evacuation_failures = value;
   }

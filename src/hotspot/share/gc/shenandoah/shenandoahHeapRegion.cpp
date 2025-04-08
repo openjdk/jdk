@@ -912,6 +912,20 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
   heap->set_affiliation(this, new_affiliation);
 }
 
+struct ShenandoahClearSelfForwarded : ObjectClosure {
+  void do_object(oop obj) override {
+    if (obj->is_self_forwarded()) {
+      obj->unset_self_forwarded();
+    }
+  }
+};
+
+void ShenandoahHeapRegion::clear_self_forwarded_mark_words() {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahClearSelfForwarded clear_self_forwarded;
+  heap->marked_object_iterate(this, &clear_self_forwarded);
+}
+
 void ShenandoahHeapRegion::decrement_humongous_waste() const {
   assert(is_humongous(), "Should only use this for humongous regions");
   size_t waste_bytes = free();

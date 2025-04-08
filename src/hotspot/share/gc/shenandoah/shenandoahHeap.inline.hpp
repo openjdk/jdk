@@ -132,19 +132,11 @@ inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
     return;
   }
 
-  // Objects in collection set regions that have failed evacuation could be forwarded
-  // to themselves, they could be forwarded to other regions, or they could not be
-  // forwarded at all. It's chaos, basically.
-
-  if (!obj->is_forwarded()) {
-    assert(heap_region_containing(obj)->has_evacuation_failures(),
-           "Unforwarded object in cset only allowed for regions that have failed evacuation");
-    return;
-  }
-
-  if (obj->is_self_forwarded()) {
-    obj->unset_self_forwarded();
-  } else {
+  // Objects in collection set regions that have failed evacuation must be forwarded to
+  // themselves or into other regions. All objects in the collection set must be touched
+  // by an evacuating thread. Otherwise, we have no way to distinguish error conditions
+  // in which objects that _should_ be evacuated were ignored.
+  if (!obj->is_self_forwarded()) {
     shenandoah_assert_forwarded(p, obj);
     oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
     // Unconditionally store the update: no concurrent updates expected.
@@ -168,17 +160,7 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
   // themselves or into other regions. All objects in the collection set must be touched
   // by an evacuating thread. Otherwise, we have no way to distinguish error conditions
   // in which objects that _should_ be evacuated were ignored.
-
-  if (!obj->is_forwarded()) {
-    assert(heap_region_containing(obj)->has_evacuation_failures(),
-           "Unforwarded object in cset only allowed for regions that have failed evacuation");
-    return;
-  }
-
-  if (obj->is_self_forwarded()) {
-    log_debug(gc)("Clear self forwarding bit: " PTR_FORMAT, p2i(obj));
-    obj->unset_self_forwarded();
-  } else {
+  if (!obj->is_self_forwarded()) {
     shenandoah_assert_forwarded(p, obj);
     oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
     atomic_update_oop(fwd, p, obj);

@@ -1404,14 +1404,15 @@ void ShenandoahHeap::trash_cset_regions() {
     if (r->has_evacuation_failures()) {
       r->make_regular_allocation(r->affiliation());
       r->set_has_evacuation_failures(false);
+      r->clear_self_forwarded_mark_words();
       free_bytes_in_evac_failed_regions += r->free();
     } else {
       r->make_trash();
     }
   }
   set->clear();
-  log_info(gc)("Memory available in regions that failed evacuation: " EXACTFMT,
-               EXACTFMTARGS(free_bytes_in_evac_failed_regions));
+  log_info(gc)("Memory available in regions that failed evacuation: " PROPERFMT,
+               PROPERFMTARGS(free_bytes_in_evac_failed_regions));
 }
 
 void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {

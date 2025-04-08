@@ -42,6 +42,10 @@ inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
   // fwdptr. That object is still not forwarded, and we need to return
   // the object itself.
   markWord mark = obj->mark();
+  if (mark.is_self_forwarded()) {
+    return obj;
+  }
+
   if (mark.is_marked()) {
     HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
     if (fwdptr != nullptr) {
@@ -57,6 +61,10 @@ inline oop ShenandoahForwarding::get_forwardee_mutator(oop obj) {
   assert(Thread::current()->is_Java_thread(), "Must be a mutator thread");
 
   markWord mark = obj->mark();
+  if (mark.is_self_forwarded()) {
+    return obj;
+  }
+
   if (mark.is_marked()) {
     HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
     assert(fwdptr != nullptr, "Forwarding pointer is never null here");

@@ -330,8 +330,15 @@ void ShenandoahAsserts::assert_forwarded(void* interior_loc, oop obj, const char
   assert_correct(interior_loc, obj, file, line);
   oop fwd =   ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
-  if (obj == fwd && !obj->is_self_forwarded()) {
-    log_debug(gc)("Bad mark word " PTR_FORMAT, obj->mark().value());
+  if (obj == fwd) {
+    // This feels kinda racy...
+    if (obj->has_displaced_mark()) {
+      markWord displaced_mark = obj->displaced_mark();
+      if (displaced_mark.is_self_forwarded()) {
+        return;
+      }
+    }
+    log_debug(gc)("Bad mark word " PTR_FORMAT ", obj->has_displaced_mark ? %s", obj->mark().value(), BOOL_TO_STR(obj->has_displaced_mark()));
     print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_forwarded failed",
                   "Object should be forwarded",
                   file, line);
