@@ -151,11 +151,8 @@ public:
   void move_from_partition_to_partition(ssize_t idx, ShenandoahFreeSetPartitionId orig_partition,
                                         ShenandoahFreeSetPartitionId new_partition, size_t available);
 
-  // In case recycled region r is in the OldCollector partition but not within the interval for empty OldCollector regions, expand
-  // the empty interval to include this region.  If recycled region r is not in the OldCollector partition, do nothing.
-  inline void adjust_interval_for_recycled_old_region(ShenandoahHeapRegion* r);
-
-  // Same as above, but assume we already hold global heap lock
+  // For recycled region r in the OldCollector partition but possibly not within the interval for empty OldCollector regions,
+  // expand the empty interval to include this region.
   inline void adjust_interval_for_recycled_old_region_under_lock(ShenandoahHeapRegion* r);
 
   const char* partition_membership_name(ssize_t idx) const;
