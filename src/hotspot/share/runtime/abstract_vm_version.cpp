@@ -137,6 +137,9 @@ const char* Abstract_VM_Version::vm_vendor() {
 }
 
 
+// The VM info string should be a constant, but its value cannot be finalized until after VM arguments
+// have been fully processed. And we want to avoid dynamic memory allocation which will cause ASAN
+// report error, so we enumerate all the cases by static const string value.
 const char* Abstract_VM_Version::vm_info_string() {
   switch (Arguments::mode()) {
     case Arguments::_int:
