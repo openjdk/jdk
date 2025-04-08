@@ -1240,7 +1240,45 @@ void EliminateUselessPredicates::mark_useful_predicates_for_loop(IdealLoopTree* 
 void EliminateUselessPredicates::mark_maybe_useful_predicates_useless() const {
   mark_maybe_useful_predicates_on_list_useless(_parse_predicates);
   mark_maybe_useful_predicates_on_list_useless(_template_assertion_predicate_opaques);
+  DEBUG_ONLY(verify_loop_nodes_of_useless_templates_assertion_predicates_are_dead();)
 }
+
+#ifdef ASSERT
+// All now useless Template Assertion Predicates should not refer to any CountedLoopNode that can still be found in the
+// graph (otherwise, they would have been marked useful instead). This is verified in this method.
+void EliminateUselessPredicates::verify_loop_nodes_of_useless_templates_assertion_predicates_are_dead() const {
+  ResourceMark rm;
+  Unique_Node_List loop_nodes_of_useless_template_assertion_predicates =
+       collect_loop_nodes_of_useless_template_assertion_predicates();
+  verify_associated_loop_nodes_are_dead(loop_nodes_of_useless_template_assertion_predicates);
+}
+
+Unique_Node_List EliminateUselessPredicates::collect_loop_nodes_of_useless_template_assertion_predicates() const {
+  Unique_Node_List loop_nodes_of_useless_template_assertion_predicates;
+  for (int i = 0; i < _template_assertion_predicate_opaques.length(); i++) {
+    OpaqueTemplateAssertionPredicateNode* opaque_node = _template_assertion_predicate_opaques.at(i);
+    if (opaque_node->is_useless()) {
+      loop_nodes_of_useless_template_assertion_predicates.push(opaque_node->loop_node());
+    }
+  }
+  return loop_nodes_of_useless_template_assertion_predicates;
+}
+
+void EliminateUselessPredicates::verify_associated_loop_nodes_are_dead(
+    const Unique_Node_List& loop_nodes_of_useless_template_assertion_predicates) const {
+  if (loop_nodes_of_useless_template_assertion_predicates.size() == 0) {
+    return;
+  }
+  for (LoopTreeIterator iterator(_ltree_root); !iterator.done(); iterator.next()) {
+    IdealLoopTree* loop = iterator.current();
+    Node* loop_head = loop->head();
+    if (loop_head->is_CountedLoop()) {
+      assert(!loop_nodes_of_useless_template_assertion_predicates.member(loop_head),
+             "CountedLoopNode should be dead when found in OpaqueTemplateAssertionPredicateNode being marked useless");
+    }
+  }
+}
+#endif // ASSERT
 
 template<class PredicateList>
 void EliminateUselessPredicates::mark_maybe_useful_predicates_on_list_useless(

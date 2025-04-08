@@ -367,7 +367,7 @@ abstract public class CDSAppTester {
         return out;
     }
 
-    public void run(String args[]) throws Exception {
+    public void run(String... args) throws Exception {
         String err = "Must have exactly one command line argument of the following: ";
         String prefix = "";
         for (Workflow wf : Workflow.values()) {
