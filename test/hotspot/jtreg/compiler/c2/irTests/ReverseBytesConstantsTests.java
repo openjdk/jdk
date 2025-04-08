@@ -71,28 +71,32 @@ public class ReverseBytesConstantsTests {
     public void assertResultI() {
         Asserts.assertEQ(Integer.reverseBytes(0x04030201), testI1());
         Asserts.assertEQ(Integer.reverseBytes(0x50607080), testI2());
-        Asserts.assertEQ(Integer.reverseBytes(C_INT), testI3());
+        Asserts.assertEQ(Integer.reverseBytes(0x80706050), testI3());
+        Asserts.assertEQ(Integer.reverseBytes(C_INT), testI4());
     }
 
     @DontCompile
     public void assertResultL() {
         Asserts.assertEQ(Long.reverseBytes(0x0807060504030201L), testL1());
         Asserts.assertEQ(Long.reverseBytes(0x1020304050607080L), testL2());
-        Asserts.assertEQ(Long.reverseBytes(C_LONG), testL3());
+        Asserts.assertEQ(Long.reverseBytes(0x8070605040302010L), testL3());
+        Asserts.assertEQ(Long.reverseBytes(C_LONG), testL4());
     }
 
     @DontCompile
     public void assertResultS() {
         Asserts.assertEQ(Short.reverseBytes((short) 0x0201), testS1());
         Asserts.assertEQ(Short.reverseBytes((short) 0x7080), testS2());
-        Asserts.assertEQ(Short.reverseBytes(C_SHORT), testS3());
+        Asserts.assertEQ(Short.reverseBytes((short) 0x8070), testS3());
+        Asserts.assertEQ(Short.reverseBytes(C_SHORT), testS4());
     }
 
     @DontCompile
     public void assertResultUS() {
         Asserts.assertEQ(Character.reverseBytes((char) 0x0201), testUS1());
         Asserts.assertEQ(Character.reverseBytes((char) 0x7080), testUS2());
-        Asserts.assertEQ(Character.reverseBytes(C_CHAR), testUS3());
+        Asserts.assertEQ(Character.reverseBytes((char) 0x8070), testUS3());
+        Asserts.assertEQ(Character.reverseBytes(C_CHAR), testUS4());
     }
 
     @Test
@@ -110,6 +114,12 @@ public class ReverseBytesConstantsTests {
     @Test
     @IR(failOn = {IRNode.REVERSE_BYTES_I})
     public int testI3() {
+        return Integer.reverseBytes(0x80706050);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.REVERSE_BYTES_I})
+    public int testI4() {
         return Integer.reverseBytes(C_INT);
     }
 
@@ -128,6 +138,12 @@ public class ReverseBytesConstantsTests {
     @Test
     @IR(failOn = {IRNode.REVERSE_BYTES_L})
     public long testL3() {
+        return Long.reverseBytes(0x8070605040302010L);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.REVERSE_BYTES_L})
+    public long testL4() {
         return Long.reverseBytes(C_LONG);
     }
 
@@ -146,6 +162,12 @@ public class ReverseBytesConstantsTests {
     @Test
     @IR(failOn = {IRNode.REVERSE_BYTES_S})
     public short testS3() {
+        return Short.reverseBytes((short) 0x8070);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.REVERSE_BYTES_S})
+    public short testS4() {
         return Short.reverseBytes(C_SHORT);
     }
 
@@ -164,6 +186,12 @@ public class ReverseBytesConstantsTests {
     @Test
     @IR(failOn = {IRNode.REVERSE_BYTES_US})
     public char testUS3() {
+        return Character.reverseBytes((char) 0x8070);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.REVERSE_BYTES_US})
+    public char testUS4() {
         return Character.reverseBytes(C_CHAR);
     }
 
