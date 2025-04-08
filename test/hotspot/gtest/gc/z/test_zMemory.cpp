@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,12 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zMemory.inline.hpp"
-#include "unittest.hpp"
-
-class ZAddressOffsetMaxSetter {
-private:
-  const size_t _old_max;
-  const size_t _old_mask;
-
-public:
-  ZAddressOffsetMaxSetter()
-    : _old_max(ZAddressOffsetMax),
-      _old_mask(ZAddressOffsetMask) {
-    ZAddressOffsetMax = size_t(16) * G * 1024;
-    ZAddressOffsetMask = ZAddressOffsetMax - 1;
-  }
-  ~ZAddressOffsetMaxSetter() {
-    ZAddressOffsetMax = _old_max;
-    ZAddressOffsetMask = _old_mask;
-  }
-};
+#include "zunittest.hpp"
 
 TEST(ZMemory, accessors) {
-  ZAddressOffsetMaxSetter setter;
+  ZAddressOffsetMaxSetter setter(size_t(16) * G * 1024);
 
   {
     ZMemory mem(zoffset(0), ZGranuleSize);
@@ -75,7 +56,7 @@ TEST(ZMemory, accessors) {
 }
 
 TEST(ZMemory, resize) {
-  ZAddressOffsetMaxSetter setter;
+  ZAddressOffsetMaxSetter setter(size_t(16) * G * 1024);
 
   ZMemory mem(zoffset(ZGranuleSize * 2), ZGranuleSize * 2) ;
 

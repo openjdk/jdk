@@ -305,7 +305,7 @@ public class SctpNet {
         loadSctpLibrary();
     }
 
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     private static void loadSctpLibrary() {
         NIOUtil.load();   // loads nio & net native libraries
         System.loadLibrary("sctp");

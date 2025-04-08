@@ -228,7 +228,6 @@ public class CreateSymbols {
     /**Create sig files for ct.sym reading the classes description from the directory that contains
      * {@code ctDescriptionFile}, using the file as a recipe to create the sigfiles.
      */
-    @SuppressWarnings("unchecked")
     public void createSymbols(String ctDescriptionFileExtra, String ctDescriptionFile, String ctSymLocation,
                               long timestamp, String currentVersion, String preReleaseTag, String moduleClasses,
                               String includedModulesFile) throws IOException {
@@ -4634,7 +4633,6 @@ public class CreateSymbols {
     /**Create sig files for ct.sym reading the classes description from the directory that contains
      * {@code ctDescriptionFile}, using the file as a recipe to create the sigfiles.
      */
-    @SuppressWarnings("unchecked")
     public void createJavadocData(String ctDescriptionFileExtra, String ctDescriptionFile,
                                   String targetDir, int startVersion) throws IOException {
         LoadDescriptions data = load(ctDescriptionFileExtra != null ? Paths.get(ctDescriptionFileExtra)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,8 @@ var getJibProfiles = function (input) {
     // Exclude list to use when Jib creates a source bundle
     data.src_bundle_excludes = [
         "build", "{,**/}webrev*", "{,**/}.hg", "{,**/}JTwork*", "{,**/}JTreport*",
-        "{,**/}.git"
+        "{,**/}.git",
+        "{,**/}core.[0-9]*"
     ];
     // Include list to use when creating a minimal jib source bundle which
     // contains just the jib configuration files.
@@ -390,8 +391,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "23";
-    common.boot_jdk_build_number = "37";
+    common.boot_jdk_version = "24";
+    common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -780,7 +781,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
             dependencies: [
-                "boot_jdk", "devkit", "graphviz", "pandoc", buildJdkDep,
+                "autoconf", "boot_jdk", "devkit", "graphviz", "pandoc", buildJdkDep,
             ],
             configure_args: concat(
                 "--enable-full-docs",
@@ -1092,9 +1093,9 @@ var getJibProfilesDependencies = function (input, common) {
         windows_x64: "VS2022-17.6.5+1.0",
         linux_aarch64: "gcc13.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
-        linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
-        linux_s390x: "gcc8.2.0-Fedora27+1.0",
-        linux_riscv64: "gcc11.3.0-Fedora_rawhide_68692+1.1"
+        linux_ppc64le: "gcc13.2.0-Fedora_41+1.0",
+        linux_s390x: "gcc13.2.0-Fedora_41+1.0",
+        linux_riscv64: "gcc13.2.0-Fedora_41+1.0"
     };
 
     var devkit_platform = (input.target_cpu == "x86"
@@ -1186,9 +1187,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "7.4",
+            version: "7.5.1",
             build_number: "1",
-            file: "bundles/jtreg-7.4+1.zip",
+            file: "bundles/jtreg-7.5.1+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1201,9 +1202,11 @@ var getJibProfilesDependencies = function (input, common) {
         },
 
         jcov: {
-            organization: common.organization,
-            revision: "3.0-17-jdk-asm+1.0",
-            ext: "zip",
+            server: "jpg",
+            product: "jcov",
+            version: "3.0",
+            build_number: "1",
+            file: "bundles/jcov-3.0+1.zip",
             environment_name: "JCOV_HOME",
         },
 
@@ -1234,7 +1237,7 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             revision: "9.0.0+1.0",
-            module: "graphviz-" + input.target_platform,
+            module: "graphviz-" + input.build_platform,
             configure_args: "DOT=" + input.get("graphviz", "install_path") + "/dot",
             environment_path: input.get("graphviz", "install_path")
         },

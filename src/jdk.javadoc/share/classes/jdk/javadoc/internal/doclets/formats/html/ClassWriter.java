@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,6 @@ public class ClassWriter extends SubWriterHolderWriter {
                        ClassTree classTree) {
         super(configuration, configuration.docPaths.forClass(typeElement));
         this.typeElement = typeElement;
-        configuration.currentTypeElement = typeElement;
         this.classTree = classTree;
 
         pHelper = new PropertyUtils.PropertyHelper(configuration, typeElement);
@@ -506,7 +505,7 @@ public class ClassWriter extends SubWriterHolderWriter {
     }
 
     @Override
-    public TypeElement getCurrentPageElement() {
+    public TypeElement getCurrentTypeElement() {
         return typeElement;
     }
 
@@ -517,13 +516,12 @@ public class ClassWriter extends SubWriterHolderWriter {
 
     protected void addClassDescription(Content classInfo) {
         addPreviewInfo(classInfo);
-        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, contents.descriptionLabel);
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, contents.descriptionLabel,
+                TableOfContents.Level.FIRST);
         if (!options.noComment()) {
             // generate documentation for the class.
             if (!utils.getFullBody(typeElement).isEmpty()) {
-                tableOfContents.pushNestedList();
                 addInlineComment(typeElement, classInfo);
-                tableOfContents.popNestedList();
             }
         }
     }
@@ -535,9 +533,7 @@ public class ClassWriter extends SubWriterHolderWriter {
     protected void addClassTagInfo(Content classInfo) {
         if (!options.noComment()) {
             // Print Information about all the tags here
-            tableOfContents.pushNestedList();
             addTagsInfo(typeElement, classInfo);
-            tableOfContents.popNestedList();
         }
     }
 
@@ -740,16 +736,14 @@ public class ClassWriter extends SubWriterHolderWriter {
             }
             // TODO: should we simply split this method up to avoid instanceof ?
             if (type instanceof TypeElement te) {
-                Content link = getLink(
-                        new HtmlLinkInfo(configuration, context, te));
-                content.add(HtmlTree.CODE(link));
+                content.add(getLink(
+                        new HtmlLinkInfo(configuration, context, te)));
             } else {
-                Content link = getLink(
-                        new HtmlLinkInfo(configuration, context, ((TypeMirror)type)));
-                content.add(HtmlTree.CODE(link));
+                content.add(getLink(
+                        new HtmlLinkInfo(configuration, context, ((TypeMirror)type))));
             }
         }
-        return content;
+        return HtmlTree.CODE(content);
     }
 
     /**

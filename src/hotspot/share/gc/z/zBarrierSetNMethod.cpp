@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/z/zAddress.hpp"
@@ -97,4 +96,12 @@ int* ZBarrierSetNMethod::disarmed_guard_value_address() const {
 
 ByteSize ZBarrierSetNMethod::thread_disarmed_guard_value_offset() const {
   return ZThreadLocalData::nmethod_disarmed_offset();
+}
+
+oop ZBarrierSetNMethod::oop_load_no_keepalive(const nmethod* nm, int index) {
+  return ZNMethod::oop_load_no_keepalive(nm, index);
+}
+
+oop ZBarrierSetNMethod::oop_load_phantom(const nmethod* nm, int index) {
+  return ZNMethod::oop_load_phantom(nm, index);
 }

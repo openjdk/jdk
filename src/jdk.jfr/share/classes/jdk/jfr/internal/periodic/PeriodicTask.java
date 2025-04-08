@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,6 @@ import jdk.jfr.internal.Logger;
  *           /     \
  *          /       \
  * JVMEventTask   JavaEventTask
- *                /         \
- *               /           \
- *      UserEventTask     JDKEventTask
  * </pre>
  * <p>
  * State modifications should only be done from the periodic task thread.
@@ -127,8 +124,8 @@ abstract class PeriodicTask {
         try {
             execute(timestamp, periodicType);
         } catch (Throwable e) {
-            // Prevent malicious user to propagate exception callback in the wrong context
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Exception occurred during execution of " + name);
+            String msg = "Exception occurred during execution of " + name + ". " + e.getMessage();
+            Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, msg);
         }
     }
 

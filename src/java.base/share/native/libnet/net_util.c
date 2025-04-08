@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,10 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
     jint preferIPv4Stack;
     if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_2) != JNI_OK) {
         return JNI_EVERSION; /* JNI version not supported */
+    }
+
+    if (NET_PlatformInit() != 0) {
+      return JNI_ERR;
     }
 
     iCls = (*env)->FindClass(env, "java/lang/Boolean");

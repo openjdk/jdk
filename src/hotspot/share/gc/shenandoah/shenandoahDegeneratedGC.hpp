@@ -36,6 +36,7 @@ private:
   const ShenandoahDegenPoint  _degen_point;
   ShenandoahGeneration* _generation;
   bool _abbreviated;
+  size_t _consecutive_degen_with_bad_progress;
 
 public:
   ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation);
@@ -53,8 +54,8 @@ private:
   void op_cleanup_early();
 
   void op_evacuate();
-  void op_init_updaterefs();
-  void op_updaterefs();
+  void op_init_update_refs();
+  void op_update_refs();
   void op_update_roots();
   void op_cleanup_complete();
 

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -28,6 +30,9 @@ import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Optional;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -39,9 +44,24 @@ import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stax.StAXResult;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 
 public final class XmlUtils {
+
+    @FunctionalInterface
+    public interface XmlConsumerNoArg {
+        void accept() throws IOException, XMLStreamException;
+    }
+
+    public static XmlConsumer toXmlConsumer(XmlConsumerNoArg xmlConsumer) {
+        return xml -> xmlConsumer.accept();
+    }
 
     public static void createXml(Path dstFile, XmlConsumer xmlConsumer) throws
             IOException {
@@ -98,5 +118,21 @@ public final class XmlUtils {
             throw new IllegalStateException(ex);
         }
         return dbf;
+    }
+
+    public static Stream<Node> queryNodes(Node xml, XPath xPath, String xpathExpr) throws XPathExpressionException {
+        return toStream((NodeList) xPath.evaluate(xpathExpr, xml, XPathConstants.NODESET));
+    }
+
+    public static Stream<Node> toStream(NodeList nodes) {
+        return Optional.ofNullable(nodes).map(v -> {
+            return IntStream.range(0, v.getLength()).mapToObj(v::item);
+        }).orElseGet(Stream::of);
+    }
+
+    public static Stream<Node> toStream(NamedNodeMap nodes) {
+        return Optional.ofNullable(nodes).map(v -> {
+            return IntStream.range(0, v.getLength()).mapToObj(v::item);
+        }).orElseGet(Stream::of);
     }
 }

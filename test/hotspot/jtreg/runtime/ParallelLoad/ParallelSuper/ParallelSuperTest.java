@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @test MyLoaderTest
  * @bug 8262046
  * @summary Call handle_parallel_super_load, loading parallel threads that throw CCE
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc
+ * @library /testlibrary/asm
  * @library /test/lib
  * @compile -XDignore.symbol.file AsmClasses.java
  * @compile test-classes/ClassInLoader.java test-classes/A.java test-classes/B.java ../share/ThreadPrint.java

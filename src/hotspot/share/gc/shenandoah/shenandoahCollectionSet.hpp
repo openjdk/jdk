@@ -26,11 +26,12 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTIONSET_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTIONSET_HPP
 
-#include "memory/allocation.hpp"
-#include "memory/virtualspace.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "memory/allocation.hpp"
+#include "memory/reservedSpace.hpp"
+#include "memory/virtualspace.hpp"
 
 class ShenandoahCollectionSet : public CHeapObj<mtGC> {
   friend class ShenandoahHeap;

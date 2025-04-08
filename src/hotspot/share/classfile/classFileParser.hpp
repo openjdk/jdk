@@ -367,6 +367,10 @@ class ClassFileParser {
                             const Klass* k,
                             TRAPS) const;
 
+  // Uses msg directly in the ICCE, with no additional content
+  void classfile_icce_error(const char* msg,
+                            TRAPS) const;
+
   void classfile_ucve_error(const char* msg,
                             const Symbol* class_name,
                             u2 major,

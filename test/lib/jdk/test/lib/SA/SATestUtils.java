@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,6 @@ import jtreg.SkippedException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -203,23 +200,16 @@ public class SATestUtils {
      * if we are root, so return true.  Then return false for an expected denial
      * if "ptrace_scope" is 1, and true otherwise.
      */
-    @SuppressWarnings("removal")
     private static boolean canPtraceAttachLinux() throws IOException {
         // SELinux deny_ptrace:
         var deny_ptrace = Paths.get("/sys/fs/selinux/booleans/deny_ptrace");
         if (Files.exists(deny_ptrace)) {
-            try {
-                var bb = AccessController.doPrivileged(
-                    (PrivilegedExceptionAction<byte[]>) () -> Files.readAllBytes(deny_ptrace));
-                if (bb.length == 0) {
-                    throw new Error("deny_ptrace is empty");
-                }
-                if (bb[0] != '0') {
-                    return false;
-                }
-            } catch (PrivilegedActionException e) {
-                IOException t = (IOException) e.getException();
-                throw t;
+            var bb = Files.readAllBytes(deny_ptrace);
+            if (bb.length == 0) {
+                throw new Error("deny_ptrace is empty");
+            }
+            if (bb[0] != '0') {
+                return false;
             }
         }
 
@@ -230,23 +220,17 @@ public class SATestUtils {
         // 3 - no attach: no processes may use ptrace with PTRACE_ATTACH
         var ptrace_scope = Paths.get("/proc/sys/kernel/yama/ptrace_scope");
         if (Files.exists(ptrace_scope)) {
-            try {
-                var bb = AccessController.doPrivileged(
-                    (PrivilegedExceptionAction<byte[]>) () -> Files.readAllBytes(ptrace_scope));
-                if (bb.length == 0) {
-                    throw new Error("ptrace_scope is empty");
-                }
-                byte yama_scope = bb[0];
-                if (yama_scope == '3') {
-                    return false;
-                }
+            var bb = Files.readAllBytes(ptrace_scope);
+            if (bb.length == 0) {
+                throw new Error("ptrace_scope is empty");
+            }
+            byte yama_scope = bb[0];
+            if (yama_scope == '3') {
+                return false;
+            }
 
-                if (!Platform.isRoot() && yama_scope != '0') {
-                    return false;
-                }
-            } catch (PrivilegedActionException e) {
-                IOException t = (IOException) e.getException();
-                throw t;
+            if (!Platform.isRoot() && yama_scope != '0') {
+                return false;
             }
         }
         // Otherwise expect to be permitted:

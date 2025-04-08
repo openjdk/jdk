@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,7 +27,7 @@
  * @test
  * @summary Test messages of IllegalAccessError.
  * @modules java.base/java.lang:open
- *          java.base/jdk.internal.org.objectweb.asm
+ * @library /testlibrary/asm
  * @compile IAE_Loader1.java IAE_Loader2.java IAE78_A.java IAE78_B.java
  *          IllegalAccessErrorTest.java
  * @run main/othervm -Xbootclasspath/a:. test.IllegalAccessErrorTest
@@ -44,9 +44,9 @@ import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodHandles.Lookup.*;
 import java.security.*;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import static org.objectweb.asm.Opcodes.*;
 
 import test.*;
 

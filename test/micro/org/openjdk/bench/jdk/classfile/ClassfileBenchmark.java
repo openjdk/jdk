@@ -50,9 +50,7 @@ import org.openjdk.jmh.infra.Blackhole;
  */
 @Warmup(iterations = 3)
 @Measurement(iterations = 5)
-@Fork(value = 1, jvmArgs = {
-        "--enable-preview"})
-
+@Fork(value = 1)
 @State(Scope.Benchmark)
 public class ClassfileBenchmark {
     private byte[] benchBytes;

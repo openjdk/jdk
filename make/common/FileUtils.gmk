@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,11 @@
 # questions.
 #
 
-ifeq ($(_MAKEBASE_GMK), )
-  $(error You must include MakeBase.gmk prior to including FileUtils.gmk)
-endif
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
 
 ################################################################################
-#
 # Common file utility functions
-#
 ################################################################################
 
 ################################################################################
@@ -308,25 +305,7 @@ else
   FindFiles = $(CacheFindFiles)
 endif
 
-# Find native debuginfo files in a directory
-#
-# Param 1 - dir to find debuginfo files in
-FindDebuginfoFiles = \
-    $(wildcard $(addprefix $1/*, $(DEBUGINFO_SUFFIXES)) \
-        $(addprefix $1/*/*, $(DEBUGINFO_SUFFIXES)) \
-        $(addprefix $1/*/*/*, $(DEBUGINFO_SUFFIXES)))
+################################################################################
 
-# Pick the correct debug info files to copy, either zipped or not.
-ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
-  DEBUGINFO_SUFFIXES += .diz
-else
-  DEBUGINFO_SUFFIXES := .debuginfo .pdb .map
-  # On Macosx, if debug symbols have not been zipped, find all files inside *.dSYM
-  # dirs.
-  ifeq ($(call isTargetOs, macosx), true)
-    $(call FillFindCache, \
-        $(SUPPORT_OUTPUTDIR)/modules_libs $(SUPPORT_OUTPUTDIR)/modules_cmds)
-    FindDebuginfoFiles = \
-        $(if $(wildcard $1), $(call containing, .dSYM/, $(call FindFiles, $1)))
-  endif
-endif
+include MakeIncludeEnd.gmk
+endif # include guard

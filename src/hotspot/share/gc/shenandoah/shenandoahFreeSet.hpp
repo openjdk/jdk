@@ -286,7 +286,6 @@ class ShenandoahFreeSet : public CHeapObj<mtGC> {
 private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
-  ShenandoahHeapRegion** _trash_regions;
 
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
@@ -324,9 +323,12 @@ private:
   //
   // Typical usage: During evacuation, the GC may find it needs more memory than had been reserved at the start of evacuation to
   // hold evacuated objects.  If this occurs and memory is still available in the Mutator's free set, we will flip a region from
-  // the Mutator free set into the Collector or OldCollector free set.
+  // the Mutator free set into the Collector or OldCollector free set. The conditions to move this region are checked by
+  // the caller, so the given region is always moved.
   void flip_to_gc(ShenandoahHeapRegion* r);
-  void flip_to_old_gc(ShenandoahHeapRegion* r);
+
+  // Return true if and only if the given region is successfully flipped to the old partition
+  bool flip_to_old_gc(ShenandoahHeapRegion* r);
 
   // Handle allocation for mutator.
   HeapWord* allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
@@ -352,7 +354,6 @@ private:
   HeapWord* try_allocate_from_mutator(ShenandoahAllocRequest& req, bool& in_new_region);
 
   void clear_internal();
-  void try_recycle_trashed(ShenandoahHeapRegion *r);
 
   // Returns true iff this region is entirely available, either because it is empty() or because it has been found to represent
   // immediate trash and we'll be able to immediately recycle it.  Note that we cannot recycle immediate trash if
@@ -437,8 +438,12 @@ public:
   // Acquire heap lock and log status, assuming heap lock is not acquired by the caller.
   void log_status_under_lock();
 
+  // Note that capacity is the number of regions that had available memory at most recent rebuild.  It is not the
+  // entire size of the young or global generation.  (Regions within the generation that were fully utilized at time of
+  // rebuild are not counted as part of capacity.)
   inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator); }
   inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);     }
+
   inline size_t available() const {
     assert(used() <= capacity(), "must use less than capacity");
     return capacity() - used();

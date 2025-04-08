@@ -471,21 +471,11 @@ public interface JavaLangAccess {
      */
     Object classData(Class<?> c);
 
-    int getCharsLatin1(long i, int index, byte[] buf);
-
-    int getCharsUTF16(long i, int index, byte[] buf);
-
     /**
      * Returns the {@link NativeLibraries} object associated with the provided class loader.
      * This is used by {@link SymbolLookup#loaderLookup()}.
      */
     NativeLibraries nativeLibrariesFor(ClassLoader loader);
-
-    /**
-     * Direct access to Shutdown.exit to avoid security manager checks
-     * @param statusCode the status code
-     */
-    void exit(int statusCode);
 
     /**
      * Returns an array of all platform threads.

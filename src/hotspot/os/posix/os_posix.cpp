@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -551,7 +551,7 @@ void os::Posix::print_uptime_info(outputStream* st) {
   setutxent();
   while ((ent = getutxent())) {
     if (!strcmp("system boot", ent->ut_line)) {
-      bootsec = ent->ut_tv.tv_sec;
+      bootsec = (int)ent->ut_tv.tv_sec;
       break;
     }
   }
@@ -972,7 +972,7 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   // Work around glibc stack guard issue, see os::create_thread() in os_linux.cpp.
   LINUX_ONLY(if (os::Linux::adjustStackSizeForGuardPages()) stack_size -= guard_size;)
   pthread_attr_getdetachstate(attr, &detachstate);
-  jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
+  jio_snprintf(buf, buflen, "stacksize: %zuk, guardsize: %zuk, %s",
     stack_size / K, guard_size / K,
     (detachstate == PTHREAD_CREATE_DETACHED ? "detached" : "joinable"));
   return buf;

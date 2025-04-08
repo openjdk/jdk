@@ -43,7 +43,7 @@ import static org.openjdk.bench.jdk.classfile.TestConstants.*;
 @Measurement(iterations = 5)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @BenchmarkMode(Mode.Throughput)
-@Fork(value = 1, jvmArgs = {"--enable-preview"})
+@Fork(value = 1)
 @State(Scope.Benchmark)
 public class ConstantPoolBuildingClassEntry {
     // JDK-8338546

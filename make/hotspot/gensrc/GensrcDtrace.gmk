@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,12 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # Gensrc support for dtrace. The files generated here are included by dtrace.hpp
+################################################################################
 
 ifeq ($(call check-jvm-feature, dtrace), true)
 
@@ -43,7 +47,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
 	$(call LogInfo, Generating dtrace header file $(@F))
 	$(call MakeDir, $(@D) $(DTRACE_SUPPORT_DIR))
 	$(call ExecuteWithLog, $(DTRACE_SUPPORT_DIR)/$(@F).d, \
-	    ($(CPP) $(DTRACE_CPP_FLAGS) $< > $(DTRACE_SUPPORT_DIR)/$(@F).d))
+	    ($(CPP) $(DTRACE_CPP_FLAGS) $(SYSROOT_CFLAGS) $< > $(DTRACE_SUPPORT_DIR)/$(@F).d))
 	$(call ExecuteWithLog, $@, $(DTRACE) $(DTRACE_FLAGS) -h -o $@ -s $(DTRACE_SUPPORT_DIR)/$(@F).d)
 
   # Process all .d files in DTRACE_SOURCE_DIR. They are:
@@ -52,3 +56,8 @@ ifeq ($(call check-jvm-feature, dtrace), true)
       $(DTRACE_GENSRC_DIR)/%.h, $(wildcard $(DTRACE_SOURCE_DIR)/*.d))
 
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

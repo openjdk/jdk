@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,15 +102,20 @@ public class IREncodingPrinter {
         "avx512dq",
         "avx512vl",
         "avx512f",
+        "avx512_fp16",
         "avx512_vnni",
         // AArch64
         "sha3",
         "asimd",
         "sve",
-        // Riscv64
+        "sve2",
+        // RISCV64
         "rvv",
+        "zbkb",
+        "zfh",
         "zvbb",
-        "zvfh"
+        "zvfh",
+        "zvkn"
     ));
 
     public IREncodingPrinter() {

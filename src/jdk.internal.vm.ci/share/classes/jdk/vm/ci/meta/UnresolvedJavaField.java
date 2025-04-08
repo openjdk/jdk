@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,27 @@ public final class UnresolvedJavaField implements JavaField {
     private final JavaType holder;
     private final JavaType type;
 
-    public UnresolvedJavaField(JavaType holder, String name, JavaType type) {
+    /**
+     * The reason field resolution failed. Can be null.
+     */
+    private final Throwable cause;
+
+    public UnresolvedJavaField(JavaType holder, String name, JavaType type, Throwable cause) {
         this.name = name;
         this.type = type;
         this.holder = holder;
+        this.cause = cause;
+    }
+
+    public UnresolvedJavaField(JavaType holder, String name, JavaType type) {
+        this(holder, name, type, null);
+    }
+
+    /**
+     * Gets the exception, if any, representing the reason field resolution resulted in this object.
+     */
+    public Throwable getCause() {
+        return cause;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020 Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"

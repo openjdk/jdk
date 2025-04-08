@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_ppc.hpp"
@@ -94,7 +93,6 @@ void Relocation::pd_set_call_destination(address x) {
 
 address* Relocation::pd_address_in_code() {
   ShouldNotReachHere();
-  return 0;
 }
 
 address Relocation::pd_get_address_from_code() {

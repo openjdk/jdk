@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8335927
+ * @bug 8335927 8345773
  * @summary Testing ClassFile ClassPrinter.
  * @run junit ClassPrinterTest
  */
@@ -122,8 +122,7 @@ class ClassPrinterTest {
 
     @Test
     void testPrintYamlTraceAll() throws IOException {
-        var out = new StringBuilder();
-        ClassPrinter.toYaml(getClassModel(), ClassPrinter.Verbosity.TRACE_ALL, out::append);
+        var out = getClassModel().toDebugString();
         assertOut(out,
                 """
                   - class name: Foo
@@ -904,7 +903,7 @@ class ClassPrinterTest {
         assertEquals(node.walk().count(), 42);
     }
 
-    private static void assertOut(StringBuilder out, String expected) {
+    private static void assertOut(CharSequence out, String expected) {
 //        System.out.println("-----------------");
 //        System.out.println(out.toString());
 //        System.out.println("-----------------");

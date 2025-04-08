@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,7 @@ public class RedirectMethodChange implements HttpServerAdapters {
 
     @AfterTest
     public void teardown() throws Exception {
+        client.close();
         httpTestServer.stop();
         httpsTestServer.stop();
         http2TestServer.stop();
@@ -240,8 +241,8 @@ public class RedirectMethodChange implements HttpServerAdapters {
      */
     static class RedirMethodChgeHandler implements HttpTestHandler {
 
-        boolean inTest;
-        String expectedMethod;
+        volatile boolean inTest;
+        volatile String expectedMethod;
 
         final String targetURL;
         RedirMethodChgeHandler(String targetURL) {
@@ -272,11 +273,14 @@ public class RedirectMethodChange implements HttpServerAdapters {
                 Throwable ex = new RuntimeException("Unexpected newtest:" + newtest
                         + ", inTest:" + inTest +  ", for " + he.getRequestURI());
                 ex.printStackTrace();
+                inTest = false; // next request should be new test
                 he.sendResponseHeaders(500, 0);
                 return;
             }
 
             if (newtest) {
+                // set inTest before sending responses
+                inTest = true;
                 HttpTestRequestHeaders hdrs = he.getRequestHeaders();
                 String value = hdrs.firstValue("X-Redirect-Code").get();
                 int redirectCode = Integer.parseInt(value);
@@ -286,8 +290,9 @@ public class RedirectMethodChange implements HttpServerAdapters {
                 HttpTestResponseHeaders headersbuilder = he.getResponseHeaders();
                 headersbuilder.addHeader("Location", targetURL);
                 he.sendResponseHeaders(redirectCode, 0);
-                inTest = true;
             } else {
+                // set inTest before sending responses
+                inTest = false;
                 // should be the redirect
                 if (!he.getRequestURI().getPath().endsWith("/redirect/rmt")) {
                     Throwable ex = new RuntimeException("Unexpected redirected request, got:"
@@ -307,7 +312,6 @@ public class RedirectMethodChange implements HttpServerAdapters {
                         os.write(RESPONSE.getBytes(US_ASCII));
                     }
                 }
-                inTest = false;
             }
         }
     }

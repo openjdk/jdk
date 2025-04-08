@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddress.inline.hpp"
@@ -43,14 +42,17 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
   // Initialize platform specific parts before reserving address space
   pd_initialize_before_reserve();
 
+  // Register the Windows callbacks
+  pd_register_callbacks(&_manager);
+
   // Reserve address space
   if (!reserve(max_capacity)) {
     ZInitialize::error_d("Failed to reserve enough address space for Java heap");
     return;
   }
 
-  // Initialize platform specific parts after reserving address space
-  pd_initialize_after_reserve();
+  // Set ZAddressOffsetMax to the highest address end available after reservation
+  ZAddressOffsetMax = untype(highest_available_address_end());
 
   // Successfully initialized
   _initialized = true;
@@ -138,7 +140,7 @@ size_t ZVirtualMemoryManager::reserve_discontiguous(size_t size) {
 }
 
 bool ZVirtualMemoryManager::reserve_contiguous(zoffset start, size_t size) {
-  assert(is_aligned(size, ZGranuleSize), "Must be granule aligned " SIZE_FORMAT_X, size);
+  assert(is_aligned(size, ZGranuleSize), "Must be granule aligned 0x%zx", size);
 
   // Reserve address views
   const zaddress_unsafe addr = ZOffset::address_unsafe(start);
@@ -152,7 +154,7 @@ bool ZVirtualMemoryManager::reserve_contiguous(zoffset start, size_t size) {
   ZNMT::reserve(addr, size);
 
   // Make the address range free
-  _manager.free(start, size);
+  _manager.register_range(start, size);
 
   return true;
 }
@@ -201,12 +203,31 @@ bool ZVirtualMemoryManager::reserve(size_t max_capacity) {
                        (contiguous ? "Contiguous" : "Discontiguous"),
                        (limit == ZAddressOffsetMax ? "Unrestricted" : "Restricted"),
                        (reserved == size ? "Complete" : "Degraded"));
-  log_info_p(gc, init)("Address Space Size: " SIZE_FORMAT "M", reserved / M);
+  log_info_p(gc, init)("Address Space Size: %zuM", reserved / M);
 
   // Record reserved
   _reserved = reserved;
 
   return reserved >= max_capacity;
+}
+
+void ZVirtualMemoryManager::unreserve(zoffset start, size_t size) {
+  const zaddress_unsafe addr = ZOffset::address_unsafe(start);
+
+  // Unregister the reserved memory from NMT
+  ZNMT::unreserve(addr, size);
+
+  // Unreserve address space
+  pd_unreserve(addr, size);
+}
+
+void ZVirtualMemoryManager::unreserve_all() {
+  zoffset start;
+  size_t size;
+
+  while (_manager.unregister_first(&start, &size)) {
+    unreserve(start, size);
+  }
 }
 
 bool ZVirtualMemoryManager::is_initialized() const {

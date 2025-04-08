@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shared/workerDataArray.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -122,6 +121,7 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
     case conc_weak_refs:
     case conc_strong_roots:
     case conc_coalesce_and_fill:
+    case promote_in_place:
       return true;
     default:
       return false;

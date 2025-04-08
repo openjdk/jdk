@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/filemap.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -103,6 +101,7 @@ bool   Arguments::_ClipInlining                 = ClipInlining;
 size_t Arguments::_default_SharedBaseAddress    = SharedBaseAddress;
 
 bool   Arguments::_enable_preview               = false;
+bool   Arguments::_has_jdwp_agent               = false;
 
 LegacyGCLogging Arguments::_legacyGCLogging     = { nullptr, 0 };
 
@@ -332,8 +331,7 @@ bool Arguments::is_incompatible_cds_internal_module_property(const char* propert
 bool Arguments::internal_module_property_helper(const char* property, bool check_for_cds) {
   if (strncmp(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
     const char* property_suffix = property + MODULE_PROPERTY_PREFIX_LEN;
-    if (matches_property_suffix(property_suffix, ADDEXPORTS, ADDEXPORTS_LEN) ||
-        matches_property_suffix(property_suffix, ADDREADS, ADDREADS_LEN) ||
+    if (matches_property_suffix(property_suffix, ADDREADS, ADDREADS_LEN) ||
         matches_property_suffix(property_suffix, ADDOPENS, ADDOPENS_LEN) ||
         matches_property_suffix(property_suffix, PATCH, PATCH_LEN) ||
         matches_property_suffix(property_suffix, LIMITMODS, LIMITMODS_LEN) ||
@@ -344,7 +342,8 @@ bool Arguments::internal_module_property_helper(const char* property, bool check
 
     if (!check_for_cds) {
       // CDS notes: these properties are supported by CDS archived full module graph.
-      if (matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
+      if (matches_property_suffix(property_suffix, ADDEXPORTS, ADDEXPORTS_LEN) ||
+          matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
           matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN) ||
           matches_property_suffix(property_suffix, ENABLE_NATIVE_ACCESS, ENABLE_NATIVE_ACCESS_LEN)) {
         return true;
@@ -522,9 +521,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-  { "DontYieldALot",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
 #ifdef LINUX
   { "UseLinuxPosixThreadCPUClocks", JDK_Version::jdk(24), JDK_Version::jdk(25), JDK_Version::jdk(26) },
+  { "UseOprofile",                  JDK_Version::jdk(25), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 #endif
   { "LockingMode",                  JDK_Version::jdk(24), JDK_Version::jdk(26), JDK_Version::jdk(27) },
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
@@ -534,20 +533,8 @@ static SpecialFlag const special_jvm_flags[] = {
 
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::undefined() },
-  { "UseNotificationThread",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "PreserveAllAnnotations",       JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "UseEmptySlotsInSupers",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "OldSize",                      JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-#if defined(X86)
-  { "UseRTMLocking",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "UseRTMDeopt",                  JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "RTMRetryCount",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-#endif // X86
+  { "ZMarkStackSpaceLimit",         JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::undefined() },
 
-
-  { "BaseFootPrintEstimate",           JDK_Version::undefined(), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "HeapFirstMaximumCompactionCount", JDK_Version::undefined(), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "UseVtableBasedCHA",               JDK_Version::undefined(), JDK_Version::jdk(24), JDK_Version::jdk(25) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -1378,11 +1365,19 @@ void Arguments::set_mode_flags(Mode mode) {
 // incompatible command line options were chosen.
 void Arguments::no_shared_spaces(const char* message) {
   if (RequireSharedSpaces) {
-    jio_fprintf(defaultStream::error_stream(),
-      "Class data sharing is inconsistent with other specified options.\n");
-    vm_exit_during_initialization("Unable to use shared archive", message);
+    log_error(cds)("%s is incompatible with other specified options.",
+                   CDSConfig::new_aot_flags_used() ? "AOT cache" : "CDS");
+    if (CDSConfig::new_aot_flags_used()) {
+      vm_exit_during_initialization("Unable to use AOT cache", message);
+    } else {
+      vm_exit_during_initialization("Unable to use shared archive", message);
+    }
   } else {
-    log_info(cds)("Unable to use shared archive: %s", message);
+    if (CDSConfig::new_aot_flags_used()) {
+      log_warning(cds)("Unable to use AOT cache: %s", message);
+    } else {
+      log_info(cds)("Unable to use shared archive: %s", message);
+    }
     UseSharedSpaces = false;
   }
 }
@@ -1545,8 +1540,8 @@ void Arguments::set_heap_size() {
       if (!FLAG_IS_DEFAULT(HeapBaseMinAddress)) {
         if (HeapBaseMinAddress < DefaultHeapBaseMinAddress) {
           // matches compressed oops printing flags
-          log_debug(gc, heap, coops)("HeapBaseMinAddress must be at least " SIZE_FORMAT
-                                     " (" SIZE_FORMAT "G) which is greater than value given " SIZE_FORMAT,
+          log_debug(gc, heap, coops)("HeapBaseMinAddress must be at least %zu"
+                                     " (%zuG) which is greater than value given %zu",
                                      DefaultHeapBaseMinAddress,
                                      DefaultHeapBaseMinAddress/G,
                                      HeapBaseMinAddress);
@@ -1571,7 +1566,7 @@ void Arguments::set_heap_size() {
       if (reasonable_max > max_coop_heap) {
         if (FLAG_IS_ERGO(UseCompressedOops) && override_coop_limit) {
           log_info(cds)("UseCompressedOops and UseCompressedClassPointers have been disabled due to"
-            " max heap " SIZE_FORMAT " > compressed oop heap " SIZE_FORMAT ". "
+            " max heap %zu > compressed oop heap %zu. "
             "Please check the setting of MaxRAMPercentage %5.2f."
             ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
           FLAG_SET_ERGO(UseCompressedOops, false);
@@ -1582,7 +1577,7 @@ void Arguments::set_heap_size() {
     }
 #endif // _LP64
 
-    log_trace(gc, heap)("  Maximum heap size " SIZE_FORMAT, (size_t) reasonable_max);
+    log_trace(gc, heap)("  Maximum heap size %zu", (size_t) reasonable_max);
     FLAG_SET_ERGO(MaxHeapSize, (size_t)reasonable_max);
   }
 
@@ -1603,13 +1598,13 @@ void Arguments::set_heap_size() {
       reasonable_initial = MIN2(reasonable_initial, (julong)MaxHeapSize);
 
       FLAG_SET_ERGO(InitialHeapSize, (size_t)reasonable_initial);
-      log_trace(gc, heap)("  Initial heap size " SIZE_FORMAT, InitialHeapSize);
+      log_trace(gc, heap)("  Initial heap size %zu", InitialHeapSize);
     }
     // If the minimum heap size has not been set (via -Xms or -XX:MinHeapSize),
     // synchronize with InitialHeapSize to avoid errors with the default value.
     if (MinHeapSize == 0) {
       FLAG_SET_ERGO(MinHeapSize, MIN2((size_t)reasonable_minimum, InitialHeapSize));
-      log_trace(gc, heap)("  Minimum heap size " SIZE_FORMAT, MinHeapSize);
+      log_trace(gc, heap)("  Minimum heap size %zu", MinHeapSize);
     }
   }
 }
@@ -1744,7 +1739,7 @@ jint Arguments::set_aggressive_opts_flags() {
     }
     // Feed the cache size setting into the JDK
     char buffer[1024];
-    jio_snprintf(buffer, 1024, "java.lang.Integer.IntegerCache.high=" INTX_FORMAT, AutoBoxCacheMax);
+    jio_snprintf(buffer, 1024, "java.lang.Integer.IntegerCache.high=%zd", AutoBoxCacheMax);
     if (!add_property(buffer)) {
       return JNI_ENOMEM;
     }
@@ -1798,7 +1793,7 @@ bool Arguments::check_vm_args_consistency() {
   if (TLABRefillWasteFraction == 0) {
     jio_fprintf(defaultStream::error_stream(),
                 "TLABRefillWasteFraction should be a denominator, "
-                "not " SIZE_FORMAT "\n",
+                "not %zu\n",
                 TLABRefillWasteFraction);
     status = false;
   }
@@ -2021,7 +2016,7 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   return JNI_OK;
 }
 
-#if !INCLUDE_JVMTI
+#if !INCLUDE_JVMTI || INCLUDE_CDS
 // Checks if name in command-line argument -agent{lib,path}:name[=options]
 // represents a valid JDWP agent.  is_path==true denotes that we
 // are dealing with -agentpath (case where name is a path), otherwise with
@@ -2319,6 +2314,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
             "Debugging agents are not supported in this VM\n");
           return JNI_ERR;
         }
+#elif INCLUDE_CDS
+        if (valid_jdwp_agent(name, is_absolute_path)) {
+          _has_jdwp_agent = true;
+        }
 #endif // !INCLUDE_JVMTI
         JvmtiAgentList::add(name, options, is_absolute_path);
         os::free(name);
@@ -2606,9 +2605,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       } else if (strcmp(tail, ":disable") == 0) {
         LogConfiguration::disable_logging();
         ret = true;
-      } else if (strcmp(tail, ":async") == 0) {
-        LogConfiguration::set_async_mode(true);
-        ret = true;
+      } else if (strncmp(tail, ":async", strlen(":async")) == 0) {
+        const char* async_tail = tail + strlen(":async");
+        ret = LogConfiguration::parse_async_argument(async_tail);
       } else if (*tail == '\0') {
         ret = LogConfiguration::parse_command_line_arguments();
         assert(ret, "-Xlog without arguments should never fail to parse");
@@ -3798,10 +3797,18 @@ jint Arguments::apply_ergo() {
   }
 #endif // COMPILER2_OR_JVMCI
 
+#ifdef COMPILER2
+  if (!FLAG_IS_DEFAULT(UseLoopPredicate) && !UseLoopPredicate && UseProfiledLoopPredicate) {
+    warning("Disabling UseProfiledLoopPredicate since UseLoopPredicate is turned off.");
+    FLAG_SET_ERGO(UseProfiledLoopPredicate, false);
+  }
+#endif // COMPILER2
+
   if (log_is_enabled(Info, perf, class, link)) {
     if (!UsePerfData) {
       warning("Disabling -Xlog:perf+class+link since UsePerfData is turned off.");
-      LogConfiguration::configure_stdout(LogLevel::Off, false, LOG_TAGS(perf, class, link));
+      LogConfiguration::disable_tags(false, LOG_TAGS(perf, class, link));
+      assert(!log_is_enabled(Info, perf, class, link), "sanity");
     }
   }
 

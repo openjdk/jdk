@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,28 @@
  */
 package java.lang.classfile.constantpool;
 
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassFileBuilder;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
+
 /**
- * Models an entry in the constant pool of a classfile.
+ * Models an entry in the constant pool of a {@code class} file.  Entries are
+ * read from {@code class} files, and can be created with a {@link
+ * ConstantPoolBuilder} to write to {@code class} files.
  *
+ * @implNote
+ * <h2 id="unbound">Unbound Constant Pool Entries</h2>
+ * Implementations may create unbound constant pool entries not belonging to
+ * an actual constant pool.  They conveniently represent constant pool entries
+ * referred by unbound {@linkplain Attribute attributes} not read from a {@code
+ * class} file.  Their {@link #index() index()} return a non-positive invalid
+ * value, and behaviors of their {@link #constantPool() constantPool()} are
+ * unspecified.  They are considered alien to any {@linkplain
+ * ClassFileBuilder#constantPool() contextual constant pool} and will be
+ * converted when they are written to {@code class} files.
+ *
+ * @see ConstantPoolBuilder##alien Alien Constant Pool Entries
  * @sealedGraph
  * @since 24
  */
@@ -88,6 +107,14 @@ public sealed interface PoolEntry
 
     /**
      * {@return the constant pool this entry is from}
+     *
+     * @apiNote
+     * Given a {@link ConstantPoolBuilder} {@code builder} and a {@code
+     * PoolEntry entry}, use {@link ConstantPoolBuilder#canWriteDirect
+     * builder.canWriteDirect(entry.constantPool())} instead of object equality
+     * of the constant pool to determine if an entry belongs to the builder.
+     *
+     * @see ##unbound Unbound Constant Pool Entries
      */
     ConstantPool constantPool();
 
@@ -102,11 +129,32 @@ public sealed interface PoolEntry
 
     /**
      * {@return the index within the constant pool corresponding to this entry}
+     * A valid index is always positive; if the index is non-positive, this
+     * entry is {@linkplain ##unbound unbound}.
+     *
+     * @see ##unbound Unbound Constant Pool Entries
      */
     int index();
 
     /**
      * {@return the number of constant pool slots this entry consumes}
+     * <p>
+     * All pool entries except {@link LongEntry CONSTANT_Long} and {@link
+     * DoubleEntry CONSTANT_Double} have width {@code 1}. These two exceptions
+     * have width {@code 2}, and their subsequent indices at {@link #index()
+     * index() + 1} are considered unusable.
+     *
+     * @apiNote
+     * If this entry is {@linkplain LoadableConstantEntry loadable}, the width
+     * of this entry does not decide if this entry should be loaded with {@link
+     * Opcode#LDC ldc} or {@link Opcode#LDC2_W ldc2_w}.  For example, {@link
+     * ConstantDynamicEntry} always has width {@code 1}, but it must be loaded
+     * with {@code ldc2_w} if its {@linkplain ConstantDynamicEntry#typeKind()
+     * type} is {@link TypeKind#LONG long} or {@link TypeKind#DOUBLE double}.
+     * Use {@link LoadableConstantEntry#typeKind() typeKind().slotSize()} to
+     * determine the loading instruction instead.
+     *
+     * @see ConstantPool##index Index in the Constant Pool
      */
     int width();
 }

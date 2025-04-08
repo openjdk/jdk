@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *          java.management
  *
  * @build jdk.test.whitebox.WhiteBox
- * @requires !(vm.cpu.features ~= ".*aes.*")
+ * @requires !(vm.cpu.features ~= ".*aes.*" | vm.cpu.features ~= ".*zvkn.*")
  * @requires vm.compiler1.enabled | !vm.graal.enabled
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions

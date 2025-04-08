@@ -29,6 +29,9 @@
 module name java.management
 header exports java/lang/management,javax/management,javax/management/loading,javax/management/modelmbean,javax/management/monitor,javax/management/openmbean,javax/management/relation,javax/management/remote,javax/management/timer requires name\u0020;java.base\u0020;flags\u0020;8000 uses javax/management/remote/JMXConnectorProvider,javax/management/remote/JMXConnectorServerProvider,sun/management/spi/PlatformMBeanProvider provides interface\u0020;javax/security/auth/spi/LoginModule\u0020;impls\u0020;com/sun/jmx/remote/security/FileLoginModule target macos-aarch64 flags 8000
 
+class name java/lang/management/RuntimeMXBean
+header extends java/lang/Object implements java/lang/management/PlatformManagedObject flags 601 classAnnotations @Ljdk/Profile+Annotation;(value=I3)
+
 class name javax/management/Notification
 header extends java/util/EventObject flags 21
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19

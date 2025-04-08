@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1636,6 +1636,13 @@ public class JPEGImageReader extends ImageReader {
         return true;
     }
 
+    private int getNumJFIFThumbnails(JFIFMarkerSegment jfif) throws IOException {
+        if (jfif == null) {
+            return 0;
+        }
+        return ((jfif.thumb == null) ? 0 : 1) + jfif.extSegments.size();
+    }
+
     @Override
     public int getNumThumbnails(int imageIndex) throws IOException {
         setThreadLock();
@@ -1643,16 +1650,22 @@ public class JPEGImageReader extends ImageReader {
             cbLock.check();
 
             getImageMetadata(imageIndex);  // checks iis state for us
-            // Now check the jfif segments
+
+            // Check the jfif segments
             JFIFMarkerSegment jfif =
-                (JFIFMarkerSegment) imageMetadata.findMarkerSegment
-                (JFIFMarkerSegment.class, true);
-            int retval = 0;
-            if (jfif != null) {
-                retval = (jfif.thumb == null) ? 0 : 1;
-                retval += jfif.extSegments.size();
+                    (JFIFMarkerSegment) imageMetadata.findMarkerSegment
+                            (JFIFMarkerSegment.class, true);
+            int numThumbnails = getNumJFIFThumbnails(jfif);
+
+            // Check the Exif segment
+            ExifMarkerSegment exifMarkerSegment =
+                    (ExifMarkerSegment) imageMetadata.findMarkerSegment
+                            (ExifMarkerSegment.class, true);
+            if (exifMarkerSegment != null) {
+                numThumbnails += exifMarkerSegment.getNumThumbnails();
             }
-            return retval;
+
+            return numThumbnails;
         } finally {
             clearThreadLock();
         }
@@ -1669,11 +1682,22 @@ public class JPEGImageReader extends ImageReader {
                 || (thumbnailIndex >= getNumThumbnails(imageIndex))) {
                 throw new IndexOutOfBoundsException("No such thumbnail");
             }
-            // Now we know that there is a jfif segment
+
+            // Check the JFIF segment
             JFIFMarkerSegment jfif =
                 (JFIFMarkerSegment) imageMetadata.findMarkerSegment
                 (JFIFMarkerSegment.class, true);
-            return  jfif.getThumbnailWidth(thumbnailIndex);
+
+            int numJFIFThumbnails = getNumJFIFThumbnails(jfif);
+            if (thumbnailIndex < numJFIFThumbnails) {
+                return jfif.getThumbnailWidth(thumbnailIndex);
+            }
+
+            // Check the Exif segment
+            ExifMarkerSegment exifMarkerSegment =
+                    (ExifMarkerSegment) imageMetadata.findMarkerSegment
+                            (ExifMarkerSegment.class, true);
+            return exifMarkerSegment.getThumbnailWidth();
         } finally {
             clearThreadLock();
         }
@@ -1690,11 +1714,22 @@ public class JPEGImageReader extends ImageReader {
                 || (thumbnailIndex >= getNumThumbnails(imageIndex))) {
                 throw new IndexOutOfBoundsException("No such thumbnail");
             }
-            // Now we know that there is a jfif segment
+
+            // Check the JFIF segment
             JFIFMarkerSegment jfif =
-                (JFIFMarkerSegment) imageMetadata.findMarkerSegment
-                (JFIFMarkerSegment.class, true);
-            return  jfif.getThumbnailHeight(thumbnailIndex);
+                    (JFIFMarkerSegment) imageMetadata.findMarkerSegment
+                            (JFIFMarkerSegment.class, true);
+
+            int numJFIFThumbnails = getNumJFIFThumbnails(jfif);
+            if (thumbnailIndex < numJFIFThumbnails) {
+                return jfif.getThumbnailHeight(thumbnailIndex);
+            }
+
+            // Check the Exif segment
+            ExifMarkerSegment exifMarkerSegment =
+                    (ExifMarkerSegment) imageMetadata.findMarkerSegment
+                            (ExifMarkerSegment.class, true);
+            return exifMarkerSegment.getThumbnailHeight();
         } finally {
             clearThreadLock();
         }
@@ -1712,11 +1747,21 @@ public class JPEGImageReader extends ImageReader {
                 || (thumbnailIndex >= getNumThumbnails(imageIndex))) {
                 throw new IndexOutOfBoundsException("No such thumbnail");
             }
-            // Now we know that there is a jfif segment and that iis is good
+
+            // Check the JFIF segment
             JFIFMarkerSegment jfif =
-                (JFIFMarkerSegment) imageMetadata.findMarkerSegment
-                (JFIFMarkerSegment.class, true);
-            return  jfif.getThumbnail(iis, thumbnailIndex, this);
+                    (JFIFMarkerSegment) imageMetadata.findMarkerSegment
+                            (JFIFMarkerSegment.class, true);
+            int numJFIFThumbnails = getNumJFIFThumbnails(jfif);
+            if (thumbnailIndex < numJFIFThumbnails) {
+                return jfif.getThumbnail(iis, thumbnailIndex, this);
+            }
+
+            // Check the Exif segment
+            ExifMarkerSegment exifMarkerSegment =
+                    (ExifMarkerSegment) imageMetadata.findMarkerSegment
+                            (ExifMarkerSegment.class, true);
+            return exifMarkerSegment.getThumbnail(this);
         } finally {
             clearThreadLock();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public:
 
 class ZVirtualMemoryManager {
   friend class ZMapperTest;
+  friend class ZVirtualMemoryManagerTest;
 
 private:
   static size_t calculate_min_range(size_t size);
@@ -58,7 +59,7 @@ private:
 
   // Platform specific implementation
   void pd_initialize_before_reserve();
-  void pd_initialize_after_reserve();
+  void pd_register_callbacks(ZMemoryManager* manager);
   bool pd_reserve(zaddress_unsafe addr, size_t size);
   void pd_unreserve(zaddress_unsafe addr, size_t size);
 
@@ -67,6 +68,8 @@ private:
   size_t reserve_discontiguous(zoffset start, size_t size, size_t min_range);
   size_t reserve_discontiguous(size_t size);
   bool reserve(size_t max_capacity);
+
+  void unreserve(zoffset start, size_t size);
 
   DEBUG_ONLY(size_t force_reserve_discontiguous(size_t size);)
 
@@ -77,9 +80,12 @@ public:
 
   size_t reserved() const;
   zoffset lowest_available_address() const;
+  zoffset_end highest_available_address_end() const;
 
   ZVirtualMemory alloc(size_t size, bool force_low_address);
   void free(const ZVirtualMemory& vmem);
+
+  void unreserve_all();
 };
 
 #endif // SHARE_GC_Z_ZVIRTUALMEMORY_HPP

@@ -52,7 +52,6 @@ public interface RSAPrivateCrtKey extends RSAPrivateKey {
      * ineffectual. Do not use; no replacement.
      */
     @Deprecated
-    @SuppressWarnings("serial")
     @java.io.Serial
     long serialVersionUID = -5682214253527700368L;
 

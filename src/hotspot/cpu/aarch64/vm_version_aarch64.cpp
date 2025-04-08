@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "pauth_aarch64.hpp"
 #include "register_aarch64.hpp"
 #include "runtime/arguments.hpp"
@@ -158,6 +157,10 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
       FLAG_SET_DEFAULT(OnSpinWaitInstCount, 2);
     }
+    if (FLAG_IS_DEFAULT(CodeEntryAlignment) &&
+        (_model == CPU_MODEL_AMPERE_1A || _model == CPU_MODEL_AMPERE_1B)) {
+      FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
+    }
   }
 
   // ThunderX
@@ -237,7 +240,7 @@ void VM_Version::initialize() {
     }
   }
 
-  if (_cpu == CPU_ARM) {
+  if (_features & (CPU_FP | CPU_ASIMD)) {
     if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
     }
@@ -409,6 +412,17 @@ void VM_Version::initialize() {
       warning("ChaCha20 intrinsic requires ASIMD instructions");
     }
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
+
+  if (_features & CPU_ASIMD) {
+      if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
+          UseDilithiumIntrinsics = true;
+      }
+  } else if (UseDilithiumIntrinsics) {
+      if (!FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
+          warning("Dilithium intrinsic requires ASIMD instructions");
+      }
+      FLAG_SET_DEFAULT(UseDilithiumIntrinsics, false);
   }
 
   if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {

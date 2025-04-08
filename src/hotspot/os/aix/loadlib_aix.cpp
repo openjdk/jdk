@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * Copyright (c) 2022, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -41,6 +41,9 @@
 
 // For loadquery()
 #include <sys/ldr.h>
+
+// For getargs()
+#include <procinfo.h>
 
 // Use raw malloc instead of os::malloc - this code gets used for error reporting.
 
@@ -203,7 +206,23 @@ static bool reload_table() {
     }
   }
 
-  trcVerbose("loadquery buffer size is " SIZE_FORMAT ".", buflen);
+  trcVerbose("loadquery buffer size is %zu.", buflen);
+
+  // the entry for the executable itself does not contain a path.
+  // instead we retrieve the path of the executable with the getargs API.
+  static char pgmpath[PATH_MAX+1] = "";
+  static char* pgmbase = nullptr;
+  if (pgmpath[0] == 0) {
+    procentry64 PInfo;
+    PInfo.pi_pid = ::getpid();
+    if (0 == ::getargs(&PInfo, sizeof(PInfo), (char*)pgmpath, PATH_MAX) && *pgmpath) {
+      pgmpath[PATH_MAX] = '\0';
+      pgmbase = strrchr(pgmpath, '/');
+      if (pgmbase != nullptr) {
+        pgmbase += 1;
+      }
+    }
+  }
 
   // Iterate over the loadquery result. For details see sys/ldr.h on AIX.
   ldi = (struct ld_info*) buffer;
@@ -223,7 +242,12 @@ static bool reload_table() {
     lm->data     = ldi->ldinfo_dataorg;
     lm->data_len = ldi->ldinfo_datasize;
 
-    lm->path = g_stringlist.add(ldi->ldinfo_filename);
+    if (pgmbase != nullptr && 0 == strcmp(pgmbase, ldi->ldinfo_filename)) {
+      lm->path = g_stringlist.add(pgmpath);
+    } else {
+      lm->path = g_stringlist.add(ldi->ldinfo_filename);
+    }
+
     if (!lm->path) {
       log_warning(os)("OOM.");
       free(lm);
@@ -262,7 +286,7 @@ static bool reload_table() {
       lm->is_in_vm = true;
     }
 
-    trcVerbose("entry: %p " SIZE_FORMAT ", %p " SIZE_FORMAT ", %s %s %s, %d",
+    trcVerbose("entry: %p %zu, %p %zu, %s %s %s, %d",
       lm->text, lm->text_len,
       lm->data, lm->data_len,
       lm->path, lm->shortname,

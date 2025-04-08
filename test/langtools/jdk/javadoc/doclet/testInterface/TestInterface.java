@@ -76,8 +76,8 @@ public class TestInterface extends JavadocTester {
                 """
                     <dl class="notes">
                     <dt>All Known Implementing Classes:</dt>
-                    <dd><code><a href="Child.html" title="class in pkg">Child</a></code>, <code><a h\
-                    ref="Parent.html" title="class in pkg">Parent</a></code></dd>
+                    <dd><code><a href="Child.html" title="class in pkg">Child</a>, <a href="Parent.h\
+                    tml" title="class in pkg">Parent</a></code></dd>
                     </dl>""");
 
         checkOutput("pkg/Child.html", true,
@@ -205,22 +205,13 @@ public class TestInterface extends JavadocTester {
             // Ensure the correct type parameters are displayed correctly
             """
                 <h3 id="nested-classes-inherited-from-class-pkg2.Spliterator">Nested classes/int\
-                erfaces inherited from interface&nbsp;pkg2.<a href="Spliterator.html" title="int\
-                erface in pkg2">Spliterator</a></h3>
+                erfaces inherited from interface&nbsp;<a href="Spliterator.html#nested-class-sum\
+                mary" title="interface in pkg2">Spliterator</a></h3>
                 <code><a href="Spliterator.OfDouble.html" title="interface in pkg2">Spliterator.\
                 OfDouble</a>, <a href="Spliterator.OfInt.html" title="interface in pkg2">Spliter\
-                ator.OfInt</a>&lt;<a href="Spliterator.OfInt.html#type-param-Integer" title="type parameter in Spli\
-                terator.OfInt">Integer</a>&gt;, <a href="Spliterator.OfPrimitive.html" title="in\
-                terface in pkg2">Spliterator.OfPrimitive</a>&lt;<a href="Spliterator.OfPrimitive\
-                .html#type-param-T" title="type parameter in Spliterator.OfPrimitive">T</a>, <a href="Spl\
-                iterator.OfPrimitive.html#type-param-T_CONS" title="type parameter in Spliterator.OfPrimitive">T_C\
-                ONS</a>, <a href="Spliterator.OfPrimitive.html#type-param-T_SPLITR" title="type parameter in Spl\
-                iterator.OfPrimitive">T_SPLITR</a> extends <a href="Spliterator.OfPrimitive.html\
-                " title="interface in pkg2">Spliterator.OfPrimitive</a>&lt;<a href="Spliterator.\
-                OfPrimitive.html#type-param-T" title="type parameter in Spliterator.OfPrimitive">T</a>,<wbr><\
-                a href="Spliterator.OfPrimitive.html#type-param-T_CONS" title="type parameter in Spliterator.OfPri\
-                mitive">T_CONS</a>,<wbr><a href="Spliterator.OfPrimitive.html#type-param-T_SPLITR" title="type param\
-                eter in Spliterator.OfPrimitive">T_SPLITR</a>&gt;&gt;</code>""");
+                ator.OfInt</a>&lt;Integer&gt;, <a href="Spliterator.OfPrimitive.html" title="int\
+                erface in pkg2">Spliterator.OfPrimitive</a>&lt;T,<wbr>T_CONS,<wbr>T_SPLITR&gt;</\
+                code></div>""");
         checkOutput("pkg2/Spliterator.html", true,
             """
                 <div class="caption"><span>Nested Classes</span></div>

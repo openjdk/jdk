@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -132,10 +131,6 @@ ZGeneration::ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocato
     _stat_relocation(),
     _gc_timer(nullptr) {}
 
-bool ZGeneration::is_initialized() const {
-  return _mark.is_initialized();
-}
-
 ZWorkers* ZGeneration::workers() {
   return &_workers;
 }
@@ -152,8 +147,8 @@ void ZGeneration::threads_do(ThreadClosure* tc) const {
   _workers.threads_do(tc);
 }
 
-void ZGeneration::mark_flush_and_free(Thread* thread) {
-  _mark.flush_and_free(thread);
+void ZGeneration::mark_flush(Thread* thread) {
+  _mark.flush(thread);
 }
 
 void ZGeneration::mark_free() {
@@ -187,9 +182,9 @@ static double fragmentation_limit(ZGenerationId generation) {
   }
 }
 
-void ZGeneration::select_relocation_set(ZGenerationId generation, bool promote_all) {
+void ZGeneration::select_relocation_set(bool promote_all) {
   // Register relocatable pages with selector
-  ZRelocationSetSelector selector(fragmentation_limit(generation));
+  ZRelocationSetSelector selector(fragmentation_limit(_id));
   {
     ZGenerationPagesIterator pt_iter(_page_table, _id, _page_allocator);
     for (ZPage* page; pt_iter.next(&page);) {
@@ -243,7 +238,7 @@ void ZGeneration::select_relocation_set(ZGenerationId generation, bool promote_a
   // Selecting tenuring threshold must be done after select
   // which produces the liveness data, but before install,
   // which consumes the tenuring threshold.
-  if (generation == ZGenerationId::young) {
+  if (is_young()) {
     ZGeneration::young()->select_tenuring_threshold(selector.stats(), promote_all);
   }
 
@@ -361,7 +356,7 @@ void ZGeneration::log_phase_switch(Phase from, Phase to) {
     index += 1;
   }
 
-  assert(index < ARRAY_SIZE(str), "OOB: " SIZE_FORMAT " < " SIZE_FORMAT, index, ARRAY_SIZE(str));
+  assert(index < ARRAY_SIZE(str), "OOB: %zu < %zu", index, ARRAY_SIZE(str));
 
   Events::log_zgc_phase_switch("%-21s %4u", str[index], seqnum());
 }
@@ -796,8 +791,8 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   // if the GC is finding it hard to keep up with the allocation rate.
   const double tenuring_threshold_raw = young_life_decay_factor * young_log_residency;
 
-  log_trace(gc, reloc)("Young Allocated: " SIZE_FORMAT "M", young_allocated / M);
-  log_trace(gc, reloc)("Young Garbage: " SIZE_FORMAT "M", young_garbage / M);
+  log_trace(gc, reloc)("Young Allocated: %zuM", young_allocated / M);
+  log_trace(gc, reloc)("Young Garbage: %zuM", young_garbage / M);
   log_debug(gc, reloc)("Allocated To Garbage: %.1f", allocated_garbage_ratio);
   log_trace(gc, reloc)("Young Log: %.1f", young_log);
   log_trace(gc, reloc)("Young Residency Reciprocal: %.1f", young_residency_reciprocal);
@@ -816,7 +811,7 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
 void ZGenerationYoung::concurrent_select_relocation_set() {
   ZStatTimerYoung timer(ZPhaseConcurrentSelectRelocationSetYoung);
   const bool promote_all = type() == ZYoungType::major_full_preclean;
-  select_relocation_set(_id, promote_all);
+  select_relocation_set(promote_all);
 }
 
 class VM_ZRelocateStartYoung : public VM_ZYoungOperation {
@@ -1158,7 +1153,7 @@ void ZGenerationOld::pause_verify() {
 
 void ZGenerationOld::concurrent_select_relocation_set() {
   ZStatTimerOld timer(ZPhaseConcurrentSelectRelocationSetOld);
-  select_relocation_set(_id, false /* promote_all */);
+  select_relocation_set(false /* promote_all */);
 }
 
 class VM_ZRelocateStartOld : public VM_ZOperation {

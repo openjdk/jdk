@@ -2,7 +2,6 @@
  * @test /nodynamiccopyright/
  * @bug 8172880
  * @summary  Wrong LineNumberTable for synthetic null checks
- * @enablePreview
  */
 
 import java.lang.classfile.*;
@@ -36,13 +35,13 @@ public class NullCheckLineNumberTest {
     public static void main(String[] args) throws Exception {
         List<Entry> actualEntries = findEntries();
         List<Entry> expectedEntries = List.of(
-                new SimpleEntry<>(25, 0),
-                new SimpleEntry<>(26, 4),
-                new SimpleEntry<>(28, 9),
-                new SimpleEntry<>(29, 16),
-                new SimpleEntry<>(30, 32),
-                new SimpleEntry<>(31, 46),
-                new SimpleEntry<>(32, 52)
+                new SimpleEntry<>(24, 0),
+                new SimpleEntry<>(25, 4),
+                new SimpleEntry<>(27, 9),
+                new SimpleEntry<>(28, 16),
+                new SimpleEntry<>(29, 32),
+                new SimpleEntry<>(30, 46),
+                new SimpleEntry<>(31, 52)
         );
         if (!Objects.equals(actualEntries, expectedEntries)) {
             error(String.format("Unexpected LineNumberTable: %s", actualEntries.toString()));
@@ -53,8 +52,8 @@ public class NullCheckLineNumberTest {
         } catch (NullPointerException npe) {
             if (Arrays.stream(npe.getStackTrace())
                       .noneMatch(se -> se.getFileName().contains("NullCheckLineNumberTest") &&
-                                       se.getLineNumber() == 30)) {
-                throw new AssertionError("Should go through line 30!");
+                                       se.getLineNumber() == 29)) {
+                throw new AssertionError("Should go through line 29!");
             }
         }
     }

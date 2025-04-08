@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,6 @@ class ScopedVMInitArgs;
 class Arguments : AllStatic {
   friend class VMStructs;
   friend class JvmtiExport;
-  friend class CodeCacheExtensions;
   friend class ArgumentsTest;
   friend class LargeOptionsTest;
  public:
@@ -253,6 +252,9 @@ class Arguments : AllStatic {
 
   // preview features
   static bool _enable_preview;
+
+  // jdwp
+  static bool _has_jdwp_agent;
 
   // Used to save default settings
   static bool _AlwaysCompileLoopMethods;
@@ -505,6 +507,9 @@ class Arguments : AllStatic {
   // preview features
   static void set_enable_preview() { _enable_preview = true; }
   static bool enable_preview() { return _enable_preview; }
+
+  // jdwp
+  static bool has_jdwp_agent() { return _has_jdwp_agent; }
 
   // Utility: copies src into buf, replacing "%%" with "%" and "%p" with pid.
   static bool copy_expand_pid(const char* src, size_t srclen, char* buf, size_t buflen);

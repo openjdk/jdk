@@ -149,16 +149,6 @@ public class BasicSliderUI extends SliderUI{
     private boolean sameLabelBaselines;
 
     /**
-     * Constructs a {@code BasicSliderUI}.
-     *
-     * @since 16
-     * @deprecated This constructor was exposed erroneously and will be removed in a future release.
-     *             Use {@link #BasicSliderUI(JSlider)} instead.
-     */
-    @Deprecated(since = "23", forRemoval = true)
-    public BasicSliderUI() {}
-
-    /**
      * Returns the shadow color.
      * @return the shadow color
      */

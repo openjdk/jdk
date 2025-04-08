@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,6 +166,8 @@ jlong JNICALL jfr_register_stack_filter(JNIEnv* env, jclass jvm, jobjectArray cl
 void JNICALL jfr_unregister_stack_filter(JNIEnv* env, jclass jvm, jlong id);
 
 jlong JNICALL jfr_nanos_now(JNIEnv* env, jclass jvm);
+
+jboolean JNICALL jfr_is_product(JNIEnv* env, jclass jvm);
 
 #ifdef __cplusplus
 }

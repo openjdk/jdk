@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +24,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shenandoah/shenandoahArguments.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -60,7 +61,7 @@ void ShenandoahArguments::initialize() {
   if (UseLargePages) {
     size_t large_page_size = os::large_page_size();
     if ((align_up(MaxHeapSize, large_page_size) / large_page_size) < ShenandoahHeapRegion::MIN_NUM_REGIONS) {
-      warning("Large pages size (" SIZE_FORMAT "K) is too large to afford page-sized regions, disabling uncommit",
+      warning("Large pages size (%zuK) is too large to afford page-sized regions, disabling uncommit",
               os::large_page_size() / K);
       FLAG_SET_DEFAULT(ShenandoahUncommit, false);
     }
@@ -185,6 +186,11 @@ void ShenandoahArguments::initialize() {
   // to converge faster over smaller number of resizing decisions.
   if (FLAG_IS_DEFAULT(TLABAllocationWeight)) {
     FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
+  }
+
+  if (GCCardSizeInBytes < ShenandoahMinCardSizeInBytes) {
+    vm_exit_during_initialization(
+      err_msg("GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes, (unsigned int) ShenandoahMinCardSizeInBytes));
   }
 
   FullGCForwarding::initialize_flags(MaxHeapSize);

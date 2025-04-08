@@ -1,4 +1,4 @@
-## Unicode Common Local Data Repository (CLDR) v46
+## Unicode Common Local Data Repository (CLDR) v47
 
 ### CLDR License
 
@@ -9,7 +9,7 @@ UNICODE LICENSE V3
 
 COPYRIGHT AND PERMISSION NOTICE
 
-Copyright © 1991-2024 Unicode, Inc.
+Copyright © 1991-2025 Unicode, Inc.
 
 NOTICE TO USER: Carefully read the following legal agreement. BY
 DOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING DATA FILES, AND/OR
@@ -53,7 +53,7 @@ Unicode® Copyright and Terms of Use
 For the general privacy policy governing access to this site, see the  Unicode Privacy Policy.
 
 Unicode Copyright
-Copyright © 1991-2024 Unicode, Inc. All rights reserved.
+Copyright © 1991-2025 Unicode, Inc. All rights reserved.
 Definitions
 Unicode Data Files ("DATA FILES") include all data files under the directories:
 https://www.unicode.org/Public/

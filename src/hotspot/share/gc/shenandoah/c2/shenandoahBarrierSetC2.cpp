@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
@@ -434,17 +433,6 @@ void ShenandoahBarrierSetC2::insert_pre_barrier(GraphKit* kit, Node* base_oop, N
   kit->final_sync(ideal);
 }
 
-Node* ShenandoahBarrierSetC2::byte_map_base_node(GraphKit* kit) const {
-  BarrierSet* bs = BarrierSet::barrier_set();
-  ShenandoahBarrierSet* ctbs = barrier_set_cast<ShenandoahBarrierSet>(bs);
-  CardTable::CardValue* card_table_base = ctbs->card_table()->byte_map_base();
-  if (card_table_base != nullptr) {
-    return kit->makecon(TypeRawPtr::make((address)card_table_base));
-  } else {
-    return kit->null();
-  }
-}
-
 void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
                                           Node* ctl,
                                           Node* oop_store,
@@ -458,18 +446,24 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
 
   // No store check needed if we're storing a null.
   if (val != nullptr && val->is_Con()) {
-    // must be either an oop or NULL
+    // must be either an oop or null
     const Type* t = val->bottom_type();
     if (t == TypePtr::NULL_PTR || t == Type::TOP)
       return;
   }
 
   if (ReduceInitialCardMarks && obj == kit->just_allocated_object(kit->control())) {
-    // We can skip marks on a freshly-allocated object in Eden.
-    // Keep this code in sync with new_deferred_store_barrier() in runtime.cpp.
-    // That routine informs GC to take appropriate compensating steps,
-    // upon a slow-path allocation, so as to make this card-mark
-    // elision safe.
+    // We use card marks to track old to young references in Generational Shenandoah;
+    // see flag ShenandoahCardBarrier above.
+    // Objects are always allocated in the young generation and initialized
+    // before they are promoted. There's always a safepoint (e.g. at final mark)
+    // before an object is promoted from young to old. Promotion entails dirtying of
+    // the cards backing promoted objects, so they will be guaranteed to be scanned
+    // at the next remembered set scan of the old generation.
+    // Thus, we can safely skip card-marking of initializing stores on a
+    // freshly-allocated object. If any of the assumptions above change in
+    // the future, this code will need to be re-examined; see check in
+    // ShenandoahCardBarrier::on_slowpath_allocation_exit().
     return;
   }
 
@@ -482,14 +476,20 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
 
   IdealKit ideal(kit, true);
 
+  Node* tls = __ thread(); // ThreadLocalStorage
+
   // Convert the pointer to an int prior to doing math on it
   Node* cast = __ CastPX(__ ctrl(), adr);
+
+  Node* curr_ct_holder_offset = __ ConX(in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+  Node* curr_ct_holder_addr  = __ AddP(__ top(), tls, curr_ct_holder_offset);
+  Node* curr_ct_base_addr = __ load( __ ctrl(), curr_ct_holder_addr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
 
   // Divide by card size
   Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift()) );
 
   // Combine card table base and card offset
-  Node* card_adr = __ AddP(__ top(), byte_map_base_node(kit), card_offset );
+  Node* card_adr = __ AddP(__ top(), curr_ct_base_addr, card_offset);
 
   // Get the alias_index for raw card-mark memory
   int adr_type = Compile::AliasIdxRaw;

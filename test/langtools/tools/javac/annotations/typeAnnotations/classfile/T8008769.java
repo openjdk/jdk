@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
  * @summary Repeated type-annotations on type parm of local variable
  *          are not written to classfile.
  * @bug 8008769
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;
