@@ -65,9 +65,11 @@ ALWAYSINLINE KlassLUTEntry KlassInfoLUT::lookup(narrowKlass nk) {
   return e;
 }
 
-ALWAYSINLINE ClassLoaderData* KlassInfoLUT::get_perma_cld(int index) {
-  assert(index >= 1 && index <= 3, "Sanity");
-  return _common_loaders[index];
+ALWAYSINLINE ClassLoaderData* KlassInfoLUT::lookup_cld(int index) {
+  assert(index >= 0 && index <= 3, "Sanity");
+  ClassLoaderData* cld = _common_loaders[index];
+  assert(index == 0 || cld != nullptr, "CLD for index %d not yet registered?", index);
+  return cld;
 }
 
 #endif // SHARE_OOPS_KLASSINFOLUT_INLINE_HPP
