@@ -2600,6 +2600,7 @@ static inline void report_error(Thread* t, DWORD exception_code,
 //-----------------------------------------------------------------------------
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
+  PreserveLastError ple;
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
   PEXCEPTION_RECORD exception_record = exceptionInfo->ExceptionRecord;
   DWORD exception_code = exception_record->ExceptionCode;
@@ -3409,8 +3410,8 @@ static char* find_aligned_address(size_t size, size_t alignment) {
 }
 
 static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exec) {
-  log_debug(pagesize)("Reserving large pages at an aligned address, alignment=%zu%s",
-                      byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
+  log_debug(pagesize)("Reserving large pages at an aligned address, alignment=" EXACTFMT,
+                      EXACTFMTARGS(alignment));
 
   // Will try to find a suitable address at most 20 times. The reason we need to try
   // multiple times is that between finding the aligned address and trying to commit

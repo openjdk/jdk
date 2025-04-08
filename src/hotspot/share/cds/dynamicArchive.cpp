@@ -31,6 +31,7 @@
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -159,8 +160,10 @@ public:
       ArchiveBuilder::serialize_dynamic_archivable_items(&wc);
     }
 
-    log_info(cds)("Adjust lambda proxy class dictionary");
-    SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
+    if (CDSConfig::is_dumping_lambdas_in_legacy_mode()) {
+      log_info(cds)("Adjust lambda proxy class dictionary");
+      LambdaProxyClassDictionary::adjust_dumptime_table();
+    }
 
     relocate_to_requested();
 
@@ -170,7 +173,6 @@ public:
 
     post_dump();
 
-    assert(_num_dump_regions_used == _total_dump_regions, "must be");
     verify_universe("After CDS dynamic dump");
   }
 
