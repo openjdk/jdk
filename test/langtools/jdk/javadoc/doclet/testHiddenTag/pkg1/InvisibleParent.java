@@ -59,6 +59,16 @@ public abstract class InvisibleParent<T extends InvisibleParent> implements Intf
      * An invisible interface.
      * @hidden
      */
-    public static interface InvisibleInterface {}
+    public static interface InvisibleInterface {
+        /**
+         * Default method in invisible interface.
+         */
+        default void invisibleInterfaceDefaultMethod() {}
+
+        /**
+         * Interface method in invisible interface.
+         */
+        void invisibleInterfaceInterfaceMethod();
+    }
 
 }

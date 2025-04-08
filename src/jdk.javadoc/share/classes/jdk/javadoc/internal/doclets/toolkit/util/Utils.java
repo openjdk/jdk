@@ -786,7 +786,7 @@ public class Utils {
                 if (!visited.add(e)) {
                     continue; // seen it before
                 }
-                if ((isPublic(e) || isLinkable(e)) && !isHidden(e)) {
+                if (isVisible(e)) {
                     results.add(t);
                 }
                 addSuperInterfaces(t, results, visited);
@@ -1006,7 +1006,7 @@ public class Utils {
             t = supertypes.get(0); // if non-empty, the first element is always the superclass
             var te = asTypeElement(t);
             assert alreadySeen.add(te); // it should be the first time we see `te`
-            if (!isHidden(te) && (isPublic(te) || isLinkable(te))) {
+            if (isVisible(te)) {
                 return t;
             }
         }
@@ -1234,6 +1234,17 @@ public class Utils {
         }
         return propertyName.substring(0, 1).toLowerCase(configuration.getLocale())
                 + propertyName.substring(1);
+    }
+
+    /**
+     * Returns {@code true} if the type element is visible. This means that it is not hidden,
+     * and is either public or linkable (either internally or externally).
+     *
+     * @param typeElement the type element
+     * @return {@code true} if the type element is visible
+     */
+    public boolean isVisible(TypeElement typeElement) {
+        return !isHidden(typeElement) && (isPublic(typeElement) || isLinkable(typeElement));
     }
 
     /**
@@ -2851,7 +2862,7 @@ public class Utils {
                     next = null; // end-of-hierarchy
                     break;
                 }
-                if (isPlainInterface(peek) && !isPublic(peek) && !isLinkable(peek)) {
+                if (isPlainInterface(peek) && !isVisible(peek)) {
                     // we don't consider such interfaces directly, but may consider
                     // their supertypes (subject to this check for each of them)
                     continue;

@@ -140,7 +140,7 @@ public class TestHiddenTag extends JavadocTester {
                 "invisibleField",
                 "invisibleMethod",
                 "invisibleDefaultMethod",
-                "InvisibleParent.InvisibleInterface");
+                "InvisibleInterface");
 
         checkOutput("pkg1/InvisibleParent.VisibleInner.html", true,
                 """
@@ -152,7 +152,7 @@ public class TestHiddenTag extends JavadocTester {
 
         checkOutput("pkg1/package-tree.html", false, "A.InvisibleInner");
 
-        checkOutput("pkg1/package-tree.html", false, "InvisibleParent.html");
+        checkOutput("pkg1/package-tree.html", false, "InvisibleParent.html", "InvisibleInterface");
 
         checkFiles(false,
                 "pkg1/A.InvisibleInner.html",

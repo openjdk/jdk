@@ -27,6 +27,9 @@ import pkg2.UndocumentedParent;
 
 /**
  * A visible class, extending invisible classes.
+ *
+ * @see #invisibleInterfaceDefaultMethod()
+ * @see #invisibleInterfaceInterfaceMethod()
  */
 public class Child extends UndocumentedParent<Child> implements InvisibleParent.InvisibleInterface {
 

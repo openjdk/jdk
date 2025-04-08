@@ -199,8 +199,7 @@ public class PropertyWriter extends AbstractMemberWriter {
     protected void addComments(ExecutableElement property, Content propertyContent) {
         TypeElement holder = (TypeElement)property.getEnclosingElement();
         if (!utils.getFullBody(property).isEmpty()) {
-            if (holder.equals(typeElement) ||
-                    (!utils.isPublic(holder) || utils.isLinkable(holder))) {
+            if (holder.equals(typeElement) || !utils.isVisible(holder)) {
                 writer.addInlineComment(property, propertyContent);
             } else {
                 if (!utils.isHidden(holder) && !utils.isHidden(property)) {
