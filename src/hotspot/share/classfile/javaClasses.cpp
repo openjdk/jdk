@@ -1897,8 +1897,8 @@ struct LockInfo {
 
 class GetThreadSnapshotClosure : public HandshakeClosure {
 public:
-  const Handle _java_thread;
-  const JavaThread* _thread;
+  Handle _java_thread;
+  JavaThread* _thread;
   int _depth;
   bool _retry_handshake;
   GrowableArray<Method*>* _methods;
@@ -1906,6 +1906,7 @@ public:
   JavaThreadStatus _thread_status;
   oop _name;
   bool _with_locks;
+  bool _found_first_lock;
   GrowableArray<LockInfo>* _locks;
 
   GetThreadSnapshotClosure(Handle java_thread, JavaThread* thread, bool with_locks) :
@@ -1913,7 +1914,7 @@ public:
       _depth(0), _retry_handshake(false),
       _methods(nullptr), _bcis(nullptr),
       _thread_status(), _name(nullptr),
-      _with_locks(with_locks), _locks(nullptr) { }
+      _with_locks(with_locks), _found_first_lock(false), _locks(nullptr) { }
   virtual ~GetThreadSnapshotClosure() {
     delete _methods;
     delete _bcis;
@@ -1933,7 +1934,7 @@ public:
   void detect_locks(javaVFrame* jvf, int depth) {
     Thread* current = Thread::current();
 
-    if (depth == 0) {
+    if (depth == 0 && !_found_first_lock) {
       // See javaVFrame::print_lock_info_on() for some other cases:
       // "waiting to re-lock in wait", "waiting on the Class initialization monitor".
 
@@ -1949,23 +1950,24 @@ public:
           StackValue* sv = locs->at(0);
           if (sv->type() == T_OBJECT) {
             Handle o = locs->at(0)->get_obj();
-            if (java_lang_Thread::get_thread_status(_java_thread()) == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER) {
+            if (_thread_status == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER) {
               type = LockInfo::WAITING_TO_RELOCK;;
             }
             _locks->push(LockInfo(depth, type, o()));
           }
         }
+        _found_first_lock = true;
       } else {
         oop park_blocker = java_lang_Thread::park_blocker(_java_thread());
         if (park_blocker != nullptr) {
           _locks->push(LockInfo(depth, LockInfo::PARKING_TO_WAIT, park_blocker));
+          _found_first_lock = true;
         }
       }
     }
 
     GrowableArray<MonitorInfo*>* mons = jvf->monitors();
     if (!mons->is_empty()) {
-      bool found_first_monitor = false;
       for (int index = (mons->length() - 1); index >= 0; index--) {
         MonitorInfo* monitor = mons->at(index);
         if (monitor->eliminated() && jvf->is_compiled_frame()) { // Eliminated in compiled code
@@ -1984,7 +1986,7 @@ public:
           // the monitor is associated with an object, i.e., it is locked
           int type = LockInfo::LOCKED;
 
-          if (!found_first_monitor && depth == 0) {
+          if (depth == 0 && !_found_first_lock) {
             ObjectMonitor* pending_moninor = java_lang_VirtualThread::is_instance(_java_thread())
                            ? java_lang_VirtualThread::current_pending_monitor(_java_thread())
                            : jvf->thread()->current_pending_monitor();
@@ -2006,7 +2008,7 @@ public:
           }
           _locks->push(LockInfo(depth, type, monitor->owner()));
 
-           found_first_monitor = true;
+          _found_first_lock = true;
         }
       }
     }
@@ -2018,10 +2020,10 @@ public:
       return;
     }
 
-    JavaThread* thread = nullptr;
     // ensure virtual thread was not mounted/unmounted
     bool is_virtual = java_lang_VirtualThread::is_instance(_java_thread());
     if (is_virtual) {
+      JavaThread* thread = nullptr;
       oop carrier_thread = java_lang_VirtualThread::carrier_thread(_java_thread());
       if (carrier_thread != nullptr) {
         thread = java_lang_Thread::thread(carrier_thread);
@@ -2033,29 +2035,38 @@ public:
         _retry_handshake = true;
         return;
       }
-    } else {
-      thread = java_lang_Thread::thread(_java_thread());
     }
 
-    _thread_status = java_lang_Thread::get_thread_status(_java_thread());
+    if (_thread != nullptr) {
+      // mounted vthread, use carrier thread state
+      if (is_virtual) {
+        oop carrier_thread = java_lang_VirtualThread::carrier_thread(_java_thread());
+        _thread_status = java_lang_Thread::get_thread_status(carrier_thread);
+      } else {
+        _thread_status = java_lang_Thread::get_thread_status(_java_thread());
+      }
+    } else {
+      int vt_state = java_lang_VirtualThread::state(_java_thread());
+      _thread_status = java_lang_VirtualThread::map_state_to_thread_status(vt_state);
+    }
     _name = java_lang_Thread::name(_java_thread());
 
-    if (thread != nullptr && !thread->has_last_Java_frame()) {
+    if (_thread != nullptr && !_thread->has_last_Java_frame()) {
       return;
     }
 
     bool carrier = false;
 
     if (is_virtual) {
-      if (thread != nullptr) {
+      if (_thread != nullptr) {
         // if (thread->vthread() != _java_thread()) // We might be inside a System.executeOnCarrierThread
-        const ContinuationEntry* ce = thread->vthread_continuation();
-        if (ce == nullptr || ce->cont_oop(thread) != java_lang_VirtualThread::continuation(_java_thread())) {
+        const ContinuationEntry* ce = _thread->vthread_continuation();
+        if (ce == nullptr || ce->cont_oop(_thread) != java_lang_VirtualThread::continuation(_java_thread())) {
           // TODO: handle
         }
       }
     } else {
-      carrier = (thread->vthread_continuation() != nullptr);
+      carrier = (_thread->vthread_continuation() != nullptr);
     }
 
     ResourceMark rm(Thread::current());
@@ -2073,8 +2084,8 @@ public:
     }
     int total_count = 0;
 
-    vframeStream vfst(thread != nullptr
-        ? vframeStream(thread, false, false, carrier)
+    vframeStream vfst(_thread != nullptr
+        ? vframeStream(_thread, false, false, carrier)
         : vframeStream(java_lang_VirtualThread::continuation(_java_thread())));
 
     for (;
