@@ -1568,7 +1568,7 @@ static bool stable_phi(PhiNode* phi, PhaseGVN *phase) {
 //------------------------------get_region_of_split_through_phi------------------------------
 // Given a base node and a memory node, this function determines the region of split through phi.
 // If the base node is not a phi node, it returns nullptr.
-Node* LoadNode::get_region_of_split_through_base_phi(PhaseGVN* phase, Node *base) {
+Node* LoadNode::get_region_of_split_through_base_phi(PhaseGVN* phase, Node* base) {
   Node* mem        = in(Memory);
   Node* address    = in(Address);
   bool base_is_phi = (base != nullptr) && base->is_Phi();
@@ -1616,7 +1616,7 @@ Node* LoadNode::get_region_of_split_through_base_phi(PhaseGVN* phase, Node *base
   return region;
 }
 
-static bool can_split_through_phi_helper(Node *base, Node *mem) {
+static bool can_split_through_phi_helper(Node* base, Node* mem) {
   if (base == nullptr || !base->is_Phi()) {
     return false;
   }
@@ -1659,7 +1659,7 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase, bool nested) {
     for (uint i = 1; i < base->req(); i++) {
       if (base->in(i)->is_Phi()) {
         // base->in(i) is the parent phi node for base node.
-        Node *mem_node_for_load_after_opt = get_memory_node_for_nestedphi_after_split(phase, base, i);
+        Node* mem_node_for_load_after_opt = get_memory_node_for_nestedphi_after_split(phase, base, i);
         if (!mem_node_for_load_after_opt || !can_split_through_phi_helper(base->in(i), mem_node_for_load_after_opt)) {
           return false;
         }
@@ -1674,7 +1674,7 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase, bool nested) {
 // and returns the memory node of the new load field node that is attached to the parentphi node.
 // Note that this function doesn't actually perform the split.
 // If a split is impossible, it returns nullptr.
-Node* LoadNode::get_memory_node_for_nestedphi_after_split(PhaseGVN* phase, Node *base, uint parent_idx) {
+Node* LoadNode::get_memory_node_for_nestedphi_after_split(PhaseGVN* phase, Node* base, uint parent_idx) {
   Node* mem        = in(Memory);
   Node* region = get_region_of_split_through_base_phi(phase, base);
   if (region == nullptr) {

@@ -1315,7 +1315,7 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_wo
   // Splitting through the child phi nodes ahead of parent phi nodes in nested scenarios is crucial.
   // Ensure that the splits are applied to the load fields of child phi nodes before the parent phi nodes take place.
   for (uint i = 0; i < nested_phis.size(); i++) {
-    Node *nested_phi = nested_phis.at(i);
+    Node* nested_phi = nested_phis.at(i);
     reduce_phi(nested_phi->as_Phi(), alloc_worklist, memnode_worklist, reducible_merges);
   }
 
