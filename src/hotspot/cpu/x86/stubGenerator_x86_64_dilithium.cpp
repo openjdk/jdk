@@ -341,8 +341,6 @@ static address generate_dilithiumAlmostNtt_avx512(StubGenerator *stubgen,
   // memory after level 7, then loading back the coefficients that we saved after
   // level 1 and do the same computation with those
 
-  store4Xmms(coeffs, 0, xmm0_3, _masm);
-  store4Xmms(coeffs, 4 * XMMBYTES, xmm4_7, _masm);
   store4Xmms(coeffs, 8 * XMMBYTES, xmm8_11, _masm);
   store4Xmms(coeffs, 12 * XMMBYTES, xmm12_15, _masm);
 
@@ -367,7 +365,7 @@ static address generate_dilithiumAlmostNtt_avx512(StubGenerator *stubgen,
   // level 4
   loadPerm(xmm16_19, perms, nttL4PermsIdx, _masm);
   loadPerm(xmm12_15, perms, nttL4PermsIdx + 64, _masm);
-  load4Xmms(xmm24_27, zetas, 4 * 512, _masm); // for level 3
+  load4Xmms(xmm24_27, zetas, 4 * 512, _masm);
 
   for (int i = 0; i < 8; i += 2) {
     __ evpermi2d(xmm(i/2 + 16), xmm(i), xmm(i + 1), Assembler::AVX_512bit);
@@ -796,16 +794,15 @@ static address generate_dilithiumDecomposePoly_avx512(StubGenerator *stubgen,
   const XMMRegister barrettMultiplier = xmm29;
   const XMMRegister barrettAddend = xmm30;
 
-  __ xorl(scratch, scratch);
-  __ evpbroadcastd(zero, scratch, Assembler::AVX_512bit); // 0
-  __ addl(scratch, 1);
-  __ evpbroadcastd(one, scratch, Assembler::AVX_512bit); // 1
+  __ vpxor(zero, zero, zero, Assembler::AVX_512bit); // 0
+  __ vpternlogd(xmm0, 0xff, xmm0, xmm0, Assembler::AVX_512bit); // -1
+  __ vpsubd(one, zero, xmm0, Assembler::AVX_512bit); // 1
   __ vpbroadcastd(dilithium_q,
                   ExternalAddress(dilithiumAvx512ConstsAddr(dilithium_qIdx)),
-                  Assembler::AVX_512bit, scratch); // q^-1 mod 2^32
+                  Assembler::AVX_512bit, scratch); // q
   __ vpbroadcastd(barrettAddend,
                   ExternalAddress(dilithiumAvx512ConstsAddr(barrettAddendIdx)),
-                  Assembler::AVX_512bit, scratch); // q
+                  Assembler::AVX_512bit, scratch); // addend for Barrett reduction
 
   __ evpbroadcastd(twoGamma2, rTwoGamma2, Assembler::AVX_512bit); // 2 * gamma2
 
@@ -1008,10 +1005,9 @@ static address generate_dilithiumDecomposePoly_avx512(StubGenerator *stubgen,
   store4Xmms(highPart, 0, xmm0_3, _masm);
   store4Xmms(lowPart, 0, xmm8_11, _masm);
 
-  __ subl(len, 4 * XMMBYTES);
   __ addptr(highPart, 4 * XMMBYTES);
   __ addptr(lowPart, 4 * XMMBYTES);
-  __ cmpl(len, 0);
+  __ subl(len, 4 * XMMBYTES);
   __ jcc(Assembler::notEqual, L_loop);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
