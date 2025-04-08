@@ -452,7 +452,7 @@ void G1ParScanThreadState::do_iterate_object(oop const obj,
     }
 
     assert(_scanner.skip_card_enqueue_set(), "must be");
-    obj->oop_iterate_backwards(&_scanner, klass);
+    obj->oop_iterate_backwards(&_scanner);
 }
 
 // Private inline function, for direct internal use and providing the
