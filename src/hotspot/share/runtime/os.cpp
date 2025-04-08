@@ -1570,8 +1570,9 @@ void os::read_image_release_file() {
 }
 
 void os::print_image_release_file(outputStream* st) {
-  if (_image_release_file_content != nullptr) {
-    st->print_cr("%s", _image_release_file_content);
+  char* ifrc = Atomic::load_acquire(&_image_release_file_content);
+  if (ifrc != nullptr) {
+    st->print_cr("%s", ifrc);
   }
 }
 
