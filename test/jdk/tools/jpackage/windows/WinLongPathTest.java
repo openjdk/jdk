@@ -40,10 +40,8 @@ import jdk.jpackage.test.TKit;
  * @bug 8289771
  * @summary jpackage with long paths on windows
  * @library /test/jdk/tools/jpackage/helpers
- * @library /test/lib
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @build jtreg.SkippedException
  * @requires (os.family == "windows")
  * @compile -Xlint:all -Werror WinLongPathTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
