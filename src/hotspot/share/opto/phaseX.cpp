@@ -1828,17 +1828,17 @@ void PhaseCCP::analyze() {
       // not reachable from the bottom. Otherwise, infinite loops would be removed.
       _root_and_safepoints.push(n);
     }
-    if (n->is_Type()) {
-      // Keep track of Type nodes to kill CFG paths that use Type
-      // nodes that become dead.
-      _type_nodes.push(n);
-    }
     const Type* new_type = n->Value(this);
     if (new_type != type(n)) {
       DEBUG_ONLY(verify_type(n, new_type, type(n));)
       dump_type_and_node(n, new_type);
       set_type(n, new_type);
       push_child_nodes_to_worklist(worklist, n);
+    }
+    if (KillPathsReachableByDeadTypeNode && n->is_Type() && new_type == Type::TOP) {
+      // Keep track of Type nodes to kill CFG paths that use Type
+      // nodes that become dead.
+      _maybe_top_type_nodes.push(n);
     }
   }
   DEBUG_ONLY(verify_analyze(worklist_verify);)
@@ -2066,13 +2066,15 @@ Node *PhaseCCP::transform( Node *n ) {
   Unique_Node_List useful;
 
   if (KillPathsReachableByDeadTypeNode) {
-    for (uint i = 0; i < _type_nodes.size(); ++i) {
-      Node* type_node = _type_nodes.at(i);
+    for (uint i = 0; i < _maybe_top_type_nodes.size(); ++i) {
+      Node* type_node = _maybe_top_type_nodes.at(i);
       if (type(type_node) == Type::TOP) {
         ResourceMark rm;
         type_node->as_Type()->make_paths_from_here_dead(this, nullptr, "ccp");
       }
     }
+  } else {
+    assert(_maybe_top_type_nodes.size() == 0, "we don't need type nodes");
   }
 
   // Initialize the traversal.
