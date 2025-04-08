@@ -52,7 +52,7 @@ public class TestMissingSystemClass extends JNativeScanTestBase {
 
     @Test
     public void testSingleJarClassPath() {
-        final List<String> stderr = assertSuccess(jnativescan("--class-path", MISSING_SYSTEM.toString(), "--release", "21"))
+        List<String> stderr = assertSuccess(jnativescan("--class-path", MISSING_SYSTEM.toString(), "--release", "21"))
                 .stdoutShouldContain("<no restricted methods>")
                 .stderrShouldContain("Error(s) while processing classes")
                 .stderrShouldContain("Error while processing method")
