@@ -187,7 +187,7 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                 // that has been buffered in the stream, so we drop all buffered data on this stream
                 if (state != RECV && state != DATA_READ) {
                     // we know the final size; we can remove the stream
-                    increaseProcessedData(maxReceivedData);
+                    increaseProcessedData(knownSize);
                     if (switchReceivingState(RESET_READ)) {
                         eof = false;
                     }
@@ -234,9 +234,9 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
         try {
             checkUpdateState(resetStreamFrame);
             if (requestedStopSending) {
+                increaseProcessedData(knownSize);
                 switchReceivingState(RESET_READ);
             }
-            increaseProcessedData(knownSize);
         } finally {
             // make sure the state is switched to reset received.
             // even if we're closing the connection
@@ -559,7 +559,7 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
         assert diff >= 0;
         if (diff <= 0) return;
         synchronized (this) {
-            assert processed + diff <= received;
+            assert processed + diff <= received : processed+"+"+diff+">"+received+"("+maxReceivedData+")";
             processed += diff;
         }
         connection().increaseProcessedData(diff);
@@ -611,6 +611,7 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                 if (eof) return EOF;
                 var state = receivingState;
                 if (state == RESET_RECVD) {
+                    increaseProcessedData(knownSize);
                     switchReceivingState(RESET_READ);
                 }
                 checkReset(true);
@@ -631,8 +632,8 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
             }
             if (buffer == EOF) {
                 eof = true;
+                assert processed == received : processed + "!=" + received;
                 switchReceivingState(DATA_READ);
-                increaseProcessedData(received);
                 return EOF;
             }
             // if the amount of received data that has been processed on this stream is
