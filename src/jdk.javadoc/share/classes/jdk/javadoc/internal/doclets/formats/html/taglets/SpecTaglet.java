@@ -120,7 +120,7 @@ public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
         List<? extends DocTree> specTreeLabel = specTree.getTitle();
         Content label = htmlWriter.commentTagsToContent(holder, specTreeLabel, tagletWriter.context.isFirstSentence);
         return getExternalSpecContent(holder, specTree, specTreeURL,
-                label.stripTags().toString().replaceAll("\\s+", " "), label);
+                utils.normalizeWhitespace(label.stripTags().toString()), label);
     }
 
     Content getExternalSpecContent(Element holder,

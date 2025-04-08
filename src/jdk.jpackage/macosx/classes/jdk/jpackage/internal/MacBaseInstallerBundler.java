@@ -38,6 +38,9 @@ import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
+
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.util.FileUtils;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
@@ -173,11 +176,11 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             FileUtils.copyRecursive(predefinedImage, appDir,
                     LinkOption.NOFOLLOW_LINKS);
 
-            // Create PackageFile if predefined app image is not signed
-            if (!StandardBundlerParam.isRuntimeInstaller(params) &&
-                    !AppImageFile.load(predefinedImage).isSigned()) {
+            // Alter app image if predefined app image is not signed
+            if (!AppImageFile.load(predefinedImage).isSigned()) {
                 new PackageFile(APP_NAME.fetchFrom(params)).save(
                         ApplicationLayout.macAppImage().resolveAt(appDir));
+                Files.deleteIfExists(AppImageFile.getPathInAppImage(appDir));
                 // We need to re-sign app image after adding ".package" to it.
                 // We only do this if app image was not signed which means it is
                 // signed with ad-hoc signature. App bundles with ad-hoc
