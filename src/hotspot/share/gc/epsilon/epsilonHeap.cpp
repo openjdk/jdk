@@ -310,6 +310,16 @@ void EpsilonHeap::print_on(outputStream *st) const {
   MetaspaceUtils::print_on(st);
 }
 
+void EpsilonHeap::print_on_error(outputStream *st) const {
+  print_on(st);
+  st->cr();
+
+  BarrierSet* bs = BarrierSet::barrier_set();
+  if (bs != nullptr) {
+    bs->print_on(st);
+  }
+}
+
 bool EpsilonHeap::print_location(outputStream* st, void* addr) const {
   return BlockLocationPrinter<EpsilonHeap>::print_location(st, addr);
 }
