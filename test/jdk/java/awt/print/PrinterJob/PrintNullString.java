@@ -48,7 +48,8 @@ public class PrintNullString extends Frame {
     private static final String INSTRUCTIONS =
             "This test will automatically initiate a print\n\n" +
             "A passing test will print 'OK' and 'expected' messages.\n" +
-            "Test failed if no exception thrown.";
+            "Test failed if no exception thrown.\n\n" +
+			"The test will complete automatically.";
 
     public static void main(String[] args) throws Exception {
         if (PrinterJob.lookupPrintServices().length == 0) {
@@ -80,6 +81,8 @@ public class PrintNullString extends Frame {
                         JOptionPane.ERROR_MESSAGE);
                 PassFailJFrame.forceFail(msg);
             }
+        } else {
+            PassFailJFrame.forceFail("User cancelled printing");
         }
     }
 
