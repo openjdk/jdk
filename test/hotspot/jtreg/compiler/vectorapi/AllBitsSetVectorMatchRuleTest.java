@@ -63,6 +63,9 @@ public class AllBitsSetVectorMatchRuleTest {
     private static boolean[] mb;
     private static boolean[] mc;
     private static boolean[] mr;
+    private static long[] la;
+    private static long[] lb;
+    private static long[] lr;
 
     static {
         ia = new int[LENGTH];
@@ -72,6 +75,9 @@ public class AllBitsSetVectorMatchRuleTest {
         mb = new boolean[LENGTH];
         mc = new boolean[LENGTH];
         mr = new boolean[LENGTH];
+        la = new long[LENGTH];
+        lb = new long[LENGTH];
+        lr = new long[LENGTH];
 
         for (int i = 0; i < LENGTH; i++) {
             ia[i] = RD.nextInt(25);
@@ -79,6 +85,8 @@ public class AllBitsSetVectorMatchRuleTest {
             ma[i] = RD.nextBoolean();
             mb[i] = RD.nextBoolean();
             mc[i] = RD.nextBoolean();
+            la[i] = RD.nextLong(25);
+            lb[i] = RD.nextLong(25);
         }
     }
 
@@ -100,7 +108,6 @@ public class AllBitsSetVectorMatchRuleTest {
     @Warmup(10000)
     @IR(counts = { IRNode.VAND_NOT_L, " >= 1" }, applyIfPlatform = {"aarch64", "true"}, applyIf = {"UseSVE", "0"})
     @IR(counts = { IRNode.VMASK_AND_NOT_L, " >= 1" }, applyIfPlatform = {"aarch64", "true"}, applyIf = {"UseSVE", "> 0"})
-    @IR(counts = { IRNode.VAND_NOT_L, " >= 1" }, applyIfPlatform = {"riscv64", "true"})
     public static void testAllBitsSetMask() {
         VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);
         VectorMask<Long> bvm = VectorMask.fromArray(L_SPECIES, mb, 0);
@@ -110,6 +117,20 @@ public class AllBitsSetVectorMatchRuleTest {
         // Verify results
         for (int i = 0; i < L_SPECIES.length(); i++) {
             Asserts.assertEquals((ma[i] & (!mb[i])) & (!mc[i]), mr[i]);
+        }
+    }
+
+    @Test
+    @Warmup(10000)
+    @IR(counts = { IRNode.VAND_NOT_L, " >= 1" })
+    public static void testVectorVAndNotL() {
+        LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
+        LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
+        av.not().lanewise(VectorOperators.AND_NOT, bv).intoArray(lr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            Asserts.assertEquals((~la[i]) & (~lb[i]), lr[i]);
         }
     }
 
