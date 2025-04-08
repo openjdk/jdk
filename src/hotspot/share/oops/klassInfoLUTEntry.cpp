@@ -62,6 +62,7 @@ uint32_t KlassLUTEntry::build_from_ik(const InstanceKlass* ik, const char*& not_
 
   const int kind = ik->kind();
   const int lh = ik->layout_helper();
+  assert(ik->class_loader_data() != nullptr, "no associated class loader?");
   const int loader_index = KlassInfoLUT::try_register_perma_cld(ik->class_loader_data());
 
   U value(0);
@@ -211,7 +212,8 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
   const unsigned loader = loader_index();
   assert(loader < 4, "invalid loader index");
   if (loader > 0) {
-    assert(KlassInfoLUT::get_perma_cld(loader) == real_cld, "Different CLD?");
+    assert(KlassInfoLUT::get_perma_cld(loader) == real_cld, "Different CLD (%d, %p vs %p)?", loader,
+           real_cld, KlassInfoLUT::get_perma_cld(loader));
   } else {
     assert(!real_cld->is_permanent_class_loader_data(), "perma cld?");
   }
