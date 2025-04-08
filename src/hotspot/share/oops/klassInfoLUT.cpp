@@ -116,10 +116,13 @@ int KlassInfoLUT::index_for_cld(const ClassLoaderData* cld) {
   return 0;
 }
 
-static void log_klass_registration(const Klass* k, narrowKlass nk, KlassLUTEntry klute, const char* message) {
+static void log_klass_registration(const Klass* k, narrowKlass nk, bool added_to_table,
+                                   KlassLUTEntry klute, const char* message) {
   char tmp[1024];
-  log_debug(klut)("Klass " PTR_FORMAT ", cld: %s, nk %u, klute: " INT32_FORMAT_X_0 ": %s %s%s",
-                  p2i(k), common_loader_names[klute.loader_index()], nk, klute.value(),
+  log_debug(klut)("Klass " PTR_FORMAT ", cld: %s, nk %u(%c), klute: " INT32_FORMAT_X_0 ": %s %s%s",
+                  p2i(k), common_loader_names[klute.loader_index()], nk,
+                  (added_to_table ? '+' : '-'),
+                  klute.value(),
                   message,
                   (k->is_shared() ? "(shared) " : ""),
                   k->name()->as_C_string(tmp, sizeof(tmp)));
@@ -132,34 +135,40 @@ KlassLUTEntry KlassInfoLUT::register_klass(const Klass* k) {
   assert(cld != nullptr, "Require CLD");
   register_cld_if_needed(cld);
 
-  const narrowKlass nk = UseCompressedClassPointers ? CompressedKlassPointers::encode(const_cast<Klass*>(k)) : 0;
+  // We calculate the klute that will be stored into the Klass.
+  //
+  // We also add the klute to the lookup table iff we use a lookup table (we do if COH is enabled)
+  // and if the Klass is in the narrowKlass encoding range. Interfaces and abstract classes are
+  // not put there anymore since we don't need narrowKlass lookup for them.
+  const bool add_to_table =  use_lookup_table() ? CompressedKlassPointers::is_encodable(k) : false;
+  const narrowKlass nk = add_to_table ? CompressedKlassPointers::encode(const_cast<Klass*>(k)) : 0;
 
   KlassLUTEntry klute = k->klute();
   if (klute.is_valid()) {
     // The Klass already carries the pre-computed klute. That can happen if it was loaded from a shared
     // archive, in which case it contains the klute computed at (dynamic) load time when dumping.
-    if (use_lookup_table()) {
+    if (add_to_table) {
       assert(nk < num_entries(), "narrowKlass %u is OOB for LUT", nk);
       if (klute.value() == _entries[nk]) {
-        log_klass_registration(k, nk, klute, "already registered");
+        log_klass_registration(k, nk, false, klute, "already registered");
       } else {
         // Copy the klute value from the Klass to the table slot.
         _entries[nk] = klute.value();
-        log_klass_registration(k, nk, klute, "updated table value for");
+        log_klass_registration(k, nk, true, klute, "updated table value for");
       }
     }
   } else {
     // Calculate klute from Klass properties and update the table value.
     klute = KlassLUTEntry::build_from_klass(k);
-    if (use_lookup_table()) {
+    if (add_to_table) {
       _entries[nk] = klute.value();
     }
-    log_klass_registration(k, nk, klute, "registered");
+    log_klass_registration(k, nk, add_to_table, klute, "registered");
   }
 
 #ifdef ASSERT
   klute.verify_against_klass(k);
-  if (use_lookup_table()) {
+  if (add_to_table) {
     KlassLUTEntry e2(at(nk));
     assert(e2 == klute, "sanity");
   }
@@ -190,6 +199,7 @@ KlassLUTEntry KlassInfoLUT::register_klass(const Klass* k) {
 // The problem with late_register_class is that it imposes an overhead on every lookup, since
 // a lookup table entry may potentially be still invalid.
 KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
+  assert(nk != 0, "null narrow Klass - is this class encodable?");
   const Klass* k = CompressedKlassPointers::decode(nk);
   assert(k->is_shared(), "Only for CDS classes");
   // In the CDS case, we expect the original class to have been registered during dumptime; so
@@ -199,7 +209,7 @@ KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
   const KlassLUTEntry klute = k->klute();
   assert(klute.is_valid(), "Must be a valid klute");
   _entries[nk] = klute.value();
-  log_klass_registration(k, nk, klute.value(), "late-registered");
+  log_klass_registration(k, nk, true, klute.value(), "late-registered");
   return klute;
 }
 #endif // INCLUDE_CDS

@@ -39,7 +39,7 @@ ALWAYSINLINE uint32_t KlassInfoLUT::at(unsigned index) {
 }
 
 ALWAYSINLINE KlassLUTEntry KlassInfoLUT::lookup(narrowKlass nk) {
-
+  assert(nk != 0, "null narrow Klass - is this class encodable?");
   const uint32_t v = at(nk);
   KlassLUTEntry e(v);
 #if INCLUDE_CDS
