@@ -70,7 +70,7 @@ inline unsigned KlassLUTEntry::ik_omb_offset_2() const {
 }
 
 // calculates word size given header size, element size, and array length
-inline unsigned KlassLUTEntry::ak_calculate_wordsize_given_oop(oop obj) const {
+inline unsigned KlassLUTEntry::ak_calculate_wordsize_given_oop(oopDesc* obj) const {
   assert(is_array(), "only for ak entries");
   assert(UseCompactObjectHeaders, "+COH only");
   assert(UseKLUT, "+KLUT only");
@@ -92,7 +92,7 @@ inline unsigned KlassLUTEntry::ak_calculate_wordsize_given_oop(oop obj) const {
   return align_up(size_in_bytes, HardCodedObjectAlignmentInBytes) / HeapWordSize;
 }
 
-inline unsigned KlassLUTEntry::calculate_wordsize_given_oop(oop obj) const {
+inline unsigned KlassLUTEntry::calculate_wordsize_given_oop(oopDesc* obj) const {
   size_t rc = 0;
   return is_array() ? ak_calculate_wordsize_given_oop(obj) : ik_wordsize();
 }
