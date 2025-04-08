@@ -2624,6 +2624,10 @@ void MacroAssembler::movflt(XMMRegister dst, AddressLiteral src, Register rscrat
   }
 }
 
+bool MacroAssembler::is_r12_zero() {
+  return (UseCompressedOops && CompressedOops::base() == nullptr);
+}
+
 void MacroAssembler::movptr(Register dst, Register src) {
   LP64_ONLY(movq(dst, src)) NOT_LP64(movl(dst, src));
 }
@@ -2635,7 +2639,9 @@ void MacroAssembler::movptr(Register dst, Address src) {
 // src should NEVER be a real pointer. Use AddressLiteral for true pointers
 void MacroAssembler::movptr(Register dst, intptr_t src) {
 #ifdef _LP64
-  if (is_uimm32(src)) {
+  if ((src == 0) && is_r12_zero() && (dst != r12_heapbase)) {
+    movq(dst, r12_heapbase);
+  } else if (is_uimm32(src)) {
     movl(dst, checked_cast<uint32_t>(src));
   } else if (is_simm32(src)) {
     movq(dst, checked_cast<int32_t>(src));
@@ -2652,7 +2658,16 @@ void MacroAssembler::movptr(Address dst, Register src) {
 }
 
 void MacroAssembler::movptr(Address dst, int32_t src) {
-  LP64_ONLY(movslq(dst, src)) NOT_LP64(movl(dst, src));
+#ifdef _LP64
+  if ((src == 0) && is_r12_zero()) {
+    movq(dst, r12_heapbase);
+  } else {
+    movslq(dst, src);
+  }
+#else
+  movl(dst, src);
+#endif
+
 }
 
 void MacroAssembler::movdqu(Address dst, XMMRegister src) {

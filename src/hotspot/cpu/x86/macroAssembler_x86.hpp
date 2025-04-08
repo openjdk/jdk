@@ -2036,6 +2036,8 @@ public:
   void mov_metadata(Register dst, Metadata* obj);
   void mov_metadata(Address  dst, Metadata* obj, Register rscratch);
 
+  static bool is_r12_zero();
+
   void movptr(Register     dst, Register       src);
   void movptr(Register     dst, Address        src);
   void movptr(Register     dst, AddressLiteral src);
@@ -2050,7 +2052,6 @@ public:
     if (src.is_constant()) movptr(dst, src.as_constant());
     else                   movptr(dst, src.as_register());
   }
-
 
   // to avoid hiding movl
   void mov32(Register       dst, AddressLiteral src);
