@@ -53,6 +53,12 @@ import org.testng.annotations.Test;
 public class LoadAgentDcmdTest {
 
     public String getLibInstrumentPath() throws FileNotFoundException {
+        if (Platform.isStatic()) {
+            // libinstrument is statically linked with the launcher. Don't
+            // locate the libinstrument shared library on static JDK.
+            return "libinstrument.so";
+        }
+
         String jdkPath = System.getProperty("test.jdk");
 
         if (jdkPath == null) {
