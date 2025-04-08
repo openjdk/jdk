@@ -31,8 +31,7 @@ import java.util.List;
 
 /*
  * @test id=no_coops_no_ccptr_no_coh
- * @library /test/lib /
- * @requires vm.bits == "64"
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
@@ -42,8 +41,7 @@ import java.util.List;
 
 /*
  * @test id=coops_no_ccptr_no_coh
- * @library /test/lib /
- * @requires vm.bits == "64"
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
@@ -53,8 +51,7 @@ import java.util.List;
 
 /*
  * @test id=no_coops_ccptr_no_coh
- * @library /test/lib /
- * @requires vm.bits == "64"
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
@@ -64,8 +61,7 @@ import java.util.List;
 
 /*
  * @test id=coops_ccptr_no_coh
- * @library /test/lib /
- * @requires vm.bits == "64"
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
@@ -75,8 +71,7 @@ import java.util.List;
 
 /*
  * @test id=no_coops_ccptr_coh
- * @library /test/lib /
- * @requires vm.bits == "64"
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
