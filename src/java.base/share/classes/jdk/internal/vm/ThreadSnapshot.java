@@ -139,47 +139,4 @@ public class ThreadSnapshot {
                     + " (" + lock.getClass().getName() + ")";
         }
     }
-
-    private static class StackTraceInfo {
-        private StackTraceElement ste;
-        private ThreadLock[] locks;
-        private static final ThreadLock[] EMPTY_LOCKS = new ThreadLock[0];
-        private static final StackTraceInfo[] EMPTY_STACK = new StackTraceInfo[0];
-
-        private StackTraceInfo(StackTraceElement ste, ThreadLock[] locks) {
-            this.ste = ste;
-            this.locks = locks;
-        }
-
-        // called by VM
-        private static StackTraceInfo[] createStackTraceInfo(StackTraceElement[] stes, ThreadLock[] locks) {
-            if (stes == null) {
-                return EMPTY_STACK;
-            }
-
-            StackTraceInfo[] result = new StackTraceInfo[stes.length];
-            int lockIndex = 0;
-            int maxLockIndex = locks != null ? locks.length : 0;
-            for (int depth = 0; depth < stes.length; depth++) {
-                int startLockIndex = lockIndex;
-                while (lockIndex < maxLockIndex && locks[lockIndex].depth == depth) {
-                    lockIndex++;
-                }
-                ThreadLock[] thisLocks = lockIndex - startLockIndex == 0
-                                        ? EMPTY_LOCKS
-                                        : Arrays.copyOfRange(locks, startLockIndex, lockIndex);
-                result[depth] = new StackTraceInfo(stes[depth], thisLocks);
-            }
-            return result;
-        }
-
-        public StackTraceElement getStackTraceElement() {
-            return ste;
-        }
-        public ThreadLock[] getLocks() {
-            return locks;
-        }
-    }
-
-    private static native StackTraceInfo[] getStackTraceInfo(Thread thread, boolean withLocks);
 }
