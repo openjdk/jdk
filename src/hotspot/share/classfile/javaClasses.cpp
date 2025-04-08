@@ -65,6 +65,7 @@
 #include "oops/recordComponent.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.hpp" // for JvmtiVTMSTransitionDisabler
 #include "prims/methodHandles.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/continuationEntry.inline.hpp"
@@ -1877,22 +1878,22 @@ oop java_lang_Thread::park_blocker(oop java_thread) {
 
 
 struct LockInfo {
-    enum { // should be synced with jdk.internal.vm.ThreadSnapshot.ThreadLock constants
-        PARKING_TO_WAIT = 1,
-        ELEMINATED_SCALAR_REPLACED = 2,
-        ELEMINATED_MONITOR = 3,
-        LOCKED = 4,
-        WAITING_TO_LOCK = 5,
-        WAITING_ON = 6,
-        WAITING_TO_RELOCK = 7,
-    };
+  enum { // should be synced with jdk.internal.vm.ThreadSnapshot.ThreadLock constants
+    PARKING_TO_WAIT = 1,
+    ELEMINATED_SCALAR_REPLACED = 2,
+    ELEMINATED_MONITOR = 3,
+    LOCKED = 4,
+    WAITING_TO_LOCK = 5,
+    WAITING_ON = 6,
+    WAITING_TO_RELOCK = 7,
+  };
 
-    int _depth;
-    int _type;
-    oop _obj;
+  int _depth;
+  int _type;
+  oop _obj;
 
-    LockInfo(int depth, int type, oop obj) : _depth(depth), _type(type), _obj(obj) {}
-    LockInfo() : _depth(0), _type(0), _obj(nullptr) {}
+  LockInfo(int depth, int type, oop obj) : _depth(depth), _type(type), _obj(obj) {}
+  LockInfo() : _depth(0), _type(0), _obj(nullptr) {}
 };
 
 class GetThreadSnapshotClosure : public HandshakeClosure {
@@ -2020,38 +2021,24 @@ public:
       return;
     }
 
-    // ensure virtual thread was not mounted/unmounted
     bool is_virtual = java_lang_VirtualThread::is_instance(_java_thread());
-    if (is_virtual) {
-      JavaThread* thread = nullptr;
-      oop carrier_thread = java_lang_VirtualThread::carrier_thread(_java_thread());
-      if (carrier_thread != nullptr) {
-        thread = java_lang_Thread::thread(carrier_thread);
-      } else {
-        thread = nullptr;
-      }
-      if (thread != _thread) {
-        // carrier changed - retry
-        _retry_handshake = true;
-        return;
-      }
-    }
-
     if (_thread != nullptr) {
-      // mounted vthread, use carrier thread state
       if (is_virtual) {
+        // mounted vthread, use carrier thread state
         oop carrier_thread = java_lang_VirtualThread::carrier_thread(_java_thread());
         _thread_status = java_lang_Thread::get_thread_status(carrier_thread);
       } else {
         _thread_status = java_lang_Thread::get_thread_status(_java_thread());
       }
     } else {
+      // unmounted vthread
       int vt_state = java_lang_VirtualThread::state(_java_thread());
       _thread_status = java_lang_VirtualThread::map_state_to_thread_status(vt_state);
     }
     _name = java_lang_Thread::name(_java_thread());
 
     if (_thread != nullptr && !_thread->has_last_Java_frame()) {
+      // stack trace is empty
       return;
     }
 
@@ -2231,100 +2218,117 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
   return trace();
 }
 
-oop java_lang_Thread::get_thread_snapshot(oop java_thread, bool with_locks, TRAPS) {
+oop java_lang_Thread::get_thread_snapshot(jobject jthread, bool with_locks, TRAPS) {
   ThreadsListHandle tlh(JavaThread::current());
 
-  while (true) {
-    JavaThread* thread = nullptr;
-    bool is_virtual = java_lang_VirtualThread::is_instance(java_thread);
-    if (is_virtual) {
-      oop carrier_thread = java_lang_VirtualThread::carrier_thread(java_thread);
-      if (carrier_thread != nullptr) {
-        thread = java_lang_Thread::thread(carrier_thread);
-      } else {
-        // TODO: need to "suspend" the VT like VirtualThread.getStackTrace does
-      }
-    } else {
-      thread = java_lang_Thread::thread(java_thread);
-    }
+  oop java_thread = JNIHandles::resolve(jthread);
 
-    // Handshake with target
-    ResourceMark rm(THREAD);
-    HandleMark   hm(THREAD);
-    GetThreadSnapshotClosure cl(Handle(THREAD, java_thread), thread, with_locks);
-
-    if (thread == nullptr) {
-      // unmounted vthread, execute on the current thread
-      cl.do_thread(nullptr);
-    } else {
-      Handshake::execute(&cl, &tlh, thread);
-    }
-    if (cl.read_reset_retry()) {
-      continue;
-    }
-
-    // Convert to StackTraceElement array
-    InstanceKlass* k = vmClasses::StackTraceElement_klass();
-    assert(k != nullptr, "must be loaded in 1.4+");
-    if (k->should_be_initialized()) {
-      k->initialize(CHECK_NULL);
-    }
-
-    objArrayHandle trace = oopFactory::new_objArray_handle(k, cl._depth, CHECK_NULL);
-
-    InstanceKlass* lock_klass = nullptr;
-    if (with_locks) {
-      Symbol* sym = vmSymbols::jdk_internal_vm_ThreadLock();
-      Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK_NULL);
-      lock_klass = InstanceKlass::cast(k);
-    }
-
-    int max_locks = cl._locks != nullptr ? cl._locks->length() : 0;
-    for (int i = 0; i < cl._depth; i++) {
-      methodHandle method(THREAD, cl._methods->at(i));
-      oop element = java_lang_StackTraceElement::create(method, cl._bcis->at(i), CHECK_NULL);
-      trace->obj_at_put(i, element);
-    }
-
-    objArrayHandle locks;
-    int lock_index = 0;
-    if (with_locks && max_locks > 0) {
-      locks = oopFactory::new_objArray_handle(lock_klass, max_locks, CHECK_NULL);
-      for (int n = 0; n < max_locks; n++) {
-        LockInfo* lock_info = cl._locks->adr_at(lock_index++);
-        oop o = lock_info->_obj;
-        Handle lock_object = Handle(THREAD, o);
-
-        // TODO: allocate and fill in the VM
-        JavaValue result(T_OBJECT);
-        JavaCallArguments args;
-        args.push_int(lock_info->_depth);
-        args.push_int(lock_info->_type);
-        args.push_oop(lock_object);
-        Handle lock = JavaCalls::construct_new_instance(lock_klass,
-            vmSymbols::jdk_internal_vm_ThreadLock_ctor_signature(), &args, CHECK_NULL);
-
-        locks->obj_at_put(n, lock());
+  // wrapper to auto delete JvmtiVTMSTransitionDisabler
+  class TransitionDisabler {
+    JvmtiVTMSTransitionDisabler* _transition_disabler;
+  public:
+    TransitionDisabler() : _transition_disabler(nullptr) {}
+    ~TransitionDisabler() {
+      if (_transition_disabler != nullptr) {
+        delete _transition_disabler;
       }
     }
-
-    Symbol* snapshot_name = vmSymbols::jdk_internal_vm_ThreadSnapshot();
-    Klass* snapshot_klass = SystemDictionary::resolve_or_fail(snapshot_name, true, CHECK_NULL);
-    if (snapshot_klass->should_be_initialized()) {
-      snapshot_klass->initialize(CHECK_NULL);
+    void init(jobject jthread) {
+      _transition_disabler = new (mtInternal) JvmtiVTMSTransitionDisabler(jthread);
     }
+  } transition_disabler;
 
-    // TODO: allocate and fill in the VM
-    JavaValue result(T_OBJECT);
-    JavaCallArguments args;
-    args.push_oop(trace);
-    args.push_oop(locks);
-    args.push_oop(Handle(THREAD, cl._name));
-    args.push_int((int)cl._thread_status);
-    Handle snapshot = JavaCalls::construct_new_instance(InstanceKlass::cast(snapshot_klass),
-        vmSymbols::jdk_internal_vm_ThreadSnapshot_ctor_signature(), &args, CHECK_NULL);
-    return snapshot();
+  JavaThread* thread = nullptr;
+  bool is_virtual = java_lang_VirtualThread::is_instance(java_thread);
+
+  if (is_virtual) {
+    // 1st need to disable mount/unmount transitions
+    transition_disabler.init(jthread);
+
+    oop carrier_thread = java_lang_VirtualThread::carrier_thread(java_thread);
+    if (carrier_thread != nullptr) {
+      thread = java_lang_Thread::thread(carrier_thread);
+    } else {
+      // TODO: need to "suspend" the VT like VirtualThread.getStackTrace does
+    }
+  } else {
+    thread = java_lang_Thread::thread(java_thread);
   }
+
+  // Handshake with target
+  ResourceMark rm(THREAD);
+  HandleMark   hm(THREAD);
+  GetThreadSnapshotClosure cl(Handle(THREAD, java_thread), thread, with_locks);
+  if (thread == nullptr) {
+    // unmounted vthread, execute on the current thread
+    cl.do_thread(nullptr);
+  } else {
+    do {
+      Handshake::execute(&cl, &tlh, thread);
+    } while (cl.read_reset_retry());
+  }
+
+  // Convert to StackTraceElement array
+  InstanceKlass* k = vmClasses::StackTraceElement_klass();
+  assert(k != nullptr, "must be loaded in 1.4+");
+  if (k->should_be_initialized()) {
+    k->initialize(CHECK_NULL);
+  }
+
+  objArrayHandle trace = oopFactory::new_objArray_handle(k, cl._depth, CHECK_NULL);
+
+  InstanceKlass* lock_klass = nullptr;
+  if (with_locks) {
+    Symbol* sym = vmSymbols::jdk_internal_vm_ThreadLock();
+    Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK_NULL);
+    lock_klass = InstanceKlass::cast(k);
+  }
+
+  int max_locks = cl._locks != nullptr ? cl._locks->length() : 0;
+  for (int i = 0; i < cl._depth; i++) {
+    methodHandle method(THREAD, cl._methods->at(i));
+    oop element = java_lang_StackTraceElement::create(method, cl._bcis->at(i), CHECK_NULL);
+    trace->obj_at_put(i, element);
+  }
+
+  objArrayHandle locks;
+  int lock_index = 0;
+  if (with_locks && max_locks > 0) {
+    locks = oopFactory::new_objArray_handle(lock_klass, max_locks, CHECK_NULL);
+    for (int n = 0; n < max_locks; n++) {
+      LockInfo* lock_info = cl._locks->adr_at(lock_index++);
+      oop o = lock_info->_obj;
+      Handle lock_object = Handle(THREAD, o);
+
+      // TODO: allocate and fill in the VM
+      JavaValue result(T_OBJECT);
+      JavaCallArguments args;
+      args.push_int(lock_info->_depth);
+      args.push_int(lock_info->_type);
+      args.push_oop(lock_object);
+      Handle lock = JavaCalls::construct_new_instance(lock_klass,
+          vmSymbols::jdk_internal_vm_ThreadLock_ctor_signature(), &args, CHECK_NULL);
+
+      locks->obj_at_put(n, lock());
+    }
+  }
+
+  Symbol* snapshot_name = vmSymbols::jdk_internal_vm_ThreadSnapshot();
+  Klass* snapshot_klass = SystemDictionary::resolve_or_fail(snapshot_name, true, CHECK_NULL);
+  if (snapshot_klass->should_be_initialized()) {
+    snapshot_klass->initialize(CHECK_NULL);
+  }
+
+  // TODO: allocate and fill in the VM
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+  args.push_oop(trace);
+  args.push_oop(locks);
+  args.push_oop(Handle(THREAD, cl._name));
+  args.push_int((int)cl._thread_status);
+  Handle snapshot = JavaCalls::construct_new_instance(InstanceKlass::cast(snapshot_klass),
+      vmSymbols::jdk_internal_vm_ThreadSnapshot_ctor_signature(), &args, CHECK_NULL);
+  return snapshot();
 }
 
 const char* java_lang_Thread::thread_status_name(oop java_thread) {
