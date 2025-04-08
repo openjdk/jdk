@@ -22,9 +22,9 @@
  *
  */
 
-#include "classfile/javaClasses.inline.hpp"
 #include "ci/ciCallSite.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "classfile/javaClasses.inline.hpp"
 
 // ciCallSite
 
