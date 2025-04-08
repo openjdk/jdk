@@ -78,6 +78,7 @@ public @interface PreviewFeature {
         STREAM_GATHERERS,
         @JEP(number=494, title="Module Import Declarations", status="Second Preview")
         MODULE_IMPORTS,
+        KEY_DERIVATION,
         LANGUAGE_MODEL,
         /**
          * A key for testing.
