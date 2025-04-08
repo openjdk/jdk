@@ -74,7 +74,7 @@ static void check_relauncher_argument(char* arg) {
         }
         JLI_List_add(java_args, java_args_ptr);
 
-        jargc = java_args->size;
+        jargc = (int) java_args->size;
         jargs = (const char**) java_args->elements;
     }
 }
