@@ -67,25 +67,22 @@ InstanceKlass* UnregisteredClasses::load_class(Symbol* name, const char* path, T
   assert(!_unregistered_class_loader.is_empty(), "not initialized");
   Handle classloader(THREAD, _unregistered_class_loader.resolve());
 
-  oop obj;
-  { // Call CDS$UnregisteredClassLoader::load(String name, String source)
-    Symbol* methodName = SymbolTable::new_symbol("load");
-    Symbol* methodSignature = SymbolTable::new_symbol("(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Class;");
-    Handle ext_class_name = java_lang_String::externalize_classname(name, CHECK_NULL);
-    Handle path_string = java_lang_String::create_from_str(path, CHECK_NULL);
+  // Call CDS$UnregisteredClassLoader::load(String name, String source)
+  Symbol* methodName = SymbolTable::new_symbol("load");
+  Symbol* methodSignature = SymbolTable::new_symbol("(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Class;");
+  Handle ext_class_name = java_lang_String::externalize_classname(name, CHECK_NULL);
+  Handle path_string = java_lang_String::create_from_str(path, CHECK_NULL);
 
-    JavaValue result(T_OBJECT);
-    JavaCalls::call_virtual(&result,
-                            classloader,
-                            UnregisteredClassLoader_klass(),
-                            methodName,
-                            methodSignature,
-                            ext_class_name,
-                            path_string,
-                            CHECK_NULL);
-    assert(result.get_type() == T_OBJECT, "just checking");
-    obj = result.get_oop();
-  }
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_virtual(&result,
+                          classloader,
+                          UnregisteredClassLoader_klass(),
+                          methodName,
+                          methodSignature,
+                          ext_class_name,
+                          path_string,
+                          CHECK_NULL);
+  assert(result.get_type() == T_OBJECT, "just checking");
 
-  return InstanceKlass::cast(java_lang_Class::as_Klass(obj));
+  return InstanceKlass::cast(java_lang_Class::as_Klass(result.get_oop()));
 }
