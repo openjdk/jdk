@@ -111,6 +111,10 @@ public interface HttpResponse<T> {
      * The default implementation of this method returns
      * {@link Optional#empty() Optional.empty()}.
      *
+     * @implNote
+     * Instances of {@code HttpResponse} returned by the JDK built-in
+     * implementation of {@code HttpClient} always return a non-empty value.
+     *
      * @since 25
      */
     default Optional<String> connectionLabel() {
