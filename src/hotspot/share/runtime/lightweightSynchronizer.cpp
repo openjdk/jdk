@@ -518,8 +518,12 @@ class LightweightSynchronizer::CacheSetter : StackObj {
     // Only use the cache if using the table.
     if (UseObjectMonitorTable) {
       if (_monitor != nullptr) {
-        _thread->om_set_monitor_cache(_monitor);
-        _lock->set_object_monitor_cache(_monitor);
+        // If the monitor is already in the BasicLock cache then it is most
+        // likely in the thread cache, do not set it again to avoid reordering.
+        if (_monitor != _lock->object_monitor_cache()) {
+          _thread->om_set_monitor_cache(_monitor);
+          _lock->set_object_monitor_cache(_monitor);
+        }
       } else {
         _lock->clear_object_monitor_cache();
       }
