@@ -80,32 +80,40 @@ void KlassInfoLUT::initialize() {
   }
 }
 
-static const char* common_loader_names[4] = { "other", "null", "system", "platform" };
+static const char* common_loader_names[4] = { "other", "boot", "system", "platform" };
 
-int KlassInfoLUT::try_register_perma_cld(ClassLoaderData* cld) {
+void KlassInfoLUT::register_cld_if_needed(ClassLoaderData* cld) {
+  // We remember CLDs for the three permanent class loaders in a lookup array.
   int index = 0;
-  if (cld->is_permanent_class_loader_data()) {
-    if (cld->is_the_null_class_loader_data()) {
-      index = 1;
-    } else if (cld->is_system_class_loader_data()) {
-      index = 2;
-    } else if (cld->is_platform_class_loader_data()) {
-      index = 3;
-    }
+  if (cld->is_the_null_class_loader_data()) {
+    index = 1;
+  } else if (cld->is_system_class_loader_data()) {
+    index = 2;
+  } else if (cld->is_platform_class_loader_data()) {
+    index = 3;
+  } else {
+    return;
   }
-  if (index > 0) {
-    ClassLoaderData* old_cld = Atomic::load(_common_loaders + index);
+  ClassLoaderData* old_cld = Atomic::load(_common_loaders + index);
+  if (old_cld == nullptr) {
+    old_cld = Atomic::cmpxchg(&_common_loaders[index], (ClassLoaderData*)nullptr, cld);
     if (old_cld == nullptr) {
-      old_cld = Atomic::cmpxchg(&_common_loaders[index], (ClassLoaderData*)nullptr, cld);
-      if (old_cld == nullptr) {
-        log_debug(klut)("Registered CLD for %s loader at index %d: " PTR_FORMAT,
-                        common_loader_names[index], index, p2i(cld));
-      } else {
-        assert(old_cld == cld, "Different CLD??"); // There should only be one for each
-      }
+      log_debug(klut)("Registered CLD " PTR_FORMAT " (%s loader) CLD at index %d",
+                       p2i(cld), common_loader_names[index], index);
     }
   }
-  return index;
+  // There should only be 3 permanent CLDs
+  assert(old_cld == cld || old_cld == nullptr, "Different CLD??");
+}
+
+int KlassInfoLUT::index_for_cld(const ClassLoaderData* cld) {
+  assert(cld != nullptr, "must not be null");
+  for (int i = 1; i <= 3; i++) {
+    if (cld == _common_loaders[i]) {
+      return i;
+    }
+  }
+  return 0;
 }
 
 static void log_klass_registration(const Klass* k, narrowKlass nk, KlassLUTEntry klute, const char* message) {
@@ -119,32 +127,35 @@ static void log_klass_registration(const Klass* k, narrowKlass nk, KlassLUTEntry
 
 KlassLUTEntry KlassInfoLUT::register_klass(const Klass* k) {
 
+  // First register the CLD in case we did not already do that
+  ClassLoaderData* const cld = k->class_loader_data();
+  assert(cld != nullptr, "Require CLD");
+  register_cld_if_needed(cld);
+
   const narrowKlass nk = UseCompressedClassPointers ? CompressedKlassPointers::encode(const_cast<Klass*>(k)) : 0;
 
-//  KlassLUTEntry klute = k->klute();
-//  if (klute.is_valid()) {
-//    // The Klass already carries the pre-computed klute. That can happen if it was loaded from a shared
-//    // archive, in which case it contains the klute computed at (dynamic) load time when dumping.
-//    if (use_lookup_table()) {
-//      assert(nk < num_entries(), "narrowKlass %u is OOB for LUT", nk);
-//      if (klute.value() == _entries[nk]) {
-//        log_klass_registration(k, nk, klute, "already registered");
-//      } else {
-//        // Copy the klute value from the Klass to the table slot. This saves some cycles but, more importantly,
-//        // makes the coding more robust when using it on Klasses that are not fully initialized yet (during CDS
-//        // initialization we encounter Klasses with no associated CLD, for instance).
-//        _entries[nk] = klute.value();
-//        log_klass_registration(k, nk, klute, "updated table value for");
-//      }
-//    }
-//  } else {
+  KlassLUTEntry klute = k->klute();
+  if (klute.is_valid()) {
+    // The Klass already carries the pre-computed klute. That can happen if it was loaded from a shared
+    // archive, in which case it contains the klute computed at (dynamic) load time when dumping.
+    if (use_lookup_table()) {
+      assert(nk < num_entries(), "narrowKlass %u is OOB for LUT", nk);
+      if (klute.value() == _entries[nk]) {
+        log_klass_registration(k, nk, klute, "already registered");
+      } else {
+        // Copy the klute value from the Klass to the table slot.
+        _entries[nk] = klute.value();
+        log_klass_registration(k, nk, klute, "updated table value for");
+      }
+    }
+  } else {
     // Calculate klute from Klass properties and update the table value.
-  const KlassLUTEntry klute = KlassLUTEntry::build_from_klass(k);
+    klute = KlassLUTEntry::build_from_klass(k);
     if (use_lookup_table()) {
       _entries[nk] = klute.value();
     }
-//log_klass_registration(k, nk, klute, "registered");
-//  }
+    log_klass_registration(k, nk, klute, "registered");
+  }
 
 #ifdef ASSERT
   klute.verify_against_klass(k);
@@ -182,10 +193,9 @@ KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
   const Klass* k = CompressedKlassPointers::decode(nk);
   assert(k->is_shared(), "Only for CDS classes");
   // In the CDS case, we expect the original class to have been registered during dumptime; so
-  // it should carry a valid KLUTE entry. We just copy the klute into the lookup table. Note that
-  // we cannot calculate the KLUTE from the Klass here even if we wanted, since the Klass may not
-  // yet been fully initialized (CDS calls Klass functions on Klass structures that are not yet
-  // fully initialized, e.g. have no associated CLD).
+  // it should carry a valid klute. We just copy that value into the lookup table. Note that
+  // we cannot calculate the klute from the Klass here even if we wanted, since the Klass may not
+  // yet carry a CLD (CDS calls Klass functions on Klass structures that are not yet fully initialized).
   const KlassLUTEntry klute = k->klute();
   assert(klute.is_valid(), "Must be a valid klute");
   _entries[nk] = klute.value();

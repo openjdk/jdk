@@ -63,14 +63,14 @@ uint32_t KlassLUTEntry::build_from_ik(const InstanceKlass* ik, const char*& not_
   const int kind = ik->kind();
   const int lh = ik->layout_helper();
   assert(ik->class_loader_data() != nullptr, "no associated class loader?");
-  const int loader_index = KlassInfoLUT::try_register_perma_cld(ik->class_loader_data());
+  const int cld_index = KlassInfoLUT::index_for_cld(ik->class_loader_data());
 
   U value(0);
 
   // Set common bits, these are always present
   assert(kind < 0b111, "sanity");
   value.common.kind = kind;
-  value.common.loader = loader_index;
+  value.common.loader = cld_index;
 
   // We may not be able to encode the IK-specific info; if we can't, those bits are left zero
   // and we return an error string for logging
@@ -145,14 +145,14 @@ uint32_t KlassLUTEntry::build_from_ak(const ArrayKlass* ak) {
 
   const int kind = ak->kind();
   const int lh = ak->layout_helper();
-  const int loader_index = KlassInfoLUT::try_register_perma_cld(ak->class_loader_data());
+  const int cld_index = KlassInfoLUT::index_for_cld(ak->class_loader_data());
 
   assert(Klass::layout_helper_is_objArray(lh) || Klass::layout_helper_is_typeArray(lh), "unexpected");
 
   LayoutHelperHelper lhu = { (unsigned) lh };
   U value(0);
   value.common.kind = kind;
-  value.common.loader = loader_index;
+  value.common.loader = cld_index;
   value.ake.lh_ebt = lhu.bytes.lh_ebt;
   value.ake.lh_esz = lhu.bytes.lh_esz;
   value.ake.lh_hsz = lhu.bytes.lh_hsz;
@@ -209,11 +209,13 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
   assert(our_kind == real_kind, "kind mismatch (%d vs %d) (%x)", real_kind, our_kind, _v.raw);
 
   const ClassLoaderData* const real_cld = k->class_loader_data();
-  const unsigned loader = loader_index();
-  assert(loader < 4, "invalid loader index");
-  if (loader > 0) {
-    assert(KlassInfoLUT::get_perma_cld(loader) == real_cld, "Different CLD (%d, %p vs %p)?", loader,
-           real_cld, KlassInfoLUT::get_perma_cld(loader));
+  const unsigned cld_index = loader_index();
+  assert(cld_index < 4, "invalid loader index");
+  if (cld_index > 0) {
+    const ClassLoaderData* const cld_from_klute = KlassInfoLUT::lookup_cld(cld_index);
+    assert(cld_from_klute == real_cld,
+           "Different CLD (loader_index: %d, real CLD: " PTR_FORMAT ", from klute lookup table: " PTR_FORMAT ")?",
+           cld_index, p2i(real_cld), p2i(cld_from_klute));
   } else {
     assert(!real_cld->is_permanent_class_loader_data(), "perma cld?");
   }

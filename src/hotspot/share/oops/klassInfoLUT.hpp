@@ -100,16 +100,17 @@ class KlassInfoLUT : public AllStatic {
 
   static bool use_lookup_table() { return _entries != nullptr; }
 
+  static void register_cld_if_needed(ClassLoaderData* cld);
+
 public:
 
   static void initialize();
 
   static KlassLUTEntry register_klass(const Klass* k);
-
   static inline KlassLUTEntry lookup(narrowKlass k);
 
-  static int try_register_perma_cld(ClassLoaderData* cld);
-  static inline ClassLoaderData* get_perma_cld(int index);
+  static int index_for_cld(const ClassLoaderData* cld);
+  static inline ClassLoaderData* lookup_cld(int index);
 
   static void print_statistics(outputStream* out);
 

@@ -1053,6 +1053,8 @@ public:
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_single_oop_map_bounded(oop obj, OopClosureType* closure, MemRegion mr, unsigned offset, unsigned count);
 
+  static inline ClassLoaderData* cld_from_klut_or_klass(oop obj, KlassLUTEntry klute);
+
  public:
 
   // klute variants

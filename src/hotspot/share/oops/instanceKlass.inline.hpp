@@ -207,14 +207,21 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType
 
 // Klute variants
 
+ALWAYSINLINE ClassLoaderData* InstanceKlass::cld_from_klut_or_klass(oop obj, KlassLUTEntry klute) {
+  const unsigned perma_cld_index = klute.loader_index();
+  ClassLoaderData* cld = KlassInfoLUT::lookup_cld(perma_cld_index);
+  if (cld == nullptr) {
+    // Rare path
+    cld = obj->klass()->class_loader_data();
+  }
+  return cld;
+}
+
 // Iterate over all oop fields and metadata.
 template <typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
   if (Devirtualizer::do_metadata(closure)) {
-    const unsigned perma_cld_index = klute.loader_index();
-    ClassLoaderData* const cld = perma_cld_index > 0 ?
-        KlassInfoLUT::get_perma_cld(perma_cld_index) :
-        obj->klass()->class_loader_data(); // Rare path
+    ClassLoaderData* cld = cld_from_klut_or_klass(obj, klute);
     Devirtualizer::do_cld(closure, cld);
   }
 
@@ -261,10 +268,7 @@ template <typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute) {
   if (Devirtualizer::do_metadata(closure)) {
     if (mr.contains(obj)) {
-      const unsigned perma_cld_index = klute.loader_index();
-      ClassLoaderData* const cld = perma_cld_index > 0 ?
-          KlassInfoLUT::get_perma_cld(perma_cld_index) :
-          obj->klass()->class_loader_data(); // Rare path
+      ClassLoaderData* cld = cld_from_klut_or_klass(obj, klute);
       Devirtualizer::do_cld(closure, cld);
     }
   }
