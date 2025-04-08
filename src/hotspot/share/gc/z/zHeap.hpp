@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,9 @@ public:
 
   // Printing
   void print_on(outputStream* st) const;
-  void print_extended_on(outputStream* st) const;
+  void print_on_error(outputStream* st) const;
+  void print_globals_on(outputStream* st) const;
+  void print_page_table_on(outputStream* st) const;
   bool print_location(outputStream* st, uintptr_t addr) const;
   bool print_location(outputStream* st, zaddress addr) const;
   bool print_location(outputStream* st, zpointer ptr) const;
