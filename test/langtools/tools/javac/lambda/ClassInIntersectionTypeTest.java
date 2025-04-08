@@ -1,0 +1,22 @@
+/*
+ * @test /nodynamiccopyright/
+ * @bug 8322810
+ * @summary Lambda expressions can implement classes
+ * @compile/fail/ref=ClassInIntersectionTypeTest.out -XDrawDiagnostics ClassInIntersectionTypeTest.java
+ */
+
+public class ClassInIntersectionTypeTest {
+    // test 1
+    void m() {
+        var r = (ClassInIntersectionTypeTest & Runnable) () -> System.out.println("Hello, World!");
+    }
+
+    // test 2
+    static void foo() {
+        run(() -> System.out.println("Hello, World!"));
+    }
+
+    static <T extends ClassInIntersectionTypeTest & Runnable> void run(T t) {
+        t.run();
+    }
+}
