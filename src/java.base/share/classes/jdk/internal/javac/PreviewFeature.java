@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,6 @@ public @interface PreviewFeature {
         STREAM_GATHERERS,
         @JEP(number=494, title="Module Import Declarations", status="Second Preview")
         MODULE_IMPORTS,
-        @JEP(number=478, title="Key Derivation Function API", status="Preview")
-        KEY_DERIVATION,
         LANGUAGE_MODEL,
         /**
          * A key for testing.
