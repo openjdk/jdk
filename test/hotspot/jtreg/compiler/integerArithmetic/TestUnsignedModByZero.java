@@ -41,7 +41,7 @@
 
      public static Object testInt() {
         double x = 1.0;
-        return Long.remainderUnsigned(1, (long)(x % x));
+        return Integer.remainderUnsigned(1, (int)(x % x));
     }
 
      public static Object testLong() {
