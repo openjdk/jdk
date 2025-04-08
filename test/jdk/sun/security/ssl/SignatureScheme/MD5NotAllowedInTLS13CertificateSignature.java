@@ -26,14 +26,15 @@
  * @bug 8350807
  * @summary Certificates using MD5 algorithm that are disabled by default are
  *          incorrectly allowed in TLSv1.3 when re-enabled.
- *          This test only covers TLS 1.3.
  * @library /javax/net/ssl/templates
  *          /test/lib
- * @run main/othervm MD5NotAllowedInCertificateSignatureTLS13
+ * @run main/othervm MD5NotAllowedInCertificateSignatureTLS13 TLS
+ * @run main/othervm MD5NotAllowedInCertificateSignatureTLS13 TLSv1.2
  */
 
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.fail;
 import static jdk.test.lib.Utils.runAndCheckException;
 
 import java.io.ByteArrayInputStream;
@@ -407,7 +408,8 @@ import javax.net.ssl.TrustManagerFactory;
  * -----END CERTIFICATE---
  */
 
-public class MD5NotAllowedInCertificateSignatureTLS13 extends SSLSocketTemplate {
+public class MD5NotAllowedInTLS13CertificateSignature extends
+        SSLSocketTemplate {
 
     static String trusedCertStr =
             "-----BEGIN CERTIFICATE-----\n" +
@@ -610,44 +612,65 @@ public class MD5NotAllowedInCertificateSignatureTLS13 extends SSLSocketTemplate 
 
     static char[] passphrase = "passphrase".toCharArray();
 
-    protected MD5NotAllowedInCertificateSignatureTLS13() throws Exception {
+    private final String protocol;
+
+    protected MD5NotAllowedInTLS13CertificateSignature(String protocol) {
         super();
+        this.protocol = protocol;
     }
 
     public static void main(String[] args) throws Exception {
+        // MD5 is disabled by default in java.security config file.
         Security.setProperty("jdk.certpath.disabledAlgorithms", "");
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
 
-        runAndCheckException(
-                () -> new MD5NotAllowedInCertificateSignatureTLS13().run(),
-                e -> {
-                    Throwable suppressedEx = e.getSuppressed()[0];
-                    assertTrue(suppressedEx instanceof SSLHandshakeException);
+        MD5NotAllowedInTLS13CertificateSignature test =
+                new MD5NotAllowedInTLS13CertificateSignature(args[0]);
 
-                    Throwable rootCause = suppressedEx
-                            .getCause().getCause().getCause();
-                    assertTrue(rootCause instanceof CertPathValidatorException);
-                    assertEquals(rootCause.getMessage(),
-                            "Algorithm constraints check failed on signature "
-                            + "algorithm: MD5withRSA");
-                });
+        if (test.protocol.equals("TLSv1.2")) {
+            // Should run fine on TLSv1.2.
+            test.run();
+        } else if (test.protocol.equals("TLS")) {
+            // Should fail on TLSv1.3 and up.
+            runAndCheckException(
+                    test::run,
+                    e -> {
+                        Throwable suppressedEx = e.getSuppressed()[0];
+                        assertTrue(
+                                suppressedEx instanceof SSLHandshakeException);
+
+                        Throwable rootCause = suppressedEx
+                                .getCause().getCause().getCause();
+                        assertTrue(
+                                rootCause instanceof CertPathValidatorException);
+                        assertEquals(rootCause.getMessage(),
+                                "Algorithm constraints check failed on signature "
+                                + "algorithm: MD5withRSA");
+                    });
+        } else {
+            // The conditions to reproduce the bug being fixed only met when
+            // 'TLS' is specified, i.e. when older versions of protocol are
+            // supported besides TLSv1.3.
+            fail("Should specify either 'TLSv1.2' or 'TLS' for proper testing");
+        }
     }
 
     @Override
     public SSLContext createServerSSLContext() throws Exception {
         return getSSLContext(trusedCertStr, serverCertStr,
-                serverModulus, serverPrivateExponent, passphrase);
+                serverModulus, serverPrivateExponent, passphrase, protocol);
     }
 
     @Override
     public SSLContext createClientSSLContext() throws Exception {
         return getSSLContext(trusedCertStr, clientCertStr,
-                clientModulus, clientPrivateExponent, passphrase);
+                clientModulus, clientPrivateExponent, passphrase, protocol);
     }
 
     private static SSLContext getSSLContext(String trusedCertStr,
             String keyCertStr, byte[] modulus,
-            byte[] privateExponent, char[] passphrase) throws Exception {
+            byte[] privateExponent, char[] passphrase, String protocol)
+            throws Exception {
 
         // generate certificate from cert string
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -664,45 +687,40 @@ public class MD5NotAllowedInCertificateSignatureTLS13 extends SSLSocketTemplate 
         // import the trused cert
         ks.setCertificateEntry("RSA Export Signer", trusedCert);
 
-        if (keyCertStr != null) {
-            // generate the private key.
-            RSAPrivateKeySpec priKeySpec = new RSAPrivateKeySpec(
-                    new BigInteger(modulus),
-                    new BigInteger(privateExponent));
-            KeyFactory kf = KeyFactory.getInstance("RSA");
-            RSAPrivateKey priKey =
-                    (RSAPrivateKey)kf.generatePrivate(priKeySpec);
+        // generate the private key.
+        RSAPrivateKeySpec priKeySpec = new RSAPrivateKeySpec(
+                new BigInteger(modulus),
+                new BigInteger(privateExponent));
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+        RSAPrivateKey priKey =
+                (RSAPrivateKey) kf.generatePrivate(priKeySpec);
 
-            // generate certificate chain
-            is = new ByteArrayInputStream(keyCertStr.getBytes());
-            Certificate keyCert = cf.generateCertificate(is);
-            is.close();
+        // generate certificate chain
+        is = new ByteArrayInputStream(keyCertStr.getBytes());
+        Certificate keyCert = cf.generateCertificate(is);
+        is.close();
 
-            Certificate[] chain = new Certificate[2];
-            chain[0] = keyCert;
-            chain[1] = trusedCert;
+        Certificate[] chain = new Certificate[2];
+        chain[0] = keyCert;
+        chain[1] = trusedCert;
 
-            // import the key entry.
-            ks.setKeyEntry("Whatever", priKey, passphrase, chain);
-        }
+        // import the key entry.
+        ks.setKeyEntry("Whatever", priKey, passphrase, chain);
 
-        // create SSL context
+        // Using PKIX TrustManager - this is where MD5 signature check is done.
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
         tmf.init(ks);
 
-        SSLContext ctx = SSLContext.getInstance("TLS");
+        // create SSL context
+        SSLContext ctx = SSLContext.getInstance(protocol);
 
-        if (keyCertStr != null) {
-            // Using "SunX509" which doesn't check peer supported signature
-            // algorithms, so we check against local supported signature
-            // algorithms which constitutes the fix being tested.
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, passphrase);
+        // Using "SunX509" which doesn't check peer supported signature
+        // algorithms, so we check against local supported signature
+        // algorithms which constitutes the fix being tested.
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, passphrase);
 
-            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-        } else {
-            ctx.init(null, tmf.getTrustManagers(), null);
-        }
+        ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
         return ctx;
     }
