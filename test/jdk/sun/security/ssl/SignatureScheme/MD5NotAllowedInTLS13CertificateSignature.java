@@ -28,8 +28,7 @@
  *          incorrectly allowed in TLSv1.3 when re-enabled.
  * @library /javax/net/ssl/templates
  *          /test/lib
- * @run main/othervm MD5NotAllowedInTLS13CertificateSignature TLS
- * @run main/othervm MD5NotAllowedInTLS13CertificateSignature TLSv1.2
+ * @run main/othervm MD5NotAllowedInTLS13CertificateSignature
  */
 
 import static jdk.test.lib.Asserts.assertEquals;
@@ -270,35 +269,24 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
         Security.setProperty("jdk.certpath.disabledAlgorithms", "");
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
 
-        MD5NotAllowedInTLS13CertificateSignature test =
-                new MD5NotAllowedInTLS13CertificateSignature(args[0]);
+        // Should fail on TLSv1.3 and up.
+        runAndCheckException(
+                // The conditions to reproduce the bug being fixed only met when
+                // 'TLS' is specified, i.e. when older versions of protocol are
+                // supported besides TLSv1.3.
+                () -> new MD5NotAllowedInTLS13CertificateSignature("TLS").run(),
+                serverEx -> {
+                    Throwable clientEx = serverEx.getSuppressed()[0];
+                    assertTrue(clientEx instanceof SSLHandshakeException);
+                    assertEquals(clientEx.getMessage(), "(bad_certificate) "
+                            + "PKIX path validation failed: "
+                            + "java.security.cert.CertPathValidatorException: "
+                            + "Algorithm constraints check failed on signature"
+                            + " algorithm: MD5withRSA");
+                });
 
-        if (test.protocol.equals("TLSv1.2")) {
-            // Should run fine on TLSv1.2.
-            test.run();
-        } else if (test.protocol.equals("TLS")) {
-            // Should fail on TLSv1.3 and up.
-            runAndCheckException(
-                    test::run,
-                    e -> {
-                        Throwable suppressedEx = e.getSuppressed()[0];
-                        assertTrue(
-                                suppressedEx instanceof SSLHandshakeException);
-
-                        Throwable rootCause = suppressedEx
-                                .getCause().getCause().getCause();
-                        assertTrue(
-                                rootCause instanceof CertPathValidatorException);
-                        assertEquals(rootCause.getMessage(),
-                                "Algorithm constraints check failed on signature "
-                                + "algorithm: MD5withRSA");
-                    });
-        } else {
-            // The conditions to reproduce the bug being fixed only met when
-            // 'TLS' is specified, i.e. when older versions of protocol are
-            // supported besides TLSv1.3.
-            fail("Should specify either 'TLSv1.2' or 'TLS' for proper testing");
-        }
+        // Should run fine on TLSv1.2.
+        new MD5NotAllowedInTLS13CertificateSignature("TLSv1.2").run();
     }
 
     @Override
