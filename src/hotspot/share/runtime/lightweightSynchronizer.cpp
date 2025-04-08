@@ -1220,6 +1220,11 @@ bool LightweightSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread* 
     }
 
     if (UseObjectMonitorTable) {
+      // Set the monitor regardless of success.
+      // Either we successfully lock on the monitor, or we retry with the
+      // monitor in the slow path. If the monitor gets deflated, it will be
+      // cleared, either by the CacheSetter if we fast lock in enter or in
+      // inflate_and_enter when we see that the monitor is deflated.
       lock->set_object_monitor_cache(monitor);
     }
 
