@@ -24,6 +24,7 @@
 import java.awt.Frame;
 import java.awt.Window;
 import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /*
  * @test
@@ -56,17 +57,17 @@ public class TitleBarGetsMousePressed {
         Frame frame = new Frame("TitleBarGetsMousePressed");
         frame.setSize(300, 200);
         frame.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent ev) {
+            public void mouseClicked(MouseEvent ev) {
                 PassFailJFrame.log("mouseClicked at x:" + ev.getX() +
                         " y:" + ev.getY());
             }
 
-            public void mousePressed(java.awt.event.MouseEvent ev) {
+            public void mousePressed(MouseEvent ev) {
                 PassFailJFrame.log("mousePressed at x:" + ev.getX() +
                         " y:" + ev.getY());
             }
 
-            public void mouseReleased(java.awt.event.MouseEvent ev) {
+            public void mouseReleased(MouseEvent ev) {
                 PassFailJFrame.log("mouseReleased at x:" + ev.getX() +
                         " y:" + ev.getY());
             }
@@ -75,5 +76,3 @@ public class TitleBarGetsMousePressed {
         return frame;
     }
 }
-
-

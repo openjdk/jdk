@@ -30,7 +30,7 @@
  * @key headful
  * @library /lib/client /java/awt/regtesthelpers
  * @build ExtendedRobot Util
- * @run main DragMouseEventTest
+ * @run main/othervm -Dsun.java2d.uiScale=1 DragMouseEventTest
 */
 
 import java.awt.BorderLayout;
@@ -365,7 +365,7 @@ public class DragMouseEventTest {
             scrollbar.addMouseListener(adapter);
 
             setSize(500, 400);
-            setLocation(200, 200);
+            setLocationRelativeTo(null);
             addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosing(WindowEvent e) {

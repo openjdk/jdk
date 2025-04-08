@@ -26,22 +26,22 @@
  * @bug 4117523
  * @summary Solaris: MousePressed event has modifier=0 when left button is pressed
  * @key headful
- * @library /java/awt/regtesthelpers /test/lib
+ * @library /javax/swing/regtesthelpers /test/lib
  * @build Util jdk.test.lib.Platform
  * @run main MouseModifierTest
 */
 
-import jdk.test.lib.Platform;
-import test.java.awt.regtesthelpers.Util;
 
 import java.awt.EventQueue;
 import java.awt.Frame;
-import java.awt.Rectangle;
+import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+
+import jdk.test.lib.Platform;
 
 public class MouseModifierTest {
     private static Frame frame;
@@ -65,11 +65,11 @@ public class MouseModifierTest {
         robot.waitForIdle();
         robot.delay(500);
 
-        Rectangle bounds = Util.invokeOnEDT(() -> frame.getBounds());
+        Point centerPoint = Util.getCenterPoint(frame);
 
         System.out.println("MOUSE1 press case");
 
-        robot.mouseMove(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+        robot.mouseMove(centerPoint.x, centerPoint.y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(25);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);

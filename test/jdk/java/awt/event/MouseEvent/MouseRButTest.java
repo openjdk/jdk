@@ -26,7 +26,7 @@
  * @bug 4037521
  * @summary Mouse Right button does not send mouseClick action
  * @key headful
- * @library /java/awt/regtesthelpers
+ * @library /javax/swing/regtesthelpers
  * @build Util
  * @run main MouseRButTest
  */
@@ -43,8 +43,6 @@ import java.awt.event.MouseEvent;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import test.java.awt.regtesthelpers.Util;
-
 public class MouseRButTest {
     private static Frame frame;
     private static Button button;
@@ -58,8 +56,8 @@ public class MouseRButTest {
             robot.waitForIdle();
             robot.delay(500);
 
-            Point point = Util.invokeOnEDT(() -> button.getLocationOnScreen());
-            robot.mouseMove(point.x + 15, point.y + 10);
+            Point point = Util.getCenterPoint(button);
+            robot.mouseMove(point.x, point.y);
             robot.waitForIdle();
             robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
             robot.delay(50);
