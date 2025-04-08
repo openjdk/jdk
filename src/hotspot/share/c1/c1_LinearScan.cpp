@@ -27,8 +27,8 @@
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_IR.hpp"
-#include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_LinearScan.hpp"
+#include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "code/vmreg.inline.hpp"
 #include "runtime/timerTrace.hpp"
@@ -91,9 +91,6 @@ LinearScan::LinearScan(IR* ir, LIRGenerator* gen, FrameMap* frame_map)
  , _has_call(0)
  , _interval_in_loop(0)  // initialized later with correct length
  , _scope_value_cache(0) // initialized later with correct length
-#ifdef IA32
- , _fpu_stack_allocator(nullptr)
-#endif
 {
   assert(this->ir() != nullptr,          "check if valid");
   assert(this->compilation() != nullptr, "check if valid");
@@ -1868,15 +1865,12 @@ void LinearScan::resolve_exception_entry(BlockBegin* block, int reg_num, MoveRes
   int reg = interval->assigned_reg();
   int regHi = interval->assigned_regHi();
 
-  if ((reg < nof_regs && interval->always_in_memory()) ||
-      (use_fpu_stack_allocation() && reg >= pd_first_fpu_reg && reg <= pd_last_fpu_reg)) {
+  if ((reg < nof_regs && interval->always_in_memory())) {
     // the interval is split to get a short range that is located on the stack
-    // in the following two cases:
+    // in the following case:
     // * the interval started in memory (e.g. method parameter), but is currently in a register
     //   this is an optimization for exception handling that reduces the number of moves that
     //   are necessary for resolving the states when an exception uses this exception handler
-    // * the interval would be on the fpu stack at the begin of the exception handler
-    //   this is not allowed because of the complicated fpu stack handling on Intel
 
     // range that will be spilled to memory
     int from_op_id = block->first_lir_instruction_id();
@@ -2665,17 +2659,9 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 #endif
 
   } else if (opr->is_single_fpu()) {
-#ifdef IA32
-    // the exact location of fpu stack values is only known
-    // during fpu stack allocation, so the stack allocator object
-    // must be present
-    assert(use_fpu_stack_allocation(), "should not have float stack values without fpu stack allocation (all floats must be SSE2)");
-    assert(_fpu_stack_allocator != nullptr, "must be present");
-    opr = _fpu_stack_allocator->to_fpu_stack(opr);
-#elif defined(AMD64)
+#if defined(AMD64)
     assert(false, "FPU not used on x86-64");
 #endif
-
     Location::Type loc_type = float_saved_as_double ? Location::float_in_dbl : Location::normal;
     VMReg rname = frame_map()->fpu_regname(opr->fpu_regnr());
 #ifndef __SOFTFP__
@@ -2778,16 +2764,6 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
       // name for the other half.  *first and *second must represent the
       // least and most significant words, respectively.
 
-#ifdef IA32
-      // the exact location of fpu stack values is only known
-      // during fpu stack allocation, so the stack allocator object
-      // must be present
-      assert(use_fpu_stack_allocation(), "should not have float stack values without fpu stack allocation (all floats must be SSE2)");
-      assert(_fpu_stack_allocator != nullptr, "must be present");
-      opr = _fpu_stack_allocator->to_fpu_stack(opr);
-
-      assert(opr->fpu_regnrLo() == opr->fpu_regnrHi(), "assumed in calculation (only fpu_regnrLo is used)");
-#endif
 #ifdef AMD64
       assert(false, "FPU not used on x86-64");
 #endif
@@ -3021,15 +2997,9 @@ void LinearScan::assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw) {
       compute_oop_map(iw, visitor, op);
 
       // compute debug information
-      if (!use_fpu_stack_allocation()) {
-        // compute debug information if fpu stack allocation is not needed.
-        // when fpu stack allocation is needed, the debug information can not
-        // be computed here because the exact location of fpu operands is not known
-        // -> debug information is created inside the fpu stack allocator
-        int n = visitor.info_count();
-        for (int k = 0; k < n; k++) {
-          compute_debug_info(visitor.info_at(k), op_id);
-        }
+      int n = visitor.info_count();
+      for (int k = 0; k < n; k++) {
+        compute_debug_info(visitor.info_at(k), op_id);
       }
     }
 
@@ -3125,14 +3095,6 @@ void LinearScan::do_linear_scan() {
 
   NOT_PRODUCT(print_lir(2, "LIR after assignment of register numbers:"));
   NOT_PRODUCT(LinearScanStatistic::compute(this, _stat_after_asign));
-
-  { TIME_LINEAR_SCAN(timer_allocate_fpu_stack);
-
-    if (use_fpu_stack_allocation()) {
-      allocate_fpu_stack(); // Only has effect on Intel
-      NOT_PRODUCT(print_lir(2, "LIR after FPU stack allocation:"));
-    }
-  }
 
 #ifndef RISCV
   // Disable these optimizations on riscv temporarily, because it does not
@@ -6007,20 +5969,6 @@ bool EdgeMoveOptimizer::operations_different(LIR_Op* op1, LIR_Op* op2) {
       // these moves are exactly equal and can be optimized
       return false;
     }
-
-  } else if (op1->code() == lir_fxch && op2->code() == lir_fxch) {
-    assert(op1->as_Op1() != nullptr, "fxch must be LIR_Op1");
-    assert(op2->as_Op1() != nullptr, "fxch must be LIR_Op1");
-    LIR_Op1* fxch1 = (LIR_Op1*)op1;
-    LIR_Op1* fxch2 = (LIR_Op1*)op2;
-    if (fxch1->in_opr()->as_jint() == fxch2->in_opr()->as_jint()) {
-      // equal FPU stack operations can be optimized
-      return false;
-    }
-
-  } else if (op1->code() == lir_fpop_raw && op2->code() == lir_fpop_raw) {
-    // equal FPU stack operations can be optimized
-    return false;
   }
 
   // no optimization possible
@@ -6540,7 +6488,6 @@ const char* LinearScanStatistic::counter_name(int counter_idx) {
     case counter_throw:           return "throw";
     case counter_unwind:          return "unwind";
     case counter_typecheck:       return "type+null-checks";
-    case counter_fpu_stack:       return "fpu-stack";
     case counter_misc_inst:       return "other instructions";
     case counter_other_inst:      return "misc. instructions";
 
@@ -6761,10 +6708,6 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
         case lir_checkcast:
         case lir_store_check:     inc_counter(counter_typecheck); break;
 
-        case lir_fpop_raw:
-        case lir_fxch:
-        case lir_fld:             inc_counter(counter_fpu_stack); break;
-
         case lir_nop:
         case lir_push:
         case lir_pop:
@@ -6817,7 +6760,6 @@ const char* LinearScanTimers::timer_name(int idx) {
     case timer_sort_intervals_after:     return "Sort Intervals After";
     case timer_eliminate_spill_moves:    return "Spill optimization";
     case timer_assign_reg_num:           return "Assign Reg Num";
-    case timer_allocate_fpu_stack:       return "Allocate FPU Stack";
     case timer_optimize_lir:             return "Optimize LIR";
     default: ShouldNotReachHere();       return "";
   }

@@ -561,32 +561,42 @@ void TemplateInterpreterGenerator::lock_method() {
 //      rdx: cp cache
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // initialize fixed part of activation frame
-  __ push(rax);        // save return address
-  __ enter();          // save old & set new rbp
+  __ push(rax);         // save return address
+  __ enter();           // save old & set new rbp
   __ push(rbcp);        // set sender sp
-  __ push(NULL_WORD); // leave last_sp as null
-  __ movptr(rbcp, Address(rbx, Method::const_offset()));      // get ConstMethod*
-  __ lea(rbcp, Address(rbcp, ConstMethod::codes_offset())); // get codebase
+
+  // Resolve ConstMethod* -> ConstantPool*.
+  // Get codebase, while we still have ConstMethod*.
+  // Save ConstantPool* in rax for later use.
+  __ movptr(rax, Address(rbx, Method::const_offset()));
+  __ lea(rbcp, Address(rax, ConstMethod::codes_offset()));
+  __ movptr(rax, Address(rax, ConstMethod::constants_offset()));
+
+  __ push(NULL_WORD);  // leave last_sp as null
   __ push(rbx);        // save Method*
-  // Get mirror and store it in the frame as GC root for this Method*
-  __ load_mirror(rdx, rbx, rscratch2);
+
+  // Get mirror and store it in the frame as GC root for this Method*.
+  // rax is still ConstantPool*, resolve ConstantPool* -> InstanceKlass* -> Java mirror.
+  __ movptr(rdx, Address(rax, ConstantPool::pool_holder_offset()));
+  __ movptr(rdx, Address(rdx, in_bytes(Klass::java_mirror_offset())));
+  __ resolve_oop_handle(rdx, rscratch2);
   __ push(rdx);
+
   if (ProfileInterpreter) {
     Label method_data_continue;
     __ movptr(rdx, Address(rbx, in_bytes(Method::method_data_offset())));
     __ testptr(rdx, rdx);
-    __ jcc(Assembler::zero, method_data_continue);
+    __ jccb(Assembler::zero, method_data_continue);
     __ addptr(rdx, in_bytes(MethodData::data_offset()));
     __ bind(method_data_continue);
     __ push(rdx);      // set the mdp (method data pointer)
   } else {
-    __ push(0);
+    __ push(NULL_WORD);
   }
 
-  __ movptr(rdx, Address(rbx, Method::const_offset()));
-  __ movptr(rdx, Address(rdx, ConstMethod::constants_offset()));
-  __ movptr(rdx, Address(rdx, ConstantPool::cache_offset()));
-  __ push(rdx); // set constant pool cache
+  // rax is still ConstantPool*, set the constant pool cache
+  __ movptr(rdx, Address(rax, ConstantPool::cache_offset()));
+  __ push(rdx);
 
   __ movptr(rax, rlocals);
   __ subptr(rax, rbp);
@@ -594,7 +604,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ push(rax); // set relativized rlocals, see frame::interpreter_frame_locals()
 
   if (native_call) {
-    __ push(0); // no bcp
+    __ push(NULL_WORD); // no bcp
   } else {
     __ push(rbcp); // set bcp
   }
@@ -1242,11 +1252,11 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   {
     Label exit, loop;
     __ testl(rdx, rdx);
-    __ jcc(Assembler::lessEqual, exit); // do nothing if rdx <= 0
+    __ jccb(Assembler::lessEqual, exit); // do nothing if rdx <= 0
     __ bind(loop);
     __ push(NULL_WORD); // initialize local variables
     __ decrementl(rdx); // until everything initialized
-    __ jcc(Assembler::greater, loop);
+    __ jccb(Assembler::greater, loop);
     __ bind(exit);
   }
 
