@@ -624,6 +624,7 @@ bool LightweightSynchronizer::fast_lock_spin_enter(oop obj, LockStack& lock_stac
 
 void LightweightSynchronizer::enter_for(Handle obj, BasicLock* lock, JavaThread* locking_thread) {
   assert(LockingMode == LM_LIGHTWEIGHT, "must be");
+  assert(!UseObjectMonitorTable || lock->object_monitor_cache() == nullptr, "must be cleared");
   JavaThread* current = JavaThread::current();
   VerifyThreadState vts(locking_thread, current);
 
