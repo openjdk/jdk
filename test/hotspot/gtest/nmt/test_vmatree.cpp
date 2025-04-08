@@ -787,7 +787,7 @@ void check_tree(Tree& tree,const ExpectedTree<N>& et, int line_no) {
       EXPECT_TRUE(left_released(node)) << "left-of first node is not Released";
     }
 
-    sprintf(for_this_node, "test at line: %d, for node: %d", line_no, et.nodes[i]);
+    snprintf(for_this_node, sizeof(for_this_node), "test at line: %d, for node: %d", line_no, et.nodes[i]);
     EXPECT_EQ(node.val().out.type(), et.states[i+1]) << for_this_node;
     EXPECT_EQ(node.val().out.mem_tag(), et.tags[i+1]) << for_this_node;
     if (et.res_si[i+1] >= 0) {
@@ -858,7 +858,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     check_tree(tree, et1, __LINE__);
 
     tree.commit_mapping(25, 25, call_stack_2, true); // commit at the middle of the region
-    // Pre: post of previous
+    // Pre : .........0------------------------------100.........
     // Post: .........0---------25*********50--------100.........
     //        mtNone    mtTest       mtTest   mtTest     mtNone
     //        Rl        Rs           C        Rs         Rl
@@ -872,7 +872,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     check_tree(tree, et2, __LINE__);
 
     tree.commit_mapping(0, 20, call_stack_2, true); // commit at the begin of the region
-    // Pre: post of previous
+    // Pre:  .........0-------------------25********50--------100.........
     // Post: .........0********20---------25********50--------100.........
     //        mtNone    mtTest    mtTest      mtTest   mtTest     mtNone
     //        Rl        C         Rs          C        Rs         Rl
@@ -886,7 +886,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     check_tree(tree, et3, __LINE__);
 
     tree.commit_mapping(80, 20, call_stack_2, true); // commit at the end of the region
-    // Pre: post of previous
+    // Pre:  .........0********20---------25********50------------------100.........
     // Post: .........0********20---------25********50--------80********100.........
     //        mtNone    mtTest    mtTest      mtTest   mtTest     mtTest    mtNone
     //        Rl        C         Rs          C        Rs         C         Rl
@@ -916,7 +916,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     check_tree(tree, et1, __LINE__);
 
     tree.commit_mapping(20, 20, call_stack_2, true);
-    // Pre: post of previous
+    // Pre:  .........0----------------------------100.........
     // Post: .........0---------20********40-------100.........
     //        mtNone    mtTest     mtTest    mtTest    mtNone
     //        Rl        Rs           C       Rs        Rl
@@ -933,7 +933,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     VMATree::RegionData call_stack_3(si_3, mtTest);
     // commit with overlap at the region's start
     tree.commit_mapping(10, 20, call_stack_3);
-    // Pre: post of previous
+    // Pre:  .........0-------------20**************40-------100.........
     // Post: .........0---------10********30********40-------100.........
     //        mtNone    mtTest     mtTest    mtTest    mtTest    mtNone
     //        Rl        Rs           C       C         Rs        Rl
@@ -950,7 +950,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     VMATree::RegionData call_stack_4(si_4, mtTest);
     // commit with overlap at the region's end
     tree.commit_mapping(30, 20, call_stack_4);
-    // Pre: post of previous
+    // Pre:  .........0---------10********30**40-------------100.........
     // Post: .........0---------10********30********50-------100.........
     //        mtNone    mtTest     mtTest    mtTest    mtTest    mtNone
     //        Rl        Rs           C       C         Rs        Rl
@@ -990,7 +990,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     check_tree(tree, et1, __LINE__);
 
     tree.uncommit_mapping(20, 10, call_stack_2);
-    // Pre: post of previous
+    // Pre:  .........0--------5********10---20*************40-------100.........
     // Post: .........0--------5********10--------30********40-------100.........
     //        mtNone    mtTest   mtTest    mtTest    mtTest    mtTest    mtNone
     //        Rl        Rs       C         Rs        C         Rs        Rl
@@ -1010,6 +1010,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     Tree tree;
     tree.reserve_mapping(0, 100, call_stack_1);
     tree.reserve_mapping(10, 10, call_stack_4);
+    // Pre:  .........0----------------------------100.........
     // Post: .........0--------10--------20--------100.........
     //        mtNone   mtTest    mtTest    mtTest    mtNone
     //        Rl       Rs        Rs         Rs       Rl
