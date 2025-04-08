@@ -49,11 +49,10 @@ public class TestMissingSystemClass extends JNativeScanTestBase {
 
     @Test
     public void testSingleJarClassPath() {
-        assertFailure(jnativescan("--class-path", MISSING_SYSTEM.toString(), "--release", "21"))
-                .stdoutShouldBeEmpty()
+        assertSuccess(jnativescan("--class-path", MISSING_SYSTEM.toString(), "--release", "21"))
+                .stdoutShouldContain("<no restricted methods>")
                 .stderrShouldContain("Error while processing method")
                 .stderrShouldContain("missingsystem.App::main(String[])void")
-                .stderrShouldContain("CAUSED BY:")
                 .stderrShouldContain("System class can not be found")
                 .stderrShouldContain("java.lang.Compiler");
     }

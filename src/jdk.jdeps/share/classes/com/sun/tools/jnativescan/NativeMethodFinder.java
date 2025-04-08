@@ -28,6 +28,7 @@ import com.sun.tools.jnativescan.RestrictedUse.NativeMethodDecl;
 import com.sun.tools.jnativescan.RestrictedUse.RestrictedMethodRefs;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.MethodModel;
@@ -44,16 +45,19 @@ class NativeMethodFinder {
     private static final String RESTRICTED_NAME = "Ljdk/internal/javac/Restricted+Annotation;";
 
     private final Map<MethodRef, Boolean> cache = new HashMap<>();
+    private final PrintWriter err;
     private final ClassResolver classesToScan;
     private final ClassResolver systemClassResolver;
 
-    private NativeMethodFinder(ClassResolver classesToScan, ClassResolver systemClassResolver) {
+    private NativeMethodFinder(PrintWriter err, ClassResolver classesToScan, ClassResolver systemClassResolver) {
+        this.err = err;
         this.classesToScan = classesToScan;
         this.systemClassResolver = systemClassResolver;
     }
 
-    public static NativeMethodFinder create(ClassResolver classesToScan, ClassResolver systemClassResolver) throws JNativeScanFatalError, IOException {
-        return new NativeMethodFinder(classesToScan, systemClassResolver);
+    public static NativeMethodFinder create(PrintWriter err, ClassResolver classesToScan,
+                                            ClassResolver systemClassResolver) throws JNativeScanFatalError, IOException {
+        return new NativeMethodFinder(err, classesToScan, systemClassResolver);
     }
 
     public SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> findAll() throws JNativeScanFatalError {
@@ -82,8 +86,8 @@ class NativeMethodFinder {
                                  }
                              });
                          } catch (JNativeScanFatalError e) {
-                             throw new JNativeScanFatalError("Error while processing method: " +
-                                     MethodRef.ofModel(methodModel), e);
+                             err.println("Error while processing method: " +
+                                     MethodRef.ofModel(methodModel) + ": " + e.getMessage());
                          }
                     });
                     if (!perMethod.isEmpty()) {

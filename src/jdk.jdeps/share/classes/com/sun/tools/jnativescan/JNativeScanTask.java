@@ -42,15 +42,17 @@ import java.util.zip.ZipFile;
 class JNativeScanTask {
 
     private final PrintWriter out;
+    private final PrintWriter err;
     private final List<Path> classPaths;
     private final List<Path> modulePaths;
     private final List<String> cmdRootModules;
     private final Runtime.Version version;
     private final Action action;
 
-    public JNativeScanTask(PrintWriter out, List<Path> classPaths, List<Path> modulePaths,
+    public JNativeScanTask(PrintWriter out, PrintWriter err, List<Path> classPaths, List<Path> modulePaths,
                            List<String> cmdRootModules, Runtime.Version version, Action action) {
         this.out = out;
+        this.err = err;
         this.classPaths = classPaths;
         this.modulePaths = modulePaths;
         this.version = version;
@@ -74,7 +76,7 @@ class JNativeScanTask {
         SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods;
         try(ClassResolver classesToScan = ClassResolver.forClassFileSources(toScan, version);
             ClassResolver systemClassResolver = ClassResolver.forSystemModules(version)) {
-            NativeMethodFinder finder = NativeMethodFinder.create(classesToScan, systemClassResolver);
+            NativeMethodFinder finder = NativeMethodFinder.create(err, classesToScan, systemClassResolver);
             allRestrictedMethods = finder.findAll();
         } catch (IOException e) {
             throw new RuntimeException(e);
