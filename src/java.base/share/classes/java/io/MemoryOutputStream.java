@@ -37,7 +37,7 @@ import java.util.Arrays;
  * Also unlike {@code ByteArrayOutputStream}, this class is entirely
  * unsynchronized, and concurrent accesses require external handling.
  * <p>
- * 
+ *
  * Closing a {@code MemoryOutputStream} has no effect. The methods in this class
  * can be called after the stream has been closed without generating an
  * {@code IOException}.
