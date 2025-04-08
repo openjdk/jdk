@@ -163,6 +163,8 @@ public abstract sealed class AbstractMemorySegmentImpl
     // Using a static helper method ensures there is no unintended lambda capturing of `this`
     private static Runnable cleanupAction(long address, long newSize, Consumer<MemorySegment> cleanup) {
         return cleanup != null
+                // Use an anonymous class instead of a lambda to enable early
+                // use in the init sequence.
                 ? new Runnable() {
                     @Override
                     public void run() {
