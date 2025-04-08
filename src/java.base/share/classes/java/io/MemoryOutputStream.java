@@ -27,26 +27,17 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 
 /**
- * An {@code OutputStream} in which data is kept in memory for later output
- * via {@code writeTo(OutputStream)} or {@code toByteArray()}.
- * {@code MemoryOutputStream} is functionally equivalent to
- * {@code ByteArrayOutputStream} but uses a more efficient array-of-arrays
- * datastructure that reduces array copying and object size. This results in
- * better performance in most cases and lifts the maximum capacity well
- * beyond the 2GB limitations of an array.
+ * A {@code ByteArrayOutputStream} built on a different datastructure, relying
+ * on a series of {@code byte[]} that can be iterated or reconstituted as
+ * necessary. Capacity growth is performed by creating an additional segment,
+ * thus avoiding the redundant copying and large objects that are
+ * characteristics of {@code ByteArrayOutputStream}. Performance approaches 4x
+ * faster for payloads that exceed the initial capacity hint.
  * <p>
- * However specific api differences exist:
- * <ol>
- * <li>The {@code size()} method returns long rather than int. This is necessary
- * to accurately report the increased capacity.</li>
- * <li>Several methods return arrays and remain limited to 2GB payloads:
- * {@code toByteArray()} and the various {@code toString()} implementations.
- * Invocations will succeed when possible and throw
- * {@code IllegalStateException} when the payload is too large.</li>
- * <li>Methods are not thread-safe. Concurrent access requires external
- * synchronization.</li>
- * </ol>
+ * Also unlike {@code ByteArrayOutputStream}, this class is entirely
+ * unsynchronized, and concurrent accesses require external handling.
  * <p>
+ * 
  * Closing a {@code MemoryOutputStream} has no effect. The methods in this class
  * can be called after the stream has been closed without generating an
  * {@code IOException}.
@@ -58,7 +49,7 @@ import java.util.Arrays;
  * @author John Engebretson
  */
 
-public class MemoryOutputStream extends OutputStream {
+class MemoryOutputStream extends ByteArrayOutputStream {
 
     /**
      * Reusable zero-length array. Used where necessary to avoid recreating a
@@ -123,7 +114,7 @@ public class MemoryOutputStream extends OutputStream {
     /**
      * Creates a new {@code MemoryOutputStream} with a default initial capacity.
      */
-    public MemoryOutputStream() {
+    MemoryOutputStream() {
         this(32);
     }
 
@@ -133,7 +124,7 @@ public class MemoryOutputStream extends OutputStream {
      * @param size the minimum segment.
      * @throws IllegalArgumentException if size is negative.
      */
-    public MemoryOutputStream(int size) {
+    MemoryOutputStream(int size) {
         if (size < 0) {
             throw new IllegalArgumentException("Negative initial size: " + size);
         } else {
@@ -192,12 +183,18 @@ public class MemoryOutputStream extends OutputStream {
     }
 
     /**
-     * Returns the accumulated payload size as a {@code long}.
+     * Returns the accumulated payload size. Calling this method for payloads larger
+     * than Integer.MAX_VALUE will result in {@code IllegalStateException}.
      *
      * @return current payload size
      */
-    public long size() {
-        return completedSegmentsTotalBytes + currentSegmentLengthInBytes;
+    public int size() {
+        long size = completedSegmentsTotalBytes + currentSegmentLengthInBytes;
+        if (size > Integer.MAX_VALUE) {
+            throw new IllegalStateException("Current size of this stream cannot be expressed as an int");
+        }
+
+        return (int) size;
     }
 
     /**
@@ -214,14 +211,12 @@ public class MemoryOutputStream extends OutputStream {
      *                                         be stored in an array.
      */
     public byte[] toByteArray() {
-        long currentSize = size();
+        int currentSize = size();
         if (currentSize == 0) {
             return EMPTY_BYTE_ARRAY;
-        } else if (currentSize > Integer.MAX_VALUE) {
-            throw new IllegalStateException("Payload is larger than be stored in an array (" + currentSize + "L)");
         }
 
-        byte[] out = new byte[(int)currentSize];
+        byte[] out = new byte[currentSize];
         int nextWritePosition = 0;
 
         // copy in each previous segment, remembering they are guaranteed to be full
@@ -238,17 +233,8 @@ public class MemoryOutputStream extends OutputStream {
     }
 
     /**
-     * Converts the buffer's contents into a string decoding bytes using the default
-     * charset. The length of the new {@code String} is a function of the charset,
-     * and hence may not be equal to the size of the contained payload.
-     * <p>
-     * This method always replaces malformed-input and unmappable-character
-     * sequences with the default replacement string for the default charset. The
-     * {@linkplain java.nio.charset.CharsetDecoder} class should be used when more
-     * control over the decoding process is required.
+     * {@inheritDoc}
      *
-     * @see Charset#defaultCharset()
-     * @return String decoded from the accumulated payload
      * @throws java.lang.IllegalStateException when the payload is larger than can
      *                                         be stored in an array.
      */
@@ -258,20 +244,8 @@ public class MemoryOutputStream extends OutputStream {
     }
 
     /**
-     * Converts the accumulated payload contents into a string by decoding the bytes
-     * using the specified {@link Charset charset}. The length of the new
-     * {@code String} is a function of the charset, and hence may not be equal to
-     * the length of the payload.
+     * {@inheritDoc}
      *
-     * <p>
-     * This method always replaces malformed-input and unmappable-character
-     * sequences with the charset's default replacement string. The
-     * {@link java.nio.charset.CharsetDecoder} class should be used when more
-     * control over the decoding process is required.
-     *
-     * @param charset the {@linkplain Charset charset} to be used to decode the
-     *                {@code bytes}
-     * @return String decoded from the accumulated payload
      * @throws java.lang.IllegalStateException when the payload is larger than can
      *                                         be stored in an array.
      */
@@ -280,21 +254,31 @@ public class MemoryOutputStream extends OutputStream {
     }
 
     /**
-     * Converts the buffer's contents into a string by decoding the bytes using the
-     * named {@link Charset charset}.
+     * {@inheritDoc}
      *
-     * <p>
-     * This method is equivalent to {@code #toString(charset)} that takes a
-     * {@link Charset charset}.
-     *
-     * @param charsetName the name of a supported {@link Charset charset}
-     * @return String decoded from the accumulated payload
-     * @throws UnsupportedEncodingException    If the named charset is not supported
      * @throws java.lang.IllegalStateException when the payload is larger than can
      *                                         be stored in an array.
      */
     public String toString(String charsetName) throws UnsupportedEncodingException {
         return new String(toByteArray(), charsetName);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     *
+     * @deprecated This method does not properly convert bytes into characters.
+     * As of JDK&nbsp;1.1, the preferred way to do this is via the
+     * {@link #toString(String charsetName)} or {@link #toString(Charset charset)}
+     * method, which takes an encoding-name or charset argument,
+     * or the {@code toString()} method, which uses the default charset.
+     *
+     * @throws java.lang.IllegalStateException when the payload is larger than can
+     *                                         be stored in an array.
+     */
+    @Deprecated
+    public String toString(int hibyte) {
+        return new String(buf, hibyte, 0, count);
     }
 
     /**
