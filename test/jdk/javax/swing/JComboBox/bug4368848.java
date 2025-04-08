@@ -32,7 +32,6 @@ import javax.swing.table.AbstractTableModel;
  * @test
  * @bug 4368848
  * @summary Tests that mouse wheel events cancel popups
- * @key headful
  * @library /open/test/jdk/java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4368848
