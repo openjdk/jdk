@@ -30,12 +30,9 @@
  * @run main/manual bug4943900
  */
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.io.File;
-import javax.swing.JButton;
 import javax.swing.JFileChooser;
-import javax.swing.JPanel;
+import javax.swing.JFrame;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 import jtreg.SkippedException;
@@ -73,26 +70,19 @@ public class bug4943900 {
                 .instructions(INSTRUCTIONS)
                 .rows(20)
                 .columns(65)
-                .splitUIBottom(bug4943900::createAndShowUI)
+                .testUI(bug4943900::createAndShowUI)
                 .build()
                 .awaitAndCheck();
     }
 
-    public static JPanel createAndShowUI() {
-        JButton button = new JButton("Show JFileChooser");
-
-        button.addActionListener(e -> {
-            JFileChooser fc = new JFileChooser();
-            TextFileFilter filter = new TextFileFilter();
-            fc.setFileFilter(filter);
-            fc.showOpenDialog(null);
-        });
-
-        JPanel p = new JPanel();
-        p.setLayout(new BorderLayout());
-        p.setPreferredSize(new Dimension(200, 50));
-        p.add(button);
-        return p;
+    public static JFrame createAndShowUI() {
+        JFrame frame = new JFrame("JFileChooser bug4464774");
+        JFileChooser fc = new JFileChooser();
+        TextFileFilter filter = new TextFileFilter();
+        fc.setFileFilter(filter);
+        frame.add(fc);
+        frame.pack();
+        return frame;
     }
 
     private static final class TextFileFilter extends FileFilter {

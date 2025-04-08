@@ -32,17 +32,12 @@
  * @run main/manual bug4464774
  */
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import javax.swing.JButton;
 import javax.swing.JFileChooser;
-import javax.swing.JPanel;
+import javax.swing.JFrame;
 import javax.swing.UIManager;
 
 public class bug4464774 {
     private static final String INSTRUCTIONS = """
-            Click on "Show JFileChooser" button below to display
-            a JFileChooser dialog.
             Click any button from the buttons to the left
             ("Documents", "Desktop", "My Computer" etc.) in FileChooser dialog.
             When the button is toggled, it should be lowered and
@@ -58,21 +53,16 @@ public class bug4464774 {
                 .instructions(INSTRUCTIONS)
                 .rows(10)
                 .columns(65)
-                .splitUIBottom(bug4464774::createAndShowUI)
+                .testUI(bug4464774::createAndShowUI)
                 .build()
                 .awaitAndCheck();
     }
 
-    public static JPanel createAndShowUI() {
-        JButton button = new JButton("Show JFileChooser");
-        button.addActionListener(e -> {
-            JFileChooser jfc = new JFileChooser();
-            jfc.showOpenDialog(null);
-        });
-        JPanel p = new JPanel();
-        p.setLayout(new BorderLayout());
-        p.setPreferredSize(new Dimension(200, 50));
-        p.add(button);
-        return p;
+    public static JFrame createAndShowUI() {
+        JFrame frame = new JFrame("JFileChooser bug4464774");
+        JFileChooser jfc = new JFileChooser();
+        frame.add(jfc);
+        frame.pack();
+        return frame;
     }
 }

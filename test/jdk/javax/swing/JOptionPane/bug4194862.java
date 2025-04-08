@@ -21,9 +21,10 @@
  * questions.
  */
 
-/* @test
-   @bug 4194862
-   @summary Tests that internal frame-based dialogs are centered relative
+/*
+ * @test
+ * @bug 4194862
+ * @summary Tests that internal frame-based dialogs are centered relative
             to their parents
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame

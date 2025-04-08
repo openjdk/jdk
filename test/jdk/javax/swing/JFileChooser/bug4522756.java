@@ -21,26 +21,24 @@
  * questions.
  */
 
-/* @test
-   @bug 4522756
-   @requires (os.family == "windows")
-   @summary To verify that if for the first time JFileChooser is opened,
+/*
+ * @test
+ * @bug 4522756
+ * @requires (os.family == "windows")
+ * @summary To verify that if for the first time JFileChooser is opened,
             the icon for Desktop is not missing.
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4522756
  */
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import javax.swing.JButton;
 import javax.swing.JFileChooser;
-import javax.swing.JPanel;
+import javax.swing.JFrame;
 import javax.swing.UIManager;
 
 public class bug4522756 {
     private static final String INSTRUCTIONS = """
-            Click on "Show JFileChooser" button below and verify the following:
+            Verify the following:
 
             1. If Desktop icon image is present on the Desktop button
                on the left panel of JFileChooser.
@@ -57,21 +55,16 @@ public class bug4522756 {
                 .instructions(INSTRUCTIONS)
                 .rows(12)
                 .columns(50)
-                .splitUIBottom(bug4522756::createAndShowUI)
+                .testUI(bug4522756::createAndShowUI)
                 .build()
                 .awaitAndCheck();
     }
 
-    public static JPanel createAndShowUI() {
-        JButton button = new JButton("Show JFileChooser");
-        button.addActionListener(e -> {
-            JFileChooser jfc = new JFileChooser();
-            jfc.showOpenDialog(null);
-        });
-        JPanel p = new JPanel();
-        p.setLayout(new BorderLayout());
-        p.setPreferredSize(new Dimension(200, 50));
-        p.add(button);
-        return p;
+    public static JFrame createAndShowUI() {
+        JFrame frame = new JFrame("JFileChooser bug4522756");
+        JFileChooser jfc = new JFileChooser();
+        frame.add(jfc);
+        frame.pack();
+        return frame;
     }
 }
