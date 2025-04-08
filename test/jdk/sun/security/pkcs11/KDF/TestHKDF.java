@@ -610,6 +610,22 @@ public final class TestHKDF extends PKCS11Test {
                 "6e09");
     }
 
+    private static void test_invalid_AES_key_size() {
+        printTestHeader("Test derivation of an invalid AES key size");
+        try {
+            KDF k = KDF.getInstance("HKDF-SHA256", p11Provider);
+            k.deriveKey("AES", HKDFParameterSpec.ofExtract()
+                    .thenExpand(null, 31));
+            throw new Exception("No exception thrown.");
+        } catch (InvalidAlgorithmParameterException iape) {
+            // Expected.
+        } catch (Exception e) {
+            reportTestFailure(new Exception("Derivation of an AES key of " +
+                    "invalid size (31 bytes) expected to throw " +
+                    "InvalidAlgorithmParameterException.", e));
+        }
+    }
+
     public void main(Provider p) throws Exception {
         p11Provider = p;
         p11GenericSkf = SecretKeyFactory.getInstance("Generic", p11Provider);
