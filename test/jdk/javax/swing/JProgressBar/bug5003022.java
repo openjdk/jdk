@@ -55,7 +55,7 @@ public class bug5003022 {
     }
 
     static JFrame createUI() {
-      try {
+        try {
             /* This will only succeed on Linux, but the test is valid for other platforms and L&Fs */
             UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
         } catch (Exception e) {
