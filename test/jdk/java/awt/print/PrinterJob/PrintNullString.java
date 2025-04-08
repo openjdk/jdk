@@ -49,7 +49,7 @@ public class PrintNullString extends Frame {
             "This test will automatically initiate a print\n\n" +
             "A passing test will print 'OK' and 'expected' messages.\n" +
             "Test failed if no exception thrown.\n\n" +
-			"The test will complete automatically.";
+            "The test will complete automatically.";
 
     public static void main(String[] args) throws Exception {
         if (PrinterJob.lookupPrintServices().length == 0) {
