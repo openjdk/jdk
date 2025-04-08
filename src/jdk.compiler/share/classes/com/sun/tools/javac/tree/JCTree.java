@@ -641,8 +641,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /** The tree representing the package clause. */
         public JCExpression pid;
         public PackageSymbol packge;
-        /** Position of closing semicolon, optional. */
-        public int endPos = Position.NOPOS;
         public JCPackageDecl(List<JCAnnotation> annotations, JCExpression pid) {
             this.annotations = annotations;
             this.pid = pid;
@@ -839,8 +837,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCTree> defs;
         /** the symbol */
         public ClassSymbol sym;
-        /** position of closing brace, optional. */
-        public int endPos = Position.NOPOS;
         protected JCClassDecl(JCModifiers mods,
                            Name name,
                            List<JCTypeParameter> typarams,
@@ -935,8 +931,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public MethodSymbol sym;
         /** does this method completes normally */
         public boolean completesNormally;
-        /** position of closing brace or semicolon, optional. */
-        public int endPos = Position.NOPOS;
 
         protected JCMethodDecl(JCModifiers mods,
                             Name name,
@@ -1022,8 +1016,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public VarSymbol sym;
         /** explicit start pos */
         public int startPos = Position.NOPOS;
-        /** position of closing semicolon, optional. */
-        public int endPos = Position.NOPOS;
         /** declared using `var` */
         private boolean declaredUsingVar;
 
@@ -1129,7 +1121,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /** statements */
         public List<JCStatement> stats;
         /** Position of closing brace, optional. */
-        public int endpos = Position.NOPOS;
+        public int bracePos = Position.NOPOS;
         /** If this block contains record pattern, it is necessary to catch
          *  exceptions from the deconstructors and wrap them.
          * The {@code patternMatchingCatch} keeps the list of the deconstructor
@@ -1337,8 +1329,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCSwitch extends JCStatement implements SwitchTree {
         public JCExpression selector;
         public List<JCCase> cases;
-        /** Position of closing brace, optional. */
-        public int endpos = Position.NOPOS;
         public boolean hasUnconditionalPattern;
         public boolean isExhaustive;
         public boolean patternSwitch;
@@ -1438,7 +1428,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression selector;
         public List<JCCase> cases;
         /** Position of closing brace, optional. */
-        public int endpos = Position.NOPOS;
+        public int bracePos = Position.NOPOS;
         public boolean hasUnconditionalPattern;
         public boolean isExhaustive;
         public boolean patternSwitch;
@@ -3134,8 +3124,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression qualId;
         public List<JCDirective> directives;
         public ModuleSymbol sym;
-        /** position of closing brace, optional. */
-        public int endPos = Position.NOPOS;
 
         protected JCModuleDecl(JCModifiers mods, ModuleKind kind,
                 JCExpression qualId, List<JCDirective> directives) {
