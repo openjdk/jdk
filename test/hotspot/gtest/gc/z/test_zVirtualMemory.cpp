@@ -22,9 +22,11 @@
  */
 
 #include "gc/z/zVirtualMemory.inline.hpp"
-#include "unittest.hpp"
+#include "zunittest.hpp"
 
 TEST(ZVirtualMemory, split) {
+  ZAddressOffsetMaxSetter setter(size_t(16) * G * 1024);
+
   ZVirtualMemory vmem(zoffset(0), 10);
 
   ZVirtualMemory vmem0 = vmem.split(0);
