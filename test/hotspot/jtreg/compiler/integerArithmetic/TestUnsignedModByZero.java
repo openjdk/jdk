@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8351660
- * @summary Test that modulo by zero throws exception at runtime in case of unsigned values.
+ * @summary Test that modulo by zero throws an exception at runtime in case of unsigned values.
  * @library /test/lib
  * @run main/othervm -Xbatch
  *                   -XX:CompileCommand=compileonly,compiler.integerArithmetic.TestUnsignedModByZero::testInt
