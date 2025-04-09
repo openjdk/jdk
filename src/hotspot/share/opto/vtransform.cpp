@@ -246,21 +246,15 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
           }
 #endif
           // TODO: optimize so that we do not have too many checks!
-          const VPointer& p1 = vtn->vpointer(_vloop_analyzer);
-          const VPointer& p2 = use->vpointer(_vloop_analyzer);
-          add_speculative_aliasing_check(p1, p2);
+          const VPointer& vp1 = vtn->vpointer(_vloop_analyzer);
+          const VPointer& vp2 = use->vpointer(_vloop_analyzer);
+          BoolNode* bol = vp1.make_speculative_aliasing_check_with(vp2);
+          add_speculative_check(bol);
         }
       }
       visited.set(vtn->_idx);
     }
   }
-}
-
-
-// TODO: remove?
-void VTransform::add_speculative_aliasing_check(const VPointer& vp1, const VPointer& vp2) {
-  BoolNode* bol = vp1.make_speculative_aliasing_check_with(vp2);
-  add_speculative_check(bol);
 }
 
 void VTransform::add_speculative_check(BoolNode* bol) {
