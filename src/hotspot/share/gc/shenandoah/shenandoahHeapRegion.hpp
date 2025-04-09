@@ -378,12 +378,19 @@ public:
   // Increase live data for region scanned with GC
   inline void increase_live_data_gc_words(size_t s);
 
+  inline bool has_marked() const;
+
   inline bool has_live() const;
 
-  // Returns bytes identified as live at time of most recent mark. Does not include allocations subsequent to last mark.
+  // Returns bytes identified as live by most recently completed marking effort.  Can only be called during safepoints.
+  inline size_t get_marked_data_bytes() const;
+
+  // Returns bytes identified as live by most recently completed marking effort, plus allocations above TAMS.
+  // Can only be called during safepoints.
   inline size_t get_live_data_bytes() const;
 
-  // Returns words identified as live at time of most recent mark.  Can only be called during final mark safepoints.
+  // Returns words identified as live by most recently completed marking effort, plus allocations above TAMS.
+  // Can only be called during safepoints.
   inline size_t get_live_data_words() const;
 #ifdef KELVIN_DEPRECATE
   inline size_t get_mixed_candidate_live_data_bytes() const;
@@ -392,8 +399,8 @@ public:
   inline void capture_mixed_candidate_garbage();
 #endif
 
-  // Returns garbage by calculating difference between used and get_live_data_words.  Can only be called during final
-  // meark safepoints. Allocations above TAMS are considered live.
+  // Returns garbage by calculating difference between used and get_live_data_words.  Can only be called at
+  // safepoints. Allocations above TAMS are considered live.
   inline size_t garbage() const;
 
   void print_on(outputStream* st) const;

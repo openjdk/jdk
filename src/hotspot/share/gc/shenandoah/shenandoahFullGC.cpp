@@ -925,12 +925,14 @@ class ShenandoahPostCompactClosure : public ShenandoahHeapRegionClosure {
 private:
   ShenandoahHeap* const _heap;
   bool _is_generational;
+  ShenandoahMarkingContext* _mark_context;
   size_t _young_regions, _young_usage, _young_humongous_waste;
   size_t _old_regions, _old_usage, _old_humongous_waste;
 
 public:
   ShenandoahPostCompactClosure() : _heap(ShenandoahHeap::heap()),
                                    _is_generational(_heap->mode()->is_generational()),
+                                   _mark_context(_heap->complete_marking_context()),
                                    _young_regions(0),
                                    _young_usage(0),
                                    _young_humongous_waste(0),
@@ -984,6 +986,12 @@ public:
       }
     }
     r->set_live_data(live);
+#ifdef ASSERT
+    // Verification and assert enforcement requires TAMS to equal top() at moment live data is set and requires
+    // UWM >= TAMS
+    _mark_context->capture_top_at_mark_start(r);
+    r->set_update_watermark_at_safepoint(r->top());
+#endif
     r->reset_alloc_metadata();
   }
 
@@ -1093,7 +1101,7 @@ public:
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahMarkingContext* const ctx = heap->complete_marking_context();
     while (region != nullptr) {
-      if (heap->is_bitmap_slice_committed(region) && !region->is_pinned() && region->has_live()) {
+      if (heap->is_bitmap_slice_committed(region) && !region->is_pinned() && region->has_marked()) {
         ctx->clear_bitmap(region);
       }
       region = _regions.next();
