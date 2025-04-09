@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,15 @@
 
 /*
  * @test
- * @bug 8333377
+ * @bug 8350704
  * @summary Test behaviors with Signature attribute with any absent
- *          class or interface
+ *          class or interface (the string is of valid format)
  * @library /test/lib
  * @modules java.base/jdk.internal.classfile.components
  * @compile MalformedSignatureTest.java
  * @comment reuses Sample classes from MalformedSignatureTest
  * @run junit TypeNotPresentInSignatureTest
  */
-
-import jdk.internal.classfile.components.ClassRemapper;
-import jdk.test.lib.ByteCodeLoader;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassTransform;
@@ -49,6 +44,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import jdk.internal.classfile.components.ClassRemapper;
+import jdk.test.lib.ByteCodeLoader;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class TypeNotPresentInSignatureTest {
@@ -60,6 +60,8 @@ class TypeNotPresentInSignatureTest {
         var compiledDir = Path.of(System.getProperty("test.classes"));
         var cf = ClassFile.of();
 
+        // Transforms all references to RuntimeException to an absent class or
+        // interface does.not.Exist. The signature string format is still valid.
         var reDesc = ClassDesc.of("java.lang.RuntimeException");
         var fix = ClassRemapper.of(Map.of(reDesc, ClassDesc.of("does.not.Exist")));
         var f2 = ClassTransform.transformingMethods((mb, me) -> {
@@ -78,7 +80,11 @@ class TypeNotPresentInSignatureTest {
         sampleRecord = ByteCodeLoader.load("SampleRecord", recordBytes);
     }
 
-
+    /**
+     * Ensures the reflective generic inspection of a Class with missing class
+     * or interface throws TypeNotPresentException while the non-generic
+     * inspection is fine.
+     */
     @Test
     void testClass() {
         assertEquals(ArrayList.class, sampleClass.getSuperclass());
@@ -89,6 +95,11 @@ class TypeNotPresentInSignatureTest {
         assertEquals("does.not.Exist", ex.typeName());
     }
 
+    /**
+     * Ensures the reflective generic inspection of a Field with missing class
+     * or interface throws TypeNotPresentException while the non-generic
+     * inspection is fine.
+     */
     @Test
     void testField() throws ReflectiveOperationException {
         var field = sampleClass.getDeclaredField("field");
@@ -97,6 +108,11 @@ class TypeNotPresentInSignatureTest {
         assertEquals("does.not.Exist", ex.typeName());
     }
 
+    /**
+     * Ensures the reflective generic inspection of a Constructor with missing class
+     * or interface throws TypeNotPresentException while the non-generic
+     * inspection is fine.
+     */
     @Test
     void testConstructor() throws ReflectiveOperationException {
         var constructor = sampleClass.getDeclaredConstructor(Optional.class);
@@ -109,6 +125,11 @@ class TypeNotPresentInSignatureTest {
         assertEquals("does.not.Exist", ex.typeName());
     }
 
+    /**
+     * Ensures the reflective generic inspection of a Method with missing class
+     * or interface throws TypeNotPresentException while the non-generic
+     * inspection is fine.
+     */
     @Test
     void testMethod() throws ReflectiveOperationException {
         var method = sampleClass.getDeclaredMethod("method", Optional.class);
@@ -124,6 +145,11 @@ class TypeNotPresentInSignatureTest {
         assertEquals("does.not.Exist", ex.typeName());
     }
 
+    /**
+     * Ensures the reflective generic inspection of a RecordComponent with missing class
+     * or interface throws TypeNotPresentException while the non-generic
+     * inspection is fine.
+     */
     @Test
     void testRecordComponent() {
         var rcs = sampleRecord.getRecordComponents();

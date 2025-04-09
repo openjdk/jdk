@@ -23,11 +23,9 @@
 
 /*
  * @test
- * @bug 8333377
+ * @bug 8350704
  * @summary Test behaviors with malformed annotations (in class files)
- *          that should stay in refactors
  * @library /test/lib
- * @comment
  * @run junit MalformedAnnotationTest
  */
 
@@ -49,6 +47,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MalformedAnnotationTest {
 
+    /**
+     * An annotation that has elements of the Class type.
+     * Useful for checking behavior when the string is not a descriptor string.
+     */
     @Retention(RetentionPolicy.RUNTIME)
     @interface ClassCarrier {
         Class<?> value();
@@ -56,7 +58,8 @@ class MalformedAnnotationTest {
 
     /**
      * Ensures bad class descriptors in annotations lead to
-     * {@link GenericSignatureFormatError}.
+     * {@link GenericSignatureFormatError} and the error message contains the
+     * malformed descriptor string.
      */
     @Test
     void testMalformedClassValue() throws Exception {

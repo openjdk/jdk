@@ -27,7 +27,7 @@
 #include "runtime/objectMonitor.hpp"
 #include "runtime/synchronizer.hpp"
 
-void BasicLock::print_on(outputStream* st, oop owner) const {
+void BasicLock::print_on(outputStream* st, oop owner) {
   st->print("monitor");
   if (UseObjectMonitorTable) {
     ObjectMonitor* mon = object_monitor_cache();

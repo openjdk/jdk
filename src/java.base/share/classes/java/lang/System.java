@@ -2196,11 +2196,6 @@ public final class System {
                 return ClassLoader.nativeLibrariesFor(loader);
             }
 
-            @Override
-            public void exit(int statusCode) {
-                Shutdown.exit(statusCode);
-            }
-
             public Thread[] getAllThreads() {
                 return Thread.getAllThreads();
             }
@@ -2293,10 +2288,6 @@ public final class System {
 
             public Executor virtualThreadDefaultScheduler() {
                 return VirtualThread.defaultScheduler();
-            }
-
-            public Stream<ScheduledExecutorService> virtualThreadDelayedTaskSchedulers() {
-                return VirtualThread.delayedTaskSchedulers();
             }
 
             public StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,

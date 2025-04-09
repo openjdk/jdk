@@ -413,7 +413,13 @@ ModuleEntry* ModuleEntry::allocate_archived_entry() const {
   _archive_modules_entries->put(this, archived_entry);
   DEBUG_ONLY(_num_archived_module_entries++);
 
-  assert(archived_entry->shared_protection_domain() == nullptr, "never set during -Xshare:dump");
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    OopHandle null_handle;
+    archived_entry->_shared_pd = null_handle;
+  } else {
+    assert(archived_entry->shared_protection_domain() == nullptr, "never set during -Xshare:dump");
+  }
+
   // Clear handles and restore at run time. Handles cannot be archived.
   OopHandle null_handle;
   archived_entry->_module = null_handle;

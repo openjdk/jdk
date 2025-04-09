@@ -240,7 +240,6 @@ public final class Constructor<T> extends Executable {
             return GenericInfo.emptyTypeVars();
     }
 
-
     @Override
     Class<?>[] getSharedParameterTypes() {
         return parameterTypes;

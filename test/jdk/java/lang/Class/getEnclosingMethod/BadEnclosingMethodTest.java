@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8333377
- * @summary Test behaviors with bad EnclosingMethod attribute
+ * @bug 8350704
+ * @summary Test behaviors with various bad EnclosingMethod attribute
  * @library /test/lib
  * @run junit BadEnclosingMethodTest
  */
@@ -48,6 +48,16 @@ class BadEnclosingMethodTest {
         return Path.of(System.getProperty("test.classes"), className + ".class");
     }
 
+    /**
+     * Loads a test class that is transformed from the Enclosed local class in
+     * the Encloser::work method. This local class has its EnclosingMethod
+     * attribute transformed to the specific name and type, which may be malformed
+     * strings.
+     *
+     * @param name the new enclosing method name, may be malformed
+     * @param type the new enclosing method type, may be malformed
+     * @return the loaded test class, for reflective inspection
+     */
     private Class<?> loadTestClass(String name, String type) throws Exception {
         var outerName = "Encloser";
         var className = outerName + "$1Enclosed";
@@ -77,11 +87,22 @@ class BadEnclosingMethodTest {
                 .loadClass(className);
     }
 
+    /**
+     * Test reflection behaviors when the EnclosingMethod attribute's type is
+     * an invalid string.
+     */
     @Test
-    void testBadTypes() throws Exception {
+    void testMalformedTypes() throws Exception {
         assertThrows(ClassFormatError.class, () -> loadTestClass("methodName", "(L[;)V"));
         assertThrows(ClassFormatError.class, () -> loadTestClass(INIT_NAME, "(L[;)V"));
+    }
 
+    /**
+     * Test reflective behaviors when the EnclosingMethod attribute's type is
+     * valid, but refers to a class or interface that cannot be found.
+     */
+    @Test
+    void testAbsentMethods() throws Exception {
         var absentMethodType = loadTestClass("methodName", "(Ldoes/not/Exist;)V");
         var ex = assertThrows(TypeNotPresentException.class,
                 absentMethodType::getEnclosingMethod);
