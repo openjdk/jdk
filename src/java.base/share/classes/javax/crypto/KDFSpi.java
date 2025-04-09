@@ -67,7 +67,7 @@ import java.security.spec.AlgorithmParameterSpec;
  * @see KDFParameters
  * @see KDF#getParameters()
  * @see SecretKey
- * @since 24
+ * @since 25
  */
 public abstract class KDFSpi {
 

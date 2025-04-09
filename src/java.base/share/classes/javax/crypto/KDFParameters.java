@@ -42,6 +42,6 @@ package javax.crypto;
  * @see KDF#getInstance(String, KDFParameters)
  * @see KDF#getParameters()
  * @see KDF
- * @since 24
+ * @since 25
  */
 public interface KDFParameters {}

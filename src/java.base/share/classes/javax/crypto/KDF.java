@@ -97,7 +97,7 @@ import java.util.Objects;
  *
  * @see KDFParameters
  * @see SecretKey
- * @since 24
+ * @since 25
  */
 public final class KDF {
 

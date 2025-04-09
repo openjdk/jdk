@@ -73,7 +73,7 @@ import java.util.Objects;
  * @spec https://www.rfc-editor.org/info/rfc5869
  *      RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF)
  * @see javax.crypto.KDF
- * @since 24
+ * @since 25
  */
 public interface HKDFParameterSpec extends AlgorithmParameterSpec {
 
