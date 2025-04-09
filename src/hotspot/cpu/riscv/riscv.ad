@@ -10022,7 +10022,7 @@ instruct cmovI_cmpF(iRegINoSp dst, iRegI src, fRegF op1, fRegF op2, cmpOp cop) %
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpF\n\t"
+    "CMoveI $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpF\n\t"
   %}
 
   ins_encode %{
@@ -10039,7 +10039,7 @@ instruct cmovI_cmpD(iRegINoSp dst, iRegI src, fRegD op1, fRegD op2, cmpOp cop) %
   ins_cost(ALU_COST + BRANCH_COST);
 
   format %{
-    "CMove $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpD\n\t"
+    "CMoveI $dst, ($op1 $cop $op2), $dst, $src\t#@cmovI_cmpD\n\t"
   %}
 
   ins_encode %{
