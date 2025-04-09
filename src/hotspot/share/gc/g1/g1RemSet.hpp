@@ -122,7 +122,8 @@ public:
       HasRefToCSet,          // The (dirty) card has a reference to the collection set.
       AlreadyToCSet,         // The card is already one marked as having a reference to the collection set.
       HasRefToOld,           // The dirty card contains references to other old regions (not the collection set).
-      NoInteresting,         // There is no interesting reference in the card.
+      NoInteresting,         // There is no interesting reference in the card any more. The mutator changed all
+                             // references to such after dirtying the card.
       CouldNotParse          // The card is unparsable, need to retry later.
   };
   // Refine the region corresponding to "card_ptr". Must be called after

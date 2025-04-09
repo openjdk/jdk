@@ -24,12 +24,12 @@
 
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/g1ReviseYoungListTargetLengthTask.hpp"
+#include "gc/g1/g1ReviseYoungLengthTask.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 
 
-jlong G1ReviseYoungLengthTargetLengthTask::reschedule_delay_ms() const {
+jlong G1ReviseYoungLengthTask::reschedule_delay_ms() const {
   G1Policy* policy = G1CollectedHeap::heap()->policy();
   size_t available_bytes;
   if (policy->try_get_available_bytes_estimate(available_bytes)) {
@@ -47,7 +47,7 @@ jlong G1ReviseYoungLengthTargetLengthTask::reschedule_delay_ms() const {
   }
 }
 
-class G1ReviseYoungLengthTargetLengthTask::RemSetSamplingClosure : public G1HeapRegionClosure {
+class G1ReviseYoungLengthTask::RemSetSamplingClosure : public G1HeapRegionClosure {
   size_t _sampled_code_root_rs_length;
 
 public:
@@ -62,7 +62,7 @@ public:
   size_t sampled_code_root_rs_length() const { return _sampled_code_root_rs_length; }
 };
 
-void G1ReviseYoungLengthTargetLengthTask::adjust_young_list_target_length() {
+void G1ReviseYoungLengthTask::adjust_young_list_target_length() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   G1Policy* policy = g1h->policy();
 
@@ -72,9 +72,8 @@ void G1ReviseYoungLengthTargetLengthTask::adjust_young_list_target_length() {
   size_t current_to_collection_set_cards;
   {
     MutexLocker x(G1ReviseYoungLength_lock, Mutex::_no_safepoint_check_flag);
-    G1Policy* p = g1h->policy();
-    pending_cards = p->current_pending_cards();
-    current_to_collection_set_cards = p->current_to_collection_set_cards();
+    pending_cards = policy->current_pending_cards();
+    current_to_collection_set_cards = policy->current_to_collection_set_cards();
   }
 
   RemSetSamplingClosure cl;
@@ -85,10 +84,10 @@ void G1ReviseYoungLengthTargetLengthTask::adjust_young_list_target_length() {
                                           cl.sampled_code_root_rs_length());
 }
 
-G1ReviseYoungLengthTargetLengthTask::G1ReviseYoungLengthTargetLengthTask(const char* name) :
+G1ReviseYoungLengthTask::G1ReviseYoungLengthTask(const char* name) :
   G1ServiceTask(name) { }
 
-void G1ReviseYoungLengthTargetLengthTask::execute() {
+void G1ReviseYoungLengthTask::execute() {
   SuspendibleThreadSetJoiner sts;
 
   adjust_young_list_target_length();

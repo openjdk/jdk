@@ -42,7 +42,7 @@ class G1ConcurrentRefineStats : public CHeapObj<mtGC> {
   size_t _cards_not_parsable;         // Number of cards we could not parse and left unrefined.
   size_t _cards_already_refer_to_cset;// Number of cards marked found to be already young.
   size_t _cards_refer_to_cset;        // Number of dirty cards that were recently found to contain a to-cset reference.
-  size_t _cards_clean_again;          // Dirtied cards that were cleaned.
+  size_t _cards_clean_again;          // Number of dirty cards that were cleaned by the mutator.
 
   jlong _refine_duration;             // Time spent during actual refinement.
 
@@ -75,27 +75,14 @@ public:
   void inc_yield_duration(jlong t) { _yield_duration += t; }
   void inc_refine_duration(jlong t) { _refine_duration += t; }
 
-  void inc_cards_scanned(size_t increment = 1) { _cards_scanned += increment; }
-  void inc_cards_clean(size_t increment = 1) { _cards_clean += increment; }
+  void inc_cards_scanned(size_t increment) { _cards_scanned += increment; }
+  void inc_cards_clean(size_t increment) { _cards_clean += increment; }
   void inc_cards_not_parsable() { _cards_not_parsable++; }
   void inc_cards_already_refer_to_cset() { _cards_already_refer_to_cset++; }
   void inc_cards_refer_to_cset() { _cards_refer_to_cset++; }
   void inc_cards_clean_again() { _cards_clean_again++; }
 
   void add_atomic(G1ConcurrentRefineStats* other);
-
-  G1ConcurrentRefineStats& operator+=(const G1ConcurrentRefineStats& other);
-  G1ConcurrentRefineStats& operator-=(const G1ConcurrentRefineStats& other);
-
-  friend G1ConcurrentRefineStats operator+(G1ConcurrentRefineStats x,
-                                           const G1ConcurrentRefineStats& y) {
-    return x += y;
-  }
-
-  friend G1ConcurrentRefineStats operator-(G1ConcurrentRefineStats x,
-                                           const G1ConcurrentRefineStats& y) {
-    return x -= y;
-  }
 
   void reset();
 };

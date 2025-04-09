@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1REVISEYOUNGLISTTARGETLENGTHTASK_HPP
-#define SHARE_GC_G1_G1REVISEYOUNGLISTTARGETLENGTHTASK_HPP
+#ifndef SHARE_GC_G1_G1REVISEYOUNGLENGTHTASK_HPP
+#define SHARE_GC_G1_G1REVISEYOUNGLENGTHTASK_HPP
 
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1HeapRegionRemSet.hpp"
@@ -33,7 +33,7 @@
 #include "utilities/ticks.hpp"
 
 // ServiceTask to revise the young generation target length.
-class G1ReviseYoungLengthTargetLengthTask : public G1ServiceTask {
+class G1ReviseYoungLengthTask : public G1ServiceTask {
 
   // The delay used to reschedule this task.
   jlong reschedule_delay_ms() const;
@@ -55,9 +55,9 @@ class G1ReviseYoungLengthTargetLengthTask : public G1ServiceTask {
   void adjust_young_list_target_length();
 
 public:
-  explicit G1ReviseYoungLengthTargetLengthTask(const char* name);
+  explicit G1ReviseYoungLengthTask(const char* name);
 
   void execute() override;
 };
 
-#endif // SHARE_GC_G1_G1REVISEYOUNGLISTTARGETLENGTHTASK_HPP
+#endif // SHARE_GC_G1_G1REVISEYOUNGLENGTHTASK_HPP

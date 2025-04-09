@@ -53,7 +53,7 @@ class Thread;
 // them, keeping the write barrier simple.
 //
 // The refinement threads mark cards in the current collection set specially on the
-// card table - this is fine wrt to synchronization with the mutator, because at
+// card table - this is fine wrt synchronization with the mutator, because at
 // most the mutator will overwrite it again if there is a race, as G1 will scan the
 // entire card either way during the GC pause.
 //

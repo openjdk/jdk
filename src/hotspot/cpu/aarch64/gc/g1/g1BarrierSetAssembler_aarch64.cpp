@@ -243,7 +243,7 @@ static void generate_post_barrier_fast_path(MacroAssembler* masm,
   if (new_val_may_be_null) {
     __ cbz(new_val, done);
   }
-  // Storing region crossing non-null, is card young?
+  // Storing region crossing non-null.
   __ lsr(tmp1, store_addr, CardTable::card_shift());     // tmp1 := card address relative to card table base
 
   Address card_table_addr(thread, in_bytes(G1ThreadLocalData::card_table_base_offset()));

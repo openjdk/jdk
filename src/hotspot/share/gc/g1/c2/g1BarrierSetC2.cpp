@@ -304,7 +304,7 @@ uint G1BarrierSetC2::estimated_barrier_size(const Node* node) const {
     nodes +=   4  // base cost for the card write containing getting base offset, address calculation and the card write;
              + 6  // same region check: Uncompress (new_val) oop, xor, shr, (cmp), jmp
              + 4  // new_val is null check
-             + 4; // card not clean check.
+             + (UseCondCardMark ? 4 : 0); // card not clean check.
   }
   return nodes;
 }
@@ -392,7 +392,7 @@ public:
   }
 
   bool needs_liveness_data(const MachNode* mach) const {
-    // Liveness data is only required to compute registers to be preserved
+    // Liveness data is only required to compute registers that must be preserved
     // across the runtime call in the pre-barrier stub.
     return G1BarrierStubC2::needs_pre_barrier(mach);
   }

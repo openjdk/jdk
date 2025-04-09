@@ -76,6 +76,7 @@ class G1GCPhaseTimes;
 class G1HeapSizingPolicy;
 class G1NewTracer;
 class G1RemSet;
+class G1ReviseYoungLengthTask;
 class G1ServiceTask;
 class G1ServiceThread;
 class GCMemoryManager;
@@ -84,7 +85,6 @@ class MemoryPool;
 class nmethod;
 class PartialArrayStateManager;
 class ReferenceProcessor;
-class G1ReviseYoungLengthTargetLengthTask;
 class STWGCTimer;
 class WorkerThreads;
 
@@ -173,7 +173,7 @@ private:
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
   G1MonotonicArenaFreeMemoryTask* _free_arena_memory_task;
-  G1ReviseYoungLengthTargetLengthTask* _revise_young_length_task;
+  G1ReviseYoungLengthTask* _revise_young_length_task;
 
   WorkerThreads* _workers;
 

@@ -52,43 +52,6 @@ void G1ConcurrentRefineStats::add_atomic(G1ConcurrentRefineStats* other) {
   Atomic::add(&_refine_duration, other->_refine_duration, memory_order_relaxed);
 }
 
-G1ConcurrentRefineStats&
-G1ConcurrentRefineStats::operator+=(const G1ConcurrentRefineStats& other) {
-  _sweep_duration += other._sweep_duration;
-  _yield_duration += other._yield_duration;
-
-  _cards_scanned += other._cards_scanned;
-  _cards_clean += other._cards_clean;
-  _cards_not_parsable += other._cards_not_parsable;
-  _cards_already_refer_to_cset += other._cards_already_refer_to_cset;
-  _cards_refer_to_cset += other._cards_refer_to_cset;
-  _cards_clean_again += other._cards_clean_again;
-
-  _refine_duration += other._refine_duration;
-  return *this;
-}
-
-template<typename T>
-static T saturated_sub(T x, T y) {
-  return (x < y) ? T() : (x - y);
-}
-
-G1ConcurrentRefineStats&
-G1ConcurrentRefineStats::operator-=(const G1ConcurrentRefineStats& other) {
-  _sweep_duration = saturated_sub(_sweep_duration, other._sweep_duration);
-  _yield_duration = saturated_sub(_yield_duration, other._yield_duration);
-
-  _cards_scanned = saturated_sub(_cards_scanned, other._cards_scanned);
-  _cards_clean = saturated_sub(_cards_clean, other._cards_clean);
-  _cards_not_parsable = saturated_sub(_cards_not_parsable, other._cards_not_parsable);
-  _cards_already_refer_to_cset = saturated_sub(_cards_already_refer_to_cset, other._cards_already_refer_to_cset);
-  _cards_refer_to_cset = saturated_sub(_cards_refer_to_cset, other._cards_refer_to_cset);
-  _cards_clean_again = saturated_sub(_cards_clean_again, other._cards_clean_again);
-
-  _refine_duration = saturated_sub(_refine_duration, other._refine_duration);
-  return *this;
-}
-
 void G1ConcurrentRefineStats::reset() {
   *this = G1ConcurrentRefineStats();
 }

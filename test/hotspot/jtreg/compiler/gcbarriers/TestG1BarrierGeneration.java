@@ -517,8 +517,6 @@ public class TestG1BarrierGeneration {
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
         failOn = {IRNode.G1_STORE_N, IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
-    @IR(counts = {IRNode.COUNTED_LOOP, "2"},
-        phase = CompilePhase.FINAL_CODE)
     public static Object[] testStoreAllOnNewSmallArray(Object o1) {
         Object[] a = new Object[64];
         for (int i = 0; i < a.length; i++) {

@@ -62,7 +62,7 @@
 #include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/g1RemSet.hpp"
-#include "gc/g1/g1ReviseYoungListTargetLengthTask.hpp"
+#include "gc/g1/g1ReviseYoungLengthTask.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
@@ -1471,7 +1471,7 @@ jint G1CollectedHeap::initialize() {
   _service_thread->register_task(_free_arena_memory_task);
 
   if (policy()->use_adaptive_young_list_length()) {
-    _revise_young_length_task = new G1ReviseYoungLengthTargetLengthTask("Revise Young Length List Task");
+    _revise_young_length_task = new G1ReviseYoungLengthTask("Revise Young Length List Task");
     _service_thread->register_task(_revise_young_length_task);
   }
 

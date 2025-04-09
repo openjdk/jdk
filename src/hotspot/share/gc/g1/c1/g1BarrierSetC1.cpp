@@ -142,7 +142,7 @@ public:
     state->do_input(_new_val);
     state->do_input(_thread);
 
-    // Use temp registers to ensure these they use different registers.
+    // Use temps to enforce different registers.
     state->do_temp(_addr);
     state->do_temp(_new_val);
     state->do_temp(_thread);

@@ -136,12 +136,12 @@ public:
 
       G1ChunkScanner scanner{start_card, end_card};
 
-      size_t scanned = 0;
+      size_t num_dirty_cards = 0;
       scanner.on_dirty_cards([&] (CardValue* dirty_l, CardValue* dirty_r) {
                                jlong refine_start = os::elapsed_counter();
 
                                do_claimed_block(dirty_l, dirty_r, dest_card + pointer_delta(dirty_l, start_card, sizeof(CardValue)));
-                               scanned += pointer_delta(dirty_r, dirty_l, sizeof(CardValue));
+                               num_dirty_cards += pointer_delta(dirty_r, dirty_l, sizeof(CardValue));
 
                                _refine_stats.inc_refine_duration(os::elapsed_counter() - refine_start);
                              });
@@ -153,7 +153,7 @@ public:
       }
 
       _refine_stats.inc_cards_scanned(claim.size());
-      _refine_stats.inc_cards_clean(claim.size() - scanned);
+      _refine_stats.inc_cards_clean(claim.size() - num_dirty_cards);
 
       if (SuspendibleThreadSet::should_yield()) {
         _completed = false;
