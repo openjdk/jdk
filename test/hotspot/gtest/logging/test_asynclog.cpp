@@ -79,12 +79,12 @@ LOG_LEVEL_LIST
 
     // write more messages than its capacity in burst
     for (size_t i = 0; i < (sz / str_size); ++i) {
-      lm.debug("%s", "a lot of log...");
+      lm.debug("%s", str);
     }
-    lm.debug("%s","a lot of log...");
-    lm.debug("%s","a lot of log...");
-    lm.debug("%s","a lot of log...");
-    lm.debug("%s","a lot of log...");
+    lm.debug("%s", str);
+    lm.debug("%s", str);
+    lm.debug("%s", str);
+    lm.debug("%s", str);
     lm.flush();
   }
 
