@@ -97,6 +97,8 @@
 #include "utilities/ostream.hpp"
 #include "utilities/resourceHash.hpp"
 
+#include <sys/stat.h>
+
 ReservedSpace MetaspaceShared::_symbol_rs;
 VirtualSpace MetaspaceShared::_symbol_vs;
 bool MetaspaceShared::_archive_loading_failed = false;
@@ -696,6 +698,16 @@ class CollectClassesForLinking : public KlassClosure {
   GrowableArray<OopHandle> _mirrors;
 
 public:
+   CollectClassesForLinking() : _mirrors() {
+     // ClassLoaderDataGraph::loaded_classes_do_keepalive() requires ClassLoaderDataGraph_lock.
+     // We cannot link the classes while holding this lock (or else we may run into deadlock).
+     // Therefore, we need to first collect all the classes, keeping them alive by
+     // holding onto their java_mirrors in global OopHandles. We then link the classes after
+     // releasing the lock.
+     MutexLocker lock(ClassLoaderDataGraph_lock);
+     ClassLoaderDataGraph::loaded_classes_do_keepalive(this);
+   }
+
   ~CollectClassesForLinking() {
     for (int i = 0; i < _mirrors.length(); i++) {
       _mirrors.at(i).release(Universe::vm_global());
@@ -736,43 +748,20 @@ bool MetaspaceShared::may_be_eagerly_linked(InstanceKlass* ik) {
   return true;
 }
 
-bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
-  // Link the class to cause the bytecodes to be rewritten and the
-  // cpcache to be created. Class verification is done according
-  // to -Xverify setting.
-  bool res = MetaspaceShared::try_link_class(THREAD, ik);
-  AOTConstantPoolResolver::dumptime_resolve_constants(ik, CHECK_(false));
-  return res;
-}
-
-void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
+void MetaspaceShared::link_shared_classes(TRAPS) {
   AOTClassLinker::initialize();
   AOTClassInitializer::init_test_class(CHECK);
 
-  if (!jcmd_request && !CDSConfig::is_dumping_final_static_archive()) {
-    LambdaFormInvokers::regenerate_holder_classes(CHECK);
-  }
-
-
   while (true) {
+    ResourceMark rm(THREAD);
     CollectClassesForLinking collect_classes;
-    {
-      // ClassLoaderDataGraph::loaded_classes_do_keepalive() requires ClassLoaderDataGraph_lock.
-      // We cannot link the classes while holding this lock (or else we may run into deadlock).
-      // Therefore, we need to first collect all the classes, keeping them alive by
-      // holding onto their java_mirrors in global OopHandles. We then link the classes after
-      // releasing the lock.
-      MutexLocker lock(ClassLoaderDataGraph_lock);
-      ClassLoaderDataGraph::loaded_classes_do_keepalive(&collect_classes);
-    }
-
     bool has_linked = false;
     const GrowableArray<OopHandle>* mirrors = collect_classes.mirrors();
     for (int i = 0; i < mirrors->length(); i++) {
       OopHandle mirror = mirrors->at(i);
       InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(mirror.resolve()));
       if (may_be_eagerly_linked(ik)) {
-        has_linked |= link_class_for_cds(ik, CHECK);
+        has_linked |= try_link_class(THREAD, ik);
       }
     }
 
@@ -781,6 +770,18 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
     }
     // Class linking includes verification which may load more classes.
     // Keep scanning until we have linked no more classes.
+  }
+
+  // Resolve constant pool entries -- we don't load any new classes during this stage
+  {
+    ResourceMark rm(THREAD);
+    CollectClassesForLinking collect_classes;
+    const GrowableArray<OopHandle>* mirrors = collect_classes.mirrors();
+    for (int i = 0; i < mirrors->length(); i++) {
+      OopHandle mirror = mirrors->at(i);
+      InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(mirror.resolve()));
+      AOTConstantPoolResolver::dumptime_resolve_constants(ik, CHECK);
+    }
   }
 
   if (CDSConfig::is_dumping_final_static_archive()) {
@@ -823,8 +824,14 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
       // When the new -XX:AOTMode=create flag is used, we can't return
       // to the JLI launcher, as the launcher will fail when trying to
       // run the main class, which is not what we want.
-      tty->print_cr("AOTCache creation is complete: %s", AOTCache);
-      vm_exit(0);
+      struct stat st;
+      if (os::stat(AOTCache, &st) != 0) {
+        tty->print_cr("AOTCache creation failed: %s", AOTCache);
+        vm_exit(0);
+      } else {
+        tty->print_cr("AOTCache creation is complete: %s " INT64_FORMAT " bytes", AOTCache, (int64_t)(st.st_size));
+        vm_exit(0);
+      }
     }
   }
 }
@@ -926,6 +933,18 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
     }
   }
 
+#if INCLUDE_CDS_JAVA_HEAP
+  if (CDSConfig::is_dumping_heap()) {
+    assert(CDSConfig::allow_only_single_java_thread(), "Required");
+    if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
+      log_info(cds)("archivedBootLayer not available, disabling full module graph");
+      CDSConfig::stop_dumping_full_module_graph();
+    }
+    // Do this before link_shared_classes(), as the following line may load new classes.
+    HeapShared::init_for_dumping(CHECK);
+  }
+#endif
+
   if (CDSConfig::is_dumping_final_static_archive()) {
     if (ExtraSharedClassListFile) {
       log_info(cds)("Loading extra classes from %s ...", ExtraSharedClassListFile);
@@ -941,16 +960,15 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   // were not explicitly specified in the classlist. E.g., if an interface implemented by class K
   // fails verification, all other interfaces that were not specified in the classlist but
   // are implemented by K are not verified.
-  link_shared_classes(false/*not from jcmd*/, CHECK);
+  link_shared_classes(CHECK);
   log_info(cds)("Rewriting and linking classes: done");
+
+  if (CDSConfig::is_dumping_regenerated_lambdaform_invokers()) {
+    LambdaFormInvokers::regenerate_holder_classes(CHECK);
+  }
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
-      log_info(cds)("archivedBootLayer not available, disabling full module graph");
-      CDSConfig::stop_dumping_full_module_graph();
-    }
-    HeapShared::init_for_dumping(CHECK);
     ArchiveHeapWriter::init();
     if (CDSConfig::is_dumping_full_module_graph()) {
       ClassLoaderDataShared::ensure_module_entry_tables_exist();
