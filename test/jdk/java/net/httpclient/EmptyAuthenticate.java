@@ -71,8 +71,9 @@ class EmptyAuthenticate {
     @ParameterizedTest
     @MethodSource("args")
     void test(Version version, boolean secure) throws Exception {
-        String uriPath = "/%s/%s/%s".formatted(EmptyAuthenticate.class.getSimpleName(), version, secure ? 's' : 'c');
-        HttpTestServer server = createServer(version, secure, uriPath);
+        String handlerPath = "/%s/%s/".formatted(EmptyAuthenticate.class.getSimpleName(), version)
+        String uriPath = handlerPath + (secure ? 's' : 'c');
+        HttpTestServer server = createServer(version, secure, handlerPath);
         try (HttpClient client = createClient(version, secure)) {
             HttpRequest request = createRequest(server, secure, uriPath);
             HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
