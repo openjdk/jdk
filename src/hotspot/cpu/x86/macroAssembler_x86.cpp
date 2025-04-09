@@ -2580,7 +2580,27 @@ void MacroAssembler::movflt(XMMRegister dst, AddressLiteral src, Register rscrat
 }
 
 bool MacroAssembler::is_r12_zero() {
-  return (UseCompressedOops && CompressedOops::base() == nullptr);
+  if (Universe::heap() == nullptr) {
+    // Heap is not yet initialized, we do not know compressed oops base.
+    // Base can technically be zero, but it is not worth checking at runtime.
+    return false;
+  }
+  if (UseCompressedOops && CompressedOops::base() == nullptr) {
+#ifdef ASSERT
+    // Verify the register is indeed zero. Be careful not to clobber
+    // the flags, and/or explode the generated code size. A simple HLT
+    // would be enough to crash near the actual problematic site.
+    Label L_correct;
+    pushf();
+    testptr(r12_heapbase, r12_heapbase);
+    jccb(Assembler::equal, L_correct);
+    hlt();
+    bind(L_correct);
+    popf();
+#endif
+    return true;
+  }
+  return false;
 }
 
 void MacroAssembler::movptr(Register dst, Register src) {
@@ -2593,7 +2613,6 @@ void MacroAssembler::movptr(Register dst, Address src) {
 
 // src should NEVER be a real pointer. Use AddressLiteral for true pointers
 void MacroAssembler::movptr(Register dst, intptr_t src) {
-#ifdef _LP64
   if ((src == 0) && is_r12_zero() && (dst != r12_heapbase)) {
     movq(dst, r12_heapbase);
   } else if (is_uimm32(src)) {
@@ -2603,9 +2622,6 @@ void MacroAssembler::movptr(Register dst, intptr_t src) {
   } else {
     mov64(dst, src);
   }
-#else
-  movl(dst, src);
-#endif
 }
 
 void MacroAssembler::movptr(Address dst, Register src) {
@@ -2613,16 +2629,11 @@ void MacroAssembler::movptr(Address dst, Register src) {
 }
 
 void MacroAssembler::movptr(Address dst, int32_t src) {
-#ifdef _LP64
   if ((src == 0) && is_r12_zero()) {
     movq(dst, r12_heapbase);
   } else {
     movslq(dst, src);
   }
-#else
-  movl(dst, src);
-#endif
-
 }
 
 void MacroAssembler::movdqu(Address dst, XMMRegister src) {
