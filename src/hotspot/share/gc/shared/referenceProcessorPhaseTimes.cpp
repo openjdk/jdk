@@ -267,7 +267,6 @@ void ReferenceProcessorPhaseTimes::print_reference(ReferenceType ref_type, uint 
 
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    ResourceMark rm;
 
     int const ref_type_index = ref_type_2_index(ref_type);
 

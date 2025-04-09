@@ -2108,7 +2108,12 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_RoundDoubleModeV:
       return SuperwordUseVSX;
     case Op_PopCountVI:
+    case Op_PopCountVL:
       return (SuperwordUseVSX && UsePopCountInstruction);
+    case Op_CountLeadingZerosV:
+      return SuperwordUseVSX && UseCountLeadingZerosInstructionsPPC64;
+    case Op_CountTrailingZerosV:
+      return SuperwordUseVSX && UseCountTrailingZerosInstructionsPPC64;
     case Op_FmaF:
     case Op_FmaD:
       return UseFMA;
@@ -9532,28 +9537,6 @@ instruct sqrtF_reg(regF dst, regF src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct roundDouble_nop(regD dst) %{
-  match(Set dst (RoundDouble dst));
-  ins_cost(0);
-
-  format %{ " -- \t// RoundDouble not needed - empty" %}
-  size(0);
-  // PPC results are already "rounded" (i.e., normal-format IEEE).
-  ins_encode( /*empty*/ );
-  ins_pipe(pipe_class_default);
-%}
-
-instruct roundFloat_nop(regF dst) %{
-  match(Set dst (RoundFloat dst));
-  ins_cost(0);
-
-  format %{ " -- \t// RoundFloat not needed - empty" %}
-  size(0);
-  // PPC results are already "rounded" (i.e., normal-format IEEE).
-  ins_encode( /*empty*/ );
-  ins_pipe(pipe_class_default);
-%}
-
 
 // Multiply-Accumulate
 // src1 * src2 + src3
@@ -14077,10 +14060,11 @@ instruct vsqrt2D_reg(vecX dst, vecX src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Vector Population Count Instructions
+// Vector Population Count and Zeros Count Instructions
 
 instruct vpopcnt_reg(vecX dst, vecX src) %{
   match(Set dst (PopCountVI src));
+  match(Set dst (PopCountVL src));
   format %{ "VPOPCNT $dst,$src\t// pop count packed" %}
   size(4);
   ins_encode %{
@@ -14097,6 +14081,58 @@ instruct vpopcnt_reg(vecX dst, vecX src) %{
         break;
       case T_LONG:
         __ vpopcntd($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vcount_leading_zeros_reg(vecX dst, vecX src) %{
+  match(Set dst (CountLeadingZerosV src));
+  format %{ "VCLZ $dst,$src\t// leading zeros count packed" %}
+  size(4);
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_BYTE:
+        __ vclzb($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_SHORT:
+        __ vclzh($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_INT:
+        __ vclzw($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_LONG:
+        __ vclzd($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vcount_trailing_zeros_reg(vecX dst, vecX src) %{
+  match(Set dst (CountTrailingZerosV src));
+  format %{ "VCTZ $dst,$src\t// trailing zeros count packed" %}
+  size(4);
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_BYTE:
+        __ vctzb($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_SHORT:
+        __ vctzh($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_INT:
+        __ vctzw($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_LONG:
+        __ vctzd($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
         break;
       default:
         ShouldNotReachHere();

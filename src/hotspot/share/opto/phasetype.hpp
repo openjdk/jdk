@@ -64,14 +64,17 @@
   flags(AFTER_LOOP_PEELING,             "After Loop Peeling") \
   flags(BEFORE_LOOP_UNSWITCHING,        "Before Loop Unswitching") \
   flags(AFTER_LOOP_UNSWITCHING,         "After Loop Unswitching") \
+  flags(BEFORE_LOOP_MULTIVERSIONING,    "Before Loop Multiversioning") \
+  flags(AFTER_LOOP_MULTIVERSIONING,     "After Loop Multiversioning") \
   flags(BEFORE_RANGE_CHECK_ELIMINATION, "Before Range Check Elimination") \
   flags(AFTER_RANGE_CHECK_ELIMINATION,  "After Range Check Elimination") \
   flags(BEFORE_PRE_MAIN_POST,           "Before Pre/Main/Post Loops") \
   flags(AFTER_PRE_MAIN_POST,            "After Pre/Main/Post Loops") \
-  flags(AUTO_VECTORIZATION1_BEFORE_APPLY,       "AutoVectorization 1, Before Apply") \
-  flags(AUTO_VECTORIZATION2_AFTER_REORDER,      "AutoVectorization 2, After Apply Memop Reordering") \
-  flags(AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, "AutoVectorization 3, After Adjusting Pre-Loop Limit") \
-  flags(AUTO_VECTORIZATION4_AFTER_APPLY,        "AutoVectorization 4, After Apply") \
+  flags(AUTO_VECTORIZATION1_BEFORE_APPLY,                     "AutoVectorization 1, Before Apply") \
+  flags(AUTO_VECTORIZATION2_AFTER_REORDER,                    "AutoVectorization 2, After Apply Memop Reordering") \
+  flags(AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT,               "AutoVectorization 3, After Adjusting Pre-Loop Limit") \
+  flags(AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, "AutoVectorization 4, After Adding Speculative Runtime Checks") \
+  flags(AUTO_VECTORIZATION5_AFTER_APPLY,                      "AutoVectorization 5, After Apply") \
   flags(BEFORE_CLOOPS,                  "Before CountedLoop") \
   flags(AFTER_CLOOPS,                   "After CountedLoop") \
   flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
@@ -85,6 +88,7 @@
   flags(CCP1,                           "PhaseCCP 1") \
   flags(ITER_GVN2,                      "Iter GVN 2") \
   flags(PHASEIDEALLOOP_ITERATIONS,      "PhaseIdealLoop iterations") \
+  flags(AFTER_MERGE_STORES,             "After Merge Stores") \
   flags(BEFORE_MACRO_EXPANSION ,        "Before Macro Expansion") \
   flags(AFTER_MACRO_EXPANSION_STEP,     "After Macro Expansion Step") \
   flags(AFTER_MACRO_EXPANSION,          "After Macro Expansion") \
