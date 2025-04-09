@@ -573,6 +573,24 @@ bool CDSConfig::is_logging_lambda_form_invokers() {
   return ClassListWriter::is_enabled() || is_dumping_dynamic_archive();
 }
 
+bool CDSConfig::is_dumping_regenerated_lambdaform_invokers() {
+  if (is_dumping_final_static_archive()) {
+    // No need to regenerate -- the lambda form invokers should have been regenerated
+    // in the preimage archive (if allowed)
+    return false;
+  } else if (is_dumping_dynamic_archive() && is_using_aot_linked_classes()) {
+    // The base archive has aot-linked classes that may have AOT-resolved CP references
+    // that point to the lambda form invokers in the base archive. Such pointers will
+    // be invalid if lambda form invokers are regenerated in the dynamic archive.
+    return false;
+  } else if (CDSConfig::is_dumping_method_handles()) {
+    // Work around JDK-8310831, as some methods in lambda form holder classes may not get generated.
+    return false;
+  } else {
+    return is_dumping_archive();
+  }
+}
+
 void CDSConfig::stop_using_optimized_module_handling() {
   _is_using_optimized_module_handling = false;
   _is_dumping_full_module_graph = false; // This requires is_using_optimized_module_handling()
@@ -648,11 +666,15 @@ void CDSConfig::log_reasons_for_not_dumping_heap() {
   log_info(cds)("Archived java heap is not supported: %s", reason);
 }
 
+// This is *Legacy* optimization for lambdas before JEP 483. May be removed in the future.
+bool CDSConfig::is_dumping_lambdas_in_legacy_mode() {
+  return !is_dumping_method_handles();
+}
+
 #if INCLUDE_CDS_JAVA_HEAP
 bool CDSConfig::are_vm_options_incompatible_with_dumping_heap() {
   return check_options_incompatible_with_dumping_heap() != nullptr;
 }
-
 
 bool CDSConfig::is_dumping_heap() {
   if (!(is_dumping_classic_static_archive() || is_dumping_final_static_archive())

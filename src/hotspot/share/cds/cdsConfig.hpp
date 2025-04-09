@@ -131,11 +131,15 @@ public:
   // Misc CDS features
   static bool allow_only_single_java_thread()                NOT_CDS_RETURN_(false);
 
+  // This is *Legacy* optimization for lambdas before JEP 483. May be removed in the future.
+  static bool is_dumping_lambdas_in_legacy_mode()            NOT_CDS_RETURN_(false);
+
   // optimized_module_handling -- can we skip some expensive operations related to modules?
   static bool is_using_optimized_module_handling()           { return CDS_ONLY(_is_using_optimized_module_handling) NOT_CDS(false); }
   static void stop_using_optimized_module_handling()         NOT_CDS_RETURN;
 
   static bool is_logging_lambda_form_invokers()              NOT_CDS_RETURN_(false);
+  static bool is_dumping_regenerated_lambdaform_invokers()   NOT_CDS_RETURN_(false);
 
   static bool is_dumping_aot_linked_classes()                NOT_CDS_JAVA_HEAP_RETURN_(false);
   static bool is_using_aot_linked_classes()                  NOT_CDS_JAVA_HEAP_RETURN_(false);

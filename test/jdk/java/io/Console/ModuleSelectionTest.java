@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 /**
  * @test
- * @bug 8295803 8299689
+ * @bug 8295803 8299689 8351435
  * @summary Tests System.console() returns correct Console (or null) from the expected
  *          module.
  * @modules java.base/java.io:+open
- * @run main/othervm ModuleSelectionTest jdk.internal.le
+ * @run main/othervm ModuleSelectionTest java.base
  * @run main/othervm -Djdk.console=jdk.internal.le ModuleSelectionTest jdk.internal.le
  * @run main/othervm -Djdk.console=java.base ModuleSelectionTest java.base
  * @run main/othervm --limit-modules java.base ModuleSelectionTest java.base

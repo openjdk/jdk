@@ -34,6 +34,7 @@ import java.util.jar.JarFile;
 
 import jdk.internal.util.OperatingSystem;
 import sun.net.util.URLUtil;
+import sun.net.www.ParseUtil;
 import static jdk.internal.util.Exceptions.filterJarName;
 import static jdk.internal.util.Exceptions.throwException;
 
@@ -94,7 +95,7 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
             return get(url, false);
         }
         URL patched = urlFor(url);
-        if (!URLJarFile.isFileURL(patched)) {
+        if (!ParseUtil.isLocalFileURL(patched)) {
             // A temporary file will be created, we can prepopulate
             // the cache in this case.
             return get(url, useCaches);
@@ -160,9 +161,10 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
             // Deal with UNC pathnames specially. See 4180841
 
             String host = url.getHost();
-            if (host != null && !host.isEmpty() &&
-                    !host.equalsIgnoreCase("localhost")) {
-
+            // Subtly different from ParseUtil.isLocalFileURL, for historical reasons
+            boolean isLocalFile = ParseUtil.isLocalFileURL(url) && !"~".equals(host);
+            // For remote hosts, change 'file://host/folder/data.xml' to 'file:////host/folder/data.xml'
+            if (!isLocalFile) {
                 @SuppressWarnings("deprecation")
                 var _unused = url = new URL("file", "", "//" + host + url.getPath());
             }

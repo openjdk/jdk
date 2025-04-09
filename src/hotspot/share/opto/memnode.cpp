@@ -289,10 +289,17 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
         toop->isa_instptr() &&
         toop->is_instptr()->instance_klass()->is_java_lang_Object() &&
         toop->offset() == Type::OffsetBot)) {
-    // compress paths and change unreachable cycles to TOP
-    // If not, we can update the input infinitely along a MergeMem cycle
-    // Equivalent code in PhiNode::Ideal
-    Node* m  = phase->transform(mmem);
+    // IGVN _delay_transform may be set to true and if that is the case and mmem
+    // is already a registered node then the validation inside transform will
+    // complain.
+    Node* m = mmem;
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    if (igvn == nullptr || !igvn->delay_transform()) {
+      // compress paths and change unreachable cycles to TOP
+      // If not, we can update the input infinitely along a MergeMem cycle
+      // Equivalent code in PhiNode::Ideal
+      m = phase->transform(mmem);
+    }
     // If transformed to a MergeMem, get the desired slice
     // Otherwise the returned node represents memory for every slice
     mem = (m->is_MergeMem())? m->as_MergeMem()->memory_at(alias_idx) : m;

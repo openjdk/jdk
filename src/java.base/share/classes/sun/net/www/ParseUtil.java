@@ -509,6 +509,22 @@ public final class ParseUtil {
         }
     }
 
+    /**
+     * {@return true if the url is a file: URL for a 'local file' as defined by RFC 8089, Section 2}
+     *
+     * For unknown historical reasons, this method deviates from RFC 8089
+     * by allowing "~" as an alias for 'localhost'
+     *
+     * @param url the URL which may be a local file URL
+     */
+    public static boolean isLocalFileURL(URL url) {
+        if (url.getProtocol().equalsIgnoreCase("file")) {
+            String host = url.getHost();
+            return host == null || host.isEmpty() || host.equals("~") ||
+                    host.equalsIgnoreCase("localhost");
+        }
+        return false;
+    }
 
     // -- Character classes for parsing --
 

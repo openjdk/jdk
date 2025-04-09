@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
  * @build SSLContextTemplate
  * @run main/othervm SSLEngineTemplate
  */
+
+import java.util.Objects;
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import java.nio.ByteBuffer;
@@ -263,5 +265,76 @@ public class SSLEngineTemplate extends SSLContextTemplate {
         b.position(b.limit());
         a.limit(a.capacity());
         b.limit(b.capacity());
+    }
+
+    /**
+     * Given a TLS record containing one or more handshake messages, return
+     * the specific handshake message as a ByteBuffer (a slice of the record)
+     *
+     * @param tlsRecord A ByteBuffer containing a TLS record.  It is
+     *         assumed that the position of the ByteBuffer is on the
+     *         first byte of the TLS record header.
+     * @param hsMsgId The message identifier for the handshake message
+     *         being sought.
+     *         <a
+     *         href="https://datatracker.ietf.org/doc/html/rfc8446#appendix-B.3">
+     *         Message Identifiers
+     *         </a>
+     * @param isDtls Indicates whether DTLS protocol being used.
+     * @return a ByteBuffer containing the TLS handshake message.
+     *         The position of the returned ByteBuffer will be on the
+     *         first byte of the TLS handshake message data,
+     *         immediately following the handshake header.
+     *         If the message is not found, null will be returned.
+     * @throws SSLException if the incoming ByteBuffer does not contain
+     *         a well-formed TLS message.
+     */
+    protected static ByteBuffer extractHandshakeMsg(
+            ByteBuffer tlsRecord, int hsMsgId, boolean isDtls)
+            throws SSLException {
+        Objects.requireNonNull(tlsRecord);
+        tlsRecord.mark();
+
+        // Process the TLS record header
+        int type = Byte.toUnsignedInt(tlsRecord.get());
+        int ver_major = Byte.toUnsignedInt(tlsRecord.get());
+        int ver_minor = Byte.toUnsignedInt(tlsRecord.get());
+        // Skip DTLS-specific bytes
+        if (isDtls) {
+            tlsRecord.position(tlsRecord.position() + 8);
+        }
+        int recLen = Short.toUnsignedInt(tlsRecord.getShort());
+
+        if (recLen > tlsRecord.remaining()) {
+            throw new SSLException("Incomplete record in buffer: " +
+                                   "Record length = " + recLen
+                                   + ", Remaining = " +
+                                   tlsRecord.remaining());
+        }
+
+        while (tlsRecord.hasRemaining()) {
+            // Grab the handshake message header.
+            int msgHdr = tlsRecord.getInt();
+            int msgType = (msgHdr >> 24) & 0x000000FF;
+            int msgLen = msgHdr & 0x00FFFFFF;
+            // Skip DTLS-specific bytes
+            if (isDtls) {
+                tlsRecord.position(tlsRecord.position() + 8);
+            }
+
+            if (msgType == hsMsgId) {
+                // Slice the buffer such that it contains the entire
+                // handshake message (less the handshake header).
+                ByteBuffer buf = tlsRecord.slice(tlsRecord.position(), msgLen);
+                tlsRecord.reset();
+                return buf;
+            } else {
+                // Skip to the next handshake message, if there is one
+                tlsRecord.position(tlsRecord.position() + msgLen);
+            }
+        }
+
+        tlsRecord.reset();
+        return null;
     }
 }
