@@ -75,7 +75,8 @@ public class TestHeapDumpOnOutOfMemoryError {
     }
 
     static void test(String type) throws Exception {
-        String heapdumpFilename = type + ".hprof";
+        // Test using %p pid substitution in HeapDumpPath:
+        String heapdumpFilename = type + ".%p.hprof";
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=" + heapdumpFilename,
                 // Note: When trying to provoke a metaspace OOM we may generate a lot of classes. In debug VMs this
@@ -95,27 +96,10 @@ public class TestHeapDumpOnOutOfMemoryError {
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.stdoutShouldNotBeEmpty();
-        output.shouldContain("Dumping heap to " + type + ".hprof");
-        File dump = new File(heapdumpFilename);
-        Asserts.assertTrue(dump.exists() && dump.isFile(), "Could not find dump file " + dump.getAbsolutePath());
-        HprofParser.parse(new File(heapdumpFilename));
-
-        // Test again using %p pid substitution in HeapDumpPath:
-        heapdumpFilename = type + ".%p.hprof";
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+HeapDumpOnOutOfMemoryError",
-                "-XX:HeapDumpPath=" + heapdumpFilename,
-                "-XX:MaxMetaspaceSize=16m",
-                "-Xmx128m",
-                Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "-Dx",
-                TestHeapDumpOnOutOfMemoryError.class.getName(), type);
-
-        output = new OutputAnalyzer(pb.start());
-        output.stdoutShouldNotBeEmpty();
-        String actualHeapdumpFilename = type + "." + output.pid() + ".hprof";
-        output.shouldContain("Dumping heap to " + actualHeapdumpFilename);
-        dump = new File(actualHeapdumpFilename);
-        Asserts.assertTrue(dump.exists() && dump.isFile(), "Could not find dump file " + dump.getAbsolutePath());
-        HprofParser.parse(new File(actualHeapdumpFilename));
+        String expectedHeapdumpFilename = type + "." + output.pid() + ".hprof";
+        output.shouldContain("Dumping heap to " + expectedHeapdumpFilename);
+        File dump = new File(expectedHeapdumpFilename);
+        Asserts.assertTrue(dump.exists() && dump.isFile(), "Expected heap dump file " + dump.getAbsolutePath());
+        HprofParser.parse(new File(expectedHeapdumpFilename));
     }
-
 }
