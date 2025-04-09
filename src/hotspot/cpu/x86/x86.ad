@@ -1368,8 +1368,6 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
-    case Op_AddReductionVL:
-      break;
     case Op_AbsVB:
     case Op_AbsVS:
     case Op_AbsVI:
@@ -1553,16 +1551,10 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
-    case Op_SignumF:
-    case Op_SignumD:
-      break;
     case Op_CompressM:
       if (!VM_Version::supports_avx512vl() || !VM_Version::supports_bmi2()) {
         return false;
       }
-      break;
-    case Op_SqrtF:
-    case Op_SqrtD:
       break;
     case Op_ConvF2HF:
     case Op_ConvHF2F:
