@@ -189,7 +189,7 @@ class MemoryOutputStream extends ByteArrayOutputStream {
      * @return current payload size
      */
     public int size() {
-        long size = completedSegmentsTotalBytes + currentSegmentLengthInBytes;
+        long size = completedSegmentsTotalBytes + currentSegmentCount;
         if (size > Integer.MAX_VALUE) {
             throw new IllegalStateException("Current size of this stream cannot be expressed as an int");
         }
@@ -303,6 +303,7 @@ class MemoryOutputStream extends ByteArrayOutputStream {
             currentSegmentCount += len;
         } else {
             // some portion must overflow across segments
+            int overflowLength = len - currentSegmentSpaceAvailable;
             if (currentSegmentSpaceAvailable > 0) {
                 // copy what we can
                 System.arraycopy(b, off, currentSegment, currentSegmentCount, currentSegmentSpaceAvailable);
@@ -312,7 +313,6 @@ class MemoryOutputStream extends ByteArrayOutputStream {
 
             // calculate how much data overflowed and allocate a new segment large enough to
             // accommodate
-            int overflowLength = len - currentSegmentSpaceAvailable;
             allocateExtraCapacity(overflowLength);
 
             // calculate the offset of the remaining data, then copy into the new segment

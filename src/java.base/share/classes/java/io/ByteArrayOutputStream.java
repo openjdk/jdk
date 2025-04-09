@@ -54,7 +54,6 @@ public class ByteArrayOutputStream extends OutputStream {
      *
      * @return a new instance of java.io.ByteArrayOutputStream
      *
-     * @see  java.io.MemoryOutputStream
      * @since 25
      */
     public static ByteArrayOutputStream unsynchronized() {
@@ -68,7 +67,6 @@ public class ByteArrayOutputStream extends OutputStream {
      * @param initialCapacity caller-provided hint about the total payload capacity
      * @return a new instance of java.io.ByteArrayOutputStream
      *
-     * @see java.io.MemoryOutputStream
      * @since 25
      */
     public static ByteArrayOutputStream unsynchronized(int initialCapacity) {
