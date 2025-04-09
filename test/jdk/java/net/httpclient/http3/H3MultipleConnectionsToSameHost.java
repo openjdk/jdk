@@ -231,10 +231,18 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
             List<CompletableFuture<HttpResponse<Void>>> list = new ArrayList<>(max);
             long start2 = System.nanoTime();
             for (int i = 0; i < max; i++) {
+                int rqNum = i;
                 var cf = client.sendAsync(request, BodyHandlers.ofByteArrayConsumer(b-> {}))
-                                .whenComplete((r, t) -> Optional.ofNullable(r)
-                                        .flatMap(HttpResponse::connectionLabel)
-                                        .ifPresent(connections::add));
+                                .whenComplete((r, t) -> {
+                                    Optional.ofNullable(r)
+                                            .flatMap(HttpResponse::connectionLabel)
+                                            .ifPresent(connections::add);
+                                    if (r != null) {
+                                        System.out.println(rqNum + " completed: " + r.connectionLabel());
+                                    } else {
+                                        System.out.println(rqNum + " failed: " + t);
+                                    }
+                                });
                 list.add(cf);
                 //cf.get(); // uncomment to test with serial instead of concurrent requests
             }
@@ -244,7 +252,6 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
                 long elapsed2 = System.nanoTime() - start2;
                 long completed = list.stream().filter(CompletableFuture::isDone)
                         .filter(Predicate.not(CompletableFuture::isCompletedExceptionally)).count();
-                connections.forEach(System.out::println);
                 if (completed > 0) {
                     System.out.println("Next " + completed + " requests took: " + elapsed2 + " nanos ("
                             + TimeUnit.NANOSECONDS.toMillis(elapsed2) + "ms for " + completed + " requests): "
