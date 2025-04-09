@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug     8351110
  * @summary Test verifies that when a JFIF thumbnail may exceed 65535 bytes
