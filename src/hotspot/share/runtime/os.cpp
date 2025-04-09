@@ -2198,12 +2198,10 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
 }
 
 // The scope of NmtVirtualMemoryLocker covers both pd_uncommit_memory and record_virtual_memory_uncommit because
-// these operations must happen atomically to avoid races. For example, if Thread_1 were to uncommit a region, but
-// before Thread_1 can update NMT accounting, Thead_2 commits overlapping the same region and updates NMT,
-// then Thread_1 finishes updating NMT. This would result in NMT perceiving part of the region being uncommited,
-// when it is actually committed. The opposite scenario is not guarded against. pd_commit_memory and
-// record_virtual_memory_commit do not happen atomically. We assume that there is some external synchronization
-// that prevents a region from being uncommitted before it is finished being committed.
+// these operations must happen atomically to avoid races causing NMT to fall out os sync with the OS reality.
+// We do not have the same lock protection for pd_commit_memory and record_virtual_memory_commit.
+// We assume that there is some external synchronization that prevents a region from being uncommitted
+// before it is finished being committed.
 bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
@@ -2227,12 +2225,10 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
 }
 
 // The scope of NmtVirtualMemoryLocker covers both pd_release_memory and record_virtual_memory_release because
-// these operations must happen atomically to avoid races. For example, Thread_1 releases a range, but before
-// Thread_1 can update NMT accounting, Thread_2 reserves the same range and accounts it with NMT,
-// then Thread_1 finishes updating NMT.  This would cause NMT to perceive the range as released, when it is
-// actually reserved. The opposite scenario is not guarded against. pd_reserve_memory and
-// record_virtual_memory_reserve do not happen atomically. We assume that there is some external synchronization
-// that prevents a region from being released before it is finished being reserved.
+// these operations must happen atomically to avoid races causing NMT to fall out os sync with the OS reality.
+// We do not have the same lock protection for pd_reserve_memory and record_virtual_memory_reserve.
+// We assume that there is some external synchronization that prevents a region from being released
+// before it is finished being reserved.
 bool os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
   bool res;

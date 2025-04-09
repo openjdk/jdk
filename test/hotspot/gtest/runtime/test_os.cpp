@@ -28,6 +28,7 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
+#include "testutils.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -1141,10 +1142,8 @@ TEST_VM(os, map_memory_to_file) {
   EXPECT_TRUE(os::write(fd, letters, size));
 
   char* result = os::map_memory_to_file(size, fd, mtTest);
-  EXPECT_TRUE(result != nullptr);
-
-  EXPECT_TRUE(strcmp(letters, result) == 0);
-
+  ASSERT_NOT_NULL(result);
+  EXPECT_EQ(strcmp(letters, result), 0);
   EXPECT_TRUE(os::unmap_memory(result, size));
   ::close(fd);
 }
@@ -1160,8 +1159,8 @@ TEST_VM(os, map_unmap_memory) {
 
   fd = os::open(path, O_RDONLY, 0666);
   char* result = os::map_memory(fd, path, 0, nullptr, size, true, false, mtTest);
-  EXPECT_TRUE(result != nullptr);
-  EXPECT_TRUE(strcmp(letters, result) == 0);
+  ASSERT_NOT_NULL(result);
+  EXPECT_EQ(strcmp(letters, result), 0);
   EXPECT_TRUE(os::unmap_memory(result, size));
   ::close(fd);
 }
@@ -1175,10 +1174,8 @@ TEST_VM(os, map_memory_to_file_aligned) {
   EXPECT_TRUE(os::write(fd, letters, size));
 
   char* result = os::map_memory_to_file_aligned(os::vm_allocation_granularity(), os::vm_allocation_granularity(), fd, mtTest);
-  EXPECT_TRUE(result != nullptr);
-
-  EXPECT_TRUE(strcmp(letters, result) == 0);
-
+  ASSERT_NOT_NULL(result);
+  EXPECT_EQ(strcmp(letters, result), 0);
   EXPECT_TRUE(os::unmap_memory(result, os::vm_allocation_granularity()));
   ::close(fd);
 }
