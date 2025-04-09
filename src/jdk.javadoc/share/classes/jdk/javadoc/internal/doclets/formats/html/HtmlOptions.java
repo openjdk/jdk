@@ -430,7 +430,7 @@ public class HtmlOptions extends BaseOptions {
 
                 new Option(resources, "--syntax-highlight") {
                     @Override
-                    public boolean process(String opt,  List<String> args) {
+                    public boolean process(String opt, List<String> args) {
                         syntaxHighlight = true;
                         return true;
                     }

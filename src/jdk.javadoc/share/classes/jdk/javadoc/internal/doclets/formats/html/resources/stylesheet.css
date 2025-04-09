@@ -27,7 +27,7 @@
     --nav-font-size: 13.4px;
     /* Line height for continuous text blocks */
     --block-line-height: 1.5;
-    --code-line-height: 1.7;
+    --code-line-height: 1.6;
     /* Text colors for body and block elements */
     --body-text-color: #282828;
     --block-text-color: #282828;
@@ -1650,7 +1650,7 @@ table.striped > tbody > tr > th {
 pre.snippet {
     background-color: var(--code-background-color);
     color: var(--snippet-text-color);
-    padding: 16px;
+    padding: 12px;
 }
 div.snippet-container {
     position: relative;
