@@ -972,11 +972,11 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     tree.commit_mapping(0, 10, call_stack_2, true);
 
     tree.uncommit_mapping(0, 5, call_stack_2);
-    // Pre:  .........0********10--------20********40-------100.........
-    //        mtNone    mtTest    mtTest    mtTest    mtTest    mtNone
-    //        Rl        C         Rs        C         Rs        Rl
-    //        -         si_1      si_1      si_1      si_1      -
-    //        -         si_2      -         si_2      -         -
+    // Pre:  .........0*****************10--------20********40-------100.........
+    //        mtNone             mtTest    mtTest    mtTest    mtTest    mtNone
+    //        Rl                 C         Rs        C         Rs        Rl
+    //        -                  si_1      si_1      si_1      si_1      -
+    //        -                  si_2      -         si_2      -         -
     // Post: .........0--------5********10--------20********40-------100.........
     //        mtNone    mtTest   mtTest    mtTest    mtTest    mtTest    mtNone
     //        Rl        Rs       C         Rs        C         Rs        Rl
