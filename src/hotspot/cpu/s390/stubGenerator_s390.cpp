@@ -1479,15 +1479,15 @@ class StubGenerator: public StubCodeGenerator {
     Register tmp = Z_R1; // R1 is free at this point
 
     if (elem_size > 1) {
-      __ rotate_then_insert(byteVal, byteVal, 64 - 2 * 8 , 63 - 8,  8, 0);
+      __ rotate_then_insert(byteVal, byteVal, 64 - 2 * 8 , 63 - 8,  8, false);
     }
 
     if (elem_size > 2) {
-      __ rotate_then_insert(byteVal, byteVal, 64 - 2 * 16, 63 - 16, 16, 0);
+      __ rotate_then_insert(byteVal, byteVal, 64 - 2 * 16, 63 - 16, 16, false);
     }
 
     if (elem_size > 4) {
-      __ rotate_then_insert(byteVal, byteVal, 64 - 2 * 32, 63 - 32, 32, 0);
+      __ rotate_then_insert(byteVal, byteVal, 64 - 2 * 32, 63 - 32, 32, false);
     }
 
     __ z_risbg(tmp, size, 32, 63, 64 - exact_log2(2 * elem_size), /* zero_rest */ true); // just do the right shift and set cc
@@ -1539,7 +1539,6 @@ class StubGenerator: public StubCodeGenerator {
 
       __ z_nill(rScratch1, 7);
       __ z_braz(L_fill8Bytes); // branch if 0
-
 
       __ z_nill(rScratch1, 3);
       __ z_braz(L_fill4Bytes); // branch if 0
