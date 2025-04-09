@@ -190,8 +190,8 @@ public class PreviewAutoSuppress extends TestRunner {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         expected =
-                List.of("Use.java:5:13: compiler.warn.is.preview: preview.api.Outer",
-                        "Use.java:7:35: compiler.warn.is.preview: preview.api.Outer",
+                List.of("Use.java:7:35: compiler.warn.is.preview: preview.api.Outer",
+                        "Use.java:5:13: compiler.warn.is.preview: preview.api.Outer",
                         "2 warnings");
 
         if (!log.equals(expected))
