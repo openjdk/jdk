@@ -1131,6 +1131,7 @@ TEST_VM(os, commit_memory_or_exit) {
 }
 
 #if !defined(_AIX)
+
 TEST_VM(os, map_memory_to_file) {
   const char* letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const size_t size = strlen(letters) +1;
