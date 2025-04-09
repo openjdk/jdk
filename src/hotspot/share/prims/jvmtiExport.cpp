@@ -423,7 +423,9 @@ JvmtiExport::get_jvmti_thread_state(JavaThread *thread, bool allow_suspend) {
   if (thread->is_vthread_mounted() && thread->jvmti_thread_state() == nullptr) {
     JvmtiEventController::thread_started(thread);
     if (allow_suspend && thread->is_suspended()) {
-      // suspend here if there is a suspend request
+      // Suspend here if thread_started got a suspend request during its execution.
+      // Within thread_started we could block on a VM mutex and pick up a suspend
+      // request from debug agent which we need to honor before proceeding.
       ThreadBlockInVM tbivm(thread, true /* allow suspend */);
     }
   }
