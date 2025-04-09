@@ -10974,7 +10974,7 @@ instruct scalar_minmax_HF_reg(regF dst, regF src1, regF src2, kReg ktmp, regF xt
   format %{ "scalar_min_max_fp16 $dst, $src1, $src2\t using $ktmp, $xtmp1 and $xtmp2 as TEMP" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
-    __ scalar_max_min_fp16(opcode, $dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister, $ktmp$$KRegister,
+    __ scalar_max_min_fp16(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $ktmp$$KRegister,
                            $xtmp1$$XMMRegister, $xtmp2$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
@@ -11018,8 +11018,6 @@ instruct vector_binOps_HF_reg(vec dst, vec src1, vec src2)
 %{
   match(Set dst (AddVHF src1 src2));
   match(Set dst (DivVHF src1 src2));
-  match(Set dst (MaxVHF src1 src2));
-  match(Set dst (MinVHF src1 src2));
   match(Set dst (MulVHF src1 src2));
   match(Set dst (SubVHF src1 src2));
   format %{ "vector_binop_fp16 $dst, $src1, $src2" %}
@@ -11071,8 +11069,8 @@ instruct vector_fma_HF_mem(vec dst, memory src1, vec src2)
 
 instruct vector_minmax_HF_reg(vec dst, vec src1, vec src2, kReg ktmp, vec xtmp1, vec xtmp2)
 %{
-  match(Set dst (MinVHF src1 (VectorReinterpret src2)));
-  match(Set dst (MaxVHF src1 (VectorReinterpret src2)));
+  match(Set dst (MinVHF src1 src2));
+  match(Set dst (MaxVHF src1 src2));
   effect(TEMP_DEF dst, TEMP ktmp, TEMP xtmp1, TEMP xtmp2);
   format %{ "vector_min_max_fp16 $dst, $src1, $src2\t using $ktmp, $xtmp1 and $xtmp2 as TEMP" %}
   ins_encode %{
