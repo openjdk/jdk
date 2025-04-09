@@ -3636,9 +3636,12 @@ const char* InstanceKlass::init_state_name() const {
 void InstanceKlass::print_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   Klass::print_on(st);
-
   if (UseCompressedClassPointers) {
-    st->print(BULLET"narrow Klass:    %x", CompressedKlassPointers::encode(const_cast<InstanceKlass*>(this))); st->cr();
+    if (CompressedKlassPointers::is_encodable(this)) {
+      st->print(BULLET"narrow Klass:    %x", CompressedKlassPointers::encode(const_cast<InstanceKlass*>(this)));
+    } else {
+      st->print(BULLET"narrow Klass:    (not in class space)");
+    }
   }
   st->print(BULLET"instance size:     %d", size_helper());                        st->cr();
   st->print(BULLET"klass size:        %d", size());                               st->cr();
