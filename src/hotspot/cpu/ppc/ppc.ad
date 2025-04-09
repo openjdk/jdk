@@ -2340,44 +2340,11 @@ bool Matcher::is_generic_vector(MachOper* opnd)  {
   return false;
 }
 
-// Constants for c2c and c calling conventions.
-
-const MachRegisterNumbers iarg_reg[8] = {
-  R3_num, R4_num, R5_num, R6_num,
-  R7_num, R8_num, R9_num, R10_num
-};
-
-const MachRegisterNumbers farg_reg[13] = {
-  F1_num, F2_num, F3_num, F4_num,
-  F5_num, F6_num, F7_num, F8_num,
-  F9_num, F10_num, F11_num, F12_num,
-  F13_num
-};
-
-const MachRegisterNumbers vsarg_reg[32] = {
-  VSR32_num, VSR33_num, VSR34_num, VSR35_num,
-  VSR36_num, VSR37_num, VSR38_num, VSR39_num,
-  VSR40_num, VSR41_num, VSR42_num, VSR43_num,
-  VSR44_num, VSR45_num, VSR46_num, VSR47_num,
-  VSR48_num, VSR49_num, VSR50_num, VSR51_num,
-  VSR52_num, VSR53_num, VSR54_num, VSR55_num,
-  VSR56_num, VSR57_num, VSR58_num, VSR59_num,
-  VSR60_num, VSR61_num, VSR62_num, VSR63_num
-};
-
-const int num_iarg_registers = sizeof(iarg_reg) / sizeof(iarg_reg[0]);
-
-const int num_farg_registers = sizeof(farg_reg) / sizeof(farg_reg[0]);
-
-const int num_vsarg_registers = sizeof(vsarg_reg) / sizeof(vsarg_reg[0]);
-
 // Return whether or not this register is ever used as an argument. This
 // function is used on startup to build the trampoline stubs in generateOptoStub.
 // Registers not mentioned will be killed by the VM call in the trampoline, and
 // arguments in those registers not be available to the callee.
 bool Matcher::can_be_java_arg(int reg) {
-  // We return true for all registers contained in iarg_reg[] and
-  // farg_reg[] and their virtual halves.
   // We must include the virtual halves in order to get STDs and LDs
   // instead of STWs and LWs in the trampoline stubs.
 
