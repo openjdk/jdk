@@ -33,7 +33,7 @@ import jtreg.SkippedException;
  * @bug 4201964
  * @summary Tests that JComboBox's arrow button isn't drawn too wide in Windows Look&Feel
  * @requires (os.family == "windows")
- * @library /open/test/jdk/java/awt/regtesthelpers /open/test/lib
+ * @library /java/awt/regtesthelpers /test/lib
  * @build PassFailJFrame
  * @run main/manual bug4201964
  */

@@ -33,7 +33,7 @@ import jtreg.SkippedException;
  * @bug 4249732
  * @requires (os.family == "windows")
  * @summary Tests that Windows editable combo box selects text picked from its list
- * @library /open/test/jdk/java/awt/regtesthelpers /open/test/lib
+ * @library /java/awt/regtesthelpers /test/lib
  * @build PassFailJFrame
  * @run main/manual bug4249732
  */
