@@ -420,8 +420,9 @@ public class CDS {
         /**
          * Load the class of the given <code>name</code> from the given <code>source</code>.
          * <p>
-         * All unregistered super classes and interfaces of the named class must already be loaded
-         * by this class loader instance.
+         * All super classes and interfaces of the named class must have already been loaded:
+         * either defined by this class loader (unregistered ones) or loaded, possibly indirectly,
+         * by the system class loader (registered ones).
          *
          * @param name the name of the class to be loaded.
          * @param source path to a directory or a JAR file from which the named class should be
@@ -430,19 +431,22 @@ public class CDS {
         private Class<?> load(String name, String source) throws IOException {
             final Source resolvedSource = resolveSource(source);
             final byte[] bytes = resolvedSource.readClassFile(name);
-            // While executing this VM may invoke loadClass() to load supers and interfaces of
-            // this unregistered class. This should only happen for registered supers and
-            // interfaces because all unregistered ones should have already been loaded by this
-            // class loader. Thus it is safe to delegate their loading to system class loader
-            // (our parent) - this is what the default implementation of loadClass() will do.
+            // 'defineClass()' may cause loading of supertypes of this unregistered class.
+            //
+            // For any supertype S named SN the following is ensured by the order of classes in the
+            // classlist:
+            // - if S is an unregistered class it must have already been defined by this class
+            //   loader and thus will be found by 'this.findLoadedClass(SN)',
+            // - if S is not an unregistered class S must have already been loaded by the system
+            //   class loader (as an initiating loader) and thus can be found by delegating to it by
+            //   calling 'this.getParent().loadClass(SN, false)'.
+            // See the implementation of 'ClassLoader.loadClass()' for details.
+            //
+            // Therefore, we should resolve all supertypes to the expected ones as specified by the
+            // "super:" and "interfaces:" attributes in the classlist. This invariant is validated
+            // by the C++ function 'ClassListParser::load_class_from_source()'.
+            assert getParent() == getSystemClassLoader();
             return defineClass(name, bytes, 0, bytes.length);
-        }
-
-        @Override
-        protected Class<?> findClass(String name) throws ClassNotFoundException {
-            // Unregistered classes should be found in load(...), registered classes should be
-            // handeled by parent loaders
-            throw new ClassNotFoundException(name);
         }
     }
 }
