@@ -2010,6 +2010,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
 
   // If sov == 0, limit's type always satisfies the condition, for
   // example, when it is an array length.
+
   if (sov > 0) {
     // (1) Loop Limit Check Predicate is required because we could not statically prove that
     //     limit + final_correction = adjusted_limit - 1 + stride <= max_int
