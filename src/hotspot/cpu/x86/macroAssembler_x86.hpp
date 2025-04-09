@@ -59,13 +59,10 @@ class MacroAssembler: public Assembler {
   // may customize this version by overriding it for its purposes (e.g., to save/restore
   // additional registers when doing a VM call).
   //
-  // If no java_thread register is specified (noreg) than rdi will be used instead. call_VM_base
-  // returns the register which contains the thread upon return. If a thread register has been
-  // specified, the return value will correspond to that register. If no last_java_sp is specified
-  // (noreg) than rsp will be used instead.
+  // call_VM_base returns the register which contains the thread upon return.
+  // If no last_java_sp is specified (noreg) than rsp will be used instead.
   virtual void call_VM_base(           // returns the register containing the thread upon return
     Register oop_result,               // where an oop-result ends up if any; use noreg otherwise
-    Register java_thread,              // the thread if computed before     ; use noreg otherwise
     Register last_java_sp,             // to set up last_Java_frame in stubs; use noreg otherwise
     address  entry_point,              // the entry point
     int      number_of_arguments,      // the number of arguments (w/o thread) to pop after the call
@@ -85,8 +82,8 @@ class MacroAssembler: public Assembler {
  // These routines should emit JVMTI PopFrame and ForceEarlyReturn handling code.
  // The implementation is only non-empty for the InterpreterMacroAssembler,
  // as only the interpreter handles PopFrame and ForceEarlyReturn requests.
- virtual void check_and_handle_popframe(Register java_thread);
- virtual void check_and_handle_earlyret(Register java_thread);
+ virtual void check_and_handle_popframe();
+ virtual void check_and_handle_earlyret();
 
   Address as_Address(AddressLiteral adr);
   Address as_Address(ArrayAddress adr, Register rscratch);
@@ -224,9 +221,10 @@ class MacroAssembler: public Assembler {
   void enter();
   void leave();
 
-  // Support for getting the JavaThread pointer (i.e.; a reference to thread-local information)
-  // The pointer will be loaded into the thread register.
-  void get_thread(Register thread);
+  // Support for getting the JavaThread pointer (i.e.; a reference to thread-local information).
+  // The pointer will be loaded into the thread register. This is a slow version that does native call.
+  // Normally, JavaThread pointer is available in r15_thread, use that where possible.
+  void get_thread_slow(Register thread);
 
 #ifdef _LP64
   // Support for argument shuffling
@@ -291,8 +289,8 @@ class MacroAssembler: public Assembler {
                Register arg_1, Register arg_2, Register arg_3,
                bool check_exceptions = true);
 
-  void get_vm_result  (Register oop_result, Register thread);
-  void get_vm_result_2(Register metadata_result, Register thread);
+  void get_vm_result  (Register oop_result);
+  void get_vm_result_2(Register metadata_result);
 
   // These always tightly bind to MacroAssembler::call_VM_base
   // bypassing the virtual implementation
@@ -323,35 +321,22 @@ class MacroAssembler: public Assembler {
   void super_call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3);
   void super_call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3, Register arg_4);
 
-  // last Java Frame (fills frame anchor)
-  void set_last_Java_frame(Register thread,
-                           Register last_java_sp,
-                           Register last_java_fp,
-                           address  last_java_pc,
-                           Register rscratch);
-
-  // thread in the default location (r15_thread on 64bit)
   void set_last_Java_frame(Register last_java_sp,
                            Register last_java_fp,
                            address  last_java_pc,
                            Register rscratch);
 
-#ifdef _LP64
   void set_last_Java_frame(Register last_java_sp,
                            Register last_java_fp,
                            Label &last_java_pc,
                            Register scratch);
-#endif
 
-  void reset_last_Java_frame(Register thread, bool clear_fp);
-
-  // thread in the default location (r15_thread on 64bit)
   void reset_last_Java_frame(bool clear_fp);
 
   // jobjects
   void clear_jobject_tag(Register possibly_non_local);
-  void resolve_jobject(Register value, Register thread, Register tmp);
-  void resolve_global_jobject(Register value, Register thread, Register tmp);
+  void resolve_jobject(Register value, Register tmp);
+  void resolve_global_jobject(Register value, Register tmp);
 
   // C 'boolean' to Java boolean: x == 0 ? 0 : 1
   void c2bool(Register x);
@@ -762,7 +747,6 @@ public:
                            Label& L_success);
 
   void clinit_barrier(Register klass,
-                      Register thread,
                       Label* L_fast_path = nullptr,
                       Label* L_slow_path = nullptr);
 
@@ -837,7 +821,7 @@ public:
   // Check for reserved stack access in method being exited (for JIT)
   void reserved_stack_check();
 
-  void safepoint_poll(Label& slow_path, Register thread_reg, bool at_return, bool in_nmethod);
+  void safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod);
 
   void verify_tlab();
 
@@ -2247,8 +2231,8 @@ public:
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
-  void lightweight_lock(Register basic_lock, Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
-  void lightweight_unlock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
+  void lightweight_lock(Register basic_lock, Register obj, Register reg_rax, Register tmp, Label& slow);
+  void lightweight_unlock(Register obj, Register reg_rax, Register tmp, Label& slow);
 
 #ifdef _LP64
   void save_legacy_gprs();
