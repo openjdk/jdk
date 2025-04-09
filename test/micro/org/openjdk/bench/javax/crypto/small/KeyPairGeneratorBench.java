@@ -34,7 +34,7 @@ public class KeyPairGeneratorBench extends org.openjdk.bench.javax.crypto.full.K
 
     public static class MLDSA extends KeyPairGeneratorBench {
 
-        @Param({"ML-DSA"})
+        @Param({"ML-DSA-65"})
         private String algorithm;
 
         @Param({"0"}) // ML_DSA key length is not supported
@@ -43,7 +43,7 @@ public class KeyPairGeneratorBench extends org.openjdk.bench.javax.crypto.full.K
 
     public static class MLKEM extends KeyPairGeneratorBench {
 
-        @Param({"ML-KEM"})
+        @Param({"ML-KEM-768"})
         private String algorithm;
 
         @Param({"0"}) // ML-KEM key length is not supported
