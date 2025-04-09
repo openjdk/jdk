@@ -356,7 +356,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
 
         // PSK identity
-        i = buf.get();
+        i = Byte.toUnsignedInt(buf.get());
         if (i > 0) {
             b = new byte[i];
             buf.get(b);
@@ -394,7 +394,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         }
 
         // SNI
-        i = buf.get();  // length
+        i = Byte.toUnsignedInt(buf.get());  // length
         if (i == 0) {
             serverNameIndication = null;
         } else {
@@ -410,7 +410,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         } else {
             requestedServerNames = new ArrayList<>();
             while (len > 0) {
-                int l = buf.get();
+                int l = Byte.toUnsignedInt(buf.get());
                 b = new byte[l];
                 buf.get(b, 0, l);
                 requestedServerNames.add(new SNIHostName(new String(b)));
