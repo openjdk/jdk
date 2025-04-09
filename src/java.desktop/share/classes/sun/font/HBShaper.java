@@ -28,7 +28,6 @@ package sun.font;
 
 import java.awt.geom.Point2D;
 
-import jdk.internal.foreign.NativeMemorySegmentImpl;
 import jdk.internal.foreign.SegmentFactories;
 import sun.font.GlyphLayout.GVData;
 import sun.java2d.Disposer;
@@ -600,7 +599,7 @@ public class HBShaper {
 
         int initialCount = gvdata._count;
 
-        int maxGlyphs = (charCount > glyphCount) ? charCount : glyphCount;
+        int maxGlyphs = Math.max(charCount, glyphCount);
         int maxStore = maxGlyphs + initialCount;
         boolean needToGrow = (maxStore > gvdata._glyphs.length) ||
                              ((maxStore * 2 + 2) > gvdata._positions.length);
@@ -647,7 +646,7 @@ public class HBShaper {
         startPt.y = advY;
     }
 
-    private static NativeMemorySegmentImpl reinterpret(MemorySegment segment, long len) {
+    private static MemorySegment reinterpret(MemorySegment segment, long len) {
         return SegmentFactories.makeNativeSegmentUnchecked(segment.address(), len);
     }
 
