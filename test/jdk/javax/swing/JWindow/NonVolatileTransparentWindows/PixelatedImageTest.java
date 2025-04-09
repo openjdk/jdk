@@ -31,7 +31,7 @@ import javax.swing.border.EmptyBorder;
             when volatile image buffering is disabled.
    @library /java/awt/regtesthelpers
    @build PassFailJFrame
-   @run main/manual PixelatedImageTest
+   @run main PixelatedImageTest
  */
 public class PixelatedImageTest {
 
@@ -54,16 +54,19 @@ public class PixelatedImageTest {
                 .awaitAndCheck();
     }
 
-    private static JDialog createTestUI() {
+    private static JWindow createTestUI() {
+        String text = """
+                This text should appear clear, without any pixelation.
+                The backgroud has to be transparent with no black borders
+                """;
         JTextPane textPane = new JTextPane();
-        textPane.setText("This text should appear clear, without any pixelation.");
+        textPane.setText(text);
         textPane.setEditable(false);
         textPane.setOpaque(false);
         textPane.setBorder(new EmptyBorder(10,10,10,10));
 
-        JDialog dialog = new JDialog();
-        dialog.setUndecorated(true);
-        dialog.setLocationRelativeTo(null);
+        JWindow window = new JWindow();
+        window.setLocationRelativeTo(null);
 
         JPanel panel = new JPanel() {
             @Override
@@ -80,10 +83,10 @@ public class PixelatedImageTest {
         panel.setLayout(new BorderLayout());
         panel.add(textPane, BorderLayout.NORTH);
 
-        dialog.getContentPane().add(panel);
-        dialog.setBackground(new Color(0,0,0,0));
-        dialog.pack();
-        return dialog;
+        window.getContentPane().add(panel);
+        window.setBackground(new Color(0,0,0,0));
+        window.setSize(200, 200);
+        return window;
     }
 }
 
