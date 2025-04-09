@@ -46,7 +46,7 @@ public class LinkableRuntimeImage {
     // The diff files per module for supporting linking from the run-time image
     public static final String DIFF_PATTERN = "jdk/tools/jlink/internal/runtimelink/diff_%s";
     // meta data for upgradable files
-    private static final String UPGRADEABLE_FILES_PATTERN = "jdk/tools/jlink/internal/runtimelink/upgrade_files_%s";
+    private static final String UPGRADEABLE_FILES_PATTERN = "jdk/tools/jlink/internal/runtimelink/upgrade_files_%s.conf";
     private static final Module JDK_JLINK_MOD = LinkableRuntimeImage.class.getModule();
 
     /**

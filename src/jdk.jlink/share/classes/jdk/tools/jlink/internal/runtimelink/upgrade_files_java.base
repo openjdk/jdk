@@ -1,3 +1,0 @@
-# Resource paths of files allowed to be upgraded (in java.base)
-lib/tzdb.dat
-lib/security/cacerts
