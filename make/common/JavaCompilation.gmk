@@ -270,7 +270,7 @@ define SetupJavaCompilationBody
   $1_FLAGS += -g -Xlint:all $$($1_TARGET_RELEASE) $$(PARANOIA_FLAGS)
   $1_FLAGS += $$($1_JAVAC_FLAGS)
 
-  ifeq ($$(JAVAC_WARNINGS_AS_ERRORS), true)
+  ifeq ($$(JAVA_WARNINGS_AS_ERRORS), true)
     $1_FLAGS += -Werror
   endif
 

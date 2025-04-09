@@ -992,12 +992,12 @@ AC_DEFUN([JDKOPT_SETUP_SIGNING_HOOK],
 #
 # Setup how javac should handle warnings.
 #
-AC_DEFUN([JDKOPT_SETUP_JAVAC_WARNINGS],
+AC_DEFUN([JDKOPT_SETUP_JAVA_WARNINGS],
 [
-  UTIL_ARG_ENABLE(NAME: javac-warnings-as-errors, DEFAULT: true,
-      RESULT: JAVAC_WARNINGS_AS_ERRORS,
-      DESC: [consider javac warnings to be an error])
-  AC_SUBST(JAVAC_WARNINGS_AS_ERRORS)
+  UTIL_ARG_ENABLE(NAME: java-warnings-as-errors, DEFAULT: true,
+      RESULT: JAVA_WARNINGS_AS_ERRORS,
+      DESC: [consider java warnings to be an error])
+  AC_SUBST(JAVA_WARNINGS_AS_ERRORS)
 ])
 
 ################################################################################

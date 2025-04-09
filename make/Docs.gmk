@@ -318,7 +318,7 @@ define SetupApiDocsGenerationBody
   # Ignore the doclint warnings in certain packages
   $1_OPTIONS += -Xdoclint/package:$$(call CommaList, $$(addprefix -, \
       $$(JAVADOC_DISABLED_DOCLINT_PACKAGES)))
-  ifeq ($$(JAVAC_WARNINGS_AS_ERRORS), true)
+  ifeq ($$(JAVA_WARNINGS_AS_ERRORS), true)
     $1_OPTIONS += -Werror
   endif
 
