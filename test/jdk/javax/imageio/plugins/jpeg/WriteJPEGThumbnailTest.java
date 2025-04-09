@@ -119,7 +119,7 @@ public class WriteJPEGThumbnailTest {
             writer.setOutput(outputStream);
 
             // Write the main image
-            IIOImage img = new javax.imageio.IIOImage(bi, List.of(thumbnail), null);
+            IIOImage img = new IIOImage(bi, List.of(thumbnail), null);
             writer.write(null, img, null);
         } finally {
             writer.dispose();
