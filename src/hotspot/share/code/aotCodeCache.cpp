@@ -22,8 +22,8 @@
  *
  */
 
+#include "cds/aotCodeAccess.hpp"
 #include "cds/cds_globals.hpp"
-#include "cds/cdsAccess.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -126,11 +126,11 @@ uint AOTCodeCache::max_aot_code_size() {
 
 void AOTCodeCache::initialize() {
   if (LoadAOTCode && (!CDSConfig::is_using_archive() ||
-                       CDSAccess::get_aot_code_size() == 0)) {
+                       AOTCodeAccess::get_aot_code_size() == 0)) {
     if (!CDSConfig::is_using_archive()) {
       log_warning(aot, codecache, init)("AOT Cache is not used");
     }
-    if (CDSAccess::get_aot_code_size() == 0) {
+    if (AOTCodeAccess::get_aot_code_size() == 0) {
       log_warning(aot, codecache, init)("AOT Code Cache is empty");
     }
     exit_vm_on_load_failure();
@@ -221,14 +221,14 @@ AOTCodeCache::AOTCodeCache() :
   // Read header at the begining of cache
   if (_for_read) {
     // Read cache
-    size_t load_size = CDSAccess::get_aot_code_size();
+    size_t load_size = AOTCodeAccess::get_aot_code_size();
     ReservedSpace rs = MemoryReserver::reserve(load_size, mtCode);
     if (!rs.is_reserved()) {
       log_warning(aot, codecache, init)("Failed to reserved %u bytes of memory for mapping AOT code region into AOT Code Cache", (uint)load_size);
       set_failed();
       return;
     }
-    if (!CDSAccess::map_aot_code(rs)) {
+    if (!AOTCodeAccess::map_aot_code(rs)) {
       log_warning(aot, codecache, init)("Failed to read/mmap cached code region into AOT Code Cache");
       set_failed();
       return;
@@ -605,7 +605,7 @@ bool AOTCodeCache::finish_write() {
     // Create ordered search table for entries [id, index];
     uint* search = NEW_C_HEAP_ARRAY(uint, search_count, mtCode);
     // Allocate in AOT Cache buffer
-    char* buffer = (char *)CDSAccess::allocate_aot_code(total_size + DATA_ALIGNMENT);
+    char* buffer = (char *)AOTCodeAccess::allocate_aot_code(total_size + DATA_ALIGNMENT);
     char* start = align_up(buffer, DATA_ALIGNMENT);
     char* current = start + header_size; // Skip header
 

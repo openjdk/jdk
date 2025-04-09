@@ -26,13 +26,13 @@
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotClassLocation.hpp"
+#include "cds/aotCodeAccess.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/cds_globals.hpp"
-#include "cds/cdsAccess.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "cds/classListParser.hpp"
@@ -1233,7 +1233,7 @@ FileMapInfo* MetaspaceShared::open_static_archive() {
     return nullptr;
   }
   FileMapRegion* r = mapinfo->region_at(MetaspaceShared::ac);
-  CDSAccess::set_aot_code_size(r->used_aligned());
+  AOTCodeAccess::set_aot_code_size(r->used_aligned());
   return mapinfo;
 }
 

@@ -22,8 +22,8 @@
  *
  */
 
+#include "cds/aotCodeAccess.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/cdsAccess.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
@@ -38,25 +38,25 @@
 
 static size_t _aot_code_size = 0;
 
-void* CDSAccess::allocate_aot_code(size_t size) {
+void* AOTCodeAccess::allocate_aot_code(size_t size) {
   assert(CDSConfig::is_dumping_final_static_archive(), "must be");
   return (void*)ArchiveBuilder::ac_region_alloc(size);
 }
 
-size_t CDSAccess::get_aot_code_size() {
+size_t AOTCodeAccess::get_aot_code_size() {
   return _aot_code_size;
 }
 
-void CDSAccess::set_aot_code_size(size_t sz) {
+void AOTCodeAccess::set_aot_code_size(size_t sz) {
   _aot_code_size = sz;
 }
 
-bool CDSAccess::is_aot_code_region_empty() {
+bool AOTCodeAccess::is_aot_code_region_empty() {
   assert(CDSConfig::is_dumping_final_static_archive(), "must be");
   return ArchiveBuilder::current()->ac_region()->is_empty();
 }
 
-bool CDSAccess::map_aot_code(ReservedSpace rs) {
+bool AOTCodeAccess::map_aot_code(ReservedSpace rs) {
   FileMapInfo* static_mapinfo = FileMapInfo::current_info();
   assert(UseSharedSpaces && static_mapinfo != nullptr, "must be");
   return static_mapinfo->map_aot_code_region(rs);
