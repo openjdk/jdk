@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,9 +71,10 @@ class EmptyAuthenticate {
     @ParameterizedTest
     @MethodSource("args")
     void test(Version version, boolean secure) throws Exception {
-        HttpTestServer server = createStartedServerRespondingWithEmptyWwwAuthHeader(version, secure);
+        String uriPath = "/%s/%s/%s".formatted(EmptyAuthenticate.class.getSimpleName(), version, secure ? 's' : 'c');
+        HttpTestServer server = createServer(version, secure, uriPath);
         try (HttpClient client = createClient(version, secure)) {
-            HttpRequest request = createRequest(server, secure);
+            HttpRequest request = createRequest(server, secure, uriPath);
             HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
             HttpHeaders responseHeaders = response.headers();
             assertEquals(
@@ -94,13 +95,13 @@ class EmptyAuthenticate {
                         .map(secure -> Arguments.of(version, secure)));
     }
 
-    private static HttpTestServer createStartedServerRespondingWithEmptyWwwAuthHeader(Version version, boolean secure)
+    private static HttpTestServer createServer(Version version, boolean secure, String uriPath)
             throws IOException {
         HttpTestServer server = secure
                 ? HttpTestServer.create(version, SSL_CONTEXT)
                 : HttpTestServer.create(version);
         HttpTestHandler handler = new ServerHandlerRespondingWithEmptyWwwAuthHeader();
-        server.addHandler(handler, "/");
+        server.addHandler(handler, uriPath);
         server.start();
         return server;
     }
@@ -133,8 +134,8 @@ class EmptyAuthenticate {
         return clientBuilder.build();
     }
 
-    private static HttpRequest createRequest(HttpTestServer server, boolean secure) {
-        URI uri = URI.create("%s://%s/".formatted(secure ? "https" : "http", server.serverAuthority()));
+    private static HttpRequest createRequest(HttpTestServer server, boolean secure, String uriPath) {
+        URI uri = URI.create("%s://%s%s".formatted(secure ? "https" : "http", server.serverAuthority(), uriPath));
         return HttpRequest.newBuilder(uri).version(server.getVersion()).GET().build();
     }
 
