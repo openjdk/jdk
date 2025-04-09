@@ -291,30 +291,30 @@ static void record_thread_in_java(const JfrSampleRequest& request, const JfrTick
 }
 
 #ifdef LINUX
-static void record_cpu_time_thread(const JfrSampleRequest* request, const JfrTicks& now, JavaThread* jt, Thread* current) {
+static void record_cpu_time_thread(const JfrCPUTimeSampleRequest* request, const JfrTicks& now, JavaThread* jt, Thread* current) {
   assert(jt != nullptr, "invariant");
   assert(current != nullptr, "invariant");
   frame top_frame;
   const traceid tid = JfrThreadLocal::thread_id(jt);
   bool biased;
-  if (!compute_top_frame(*request, top_frame, jt, &biased)) {
-    JfrCPUTimeThreadSampling::send_empty_event(request->_sample_ticks, now, tid, request->_cpu_time_period);
+  if (!compute_top_frame(request->_request, top_frame, jt, &biased)) {
+    JfrCPUTimeThreadSampling::send_empty_event(request->_request._sample_ticks, now, tid, request->_cpu_time_period);
     return;
   }
   traceid sid;
   {
     ResourceMark rm(current);
     JfrStackTrace stacktrace;
-    if (!stacktrace.record(jt, top_frame, *request)) {
+    if (!stacktrace.record(jt, top_frame, request->_request)) {
       // Unable to record stacktrace. Fail.
-      JfrCPUTimeThreadSampling::send_empty_event(request->_sample_ticks, now, tid, request->_cpu_time_period);
+      JfrCPUTimeThreadSampling::send_empty_event(request->_request._sample_ticks, now, tid, request->_cpu_time_period);
       return;
     }
     sid = JfrStackTraceRepository::add(stacktrace);
   }
   assert(sid != 0, "invariant");
-  JfrCPUTimeThreadSampling::send_event(request->_sample_ticks, now, sid, tid, request->_cpu_time_period, biased);
-  send_safepoint_latency_event(*request, now, sid, jt);
+  JfrCPUTimeThreadSampling::send_event(request->_request._sample_ticks, now, sid, tid, request->_cpu_time_period, biased);
+  send_safepoint_latency_event(request->_request, now, sid, jt);
 }
 #endif
 
@@ -343,7 +343,7 @@ static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl,
   if (jt->has_cpu_time_jfr_requests()) {
     JfrTicks now = JfrTicks::now();
     jt->acquire_cpu_time_jfr_dequeue_lock();
-    JfrSampleRequest* request;
+    JfrCPUTimeSampleRequest* request;
     JfrCPUTimeTraceQueue& queue = jt->cpu_time_jfr_queue();
     while ((request = queue.dequeue()) != nullptr) {
       record_cpu_time_thread(request, now, jt, current);

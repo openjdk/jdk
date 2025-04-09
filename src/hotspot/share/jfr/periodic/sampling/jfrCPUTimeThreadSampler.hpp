@@ -36,6 +36,13 @@ class NonJavaThread;
 #include "memory/padded.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 
+struct JfrCPUTimeSampleRequest {
+  JfrSampleRequest _request;
+  Tickspan _cpu_time_period;
+
+  JfrCPUTimeSampleRequest() {}
+};
+
 // Fixed size async-signal-safe SPSC linear queue backed by an array.
 // Designed to be only used under lock and read linearly
 class JfrCPUTimeTraceQueue {
@@ -44,7 +51,7 @@ class JfrCPUTimeTraceQueue {
   // when the thread is started
   static const u4 CPU_TIME_QUEUE_CAPACITY = 1000;
 
-  JfrSampleRequest* _data;
+  JfrCPUTimeSampleRequest* _data;
   u4 _capacity;
   // next unfilled index
   volatile u4 _head;
@@ -57,10 +64,10 @@ public:
   ~JfrCPUTimeTraceQueue();
 
   // signal safe, but can't be interleaved with dequeue
-  bool enqueue(JfrSampleRequest& trace);
+  bool enqueue(JfrCPUTimeSampleRequest& trace);
 
   // only usable if dequeue lock aquired
-  JfrSampleRequest* dequeue();
+  JfrCPUTimeSampleRequest* dequeue();
 
   u4 size() const;
 

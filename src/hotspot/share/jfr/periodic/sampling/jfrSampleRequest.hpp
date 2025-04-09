@@ -60,7 +60,6 @@ struct JfrSampleRequest {
   void* _sample_pc;
   void* _sample_bcp;
   JfrTicks _sample_ticks;
-  Tickspan _cpu_time_period;
 
   JfrSampleRequest() :
     _sample_sp(nullptr),
