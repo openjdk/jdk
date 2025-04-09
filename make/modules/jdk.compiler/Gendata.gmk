@@ -60,7 +60,7 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK), \
     COMPILER := buildjdk, \
     SRC := $(TOPDIR)/make/langtools/src/classes, \
-    INCLUDES := build/tools/symbolgenerator com/sun/tools/classfile, \
+    INCLUDES := build/tools/symbolgenerator, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javac, \
     DISABLED_WARNINGS := options, \
     JAVAC_FLAGS := \
