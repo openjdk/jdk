@@ -52,6 +52,9 @@ final class StringConcatHelper {
             byte coder  = String.LATIN1;
             for (String c : constants) {
                 length += c.length();
+                if (length < 0) {
+                    throw new OutOfMemoryError("Total length of constants is out of range");
+                }
                 coder  |= c.coder();
             }
             this.constants = constants;
