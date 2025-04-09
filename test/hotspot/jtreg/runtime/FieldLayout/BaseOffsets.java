@@ -29,7 +29,7 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
  */
 /*
  * @test id=no-coops-with-ccp
@@ -39,7 +39,7 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:+UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedOops -XX:+UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
  */
 /*
  * @test id=with-coops-no-ccp
@@ -49,7 +49,7 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:-UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCompressedOops -XX:-UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
  */
 /*
  * @test id=no-coops-no-ccp
@@ -59,7 +59,7 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
  */
 /*
  * @test id=with-coop--with-coh
@@ -69,7 +69,7 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:+UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCompressedOops -XX:+UseCompactObjectHeaders BaseOffsets
  */
 /*
  * @test id=no-coops-with-coh
@@ -79,7 +79,7 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:+UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedOops -XX:+UseCompactObjectHeaders BaseOffsets
  */
 /*
  * @test id=32bit
