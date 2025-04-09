@@ -916,6 +916,11 @@ inline void Assembler::xvrdpic(   VectorSRegister d, VectorSRegister b)         
 inline void Assembler::xvrdpim(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIM_OPCODE | vsrt(d) | vsrb(b)); }
 inline void Assembler::xvrdpip(   VectorSRegister d, VectorSRegister b)                  { emit_int32( XVRDPIP_OPCODE | vsrt(d) | vsrb(b)); }
 
+inline void Assembler::xvminsp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMINSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvmindp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMINDP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvmaxsp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMAXSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+inline void Assembler::xvmaxsp(VectorSRegister d, VectorSRegister a, VectorSRegister b) { emit_int32( XVMAXSP_OPCODE | vsrt(d) | vsra(a) | vsrb(b)); }
+
 inline void Assembler::mtvrd(   VectorRegister d, Register a)               { emit_int32( MTVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
 inline void Assembler::mfvrd(   Register        a, VectorRegister d)         { emit_int32( MFVSRD_OPCODE  | vsrt(d->to_vsr()) | ra(a)); }
 inline void Assembler::mtvrwz(  VectorRegister  d, Register a)               { emit_int32( MTVSRWZ_OPCODE | vsrt(d->to_vsr()) | ra(a)); }

@@ -591,6 +591,10 @@ class Assembler : public AbstractAssembler {
     XVRDPIC_OPCODE = (60u << OPCODE_SHIFT |  235u << 2),
     XVRDPIM_OPCODE = (60u << OPCODE_SHIFT |  249u << 2),
     XVRDPIP_OPCODE = (60u << OPCODE_SHIFT |  233u << 2),
+    XVMINSP_OPCODE = (60u << OPCODE_SHIFT |  200u << 2),
+    XVMINDP_OPCODE = (60u << OPCODE_SHIFT |  232u << 2),
+    XVMAXSP_OPCODE = (60u << OPCODE_SHIFT |  192u << 2),
+    XVMAXDP_OPCODE = (60u << OPCODE_SHIFT |  224u << 2),
 
     // Deliver A Random Number (introduced with POWER9)
     DARN_OPCODE    = (31u << OPCODE_SHIFT |  755u << 1),
@@ -2444,6 +2448,10 @@ class Assembler : public AbstractAssembler {
   inline void xvrdpic(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpim(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpip(  VectorSRegister d, VectorSRegister b);
+  inline void xvminsp(  VectorSRegister d, VectorSRegister b, VectorSRegister b);
+  inline void xvmindp(  VectorSRegister d, VectorSRegister b, VectorSRegister b);
+  inline void xvmaxsp(  VectorSRegister d, VectorSRegister b, VectorSRegister b);
+  inline void xvmaxdp(  VectorSRegister d, VectorSRegister b, VectorSRegister b);
 
   // VSX Extended Mnemonics
   inline void xxspltd(  VectorSRegister d, VectorSRegister a, int x);

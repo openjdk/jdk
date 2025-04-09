@@ -14254,6 +14254,7 @@ instruct vdiv2D_reg(vecX dst, vecX src1, vecX src2) %{
 
 // Vector Min / Max Instructions
 
+// Int
 instruct vminsw_reg(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (MinV src1 src2));
   predicate(n->as_Vector()->length() == 4);
@@ -14276,6 +14277,7 @@ instruct vmaxsw_reg(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_default);
 %}
 
+// Long
 instruct vminsd_reg(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (MinV src1 src2));
   predicate(n->as_Vector()->length() == 2);
@@ -14294,6 +14296,54 @@ instruct vmaxsd_reg(vecX dst, vecX src1, vecX src2) %{
   size(4);
   ins_encode %{
     __ vmaxsd($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+  // TODO: match no floating points above?!
+
+// Float
+instruct xvminsp_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MinV src1 src2));
+  predicate(is_floating_point_type(Matcher::vector_element_basic_type(n) && n->as_Vector()->length() == 4);
+  format %{ "XVMINSP  $dst,$src1,$src2\t// max packed4F" %}
+  size(4);
+  ins_encode %{
+    __ xvminsp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct xvmaxsp_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MaxV src1 src2));
+  predicate(is_floating_point_type(Matcher::vector_element_basic_type(n) && n->as_Vector()->length() == 4);
+  format %{ "XVMAXSP  $dst,$src1,$src2\t// max packed4F" %}
+  size(4);
+  ins_encode %{
+    __ xvmaxsp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Double
+instruct xvmindp_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MinV src1 src2));
+  predicate(is_floating_point_type(Matcher::vector_element_basic_type(n) && n->as_Vector()->length() == 2);
+  format %{ "XVMINDP  $dst,$src1,$src2\t// max packed2D" %}
+  size(4);
+  ins_encode %{
+    __ xvmindp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct xvmaxdp_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MaxV src1 src2));
+  predicate(is_floating_point_type(Matcher::vector_element_basic_type(n) && n->as_Vector()->length() == 2);
+  format %{ "XVMAXDP  $dst,$src1,$src2\t// max packed2D" %}
+  size(4);
+  ins_encode %{
+    __ xvmaxdp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
