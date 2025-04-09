@@ -219,24 +219,45 @@ void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
 
 class VPointerWeakAliasingPair : public StackObj {
 private:
-  const VPointer& _vp1;
-  const VPointer& _vp2;
+  // Using references instead of pointers would be preferrable, but GrowableArray
+  // requires a default constructor, and we do not have a default constructor for
+  // VPointer.
+  const VPointer* _vp1 = nullptr;
+  const VPointer* _vp2 = nullptr;
 
-  VPointerWeakAliasingPair(const VPointer& vp1, const VPointer& vp2) : _vp1(vp1), _vp2(vp2) {
+  VPointerWeakAliasingPair(const VPointer& vp1, const VPointer& vp2) : _vp1(&vp1), _vp2(&vp2) {
     assert(vp1.is_valid(), "sanity");
     assert(vp2.is_valid(), "sanity");
     assert(!vp1.never_overlaps_with(vp2), "otherwise no aliasing");
     assert(!vp1.always_overlaps_with(vp2), "otherwise must be strong");
-    assert(VPointer::cmp_for_sort(vp1, vp2) <= 0, "must be sorted");
+    assert(VPointer::cmp_summands_and_con(vp1, vp2) <= 0, "must be sorted");
   }
 
 public:
+  // Default constructor to make GrowableArray happy.
+  VPointerWeakAliasingPair() : _vp1(nullptr), _vp2(nullptr) {}
+
   static VPointerWeakAliasingPair make(const VPointer& vp1, const VPointer& vp2) {
-    if (VPointer::cmp_for_sort(vp1, vp2) <= 0) {
+    if (VPointer::cmp_summands(vp1, vp2) <= 0) {
       return VPointerWeakAliasingPair(vp1, vp2);
     } else {
       return VPointerWeakAliasingPair(vp2, vp1);
     }
+  }
+
+  const VPointer& vp1() const { return *_vp1; }
+  const VPointer& vp2() const { return *_vp2; }
+
+  // Sort by summands, so that pairs with same summands (summand1, summands2) are adjacent.
+  // Internally sort by con, so that we only have increasing con.
+  static int cmp_for_sort(VPointerWeakAliasingPair* pair1, VPointerWeakAliasingPair* pair2) {
+    int cmp_summands1 = VPointer::cmp_summands(pair1->vp1(), pair2->vp1());
+    if (cmp_summands1 != 0) { return cmp_summands1; }
+    int cmp_summands2 = VPointer::cmp_summands(pair1->vp2(), pair2->vp2());
+    if (cmp_summands2 != 0) { return cmp_summands2; }
+    int cmp_con1 = VPointer::cmp_con(pair1->vp1(), pair2->vp1());
+    if (cmp_con1 != 0) { return cmp_con1; }
+    return VPointer::cmp_con(pair1->vp2(), pair2->vp2());
   }
 };
 
@@ -253,6 +274,7 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
     // TODO: ResourceMark, collides with resource allocation in PhaseIdealLoop::set_idom
     //ResourceMark rm;
     VectorSet visited;
+    GrowableArray<VPointerWeakAliasingPair> weak_aliasing_pairs;
 
     const GrowableArray<VTransformNode*>& schedule = _graph.get_schedule();
     for (int i = 0; i < schedule.length(); i++) {
@@ -273,12 +295,54 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
             vp2.print_on(tty);
           }
 #endif
-          VPointerWeakAliasingPair weak_pair = VPointerWeakAliasingPair::make(vp1, vp2);
-          BoolNode* bol = vp1.make_speculative_aliasing_check_with(vp2);
-          add_speculative_check(bol);
+          weak_aliasing_pairs.push(VPointerWeakAliasingPair::make(vp1, vp2));
         }
       }
       visited.set(vtn->_idx);
+    }
+
+    weak_aliasing_pairs.sort(VPointerWeakAliasingPair::cmp_for_sort);
+
+    int group_start = 0;
+    while (group_start < weak_aliasing_pairs.length()) {
+      const VPointer& vp1 = weak_aliasing_pairs.at(group_start).vp1();
+      const VPointer& vp2 = weak_aliasing_pairs.at(group_start).vp2();
+      jint size1 = vp1.size();
+      jint size2 = vp2.size();
+      int group_end = group_start + 1;
+      while (group_end < weak_aliasing_pairs.length()) {
+        const VPointer& vp1_next = weak_aliasing_pairs.at(group_end).vp1();
+        const VPointer& vp2_next = weak_aliasing_pairs.at(group_end).vp2();
+        // Different summands -> different group.
+        if (VPointer::cmp_summands(vp1, vp1_next) != 0) { break; }
+        if (VPointer::cmp_summands(vp2, vp2_next) != 0) { break; }
+
+        assert(vp1.con() <= vp1_next.con(), "should be sorted");
+        assert(vp2.con() <= vp2_next.con(), "should be sorted");
+        NoOverflowInt new_size1 = NoOverflowInt(vp1_next.con()) + NoOverflowInt(vp1_next.size()) - NoOverflowInt(vp1.con());
+        NoOverflowInt new_size2 = NoOverflowInt(vp2_next.con()) + NoOverflowInt(vp2_next.size()) - NoOverflowInt(vp2.con());
+        if (new_size1.is_NaN() || new_size2.is_NaN()) { break; }
+
+        size1 = new_size1.value();
+        size2 = new_size2.value();
+        group_end++;
+      }
+      // Create "union" VPointer that cover all VPointer from the group.
+      VPointer vp_union1 = vp1.make_with_size(size1);
+      VPointer vp_union2 = vp2.make_with_size(size2);
+
+#ifdef ASSERT
+          if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
+            tty->print_cr("\nUnion of %d weak aliasing edges:", group_end - group_start);
+            vp_union1.print_on(tty);
+            vp_union2.print_on(tty);
+          }
+#endif
+
+      BoolNode* bol = vp_union1.make_speculative_aliasing_check_with(vp_union2);
+      add_speculative_check(bol);
+
+      group_start = group_end;
     }
   }
 }
