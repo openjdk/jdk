@@ -969,6 +969,18 @@ public:
     return mem_pointer().always_overlaps_with(other.mem_pointer());
   }
 
+  static int cmp_for_sort(const VPointer& vp1, const VPointer& vp2) {
+    int cmp = MemPointer::cmp_summands(vp1.mem_pointer(), vp2.mem_pointer());
+    if (cmp != 0) { return cmp; }
+
+    // We use two comparisons, because a subtraction could underflow.
+    jint con1 = vp1.con();
+    jint con2 = vp2.con();
+    if (con1 < con2) { return -1; }
+    if (con1 > con2) { return  1; }
+    return 0;
+  }
+
   bool can_make_speculative_aliasing_check_with(const VPointer& other) const;
   Node* make_pointer_expression(Node* iv_value) const;
   BoolNode* make_speculative_aliasing_check_with(const VPointer& other) const;

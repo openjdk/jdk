@@ -22,6 +22,7 @@
  */
 
 #include "opto/vtransform.hpp"
+#include "opto/vectorization.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
@@ -216,6 +217,29 @@ void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
   add_speculative_check(bol_alignment);
 }
 
+class VPointerWeakAliasingPair : public StackObj {
+private:
+  const VPointer& _vp1;
+  const VPointer& _vp2;
+
+  VPointerWeakAliasingPair(const VPointer& vp1, const VPointer& vp2) : _vp1(vp1), _vp2(vp2) {
+    assert(vp1.is_valid(), "sanity");
+    assert(vp2.is_valid(), "sanity");
+    assert(!vp1.never_overlaps_with(vp2), "otherwise no aliasing");
+    assert(!vp1.always_overlaps_with(vp2), "otherwise must be strong");
+    assert(VPointer::cmp_for_sort(vp1, vp2) <= 0, "must be sorted");
+  }
+
+public:
+  static VPointerWeakAliasingPair make(const VPointer& vp1, const VPointer& vp2) {
+    if (VPointer::cmp_for_sort(vp1, vp2) <= 0) {
+      return VPointerWeakAliasingPair(vp1, vp2);
+    } else {
+      return VPointerWeakAliasingPair(vp2, vp1);
+    }
+  }
+};
+
 void VTransform::apply_speculative_aliasing_runtime_checks() {
 
   if (_vloop.use_speculative_aliasing_checks()) {
@@ -238,16 +262,18 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
         if (visited.test(use->_idx)) {
           // The use node was already visited, i.e. is higher up in the schedule.
           // The "out" edge thus points backward, i.e. it is violated.
+          const VPointer& vp1 = vtn->vpointer(_vloop_analyzer);
+          const VPointer& vp2 = use->vpointer(_vloop_analyzer);
 #ifdef ASSERT
           if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
             tty->print_cr("\nViolated Weak Edge:");
             vtn->print();
+            vp1.print_on(tty);
             use->print();
+            vp2.print_on(tty);
           }
 #endif
-          // TODO: optimize so that we do not have too many checks!
-          const VPointer& vp1 = vtn->vpointer(_vloop_analyzer);
-          const VPointer& vp2 = use->vpointer(_vloop_analyzer);
+          VPointerWeakAliasingPair weak_pair = VPointerWeakAliasingPair::make(vp1, vp2);
           BoolNode* bol = vp1.make_speculative_aliasing_check_with(vp2);
           add_speculative_check(bol);
         }
