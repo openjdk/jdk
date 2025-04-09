@@ -2037,6 +2037,7 @@ public:
     else                   movptr(dst, src.as_register());
   }
 
+
   // to avoid hiding movl
   void mov32(Register       dst, AddressLiteral src);
   void mov32(AddressLiteral dst, Register        src, Register rscratch = noreg);
