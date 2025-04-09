@@ -1573,6 +1573,8 @@ void os::print_image_release_file(outputStream* st) {
   char* ifrc = Atomic::load_acquire(&_image_release_file_content);
   if (ifrc != nullptr) {
     st->print_cr("%s", ifrc);
+  } else {
+    st->print_cr("<release file has not been read>");
   }
 }
 
