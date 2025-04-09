@@ -823,7 +823,6 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, int entry_offset_co
   int stored_count = *(int*)addr(offset);
   assert(stored_count == entry_offset_count, "entry offset count mismatch, count in AOT code cache=%d, expected=%d", stored_count, entry_offset_count);
   offset += sizeof(int);
-  assert(stored_count == AdapterHandlerEntry::ENTRIES_COUNT, "wrong caller expectations");
   set_read_position(offset);
   for (int i = 0; i < stored_count; i++) {
     uint32_t off = *(uint32_t*)addr(offset);
