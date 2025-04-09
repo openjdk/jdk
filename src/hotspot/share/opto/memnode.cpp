@@ -2218,10 +2218,8 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     // This will help short-circuit some reflective code.
     if (tkls->offset() == in_bytes(Klass::layout_helper_offset()) &&
         tkls->isa_instklassptr() && // not directly typed as an array
-        !tkls->is_instklassptr()->instance_klass()->is_java_lang_Object() // not the supertype of all T[] and specifically not Serializable & Cloneable
-        ) {
-      // Note:  When interfaces are reliable, we can narrow the interface
-      // test to (klass != Serializable && klass != Cloneable).
+        !tkls->is_instklassptr()->might_be_an_array() // not the supertype of all T[] (java.lang.Object) or has an interface that is not Serializable or Cloneable
+    ) {
       assert(Opcode() == Op_LoadI, "must load an int from _layout_helper");
       jint min_size = Klass::instance_layout_helper(oopDesc::header_size(), false);
       // The key property of this type is that it folds up tests
