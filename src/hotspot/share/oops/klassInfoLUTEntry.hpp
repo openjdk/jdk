@@ -232,7 +232,7 @@ public:
 
   // calculates word size given header size, element size, and array length
   template <bool is_objarray, class OopType, bool compact_headers>
-  inline unsigned ak_calculate_wordsize_given_oop_fast(oopDesc* obj) const;
+  inline size_t ak_calculate_wordsize_given_oop_fast(oopDesc* obj) const;
 
   // Helper function, prints current limits
   static void print_limits(outputStream* st);

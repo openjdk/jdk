@@ -71,7 +71,7 @@ inline unsigned KlassLUTEntry::ik_omb_offset_2() const {
 
 // calculates word size given header size, element size, and array length
 template <bool is_objarray, class OopType, bool compact_headers>
-inline unsigned KlassLUTEntry::ak_calculate_wordsize_given_oop_fast(oopDesc* obj) const {
+inline size_t KlassLUTEntry::ak_calculate_wordsize_given_oop_fast(oopDesc* obj) const {
   // The purpose of this function is to be as fast as possible; we hard-code as much
   // as we can via template parameters.
   assert(is_obj_array() == is_objarray, "Bad call");
@@ -92,8 +92,8 @@ inline unsigned KlassLUTEntry::ak_calculate_wordsize_given_oop_fast(oopDesc* obj
   const int first_element_offset = compact_headers ? ak_header_size() : 16;
   const unsigned log2_elemsize = is_objarray ? log2_oopsize : ak_log2_elem_size();
 
-  const int* const array_len_addr = (int*)(obj->field_addr<int>(length_field_offset));
-  const size_t array_length = (size_t) (*array_len_addr);
+  const unsigned* const array_len_addr = (unsigned*)(obj->field_addr<unsigned>(length_field_offset));
+  const unsigned array_length = (size_t) (*array_len_addr);
 
   const size_t size_in_bytes = (array_length << log2_elemsize) + first_element_offset;
   return align_up(size_in_bytes, alignment) / HeapWordSize;
