@@ -151,7 +151,7 @@ module java.base {
     // and therefore if they use preview features they do not need to be
     // compiled with "--enable-preview".
     // It is recommended for any modules that do participate that their
-    // module declaration be annotated with jdk.fjavac.ParticipatesInPreview
+    // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview
     exports jdk.internal.javac to
         java.compiler,
         java.desktop, // for ScopedValue
