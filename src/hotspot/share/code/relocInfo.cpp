@@ -179,6 +179,26 @@ RelocIterator::RelocIterator(CodeSection* cs, address begin, address limit) {
   set_limits(begin, limit);
 }
 
+RelocIterator::RelocIterator(CodeBlob* cb) {
+  initialize_misc();
+  if (cb->is_nmethod()) {
+    _code = cb->as_nmethod();
+  } else {
+    _code = nullptr;
+  }
+  _current = cb->relocation_begin() - 1;
+  _end = cb->relocation_end();
+  _addr = cb->content_begin();
+
+  _section_start[CodeBuffer::SECT_CONSTS] = cb->content_begin();
+  _section_start[CodeBuffer::SECT_INSTS] = cb->code_begin();
+
+  _section_end[CodeBuffer::SECT_CONSTS] = cb->code_begin();
+  _section_start[CodeBuffer::SECT_INSTS] = cb->code_end();
+  assert(!has_current(), "just checking");
+  set_limits(nullptr, nullptr);
+}
+
 bool RelocIterator::addr_in_const() const {
   const int n = CodeBuffer::SECT_CONSTS;
   if (_section_start[n] == nullptr) {
@@ -771,6 +791,14 @@ void internal_word_Relocation::fix_relocation_after_move(const CodeBuffer* src, 
   set_value(target);
 }
 
+void internal_word_Relocation::fix_relocation_after_aot_load(address orig_base_addr, address current_base_addr) {
+  address target = _target;
+  if (target == nullptr) {
+    target = this->target();
+    target = current_base_addr + (target - orig_base_addr);
+  }
+  set_value(target);
+}
 
 address internal_word_Relocation::target() {
   address target = _target;

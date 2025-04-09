@@ -35,6 +35,9 @@
 class CodeBuffer;
 class RelocIterator;
 class AOTCodeCache;
+class AdapterBlob;
+class ExceptionBlob;
+class ImmutableOopMapSet;
 
 enum class vmIntrinsicID : int;
 enum CompLevel : signed char;
@@ -57,17 +60,16 @@ private:
   uint   _size;        // Entry size
   uint   _name_offset; // Code blob name
   uint   _name_size;
-  uint   _code_offset; // Start of code in cache
-  uint   _code_size;   // Total size of all code sections
-  uint   _reloc_offset;// Relocations
-  uint   _reloc_size;  // Max size of relocations per code section
+  uint   _blob_offset; // Start of code in cache
+  bool   _has_oop_maps;
+  address _dumptime_content_start_addr; // CodeBlob::content_begin() at dump time; used for applying relocations
 
 public:
   AOTCodeEntry(Kind kind,         uint id,
                uint offset,       uint size,
                uint name_offset,  uint name_size,
-               uint code_offset,  uint code_size,
-               uint reloc_offset, uint reloc_size) {
+               uint blob_offset,  bool has_oop_maps,
+               address dumptime_content_start_addr) {
     _next         = nullptr;
     _kind         = kind;
     _id           = id;
@@ -76,10 +78,9 @@ public:
     _size         = size;
     _name_offset  = name_offset;
     _name_size    = name_size;
-    _code_offset  = code_offset;
-    _code_size    = code_size;
-    _reloc_offset = reloc_offset;
-    _reloc_size   = reloc_size;
+    _blob_offset  = blob_offset;
+    _has_oop_maps = has_oop_maps;
+    _dumptime_content_start_addr = dumptime_content_start_addr;
   }
   void* operator new(size_t x, AOTCodeCache* cache);
   // Delete is a NOP
@@ -97,10 +98,11 @@ public:
   uint size()         const { return _size; }
   uint name_offset()  const { return _name_offset; }
   uint name_size()    const { return _name_size; }
-  uint code_offset()  const { return _code_offset; }
-  uint code_size()    const { return _code_size; }
-  uint reloc_offset() const { return _reloc_offset; }
-  uint reloc_size()   const { return _reloc_size; }
+  uint blob_offset()  const { return _blob_offset; }
+  bool has_oop_maps() const { return _has_oop_maps; }
+  address dumptime_content_start_addr() const { return _dumptime_content_start_addr; }
+
+  static bool is_valid_entry_kind(Kind kind) { return kind == Adapter || kind == Blob; }
 };
 
 // Addresses of stubs, blobs and runtime finctions called from compiled code.
@@ -131,7 +133,7 @@ public:
   void add_C_string(const char* str);
   int  id_for_C_string(address str);
   address address_for_C_string(int idx);
-  int  id_for_address(address addr, RelocIterator iter, CodeBuffer* buffer);
+  int  id_for_address(address addr, RelocIterator iter, CodeBlob* code_blob);
   address address_for_id(int id);
 };
 
@@ -239,6 +241,7 @@ private:
 
   bool set_write_position(uint pos);
   bool align_write();
+  address reserve_bytes(uint nbytes);
   uint write_bytes(const void* buffer, uint nbytes);
   const char* addr(uint offset) const { return _load_buffer + offset; }
   static AOTCodeAddressTable* addr_table() {
@@ -285,14 +288,11 @@ public:
 
   bool finish_write();
 
-  bool write_code(CodeBuffer* buffer, uint& code_size);
-  bool write_relocations(CodeBuffer* buffer, uint& reloc_size);
+  bool write_relocations(CodeBlob& code_blob);
+  bool write_oop_map_set(CodeBlob& cb);
 
-  static bool load_exception_blob(CodeBuffer* buffer, int* pc_offset) NOT_CDS_RETURN_(false);
-  static bool store_exception_blob(CodeBuffer* buffer, int pc_offset) NOT_CDS_RETURN_(false);
-
-  static bool load_adapter(CodeBuffer* buffer, uint32_t id, const char* basic_sig, uint32_t *entry_offset) NOT_CDS_RETURN_(false);
-  static bool store_adapter(CodeBuffer* buffer, uint32_t id, const char* basic_sig, uint32_t *entry_offset) NOT_CDS_RETURN_(false);
+  static bool store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind, uint id, const char* name, int entry_offset_count, int* entry_offsets) NOT_CDS_RETURN_(false);
+  static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind, uint id, const char* name, int entry_offset_count, int* entry_offsets) NOT_CDS_RETURN_(nullptr);
 
   static uint store_entries_cnt() {
     if (is_on_for_write()) {
@@ -343,13 +343,14 @@ private:
   void clear_lookup_failed()   { _lookup_failed = false; }
   bool lookup_failed()   const { return _lookup_failed; }
 
+  AOTCodeEntry* aot_code_entry() { return (AOTCodeEntry*)_entry; }
 public:
   AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry);
 
-  bool compile_blob(CodeBuffer* buffer, int* pc_offset);
-  bool compile_adapter(CodeBuffer* buffer, const char* name, uint32_t offsets[4]);
+  CodeBlob* compile_code_blob(const char* name, int entry_offset_count, int* entry_offsets);
 
-  bool read_code(CodeBuffer* buffer, CodeBuffer* orig_buffer, uint code_offset);
-  bool read_relocations(CodeBuffer* buffer, CodeBuffer* orig_buffer);
+  ImmutableOopMapSet* read_oop_map_set();
+
+  void fix_relocations(CodeBlob* code_blob);
 };
 #endif // SHARE_CODE_AOTCODECACHE_HPP

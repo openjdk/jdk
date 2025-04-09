@@ -790,7 +790,7 @@ class AdapterHandlerLibrary: public AllStatic {
                                                     int total_args_passed,
                                                     BasicType* sig_bt);
   static AdapterHandlerEntry* get_simple_adapter(const methodHandle& method);
-  static bool lookup_aot_cache(AdapterHandlerEntry* handler, CodeBuffer* buffer);
+  static AdapterBlob* lookup_aot_cache(AdapterHandlerEntry* handler);
   static AdapterHandlerEntry* create_adapter(AdapterBlob*& new_adapter,
                                              AdapterFingerPrint* fingerprint,
                                              int total_args_passed,
@@ -826,7 +826,7 @@ class AdapterHandlerLibrary: public AllStatic {
 
   static bool is_abstract_method_adapter(AdapterHandlerEntry* adapter);
 
-  static bool link_adapter_handler(AdapterHandlerEntry* handler, AdapterBlob*& adapter_blob) NOT_CDS_RETURN_(false);
+  static AdapterBlob* link_adapter_handler(AdapterHandlerEntry* handler) NOT_CDS_RETURN_(nullptr);
   static void archive_adapter_table() NOT_CDS_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_RETURN;
 };

@@ -602,6 +602,7 @@ class RelocIterator : public StackObj {
   // constructor
   RelocIterator(nmethod* nm, address begin = nullptr, address limit = nullptr);
   RelocIterator(CodeSection* cb, address begin = nullptr, address limit = nullptr);
+  RelocIterator(CodeBlob* cb);
 
   // get next reloc info, return !eos
   bool next() {
@@ -1396,6 +1397,8 @@ class internal_word_Relocation : public DataRelocation {
   void unpack_data() override;
 
   void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
+  void fix_relocation_after_aot_load(address orig_base_addr, address current_base_addr);
+
   address  target();        // if _target==nullptr, fetch addr from code stream
   int      section()        { return _section;   }
   address  value() override { return target();   }
