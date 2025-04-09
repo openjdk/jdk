@@ -38,7 +38,7 @@ import java.util.List;
 import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
-import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.CKR_KEY_SIZE_RANGE;
 
 final class P11HKDF extends KDFSpi {
     private final Token token;
