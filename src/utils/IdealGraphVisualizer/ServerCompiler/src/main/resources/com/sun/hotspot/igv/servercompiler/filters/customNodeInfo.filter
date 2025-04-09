@@ -28,6 +28,8 @@ function callLeafInfo(dump_spec, pos) {
 }
 editProperty(matches("name", "CallLeaf|CallLeafNoFP"), ["dump_spec"], "extra_label",
              function(dump_spec) {return callLeafInfo(dump_spec[0], 1);});
+editProperty(matches("name", "PureUnaryNativeMath|PureBinaryNativeMath"), ["dump_spec"], "extra_label",
+             function(dump_spec) {return callLeafInfo(dump_spec[0], 1);});
 editProperty(matches("name", "CallLeafDirect|CallLeafDirectVector|CallLeafNoFPDirect"), ["dump_spec"], "extra_label",
              function(dump_spec) {return callLeafInfo(dump_spec[0], 0);});
 

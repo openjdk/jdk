@@ -164,6 +164,13 @@ class PhiNode;
 class Pipeline;
 class PopulateIndexNode;
 class ProjNode;
+class PureBinaryNativeMathNode;
+class PureCallNode;
+class PureFloatingModuloNode;
+class PureModDNode;
+class PureModFNode;
+class PureNativeMathNode;
+class PureUnaryNativeMathNode;
 class RangeCheckNode;
 class ReductionNode;
 class RegMask;
@@ -811,6 +818,13 @@ public:
     DEFINE_CLASS_ID(Move,     Node, 20)
     DEFINE_CLASS_ID(LShift,   Node, 21)
     DEFINE_CLASS_ID(Neg,      Node, 22)
+    DEFINE_CLASS_ID(PureCall, Node, 23)
+      DEFINE_CLASS_ID(PureFloatingModulo, PureCall, 0)
+        DEFINE_CLASS_ID(PureModF, PureFloatingModulo, 0)
+        DEFINE_CLASS_ID(PureModD, PureFloatingModulo, 1)
+      DEFINE_CLASS_ID(PureNativeMath, PureCall, 1)
+        DEFINE_CLASS_ID(PureUnaryNativeMath, PureNativeMath, 0)
+        DEFINE_CLASS_ID(PureBinaryNativeMath, PureNativeMath, 1)
 
     _max_classes  = ClassMask_Neg
   };
@@ -996,6 +1010,13 @@ public:
   DEFINE_CLASS_QUERY(PCTable)
   DEFINE_CLASS_QUERY(Phi)
   DEFINE_CLASS_QUERY(Proj)
+  DEFINE_CLASS_QUERY(PureBinaryNativeMath)
+  DEFINE_CLASS_QUERY(PureCall)
+  DEFINE_CLASS_QUERY(PureFloatingModulo)
+  DEFINE_CLASS_QUERY(PureModD)
+  DEFINE_CLASS_QUERY(PureModF)
+  DEFINE_CLASS_QUERY(PureNativeMath)
+  DEFINE_CLASS_QUERY(PureUnaryNativeMath)
   DEFINE_CLASS_QUERY(Reduction)
   DEFINE_CLASS_QUERY(Region)
   DEFINE_CLASS_QUERY(Root)

@@ -2435,6 +2435,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_ModD ||
                n->Opcode() == Op_ModF ||
+               n->is_PureCall()            ||
                n->is_OpaqueNotNull()       ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
@@ -2608,7 +2609,15 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         break;
       }
       default:
-        assert(false, "unknown node type in macro list");
+        if (n->is_PureCall()) {
+          PureCallNode* pure_call = n->as_PureCall();
+          Node* new_node = pure_call->expand_macro(C);
+          _igvn.replace_node(pure_call, new_node);
+          transform_later(new_node);
+          break;
+        } else {
+          assert(false, "unknown node type in macro list");
+        }
       }
     }
     assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");

@@ -56,6 +56,100 @@ class       LockNode;
 class       UnlockNode;
 class FastLockNode;
 
+class PureCallNode : public Node {
+  virtual uint size_of() const; // Size is bigger
+
+protected:
+  const TypeFunc* _tf;
+  address _addr;
+  const char* _name;
+
+  PureCallNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name);
+
+  bool remove_if_result_is_unused(PhaseIterGVN* phase);
+
+public:
+  enum {
+    Control = 0,
+    Parms = 1,
+  };
+
+  virtual int Opcode() const;
+
+  virtual const Type* bottom_type() const;
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase) { return this; }
+
+  const TypeFunc* tf() const { return _tf; }
+  address addr() const { return _addr; }
+  const char* name() const { return _name; }
+  virtual bool is_CFG() const { return true; }
+
+  ProjNode* proj_out_or_null(uint which_proj) const;
+  void remove_unused_node(PhaseIterGVN* phase);
+  void replace_with_con(PhaseIterGVN* phase, const Type* con);
+  void extract_projections(Node*& ctrl_proj, Node*& data_proj) const;
+
+  virtual Node* expand_macro(Compile* C) const;
+
+  NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
+};
+
+class PureFloatingModuloNode : public PureCallNode {
+protected:
+  PureFloatingModuloNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name);
+  virtual Node* dividend() const = 0;
+  virtual Node* divisor() const = 0;
+
+public:
+  virtual int Opcode() const;
+};
+
+class PureModFNode : public PureFloatingModuloNode {
+  PureModFNode(Compile* C, Node* ctrl, Node* lhs, Node* rhs);
+  virtual Node* dividend() const;
+  virtual Node* divisor() const;
+
+public:
+  static PureModFNode* make(Compile* C, Node* ctrl, Node* lhs, Node* rhs);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual int Opcode() const;
+};
+class PureModDNode : public PureFloatingModuloNode {
+  PureModDNode(Compile* C, Node* ctrl, Node* lhs, Node* rhs);
+  virtual Node* dividend() const;
+  virtual Node* divisor() const;
+
+public:
+  static PureModDNode* make(Compile* C, Node* ctrl, Node* lhs, Node* rhs);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual int Opcode() const;
+};
+class PureNativeMathNode : public PureCallNode {
+protected:
+  PureNativeMathNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name);
+
+public:
+  virtual int Opcode() const;
+};
+class PureUnaryNativeMathNode : public PureNativeMathNode {
+protected:
+  PureUnaryNativeMathNode(Compile* C, address addr, const char* name);
+
+public:
+  virtual int Opcode() const;
+  static PureUnaryNativeMathNode* make(Compile* C, address addr, const char* name, Node* ctrl, Node* arg);
+};
+class PureBinaryNativeMathNode : public PureNativeMathNode {
+protected:
+  PureBinaryNativeMathNode(Compile* C, address addr, const char* name);
+
+public:
+  virtual int Opcode() const;
+  static PureBinaryNativeMathNode* make(Compile* C, address addr, const char* name, Node* ctrl, Node* lhs, Node* rhs);
+};
+
 //------------------------------StartNode--------------------------------------
 // The method start node
 class StartNode : public MultiNode {

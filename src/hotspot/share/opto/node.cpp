@@ -2940,7 +2940,7 @@ bool Node::is_pure_function() const {
   case Op_ModF:
     return true;
   default:
-    return false;
+    return is_PureCall();
   }
 }
 
