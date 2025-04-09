@@ -2989,77 +2989,35 @@ void MacroAssembler::push_IU_state() {
 void MacroAssembler::push_cont_fastpath() {
   if (!Continuations::enabled()) return;
 
-#ifndef _LP64
-  Register rthread = rax;
-  Register rrealsp = rbx;
-  push(rthread);
-  push(rrealsp);
-
-  get_thread(rthread);
-
-  // The code below wants the original RSP.
-  // Move it back after the pushes above.
-  movptr(rrealsp, rsp);
-  addptr(rrealsp, 2*wordSize);
-#else
   Register rthread = r15_thread;
   Register rrealsp = rsp;
-#endif
 
   Label done;
   cmpptr(rrealsp, Address(rthread, JavaThread::cont_fastpath_offset()));
   jccb(Assembler::belowEqual, done);
   movptr(Address(rthread, JavaThread::cont_fastpath_offset()), rrealsp);
   bind(done);
-
-#ifndef _LP64
-  pop(rrealsp);
-  pop(rthread);
-#endif
 }
 
 void MacroAssembler::pop_cont_fastpath() {
   if (!Continuations::enabled()) return;
 
-#ifndef _LP64
-  Register rthread = rax;
-  Register rrealsp = rbx;
-  push(rthread);
-  push(rrealsp);
-
-  get_thread(rthread);
-
-  // The code below wants the original RSP.
-  // Move it back after the pushes above.
-  movptr(rrealsp, rsp);
-  addptr(rrealsp, 2*wordSize);
-#else
   Register rthread = r15_thread;
   Register rrealsp = rsp;
-#endif
 
   Label done;
   cmpptr(rrealsp, Address(rthread, JavaThread::cont_fastpath_offset()));
   jccb(Assembler::below, done);
   movptr(Address(rthread, JavaThread::cont_fastpath_offset()), 0);
   bind(done);
-
-#ifndef _LP64
-  pop(rrealsp);
-  pop(rthread);
-#endif
 }
 
 void MacroAssembler::inc_held_monitor_count() {
-#ifdef _LP64
   incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
-#endif
 }
 
 void MacroAssembler::dec_held_monitor_count() {
-#ifdef _LP64
   decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
-#endif
 }
 
 #ifdef ASSERT
