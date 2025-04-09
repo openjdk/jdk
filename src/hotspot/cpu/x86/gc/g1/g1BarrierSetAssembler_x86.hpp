@@ -51,8 +51,7 @@ class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
                              Register store_addr,
                              Register new_val,
                              Register thread,
-                             Register tmp,
-                             Register tmp2);
+                             Register tmp);
 
   virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                             Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
@@ -88,7 +87,6 @@ class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
                                 Register new_val,
                                 Register thread,
                                 Register tmp,
-                                Register tmp2,
                                 bool new_val_may_be_null);
 #endif // COMPILER2
 };
