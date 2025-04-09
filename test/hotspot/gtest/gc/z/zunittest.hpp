@@ -67,7 +67,7 @@ private:
 protected:
   ZTest()
     : _zaddress_offset_max_setter(ZAddressOffsetMax),
-	  _rand_seed(static_cast<unsigned int>(::testing::UnitTest::GetInstance()->random_seed())) {
+      _rand_seed(static_cast<unsigned int>(::testing::UnitTest::GetInstance()->random_seed())) {
     if (!is_os_supported()) {
       // If the OS does not support ZGC do not run initialization, as it may crash the VM.
       return;
