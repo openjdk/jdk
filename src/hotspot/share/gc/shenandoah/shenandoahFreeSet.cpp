@@ -1030,7 +1030,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     _heap->generation_for(r->affiliation())->increment_affiliated_region_count();
 
 #ifdef ASSERT
-    ShenandoahMarkingContext* const ctx = _heap->complete_marking_context();
+    ShenandoahMarkingContext* const ctx = _heap->marking_context();
     assert(ctx->top_at_mark_start(r) == r->bottom(), "Newly established allocation region starts with TAMS equal to bottom");
     assert(ctx->is_bitmap_range_within_region_clear(ctx->top_bitmap(r), r->end()), "Bitmap above top_bitmap() must be clear");
 #endif

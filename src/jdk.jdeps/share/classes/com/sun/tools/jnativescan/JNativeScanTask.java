@@ -43,15 +43,17 @@ import java.util.zip.ZipFile;
 class JNativeScanTask {
 
     private final PrintWriter out;
+    private final PrintWriter err;
     private final List<Path> classPaths;
     private final List<Path> modulePaths;
     private final List<String> cmdRootModules;
     private final Runtime.Version version;
     private final Action action;
 
-    public JNativeScanTask(PrintWriter out, List<Path> classPaths, List<Path> modulePaths,
+    public JNativeScanTask(PrintWriter out, PrintWriter err, List<Path> classPaths, List<Path> modulePaths,
                            List<String> cmdRootModules, Runtime.Version version, Action action) {
         this.out = out;
+        this.err = err;
         this.classPaths = classPaths;
         this.modulePaths = modulePaths;
         this.version = version;
@@ -72,10 +74,13 @@ class JNativeScanTask {
             toScan.add(new ClassFileSource.Module(m.reference()));
         }
 
+        Set<String> errors = new LinkedHashSet<>();
+        Diagnostics diagnostics = (context, error) ->
+                errors.add("Error while processing method: " + context + ": " + error.getMessage());
         SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods
                 = new TreeMap<>(Comparator.comparing(ClassFileSource::path));
         try(SystemClassResolver systemClassResolver = SystemClassResolver.forRuntimeVersion(version)) {
-            NativeMethodFinder finder = NativeMethodFinder.create(systemClassResolver);
+            NativeMethodFinder finder = NativeMethodFinder.create(diagnostics, systemClassResolver);
 
             for (ClassFileSource source : toScan) {
                 SortedMap<ClassDesc, List<RestrictedUse>> perClass
@@ -98,7 +103,7 @@ class JNativeScanTask {
 
         switch (action) {
             case PRINT -> printNativeAccess(allRestrictedMethods);
-            case DUMP_ALL -> dumpAll(allRestrictedMethods);
+            case DUMP_ALL -> dumpAll(allRestrictedMethods, errors);
         }
     }
 
@@ -172,7 +177,7 @@ class JNativeScanTask {
         out.println(nativeAccess);
     }
 
-    private void dumpAll(SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods) {
+    private void dumpAll(SortedMap<ClassFileSource, SortedMap<ClassDesc, List<RestrictedUse>>> allRestrictedMethods, Set<String> errors) {
         if (allRestrictedMethods.isEmpty()) {
             out.println("  <no restricted methods>");
         } else {
@@ -193,6 +198,10 @@ class JNativeScanTask {
                 });
             });
         }
+        if (!errors.isEmpty()) {
+            err.println("Error(s) while processing classes:");
+            errors.forEach(error -> err.println("  " + error));
+        }
     }
 
     private static boolean isJarFile(Path path) throws JNativeScanFatalError {
@@ -207,5 +216,9 @@ class JNativeScanTask {
     public static String qualName(ClassDesc desc) {
         String packagePrefix = desc.packageName().isEmpty() ? "" : desc.packageName() + ".";
         return packagePrefix + desc.displayName();
+    }
+
+    interface Diagnostics {
+        void error(MethodRef context, JNativeScanFatalError error);
     }
 }

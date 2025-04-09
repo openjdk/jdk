@@ -24,6 +24,7 @@
  */
 package com.sun.tools.jnativescan;
 
+import com.sun.tools.jnativescan.JNativeScanTask.Diagnostics;
 import com.sun.tools.jnativescan.RestrictedUse.NativeMethodDecl;
 import com.sun.tools.jnativescan.RestrictedUse.RestrictedMethodRefs;
 
@@ -43,14 +44,16 @@ class NativeMethodFinder {
     private static final String RESTRICTED_NAME = "Ljdk/internal/javac/Restricted+Annotation;";
 
     private final Map<MethodRef, Boolean> cache = new HashMap<>();
+    private final Diagnostics diagnostics;
     private final SystemClassResolver systemClassResolver;
 
-    private NativeMethodFinder(SystemClassResolver systemClassResolver) {
+    private NativeMethodFinder(Diagnostics diagnostics, SystemClassResolver systemClassResolver) {
+        this.diagnostics = diagnostics;
         this.systemClassResolver = systemClassResolver;
     }
 
-    public static NativeMethodFinder create(SystemClassResolver systemClassResolver) throws JNativeScanFatalError, IOException {
-        return new NativeMethodFinder(systemClassResolver);
+    public static NativeMethodFinder create(Diagnostics diagnostics, SystemClassResolver systemClassResolver) throws JNativeScanFatalError, IOException {
+        return new NativeMethodFinder(diagnostics, systemClassResolver);
     }
 
     public List<RestrictedUse> find(ClassModel model) throws JNativeScanFatalError {
@@ -69,21 +72,18 @@ class NativeMethodFinder {
 
     private SortedSet<MethodRef> findRestrictedMethodInvocations(MethodModel methodModel) {
         SortedSet<MethodRef> perMethod = new TreeSet<>(Comparator.comparing(MethodRef::toString));
-        methodModel.code().ifPresent(code -> {
-             try {
-                 code.forEach(e -> {
-                     if (e instanceof InvokeInstruction invoke) {
-                         MethodRef ref = MethodRef.ofInvokeInstruction(invoke);
-                         if (isRestrictedMethod(ref)) {
-                             perMethod.add(ref);
-                         }
-                     }
-                 });
-             } catch (JNativeScanFatalError e) {
-                 throw new JNativeScanFatalError("Error while processing method: " +
-                         MethodRef.ofModel(methodModel), e);
-             }
-        });
+        methodModel.code().ifPresent(code -> code.forEach(e -> {
+            if (e instanceof InvokeInstruction invoke) {
+                MethodRef ref = MethodRef.ofInvokeInstruction(invoke);
+                try {
+                    if (isRestrictedMethod(ref)) {
+                        perMethod.add(ref);
+                    }
+                } catch (JNativeScanFatalError ex) {
+                    diagnostics.error(MethodRef.ofModel(methodModel), ex);
+                }
+            }
+        }));
         return perMethod;
     }
 
