@@ -40,6 +40,10 @@ public class BuiltInProfileCheck {
     private static final int HEADER_TAG = ICC_Profile.icSigHead;
     private static final int INDEX = ICC_Profile.icHdrDeviceClass;
     private static final String EXCEPTION_MSG = "Built-in profile cannot be modified";
+    /**
+     * {@link #prepareTestProfile(String, boolean, int)}
+     * stores the profile to test in testProfile.
+     */
     private static ICC_Profile testProfile;
 
     private static final Map<Integer, String> colorSpace = Map.of(
