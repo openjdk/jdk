@@ -33,7 +33,6 @@
 
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
-import static jdk.test.lib.Asserts.fail;
 import static jdk.test.lib.Utils.runAndCheckException;
 
 import java.io.ByteArrayInputStream;
@@ -41,7 +40,6 @@ import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.Security;
-import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.interfaces.RSAPrivateKey;
