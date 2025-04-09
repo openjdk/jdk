@@ -142,11 +142,9 @@ class ZipFileSystem extends FileSystem {
     private final Set<String> supportedFileAttributeViews;
 
     // If it's decided to try and make access mode common to other file systems,
-    // this should exist somewhere common, but if it's definitely never going to
+    // this could exist somewhere common, but if it's definitely never going to
     // be shared, it could be made public here.
-    private enum FileSystemAccessMode {
-        // Creates a file system for default access according to file system semantics.
-        DEFAULT("default"),
+    private enum AccessMode {
         // Creates a file system for read-write access.
         READ_WRITE("readWrite"),
         // Creates a file system for read-only access.
@@ -154,21 +152,17 @@ class ZipFileSystem extends FileSystem {
 
         private final String label;
 
-        FileSystemAccessMode(String label) {
+        AccessMode(String label) {
             this.label = label;
         }
 
-        // Parses the file system permission from an environmental parameter.
-        static FileSystemAccessMode from(Object value) {
+        // Parses the file system permission from an environmental parameter. While
+        // the FileSystemAccessMode is private, we don't need to check if it was
+        // given as a value. Returns null to indicate default behaviour.
+        static AccessMode from(Object value) {
             switch (value) {
                 case null -> {
-                    return DEFAULT;
-                }
-                case FileSystemAccessMode permission -> {
-                    return permission;
-                }
-                case String label when DEFAULT.label.equals(label) -> {
-                    return DEFAULT;
+                    return null;
                 }
                 case String label when READ_WRITE.label.equals(label) -> {
                     return READ_WRITE;
@@ -195,8 +189,8 @@ class ZipFileSystem extends FileSystem {
         this.forceEnd64 = isTrue(env, "forceZIP64End");
         this.defaultCompressionMethod = getDefaultCompressionMethod(env);
 
-        FileSystemAccessMode accessMode = FileSystemAccessMode.from(env.get(PROPERTY_ACCESS_MODE));
-        boolean forceReadOnly = (accessMode == FileSystemAccessMode.READ_ONLY);
+        AccessMode accessMode = AccessMode.from(env.get(PROPERTY_ACCESS_MODE));
+        boolean forceReadOnly = (accessMode == AccessMode.READ_ONLY);
 
         this.supportPosix = isTrue(env, PROPERTY_POSIX);
         this.defaultOwner = supportPosix ? initOwner(zfpath, env) : null;
@@ -217,7 +211,7 @@ class ZipFileSystem extends FileSystem {
             }
         }
         // sm and existence check
-        zfpath.getFileSystem().provider().checkAccess(zfpath, AccessMode.READ);
+        zfpath.getFileSystem().provider().checkAccess(zfpath, java.nio.file.AccessMode.READ);
         this.zc = ZipCoder.get(nameEncoding);
         this.ch = Files.newByteChannel(zfpath, READ);
         try {
@@ -246,7 +240,7 @@ class ZipFileSystem extends FileSystem {
         // We only allow read-write zip/jar files if they are not multi-release
         // JARs and the underlying file is writable.
         this.readOnly = forceReadOnly || multiReleaseVersion.isPresent() || !Files.isWritable(zfpath);
-        if (readOnly && accessMode == FileSystemAccessMode.READ_WRITE) {
+        if (readOnly && accessMode == AccessMode.READ_WRITE) {
             String reason = Files.isWritable(zfpath)
                     ? "A multi-release JAR file opened with a specified version is not writable"
                     : "The underlying ZIP file is not writable";
