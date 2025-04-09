@@ -29,7 +29,7 @@
 #include "utilities/debug.hpp"
 
 class InstanceKlass;
-class JavaThread;
+class Thread;
 
 // Used by SystemDictionaryShared/AOTArtifactFinder to filter out classes that
 // shouldn't be included into the AOT cache -- for example, classes that are used only
@@ -42,27 +42,19 @@ public:
   // Filters should be defined using RAII pattern
   class FilterMark {
   public:
-    FilterMark() {
-      assert(_current_mark == nullptr, "sanity");
-      _current_mark = this;
-    }
-    ~FilterMark() {
-      assert(_current_mark == this, "sanity");
-      _current_mark = nullptr;
-    }
-
+    FilterMark();
+    ~FilterMark();
     virtual bool is_aot_tooling_class(InstanceKlass* ik) = 0;
   };
 
   // Called when ik is being loaded. Return true iff this class is loaded
   // only because it's used by the AOT tooling code.
-  static bool is_aot_tooling_class(InstanceKlass* ik) {
-    return (_current_mark == nullptr) ? false : _current_mark->is_aot_tooling_class(ik);
-  }
+  static bool is_aot_tooling_class(InstanceKlass* ik);
 
 private:
   // For the time being, we allow at most one filter.
   static FilterMark* _current_mark;
+  static Thread* _filtering_thread;
 };
 
 #endif // SHARE_CDS_AOTCLASSFILTER_HPP

@@ -168,7 +168,7 @@ public:
 
 private:
   void do_partial_array(PartialArrayState* state, bool stolen);
-  void start_partial_objarray(G1HeapRegionAttr dest_dir, oop from, oop to);
+  void start_partial_objarray(oop from, oop to);
 
   HeapWord* allocate_copy_slow(G1HeapRegionAttr* dest_attr,
                                Klass* klass,
@@ -183,6 +183,12 @@ private:
 
   void update_bot_after_copying(oop obj, size_t word_sz);
 
+  void do_iterate_object(oop const obj,
+                         oop const old,
+                         Klass* const klass,
+                         G1HeapRegionAttr const region_attr,
+                         G1HeapRegionAttr const dest_attr,
+                         uint age);
   oop do_copy_to_survivor_space(G1HeapRegionAttr region_attr,
                                 oop obj,
                                 markWord old_mark);
@@ -230,7 +236,7 @@ public:
 
   void record_evacuation_failed_region(G1HeapRegion* r, uint worker_id, bool cause_pinned);
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(oop obj, markWord m, size_t word_sz, bool cause_pinned);
+  oop handle_evacuation_failure_par(oop obj, markWord m, Klass* klass, G1HeapRegionAttr attr, size_t word_sz, bool cause_pinned);
 
   template <typename T>
   inline void remember_root_into_optional_region(T* p);
