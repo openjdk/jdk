@@ -32,7 +32,7 @@ import javax.swing.JTextArea;
  * @bug 5014727
  * @summary Display Devanagari text and make sure the character
  *          that appears after the nukta (dot) isn't duplicated.
- * @library /open/test/jdk/java/awt/regtesthelpers /open/test/lib
+ * @library /java/awt/regtesthelpers /test/lib
  * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual TestDevanagari
  */

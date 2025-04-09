@@ -44,7 +44,7 @@ import java.awt.font.TextLayout;
  *          Note, the character is rendered between '><' but owing to the directional
  *          properties of two of the characters, the second '<' is rendered as '>'.
  *          This is correct behavior.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TestControls
  */

@@ -46,7 +46,7 @@ import javax.swing.JPanel;
  *          and black box bounds (bottom) of the result. The circles should each display at a
  *          different height. The outline and frames should approximately (within a pixel
  *          or two) surround each character.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TestGraphicOutline
  */
