@@ -392,8 +392,9 @@ public:
   }
 
   bool needs_liveness_data(const MachNode* mach) const {
-    return G1BarrierStubC2::needs_pre_barrier(mach) ||
-           G1BarrierStubC2::needs_post_barrier(mach);
+    // Liveness data is only required to compute registers to be preserved
+    // across the runtime call in the pre-barrier stub.
+    return G1BarrierStubC2::needs_pre_barrier(mach);
   }
 
   bool needs_livein_data() const {
