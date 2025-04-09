@@ -70,31 +70,33 @@ inline unsigned KlassLUTEntry::ik_omb_offset_2() const {
 }
 
 // calculates word size given header size, element size, and array length
-inline unsigned KlassLUTEntry::ak_calculate_wordsize_given_oop(oopDesc* obj) const {
-  assert(is_array(), "only for ak entries");
-  assert(UseCompactObjectHeaders, "+COH only");
-  assert(UseKLUT, "+KLUT only");
+template <bool is_objarray, class OopType, bool compact_headers>
+inline unsigned KlassLUTEntry::ak_calculate_wordsize_given_oop_fast(oopDesc* obj) const {
+  // The purpose of this function is to be as fast as possible; we hard-code as much
+  // as we can via template parameters.
+  assert(is_obj_array() == is_objarray, "Bad call");
+  assert(is_type_array() == !is_objarray, "Bad call");
 
-  // See oopDesc::size_given_klass
-  const unsigned l2esz = ak_layouthelper_esz();
-  const unsigned hsz = ak_layouthelper_hsz();
+  assert(sizeof(OopType) == 4 || sizeof(OopType) == 8, "Bad oop type");
+  constexpr int log2_oopsize = (sizeof(OopType) == 4 ? 2 : 3); // narrowOop or Oop
+  assert(UseCompressedOops == (log2_oopsize == 2),
+         "Bad call - UseCompressedOops mismatch (%d, %zu)", UseCompressedOops, sizeof(OopType));
 
-  // In +COH, array length is always at offset 8
-  STATIC_ASSERT(sizeof(markWord) == 8);
-  const int* const array_len_addr = (int*)(obj->field_addr<int>(8));
+  assert(UseCompressedClassPointers, "Bad call");
+  assert(UseCompactObjectHeaders == compact_headers, "Bad call - COH mismatch");
+
+  constexpr int alignment = BytesPerWord;
+  assert(MinObjAlignmentInBytes == alignment, "Bad call - alignment mismatch");
+
+  constexpr int length_field_offset = compact_headers ? 8 : 12;
+  const int first_element_offset = compact_headers ? ak_header_size() : 16;
+  const unsigned log2_elemsize = is_objarray ? log2_oopsize : ak_log2_elem_size();
+
+  const int* const array_len_addr = (int*)(obj->field_addr<int>(length_field_offset));
   const size_t array_length = (size_t) (*array_len_addr);
-  const size_t size_in_bytes = (array_length << l2esz) + hsz;
 
-  // Note: for UseKLUT, we require a standard object alignment (see argument.cpp)
-  constexpr int HardCodedObjectAlignmentInBytes = BytesPerWord;
-  assert(MinObjAlignmentInBytes == HardCodedObjectAlignmentInBytes, "Sanity");
-
-  return align_up(size_in_bytes, HardCodedObjectAlignmentInBytes) / HeapWordSize;
-}
-
-inline unsigned KlassLUTEntry::calculate_wordsize_given_oop(oopDesc* obj) const {
-  size_t rc = 0;
-  return is_array() ? ak_calculate_wordsize_given_oop(obj) : ik_wordsize();
+  const size_t size_in_bytes = (array_length << log2_elemsize) + first_element_offset;
+  return align_up(size_in_bytes, alignment) / HeapWordSize;
 }
 
 #endif // SHARE_OOPS_KLASSINFOLUTENTRY_INLINE_HPP

@@ -48,7 +48,7 @@ class outputStream;
 // InstanceKlass, has_no_addinfo:         KKKL L000 0000 0000 0000 0000 0000 0000  (all IK specific bits 0) (note: means that "0" is a valid IK entry with no add. info)
 // InstanceKlass, has no oopmap entries:  KKKL LSSS SSS. .... .... .... 0000 0000  (omb count bits are 0)   (only valid if !has_no_addinfo)
 //
-// ArrayKlass:                            KKKL L--- tttt tttt hhhh hhhh eeee eeee
+// ArrayKlass:                            KKKL L--- ---- ---- ---- ---- -eeh hhhh
 //
 //
 // IK specific bits:
@@ -59,9 +59,8 @@ class outputStream;
 // S  : Object instance size in words             (6 bits)
 //
 // AK specific bits:
-// e : log2 element size                          (8 bits)
-// h : header size                                (8 bits)
-// t : element basic type                         (8 bits)
+// h : header size                                (5 bits)
+// e : log2 element size                          (2 bits)
 //
 // Common bits:
 // L : Loader                                     (2 bits)
@@ -129,17 +128,13 @@ class KlassLUTEntry {
   };
 
   // Bits only valid for ArrayKlass
-  static constexpr int bits_ak_lh_esz     = 8;
-  static constexpr int bits_ak_lh_ebt     = 8;
-  static constexpr int bits_ak_lh_hsz     = 8;
-  static constexpr int bits_ak_lh         = bits_ak_lh_esz + bits_ak_lh_ebt + bits_ak_lh_hsz;
+  static constexpr int bits_ak_l2esz      = 2;
+  static constexpr int bits_ak_hsz        = 5;
   struct AKE {
     // lsb
-    // see klass.hpp
-    unsigned lh_esz : bits_ak_lh_esz; // element size
-    unsigned lh_ebt : bits_ak_lh_ebt; // element BasicType (currently unused)
-    unsigned lh_hsz : bits_ak_lh_hsz; // header size (offset to first element)
-    unsigned unused : bits_specific - bits_ak_lh_esz - bits_ak_lh_ebt - bits_ak_lh_hsz;
+    unsigned hsz    : bits_ak_hsz;    // header size (offset to first element) in bytes
+    unsigned l2esz  : bits_ak_l2esz;  // log2 elem size
+    unsigned unused : bits_specific - bits_ak_l2esz - bits_ak_hsz;
     unsigned other  : bits_common;
     // msb
   };
@@ -204,10 +199,6 @@ public:
   bool is_obj_array() const  { return _v.common.kind == ObjArrayKlassKind; }
   bool is_type_array() const { return _v.common.kind == TypeArrayKlassKind; }
 
-  // Calculates the object size. Note, introduces a branch (is_array or not).
-  // If possible, use either ik_wordsize() or ak_calculate_wordsize_given_oop() instead.
-  inline unsigned calculate_wordsize_given_oop(oopDesc* obj) const;
-
   // Following methods only if IK:
 
   // Returns true if entry carries IK-specific info (oop map block info + size).
@@ -234,16 +225,14 @@ public:
   // Following methods only if AK:
 
   // returns log2 element size
-  inline unsigned ak_layouthelper_esz() const { return _v.ake.lh_esz; }
-
-  // returns ebt byte
-  inline unsigned ak_layouthelper_ebt() const { return _v.ake.lh_ebt; }
+  inline unsigned ak_log2_elem_size() const { return _v.ake.l2esz; }
 
   // returns distance to first element
-  inline unsigned ak_layouthelper_hsz() const { return _v.ake.lh_hsz; }
+  inline unsigned ak_header_size() const { return _v.ake.hsz; }
 
   // calculates word size given header size, element size, and array length
-  inline unsigned ak_calculate_wordsize_given_oop(oopDesc* obj) const;
+  template <bool is_objarray, class OopType, bool compact_headers>
+  inline unsigned ak_calculate_wordsize_given_oop_fast(oopDesc* obj) const;
 
   // Helper function, prints current limits
   static void print_limits(outputStream* st);

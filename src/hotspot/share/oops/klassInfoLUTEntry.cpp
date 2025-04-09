@@ -153,9 +153,12 @@ uint32_t KlassLUTEntry::build_from_ak(const ArrayKlass* ak) {
   U value(0);
   value.common.kind = kind;
   value.common.loader = cld_index;
-  value.ake.lh_ebt = lhu.bytes.lh_ebt;
-  value.ake.lh_esz = lhu.bytes.lh_esz;
-  value.ake.lh_hsz = lhu.bytes.lh_hsz;
+
+  assert(lhu.bytes.lh_esz <= 3, "Sanity (%X)", lh);
+  value.ake.l2esz = lhu.bytes.lh_esz;
+
+  assert(lhu.bytes.lh_hsz >= 12 && lhu.bytes.lh_hsz <= 20, "Sanity");
+  value.ake.hsz = lhu.bytes.lh_hsz;
   return value.raw;
 
 }
@@ -185,7 +188,6 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
   // to place them in a header
   STATIC_ASSERT(bits_common + bits_specific == bits_total);
   STATIC_ASSERT(32 == bits_total);
-  STATIC_ASSERT(bits_ak_lh <= bits_specific);
 
   STATIC_ASSERT(sizeof(KE) == sizeof(uint32_t));
   STATIC_ASSERT(sizeof(AKE) == sizeof(uint32_t));
@@ -224,12 +226,11 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
 
     // compare our (truncated) lh with the real one
     const LayoutHelperHelper lhu = { (unsigned) real_lh };
-    assert(lhu.bytes.lh_ebt == ak_layouthelper_ebt() &&
-           lhu.bytes.lh_esz == ak_layouthelper_esz() &&
-           lhu.bytes.lh_hsz == ak_layouthelper_hsz() &&
+    assert(lhu.bytes.lh_esz == ak_log2_elem_size() &&
+           lhu.bytes.lh_hsz == ak_header_size() &&
            ( (lhu.bytes.lh_tag == 0xC0 && real_kind == Klass::TypeArrayKlassKind) ||
              (lhu.bytes.lh_tag == 0x80 && real_kind == Klass::ObjArrayKlassKind) ),
-             "layouthelper mismatch (0x%x vs 0x%x)", real_lh, _v.raw);
+             "layouthelper mismatch (layouthelper: 0x%x, klute: 0x%x)", real_lh, _v.raw);
 
   } else {
 

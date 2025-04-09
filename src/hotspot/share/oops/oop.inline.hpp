@@ -97,6 +97,17 @@ void oopDesc::init_mark() {
   set_mark(prototype_mark());
 }
 
+KlassLUTEntry oopDesc::get_klute() const {
+  switch (ObjLayout::klass_mode()) {
+    case ObjLayout::Compact:
+      return KlassInfoLUT::lookup(mark().narrow_klass());
+    case ObjLayout::Compressed:
+      return CompressedKlassPointers::decode_not_null(_metadata._compressed_klass)->klute();
+    default:
+      return _metadata._klass->klute();
+  }
+}
+
 Klass* oopDesc::klass() const {
   switch (ObjLayout::klass_mode()) {
     case ObjLayout::Compact:
@@ -396,43 +407,20 @@ void oopDesc::incr_age() {
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate(OopClosureType* cl) {
-
-  if (UseKLUT) {
-    const narrowKlass nk = mark().narrow_klass();
-    const KlassLUTEntry klute = KlassInfoLUT::lookup(nk);
-    OopIteratorClosureDispatch::oop_oop_iterate(this, cl, klute);
-    return;
-  }
-
-  OopIteratorClosureDispatch::oop_oop_iterate(cl, this, klass());
+  const KlassLUTEntry klute = get_klute();
+  OopIteratorClosureDispatch::oop_oop_iterate(this, cl, klute);
 }
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate(OopClosureType* cl, MemRegion mr) {
-
-  if (UseKLUT) {
-    const narrowKlass nk = mark().narrow_klass();
-    const KlassLUTEntry klute = KlassInfoLUT::lookup(nk);
-    OopIteratorClosureDispatch::oop_oop_iterate_bounded(this, cl, mr, klute);
-    return;
-  }
-
-  OopIteratorClosureDispatch::oop_oop_iterate(cl, this, klass(), mr);
+  const KlassLUTEntry klute = get_klute();
+  OopIteratorClosureDispatch::oop_oop_iterate_bounded(this, cl, mr, klute);
 }
 
 template <typename OopClosureType>
 size_t oopDesc::oop_iterate_size(OopClosureType* cl) {
-
-  if (UseKLUT) {
-    const narrowKlass nk = mark().narrow_klass();
-    const KlassLUTEntry klute = KlassInfoLUT::lookup(nk);
-    return OopIteratorClosureDispatch::oop_oop_iterate_size(this, cl, klute);
-  }
-
-  Klass* k = klass();
-  size_t size = size_given_klass(k);
-  OopIteratorClosureDispatch::oop_oop_iterate(cl, this, k);
-  return size;
+  const KlassLUTEntry klute = get_klute();
+  return OopIteratorClosureDispatch::oop_oop_iterate_size(this, cl, klute);
 }
 
 template <typename OopClosureType>
