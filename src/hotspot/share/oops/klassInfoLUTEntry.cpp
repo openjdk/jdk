@@ -157,7 +157,7 @@ uint32_t KlassLUTEntry::build_from_ak(const ArrayKlass* ak) {
   assert(lhu.bytes.lh_esz <= 3, "Sanity (%X)", lh);
   value.ake.l2esz = lhu.bytes.lh_esz;
 
-  assert(lhu.bytes.lh_hsz >= 12 && lhu.bytes.lh_hsz <= 20, "Sanity");
+  assert(lhu.bytes.lh_hsz >= 12 && lhu.bytes.lh_hsz <= 24, "Sanity");
   value.ake.hsz = lhu.bytes.lh_hsz;
   return value.raw;
 
