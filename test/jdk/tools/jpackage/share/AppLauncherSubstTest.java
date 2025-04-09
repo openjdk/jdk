@@ -21,13 +21,16 @@
  * questions.
  */
 
+import static jdk.internal.util.OperatingSystem.WINDOWS;
 import static jdk.jpackage.test.HelloApp.configureAndExecute;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -79,7 +82,7 @@ public class AppLauncherSubstTest {
 
             private String str;
             private String expectedStr;
-            private Map<String, String> env = new HashMap<>();
+            private Map<String, String> env = new LinkedHashMap<>();
         }
 
         public TestSpec {
@@ -115,6 +118,8 @@ public class AppLauncherSubstTest {
 
     @Test
     @ParameterSupplier
+    @ParameterSupplier(value = "testCaseSensitive", ifNotOS = WINDOWS)
+    @ParameterSupplier(value = "testCaseInsensitive", ifOS = WINDOWS)
     public static void test(TestSpec spec) throws IOException {
         final var cmd = JPackageCommand.helloAppImage(TEST_APP_JAVA + "*Hello")
                 .ignoreFakeRuntime()
@@ -159,6 +164,78 @@ public class AppLauncherSubstTest {
         ).map(TestSpec.Builder::create).map(v -> {
             return new Object[] {v};
         }).toList();
+    }
+
+    public static Collection<Object[]> testCaseSensitive() {
+        final List<TestSpec> testCases = new ArrayList<>();
+        for (final var macro : Macro.values()) {
+            testCases.addAll(createTestCases(macro, true));
+        }
+
+        testCases.addAll(Stream.of(
+                testSpec("$ALPHA $alpha").expect("A a").var("ALPHA", "A").var("alpha", "a"),
+                testSpec("$ALPHA $alpha").expect("$ALPHA a").var("alpha", "a"),
+                testSpec("$ALPHA $alpha").expect("A $alpha").var("ALPHA", "A")
+        ).map(TestSpec.Builder::create).toList());
+
+        return testCases.stream().map(v -> {
+            return new Object[] {v};
+        }).toList();
+    }
+
+    public static Collection<Object[]> testCaseInsensitive() {
+        final List<TestSpec> testCases = new ArrayList<>();
+        for (final var macro : Macro.values()) {
+            testCases.addAll(createTestCases(macro, false));
+        }
+
+        testCases.addAll(Stream.of(
+                testSpec("$ALPHA $alpha").expect("A A").var("AlphA", "A"),
+                testSpec("$ALPHA $alpha").expect("a a").var("alpha", "a"),
+                testSpec("$ALPHA $alpha").expect("A A").var("ALPHA", "A")
+        ).map(TestSpec.Builder::create).toList());
+
+        return testCases.stream().map(v -> {
+            return new Object[] {v};
+        }).toList();
+    }
+
+    private static List<TestSpec> createTestCases(Macro macro, boolean caseSensitive) {
+        final var name = macro.name();
+        final var name2 = name.transform(str -> {
+            final var chars = name.toCharArray();
+            for (int i = 0; i < chars.length; i += 2) {
+                chars[i] = Character.toLowerCase(chars[i]);
+            }
+            return new String(chars);
+        });
+
+        if (name.equals(name2)) {
+            throw new UnsupportedOperationException();
+        }
+
+        final var testSpec = testSpec(String.format("${%s}${%s}", name, name2)).var(name, "A").var(name2, "[foo]");
+        if (caseSensitive) {
+            testSpec.expect(String.format("@@%s@@[foo]", name, name2));
+        } else {
+            testSpec.expect(String.format("@@%s@@@@%s@@", name, name));
+        }
+
+        final var testSpec2 = testSpec(String.format("${%s}${%s}", name, name2)).var(name, "A");
+        if (caseSensitive) {
+            testSpec2.expect(String.format("@@%s@@${%s}", name, name2));
+        } else {
+            testSpec2.expect(String.format("@@%s@@@@%s@@", name, name));
+        }
+
+        final var testSpec3 = testSpec(String.format("${%s}${%s}", name, name2));
+        if (caseSensitive) {
+            testSpec3.expect(String.format("@@%s@@${%s}", name, name2));
+        } else {
+            testSpec3.expect(String.format("@@%s@@@@%s@@", name, name));
+        }
+
+        return Stream.of(testSpec, testSpec2).map(TestSpec.Builder::create).toList();
     }
 
     private static TestSpec.Builder testSpec(String str) {

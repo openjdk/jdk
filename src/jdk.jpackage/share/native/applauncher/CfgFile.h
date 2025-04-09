@@ -27,8 +27,7 @@
 #ifndef CfgFile_h
 #define CfgFile_h
 
-#include <map>
-#include "tstrings.h"
+#include "StringProcessing.h"
 
 
 class CfgFile {
@@ -90,7 +89,7 @@ public:
         std::swap(empty, other.empty);
     }
 
-    typedef std::map<tstring, tstring> Macros;
+    typedef StringProcessing::VariableValues Macros;
 
     /**
      * Returns copy of this instance with the given macros and environment variables expanded.

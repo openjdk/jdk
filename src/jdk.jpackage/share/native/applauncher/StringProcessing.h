@@ -59,7 +59,16 @@ private:
 
 typedef std::vector<Token> TokenizedString;
 typedef std::vector<tstring> VariableNameList;
+#ifdef _WIN32
+struct less_ignore_case {
+    bool operator() (const tstring& x, const tstring& y) const {
+        return std::less<tstring>()(tstrings::toLower(x), tstrings::toLower(y));
+    }
+};
+typedef std::map<tstring, tstring, less_ignore_case> VariableValues;
+#else
 typedef std::map<tstring, tstring> VariableValues;
+#endif
 
 TokenizedString tokenize(const tstring& str);
 
