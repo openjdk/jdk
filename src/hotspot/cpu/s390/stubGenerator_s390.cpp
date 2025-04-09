@@ -1476,7 +1476,8 @@ class StubGenerator: public StubCodeGenerator {
                                        MacroAssembler *_masm) {
 
     NearLabel L_Loop, L_Tail; // 2x unrolled loop
-    Register tmp = Z_R1; // R1 is free at this point
+    Register tmp = Z_R0; // R1 is free at this point
+    Register tmp1 = Z_R1;
 
     if (elem_size > 1) {
       __ rotate_then_insert(byteVal, byteVal, 64 - 2 * 8 , 63 - 8,  8, 0);
@@ -1494,9 +1495,22 @@ class StubGenerator: public StubCodeGenerator {
     __ z_bre(L_Tail);
 
     __ align(32); // loop alignment
-    __ bind(L_Loop);
+    __ z_lgr(tmp1, dest);
     __ store_sized_value(byteVal, Address(dest, 0), elem_size);
     __ store_sized_value(byteVal, Address(dest, elem_size), elem_size);
+
+    __ z_aghi(dest, 2 * elem_size);
+    __ z_aghi(tmp, -1);
+
+    __ z_ltr(tmp, tmp);
+    __ z_bcr(Assembler::bcondEqual, Z_R14);
+
+    __ bind(L_Loop);
+    __ z_mvc(
+        Address(dest, 0), // move to
+        Address(tmp1, 0), // move from
+        2 * elem_size // size of data
+        );
     __ z_aghi(dest, 2 * elem_size);
     __ z_brct(tmp, L_Loop);
 
