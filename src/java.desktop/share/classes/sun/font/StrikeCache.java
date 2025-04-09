@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.awt.GraphicsEnvironment;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import static java.lang.foreign.MemorySegment.NULL;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
 import static java.lang.foreign.ValueLayout.*;
@@ -43,6 +42,7 @@ import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.*;
 
+import jdk.internal.foreign.SegmentFactories;
 import sun.java2d.Disposer;
 import sun.java2d.pipe.BufferedContext;
 import sun.java2d.pipe.RenderQueue;
@@ -72,9 +72,9 @@ free native memory resources.
 
 public final class StrikeCache {
 
-    static ReferenceQueue<Object> refQueue = Disposer.getQueue();
+    static final ReferenceQueue<Object> REF_QUEUE = Disposer.getQueue();
 
-    static ArrayList<GlyphDisposedListener> disposeListeners = new ArrayList<GlyphDisposedListener>(1);
+    static final ArrayList<GlyphDisposedListener> DISPOSED_LISTENERS = new ArrayList<>(1);
 
 
     /* Reference objects may have their referents cleared when GC chooses.
@@ -94,27 +94,28 @@ public final class StrikeCache {
      * access there is no guarantee that this cache will ensure that unique
      * strikes are cached. Every time a strike is looked up it is added
      * to the current index in this cache. All this cache has to do to be
-     * worthwhile is prevent excessive cache flushing of strikes that are
+     * worthwhile is to prevent excessive cache flushing of strikes that are
      * referenced frequently. The logic that adds references here could be
      * tweaked to keep only strikes  that represent untransformed, screen
      * sizes as that's the typical performance case.
      */
-    static int MINSTRIKES = 8; // can be overridden by property
+    static final int MIN_STRIKES = minStrikes();
+    static final FontStrike[] RECENT_STRIKES = new FontStrike[MIN_STRIKES];
+    static final boolean CACHE_REF_TYPE_WEAK = isCacheRefTypeWeak();
+
     static int recentStrikeIndex = 0;
-    static FontStrike[] recentStrikes;
-    static boolean cacheRefTypeWeak;
 
     /*
      * Native sizes and accessors for glyph cache structure.
      * There are 10 values. Also need native address size and a long which
      * references a memory address for a "null" glyph image.
      */
-    static final int nativeAddressSize = (int)ValueLayout.ADDRESS.byteSize();
-    static final long invisibleGlyphPtr = getInvisibleGlyphPtr(); // a singleton.
+    static final int NATIVE_ADDRESS_SIZE = (int)ValueLayout.ADDRESS.byteSize();
+    static final long INVISIBLE_GLYPH_PTR = getInvisibleGlyphPtr(); // a singleton.
 
     static native long getInvisibleGlyphPtr();
 
-    public static final StructLayout GlyphImageLayout = MemoryLayout.structLayout(
+    public static final StructLayout GLYPH_IMAGE_LAYOUT = MemoryLayout.structLayout(
         JAVA_FLOAT.withName("xAdvance"), // 0+4=4,
         JAVA_FLOAT.withName("yAdvance"), // 4+4=8,
         JAVA_CHAR.withName("width"),     // 8+2=10,
@@ -128,125 +129,86 @@ public final class StrikeCache {
         ADDRESS.withName("image")        // 32+8=40
      );
 
-   private static final long GLYPHIMAGESIZE = GlyphImageLayout.byteSize();
+   private static final long GLYPH_IMAGE_SIZE = GLYPH_IMAGE_LAYOUT.byteSize();
 
-   private static VarHandle getVarHandle(StructLayout struct, String name) {
-        VarHandle h = struct.varHandle(PathElement.groupElement(name));
+   private static VarHandle varHandle(String name) {
+        VarHandle h = GLYPH_IMAGE_LAYOUT.varHandle(PathElement.groupElement(name));
         /* insert 0 offset so don't need to pass arg every time */
         return MethodHandles.insertCoordinates(h, 1, 0L).withInvokeExactBehavior();
     }
 
-    private static final VarHandle xAdvanceHandle = getVarHandle(GlyphImageLayout, "xAdvance");
-    private static final VarHandle yAdvanceHandle = getVarHandle(GlyphImageLayout, "yAdvance");
-    private static final VarHandle widthHandle    = getVarHandle(GlyphImageLayout, "width");
-    private static final VarHandle heightHandle   = getVarHandle(GlyphImageLayout, "height");
-    private static final VarHandle rowBytesHandle = getVarHandle(GlyphImageLayout, "rowBytes");
-    private static final VarHandle managedHandle  = getVarHandle(GlyphImageLayout, "managed");
-    private static final VarHandle topLeftXHandle = getVarHandle(GlyphImageLayout, "topLeftX");
-    private static final VarHandle topLeftYHandle = getVarHandle(GlyphImageLayout, "topLeftY");
-    private static final VarHandle cellInfoHandle = getVarHandle(GlyphImageLayout, "cellInfo");
-    private static final VarHandle imageHandle    = getVarHandle(GlyphImageLayout, "image");
+    private static final VarHandle xAdvanceHandle = varHandle("xAdvance");
+    private static final VarHandle yAdvanceHandle = varHandle("yAdvance");
+    private static final VarHandle widthHandle    = varHandle("width");
+    private static final VarHandle heightHandle   = varHandle("height");
+    private static final VarHandle rowBytesHandle = varHandle("rowBytes");
+    private static final VarHandle managedHandle  = varHandle("managed");
+    private static final VarHandle topLeftXHandle = varHandle("topLeftX");
+    private static final VarHandle topLeftYHandle = varHandle("topLeftY");
+    private static final VarHandle cellInfoHandle = varHandle("cellInfo");
+    private static final VarHandle imageHandle    = varHandle("image");
 
-    @SuppressWarnings("restricted")
-    static final float getGlyphXAdvance(long ptr) {
-        MemorySegment seg = MemorySegment.ofAddress(ptr);
-        seg = seg.reinterpret(GLYPHIMAGESIZE);
-        return (float)xAdvanceHandle.get(seg);
+    static float getGlyphXAdvance(long ptr) {
+        return (float)xAdvanceHandle.get(asGlyphSegment(ptr));
+    }
+
+    static void setGlyphXAdvance(long ptr, float val) {
+        xAdvanceHandle.set(asGlyphSegment(ptr), val);
+    }
+
+    static float getGlyphYAdvance(long ptr) {
+        return (float)yAdvanceHandle.get(asGlyphSegment(ptr));
+    }
+
+    static char getGlyphWidth(long ptr) {
+        return (char)widthHandle.get(asGlyphSegment(ptr));
+    }
+
+    static char getGlyphHeight(long ptr) {
+        return (char)heightHandle.get(asGlyphSegment(ptr));
+    }
+
+    static char getGlyphRowBytes(long ptr) {
+        return (char)rowBytesHandle.get(asGlyphSegment(ptr));
+    }
+
+    static byte getGlyphManaged(long ptr) {
+        return (byte)managedHandle.get(asGlyphSegment(ptr));
+    }
+
+    static float getGlyphTopLeftX(long ptr) {
+        return (float)topLeftXHandle.get(asGlyphSegment(ptr));
+    }
+
+    static float getGlyphTopLeftY(long ptr) {
+        return (float)topLeftYHandle.get(asGlyphSegment(ptr));
+    }
+
+    static long getGlyphCellInfo(long ptr) {
+        return ((MemorySegment)cellInfoHandle.get(asGlyphSegment(ptr))).address();
+    }
+
+    static void setGlyphCellInfo(long ptr, long val) {
+        cellInfoHandle.set(asGlyphSegment(ptr), SegmentFactories.makeNativeSegmentUnchecked(val, 0));
+    }
+
+    static long getGlyphImagePtr(long ptr) {
+        return ((MemorySegment)imageHandle.get(asGlyphSegment(ptr))).address();
     }
 
     @SuppressWarnings("restricted")
-    static final void setGlyphXAdvance(long ptr, float val) {
-        MemorySegment seg = MemorySegment.ofAddress(ptr);
-        seg = seg.reinterpret(GLYPHIMAGESIZE);
-        xAdvanceHandle.set(seg, val);
-    }
-
-    @SuppressWarnings("restricted")
-    static final float getGlyphYAdvance(long ptr) {
-        MemorySegment seg = MemorySegment.ofAddress(ptr);
-        seg = seg.reinterpret(GLYPHIMAGESIZE);
-        return (float)yAdvanceHandle.get(seg);
-    }
-
-    @SuppressWarnings("restricted")
-    static final char getGlyphWidth(long ptr) {
-        MemorySegment seg = MemorySegment.ofAddress(ptr);
-        seg = seg.reinterpret(GLYPHIMAGESIZE);
-        return (char)widthHandle.get(seg);
-    }
-
-    @SuppressWarnings("restricted")
-    static final char getGlyphHeight(long ptr) {
-        MemorySegment seg = MemorySegment.ofAddress(ptr);
-        seg = seg.reinterpret(GLYPHIMAGESIZE);
-        return (char)heightHandle.get(seg);
-    }
-
-    @SuppressWarnings("restricted")
-    static final char getGlyphRowBytes(long ptr) {
-        MemorySegment seg = MemorySegment.ofAddress(ptr);
-        seg = seg.reinterpret(GLYPHIMAGESIZE);
-        return (char)rowBytesHandle.get(seg);
-    }
-
-    @SuppressWarnings("restricted")
-    static final byte getGlyphManaged(long ptr) {
-        MemorySegment seg = MemorySegment.ofAddress(ptr);
-        seg = seg.reinterpret(GLYPHIMAGESIZE);
-        return (byte)managedHandle.get(seg);
-    }
-
-    @SuppressWarnings("restricted")
-    static final float getGlyphTopLeftX(long ptr) {
-        MemorySegment seg = MemorySegment.ofAddress(ptr);
-        seg = seg.reinterpret(GLYPHIMAGESIZE);
-        return (float)topLeftXHandle.get(seg);
-    }
-
-    @SuppressWarnings("restricted")
-    static final float getGlyphTopLeftY(long ptr) {
-        MemorySegment seg = MemorySegment.ofAddress(ptr);
-        seg = seg.reinterpret(GLYPHIMAGESIZE);
-        return (float)topLeftYHandle.get(seg);
-    }
-
-    @SuppressWarnings("restricted")
-    static final long getGlyphCellInfo(long ptr) {
-        MemorySegment seg = MemorySegment.ofAddress(ptr);
-        seg = seg.reinterpret(GLYPHIMAGESIZE);
-        return ((MemorySegment)cellInfoHandle.get(seg)).address();
-    }
-
-    @SuppressWarnings("restricted")
-    static final void setGlyphCellInfo(long ptr, long val) {
-        MemorySegment seg = MemorySegment.ofAddress(ptr);
-        seg = seg.reinterpret(GLYPHIMAGESIZE);
-        MemorySegment segval = MemorySegment.ofAddress(val);
-        cellInfoHandle.set(seg, segval);
-    }
-
-    @SuppressWarnings("restricted")
-    static final long getGlyphImagePtr(long ptr) {
-        MemorySegment seg = MemorySegment.ofAddress(ptr);
-        seg = seg.reinterpret(GLYPHIMAGESIZE);
-        return ((MemorySegment)imageHandle.get(seg)).address();
-    }
-
-    @SuppressWarnings("restricted")
-    static final MemorySegment getGlyphPixelData(long ptr) {
-        MemorySegment seg = MemorySegment.ofAddress(ptr);
-        seg = seg.reinterpret(GLYPHIMAGESIZE);
+    static MemorySegment getGlyphPixelData(long ptr) {
+        final MemorySegment seg = asGlyphSegment(ptr);
         char hgt = (char)heightHandle.get(seg);
         char rb = (char)rowBytesHandle.get(seg);
         MemorySegment pixelData = (MemorySegment)imageHandle.get(seg);
-        pixelData = pixelData.reinterpret(rb * hgt);
+        pixelData = pixelData.reinterpret((long) rb * hgt);
         return pixelData;
     }
 
     @SuppressWarnings("restricted")
-    static final byte[] getGlyphPixelBytes(long ptr) {
-        MemorySegment seg = MemorySegment.ofAddress(ptr);
-        seg = seg.reinterpret(GLYPHIMAGESIZE);
+    static byte[] getGlyphPixelBytes(long ptr) {
+        final MemorySegment seg = asGlyphSegment(ptr);
         char hgt = (char)heightHandle.get(seg);
         char rb = (char)rowBytesHandle.get(seg);
         MemorySegment pixelData = (MemorySegment)imageHandle.get(seg);
@@ -255,51 +217,34 @@ public final class StrikeCache {
         return pixelData.toArray(ValueLayout.JAVA_BYTE);
     }
 
-    static final byte getPixelByte(MemorySegment pixelData, long index) {
+    static MemorySegment asGlyphSegment(long ptr) {
+        return SegmentFactories.makeNativeSegmentUnchecked(ptr, GLYPH_IMAGE_SIZE);
+    }
+
+    static byte getPixelByte(MemorySegment pixelData, long index) {
        return pixelData.getAtIndex(JAVA_BYTE, index);
     }
 
-    static {
-        initStatic();
+    private static int minStrikes() {
+        return Math.max(1, Integer.getInteger("sun.java2d.font.minstrikes", 8));
     }
 
-    private static void initStatic() {
-
-        if (nativeAddressSize < 4) {
-            throw new InternalError("Unexpected address size for font data: " +
-                                    nativeAddressSize);
-        }
-
-       /* Allow a client to override the reference type used to
-        * cache strikes. The default is "soft" which hints to keep
-        * the strikes around. This property allows the client to
-        * override this to "weak" which hint to the GC to free
-        * memory more aggressively.
-        */
-       String refType = System.getProperty("sun.java2d.font.reftype", "soft");
-       cacheRefTypeWeak = refType.equals("weak");
-
-        String minStrikesStr =
-            System.getProperty("sun.java2d.font.minstrikes");
-        if (minStrikesStr != null) {
-            try {
-                MINSTRIKES = Integer.parseInt(minStrikesStr);
-                if (MINSTRIKES <= 0) {
-                    MINSTRIKES = 1;
-                }
-            } catch (NumberFormatException e) {
-            }
-        }
-
-        recentStrikes = new FontStrike[MINSTRIKES];
+    private static boolean isCacheRefTypeWeak() {
+        /* Allow a client to override the reference type used to
+         * cache strikes. The default is "soft" which hints to keep
+         * the strikes around. This property allows the client to
+         * override this to "weak" which hint to the GC to free
+         * memory more aggressively.
+         */
+        String refType = System.getProperty("sun.java2d.font.reftype", "soft");
+        return refType.equals("weak");
     }
-
 
     static void refStrike(FontStrike strike) {
         int index = recentStrikeIndex;
-        recentStrikes[index] = strike;
+        RECENT_STRIKES[index] = strike;
         index++;
-        if (index == MINSTRIKES) {
+        if (index == MIN_STRIKES) {
             index = 0;
         }
         recentStrikeIndex = index;
@@ -358,7 +303,7 @@ public final class StrikeCache {
     }
 
     private static boolean longAddresses() {
-        return nativeAddressSize == 8;
+        return NATIVE_ADDRESS_SIZE == 8;
     }
 
     static void disposeStrike(final FontStrikeDisposer disposer) {
@@ -417,15 +362,15 @@ public final class StrikeCache {
     private static native void freeLongMemory(long[] glyphPtrs, long pContext);
 
     private static void freeCachedIntMemory(int[] glyphPtrs, long pContext) {
-        synchronized(disposeListeners) {
-            if (disposeListeners.size() > 0) {
+        synchronized(DISPOSED_LISTENERS) {
+            if (!DISPOSED_LISTENERS.isEmpty()) {
                 ArrayList<Long> gids = null;
 
                 for (int i = 0; i < glyphPtrs.length; i++) {
                     if ((glyphPtrs[i] != 0) && getGlyphManaged(glyphPtrs[i]) == 0) {
 
                         if (gids == null) {
-                            gids = new ArrayList<Long>();
+                            gids = new ArrayList<>();
                         }
                         gids.add((long) glyphPtrs[i]);
                     }
@@ -443,45 +388,45 @@ public final class StrikeCache {
     }
 
     private static void  freeCachedLongMemory(long[] glyphPtrs, long pContext) {
-        synchronized(disposeListeners) {
-        if (disposeListeners.size() > 0)  {
-                ArrayList<Long> gids = null;
+        synchronized(DISPOSED_LISTENERS) {
+            if (!DISPOSED_LISTENERS.isEmpty())  {
+                    ArrayList<Long> gids = null;
 
-                for (int i=0; i < glyphPtrs.length; i++) {
-                    if ((glyphPtrs[i] != 0) && getGlyphManaged(glyphPtrs[i]) == 0) {
+                    for (int i=0; i < glyphPtrs.length; i++) {
+                        if ((glyphPtrs[i] != 0) && getGlyphManaged(glyphPtrs[i]) == 0) {
 
-                        if (gids == null) {
-                            gids = new ArrayList<Long>();
+                            if (gids == null) {
+                                gids = new ArrayList<>();
+                            }
+                            gids.add(glyphPtrs[i]);
                         }
-                        gids.add(glyphPtrs[i]);
                     }
-                }
 
-                if (gids != null) {
-                    // Any reference by the disposers to the native glyph ptrs
-                    // must be done before this returns.
-                    notifyDisposeListeners(gids);
-                }
-        }
+                    if (gids != null) {
+                        // Any reference by the disposers to the native glyph ptrs
+                        // must be done before this returns.
+                        notifyDisposeListeners(gids);
+                    }
+            }
         }
 
         freeLongMemory(glyphPtrs, pContext);
     }
 
     public static void addGlyphDisposedListener(GlyphDisposedListener listener) {
-        synchronized(disposeListeners) {
-            disposeListeners.add(listener);
+        synchronized(DISPOSED_LISTENERS) {
+            DISPOSED_LISTENERS.add(listener);
         }
     }
 
     private static void notifyDisposeListeners(ArrayList<Long> glyphs) {
-        for (GlyphDisposedListener listener : disposeListeners) {
+        for (GlyphDisposedListener listener : DISPOSED_LISTENERS) {
             listener.glyphDisposed(glyphs);
         }
     }
 
     public static Reference<FontStrike> getStrikeRef(FontStrike strike) {
-        return getStrikeRef(strike, cacheRefTypeWeak);
+        return getStrikeRef(strike, CACHE_REF_TYPE_WEAK);
     }
 
     public static Reference<FontStrike> getStrikeRef(FontStrike strike, boolean weak) {
@@ -507,14 +452,14 @@ public final class StrikeCache {
         }
     }
 
-    static interface DisposableStrike {
+    interface DisposableStrike {
         FontStrikeDisposer getDisposer();
     }
 
-    static class SoftDisposerRef
+    static final class SoftDisposerRef
         extends SoftReference<FontStrike> implements DisposableStrike {
 
-        private FontStrikeDisposer disposer;
+        private final FontStrikeDisposer disposer;
 
         public FontStrikeDisposer getDisposer() {
             return disposer;
@@ -522,16 +467,16 @@ public final class StrikeCache {
 
         @SuppressWarnings("unchecked")
         SoftDisposerRef(FontStrike strike) {
-            super(strike, StrikeCache.refQueue);
+            super(strike, StrikeCache.REF_QUEUE);
             disposer = strike.disposer;
-            Disposer.addReference((Reference<Object>)(Reference)this, disposer);
+            Disposer.addReference((Reference<Object>)(Reference<?>)this, disposer);
         }
     }
 
-    static class WeakDisposerRef
+    static final class WeakDisposerRef
         extends WeakReference<FontStrike> implements DisposableStrike {
 
-        private FontStrikeDisposer disposer;
+        private final FontStrikeDisposer disposer;
 
         public FontStrikeDisposer getDisposer() {
             return disposer;
@@ -539,9 +484,9 @@ public final class StrikeCache {
 
         @SuppressWarnings("unchecked")
         WeakDisposerRef(FontStrike strike) {
-            super(strike, StrikeCache.refQueue);
+            super(strike, StrikeCache.REF_QUEUE);
             disposer = strike.disposer;
-            Disposer.addReference((Reference<Object>)(Reference)this, disposer);
+            Disposer.addReference((Reference<Object>)(Reference<?>)this, disposer);
         }
     }
 

@@ -267,7 +267,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         // so there's no need to do anything explicit here.
         initIDs();
 
-        switch (StrikeCache.nativeAddressSize) {
+        switch (StrikeCache.NATIVE_ADDRESS_SIZE) {
         case 8: longAddresses = true; break;
         case 4: longAddresses = false; break;
         default: throw new RuntimeException("Unexpected address size");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,6 @@ import java.awt.Font;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,20 +81,20 @@ import static java.lang.Character.*;
 
 public final class GlyphLayout {
     // data for glyph vector
-    private GVData _gvdata;
+    private final GVData _gvdata;
 
     // cached glyph layout data for reuse
     private static volatile GlyphLayout cache;  // reusable
 
     private LayoutEngineFactory _lef;  // set when get is called, unset when done is called
-    private TextRecord _textRecord;    // the text we're working on, used by iterators
-    private ScriptRun _scriptRuns;     // iterator over script runs
-    private FontRunIterator _fontRuns; // iterator over physical fonts in a composite
+    private final TextRecord _textRecord;    // the text we're working on, used by iterators
+    private final ScriptRun _scriptRuns;     // iterator over script runs
+    private final FontRunIterator _fontRuns; // iterator over physical fonts in a composite
     private int _ercount;
-    private ArrayList<EngineRecord> _erecords;
-    private Point2D.Float _pt;
+    private final ArrayList<EngineRecord> _erecords;
+    private final Point2D.Float _pt;
     private FontStrikeDesc _sd;
-    private float[] _mat;
+    private final float[] _mat;
     private float ptSize;
     private int _typo_flags;
     private int _offset;
@@ -286,7 +285,7 @@ public final class GlyphLayout {
                         font.equals(rhs.font) &&
                         frc.equals(rhs.frc);
                 }
-                catch (ClassCastException e) {
+                catch (ClassCastException _) {
                 }
                 return false;
             }
@@ -627,7 +626,7 @@ public final class GlyphLayout {
         private int limit;
         private int gmask;
         private int eflags;
-        private LayoutEngineKey key;
+        private final LayoutEngineKey key;
         private LayoutEngine engine;
 
         EngineRecord() {
