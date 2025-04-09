@@ -244,25 +244,15 @@ bool oopDesc::is_stackChunk()  const { return klass()->is_stack_chunk_instance_k
 bool oopDesc::is_array()       const { return klass()->is_array_klass();                }
 
 bool oopDesc::is_objArray() const {
-
-  if (UseKLUT) {
-    const KlassLUTEntry klute = KlassInfoLUT::lookup(mark().narrow_klass());
-    return klute.is_obj_array();
-  }
-  return klass()->is_objArray_klass();
-
-//  const KlassLUTEntry klute = UseKLUT ?
-//      KlassInfoLUT::get_entry(mark().narrow_klass()) :
-//      KlassLUTEntry(klass()->klute());
-//  return klute.is_obj_array();
+  const bool rc = get_klute().is_obj_array();
+  assert(rc == klass()->is_objArray_klass(), "Sanity");
+  return rc;
 }
 
 bool oopDesc::is_typeArray() const {
-  if (UseKLUT) {
-    const KlassLUTEntry klute = KlassInfoLUT::lookup(mark().narrow_klass());
-    return klute.is_type_array();
-  }
-  return klass()->is_typeArray_klass();
+  const bool rc = get_klute().is_type_array();
+  assert(rc == klass()->is_typeArray_klass(), "Sanity");
+  return rc;
 }
 
 template<typename T>
@@ -425,33 +415,14 @@ size_t oopDesc::oop_iterate_size(OopClosureType* cl) {
 
 template <typename OopClosureType>
 size_t oopDesc::oop_iterate_size(OopClosureType* cl, MemRegion mr) {
-
-  if (UseKLUT) {
-    const narrowKlass nk = mark().narrow_klass();
-    const KlassLUTEntry klute = KlassInfoLUT::lookup(nk);
-    return OopIteratorClosureDispatch::oop_oop_iterate_bounded_size(this, cl, mr, klute);
-  }
-
-  Klass* k = klass();
-  size_t size = size_given_klass(k);
-  OopIteratorClosureDispatch::oop_oop_iterate(cl, this, k, mr);
-  return size;
+  const KlassLUTEntry klute = get_klute();
+  return OopIteratorClosureDispatch::oop_oop_iterate_bounded_size(this, cl, mr, klute);
 }
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate_backwards(OopClosureType* cl) {
-
-  if (UseKLUT) {
-    const narrowKlass nk = mark().narrow_klass();
-    const KlassLUTEntry klute = KlassInfoLUT::lookup(nk);
-    if (!klute.is_type_array()) { // no need to iterate TAK
-      OopIteratorClosureDispatch::oop_oop_iterate_reverse(this, cl, klute);
-    }
-    return;
-  }
-
-  Klass* k = klass();
-  OopIteratorClosureDispatch::oop_oop_iterate_backwards(cl, this, k);
+  const KlassLUTEntry klute = get_klute();
+  OopIteratorClosureDispatch::oop_oop_iterate_reverse(this, cl, klute);
 }
 
 bool oopDesc::is_instanceof_or_null(oop obj, Klass* klass) {
