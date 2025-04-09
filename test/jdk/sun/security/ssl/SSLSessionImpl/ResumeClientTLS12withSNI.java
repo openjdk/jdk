@@ -34,7 +34,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.util.List;
+import java.util.*;
 
 public class ResumeClientTLS12withSNI {
 
@@ -76,7 +76,7 @@ public class ResumeClientTLS12withSNI {
     /*
      * The following is to set up the keystores.
      */
-    private static final String pathToStores = System.getProperty("test.src", ".");;
+    private static final String pathToStores = System.getProperty("test.src", ".");
     private static final String keyStoreFile = "keystore_san.p12";
     private static final String trustStoreFile = "keystore_san.p12";
     private static final char[] passphrase = "123456".toCharArray();
@@ -96,7 +96,7 @@ public class ResumeClientTLS12withSNI {
      */
     public static void main(String args[]) throws Exception {
         if (debug) {
-            System.setProperty("javax.net.debug", "ssl:handshake");
+            System.setProperty("javax.net.debug", "ssl");
         }
 
         final ResumeClientTLS12withSNI clientSession = new ResumeClientTLS12withSNI("TLSv1.2");
@@ -386,7 +386,7 @@ public class ResumeClientTLS12withSNI {
         }
         final byte[] sessionId = engine.getSession().getId();
         // compare and verify if they are same
-        if (java.util.Arrays.equals(expected, sessionId)) {
+        if (Arrays.equals(expected, sessionId)) {
             System.out.println(this.sslc.getProvider().getName() + " " + this.sslc.getProtocol() + " - Session resumption SUCCEEDED");
         } else {
             System.out.println(this.sslc.getProvider().getName() + " " + this.sslc.getProtocol() + " - Session resumption FAILED");
