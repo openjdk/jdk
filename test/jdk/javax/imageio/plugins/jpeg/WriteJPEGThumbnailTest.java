@@ -68,7 +68,8 @@ public class WriteJPEGThumbnailTest {
         }
     }
 
-    final int thumbWidth, thumbHeight;
+    final int thumbWidth;
+    final int thumbHeight;
 
     public WriteJPEGThumbnailTest(int thumbWidth, int thumbHeight) {
         this.thumbWidth = thumbWidth;
