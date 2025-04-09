@@ -26,7 +26,7 @@ import org.openjdk.jmh.annotations.Param;
 
 public class KEMBench extends org.openjdk.bench.javax.crypto.full.KEMBench {
 
-    @Param({"ML-KEM"})
+    @Param({"ML-KEM-768"})
     private String algorithm;
 
 }
