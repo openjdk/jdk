@@ -537,11 +537,11 @@ public final class PrettyWriter extends EventPrintWriter {
         Percentage percentage = field.getAnnotation(Percentage.class);
         if (percentage != null) {
             if (value instanceof Number n) {
-                double d = n.doubleValue();
+                double p = n.doubleValue() *100;
                 if (showExact) {
-                    println(String.format("%.9f%%", d));
+                    println(String.format("%.9f%%", p));
                 } else {
-                    println(String.format("%.2f", d * 100) + "%");
+                    println(String.format("%.2f%%", p));
                 }
                 return true;
             }
@@ -554,6 +554,7 @@ public final class PrettyWriter extends EventPrintWriter {
             boolean bytes = unit.equals(DataAmount.BYTES);
             if (bits || bytes) {
                 formatMemory(number.longValue(), bytes, frequency);
+                return true;
             }
         }
         MemoryAddress memoryAddress = field.getAnnotation(MemoryAddress.class);
@@ -579,7 +580,6 @@ public final class PrettyWriter extends EventPrintWriter {
         if (showExact) {
             StringBuilder sb = new StringBuilder();
             sb.append(value);
-            sb.append(" ");
             sb.append(bytesUnit ? " byte" : " bit");
             if (value > 1) {
                 sb.append("s");
