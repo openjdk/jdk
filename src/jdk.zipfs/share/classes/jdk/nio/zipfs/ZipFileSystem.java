@@ -198,7 +198,7 @@ class ZipFileSystem extends FileSystem {
 
     /**
      * Return the compression method to use (STORED or DEFLATED).  If the
-     * property {@code commpressionMethod} is set use its value to determine
+     * property {@code compressionMethod} is set use its value to determine
      * the compression method to use.  If the property is not set, then the
      * default compression is DEFLATED unless the property {@code noCompression}
      * is set which is supported for backwards compatibility.
@@ -1385,11 +1385,10 @@ class ZipFileSystem extends FileSystem {
     }
 
     /**
-     * If a version property has been specified and the file represents a multi-release JAR,
-     * determine the requested runtime version and initialize the ZipFileSystem instance accordingly.
-     *
-     * Checks if the Zip File System property "releaseVersion" has been specified. If it has,
-     * use its value to determine the requested version. If not use the value of the "multi-release" property.
+     * Returns the release version for a multi-release JAR from the given environment map.
+     * <p>
+     * If the Zip File System property "releaseVersion" has been specified it is used,
+     * otherwise use the legacy property "multi-release".
      */
     private Optional<Integer> determineReleaseVersion(Map<String, ?> env) throws IOException {
         Object o = env.containsKey(PROPERTY_RELEASE_VERSION) ?
