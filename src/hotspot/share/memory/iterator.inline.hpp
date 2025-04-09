@@ -69,6 +69,7 @@ inline void ClaimMetadataVisitingOopIterateClosure::do_method(Method* m) {
   m->record_gc_epoch();
 }
 
+// TODO update comment
 // Dispatch table implementation for *Klass::oop_oop_iterate
 //
 // It allows for a single call to do a multi-dispatch to an optimized version
@@ -102,215 +103,6 @@ inline void ClaimMetadataVisitingOopIterateClosure::do_method(Method* m) {
 //   narrowOop version or optimized oop version of oop_oop_iterate. The appropriate
 //   oop_oop_iterate function replaces the init function in the table, and
 //   succeeding calls will jump directly to oop_oop_iterate.
-
-
-template <typename OopClosureType>
-class OopOopIterateDispatch : public AllStatic {
-private:
-  typedef void (*FunctionType)(OopClosureType*, oop, Klass*);
-
-  class Table {
-  private:
-    template <typename KlassType, typename T>
-    static void oop_oop_iterate(OopClosureType* cl, oop obj, Klass* k) {
-      ((KlassType*)k)->KlassType::template oop_oop_iterate<T>(obj, cl);
-    }
-
-    template <typename KlassType>
-    static void init(OopClosureType* cl, oop obj, Klass* k) {
-      OopOopIterateDispatch<OopClosureType>::_table.set_resolve_function_and_execute<KlassType>(cl, obj, k);
-    }
-
-    template <typename KlassType>
-    void set_init_function() {
-      _function[KlassType::Kind] = &init<KlassType>;
-    }
-
-    template <typename KlassType>
-    void set_resolve_function() {
-      // Size requirement to prevent word tearing
-      // when functions pointers are updated.
-      STATIC_ASSERT(sizeof(_function[0]) == sizeof(void*));
-      if (UseCompressedOops) {
-        _function[KlassType::Kind] = &oop_oop_iterate<KlassType, narrowOop>;
-      } else {
-        _function[KlassType::Kind] = &oop_oop_iterate<KlassType, oop>;
-      }
-    }
-
-    template <typename KlassType>
-    void set_resolve_function_and_execute(OopClosureType* cl, oop obj, Klass* k) {
-      set_resolve_function<KlassType>();
-      _function[KlassType::Kind](cl, obj, k);
-    }
-
-  public:
-    FunctionType _function[Klass::KLASS_KIND_COUNT];
-
-    Table(){
-      set_init_function<InstanceKlass>();
-      set_init_function<InstanceRefKlass>();
-      set_init_function<InstanceMirrorKlass>();
-      set_init_function<InstanceClassLoaderKlass>();
-      set_init_function<InstanceStackChunkKlass>();
-      set_init_function<ObjArrayKlass>();
-      set_init_function<TypeArrayKlass>();
-    }
-  };
-
-  static Table _table;
-public:
-
-  static FunctionType function(Klass* klass) {
-    return _table._function[klass->kind()];
-  }
-};
-
-template <typename OopClosureType>
-typename OopOopIterateDispatch<OopClosureType>::Table OopOopIterateDispatch<OopClosureType>::_table;
-
-
-template <typename OopClosureType>
-class OopOopIterateBoundedDispatch {
-private:
-  typedef void (*FunctionType)(OopClosureType*, oop, Klass*, MemRegion);
-
-  class Table {
-  private:
-    template <typename KlassType, typename T>
-    static void oop_oop_iterate_bounded(OopClosureType* cl, oop obj, Klass* k, MemRegion mr) {
-      ((KlassType*)k)->KlassType::template oop_oop_iterate_bounded<T>(obj, cl, mr);
-    }
-
-    template <typename KlassType>
-    static void init(OopClosureType* cl, oop obj, Klass* k, MemRegion mr) {
-      OopOopIterateBoundedDispatch<OopClosureType>::_table.set_resolve_function_and_execute<KlassType>(cl, obj, k, mr);
-    }
-
-    template <typename KlassType>
-    void set_init_function() {
-      _function[KlassType::Kind] = &init<KlassType>;
-    }
-
-    template <typename KlassType>
-    void set_resolve_function() {
-      if (UseCompressedOops) {
-        _function[KlassType::Kind] = &oop_oop_iterate_bounded<KlassType, narrowOop>;
-      } else {
-        _function[KlassType::Kind] = &oop_oop_iterate_bounded<KlassType, oop>;
-      }
-    }
-
-    template <typename KlassType>
-    void set_resolve_function_and_execute(OopClosureType* cl, oop obj, Klass* k, MemRegion mr) {
-      set_resolve_function<KlassType>();
-      _function[KlassType::Kind](cl, obj, k, mr);
-    }
-
-  public:
-    FunctionType _function[Klass::KLASS_KIND_COUNT];
-
-    Table(){
-      set_init_function<InstanceKlass>();
-      set_init_function<InstanceRefKlass>();
-      set_init_function<InstanceMirrorKlass>();
-      set_init_function<InstanceClassLoaderKlass>();
-      set_init_function<InstanceStackChunkKlass>();
-      set_init_function<ObjArrayKlass>();
-      set_init_function<TypeArrayKlass>();
-    }
-  };
-
-  static Table _table;
-public:
-
-  static FunctionType function(Klass* klass) {
-    return _table._function[klass->kind()];
-  }
-};
-
-template <typename OopClosureType>
-typename OopOopIterateBoundedDispatch<OopClosureType>::Table OopOopIterateBoundedDispatch<OopClosureType>::_table;
-
-
-template <typename OopClosureType>
-class OopOopIterateBackwardsDispatch {
-private:
-  typedef void (*FunctionType)(OopClosureType*, oop, Klass*);
-
-  class Table {
-  private:
-    template <typename KlassType, typename T>
-    static void oop_oop_iterate_backwards(OopClosureType* cl, oop obj, Klass* k) {
-      ((KlassType*)k)->KlassType::template oop_oop_iterate_reverse<T>(obj, cl);
-    }
-
-    template <typename KlassType>
-    static void init(OopClosureType* cl, oop obj, Klass* k) {
-      OopOopIterateBackwardsDispatch<OopClosureType>::_table.set_resolve_function_and_execute<KlassType>(cl, obj, k);
-    }
-
-    template <typename KlassType>
-    void set_init_function() {
-      _function[KlassType::Kind] = &init<KlassType>;
-    }
-
-    template <typename KlassType>
-    void set_resolve_function() {
-      if (UseCompressedOops) {
-        _function[KlassType::Kind] = &oop_oop_iterate_backwards<KlassType, narrowOop>;
-      } else {
-        _function[KlassType::Kind] = &oop_oop_iterate_backwards<KlassType, oop>;
-      }
-    }
-
-    template <typename KlassType>
-    void set_resolve_function_and_execute(OopClosureType* cl, oop obj, Klass* k) {
-      set_resolve_function<KlassType>();
-      _function[KlassType::Kind](cl, obj, k);
-    }
-
-  public:
-    FunctionType _function[Klass::KLASS_KIND_COUNT];
-
-    Table(){
-      set_init_function<InstanceKlass>();
-      set_init_function<InstanceRefKlass>();
-      set_init_function<InstanceMirrorKlass>();
-      set_init_function<InstanceClassLoaderKlass>();
-      set_init_function<InstanceStackChunkKlass>();
-      set_init_function<ObjArrayKlass>();
-      set_init_function<TypeArrayKlass>();
-    }
-  };
-
-  static Table _table;
-public:
-
-  static FunctionType function(Klass* klass) {
-    return _table._function[klass->kind()];
-  }
-};
-
-template <typename OopClosureType>
-typename OopOopIterateBackwardsDispatch<OopClosureType>::Table OopOopIterateBackwardsDispatch<OopClosureType>::_table;
-
-
-template <typename OopClosureType>
-void OopIteratorClosureDispatch::oop_oop_iterate(OopClosureType* cl, oop obj, Klass* klass) {
-  OopOopIterateDispatch<OopClosureType>::function(klass)(cl, obj, klass);
-}
-
-template <typename OopClosureType>
-void OopIteratorClosureDispatch::oop_oop_iterate(OopClosureType* cl, oop obj, Klass* klass, MemRegion mr) {
-  OopOopIterateBoundedDispatch<OopClosureType>::function(klass)(cl, obj, klass, mr);
-}
-
-template <typename OopClosureType>
-void OopIteratorClosureDispatch::oop_oop_iterate_backwards(OopClosureType* cl, oop obj, Klass* klass) {
-  OopOopIterateBackwardsDispatch<OopClosureType>::function(klass)(cl, obj, klass);
-}
-
 
 ////////////// KLUTE variants /////////////////////
 
@@ -392,27 +184,27 @@ void OopIteratorClosureDispatch::ITERATION_FUNCTION ARGUMENT_DEFINITION {       
 }
 
 DEFINE_DISPATCH_CLASS(
-    OopOopIterateDispatchWithKlute,
+    OopOopIterateDispatch,
     oop_oop_iterate,
     (oop obj, OopClosureType* cl, KlassLUTEntry klute),
     (obj, cl, klute)
 )
 
 DEFINE_DISPATCH_CLASS(
-    OopOopIterateDispatchWithKluteReverse,
+    OopOopIterateDispatchReverse,
     oop_oop_iterate_reverse,
     (oop obj, OopClosureType* cl, KlassLUTEntry klute),
     (obj, cl, klute)
 )
 
 DEFINE_DISPATCH_CLASS(
-    OopOopIterateDispatchWithKluteBounded,
+    OopOopIterateDispatchBounded,
     oop_oop_iterate_bounded,
     (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute),
     (obj, cl, mr, klute)
 )
 
-class DispatchWithKluteReturnSize_base {
+class DispatchBase {
 protected:
 
   // Return the size of an object; uses as much hard-coded information as possible
@@ -442,7 +234,7 @@ protected:
 };
 
 template <typename OopClosureType>
-class OopOopIterateDispatchWithKluteReturnSize : public DispatchWithKluteReturnSize_base {
+class OopOopIterateDispatchReturnSize : public DispatchBase {
 
   typedef size_t (*FunctionType) (oop obj, OopClosureType* cl, KlassLUTEntry klute);
 
@@ -464,7 +256,7 @@ class OopOopIterateDispatchWithKluteReturnSize : public DispatchWithKluteReturnS
 
     template <typename KlassType>
     static size_t init_and_execute (oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-      return OopOopIterateDispatchWithKluteReturnSize<OopClosureType>::_table.resolve_and_execute<KlassType> (obj, cl, klute);
+      return OopOopIterateDispatchReturnSize<OopClosureType>::_table.resolve_and_execute<KlassType> (obj, cl, klute);
     }
 
     template <typename KlassType>
@@ -526,17 +318,17 @@ public:
 };
 
 template <typename OopClosureType>
-typename OopOopIterateDispatchWithKluteReturnSize<OopClosureType>::Table OopOopIterateDispatchWithKluteReturnSize<OopClosureType>::_table;
+typename OopOopIterateDispatchReturnSize<OopClosureType>::Table OopOopIterateDispatchReturnSize<OopClosureType>::_table;
 
 template <typename OopClosureType>
 size_t OopIteratorClosureDispatch::oop_oop_iterate_size  (oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-  return OopOopIterateDispatchWithKluteReturnSize<OopClosureType>::invoke (obj, cl, klute);
+  return OopOopIterateDispatchReturnSize<OopClosureType>::invoke (obj, cl, klute);
 }
 
 
 
 template <typename OopClosureType>                                                                              \
-class OopOopIterateDispatchWithKluteBoundedReturnSize : public DispatchWithKluteReturnSize_base {
+class OopOopIterateDispatchBoundedReturnSize : public DispatchBase {
   typedef size_t (*FunctionType) (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute);
 
   struct Table {
@@ -557,7 +349,7 @@ class OopOopIterateDispatchWithKluteBoundedReturnSize : public DispatchWithKlute
 
     template <typename KlassType>
     static size_t init_and_execute (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
-      return OopOopIterateDispatchWithKluteBoundedReturnSize<OopClosureType>::_table.resolve_and_execute<KlassType> (obj, cl, mr, klute);
+      return OopOopIterateDispatchBoundedReturnSize<OopClosureType>::_table.resolve_and_execute<KlassType> (obj, cl, mr, klute);
     }
 
     template <typename KlassType>
@@ -617,12 +409,12 @@ public:
 };
 
 template <typename OopClosureType>
-typename OopOopIterateDispatchWithKluteBoundedReturnSize<OopClosureType>::Table
-  OopOopIterateDispatchWithKluteBoundedReturnSize<OopClosureType>::_table;
+typename OopOopIterateDispatchBoundedReturnSize<OopClosureType>::Table
+OopOopIterateDispatchBoundedReturnSize<OopClosureType>::_table;
 
 template <typename OopClosureType>
 size_t OopIteratorClosureDispatch::oop_oop_iterate_bounded_size  (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
-  return OopOopIterateDispatchWithKluteBoundedReturnSize<OopClosureType>::invoke(obj, cl, mr, klute);
+  return OopOopIterateDispatchBoundedReturnSize<OopClosureType>::invoke(obj, cl, mr, klute);
 }
 
 #endif // SHARE_MEMORY_ITERATOR_INLINE_HPP
