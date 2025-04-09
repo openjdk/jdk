@@ -370,9 +370,10 @@ public:
 
   inline void clear_live_data();
   void set_live_data(size_t s);
-
+#ifdef KELVIN_DEPRECATE
   // Increase live data for newly allocated region
   inline void increase_live_data_alloc_words(size_t s);
+#endif
 
   // Increase live data for region scanned with GC
   inline void increase_live_data_gc_words(size_t s);
@@ -382,17 +383,17 @@ public:
   // Returns bytes identified as live at time of most recent mark. Does not include allocations subsequent to last mark.
   inline size_t get_live_data_bytes() const;
 
-  // Returns words identified as live at time of most recent mark. Does not include allocations subsequent to last mark.
+  // Returns words identified as live at time of most recent mark.  Can only be called during final mark safepoints.
   inline size_t get_live_data_words() const;
-
+#ifdef KELVIN_DEPRECATE
   inline size_t get_mixed_candidate_live_data_bytes() const;
   inline size_t get_mixed_candidate_live_data_words() const;
 
   inline void capture_mixed_candidate_garbage();
+#endif
 
-  // Returns garbage by calculating difference between used and get_live_data_words.  The value returned is only
-  // meaningful immediately following completion of marking.  If there have been subsequent allocations in this region,
-  // use a different approach to determine garbage, such as (used() - get_mixed_candidate_live_data_bytes())
+  // Returns garbage by calculating difference between used and get_live_data_words.  Can only be called during final
+  // meark safepoints. Allocations above TAMS are considered live.
   inline size_t garbage() const;
 
   void print_on(outputStream* st) const;

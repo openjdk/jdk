@@ -94,7 +94,7 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
   // us to more quickly replenish free memory with empty regions.
   for (uint i = _next_old_collection_candidate; i < _last_old_collection_candidate; i++) {
     ShenandoahHeapRegion* r = _region_data[i].get_region();
-    _region_data[i].update_livedata(r->get_mixed_candidate_live_data_bytes());
+    _region_data[i].update_livedata(r->get_live_data_bytes());
   }
   QuickSort::sort<RegionData>(_region_data + _next_old_collection_candidate, unprocessed_old_collection_candidates(),
                               compare_by_live);
@@ -415,7 +415,9 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     size_t region_garbage = r->garbage();
     size_t region_free = r->free();
 
+#ifdef KELVIN_DEPRECATE
     r->capture_mixed_candidate_garbage();
+#endif
     candidates_garbage += region_garbage;
     unfragmented += region_free;
   }
@@ -459,7 +461,9 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
       const size_t region_garbage = r->garbage();
       const size_t region_free = r->free();
 
+#ifdef KELVIN_DEPRECATE
       r->capture_mixed_candidate_garbage();
+#endif
       candidates_garbage += region_garbage;
       unfragmented += region_free;
       defrag_count++;

@@ -57,6 +57,7 @@ ShenandoahFinalMarkUpdateRegionStateClosure::ShenandoahFinalMarkUpdateRegionStat
 
 void ShenandoahFinalMarkUpdateRegionStateClosure::heap_region_do(ShenandoahHeapRegion* r) {
   if (r->is_active()) {
+#ifdef KELVIN_DEPRECATE
     if (_ctx != nullptr) {
       // _ctx may be null when this closure is used to sync only the pin status
       // update the watermark of old regions. For old regions we cannot reset
@@ -71,6 +72,7 @@ void ShenandoahFinalMarkUpdateRegionStateClosure::heap_region_do(ShenandoahHeapR
         r->increase_live_data_alloc_words(pointer_delta(top, tams));
       }
     }
+#endif
 
     // We are about to select the collection set, make sure it knows about
     // current pinning status. Also, this allows trashing more regions that

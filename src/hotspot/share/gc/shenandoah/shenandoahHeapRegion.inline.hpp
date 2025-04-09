@@ -128,9 +128,11 @@ inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::
   }
 }
 
+#ifdef KELVIN_DEPRECATE
 inline void ShenandoahHeapRegion::increase_live_data_alloc_words(size_t s) {
   internal_increase_live_data(s);
 }
+#endif
 
 inline void ShenandoahHeapRegion::increase_live_data_gc_words(size_t s) {
   internal_increase_live_data(s);
@@ -148,29 +150,34 @@ inline void ShenandoahHeapRegion::clear_live_data() {
 }
 
 inline size_t ShenandoahHeapRegion::get_live_data_words() const {
-  return Atomic::load(&_live_data);
+  ShenandoahMarkingContext *ctx = ShenandoahHeap::heap()->complete_marking_context();
+  HeapWord* tams = ctx->top_at_mark_start(this);
+  size_t words_above_tams = pointer_delta(top(), tams);
+  return Atomic::load(&_live_data) + words_above_tams;
 }
 
 inline size_t ShenandoahHeapRegion::get_live_data_bytes() const {
   return get_live_data_words() * HeapWordSize;
 }
 
+#ifdef KELVIN_DEPRECATE
 inline size_t ShenandoahHeapRegion::get_mixed_candidate_live_data_bytes() const {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at Shenandoah safepoint");
+  shenandoah_assert_safepoint();
   assert(used() >= _mixed_candidate_garbage_words * HeapWordSize, "used must exceed garbage");
   return used() - _mixed_candidate_garbage_words * HeapWordSize;
 }
 
 inline size_t ShenandoahHeapRegion::get_mixed_candidate_live_data_words() const {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at Shenandoah safepoint");
+  shenandoah_assert_safepoint();
   assert(used() >= _mixed_candidate_garbage_words * HeapWordSize, "used must exceed garbage");
   return used() / HeapWordSize - _mixed_candidate_garbage_words;
 }
 
 inline void ShenandoahHeapRegion::capture_mixed_candidate_garbage() {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at Shenandoah safepoint");
+  shenandoah_assert_safepoint();
   _mixed_candidate_garbage_words = garbage() / HeapWordSize;
 }
+#endif
 
 inline bool ShenandoahHeapRegion::has_live() const {
   return get_live_data_words() != 0;
@@ -180,7 +187,6 @@ inline size_t ShenandoahHeapRegion::garbage() const {
   assert(used() >= get_live_data_bytes(),
          "Live Data must be a subset of used() live: %zu used: %zu",
          get_live_data_bytes(), used());
-
   size_t result = used() - get_live_data_bytes();
   return result;
 }
