@@ -296,13 +296,10 @@ void VLoopDependencyGraph::construct() {
 
         // If we can prove that they will never overlap -> drop edge.
         if (!p1.never_overlaps_with(p2)) {
-          // If one is invalid -> we cannot formulate a speculative check -> must have strong edge.
-          // If they provably always overlap -> speculative check would always fail -> strong edge.
-          // Otherwise: a speculative check can fail and pass -> weak edge.
-          if (!p1.is_valid() || !p2.is_valid() || p1.always_overlaps_with(p2)) {
-            strong_edges.append(_body.bb_idx(n2));
-          } else {
+          if (p1.can_make_speculative_aliasing_check_with(p2)) {
             weak_edges.append(_body.bb_idx(n2));
+          } else {
+            strong_edges.append(_body.bb_idx(n2));
           }
         }
       }
@@ -471,6 +468,24 @@ void VLoopDependencyGraph::PredsIterator::next() {
     _current = nullptr; // done
     _is_current_weak_edge = false;
   }
+}
+
+bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) const {
+  const VPointer& vp1 = *this;
+  const VPointer& vp2 = other;
+
+  if (!_vloop.use_speculative_aliasing_checks()) { return false; }
+
+  // Both pointers need a nice linear form, otherwise we cannot formulate the check.
+  if (!vp1.is_valid() || !vp2.is_valid()) { return false; }
+
+  // The pointers always overlap -> a speculative check would always fail.
+  if (vp1.always_overlaps_with(vp2)) { return false; }
+
+  // The pointers never overlap -> a speculative check would always succeed.
+  assert(!vp1.never_overlaps_with(vp2), "ensured by caller");
+
+  return true;
 }
 
 Node* VPointer::make_pointer_expression(Node* iv_value) const {

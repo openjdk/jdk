@@ -969,6 +969,7 @@ public:
     return mem_pointer().always_overlaps_with(other.mem_pointer());
   }
 
+  bool can_make_speculative_aliasing_check_with(const VPointer& other) const;
   Node* make_pointer_expression(Node* iv_value) const;
 
   NOT_PRODUCT( void print_on(outputStream* st, bool end_with_cr = true) const; )
