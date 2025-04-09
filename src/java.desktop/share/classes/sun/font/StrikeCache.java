@@ -189,7 +189,7 @@ public final class StrikeCache {
     }
 
     static void setGlyphCellInfo(long ptr, long val) {
-        cellInfoHandle.set(asGlyphSegment(ptr), SegmentFactories.makeNativeSegmentUnchecked(val, 0));
+        cellInfoHandle.set(asGlyphSegment(ptr), (MemorySegment)SegmentFactories.makeNativeSegmentUnchecked(val, 0));
     }
 
     static long getGlyphImagePtr(long ptr) {
