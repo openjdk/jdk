@@ -199,7 +199,7 @@ class TestZGCCorrectBarrierElision {
     @IR(counts = { IRNode.Z_GET_AND_SET_P_WITH_BARRIER_FLAG, Common.REMAINING, "1" }, phase = CompilePhase.FINAL_CODE)
     static void testLoadThenAtomic(Outer o, Inner i) {
         Common.blackhole(o.field1);
-        Common.field1VarHandle.getAndSet(o, i); /a
+        Common.field1VarHandle.getAndSet(o, i);
     }
 
     @Test
