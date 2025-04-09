@@ -429,6 +429,7 @@ bool castLL_is_imm32(const Node* n);
 source %{
 
 bool castLL_is_imm32(const Node* n) {
+  assert(n->is_CastLL(), "must be a CastLL");
   const TypeLong* t = n->bottom_type()->is_long();
   return (t->_lo == min_jlong || Assembler::is_simm32(t->_lo)) && (t->_hi == max_jlong || Assembler::is_simm32(t->_hi));
 }
