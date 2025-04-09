@@ -295,16 +295,37 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
             vp2.print_on(tty);
           }
 #endif
+
+          // We could generate checks for the pair (vp1, vp2) directly. But in
+          // some graphs, this generates quadratically many checks. Example:
+          //
+          //   set1: a[i+0] a[i+1] a[i+2] a[i+3]
+          //   set2: b[i+0] b[i+1] b[i+2] b[i+3]
+          //
+          // We may have a weak memory edge between every memory access from
+          // set1 to every memory access from set2. In this example, this would
+          // be 4 * 4 = 16 checks. But instead, we can create a union VPointer
+          // for set1 and set2 each, and only create a single check.
+          //
+          //   set1: a[i+0, size = 4]
+          //   set1: b[i+0, size = 4]
+          //
+          // For this, we add all pairs to an array, and process it below.
           weak_aliasing_pairs.push(VPointerWeakAliasingPair::make(vp1, vp2));
         }
       }
       visited.set(vtn->_idx);
     }
 
+    // Sort so that all pairs with the same summands (summands1, summands2)
+    // are consecutive, i.e. in the same group. This allows us to do a linear
+    // walk over all pairs of a group and create the union VPointers.
+    // Inside a group, we sort by constant.
     weak_aliasing_pairs.sort(VPointerWeakAliasingPair::cmp_for_sort);
 
     int group_start = 0;
     while (group_start < weak_aliasing_pairs.length()) {
+      // New group: pick the first pair as the reference.
       const VPointer& vp1 = weak_aliasing_pairs.at(group_start).vp1();
       const VPointer& vp2 = weak_aliasing_pairs.at(group_start).vp2();
       jint size1 = vp1.size();
@@ -323,6 +344,7 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
         NoOverflowInt new_size2 = NoOverflowInt(vp2_next.con()) + NoOverflowInt(vp2_next.size()) - NoOverflowInt(vp2.con());
         if (new_size1.is_NaN() || new_size2.is_NaN()) { break; }
 
+        // The "next" VPointer indeed belong to the group.
         size1 = new_size1.value();
         size2 = new_size2.value();
         group_end++;
