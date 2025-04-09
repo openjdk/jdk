@@ -25,19 +25,17 @@
 
 package com.sun.tools.javac.file;
 
-import java.io.IOError;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -163,4 +161,36 @@ public class FSInfo {
         return null;
     }
 
+    // Should match the properties/values in ZipFileSystem.java.
+    private static final String ACCESS_MODE_KEY = "accessMode";
+    private static final String READ_ONLY_MODE = "readOnly";
+    private static final Map<String, ?> READ_ONLY_ZIPFS_ENV = Map.of(ACCESS_MODE_KEY, READ_ONLY_MODE);
+
+    /**
+     * Returns a {@link java.nio.file.FileSystem FileSystem} environment map
+     * suitable for creating a read-only JAR file-system via
+     * {@link jdk.nio.zipfs.ZipFileSystemProvider ZipFileSystemProvider}.
+     *
+     * @param releaseVersion the release version to use when creating a
+     *                       file-system from a multi-release JAR (or
+     *                       {@code null} to ignore release versions).
+     */
+    public static Map<String, ?> getReadOnlyJarEnv(String releaseVersion) {
+        return releaseVersion == null
+                ? READ_ONLY_ZIPFS_ENV
+                : Map.of(ACCESS_MODE_KEY, READ_ONLY_MODE, "releaseVersion", releaseVersion);
+    }
+
+    /**
+     * Returns a {@link java.nio.file.FileSystem FileSystem} environment map
+     * suitable for creating a read-only ZIP/JAR file-system via
+     * {@link jdk.nio.zipfs.ZipFileSystemProvider ZipFileSystemProvider}.
+     * <p>
+     * This is equivalent to {@code getReadOnlyJarEnv(null)} when a JAR is
+     * known to <em>not</em> be multi-release, but also suitable for any
+     * non-JAR ZIP file.
+     */
+    public static Map<String, ?> getReadOnlyZipEnv() {
+        return READ_ONLY_ZIPFS_ENV;
+    }
 }
