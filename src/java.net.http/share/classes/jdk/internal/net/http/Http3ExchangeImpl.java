@@ -35,7 +35,6 @@ import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodySubscriber;
-import java.net.http.HttpResponse.PushPromiseHandler.PushId.Http3PushId;
 import java.net.http.HttpResponse.ResponseInfo;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -72,7 +71,6 @@ import jdk.internal.net.http.http3.frames.DataFrame;
 import jdk.internal.net.http.http3.frames.FramesDecoder;
 import jdk.internal.net.http.http3.frames.HeadersFrame;
 import jdk.internal.net.http.http3.frames.PushPromiseFrame;
-import jdk.internal.net.http.http3.streams.Http3Streams;
 import jdk.internal.net.http.qpack.Decoder;
 import jdk.internal.net.http.qpack.DecodingCallback;
 import jdk.internal.net.http.qpack.Encoder;
@@ -135,7 +133,6 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
     volatile boolean stopRequested;
     volatile boolean deRegistered;
     private String dbgTag = null;
-    long receivedQuicBytes;
     long sentQuicBytes;
 
     Http3ExchangeImpl(final Http3Connection connection, final Exchange<T> exchange,
@@ -1320,7 +1317,7 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                     connection().quicConnection().logTag(),
                     String.valueOf(reader.stream().streamId()), request, String.valueOf(exchange.multi.id),
                     requestSent, responseReceived, reader.receivingState(), writer.sendingState(),
-                    String.valueOf(responseCode), connection.isFinalStream(), String.valueOf(receivedQuicBytes),
+                    String.valueOf(responseCode), connection.isFinalStream(), String.valueOf(receivedQuicBytes()),
                     String.valueOf(sentQuicBytes), io);
         }
     }
