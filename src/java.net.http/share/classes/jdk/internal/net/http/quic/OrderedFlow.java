@@ -156,43 +156,36 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
     public T receive(T frame) {
         if (frame == null) return null;
 
-        long pos = this.position.applyAsLong(frame);
+        long start = this.position.applyAsLong(frame);
         int length = this.length.applyAsInt(frame);
+        long end = start + length;
         assert length >= 0;
-        assert pos >= 0;
+        assert start >= 0;
         long offset = this.offset;
-        long offsetdiff = offset - pos;
-
-        // case where the frame is either at offset, or is below
-        // offset but has a length that provides bytes that
-        // overlap with the current offset. In the later case
-        // we will return a slice.
-        int todeliver = offsetdiff < 0 ? -1
-                : (offsetdiff > length ? -1 : length - (int)offsetdiff);
-
-        // is this the frame we are waiting for, or does it overlaps
-        // with the frame we're waiting for?
-        if (todeliver == 0 || length == 0) {
-            return null;
-        } else if (todeliver > 0) {
-            long next = Math.addExact(offset, todeliver);
-            // update the offset with the new position
-            this.offset = next;
-            // cleanup the queue
-            dropuntil(next);
-            if (pos == offset) return frame;
-            return slice(frame, offset, todeliver);
-        } else if (pos < offset) {
-            // late arrival! duplicated or retransmitted frame which
-            // has already been handled. Just drop it; No overlap
+        if (end <= offset || length == 0) {
+            // late arrival or empty frame. Just drop it; No overlap
             // if we reach here!
             return null;
-        } else {
-            // otherwise, the frame is after the offset.
+        } else if (start > offset) {
+            // the frame is after the offset.
             // insert or slice it, depending on what we
             // have already received.
-            enqueue(frame, pos, length, offset);
+            enqueue(frame, start, length, offset);
             return null;
+        } else {
+            // case where the frame is either at offset, or is below
+            // offset but has a length that provides bytes that
+            // overlap with the current offset. In the later case
+            // we will return a slice.
+            int todeliver = (int)(end - offset);
+
+            assert end == Math.addExact(offset, todeliver);
+            // update the offset with the new position
+            this.offset = end;
+            // cleanup the queue
+            dropuntil(end);
+            if (start == offset) return frame;
+            return slice(frame, offset, todeliver);
         }
     }
 
