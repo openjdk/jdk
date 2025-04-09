@@ -1182,4 +1182,5 @@ TEST_VM(os, map_memory_to_file_aligned) {
   EXPECT_TRUE(os::unmap_memory(result, os::vm_allocation_granularity()));
   ::close(fd);
 }
-#endif
+
+#endif // !defined(_AIX)
