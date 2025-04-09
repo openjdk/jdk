@@ -1120,7 +1120,7 @@ TEST_VM(os, commit_memory_or_exit) {
   const char* letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
   char* base = os::reserve_memory(size, false, mtTest);
-  ASSERT_NE(base, (char*) nullptr);
+  ASSERT_NOT_NULL(base);
   os::commit_memory_or_exit(base, size, false, "Commit failed.");
   strcpy(base, letters);
   ASSERT_TRUE(os::uncommit_memory(base, size, false));
