@@ -66,6 +66,18 @@ void ParallelArguments::initialize() {
     }
   }
 
+  if (InitialSurvivorRatio < MinSurvivorRatio) {
+    if (FLAG_IS_CMDLINE(InitialSurvivorRatio)) {
+      if (FLAG_IS_CMDLINE(MinSurvivorRatio)) {
+        jio_fprintf(defaultStream::error_stream(),
+          "Inconsistent MinSurvivorRatio vs InitialSurvivorRatio: %d vs %d\n", MinSurvivorRatio, InitialSurvivorRatio);
+      }
+      FLAG_SET_DEFAULT(MinSurvivorRatio, InitialSurvivorRatio);
+    } else {
+      FLAG_SET_DEFAULT(InitialSurvivorRatio, MinSurvivorRatio);
+    }
+  }
+
   // If InitialSurvivorRatio or MinSurvivorRatio were not specified, but the
   // SurvivorRatio has been set, reset their default values to SurvivorRatio +
   // 2.  By doing this we make SurvivorRatio also work for Parallel Scavenger.
