@@ -23,7 +23,6 @@
  *
  */
 
-#include <cstddef>
 #ifdef COMPILER2
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
