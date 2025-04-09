@@ -22,8 +22,11 @@
  *
  */
 
+#include "c1/c1_LIR.hpp"
+#include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_CodeStubs.hpp"
+#include "c1/c1_MacroAssembler.hpp"
 #include "gc/g1/c1/g1BarrierSetC1.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
@@ -31,11 +34,6 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
-#ifdef COMPILER1
-#include "c1/c1_LIR.hpp"
-#include "c1/c1_LIRAssembler.hpp"
-#include "c1/c1_MacroAssembler.hpp"
-#endif // COMPILER1
 
 #ifdef ASSERT
 #define __ gen->lir(__FILE__, __LINE__)->
