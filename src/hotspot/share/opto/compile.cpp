@@ -1014,8 +1014,6 @@ void Compile::Init(bool aliasing) {
   _matcher = nullptr;  // filled in later
   _cfg     = nullptr;  // filled in later
 
-  IA32_ONLY( set_24_bit_selection_and_mode(true, false); )
-
   _node_note_array = nullptr;
   _default_node_notes = nullptr;
   DEBUG_ONLY( _modified_nodes = nullptr; ) // Used in Optimize()
