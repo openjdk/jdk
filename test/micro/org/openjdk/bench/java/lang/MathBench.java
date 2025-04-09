@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package org.openjdk.bench.java.lang;
 
 import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -62,6 +63,18 @@ public class MathBench {
     public float float1 = 1.0f, float2 = 2.0f, floatNegative99 = -99.0f, float7 = 7.0f, eFloat = 2.718f;
     public double double1 = 1.0d, double2 = 2.0d, double81 = 81.0d, doubleNegative12 = -12.0d, double4Dot1 = 4.1d, double0Dot5 = 0.5d;
 
+    @Param("2048")
+    public int tanhValueCount;
+
+    @Param("0")
+    public double tanhBound1;
+
+    @Param("2.7755575615628914E-17")
+    public double tanhBound2;
+
+    public double [] tanhPosVector;
+    public double [] tanhNegVector;
+
     @Setup
     public void setupValues() {
         Random random = new Random(seed);
@@ -69,6 +82,14 @@ public class MathBench {
         divisor  = Math.abs(random.nextInt(dividend) + 17);
         longDividend = Math.abs(random.nextLong() + 4711L);
         longDivisor  = Math.abs(random.nextLong() + longDividend);
+
+        // Fill the positive and negative tanh vectors with random values
+        tanhPosVector = new double[tanhValueCount];
+        tanhNegVector = new double[tanhValueCount];
+        for (int i = 0; i < tanhValueCount; i++) {
+            tanhPosVector[i] = random.nextDouble(tanhBound1, tanhBound2);
+            tanhNegVector[i] = random.nextDouble(-tanhBound2, -tanhBound1);
+        }
     }
 
     @Benchmark
@@ -518,6 +539,15 @@ public class MathBench {
     @Benchmark
     public double  tanhDouble() {
         return  Math.tanh(double1);
+    }
+
+    @Benchmark
+    public double  tanhRangeDouble() {
+        double sum = 0.0;
+        for (int i = 0; i < tanhValueCount; i++) {
+            sum += Math.tanh(tanhPosVector[i]) + Math.tanh(tanhNegVector[i]);
+        }
+        return sum;
     }
 
     @Benchmark
