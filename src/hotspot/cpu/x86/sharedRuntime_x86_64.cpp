@@ -3234,7 +3234,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   __ jcc(Assembler::notEqual, pending);
 
   // get the returned Method*
-  __ get_vm_result_2(rbx, r15_thread);
+  __ get_vm_result_metadata(rbx, r15_thread);
   __ movptr(Address(rsp, RegisterSaver::rbx_offset_in_bytes()), rbx);
 
   __ movptr(Address(rsp, RegisterSaver::rax_offset_in_bytes()), rax);
@@ -3253,7 +3253,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 
   // exception pending => remove activation and forward to exception handler
 
-  __ movptr(Address(r15_thread, JavaThread::vm_result_offset()), NULL_WORD);
+  __ movptr(Address(r15_thread, JavaThread::vm_result_oop_offset()), NULL_WORD);
 
   __ movptr(rax, Address(r15_thread, Thread::pending_exception_offset()));
   __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
