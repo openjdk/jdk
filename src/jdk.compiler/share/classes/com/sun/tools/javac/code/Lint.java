@@ -372,7 +372,7 @@ public class Lint {
          * Warn about issues relating to use of text blocks
          *
          * <p>
-         * This category is not supported by {@code @SuppressWarnings}.
+         * This category is not supported by {@code @SuppressWarnings} (yet - see JDK-8224228).
          */
         TEXT_BLOCKS("text-blocks", false),
 
