@@ -224,6 +224,16 @@ void RiscvHwprobe::add_features_from_query_result() {
     VM_Version::ext_Zfa.enable_feature();
   }
 #endif
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZTSO)) {
+    VM_Version::ext_Ztso.enable_feature();
+  }
+#endif
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZACAS)) {
+    VM_Version::ext_Zacas.enable_feature();
+  }
+#endif
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICOND)) {
     VM_Version::ext_Zicond.enable_feature();
   }
