@@ -52,7 +52,6 @@ import java.util.function.Function;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.zip.CRC32;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
@@ -83,13 +82,11 @@ class ZipFileSystem extends FileSystem {
             .startsWith("Windows");
     private static final byte[] ROOTPATH = new byte[]{'/'};
 
-    // Global access permission for "mounted" file system ("readOnly" or "readWrite").
-    // Note: If this is made a standard property for FileSystems, then there should
-    // probably be an Enum in/around FileSystem as well as allowing string values.
-    private static final String PROPERTY_ACCESS_PERMISSION = "accessPermission";
+    // Global access mode for "mounted" file system ("readOnly" or "readWrite").
+    private static final String PROPERTY_ACCESS_MODE = "accessMode";
 
     // Posix file permissions allow per-file access control in a posix-like fashion.
-    // Note that using a "readOnly" access permission will force all files, and the
+    // Note that using a "readOnly" access mode will force all files, and the
     // default permission, to lose any "write" permissions.
     private static final String PROPERTY_POSIX = "enablePosixFileAttributes";
     private static final String PROPERTY_DEFAULT_OWNER = "defaultOwner";
@@ -101,11 +98,6 @@ class ZipFileSystem extends FileSystem {
     // Original property used to specify the entry version to use for a
     // multi-release JAR which is kept for backwards compatibility.
     private static final String PROPERTY_MULTI_RELEASE = "multi-release";
-
-    private static final Set<PosixFilePermission> DEFAULT_PERMISSIONS =
-            PosixFilePermissions.fromString("rwxrwxrwx");
-    private static final Set<PosixFilePermission> WRITE_PERMISSIONS =
-            PosixFilePermissions.fromString("-w--w--w-");
 
     // Property used to specify the compression mode to use
     private static final String PROPERTY_COMPRESSION_METHOD = "compressionMethod";
@@ -149,44 +141,34 @@ class ZipFileSystem extends FileSystem {
 
     private final Set<String> supportedFileAttributeViews;
 
-    // This exists privately until such time as access permissions are made available
-    // to any file system.
-    private enum FileSystemAccessPermission {
-        /**
-         * Creates a file system for default access according to the file system semantics.
-         */
+    // If it's decided to try and make access mode common to other file systems,
+    // this should exist somewhere common, but if it's definitely never going to
+    // be shared, it could be made public here.
+    private enum FileSystemAccessMode {
+        // Creates a file system for default access according to file system semantics.
         DEFAULT("default"),
-        /**
-         * Creates a file system for read-write access.
-         */
+        // Creates a file system for read-write access.
         READ_WRITE("readWrite"),
-        /**
-         * Creates a file system for read-only access.
-         */
+        // Creates a file system for read-only access.
         READ_ONLY("readOnly");
 
         private final String label;
 
-        FileSystemAccessPermission(String label) {
+        FileSystemAccessMode(String label) {
             this.label = label;
         }
 
-        /**
-         * Parses the file system permission from an environmental parameter.
-         *
-         * @param value the environment parameter
-         * @return
-         */
-        static FileSystemAccessPermission from(Object value) {
+        // Parses the file system permission from an environmental parameter.
+        static FileSystemAccessMode from(Object value) {
             switch (value) {
                 case null -> {
                     return DEFAULT;
                 }
-                case FileSystemAccessPermission permission -> {
+                case FileSystemAccessMode permission -> {
                     return permission;
                 }
                 case String label when DEFAULT.label.equals(label) -> {
-                    return READ_ONLY;
+                    return DEFAULT;
                 }
                 case String label when READ_WRITE.label.equals(label) -> {
                     return READ_WRITE;
@@ -197,7 +179,7 @@ class ZipFileSystem extends FileSystem {
                 default -> {
                 }
             }
-            throw new IllegalArgumentException("Unknown file system access permission: " + value);
+            throw new IllegalArgumentException("Unknown file system access mode: " + value);
         }
     }
 
@@ -213,13 +195,13 @@ class ZipFileSystem extends FileSystem {
         this.forceEnd64 = isTrue(env, "forceZIP64End");
         this.defaultCompressionMethod = getDefaultCompressionMethod(env);
 
-        FileSystemAccessPermission access = FileSystemAccessPermission.from(env.get(PROPERTY_ACCESS_PERMISSION));
-        boolean forceReadOnly = access == FileSystemAccessPermission.READ_ONLY;
+        FileSystemAccessMode accessMode = FileSystemAccessMode.from(env.get(PROPERTY_ACCESS_MODE));
+        boolean forceReadOnly = (accessMode == FileSystemAccessMode.READ_ONLY);
 
         this.supportPosix = isTrue(env, PROPERTY_POSIX);
         this.defaultOwner = supportPosix ? initOwner(zfpath, env) : null;
         this.defaultGroup = supportPosix ? initGroup(zfpath, env) : null;
-        this.defaultPermissions = supportPosix ? getDefaultPermissions(env, forceReadOnly) : null;
+        this.defaultPermissions = supportPosix ? Collections.unmodifiableSet(initPermissions(env)) : null;
         this.supportedFileAttributeViews = supportPosix ?
             Set.of("basic", "posix", "zip") : Set.of("basic", "zip");
         if (Files.notExists(zfpath)) {
@@ -264,9 +246,12 @@ class ZipFileSystem extends FileSystem {
         // We only allow read-write zip/jar files if they are not multi-release
         // JARs and the underlying file is writable.
         this.readOnly = forceReadOnly || multiReleaseVersion.isPresent() || !Files.isWritable(zfpath);
-        if (readOnly && access == FileSystemAccessPermission.READ_WRITE) {
-            throw new IllegalArgumentException(
-                    "A read-write ZIP file system could not be created for the given path: " + zfpath);
+        if (readOnly && accessMode == FileSystemAccessMode.READ_WRITE) {
+            String reason = Files.isWritable(zfpath)
+                    ? "A multi-release JAR file opened with a specified version is not writable"
+                    : "The underlying ZIP file is not writable";
+            throw new IOException(
+                    "A writable ZIP file system could not be opened for: " + zfpath + "\n" + reason);
         }
 
         // Pass "this" as a parameter after everything else is set up.
@@ -383,16 +368,11 @@ class ZipFileSystem extends FileSystem {
             " or " + GroupPrincipal.class);
     }
 
-    private Set<PosixFilePermission> getDefaultPermissions(Map<String, ?> env, boolean readOnly) {
-        Set<PosixFilePermission> permissions = parsePermissions(env.get(PROPERTY_DEFAULT_PERMISSIONS));
-        return readOnly ? withoutWritePermission(permissions) : Collections.unmodifiableSet(permissions);
-    }
-
-    // Initialize the default permissions for files inside the zip archive.
+    // Return the default permissions for files inside the zip archive.
     // If not specified in env, it will return 777.
-    private Set<PosixFilePermission> parsePermissions(Object o) {
+    private Set<PosixFilePermission> initPermissions(Object o) {
         if (o == null) {
-            return DEFAULT_PERMISSIONS;
+            return PosixFilePermissions.fromString("rwxrwxrwx");
         }
         if (o instanceof String) {
             return PosixFilePermissions.fromString((String)o);
@@ -412,12 +392,6 @@ class ZipFileSystem extends FileSystem {
             }
         }
         return perms;
-    }
-
-    private Set<PosixFilePermission> withoutWritePermission(Set<PosixFilePermission> permissions) {
-        return permissions.stream()
-                .filter(p -> !WRITE_PERMISSIONS.contains(p))
-                .collect(Collectors.toUnmodifiableSet());
     }
 
     @Override
@@ -3644,7 +3618,8 @@ class ZipFileSystem extends FileSystem {
 
         @Override
         public Set<PosixFilePermission> permissions() {
-            return storedPermissions().orElse(Set.copyOf(defaultPermissions));
+            // supportPosix ==> (defaultPermissions != null)
+            return storedPermissions().orElse(defaultPermissions);
         }
     }
 

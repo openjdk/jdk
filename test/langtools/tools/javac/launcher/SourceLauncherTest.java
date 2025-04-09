@@ -191,7 +191,7 @@ public class SourceLauncherTest extends TestRunner {
             "    }\n" +
             "}");
 
-        List<String> javacArgs = List.of("-classpath", annoClasses.toString());
+        List<String> javacArgs = List.of("-classpath", annoClasses.toString(), "-implicit:none");
         List<String> classArgs = List.of("1", "2", "3");
         String expect = "Hello World! [1, 2, 3]\n";
         Result r = run(mainSrc.resolve("HelloWorld.java"), javacArgs, classArgs);

@@ -25,21 +25,45 @@
  * @test
  * @bug 8015927
  * @summary Class reference duplicates in constant pool
- * @clean ClassRefDupInConstantPoolTest$Duplicates
+ * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.util
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main ClassRefDupInConstantPoolTest
  */
 
-import java.util.TreeSet;
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
-import java.lang.classfile.*;
-import java.lang.classfile.constantpool.*;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.TreeSet;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class ClassRefDupInConstantPoolTest {
-    public static void main(String[] args) throws Exception {
-        ClassModel cls = ClassFile.of().parse(ClassRefDupInConstantPoolTest.class.
-                                       getResourceAsStream("ClassRefDupInConstantPoolTest$Duplicates.class").readAllBytes());
-        ConstantPool pool = cls.constantPool();
 
+    private static final String DUPLICATE_REFS_CLASS =
+            """
+            class Duplicates {
+                String concat(String s1, String s2) {
+                    return s1 + (s2 == s1 ? " " : s2);
+                }
+            }""";
+
+    public static void main(String[] args) throws Exception {
+        new JavacTask(new ToolBox()).sources(DUPLICATE_REFS_CLASS).run();
+
+        ClassModel cls = ClassFile.of().parse(Files.readAllBytes(Path.of("Duplicates.class")));
+        ConstantPool pool = cls.constantPool();
         int duplicates = 0;
         TreeSet<String> set = new TreeSet<>();
         for (PoolEntry pe : pool) {
@@ -50,13 +74,8 @@ public class ClassRefDupInConstantPoolTest {
                 }
             }
         }
-        if (duplicates > 0)
+        if (duplicates > 0) {
             throw new Exception("Test Failed");
-    }
-
-    class Duplicates {
-        String concat(String s1, String s2) {
-            return s1 + (s2 == s1 ? " " : s2);
         }
     }
 }
