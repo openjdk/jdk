@@ -337,7 +337,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
                       .shouldContain(HELLO_WORLD)
                       .shouldContain("The shared archive file version " + hex(version2) + " does not match the required version " + hex(currentCDSVersion))
                       .shouldContain("The shared archive file has the wrong version")
-                      .shouldContain("Initialize dynamic archive failed")
+                      .shouldContain("Loading dynamic archive failed")
                       .shouldContain("Dumping shared data to file");
             });
         ft2 = Files.getLastModifiedTime(Paths.get(modVersion));

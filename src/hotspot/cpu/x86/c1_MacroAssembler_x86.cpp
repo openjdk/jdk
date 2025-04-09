@@ -62,8 +62,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    const Register thread = r15_thread;
-    lightweight_lock(disp_hdr, obj, hdr, thread, tmp, slow_case);
+    lightweight_lock(disp_hdr, obj, hdr, tmp, slow_case);
   } else  if (LockingMode == LM_LEGACY) {
     Label done;
     // Load object header
@@ -128,7 +127,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   verify_oop(obj);
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_unlock(obj, disp_hdr, r15_thread, hdr, slow_case);
+    lightweight_unlock(obj, disp_hdr, hdr, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     // test if object header is pointing to the displaced header, and if so, restore
     // the displaced header in the object - if the object header is not pointing to

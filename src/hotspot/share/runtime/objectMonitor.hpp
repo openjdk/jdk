@@ -385,6 +385,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      wait(jlong millis, bool interruptible, TRAPS);
   void      notify(TRAPS);
   void      notifyAll(TRAPS);
+  void      quick_notify(JavaThread* current);
+  void      quick_notifyAll(JavaThread* current);
 
   void      print() const;
 #ifdef ASSERT
