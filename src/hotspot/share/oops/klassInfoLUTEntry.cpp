@@ -238,10 +238,10 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
     const InstanceKlass* const ik = InstanceKlass::cast(k);
 
     const int real_oop_map_count = ik->nonstatic_oop_map_count();
-    const unsigned omb_offset_1 = (real_oop_map_count >= 1) ? (unsigned)ik->start_of_nonstatic_oop_maps()[0].offset() : max_uintx;
-    const unsigned omb_count_1 =  (real_oop_map_count >= 1) ? ik->start_of_nonstatic_oop_maps()[0].count() : max_uintx;
-    const unsigned omb_offset_2 = (real_oop_map_count >= 2) ? (unsigned)ik->start_of_nonstatic_oop_maps()[1].offset() : max_uintx;
-    const unsigned omb_count_2 =  (real_oop_map_count >= 2) ? ik->start_of_nonstatic_oop_maps()[1].count() : max_uintx;
+    const unsigned omb_offset_1 = (real_oop_map_count >= 1) ? (unsigned)ik->start_of_nonstatic_oop_maps()[0].offset() : UINT_MAX;
+    const unsigned omb_count_1 =  (real_oop_map_count >= 1) ? ik->start_of_nonstatic_oop_maps()[0].count() : UINT_MAX;
+    const unsigned omb_offset_2 = (real_oop_map_count >= 2) ? (unsigned)ik->start_of_nonstatic_oop_maps()[1].offset() : UINT_MAX;
+    const unsigned omb_count_2 =  (real_oop_map_count >= 2) ? ik->start_of_nonstatic_oop_maps()[1].count() : UINT_MAX;
 
     const int real_wordsize = Klass::layout_helper_needs_slow_path(real_lh) ?
         -1 : Klass::layout_helper_to_size_helper(real_lh);
