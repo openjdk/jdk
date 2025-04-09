@@ -50,7 +50,7 @@
     }
 
      public static void main(String[] args) {
-        for (int i =0; i < 10_000; i++) {
+        for (int i = 0; i < 10_000; i++) {
              Asserts.assertThrows(ArithmeticException.class, TestUnsignedModByZero::testInt);
              Asserts.assertThrows(ArithmeticException.class, TestUnsignedModByZero::testLong);
         }

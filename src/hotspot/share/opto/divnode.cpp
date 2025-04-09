@@ -1319,7 +1319,7 @@ static const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
     return TypeClass::ZERO;
   }
 
-  // Mod by zero?  Throw exception at runtime!
+  // Mod by zero?  Throw an exception at runtime!
   if (type_divisor->is_con() && type_divisor->get_con() == 0) {
     return TypeClass::POS;
   }
