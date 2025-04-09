@@ -3113,8 +3113,9 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
 
   // ZX additional features.
   if (is_zx()) {
-    // We do not know if these are supported by ZX,
-    // so we cannot trust common CPUID bit for it.
+    // We do not know if these are supported by ZX, so we cannot trust
+    // common CPUID bit for them.
+    assert((result & CPU_CLWB) == 0, "Check if it is supported?");
     result &= ~CPU_CLWB;
   }
 
