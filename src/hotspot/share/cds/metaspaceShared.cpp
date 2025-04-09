@@ -678,14 +678,11 @@ void VM_PopulateDumpSharedSpace::doit() {
   CppVtables::zero_archived_vtables();
 
   // Write the archive file
-  const char* static_archive;
   if (CDSConfig::is_dumping_final_static_archive()) {
-    static_archive = AOTCache;
-    FileMapInfo::free_current_info();
-  } else {
-    static_archive = CDSConfig::static_archive_path();
+    FileMapInfo::free_current_info(); // FIXME: should not free current info
   }
-  assert(static_archive != nullptr, "SharedArchiveFile not set?");
+  const char* static_archive = CDSConfig::output_archive_path();
+  assert(static_archive != nullptr, "sanity");
   _map_info = new FileMapInfo(static_archive, true);
   _map_info->populate_header(MetaspaceShared::core_region_alignment());
   _map_info->set_early_serialized_data(early_serialized_data);
@@ -787,11 +784,6 @@ void MetaspaceShared::link_shared_classes(TRAPS) {
   if (CDSConfig::is_dumping_final_static_archive()) {
     FinalImageRecipes::apply_recipes(CHECK);
   }
-}
-
-void MetaspaceShared::prepare_for_dumping() {
-  assert(CDSConfig::is_dumping_archive(), "sanity");
-  CDSConfig::check_unsupported_dumping_module_options();
 }
 
 // Preload classes from a list, populate the shared spaces and dump to a
@@ -1023,7 +1015,7 @@ bool MetaspaceShared::write_static_archive(ArchiveBuilder* builder, FileMapInfo*
   // without runtime relocation.
   builder->relocate_to_requested();
 
-  map_info->open_for_write();
+  map_info->open_as_output();
   if (!map_info->is_open()) {
     return false;
   }
@@ -1214,10 +1206,10 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
 }
 
 FileMapInfo* MetaspaceShared::open_static_archive() {
-  const char* static_archive = CDSConfig::static_archive_path();
+  const char* static_archive = CDSConfig::input_static_archive_path();
   assert(static_archive != nullptr, "sanity");
   FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
-  if (!mapinfo->initialize()) {
+  if (!mapinfo->open_as_input()) {
     delete(mapinfo);
     return nullptr;
   }
@@ -1228,13 +1220,13 @@ FileMapInfo* MetaspaceShared::open_dynamic_archive() {
   if (CDSConfig::is_dumping_dynamic_archive()) {
     return nullptr;
   }
-  const char* dynamic_archive = CDSConfig::dynamic_archive_path();
+  const char* dynamic_archive = CDSConfig::input_dynamic_archive_path();
   if (dynamic_archive == nullptr) {
     return nullptr;
   }
 
   FileMapInfo* mapinfo = new FileMapInfo(dynamic_archive, false);
-  if (!mapinfo->initialize()) {
+  if (!mapinfo->open_as_input()) {
     delete(mapinfo);
     if (RequireSharedSpaces) {
       MetaspaceShared::unrecoverable_loading_error("Failed to initialize dynamic archive");
@@ -1817,7 +1809,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   if (PrintSharedArchiveAndExit) {
     // Print archive names
     if (dynamic_mapinfo != nullptr) {
-      tty->print_cr("\n\nBase archive name: %s", CDSConfig::static_archive_path());
+      tty->print_cr("\n\nBase archive name: %s", CDSConfig::input_static_archive_path());
       tty->print_cr("Base archive version %d", static_mapinfo->version());
     } else {
       tty->print_cr("Static archive name: %s", static_mapinfo->full_path());
