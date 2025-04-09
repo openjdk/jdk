@@ -80,7 +80,7 @@ address StubRoutines::ppc::generate_crc_constants(juint reverse_poly) {
   // <= Power7 Little Endian: 4 tables for byte folding
   // <= Power7 Big Endian: 1 table for single byte folding + 4 tables for multi-byte folding
   // >= Power8: 1 table for single byte folding + constants for fast vector implementation
-  const bool use_vector = VM_Version::has_vpmsumb();
+  const bool use_vector = true;
   const int vector_size = 16 * (CRC32_UNROLL_FACTOR2 + CRC32_UNROLL_FACTOR / CRC32_UNROLL_FACTOR2);
 
   const int size = use_vector ? CRC32_TABLE_SIZE + vector_size : (4 BIG_ENDIAN_ONLY(+1)) * CRC32_TABLE_SIZE;

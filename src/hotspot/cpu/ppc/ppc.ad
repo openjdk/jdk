@@ -2065,9 +2065,7 @@ bool Matcher::match_rule_supported(int opcode) {
 
   switch (opcode) {
     case Op_SqrtD:
-      return VM_Version::has_fsqrt();
     case Op_RoundDoubleMode:
-      return VM_Version::has_vsx();
     case Op_CountLeadingZerosI:
     case Op_CountLeadingZerosL:
       return UseCountLeadingZerosInstructionsPPC64;
@@ -2922,85 +2920,42 @@ encode %{
   %}
 
   enc_class postalloc_expand_encode_oop(iRegNdst dst, iRegPdst src, flagsReg crx) %{
+    // use isel instruction with Power 7
+    cmpP_reg_imm16Node *n_compare  = new cmpP_reg_imm16Node();
+    encodeP_subNode    *n_sub_base = new encodeP_subNode();
+    encodeP_shiftNode  *n_shift    = new encodeP_shiftNode();
+    cond_set_0_oopNode *n_cond_set = new cond_set_0_oopNode();
 
-    if (VM_Version::has_isel()) {
-      // use isel instruction with Power 7
-      cmpP_reg_imm16Node *n_compare  = new cmpP_reg_imm16Node();
-      encodeP_subNode    *n_sub_base = new encodeP_subNode();
-      encodeP_shiftNode  *n_shift    = new encodeP_shiftNode();
-      cond_set_0_oopNode *n_cond_set = new cond_set_0_oopNode();
+    n_compare->add_req(n_region, n_src);
+    n_compare->_opnds[0] = op_crx;
+    n_compare->_opnds[1] = op_src;
+    n_compare->_opnds[2] = new immL16Oper(0);
 
-      n_compare->add_req(n_region, n_src);
-      n_compare->_opnds[0] = op_crx;
-      n_compare->_opnds[1] = op_src;
-      n_compare->_opnds[2] = new immL16Oper(0);
+    n_sub_base->add_req(n_region, n_src);
+    n_sub_base->_opnds[0] = op_dst;
+    n_sub_base->_opnds[1] = op_src;
+    n_sub_base->_bottom_type = _bottom_type;
 
-      n_sub_base->add_req(n_region, n_src);
-      n_sub_base->_opnds[0] = op_dst;
-      n_sub_base->_opnds[1] = op_src;
-      n_sub_base->_bottom_type = _bottom_type;
+    n_shift->add_req(n_region, n_sub_base);
+    n_shift->_opnds[0] = op_dst;
+    n_shift->_opnds[1] = op_dst;
+    n_shift->_bottom_type = _bottom_type;
 
-      n_shift->add_req(n_region, n_sub_base);
-      n_shift->_opnds[0] = op_dst;
-      n_shift->_opnds[1] = op_dst;
-      n_shift->_bottom_type = _bottom_type;
+    n_cond_set->add_req(n_region, n_compare, n_shift);
+    n_cond_set->_opnds[0] = op_dst;
+    n_cond_set->_opnds[1] = op_crx;
+    n_cond_set->_opnds[2] = op_dst;
+    n_cond_set->_bottom_type = _bottom_type;
 
-      n_cond_set->add_req(n_region, n_compare, n_shift);
-      n_cond_set->_opnds[0] = op_dst;
-      n_cond_set->_opnds[1] = op_crx;
-      n_cond_set->_opnds[2] = op_dst;
-      n_cond_set->_bottom_type = _bottom_type;
+    ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
+    ra_->set_pair(n_sub_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+    ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+    ra_->set_pair(n_cond_set->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
 
-      ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
-      ra_->set_pair(n_sub_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      ra_->set_pair(n_cond_set->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-      nodes->push(n_compare);
-      nodes->push(n_sub_base);
-      nodes->push(n_shift);
-      nodes->push(n_cond_set);
-
-    } else {
-      // before Power 7
-      moveRegNode        *n_move     = new moveRegNode();
-      cmpP_reg_imm16Node *n_compare  = new cmpP_reg_imm16Node();
-      encodeP_shiftNode  *n_shift    = new encodeP_shiftNode();
-      cond_sub_baseNode  *n_sub_base = new cond_sub_baseNode();
-
-      n_move->add_req(n_region, n_src);
-      n_move->_opnds[0] = op_dst;
-      n_move->_opnds[1] = op_src;
-      ra_->set_oop(n_move, true); // Until here, 'n_move' still produces an oop.
-
-      n_compare->add_req(n_region, n_src);
-      n_compare->add_prec(n_move);
-
-      n_compare->_opnds[0] = op_crx;
-      n_compare->_opnds[1] = op_src;
-      n_compare->_opnds[2] = new immL16Oper(0);
-
-      n_sub_base->add_req(n_region, n_compare, n_src);
-      n_sub_base->_opnds[0] = op_dst;
-      n_sub_base->_opnds[1] = op_crx;
-      n_sub_base->_opnds[2] = op_src;
-      n_sub_base->_bottom_type = _bottom_type;
-
-      n_shift->add_req(n_region, n_sub_base);
-      n_shift->_opnds[0] = op_dst;
-      n_shift->_opnds[1] = op_dst;
-      n_shift->_bottom_type = _bottom_type;
-
-      ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
-      ra_->set_pair(n_sub_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      ra_->set_pair(n_move->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-      nodes->push(n_move);
-      nodes->push(n_compare);
-      nodes->push(n_sub_base);
-      nodes->push(n_shift);
-    }
+    nodes->push(n_compare);
+    nodes->push(n_sub_base);
+    nodes->push(n_shift);
+    nodes->push(n_cond_set);
 
     assert(!(ra_->is_oop(this)), "sanity"); // This is not supposed to be GC'ed.
   %}
@@ -3040,56 +2995,33 @@ encode %{
     n_shift->_opnds[1] = op_src;
     n_shift->_bottom_type = _bottom_type;
 
-    if (VM_Version::has_isel()) {
-      // use isel instruction with Power 7
+    // use isel instruction with Power 7
+    decodeN_addNode *n_add_base = new decodeN_addNode();
+    n_add_base->add_req(n_region, n_shift);
+    n_add_base->_opnds[0] = op_dst;
+    n_add_base->_opnds[1] = op_dst;
+    n_add_base->_bottom_type = _bottom_type;
 
-      decodeN_addNode *n_add_base = new decodeN_addNode();
-      n_add_base->add_req(n_region, n_shift);
-      n_add_base->_opnds[0] = op_dst;
-      n_add_base->_opnds[1] = op_dst;
-      n_add_base->_bottom_type = _bottom_type;
+    cond_set_0_ptrNode *n_cond_set = new cond_set_0_ptrNode();
+    n_cond_set->add_req(n_region, n_compare, n_add_base);
+    n_cond_set->_opnds[0] = op_dst;
+    n_cond_set->_opnds[1] = op_crx;
+    n_cond_set->_opnds[2] = op_dst;
+    n_cond_set->_bottom_type = _bottom_type;
 
-      cond_set_0_ptrNode *n_cond_set = new cond_set_0_ptrNode();
-      n_cond_set->add_req(n_region, n_compare, n_add_base);
-      n_cond_set->_opnds[0] = op_dst;
-      n_cond_set->_opnds[1] = op_crx;
-      n_cond_set->_opnds[2] = op_dst;
-      n_cond_set->_bottom_type = _bottom_type;
+    assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
+    ra_->set_oop(n_cond_set, true);
 
-      assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
-      ra_->set_oop(n_cond_set, true);
+    ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+    ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
+    ra_->set_pair(n_add_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+    ra_->set_pair(n_cond_set->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
 
-      ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
-      ra_->set_pair(n_add_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      ra_->set_pair(n_cond_set->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
+    nodes->push(n_compare);
+    nodes->push(n_shift);
+    nodes->push(n_add_base);
+    nodes->push(n_cond_set);
 
-      nodes->push(n_compare);
-      nodes->push(n_shift);
-      nodes->push(n_add_base);
-      nodes->push(n_cond_set);
-
-    } else {
-      // before Power 7
-      cond_add_baseNode *n_add_base = new cond_add_baseNode();
-
-      n_add_base->add_req(n_region, n_compare, n_shift);
-      n_add_base->_opnds[0] = op_dst;
-      n_add_base->_opnds[1] = op_crx;
-      n_add_base->_opnds[2] = op_dst;
-      n_add_base->_bottom_type = _bottom_type;
-
-      assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
-      ra_->set_oop(n_add_base, true);
-
-      ra_->set_pair(n_shift->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-      ra_->set_pair(n_compare->_idx, ra_->get_reg_second(n_crx), ra_->get_reg_first(n_crx));
-      ra_->set_pair(n_add_base->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-      nodes->push(n_compare);
-      nodes->push(n_shift);
-      nodes->push(n_add_base);
-    }
   %}
 
   enc_class postalloc_expand_decode_oop_not_null(iRegPdst dst, iRegNsrc src) %{
@@ -6781,7 +6713,7 @@ instruct decodeN_Disjoint_isel_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
   effect(TEMP_DEF dst, TEMP crx);
   predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
              n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
-            CompressedOops::base_disjoint() && VM_Version::has_isel());
+            CompressedOops::base_disjoint());
   ins_cost(3 * DEFAULT_COST);
 
   format %{ "DecodeN  $dst, $src \t// decode with disjoint base using isel" %}
@@ -7161,7 +7093,6 @@ instruct membar_CPUOrder() %{
 // Cmove using isel.
 instruct cmovI_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) %{
   match(Set dst (CMoveI (Binary cmp crx) (Binary dst src)));
-  predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST);
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
@@ -7176,19 +7107,6 @@ instruct cmovI_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) 
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_reg(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, iRegIsrc src) %{
-  match(Set dst (CMoveI (Binary cmp crx) (Binary dst src)));
-  predicate(!VM_Version::has_isel());
-  ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler
-  size(8);
-  ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
-  ins_pipe(pipe_class_default);
-%}
 
 instruct cmovI_imm(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, immI16 src) %{
   match(Set dst (CMoveI (Binary cmp crx) (Binary dst src)));
@@ -7206,7 +7124,6 @@ instruct cmovI_imm(cmpOp cmp, flagsRegSrc crx, iRegIdst dst, immI16 src) %{
 // Cmove using isel.
 instruct cmovL_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) %{
   match(Set dst (CMoveL (Binary cmp crx) (Binary dst src)));
-  predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST);
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
@@ -7221,19 +7138,7 @@ instruct cmovL_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) 
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovL_reg(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, iRegLsrc src) %{
-  match(Set dst (CMoveL (Binary cmp crx) (Binary dst src)));
-  predicate(!VM_Version::has_isel());
-  ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
-  size(8);
-  ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
-  ins_pipe(pipe_class_default);
-%}
+ 
 
 instruct cmovL_imm(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, immL16 src) %{
   match(Set dst (CMoveL (Binary cmp crx) (Binary dst src)));
@@ -7251,7 +7156,6 @@ instruct cmovL_imm(cmpOp cmp, flagsRegSrc crx, iRegLdst dst, immL16 src) %{
 // Cmove using isel.
 instruct cmovN_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) %{
   match(Set dst (CMoveN (Binary cmp crx) (Binary dst src)));
-  predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST);
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
@@ -7266,20 +7170,7 @@ instruct cmovN_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) 
   ins_pipe(pipe_class_default);
 %}
 
-// Conditional move for RegN. Only cmov(reg, reg).
-instruct cmovN_reg(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, iRegNsrc src) %{
-  match(Set dst (CMoveN (Binary cmp crx) (Binary dst src)));
-  predicate(!VM_Version::has_isel());
-  ins_cost(DEFAULT_COST+BRANCH_COST);
 
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
-  size(8);
-  ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
-  ins_pipe(pipe_class_default);
-%}
 
 instruct cmovN_imm(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, immN_0 src) %{
   match(Set dst (CMoveN (Binary cmp crx) (Binary dst src)));
@@ -7297,7 +7188,6 @@ instruct cmovN_imm(cmpOp cmp, flagsRegSrc crx, iRegNdst dst, immN_0 src) %{
 // Cmove using isel.
 instruct cmovP_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegPsrc src) %{
   match(Set dst (CMoveP (Binary cmp crx) (Binary dst src)));
-  predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST);
 
   format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
@@ -7312,19 +7202,6 @@ instruct cmovP_reg_isel(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegPsrc src) 
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovP_reg(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, iRegP_N2P src) %{
-  match(Set dst (CMoveP (Binary cmp crx) (Binary dst src)));
-  predicate(!VM_Version::has_isel());
-  ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $cmp, $crx, $dst, $src\n\t" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
-  size(8);
-  ins_encode( enc_cmove_reg(dst, crx, src, cmp) );
-  ins_pipe(pipe_class_default);
-%}
 
 instruct cmovP_imm(cmpOp cmp, flagsRegSrc crx, iRegPdst dst, immP_0 src) %{
   match(Set dst (CMoveP (Binary cmp crx) (Binary dst src)));
@@ -9282,7 +9159,6 @@ instruct negD_absD_reg(regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// VM_Version::has_fsqrt() decides if this node will be used.
 // Sqrt float double precision
 instruct sqrtD_reg(regD dst, regD src) %{
   match(Set dst (SqrtD src));
@@ -9297,7 +9173,6 @@ instruct sqrtD_reg(regD dst, regD src) %{
 // Single-precision sqrt.
 instruct sqrtF_reg(regF dst, regF src) %{
   match(Set dst (SqrtF src));
-  predicate(VM_Version::has_fsqrts());
   ins_cost(DEFAULT_COST);
 
   format %{ "FSQRTS  $dst, $src" %}
@@ -9821,7 +9696,6 @@ instruct andcL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
 
 instruct moveL2D_reg(regD dst, iRegLsrc src) %{
   match(Set dst (MoveL2D src));
-  predicate(VM_Version::has_mtfprd());
 
   format %{ "MTFPRD  $dst, $src" %}
   size(4);
@@ -10509,7 +10383,6 @@ instruct cmovI_bso_reg_conLvalue0_Ex(iRegIdst dst, flagsRegSrc crx, regD src) %{
 // Double to Int conversion, NaN is mapped to 0.
 instruct convD2I_reg_ExEx(iRegIdst dst, regD src) %{
   match(Set dst (ConvD2I src));
-  predicate(!VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10526,7 +10399,6 @@ instruct convD2I_reg_ExEx(iRegIdst dst, regD src) %{
 // Double to Int conversion, NaN is mapped to 0. Special version for Power8.
 instruct convD2I_reg_mffprd_ExEx(iRegIdst dst, regD src) %{
   match(Set dst (ConvD2I src));
-  predicate(VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10554,7 +10426,6 @@ instruct convF2IRaw_regF(regF dst, regF src) %{
 // Float to Int conversion, NaN is mapped to 0.
 instruct convF2I_regF_ExEx(iRegIdst dst, regF src) %{
   match(Set dst (ConvF2I src));
-  predicate(!VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10571,7 +10442,6 @@ instruct convF2I_regF_ExEx(iRegIdst dst, regF src) %{
 // Float to Int conversion, NaN is mapped to 0. Special version for Power8.
 instruct convF2I_regF_mffprd_ExEx(iRegIdst dst, regF src) %{
   match(Set dst (ConvF2I src));
-  predicate(VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10767,7 +10637,6 @@ instruct cmovL_bso_reg_conLvalue0_Ex(iRegLdst dst, flagsRegSrc crx, regD src) %{
 // Float to Long conversion, NaN is mapped to 0.
 instruct convF2L_reg_ExEx(iRegLdst dst, regF src) %{
   match(Set dst (ConvF2L src));
-  predicate(!VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10784,7 +10653,6 @@ instruct convF2L_reg_ExEx(iRegLdst dst, regF src) %{
 // Float to Long conversion, NaN is mapped to 0. Special version for Power8.
 instruct convF2L_reg_mffprd_ExEx(iRegLdst dst, regF src) %{
   match(Set dst (ConvF2L src));
-  predicate(VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10812,7 +10680,6 @@ instruct convD2LRaw_regD(regD dst, regD src) %{
 // Double to Long conversion, NaN is mapped to 0.
 instruct convD2L_reg_ExEx(iRegLdst dst, regD src) %{
   match(Set dst (ConvD2L src));
-  predicate(!VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10829,7 +10696,6 @@ instruct convD2L_reg_ExEx(iRegLdst dst, regD src) %{
 // Double to Long conversion, NaN is mapped to 0. Special version for Power8.
 instruct convD2L_reg_mffprd_ExEx(iRegLdst dst, regD src) %{
   match(Set dst (ConvD2L src));
-  predicate(VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10871,7 +10737,6 @@ instruct convD2F_reg(regF dst, regD src) %{
 // Integer to Float conversion.
 instruct convI2F_ireg_Ex(regF dst, iRegIsrc src) %{
   match(Set dst (ConvI2F src));
-  predicate(!VM_Version::has_fcfids());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10903,7 +10768,6 @@ instruct convL2FRaw_regF(regF dst, regD src) %{
 // Integer to Float conversion. Special version for Power7.
 instruct convI2F_ireg_fcfids_Ex(regF dst, iRegIsrc src) %{
   match(Set dst (ConvI2F src));
-  predicate(VM_Version::has_fcfids() && !VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10920,7 +10784,6 @@ instruct convI2F_ireg_fcfids_Ex(regF dst, iRegIsrc src) %{
 // Integer to Float conversion. Special version for Power8.
 instruct convI2F_ireg_mtfprd_Ex(regF dst, iRegIsrc src) %{
   match(Set dst (ConvI2F src));
-  predicate(VM_Version::has_fcfids() && VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10933,7 +10796,6 @@ instruct convI2F_ireg_mtfprd_Ex(regF dst, iRegIsrc src) %{
 // L2F to avoid runtime call.
 instruct convL2F_ireg_fcfids_Ex(regF dst, iRegLsrc src) %{
   match(Set dst (ConvL2F src));
-  predicate(VM_Version::has_fcfids() && !VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10948,7 +10810,6 @@ instruct convL2F_ireg_fcfids_Ex(regF dst, iRegLsrc src) %{
 // L2F to avoid runtime call.  Special version for Power8.
 instruct convL2F_ireg_mtfprd_Ex(regF dst, iRegLsrc src) %{
   match(Set dst (ConvL2F src));
-  predicate(VM_Version::has_fcfids() && VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10966,7 +10827,6 @@ instruct convL2F_ireg_mtfprd_Ex(regF dst, iRegLsrc src) %{
 // Integer to Double conversion.
 instruct convI2D_reg_Ex(regD dst, iRegIsrc src) %{
   match(Set dst (ConvI2D src));
-  predicate(!VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -10983,7 +10843,6 @@ instruct convI2D_reg_Ex(regD dst, iRegIsrc src) %{
 // Integer to Double conversion. Special version for Power8.
 instruct convI2D_reg_mtfprd_Ex(regD dst, iRegIsrc src) %{
   match(Set dst (ConvI2D src));
-  predicate(VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -11008,7 +10867,6 @@ instruct convL2D_reg_Ex(regD dst, stackSlotL src) %{
 // Long to Double conversion. Special version for Power8.
 instruct convL2D_reg_mtfprd_Ex(regD dst, iRegLsrc src) %{
   match(Set dst (ConvL2D src));
-  predicate(VM_Version::has_mtfprd());
   ins_cost(DEFAULT_COST);
 
   expand %{
@@ -12626,7 +12484,6 @@ instruct minI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
 instruct minI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set dst (MinI src1 src2));
   effect(KILL cr0);
-  predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST*2);
 
   ins_encode %{
@@ -12659,7 +12516,6 @@ instruct maxI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
 instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set dst (MaxI src1 src2));
   effect(KILL cr0);
-  predicate(VM_Version::has_isel());
   ins_cost(DEFAULT_COST*2);
 
   ins_encode %{
@@ -13046,7 +12902,7 @@ instruct loadI_reversed_acquire(iRegIdst dst, indirect mem) %{
 // Load Long - aligned and reversed
 instruct loadL_reversed(iRegLdst dst, indirect mem) %{
   match(Set dst (ReverseBytesL (LoadL mem)));
-  predicate(VM_Version::has_ldbrx() && (n->in(1)->as_Load()->is_unordered() || followed_by_acquire(n->in(1))));
+  predicate((n->in(1)->as_Load()->is_unordered() || followed_by_acquire(n->in(1))));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
@@ -13058,7 +12914,6 @@ instruct loadL_reversed(iRegLdst dst, indirect mem) %{
 
 instruct loadL_reversed_acquire(iRegLdst dst, indirect mem) %{
   match(Set dst (ReverseBytesL (LoadL mem)));
-  predicate(VM_Version::has_ldbrx());
   ins_cost(2 * MEMORY_REF_COST);
 
   size(12);
@@ -13139,7 +12994,6 @@ instruct storeI_reversed(iRegIsrc src, indirect mem) %{
 // Store Long reversed byte order
 instruct storeL_reversed(iRegLsrc src, indirect mem) %{
   match(Set mem (StoreL mem (ReverseBytesL src)));
-  predicate(VM_Version::has_stdbrx());
   ins_cost(MEMORY_REF_COST);
 
   size(4);

@@ -1583,59 +1583,17 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
   // For older processors, instruction_type != size holds, and we
   // emulate the sub-word instructions by constructing a 4-byte value
   // that leaves the other bytes unchanged.
-  const int instruction_type = size;
 
   Label retry;
   Register shift_amount = noreg,
            val32 = dest_current_value,
            modval = is_add ? tmp1 : exchange_value;
 
-  if (instruction_type != size) {
-    assert_different_registers(tmp1, tmp2, tmp3, dest_current_value, exchange_value, addr_base);
-    modval = tmp1;
-    shift_amount = tmp2;
-    val32 = tmp3;
-    // Need some preparation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
-#ifdef VM_LITTLE_ENDIAN
-    rldic(shift_amount, addr_base, 3, 64-5); // (dest & 3) * 8;
-    clrrdi(addr_base, addr_base, 2);
-#else
-    xori(shift_amount, addr_base, (size == 1) ? 3 : 2);
-    clrrdi(addr_base, addr_base, 2);
-    rldic(shift_amount, shift_amount, 3, 64-5); // byte: ((3-dest) & 3) * 8; short: ((1-dest/2) & 1) * 16;
-#endif
-  }
 
   // atomic emulation loop
   bind(retry);
 
-  switch (instruction_type) {
-    case 4: lwarx(val32, addr_base, cmpxchgx_hint); break;
-    case 2: lharx(val32, addr_base, cmpxchgx_hint); break;
-    case 1: lbarx(val32, addr_base, cmpxchgx_hint); break;
-    default: ShouldNotReachHere();
-  }
-
-  if (instruction_type != size) {
-    srw(dest_current_value, val32, shift_amount);
-  }
-
   if (is_add) { add(modval, dest_current_value, exchange_value); }
-
-  if (instruction_type != size) {
-    // Transform exchange value such that the replacement can be done by one xor instruction.
-    xorr(modval, dest_current_value, is_add ? modval : exchange_value);
-    clrldi(modval, modval, (size == 1) ? 56 : 48);
-    slw(modval, modval, shift_amount);
-    xorr(modval, val32, modval);
-  }
-
-  switch (instruction_type) {
-    case 4: stwcx_(modval, addr_base); break;
-    case 2: sthcx_(modval, addr_base); break;
-    case 1: stbcx_(modval, addr_base); break;
-    default: ShouldNotReachHere();
-  }
 
   if (UseStaticBranchPredictionInCompareAndSwapPPC64) {
     bne_predict_not_taken(CR0, retry); // StXcx_ sets CR0.
@@ -1654,13 +1612,12 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
 // Temps, addr_base and exchange_value are killed if size < 4 and processor does not support respective instructions.
 // Only signed types are supported with size < 4.
 void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
-RegisterOrConstant compare_value, Register exchange_value,
-Register addr_base, Label &retry, Label &failed, bool cmpxchgx_hint, int size) {
+                                      RegisterOrConstant compare_value, Register exchange_value,
+                                      Register addr_base, Label &retry, Label &failed, bool cmpxchgx_hint, int size) {
   // Sub-word instructions are available since Power 8.
   // For older processors, instruction_type != size holds, and we
   // emulate the sub-word instructions by constructing a 4-byte value
   // that leaves the other bytes unchanged.
-  const int instruction_type = size;
 
   Register shift_amount = noreg,
            val32 = dest_current_value,
@@ -1669,16 +1626,6 @@ Register addr_base, Label &retry, Label &failed, bool cmpxchgx_hint, int size) {
   // atomic emulation loop
   bind(retry);
 
-  switch (instruction_type) {
-    case 4: lwarx(val32, addr_base, cmpxchgx_hint); break;
-    case 2: lharx(val32, addr_base, cmpxchgx_hint); break;
-    case 1: lbarx(val32, addr_base, cmpxchgx_hint); break;
-    default: ShouldNotReachHere();
-  }
-
-  if (instruction_type != size) {
-    srw(dest_current_value, val32, shift_amount);
-  }
   if (size == 1) {
     extsb(dest_current_value, dest_current_value);
   } else if (size == 2) {
@@ -1694,16 +1641,6 @@ Register addr_base, Label &retry, Label &failed, bool cmpxchgx_hint, int size) {
   // branch to done  => (flag == ne), (dest_current_value != compare_value)
   // fall through    => (flag == eq), (dest_current_value == compare_value)
 
-  if (instruction_type != size) {
-    xorr(modval, val32, exchange_value);
-  }
-
-  switch (instruction_type) {
-    case 4: stwcx_(modval, addr_base); break;
-    case 2: sthcx_(modval, addr_base); break;
-    case 1: stbcx_(modval, addr_base); break;
-    default: ShouldNotReachHere();
-  }
 }
 
 // CmpxchgX sets condition register to cmpX(current, compare).
@@ -3723,7 +3660,6 @@ void MacroAssembler::load_reverse_32(Register dst, Register src) {
 // Due to register shortage, setting tc3 may overwrite table. With the return offset
 // at hand, the original table address can be easily reconstructed.
 int MacroAssembler::crc32_table_columns(Register table, Register tc0, Register tc1, Register tc2, Register tc3) {
-  assert(!VM_Version::has_vpmsumb(), "Vector version should be used instead!");
 
   // Point to 4 byte folding tables (byte-reversed version for Big Endian)
   // Layout: See StubRoutines::ppc::generate_crc_constants.
@@ -4290,11 +4226,7 @@ void MacroAssembler::crc32(Register crc, Register buf, Register len, Register t0
   load_const_optimized(t0, is_crc32c ? StubRoutines::crc32c_table_addr()
                                      : StubRoutines::crc_table_addr()   , R0);
 
-  if (VM_Version::has_vpmsumb()) {
-    kernel_crc32_vpmsum(crc, buf, len, t0, t1, t2, t3, t4, t5, t6, t7, !is_crc32c);
-  } else {
-    kernel_crc32_1word(crc, buf, len, t0, t1, t2, t3, t4, t5, t6, t7, t0, !is_crc32c);
-  }
+  kernel_crc32_vpmsum(crc, buf, len, t0, t1, t2, t3, t4, t5, t6, t7, !is_crc32c);
 }
 
 void MacroAssembler::kernel_crc32_singleByteReg(Register crc, Register val, Register table, bool invertCRC) {

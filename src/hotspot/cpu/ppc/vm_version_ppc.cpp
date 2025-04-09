@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,20 +96,19 @@ void VM_Version::initialize() {
   }
 
   if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
-      FLAG_SET_ERGO(UsePopCountInstruction, true);
+    FLAG_SET_ERGO(UsePopCountInstruction, true);
   }
 
-  if (!VM_Version::has_isel() && FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
+
+  if (FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
     FLAG_SET_ERGO(ConditionalMoveLimit, 0);
   }
 
   if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
-      FLAG_SET_ERGO(SuperwordUseVSX, true);
+    FLAG_SET_ERGO(SuperwordUseVSX, true);
   }
+
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
-  if (FLAG_IS_DEFAULT(AlignVector)) {
-    FLAG_SET_ERGO(AlignVector, false);
-  }
 
   if (PowerArchitecturePPC64 >= 9) {
     if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstructionsPPC64)) {
@@ -174,22 +173,9 @@ void VM_Version::initialize() {
   // Create and print feature-string.
   char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
-               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
-               (has_fsqrt()   ? " fsqrt"   : ""),
-               (has_isel()    ? " isel"    : ""),
+               "ppc64%s%s%s%s%s",
                (has_lxarxeh() ? " lxarxeh" : ""),
-               "cmpb",
-               "popcntb",
-               "popcntw",
-               (has_fcfids()  ? " fcfids"  : ""),
-               (has_vand()    ? " vand"    : ""),
-               "lqarx",
-               (has_vcipher() ? " aes"     : ""),
-               (has_vpmsumb() ? " vpmsumb" : ""),
                (has_mfdscr()  ? " mfdscr"  : ""),
-               (has_vsx()     ? " vsx"     : ""),
-               (has_ldbrx()   ? " ldbrx"   : ""),
-               (has_stdbrx()  ? " stdbrx"  : ""),
                (has_vshasig() ? " sha"     : ""),
                (has_darn()    ? " darn"    : ""),
                (has_brw()     ? " brw"     : "")
@@ -259,25 +245,15 @@ void VM_Version::initialize() {
   }
 
   // The AES intrinsic stubs require AES instruction support.
-  if (has_vcipher()) {
-    if (FLAG_IS_DEFAULT(UseAES)) {
-      UseAES = true;
-    }
-  } else if (UseAES) {
-    if (!FLAG_IS_DEFAULT(UseAES))
-      warning("AES instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAES, false);
+  if (FLAG_IS_DEFAULT(UseAES)) {
+    UseAES = true;
   }
 
-  if (UseAES && has_vcipher()) {
-    if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-      UseAESIntrinsics = true;
-    }
-  } else if (UseAESIntrinsics) {
-    if (!FLAG_IS_DEFAULT(UseAESIntrinsics))
-      warning("AES intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+
+  if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+    UseAESIntrinsics = true;
   }
+
 
   if (UseAESCTRIntrinsics) {
     warning("AES/CTR intrinsics are not available on this CPU");

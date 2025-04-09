@@ -1077,7 +1077,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   // PPC64 specific:
   switch (kind) {
-    case Interpreter::java_lang_math_sqrt: use_instruction = VM_Version::has_fsqrt(); break;
+    case Interpreter::java_lang_math_sqrt: use_instruction = true; break;
     case Interpreter::java_lang_math_abs:  use_instruction = true; break;
     case Interpreter::java_lang_math_fmaF:
     case Interpreter::java_lang_math_fmaD: use_instruction = UseFMA; break;
