@@ -1142,7 +1142,7 @@ TEST_VM(os, map_memory_to_file) {
   char* result = os::map_memory_to_file(size, fd, mtTest);
   EXPECT_TRUE(result != nullptr);
 
-  EXPECT_TRUE(strcmp(letters, result)==0);
+  EXPECT_TRUE(strcmp(letters, result) == 0);
 
   EXPECT_TRUE(os::unmap_memory(result, size));
   ::close(fd);
