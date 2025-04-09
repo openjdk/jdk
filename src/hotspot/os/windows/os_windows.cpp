@@ -2211,14 +2211,11 @@ void os::jvm_path(char *buf, jint buflen) {
     char* java_home_var = ::getenv("JAVA_HOME");
     if (java_home_var != nullptr && java_home_var[0] != 0 &&
         strlen(java_home_var) < (size_t)buflen) {
-      strncpy(buf, java_home_var, buflen);
-
-      size_t len = strlen(buf);
-      char* bin_p = buf + len;
-      jio_snprintf(bin_p, buflen - len, "\\bin\\");
-      len = strlen(buf);
-      jio_snprintf(buf + len, buflen - len, "%s\\jvm%s",
-                   Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+      stringStream ss(buf, buflen);
+      ss.print("%s\\bin\\%s\\jvm%s",
+               java_home_var, Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+      assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+             "buf has been truncated");
     }
   }
 

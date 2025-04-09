@@ -2786,6 +2786,7 @@ void os::jvm_path(char *buf, jint buflen) {
       }
       assert(strstr(p, "/libjvm") == p, "invalid library name");
 
+      stringStream ss(buf, buflen);
       rp = os::realpath(java_home_var, buf, buflen);
       if (rp == nullptr) {
         return;
@@ -2793,14 +2794,13 @@ void os::jvm_path(char *buf, jint buflen) {
 
       len = checked_cast<int>(strlen(buf));
       assert(len < buflen, "Ran out of buffer room");
-      char* lib_p = buf + len;
-      snprintf(lib_p, buflen - len, "/lib");
+      ss.print("%s/lib", buf);
 
       if (0 == access(buf, F_OK)) {
         // Use current module name "libjvm.so"
-        len = (int)strlen(buf);
-        snprintf(buf + len, buflen - len, "/%s/libjvm%s",
-                 Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+        ss.print("/%s/libjvm%s", Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+               "buf has been truncated");
       } else {
         // Go back to path of .so
         rp = os::realpath(dli_fname, buf, buflen);

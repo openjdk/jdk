@@ -1513,6 +1513,7 @@ void os::jvm_path(char *buf, jint buflen) {
       const char* p = strrchr(buf, '/');
       assert(strstr(p, "/libjvm") == p, "invalid library name");
 
+      stringStream ss(buf, buflen);
       rp = os::realpath(java_home_var, buf, buflen);
       if (rp == nullptr) {
         return;
@@ -1520,17 +1521,12 @@ void os::jvm_path(char *buf, jint buflen) {
 
       len = strlen(buf);
       assert(len < buflen, "Ran out of buffer space");
-      char* lib_p = buf + len;
+      // Add the appropriate library  and JVM variant subdirs
+      ss.print("%s/lib/%s", buf, Abstract_VM_Version::vm_variant());
 
-      // Add the appropriate library subdir
-      snprintf(lib_p, buflen - len, "/lib");
-
-      // Add the appropriate JVM variant subdir
-      len = strlen(buf);
-      lib_p = buf + len;
-      snprintf(lib_p, buflen - len, "/%s", Abstract_VM_Version::vm_variant());
       if (0 != access(buf, F_OK)) {
-        snprintf(lib_p, buflen - len, "%s", "");
+        ss.reset();
+        ss.print("%s/lib", buf);
       }
 
       // If the path exists within JAVA_HOME, add the JVM library name
@@ -1538,8 +1534,9 @@ void os::jvm_path(char *buf, jint buflen) {
       // to the path to the current library.
       if (0 == access(buf, F_OK)) {
         // Use current module name "libjvm"
-        len = strlen(buf);
-        snprintf(buf + len, buflen - len, "/libjvm%s", JNI_LIB_SUFFIX);
+        ss.print("/libjvm%s", JNI_LIB_SUFFIX);
+        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+               "buf has been truncated");
       } else {
         // Fall back to path of current library
         rp = os::realpath(dli_fname, buf, buflen);
