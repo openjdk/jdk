@@ -80,13 +80,9 @@ public class WriteJPEGThumbnailTest {
     public boolean run() throws Exception {
         System.out.println("Testing thumbnail " + thumbWidth + "x" + thumbHeight + "...");
         try {
-            byte[] jpegData;
-            BufferedImage thumbnail;
-            try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream()) {
-                thumbnail = writeImage(byteOut);
-                jpegData = byteOut.toByteArray();
-            }
-
+            ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+            BufferedImage thumbnail = writeImage(byteOut);
+            byte[] jpegData = byteOut.toByteArray();
             ImageReader reader = getJPEGImageReader();
             ImageInputStream stream = ImageIO.createImageInputStream(new ByteArrayInputStream(jpegData));
             reader.setInput(stream);
