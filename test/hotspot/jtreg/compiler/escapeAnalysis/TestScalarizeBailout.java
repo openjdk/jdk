@@ -49,7 +49,7 @@ public class TestScalarizeBailout {
     }
 
     // This method is used to initialize the array with values from 0 to length - 1.
-    // Esape analysis should be able to eliminate the allocation of the array as the size 48k is
+    // Esape analysis should be able to eliminate the allocation of the array as the size 16k is
     // below the EliminateAllocationArraySizeLimit=32000.
     private void initializeArray(long[] a1) {
         for (int i = 0; i < a1.length; i++) {
