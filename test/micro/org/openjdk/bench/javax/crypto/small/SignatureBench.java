@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2055, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public abstract class SignatureBench extends org.openjdk.bench.javax.crypto.full
 
     public static class MLDSA extends SignatureBench {
 
-        @Param({"ML-DSA" })
+        @Param({"ML-DSA-65" })
         private String algorithm;
 
         @Param({"1024"})
