@@ -542,18 +542,33 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     case Bytecodes::_l2d: {
       FloatRegister rdst = dst->as_double_reg();
       FloatRegister rsrc;
-      rsrc = src->as_double_reg(); // via mem
+
+        // move src to dst register
+      if (code == Bytecodes::_i2d) {
+        __ mtfprwa(rdst, src->as_register());
+      } else {
+        __ mtfprd(rdst, src->as_register_lo());
+      }
+      rsrc = rdst;
+      
       __ fcfid(rdst, rsrc);
       break;
     }
     case Bytecodes::_i2f:
     case Bytecodes::_l2f: {
+
       FloatRegister rdst = dst->as_float_reg();
       FloatRegister rsrc;
-      rsrc = src->as_double_reg(); // via mem
+
+        // move src to dst register
+      if (code == Bytecodes::_i2f) {
+        __ mtfprwa(rdst, src->as_register());
+      } else {
+        __ mtfprd(rdst, src->as_register_lo());
+      }
       rsrc = rdst;
-      __ fcfids(rdst, rsrc);
       
+      __ fcfids(rdst, rsrc);
       
       break;
     }
@@ -573,6 +588,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       // Result must be 0 if value is NaN; test by comparing value to itself.
       __ fcmpu(CR0, rsrc, rsrc);
       __ li(dst->as_register(), 0);
+      
       __ bso(CR0, L);
       __ fctiwz(rsrc, rsrc); // USE_KILL
       __ mffprd(dst->as_register(), rsrc);
@@ -581,15 +597,20 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     }
     case Bytecodes::_d2l:
     case Bytecodes::_f2l: {
+
       FloatRegister rsrc = (code == Bytecodes::_d2l) ? src->as_double_reg() : src->as_float_reg();
       Address       addr = Address();
       Label L;
       // Result must be 0 if value is NaN; test by comparing value to itself.
       __ fcmpu(CR0, rsrc, rsrc);
+
       __ li(dst->as_register_lo(), 0);
+
       __ bso(CR0, L);
       __ fctidz(rsrc, rsrc); // USE_KILL
-      __ mffprd(dst->as_register_lo(), rsrc);
+
+      __ stfd(rsrc, addr.disp(), addr.base());
+
       __ bind(L);
       break;
     }
