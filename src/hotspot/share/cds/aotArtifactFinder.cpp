@@ -156,7 +156,7 @@ void AOTArtifactFinder::find_artifacts() {
       if (log_is_enabled(Debug, cds)) {
         ResourceMark rm;
         log_debug(cds)("Skipping %s: %s class", k->name()->as_C_string(),
-                      k->is_hidden() ? "Hidden" : "AOT tooling");
+                      k->is_hidden() ? "Unreferenced hidden" : "AOT tooling");
       }
     }
   });
