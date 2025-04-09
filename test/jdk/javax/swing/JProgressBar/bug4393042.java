@@ -68,9 +68,9 @@ public class bug4393042 extends JProgressBar {
 
        } finally {
            SwingUtilities.invokeAndWait(() -> {
-                  if (frame != null) {
-                      frame.dispose();
-                  }
+              if (frame != null) {
+                  frame.dispose();
+              }
            });
         }
         if (paintCount < 10 || paintCount > 100) {
@@ -79,12 +79,12 @@ public class bug4393042 extends JProgressBar {
     }
 
     static void createUI() {
-        JFrame frame = new JFrame("bug4393042");
+        frame = new JFrame("bug4393042");
         progressBar = new bug4393042(0, MAXIMUM);
         progressBar.setStringPainted(true);
         progressBar.setValue(0);
         frame.add(progressBar);
-        frame.setSize(200, 100);
+        frame.setSize(400, 200);
         frame.setVisible(true);
     }
 }

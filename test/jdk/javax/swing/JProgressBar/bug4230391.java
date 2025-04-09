@@ -83,12 +83,10 @@ public class bug4230391 {
     static JPanel createProgressBars(String name, String plaf) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel,BoxLayout.X_AXIS));
-        JLabel label = new JLabel(name);
         try {
             LookAndFeel save = UIManager.getLookAndFeel();
             UIManager.setLookAndFeel(plaf);
 
-            ComponentOrientation rtl = ComponentOrientation.RIGHT_TO_LEFT;
             ComponentOrientation ltr = ComponentOrientation.LEFT_TO_RIGHT;
 
             Box b = Box.createVerticalBox();

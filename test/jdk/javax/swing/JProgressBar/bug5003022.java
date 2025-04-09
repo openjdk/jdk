@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4785160
+ * @bug 5003022
  * @summary Test that setting zero value on JProgressBar works in GTK L&F
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
