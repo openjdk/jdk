@@ -1531,7 +1531,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
 static char* _image_release_file_content = nullptr;
 
 void os::read_image_release_file() {
-  assert(_image_release_file_content == nullptr, "release file content must not be already set")
+  assert(_image_release_file_content == nullptr, "release file content must not be already set");
   const char* home = Arguments::get_java_home();
   stringStream ss;
   ss.print("%s/release", home);
