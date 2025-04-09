@@ -105,7 +105,7 @@ public class VMDeprecatedOptions {
 
         OutputAnalyzer output = CommandLineOptionTest.startVMWithOptions(optionNames, expectedValues);
         output.reportDiagnosticSummary();
-        
+
         // check for option deprecation messages:
         output.shouldHaveExitValue(0);
         for (String[] deprecated : optionInfo) {
