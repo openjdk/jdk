@@ -623,6 +623,25 @@ bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) c
   // The pointers never overlap -> a speculative check would always succeed.
   assert(!vp1.never_overlaps_with(vp2), "ensured by caller");
 
+  // The check happens before the main-loop, and even before the pre-loop,
+  // either at the AutoVectorization Predicate or the multiversion_if.
+  // From the construction of VPointer, we already know that all its variables
+  // (except iv) are pre-loop invariant.
+  // As proven above, we can replace iv with init. And depending on the case,
+  // we also need to use the limit.
+  // TODO: more precision here!
+  Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
+  Node* init = pre_opaq->in(1);
+  Node* limit = _vloop.cl()->limit();
+
+  assert(_vloop.is_pre_loop_invariant(init), "should always hold");
+  if (!_vloop.is_pre_loop_invariant(init)) { return false; }
+
+  if (vp1.iv_scale() != vp2.iv_scale() &&
+      !_vloop.is_pre_loop_invariant(limit)) {
+    return false;
+  }
+
   return true;
 }
 
@@ -640,35 +659,19 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
   const VPointer& vp1 = *this;
   const VPointer& vp2 = other;
 
+  assert(vp1.can_make_speculative_aliasing_check_with(vp2), "sanity");
+
   PhaseIdealLoop* phase = _vloop.phase();
   PhaseIterGVN& igvn = phase->igvn();
-
-  // TODO: check if limit is really ok, or if we have to adjust slightly.
-  //       also we have to check that we don't create cycles ...
-  Node* init_pre = _vloop.pre_loop_head()->init_trip();
-  Node* init_main = _vloop.cl()->init_trip();
-  Node* limit_main = _vloop.cl()->limit();
-
-  //tty->print_cr("init_pre");
-  //init_pre->dump_bfs(100,nullptr,"#dC");
-  //tty->print_cr("init_main");
-  //init_main->dump_bfs(100,nullptr,"#dC");
-  //tty->print_cr("limit_main");
-  //limit_main->dump_bfs(100,nullptr,"#dC");
-
-  Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
-  Node* limit_pre = pre_opaq->in(1);
-  //tty->print_cr("limit_pre");
-  //limit_pre->dump_bfs(100,nullptr,"#dC");
-  Node* limit_orig = pre_opaq->original_loop_limit();
-  //tty->print_cr("limit_orig");
-  //limit_orig->dump_bfs(100,nullptr,"#dC");
 
   // init: cannot take the main-init, because it depends on the pre-loop
   //       trip-count. But the limit_pre should be independent, and we
   //       know that the main-init >= limit_pre. TODO: details.
-  Node* init = limit_pre;
-  Node* limit = limit_main;
+  // TODO: check if limit is really ok, or if we have to adjust slightly.
+  //       also we have to check that we don't create cycles ...
+  Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
+  Node* init = pre_opaq->in(1);
+  Node* limit = _vloop.cl()->limit();
 
   Node* p1_init = vp1.make_pointer_expression(init);
   Node* p2_init = vp2.make_pointer_expression(init);
