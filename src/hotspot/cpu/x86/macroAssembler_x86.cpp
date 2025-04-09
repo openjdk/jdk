@@ -3022,16 +3022,12 @@ void MacroAssembler::dec_held_monitor_count() {
 
 #ifdef ASSERT
 void MacroAssembler::stop_if_in_cont(Register cont, const char* name) {
-#ifdef _LP64
   Label no_cont;
   movptr(cont, Address(r15_thread, JavaThread::cont_entry_offset()));
   testl(cont, cont);
   jcc(Assembler::zero, no_cont);
   stop(name);
   bind(no_cont);
-#else
-  Unimplemented();
-#endif
 }
 #endif
 
