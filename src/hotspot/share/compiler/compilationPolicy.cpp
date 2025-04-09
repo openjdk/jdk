@@ -122,7 +122,7 @@ static inline CompLevel adjust_level_for_compilability_query(CompLevel comp_leve
 // Returns true if m is allowed to be compiled
 bool CompilationPolicy::can_be_compiled(const methodHandle& m, int comp_level) {
   // allow any levels for WhiteBox
-  assert(WhiteBoxAPI || comp_level == CompLevel_any || is_compile(comp_level), "illegal compilation level");
+  assert(WhiteBoxAPI || comp_level == CompLevel_any || comp_level == CompLevel_all || is_compile(comp_level), "illegal compilation level");
 
   if (m->is_abstract()) return false;
   if (DontCompileHugeMethods && m->code_size() > HugeMethodLimit) return false;
