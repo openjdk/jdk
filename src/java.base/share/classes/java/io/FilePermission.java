@@ -34,11 +34,9 @@ import java.util.StringJoiner;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jdk.internal.access.JavaIOFilePermissionAccess;
-import jdk.internal.access.SharedSecrets;
 import sun.nio.fs.DefaultFileSystemProvider;
-import sun.security.util.FilePermCompat;
 import sun.security.util.SecurityConstants;
+import sun.security.util.SecurityProperties;
 
 /**
  * This class represents access to a file or directory.  A FilePermission consists
@@ -155,6 +153,26 @@ public final class FilePermission extends Permission implements Serializable {
     private static final char RECURSIVE_CHAR = '-';
     private static final char WILD_CHAR = '*';
 
+    /**
+     * New behavior? Keep compatibility?
+     * The new behavior does not use the canonical path normalization
+     */
+    private static final boolean nb = initNb();
+
+    // Initialize the nb flag from the System property jdk.io.permissionsUseCanonicalPath.
+    private static boolean initNb() {
+        String flag = SecurityProperties.getOverridableProperty(
+                "jdk.io.permissionsUseCanonicalPath");
+        return switch (flag) {
+            case "true" -> false;   // compatibility mode to canonicalize paths
+            case "false" -> true;   // do not canonicalize
+            case null -> true;      // default, do not canonicalize
+            default ->
+                throw new RuntimeException(
+                        "Invalid jdk.io.permissionsUseCanonicalPath: " + flag);
+        };
+    }
+
 //    public String toString() {
 //        StringBuilder sb = new StringBuilder();
 //        sb.append("*** FilePermission on " + getName() + " ***");
@@ -232,50 +250,49 @@ public final class FilePermission extends Permission implements Serializable {
         }
     }
 
-    static {
-        SharedSecrets.setJavaIOFilePermissionAccess(
-            /**
-             * Creates FilePermission objects with special internals.
-             * See {@link FilePermCompat#newPermPlusAltPath(Permission)} and
-             * {@link FilePermCompat#newPermUsingAltPath(Permission)}.
-             */
-            new JavaIOFilePermissionAccess() {
-                public FilePermission newPermPlusAltPath(FilePermission input) {
-                    if (!input.invalid && input.npath2 == null && !input.allFiles) {
-                        Path npath2 = altPath(input.npath);
-                        if (npath2 != null) {
-                            // Please note the name of the new permission is
-                            // different than the original so that when one is
-                            // added to a FilePermissionCollection it will not
-                            // be merged with the original one.
-                            return new FilePermission(input.getName() + "#plus",
-                                    input,
-                                    input.npath,
-                                    npath2,
-                                    input.mask,
-                                    input.actions);
-                        }
-                    }
-                    return input;
-                }
-                public FilePermission newPermUsingAltPath(FilePermission input) {
-                    if (!input.invalid && !input.allFiles) {
-                        Path npath2 = altPath(input.npath);
-                        if (npath2 != null) {
-                            // New name, see above.
-                            return new FilePermission(input.getName() + "#using",
-                                    input,
-                                    npath2,
-                                    null,
-                                    input.mask,
-                                    input.actions);
-                        }
-                    }
-                    return null;
-                }
+    // Construct a new Permission with altPath
+    // Package private for use by test FilePermissionCollectionMerge
+    static FilePermission newPermPlusAltPath(FilePermission input) {
+        if (!input.invalid && input.npath2 == null && !input.allFiles) {
+            Path npath2 = altPath(input.npath);
+            if (npath2 != null) {
+                // Please note the name of the new permission is
+                // different than the original so that when one is
+                // added to a FilePermissionCollection it will not
+                // be merged with the original one.
+                return new FilePermission(input.getName() + "#plus",
+                        input,
+                        input.npath,
+                        npath2,
+                        input.mask,
+                        input.actions);
             }
-        );
+        }
+        return input;
     }
+
+    // Construct a new Permission adding altPath
+    // Package private for use by test FilePermissionCollectionMerge
+    static FilePermission newPermUsingAltPath(FilePermission input) {
+        if (!nb) {
+            return input;
+        }
+        if (!input.invalid && !input.allFiles) {
+            Path npath2 = altPath(input.npath);
+            if (npath2 != null) {
+                // New name, see above.
+                return new FilePermission(input.getName() + "#using",
+                        input,
+                        npath2,
+                        null,
+                        input.mask,
+                        input.actions);
+            }
+        }
+        return null;
+}
+
+
 
     /**
      * initialize a FilePermission object. Common to all constructors.
@@ -291,7 +308,7 @@ public final class FilePermission extends Permission implements Serializable {
         if (mask == NONE)
                 throw new IllegalArgumentException("invalid actions mask");
 
-        if (FilePermCompat.nb) {
+        if (nb) {
             String name = getName();
 
             if (name == null)
@@ -567,7 +584,7 @@ public final class FilePermission extends Permission implements Serializable {
         if (that.allFiles) {
             return false;
         }
-        if (FilePermCompat.nb) {
+        if (nb) {
             // Left at least same level of wildness as right
             if ((this.recursive && that.recursive) != that.recursive
                     || (this.directory && that.directory) != that.directory) {
@@ -766,7 +783,7 @@ public final class FilePermission extends Permission implements Serializable {
         if (this.invalid || that.invalid) {
             return false;
         }
-        if (FilePermCompat.nb) {
+        if (nb) {
             return (this.mask == that.mask) &&
                     (this.allFiles == that.allFiles) &&
                     this.npath.equals(that.npath) &&
@@ -789,7 +806,7 @@ public final class FilePermission extends Permission implements Serializable {
      */
     @Override
     public int hashCode() {
-        if (FilePermCompat.nb) {
+        if (nb) {
             return Objects.hash(
                     mask, allFiles, directory, recursive, npath, npath2, invalid);
         } else {
