@@ -302,6 +302,22 @@ public final class TestHKDF extends PKCS11Test {
         executeDerivation(ctx, KdfParamSpecType.EXPAND);
     }
 
+    private static void executeInvalidKeyDerivationTest(String testHeader,
+            String keyAlg, int keySize, String errorMsg) {
+        printTestHeader(testHeader);
+        try {
+            KDF k = KDF.getInstance("HKDF-SHA256", p11Provider);
+            k.deriveKey(keyAlg, HKDFParameterSpec.ofExtract()
+                    .thenExpand(null, keySize));
+            throw new Exception("No exception thrown.");
+        } catch (InvalidAlgorithmParameterException iape) {
+            // Expected.
+        } catch (Exception e) {
+            reportTestFailure(new Exception(errorMsg + " expected to throw " +
+                    "InvalidAlgorithmParameterException.", e));
+        }
+    }
+
     private static void printTestHeader(String testHeader) {
         debugPrinter.println();
         debugPrinter.println("=".repeat(testHeader.length()));
@@ -610,20 +626,28 @@ public final class TestHKDF extends PKCS11Test {
                 "6e09");
     }
 
+    private static void test_unknown_key_algorithm_derivation() {
+        executeInvalidKeyDerivationTest(
+                "Test derivation of an unknown key algorithm",
+                "UnknownAlgorithm",
+                32,
+                "Derivation of an unknown key algorithm");
+    }
+
+    private static void test_invalid_key_algorithm_derivation() {
+        executeInvalidKeyDerivationTest(
+                "Test derivation of an invalid key algorithm",
+                "PBKDF2WithHmacSHA1",
+                32,
+                "Derivation of an invalid key algorithm");
+    }
+
     private static void test_invalid_AES_key_size() {
-        printTestHeader("Test derivation of an invalid AES key size");
-        try {
-            KDF k = KDF.getInstance("HKDF-SHA256", p11Provider);
-            k.deriveKey("AES", HKDFParameterSpec.ofExtract()
-                    .thenExpand(null, 31));
-            throw new Exception("No exception thrown.");
-        } catch (InvalidAlgorithmParameterException iape) {
-            // Expected.
-        } catch (Exception e) {
-            reportTestFailure(new Exception("Derivation of an AES key of " +
-                    "invalid size (31 bytes) expected to throw " +
-                    "InvalidAlgorithmParameterException.", e));
-        }
+        executeInvalidKeyDerivationTest(
+                "Test derivation of an invalid AES key size",
+                "AES",
+                31,
+                "Derivation of an AES key of invalid size (31 bytes)");
     }
 
     public void main(Provider p) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,9 +75,10 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
     // java-specific lower limit; returned values are in bits
     private static CK_MECHANISM_INFO getSupportedRange(Token token,
         long mech) throws ProviderException {
-        // No need to query for fix-length algorithms
-        if (mech == CKM_DES_KEY_GEN || mech == CKM_DES2_KEY_GEN ||
-            mech == CKM_DES3_KEY_GEN) {
+        // No need to query if the mechanism is not available or for
+        // fix-length algorithms
+        if (mech == CK_UNAVAILABLE_INFORMATION || mech == CKM_DES_KEY_GEN ||
+                mech == CKM_DES2_KEY_GEN || mech == CKM_DES3_KEY_GEN) {
             return null;
         }
 
@@ -115,7 +116,7 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
      * and within the supported range. Return the significant key size
      * upon successful validation.
      * @param keyGenMech the PKCS#11 key generation mechanism.
-     * @param keySize the to-be-checked key size for this mechanism.
+     * @param keySize the to-be-checked key size (in bits) for this mechanism.
      * @param token token which provides this mechanism.
      * @return the significant key size (in bits) corresponding to the
      * specified key size.
@@ -123,7 +124,7 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
      * @throws ProviderException if this mechanism isn't supported by SunPKCS11
      * or underlying native impl.
      */
-    // called by P11SecretKeyFactory to check key size
+    // called by P11SecretKeyFactory and P11HKDF to check key size
     static int checkKeySize(long keyGenMech, int keySize, Token token)
         throws InvalidAlgorithmParameterException, ProviderException {
         CK_MECHANISM_INFO range = getSupportedRange(token, keyGenMech);
@@ -154,8 +155,8 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
                 break;
             default:
                 // Handle all variable-key-length algorithms here
-                if (range != null && keySize < range.iMinKeySize
-                    || keySize > range.iMaxKeySize) {
+                if (range != null && (keySize < range.iMinKeySize
+                    || keySize > range.iMaxKeySize)) {
                     throw new InvalidAlgorithmParameterException
                         ("Key length must be between " + range.iMinKeySize +
                         " and " + range.iMaxKeySize + " bits");
