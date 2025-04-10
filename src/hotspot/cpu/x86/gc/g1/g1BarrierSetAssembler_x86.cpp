@@ -120,7 +120,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
     __ cmpb(Address(addr, 0), G1CardTable::clean_card_val());
     __ jcc(Assembler::equal, is_clean_card);
   } else {
-  __ movb(Address(addr, 0), G1CardTable::dirty_card_val());
+   __ movb(Address(addr, 0), G1CardTable::dirty_card_val());
   }
 
   Label next_card;
