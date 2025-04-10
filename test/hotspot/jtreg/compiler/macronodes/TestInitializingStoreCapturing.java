@@ -57,4 +57,3 @@ public class TestInitializingStoreCapturing {
         return new float[] {4.2f};
     }
 }
- 
