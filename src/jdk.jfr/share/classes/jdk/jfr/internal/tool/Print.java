@@ -73,7 +73,7 @@ final class Print extends Command {
         stream.println();
         stream.println("  --json                  Print recording in JSON format");
         stream.println();
-        stream.println("  --exact                 Pretty print numbers and timestamps in full precision.");
+        stream.println("  --exact                 Pretty-print numbers and timestamps with full precision.");
         stream.println();
         stream.println("  --categories <filter>   Select events matching a category name.");
         stream.println("                          The filter is a comma-separated list of names,");
