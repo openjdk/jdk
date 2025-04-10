@@ -199,13 +199,13 @@ import java.util.function.Supplier;
  *     private Log2Util() {}
  *
  *     private static final Set<Integer> KEYS =
- *             Set.of(1, 2, 4, 8, 16, 32);
+ *         Set.of(1, 2, 4, 8, 16, 32);
  *     private static final UnaryOperator<Integer> ORIGINAL_LOG2 =
- *             i -> 31 - Integer.numberOfLeadingZeros(i);
+ *         i -> 31 - Integer.numberOfLeadingZeros(i);
  *
  *     private static final Function<Integer, Integer> LOG2 =
- *             // @link substring="function" target="#function(Set,Function)" :
- *             StableValue.function(KEYS, ORIGINAL_LOG2);
+ *         // @link substring="function" target="#function(Set,Function)" :
+ *         StableValue.function(KEYS, ORIGINAL_LOG2);
  *
  *     public static int log2(int a) {
  *         return LOG2.apply(a);
