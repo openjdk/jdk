@@ -134,6 +134,40 @@ public class AllBitsSetVectorMatchRuleTest {
         }
     }
 
+    @Test
+    @Warmup(10000)
+    @IR(counts = { IRNode.VAND_NOT_I_MASKED, " >= 1" })
+    public static void testVectorVAndNotIMasked() {
+        VectorMask<Integer> avm = VectorMask.fromArray(I_SPECIES, ma, 0);
+        IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
+        IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
+        av.not().lanewise(VectorOperators.AND_NOT, bv, avm).intoArray(ir, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            if (ma[i] == true) {
+                Asserts.assertEquals((~ia[i]) & (~ib[i]), ir[i]);
+            }
+        }
+    }
+
+    @Test
+    @Warmup(10000)
+    @IR(counts = { IRNode.VAND_NOT_L_MASKED, " >= 1" })
+    public static void testVectorVAndNotLMasked() {
+        VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);
+        LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
+        LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
+        av.not().lanewise(VectorOperators.AND_NOT, bv, avm).intoArray(lr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            if (ma[i] == true) {
+                Asserts.assertEquals((~la[i]) & (~lb[i]), lr[i]);
+            }
+        }
+    }
+
     public static void main(String[] args) {
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
     }
