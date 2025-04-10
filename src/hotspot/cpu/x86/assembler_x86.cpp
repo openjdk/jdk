@@ -2642,7 +2642,7 @@ void Assembler::imull(Register dst, Register src) {
 }
 
 void Assembler::eimull(Register dst, Register src1, Register src2, bool no_flags) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
     return imull(dst, src2);
   }
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -4590,7 +4590,7 @@ void Assembler::orw(Register dst, Register src) {
 }
 
 void Assembler::eorw(Register dst, Register src1, Register src2, bool no_flags) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
     return orw(dst, src2);
   }
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -7070,7 +7070,7 @@ void Assembler::shldl(Register dst, Register src) {
 }
 
 void Assembler::eshldl(Register dst, Register src1, Register src2, bool no_flags) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
     return shldl(dst, src2);
   }
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -7086,7 +7086,7 @@ void Assembler::shldl(Register dst, Register src, int8_t imm8) {
 }
 
 void Assembler::eshldl(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
     return shldl(dst, src2, imm8);
   }
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -7102,7 +7102,7 @@ void Assembler::shrdl(Register dst, Register src) {
 }
 
 void Assembler::eshrdl(Register dst, Register src1, Register src2, bool no_flags) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
     return shrdl(dst, src2);
   }
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -7118,7 +7118,7 @@ void Assembler::shrdl(Register dst, Register src, int8_t imm8) {
 }
 
 void Assembler::eshrdl(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
     return shrdl(dst, src2, imm8);
   }
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -7135,7 +7135,7 @@ void Assembler::shldq(Register dst, Register src, int8_t imm8) {
 }
 
 void Assembler::eshldq(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
     return shldq(dst, src2, imm8);
   }
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -7151,7 +7151,7 @@ void Assembler::shrdq(Register dst, Register src, int8_t imm8) {
 }
 
 void Assembler::eshrdq(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
     return shrdq(dst, src2, imm8);
   }
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -13765,20 +13765,20 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
 }
 
 int Assembler::evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                           InstructionAttr *attributes, bool no_flags, bool use_prefixq) {
+                           InstructionAttr *attributes, bool no_flags, bool use_prefixq, bool demote) {
   // Demote RegRegReg instructions
-  if (!no_flags && dst_enc == nds_enc) {
-    return use_prefixq? prefixq_and_encode(dst_enc, src_enc) : prefix_and_encode(dst_enc, src_enc);
+  if (demote && is_demotable(no_flags, dst_enc, nds_enc)) {
+    return use_prefixq ? prefixq_and_encode(dst_enc, src_enc) : prefix_and_encode(dst_enc, src_enc);
   }
   attributes->set_is_evex_instruction();
   return vex_prefix_and_encode(dst_enc, nds_enc, src_enc, pre, opc, attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true, no_flags);
 }
 
 int Assembler::evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, VexSimdPrefix pre, VexOpcode opc,
-                           InstructionAttr *attributes, bool no_flags, bool use_prefixq) {
+                           InstructionAttr *attributes, bool no_flags, bool use_prefixq, bool demote) {
   // Demote RegReg and RegRegImm instructions
-  if (!no_flags && dst_enc == nds_enc) {
-    return use_prefixq? prefixq_and_encode(dst_enc) : prefix_and_encode(dst_enc);
+  if (demote && is_demotable(no_flags, dst_enc, nds_enc)) {
+    return use_prefixq ? prefixq_and_encode(dst_enc) : prefix_and_encode(dst_enc);
   }
   attributes->set_is_evex_instruction();
   return vex_prefix_and_encode(0, dst_enc, nds_enc, pre, opc, attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true, no_flags);
@@ -13813,10 +13813,6 @@ int Assembler::simd_prefix_and_encode(XMMRegister dst, XMMRegister nds, XMMRegis
     assert((nds == dst) || (nds == src) || (nds == xnoreg), "wrong sse encoding");
     return rex_prefix_and_encode(dst_enc, src_enc, pre, opc, attributes->is_rex_vex_w());
   }
-}
-
-bool Assembler::is_demotable(bool no_flags, int dst_enc, int nds_enc, int src_enc) {
-  return (!no_flags && dst_enc == nds_enc);
 }
 
 bool Assembler::is_demotable(bool no_flags, int dst_enc, int nds_enc) {
@@ -15364,7 +15360,7 @@ void Assembler::adcxq(Register dst, Register src) {
 }
 
 void Assembler::eadcxq(Register dst, Register src1, Register src2) {
-  if (is_demotable(false, dst->encoding(), src1->encoding(), src2->encoding())) {
+  if (is_demotable(false, dst->encoding(), src1->encoding())) {
     return adcxq(dst, src2);
   }
   InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -15389,7 +15385,7 @@ void Assembler::adoxq(Register dst, Register src) {
 }
 
 void Assembler::eadoxq(Register dst, Register src1, Register src2) {
-  if (is_demotable(false, dst->encoding(), src1->encoding(), src2->encoding())) {
+  if (is_demotable(false, dst->encoding(), src1->encoding())) {
     return adoxq(dst, src2);
   }
   InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -15830,7 +15826,7 @@ void Assembler::eimulq(Register dst, Register src, bool no_flags) {
 }
 
 void Assembler::eimulq(Register dst, Register src1, Register src2, bool no_flags) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding(), src2->encoding())) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
     return imulq(dst, src2);
   }
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -17182,7 +17178,7 @@ void Assembler::esetzucc(Condition cc, Register dst) {
   assert(0 <= cc && cc < 16, "illegal cc");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   // Encoding Format : eevex_prefix (4 bytes) | opcode_cc | modrm
-  int encode =  evex_prefix_and_encode_ndd(0, 0, dst->encoding(), VEX_SIMD_F2, /* MAP4 */VEX_OPCODE_0F_3C, &attributes); //TODO: check this
+  int encode =  evex_prefix_and_encode_ndd(0, 0, dst->encoding(), VEX_SIMD_F2, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, false, false, false); // demotion disabled
   emit_opcode_prefix_and_encoding((0x40 | cc), 0xC0, encode);
 }
 

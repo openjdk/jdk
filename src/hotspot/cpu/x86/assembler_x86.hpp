@@ -808,10 +808,10 @@ private:
                              InstructionAttr *attributes, bool src_is_gpr = false, bool nds_is_ndd = false, bool no_flags = false);
 
   int  evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                  InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
+                                  InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false, bool demote = true);
 
   int  evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, VexSimdPrefix pre, VexOpcode opc,
-                                  InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
+                                  InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false, bool demote = true);
 
   int  evex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                  InstructionAttr *attributes, bool no_flags = false);
@@ -823,7 +823,6 @@ private:
                              VexOpcode opc, InstructionAttr *attributes, bool src_is_gpr = false);
 
   // Helper functions for groups of instructions
-  bool is_demotable(bool no_flags, int dst_enc, int nds_enc, int src_enc);
   bool is_demotable(bool no_flags, int dst_enc, int nds_enc);
   void emit_arith_b(int op1, int op2, Register dst, int imm8);
 
