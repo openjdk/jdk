@@ -26,6 +26,7 @@ package jdk.test.whitebox;
 import java.lang.management.MemoryUsage;
 import java.lang.ref.Reference;
 import java.lang.reflect.Executable;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -559,6 +560,30 @@ public class WhiteBox {
   // Force Full GC
   public native void fullGC();
 
+  // Infrastructure for waitForReferenceProcessing()
+  private Method waitForReferenceProcessingMethod = null;
+
+  private Method getWaitForReferenceProcessingMethod() {
+    Method wfrp = waitForReferenceProcessingMethod;
+    if (wfrp == null) {
+      try {
+        wfrp = Reference.class.getDeclaredMethod("waitForReferenceProcessing");
+        wfrp.setAccessible(true);
+        assert wfrp.getReturnType() == Boolean.class;
+        assert wfrp.getParameterCount() == 0;
+        Class<?>[] ev = wfrp.getExceptionTypes();
+        assert ev.length == 1;
+        assert ev[0] == InterruptedException.class;
+        waitForReferenceProcessingMethod = wfrp;
+      } catch (InaccessibleObjectException e) {
+        throw new RuntimeException("Need to add @modules java.base/java.lang.ref:open to test?", e);
+      } catch (NoSuchMethodException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return wfrp;
+  }
+
   /**
    * Wait for reference processing, via Reference.waitForReferenceProcessing().
    * Callers of this method will need the
@@ -567,16 +592,15 @@ public class WhiteBox {
    *
    * This method should usually be called after a call to WhiteBox.fullGC().
    */
-  public static void waitForReferenceProcessing() {
+  public boolean waitForReferenceProcessing() {
     try {
-      Method wfrp = Reference.class.getDeclaredMethod("waitForReferenceProcessing");
-      wfrp.setAccessible(true);
-      wfrp.invoke(null, new Object[0]);
-    } catch (IllegalAccessException iae) {
-      throw new RuntimeException("Need to add @modules java.base/java.lang.ref:open?",
-              iae);
-    } catch (NoSuchMethodException | InvocationTargetException e) {
-      throw new RuntimeException("Reflection problem", e);
+      Method wfrp = getWaitForReferenceProcessingMethod();
+      return (Boolean) wfrp.invoke(null);
+    } catch (RuntimeException e) {
+      // Just rethrow any RuntimeExceptions from getWaitForReferenceProcessingMethod()
+      throw e;
+    } catch (Throwable t) {
+      throw new RuntimeException(t);
     }
   }
 
