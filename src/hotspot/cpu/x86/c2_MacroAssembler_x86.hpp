@@ -577,4 +577,7 @@ public:
 
   void scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
                           KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2);
+
+  void reconstruct_frame_pointer(Register rtmp);
+
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

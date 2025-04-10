@@ -191,5 +191,6 @@
   void verify_int_in_range(uint idx, const TypeInt* t, Register val, Register tmp);
   void verify_long_in_range(uint idx, const TypeLong* t, Register val, Register tmp);
 
+  void reconstruct_frame_pointer(Register rtmp);
 
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

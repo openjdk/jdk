@@ -791,6 +791,31 @@ static void abort_verify_int_in_range(uint idx, jint val, jint lo, jint hi) {
   fatal("Invalid CastII, idx: %u, val: %d, lo: %d, hi: %d", idx, val, lo, hi);
 }
 
+static void reconstruct_frame_pointer_helper(MacroAssembler* masm, Register dst) {
+  const int framesize = Compile::current()->output()->frame_size_in_bytes();
+  masm->movptr(dst, rsp);
+  if (framesize > 2 * wordSize) {
+    masm->addptr(dst, framesize - 2 * wordSize);
+  }
+}
+
+void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
+  if (PreserveFramePointer) {
+    // frame pointer is valid
+#ifdef ASSERT
+    // Verify frame pointer value in rbp.
+    reconstruct_frame_pointer_helper(this, rtmp);
+    Label L_success;
+    cmpq(rbp, rtmp);
+    jccb(Assembler::equal, L_success);
+    STOP("frame pointer mismatch");
+    bind(L_success);
+#endif // ASSERT
+  } else {
+    reconstruct_frame_pointer_helper(this, rbp);
+  }
+}
+
 void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register val) {
   jint lo = t->_lo;
   jint hi = t->_hi;
@@ -819,6 +844,7 @@ void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register
   movl(c_rarg1, val);
   movl(c_rarg2, lo);
   movl(c_rarg3, hi);
+  reconstruct_frame_pointer(rscratch1);
   call(RuntimeAddress(CAST_FROM_FN_PTR(address, abort_verify_int_in_range)));
   hlt();
   bind(succeed);
@@ -867,6 +893,7 @@ void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Regist
   movq(c_rarg1, val);
   mov64(c_rarg2, lo);
   mov64(c_rarg3, hi);
+  reconstruct_frame_pointer(rscratch1);
   call(RuntimeAddress(CAST_FROM_FN_PTR(address, abort_verify_long_in_range)));
   hlt();
   bind(succeed);

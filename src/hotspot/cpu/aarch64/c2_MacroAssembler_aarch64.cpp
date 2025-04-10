@@ -2779,6 +2779,7 @@ void C2_MacroAssembler::verify_int_in_range(uint idx, const TypeInt* t, Register
   mov(c_rarg1, rval);
   movw(c_rarg2, lo);
   movw(c_rarg3, hi);
+  reconstruct_frame_pointer(rtmp);
   rt_call(CAST_FROM_FN_PTR(address, abort_verify_int_in_range), rtmp);
   hlt(0);
 
@@ -2821,9 +2822,28 @@ void C2_MacroAssembler::verify_long_in_range(uint idx, const TypeLong* t, Regist
   mov(c_rarg1, rval);
   mov(c_rarg2, lo);
   mov(c_rarg3, hi);
+  reconstruct_frame_pointer(rtmp);
   rt_call(CAST_FROM_FN_PTR(address, abort_verify_long_in_range), rtmp);
   hlt(0);
 
   bind(L_success);
   BLOCK_COMMENT("} verify_long_in_range");
+}
+
+void C2_MacroAssembler::reconstruct_frame_pointer(Register rtmp) {
+  const int framesize = Compile::current()->output()->frame_size_in_bytes();
+  if (PreserveFramePointer) {
+    // frame pointer is valid
+#ifdef ASSERT
+    // Verify frame pointer value in rfp.
+    add(rtmp, sp, framesize - 2 * wordSize);
+    Label L_success;
+    cmp(rfp, rtmp);
+    br(Assembler::EQ, L_success);
+    stop("frame pointer mismatch");
+    bind(L_success);
+#endif // ASSERT
+  } else {
+    add(rfp, sp, framesize - 2 * wordSize);
+  }
 }
