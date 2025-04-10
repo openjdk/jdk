@@ -6987,9 +6987,34 @@ void C2_MacroAssembler::vector_saturating_op(int ideal_opc, BasicType elem_bt, X
   }
 }
 
+void C2_MacroAssembler::evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc) {
+  switch(opcode) {
+    case Op_AddVHF: evaddph(dst, src1, src2, vlen_enc); break;
+    case Op_SubVHF: evsubph(dst, src1, src2, vlen_enc); break;
+    case Op_MulVHF: evmulph(dst, src1, src2, vlen_enc); break;
+    case Op_DivVHF: evdivph(dst, src1, src2, vlen_enc); break;
+    default: assert(false, "%s", NodeClassNames[opcode]); break;
+  }
+}
+
+void C2_MacroAssembler::evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, Address src2, int vlen_enc) {
+  switch(opcode) {
+    case Op_AddVHF: evaddph(dst, src1, src2, vlen_enc); break;
+    case Op_SubVHF: evsubph(dst, src1, src2, vlen_enc); break;
+    case Op_MulVHF: evmulph(dst, src1, src2, vlen_enc); break;
+    case Op_DivVHF: evdivph(dst, src1, src2, vlen_enc); break;
+    default: assert(false, "%s", NodeClassNames[opcode]); break;
+  }
+}
+
 void C2_MacroAssembler::scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
-                                          KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc) {
-  if (opcode == Op_MaxHF) {
+                                            KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2) {
+  vector_max_min_fp16(opcode, dst, src1, src2, ktmp, xtmp1, xtmp2, Assembler::AVX_128bit);
+}
+
+void C2_MacroAssembler::vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                            KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc) {
+  if (opcode == Op_MaxVHF || opcode == Op_MaxHF) {
     // Move sign bits of src2 to mask register.
     evpmovw2m(ktmp, src2, vlen_enc);
     // xtmp1 = src2 < 0 ? src2 : src1
@@ -7001,15 +7026,15 @@ void C2_MacroAssembler::scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegi
     // the second source operand is returned. If only one value is a NaN (SNaN or QNaN) for this instruction,
     // the second source operand, either a NaN or a valid floating-point value, is returned
     // dst = max(xtmp1, xtmp2)
-    vmaxsh(dst, xtmp1, xtmp2);
+    evmaxph(dst, xtmp1, xtmp2, vlen_enc);
     // isNaN = is_unordered_quiet(xtmp1)
-    evcmpsh(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q);
+    evcmpph(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q, vlen_enc);
     // Final result is same as first source if its a NaN value,
     // in case second operand holds a NaN value then as per above semantics
     // result is same as second operand.
     Assembler::evmovdquw(dst, ktmp, xtmp1, true, vlen_enc);
   } else {
-    assert(opcode == Op_MinHF, "");
+    assert(opcode == Op_MinVHF || opcode == Op_MinHF, "");
     // Move sign bits of src1 to mask register.
     evpmovw2m(ktmp, src1, vlen_enc);
     // xtmp1 = src1 < 0 ? src2 : src1
@@ -7022,9 +7047,9 @@ void C2_MacroAssembler::scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegi
     // If only one value is a NaN (SNaN or QNaN) for this instruction, the second source operand, either a NaN
     // or a valid floating-point value, is written to the result.
     // dst = min(xtmp1, xtmp2)
-    vminsh(dst, xtmp1, xtmp2);
+    evminph(dst, xtmp1, xtmp2, vlen_enc);
     // isNaN = is_unordered_quiet(xtmp1)
-    evcmpsh(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q);
+    evcmpph(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q, vlen_enc);
     // Final result is same as first source if its a NaN value,
     // in case second operand holds a NaN value then as per above semantics
     // result is same as second operand.
