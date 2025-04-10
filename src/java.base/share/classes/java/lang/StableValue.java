@@ -213,7 +213,7 @@ import java.util.function.Supplier;
  *
  * }
  *
- * int log16 = Log2Util.log2(16);   // May eventually constant fold to 4 at runtime
+ * int result = Log2Util.log2(16);   // May eventually constant fold to 4 at runtime
  *}
  *
  * The {@code Log2Util.log2()} function is a <em>partial function</em> that only allows
