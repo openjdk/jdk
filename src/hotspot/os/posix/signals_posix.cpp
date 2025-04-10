@@ -49,8 +49,12 @@
 
 #include <signal.h>
 
-#if !defined(SEGV_BNDERR)
-#define SEGV_BNDERR 3
+#define SEGV_BNDERR_value 3
+
+#if defined(SEGV_BNDERR)
+STATIC_ASSERT(SEGV_BNDERR == SEGV_BNDERR_value);
+#else
+#define SEGV_BNDERR SEGV_BNDERR_value
 #endif
 
 static const char* get_signal_name(int sig, char* out, size_t outlen);
