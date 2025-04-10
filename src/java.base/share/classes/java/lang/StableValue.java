@@ -393,7 +393,7 @@ import java.util.function.Supplier;
  * the reference to the stable value is also constant (e.g. in cases where the
  * stable value itself is stored in a {@code static final} field). Stable functions and
  * collections are built on top of StableValue. As such, they are also treated as
- * constants by the JFM.
+ * constants by the JVM.
  * <p>
  * This means that, at least in some cases, access to the content of a stable value
  * enjoys the same constant-folding optimizations that are available when accessing
