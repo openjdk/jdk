@@ -5,6 +5,8 @@
  * @compile/fail/ref=ClassInIntersectionTypeTest.out -XDrawDiagnostics ClassInIntersectionTypeTest.java
  */
 
+import java.io.Serializable;
+
 public class ClassInIntersectionTypeTest {
     // test 1
     void m() {
@@ -19,4 +21,7 @@ public class ClassInIntersectionTypeTest {
     static <T extends ClassInIntersectionTypeTest & Runnable> void run(T t) {
         t.run();
     }
+
+    @interface Anno {}
+    Anno a = (Anno & Serializable) ()-> null; // OK
 }

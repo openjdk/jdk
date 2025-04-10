@@ -3339,7 +3339,7 @@ public class Attr extends JCTree.Visitor {
                             try {
                                 bound = infer.instantiateFunctionalInterface(that,
                                         bound, explicitParamTypes, resultInfo.checkContext);
-                                if (bound.tsym != syms.objectType.tsym && (!bound.isInterface() || (bound.tsym.flags() & ANNOTATION) != 0)) {
+                                if (bound.tsym != syms.objectType.tsym && !bound.isInterface()) {
                                     // bound must be j.l.Object or an interface
                                     reportIntersectionError(that, "not.an.intf.component", bound);
                                 }

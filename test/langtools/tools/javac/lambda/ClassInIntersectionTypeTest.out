@@ -1,3 +1,3 @@
-ClassInIntersectionTypeTest.java:11:58: compiler.err.prob.found.req: (compiler.misc.bad.intersection.target.for.functional.expr: (compiler.misc.not.an.intf.component: ClassInIntersectionTypeTest))
-ClassInIntersectionTypeTest.java:16:12: compiler.err.prob.found.req: (compiler.misc.infer.no.conforming.assignment.exists: T, (compiler.misc.bad.intersection.target.for.functional.expr: (compiler.misc.not.an.intf.component: ClassInIntersectionTypeTest)))
+ClassInIntersectionTypeTest.java:13:58: compiler.err.prob.found.req: (compiler.misc.bad.intersection.target.for.functional.expr: (compiler.misc.not.an.intf.component: ClassInIntersectionTypeTest))
+ClassInIntersectionTypeTest.java:18:12: compiler.err.prob.found.req: (compiler.misc.infer.no.conforming.assignment.exists: T, (compiler.misc.bad.intersection.target.for.functional.expr: (compiler.misc.not.an.intf.component: ClassInIntersectionTypeTest)))
 2 errors
