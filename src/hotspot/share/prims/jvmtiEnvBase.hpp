@@ -90,8 +90,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   // It is unsafe to use this function when virtual threads are executed.
   static bool disable_virtual_threads_notify_jvmti();
 
-  static jvmtiError suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend,
-                                   int* need_safepoint_p);
+  static jvmtiError suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend);
   static jvmtiError resume_thread(oop thread_oop, JavaThread* java_thread, bool single_resume);
   static jvmtiError check_thread_list(jint count, const jthread* list);
   static bool is_in_thread_list(jint count, const jthread* list, oop jt_oop);
