@@ -181,7 +181,7 @@ public class Log extends AbstractLog {
 
         /** Report all deferred diagnostics in the specified order. */
         public void reportDeferredDiagnostics(Comparator<JCDiagnostic> order) {
-            deferred.sort(order);
+            deferred.sort(order);   // ok to sort in place: reportDeferredDiagnostics() is going to discard it
             reportDeferredDiagnostics();
         }
     }
