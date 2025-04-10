@@ -177,7 +177,7 @@ import java.util.function.Supplier;
  *     }
  * }
  *
- * int pwr4 = PowerOf2Util.powerOfTwo(4);   // May eventually constant fold to 16 at runtime
+ * int result = PowerOf2Util.powerOfTwo(4);   // May eventually constant fold to 16 at runtime
  *
  *}
  * The {@code PowerOf2Util.powerOfTwo()} function is a <em>partial function</em> that only
