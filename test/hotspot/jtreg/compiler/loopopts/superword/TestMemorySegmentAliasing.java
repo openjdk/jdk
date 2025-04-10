@@ -49,6 +49,22 @@ import java.lang.foreign.*;
  */
 
 /*
+ * @test id=byte-array-NoSpeculativeAliasingCheck
+ * @bug 8324751
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentAliasing ByteArray NoSpeculativeAliasingCheck
+ */
+
+/*
+ * @test id=byte-array-AlignVector-NoSpeculativeAliasingCheck
+ * @bug 8324751
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentAliasing ByteArray AlignVector NoSpeculativeAliasingCheck
+ */
+
+/*
  * @test id=char-array
  * @bug 8324751
  * @summary Test vectorization of loops over MemorySegment
@@ -81,6 +97,22 @@ import java.lang.foreign.*;
  */
 
 /*
+ * @test id=int-array-NoSpeculativeAliasingCheck
+ * @bug 8324751
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentAliasing IntArray NoSpeculativeAliasingCheck
+ */
+
+/*
+ * @test id=int-array-AlignVector-NoSpeculativeAliasingCheck
+ * @bug 8324751
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentAliasing IntArray AlignVector NoSpeculativeAliasingCheck
+ */
+
+/*
  * @test id=long-array
  * @bug 8324751
  * @summary Test vectorization of loops over MemorySegment
@@ -94,6 +126,22 @@ import java.lang.foreign.*;
  * @summary Test vectorization of loops over MemorySegment
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegmentAliasing LongArray AlignVector
+ */
+
+/*
+ * @test id=long-array-NoSpeculativeAliasingCheck
+ * @bug 8324751
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentAliasing LongArray NoSpeculativeAliasingCheck
+ */
+
+/*
+ * @test id=long-array-AlignVector-NoSpeculativeAliasingCheck
+ * @bug 8324751
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentAliasing LongArray AlignVector NoSpeculativeAliasingCheck
  */
 
 /*
@@ -144,12 +192,33 @@ import java.lang.foreign.*;
  * @run driver compiler.loopopts.superword.TestMemorySegmentAliasing Native AlignVector
  */
 
+/*
+ * @test id=native-NoSpeculativeAliasingCheck
+ * @bug 8324751
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentAliasing Native NoSpeculativeAliasingCheck
+ */
+
+/*
+ * @test id=native-AlignVector-NoSpeculativeAliasingCheck
+ * @bug 8324751
+ * @summary Test vectorization of loops over MemorySegment
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentAliasing Native AlignVector NoSpeculativeAliasingCheck
+ */
+
 public class TestMemorySegmentAliasing {
     public static void main(String[] args) {
         TestFramework framework = new TestFramework(TestMemorySegmentAliasingImpl.class);
         framework.addFlags("-DmemorySegmentProviderNameForTestVM=" + args[0]);
-        if (args.length > 1 && args[1].equals("AlignVector")) {
-            framework.addFlags("-XX:+AlignVector");
+        for (int i = 1; i < args.length; i++) {
+            String tag = args[i];
+            switch (tag) {
+                case "AlignVector" ->                framework.addFlags("-XX:+AlignVector");
+                case "NoSpeculativeAliasingCheck" -> framework.addFlags("-XX:-UseAutoVectorizationSpeculativeAliasingChecks");
+                default ->                           throw new RuntimeException("Bad tag: " + tag);
+            }
         }
         framework.setDefaultWarmup(100);
         framework.start();
@@ -363,7 +432,7 @@ class TestMemorySegmentAliasingImpl {
                   ".*multiversion.*",   "= 0"}, // AutoVectorization Predicate SUFFICES
         phase = CompilePhase.PRINT_IDEAL,
         applyIfPlatform = {"64-bit", "true"},
-        applyIf = {"AlignVector", "false"},
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test_byte_incr_noaliasing(MemorySegment a, MemorySegment b) {
         for (long i = 0; i < a.byteSize(); i++) {
@@ -378,8 +447,7 @@ class TestMemorySegmentAliasingImpl {
                   IRNode.STORE_VECTOR,  "> 0",
                   ".*multiversion.*",   "> 0"}, // AutoVectorization Predicate FAILS
         phase = CompilePhase.PRINT_IDEAL,
-        applyIfPlatform = {"64-bit", "true"},
-        applyIf = {"AlignVector", "false"},
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test_byte_incr_aliasing(MemorySegment a, MemorySegment b) {
         for (long i = 0; i < a.byteSize(); i++) {
@@ -395,7 +463,7 @@ class TestMemorySegmentAliasingImpl {
                   ".*multiversion.*",   "> 0"}, // AutoVectorization Predicate FAILS
         phase = CompilePhase.PRINT_IDEAL,
         applyIfPlatform = {"64-bit", "true"},
-        applyIf = {"AlignVector", "false"},
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test_byte_incr_aliasing_fwd3(MemorySegment a, MemorySegment b) {
         for (long i = 0; i < a.byteSize(); i++) {
@@ -411,7 +479,7 @@ class TestMemorySegmentAliasingImpl {
                   ".*multiversion.*",   "= 0"}, // AutoVectorization Predicate SUFFICES
         phase = CompilePhase.PRINT_IDEAL,
         applyIfPlatform = {"64-bit", "true"},
-        applyIf = {"AlignVector", "false"},
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test_byte_incr_noaliasing_fwd128(MemorySegment a, MemorySegment b) {
         for (long i = 0; i < a.byteSize(); i++) {
