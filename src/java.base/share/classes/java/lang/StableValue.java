@@ -169,8 +169,8 @@ import java.util.function.Supplier;
  *         v -> 1 << v;
  *
  *     private static final IntFunction<Integer> POWER_OF_TWO =
- *             // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
- *             StableValue.intFunction(SIZE, ORIGINAL_POWER_OF_TWO);
+ *         // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
+ *         StableValue.intFunction(SIZE, ORIGINAL_POWER_OF_TWO);
  *
  *     public static int powerOfTwo(int a) {
  *         return POWER_OF_TWO.apply(a);
