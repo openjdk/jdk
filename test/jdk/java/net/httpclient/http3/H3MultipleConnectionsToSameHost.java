@@ -76,8 +76,8 @@
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError -Djdk.tracePinnedThreads=full
- *                     -Djdk.httpclient.quic.idleTimeout=90
- *                     -Djdk.test.server.quic.idleTimeout=60
+ *                     -Djdk.httpclient.quic.idleTimeout=120
+ *                     -Djdk.test.server.quic.idleTimeout=90
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=45
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=60
  *                     -Djdk.httpclient.quic.maxPtoBackoff=9
@@ -86,7 +86,7 @@
  *                     -Djdk.httpclient.quic.maxEndpoints=1
  *                     -Djdk.httpclient.quic.maxBidiStreams=2
  *                     -Djdk.httpclient.retryOnStreamlimit=50
- *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:retransmit
+ *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:cc,retransmit
  *                     -Dsimpleget.requests=100
  *                     H3MultipleConnectionsToSameHost
  * @summary Send 100 large concurrent requests, with connections whose max stream
