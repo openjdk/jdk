@@ -81,20 +81,26 @@ void KlassInfoLUT::initialize() {
   }
 }
 
-static const char* common_loader_names[4] = { "other", "boot", "system", "platform" };
+static const char* common_loader_names[4] = { "other", "boot", "app", "platform" };
 
 void KlassInfoLUT::register_cld_if_needed(ClassLoaderData* cld) {
+
   // We remember CLDs for the three permanent class loaders in a lookup array.
-  int index = 0;
-  if (cld->is_the_null_class_loader_data()) {
-    index = 1;
-  } else if (cld->is_system_class_loader_data()) {
-    index = 2;
-  } else if (cld->is_platform_class_loader_data()) {
-    index = 3;
-  } else {
+  int index = -1;
+  if (cld->is_permanent_class_loader_data()) {
+    if (cld->is_the_null_class_loader_data()) {
+      index = 1;
+    } else if (cld->is_system_class_loader_data()) {
+      index = 2;
+    } else if (cld->is_platform_class_loader_data()) {
+      index = 3;
+    }
+  }
+
+  if (index == -1) {
     return;
   }
+
   ClassLoaderData* old_cld = Atomic::load(_common_loaders + index);
   if (old_cld == nullptr) {
     old_cld = Atomic::cmpxchg(&_common_loaders[index], (ClassLoaderData*)nullptr, cld);
@@ -103,6 +109,7 @@ void KlassInfoLUT::register_cld_if_needed(ClassLoaderData* cld) {
                        p2i(cld), common_loader_names[index], index);
     }
   }
+
   // There should only be 3 permanent CLDs
   assert(old_cld == cld || old_cld == nullptr, "Different CLD??");
 }
