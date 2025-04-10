@@ -204,10 +204,12 @@ inline size_t ShenandoahHeapRegion::garbage_before_padded_for_promote() const {
   size_t used_before_promote = byte_size(bottom(), get_top_before_promote());
   assert(used_before_promote >= get_marked_data_bytes(),
          "Live Data must be a subset of used before promotion live: %zu used: %zu",
-         get_live_data_bytes(), used_before_promote);
-  size_t result = used_before_promote - get_live_data_bytes();
+         get_marked_data_bytes(), used_before_promote);
+  ShenandoahMarkingContext *ctx = ShenandoahHeap::heap()->complete_marking_context();
+  HeapWord* tams = ctx->top_at_mark_start(this);
+  size_t bytes_allocated_during_mark = pointer_delta(get_top_before_promote(), tams) * HeapWordSize;
+  size_t result = used_before_promote - (get_marked_data_bytes() + bytes_allocated_during_mark);
   return result;
-
 }
 
 inline HeapWord* ShenandoahHeapRegion::get_update_watermark() const {
