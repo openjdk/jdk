@@ -26,6 +26,7 @@ package jdk.internal.net.http.common;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.ProtocolException;
 import java.util.Map;
 import java.util.Set;
 
@@ -120,6 +121,6 @@ public class ValidatingHeadersConsumer {
     protected UncheckedIOException newException(String message, String header)
     {
         return new UncheckedIOException(
-                new IOException(formatMessage(message, header)));
+                new ProtocolException(formatMessage(message, header)));
     }
 }

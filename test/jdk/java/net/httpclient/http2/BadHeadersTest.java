@@ -47,6 +47,7 @@ import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ProtocolException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
@@ -210,8 +211,8 @@ public class BadHeadersTest {
     // sync with implementation.
     static void assertDetailMessage(Throwable throwable, int iterationIndex) {
         try {
-            assertTrue(throwable instanceof IOException,
-                    "Expected IOException, got, " + throwable);
+            assertTrue(throwable instanceof ProtocolException,
+                    "Expected ProtocolException, got " + throwable);
             assertTrue(throwable.getMessage().contains("malformed response"),
                     "Expected \"malformed response\" in: " + throwable.getMessage());
 
