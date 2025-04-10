@@ -79,7 +79,7 @@ void ContiguousSpace::mangle_unused_area(MemRegion mr) {
 void ContiguousSpace::print() const { print_on(tty); }
 
 void ContiguousSpace::print_on(outputStream* st) const {
-  st->print_cr(" space %zuK, %3d%% used [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+  st->print_cr("space %zuK, %3d%% used [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
                capacity() / K, (int) ((double) used() * 100 / capacity()),
                p2i(bottom()), p2i(top()), p2i(end()));
 }

@@ -1199,7 +1199,13 @@ void VMError::report(outputStream* st, bool _verbose) {
     GCLogPrecious::print_on_error(st);
 
     if (Universe::heap() != nullptr) {
-      st->print_cr("Heap:");
+      {
+        st->print_cr("Heap:");
+        StreamAutoIndentor indentor(st, 1);
+        Universe::heap()->print_on(st);
+        MetaspaceUtils::print_on(st);
+        st->cr();
+      }
       Universe::heap()->print_on_error(st);
       st->cr();
     }
@@ -1383,7 +1389,13 @@ void VMError::print_vm_info(outputStream* st) {
   if (Universe::is_fully_initialized()) {
     MutexLocker hl(Heap_lock);
     GCLogPrecious::print_on_error(st);
-    st->print_cr("Heap:");
+    {
+      st->print_cr("Heap:");
+      StreamAutoIndentor indentor(st, 1);
+      Universe::heap()->print_on(st);
+      MetaspaceUtils::print_on(st);
+      st->cr();
+    }
     Universe::heap()->print_on_error(st);
     st->cr();
     st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));

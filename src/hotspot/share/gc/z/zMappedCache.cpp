@@ -30,6 +30,7 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class ZMappedCacheEntry {
@@ -591,7 +592,7 @@ void ZMappedCache::print_on(outputStream* st) const {
   }
 
   // Print information on size classes
-  streamIndentor indentor(st, 1);
+  StreamAutoIndentor indentor(st, 1);
 
   st->print("size classes");
   st->fill_to(17);

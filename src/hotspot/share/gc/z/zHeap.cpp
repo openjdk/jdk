@@ -315,32 +315,17 @@ ZServiceabilityCounters* ZHeap::serviceability_counters() {
 }
 
 void ZHeap::print_on(outputStream* st) const {
-  streamIndentor indentor(st, 1);
   _page_allocator.print_on(st);
-
-  // Metaspace printing prepends spaces instead of using outputStream indentation
-  streamIndentor indentor_back(st, -1);
-  MetaspaceUtils::print_on(st);
 }
 
 void ZHeap::print_on_error(outputStream* st) const {
-  {
-    streamIndentor indentor(st, 1);
-    _page_allocator.print_on_error(st);
-
-    // Metaspace printing prepends spaces instead of using outputStream indentation
-    streamIndentor indentor_back(st, -1);
-    MetaspaceUtils::print_on(st);
-  }
-  st->cr();
-
   print_globals_on(st);
   st->cr();
 
   print_page_table_on(st);
   st->cr();
 
-  _page_allocator.print_extended_on_error(st);
+  _page_allocator.print_on_error(st);
 }
 
 void ZHeap::print_globals_on(outputStream* st) const {
@@ -373,12 +358,12 @@ void ZHeap::print_page_table_on(outputStream* st) const {
 
   // Print all pages
   st->print_cr("ZGC Page Table:");
-  {
-    streamIndentor indentor(st, 1);
-    ZPageTableIterator iter(&_page_table);
-    for (ZPage* page; iter.next(&page);) {
-      page->print_on(st);
-    }
+
+  StreamAutoIndentor indentor(st, 1);
+
+  ZPageTableIterator iter(&_page_table);
+  for (ZPage* page; iter.next(&page);) {
+    page->print_on(st);
   }
 
   // Allow pages to be deleted
