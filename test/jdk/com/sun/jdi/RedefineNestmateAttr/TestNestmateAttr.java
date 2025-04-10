@@ -213,6 +213,7 @@ public class TestNestmateAttr extends TestScaffold {
 
     TestNestmateAttr (String[] args) {
         super(args);
+        enableIncludeVirtualthreads(); // need to run debug agent with includevirtualthreads=y
     }
 
     public static void main(String[] args) throws Throwable {
