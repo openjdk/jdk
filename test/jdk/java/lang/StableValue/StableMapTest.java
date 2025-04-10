@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @summary Basic tests for LazyMap methods
+ * @summary Basic tests for StableMap methods
  * @modules java.base/jdk.internal.lang.stable
  * @enablePreview
  * @run junit StableMapTest
