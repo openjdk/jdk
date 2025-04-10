@@ -28,6 +28,7 @@
 #include "opto/convertnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/noOverflowInt.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
@@ -678,11 +679,27 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
   Node* size1 = igvn.longcon(vp1.size());
   Node* size2 = igvn.longcon(vp2.size());
 
+#ifdef ASSERT
+  if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+    tty->print_cr("\nVPointer::make_speculative_aliasing_check_with:");
+    tty->print("init:  "); init->dump();
+    tty->print("limit: "); limit->dump();
+    tty->print_cr("p1_init:");
+    p1_init->dump_bfs(5, nullptr, "");
+    tty->print_cr("p2_init:");
+    p2_init->dump_bfs(5, nullptr, "");
+  }
+#endif
+
   BoolNode* condition1 = nullptr;
   BoolNode* condition2 = nullptr;
   if (vp1.iv_scale() == vp2.iv_scale()) {
-    // p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)
-    // -------- condition1 --------      ------- condition2 ---------
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+      tty->print_cr("  p1(init) + size1 <= p2(init)  OR  p2(init) + size2 <= p1(init)");
+      tty->print_cr("  -------- condition1 --------      ------- condition2 ---------");
+    }
+#endif
     condition1 = make_a_plus_b_leq_c(p1_init, size1, p2_init, phase);
     condition2 = make_a_plus_b_leq_c(p2_init, size2, p1_init, phase);
   } else {
@@ -709,6 +726,17 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
       swap(span1, span2);
     }
 
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+      tty->print("p1_init: "); p1_init->dump();
+      tty->print("p2_init: "); p2_init->dump();
+      tty->print("size1: "); size1->dump();
+      tty->print("size2: "); size2->dump();
+      tty->print_cr("span1: "); span1->dump_bfs(5, nullptr, "");
+      tty->print_cr("span2: "); span2->dump_bfs(5, nullptr, "");
+    }
+#endif
+
     Node* p1_init_plus_span1 = new AddLNode(p1_init, span1);
     Node* p2_init_plus_span2 = new AddLNode(p2_init, span2);
     phase->register_new_node_with_ctrl_of(p1_init_plus_span1, init);
@@ -721,6 +749,15 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
       condition2 = make_a_plus_b_leq_c(p2_init,            size2, p1_init,            phase);
     }
   }
+
+#ifdef ASSERT
+  if (_vloop.is_trace_speculative_aliasing_analysis() || _vloop.is_trace_speculative_runtime_checks()) {
+    tty->print_cr("condition1:");
+    condition1->dump_bfs(5, nullptr, "");
+    tty->print_cr("condition2:");
+    condition2->dump_bfs(5, nullptr, "");
+  }
+#endif
 
   // Convert bol back to int value that we can OR.
   Node* zero = igvn.intcon(0);
@@ -786,6 +823,7 @@ Node* VPointer::make_pointer_expression(Node* iv_value) const {
   int max_int_group = mem_pointer().max_int_group();
   for (int int_group = 1; int_group <= max_int_group; int_group++) {
     Node* int_expression = nullptr;
+    NoOverflowInt int_group_scaleL;
     mem_pointer().for_each_raw_summand_of_int_group(int_group, [&] (const MemPointerRawSummand& s) {
       Node* node = nullptr;
       if (s.is_con()) {
@@ -796,10 +834,14 @@ Node* VPointer::make_pointer_expression(Node* iv_value) const {
         node = new MulINode(scaleI, variable);
         phase->register_new_node(node, ctrl);
       }
+      int_group_scaleL = s.scaleL(); // remember for multiplication after ConvI2L
       int_expression = maybe_add(int_expression, node, T_INT);
     });
     assert(int_expression != nullptr, "no empty int group");
     int_expression = new ConvI2LNode(int_expression);
+    phase->register_new_node(int_expression, ctrl);
+    Node* scaleL = igvn.longcon(int_group_scaleL.value());
+    int_expression = new MulLNode(scaleL, int_expression);
     phase->register_new_node(int_expression, ctrl);
     expression = maybe_add(expression, int_expression, T_LONG);
   }
