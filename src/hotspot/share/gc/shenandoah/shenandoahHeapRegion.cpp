@@ -855,8 +855,8 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   ShenandoahAffiliation region_affiliation = heap->region_affiliation(this);
+  ShenandoahMarkingContext* const ctx = heap->marking_context();
   {
-    ShenandoahMarkingContext* const ctx = heap->complete_marking_context();
     log_debug(gc)("Setting affiliation of Region %zu from %s to %s, top: " PTR_FORMAT ", TAMS: " PTR_FORMAT
                   ", watermark: " PTR_FORMAT ", top_bitmap: " PTR_FORMAT,
                   index(), shenandoah_affiliation_name(region_affiliation), shenandoah_affiliation_name(new_affiliation),
@@ -865,8 +865,6 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
 
 #ifdef ASSERT
   {
-    // During full gc, heap->complete_marking_context() is not valid, may equal nullptr.
-    ShenandoahMarkingContext* const ctx = heap->complete_marking_context();
     size_t idx = this->index();
     HeapWord* top_bitmap = ctx->top_bitmap(this);
 

@@ -100,7 +100,7 @@ import jdk.test.lib.Utils;
  * <p>
  * Unless you have reasons to pick a specific distribution, you are encouraged to rely on {@link #ints()},
  * {@link #longs()}, {@link #doubles()} and {@link #floats()}, which will randomly pick an interesting distribution.
- * This is best practice, because that allows the test to be run under different conditions – maybe only a single
+ * This is best practice, because that allows the test to be run under different conditions - maybe only a single
  * distribution can trigger a bug.
  */
 public final class Generators {
