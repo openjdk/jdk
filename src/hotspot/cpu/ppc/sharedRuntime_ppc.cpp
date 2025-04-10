@@ -354,18 +354,34 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
     offset += reg_size;
   }
 
-  for (int i = 0; i < vsregstosave_num; i++) {
-    int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
-    int reg_type = RegisterSaver_LiveVSRegs[i].reg_type;
+  if (PowerArchitecturePPC64 >= 10) {
+    for (int i = 0; i < vsregstosave_num; i += 2) {
+      int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
+      assert(RegisterSaver_LiveVSRegs[i + 1].reg_num == reg_num + 1, "or use other instructions!");
 
-    __ li(R30, offset);
-    __ stxvd2x(as_VectorSRegister(reg_num), R30, R1_SP);
+      __ stxvp(as_VectorSRegister(reg_num), offset, R1_SP);
 
-    if (generate_oop_map) {
-      map->set_callee_saved(VMRegImpl::stack2reg(offset>>2),
-                            RegisterSaver_LiveVSRegs[i].vmreg);
+      if (generate_oop_map) {
+        map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2),
+                              RegisterSaver_LiveVSRegs[i].vmreg);
+        map->set_callee_saved(VMRegImpl::stack2reg((offset + vs_reg_size) >> 2),
+                              RegisterSaver_LiveVSRegs[i + 1].vmreg);
+      }
+      offset += (2 * vs_reg_size);
     }
-    offset += vs_reg_size;
+  } else {
+    for (int i = 0; i < vsregstosave_num; i++) {
+      int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
+
+      __ li(R31, offset);
+      __ stxvd2x(as_VectorSRegister(reg_num), R31, R1_SP);
+
+      if (generate_oop_map) {
+        map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2),
+                              RegisterSaver_LiveVSRegs[i].vmreg);
+      }
+      offset += vs_reg_size;
+    }
   }
 
   assert(offset == frame_size_in_bytes, "consistency check");
@@ -428,14 +444,24 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
     offset += reg_size;
   }
 
-  for (int i = 0; i < vsregstosave_num; i++) {
-    int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
-    int reg_type = RegisterSaver_LiveVSRegs[i].reg_type;
+  if (PowerArchitecturePPC64 >= 10) {
+    for (int i = 0; i < vsregstosave_num; i += 2) {
+      int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
+      assert(RegisterSaver_LiveVSRegs[i + 1].reg_num == reg_num + 1, "or use other instructions!");
 
-    __ li(R31, offset);
-    __ lxvd2x(as_VectorSRegister(reg_num), R31, R1_SP);
+      __ lxvp(as_VectorSRegister(reg_num), offset, R1_SP);
 
-    offset += vs_reg_size;
+      offset += (2 * vs_reg_size);
+    }
+  } else {
+    for (int i = 0; i < vsregstosave_num; i++) {
+      int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
+
+      __ li(R31, offset);
+      __ lxvd2x(as_VectorSRegister(reg_num), R31, R1_SP);
+
+      offset += vs_reg_size;
+    }
   }
 
   assert(offset == frame_size_in_bytes, "consistency check");

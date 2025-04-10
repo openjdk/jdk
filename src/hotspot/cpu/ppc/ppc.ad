@@ -1818,21 +1818,35 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
     else if (src_lo_rc == rc_vs && dst_lo_rc == rc_stack) {
       VectorSRegister Rsrc = as_VectorSRegister(Matcher::_regEncode[src_lo]);
       int dst_offset = ra_->reg2offset(dst_lo);
-      if (masm) {
-        __ addi(R0, R1_SP, dst_offset);
-        __ stxvd2x(Rsrc, R0);
+      if (PowerArchitecturePPC64 >= 9) {
+        if (masm) {
+          __ stxv(Rsrc, dst_offset, R1_SP);
+        }
+        size += 4;
+      } else {
+        if (masm) {
+          __ addi(R0, R1_SP, dst_offset);
+          __ stxvd2x(Rsrc, R0);
+        }
+        size += 8;
       }
-      size += 8;
     }
     // Memory->VectorSRegister Spill.
     else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vs) {
       VectorSRegister Rdst = as_VectorSRegister(Matcher::_regEncode[dst_lo]);
       int src_offset = ra_->reg2offset(src_lo);
-      if (masm) {
-        __ addi(R0, R1_SP, src_offset);
-        __ lxvd2x(Rdst, R0);
+      if (PowerArchitecturePPC64 >= 9) {
+        if (masm) {
+          __ lxv(Rdst, src_offset, R1_SP);
+        }
+        size += 4;
+      } else {
+        if (masm) {
+          __ addi(R0, R1_SP, src_offset);
+          __ lxvd2x(Rdst, R0);
+        }
+        size += 8;
       }
-      size += 8;
     }
     // VectorSRegister->VectorSRegister.
     else if (src_lo_rc == rc_vs && dst_lo_rc == rc_vs) {
