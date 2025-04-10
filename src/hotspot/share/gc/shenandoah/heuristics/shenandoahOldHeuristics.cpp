@@ -427,10 +427,6 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     ShenandoahHeapRegion* r = candidates[i].get_region();
     size_t region_garbage = r->garbage();
     size_t region_free = r->free();
-
-#ifdef KELVIN_DEPRECATE
-    r->capture_mixed_candidate_garbage();
-#endif
     candidates_garbage += region_garbage;
     unfragmented += region_free;
   }
@@ -473,10 +469,6 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
              r->index(), ShenandoahHeapRegion::region_state_to_string(r->state()));
       const size_t region_garbage = r->garbage();
       const size_t region_free = r->free();
-
-#ifdef KELVIN_DEPRECATE
-      r->capture_mixed_candidate_garbage();
-#endif
       candidates_garbage += region_garbage;
       unfragmented += region_free;
       defrag_count++;

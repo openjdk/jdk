@@ -128,12 +128,6 @@ inline void ShenandoahHeapRegion::adjust_alloc_metadata(ShenandoahAllocRequest::
   }
 }
 
-#ifdef KELVIN_DEPRECATE
-inline void ShenandoahHeapRegion::increase_live_data_alloc_words(size_t s) {
-  internal_increase_live_data(s);
-}
-#endif
-
 inline void ShenandoahHeapRegion::increase_live_data_gc_words(size_t s) {
   internal_increase_live_data(s);
   if (ShenandoahPacing) {
@@ -163,25 +157,6 @@ inline size_t ShenandoahHeapRegion::get_live_data_words() const {
 inline size_t ShenandoahHeapRegion::get_live_data_bytes() const {
   return get_live_data_words() * HeapWordSize;
 }
-
-#ifdef KELVIN_DEPRECATE
-inline size_t ShenandoahHeapRegion::get_mixed_candidate_live_data_bytes() const {
-  shenandoah_assert_safepoint();
-  assert(used() >= _mixed_candidate_garbage_words * HeapWordSize, "used must exceed garbage");
-  return used() - _mixed_candidate_garbage_words * HeapWordSize;
-}
-
-inline size_t ShenandoahHeapRegion::get_mixed_candidate_live_data_words() const {
-  shenandoah_assert_safepoint();
-  assert(used() >= _mixed_candidate_garbage_words * HeapWordSize, "used must exceed garbage");
-  return used() / HeapWordSize - _mixed_candidate_garbage_words;
-}
-
-inline void ShenandoahHeapRegion::capture_mixed_candidate_garbage() {
-  shenandoah_assert_safepoint();
-  _mixed_candidate_garbage_words = garbage() / HeapWordSize;
-}
-#endif
 
 inline bool ShenandoahHeapRegion::has_marked() const {
   return Atomic::load(&_live_data) != 0;
