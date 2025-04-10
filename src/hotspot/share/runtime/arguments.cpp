@@ -3686,16 +3686,6 @@ void Arguments::set_compact_headers_flags() {
   if (UseCompactObjectHeaders && !UseCompressedClassPointers) {
     FLAG_SET_DEFAULT(UseCompressedClassPointers, true);
   }
-  // KLUT
-  if (UseKLUT) {
-    if (!UseCompactObjectHeaders) {
-      warning("UseKLUT requires COH.");
-      FLAG_SET_DEFAULT(UseKLUT, false);
-    } else if (ObjectAlignmentInBytes != BytesPerWord) {
-      warning("UseKLUT requires default object alignment.");
-      FLAG_SET_DEFAULT(UseKLUT, false);
-    }
-  }
 #endif
 }
 
