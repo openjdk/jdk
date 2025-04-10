@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import javax.tools.JavaFileObject;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.ToIntFunction;
+import java.util.function.ToIntBiFunction;
 
 import static com.sun.tools.javac.tree.JCTree.JCOperatorExpression.OperandPos.LEFT;
 import static com.sun.tools.javac.tree.JCTree.JCOperatorExpression.OperandPos.RIGHT;
@@ -500,26 +500,27 @@ public class TreeInfo {
             return tree.pos;
     }
 
-    /** The end position of given tree, if it is a block with
-     *  defined endpos.
+    /** The end position of the given tree, if defined.
      */
-    public static int endPos(JCTree tree) {
-        if (tree.hasTag(BLOCK) && ((JCBlock) tree).endpos != Position.NOPOS)
-            return ((JCBlock) tree).endpos;
-        else if (tree.hasTag(SYNCHRONIZED))
-            return endPos(((JCSynchronized) tree).body);
-        else if (tree.hasTag(TRY)) {
+    public static int endPos(EndPosTable endPosTable, JCTree tree) {
+        switch (tree.getTag()) {
+        case BLOCK:
+            return ((JCBlock)tree).bracePos;
+        case SWITCH_EXPRESSION:
+            return ((JCSwitchExpression)tree).bracePos;
+        case SYNCHRONIZED:
+            return endPos(endPosTable, ((JCSynchronized)tree).body);
+        case TRY:
             JCTry t = (JCTry) tree;
-            return endPos((t.finalizer != null) ? t.finalizer
+            return endPos(endPosTable, (t.finalizer != null) ? t.finalizer
                           : (t.catchers.nonEmpty() ? t.catchers.last().body : t.body));
-        } else if (tree.hasTag(SWITCH) &&
-                   ((JCSwitch) tree).endpos != Position.NOPOS) {
-            return ((JCSwitch) tree).endpos;
-        } else if (tree.hasTag(SWITCH_EXPRESSION) &&
-                   ((JCSwitchExpression) tree).endpos != Position.NOPOS) {
-            return ((JCSwitchExpression) tree).endpos;
-        } else
-            return tree.pos;
+        default:
+            break;
+        }
+        int endPos = endPosTable.getEndPos(tree);
+        if (endPos != Position.NOPOS)
+            return endPos;
+        return tree.pos;
     }
 
 
@@ -646,11 +647,6 @@ public class TreeInfo {
         if (tree == null)
             return Position.NOPOS;
 
-        if (endPosTable == null) {
-            // fall back on limited info in the tree
-            return endPos(tree);
-        }
-
         int mapPos = endPosTable.getEndPos(tree);
         if (mapPos != Position.NOPOS)
             return mapPos;
@@ -734,8 +730,8 @@ public class TreeInfo {
      *  end position of given tree, if it is a block with
      *  defined endpos.
      */
-    public static DiagnosticPosition diagEndPos(final JCTree tree) {
-        final int endPos = TreeInfo.endPos(tree);
+    public static DiagnosticPosition diagEndPos(EndPosTable endPosTable, final JCTree tree) {
+        final int endPos = TreeInfo.endPos(endPosTable, tree);
         return new DiagnosticPosition() {
             public JCTree getTree() { return tree; }
             public int getStartPosition() { return TreeInfo.getStartPos(tree); }
@@ -747,30 +743,30 @@ public class TreeInfo {
     }
 
     public enum PosKind {
-        START_POS(TreeInfo::getStartPos),
-        FIRST_STAT_POS(TreeInfo::firstStatPos),
+        START_POS((table, tree) -> TreeInfo.getStartPos(tree)),
+        FIRST_STAT_POS((table, tree) -> TreeInfo.firstStatPos(tree)),
         END_POS(TreeInfo::endPos);
 
-        final ToIntFunction<JCTree> posFunc;
+        final ToIntBiFunction<EndPosTable, JCTree> posFunc;
 
-        PosKind(ToIntFunction<JCTree> posFunc) {
+        PosKind(ToIntBiFunction<EndPosTable, JCTree> posFunc) {
             this.posFunc = posFunc;
         }
 
-        int toPos(JCTree tree) {
-            return posFunc.applyAsInt(tree);
+        int toPos(EndPosTable endPosTable, JCTree tree) {
+            return posFunc.applyAsInt(endPosTable, tree);
         }
     }
 
     /** The position of the finalizer of given try/synchronized statement.
      */
-    public static int finalizerPos(JCTree tree, PosKind posKind) {
+    public static int finalizerPos(EndPosTable endPosTable, JCTree tree, PosKind posKind) {
         if (tree.hasTag(TRY)) {
             JCTry t = (JCTry) tree;
             Assert.checkNonNull(t.finalizer);
-            return posKind.toPos(t.finalizer);
+            return posKind.toPos(endPosTable, t.finalizer);
         } else if (tree.hasTag(SYNCHRONIZED)) {
-            return endPos(((JCSynchronized) tree).body);
+            return endPos(endPosTable, ((JCSynchronized)tree).body);
         } else {
             throw new AssertionError();
         }
