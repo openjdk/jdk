@@ -244,7 +244,7 @@ import java.util.function.Supplier;
  *     }
  * }
  *
- * int pwr4 = PowerOf2Util.powerOfTwo(4);   // May eventually constant fold to 16 at runtime
+ * int result = PowerOf2Util.powerOfTwo(4);   // May eventually constant fold to 16 at runtime
  *
  * }
  * <p>
