@@ -37,6 +37,7 @@ import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.tree.ModuleTree.ModuleKind;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.DeferredLintHandler.LintLogger;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.parser.Tokens.*;
@@ -113,9 +114,6 @@ public class JavacParser implements Parser {
     /** End position mappings container */
     protected final AbstractEndPosTable endPosTable;
 
-    /** A map associating "other nearby documentation comments"
-     *  with the preferred documentation comment for a declaration. */
-    protected Map<Comment, List<Comment>> danglingComments = new HashMap<>();
     /** Handler for deferred diagnostics. */
     protected final DeferredLintHandler deferredLintHandler;
 
@@ -582,17 +580,8 @@ public class JavacParser implements Parser {
      *     (using {@code token.getDocComment()}.
      *  3. At the end of the "signature" of the declaration
      *     (that is, before any initialization or body for the
-     *     declaration) any other "recent" comments are saved
-     *     in a map using the primary comment as a key,
-     *     using this method, {@code saveDanglingComments}.
-     *  4. When the tree node for the declaration is finally
-     *     available, and the primary comment, if any,
-     *     is "attached", (in {@link #attach}) any related
-     *     dangling comments are also attached to the tree node
-     *     by registering them using the {@link #deferredLintHandler}.
-     *  5. (Later) Warnings may be generated for the dangling
-     *     comments, subject to the {@code -Xlint} and
-     *     {@code @SuppressWarnings}.
+     *     declaration) any other "recent" comments are
+     *     reported to the {@link LexicalLintHandler}.
      *
      *  @param dc the primary documentation comment
      */
@@ -612,21 +601,16 @@ public class JavacParser implements Parser {
                 }
         }
 
-        var lb = new ListBuffer<Comment>();
         while (!recentComments.isEmpty()) {
             var c = recentComments.remove();
             if (c != dc) {
-                lb.add(c);
+                reportDanglingDocComment(c);
             }
         }
-        danglingComments.put(dc, lb.toList());
     }
 
     /** Make an entry into docComments hashtable,
      *  provided flag keepDocComments is set and given doc comment is non-null.
-     *  If there are any related "dangling comments", register
-     *  diagnostics to be handled later, when @SuppressWarnings
-     *  can be taken into account.
      *
      *  @param tree   The tree to be used as index in the hashtable
      *  @param dc     The doc comment to associate with the tree, or null.
@@ -635,30 +619,10 @@ public class JavacParser implements Parser {
         if (keepDocComments && dc != null) {
             docComments.putComment(tree, dc);
         }
-        reportDanglingComments(tree, dc);
-    }
-
-    /** Reports all dangling comments associated with the
-     *  primary comment for a declaration against the position
-     *  of the tree node for a declaration.
-     *
-     * @param tree the tree node for the declaration
-     * @param dc the primary comment for the declaration
-     */
-    void reportDanglingComments(JCTree tree, Comment dc) {
-        var list = danglingComments.remove(dc);
-        if (list != null) {
-            deferredLintHandler.push(tree);
-            try {
-                list.forEach(this::reportDanglingDocComment);
-            } finally {
-                deferredLintHandler.pop();
-            }
-        }
     }
 
     /**
-     * Reports an individual dangling comment using the {@link #deferredLintHandler}.
+     * Reports an individual dangling comment using the {@link LexicalLintHandler}.
      * The comment may or not may generate an actual diagnostic, depending on
      * the settings for {@code -Xlint} and/or {@code @SuppressWarnings}.
      *
@@ -666,14 +630,8 @@ public class JavacParser implements Parser {
      */
     void reportDanglingDocComment(Comment c) {
         var pos = c.getPos();
-        if (pos != null) {
-            deferredLintHandler.report(lint -> {
-                if (lint.isEnabled(Lint.LintCategory.DANGLING_DOC_COMMENTS) &&
-                        !shebang(c, pos)) {
-                    log.warning(
-                            pos, LintWarnings.DanglingDocComment);
-                }
-            });
+        if (pos != null && !shebang(c, pos)) {
+            S.lintHandler().report(pos, LintWarnings.DanglingDocComment);
         }
     }
 
@@ -1022,7 +980,7 @@ public class JavacParser implements Parser {
                 if (Feature.UNNAMED_VARIABLES.allowedInSource(source) && name == names.underscore) {
                     name = names.empty;
                 }
-                JCVariableDecl var = toP(F.at(varPos).VarDef(mods, name, e, null));
+                JCVariableDecl var = S.endDecl(toP(F.at(varPos).VarDef(mods, name, e, null)));
                 if (e == null) {
                     var.startPos = pos;
                     if (var.name == names.underscore && !allowVar) {
@@ -3831,7 +3789,7 @@ public class JavacParser implements Parser {
                 }
             }
         }
-        JCVariableDecl result = toP(F.at(pos).VarDef(mods, name, type, init, declaredUsingVar));
+        JCVariableDecl result = S.endDecl(toP(F.at(pos).VarDef(mods, name, type, init, declaredUsingVar)));
         attach(result, dc);
         result.startPos = startPos;
         return result;
@@ -3922,7 +3880,7 @@ public class JavacParser implements Parser {
                         log.error(token.pos, Errors.WrongReceiver);
                     }
                 }
-                return toP(F.at(pos).ReceiverVarDef(mods, pn, type));
+                return S.endDecl(toP(F.at(pos).ReceiverVarDef(mods, pn, type)));
             }
         } else {
             /** if it is a lambda parameter and the token kind is not an identifier,
@@ -3947,8 +3905,8 @@ public class JavacParser implements Parser {
             name = names.empty;
         }
 
-        return toP(F.at(pos).VarDef(mods, name, type, null,
-                type != null && type.hasTag(IDENT) && ((JCIdent)type).name == names.var));
+        return S.endDecl(toP(F.at(pos).VarDef(mods, name, type, null,
+                type != null && type.hasTag(IDENT) && ((JCIdent)type).name == names.var)));
     }
 
     /** Resources = Resource { ";" Resources }
@@ -4017,7 +3975,7 @@ public class JavacParser implements Parser {
             nextToken();
             JCExpression pid = qualident(false);
             accept(SEMI);
-            JCPackageDecl pd = toP(F.at(packagePos).PackageDecl(annotations, pid));
+            JCPackageDecl pd = S.endDecl(toP(F.at(packagePos).PackageDecl(annotations, pid)));
             attach(pd, firstToken.docComment());
             consumedToplevelDoc = true;
             defs.append(pd);
@@ -4139,6 +4097,7 @@ public class JavacParser implements Parser {
             toplevel.lineMap = S.getLineMap();
         this.endPosTable.setParser(null); // remove reference to parser
         toplevel.endPositions = this.endPosTable;
+        S.lintHandler().flushTo(deferredLintHandler);
         return toplevel;
     }
 
@@ -4188,9 +4147,10 @@ public class JavacParser implements Parser {
         accept(LBRACE);
         directives = moduleDirectiveList();
         accept(RBRACE);
+        int endPos = S.prevToken().endPos;
         accept(EOF);
 
-        JCModuleDecl result = toP(F.at(pos).ModuleDef(mods, kind, name, directives));
+        JCModuleDecl result = S.lintHandler().endDecl(toP(F.at(pos).ModuleDef(mods, kind, name, directives)), endPos);
         attach(result, dc);
         return result;
     }
@@ -4391,8 +4351,8 @@ public class JavacParser implements Parser {
         saveDanglingDocComments(dc);
 
         List<JCTree> defs = classInterfaceOrRecordBody(name, false, false);
-        JCClassDecl result = toP(F.at(pos).ClassDef(
-            mods, name, typarams, extending, implementing, permitting, defs));
+        JCClassDecl result = S.endDecl(toP(F.at(pos).ClassDef(
+            mods, name, typarams, extending, implementing, permitting, defs)));
         attach(result, dc);
         return result;
     }
@@ -4416,6 +4376,7 @@ public class JavacParser implements Parser {
         saveDanglingDocComments(dc);
 
         List<JCTree> defs = classInterfaceOrRecordBody(name, false, true);
+        int endPos = S.prevToken().endPos;
         java.util.List<JCVariableDecl> fields = new ArrayList<>();
         for (JCVariableDecl field : headerFields) {
             fields.add(field);
@@ -4440,7 +4401,8 @@ public class JavacParser implements Parser {
             JCVariableDecl field = fields.get(i);
             defs = defs.prepend(field);
         }
-        JCClassDecl result = toP(F.at(pos).ClassDef(mods, name, typarams, null, implementing, defs));
+        JCClassDecl result = S.lintHandler().endDecl(
+            toP(F.at(pos).ClassDef(mods, name, typarams, null, implementing, defs)), endPos);
         attach(result, dc);
         return result;
     }
@@ -4479,8 +4441,8 @@ public class JavacParser implements Parser {
 
         List<JCTree> defs;
         defs = classInterfaceOrRecordBody(name, true, false);
-        JCClassDecl result = toP(F.at(pos).ClassDef(
-            mods, name, typarams, null, extending, permitting, defs));
+        JCClassDecl result = S.endDecl(toP(F.at(pos).ClassDef(
+            mods, name, typarams, null, extending, permitting, defs)));
         attach(result, dc);
         return result;
     }
@@ -4526,9 +4488,9 @@ public class JavacParser implements Parser {
 
         List<JCTree> defs = enumBody(name);
         mods.flags |= Flags.ENUM;
-        JCClassDecl result = toP(F.at(pos).
+        JCClassDecl result = S.endDecl(toP(F.at(pos).
             ClassDef(mods, name, List.nil(),
-                     null, implementing, defs));
+                     null, implementing, defs)));
         attach(result, dc);
         return result;
     }
@@ -4670,7 +4632,7 @@ public class JavacParser implements Parser {
         if (createPos != identPos)
             storeEnd(create, S.prevToken().endPos);
         ident = F.at(identPos).Ident(enumName);
-        JCTree result = toP(F.at(pos).VarDef(mods, name, ident, create));
+        JCTree result = S.endDecl(toP(F.at(pos).VarDef(mods, name, ident, create)));
         attach(result, dc);
         return result;
     }
@@ -5097,9 +5059,9 @@ public class JavacParser implements Parser {
             }
 
             JCMethodDecl result =
-                    toP(F.at(pos).MethodDef(mods, name, type, typarams,
+                    S.endDecl(toP(F.at(pos).MethodDef(mods, name, type, typarams,
                                             receiverParam, params, thrown,
-                                            body, defaultValue));
+                                            body, defaultValue)));
             attach(result, dc);
             return result;
         } finally {
@@ -5608,7 +5570,8 @@ public class JavacParser implements Parser {
             log.error(DiagnosticFlag.SOURCE_LEVEL, pos, feature.error(source.name));
         } else if (preview.isPreview(feature)) {
             //use of preview feature, warn
-            preview.warnPreview(pos, feature);
+            SimpleDiagnosticPosition diagPos = new SimpleDiagnosticPosition(pos);
+            S.lintHandler().report(diagPos, lint -> preview.warnPreview(lint, diagPos, feature));
         }
     }
 
