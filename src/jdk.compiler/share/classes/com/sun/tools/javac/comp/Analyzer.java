@@ -366,7 +366,7 @@ public class Analyzer {
         }
 
         boolean isImplicitlyTyped(JCVariableDecl decl) {
-            return decl.vartype.pos == Position.NOPOS;
+            return decl.declaredUsingVar();
         }
 
         /**
