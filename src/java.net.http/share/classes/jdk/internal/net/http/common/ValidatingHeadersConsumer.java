@@ -45,7 +45,7 @@ public class ValidatingHeadersConsumer {
         REQUEST,
         RESPONSE,
     }
-    
+
     // Map of permitted pseudo headers in requests and responses
     private static final Map<String, Context> PSEUDO_HEADERS =
             Map.of(":authority", Context.REQUEST,
