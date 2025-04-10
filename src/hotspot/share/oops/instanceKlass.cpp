@@ -1922,8 +1922,7 @@ void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
   }
 }
 
-// first in Pair is offset, second is index.
-static int compare_fields_by_offset(FieldInfo *a, FieldInfo *b) {
+static int compare_fields_by_offset(FieldInfo* a, FieldInfo* b) {
   return a->offset() - b->offset();
 }
 
