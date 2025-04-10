@@ -25,6 +25,7 @@
 
 package jdk.internal.net.http;
 
+import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.ConnectException;

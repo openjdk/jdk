@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8203882
+ * @bug 8203882 8352623
  * @summary (httpclient) Check that HttpClient throws IOException when
  *      receiving 401/407 with no WWW-Authenticate/Proxy-Authenticate
  *      header only in the case where an authenticator is configured
