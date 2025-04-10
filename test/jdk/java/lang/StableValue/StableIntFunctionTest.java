@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @summary Basic tests for StableIntFunctionTest methods
+ * @summary Basic tests for StableIntFunction methods
  * @enablePreview
  * @run junit StableIntFunctionTest
  */
