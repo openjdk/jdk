@@ -136,7 +136,9 @@ static const char* env_list[] = {
   nullptr                       // End marker.
 };
 
-// A simple parser for -XX:OnError, usage:
+// A simple parser for lists of commands such as -XX:OnError and -XX:OnOutOfMemoryError
+// Command list (ptr) is expected to be a sequence of commands delineated by semicolons and/or newlines.
+// Usage:
 //  ptr = OnError;
 //  while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr) != nullptr)
 //     ... ...
@@ -145,13 +147,13 @@ static char* next_OnError_command(char* buf, int buflen, const char** ptr) {
 
   const char* cmd = *ptr;
 
-  // skip leading blanks or ';'
-  while (*cmd == ' ' || *cmd == ';') cmd++;
+  // skip leading blanks, ';' or newlines
+  while (*cmd == ' ' || *cmd == ';' || *cmd == '\n') cmd++;
 
   if (*cmd == '\0') return nullptr;
 
   const char * cmdend = cmd;
-  while (*cmdend != '\0' && *cmdend != ';') cmdend++;
+  while (*cmdend != '\0' && *cmdend != ';' && *cmdend != '\n') cmdend++;
 
   Arguments::copy_expand_pid(cmd, cmdend - cmd, buf, buflen);
 
