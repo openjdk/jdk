@@ -34,7 +34,9 @@
  */
 
 import jtreg.SkippedException;
-import org.ietf.jgss.*;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
+import org.ietf.jgss.Oid;
 
 public class Krb5NameEquals {
 
@@ -55,9 +57,11 @@ public class Krb5NameEquals {
         final GSSManager mgr = GSSManager.getInstance();
 
         // Checking if native GSS is installed, throwing skip exception if it's not.
-        final var mechs = mgr.getMechs();
-        if (mechs == null || mechs.length == 0) {
-            throw new SkippedException("NativeGSS not supported");
+        if (Boolean.getBoolean("sun.security.jgss.native")) {
+            final var mechs = mgr.getMechs();
+            if (mechs == null || mechs.length == 0) {
+                throw new SkippedException("NativeGSS not supported");
+            }
         }
 
         // Create GSSName and check their equals(), hashCode() impl
