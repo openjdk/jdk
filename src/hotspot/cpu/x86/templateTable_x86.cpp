@@ -151,7 +151,7 @@ static void do_oop_load(InterpreterMacroAssembler* _masm,
                         Address src,
                         Register dst,
                         DecoratorSet decorators = 0) {
-  __ load_heap_oop(dst, src, rdx, rbx, decorators);
+  __ load_heap_oop(dst, src, rdx, decorators);
 }
 
 Address TemplateTable::at_bcp(int offset) {
@@ -740,7 +740,7 @@ void TemplateTable::iaload() {
   __ access_load_at(T_INT, IN_HEAP | IS_ARRAY, rax,
                     Address(rdx, rax, Address::times_4,
                             arrayOopDesc::base_offset_in_bytes(T_INT)),
-                    noreg, noreg);
+                    noreg);
 }
 
 void TemplateTable::laload() {
@@ -752,7 +752,7 @@ void TemplateTable::laload() {
   __ access_load_at(T_LONG, IN_HEAP | IS_ARRAY, noreg /* ltos */,
                     Address(rdx, rbx, Address::times_8,
                             arrayOopDesc::base_offset_in_bytes(T_LONG)),
-                    noreg, noreg);
+                    noreg);
 }
 
 
@@ -766,7 +766,7 @@ void TemplateTable::faload() {
                     Address(rdx, rax,
                             Address::times_4,
                             arrayOopDesc::base_offset_in_bytes(T_FLOAT)),
-                    noreg, noreg);
+                    noreg);
 }
 
 void TemplateTable::daload() {
@@ -778,7 +778,7 @@ void TemplateTable::daload() {
                     Address(rdx, rax,
                             Address::times_8,
                             arrayOopDesc::base_offset_in_bytes(T_DOUBLE)),
-                    noreg, noreg);
+                    noreg);
 }
 
 void TemplateTable::aaload() {
@@ -801,7 +801,7 @@ void TemplateTable::baload() {
   index_check(rdx, rax); // kills rbx
   __ access_load_at(T_BYTE, IN_HEAP | IS_ARRAY, rax,
                     Address(rdx, rax, Address::times_1, arrayOopDesc::base_offset_in_bytes(T_BYTE)),
-                    noreg, noreg);
+                    noreg);
 }
 
 void TemplateTable::caload() {
@@ -811,7 +811,7 @@ void TemplateTable::caload() {
   index_check(rdx, rax); // kills rbx
   __ access_load_at(T_CHAR, IN_HEAP | IS_ARRAY, rax,
                     Address(rdx, rax, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)),
-                    noreg, noreg);
+                    noreg);
 }
 
 // iload followed by caload frequent pair
@@ -826,7 +826,7 @@ void TemplateTable::fast_icaload() {
   index_check(rdx, rax); // kills rbx
   __ access_load_at(T_CHAR, IN_HEAP | IS_ARRAY, rax,
                     Address(rdx, rax, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)),
-                    noreg, noreg);
+                    noreg);
 }
 
 
@@ -837,7 +837,7 @@ void TemplateTable::saload() {
   index_check(rdx, rax); // kills rbx
   __ access_load_at(T_SHORT, IN_HEAP | IS_ARRAY, rax,
                     Address(rdx, rax, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_SHORT)),
-                    noreg, noreg);
+                    noreg);
 }
 
 void TemplateTable::iload(int n) {
@@ -2566,7 +2566,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ jcc(Assembler::notZero, notByte);
 
   // btos
-  __ access_load_at(T_BYTE, IN_HEAP, rax, field, noreg, noreg);
+  __ access_load_at(T_BYTE, IN_HEAP, rax, field, noreg);
   __ push(btos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -2579,7 +2579,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ jcc(Assembler::notEqual, notBool);
 
   // ztos (same code as btos)
-  __ access_load_at(T_BOOLEAN, IN_HEAP, rax, field, noreg, noreg);
+  __ access_load_at(T_BOOLEAN, IN_HEAP, rax, field, noreg);
   __ push(ztos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -2603,7 +2603,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ cmpl(tos_state, itos);
   __ jcc(Assembler::notEqual, notInt);
   // itos
-  __ access_load_at(T_INT, IN_HEAP, rax, field, noreg, noreg);
+  __ access_load_at(T_INT, IN_HEAP, rax, field, noreg);
   __ push(itos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -2615,7 +2615,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ cmpl(tos_state, ctos);
   __ jcc(Assembler::notEqual, notChar);
   // ctos
-  __ access_load_at(T_CHAR, IN_HEAP, rax, field, noreg, noreg);
+  __ access_load_at(T_CHAR, IN_HEAP, rax, field, noreg);
   __ push(ctos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -2627,7 +2627,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ cmpl(tos_state, stos);
   __ jcc(Assembler::notEqual, notShort);
   // stos
-  __ access_load_at(T_SHORT, IN_HEAP, rax, field, noreg, noreg);
+  __ access_load_at(T_SHORT, IN_HEAP, rax, field, noreg);
   __ push(stos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -2641,7 +2641,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   // ltos
     // Generate code as if volatile (x86_32).  There just aren't enough registers to
     // save that information and this code is faster than the test.
-  __ access_load_at(T_LONG, IN_HEAP | MO_RELAXED, noreg /* ltos */, field, noreg, noreg);
+  __ access_load_at(T_LONG, IN_HEAP | MO_RELAXED, noreg /* ltos */, field, noreg);
   __ push(ltos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) patch_bytecode(Bytecodes::_fast_lgetfield, bc, rbx);
@@ -2652,7 +2652,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ jcc(Assembler::notEqual, notFloat);
   // ftos
 
-  __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg, noreg);
+  __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg);
   __ push(ftos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -2668,7 +2668,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 #endif
   // dtos
   // MO_RELAXED: for the case of volatile field, in fact it adds no extra work for the underlying implementation
-  __ access_load_at(T_DOUBLE, IN_HEAP | MO_RELAXED, noreg /* dtos */, field, noreg, noreg);
+  __ access_load_at(T_DOUBLE, IN_HEAP | MO_RELAXED, noreg /* dtos */, field, noreg);
   __ push(dtos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -3131,25 +3131,25 @@ void TemplateTable::fast_accessfield(TosState state) {
     __ verify_oop(rax);
     break;
   case Bytecodes::_fast_lgetfield:
-    __ access_load_at(T_LONG, IN_HEAP, noreg /* ltos */, field, noreg, noreg);
+    __ access_load_at(T_LONG, IN_HEAP, noreg /* ltos */, field, noreg);
     break;
   case Bytecodes::_fast_igetfield:
-    __ access_load_at(T_INT, IN_HEAP, rax, field, noreg, noreg);
+    __ access_load_at(T_INT, IN_HEAP, rax, field, noreg);
     break;
   case Bytecodes::_fast_bgetfield:
-    __ access_load_at(T_BYTE, IN_HEAP, rax, field, noreg, noreg);
+    __ access_load_at(T_BYTE, IN_HEAP, rax, field, noreg);
     break;
   case Bytecodes::_fast_sgetfield:
-    __ access_load_at(T_SHORT, IN_HEAP, rax, field, noreg, noreg);
+    __ access_load_at(T_SHORT, IN_HEAP, rax, field, noreg);
     break;
   case Bytecodes::_fast_cgetfield:
-    __ access_load_at(T_CHAR, IN_HEAP, rax, field, noreg, noreg);
+    __ access_load_at(T_CHAR, IN_HEAP, rax, field, noreg);
     break;
   case Bytecodes::_fast_fgetfield:
-    __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg, noreg);
+    __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg);
     break;
   case Bytecodes::_fast_dgetfield:
-    __ access_load_at(T_DOUBLE, IN_HEAP, noreg /* dtos */, field, noreg, noreg);
+    __ access_load_at(T_DOUBLE, IN_HEAP, noreg /* dtos */, field, noreg);
     break;
   default:
     ShouldNotReachHere();
@@ -3178,14 +3178,14 @@ void TemplateTable::fast_xaccess(TosState state) {
   const Address field = Address(rax, rbx, Address::times_1, 0*wordSize);
   switch (state) {
   case itos:
-    __ access_load_at(T_INT, IN_HEAP, rax, field, noreg, noreg);
+    __ access_load_at(T_INT, IN_HEAP, rax, field, noreg);
     break;
   case atos:
     do_oop_load(_masm, field, rax);
     __ verify_oop(rax);
     break;
   case ftos:
-    __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg, noreg);
+    __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg);
     break;
   default:
     ShouldNotReachHere();
@@ -3588,7 +3588,7 @@ void TemplateTable::_new() {
   //  Go to slow path.
 
   if (UseTLAB) {
-    __ tlab_allocate(r15_thread, rax, rdx, 0, rcx, rbx, slow_case);
+    __ tlab_allocate(rax, rdx, 0, rcx, rbx, slow_case);
     if (ZeroTLAB) {
       // the fields have been already cleared
       __ jmp(initialize_header);

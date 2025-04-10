@@ -4064,7 +4064,7 @@ void MacroAssembler::resolve_jobject(Register value,
   jcc(Assembler::notZero, tagged);
 
   // Resolve local handle
-  access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, value, Address(value, 0), tmp, thread);
+  access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, value, Address(value, 0), tmp);
   verify_oop(value);
   jmp(done);
 
@@ -4073,14 +4073,14 @@ void MacroAssembler::resolve_jobject(Register value,
   jcc(Assembler::notZero, weak_tagged);
 
   // Resolve global handle
-  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, -JNIHandles::TypeTag::global), tmp, thread);
+  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, -JNIHandles::TypeTag::global), tmp);
   verify_oop(value);
   jmp(done);
 
   bind(weak_tagged);
   // Resolve jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
-                 value, Address(value, -JNIHandles::TypeTag::weak_global), tmp, thread);
+                 value, Address(value, -JNIHandles::TypeTag::weak_global), tmp);
   verify_oop(value);
 
   bind(done);
@@ -4106,7 +4106,7 @@ void MacroAssembler::resolve_global_jobject(Register value,
 #endif
 
   // Resolve global handle
-  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, -JNIHandles::TypeTag::global), tmp, thread);
+  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, -JNIHandles::TypeTag::global), tmp);
   verify_oop(value);
 
   bind(done);
@@ -4144,14 +4144,14 @@ void MacroAssembler::testptr(Register dst, Register src) {
 }
 
 // Defines obj, preserves var_size_in_bytes, okay for t2 == var_size_in_bytes.
-void MacroAssembler::tlab_allocate(Register thread, Register obj,
+void MacroAssembler::tlab_allocate(Register obj,
                                    Register var_size_in_bytes,
                                    int con_size_in_bytes,
                                    Register t1,
                                    Register t2,
                                    Label& slow_case) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->tlab_allocate(this, thread, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
+  bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
 }
 
 RegSet MacroAssembler::call_clobbered_gp_registers() {
@@ -5979,7 +5979,7 @@ void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
   // Only IN_HEAP loads require a thread_tmp register
   // OopHandle::resolve is an indirection like jobject.
   access_load_at(T_OBJECT, IN_NATIVE,
-                 result, Address(result, 0), tmp, /*tmp_thread*/noreg);
+                 result, Address(result, 0), tmp);
 }
 
 // ((WeakHandle)result).resolve();
@@ -5995,7 +5995,7 @@ void MacroAssembler::resolve_weak_handle(Register rresult, Register rtmp) {
   // Only IN_HEAP loads require a thread_tmp register
   // WeakHandle::resolve is an indirection like jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
-                 rresult, Address(rresult, 0), rtmp, /*tmp_thread*/noreg);
+                 rresult, Address(rresult, 0), rtmp);
   bind(resolved);
 }
 
@@ -6092,14 +6092,14 @@ void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Regi
 }
 
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
-                                    Register tmp1, Register thread_tmp) {
+                                    Register tmp1) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
-    bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1);
   } else {
-    bs->load_at(this, decorators, type, dst, src, tmp1, thread_tmp);
+    bs->load_at(this, decorators, type, dst, src, tmp1);
   }
 }
 
@@ -6115,15 +6115,13 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators, Ad
   }
 }
 
-void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,
-                                   Register thread_tmp, DecoratorSet decorators) {
-  access_load_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, thread_tmp);
+void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1, DecoratorSet decorators) {
+  access_load_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1);
 }
 
 // Doesn't do verification, generates fixed size code
-void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register tmp1,
-                                            Register thread_tmp, DecoratorSet decorators) {
-  access_load_at(T_OBJECT, IN_HEAP | IS_NOT_NULL | decorators, dst, src, tmp1, thread_tmp);
+void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register tmp1, DecoratorSet decorators) {
+  access_load_at(T_OBJECT, IN_HEAP | IS_NOT_NULL | decorators, dst, src, tmp1);
 }
 
 void MacroAssembler::store_heap_oop(Address dst, Register val, Register tmp1,
