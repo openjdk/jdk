@@ -504,11 +504,18 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
   }
 
   {
-    char tmp[1024];
-    log_debug(metaspace)("Returning new IK @" PTR_FORMAT " for %s (use_class_space: %d), nKlass=%u, word size=%d",
-                          p2i(ik),
-                          parser.class_name()->as_C_string(tmp, sizeof(tmp)), use_class_space,
-                          CompressedKlassPointers::encode(ik), size);
+    LogTarget(Debug, metaspace) lt;
+    if (lt.is_enabled()) {
+      char tmp[1024];
+      LogStream ls(lt);
+      ls.print("Returning new IK @" PTR_FORMAT " for %s (%s)",
+                p2i(ik), parser.class_name()->as_C_string(tmp, sizeof(tmp)),
+                (use_class_space ? "in class space" : "outside class space"));
+      if (use_class_space) {
+        ls.print(", nKlass=%u", CompressedKlassPointers::encode(ik));
+      }
+      ls.print_cr(", wordsize=%d", size);
+    }
   }
 
   return ik;
