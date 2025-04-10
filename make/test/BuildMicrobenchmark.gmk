@@ -119,7 +119,6 @@ $(JMH_UNPACKED_JARS_DONE): $(JMH_RUNTIME_JARS)
 	$(foreach jar, $(JMH_RUNTIME_JARS), \
             $$($(UNZIP) -oq $(jar) -d $(JMH_UNPACKED_DIR)))
 	$(RM) -r $(JMH_UNPACKED_DIR)/META-INF
-	$(RM) $(JMH_UNPACKED_DIR)/*.xml
 	$(TOUCH) $@
 
 # Copy dependency files for inclusion in the benchmark JARs
