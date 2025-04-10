@@ -43,7 +43,6 @@ public class ValidatingHeadersConsumer {
     public enum Context {
         REQUEST,
         RESPONSE,
-        TRAILER
     }
     private static final Map<String, Context> PSEUDO_HEADERS =
             Map.of(":authority", Context.REQUEST,
