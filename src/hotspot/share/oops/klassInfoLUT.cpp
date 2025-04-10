@@ -60,7 +60,7 @@ void KlassInfoLUT::initialize() {
         _entries = (uint32_t*) os::reserve_memory_special(table_size_in_bytes, large_page_size, large_page_size, nullptr, false);
         if (_entries != nullptr) {
           uses_large_pages = true;
-          _num_entries = table_size_in_bytes / sizeof(uint32_t);
+          _num_entries = (unsigned)(table_size_in_bytes / sizeof(uint32_t));
         }
       }
     }
@@ -68,7 +68,7 @@ void KlassInfoLUT::initialize() {
       table_size_in_bytes = align_up(table_size_in_bytes, os::vm_page_size());
       _entries = (uint32_t*)os::reserve_memory(table_size_in_bytes, false, mtKLUT);
       os::commit_memory_or_exit((char*)_entries, table_size_in_bytes, false, "KLUT");
-      _num_entries = table_size_in_bytes / sizeof(uint32_t);
+      _num_entries = (unsigned)(table_size_in_bytes / sizeof(uint32_t));
     }
 
     log_info(klut)("Lookup table initialized (%u entries, using %s pages): " RANGEFMT,
