@@ -2448,10 +2448,10 @@ class Assembler : public AbstractAssembler {
   inline void xvrdpic(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpim(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpip(  VectorSRegister d, VectorSRegister b);
-  inline void xvminsp(  VectorSRegister d, VectorSRegister b, VectorSRegister b);
-  inline void xvmindp(  VectorSRegister d, VectorSRegister b, VectorSRegister b);
-  inline void xvmaxsp(  VectorSRegister d, VectorSRegister b, VectorSRegister b);
-  inline void xvmaxdp(  VectorSRegister d, VectorSRegister b, VectorSRegister b);
+  inline void xvminsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmindp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmaxsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xvmaxdp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
 
   // VSX Extended Mnemonics
   inline void xxspltd(  VectorSRegister d, VectorSRegister a, int x);
