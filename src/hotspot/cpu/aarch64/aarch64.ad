@@ -1888,7 +1888,7 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
       code_stub = &stub->entry();
     }
     __ relocate(relocInfo::poll_return_type);
-    __ safepoint_poll(*code_stub, true /* at_return */, false /* acquire */, true /* in_nmethod */);
+    __ safepoint_poll(*code_stub, true /* at_return */, true /* in_nmethod */);
   }
 }
 

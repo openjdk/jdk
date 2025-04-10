@@ -1875,8 +1875,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Check for safepoint operation in progress and/or pending suspend requests.
   {
-    // No need for acquire as Java threads always disarm themselves.
-    __ safepoint_poll(safepoint_in_progress, true /* at_return */, false /* acquire */, false /* in_nmethod */);
+    __ safepoint_poll(safepoint_in_progress, true /* at_return */, false /* in_nmethod */);
     __ ldrw(rscratch1, Address(rthread, JavaThread::suspend_flags_offset()));
     __ cbnzw(rscratch1, safepoint_in_progress);
     __ bind(safepoint_in_progress_done);

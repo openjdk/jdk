@@ -553,13 +553,8 @@ address MacroAssembler::target_addr_for_insn_or_null(address insn_addr, unsigned
   return MacroAssembler::target_addr_for_insn(insn_addr, insn);
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp) {
-  if (acquire) {
-    lea(tmp, Address(rthread, JavaThread::polling_word_offset()));
-    ldar(tmp, tmp);
-  } else {
-    ldr(tmp, Address(rthread, JavaThread::polling_word_offset()));
-  }
+void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp) {
+  ldr(tmp, Address(rthread, JavaThread::polling_word_offset()));
   if (at_return) {
     // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
     // we may safely use the sp instead to perform the stack watermark check.
