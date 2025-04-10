@@ -4650,1525 +4650,6 @@ class StubGenerator: public StubCodeGenerator {
     __ ldpq(as_FloatRegister(d0 + 6), as_FloatRegister(d0 + 7), tmpAddr);
   }
 
-  void kyber_load64zetas(Register zetas) {
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    __ ldpq(v20, v21, __ post(zetas, 32));
-    __ ldpq(v22, v23, __ post(zetas, 32));
-  }
-
-  void kyber_montmul64(bool by_constant) {
-    int vr16 = 16, vr17 = 17, vr18 = 18, vr19 = 19;
-    int vr20 = 20, vr21 = 21, vr22 = 22, vr23 = 23;
-    if (by_constant) {
-      vr16 = vr17 = vr18 = vr19 = vr20 = vr21 = vr22 = vr23 = 29;
-    }
-    __ sqdmulh(v24, __ T8H, v0, as_FloatRegister(vr16));
-    __ mulv(v16, __ T8H, v0, as_FloatRegister(vr16));
-    __ sqdmulh(v25, __ T8H, v1, as_FloatRegister(vr17));
-    __ mulv(v17, __ T8H, v1, as_FloatRegister(vr17));
-    __ sqdmulh(v26, __ T8H, v2, as_FloatRegister(vr18));
-    __ mulv(v18, __ T8H, v2, as_FloatRegister(vr18));
-    __ sqdmulh(v27, __ T8H, v3, as_FloatRegister(vr19));
-    __ mulv(v19, __ T8H, v3, as_FloatRegister(vr19));
-    __ mulv(v16, __ T8H, v16, v30);
-    __ mulv(v17, __ T8H, v17, v30);
-    __ mulv(v18, __ T8H, v18, v30);
-    __ mulv(v19, __ T8H, v19, v30);
-    __ sqdmulh(v16, __ T8H, v16, v31);
-    __ sqdmulh(v17, __ T8H, v17, v31);
-    __ sqdmulh(v18, __ T8H, v18, v31);
-    __ sqdmulh(v19, __ T8H, v19, v31);
-    __ shsubv(v16, __ T8H, v24, v16);
-    __ shsubv(v17, __ T8H, v25, v17);
-    __ shsubv(v18, __ T8H, v26, v18);
-    __ shsubv(v19, __ T8H, v27, v19);
-    __ sqdmulh(v24, __ T8H, v4, as_FloatRegister(vr20));
-    __ mulv(v20, __ T8H, v4, as_FloatRegister(vr20));
-    __ sqdmulh(v25, __ T8H, v5, as_FloatRegister(vr21));
-    __ mulv(v21, __ T8H, v5, as_FloatRegister(vr21));
-    __ sqdmulh(v26, __ T8H, v6, as_FloatRegister(vr22));
-    __ mulv(v22, __ T8H, v6, as_FloatRegister(vr22));
-    __ sqdmulh(v27, __ T8H, v7, as_FloatRegister(vr23));
-    __ mulv(v23, __ T8H, v7, as_FloatRegister(vr23));
-    __ mulv(v20, __ T8H, v20, v30);
-    __ mulv(v21, __ T8H, v21, v30);
-    __ mulv(v22, __ T8H, v22, v30);
-    __ mulv(v23, __ T8H, v23, v30);
-    __ sqdmulh(v20, __ T8H, v20, v31);
-    __ sqdmulh(v21, __ T8H, v21, v31);
-    __ sqdmulh(v22, __ T8H, v22, v31);
-    __ sqdmulh(v23, __ T8H, v23, v31);
-    __ shsubv(v20, __ T8H, v24, v20);
-    __ shsubv(v21, __ T8H, v25, v21);
-    __ shsubv(v22, __ T8H, v26, v22);
-    __ shsubv(v23, __ T8H, v27, v23);
-  }
-
-  void kyber_subv_addv64() {
-    __ subv(v24, __ T8H, v0, v16);
-    __ subv(v25, __ T8H, v1, v17);
-    __ subv(v26, __ T8H, v2, v18);
-    __ subv(v27, __ T8H, v3, v19);
-    __ subv(v28, __ T8H, v4, v20);
-    __ subv(v29, __ T8H, v5, v21);
-    __ subv(v30, __ T8H, v6, v22);
-    __ subv(v31, __ T8H, v7, v23);
-    __ addv(v0, __ T8H, v0, v16);
-    __ addv(v1, __ T8H, v1, v17);
-    __ addv(v2, __ T8H, v2, v18);
-    __ addv(v3, __ T8H, v3, v19);
-    __ addv(v4, __ T8H, v4, v20);
-    __ addv(v5, __ T8H, v5, v21);
-    __ addv(v6, __ T8H, v6, v22);
-    __ addv(v7, __ T8H, v7, v23);
-  }
-
-  void kyber_store64coeffs(int i0, Register tmpAddr) {
-    __ stpq(as_FloatRegister(i0), as_FloatRegister(i0 + 1), __ post(tmpAddr, 32));
-    __ stpq(as_FloatRegister(i0 + 2), as_FloatRegister(i0 + 3), __ post(tmpAddr, 32));
-    __ stpq(as_FloatRegister(i0 + 4), as_FloatRegister(i0 + 5), __ post(tmpAddr, 32));
-    __ stpq(as_FloatRegister(i0 + 6), as_FloatRegister(i0 + 7), __ post(tmpAddr, 32));
-  }
-
-  void kyber_montmul_subv_addv32() {
-    __ sqdmulh(v24, __ T8H, v1, v16);
-    __ mulv(v16, __ T8H, v1, v16);
-    __ sqdmulh(v25, __ T8H, v3, v17);
-    __ mulv(v17, __ T8H, v3, v17);
-    __ sqdmulh(v26, __ T8H, v5, v18);
-    __ mulv(v18, __ T8H, v5, v18);
-    __ sqdmulh(v27, __ T8H, v7, v19);
-    __ mulv(v19, __ T8H, v7, v19);
-    __ mulv(v16, __ T8H, v16, v30);
-    __ mulv(v17, __ T8H, v17, v30);
-    __ mulv(v18, __ T8H, v18, v30);
-    __ mulv(v19, __ T8H, v19, v30);
-    __ sqdmulh(v16, __ T8H, v16, v31);
-    __ sqdmulh(v17, __ T8H, v17, v31);
-    __ sqdmulh(v18, __ T8H, v18, v31);
-    __ sqdmulh(v19, __ T8H, v19, v31);
-    __ shsubv(v16, __ T8H, v24, v16);
-    __ shsubv(v17, __ T8H, v25, v17);
-    __ shsubv(v18, __ T8H, v26, v18);
-    __ shsubv(v19, __ T8H, v27, v19);
-    __ subv(v1, __ T8H, v0, v16);
-    __ subv(v3, __ T8H, v2, v17);
-    __ subv(v5, __ T8H, v4, v18);
-    __ subv(v7, __ T8H, v6, v19);
-    __ addv(v0, __ T8H, v0, v16);
-    __ addv(v2, __ T8H, v2, v17);
-    __ addv(v4, __ T8H, v4, v18);
-    __ addv(v6, __ T8H, v6, v19);
-  }
-
-  void kyber_subv_addv_montmul32() {
-    __ subv(v20, __ T8H, v0, v1);
-    __ subv(v21, __ T8H, v2, v3);
-    __ subv(v22, __ T8H, v4, v5);
-    __ subv(v23, __ T8H, v6, v7);
-    __ addv(v0, __ T8H, v0, v1);
-    __ addv(v2, __ T8H, v2, v3);
-    __ addv(v4, __ T8H, v4, v5);
-    __ addv(v6, __ T8H, v6, v7);
-    __ sqdmulh(v24, __ T8H, v20, v16);
-    __ mulv(v1, __ T8H, v20, v16);
-    __ sqdmulh(v25, __ T8H, v21, v17);
-    __ mulv(v3, __ T8H, v21, v17);
-    __ sqdmulh(v26, __ T8H, v22, v18);
-    __ mulv(v5, __ T8H, v22, v18);
-    __ sqdmulh(v27, __ T8H, v23, v19);
-    __ mulv(v7, __ T8H, v23, v19);
-    __ mulv(v1, __ T8H, v1, v30);
-    __ mulv(v3, __ T8H, v3, v30);
-    __ mulv(v5, __ T8H, v5, v30);
-    __ mulv(v7, __ T8H, v7, v30);
-    __ sqdmulh(v1, __ T8H, v1, v31);
-    __ sqdmulh(v3, __ T8H, v3, v31);
-    __ sqdmulh(v5, __ T8H, v5, v31);
-    __ sqdmulh(v7, __ T8H, v7, v31);
-    __ shsubv(v1, __ T8H, v24, v1);
-    __ shsubv(v3, __ T8H, v25, v3);
-    __ shsubv(v5, __ T8H, v26, v5);
-    __ shsubv(v7, __ T8H, v27, v7);
-  }
-
-  void kyber_addv_subv64() {
-    __ addv(v24, __ T8H, v0, v16);
-    __ addv(v25, __ T8H, v1, v17);
-    __ addv(v26, __ T8H, v2, v18);
-    __ addv(v27, __ T8H, v3, v19);
-    __ addv(v28, __ T8H, v4, v20);
-    __ addv(v29, __ T8H, v5, v21);
-    __ addv(v30, __ T8H, v6, v22);
-    __ addv(v31, __ T8H, v7, v23);
-    __ subv(v0, __ T8H, v0, v16);
-    __ subv(v1, __ T8H, v1, v17);
-    __ subv(v2, __ T8H, v2, v18);
-    __ subv(v3, __ T8H, v3, v19);
-    __ subv(v4, __ T8H, v4, v20);
-    __ subv(v5, __ T8H, v5, v21);
-    __ subv(v6, __ T8H, v6, v22);
-    __ subv(v7, __ T8H, v7, v23);
-  }
-
-  // Kyber NTT function.
-  // Implements
-  // static int implKyberNtt(short[] poly, short[] ntt_zetas) {}
-  //
-  // coeffs (short[256]) = c_rarg0
-  // ntt_zetas (short[256]) = c_rarg1
-  address generate_kyberNtt() {
-
-    __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::kyberNtt_id;
-    StubCodeMark mark(this, stub_id);
-    address start = __ pc();
-    __ enter();
-
-    const Register coeffs = c_rarg0;
-    const Register zetas = c_rarg1;
-
-    const Register kyberConsts = r10;
-    const Register tmpAddr = r11;
-
-    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
-    __ ldpq(v30, v31, kyberConsts);
-
-    // Each level corresponds to an iteration of the outermost loop of the
-    // Java method seilerNTT(int[] coeffs). There are some differences
-    // from what is done in the seilerNTT() method, though:
-    // 1. The computation is using 16-bit signed values, we do not convert them
-    // to ints here.
-    // 2. The zetas are delivered in a bigger array, 128 zetas are stored in
-    // this array for each level, it is easier that way to fill up the vector
-    // registers.
-    // 3. In the seilerNTT() method we use R = 2^20 for the Montgomery
-    // multiplications (this is because that way there should not be any
-    // overflow during the inverse NTT computation), here we usr R = 2^16 so
-    // that we can use the 16-bit arithmetic in the vector unit.
-    //
-    // On each level, we fill up the vector registers in such a way that the
-    // array elements that need to be multiplied by the zetas be in one
-    // set of vector registers while the corresponding ones that don't need to
-    // be multiplied, in another set. We can do 32 Montgomery multiplications
-    // in parallel, using 12 vector registers interleaving the steps of 4
-    // identical computations, each done on 8 16-bit values per register.
-    // level 0
-    __ add(tmpAddr, coeffs, 256);
-    kyber_load64coeffs(0, tmpAddr);
-    kyber_load64zetas(zetas);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 0);
-    kyber_load64coeffs(0, tmpAddr);
-    kyber_subv_addv64();
-    __ add(tmpAddr, coeffs, 0);
-    kyber_store64coeffs(0, tmpAddr);
-    __ add(tmpAddr, coeffs, 256);
-    kyber_store64coeffs(24, tmpAddr);
-    __ ldpq(v30, v31, kyberConsts);
-    kyber_load64coeffs(0, tmpAddr);
-    kyber_load64zetas(zetas);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 128);
-    kyber_load64coeffs(0, tmpAddr);
-    kyber_subv_addv64();
-    __ add(tmpAddr, coeffs, 128);
-    kyber_store64coeffs(0, tmpAddr);
-    __ add(tmpAddr, coeffs, 384);
-    kyber_store64coeffs(24, tmpAddr);
-    // level 1
-    __ ldpq(v30, v31, kyberConsts);
-    __ add(tmpAddr, coeffs, 128);
-    kyber_load64coeffs(0, tmpAddr);
-    kyber_load64zetas(zetas);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 0);
-    kyber_load64coeffs(0, tmpAddr);
-    kyber_subv_addv64();
-    __ add(tmpAddr, coeffs, 0);
-    kyber_store64coeffs(0, tmpAddr);
-    kyber_store64coeffs(24, tmpAddr);
-    __ ldpq(v30, v31, kyberConsts);
-    __ add(tmpAddr, coeffs, 384);
-    kyber_load64coeffs(0, tmpAddr);
-    kyber_load64zetas(zetas);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 256);
-    kyber_load64coeffs(0, tmpAddr);
-    kyber_subv_addv64();
-    __ add(tmpAddr, coeffs, 256);
-    kyber_store64coeffs(0, tmpAddr);
-    kyber_store64coeffs(24, tmpAddr);
-    // level 2
-    __ ldpq(v30, v31, kyberConsts);
-    __ add(tmpAddr, coeffs, 64);
-    __ ldpq(v0, v1, __ post(tmpAddr, 32));
-    __ ldpq(v2, v3, __ post(tmpAddr, 96));
-    __ ldpq(v4, v5, __ post(tmpAddr, 32));
-    __ ldpq(v6, v7, tmpAddr);
-    kyber_load64zetas(zetas);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 0);
-    __ ldpq(v0, v1, __ post(tmpAddr, 32));
-    __ ldpq(v2, v3, __ post(tmpAddr, 96));
-    __ ldpq(v4, v5, __ post(tmpAddr, 32));
-    __ ldpq(v6, v7, tmpAddr);
-    kyber_subv_addv64();
-    __ add(tmpAddr, coeffs, 0);
-    __ stpq(v0, v1, __ post(tmpAddr, 32));
-    __ stpq(v2, v3, __ post(tmpAddr, 32));
-    __ stpq(v24, v25, __ post(tmpAddr, 32));
-    __ stpq(v26, v27, __ post(tmpAddr, 32));
-    __ stpq(v4, v5, __ post(tmpAddr, 32));
-    __ stpq(v6, v7, __ post(tmpAddr, 32));
-    __ stpq(v28, v29, __ post(tmpAddr, 32));
-    __ stpq(v30, v31, __ post(tmpAddr, 96));
-    __ ldpq(v30, v31, kyberConsts);
-    __ ldpq(v0, v1, __ post(tmpAddr, 32));
-    __ ldpq(v2, v3, __ post(tmpAddr, 96));
-    __ ldpq(v4, v5, __ post(tmpAddr, 32));
-    __ ldpq(v6, v7, tmpAddr);
-    kyber_load64zetas(zetas);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 256);
-    __ ldpq(v0, v1, __ post(tmpAddr, 32));
-    __ ldpq(v2, v3, __ post(tmpAddr, 96));
-    __ ldpq(v4, v5, __ post(tmpAddr, 32));
-    __ ldpq(v6, v7, tmpAddr);
-    kyber_subv_addv64();
-    __ add(tmpAddr, coeffs, 256);
-    __ stpq(v0, v1, __ post(tmpAddr, 32));
-    __ stpq(v2, v3, __ post(tmpAddr, 32));
-    __ stpq(v24, v25, __ post(tmpAddr, 32));
-    __ stpq(v26, v27, __ post(tmpAddr, 32));
-    __ stpq(v4, v5, __ post(tmpAddr, 32));
-    __ stpq(v6, v7, __ post(tmpAddr, 32));
-    __ stpq(v28, v29, __ post(tmpAddr, 32));
-    __ stpq(v30, v31, tmpAddr);
-    // level 3
-    __ ldpq(v30, v31, kyberConsts);
-    __ add(tmpAddr, coeffs, 32);
-    __ ldpq(v0, v1, __ post(tmpAddr, 64));
-    __ ldpq(v2, v3, __ post(tmpAddr, 64));
-    __ ldpq(v4, v5, __ post(tmpAddr, 64));
-    __ ldpq(v6, v7, tmpAddr);
-    kyber_load64zetas(zetas);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 0);
-    __ ldpq(v0, v1, __ post(tmpAddr, 64));
-    __ ldpq(v2, v3, __ post(tmpAddr, 64));
-    __ ldpq(v4, v5, __ post(tmpAddr, 64));
-    __ ldpq(v6, v7, tmpAddr);
-    kyber_subv_addv64();
-    __ add(tmpAddr, coeffs, 0);
-    __ stpq(v0, v1, __ post(tmpAddr, 32));
-    __ stpq(v24, v25, __ post(tmpAddr, 32));
-    __ stpq(v2, v3, __ post(tmpAddr, 32));
-    __ stpq(v26, v27, __ post(tmpAddr, 32));
-    __ stpq(v4, v5, __ post(tmpAddr, 32));
-    __ stpq(v28, v29, __ post(tmpAddr, 32));
-    __ stpq(v6, v7, __ post(tmpAddr, 32));
-    __ stpq(v30, v31, __ post(tmpAddr, 64));
-
-    __ ldpq(v30, v31, kyberConsts);
-    __ ldpq(v0, v1, __ post(tmpAddr, 64));
-    __ ldpq(v2, v3, __ post(tmpAddr, 64));
-    __ ldpq(v4, v5, __ post(tmpAddr, 64));
-    __ ldpq(v6, v7, tmpAddr);
-    kyber_load64zetas(zetas);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 256);
-    __ ldpq(v0, v1, __ post(tmpAddr, 64));
-    __ ldpq(v2, v3, __ post(tmpAddr, 64));
-    __ ldpq(v4, v5, __ post(tmpAddr, 64));
-    __ ldpq(v6, v7, tmpAddr);
-    kyber_subv_addv64();
-    __ add(tmpAddr, coeffs, 256);
-    __ stpq(v0, v1, __ post(tmpAddr, 32));
-    __ stpq(v24, v25, __ post(tmpAddr, 32));
-    __ stpq(v2, v3, __ post(tmpAddr, 32));
-    __ stpq(v26, v27, __ post(tmpAddr, 32));
-    __ stpq(v4, v5, __ post(tmpAddr, 32));
-    __ stpq(v28, v29, __ post(tmpAddr, 32));
-    __ stpq(v6, v7, __ post(tmpAddr, 32));
-    __ stpq(v30, v31, tmpAddr);
-    // level 4
-    __ ldpq(v30, v31, kyberConsts);
-    __ add(tmpAddr, coeffs, 16);
-    __ ldr(v0, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v1, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v2, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v3, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v4, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v5, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v6, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v7, __ Q, tmpAddr);
-    kyber_load64zetas(zetas);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 0);
-    __ ldr(v0, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v1, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v2, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v3, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v4, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v5, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v6, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v7, __ Q, tmpAddr);
-    kyber_subv_addv64();
-    __ add(tmpAddr, coeffs, 0);
-    __ str(v0, __ Q, __ post(tmpAddr, 16));
-    __ str(v24, __ Q, __ post(tmpAddr, 16));
-    __ str(v1, __ Q, __ post(tmpAddr, 16));
-    __ str(v25, __ Q, __ post(tmpAddr, 16));
-    __ str(v2, __ Q, __ post(tmpAddr, 16));
-    __ str(v26, __ Q, __ post(tmpAddr, 16));
-    __ str(v3, __ Q, __ post(tmpAddr, 16));
-    __ str(v27, __ Q, __ post(tmpAddr, 16));
-    __ str(v4, __ Q, __ post(tmpAddr, 16));
-    __ str(v28, __ Q, __ post(tmpAddr, 16));
-    __ str(v5, __ Q, __ post(tmpAddr, 16));
-    __ str(v29, __ Q, __ post(tmpAddr, 16));
-    __ str(v6, __ Q, __ post(tmpAddr, 16));
-    __ str(v30, __ Q, __ post(tmpAddr, 16));
-    __ str(v7, __ Q, __ post(tmpAddr, 16));
-    __ str(v31, __ Q, __ post(tmpAddr, 32));
-
-    __ ldpq(v30, v31, kyberConsts);
-    __ ldr(v0, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v1, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v2, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v3, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v4, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v5, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v6, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v7, __ Q, tmpAddr);
-    kyber_load64zetas(zetas);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 256);
-    __ ldr(v0, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v1, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v2, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v3, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v4, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v5, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v6, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v7, __ Q, tmpAddr);
-    kyber_subv_addv64();
-    __ add(tmpAddr, coeffs, 256);
-    __ str(v0, __ Q, __ post(tmpAddr, 16));
-    __ str(v24, __ Q, __ post(tmpAddr, 16));
-    __ str(v1, __ Q, __ post(tmpAddr, 16));
-    __ str(v25, __ Q, __ post(tmpAddr, 16));
-    __ str(v2, __ Q, __ post(tmpAddr, 16));
-    __ str(v26, __ Q, __ post(tmpAddr, 16));
-    __ str(v3, __ Q, __ post(tmpAddr, 16));
-    __ str(v27, __ Q, __ post(tmpAddr, 16));
-    __ str(v4, __ Q, __ post(tmpAddr, 16));
-    __ str(v28, __ Q, __ post(tmpAddr, 16));
-    __ str(v5, __ Q, __ post(tmpAddr, 16));
-    __ str(v29, __ Q, __ post(tmpAddr, 16));
-    __ str(v6, __ Q, __ post(tmpAddr, 16));
-    __ str(v30, __ Q, __ post(tmpAddr, 16));
-    __ str(v7, __ Q, __ post(tmpAddr, 16));
-    __ str(v31, __ Q, tmpAddr);
-    // level 5
-    __ ldpq(v30, v31, kyberConsts);
-    __ add(tmpAddr, coeffs, 0);
-    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T2D, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    kyber_montmul_subv_addv32();
-    __ add(tmpAddr, coeffs, 0);
-    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T2D, __ post(tmpAddr, 32));
-
-    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T2D, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    kyber_montmul_subv_addv32();
-    __ add(tmpAddr, coeffs, 128);
-    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T2D, __ post(tmpAddr, 32));
-
-    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T2D, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    kyber_montmul_subv_addv32();
-    __ add(tmpAddr, coeffs, 256);
-    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T2D, __ post(tmpAddr, 32));
-
-    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T2D, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    kyber_montmul_subv_addv32();
-    __ add(tmpAddr, coeffs, 384);
-    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T2D, tmpAddr);
-    // level 6
-    __ add(tmpAddr, coeffs, 0);
-    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T4S, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    kyber_montmul_subv_addv32();
-    __ add(tmpAddr, coeffs, 0);
-    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T4S, __ post(tmpAddr, 32));
-
-    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T4S, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    kyber_montmul_subv_addv32();
-    __ add(tmpAddr, coeffs, 128);
-    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T4S, __ post(tmpAddr, 32));
-
-    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T4S, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    kyber_montmul_subv_addv32();
-    __ add(tmpAddr, coeffs, 256);
-    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T4S, __ post(tmpAddr, 32));
-
-    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T4S, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, zetas);
-    kyber_montmul_subv_addv32();
-    __ add(tmpAddr, coeffs, 384);
-    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T4S, tmpAddr);
-
-    __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
-    __ ret(lr);
-
-    return start;
-  }
-
-  void kyber_sqdmulh32(int i0) {
-    __ sqdmulh(as_FloatRegister(i0 + 18), __ T8H, as_FloatRegister(i0), v31);
-    __ sqdmulh(as_FloatRegister(i0 + 19), __ T8H, as_FloatRegister(i0 + 1), v31);
-    __ sqdmulh(as_FloatRegister(i0 + 20), __ T8H, as_FloatRegister(i0 + 2), v31);
-    __ sqdmulh(as_FloatRegister(i0 + 21), __ T8H, as_FloatRegister(i0 + 3), v31);
-  }
-
-  void kyber_sshr32(int i0) {
-    __ sshr(as_FloatRegister(i0), __ T8H, as_FloatRegister(i0), 11);
-    __ sshr(as_FloatRegister(i0 + 1), __ T8H, as_FloatRegister(i0 + 1), 11);
-    __ sshr(as_FloatRegister(i0 + 2), __ T8H, as_FloatRegister(i0 + 2), 11);
-    __ sshr(as_FloatRegister(i0 + 3), __ T8H, as_FloatRegister(i0 + 3), 11);
-  }
-
-  void kyber_mlsv32(int o0) {
-    __ mlsv(as_FloatRegister(o0), __ T8H, as_FloatRegister(o0 + 18), v30);
-    __ mlsv(as_FloatRegister(o0 + 1), __ T8H, as_FloatRegister(o0 + 19), v30);
-    __ mlsv(as_FloatRegister(o0 + 2), __ T8H, as_FloatRegister(o0 + 20), v30);
-    __ mlsv(as_FloatRegister(o0 + 3), __ T8H, as_FloatRegister(o0 + 21), v30);
-  }
-
-  // Kyber Inverse NTT function
-  // Implements
-  // static int implKyberInverseNtt(short[] poly, short[] zetas) {}
-  //
-  // coeffs (short[256]) = c_rarg0
-  // ntt_zetas (short[256]) = c_rarg1
-  address generate_kyberInverseNtt() {
-
-    __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::kyberInverseNtt_id;
-    StubCodeMark mark(this, stub_id);
-    address start = __ pc();
-    __ enter();
-
-    const Register coeffs = c_rarg0;
-    const Register zetas = c_rarg1;
-
-    const Register kyberConsts = r10;
-    const Register tmpAddr = r11;
-    const Register tmpAddr2 = c_rarg2;
-
-    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
-
-    // level 0
-    __ ldpq(v30, v31, kyberConsts);
-    __ add(tmpAddr, coeffs, 0);
-    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T4S, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    kyber_subv_addv_montmul32();
-    __ add(tmpAddr, coeffs, 0);
-    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T4S, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    kyber_subv_addv_montmul32();
-    __ add(tmpAddr, coeffs, 128);
-    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T4S, __ post(tmpAddr, 32));
-
-    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T4S, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    kyber_subv_addv_montmul32();
-    __ add(tmpAddr, coeffs, 256);
-    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T4S, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    kyber_subv_addv_montmul32();
-    __ add(tmpAddr, coeffs, 384);
-    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T4S, tmpAddr);
-    // level 1
-    __ add(tmpAddr, coeffs, 0);
-    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T2D, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    kyber_subv_addv_montmul32();
-    __ add(tmpAddr, coeffs, 0);
-    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T2D, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    kyber_subv_addv_montmul32();
-    __ add(tmpAddr, coeffs, 128);
-    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T2D, __ post(tmpAddr, 32));
-
-    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T2D, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    kyber_subv_addv_montmul32();
-    __ add(tmpAddr, coeffs, 256);
-    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ ld2(v6, v7, __ T2D, tmpAddr);
-    __ ldpq(v16, v17, __ post(zetas, 32));
-    __ ldpq(v18, v19, __ post(zetas, 32));
-    kyber_subv_addv_montmul32();
-    __ add(tmpAddr, coeffs, 384);
-    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
-    __ st2(v6, v7, __ T2D, tmpAddr);
-    // level 2
-    __ add(tmpAddr, coeffs, 0);
-    __ ldr(v0, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v16, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v1, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v17, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v2, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v18, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v3, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v19, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v4, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v20, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v5, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v21, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v6, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v22, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v7, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v23, __ Q, tmpAddr);
-    kyber_addv_subv64();
-    __ add(tmpAddr, coeffs, 0);
-    __ str(v24, __ Q, __ post(tmpAddr, 32));
-    __ str(v25, __ Q, __ post(tmpAddr, 32));
-    __ str(v26, __ Q, __ post(tmpAddr, 32));
-    __ str(v27, __ Q, __ post(tmpAddr, 32));
-    __ str(v28, __ Q, __ post(tmpAddr, 32));
-    __ str(v29, __ Q, __ post(tmpAddr, 32));
-    __ str(v30, __ Q, __ post(tmpAddr, 32));
-    __ str(v31, __ Q, tmpAddr);
-    kyber_load64zetas(zetas);
-    __ ldpq(v30, v31, kyberConsts);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 16);
-    __ str(v16, __ Q, __ post(tmpAddr, 32));
-    __ str(v17, __ Q, __ post(tmpAddr, 32));
-    __ str(v18, __ Q, __ post(tmpAddr, 32));
-    __ str(v19, __ Q, __ post(tmpAddr, 32));
-    __ str(v20, __ Q, __ post(tmpAddr, 32));
-    __ str(v21, __ Q, __ post(tmpAddr, 32));
-    __ str(v22, __ Q, __ post(tmpAddr, 32));
-    __ str(v23, __ Q, __ post(tmpAddr, 16));
-
-    __ ldr(v0, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v16, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v1, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v17, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v2, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v18, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v3, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v19, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v4, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v20, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v5, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v21, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v6, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v22, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v7, __ Q, __ post(tmpAddr, 16));
-    __ ldr(v23, __ Q, tmpAddr);
-    kyber_addv_subv64();
-    __ add(tmpAddr, coeffs, 256);
-    __ str(v24, __ Q, __ post(tmpAddr, 32));
-    __ str(v25, __ Q, __ post(tmpAddr, 32));
-    __ str(v26, __ Q, __ post(tmpAddr, 32));
-    __ str(v27, __ Q, __ post(tmpAddr, 32));
-    __ str(v28, __ Q, __ post(tmpAddr, 32));
-    __ str(v29, __ Q, __ post(tmpAddr, 32));
-    __ str(v30, __ Q, __ post(tmpAddr, 32));
-    __ str(v31, __ Q, tmpAddr);
-    kyber_load64zetas(zetas);
-    __ ldpq(v30, v31, kyberConsts);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 272);
-    __ str(v16, __ Q, __ post(tmpAddr, 32));
-    __ str(v17, __ Q, __ post(tmpAddr, 32));
-    __ str(v18, __ Q, __ post(tmpAddr, 32));
-    __ str(v19, __ Q, __ post(tmpAddr, 32));
-    __ str(v20, __ Q, __ post(tmpAddr, 32));
-    __ str(v21, __ Q, __ post(tmpAddr, 32));
-    __ str(v22, __ Q, __ post(tmpAddr, 32));
-    __ str(v23, __ Q, tmpAddr);
-    // Barrett reduction at indexes where overflow may happen
-    __ add(tmpAddr, kyberConsts, 16);
-    __ ldpq(v30, v31, tmpAddr);
-    __ add(tmpAddr, coeffs, 0);
-    __ ldr(v0, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v1, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v2, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v3, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v4, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v5, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v6, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v7, __ Q, tmpAddr);
-    kyber_sqdmulh32(0);
-    kyber_sqdmulh32(4);
-    kyber_sshr32(18);
-    kyber_sshr32(22);
-    kyber_mlsv32(0);
-    kyber_mlsv32(4);
-    __ add(tmpAddr, coeffs, 0);
-    __ str(v0, __ Q, __ post(tmpAddr, 32));
-    __ str(v1, __ Q, __ post(tmpAddr, 32));
-    __ str(v2, __ Q, __ post(tmpAddr, 32));
-    __ str(v3, __ Q, __ post(tmpAddr, 32));
-    __ str(v4, __ Q, __ post(tmpAddr, 32));
-    __ str(v5, __ Q, __ post(tmpAddr, 32));
-    __ str(v6, __ Q, __ post(tmpAddr, 32));
-    __ str(v7, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v0, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v1, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v2, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v3, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v4, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v5, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v6, __ Q, __ post(tmpAddr, 32));
-    __ ldr(v7, __ Q, tmpAddr);
-    kyber_sqdmulh32(0);
-    kyber_sqdmulh32(4);
-    kyber_sshr32(18);
-    kyber_sshr32(22);
-    kyber_mlsv32(0);
-    kyber_mlsv32(4);
-    __ add(tmpAddr, coeffs, 256);
-    __ str(v0, __ Q, __ post(tmpAddr, 32));
-    __ str(v1, __ Q, __ post(tmpAddr, 32));
-    __ str(v2, __ Q, __ post(tmpAddr, 32));
-    __ str(v3, __ Q, __ post(tmpAddr, 32));
-    __ str(v4, __ Q, __ post(tmpAddr, 32));
-    __ str(v5, __ Q, __ post(tmpAddr, 32));
-    __ str(v6, __ Q, __ post(tmpAddr, 32));
-    __ str(v7, __ Q, tmpAddr);
-    // level 3
-    __ add(tmpAddr, coeffs, 0);
-    __ ldpq(v0, v1, __ post(tmpAddr, 32));
-    __ ldpq(v16, v17, __ post(tmpAddr, 32));
-    __ ldpq(v2, v3, __ post(tmpAddr, 32));
-    __ ldpq(v18, v19, __ post(tmpAddr, 32));
-    __ ldpq(v4, v5, __ post(tmpAddr, 32));
-    __ ldpq(v20, v21, __ post(tmpAddr, 32));
-    __ ldpq(v6, v7, __ post(tmpAddr, 32));
-    __ ldpq(v22, v23, tmpAddr);
-    kyber_addv_subv64();
-    __ add(tmpAddr, coeffs, 0);
-    __ stpq(v24, v25, __ post(tmpAddr, 64));
-    __ stpq(v26, v27, __ post(tmpAddr, 64));
-    __ stpq(v28, v29, __ post(tmpAddr, 64));
-    __ stpq(v30, v31, tmpAddr);
-    kyber_load64zetas(zetas);
-    __ ldpq(v30, v31, kyberConsts);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 32);
-    __ stpq(v16, v17, __ post(tmpAddr, 64));
-    __ stpq(v18, v19, __ post(tmpAddr, 64));
-    __ stpq(v20, v21, __ post(tmpAddr, 64));
-    __ stpq(v22, v23, __ post(tmpAddr, 32));
-
-    __ ldpq(v0, v1, __ post(tmpAddr, 32));
-    __ ldpq(v16, v17, __ post(tmpAddr, 32));
-    __ ldpq(v2, v3, __ post(tmpAddr, 32));
-    __ ldpq(v18, v19, __ post(tmpAddr, 32));
-    __ ldpq(v4, v5, __ post(tmpAddr, 32));
-    __ ldpq(v20, v21, __ post(tmpAddr, 32));
-    __ ldpq(v6, v7, __ post(tmpAddr, 32));
-    __ ldpq(v22, v23, tmpAddr);
-    kyber_addv_subv64();
-    __ add(tmpAddr, coeffs, 256);
-    __ stpq(v24, v25, __ post(tmpAddr, 64));
-    __ stpq(v26, v27, __ post(tmpAddr, 64));
-    __ stpq(v28, v29, __ post(tmpAddr, 64));
-    __ stpq(v30, v31, tmpAddr);
-    kyber_load64zetas(zetas);
-    __ ldpq(v30, v31, kyberConsts);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 288);
-    __ stpq(v16, v17, __ post(tmpAddr, 64));
-    __ stpq(v18, v19, __ post(tmpAddr, 64));
-    __ stpq(v20, v21, __ post(tmpAddr, 64));
-    __ stpq(v22, v23, tmpAddr);
-    // level 4
-    __ add(tmpAddr, coeffs, 0);
-    __ ldpq(v0, v1, __ post(tmpAddr, 32));
-    __ ldpq(v2, v3, __ post(tmpAddr, 32));
-    __ ldpq(v16, v17, __ post(tmpAddr, 32));
-    __ ldpq(v18, v19, __ post(tmpAddr, 32));
-    __ ldpq(v4, v5, __ post(tmpAddr, 32));
-    __ ldpq(v6, v7, __ post(tmpAddr, 32));
-    __ ldpq(v20, v21, __ post(tmpAddr, 32));
-    __ ldpq(v22, v23, tmpAddr);
-    kyber_addv_subv64();
-    __ add(tmpAddr, coeffs, 0);
-    __ stpq(v24, v25, __ post(tmpAddr, 32));
-    __ stpq(v26, v27, __ post(tmpAddr, 96));
-    __ stpq(v28, v29, __ post(tmpAddr, 32));
-    __ stpq(v30, v31, tmpAddr);
-    kyber_load64zetas(zetas);
-    __ ldpq(v30, v31, kyberConsts);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 64);
-    __ stpq(v16, v17, __ post(tmpAddr, 32));
-    __ stpq(v18, v19, __ post(tmpAddr, 96));
-    __ stpq(v20, v21, __ post(tmpAddr, 32));
-    __ stpq(v22, v23, __ post(tmpAddr, 32));
-
-    __ ldpq(v0, v1, __ post(tmpAddr, 32));
-    __ ldpq(v2, v3, __ post(tmpAddr, 32));
-    __ ldpq(v16, v17, __ post(tmpAddr, 32));
-    __ ldpq(v18, v19, __ post(tmpAddr, 32));
-    __ ldpq(v4, v5, __ post(tmpAddr, 32));
-    __ ldpq(v6, v7, __ post(tmpAddr, 32));
-    __ ldpq(v20, v21, __ post(tmpAddr, 32));
-    __ ldpq(v22, v23, tmpAddr);
-    kyber_addv_subv64();
-    __ add(tmpAddr, coeffs, 256);
-    __ stpq(v24, v25, __ post(tmpAddr, 32));
-    __ stpq(v26, v27, __ post(tmpAddr, 96));
-    __ stpq(v28, v29, __ post(tmpAddr, 32));
-    __ stpq(v30, v31, tmpAddr);
-    kyber_load64zetas(zetas);
-    __ ldpq(v30, v31, kyberConsts);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 320);
-    __ stpq(v16, v17, __ post(tmpAddr, 32));
-    __ stpq(v18, v19, __ post(tmpAddr, 96));
-    __ stpq(v20, v21, __ post(tmpAddr, 32));
-    __ stpq(v22, v23, tmpAddr);
-    // level 5
-    __ add(tmpAddr, coeffs, 0);
-    kyber_load64coeffs(0, tmpAddr);
-    __ add(tmpAddr, coeffs, 128);
-    kyber_load64coeffs(16, tmpAddr);
-    kyber_addv_subv64();
-    __ add(tmpAddr, coeffs, 0);
-    kyber_store64coeffs(24, tmpAddr);
-    kyber_load64zetas(zetas);
-    __ ldpq(v30, v31, kyberConsts);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 128);
-    kyber_store64coeffs(16, tmpAddr);
-
-    kyber_load64coeffs(0, tmpAddr);
-    __ add(tmpAddr, coeffs, 384);
-    kyber_load64coeffs(16, tmpAddr);
-    kyber_addv_subv64();
-    __ add(tmpAddr, coeffs, 256);
-    kyber_store64coeffs(24, tmpAddr);
-    kyber_load64zetas(zetas);
-    __ ldpq(v30, v31, kyberConsts);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 384);
-    kyber_store64coeffs(16, tmpAddr);
-    // Barrett reduction at indexes where overflow may happen
-    __ add(tmpAddr, kyberConsts, 16);
-    __ ldpq(v30, v31, tmpAddr);
-    __ add(tmpAddr, coeffs, 0);
-    __ ldpq(v0, v1, __ post(tmpAddr, 256));
-    __ ldpq(v2, v3, tmpAddr);
-    kyber_sqdmulh32(0);
-    kyber_sshr32(18);
-    kyber_mlsv32(0);
-    __ add(tmpAddr, coeffs, 0);
-    __ stpq(v0, v1, __ post(tmpAddr, 256));
-    __ stpq(v2, v3, tmpAddr);
-    // level 6
-    __ add(tmpAddr, coeffs, 0);
-    kyber_load64coeffs(0, tmpAddr);
-    __ add(tmpAddr, coeffs, 256);
-    kyber_load64coeffs(16, tmpAddr);
-    kyber_addv_subv64();
-    __ add(tmpAddr, coeffs, 0);
-    kyber_store64coeffs(24, tmpAddr);
-    kyber_load64zetas(zetas);
-    __ ldpq(v30, v31, kyberConsts);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 256);
-    kyber_store64coeffs(16, tmpAddr);
-
-    __ add(tmpAddr, coeffs, 128);
-    kyber_load64coeffs(0, tmpAddr);
-    __ add(tmpAddr, coeffs, 384);
-    kyber_load64coeffs(16, tmpAddr);
-    kyber_addv_subv64();
-    __ add(tmpAddr, coeffs, 128);
-    kyber_store64coeffs(24, tmpAddr);
-    kyber_load64zetas(zetas);
-    __ ldpq(v30, v31, kyberConsts);
-    kyber_montmul64(false);
-    __ add(tmpAddr, coeffs, 384);
-    kyber_store64coeffs(16, tmpAddr);
-    // multiply by 2^-n
-    __ add(tmpAddr, kyberConsts, 48);
-    __ ldr(v29, __ Q, tmpAddr);
-    __ ldpq(v30, v31, kyberConsts);
-    __ add(tmpAddr, coeffs, 0);
-    kyber_load64coeffs(0, tmpAddr);
-    kyber_montmul64(true);
-    __ add(tmpAddr, coeffs, 0);
-    kyber_store64coeffs(16, tmpAddr);
-
-    kyber_load64coeffs(0, tmpAddr);
-    kyber_montmul64(true);
-    __ add(tmpAddr, coeffs, 128);
-    kyber_store64coeffs(16, tmpAddr);
-
-    kyber_load64coeffs(0, tmpAddr);
-    kyber_montmul64(true);
-    __ add(tmpAddr, coeffs, 256);
-    kyber_store64coeffs(16, tmpAddr);
-
-    kyber_load64coeffs(0, tmpAddr);
-    kyber_montmul64(true);
-   __ add(tmpAddr, coeffs, 384);
-    kyber_store64coeffs(16, tmpAddr);
-
-    __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
-    __ ret(lr);
-
-    return start;
-  }
-
-  // Kyber multiply polynomials in the NTT domain.
-  // Implements
-  // static int implKyberNttMult(
-  //          short[] result, short[] ntta, short[] nttb, short[] zetas) {}
-  //
-  // result (short[256]) = c_rarg0
-  // ntta (short[256]) = c_rarg1
-  // nttb (short[256]) = c_rarg2
-  // zetas (short[128]) = c_rarg3
-  address generate_kyberNttMult() {
-
-    __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::kyberNttMult_id;
-    StubCodeMark mark(this, stub_id);
-    address start = __ pc();
-    __ enter();
-
-    const Register result = c_rarg0;
-    const Register ntta = c_rarg1;
-    const Register nttb = c_rarg2;
-    const Register zetas = c_rarg3;
-
-    const Register kyberConsts = r10;
-    const Register limit = r11;
-
-    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
-
-    Label kyberNttMult_loop;
-
-    __ add(limit, result, 512);
-
-    __ ldpq(v30, v31, __ post(kyberConsts, 64));
-    __ ldr(v27, __ Q, kyberConsts);
-
-    __ BIND(kyberNttMult_loop);
-    __ ldpq(v28, v29, __ post(zetas, 32));
-    __ ld2(v0, v1, __ T8H, __ post(ntta, 32));
-    __ ld2(v2, v3, __ T8H, __ post(nttb, 32));
-    __ ld2(v20, v21, __ T8H, __ post(ntta, 32));
-    __ ld2(v22, v23, __ T8H, __ post(nttb, 32));
-    // montmul
-    __ sqdmulh(v5, __ T8H, v1, v3);
-    __ mulv(v17, __ T8H, v1, v3);
-    __ sqdmulh(v4, __ T8H, v0, v2);
-    __ mulv(v16, __ T8H, v0, v2);
-    __ sqdmulh(v6, __ T8H, v0, v3);
-    __ mulv(v18, __ T8H, v0, v3);
-    __ sqdmulh(v7, __ T8H, v1, v2);
-    __ mulv(v19, __ T8H, v1, v2);
-    __ mulv(v17, __ T8H, v17, v30);
-    __ mulv(v16, __ T8H, v16, v30);
-    __ mulv(v18, __ T8H, v18, v30);
-    __ mulv(v19, __ T8H, v19, v30);
-    __ sqdmulh(v17, __ T8H, v17, v31);
-    __ sqdmulh(v16, __ T8H, v16, v31);
-    __ sqdmulh(v18, __ T8H, v18, v31);
-    __ sqdmulh(v19, __ T8H, v19, v31);
-    __ shsubv(v17, __ T8H, v5, v17);
-    __ shsubv(v16, __ T8H, v4, v16);
-    __ shsubv(v18, __ T8H, v6, v18);
-    __ shsubv(v19, __ T8H, v7, v19);
-    __ sqdmulh(v5, __ T8H, v21, v23);
-    __ mulv(v1, __ T8H, v21, v23);
-    __ sqdmulh(v4, __ T8H, v20, v22);
-    __ mulv(v0, __ T8H, v20, v22);
-    __ sqdmulh(v6, __ T8H, v20, v23);
-    __ mulv(v2, __ T8H, v20, v23);
-    __ sqdmulh(v7, __ T8H, v21, v22);
-    __ mulv(v3, __ T8H, v21, v22);
-    __ mulv(v1, __ T8H, v1, v30);
-    __ mulv(v0, __ T8H, v0, v30);
-    __ mulv(v2, __ T8H, v2, v30);
-    __ mulv(v3, __ T8H, v3, v30);
-    __ sqdmulh(v1, __ T8H, v1, v31);
-    __ sqdmulh(v0, __ T8H, v0, v31);
-    __ sqdmulh(v2, __ T8H, v2, v31);
-    __ sqdmulh(v3, __ T8H, v3, v31);
-    __ shsubv(v1, __ T8H, v5, v1);
-    __ shsubv(v0, __ T8H, v4, v0);
-    __ shsubv(v2, __ T8H, v6, v2);
-    __ shsubv(v3, __ T8H, v7, v3);
-    __ sqdmulh(v5, __ T8H, v17, v28);
-    __ mulv(v17, __ T8H, v17, v28);
-    __ sqdmulh(v4, __ T8H, v1, v29);
-    __ mulv(v1, __ T8H, v1, v29);
-    __ mulv(v17, __ T8H, v17, v30);
-    __ mulv(v1, __ T8H, v1, v30);
-    __ sqdmulh(v17, __ T8H, v17, v31);
-    __ sqdmulh(v1, __ T8H, v1, v31);
-    __ shsubv(v17, __ T8H, v5, v17);
-    __ shsubv(v1, __ T8H, v4, v1);
-    __ addv(v16, __ T8H, v16, v17);
-    __ addv(v17, __ T8H, v18, v19);
-    __ addv(v18, __ T8H, v0, v1);
-    __ addv(v19, __ T8H, v2, v3);
-    __ sqdmulh(v5, __ T8H, v16, v27);
-    __ mulv(v0, __ T8H, v16, v27);
-    __ sqdmulh(v4, __ T8H, v17, v27);
-    __ mulv(v1, __ T8H, v17, v27);
-    __ sqdmulh(v6, __ T8H, v18, v27);
-    __ mulv(v2, __ T8H, v18, v27);
-    __ sqdmulh(v7, __ T8H, v19, v27);
-    __ mulv(v3, __ T8H, v19, v27);
-    __ mulv(v0, __ T8H, v0, v30);
-    __ mulv(v1, __ T8H, v1, v30);
-    __ mulv(v2, __ T8H, v2, v30);
-    __ mulv(v3, __ T8H, v3, v30);
-    __ sqdmulh(v0, __ T8H, v0, v31);
-    __ sqdmulh(v1, __ T8H, v1, v31);
-    __ sqdmulh(v2, __ T8H, v2, v31);
-    __ sqdmulh(v3, __ T8H, v3, v31);
-    __ shsubv(v0, __ T8H, v5, v0);
-    __ shsubv(v1, __ T8H, v4, v1);
-    __ shsubv(v2, __ T8H, v6, v2);
-    __ shsubv(v3, __ T8H, v7, v3);
-    __ st2(v0, v1, __ T8H, __ post(result, 32));
-    __ st2(v2, v3, __ T8H, __ post(result, 32));
-
-    __ cmp(result, limit);
-    __ br(Assembler::NE, kyberNttMult_loop);
-
-    __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
-    __ ret(lr);
-
-    return start;
-  }
-
-  void kyber_load80v0_v17(const Register a) {
-    __ ldpq(v0, v1, __ post(a, 32));
-    __ ldpq(v2, v3, __ post(a, 32));
-    __ ldpq(v4, v5, __ post(a, 32));
-    __ ldpq(v6, v7, __ post(a, 32));
-    __ ldpq(v16, v17, __ post(a, 32));
-  }
-
-  void kyber_load80v18_v27(const Register b) {
-    __ ldpq(v18, v19, __ post(b, 32));
-    __ ldpq(v20, v21, __ post(b, 32));
-    __ ldpq(v22, v23, __ post(b, 32));
-    __ ldpq(v24, v25, __ post(b, 32));
-    __ ldpq(v26, v27, __ post(b, 32));
-  }
-
-  void kyber_addv80() {
-    __ addv(v0, __ T8H, v18, v0);
-    __ addv(v1, __ T8H, v19, v1);
-    __ addv(v2, __ T8H, v20, v2);
-    __ addv(v3, __ T8H, v21, v3);
-    __ addv(v4, __ T8H, v22, v4);
-    __ addv(v5, __ T8H, v23, v5);
-    __ addv(v6, __ T8H, v24, v6);
-    __ addv(v7, __ T8H, v25, v7);
-    __ addv(v16, __ T8H, v26, v16);
-    __ addv(v17, __ T8H, v27, v17);
-  }
-
-  void kyber_addv_v31_80() {
-    __ addv(v0, __ T8H, v31, v0);
-    __ addv(v1, __ T8H, v31, v1);
-    __ addv(v2, __ T8H, v31, v2);
-    __ addv(v3, __ T8H, v31, v3);
-    __ addv(v4, __ T8H, v31, v4);
-    __ addv(v5, __ T8H, v31, v5);
-    __ addv(v6, __ T8H, v31, v6);
-    __ addv(v7, __ T8H, v31, v7);
-    __ addv(v16, __ T8H, v31, v16);
-    __ addv(v17, __ T8H, v31, v17);
-  }
-
-  void kyber_store80(const Register result) {
-    __ stpq(v0, v1, __ post(result, 32));
-    __ stpq(v2, v3, __ post(result, 32));
-    __ stpq(v4, v5, __ post(result, 32));
-    __ stpq(v6, v7, __ post(result, 32));
-    __ stpq(v16, v17, __ post(result, 32));
-  }
-
-  // Kyber add 2 polynomials.
-  // Implements
-  // static int implKyberAddPoly(short[] result, short[] a, short[] b) {}
-  //
-  // result (short[256]) = c_rarg0
-  // a (short[256]) = c_rarg1
-  // b (short[256]) = c_rarg2
-  address generate_kyberAddPoly_2() {
-
-    __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::kyberAddPoly_2_id;
-    StubCodeMark mark(this, stub_id);
-    address start = __ pc();
-    __ enter();
-
-    const Register result = c_rarg0;
-    const Register a = c_rarg1;
-    const Register b = c_rarg2;
-
-    const Register kyberConsts = r11;
-
-    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
-
-    __ add(kyberConsts, kyberConsts, 16);
-    __ ldr(v31, __ Q, kyberConsts);
-    kyber_load80v0_v17(a);
-    __ ldr(v28, __ Q, __ post(a, 16));
-    kyber_load80v18_v27(b);
-    __ ldr(v29, __ Q, __ post(b, 16));
-    kyber_addv80();
-    __ addv(v28, __ T8H, v28, v29);
-    kyber_addv_v31_80();
-    __ addv(v28, __ T8H, v28, v31);
-    kyber_store80(result);
-    __ str(v28, __ Q, __ post(result, 16));
-    kyber_load80v0_v17(a);
-    __ ldr(v28, __ Q, __ post(a, 16));
-    kyber_load80v18_v27(b);
-    __ ldr(v29, __ Q, __ post(b, 16));
-    kyber_addv80();
-    __ addv(v28, __ T8H, v28, v29);
-    kyber_addv_v31_80();
-    __ addv(v28, __ T8H, v28, v31);
-    kyber_store80(result);
-    __ str(v28, __ Q, __ post(result, 16));
-    kyber_load80v0_v17(a);
-    kyber_load80v18_v27(b);
-    kyber_addv80();
-    kyber_addv_v31_80();
-    kyber_store80(result);
-
-    __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
-    __ ret(lr);
-
-    return start;
-  }
-
-  // Kyber add 3 polynomials.
-  // Implements
-  // static int implKyberAddPoly(short[] result, short[] a, short[] b, short[] c) {}
-  //
-  // result (short[256]) = c_rarg0
-  // a (short[256]) = c_rarg1
-  // b (short[256]) = c_rarg2
-  // c (short[256]) = c_rarg3
-  address generate_kyberAddPoly_3() {
-
-    __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::kyberAddPoly_3_id;
-    StubCodeMark mark(this, stub_id);
-    address start = __ pc();
-    __ enter();
-
-    const Register result = c_rarg0;
-    const Register a = c_rarg1;
-    const Register b = c_rarg2;
-    const Register c = c_rarg3;
-
-    const Register kyberConsts = r11;
-
-    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
-
-    __ add(kyberConsts, kyberConsts, 16);
-    __ ldr(v31, __ Q, kyberConsts);
-    __ addv(v31, __ T8H, v31, v31);
-    kyber_load80v0_v17(a);
-    __ ldr(v28, __ Q, __ post(a, 16));
-    kyber_load80v18_v27(b);
-    __ ldr(v29, __ Q, __ post(b, 16));
-    kyber_addv80();
-    __ addv(v28, __ T8H, v28, v29);
-    kyber_load80v18_v27(c);
-    __ ldr(v29, __ Q, __ post(c, 16));
-    kyber_addv80();
-    __ addv(v28, __ T8H, v28, v29);
-    kyber_addv_v31_80();
-    __ addv(v28, __ T8H, v28, v31);
-    kyber_store80(result);
-    __ str(v28, __ Q, __ post(result, 16));
-    kyber_load80v0_v17(a);
-    __ ldr(v28, __ Q, __ post(a, 16));
-    kyber_load80v18_v27(b);
-    __ ldr(v29, __ Q, __ post(b, 16));
-    kyber_addv80();
-    __ addv(v28, __ T8H, v28, v29);
-    kyber_load80v18_v27(c);
-    __ ldr(v29, __ Q, __ post(c, 16));
-    kyber_addv80();
-    __ addv(v28, __ T8H, v28, v29);
-    kyber_addv_v31_80();
-    __ addv(v28, __ T8H, v28, v31);
-    kyber_store80(result);
-    __ str(v28, __ Q, __ post(result, 16));
-    kyber_load80v0_v17(a);
-    kyber_load80v18_v27(b);
-    kyber_addv80();
-    kyber_load80v18_v27(c);
-    kyber_addv80();
-    kyber_addv_v31_80();
-    kyber_store80(result);
-
-    __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
-    __ ret(lr);
-
-    return start;
-  }
-
-  // Kyber parse XOF output to polynomial coefficient candidates
-  // or decodePoly(12, ...).
-  // Implements
-  // static int implKyber12To16(
-  //         byte[] condensed, int index, short[] parsed, int parsedLength) {}
-  //
-  // (parsedLength or (parsedLength - 48) must be divisible by 64.)
-  //
-  // condensed (byte[]) = c_rarg0
-  // condensedIndex = c_rarg1
-  // parsed (short[112 or 256]) = c_rarg2
-  // parsedLength (112 or 256) = c_rarg3
-  address generate_kyber12To16() {
-    Label L_F00, L_loop, L_end;
-
-    __ BIND(L_F00);
-    __ emit_int64(0x0f000f000f000f00);
-    __ emit_int64(0x0f000f000f000f00);
-
-     __ align(CodeEntryAlignment);
-     StubGenStubId stub_id = StubGenStubId::kyber12To16_id;
-     StubCodeMark mark(this, stub_id);
-     address start = __ pc();
-     __ enter();
-
-    const Register condensed = c_rarg0;
-    const Register condensedOffs = c_rarg1;
-    const Register parsed = c_rarg2;
-    const Register parsedLength = c_rarg3;
-
-    const Register tmpAddr = r11;
-
-    __ adr(tmpAddr, L_F00);
-    __ ldr(v31, __ Q, tmpAddr);
-    __ add(condensed, condensed, condensedOffs);
-
-    __ BIND(L_loop);
-    __ ld3(v24, v25, v26, __ T16B, __ post(condensed, 48));
-    __ ld3(v27, v28, v29, __ T16B, __ post(condensed, 48));
-
-    __ ushll(v0, __ T8H, v24, __ T8B, 0);
-    __ ushll2(v1, __ T8H, v24, __ T16B, 0);
-    __ ushll(v2, __ T8H, v25, __ T8B, 0);
-    __ ushll2(v3, __ T8H, v25, __ T16B, 0);
-    __ ushll(v4, __ T8H, v25, __ T8B, 0);
-    __ ushll2(v5, __ T8H, v25, __ T16B, 0);
-    __ ushll(v16, __ T8H, v27, __ T8B, 0);
-    __ ushll2(v17, __ T8H, v27, __ T16B, 0);
-    __ ushll(v18, __ T8H, v28, __ T8B, 0);
-    __ ushll2(v19, __ T8H, v28, __ T16B, 0);
-    __ ushll(v20, __ T8H, v28, __ T8B, 0);
-    __ ushll2(v21, __ T8H, v28, __ T16B, 0);
-    __ shl(v2, __ T8H, v2, 8);
-    __ shl(v3, __ T8H, v3, 8);
-    __ shl(v18, __ T8H, v18, 8);
-    __ shl(v19, __ T8H, v19, 8);
-    __ ushll(v6, __ T8H, v26, __ T8B, 4);
-    __ ushll2(v7, __ T8H, v26, __ T16B, 4);
-    __ ushll(v22, __ T8H, v29, __ T8B, 4);
-    __ ushll2(v23, __ T8H, v29, __ T16B, 4);
-    __ andr(v2, __ T16B, v2, v31);
-    __ andr(v3, __ T16B, v3, v31);
-    __ ushr(v4, __ T8H, v4, 4);
-    __ ushr(v5, __ T8H, v5, 4);
-    __ andr(v18, __ T16B, v18, v31);
-    __ andr(v19, __ T16B, v19, v31);
-    __ ushr(v20, __ T8H, v20, 4);
-    __ ushr(v21, __ T8H, v21, 4);
-    __ addv(v0, __ T8H, v0, v2);
-    __ addv(v2, __ T8H, v1, v3);
-    __ addv(v1, __ T8H, v4, v6);
-    __ addv(v3, __ T8H, v5, v7);
-    __ addv(v16, __ T8H, v16, v18);
-    __ addv(v18, __ T8H, v17, v19);
-    __ addv(v17, __ T8H, v20, v22);
-    __ addv(v19, __ T8H, v21, v23);
-
-    __ st2(v0, v1, __ T8H, __ post(parsed, 32));
-    __ st2(v2, v3, __ T8H, __ post(parsed, 32));
-    __ st2(v16, v17, __ T8H, __ post(parsed, 32));
-    __ st2(v18, v19, __ T8H, __ post(parsed, 32));
-
-    __ sub(parsedLength, parsedLength, 64);
-    __ cmp(parsedLength, (u1)64);
-    __ br(Assembler::GE, L_loop);
-    __ cbz(parsedLength, L_end);
-
-    __ ld3(v24, v25, v26, __ T16B, __ post(condensed, 48));
-    __ ld3(v27, v28, v29, __ T8B, condensed);
-
-    __ ushll(v0, __ T8H, v24, __ T8B, 0);
-    __ ushll2(v1, __ T8H, v24, __ T16B, 0);
-    __ ushll(v2, __ T8H, v25, __ T8B, 0);
-    __ ushll2(v3, __ T8H, v25, __ T16B, 0);
-    __ ushll(v4, __ T8H, v25, __ T8B, 0);
-    __ ushll2(v5, __ T8H, v25, __ T16B, 0);
-    __ ushll(v16, __ T8H, v27, __ T8B, 0);
-    __ ushll(v18, __ T8H, v28, __ T8B, 0);
-    __ ushll(v20, __ T8H, v28, __ T8B, 0);
-    __ shl(v2, __ T8H, v2, 8);
-    __ shl(v3, __ T8H, v3, 8);
-    __ shl(v18, __ T8H, v18, 8);
-    __ ushll(v6, __ T8H, v26, __ T8B, 4);
-    __ ushll2(v7, __ T8H, v26, __ T16B, 4);
-    __ ushll(v22, __ T8H, v29, __ T8B, 4);
-    __ andr(v2, __ T16B, v2, v31);
-    __ andr(v3, __ T16B, v3, v31);
-    __ ushr(v4, __ T8H, v4, 4);
-    __ ushr(v5, __ T8H, v5, 4);
-    __ andr(v18, __ T16B, v18, v31);
-    __ ushr(v20, __ T8H, v20, 4);
-    __ addv(v0, __ T8H, v0, v2);
-    __ addv(v2, __ T8H, v1, v3);
-    __ addv(v1, __ T8H, v4, v6);
-    __ addv(v3, __ T8H, v5, v7);
-    __ addv(v16, __ T8H, v16, v18);
-    __ addv(v17, __ T8H, v20, v22);
-
-    __ st2(v0, v1, __ T8H, __ post(parsed, 32));
-    __ st2(v2, v3, __ T8H, __ post(parsed, 32));
-    __ st2(v16, v17, __ T8H, __ post(parsed, 32));
-
-    __ BIND(L_end);
-
-    __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
-    __ ret(lr);
-
-    return start;
-  }
-
-  void kyber_sqdmulh80() {
-    kyber_sqdmulh32(0);
-    kyber_sqdmulh32(4);
-    __ sqdmulh(v26, __ T8H, v16, v31);
-    __ sqdmulh(v27, __ T8H, v17, v31);
-  }
-
-  void kyber_sshr80() {
-    kyber_sshr32(18);
-    kyber_sshr32(22);
-    __ sshr(v26, __ T8H, v26, 11);
-    __ sshr(v27, __ T8H, v27, 11);
-  }
-
-  void kyber_mlsv80() {
-    kyber_mlsv32(0);
-    kyber_mlsv32(4);
-    __ mlsv(v16, __ T8H, v26, v30);
-    __ mlsv(v17, __ T8H, v27, v30);
-  }
-
-  // Kyber barrett reduce function.
-  // Implements
-  // static int implKyberBarrettReduce(short[] coeffs) {}
-  //
-  // coeffs (short[256]) = c_rarg0
-  address generate_kyberBarrettReduce() {
-
-    __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::kyberBarrettReduce_id;
-    StubCodeMark mark(this, stub_id);
-    address start = __ pc();
-    __ enter();
-
-    const Register coeffs = c_rarg0;
-
-    const Register kyberConsts = r10;
-    const Register result = r11;
-
-    __ add(result, coeffs, 0);
-    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
-
-    __ add(kyberConsts, kyberConsts, 16);
-    __ ldpq(v30, v31, kyberConsts);
-
-    kyber_load80v0_v17(coeffs);
-    __ ldr(v28, __ Q, __ post(coeffs, 16));
-    kyber_sqdmulh80();
-    __ sqdmulh(v29, __ T8H, v28, v31);
-    kyber_sshr80();
-    __ sshr(v29, __ T8H, v29, 11);
-    kyber_mlsv80();
-    __ mlsv(v28, __ T8H, v29, v30);
-    kyber_store80(result);
-    __ str(v28, __ Q, __ post(result, 16));
-
-    kyber_load80v0_v17(coeffs);
-    __ ldr(v28, __ Q, __ post(coeffs, 16));
-    kyber_sqdmulh80();     __ sqdmulh(v29, __ T8H, v28, v31);
-    kyber_sshr80();
-    __ sshr(v29, __ T8H, v29, 11);
-    kyber_mlsv80();
-    __ mlsv(v28, __ T8H, v29, v30);
-    kyber_store80(result);
-    __ str(v28, __ Q, __ post(result, 16));
-
-    kyber_load80v0_v17(coeffs);
-    kyber_sqdmulh80();
-    kyber_sshr80();
-    kyber_mlsv80();
-    kyber_store80(result);
-
-    __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ mov(r0, zr); // return 0
-    __ ret(lr);
-
-    return start;
-  }
-
   // Helpers to schedule parallel operation bundles across vector
   // register sequences of size 2, 4 or 8.
 
@@ -6177,15 +4658,24 @@ class StubGenerator: public StubCodeGenerator {
   template<int N>
   void vs_addv(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
                const VSeq<N>& v1, const VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ addv(v[i], T, v1[i], v2[i]);
     }
-
   }
 
   template<int N>
   void vs_subv(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
                const VSeq<N>& v1, const VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ subv(v[i], T, v1[i], v2[i]);
     }
@@ -6194,6 +4684,11 @@ class StubGenerator: public StubCodeGenerator {
   template<int N>
   void vs_mulv(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
                const VSeq<N>& v1, const VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ mulv(v[i], T, v1[i], v2[i]);
     }
@@ -6201,6 +4696,10 @@ class StubGenerator: public StubCodeGenerator {
 
   template<int N>
   void vs_negr(const VSeq<N>& v, Assembler::SIMD_Arrangement T, const VSeq<N>& v1) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ negr(v[i], T, v1[i]);
     }
@@ -6209,6 +4708,10 @@ class StubGenerator: public StubCodeGenerator {
   template<int N>
   void vs_sshr(const VSeq<N>& v, Assembler::SIMD_Arrangement T,
                const VSeq<N>& v1, int shift) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ sshr(v[i], T, v1[i], shift);
     }
@@ -6216,6 +4719,11 @@ class StubGenerator: public StubCodeGenerator {
 
   template<int N>
   void vs_andr(const VSeq<N>& v, const VSeq<N>& v1, const VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ andr(v[i], __ T16B, v1[i], v2[i]);
     }
@@ -6223,15 +4731,48 @@ class StubGenerator: public StubCodeGenerator {
 
   template<int N>
   void vs_orr(const VSeq<N>& v, const VSeq<N>& v1, const VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ orr(v[i], __ T16B, v1[i], v2[i]);
     }
   }
 
   template<int N>
-    void vs_notr(const VSeq<N>& v, const VSeq<N>& v1) {
+  void vs_notr(const VSeq<N>& v, const VSeq<N>& v1) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
     for (int i = 0; i < N; i++) {
       __ notr(v[i], __ T16B, v1[i]);
+    }
+  }
+
+  template<int N>
+  void vs_sqdmulh(const VSeq<N>& v, Assembler::SIMD_Arrangement T, const VSeq<N>& v1, const VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
+    for (int i = 0; i < N; i++) {
+      __ sqdmulh(v[i], T, v1[i], v2[i]);
+    }
+  }
+
+  template<int N>
+  void vs_mlsv(const VSeq<N>& v, Assembler::SIMD_Arrangement T, const VSeq<N>& v1, VSeq<N>& v2) {
+    // output must not be constant
+    assert(N == 1  || !v.is_constant(), "cannot output multiple values to a constant vector");
+    // output cannot overwrite pending inputs
+    assert(!vs_write_before_read(v, v1), "output overwrites input");
+    assert(!vs_write_before_read(v, v2), "output overwrites input");
+    for (int i = 0; i < N; i++) {
+      __ mlsv(v[i], T, v1[i], v2[i]);
     }
   }
 
@@ -6250,6 +4791,7 @@ class StubGenerator: public StubCodeGenerator {
   // in base using post-increment addressing
   template<int N>
   void vs_ldpq_post(const VSeq<N>& v, Register base) {
+    static_assert((N & (N - 1)) == 0, "sequence length must be even");
     for (int i = 0; i < N; i += 2) {
       __ ldpq(v[i], v[i+1], __ post(base, 32));
     }
@@ -6260,8 +4802,52 @@ class StubGenerator: public StubCodeGenerator {
   // supplied in base using post-increment addressing
   template<int N>
   void vs_stpq_post(const VSeq<N>& v, Register base) {
+    static_assert((N & (N - 1)) == 0, "sequence length must be even");
     for (int i = 0; i < N; i += 2) {
       __ stpq(v[i], v[i+1], __ post(base, 32));
+    }
+  }
+
+  // load N/2 pairs of quadword values from memory de-interleaved into
+  // N vector registers 2 at a time via the address supplied in base
+  // using post-increment addressing.
+  template<int N>
+  void vs_ld2_post(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base) {
+    static_assert((N & (N - 1)) == 0, "sequence length must be even");
+    for (int i = 0; i < N; i += 2) {
+      __ ld2(v[i], v[i+1], T, __ post(base, 32));
+    }
+  }
+
+  // store N vector registers interleaved into N/2 pairs of quadword
+  // memory locations via the address supplied in base using
+  // post-increment addressing.
+  template<int N>
+  void vs_st2_post(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base) {
+    static_assert((N & (N - 1)) == 0, "sequence length must be even");
+    for (int i = 0; i < N; i += 2) {
+      __ st2(v[i], v[i+1], T, __ post(base, 32));
+    }
+  }
+
+  // load N quadword values from memory de-interleaved into N vector
+  // registers 3 elements at a time via the address supplied in base.
+  template<int N>
+  void vs_ld3(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base) {
+    static_assert(N == ((N / 3) * 3), "sequence length must be multiple of 3");
+    for (int i = 0; i < N; i += 3) {
+      __ ld3(v[i], v[i+1], v[i+2], T, base);
+    }
+  }
+
+  // load N quadword values from memory de-interleaved into N vector
+  // registers 3 elements at a time via the address supplied in base
+  // using post-increment addressing.
+  template<int N>
+  void vs_ld3_post(const VSeq<N>& v, Assembler::SIMD_Arrangement T, Register base) {
+    static_assert(N == ((N / 3) * 3), "sequence length must be multiple of 3");
+    for (int i = 0; i < N; i += 3) {
+      __ ld3(v[i], v[i+1], v[i+2], T, __ post(base, 48));
     }
   }
 
@@ -6337,23 +4923,29 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  // Helper routines for various flavours of dilithium montgomery
-  // multiply
+  // Helper routines for various flavours of montgomery multiply
 
-  // Perform 16 32-bit Montgomery multiplications in parallel
-  // See the montMul() method of the sun.security.provider.ML_DSA class.
+  // Perform 16 32-bit (4x4S) or 32 16-bit (4 x 8H) Montgomery
+  // multiplications in parallel
   //
-  // Computes 4x4S results
-  //    a = b * c * 2^-32 mod MONT_Q
-  // Inputs:  vb, vc - 4x4S vector register sequences
-  //          vq - 2x4S constants <MONT_Q, MONT_Q_INV_MOD_R>
-  // Temps:   vtmp - 4x4S vector sequence trashed after call
-  // Outputs: va - 4x4S vector register sequences
+
+  // See the montMul() method of the sun.security.provider.ML_DSA
+  // class.
+  //
+  // Computes 4x4S results or 8x8H results
+  //    a = b * c * 2^MONT_R_BITS mod MONT_Q
+  // Inputs:  vb, vc - 4x4S or 4x8H vector register sequences
+  //          vq - 2x4S or 2x8H constants <MONT_Q, MONT_Q_INV_MOD_R>
+  // Temps:   vtmp - 4x4S or 4x8H vector sequence trashed after call
+  // Outputs: va - 4x4S or 4x8H vector register sequences
   // vb, vc, vtmp and vq must all be disjoint
   // va must be disjoint from all other inputs/temps or must equal vc
-  // n.b. MONT_R_BITS is 32, so the right shift by it is implicit.
-  void dilithium_montmul16(const VSeq<4>& va, const VSeq<4>& vb, const VSeq<4>& vc,
-                    const VSeq<4>& vtmp, const VSeq<2>& vq) {
+  // va must have a non-zero delta i.e. it must not be a constant vseq.
+  // n.b. MONT_R_BITS is 16 or 32, so the right shift by it is implicit.
+  void vs_montmul4(const VSeq<4>& va, const VSeq<4>& vb, const VSeq<4>& vc,
+                   Assembler::SIMD_Arrangement T,
+                   const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    assert (T == __ T4S || T == __ T8H, "invalid arrangement for montmul");
     assert(vs_disjoint(vb, vc), "vb and vc overlap");
     assert(vs_disjoint(vb, vq), "vb and vq overlap");
     assert(vs_disjoint(vb, vtmp), "vb and vtmp overlap");
@@ -6367,40 +4959,106 @@ class StubGenerator: public StubCodeGenerator {
     assert(vs_disjoint(va, vb), "va and vb overlap");
     assert(vs_disjoint(va, vq), "va and vq overlap");
     assert(vs_disjoint(va, vtmp), "va and vtmp overlap");
+    assert(!va.is_constant(), "output vector must identify 4 different registers");
 
     // schedule 4 streams of instructions across the vector sequences
     for (int i = 0; i < 4; i++) {
-      __ sqdmulh(vtmp[i], __ T4S, vb[i], vc[i]); // aHigh = hi32(2 * b * c)
-      __ mulv(va[i], __ T4S, vb[i], vc[i]);    // aLow = lo32(b * c)
+      __ sqdmulh(vtmp[i], T, vb[i], vc[i]); // aHigh = hi32(2 * b * c)
+      __ mulv(va[i], T, vb[i], vc[i]);    // aLow = lo32(b * c)
     }
 
     for (int i = 0; i < 4; i++) {
-      __ mulv(va[i], __ T4S, va[i], vq[0]);     // m = aLow * qinv
+      __ mulv(va[i], T, va[i], vq[0]);     // m = aLow * qinv
     }
 
     for (int i = 0; i < 4; i++) {
-      __ sqdmulh(va[i], __ T4S, va[i], vq[1]);  // n = hi32(2 * m * q)
+      __ sqdmulh(va[i], T, va[i], vq[1]);  // n = hi32(2 * m * q)
     }
 
     for (int i = 0; i < 4; i++) {
-      __ shsubv(va[i], __ T4S, vtmp[i], va[i]);   // a = (aHigh - n) / 2
+      __ shsubv(va[i], T, vtmp[i], va[i]);   // a = (aHigh - n) / 2
     }
   }
 
-  // Perform 2x16 32-bit Montgomery multiplications in parallel
-  // See the montMul() method of the sun.security.provider.ML_DSA class.
+  // Perform 8 32-bit (4x4S) or 16 16-bit (2 x 8H) Montgomery
+  // multiplications in parallel
   //
-  // Computes 8x4S results
-  //    a = b * c * 2^-32 mod MONT_Q
-  // Inputs:  vb, vc - 8x4S vector register sequences
-  //          vq - 2x4S constants <MONT_Q, MONT_Q_INV_MOD_R>
-  // Temps:   vtmp - 4x4S vector sequence trashed after call
-  // Outputs: va - 8x4S vector register sequences
+
+  // See the montMul() method of the sun.security.provider.ML_DSA
+  // class.
+  //
+  // Computes 4x4S results or 8x8H results
+  //    a = b * c * 2^MONT_R_BITS mod MONT_Q
+  // Inputs:  vb, vc - 4x4S or 4x8H vector register sequences
+  //          vq - 2x4S or 2x8H constants <MONT_Q, MONT_Q_INV_MOD_R>
+  // Temps:   vtmp - 4x4S or 4x8H vector sequence trashed after call
+  // Outputs: va - 4x4S or 4x8H vector register sequences
   // vb, vc, vtmp and vq must all be disjoint
   // va must be disjoint from all other inputs/temps or must equal vc
-  // n.b. MONT_R_BITS is 32, so the right shift by it is implicit.
-  void vs_montmul32(const VSeq<8>& va, const VSeq<8>& vb, const VSeq<8>& vc,
-                    const VSeq<4>& vtmp, const VSeq<2>& vq) {
+  // va must have a non-zero delta i.e. it must not be a constant vseq.
+  // n.b. MONT_R_BITS is 16 or 32, so the right shift by it is implicit.
+  void vs_montmul2(const VSeq<2>& va, const VSeq<2>& vb, const VSeq<2>& vc,
+                   Assembler::SIMD_Arrangement T,
+                   const VSeq<2>& vtmp, const VSeq<2>& vq) {
+    assert (T == __ T4S || T == __ T8H, "invalid arrangement for montmul");
+    assert(vs_disjoint(vb, vc), "vb and vc overlap");
+    assert(vs_disjoint(vb, vq), "vb and vq overlap");
+    assert(vs_disjoint(vb, vtmp), "vb and vtmp overlap");
+
+    assert(vs_disjoint(vc, vq), "vc and vq overlap");
+    assert(vs_disjoint(vc, vtmp), "vc and vtmp overlap");
+
+    assert(vs_disjoint(vq, vtmp), "vq and vtmp overlap");
+
+    assert(vs_disjoint(va, vc) || vs_same(va, vc), "va and vc neither disjoint nor equal");
+    assert(vs_disjoint(va, vb), "va and vb overlap");
+    assert(vs_disjoint(va, vq), "va and vq overlap");
+    assert(vs_disjoint(va, vtmp), "va and vtmp overlap");
+    assert(!va.is_constant(), "output vector must identify 2 different registers");
+
+    // schedule 2 streams of i<nstructions across the vector sequences
+    for (int i = 0; i < 2; i++) {
+      __ sqdmulh(vtmp[i], T, vb[i], vc[i]); // aHigh = hi32(2 * b * c)
+      __ mulv(va[i], T, vb[i], vc[i]);    // aLow = lo32(b * c)
+    }
+
+    for (int i = 0; i < 2; i++) {
+      __ mulv(va[i], T, va[i], vq[0]);     // m = aLow * qinv
+    }
+
+    for (int i = 0; i < 2; i++) {
+      __ sqdmulh(va[i], T, va[i], vq[1]);  // n = hi32(2 * m * q)
+    }
+
+    for (int i = 0; i < 2; i++) {
+      __ shsubv(va[i], T, vtmp[i], va[i]);   // a = (aHigh - n) / 2
+    }
+  }
+
+  // dilithium-specific montmul helper routines that generate parallel
+  // code for, respectively, a single 4x4s vector sequence montmul or
+  // two such multiplies in a row.
+
+
+  // Perform 16 32-bit Montgomery multiplications in parallel
+
+  void dilithium_montmul16(const VSeq<4>& va, const VSeq<4>& vb, const VSeq<4>& vc,
+                           const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    // Use the helper routine to schedule a 4x4S montgomery multiply.
+    // It will assert that the register use is valid
+    vs_montmul4(va, vb, vc, __ T4S, vtmp, vq);
+  }
+
+  // Perform 2x16 32-bit Montgomery multiplications in parallel
+
+  void dilithium_montmul32(const VSeq<8>& va, const VSeq<8>& vb, const VSeq<8>& vc,
+                           const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    // Schedule two successive 4x4S multiplies via the montmul helper
+    // on the front and back halves of va, vb and vc. The helper will
+    // assert that the register use has no overlap conflicts on each
+    // individual call but we also need to ensure that the necessary
+    // disjoint/equality constraints are met across both calls.
+
     // vb, vc, vtmp and vq must be disjoint. va must either be
     // disjoint from all other registers or equal vc
 
@@ -6418,8 +5076,8 @@ class StubGenerator: public StubCodeGenerator {
     assert(vs_disjoint(va, vq), "va and vq overlap");
     assert(vs_disjoint(va, vtmp), "va and vtmp overlap");
 
-    // we need to multiply the front and back halves of each sequence
-    // 4x4S at a time because
+    // we multiply the front and back halves of each sequence 4 at a
+    // time because
     //
     // 1) we are currently only able to get 4-way instruction
     // parallelism at best
@@ -6428,8 +5086,8 @@ class StubGenerator: public StubCodeGenerator {
     // scratch registers to hold intermediate results so vtmp can only
     // be a VSeq<4> which means we only have 4 scratch slots
 
-    dilithium_montmul16(vs_front(va), vs_front(vb), vs_front(vc), vtmp, vq);
-    dilithium_montmul16(vs_back(va), vs_back(vb), vs_back(vc), vtmp, vq);
+    vs_montmul4(vs_front(va), vs_front(vb), vs_front(vc), __ T4S, vtmp, vq);
+    vs_montmul4(vs_back(va), vs_back(vb), vs_back(vc), __ T4S, vtmp, vq);
   }
 
   // perform combined montmul then add/sub on 4x4S vectors
@@ -6502,7 +5160,7 @@ class StubGenerator: public StubCodeGenerator {
         // load next 8x4S inputs == b
         vs_ldpq_post(vs2, zetas);
         // compute a == c2 * b mod MONT_Q
-        vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+        dilithium_montmul32(vs2, vs1, vs2, vtmp, vq);
         // load 8x4s coefficients via first start pos == c1
         vs_ldpq_indexed(vs1, coeffs, c1Start, offsets);
         // compute a1 =  c1 + a
@@ -6556,8 +5214,8 @@ class StubGenerator: public StubCodeGenerator {
     VSeq<8> vs1(0), vs2(16), vs3(24);  // 3 sets of 8x4s inputs/outputs
     VSeq<4> vtmp = vs_front(vs3);         // n.b. tmp registers overlap vs3
     VSeq<2> vq(30);                    // n.b. constants overlap vs3
-    int offsets[4] = {0, 32, 64, 96};
-    int offsets1[8] = {16, 48, 80, 112, 144, 176, 208, 240 };
+    int offsets[4] = { 0, 32, 64, 96};
+    int offsets1[8] = { 16, 48, 80, 112, 144, 176, 208, 240 };
     int offsets2[8] = { 0, 32, 64, 96, 128, 160, 192, 224 };
     __ add(result, coeffs, 0);
     __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
@@ -6583,7 +5241,7 @@ class StubGenerator: public StubCodeGenerator {
       // load next 32 (8x4S) inputs = b
       vs_ldpq_post(vs2, zetas);
       // a = b montul c1
-      vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+      dilithium_montmul32(vs2, vs1, vs2, vtmp, vq);
       // load 32 (8x4S) coefficients via second offsets = c2
       vs_ldr_indexed(vs1, __ Q, coeffs, i, offsets2);
       // add/sub with result of multiply
@@ -6715,7 +5373,7 @@ class StubGenerator: public StubCodeGenerator {
         // load b next 32 (8x4S) inputs
         vs_ldpq_post(vs2, zetas);
         // a = a1 montmul b
-        vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+        dilithium_montmul32(vs2, vs1, vs2, vtmp, vq);
         // save a relative to second start index
         vs_stpq_indexed(vs2, coeffs, c2Start, offsets);
 
@@ -6833,7 +5491,7 @@ class StubGenerator: public StubCodeGenerator {
       // reload constants q, qinv -- they were clobbered earlier
       vs_ldpq(vq, dilithiumConsts); // qInv, q
       // compute a1 = b montmul c
-      vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+      dilithium_montmul32(vs2, vs1, vs2, vtmp, vq);
       // store a1 32 (8x4S) coefficients via second offsets
       vs_str_indexed(vs2, __ Q, coeffs, i, offsets2);
     }
@@ -6897,9 +5555,9 @@ class StubGenerator: public StubCodeGenerator {
     // c load 32 (8x4S) next inputs from poly2
     vs_ldpq_post(vs2, poly2);
     // compute a = b montmul c
-    vs_montmul32(vs2, vs1, vs2, vtmp, vq);
+    dilithium_montmul32(vs2, vs1, vs2, vtmp, vq);
     // compute a = rsquare montmul a
-    vs_montmul32(vs2, vrsquare, vs2, vtmp, vq);
+    dilithium_montmul32(vs2, vrsquare, vs2, vtmp, vq);
     // save a 32 (8x4S) results
     vs_stpq_post(vs2, result);
 
@@ -6960,7 +5618,7 @@ class StubGenerator: public StubCodeGenerator {
     // load next 32 inputs
     vs_ldpq_post(vs2, coeffs);
     // mont mul by constant
-    vs_montmul32(vs2, vconst, vs2, vtmp, vq);
+    dilithium_montmul32(vs2, vconst, vs2, vtmp, vq);
     // write next 32 results
     vs_stpq_post(vs2, result);
 
@@ -7131,6 +5789,1086 @@ class StubGenerator: public StubCodeGenerator {
     return start;
 
   }
+
+  // Perform 16 16-bit Montgomery multiplications in parallel
+
+  void kyber_montmul16(const VSeq<2>& va, const VSeq<2>& vb, const VSeq<2>& vc,
+                       const VSeq<2>& vtmp, const VSeq<2>& vq) {
+    // Use the helper routine to schedule a 2x8H montgomery multiply.
+    // It will assert that the register use is valid
+    vs_montmul2(va, vb, vc, __ T8H, vtmp, vq);
+  }
+
+  // Perform 32 16-bit Montgomery multiplications in parallel
+
+  void kyber_montmul32(const VSeq<4>& va, const VSeq<4>& vb, const VSeq<4>& vc,
+                       const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    // Use the helper routine to schedule a 4x8H montgomery multiply.
+    // It will assert that the register use is valid
+    vs_montmul4(va, vb, vc, __ T8H, vtmp, vq);
+  }
+
+  // Perform 64 16-bit Montgomery multiplications in parallel
+
+  void kyber_montmul64(const VSeq<8>& va, const VSeq<8>& vb, const VSeq<8>& vc,
+                       const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    // Schedule two successive 4x8H multiplies via the montmul helper
+    // on the front and back halves of va, vb and vc. The helper will
+    // assert that the register use has no overlap conflicts on each
+    // individual call but we also need to ensure that the necessary
+    // disjoint/equality constraints are met across both calls.
+
+    // vb, vc, vtmp and vq must be disjoint. va must either be
+    // disjoint from all other registers or equal vc
+
+    assert(vs_disjoint(vb, vc), "vb and vc overlap");
+    assert(vs_disjoint(vb, vq), "vb and vq overlap");
+    assert(vs_disjoint(vb, vtmp), "vb and vtmp overlap");
+
+    assert(vs_disjoint(vc, vq), "vc and vq overlap");
+    assert(vs_disjoint(vc, vtmp), "vc and vtmp overlap");
+
+    assert(vs_disjoint(vq, vtmp), "vq and vtmp overlap");
+
+    assert(vs_disjoint(va, vc) || vs_same(va, vc), "va and vc neither disjoint nor equal");
+    assert(vs_disjoint(va, vb), "va and vb overlap");
+    assert(vs_disjoint(va, vq), "va and vq overlap");
+    assert(vs_disjoint(va, vtmp), "va and vtmp overlap");
+
+    // we multiply the front and back halves of each sequence 4 at a
+    // time because
+    //
+    // 1) we are currently only able to get 4-way instruction
+    // parallelism at best
+    //
+    // 2) we need registers for the constants in vq and temporary
+    // scratch registers to hold intermediate results so vtmp can only
+    // be a VSeq<4> which means we only have 4 scratch slots
+
+    vs_montmul4(vs_front(va), vs_front(vb), vs_front(vc), __ T8H, vtmp, vq);
+    vs_montmul4(vs_back(va), vs_back(vb), vs_back(vc), __ T8H, vtmp, vq);
+  }
+
+  void kyber_montmul32_sub_add(const VSeq<4>& va0, const VSeq<4>& va1, const VSeq<4>& vc,
+                               const VSeq<4>& vtmp, const VSeq<2>& vq) {
+    // compute a = montmul(a1, c)
+    kyber_montmul32(vc, va1, vc, vtmp, vq);
+    // ouptut a1 = a0 - a
+    vs_subv(va1, __ T8H, va0, vc);
+    //    and a0 = a0 + a
+    vs_addv(va0, __ T8H, va0, vc);
+  }
+
+  void kyber_sub_add_montmul32(const VSeq<4>& va0, const VSeq<4>& va1, const VSeq<4>& vb,
+                               const VSeq<4>& vtmp1, const VSeq<4>& vtmp2, const VSeq<2>& vq) {
+    // compute c = a0 - a1
+    vs_subv(vtmp1, __ T8H, va0, va1);
+    // output a0 = a0 + a1
+    vs_addv(va0, __ T8H, va0, va1);
+    // output a1 = b montmul c
+    kyber_montmul32(va1, vtmp1, vb, vtmp2, vq);
+  }
+
+  void kyber_load64coeffs(const VSeq<8>& v, Register coeffs) {
+    vs_ldpq_post(v, coeffs);
+  }
+
+  void kyber_load64zetas(const VSeq<8>& v, Register zetas) {
+    vs_ldpq_post(v, zetas);
+  }
+
+  void kyber_load32zetas(const VSeq<4>& v, Register zetas) {
+    vs_ldpq_post(v, zetas);
+  }
+
+  void kyber_store64coeffs(VSeq<8> v, Register tmpAddr) {
+    vs_stpq_post(v, tmpAddr);
+  }
+
+  // Kyber NTT function.
+  // Implements
+  // static int implKyberNtt(short[] poly, short[] ntt_zetas) {}
+  //
+  // coeffs (short[256]) = c_rarg0
+  // ntt_zetas (short[256]) = c_rarg1
+  address generate_kyberNtt() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::kyberNtt_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+    const Register zetas = c_rarg1;
+
+    const Register kyberConsts = r10;
+    const Register tmpAddr = r11;
+
+    VSeq<8> vs1(0), vs2(16), vs3(24);  // 3 sets of 8x8H inputs/outputs
+    VSeq<4> vtmp = vs_front(vs3);      // n.b. tmp registers overlap vs3
+    VSeq<2> vq(30);                    // n.b. constants overlap vs3
+
+
+    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+    // load the montmul constants
+    vs_ldpq(vq, kyberConsts);
+
+    // Each level corresponds to an iteration of the outermost loop of the
+    // Java method seilerNTT(int[] coeffs). There are some differences
+    // from what is done in the seilerNTT() method, though:
+    // 1. The computation is using 16-bit signed values, we do not convert them
+    // to ints here.
+    // 2. The zetas are delivered in a bigger array, 128 zetas are stored in
+    // this array for each level, it is easier that way to fill up the vector
+    // registers.
+    // 3. In the seilerNTT() method we use R = 2^20 for the Montgomery
+    // multiplications (this is because that way there should not be any
+    // overflow during the inverse NTT computation), here we usr R = 2^16 so
+    // that we can use the 16-bit arithmetic in the vector unit.
+    //
+    // On each level, we fill up the vector registers in such a way that the
+    // array elements that need to be multiplied by the zetas be in one
+    // set of vector registers while the corresponding ones that don't need to
+    // be multiplied, in another set. We can do 32 Montgomery multiplications
+    // in parallel, using 12 vector registers interleaving the steps of 4
+    // identical computations, each done on 8 16-bit values per register.
+    // level 0
+    __ add(tmpAddr, coeffs, 256);
+    kyber_load64coeffs(vs1, tmpAddr);
+    kyber_load64zetas(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 0);
+    kyber_load64coeffs(vs1, tmpAddr);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 0);
+    vs_stpq_post(vs1, tmpAddr);
+    __ add(tmpAddr, coeffs, 256);
+    vs_stpq_post(vs3, tmpAddr);
+    // restore montmul constants
+    vs_ldpq(vq, kyberConsts);
+    kyber_load64coeffs(vs1, tmpAddr);
+    kyber_load64zetas(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 128);
+    kyber_load64coeffs(vs1, tmpAddr);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 128);
+    kyber_store64coeffs(vs1, tmpAddr);
+    __ add(tmpAddr, coeffs, 384);
+    kyber_store64coeffs(vs3, tmpAddr);
+
+    // level 1
+    // restore montmul constants
+    vs_ldpq(vq, kyberConsts);
+    __ add(tmpAddr, coeffs, 128);
+    kyber_load64coeffs(vs1, tmpAddr);
+    kyber_load64zetas(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 0);
+    kyber_load64coeffs(vs1, tmpAddr);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 0);
+    kyber_store64coeffs(vs1, tmpAddr);
+    kyber_store64coeffs(vs3, tmpAddr);
+    vs_ldpq(vq, kyberConsts);
+    __ add(tmpAddr, coeffs, 384);
+    kyber_load64coeffs(vs1, tmpAddr);
+    kyber_load64zetas(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 256);
+    kyber_load64coeffs(vs1, tmpAddr);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 256);
+    kyber_store64coeffs(vs1, tmpAddr);
+    kyber_store64coeffs(vs3, tmpAddr);
+
+    // level 2
+    vs_ldpq(vq, kyberConsts);
+    int offsets1[4] = { 0, 32, 128, 160 };
+    vs_ldpq_indexed(vs1, coeffs, 64, offsets1);
+    kyber_load64zetas(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_ldpq_indexed(vs1, coeffs, 0, offsets1);
+    // kyber_subv_addv64();
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 0);
+    vs_stpq_post(vs_front(vs1), tmpAddr);
+    vs_stpq_post(vs_front(vs3), tmpAddr);
+    vs_stpq_post(vs_back(vs1), tmpAddr);
+    vs_stpq_post(vs_back(vs3), tmpAddr);
+    vs_ldpq(vq, kyberConsts);
+    vs_ldpq_indexed(vs1, tmpAddr, 64, offsets1);
+    kyber_load64zetas(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_ldpq_indexed(vs1,  coeffs, 256, offsets1);
+    // kyber_subv_addv64();
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 256);
+    vs_stpq_post(vs_front(vs1), tmpAddr);
+    vs_stpq_post(vs_front(vs3), tmpAddr);
+    vs_stpq_post(vs_back(vs1), tmpAddr);
+    vs_stpq_post(vs_back(vs3), tmpAddr);
+
+    // level 3
+    vs_ldpq(vq, kyberConsts);
+    int offsets2[4] = { 0, 64, 128, 192 };
+    vs_ldpq_indexed(vs1, coeffs, 32, offsets2);
+    kyber_load64zetas(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_ldpq_indexed(vs1, coeffs, 0, offsets2);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    vs_stpq_indexed(vs1, coeffs, 0, offsets2);
+    vs_stpq_indexed(vs3, coeffs, 32, offsets2);
+
+    vs_ldpq(vq, kyberConsts);
+    vs_ldpq_indexed(vs1, coeffs, 256 + 32, offsets2);
+    kyber_load64zetas(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_ldpq_indexed(vs1, coeffs, 256, offsets2);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    vs_stpq_indexed(vs1, coeffs, 256, offsets2);
+    vs_stpq_indexed(vs3, coeffs, 256 + 32, offsets2);
+
+    // level 4
+    vs_ldpq(vq, kyberConsts);
+    int offsets3[8] = { 0, 32, 64, 96, 128, 160, 192, 224 };
+    vs_ldr_indexed(vs1, __ Q, coeffs, 16, offsets3);
+    kyber_load64zetas(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_ldr_indexed(vs1, __ Q, coeffs, 0, offsets3);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    vs_str_indexed(vs1, __ Q, coeffs, 0, offsets3);
+    vs_str_indexed(vs3, __ Q, coeffs, 16, offsets3);
+
+    vs_ldpq(vq, kyberConsts);
+    vs_ldr_indexed(vs1, __ Q, coeffs, 256 + 16, offsets3);
+    kyber_load64zetas(vs2, zetas);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_ldr_indexed(vs1, __ Q, coeffs, 256, offsets3);
+    vs_subv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_addv(vs1, __ T8H, vs1, vs2);
+    vs_str_indexed(vs1, __ Q, coeffs, 256, offsets3);
+    vs_str_indexed(vs3, __ Q, coeffs, 256 + 16, offsets3);
+
+    // level 5
+    vs_ldpq(vq, kyberConsts);
+    int offsets4[4] = { 0, 32, 64, 96 };
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 0, offsets4);
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 0, offsets4);
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 128, offsets4);
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 128, offsets4);
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 256, offsets4);
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 256, offsets4);
+
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 384, offsets4);
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 384, offsets4);
+
+    // level 6
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 0, offsets4);
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 0, offsets4);
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 128, offsets4);
+    // __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 128, offsets4);
+
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 256, offsets4);
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 256, offsets4);
+
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 384, offsets4);
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_montmul32_sub_add(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 384, offsets4);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Kyber Inverse NTT function
+  // Implements
+  // static int implKyberInverseNtt(short[] poly, short[] zetas) {}
+  //
+  // coeffs (short[256]) = c_rarg0
+  // ntt_zetas (short[256]) = c_rarg1
+  address generate_kyberInverseNtt() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::kyberInverseNtt_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+    const Register zetas = c_rarg1;
+
+    const Register kyberConsts = r10;
+    const Register tmpAddr = r11;
+    const Register tmpAddr2 = c_rarg2;
+
+    VSeq<8> vs1(0), vs2(16), vs3(24);  // 3 sets of 8x8H inputs/outputs
+    VSeq<4> vtmp = vs_front(vs3);      // n.b. tmp registers overlap vs3
+    VSeq<2> vq(30);                    // n.b. constants overlap vs3
+
+    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+
+    // level 0
+    vs_ldpq(vq, kyberConsts);
+    int offsets4[4] = { 0, 32, 64, 96 };
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 0, offsets4);
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 0, offsets4);
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 128, offsets4);
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 128, offsets4);
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 256, offsets4);
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 256, offsets4);
+    vs_ld2_indexed(vs1, __ T4S, coeffs, tmpAddr, 384, offsets4);
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T4S, coeffs, tmpAddr, 384, offsets4);
+
+    // level 1
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 0, offsets4);
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 0, offsets4);
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 128, offsets4);
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 128, offsets4);
+
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 256, offsets4);
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 256, offsets4);
+    vs_ld2_indexed(vs1, __ T2D, coeffs, tmpAddr, 384, offsets4);
+    kyber_load32zetas(vs_front(vs2), zetas);
+    kyber_sub_add_montmul32(vs_even(vs1), vs_odd(vs1), vs_front(vs2), vs_back(vs2), vtmp, vq);
+    vs_st2_indexed(vs1, __ T2D, coeffs, tmpAddr, 384, offsets4);
+
+    // level 2
+    int offsets3[8] = { 0, 32, 64, 96, 128, 160, 192, 224 };
+    vs_ldr_indexed(vs1, __ Q, coeffs, 0, offsets3);
+    vs_ldr_indexed(vs2, __ Q, coeffs, 16, offsets3);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    vs_str_indexed(vs3, __ Q, coeffs, 0, offsets3);
+    kyber_load64zetas(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_str_indexed(vs2, __ Q, coeffs, 16, offsets3);
+
+    vs_ldr_indexed(vs1, __ Q, coeffs, 256, offsets3);
+    vs_ldr_indexed(vs2, __ Q, coeffs, 256 + 16, offsets3);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    vs_str_indexed(vs3, __ Q, coeffs, 256, offsets3);
+    kyber_load64zetas(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_str_indexed(vs2, __ Q, coeffs, 256 + 16, offsets3);
+    // Barrett reduction at indexes where overflow may happen
+    __ add(tmpAddr, kyberConsts, 16);
+    vs_ldpq(vq, tmpAddr);   // *** say what these values are ***
+    VSeq<8> vq1 = VSeq<8>(vq[0], 0); // 2 constant 8 sequences
+    VSeq<8> vq2 = VSeq<8>(vq[1], 0); // for above two kyber constants
+    VSeq<8> vq3 = VSeq<8>(v29, 0);   // 3rd sequence for const montmul
+    vs_ldr_indexed(vs1, __ Q, coeffs, 0, offsets3);
+    vs_sqdmulh(vs2, __ T8H, vs1, vq2);
+    vs_sshr(vs2, __ T8H, vs2, 11);
+    vs_mlsv(vs1, __ T8H, vs2, vq1);
+    vs_str_indexed(vs1, __ Q, coeffs, 0, offsets3);
+    vs_ldr_indexed(vs1, __ Q, coeffs, 256, offsets3);
+    vs_sqdmulh(vs2, __ T8H, vs1, vq2);
+    vs_sshr(vs2, __ T8H, vs2, 11);
+    vs_mlsv(vs1, __ T8H, vs2, vq1);
+    vs_str_indexed(vs1, __ Q, coeffs, 256, offsets3);
+
+    // level 3
+    int offsets2[4] = { 0, 64, 128, 192 };
+    vs_ldpq_indexed(vs1, coeffs, 0, offsets2);
+    vs_ldpq_indexed(vs2, coeffs, 32, offsets2);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    vs_stpq_indexed(vs3, coeffs, 0, offsets2);
+    kyber_load64zetas(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_stpq_indexed(vs2, coeffs, 32, offsets2);
+
+    vs_ldpq_indexed(vs1, coeffs, 256, offsets2);
+    vs_ldpq_indexed(vs2, coeffs, 256 + 32, offsets2);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    vs_stpq_indexed(vs3, coeffs, 256, offsets2);
+    kyber_load64zetas(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_stpq_indexed(vs2, coeffs, 256 + 32, offsets2);
+
+    // level 4
+    int offsets1[4] = { 0, 32, 128, 160 };
+    vs_ldpq_indexed(vs1, coeffs, 0, offsets1);
+    vs_ldpq_indexed(vs2, coeffs, 64, offsets1);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    vs_stpq_indexed(vs3, coeffs, 0, offsets1);
+    kyber_load64zetas(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_stpq_indexed(vs2, coeffs, 64, offsets1);
+
+    vs_ldpq_indexed(vs1, coeffs, 256, offsets1);
+    vs_ldpq_indexed(vs2, coeffs, 256 + 64, offsets1);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    vs_stpq_indexed(vs3, coeffs, 256, offsets1);
+    kyber_load64zetas(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    vs_stpq_indexed(vs2, coeffs, 256 + 64, offsets1);
+
+    // level 5
+    __ add(tmpAddr, coeffs, 0);
+    kyber_load64coeffs(vs1, tmpAddr);
+    __ add(tmpAddr, coeffs, 128);
+    kyber_load64coeffs(vs2, tmpAddr);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 0);
+    kyber_store64coeffs(vs3, tmpAddr);
+    kyber_load64zetas(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 128);
+    kyber_store64coeffs(vs2, tmpAddr);
+
+    kyber_load64coeffs(vs1, tmpAddr);
+    __ add(tmpAddr, coeffs, 384);
+    kyber_load64coeffs(vs2, tmpAddr);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 256);
+    kyber_store64coeffs(vs3, tmpAddr);
+    kyber_load64zetas(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 384);
+    kyber_store64coeffs(vs2, tmpAddr);
+    // Barrett reduction at indexes where overflow may happen
+    __ add(tmpAddr, kyberConsts, 16);
+    vs_ldpq(vq, tmpAddr);   // !!! what are these constants?
+    int offsets0[2] = { 0, 256 };
+    vs_ldpq_indexed(vs_front(vs1), coeffs, 0, offsets0);
+    vs_sqdmulh(vs2, __ T8H, vs1, vq2);
+    vs_sshr(vs2, __ T8H, vs2, 11);
+    vs_mlsv(vs1, __ T8H, vs2, vq1);
+    vs_stpq_indexed(vs_front(vs1), coeffs, 0, offsets0);
+    // level 6
+    __ add(tmpAddr, coeffs, 0);
+    kyber_load64coeffs(vs1, tmpAddr);
+    __ add(tmpAddr, coeffs, 256);
+    kyber_load64coeffs(vs2, tmpAddr);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 0);
+    kyber_store64coeffs(vs3, tmpAddr);
+    kyber_load64zetas(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 256);
+    kyber_store64coeffs(vs2, tmpAddr);
+
+    __ add(tmpAddr, coeffs, 128);
+    kyber_load64coeffs(vs1, tmpAddr);
+    __ add(tmpAddr, coeffs, 384);
+    kyber_load64coeffs(vs2, tmpAddr);
+    vs_addv(vs3, __ T8H, vs1, vs2); // n.b. trashes vq
+    vs_subv(vs1, __ T8H, vs1, vs2);
+    __ add(tmpAddr, coeffs, 128);
+    kyber_store64coeffs(vs3, tmpAddr);
+    kyber_load64zetas(vs2, zetas);
+    vs_ldpq(vq, kyberConsts);
+    kyber_montmul64(vs2, vs1, vs2, vtmp, vq);
+    __ add(tmpAddr, coeffs, 384);
+    kyber_store64coeffs(vs2, tmpAddr);
+    // multiply by 2^-n
+    __ add(tmpAddr, kyberConsts, 48);
+    __ ldr(v29, __ Q, tmpAddr); // loads ??? into constant sequence vq3
+    vs_ldpq(vq, kyberConsts);
+    __ add(tmpAddr, coeffs, 0);
+    kyber_load64coeffs(vs1, tmpAddr);
+    kyber_montmul64(vs2, vs1, vq3, vtmp, vq);
+    __ add(tmpAddr, coeffs, 0);
+    kyber_store64coeffs(vs2, tmpAddr);
+
+    kyber_load64coeffs(vs1, tmpAddr);
+    kyber_montmul64(vs2, vs1, vq3, vtmp, vq);
+    __ add(tmpAddr, coeffs, 128);
+    kyber_store64coeffs(vs2, tmpAddr);
+
+    kyber_load64coeffs(vs1, tmpAddr);
+    kyber_montmul64(vs2, vs1, vq3, vtmp, vq);
+    __ add(tmpAddr, coeffs, 256);
+    kyber_store64coeffs(vs2, tmpAddr);
+
+    kyber_load64coeffs(vs1, tmpAddr);
+    kyber_montmul64(vs2, vs1, vq3, vtmp, vq);
+    __ add(tmpAddr, coeffs, 384);
+    kyber_store64coeffs(vs2, tmpAddr);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Kyber multiply polynomials in the NTT domain.
+  // Implements
+  // static int implKyberNttMult(
+  //              short[] result, short[] ntta, short[] nttb, short[] zetas) {}
+  //
+  // result (short[256]) = c_rarg0
+  // ntta (short[256]) = c_rarg1
+  // nttb (short[256]) = c_rarg2
+  // zetas (short[128]) = c_rarg3
+  address generate_kyberNttMult() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::kyberNttMult_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register result = c_rarg0;
+    const Register ntta = c_rarg1;
+    const Register nttb = c_rarg2;
+    const Register zetas = c_rarg3;
+
+    const Register kyberConsts = r10;
+    const Register limit = r11;
+
+    VSeq<4> vs1(0), vs2(4);  // 4 sets of 8x8H inputs/outputs/tmps
+    VSeq<4> vs3(16), vs4(20);
+    VSeq<2> vq(30);          // pair of constants for montmul
+    VSeq<2> vz(28);          // pair of zetas
+    VSeq<4> vc(27, 0);       // constant sequence for montmul
+
+    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+
+    Label kyberNttMult_loop;
+
+    __ add(limit, result, 512);
+
+    // load q and qinv
+    vs_ldpq(vq, kyberConsts);
+    // load which kyber constant at offset 64?
+    __ add(kyberConsts, kyberConsts, 64);
+    __ ldr(v27, __ Q, kyberConsts);
+
+    __ BIND(kyberNttMult_loop);
+    // load 16 zetas
+    vs_ldpq_post(vz, zetas);
+    // load 2 sets of 32 coefficients from the two input arrays
+    vs_ld2_post(vs_front(vs1), __ T8H, ntta);
+    vs_ld2_post(vs_back(vs1), __ T8H, nttb);
+    vs_ld2_post(vs_front(vs4), __ T8H, ntta);
+    vs_ld2_post(vs_back(vs4), __ T8H, nttb);
+    // montmul the first and second pair of values loaded into vs1
+    // in order and then with one pair reversed storing the  two
+    // results in vs3
+    kyber_montmul16(vs_front(vs3), vs_front(vs1), vs_back(vs1), vs_front(vs2), vq);
+    kyber_montmul16(vs_back(vs3), vs_front(vs1), vs_reverse(vs_back(vs1)), vs_back(vs2), vq);
+    // montmul the first and second pair of values loaded into vs4
+    // in order and then with one pair reversed storing the two
+    // results in vs1
+    kyber_montmul16(vs_front(vs1), vs_front(vs4), vs_back(vs4), vs_front(vs2), vq);
+    kyber_montmul16(vs_back(vs1), vs_front(vs4), vs_reverse(vs_back(vs4)), vs_back(vs2), vq);
+    // for each pair of results pick the second value in the first
+    // pair to create a sequence that we montmul by the zetas
+    // i.e. we want sequence <vs3[1], vs1[1]>
+    int delta = vs1[1]->encoding() - vs3[1]->encoding();
+    VSeq<2> vs5(vs3[1], delta);
+    kyber_montmul16(vs5, vz, vs5, vs_front(vs2), vq);
+    // add results in pairs storing in vs3
+    vs_addv(vs_front(vs3), __ T8H, vs_even(vs3), vs_odd(vs3));
+    vs_addv(vs_back(vs3), __ T8H, vs_even(vs1), vs_odd(vs1));
+    // montmul result by constant vc and store result in vs1
+    kyber_montmul32(vs1, vs3, vc, vs2, vq);
+    // store the four results as two interleaved pairs of
+    // quadwords
+    vs_st2_post(vs1, __ T8H, result);
+
+    __ cmp(result, limit);
+    __ br(Assembler::NE, kyberNttMult_loop);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Kyber add 2 polynomials.
+  // Implements
+  // static int implKyberAddPoly(short[] result, short[] a, short[] b) {}
+  //
+  // result (short[256]) = c_rarg0
+  // a (short[256]) = c_rarg1
+  // b (short[256]) = c_rarg2
+  address generate_kyberAddPoly_2() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::kyberAddPoly_2_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register result = c_rarg0;
+    const Register a = c_rarg1;
+    const Register b = c_rarg2;
+
+    const Register kyberConsts = r11;
+
+    // we sum 256 sets of values in total i.e. 32 x 8H quadwords.
+    // So, we can load, add and store the data in 3 groups of 11,
+    // 11 and 10 at a time i.e. we need to map sets of 10 or 11
+    // registers. A further constraint is that the mapping needs
+    // to skip callee saves. So, we allocate the register
+    // sequences using two 8 sequences, two 2 sequences and two
+    // single registers.
+    VSeq<8> vs1_1(0);
+    VSeq<2> vs1_2(16);
+    FloatRegister vs1_3 = v28;
+    VSeq<8> vs2_1(18);
+    VSeq<2> vs2_2(26);
+    FloatRegister vs2_3 = v29;
+    // we also need corresponding constant sequences
+    VSeq<8> vc_1(31, 0);    // two constant vector sequences
+    VSeq<2> vc_2(31, 0);
+    FloatRegister vc_3 = v31;
+    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+
+    __ ldr(vc_3, __ Q, Address(kyberConsts, 16));
+    for (int i = 0; i < 3; i++) {
+      // load 80 or 88 values from a into vs1_1/2/3
+      vs_ldpq_post(vs1_1, a);
+      vs_ldpq_post(vs1_2, a);
+      if (i < 2) {
+        __ ldr(vs1_3, __ Q, __ post(a, 16));
+      }
+      // load 80 or 88 values from b into vs2_1/2/3
+      vs_ldpq_post(vs2_1, b);
+      vs_ldpq_post(vs2_2, b);
+      if (i < 2) {
+        __ ldr(vs2_3, __ Q, __ post(b, 16));
+      }
+      // sum 80 or 88 values across vs1 and vs2 into vs1
+      vs_addv(vs1_1, __ T8H, vs1_1, vs2_1);
+      vs_addv(vs1_2, __ T8H, vs1_2, vs2_2);
+      if (i < 2) {
+        __ addv(vs1_3, __ T8H, vs1_3, vs2_3);
+      }
+      // add constant to all 80 or 88 results
+      vs_addv(vs1_1, __ T8H, vs1_1, vc_1);
+      vs_addv(vs1_2, __ T8H, vs1_2, vc_2);
+      if (i < 2) {
+        __ addv(vs1_3, __ T8H, vs1_3, vc_3);
+      }
+      // store 80 or 88 values
+      vs_stpq_post(vs1_1, result);
+      vs_stpq_post(vs1_2, result);
+      if (i < 2) {
+        __ str(vs1_3, __ Q, __ post(result, 16));
+      }
+    }
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Kyber add 3 polynomials.
+  // Implements
+  // static int implKyberAddPoly(short[] result, short[] a, short[] b, short[] c) {}
+  //
+  // result (short[256]) = c_rarg0
+  // a (short[256]) = c_rarg1
+  // b (short[256]) = c_rarg2
+  // c (short[256]) = c_rarg3
+  address generate_kyberAddPoly_3() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::kyberAddPoly_3_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register result = c_rarg0;
+    const Register a = c_rarg1;
+    const Register b = c_rarg2;
+    const Register c = c_rarg3;
+
+    const Register kyberConsts = r11;
+
+    // As above we sum 256 sets of values in total i.e. 32 x 8H
+    // quadwords.  So, we can load, add and store the data in 3
+    // groups of 11, 11 and 10 at a time i.e. we need to map sets
+    // of 10 or 11 registers. A further constraint is that the
+    // mapping needs to skip callee saves. So, we allocate the
+    // register sequences using two 8 sequences, two 2 sequences
+    // and two single registers.
+    VSeq<8> vs1_1(0);
+    VSeq<2> vs1_2(16);
+    FloatRegister vs1_3 = v28;
+    VSeq<8> vs2_1(18);
+    VSeq<2> vs2_2(26);
+    FloatRegister vs2_3 = v29;
+    // we also need corresponding constant sequences
+    VSeq<8> vc_1(31, 0);    // two constant vector sequences
+    VSeq<2> vc_2(31, 0);
+    FloatRegister vc_3 = v31;
+
+    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+
+    __ ldr(vc_3, __ Q, Address(kyberConsts, 16));
+    for (int i = 0; i < 3; i++) {
+      // load 80 or 88 values from a into vs1_1/2/3
+      vs_ldpq_post(vs1_1, a);
+      vs_ldpq_post(vs1_2, a);
+      if (i < 2) {
+        __ ldr(vs1_3, __ Q, __ post(a, 16));
+      }
+      // load 80 or 88 values from b into vs2_1/2/3
+      vs_ldpq_post(vs2_1, b);
+      vs_ldpq_post(vs2_2, b);
+      if (i < 2) {
+        __ ldr(vs2_3, __ Q, __ post(b, 16));
+      }
+      // sum 80 or 88 values across vs1 and vs2 into vs1
+      vs_addv(vs1_1, __ T8H, vs1_1, vs2_1);
+      vs_addv(vs1_2, __ T8H, vs1_2, vs2_2);
+      if (i < 2) {
+        __ addv(vs1_3, __ T8H, vs1_3, vs2_3);
+      }
+      // load 80 or 88 values from c into vs2_1/2/3
+      vs_ldpq_post(vs2_1, c);
+      vs_ldpq_post(vs2_2, c);
+      if (i < 2) {
+        __ ldr(vs2_3, __ Q, __ post(c, 16));
+      }
+      // sum 80 or 88 values across vs1 and vs2 into vs1
+      vs_addv(vs1_1, __ T8H, vs1_1, vs2_1);
+      vs_addv(vs1_2, __ T8H, vs1_2, vs2_2);
+      if (i < 2) {
+        __ addv(vs1_3, __ T8H, vs1_3, vs2_3);
+      }
+      // add constant to all 80 or 88 results
+      vs_addv(vs1_1, __ T8H, vs1_1, vc_1);
+      vs_addv(vs1_2, __ T8H, vs1_2, vc_2);
+      if (i < 2) {
+        __ addv(vs1_3, __ T8H, vs1_3, vc_3);
+      }
+      // store 80 or 88 values
+      vs_stpq_post(vs1_1, result);
+      vs_stpq_post(vs1_2, result);
+      if (i < 2) {
+        __ str(vs1_3, __ Q, __ post(result, 16));
+      }
+    }
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Kyber parse XOF output to polynomial coefficient candidates
+  // or decodePoly(12, ...).
+  // Implements
+  // static int implKyber12To16(
+  //         byte[] condensed, int index, short[] parsed, int parsedLength) {}
+  //
+  // (parsedLength or (parsedLength - 48) must be divisible by 64.)
+  //
+  // condensed (byte[]) = c_rarg0
+  // condensedIndex = c_rarg1
+  // parsed (short[112 or 256]) = c_rarg2
+  // parsedLength (112 or 256) = c_rarg3
+  address generate_kyber12To16() {
+    Label L_F00, L_loop, L_end;
+
+    __ BIND(L_F00);
+    __ emit_int64(0x0f000f000f000f00);
+    __ emit_int64(0x0f000f000f000f00);
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::kyber12To16_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register condensed = c_rarg0;
+    const Register condensedOffs = c_rarg1;
+    const Register parsed = c_rarg2;
+    const Register parsedLength = c_rarg3;
+
+    const Register tmpAddr = r11;
+
+    // data is input 96 bytes at a time i.e. in groups of 6 x 16B
+    // quadwords so we need a 6 vector sequence for the inputs.
+    // Parsing produces 64 shorts, employing two 8 vector
+    // sequences to store and combine the intermediate data.
+    VSeq<6> vin(24);
+    VSeq<8> va(0), vb(16);
+
+    __ adr(tmpAddr, L_F00);
+    __ ldr(v31, __ Q, tmpAddr); // 8H times 0x0f00
+    __ add(condensed, condensed, condensedOffs);
+
+    __ BIND(L_loop);
+    // load 96 (6 x 16B) byte values
+    vs_ld3_post(vin, __ T16B, condensed);
+
+    // expand groups of input bytes in vin to shorts in va and vb
+    // n.b. target elements 2 and 3 duplicate elements 4 and 5
+    __ ushll(va[0], __ T8H, vin[0], __ T8B, 0);
+    __ ushll2(va[1], __ T8H, vin[0], __ T16B, 0);
+    __ ushll(va[2], __ T8H, vin[1], __ T8B, 0);
+    __ ushll2(va[3], __ T8H, vin[1], __ T16B, 0);
+    __ ushll(va[4], __ T8H, vin[1], __ T8B, 0);
+    __ ushll2(va[5], __ T8H, vin[1], __ T16B, 0);
+
+    __ ushll(vb[0], __ T8H, vin[3], __ T8B, 0);
+    __ ushll2(vb[1], __ T8H, vin[3], __ T16B, 0);
+    __ ushll(vb[2], __ T8H, vin[4], __ T8B, 0);
+    __ ushll2(vb[3], __ T8H, vin[4], __ T16B, 0);
+    __ ushll(vb[4], __ T8H, vin[4], __ T8B, 0);
+    __ ushll2(vb[5], __ T8H, vin[4], __ T16B, 0);
+
+    // offset duplicated elements in va and vb by 8
+    __ shl(va[2], __ T8H, va[2], 8);
+    __ shl(va[3], __ T8H, va[3], 8);
+    __ shl(vb[2], __ T8H, vb[2], 8);
+    __ shl(vb[3], __ T8H, vb[3], 8);
+
+    // expand remaining input bytes in vin to shorts in va and vb
+    // but this time pre-shifted by 4
+    __ ushll(va[6], __ T8H, vin[2], __ T8B, 4);
+    __ ushll2(va[7], __ T8H, vin[2], __ T16B, 4);
+    __ ushll(vb[6], __ T8H, vin[5], __ T8B, 4);
+    __ ushll2(vb[7], __ T8H, vin[5], __ T16B, 4);
+
+    // split the duplicated 8 bit values into two distinct 4 bit
+    // upper and lower halves using a mask or a shift
+    __ andr(va[2], __ T16B, va[2], v31);
+    __ andr(va[3], __ T16B, va[3], v31);
+    __ ushr(va[4], __ T8H, va[4], 4);
+    __ ushr(va[5], __ T8H, va[5], 4);
+    __ andr(vb[2], __ T16B, vb[2], v31);
+    __ andr(vb[3], __ T16B, vb[3], v31);
+    __ ushr(vb[4], __ T8H, vb[4], 4);
+    __ ushr(vb[5], __ T8H, vb[5], 4);
+
+    // sum resulting short values into the front halves of va and
+    // vb pairing registers offset by stride 2
+    __ addv(va[0], __ T8H, va[0], va[2]);
+    __ addv(va[2], __ T8H, va[1], va[3]);
+    __ addv(va[1], __ T8H, va[4], va[6]);
+    __ addv(va[3], __ T8H, va[5], va[7]);
+    __ addv(vb[0], __ T8H, vb[0], vb[2]);
+    __ addv(vb[2], __ T8H, vb[1], vb[3]);
+    __ addv(vb[1], __ T8H, vb[4], vb[6]);
+    __ addv(vb[3], __ T8H, vb[5], vb[7]);
+
+    // store results interleaved as shorts
+    vs_st2_post(vs_front(va), __ T8H, parsed);
+    vs_st2_post(vs_front(vb), __ T8H, parsed);
+
+    __ sub(parsedLength, parsedLength, 64);
+    __ cmp(parsedLength, (u1)64);
+    __ br(Assembler::GE, L_loop);
+    __ cbz(parsedLength, L_end);
+
+    // if anything is left it should be a final 72 bytes. so we
+    // load 48 bytes into both lanes of front(vin) and 24 bytes
+    // into the lower lane of back(vin)
+    vs_ld3_post(vs_front(vin), __ T16B, condensed);
+    vs_ld3(vs_back(vin), __ T8B, condensed);
+
+    // expand groups of input bytes in vin to shorts in va and vb
+    // n.b. target elements 2 and 3 of va duplicate elements 4 and
+    // 5 and target element 2 of vb duplicates element 4.
+    __ ushll(va[0], __ T8H, vin[0], __ T8B, 0);
+    __ ushll2(va[1], __ T8H, vin[0], __ T16B, 0);
+    __ ushll(va[2], __ T8H, vin[1], __ T8B, 0);
+    __ ushll2(va[3], __ T8H, vin[1], __ T16B, 0);
+    __ ushll(va[4], __ T8H, vin[1], __ T8B, 0);
+    __ ushll2(va[5], __ T8H, vin[1], __ T16B, 0);
+
+    __ ushll(vb[0], __ T8H, vin[3], __ T8B, 0);
+    __ ushll(vb[2], __ T8H, vin[4], __ T8B, 0);
+    __ ushll(vb[4], __ T8H, vin[4], __ T8B, 0);
+
+    // offset duplicated elements in va and vb by 8
+    __ shl(va[2], __ T8H, va[2], 8);
+    __ shl(va[3], __ T8H, va[3], 8);
+    __ shl(vb[2], __ T8H, vb[2], 8);
+
+    // expand remaining input bytes in vin to shorts in va and vb
+    // but this time pre-shifted by 4
+    __ ushll(va[6], __ T8H, vin[2], __ T8B, 4);
+    __ ushll2(va[7], __ T8H, vin[2], __ T16B, 4);
+    __ ushll(vb[6], __ T8H, vin[5], __ T8B, 4);
+
+    // split the duplicated 8 bit values into two distinct 4 bit
+    // upper and lower halves using a mask or a shift
+    __ andr(va[2], __ T16B, va[2], v31);
+    __ andr(va[3], __ T16B, va[3], v31);
+    __ ushr(va[4], __ T8H, va[4], 4);
+    __ ushr(va[5], __ T8H, va[5], 4);
+    __ andr(vb[2], __ T16B, vb[2], v31);
+    __ ushr(vb[4], __ T8H, vb[4], 4);
+
+    // sum resulting short values into the front halves of va and
+    // vb pairing registers offset by stride 2
+    __ addv(va[0], __ T8H, va[0], va[2]);
+    __ addv(va[2], __ T8H, va[1], va[3]);
+    __ addv(va[1], __ T8H, va[4], va[6]);
+    __ addv(va[3], __ T8H, va[5], va[7]);
+    __ addv(vb[0], __ T8H, vb[0], vb[2]);
+    __ addv(vb[1], __ T8H, vb[4], vb[6]);
+
+    // store results interleaved as shorts
+    vs_st2_post(vs_front(va), __ T8H, parsed);
+    vs_st2_post(vs_front(vs_front(vb)), __ T8H, parsed);
+
+    __ BIND(L_end);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Kyber barrett reduce function.
+  // Implements
+  // static int implKyberBarrettReduce(short[] coeffs) {}
+  //
+  // coeffs (short[256]) = c_rarg0
+  address generate_kyberBarrettReduce() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::kyberBarrettReduce_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+
+    const Register kyberConsts = r10;
+    const Register result = r11;
+
+    // As above we process 256 sets of values in total i.e. 32 x
+    // 8H quadwords. So, we can load, add and store the data in 3
+    // groups of 11, 11 and 10 at a time i.e. we need to map sets
+    // of 10 or 11 registers. A further constraint is that the
+    // mapping needs to skip callee saves. So, we allocate the
+    // register sequences using two 8 sequences, two 2 sequences
+    // and two single registers.
+    VSeq<8> vs1_1(0);
+    VSeq<2> vs1_2(16);
+    FloatRegister vs1_3 = v28;
+    VSeq<8> vs2_1(18);
+    VSeq<2> vs2_2(26);
+    FloatRegister vs2_3 = v29;
+    // we also need a pair of corresponding constant sequences
+    VSeq<8> vc1_1(30, 0);
+    VSeq<2> vc1_2(30, 0);
+    FloatRegister vc1_3 = v30;
+    VSeq<8> vc2_1(31, 0);
+    VSeq<2> vc2_2(31, 0);
+    FloatRegister vc2_3 = v31;
+
+    __ add(result, coeffs, 0);
+    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+
+    __ add(kyberConsts, kyberConsts, 16);
+    __ ldpq(vc1_3, vc2_3, kyberConsts);
+
+    for (int i = 0; i < 3; i++) {
+      // load 80 or 88 coefficients
+      vs_ldpq_post(vs1_1, coeffs);
+      vs_ldpq_post(vs1_2, coeffs);
+      if (i < 2) {
+        __ ldr(vs1_3, __ Q, __ post(coeffs, 16));
+      }
+      vs_sqdmulh(vs2_1, __ T8H, vs1_1, vc2_1);
+      vs_sqdmulh(vs2_2, __ T8H, vs1_2, vc2_2);
+      if (i < 2) {
+        __ sqdmulh(vs2_3, __ T8H, vs1_3, vc2_3);
+      }
+      vs_sshr(vs2_1, __ T8H, vs2_1, 11);
+      vs_sshr(vs2_2, __ T8H, vs2_2, 11);
+      if (i < 2) {
+        __ sshr(vs2_3, __ T8H, vs2_3, 11);
+      }
+      vs_mlsv(vs1_1, __ T8H, vs2_1, vc1_1);
+      vs_mlsv(vs1_2, __ T8H, vs2_2, vc1_2);
+      if (i < 2) {
+        __ mlsv(vs1_3, __ T8H, vs2_3, vc1_3);
+      }
+      vs_stpq_post(vs1_1, result);
+      vs_stpq_post(vs1_2, result);
+      if (i < 2) {
+        __ str(vs1_3, __ Q, __ post(result, 16));
+      }
+    }
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+
+
+
 
   /**
    *  Arguments:
