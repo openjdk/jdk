@@ -740,3 +740,26 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccountingWhenUseFlagInplace) {
   EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
   EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
 }
+
+TEST_VM_F(NMTVMATreeTest, UncommmitReleasedRegion) {
+  {
+    Tree tree;
+    VMATree::RegionData rd(si[0], mtTest);
+    VMATree::RegionData rd2(si[0], mtNone);
+    tree.reserve_mapping(0, 100, rd);
+    tree.release_mapping(50, 20);
+    //0-----50....70-----100
+    //   40----60
+    EXPECT_DEATH(tree.uncommit_mapping(40, 20, rd2), "");
+  }
+  {
+    Tree tree;
+    VMATree::RegionData rd(si[0], mtTest);
+    VMATree::RegionData rd2(si[0], mtNone);
+    tree.reserve_mapping(0, 100, rd);
+    tree.release_mapping(50, 20);
+    //0-----50....70-----100
+    //         60----80
+    EXPECT_DEATH(tree.uncommit_mapping(60, 20, rd2), "");
+  }
+}
