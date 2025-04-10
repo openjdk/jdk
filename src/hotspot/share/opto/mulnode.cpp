@@ -266,8 +266,8 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       res = new AddINode(n2, n1);
 
 #ifdef ASSERT
-      // JDK-8347555: ensure we Ideal() generated power-of-2 patterns expected by the serial addition optimization.
-      assert(AddNode::find_power_of_two_addition_pattern(res, T_INT).valid, "");
+      // JDK-8347555: ensure Ideal() generated power-of-2 patterns are expected by the serial addition optimization.
+      assert(AddNode::find_power_of_two_addition_pattern(res, T_INT).valid, "unexpected power-of-2 pattern");
 #endif
 
     } else if (is_power_of_2(abs_con + 1)) {

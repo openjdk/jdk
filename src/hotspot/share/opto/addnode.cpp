@@ -446,7 +446,7 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, BasicType bt) {
   Node* con = (bt == T_INT)
               ? (Node*) phase->intcon((jint) (mul.multiplier + 1)) // intentional type narrowing to allow overflow at max_jint
               : (Node*) phase->longcon((mul.multiplier + 1));
-  return MulNode::make(con, in2, bt);
+  return MulNode::make(con, mul.variable, bt);
 }
 
 // Try to match `a + a`. On success, return a struct with `.valid = true`, `variable = a`, and `multiplier = 2`.
@@ -482,13 +482,13 @@ AddNode::Multiplication AddNode::find_simple_lshift_pattern(Node* n, BasicType b
 AddNode::Multiplication AddNode::find_simple_multiplication_pattern(Node* n, BasicType bt) {
   // This optimization technically only produces MulNode(CON, a), but we might as match MulNode(a, CON), too.
   if (n->Opcode() == Op_Mul(bt) && (n->in(1)->is_Con() || n->in(2)->is_Con())) {
-    // Assume pattern (1)
+    // Pattern (1)
     Node* con = n->in(1);
     Node* base = n->in(2);
 
-    // swap ConNode to lhs for easier matching
+    // Pattern (2)
     if (!con->is_Con()) {
-      // Swap for pattern (2)
+      // swap ConNode to lhs for easier matching
       swap(con, base);
     }
 
@@ -506,8 +506,8 @@ AddNode::Multiplication AddNode::find_simple_multiplication_pattern(Node* n, Bas
 //     - (1) AddNode(LShiftNode(a, CON), LShiftNode(a, CON))
 //     - (2) AddNode(LShiftNode(a, CON), a)
 //     - (3) AddNode(a, LShiftNode(a, CON))
-// given that lhs is different from rhs.
-// Note that one of the term of the addition could simply be `a` (i.e., a << 0).
+//     - (4) AddNode(a, a)
+// Note that one or both of the term of the addition could simply be `a` (i.e., a << 0) as in pattern (4).
 AddNode::Multiplication AddNode::find_power_of_two_addition_pattern(Node* n, BasicType bt) {
   if (n->Opcode() == Op_Add(bt) && n->in(1) != n->in(2)) {
     Multiplication lhs = find_simple_lshift_pattern(n->in(1), bt);
@@ -527,6 +527,9 @@ AddNode::Multiplication AddNode::find_power_of_two_addition_pattern(Node* n, Bas
     if (rhs.valid && rhs.variable == n->in(1)) {
       return Multiplication{true, rhs.variable, rhs.multiplier + 1};
     }
+
+    // Pattern (4), which is equivalent to a simple addition pattern
+    return find_simple_addition_pattern(n, bt);
   }
 
   return Multiplication{};
