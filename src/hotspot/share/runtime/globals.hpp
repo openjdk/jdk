@@ -1400,9 +1400,6 @@ const int ObjectAlignmentInBytes = 8;
           "Force the class space to be allocated at this address or "       \
           "fails VM initialization (requires -Xshare=off.")                 \
                                                                             \
-  product(bool, UseKLUT, false, EXPERIMENTAL,                               \
-          "Only for coh")                                                   \
-                                                                            \
   product(bool, PrintKLUTStatistics, false,                                 \
           "Print KLUT statistics at exit")                                  \
                                                                             \
