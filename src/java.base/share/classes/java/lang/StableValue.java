@@ -488,7 +488,7 @@ public sealed interface StableValue<T>
      * as a lazily computed value or memoized result, as in:
      *
      * {@snippet lang=java:
-     * Value witness = stable.orElseSet(Value::new);
+     * Value v = stable.orElseSet(Value::new);
      * }
      * <p>
      * When this method returns successfully, the content is always set.
