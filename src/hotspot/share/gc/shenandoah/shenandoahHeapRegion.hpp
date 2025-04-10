@@ -369,7 +369,8 @@ public:
   inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);
 
   inline void clear_live_data();
-  void set_live_data(size_t s);
+  void set_live_data_after_fullgc(size_t s);
+
 #ifdef KELVIN_DEPRECATE
   // Increase live data for newly allocated region
   inline void increase_live_data_alloc_words(size_t s);
