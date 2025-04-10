@@ -236,8 +236,8 @@ import java.util.function.Supplier;
  *             v -> 1 << v;
  *
  *     private static final List<Integer> POWER_OF_TWO =
- *             // @link substring="list" target="#list(int,IntFunction)" :
- *             StableValue.list(SIZE, ORIGINAL_POWER_OF_TWO);
+ *         // @link substring="list" target="#list(int,IntFunction)" :
+ *         StableValue.list(SIZE, ORIGINAL_POWER_OF_TWO);
  *
  *     public static int powerOfTwo(int a) {
  *         return POWER_OF_TWO.get(a);
