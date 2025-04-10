@@ -163,7 +163,8 @@ void ZHeap::update_tlab_usage(size_t current_used) {
   const size_t old_capacity = _tlab_usage.capacity();
 
   _tlab_usage.update(current_used);
-  log_debug(gc, tlab)("TLAB Usage update: used %zuM -> %zuM, capacity: %zuM -> %zuM",
+
+  log_debug(gc, tlab)("TLAB usage update: used %zuM -> %zuM, capacity: %zuM -> %zuM",
                       old_used / M,
                       _tlab_usage.used() / M,
                       old_capacity / M,

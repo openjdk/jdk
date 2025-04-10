@@ -1264,6 +1264,7 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity,
     _min_capacity(min_capacity),
     _max_capacity(max_capacity),
     _used(0),
+    _used_eden(0),
     _used_generations{0,0},
     _collection_stats{{0, 0},{0, 0}},
     _partitions(ZValueIdTagType{}, this),
@@ -1354,6 +1355,10 @@ size_t ZPageAllocator::used() const {
   return Atomic::load(&_used);
 }
 
+size_t ZPageAllocator::used_eden() const {
+  return Atomic::load(&_used_eden);
+}
+
 size_t ZPageAllocator::used_generation(ZGenerationId id) const {
   return Atomic::load(&_used_generations[(int)id]);
 }
@@ -1415,6 +1420,7 @@ ZPageAllocatorStats ZPageAllocator::update_and_stats(ZGeneration* generation) {
   ZLocker<ZLock> locker(&_lock);
 
   update_collection_stats(generation->id());
+  reset_used_eden();
   return stats_inner(generation);
 }
 
@@ -1570,6 +1576,7 @@ bool ZPageAllocator::claim_capacity_or_stall(ZPageAllocation* allocation) {
     if (claim_capacity(allocation)) {
       // Keep track of usage
       increase_used(allocation->size());
+      increase_used_eden(allocation);
 
       return true;
     }
@@ -2202,6 +2209,7 @@ void ZPageAllocator::satisfy_stalled() {
 
     // Keep track of usage
     increase_used(allocation->size());
+    increase_used_eden(allocation);
 
     // Allocation succeeded, dequeue and satisfy allocation request.
     // Note that we must dequeue the allocation request first, since
@@ -2260,6 +2268,16 @@ void ZPageAllocator::decrease_used(size_t size) {
       stats._used_low = used;
     }
   }
+}
+
+void ZPageAllocator::increase_used_eden(ZPageAllocation* allocation) {
+  if (allocation->age() == ZPageAge::eden) {
+    Atomic::add(&_used_eden, allocation->size());
+  }
+}
+
+void ZPageAllocator::reset_used_eden() {
+  Atomic::store(&_used_eden, (size_t) 0);
 }
 
 void ZPageAllocator::safe_destroy_page(ZPage* page) {

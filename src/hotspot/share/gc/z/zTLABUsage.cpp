@@ -35,5 +35,5 @@ size_t ZTLABUsage::used() const {
 }
 
 size_t ZTLABUsage::capacity() const {
-  return _used_history.avg();
+  return _used_history.davg();
 }

@@ -26,6 +26,17 @@
 
 #include "utilities/numberSeq.hpp"
 
+// ZGC is retiring TLABs concurrently with the application running when
+// processing the stack watermarks. For the common TLAB heuristic to work we
+// need to return consistent TLAB usage information when a TLAB is retired.
+// We snapshot the TLAB usage in the mark start pause for the young generation
+// and use this information until the next garbage collection cycle.
+//
+// ZGC does not have set generation sizes like most other GCs and because of
+// this there is no fixed TLAB capacity. For the common TLAB sizing heuristic
+// to work properly ZGC estimates the current capacity by using a weighted
+// average of the last 10 used values.
+
 class ZTLABUsage {
 private:
   TruncatedSeq _used_history;
