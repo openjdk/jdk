@@ -123,9 +123,11 @@ public class CancelledPartialResponseTest {
             throw new AssertionError("Unexpected null cause for " + expectedException,
                     expectedException);
         }
-        assertEquals(testThrowable.getClass(), IOException.class,
-                "Test should have closed with an IOException");
-        testThrowable.printStackTrace();
+        if (!(testThrowable instanceof IOException)) {
+            throw new AssertionError(
+                    "Test should have closed with an IOException, got: " + testThrowable,
+                    testThrowable);
+        }
         if (version == HTTP_3) {
             if (testThrowable.getMessage().contains(Http3Error.H3_EXCESSIVE_LOAD.name())) {
                 System.out.println("Got expected message: " + testThrowable.getMessage());
