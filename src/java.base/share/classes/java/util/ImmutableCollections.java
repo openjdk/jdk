@@ -1537,17 +1537,12 @@ class ImmutableCollections {
         @ForceInline
         @Override
         public V get(Object key) {
-            return getOrDefault0(key, null);
+            return getOrDefault(key, null);
         }
 
         @ForceInline
         @Override
         public V getOrDefault(Object key, V defaultValue) {
-            return getOrDefault0(key, defaultValue);
-        }
-
-        @ForceInline
-        private V getOrDefault0(Object key, V defaultValue) {
             final StableValueImpl<V> stable = delegate.get(key);
             if (stable == null) {
                 return defaultValue;
