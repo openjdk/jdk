@@ -1270,7 +1270,7 @@ public:
   // Per-Node transform
   virtual Node* transform(Node* n) { return nullptr; }
 
-  Node* loop_exit_control(const Node* x, const IdealLoopTree* loop) const;
+  Node* loop_exit_control(const Node* head, const IdealLoopTree* loop) const;
 
   struct LoopExitTest {
     Node* cmp = nullptr;
@@ -1285,7 +1285,7 @@ public:
     Node* incr = nullptr;
     Node* phi_incr = nullptr;
   };
-  LoopIVIncr loop_iv_incr(Node* old_incr, const Node* x, const IdealLoopTree* loop);
+  static LoopIVIncr loop_iv_incr(Node* old_incr, const Node* head, const IdealLoopTree* loop);
 
   struct LoopIvStride {
     Node* stride = nullptr;
@@ -1293,7 +1293,7 @@ public:
   };
   static LoopIvStride loop_iv_stride(const Node* incr);
 
-  static PhiNode* loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* x);
+  static PhiNode* loop_iv_phi(const Node* xphi, const Node* phi_incr, const Node* head);
 
   bool try_convert_to_counted_loop(Node* head, IdealLoopTree*&loop, const BasicType iv_bt);
 
@@ -1301,10 +1301,9 @@ public:
   bool create_loop_nest(IdealLoopTree* loop, Node_List &old_new);
 
   void add_parse_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop, SafePointNode* sfpt);
-  SafePointNode* find_safepoint(Node* back_control, const Node* x, const IdealLoopTree* loop);
+  SafePointNode* find_safepoint(Node* back_control, const Node* head, const IdealLoopTree* loop);
   IdealLoopTree* insert_outer_loop(IdealLoopTree* loop, LoopNode* outer_l, Node* outer_ift);
-  IdealLoopTree* create_outer_strip_mined_loop(Node *init_control,
-                                               IdealLoopTree* loop, float cl_prob, float le_fcnt,
+  IdealLoopTree* create_outer_strip_mined_loop(Node* init_control, IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                Node*& entry_control, Node*& iffalse);
 
   class CountedLoopConverter {
@@ -1324,7 +1323,7 @@ public:
     Node* _limit;
     jlong _stride_con;
     Node* _phi;
-    Node* _phi_incr;
+    Node* _phi_increment;
     Node* _stride;
     bool _includes_limit;
     BoolTest::mask _mask;
@@ -1333,7 +1332,7 @@ public:
     float _cl_prob;
     Node* _sfpt;
     jlong _final_correction;
-    Node* _trunc1;
+    const TypeInteger* _increment_truncation_type;
 
    public:
     CountedLoopConverter(PhaseIdealLoop* phase, Node* head, IdealLoopTree* loop, const BasicType iv_bt)
