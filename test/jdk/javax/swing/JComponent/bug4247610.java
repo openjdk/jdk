@@ -34,8 +34,6 @@ import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import javax.swing.JButton;
 import javax.swing.JDesktopPane;
@@ -82,12 +80,10 @@ public class bug4247610 {
 
             final Random random = new Random();
 
-            damager.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent event) {
-                    System.out.println("traceRepaints called");
-                    traceRepaints();
-                    damagee.setText(Integer.toString(random.nextInt()));
-                }
+            damager.addActionListener((e) -> {
+                System.out.println("traceRepaints called");
+                traceRepaints();
+                damagee.setText(Integer.toString(random.nextInt()));
             });
             frame.setContentPane(pane);
             frame.setSize(500, 500);
@@ -106,7 +102,7 @@ public class bug4247610 {
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         if (failed()) {
-            throw new RuntimeException("Failed: unnesessary repaint occured");
+            throw new RuntimeException("Failed: unnecessary repaint occured");
         }
     }
 
