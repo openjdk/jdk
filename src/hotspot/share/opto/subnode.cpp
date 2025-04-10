@@ -2021,34 +2021,25 @@ const Type* SqrtHFNode::Value(PhaseGVN* phase) const {
   return TypeH::make((float)sqrt((double)f));
 }
 
-template<typename T, BasicType B>
-const Type* reverse_bytes(const Node* node, PhaseGVN* phase) {
-  const Type* type = phase->type(node->in(1));
+const Type* reverse_bytes(int opcode, const Type* con) {
+  switch (opcode) {
+    case Op_ReverseBytesS:  return TypeInt::make(byteswap(checked_cast<jshort>(con->is_int()->get_con())));
+    case Op_ReverseBytesUS: return TypeInt::make(byteswap(checked_cast<jchar>(con->is_int()->get_con())));
+    case Op_ReverseBytesI:  return TypeInt::make(byteswap(checked_cast<jint>(con->is_int()->get_con())));
+    case Op_ReverseBytesL:  return TypeLong::make(byteswap(checked_cast<jlong>(con->is_long()->get_con())));
+    default: ShouldNotReachHere();
+  }
+}
+
+const Type* ReverseBytesNode::Value(PhaseGVN* phase) const {
+  const Type* type = phase->type(in(1));
   if (type == Type::TOP) {
     return Type::TOP;
   }
-  const TypeInteger* typeInteger = type->isa_integer(B);
-  if (typeInteger != nullptr && typeInteger->is_con()) {
-    const T res = byteswap<T>(static_cast<T>(typeInteger->get_con_as_long(B)));
-    return TypeInteger::make(res, B);
+  if (type->singleton()) {
+    return reverse_bytes(Opcode(), type);
   }
-  return node->bottom_type();
-}
-
-const Type* ReverseBytesINode::Value(PhaseGVN* phase) const {
-  return reverse_bytes<jint, T_INT>(this, phase);
-}
-
-const Type* ReverseBytesSNode::Value(PhaseGVN* phase) const {
-  return reverse_bytes<jshort, T_INT>(this, phase);
-}
-
-const Type* ReverseBytesUSNode::Value(PhaseGVN* phase) const {
-  return reverse_bytes<jchar, T_INT>(this, phase);
-}
-
-const Type* ReverseBytesLNode::Value(PhaseGVN* phase) const {
-  return reverse_bytes<jlong, T_LONG>(this, phase);
+  return bottom_type();
 }
 
 const Type* ReverseINode::Value(PhaseGVN* phase) const {
