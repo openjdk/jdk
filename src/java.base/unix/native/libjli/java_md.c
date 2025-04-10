@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,7 +348,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
          *
          *     o          $JVMPATH (directory portion only)
          *     o          $JDK/lib
-         *     o          $JDK/../lib
          *
          * followed by the user's previous effective LD_LIBRARY_PATH, if
          * any.
@@ -377,10 +376,8 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 
                 snprintf(new_runpath, new_runpath_size, LD_LIBRARY_PATH "="
                         "%s:"
-                        "%s/lib:"
-                        "%s/../lib",
+                        "%s/lib",
                         new_jvmpath,
-                        jdkroot,
                         jdkroot
                         );
 

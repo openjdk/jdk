@@ -1611,10 +1611,10 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     use->visit_uses(push_the_uses_to_worklist, is_boundary);
   }
   // If changed LShift inputs, check RShift users for useless sign-ext
-  if( use_op == Op_LShiftI ) {
+  if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_RShiftI)
+      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL)
         worklist.push(u);
     }
   }
@@ -1993,14 +1993,19 @@ void PhaseCCP::push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2*
   }
 }
 
-// AndI/L::Value() optimizes patterns similar to (v << 2) & 3 to zero if they are bitwise disjoint.
-// Add the AndI/L nodes back to the worklist to re-apply Value() in case the shift value changed.
-// Pattern: parent -> LShift (use) -> (ConstraintCast | ConvI2L)* -> And
+// AndI/L::Value() optimizes patterns similar to (v << 2) & 3, or CON & 3 to zero if they are bitwise disjoint.
+// Add the AndI/L nodes back to the worklist to re-apply Value() in case the value is now a constant or shift
+// value changed.
 void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const {
+  const TypeInteger* parent_type = type(parent)->isa_integer(type(parent)->basic_type());
   uint use_op = use->Opcode();
-  if ((use_op == Op_LShiftI || use_op == Op_LShiftL)
-      && use->in(2) == parent) { // is shift value (right-hand side of LShift)
-    auto push_and_uses_to_worklist = [&](Node* n){
+  if (
+    // Pattern: parent (now constant) -> (ConstraintCast | ConvI2L)* -> And
+    (parent_type != nullptr && parent_type->is_con()) ||
+    // Pattern: parent -> LShift (use) -> (ConstraintCast | ConvI2L)* -> And
+    ((use_op == Op_LShiftI || use_op == Op_LShiftL) && use->in(2) == parent)) {
+
+    auto push_and_uses_to_worklist = [&](Node* n) {
       uint opc = n->Opcode();
       if (opc == Op_AndI || opc == Op_AndL) {
         push_if_not_bottom_type(worklist, n);
