@@ -323,6 +323,19 @@ void ShenandoahOldHeuristics::slide_pinned_regions_to_front() {
   _next_old_collection_candidate = write_index + 1;
 }
 
+void ShenandoahOldHeuristics::recalibrate_old_collection_candidates_live_memory() {
+  size_t total_live_data;
+  for (uint i = _next_old_collection_candidate; i < _last_old_collection_candidate; i++) {
+    ShenandoahHeapRegion* r = _region_data[i].get_region();
+    size_t region_live = r->get_live_data_bytes();
+    total_live_data += region_live;
+    _region_data[i].update_livedata(region_live);
+  }
+  QuickSort::sort<RegionData>(_region_data + _next_old_collection_candidate, unprocessed_old_collection_candidates(),
+                              compare_by_live);
+  _live_bytes_in_unprocessed_candidates = total_live_data;
+}
+
 void ShenandoahOldHeuristics::prepare_for_old_collections() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
