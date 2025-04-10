@@ -72,8 +72,7 @@ inline unsigned KlassLUTEntry::ik_omb_offset_2() const {
 // calculates word size given header size, element size, and array length
 template <bool is_objarray, class OopType, bool compact_headers>
 inline size_t KlassLUTEntry::ak_calculate_wordsize_given_oop_fast(oopDesc* obj) const {
-  // The purpose of this function is to be as fast as possible; we hard-code as much
-  // as we can via template parameters.
+  // The purpose of this function is to hard-code as much as we can via template parameters.
   assert(is_obj_array() == is_objarray, "Bad call");
   assert(is_type_array() == !is_objarray, "Bad call");
 
