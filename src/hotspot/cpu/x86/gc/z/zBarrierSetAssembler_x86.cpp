@@ -220,11 +220,10 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
                                    BasicType type,
                                    Register dst,
                                    Address src,
-                                   Register tmp1,
-                                   Register tmp_thread) {
+                                   Register tmp1) {
   if (!ZBarrierSet::barrier_needed(decorators, type)) {
     // Barrier not needed
-    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1);
     return;
   }
 
