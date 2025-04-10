@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1811,7 +1811,7 @@ public class Code {
                     t==tother ? t :
                     types.isSubtype(t, tother) ? tother :
                     types.isSubtype(tother, t) ? t :
-                    error();
+                    commonSuperClass(t, tother);
                 int w = width(result);
                 stack[i] = result;
                 if (w == 2) Assert.checkNull(stack[i+1]);
@@ -1820,8 +1820,15 @@ public class Code {
             return this;
         }
 
-        Type error() {
-            throw new AssertionError("inconsistent stack types at join point");
+        private Type commonSuperClass(Type t1, Type t2) {
+            Type lub = types.lub(t1, t2);
+
+            if (lub.hasTag(BOT)) {
+                throw Assert.error("Cannot find a common super class of: " +
+                                   t1 + " and " + t2);
+            }
+
+            return types.erasure(lub);
         }
 
         void dump() {
