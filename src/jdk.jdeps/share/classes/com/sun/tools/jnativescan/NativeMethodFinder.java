@@ -95,6 +95,9 @@ class NativeMethodFinder {
             }
             Optional<ClassModel> modelOpt = systemClassResolver.lookup(methodRef.owner());
             if (!modelOpt.isPresent()) {
+                // The target class is not in a system module. Since only system modules
+                // contain classes with restricted methods, we can safely assume that
+                // the target method is not restricted.
                 return false;
             }
             ClassModel classModel = modelOpt.get();
