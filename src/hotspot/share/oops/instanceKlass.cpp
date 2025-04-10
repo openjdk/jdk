@@ -1939,12 +1939,13 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
       fields_sorted.push(fs.to_FieldInfo());
     }
   }
-  if (fields_sorted.length() > 0) {
+  int length = fields_sorted.length();
+  if (length > 0) {
     fields_sorted.sort(compare_fields_by_offset);
     fieldDescriptor fd;
-    for (auto it = fields_sorted.begin(); it != fields_sorted.end(); ++it) {
-      fd.reinitialize(this, *it);
-      assert(!fd.is_static() && fd.offset() == checked_cast<int>(it->offset()), "only nonstatic fields");
+    for (int i = 0; i < length; i++) {
+      fd.reinitialize(this, fields_sorted.at(i));
+      assert(!fd.is_static() && fd.offset() == checked_cast<int>(fields_sorted.at(i).offset()), "only nonstatic fields");
       cl->do_field(&fd);
     }
   }
