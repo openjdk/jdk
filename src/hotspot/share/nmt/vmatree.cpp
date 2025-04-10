@@ -28,7 +28,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
-const VMATree::RegionData VMATree::empty_regiondata{NativeCallStackStorage::StackIndex{}, mtNone};
+const VMATree::RegionData VMATree::empty_regiondata{NativeCallStackStorage::invalid, mtNone};
 
 const char* VMATree::statetype_strings[3] = {
   "reserved", "committed", "released",
@@ -55,17 +55,17 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   bool is_reserve_operation = state == StateType::Reserved && !use_tag_inplace;
   bool is_uncommit_operation = state == StateType::Reserved && use_tag_inplace;
   bool is_commit_operation = state == StateType::Committed;
+  stA.out.set_reserve_stack(NativeCallStackStorage::invalid);
+  stB.in.set_reserve_stack(NativeCallStackStorage::invalid);
+  stA.out.set_commit_stack(NativeCallStackStorage::invalid);
+  stA.in.set_commit_stack(NativeCallStackStorage::invalid);
   if (is_reserve_operation) {
     stA.out.set_reserve_stack(metadata.stack_idx);
     stB.in.set_reserve_stack(metadata.stack_idx);
-    stA.out.set_commit_stack(NativeCallStackStorage::invalid);
-    stA.in.set_commit_stack(NativeCallStackStorage::invalid);
   }
   if (is_commit_operation) {
     stA.out.set_commit_stack(metadata.stack_idx);
     stB.in.set_commit_stack(metadata.stack_idx);
-    stA.out.set_reserve_stack(NativeCallStackStorage::invalid);
-    stB.in.set_reserve_stack(NativeCallStackStorage::invalid);
   }
   // First handle A.
   // Find closest node that is LEQ A
@@ -107,6 +107,8 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       if (is_commit_operation) {
         if (leqA_n->val().out.has_reserved_stack()) {
           stA.out.set_reserve_stack(leqA_n->val().out.reserved_stack());
+        } else {
+          stA.out.set_reserve_stack(metadata.stack_idx);
         }
       }
       if (is_uncommit_operation) {
@@ -137,14 +139,17 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       // The address must be smaller.
       assert(A > leqA_n->key(), "must be");
       if (is_commit_operation) {
-        stA.out.set_reserve_stack(leqA_n->val().out.reserved_stack());
-        stB.in.set_reserve_stack(leqA_n->val().out.reserved_stack());
+        if (leqA_n->val().out.has_reserved_stack()) {
+          stA.out.set_reserve_stack(leqA_n->val().out.reserved_stack());
+          stB.in.set_reserve_stack(leqA_n->val().out.reserved_stack());
+        } else {
+          stA.out.set_reserve_stack(metadata.stack_idx);
+          stB.in.set_reserve_stack(metadata.stack_idx);
+        }
       }
       if (is_uncommit_operation) {
         stA.out.set_reserve_stack(leqA_n->val().out.reserved_stack());
         stB.in.set_reserve_stack(leqA_n->val().out.reserved_stack());
-        stA.out.set_commit_stack(NativeCallStackStorage::invalid);
-        stB.in.set_commit_stack(NativeCallStackStorage::invalid);
       }
 
       // We add a new node, but only if there would be a state change. If there would not be a
@@ -256,8 +261,9 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 #ifdef ASSERT
 void VMATree::print_on(outputStream* out) {
   visit_in_order([&](TreapNode* current) {
-    out->print("%zu (%s) - %s - ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
-               statetype_to_string(out_state(current).type()));
+    out->print("%zu (%s) - %s [%d, %d]- ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
+               statetype_to_string(out_state(current).type()), current->val().out.reserved_stack(), current->val().out.committed_stack());
+
   });
   out->cr();
 }

@@ -155,6 +155,11 @@ private:
     IntervalState out;
 
     bool is_noop() {
+      if (in.type() == StateType::Released &&
+          in.type() == out.type() &&
+          in.mem_tag() == out.mem_tag()) {
+        return true;
+      }
       return in.type() == out.type() &&
              RegionData::equals(in.reserved_regiondata(), out.reserved_regiondata()) &&
              RegionData::equals(in.committed_regiondata(), out.committed_regiondata());
