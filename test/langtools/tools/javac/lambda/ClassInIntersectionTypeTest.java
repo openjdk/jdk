@@ -24,4 +24,13 @@ public class ClassInIntersectionTypeTest {
 
     @interface Anno {}
     Anno a = (Anno & Serializable) ()-> null; // OK
+
+    Anno b = ()-> null; // OK
+
+    static void bar() {
+        annotationType(() -> null);
+    }
+    static <T extends Anno & Serializable> void annotationType(T t) {
+        t.annotationType();  // OK
+    }
 }

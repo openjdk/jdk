@@ -734,8 +734,8 @@ public class Types {
          */
         public FunctionDescriptor findDescriptorInternal(TypeSymbol origin,
                 CompoundScope membersCache) throws FunctionDescriptorLookupError {
-            if (!origin.isInterface() || (origin.flags() & ANNOTATION) != 0 || origin.isSealed()) {
-                //t must be an interface
+            if (!origin.isInterface() || origin.isSealed()) {
+                //t must be a non-sealed interface
                 throw failure("not.a.functional.intf", origin);
             }
 
