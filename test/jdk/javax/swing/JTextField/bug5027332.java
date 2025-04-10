@@ -37,8 +37,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 
-import jtreg.SkippedException;
-
 public class bug5027332 {
 
     private static final String INSTRUCTIONS = """
