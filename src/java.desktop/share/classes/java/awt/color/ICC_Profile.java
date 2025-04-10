@@ -122,8 +122,8 @@ public sealed class ICC_Profile implements Serializable
      */
     private interface BuiltInProfile {
         /*
-         * ProfileDeferralInfo is used for only built-in profile creation and
-         * all built-in profiles should be constructed using it.
+         * ProfileDeferralInfo is used for built-in profile creation only,
+         * and all built-in profiles should be constructed using it.
          */
         ICC_Profile SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
                "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
@@ -779,8 +779,8 @@ public sealed class ICC_Profile implements Serializable
      * The ID will be 0 until the profile is loaded.
      *
      * <p>
-     * Note: {@code ProfileDeferralInfo} is used for only built-in profile
-     * creation and all built-in profiles should be constructed using it.
+     * Note: {@code ProfileDeferralInfo} is used for built-in profile
+     * creation only, and all built-in profiles should be constructed using it.
      */
     ICC_Profile(ProfileDeferralInfo pdi) {
         deferralInfo = pdi;

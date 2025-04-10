@@ -45,7 +45,7 @@ public final class ICC_ProfileSetNullDataTest {
             ICC_Profile profile = ICC_Profile.getInstance(builtInProfile.getData());
             try {
                 profile.setData(ICC_Profile.icSigCmykData, null);
-                throw new RuntimeException("IAE expected, but not thrown for"
+                throw new RuntimeException("IAE expected, but not thrown for "
                                            + "ColorSpace: " + colorSpace.get(cs));
             } catch (IllegalArgumentException e) {
                 // IAE expected

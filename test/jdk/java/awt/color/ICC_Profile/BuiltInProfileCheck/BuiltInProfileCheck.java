@@ -151,7 +151,7 @@ public class BuiltInProfileCheck {
             try {
                 // Try updating a built-in profile, IAE is expected
                 testProfile.setData(HEADER_TAG, headerData);
-                throw new RuntimeException("Test Failed! IAE NOT thrown for profile"
+                throw new RuntimeException("Test Failed! IAE NOT thrown for profile "
                                            + colorSpace.get(cs));
             } catch (IllegalArgumentException iae) {
                 if (!iae.getMessage().equals(EXCEPTION_MSG)) {
@@ -166,4 +166,3 @@ public class BuiltInProfileCheck {
         }
     }
 }
-
