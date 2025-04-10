@@ -1871,7 +1871,12 @@ class Stream<T> extends ExchangeImpl<T> {
         }
     }
 
-    private class HeadersConsumer extends ValidatingHeadersConsumer implements DecodingCallback {
+    private final class HeadersConsumer extends ValidatingHeadersConsumer
+            implements DecodingCallback {
+
+        private HeadersConsumer() {
+            super(Context.RESPONSE);
+        }
 
         boolean maxHeaderListSizeReached;
 

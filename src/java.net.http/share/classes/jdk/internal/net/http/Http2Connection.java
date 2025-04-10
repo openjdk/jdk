@@ -69,6 +69,7 @@ import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.common.ValidatingHeadersConsumer;
+import jdk.internal.net.http.common.ValidatingHeadersConsumer.Context;
 import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.DataFrame;
 import jdk.internal.net.http.frame.ErrorFrame;
@@ -984,7 +985,7 @@ class Http2Connection  {
                     // always decode the headers as they may affect
                     // connection-level HPACK decoding state
                     if (orphanedConsumer == null || frame.getClass() != ContinuationFrame.class) {
-                        orphanedConsumer = new ValidatingHeadersConsumer();
+                        orphanedConsumer = new ValidatingHeadersConsumer(Context.RESPONSE);
                     }
                     DecodingCallback decoder = orphanedConsumer::onDecoded;
                     try {
