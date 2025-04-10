@@ -775,6 +775,8 @@ void MacroAssembler::clobber_carg_stack_slots(Register tmp) {
 }
 
 void MacroAssembler::save_nonvolatile_registers(Register dst, int offset, bool include_fp_regs, bool include_vector_regs) {
+  BLOCK_COMMENT("save_nonvolatile_registers {");
+
   for (int i = 14; i < 32; i++) {
     std(as_Register(i), offset, dst);
     offset += 8;
@@ -803,9 +805,13 @@ void MacroAssembler::save_nonvolatile_registers(Register dst, int offset, bool i
       }
     }
   }
+
+  BLOCK_COMMENT("} save_nonvolatile_registers ");
 }
 
 void MacroAssembler::restore_nonvolatile_registers(Register src, int offset, bool include_fp_regs, bool include_vector_regs) {
+  BLOCK_COMMENT("restore_nonvolatile_registers {");
+
   for (int i = 14; i < 32; i++) {
     ld(as_Register(i), offset, src);
     offset += 8;
@@ -834,6 +840,8 @@ void MacroAssembler::restore_nonvolatile_registers(Register src, int offset, boo
       }
     }
   }
+
+  BLOCK_COMMENT("} restore_nonvolatile_registers");
 }
 
 // For verify_oops.

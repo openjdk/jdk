@@ -35,18 +35,6 @@
 
 #define __ _masm->
 
-static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDescriptor& abi, int reg_save_area_offset) {
-  __ block_comment("{ preserve_callee_saved_regs ");
-  __ save_nonvolatile_registers(R1_SP, reg_save_area_offset, true, SuperwordUseVSX);
-  __ block_comment("} preserve_callee_saved_regs ");
-}
-
-static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescriptor& abi, int reg_save_area_offset) {
-  __ block_comment("{ restore_callee_saved_regs ");
-  __ restore_nonvolatile_registers(R1_SP, reg_save_area_offset, true, SuperwordUseVSX);
-  __ block_comment("} restore_callee_saved_regs ");
-}
-
 static const int upcall_stub_code_base_size = 1024;
 static const int upcall_stub_size_per_arg = 16; // arg save & restore + move
 
@@ -147,7 +135,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   // (and maybe attach it).
   arg_spiller.generate_spill(_masm, arg_save_area_offset);
   // Java methods won't preserve them, so save them here:
-  preserve_callee_saved_registers(_masm, abi, reg_save_area_offset);
+  __ save_nonvolatile_registers(R1_SP, reg_save_area_offset, true, SuperwordUseVSX);
 
   // Java code uses TOC (pointer to code cache).
   __ load_const_optimized(R29_TOC, MacroAssembler::global_toc(), R0); // reinit
@@ -245,7 +233,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   __ call_c(call_target_address);
   __ block_comment("} on_exit");
 
-  restore_callee_saved_registers(_masm, abi, reg_save_area_offset);
+  __ restore_nonvolatile_registers(R1_SP, reg_save_area_offset, true, SuperwordUseVSX);
 
   result_spiller.generate_fill(_masm, res_save_area_offset);
 
