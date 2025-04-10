@@ -80,8 +80,6 @@ endef
 #
 # The sed expression does this:
 # 1. Add a backslash before any :, = or ! that do not have a backslash already.
-# 2. Apply the file unicode2x.sed which does a whole bunch of \u00XX to \xXX
-#    conversions.
 # 3. Delete all lines starting with #.
 # 4. Delete empty lines.
 # 5. Append lines ending with \ with the next line.
@@ -108,7 +106,6 @@ define add_file_to_clean
 	( $(CAT) $$< && $(ECHO) "" ) \
 	    | $(SED) -e 's/\([^\\]\):/\1\\:/g' -e 's/\([^\\]\)=/\1\\=/g' \
 	        -e 's/\([^\\]\)!/\1\\!/g' -e 's/^[ 	]*#.*/#/g' \
-	    | $(SED) -f "$$(TOPDIR)/make/common/support/unicode2x.sed" \
 	    | $(SED) -e '/^#/d' -e '/^$$$$/d' \
 	        -e :a -e '/\\$$$$/N; s/\\\n//; ta' \
 	        -e 's/^[ 	]*//;s/[ 	]*$$$$//' \
