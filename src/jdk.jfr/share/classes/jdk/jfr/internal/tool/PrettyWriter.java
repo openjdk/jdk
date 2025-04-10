@@ -537,7 +537,7 @@ public final class PrettyWriter extends EventPrintWriter {
         Percentage percentage = field.getAnnotation(Percentage.class);
         if (percentage != null) {
             if (value instanceof Number n) {
-                double p = n.doubleValue() *100;
+                double p = 100 * n.doubleValue();
                 if (showExact) {
                     println(String.format("%.9f%%", p));
                 } else {
