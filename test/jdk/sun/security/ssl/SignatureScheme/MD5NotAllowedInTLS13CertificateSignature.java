@@ -55,63 +55,66 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
     // Certificates and keys used in the test.
     // Certificates are signed with signature using MD5WithRSA algorithm.
     static String trusedCertStr =
-            "-----BEGIN CERTIFICATE-----\n" +
-            "MIICrDCCAhWgAwIBAgIBADANBgkqhkiG9w0BAQQFADBJMQswCQYDVQQGEwJVUzET\n" +
-            "MBEGA1UECBMKU29tZS1TdGF0ZTESMBAGA1UEBxMJU29tZS1DaXR5MREwDwYDVQQK\n" +
-            "EwhTb21lLU9yZzAeFw0wODEyMDgwMjQzMzZaFw0yODA4MjUwMjQzMzZaMEkxCzAJ\n" +
-            "BgNVBAYTAlVTMRMwEQYDVQQIEwpTb21lLVN0YXRlMRIwEAYDVQQHEwlTb21lLUNp\n" +
-            "dHkxETAPBgNVBAoTCFNvbWUtT3JnMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKB\n" +
-            "gQDLxDggB76Ip5OwoUNRLdeOha9U3a2ieyNbz5kTU5lFfe5tui2/461uPZ8a+QOX\n" +
-            "4BdVrhEmV94BKY4FPyH35zboLjfXSKxT1mAOx1Bt9sWF94umxZE1cjyU7vEX8HHj\n" +
-            "7BvOyk5AQrBt7moO1uWtPA/JuoJPePiJl4kqlRJM2Akq6QIDAQABo4GjMIGgMB0G\n" +
-            "A1UdDgQWBBT6uVG/TOfZhpgz+efLHvEzSfeoFDBxBgNVHSMEajBogBT6uVG/TOfZ\n" +
-            "hpgz+efLHvEzSfeoFKFNpEswSTELMAkGA1UEBhMCVVMxEzARBgNVBAgTClNvbWUt\n" +
-            "U3RhdGUxEjAQBgNVBAcTCVNvbWUtQ2l0eTERMA8GA1UEChMIU29tZS1PcmeCAQAw\n" +
-            "DAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQQFAAOBgQBcIm534U123Hz+rtyYO5uA\n" +
-            "ofd81G6FnTfEAV8Kw9fGyyEbQZclBv34A9JsFKeMvU4OFIaixD7nLZ/NZ+IWbhmZ\n" +
-            "LovmJXyCkOufea73pNiZ+f/4/ScZaIlM/PRycQSqbFNd4j9Wott+08qxHPLpsf3P\n" +
-            "6Mvf0r1PNTY2hwTJLJmKtg==\n" +
-            "-----END CERTIFICATE-----";
+            """
+            -----BEGIN CERTIFICATE-----
+            MIICrDCCAhWgAwIBAgIBADANBgkqhkiG9w0BAQQFADBJMQswCQYDVQQGEwJVUzET
+            MBEGA1UECBMKU29tZS1TdGF0ZTESMBAGA1UEBxMJU29tZS1DaXR5MREwDwYDVQQK
+            EwhTb21lLU9yZzAeFw0wODEyMDgwMjQzMzZaFw0yODA4MjUwMjQzMzZaMEkxCzAJ
+            BgNVBAYTAlVTMRMwEQYDVQQIEwpTb21lLVN0YXRlMRIwEAYDVQQHEwlTb21lLUNp
+            dHkxETAPBgNVBAoTCFNvbWUtT3JnMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKB
+            gQDLxDggB76Ip5OwoUNRLdeOha9U3a2ieyNbz5kTU5lFfe5tui2/461uPZ8a+QOX
+            4BdVrhEmV94BKY4FPyH35zboLjfXSKxT1mAOx1Bt9sWF94umxZE1cjyU7vEX8HHj
+            7BvOyk5AQrBt7moO1uWtPA/JuoJPePiJl4kqlRJM2Akq6QIDAQABo4GjMIGgMB0G
+            A1UdDgQWBBT6uVG/TOfZhpgz+efLHvEzSfeoFDBxBgNVHSMEajBogBT6uVG/TOfZ
+            hpgz+efLHvEzSfeoFKFNpEswSTELMAkGA1UEBhMCVVMxEzARBgNVBAgTClNvbWUt
+            U3RhdGUxEjAQBgNVBAcTCVNvbWUtQ2l0eTERMA8GA1UEChMIU29tZS1PcmeCAQAw
+            DAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQQFAAOBgQBcIm534U123Hz+rtyYO5uA
+            ofd81G6FnTfEAV8Kw9fGyyEbQZclBv34A9JsFKeMvU4OFIaixD7nLZ/NZ+IWbhmZ
+            LovmJXyCkOufea73pNiZ+f/4/ScZaIlM/PRycQSqbFNd4j9Wott+08qxHPLpsf3P
+            6Mvf0r1PNTY2hwTJLJmKtg==
+            -----END CERTIFICATE-----""";
 
     static String serverCertStr =
-            "-----BEGIN CERTIFICATE-----\n" +
-            "MIICqjCCAhOgAwIBAgIBBDANBgkqhkiG9w0BAQQFADBJMQswCQYDVQQGEwJVUzET\n" +
-            "MBEGA1UECBMKU29tZS1TdGF0ZTESMBAGA1UEBxMJU29tZS1DaXR5MREwDwYDVQQK\n" +
-            "EwhTb21lLU9yZzAeFw0wODEyMDgwMzIxMTZaFw0yODA4MjUwMzIxMTZaMHIxCzAJ\n" +
-            "BgNVBAYTAlVTMRMwEQYDVQQIEwpTb21lLVN0YXRlMRIwEAYDVQQHEwlTb21lLUNp\n" +
-            "dHkxETAPBgNVBAoTCFNvbWUtT3JnMRMwEQYDVQQLEwpTU0wtU2VydmVyMRIwEAYD\n" +
-            "VQQDEwlsb2NhbGhvc3QwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAKWsWxw3\n" +
-            "ot2ZiS2yebiP1Uil5xyEF41pnMasbfnyHR85GdrTch5u7ETMcKTcugAw9qBPPVR6\n" +
-            "YWrMV9AKf5UoGD+a2ZTyG8gkiH7+nQ89+1dTCLMgM9Q/F0cU0c3qCNgOdU6vvszS\n" +
-            "7K+peknfwtmsuCRAkKYDVirQMAVALE+r2XSJAgMBAAGjeTB3MAkGA1UdEwQCMAAw\n" +
-            "CwYDVR0PBAQDAgXgMB0GA1UdDgQWBBTtbtv0tVbI+xoGYT8PCLumBNgWVDAfBgNV\n" +
-            "HSMEGDAWgBT6uVG/TOfZhpgz+efLHvEzSfeoFDAdBgNVHREBAf8EEzARhwR/AAAB\n" +
-            "gglsb2NhbGhvc3QwDQYJKoZIhvcNAQEEBQADgYEAWTrftGaL73lKLgRTrChGR+F6\n" +
-            "//qvs0OM94IOKVeHz36NO49cMJmhJSbKdiGIkppBgpLIBoWxZlN9NOO9oSXFYZsZ\n" +
-            "rHaAe9/lWMtQM7XpjqjhWVhB5VPvWFbkorQFMtRYLf7pkonGPFq8GOO1s0TKhogC\n" +
-            "jtYCdzlrU4v+om/J3H8=\n" +
-            "-----END CERTIFICATE-----";
+            """
+            -----BEGIN CERTIFICATE-----
+            MIICqjCCAhOgAwIBAgIBBDANBgkqhkiG9w0BAQQFADBJMQswCQYDVQQGEwJVUzET
+            MBEGA1UECBMKU29tZS1TdGF0ZTESMBAGA1UEBxMJU29tZS1DaXR5MREwDwYDVQQK
+            EwhTb21lLU9yZzAeFw0wODEyMDgwMzIxMTZaFw0yODA4MjUwMzIxMTZaMHIxCzAJ
+            BgNVBAYTAlVTMRMwEQYDVQQIEwpTb21lLVN0YXRlMRIwEAYDVQQHEwlTb21lLUNp
+            dHkxETAPBgNVBAoTCFNvbWUtT3JnMRMwEQYDVQQLEwpTU0wtU2VydmVyMRIwEAYD
+            VQQDEwlsb2NhbGhvc3QwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAKWsWxw3
+            ot2ZiS2yebiP1Uil5xyEF41pnMasbfnyHR85GdrTch5u7ETMcKTcugAw9qBPPVR6
+            YWrMV9AKf5UoGD+a2ZTyG8gkiH7+nQ89+1dTCLMgM9Q/F0cU0c3qCNgOdU6vvszS
+            7K+peknfwtmsuCRAkKYDVirQMAVALE+r2XSJAgMBAAGjeTB3MAkGA1UdEwQCMAAw
+            CwYDVR0PBAQDAgXgMB0GA1UdDgQWBBTtbtv0tVbI+xoGYT8PCLumBNgWVDAfBgNV
+            HSMEGDAWgBT6uVG/TOfZhpgz+efLHvEzSfeoFDAdBgNVHREBAf8EEzARhwR/AAAB
+            gglsb2NhbGhvc3QwDQYJKoZIhvcNAQEEBQADgYEAWTrftGaL73lKLgRTrChGR+F6
+            //qvs0OM94IOKVeHz36NO49cMJmhJSbKdiGIkppBgpLIBoWxZlN9NOO9oSXFYZsZ
+            rHaAe9/lWMtQM7XpjqjhWVhB5VPvWFbkorQFMtRYLf7pkonGPFq8GOO1s0TKhogC
+            jtYCdzlrU4v+om/J3H8=
+            -----END CERTIFICATE-----""";
 
     static String clientCertStr =
-            "-----BEGIN CERTIFICATE-----\n" +
-            "MIICqjCCAhOgAwIBAgIBBTANBgkqhkiG9w0BAQQFADBJMQswCQYDVQQGEwJVUzET\n" +
-            "MBEGA1UECBMKU29tZS1TdGF0ZTESMBAGA1UEBxMJU29tZS1DaXR5MREwDwYDVQQK\n" +
-            "EwhTb21lLU9yZzAeFw0wODEyMDgwMzIyMTBaFw0yODA4MjUwMzIyMTBaMHIxCzAJ\n" +
-            "BgNVBAYTAlVTMRMwEQYDVQQIEwpTb21lLVN0YXRlMRIwEAYDVQQHEwlTb21lLUNp\n" +
-            "dHkxETAPBgNVBAoTCFNvbWUtT3JnMRMwEQYDVQQLEwpTU0wtQ2xpZW50MRIwEAYD\n" +
-            "VQQDEwlsb2NhbGhvc3QwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALvwQDas\n" +
-            "JlRO9KNaAC9pIW+5ejqT7KL24Y7HY9gvEjCZLrDyj/gnLSR4KIT3Ab+NRHndO9JV\n" +
-            "8848slshfe/9M0qxo//GyJu5D3xBNZf52zoFYAUVr1kXkqMQrRYc5AdTr6h2olYq\n" +
-            "ktP5KOB4z14fSKtcGd3hZ0O6dY31gqxDkkQbAgMBAAGjeTB3MAkGA1UdEwQCMAAw\n" +
-            "CwYDVR0PBAQDAgXgMB0GA1UdDgQWBBTNu8iFqpG9/R2+zWd8/7PpTKgi5jAfBgNV\n" +
-            "HSMEGDAWgBT6uVG/TOfZhpgz+efLHvEzSfeoFDAdBgNVHREBAf8EEzARhwR/AAAB\n" +
-            "gglsb2NhbGhvc3QwDQYJKoZIhvcNAQEEBQADgYEAwDc4f13abs9ZeEkrl5WV2Z74\n" +
-            "BlmBhXu8ExtAvoF9q6Ug6xV1MDpxbD124KfUHHL0kNMhMB1WIpC0kOnQBxziNpfS\n" +
-            "7u6GOc3tWLSxw/sHoJGCefnRBllLZOoQuSBrWB8qgilL6HRmZ4UqDcXu4UCaLBZ0\n" +
-            "KGDT5ASEN6Lq2GtiP4Y=\n" +
-            "-----END CERTIFICATE-----";
+            """
+            -----BEGIN CERTIFICATE-----
+            MIICqjCCAhOgAwIBAgIBBTANBgkqhkiG9w0BAQQFADBJMQswCQYDVQQGEwJVUzET
+            MBEGA1UECBMKU29tZS1TdGF0ZTESMBAGA1UEBxMJU29tZS1DaXR5MREwDwYDVQQK
+            EwhTb21lLU9yZzAeFw0wODEyMDgwMzIyMTBaFw0yODA4MjUwMzIyMTBaMHIxCzAJ
+            BgNVBAYTAlVTMRMwEQYDVQQIEwpTb21lLVN0YXRlMRIwEAYDVQQHEwlTb21lLUNp
+            dHkxETAPBgNVBAoTCFNvbWUtT3JnMRMwEQYDVQQLEwpTU0wtQ2xpZW50MRIwEAYD
+            VQQDEwlsb2NhbGhvc3QwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALvwQDas
+            JlRO9KNaAC9pIW+5ejqT7KL24Y7HY9gvEjCZLrDyj/gnLSR4KIT3Ab+NRHndO9JV
+            8848slshfe/9M0qxo//GyJu5D3xBNZf52zoFYAUVr1kXkqMQrRYc5AdTr6h2olYq
+            ktP5KOB4z14fSKtcGd3hZ0O6dY31gqxDkkQbAgMBAAGjeTB3MAkGA1UdEwQCMAAw
+            CwYDVR0PBAQDAgXgMB0GA1UdDgQWBBTNu8iFqpG9/R2+zWd8/7PpTKgi5jAfBgNV
+            HSMEGDAWgBT6uVG/TOfZhpgz+efLHvEzSfeoFDAdBgNVHREBAf8EEzARhwR/AAAB
+            gglsb2NhbGhvc3QwDQYJKoZIhvcNAQEEBQADgYEAwDc4f13abs9ZeEkrl5WV2Z74
+            BlmBhXu8ExtAvoF9q6Ug6xV1MDpxbD124KfUHHL0kNMhMB1WIpC0kOnQBxziNpfS
+            7u6GOc3tWLSxw/sHoJGCefnRBllLZOoQuSBrWB8qgilL6HRmZ4UqDcXu4UCaLBZ0
+            KGDT5ASEN6Lq2GtiP4Y=
+            -----END CERTIFICATE-----""";
 
-    static byte serverPrivateExponent[] = {
+    static byte[] serverPrivateExponent = {
             (byte)0x6e, (byte)0xa7, (byte)0x1b, (byte)0x83,
             (byte)0x51, (byte)0x35, (byte)0x9a, (byte)0x44,
             (byte)0x7d, (byte)0xf6, (byte)0xe3, (byte)0x89,
@@ -146,7 +149,7 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
             (byte)0xed, (byte)0xdb, (byte)0x6d, (byte)0xb1
     };
 
-    static byte serverModulus[] = {
+    static byte[] serverModulus = {
             (byte)0x00,
             (byte)0xa5, (byte)0xac, (byte)0x5b, (byte)0x1c,
             (byte)0x37, (byte)0xa2, (byte)0xdd, (byte)0x99,
@@ -182,7 +185,7 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
             (byte)0xab, (byte)0xd9, (byte)0x74, (byte)0x89
     };
 
-    static byte clientPrivateExponent[] = {
+    static byte[] clientPrivateExponent = {
             (byte)0x11, (byte)0xb7, (byte)0x6a, (byte)0x36,
             (byte)0x3d, (byte)0x30, (byte)0x37, (byte)0xce,
             (byte)0x61, (byte)0x9d, (byte)0x6c, (byte)0x84,
@@ -217,7 +220,7 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
             (byte)0x4c, (byte)0x94, (byte)0xc6, (byte)0xb1
     };
 
-    static byte clientModulus[] = {
+    static byte[] clientModulus = {
             (byte)0x00,
             (byte)0xbb, (byte)0xf0, (byte)0x40, (byte)0x36,
             (byte)0xac, (byte)0x26, (byte)0x54, (byte)0x4e,
@@ -254,7 +257,6 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
     };
 
     static char[] passphrase = "passphrase".toCharArray();
-
     private final String protocol;
 
     protected MD5NotAllowedInTLS13CertificateSignature(String protocol) {
@@ -317,7 +319,7 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
         ks.load(null, null);
 
         // import the trused cert
-        ks.setCertificateEntry("RSA Export Signer", trusedCert);
+        ks.setCertificateEntry("TLS Signer", trusedCert);
 
         // generate the private key.
         RSAPrivateKeySpec priKeySpec = new RSAPrivateKeySpec(
