@@ -3563,7 +3563,7 @@ class ZipFileSystem extends FileSystem {
         public Set<PosixFilePermission> permissions() {
             // supportPosix ==> (defaultPermissions != null).
             assert defaultPermissions != null;
-            return storedPermissions().orElse(defaultPermissions.clone());
+            return storedPermissions().orElseGet(defaultPermissions::clone);
         }
     }
 
