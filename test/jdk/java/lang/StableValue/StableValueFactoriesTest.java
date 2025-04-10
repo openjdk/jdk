@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @summary Basic tests for StableValueFactoriesTest implementations
+ * @summary Basic tests for StableValue factory implementations
  * @modules java.base/jdk.internal.lang.stable
  * @enablePreview
  * @run junit StableValueFactoriesTest
