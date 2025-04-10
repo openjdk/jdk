@@ -6,31 +6,40 @@
  */
 
 import java.io.Serializable;
+import java.lang.annotation.Annotation;
 
 public class ClassInIntersectionTypeTest {
     // test 1
-    void m() {
-        var r = (ClassInIntersectionTypeTest & Runnable) () -> System.out.println("Hello, World!");
+    void m1() {
+        ClassInIntersectionTypeTest r1 = (ClassInIntersectionTypeTest & Runnable) () -> System.out.println("Hello, World!");
+        ClassInIntersectionTypeTest r2 = (ClassInIntersectionTypeTest & Runnable) ClassInIntersectionTypeTest::run1;
     }
+
+    static void run1() {}
 
     // test 2
     static void foo() {
-        run(() -> System.out.println("Hello, World!"));
+        run2(() -> System.out.println("Hello, World!"));
+        run2(ClassInIntersectionTypeTest::run1);
     }
 
-    static <T extends ClassInIntersectionTypeTest & Runnable> void run(T t) {
+    static <T extends ClassInIntersectionTypeTest & Runnable> void run2(T t) {
         t.run();
     }
 
+    static Class<? extends Annotation> myAnnoType() { return null; }
     @interface Anno {}
-    Anno a = (Anno & Serializable) ()-> null; // OK
-
-    Anno b = ()-> null; // OK
+    Anno a = (Anno & Serializable) ()-> null; // annotations not allowed
+    Anno b = (Anno & Serializable) ClassInIntersectionTypeTest::myAnnoType; // annotations not allowed
 
     static void bar() {
         annotationType(() -> null);
+        annotationType(ClassInIntersectionTypeTest::myAnnoType);
     }
+
     static <T extends Anno & Serializable> void annotationType(T t) {
-        t.annotationType();  // OK
+        t.annotationType();  // annotations not allowed
     }
+
+    Anno c = ()-> null; // annotations are not functional interfaces
 }

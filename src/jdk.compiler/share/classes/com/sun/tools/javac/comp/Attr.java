@@ -3339,13 +3339,13 @@ public class Attr extends JCTree.Visitor {
                             try {
                                 bound = infer.instantiateFunctionalInterface(that,
                                         bound, explicitParamTypes, resultInfo.checkContext);
-                                if (bound.tsym != syms.objectType.tsym && !bound.isInterface()) {
-                                    // bound must be j.l.Object or an interface
-                                    reportIntersectionError(that, "not.an.intf.component", bound);
-                                }
                             } catch (FunctionDescriptorLookupError t) {
                                 // do nothing
                             }
+                        }
+                        if (bound.tsym != syms.objectType.tsym || !bound.isInterface() || (bound.tsym.flags() & ANNOTATION) != 0) {
+                            // bound must be j.l.Object or an interface, but not an annotation
+                            reportIntersectionError(that, "not.an.intf.component", bound);
                         }
                         bound = types.removeWildcards(bound);
                         components.add(bound);
