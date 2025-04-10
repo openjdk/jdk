@@ -798,7 +798,7 @@ class TestMemorySegmentImpl {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.ADD_VI,        "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
-        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfOr = {"UseAutoVectorizationSpeculativeAliasingChecks", "false", "AlignVector", "true"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
@@ -806,7 +806,7 @@ class TestMemorySegmentImpl {
                   IRNode.STORE_VECTOR,  "> 0",
                   ".*multiversion.*", "> 0"},
         phase = CompilePhase.PRINT_IDEAL,
-        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // FAILS: invariants are sorted differently, because of differently inserted Cast.
@@ -826,7 +826,7 @@ class TestMemorySegmentImpl {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
                   IRNode.ADD_VI,        "= 0",
                   IRNode.STORE_VECTOR,  "= 0"},
-        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfOr = {"UseAutoVectorizationSpeculativeAliasingChecks", "false", "AlignVector", "true"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
@@ -834,7 +834,7 @@ class TestMemorySegmentImpl {
                   IRNode.STORE_VECTOR,  "> 0",
                   ".*multiversion.*", "> 0"},
         phase = CompilePhase.PRINT_IDEAL,
-        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // FAILS: invariants are sorted differently, because of differently inserted Cast.
