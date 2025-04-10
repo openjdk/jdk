@@ -194,12 +194,13 @@ public class BadHeadersTest {
             try {
                 HttpResponse<String> response = cc.sendAsync(request, BodyHandlers.ofString()).get();
                 fail("Expected exception, got :" + response + ", " + response.body());
-            } catch (Throwable t0) {
+            } catch (Exception t0) {
                 System.out.println("Got EXPECTED: " + t0);
                 if (t0 instanceof ExecutionException) {
-                    t0 = t0.getCause();
+                    t = t0.getCause();
+                } else {
+                    t = t0;
                 }
-                t = t0;
             }
             assertDetailMessage(t, i);
         }
