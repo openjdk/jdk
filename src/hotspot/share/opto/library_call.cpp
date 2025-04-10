@@ -2003,7 +2003,14 @@ bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {
   return true;
 }
 
-void LibraryCallKit::inline_math_mathExact(Node* math, Node *test) {
+bool LibraryCallKit::inline_math_mathExact(Node* math, Node* test) {
+  if (builtin_throw_too_many_traps(Deoptimization::Reason_intrinsic,
+                                   env()->ArithmeticException_instance())) {
+    // It has been already too many times, but we cannot use builtin_throw (e.g. we care about backtraces),
+    // so let's bail out intrinsic rather than risking deopting again.
+    return false;
+  }
+
   Node* bol = _gvn.transform( new BoolNode(test, BoolTest::overflow) );
   IfNode* check = create_and_map_if(control(), bol, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
   Node* fast_path = _gvn.transform( new IfFalseNode(check));
@@ -2017,12 +2024,14 @@ void LibraryCallKit::inline_math_mathExact(Node* math, Node *test) {
     set_control(slow_path);
     set_i_o(i_o());
 
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_none);
+    builtin_throw(Deoptimization::Reason_intrinsic,
+                  env()->ArithmeticException_instance(),
+                  /*allow_too_many_traps*/ false);
   }
 
   set_control(fast_path);
   set_result(math);
+  return true;
 }
 
 template <typename OverflowOp>
@@ -2032,8 +2041,7 @@ bool LibraryCallKit::inline_math_overflow(Node* arg1, Node* arg2) {
   MathOp* mathOp = new MathOp(arg1, arg2);
   Node* operation = _gvn.transform( mathOp );
   Node* ofcheck = _gvn.transform( new OverflowOp(arg1, arg2) );
-  inline_math_mathExact(operation, ofcheck);
-  return true;
+  return inline_math_mathExact(operation, ofcheck);
 }
 
 bool LibraryCallKit::inline_math_addExactI(bool is_increment) {
@@ -4297,12 +4305,7 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
   if (obj != nullptr && is_array_ctrl != nullptr && is_array_ctrl != top()) {
     // Keep track of the fact that 'obj' is an array to prevent
     // array specific accesses from floating above the guard.
-    Node* cast = _gvn.transform(new CastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
-    // Check for top because in rare cases, the type system can determine that
-    // the object can't be an array but the layout helper check is not folded.
-    if (!cast->is_top()) {
-      *obj = cast;
-    }
+    *obj = _gvn.transform(new CastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
   }
   return ctrl;
 }

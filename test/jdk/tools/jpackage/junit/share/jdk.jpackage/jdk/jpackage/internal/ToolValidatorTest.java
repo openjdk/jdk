@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 package jdk.jpackage.internal;
 
+import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.model.ConfigException;
 import java.nio.file.Path;
 import jdk.internal.util.OperatingSystem;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -52,11 +54,11 @@ public class ToolValidatorTest {
 
         // Minimal version is 1, actual is 10. Should be OK.
         assertNull(new ToolValidator(TOOL_JAVA).setMinimalVersion(
-                new DottedVersion("1")).setVersionParser(unused -> "10").validate());
+                DottedVersion.greedy("1")).setVersionParser(unused -> "10").validate());
 
         // Minimal version is 5, actual is 4.99.37. Error expected.
         assertValidationFailure(new ToolValidator(TOOL_JAVA).setMinimalVersion(
-                new DottedVersion("5")).setVersionParser(unused -> "4.99.37").validate(),
+                DottedVersion.greedy("5")).setVersionParser(unused -> "4.99.37").validate(),
                 false);
 
         // Minimal version is 8, actual is 10, lexicographical comparison is used. Error expected.
@@ -65,7 +67,7 @@ public class ToolValidatorTest {
 
         // Minimal version is 8, actual is 10, Use DottedVersion class for comparison. Should be OK.
         assertNull(new ToolValidator(TOOL_JAVA).setMinimalVersion(
-                new DottedVersion("8")).setVersionParser(unused -> "10").validate());
+                DottedVersion.greedy("8")).setVersionParser(unused -> "10").validate());
     }
 
     private static void assertValidationFailure(ConfigException v, boolean withCause) {

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
 # Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -53,15 +53,19 @@ if [ "x$OUT" = x ]; then
   fi
 fi
 
-# Test and fix cygwin on x86_64
-echo $OUT | grep 86-pc-cygwin > /dev/null 2> /dev/null
+# Test and fix cygwin/msys CPUs
+echo $OUT | grep -e "-pc-cygwin" > /dev/null 2> /dev/null
 if test $? != 0; then
-  echo $OUT | grep 86-pc-mingw > /dev/null 2> /dev/null
+  echo $OUT | grep -e "-pc-mingw" > /dev/null 2> /dev/null
 fi
 if test $? = 0; then
   case `echo $PROCESSOR_IDENTIFIER | cut -f1 -d' '` in
     intel64|Intel64|INTEL64|em64t|EM64T|amd64|AMD64|8664|x86_64)
       REAL_CPU=x86_64
+      OUT=$REAL_CPU`echo $OUT | sed -e 's/[^-]*//'`
+      ;;
+    ARMv8)
+      REAL_CPU=aarch64
       OUT=$REAL_CPU`echo $OUT | sed -e 's/[^-]*//'`
       ;;
   esac

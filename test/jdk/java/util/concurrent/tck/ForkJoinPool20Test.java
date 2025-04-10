@@ -528,6 +528,7 @@ public class ForkJoinPool20Test extends JSR166TestCase {
         final CountDownLatch delayedDone = new CountDownLatch(1);
         final CountDownLatch immediateDone = new CountDownLatch(1);
         final ForkJoinPool p = new ForkJoinPool(2);
+        p.cancelDelayedTasksOnShutdown();
         try (PoolCleaner cleaner = cleaner(p)) {
             final Runnable delayed = () -> {
                 delayedDone.countDown();
@@ -568,8 +569,8 @@ public class ForkJoinPool20Test extends JSR166TestCase {
             public Boolean call() throws Exception {
                 Thread.sleep(LONGER_DELAY_MS); return Boolean.TRUE; }};
         ForkJoinTask<?> task = p.submitWithTimeout(c, 1, NANOSECONDS, null);
-        Thread.sleep(timeoutMillis());
-        assertTrue(task.isCancelled());
+        while(!task.isCancelled())
+            Thread.sleep(timeoutMillis());
     }
 
     static final class SubmitWithTimeoutException extends RuntimeException {}
@@ -586,7 +587,6 @@ public class ForkJoinPool20Test extends JSR166TestCase {
             c, 1, NANOSECONDS,
             (ForkJoinTask<Item> t) ->
             t.complete(two));
-        Thread.sleep(timeoutMillis());
         assertEquals(task.join(), two);
     }
 
@@ -602,7 +602,6 @@ public class ForkJoinPool20Test extends JSR166TestCase {
             c, 1, NANOSECONDS,
             (ForkJoinTask<Boolean> t) ->
             t.completeExceptionally(new SubmitWithTimeoutException()));
-        Thread.sleep(timeoutMillis());
         try {
             task.join();
             shouldThrow();

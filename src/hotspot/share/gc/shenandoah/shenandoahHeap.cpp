@@ -424,8 +424,6 @@ jint ShenandoahHeap::initialize() {
       _affiliations[i] = ShenandoahAffiliation::FREE;
     }
 
-    // Initialize to complete
-    _marking_context->mark_complete();
     size_t young_cset_regions, old_cset_regions;
 
     // We are initializing free set.  We ignore cset region tallies.
@@ -647,6 +645,12 @@ void ShenandoahHeap::print_on(outputStream* st) const {
     st->cr();
     print_heap_regions_on(st);
   }
+}
+
+void ShenandoahHeap::print_on_error(outputStream* st) const {
+  print_on(st);
+  st->cr();
+  print_heap_regions_on(st);
 }
 
 class ShenandoahInitWorkerGCLABClosure : public ThreadClosure {
@@ -2580,12 +2584,6 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
     old_gen->heuristics()->evaluate_triggers(first_old_region, last_old_region, old_region_count, num_regions());
   }
-}
-
-void ShenandoahHeap::print_extended_on(outputStream *st) const {
-  print_on(st);
-  st->cr();
-  print_heap_regions_on(st);
 }
 
 bool ShenandoahHeap::is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self) {

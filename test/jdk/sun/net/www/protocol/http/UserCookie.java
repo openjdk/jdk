@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 /*
  * @test
  * @bug 6439651
- * @modules jdk.httpserver
- * @run main/othervm UserAuth
  * @summary Sending "Cookie" header with JRE 1.5.0_07 doesn't work anymore
+ * @modules jdk.httpserver
+ * @run main/othervm UserCookie
  */
 
 import java.net.*;

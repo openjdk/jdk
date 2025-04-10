@@ -55,7 +55,9 @@ public class TestSubNodeFloatDoubleNegation {
     @Test
     // Match a generic SubNode, because scalar Float16 operations are often
     // performed as float operations.
-    @IR(counts = { IRNode.SUB, "2" })
+    @IR(counts = { IRNode.SUB, "2" }, applyIfPlatform = {"riscv64", "false"})
+    @IR(counts = { IRNode.SUB, "2" }, applyIfCPUFeature = {"zfh", "false"})
+    @IR(counts = { IRNode.SUB_HF, "2" }, applyIfCPUFeature = {"zfh", "true"})
     // Checks that the subtractions in 0 - (0 - hf) do not get eliminiated
     public static Float16 testHalfFloat(Float16 hf) {
         return Float16.subtract(

@@ -33,7 +33,7 @@
 class ZVirtualMemoryManagerImpl : public CHeapObj<mtGC> {
 public:
   virtual void initialize_before_reserve() {}
-  virtual void initialize_after_reserve(ZMemoryManager* manager) {}
+  virtual void register_callbacks(ZMemoryManager* manager) {}
   virtual bool reserve(zaddress_unsafe addr, size_t size) = 0;
   virtual void unreserve(zaddress_unsafe addr, size_t size) = 0;
 };
@@ -47,7 +47,7 @@ public:
 class ZVirtualMemoryManagerSmallPages : public ZVirtualMemoryManagerImpl {
 private:
   class PlaceholderCallbacks : public AllStatic {
-  public:
+  private:
     static void split_placeholder(zoffset start, size_t size) {
       ZMapper::split_placeholder(ZOffset::address_unsafe(start), size);
     }
@@ -79,99 +79,93 @@ private:
       }
     }
 
-    // Called when a memory area is returned to the memory manager but can't
-    // be merged with an already existing area. Make sure this area is covered
-    // by a single placeholder.
-    static void create_callback(const ZMemory* area) {
-      assert(is_aligned(area->size(), ZGranuleSize), "Must be granule aligned");
+    // Callback implementations
 
-      coalesce_into_one_placeholder(area->start(), area->size());
+    // Called when a memory area is going to be handed out to be used.
+    //
+    // Splits the memory area into granule-sized placeholders.
+    static void prepare_for_hand_out_callback(const ZMemory& area) {
+      assert(is_aligned(area.size(), ZGranuleSize), "Must be granule aligned");
+
+      split_into_granule_sized_placeholders(area.start(), area.size());
     }
 
-    // Called when a complete memory area in the memory manager is allocated.
-    // Create granule sized placeholders for the entire area.
-    static void destroy_callback(const ZMemory* area) {
-      assert(is_aligned(area->size(), ZGranuleSize), "Must be granule aligned");
+    // Called when a memory area is handed back to the memory manager.
+    //
+    // Combines the granule-sized placeholders into one placeholder.
+    static void prepare_for_hand_back_callback(const ZMemory& area) {
+      assert(is_aligned(area.size(), ZGranuleSize), "Must be granule aligned");
 
-      split_into_granule_sized_placeholders(area->start(), area->size());
+      coalesce_into_one_placeholder(area.start(), area.size());
     }
 
-    // Called when a memory area is allocated at the front of an exising memory area.
-    // Turn the first part of the memory area into granule sized placeholders.
-    static void shrink_from_front_callback(const ZMemory* area, size_t size) {
-      assert(area->size() > size, "Must be larger than what we try to split out");
-      assert(is_aligned(size, ZGranuleSize), "Must be granule aligned");
+    // Called when inserting a memory area and it can be merged with an
+    // existing, adjacent memory area.
+    //
+    // Coalesces the underlying placeholders into one.
+    static void grow_callback(const ZMemory& from, const ZMemory& to) {
+      assert(is_aligned(from.size(), ZGranuleSize), "Must be granule aligned");
+      assert(is_aligned(to.size(), ZGranuleSize), "Must be granule aligned");
+      assert(from != to, "Must have grown");
+      assert(to.contains(from), "Must be within");
+
+      coalesce_into_one_placeholder(to.start(), to.size());
+    }
+
+    // Called when a memory area is removed from the front or back of an existing
+    // memory area.
+    //
+    // Splits the memory into two placeholders.
+    static void shrink_callback(const ZMemory& from, const ZMemory& to) {
+      assert(is_aligned(from.size(), ZGranuleSize), "Must be granule aligned");
+      assert(is_aligned(to.size(), ZGranuleSize), "Must be granule aligned");
+      assert(from != to, "Must have shrunk");
+      assert(from.contains(to), "Must be larger than what we try to split out");
+      assert(from.start() == to.start() || from.end() == to.end(),
+             "Only verified to work if we split a placeholder into two placeholders");
 
       // Split the area into two placeholders
-      split_placeholder(area->start(), size);
-
-      // Split the first part into granule sized placeholders
-      split_into_granule_sized_placeholders(area->start(), size);
+      split_placeholder(to.start(), to.size());
     }
 
-    // Called when a memory area is allocated at the end of an existing memory area.
-    // Turn the second part of the memory area into granule sized placeholders.
-    static void shrink_from_back_callback(const ZMemory* area, size_t size) {
-      assert(area->size() > size, "Must be larger than what we try to split out");
-      assert(is_aligned(size, ZGranuleSize), "Must be granule aligned");
-
-      // Split the area into two placeholders
-      const zoffset start = to_zoffset(area->end() - size);
-      split_placeholder(start, size);
-
-      // Split the second part into granule sized placeholders
-      split_into_granule_sized_placeholders(start, size);
-    }
-
-    // Called when freeing a memory area and it can be merged at the start of an
-    // existing area. Coalesce the underlying placeholders into one.
-    static void grow_from_front_callback(const ZMemory* area, size_t size) {
-      assert(is_aligned(area->size(), ZGranuleSize), "Must be granule aligned");
-
-      const zoffset start = area->start() - size;
-      coalesce_into_one_placeholder(start, area->size() + size);
-    }
-
-    // Called when freeing a memory area and it can be merged at the end of an
-    // existing area. Coalesce the underlying placeholders into one.
-    static void grow_from_back_callback(const ZMemory* area, size_t size) {
-      assert(is_aligned(area->size(), ZGranuleSize), "Must be granule aligned");
-
-      coalesce_into_one_placeholder(area->start(), area->size() + size);
-    }
-
-    static void register_with(ZMemoryManager* manager) {
+  public:
+    static ZMemoryManager::Callbacks callbacks() {
       // Each reserved virtual memory address area registered in _manager is
       // exactly covered by a single placeholder. Callbacks are installed so
       // that whenever a memory area changes, the corresponding placeholder
       // is adjusted.
       //
-      // The create and grow callbacks are called when virtual memory is
-      // returned to the memory manager. The new memory area is then covered
-      // by a new single placeholder.
+      // The prepare_for_hand_out callback is called when virtual memory is
+      // handed out to callers. The memory area is split into granule-sized
+      // placeholders.
       //
-      // The destroy and shrink callbacks are called when virtual memory is
-      // allocated from the memory manager. The memory area is then is split
-      // into granule-sized placeholders.
+      // The prepare_for_hand_back callback is called when previously handed
+      // out virtual memory is handed back  to the memory manager. The
+      // returned memory area is then covered by a new single placeholder.
+      //
+      // The grow callback is called when a virtual memory area grows. The
+      // resulting memory area is then covered by a single placeholder.
+      //
+      // The shrink callback is called when a virtual memory area is split into
+      // two parts. The two resulting memory areas are then covered by two
+      // separate placeholders.
       //
       // See comment in zMapper_windows.cpp explaining why placeholders are
       // split into ZGranuleSize sized placeholders.
 
       ZMemoryManager::Callbacks callbacks;
 
-      callbacks._create = &create_callback;
-      callbacks._destroy = &destroy_callback;
-      callbacks._shrink_from_front = &shrink_from_front_callback;
-      callbacks._shrink_from_back = &shrink_from_back_callback;
-      callbacks._grow_from_front = &grow_from_front_callback;
-      callbacks._grow_from_back = &grow_from_back_callback;
+      callbacks._prepare_for_hand_out = &prepare_for_hand_out_callback;
+      callbacks._prepare_for_hand_back = &prepare_for_hand_back_callback;
+      callbacks._grow = &grow_callback;
+      callbacks._shrink = &shrink_callback;
 
-      manager->register_callbacks(callbacks);
+      return callbacks;
     }
   };
 
-  virtual void initialize_after_reserve(ZMemoryManager* manager) {
-    PlaceholderCallbacks::register_with(manager);
+  virtual void register_callbacks(ZMemoryManager* manager) {
+    manager->register_callbacks(PlaceholderCallbacks::callbacks());
   }
 
   virtual bool reserve(zaddress_unsafe addr, size_t size) {
@@ -220,8 +214,8 @@ void ZVirtualMemoryManager::pd_initialize_before_reserve() {
   _impl->initialize_before_reserve();
 }
 
-void ZVirtualMemoryManager::pd_initialize_after_reserve() {
-  _impl->initialize_after_reserve(&_manager);
+void ZVirtualMemoryManager::pd_register_callbacks(ZMemoryManager* manager) {
+  _impl->register_callbacks(manager);
 }
 
 bool ZVirtualMemoryManager::pd_reserve(zaddress_unsafe addr, size_t size) {

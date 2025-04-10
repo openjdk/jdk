@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
       elif test "x$TARGET_CPU" = xaarch64; then
         # for host x86-64, target aarch64
         # aarch64 requires Visual Studio 16.8 or higher
-        VCVARSFILES="vcvarsamd64_arm64.bat vcvarsx86_arm64.bat"
+        VCVARSFILES="vcvarsarm64.bat vcvarsamd64_arm64.bat vcvarsx86_arm64.bat"
       fi
 
       for VCVARSFILE in $VCVARSFILES; do

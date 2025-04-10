@@ -291,7 +291,7 @@ void DowncallLinker::StubGenerator::generate() {
               Assembler::StoreLoad | Assembler::StoreStore));
     }
 
-    __ safepoint_poll(L_safepoint_poll_slow_path, r15_thread, true /* at_return */, false /* in_nmethod */);
+    __ safepoint_poll(L_safepoint_poll_slow_path, true /* at_return */, false /* in_nmethod */);
     __ cmpl(Address(r15_thread, JavaThread::suspend_flags_offset()), 0);
     __ jcc(Assembler::notEqual, L_safepoint_poll_slow_path);
 
@@ -305,7 +305,7 @@ void DowncallLinker::StubGenerator::generate() {
     __ jcc(Assembler::equal, L_reguard);
     __ bind(L_after_reguard);
 
-    __ reset_last_Java_frame(r15_thread, true);
+    __ reset_last_Java_frame(true);
     __ block_comment("} thread native2java");
   }
 

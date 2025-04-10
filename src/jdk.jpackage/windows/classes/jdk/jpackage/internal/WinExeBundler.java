@@ -32,6 +32,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Map;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.util.PathUtils;
 
 @SuppressWarnings("restricted")

@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotClassFilter.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
@@ -34,6 +35,7 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
+#include "cds/lambdaFormInvokers.inline.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "cds/unregisteredClasses.hpp"
@@ -463,6 +465,21 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
   return (klass == *v);
 }
 
+void SystemDictionaryShared::copy_unregistered_class_size_and_crc32(InstanceKlass* klass) {
+  precond(CDSConfig::is_dumping_final_static_archive());
+  precond(klass->is_shared());
+
+  // A shared class must have a RunTimeClassInfo record
+  const RunTimeClassInfo* record = find_record(&_static_archive._unregistered_dictionary,
+                                               nullptr, klass->name());
+  precond(record != nullptr);
+  precond(record->klass() == klass);
+
+  DumpTimeClassInfo* info = get_info(klass);
+  info->_clsfile_size = record->crc()->_clsfile_size;
+  info->_clsfile_crc32 = record->crc()->_clsfile_crc32;
+}
+
 void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(!is_builtin(k), "must be unregistered class");
@@ -484,7 +501,10 @@ void SystemDictionaryShared::initialize() {
 void SystemDictionaryShared::init_dumptime_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   assert(SystemDictionaryShared::class_loading_may_happen(), "sanity");
-  _dumptime_table->allocate_info(k);
+  DumpTimeClassInfo* info = _dumptime_table->allocate_info(k);
+  if (AOTClassFilter::is_aot_tooling_class(k)) {
+    info->set_is_aot_tooling_class();
+  }
 }
 
 void SystemDictionaryShared::remove_dumptime_info(InstanceKlass* k) {
@@ -662,7 +682,7 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
 }
 
 void SystemDictionaryShared::finish_exclusion_checks() {
-  if (CDSConfig::is_dumping_dynamic_archive()) {
+  if (CDSConfig::is_dumping_dynamic_archive() || CDSConfig::is_dumping_preimage_static_archive()) {
     // Do this first -- if a base class is excluded due to duplication,
     // all of its subclasses will also be excluded.
     ResourceMark rm;
@@ -1056,10 +1076,7 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
   if (DynamicArchive::is_mapped()) {
     // Use the regenerated holder classes in the dynamic archive as they
     // have more methods than those in the base archive.
-    if (name == vmSymbols::java_lang_invoke_Invokers_Holder() ||
-        name == vmSymbols::java_lang_invoke_DirectMethodHandle_Holder() ||
-        name == vmSymbols::java_lang_invoke_LambdaForm_Holder() ||
-        name == vmSymbols::java_lang_invoke_DelegatingMethodHandle_Holder()) {
+    if (LambdaFormInvokers::may_be_regenerated_class(name)) {
       record = dynamic_dict->lookup(name, hash, 0);
       if (record != nullptr) {
         return record;

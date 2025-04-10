@@ -48,7 +48,11 @@ import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
 import static jdk.jpackage.internal.StandardBundlerParam.DMG_CONTENT;
+
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.PathGroup;
 
 public class MacDmgBundler extends MacBaseInstallerBundler {
 

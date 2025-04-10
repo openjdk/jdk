@@ -46,6 +46,18 @@ inline size_t ZMemory::size() const {
   return end() - start();
 }
 
+inline bool ZMemory::operator==(const ZMemory& other) const {
+  return _start == other._start && _end == other._end;
+}
+
+inline bool ZMemory::operator!=(const ZMemory& other) const {
+  return !operator==(other);
+}
+
+inline bool ZMemory::contains(const ZMemory& other) const {
+  return _start <= other._start && other.end() <= end();
+}
+
 inline void ZMemory::shrink_from_front(size_t size) {
   assert(this->size() > size, "Too small");
   _start += size;

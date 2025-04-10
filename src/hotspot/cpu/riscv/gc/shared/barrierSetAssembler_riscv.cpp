@@ -275,7 +275,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
           // order, while allowing other independent instructions to be reordered.
           // Note: This may be slower than using a membar(load|load) (fence r,r).
           // Because processors will not start the second load until the first comes back.
-          // This means you can’t overlap the two loads,
+          // This means you can't overlap the two loads,
           // which is stronger than needed for ordering (stronger than TSO).
           __ srli(ra, t0, 32);
           __ orr(t1, t1, ra);

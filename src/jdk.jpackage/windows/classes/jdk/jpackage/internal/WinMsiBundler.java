@@ -55,6 +55,9 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.AppImageFile.LauncherInfo;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.MsiVersion;
+import jdk.jpackage.internal.model.PackagerException;
 
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;

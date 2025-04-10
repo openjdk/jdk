@@ -148,6 +148,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 #define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
 
 class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
+  friend class LightweightSynchronizer;
   friend class ObjectSynchronizer;
   friend class ObjectWaiter;
   friend class VMStructs;
@@ -384,6 +385,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      wait(jlong millis, bool interruptible, TRAPS);
   void      notify(TRAPS);
   void      notifyAll(TRAPS);
+  void      quick_notify(JavaThread* current);
+  void      quick_notifyAll(JavaThread* current);
 
   void      print() const;
 #ifdef ASSERT

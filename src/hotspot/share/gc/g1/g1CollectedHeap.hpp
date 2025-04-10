@@ -1313,7 +1313,7 @@ private:
 
 public:
   void print_on(outputStream* st) const override;
-  void print_extended_on(outputStream* st) const override;
+  void print_extended_on(outputStream* st) const;
   void print_on_error(outputStream* st) const override;
 
   void gc_threads_do(ThreadClosure* tc) const override;

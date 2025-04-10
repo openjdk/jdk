@@ -690,6 +690,20 @@ public class Log extends AbstractLog {
      }
 
     /**
+     * Reset the state of this instance.
+     */
+    public void clear() {
+        recorded.clear();
+        sourceMap.clear();
+        nerrors = 0;
+        nwarnings = 0;
+        nsuppressederrors = 0;
+        nsuppressedwarns = 0;
+        while (diagnosticHandler.prev != null)
+            popDiagnosticHandler(diagnosticHandler);
+    }
+
+    /**
      * Common diagnostic handling.
      * The diagnostic is counted, and depending on the options and how many diagnostics have been
      * reported so far, the diagnostic may be handed off to writeDiagnostic.

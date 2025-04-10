@@ -3763,7 +3763,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   InstanceKlass* ik = const_cast<InstanceKlass*>(this);
   ik->print_nonstatic_fields(&print_nonstatic_field);
 
-  st->print(BULLET"non-static oop maps: ");
+  st->print(BULLET"non-static oop maps (%d entries): ", nonstatic_oop_map_count());
   OopMapBlock* map     = start_of_nonstatic_oop_maps();
   OopMapBlock* end_map = map + nonstatic_oop_map_count();
   while (map < end_map) {

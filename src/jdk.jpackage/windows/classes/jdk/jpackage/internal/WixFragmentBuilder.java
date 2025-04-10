@@ -43,6 +43,7 @@ import jdk.internal.util.Architecture;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import jdk.jpackage.internal.WixSourceConverter.ResourceGroup;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.model.DottedVersion;
 import jdk.jpackage.internal.util.XmlUtils;
 
 /**

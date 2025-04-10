@@ -289,10 +289,17 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
         toop->isa_instptr() &&
         toop->is_instptr()->instance_klass()->is_java_lang_Object() &&
         toop->offset() == Type::OffsetBot)) {
-    // compress paths and change unreachable cycles to TOP
-    // If not, we can update the input infinitely along a MergeMem cycle
-    // Equivalent code in PhiNode::Ideal
-    Node* m  = phase->transform(mmem);
+    // IGVN _delay_transform may be set to true and if that is the case and mmem
+    // is already a registered node then the validation inside transform will
+    // complain.
+    Node* m = mmem;
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    if (igvn == nullptr || !igvn->delay_transform()) {
+      // compress paths and change unreachable cycles to TOP
+      // If not, we can update the input infinitely along a MergeMem cycle
+      // Equivalent code in PhiNode::Ideal
+      m = phase->transform(mmem);
+    }
     // If transformed to a MergeMem, get the desired slice
     // Otherwise the returned node represents memory for every slice
     mem = (m->is_MergeMem())? m->as_MergeMem()->memory_at(alias_idx) : m;
@@ -2211,10 +2218,8 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     // This will help short-circuit some reflective code.
     if (tkls->offset() == in_bytes(Klass::layout_helper_offset()) &&
         tkls->isa_instklassptr() && // not directly typed as an array
-        !tkls->is_instklassptr()->instance_klass()->is_java_lang_Object() // not the supertype of all T[] and specifically not Serializable & Cloneable
-        ) {
-      // Note:  When interfaces are reliable, we can narrow the interface
-      // test to (klass != Serializable && klass != Cloneable).
+        !tkls->is_instklassptr()->might_be_an_array() // not the supertype of all T[] (java.lang.Object) or has an interface that is not Serializable or Cloneable
+    ) {
       assert(Opcode() == Op_LoadI, "must load an int from _layout_helper");
       jint min_size = Klass::instance_layout_helper(oopDesc::header_size(), false);
       // The key property of this type is that it folds up tests

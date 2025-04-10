@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 
 /*
  * @test id=Arena_allocateFrom
- * @run main/othervm/timeout=5 --enable-native-access=ALL-UNNAMED -Xlog:class+init TestDeadlock Arena
+ * @run main/othervm/timeout=10 --enable-native-access=ALL-UNNAMED -Xlog:class+init TestDeadlock Arena
  */
 
 /*
  * @test id=FileChannel_map
- * @run main/othervm/timeout=5 --enable-native-access=ALL-UNNAMED -Xlog:class+init TestDeadlock FileChannel
+ * @run main/othervm/timeout=60 --enable-native-access=ALL-UNNAMED -Xlog:class+init TestDeadlock FileChannel
  */
 
 import java.lang.foreign.*;

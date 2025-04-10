@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  */
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.*;
 
@@ -270,6 +271,83 @@ public class DeflateIn_InflateOut {
         check(Arrays.equals(data, baos.toByteArray()));
     }
 
+    /**
+     * Verifies that when a DeflaterInputStream is constructed
+     * by passing a Deflater instance, then closing the DeflaterInputStream
+     * will not close the passed Deflater instance.
+     */
+    private static void deflaterInputStreamDeflaterNotClosed() throws Throwable {
+        // some arbitrary content
+        final byte[] original = "foo".repeat(1024).getBytes(StandardCharsets.US_ASCII);
+        // run the DeflaterInputStream tests
+        try (final Deflater def = new Deflater()) {
+            try (ByteArrayInputStream bis = new ByteArrayInputStream(original);
+                 DeflaterInputStream iis = new DeflaterInputStream(bis, def)) {
+                iis.readAllBytes();
+            }
+            // verify the deflater wasn't closed - reset() will throw IllegalStateException if
+            // the deflater is closed
+            def.reset();
+
+            // repeat the test with the other constructor
+            try (ByteArrayInputStream bis = new ByteArrayInputStream(original);
+                 DeflaterInputStream iis = new DeflaterInputStream(bis, def, 1024)) {
+                iis.readAllBytes();
+            }
+            // verify the deflater wasn't closed - reset() will throw IllegalStateException if
+            // the deflater is closed
+            def.reset();
+        }
+    }
+
+    private static byte[] deflate(final byte[] original) {
+        final ByteArrayOutputStream compressedBaos = new ByteArrayOutputStream();
+        try (Deflater compressor = new Deflater()) {
+            compressor.setInput(original);
+            compressor.finish();
+            while (!compressor.finished()) {
+                byte[] tmpBuffer = new byte[1024];
+                int numCompressed = compressor.deflate(tmpBuffer);
+                compressedBaos.write(tmpBuffer, 0, numCompressed);
+            }
+        }
+        return compressedBaos.toByteArray();
+    }
+
+    /**
+     * Verifies that when a InflaterOutputStream is constructed
+     * by passing a Inflater instance, then closing the InflaterOutputStream
+     * will not close the passed Inflater instance.
+     */
+    private static void inflaterOutputStreamInflaterNotClosed() throws Throwable {
+        // some arbitrary content
+        final byte[] original = "bar".repeat(1024).getBytes(StandardCharsets.US_ASCII);
+        // deflate it
+        final byte[] deflated = deflate(original);
+        try (final Inflater infl = new Inflater()) {
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                 InflaterOutputStream dos = new InflaterOutputStream(bos, infl)) {
+                dos.write(deflated);
+                dos.flush();
+                check(Arrays.equals(original, bos.toByteArray()));
+            }
+            // verify the inflater wasn't closed - reset() will throw IllegalStateException if
+            // the inflater is closed
+            infl.reset();
+
+            // repeat the test with the other constructor
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                 InflaterOutputStream dos = new InflaterOutputStream(bos, infl, 1024)) {
+                dos.write(deflated);
+                dos.flush();
+                check(Arrays.equals(original, bos.toByteArray()));
+            }
+            // verify the inflater wasn't closed - reset() will throw IllegalStateException if
+            // the inflater is closed
+            infl.reset();
+        }
+    }
+
     public static void realMain(String[] args) throws Throwable {
         new Random(new Date().getTime()).nextBytes(data);
 
@@ -284,6 +362,10 @@ public class DeflateIn_InflateOut {
         SkipBytes();
 
         NeedsDictionary();
+
+        deflaterInputStreamDeflaterNotClosed();
+
+        inflaterOutputStreamInflaterNotClosed();
     }
 
     //--------------------- Infrastructure ---------------------------

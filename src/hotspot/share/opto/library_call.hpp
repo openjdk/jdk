@@ -209,7 +209,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_pow();
   template <typename OverflowOp>
   bool inline_math_overflow(Node* arg1, Node* arg2);
-  void inline_math_mathExact(Node* math, Node* test);
+  bool inline_math_mathExact(Node* math, Node* test);
   bool inline_math_addExactI(bool is_increment);
   bool inline_math_addExactL(bool is_increment);
   bool inline_math_multiplyExactI();

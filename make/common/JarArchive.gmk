@@ -256,7 +256,7 @@ define SetupJarArchiveBody
 	  $$(if $$($1_JARMAIN), \
 	    $(ECHO) "Main-Class: $$(strip $$($1_JARMAIN))" >> $$($1_MANIFEST_FILE) $$(NEWLINE)) \
 	  $$(if $$($1_EXTRA_MANIFEST_ATTR), \
-	    $(PRINTF) "$$($1_EXTRA_MANIFEST_ATTR)\n" >> $$($1_MANIFEST_FILE) $$(NEWLINE)) \
+	    $(ECHO) "$$($1_EXTRA_MANIFEST_ATTR)" >> $$($1_MANIFEST_FILE) $$(NEWLINE)) \
 	  $(ECHO) Creating $$($1_NAME) $$(NEWLINE) \
 	  $$($1_JAR_CMD) --create $$($1_JAR_OPTIONS) --file $$@ --manifest $$($1_MANIFEST_FILE) $$(NEWLINE) \
 	  $$($1_SCAPTURE_CONTENTS) \
