@@ -29,7 +29,7 @@ import java.io.IOException;
 
 import static sun.nio.fs.WindowsConstants.*;
 import static sun.nio.fs.WindowsNativeDispatcher.*;
-import static jdk.internal.util.Exceptions.throwException;
+import static jdk.internal.util.Exceptions.formatMsg;
 import static jdk.internal.util.Exceptions.filterUserName;
 
 class WindowsUserPrincipals {
@@ -140,8 +140,8 @@ class WindowsUserPrincipals {
         } catch (WindowsException x) {
             if (x.lastError() == ERROR_NONE_MAPPED)
                 throw new UserPrincipalNotFoundException(name);
-            throwException(IOException.class, "%s " + x.errorString(),
-                           filterUserName(name).suffixWith(": "));
+            throw new IOException(formatMsg("%s " + x.errorString(),
+                                            filterUserName(name).suffixWith(": ")));
         }
         assert size > 0;
 
@@ -156,9 +156,8 @@ class WindowsUserPrincipals {
             // return user principal
             return fromSid(sidBuffer.address());
         } catch (WindowsException x) {
-            throwException(IOException.class, "%s " + x.errorString(),
-                           filterUserName(name).suffixWith(": "));
+            throw new IOException(formatMsg("%s " + x.errorString(),
+                                            filterUserName(name).suffixWith(": ")));
         }
-        return null; // can't happen. Exception will be thrown
     }
 }

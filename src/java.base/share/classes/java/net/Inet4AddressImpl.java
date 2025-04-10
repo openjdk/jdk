@@ -28,7 +28,7 @@ import java.net.spi.InetAddressResolver.LookupPolicy;
 
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV4;
 import static jdk.internal.util.Exceptions.filterLookupInfo;
-import static jdk.internal.util.Exceptions.throwException;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /*
  * Package private implementation of InetAddressImpl for IPv4.
@@ -40,7 +40,7 @@ final class Inet4AddressImpl implements InetAddressImpl {
     public InetAddress[] lookupAllHostAddr(String hostname, LookupPolicy lookupPolicy)
             throws UnknownHostException {
         if ((lookupPolicy.characteristics() & IPV4) == 0) {
-            throwException(UnknownHostException.class, filterLookupInfo(hostname));
+            throw new UnknownHostException(formatMsg("%s", filterLookupInfo(hostname)));
         }
         return lookupAllHostAddr(hostname);
     }

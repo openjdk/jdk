@@ -34,7 +34,7 @@ import jdk.internal.misc.Unsafe;
 import static sun.nio.fs.WindowsNativeDispatcher.*;
 import static sun.nio.fs.WindowsConstants.*;
 import static jdk.internal.util.Exceptions.filterUserName;
-import static jdk.internal.util.Exceptions.throwException;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * A SecurityDescriptor for use when setting a file's ACL or creating a file
@@ -138,8 +138,8 @@ class WindowsSecurityDescriptor {
                         Math.max(SIZEOF_ACCESS_ALLOWED_ACE, SIZEOF_ACCESS_DENIED_ACE);
 
                 } catch (WindowsException x) {
-                    throwException(IOException.class, "Failed to get SID %s : " + x.errorString(),
-                                   filterUserName(user.getName()).prefixWith("for "));
+                    throw new IOException(formatMsg("Failed to get SID %s : " + x.errorString(),
+                                                    filterUserName(user.getName()).prefixWith("for ")));
                 }
             }
 

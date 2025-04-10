@@ -47,7 +47,7 @@ import sun.security.util.SecurityConstants;
 import sun.security.util.Debug;
 
 import static jdk.internal.util.Exceptions.filterNetInfo;
-import static jdk.internal.util.Exceptions.throwException;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * This class represents access to a network via sockets.
@@ -394,8 +394,8 @@ public final class SocketPermission extends Permission
             if (rb != -1) {
                 host = host.substring(start, rb);
             } else {
-                throwException(IllegalArgumentException.class,
-                               "invalid host/port%s", filterNetInfo(host).prefixWith(": "));
+                throw new IllegalArgumentException(
+                    formatMsg("invalid host/port%s", filterNetInfo(host).prefixWith(": ")));
             }
             sep = hostport.indexOf(':', rb+1);
         } else {
@@ -412,8 +412,8 @@ public final class SocketPermission extends Permission
             try {
                 portrange = parsePort(port);
             } catch (Exception e) {
-                throwException(IllegalArgumentException.class,
-                               "invalid port range%s", filterNetInfo(port).prefixWith(": "));
+                throw new IllegalArgumentException(
+                    formatMsg("invalid port range%s", filterNetInfo(port).prefixWith(": ")));
             }
         } else {
             portrange = new int[] { PORT_MIN, PORT_MAX };
@@ -786,7 +786,7 @@ public final class SocketPermission extends Permission
             throw uhe;
         }  catch (IndexOutOfBoundsException iobe) {
             invalid = true;
-            throwException(UnknownHostException.class, filterNetInfo(getName()));
+            throw new UnknownHostException(formatMsg("%s", filterNetInfo(getName())));
         }
     }
 

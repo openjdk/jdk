@@ -42,11 +42,9 @@ import jdk.internal.misc.VM;
  * Contains static utility methods which can filter exception
  * message strings for sensitive information.
  *
- * Code using this mechanism should use one of the static throwException
- * methods below to generate and throw the exception in one method.
- * exception() methods are also provided to generate an exception which
- * then be modified before being thrown or used. Lastly, formatMsg()
- * can generate a formatted (enhanced or restricted) string only.
+ * Code using this mechanism should use formatMsg()
+ * to generate a formatted (enhanced or restricted) string for exception
+ * messages.
  *
  * The methods above take variable numbers of SensitiveInfo objects
  * as parameters which contain the text that may have to be filtered.
@@ -140,59 +138,6 @@ public final class Exceptions {
                 return replacement;
             }
         }
-    }
-
-    /**
-     * Throw an exception of the given class (which has a single arg (String) constructor
-     * with the given format string. For each %s in the format string, there must be a
-     * SensitiveInfo following that generates a message string in either enhanced or
-     * restricted mode. The entire string is then passed to the exception constructor
-     * Format specifiers other than %s are not supported, and will cause a runtime exception.
-     */
-    public static <X extends Throwable> void throwException(Class<X> exClass, String format,
-                                                            SensitiveInfo... infos) throws X
-    {
-        throw exception(exClass, format, infos);
-    }
-
-    /**
-     * Simplified version of above with one SensitiveInfo and a "%s" format string
-     */
-    public static <X extends Throwable> void throwException(Class<X> exClass, SensitiveInfo... infos) throws X
-    {
-        throwException(exClass, "%s", infos);
-    }
-
-    /**
-     * Returns the exception without throwing it
-     */
-    public static <X extends Throwable> X exception(Class<X> exClass, String format,
-                                                    SensitiveInfo... infos)
-    {
-        try {
-            Constructor<X> ctor = exClass.getConstructor(String.class);
-            String msg = formatMsg(format, infos);
-            return ctor.newInstance(msg);
-        } catch (ReflectiveOperationException e) {
-            throw new InternalError();
-        }
-    }
-
-    public static <X extends Throwable> X exception(Class<X> exClass, SensitiveInfo... infos)
-    {
-        return exception(exClass, "%s", infos);
-    }
-
-    /**
-     * Special case for URISyntaxException (has two additional parameters)
-     */
-    public static URISyntaxException throwURISyntaxException(String format, String arg2,
-                                                             int index, SensitiveInfo... infos)
-    throws URISyntaxException
-    {
-        String msg = formatMsg(format, infos);
-        URISyntaxException ex = new URISyntaxException(msg, arg2, index);
-        throw ex;
     }
 
     static final class SocketInfo extends SensitiveInfo {

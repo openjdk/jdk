@@ -30,7 +30,7 @@ import java.io.IOException;
 import static sun.nio.fs.UnixNativeDispatcher.*;
 
 import static jdk.internal.util.Exceptions.filterUserName;
-import static jdk.internal.util.Exceptions.throwException;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * Unix implementation of java.nio.file.attribute.UserPrincipal
@@ -139,15 +139,15 @@ public class UnixUserPrincipals {
         try {
             id = (isGroup) ? getgrnam(name) : getpwnam(name);
         } catch (UnixException x) {
-            throwException(IOException.class, "%s " + x.errorString(),
-                           filterUserName(name).suffixWith(": "));
+            throw new IOException(formatMsg("%s " + x.errorString(),
+                                            filterUserName(name).suffixWith(": ")));
         }
         if (id == -1) {
             // lookup failed, allow input to be uid or gid
             try {
                 id = Integer.parseInt(name);
             } catch (NumberFormatException ignore) {
-                throwException(UserPrincipalNotFoundException.class, filterUserName(name));
+                throw new UserPrincipalNotFoundException(formatMsg("%s", filterUserName(name)));
             }
         }
         return id;

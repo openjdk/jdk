@@ -36,7 +36,7 @@ import java.util.Enumeration;
 import java.util.Arrays;
 import java.util.Objects;
 import static jdk.internal.util.Exceptions.filterLookupInfo;
-import static jdk.internal.util.Exceptions.throwException;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * This class represents an Internet Protocol version 6 (IPv6) address.
@@ -583,8 +583,9 @@ class Inet6Address extends InetAddress {
         if (addrBytes.length == Inet4Address.INADDRSZ) {
             if (numericZone != -1 || ifname != null) {
                 // IPv4-mapped address must not contain zone-id
-                throwException(UnknownHostException.class, "%sinvalid IPv4-mapped address",
-                               filterLookupInfo(addressLiteral).suffixWith(": "));
+                throw new UnknownHostException(
+                    formatMsg("%sinvalid IPv4-mapped address",
+                              filterLookupInfo(addressLiteral).suffixWith(": ")));
             }
             return new Inet4Address(null, addrBytes);
         }

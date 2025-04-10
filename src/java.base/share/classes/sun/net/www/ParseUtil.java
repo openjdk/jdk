@@ -41,7 +41,7 @@ import java.util.HexFormat;
 
 import sun.nio.cs.UTF_8;
 import static jdk.internal.util.Exceptions.filterNetInfo;
-import static jdk.internal.util.Exceptions.throwURISyntaxException;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * A class that contains useful routines common to sun.net.www
@@ -504,8 +504,8 @@ public final class ParseUtil {
     {
         if (scheme != null) {
             if (path != null && !path.isEmpty() && path.charAt(0) != '/')
-                throwURISyntaxException("%s", "Relative path in absolute URI",
-                                        -1, filterNetInfo(s));
+                throw new URISyntaxException(formatMsg("%s", filterNetInfo(s)),
+                                             "Relative path in absolute URI");
         }
     }
 

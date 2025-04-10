@@ -44,8 +44,8 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.ThreadTracker;
 import jdk.internal.misc.VM;
 import sun.net.util.IPAddressUtil;
-import static jdk.internal.util.Exceptions.throwURISyntaxException;
 import static jdk.internal.util.Exceptions.filterNetInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * Class {@code URL} represents a Uniform Resource
@@ -1171,7 +1171,7 @@ public final class URL implements java.io.Serializable {
         if (authority != null && isBuiltinStreamHandler(handler)) {
             String s = IPAddressUtil.checkAuthority(this);
             if (s != null)
-                throwURISyntaxException("%s", s, -1, filterNetInfo(authority));
+                throw new URISyntaxException(formatMsg("%s", filterNetInfo(authority)), s);
         }
         return uri;
     }

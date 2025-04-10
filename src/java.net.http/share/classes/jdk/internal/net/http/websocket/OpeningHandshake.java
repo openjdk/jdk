@@ -62,7 +62,7 @@ import static java.lang.String.format;
 import static jdk.internal.net.http.common.Utils.isValidName;
 import static jdk.internal.net.http.common.Utils.stringOf;
 import static jdk.internal.util.Exceptions.filterNetInfo;
-import static jdk.internal.util.Exceptions.throwException;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 public class OpeningHandshake {
 
@@ -338,11 +338,13 @@ public class OpeningHandshake {
         if (!("ws".equalsIgnoreCase(scheme) || "wss".equalsIgnoreCase(scheme)))
             throw illegal("invalid URI scheme: " + scheme);
         if (uri.getHost() == null)
-            throwException(IllegalArgumentException.class, "URI must contain a host%s",
-                           filterNetInfo(uri.toString()).prefixWith(": "));
+            throw new IllegalArgumentException(
+                formatMsg("URI must contain a host%s",
+                          filterNetInfo(uri.toString()).prefixWith(": ")));
         if (uri.getFragment() != null)
-            throwException(IllegalArgumentException.class, "URI must not contain a fragment%s",
-                           filterNetInfo(uri.toString()).prefixWith(": "));
+            throw new IllegalArgumentException(
+                formatMsg("URI must not contain a fragment%s",
+                          filterNetInfo(uri.toString()).prefixWith(": ")));
         return uri;
     }
 

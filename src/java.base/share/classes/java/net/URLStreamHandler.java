@@ -30,7 +30,7 @@ import java.util.Locale;
 import java.util.Objects;
 import sun.net.util.IPAddressUtil;
 
-import static jdk.internal.util.Exceptions.throwException;
+import static jdk.internal.util.Exceptions.formatMsg;
 import static jdk.internal.util.Exceptions.filterNetInfo;
 
 /**
@@ -208,8 +208,8 @@ public abstract class URLStreamHandler {
                         host = nhost.substring(0,ind+1);
                         if (!IPAddressUtil.
                             isIPv6LiteralAddress(host.substring(1, ind))) {
-                            throwException(IllegalArgumentException.class, "Invalid host%s",
-                                           filterNetInfo(host).prefixWith(": "));
+                            throw new IllegalArgumentException(
+                                formatMsg("Invalid host%s", filterNetInfo(host).prefixWith(": ")));
                         }
 
                         port = -1 ;
@@ -222,13 +222,15 @@ public abstract class URLStreamHandler {
                                         nhost.length(), 10);
                                 }
                             } else {
-                                throwException(IllegalArgumentException.class, "Invalid authority field%s",
-                                               filterNetInfo(authority).prefixWith(": "));
+                                throw new IllegalArgumentException(
+                                    formatMsg("Invalid authority field%s",
+                                               filterNetInfo(authority).prefixWith(": ")));
                             }
                         }
                     } else {
-                        throwException(IllegalArgumentException.class, "Invalid authority field%s",
-                                       filterNetInfo(authority).prefixWith(": "));
+                        throw new IllegalArgumentException(
+                            formatMsg("Invalid authority field%s",
+                                       filterNetInfo(authority).prefixWith(": ")));
                     }
                 } else {
                     ind = host.indexOf(':');

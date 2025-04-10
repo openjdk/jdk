@@ -27,7 +27,7 @@ package java.net;
 
 import java.util.Objects;
 import static jdk.internal.util.Exceptions.filterNetInfo;
-import static jdk.internal.util.Exceptions.throwException;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * This class represents a proxy setting, typically a type (http, socks) and
@@ -96,10 +96,10 @@ public class Proxy {
      */
     public Proxy(Type type, SocketAddress sa) {
         if ((type == Type.DIRECT) || !(sa instanceof InetSocketAddress)) {
-            throwException(IllegalArgumentException.class,
-                           "type " + type + " is not compatible with address %s",
-                           filterNetInfo(sa.toString())
-                               .replaceWith("type " + sa.getClass().toString()));
+            throw new IllegalArgumentException(
+                formatMsg("type " + type + " is not compatible with address %s",
+                          filterNetInfo(sa.toString())
+                               .replaceWith("type " + sa.getClass().toString())));
         }
         this.type = type;
         this.sa = sa;

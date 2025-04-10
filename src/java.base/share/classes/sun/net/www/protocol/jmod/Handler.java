@@ -32,7 +32,7 @@ import java.net.MalformedURLException;
 import java.io.IOException;
 
 import static jdk.internal.util.Exceptions.filterJarName;
-import static jdk.internal.util.Exceptions.throwException;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * Placeholder protocol handler for the jmod protocol.
@@ -46,8 +46,8 @@ public class Handler extends URLStreamHandler {
         String s = url.toString();
         int index = s.indexOf("!/");
         if (index == -1)
-            throwException(MalformedURLException.class, "no !/ found in url spec%s",
-                           filterJarName(s).prefixWith(": "));
+            throw new MalformedURLException(
+                formatMsg("no !/ found in url spec%s", filterJarName(s).prefixWith(": ")));
 
         throw new IOException("Can't connect to jmod URL");
     }

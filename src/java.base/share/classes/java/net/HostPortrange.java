@@ -30,7 +30,7 @@ import java.util.Locale;
 import sun.net.util.IPAddressUtil;
 
 import static jdk.internal.util.Exceptions.filterNetInfo;
-import static jdk.internal.util.Exceptions.throwException;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * Parses a string containing a host/domain name and port range
@@ -80,8 +80,9 @@ class HostPortrange {
             if (rb != -1) {
                 hoststr = str.substring(1, rb);
             } else {
-                throwException(IllegalArgumentException.class, "invalid IPv6 address%s",
-                               filterNetInfo(str).prefixWith(": "));
+                throw new IllegalArgumentException(
+                           formatMsg("invalid IPv6 address%s",
+                                     filterNetInfo(str).prefixWith(": ")));
             }
             int sep = str.indexOf(':', rb + 1);
             if (sep != -1 && str.length() > sep) {
@@ -160,8 +161,8 @@ class HostPortrange {
         try {
             portrange = parsePort(portstr);
         } catch (Exception e) {
-            throwException(IllegalArgumentException.class, "invalid port range%s",
-                           filterNetInfo(portstr).prefixWith(": "));
+            throw new IllegalArgumentException(
+                formatMsg("invalid port range%s", filterNetInfo(portstr).prefixWith(": ")));
         }
     }
 

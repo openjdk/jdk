@@ -36,7 +36,7 @@ import jdk.internal.util.OperatingSystem;
 import sun.net.util.URLUtil;
 import sun.net.www.ParseUtil;
 import static jdk.internal.util.Exceptions.filterJarName;
-import static jdk.internal.util.Exceptions.throwException;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /* A factory for cached JAR file. This class is used to both retrieve
  * and cache Jar files.
@@ -110,7 +110,7 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
             result = URLJarFile.getJarFile(patched, this);
         }
         if (result == null)
-            throwException(FileNotFoundException.class, filterJarName(url.toString()));
+            throw new FileNotFoundException(formatMsg("%s", filterJarName(url.toString())));
         return result;
     }
 
@@ -202,7 +202,7 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
             result = URLJarFile.getJarFile(url, this);
         }
         if (result == null)
-            throwException(FileNotFoundException.class, filterJarName(url.toString()));
+            throw new FileNotFoundException(formatMsg("%s", filterJarName(url.toString())));
 
         return result;
     }

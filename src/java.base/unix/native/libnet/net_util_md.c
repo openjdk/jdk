@@ -199,18 +199,21 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
     buf = (char *) malloc(size);
     if (buf) {
         jstring s;
+        int n;
         if (enhancedExceptions) {
-            snprintf(buf, size, "%s: %s", hostname, error_string);
+            n = snprintf(buf, size, "%s: %s", hostname, error_string);
         } else {
-            snprintf(buf, size, " %s", error_string);
+            n = snprintf(buf, size, " %s", error_string);
         }
-        s = JNU_NewStringPlatform(env, buf);
-        if (s != NULL) {
-            jobject x = JNU_NewObjectByName(env,
+        if (n >= 0) {
+            s = JNU_NewStringPlatform(env, buf);
+            if (s != NULL) {
+                jobject x = JNU_NewObjectByName(env,
                                             "java/net/UnknownHostException",
                                             "(Ljava/lang/String;)V", s);
-            if (x != NULL)
-                (*env)->Throw(env, x);
+                if (x != NULL)
+                    (*env)->Throw(env, x);
+            }
         }
         free(buf);
     }

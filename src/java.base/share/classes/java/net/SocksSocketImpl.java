@@ -38,7 +38,7 @@ import sun.net.www.ParseUtil;
 
 import static sun.net.util.IPAddressUtil.isIPv6LiteralAddress;
 import static jdk.internal.util.Exceptions.filterSocketInfo;
-import static jdk.internal.util.Exceptions.throwException;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * SOCKS (V4 & V5) TCP socket implementation (RFC 1928).
@@ -332,7 +332,7 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             // SOCKS Protocol version 4 doesn't know how to deal with
             // DOMAIN type of addresses (unresolved addresses here)
             if (epoint.isUnresolved())
-                throwException(UnknownHostException.class, filterSocketInfo(epoint.toString()));
+                throw new UnknownHostException(formatMsg("%s", filterSocketInfo(epoint.toString())));
             connectV4(in, out, epoint, deadlineMillis);
             return;
         }
@@ -351,7 +351,7 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             // SOCKS Protocol version 4 doesn't know how to deal with
             // DOMAIN type of addresses (unresolved addresses here)
             if (epoint.isUnresolved())
-                throwException(UnknownHostException.class, filterSocketInfo(epoint.toString()));
+                throw new UnknownHostException(formatMsg("%s", filterSocketInfo(epoint.toString())));
             connectV4(in, out, epoint, deadlineMillis);
             return;
         }

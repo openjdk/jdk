@@ -1309,7 +1309,7 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 #             (socket, addressLookup, net). This is provided for compatibility
 #             with previous releases.
 #
-#  jar     - enables more detailed information in the IOExceptions thrown
+#  jar      - enables more detailed information in the IOExceptions thrown
 #             by classes in the java.util.jar package
 #
 #  userInfo - enables more detailed information in exceptions which may contain
@@ -1318,7 +1318,7 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # The property setting in this file can be overridden by a system property of
 # the same name, with the same syntax and possible values.
 #
-# If the property is not set or set to an empty string, then this is the most 
+# If the property is not set or set to an empty string, then this is the most
 # restricted setting with all categories disabled. The following is the default
 # (out of the box) setting, meaning these categories are not restricted.
 #
