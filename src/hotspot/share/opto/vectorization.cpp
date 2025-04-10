@@ -640,6 +640,12 @@ bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) c
 
   if (vp1.iv_scale() != vp2.iv_scale() &&
       !_vloop.is_pre_loop_invariant(limit)) {
+
+#ifdef ASSERT
+    if (_vloop.is_trace_speculative_aliasing_analysis()) {
+      tty->print_cr("VPointer::can_make_speculative_aliasing_check_with: limit is not pre-loop independent!");
+    }
+#endif
     return false;
   }
 

@@ -291,6 +291,8 @@ class TestMemorySegmentAliasingImpl {
             test_byte_incr_noaliasing_fwd128(x, y);
         });
 
+        tests.put("test_int_to_long_noaliasing",   () -> test_int_to_long_noaliasing(A, B));
+
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -405,7 +407,8 @@ class TestMemorySegmentAliasingImpl {
     @Run(test = {"test_byte_incr_noaliasing",
                  "test_byte_incr_aliasing",
                  "test_byte_incr_aliasing_fwd3",
-                 "test_byte_incr_noaliasing_fwd128"})
+                 "test_byte_incr_noaliasing_fwd128",
+                 "test_int_to_long_noaliasing"})
     void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -485,6 +488,24 @@ class TestMemorySegmentAliasingImpl {
         for (long i = 0; i < a.byteSize(); i++) {
             byte v = a.get(ValueLayout.JAVA_BYTE, i);
             b.set(ValueLayout.JAVA_BYTE, i, (byte)(v + 1));
+        }
+    }
+
+    // TODO: the limit is somehow not pre-loop independent!
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B,   "> 0",
+                  IRNode.VECTOR_CAST_I2L, "> 0",
+                  IRNode.STORE_VECTOR,    "> 0",
+                  ".*multiversion.*",   "= 0"}, // AutoVectorization Predicate SUFFICES
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static void test_int_to_long_noaliasing(MemorySegment a, MemorySegment b) {
+        long limit = a.byteSize() / 8L;
+        for (long i = 0; i < limit; i++) {
+            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, 4L * i);
+            b.set(ValueLayout.JAVA_LONG_UNALIGNED, 8L * i, v);
         }
     }
 }
