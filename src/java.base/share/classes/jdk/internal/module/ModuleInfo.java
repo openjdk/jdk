@@ -408,10 +408,9 @@ public final class ModuleInfo {
                     throw invalidModuleDescriptor("The requires entry for java.base"
                                                   + " has ACC_SYNTHETIC set");
                 }
-                // requires static java.base is illegal unless:
-                // - the major version is 53 (JDK 9), or:
-                if (major >= 54
-                    && mods.contains(Requires.Modifier.STATIC)) {
+                // requires static java.base is illegal unless
+                // the major version is 53 (JDK 9)
+                if (major >= 54 && mods.contains(Requires.Modifier.STATIC)) {
                     String flagName = "ACC_STATIC_PHASE";
                     throw invalidModuleDescriptor("The requires entry for java.base"
                                                   + " has " + flagName + " set");
