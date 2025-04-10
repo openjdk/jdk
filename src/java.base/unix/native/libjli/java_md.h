@@ -59,6 +59,10 @@ static jboolean GetJVMPath(const char *jdkroot, const char *jvmtype,
                            char *jvmpath, jint jvmpathsize);
 static jboolean GetJDKInstallRoot(char *path, jint pathsize, jboolean speculative);
 
+/* Reports a system error message to stderr, including errno */
+JNIEXPORT void JNICALL
+JLI_ReportErrorMessageSys(const char * message, ...);
+
 #if defined(_AIX)
 jboolean GetApplicationHomeFromLibpath(char *buf, jint bufsize);
 #include "java_md_aix.h"

@@ -125,10 +125,6 @@ void CreateExecutionEnvironment(int *argc, char ***argv,
 JNIEXPORT void JNICALL
 JLI_ReportErrorMessage(const char * message, ...);
 
-/* Reports a system error message to stderr or a window */
-JNIEXPORT void JNICALL
-JLI_ReportErrorMessageSys(const char * message, ...);
-
 /* Reports an error message only to stderr. */
 JNIEXPORT void JNICALL
 JLI_ReportMessage(const char * message, ...);
