@@ -87,10 +87,10 @@ import java.util.function.Supplier;
  * <p>
  * If {@code getLogger()} is called from several threads, several instances of
  * {@code Logger} might be created. However, the content can only be set at most once
- * meaning one "winner" is picked among the many loggers.
+ * meaning the first writer wins.
  * <p>
- * To guarantee that, even under races, only one instance of {@code Logger} is ever
- * created, the {@linkplain #orElseSet(Supplier) orElseSet()} method can be used
+ * In order to guarantee that, even under races, only one instance of {@code Logger} is
+ * evee created, the {@linkplain #orElseSet(Supplier) orElseSet()} method can be used
  * instead, where the content is atomically and lazily computed via a
  * {@linkplain Supplier supplier}. In the example below, the supplier is provided in the
  * form of a lambda expression:
