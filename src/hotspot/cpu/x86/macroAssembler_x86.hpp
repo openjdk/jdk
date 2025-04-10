@@ -371,14 +371,12 @@ class MacroAssembler: public Assembler {
   void cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2);
 
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
-                      Register tmp1, Register thread_tmp);
+                      Register tmp1);
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
-  void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
-                     Register thread_tmp = noreg, DecoratorSet decorators = 0);
-  void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
-                              Register thread_tmp = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop(Register dst, Address src, Register tmp1 = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg, DecoratorSet decorators = 0);
   void store_heap_oop(Address dst, Register val, Register tmp1 = noreg,
                       Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
 
@@ -588,7 +586,6 @@ public:
 
   // allocation
   void tlab_allocate(
-    Register thread,                   // Current thread
     Register obj,                      // result: pointer to object after successful allocation
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
     int      con_size_in_bytes,        // object size in bytes if   known at compile time

@@ -49,11 +49,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
   bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
 
   if (!dest_uninitialized) {
-    Register thread = NOT_LP64(rax) LP64_ONLY(r15_thread);
-#ifndef _LP64
-    __ push(thread);
-    __ get_thread(thread);
-#endif
+    Register thread = r15_thread;
 
     Label filtered;
     Address in_progress(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
@@ -65,12 +61,9 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
       __ cmpb(in_progress, 0);
     }
 
-    NOT_LP64(__ pop(thread);)
-
     __ jcc(Assembler::equal, filtered);
 
     __ push_call_clobbered_registers(false /* save_fpu */);
-#ifdef _LP64
     if (count == c_rarg0) {
       if (addr == c_rarg1) {
         // exactly backwards!!
@@ -88,10 +81,6 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
     } else {
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_pre_oop_entry), 2);
     }
-#else
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_pre_oop_entry),
-                    addr, count);
-#endif
     __ pop_call_clobbered_registers(false /* save_fpu */);
 
     __ bind(filtered);
@@ -152,45 +141,21 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
 }
 
 void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                    Register dst, Address src, Register tmp1, Register tmp_thread) {
+                                    Register dst, Address src, Register tmp1) {
   bool on_oop = is_reference_type(type);
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool on_reference = on_weak || on_phantom;
-  ModRefBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+  ModRefBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1);
   if (on_oop && on_reference) {
-    Register thread = NOT_LP64(tmp_thread) LP64_ONLY(r15_thread);
-
-#ifndef _LP64
-    // Work around the x86_32 bug that only manifests with Loom for some reason.
-    // MacroAssembler::resolve_weak_handle calls this barrier with tmp_thread == noreg.
-    if (thread == noreg) {
-      if (dst != rcx && tmp1 != rcx) {
-        thread = rcx;
-      } else if (dst != rdx && tmp1 != rdx) {
-        thread = rdx;
-      } else if (dst != rdi && tmp1 != rdi) {
-        thread = rdi;
-      }
-    }
-    assert_different_registers(dst, tmp1, thread);
-    __ push(thread);
-    __ get_thread(thread);
-#endif
-
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer.
     g1_write_barrier_pre(masm /* masm */,
                          noreg /* obj */,
                          dst /* pre_val */,
-                         thread /* thread */,
                          tmp1 /* tmp */,
                          true /* tosca_live */,
                          true /* expand_call */);
-
-#ifndef _LP64
-    __ pop(thread);
-#endif
   }
 }
 
@@ -231,7 +196,7 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
                                            Label& runtime) {
   // Do we need to load the previous value?
   if (obj != noreg) {
-    __ load_heap_oop(pre_val, Address(obj, 0), noreg, noreg, AS_RAW);
+    __ load_heap_oop(pre_val, Address(obj, 0), noreg, AS_RAW);
   }
   // Is the previous value null?
   __ cmpptr(pre_val, NULL_WORD);
@@ -247,16 +212,13 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
 void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
                                                  Register obj,
                                                  Register pre_val,
-                                                 Register thread,
                                                  Register tmp,
                                                  bool tosca_live,
                                                  bool expand_call) {
   // If expand_call is true then we expand the call_VM_leaf macro
   // directly to skip generating the check by
   // InterpreterMacroAssembler::call_VM_leaf_base that checks _last_sp.
-#ifdef _LP64
-  assert(thread == r15_thread, "must be");
-#endif // _LP64
+  const Register thread = r15_thread;
 
   Label done;
   Label runtime;
@@ -291,18 +253,13 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   // expand_call should be passed true.
 
   if (expand_call) {
-    LP64_ONLY( assert(pre_val != c_rarg1, "smashed arg"); )
-#ifdef _LP64
+    assert(pre_val != c_rarg1, "smashed arg");
     if (c_rarg1 != thread) {
       __ mov(c_rarg1, thread);
     }
     if (c_rarg0 != pre_val) {
       __ mov(c_rarg0, pre_val);
     }
-#else
-    __ push(thread);
-    __ push(pre_val);
-#endif
     __ MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), 2);
   } else {
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, thread);
@@ -316,14 +273,13 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
 static void generate_post_barrier_fast_path(MacroAssembler* masm,
                                             const Register store_addr,
                                             const Register new_val,
-                                            const Register thread,
                                             const Register tmp1,
                                             Label& done,
                                             bool new_val_may_be_null) {
-#ifdef _LP64
-  assert(thread == r15_thread, "must be");
-#endif // _LP64
-  assert_different_registers(store_addr, new_val, thread, tmp1, noreg);
+
+  assert_different_registers(store_addr, new_val, tmp1, noreg);
+
+  Register thread = r15_thread;
 
   // Does store cross heap regions?
   __ movptr(tmp1, store_addr);                                    // tmp1 := store address
@@ -354,17 +310,15 @@ static void generate_post_barrier_fast_path(MacroAssembler* masm,
 void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
                                                   Register store_addr,
                                                   Register new_val,
-                                                  Register thread,
                                                   Register tmp) {
   Label done;
-  generate_post_barrier_fast_path(masm, store_addr, new_val, thread, tmp, done, true /* new_val_may_be_null */);
+  generate_post_barrier_fast_path(masm, store_addr, new_val, tmp, done, true /* new_val_may_be_null */);
   __ bind(done);
 }
 
 #if defined(COMPILER2)
 
 static void generate_c2_barrier_runtime_call(MacroAssembler* masm, G1BarrierStubC2* stub, const Register arg, const address runtime_path) {
-#ifdef _LP64
   SaveLiveRegisters save_registers(masm, stub);
   if (c_rarg0 != arg) {
     __ mov(c_rarg0, arg);
@@ -376,20 +330,15 @@ static void generate_c2_barrier_runtime_call(MacroAssembler* masm, G1BarrierStub
   // call. If it did not contain any live value, it is free to be used. In
   // either case, it is safe to use it here as a call scratch register.
   __ call(RuntimeAddress(runtime_path), rax);
-#else
-  Unimplemented();
-#endif // _LP64
 }
 
 void G1BarrierSetAssembler::g1_write_barrier_pre_c2(MacroAssembler* masm,
                                                     Register obj,
                                                     Register pre_val,
-                                                    Register thread,
                                                     Register tmp,
                                                     G1PreBarrierStubC2* stub) {
-#ifdef _LP64
-  assert(thread == r15_thread, "must be");
-#endif // _LP64
+  const Register thread = r15_thread;
+
   assert(pre_val != noreg, "check this code");
   if (obj != noreg) {
     assert_different_registers(obj, pre_val, tmp);
@@ -425,11 +374,10 @@ void G1BarrierSetAssembler::generate_c2_pre_barrier_stub(MacroAssembler* masm,
 void G1BarrierSetAssembler::g1_write_barrier_post_c2(MacroAssembler* masm,
                                                      Register store_addr,
                                                      Register new_val,
-                                                     Register thread,
                                                      Register tmp,
                                                      bool new_val_may_be_null) {
   Label done;
-  generate_post_barrier_fast_path(masm, store_addr, new_val, thread, tmp, done, new_val_may_be_null);
+  generate_post_barrier_fast_path(masm, store_addr, new_val, tmp, done, new_val_may_be_null);
   __ bind(done);
 }
 
@@ -443,7 +391,6 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
   bool needs_pre_barrier = as_normal;
   bool needs_post_barrier = val != noreg && in_heap;
 
-  Register rthread = LP64_ONLY(r15_thread) NOT_LP64(rcx);
   // flatten object address if needed
   // We do it regardless of precise because we need the registers
   if (dst.index() == noreg && dst.disp() == 0) {
@@ -454,18 +401,10 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
     __ lea(tmp1, dst);
   }
 
-#ifndef _LP64
-  InterpreterMacroAssembler *imasm = static_cast<InterpreterMacroAssembler*>(masm);
-#endif
-
-  NOT_LP64(__ get_thread(rcx));
-  NOT_LP64(imasm->save_bcp());
-
   if (needs_pre_barrier) {
     g1_write_barrier_pre(masm /*masm*/,
                          tmp1 /* obj */,
                          tmp2 /* pre_val */,
-                         rthread /* thread */,
                          tmp3  /* tmp */,
                          val != noreg /* tosca_live */,
                          false /* expand_call */);
@@ -486,11 +425,9 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
       g1_write_barrier_post(masm /*masm*/,
                             tmp1 /* store_adr */,
                             new_val /* new_val */,
-                            rthread /* thread */,
                             tmp3 /* tmp */);
     }
   }
-  NOT_LP64(imasm->restore_bcp());
 }
 
 #ifdef COMPILER1
@@ -531,7 +468,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c1(MacroAssembler* masm,
                                                      Register tmp1,
                                                      Register tmp2 /* unused on x86 */) {
   Label done;
-  generate_post_barrier_fast_path(masm, store_addr, new_val, thread, tmp1, done, true /* new_val_may_be_null */);
+  generate_post_barrier_fast_path(masm, store_addr, new_val, tmp1, done, true /* new_val_may_be_null */);
   masm->bind(done);
 }
 
@@ -548,10 +485,8 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   __ push(rdx);
 
   const Register pre_val = rax;
-  const Register thread = NOT_LP64(rax) LP64_ONLY(r15_thread);
+  const Register thread = r15_thread;
   const Register tmp = rdx;
-
-  NOT_LP64(__ get_thread(thread);)
 
   Address queue_active(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
   Address queue_index(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));

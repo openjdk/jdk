@@ -1835,6 +1835,11 @@ void PhaseCCP::analyze() {
       set_type(n, new_type);
       push_child_nodes_to_worklist(worklist, n);
     }
+    if (KillPathsReachableByDeadTypeNode && n->is_Type() && new_type == Type::TOP) {
+      // Keep track of Type nodes to kill CFG paths that use Type
+      // nodes that become dead.
+      _maybe_top_type_nodes.push(n);
+    }
   }
   DEBUG_ONLY(verify_analyze(worklist_verify);)
 }
@@ -2064,6 +2069,18 @@ Node *PhaseCCP::transform( Node *n ) {
   GrowableArray <Node *> transform_stack(C->live_nodes() >> 1);
   // track all visited nodes, so that we can remove the complement
   Unique_Node_List useful;
+
+  if (KillPathsReachableByDeadTypeNode) {
+    for (uint i = 0; i < _maybe_top_type_nodes.size(); ++i) {
+      Node* type_node = _maybe_top_type_nodes.at(i);
+      if (type(type_node) == Type::TOP) {
+        ResourceMark rm;
+        type_node->as_Type()->make_paths_from_here_dead(this, nullptr, "ccp");
+      }
+    }
+  } else {
+    assert(_maybe_top_type_nodes.size() == 0, "we don't need type nodes");
+  }
 
   // Initialize the traversal.
   // This CCP pass may prove that no exit test for a loop ever succeeds (i.e. the loop is infinite). In that case,

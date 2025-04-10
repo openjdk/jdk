@@ -1857,6 +1857,9 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
   // at least to this point, even if no loop optimizations were done.
   PhaseIdealLoop::verify(igvn);
 
+  if (has_loops() || _loop_opts_cnt > 0) {
+    print_method(PHASE_AFTER_LOOP_OPTS, 2);
+  }
   C->set_post_loop_opts_phase(); // no more loop opts allowed
 
   assert(!C->major_progress(), "not cleared");
@@ -2376,6 +2379,10 @@ void Compile::Optimize() {
   remove_root_to_sfpts_edges(igvn);
 
   if (failing())  return;
+
+  if (has_loops()) {
+    print_method(PHASE_BEFORE_LOOP_OPTS, 2);
+  }
 
   // Perform escape analysis
   if (do_escape_analysis() && ConnectionGraph::has_candidates(this)) {
