@@ -60,8 +60,9 @@ public class TestUnswitchPredicateCloning {
     }
 
     @Test
-    // Check that loop unswitching the number of parse predicates inside the unswitched
-    // loop have doubled.
+    // Check that Loop Unswitching doubled the number of Parse Predicates: We have
+    // them at the true- and false-path-loop. Note that the Loop Limit Check Parse
+    // Predicate is not cloned when we already have a counted loop.
     @IR(counts = {IRNode.LOOP_PARSE_PREDICATE, "3",
                  IRNode.PROFILED_LOOP_PARSE_PREDICATE, "3",
                  IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "3",
