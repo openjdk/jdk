@@ -110,7 +110,7 @@ public sealed class ICC_Profile implements Serializable
 
     /**
      * Set to {@code true} for {@code BuiltInProfile}, {@code false} otherwise.
-     * This check is used in {@link #setData(int, byte[])} to prevent modifying
+     * This flag is used in {@link #setData(int, byte[])} to prevent modifying
      * built-in profiles.
      */
     private final transient boolean builtIn;
