@@ -34,12 +34,12 @@
  *          constants used. The current set of chosen String constants happened
  *          to work particularly well.
  * @run main/othervm -Xbatch
- *                   -XX:CompileCommand=CompileOnly,compiler.itergvn.TestSplitPhiThroughMergeMem::test
- *                   compiler.itergvn.TestSplitPhiThroughMergeMem
- * @run main compiler.itergvn.TestSplitPhiThroughMergeMem
+ *                   -XX:CompileCommand=CompileOnly,compiler.igvn.TestSplitPhiThroughMergeMem::test
+ *                   compiler.igvn.TestSplitPhiThroughMergeMem
+ * @run main compiler.igvn.TestSplitPhiThroughMergeMem
  */
 
-package compiler.itergvn;
+package compiler.igvn;
 
 public class TestSplitPhiThroughMergeMem {
 

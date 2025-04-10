@@ -1034,7 +1034,7 @@ void PhaseIterGVN::optimize() {
   uint loop_count = 0;
   // Pull from worklist and transform the node. If the node has changed,
   // update edge info and put uses on worklist.
-  while(_worklist.size()) {
+  while (_worklist.size() > 0) {
     if (C->check_node_count(max_live_nodes_increase_per_iteration, "Out of nodes")) {
       C->print_method(PHASE_AFTER_ITER_GVN, 3);
       return;
