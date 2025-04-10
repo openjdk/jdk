@@ -444,7 +444,7 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, BasicType bt) {
   }
 
   Node* con = (bt == T_INT)
-              ? (Node*) phase->intcon(java_add((jint) mul.multiplier, (jint) 1)) // intentional type narrowing to allow overflow at max_jint
+              ? (Node*) phase->intcon(java_add((jint) mul.multiplier, (jint) 1)) // Overflow at max_jint
               : (Node*) phase->longcon(java_add((jlong) mul.multiplier, (jlong) 1));
   return MulNode::make(con, mul.variable, bt);
 }
