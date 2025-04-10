@@ -24,8 +24,8 @@
 
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1CommittedRegionMap.inline.hpp"
+#include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionManager.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"

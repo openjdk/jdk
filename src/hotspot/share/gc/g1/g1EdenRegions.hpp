@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_G1_G1EDENREGIONS_HPP
 #define SHARE_GC_G1_G1EDENREGIONS_HPP
 
-#include "gc/g1/g1RegionsOnNodes.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1RegionsOnNodes.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 

@@ -24,8 +24,8 @@
 #ifndef SHARE_GC_Z_ZMARKCONTEXT_HPP
 #define SHARE_GC_Z_ZMARKCONTEXT_HPP
 
-#include "gc/z/zMarkCache.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
+#include "gc/z/zMarkCache.hpp"
 #include "memory/allocation.hpp"
 
 class ZMarkStripe;

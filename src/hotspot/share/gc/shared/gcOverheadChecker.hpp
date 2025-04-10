@@ -26,9 +26,9 @@
 #ifndef SHARE_GC_SHARED_GCOVERHEADCHECKER_HPP
 #define SHARE_GC_SHARED_GCOVERHEADCHECKER_HPP
 
-#include "memory/allocation.hpp"
-#include "gc/shared/gcCause.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcCause.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
 
 class SoftRefPolicy;

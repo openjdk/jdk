@@ -25,10 +25,10 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONSET_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONSET_HPP
 
-#include "memory/allocation.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahHeapRegionSet;

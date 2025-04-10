@@ -26,8 +26,8 @@
 #define SHARE_GC_G1_G1PARSCANTHREADSTATE_HPP
 
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1OopClosures.hpp"
+#include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"

@@ -26,8 +26,8 @@
 
 #include "utilities/globalDefinitions.hpp"
 
-#include <Windows.h>
 #include <Memoryapi.h>
+#include <Windows.h>
 
 class ZSyscall {
 private:
