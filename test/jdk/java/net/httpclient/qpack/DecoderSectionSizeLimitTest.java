@@ -119,7 +119,7 @@ public class DecoderSectionSizeLimitTest {
                     false, -1L);
 
             // Write the header
-            while (!encoder.encode(headerFrameWriter, buffer)) {
+            while (!headerFrameWriter.write(buffer)) {
                 buffer.flip();
                 buffers.add(buffer);
                 buffer = ByteBuffer.allocate(RANDOM.nextInt(1, 65));

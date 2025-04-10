@@ -37,7 +37,6 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
@@ -241,16 +240,13 @@ public final class DynamicTable implements HeadersTable {
      * (see <a href="https://www.rfc-editor.org/rfc/rfc9204.html#section-3.2.3">
      *     3.2.3 Maximum Dynamic Table Capacity</a>).
      *
-     * <p> May be called any number of times after or before a complete header
-     * has been encoded.
+     * <p> May be called only once to set maximum dynamic table capacity.
+     * <p> This method doesn't change the actual capacity of the dynamic table.
      *
-     * <p> If the encoder decides to change the actual capacity, an update will
-     * be encoded before a new encoding operation starts.
-     *
+     * @see #setCapacity(long)
      * @param maxCapacity a non-negative long
-     * @throws IllegalArgumentException if capacity is negative
-     * @throws IllegalStateException    if the encoder hasn't fully encoded the previous header, or
-     *                                  hasn't yet started to encode it
+     * @throws IllegalArgumentException if max capacity is negative
+     * @throws IllegalStateException if max capacity was already set
      */
     public void setMaxTableCapacity(long maxCapacity) {
         var writeLock = lock.writeLock();
@@ -297,16 +293,14 @@ public final class DynamicTable implements HeadersTable {
      * index does not depend on the state of the dynamic table.
      * @param uniqueID an entry unique index
      * @return retrieved header field
+     * @throws IllegalArgumentException if entry is not received yet,
+     *                                  already evicted or invalid entry index is specified.
      */
     @Override
     public HeaderField get(long uniqueID) {
         var readLock = lock.readLock();
         readLock.lock();
         try {
-            // No elements in dynamic table
-            if (getElementsCount() == 0) {
-                throw new IllegalStateException("Empty table");
-            }
             if (uniqueID < 0) {
                 throw new IllegalArgumentException("Entry index invalid");
             }
@@ -374,6 +368,10 @@ public final class DynamicTable implements HeadersTable {
      */
     @Override
     public long search(String name, String value) {
+        // This method is only designated for encoder use
+        if (!encoderTable) {
+            return 0;
+        }
         var readLock = lock.readLock();
         readLock.lock();
         try {
@@ -433,6 +431,7 @@ public final class DynamicTable implements HeadersTable {
      * @param value         header value
      * @return unique index of an entry added to the table.
      * If element cannot be added {@code -1} is returned.
+     * @throws IllegalStateException if table memory reclamation error observed
      */
     public long insert(long nameIndex, boolean isStaticIndex, String value) {
         var writeLock = lock.writeLock();
@@ -465,6 +464,7 @@ public final class DynamicTable implements HeadersTable {
      * @param sectionReference unacknowledged section references
      * @return unique index of an entry added to the table.
      * If element cannot be added {@code -1} is returned.
+     * @throws IllegalStateException if table memory reclamation error observed
      */
     public long insert(String name, String value, SectionReference sectionReference) {
         return insert(new HeaderField(name, value), sectionReference);
@@ -474,7 +474,7 @@ public final class DynamicTable implements HeadersTable {
      * Inserts an entry to the dynamic table and sends encoder insert instruction bytes
      * to the peer decoder.
      * This method is designated to be used by the {@link Encoder} class only.
-     * The entry index of entry with matching name:value is returned if one is available,
+     * If an entry with matching name:value is available, its index is returned
      * and no insert instruction is generated on encoder stream. If duplicate entry is required
      * due to entry being non-referencable then {@link DynamicTable#duplicateWithEncoderStreamUpdate(
      * EncoderInstructionsWriter, long, QueuingStreamPair, EncodingContext)} is used.
@@ -494,16 +494,15 @@ public final class DynamicTable implements HeadersTable {
         if (!encoderTable) {
             throw new IllegalStateException("Misconfigured table");
         }
-        var writeLock = lock.writeLock();
         String name = entry.name().toString();
         String value = entry.value().toString();
         // Entry with name only match in dynamic table
         boolean nameOnlyDynamicEntry = !entry.isStaticTable() && entry.type() == NAME;
+        var writeLock = lock.writeLock();
         writeLock.lock();
         try {
             // First, check if entry is in the table already -
-            // no need to add new one, at least until the draining index
-            // is implemented
+            // no need to add a new one.
             long index = search(name, value);
             if (index > 0) {
                 long absIndex = index - 1;
@@ -523,6 +522,7 @@ public final class DynamicTable implements HeadersTable {
                 }
                 evictionLimitSR = encodingContext.evictionLimit()
                         .reduce(nameIndex);
+                encodingContext.registerSessionReference(nameIndex);
             } else {
                 evictionLimitSR = encodingContext.evictionLimit();
             }
@@ -547,7 +547,6 @@ public final class DynamicTable implements HeadersTable {
                 // The instruction writer will reference a dynamic table element
                 // index if the entry type is NAME. It needs to be kept alive
                 // until the end of encoding session.
-                encodingContext.registerSessionReference(entry.index());
                 entry = entry.relativizeDynamicTableEntry(relativeNameIndex);
             }
             int instructionSize = writer.configureForEntryInsertion(entry);
@@ -589,7 +588,9 @@ public final class DynamicTable implements HeadersTable {
                 if (sectionReference.referencesEntries()) {
                     // Check if tail element is evictable
                     if (tail < sectionReference.min()) {
-                        evictEntry();
+                        if (!evictEntry()) {
+                            return ENTRY_NOT_INSERTED;
+                        }
                     } else {
                         if (logger.isLoggable(EXTRA)) {
                             logger.log(EXTRA, () -> format("Cannot evict entry: sectionRef=%s tail=%s",
@@ -605,7 +606,9 @@ public final class DynamicTable implements HeadersTable {
                     //     - Decoder when processing insert entry instructions.
                     //       Entries are evicted until there is enough space OR until table
                     //       is empty.
-                    evictEntry();
+                    if (!evictEntry()) {
+                        return ENTRY_NOT_INSERTED;
+                    }
                 }
             }
             size += entrySize;
@@ -670,7 +673,6 @@ public final class DynamicTable implements HeadersTable {
                                 " for absId=%s relId=%s ('%s', '%s')",
                         absoluteEntryId, relativeEntryId, entry.name(), entry.value()));
             }
-            encodingContext.registerSessionReference(absoluteEntryId);
 
             // Configure writer for entry duplication
             int instructionSize =
@@ -688,7 +690,7 @@ public final class DynamicTable implements HeadersTable {
         assert lock.isWriteLockedByCurrentThread();
         // Remove element from the holder array first
         if (getElementsCount() == 0) {
-            throw new NoSuchElementException("Empty");
+            throw new IllegalStateException("Empty table");
         }
 
         int tailIdx = (int) (tail++ & (elements.length - 1));
@@ -700,20 +702,22 @@ public final class DynamicTable implements HeadersTable {
             logger.log(EXTRA, () -> format("removing ('%s', '%s')", f.name(), f.value()));
         }
 
-        // Update indices map
-        Map<String, Deque<Long>> values = indicesMap.get(f.name());
-        Deque<Long> indexes = values.get(f.value());
-        // Remove the oldest index of the name:value pair
-        Long index = indexes.pollFirst();
-        // Clean-up indexes associated with a value from values map
-        if (indexes.isEmpty()) {
-            values.remove(f.value());
-        }
-        assert index != null;
-        // If indexes map associated with name is empty remove name
-        // entry from indices map
-        if (values.isEmpty()) {
-            indicesMap.remove(f.name());
+        // Update indices map on the encoder table only
+        if (encoderTable) {
+            Map<String, Deque<Long>> values = indicesMap.get(f.name());
+            Deque<Long> indexes = values.get(f.value());
+            // Remove the oldest index of the name:value pair
+            Long index = indexes.pollFirst();
+            // Clean-up indexes associated with a value from values map
+            if (indexes.isEmpty()) {
+                values.remove(f.value());
+            }
+            assert index != null;
+            // If indexes map associated with name is empty remove name
+            // entry from indices map
+            if (values.isEmpty()) {
+                indicesMap.remove(f.name());
+            }
         }
         return f;
     }
@@ -741,7 +745,10 @@ public final class DynamicTable implements HeadersTable {
                 throw new IllegalArgumentException("capacity >= 0: capacity=" + capacity);
             }
             while (capacity < size && size != 0) {
-                evictEntry();
+                // Evict entries until existing elements fit into
+                // new table capacity
+                boolean entryEvicted = evictEntry();
+                assert entryEvicted;
             }
             this.capacity = capacity;
             if (usedSpace() < drainUsedSpaceThreshold) {
@@ -781,17 +788,27 @@ public final class DynamicTable implements HeadersTable {
     }
 
 
-    private HeaderField evictEntry() {
+    /**
+     * Evicts one entry from the table tail.
+     * @return {@code true} if entry was evicted,
+     *         {@code false} if nothing to remove
+     */
+    private boolean evictEntry() {
         assert lock.isWriteLockedByCurrentThread();
-        HeaderField f = remove();
-        long s = headerSize(f);
-        this.size -= s;
-        if (logger.isLoggable(EXTRA)) {
-            logger.log(EXTRA,
-                    () -> format("evicted entry ('%s', '%s') of size %s with absId=%s",
-                            f.name(), f.value(), s, tail - 1));
+        try {
+            HeaderField f = remove();
+            long s = headerSize(f);
+            this.size -= s;
+            if (logger.isLoggable(EXTRA)) {
+                logger.log(EXTRA,
+                        () -> format("evicted entry ('%s', '%s') of size %s with absId=%s",
+                                f.name(), f.value(), s, tail - 1));
+            }
+        } catch (IllegalStateException ise) {
+            // Entry cannot be evicted from empty table
+            return false;
         }
-        return f;
+        return true;
     }
 
     public long availableEvictableSpace(SectionReference sectionReference) {
@@ -850,30 +867,6 @@ public final class DynamicTable implements HeadersTable {
         return name.length() + value.length() + ENTRY_SIZE;
     }
 
-    //
-    // Diagnostic information in the form used in the RFC 7541
-    //
-    String getStateString() {
-        var readLock = lock.readLock();
-        readLock.lock();
-        try {
-            if (size == 0) {
-                return "empty.";
-            }
-            long counter = head;
-            StringBuilder b = new StringBuilder();
-            for (int i = 0; i < getElementsCount(); i++) {
-                long uniqueID = counter - i - 1;
-                var e = get(uniqueID);
-                b.append(format("[%3d] (s = %3d) %s: %s\n", uniqueID, headerSize(e), e.name(), e.value()));
-            }
-            b.append(format("      Table size:%4s", this.size));
-            return b.toString();
-        } finally {
-            readLock.unlock();
-        }
-    }
-
     // To quickly find an index of an entry in the dynamic table with the
     // given contents an effective inverse mapping is needed.
     private void addWithInverseMapping(HeaderField field) {
@@ -883,21 +876,20 @@ public final class DynamicTable implements HeadersTable {
         ensureElementsArrayLength();
         long counterSnapshot = head++;
         elements[(int) (counterSnapshot & (elements.length - 1))] = field;
-
-        // Allocate unique index and use it to store in indicesMap
-        Map<String, Deque<Long>> values = indicesMap.computeIfAbsent(
-                field.name(), k -> new HashMap<>());
-        Deque<Long> indexes = values.computeIfAbsent(
-                field.value(), k -> new LinkedList<>());
-        indexes.add(counterSnapshot);
-        if (logger.isLoggable(EXTRA)) {
-            logger.log(EXTRA,
-                    () -> format("added '%s' header field with '%s' unique id",
-                            field, counterSnapshot));
-        }
-        assert indexesUniqueAndOrdered(indexes);
-        // Draining index is only used by the Encoder
         if (encoderTable) {
+            // Allocate unique index and use it to store in indicesMap
+            Map<String, Deque<Long>> values = indicesMap.computeIfAbsent(
+                    field.name(), _ -> new HashMap<>());
+            Deque<Long> indexes = values.computeIfAbsent(
+                    field.value(), _ -> new LinkedList<>());
+            indexes.add(counterSnapshot);
+            if (logger.isLoggable(EXTRA)) {
+                logger.log(EXTRA,
+                        () -> format("added '%s' header field with '%s' unique id",
+                                field, counterSnapshot));
+            }
+            assert indexesUniqueAndOrdered(indexes);
+            // Draining index is only used by the Encoder
             updateDrainIndex();
         }
     }
@@ -1025,7 +1017,7 @@ public final class DynamicTable implements HeadersTable {
     }
 
     /**
-     * Method returns number of elements in the dynamic table.
+     * Method returns number of elements inserted to the dynamic table.
      * Since element ids start from 0 the returned value is equal
      * to the id of the head element plus one.
      * @return number of elements in the dynamic table

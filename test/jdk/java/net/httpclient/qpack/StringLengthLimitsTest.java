@@ -337,7 +337,7 @@ public class StringLengthLimitsTest {
             // knownReceivedCount == InsertCount to allow DT reference encodings,
             // since there is one entry in the test dynamic table
             encoder.header(encodingContext, name, value, false, RIC);
-            encoder.encode(writer, headersBuffer);
+            writer.write(headersBuffer);
             headersBuffer.flip();
             buffers.add(headersBuffer);
         } else {
@@ -368,7 +368,7 @@ public class StringLengthLimitsTest {
                 encoder.header(encodingContext,
                         "X".repeat(nameLength), "Z".repeat(valueLength),
                         false, RIC);
-                encoder.encode(writer, headersBuffer);
+                writer.write(headersBuffer);
                 headersBuffer.flip();
                 buffers.add(headersBuffer);
             }

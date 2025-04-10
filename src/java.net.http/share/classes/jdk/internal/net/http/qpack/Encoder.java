@@ -29,6 +29,7 @@ import jdk.internal.net.http.http3.streams.QueuingStreamPair;
 import jdk.internal.net.http.qpack.QPACK.Logger;
 import jdk.internal.net.http.qpack.QPACK.QPACKErrorHandler;
 import jdk.internal.net.http.qpack.QPACK.StreamPairSupplier;
+import jdk.internal.net.http.qpack.TableEntry.EntryType;
 import jdk.internal.net.http.qpack.readers.DecoderInstructionsReader;
 import jdk.internal.net.http.qpack.writers.EncoderInstructionsWriter;
 import jdk.internal.net.http.qpack.writers.FieldLineSectionPrefixWriter;
@@ -77,6 +78,7 @@ public class Encoder {
     private final DynamicTable dynamicTable;
     private final QueuingStreamPair encoderStreams;
     private final DecoderInstructionsReader decoderInstructionsReader;
+    private final EncoderInstructionsWriter encoderInstructionsWriter;
     // RFC-9204: 2.1.4. Known Received Count
     private long knownReceivedCount;
 
@@ -88,7 +90,7 @@ public class Encoder {
     private long maxBlockedStreams = -1L;
 
     // Number of streams in process of headers encoding that expected to be blocked
-    // but their unacknowledged section is not registered for them
+    // but their unacknowledged section is not registered yet
     private long blockedStreamsInFlight;
 
     private final ReentrantLock blockedStreamsCounterLock = new ReentrantLock();
@@ -106,10 +108,6 @@ public class Encoder {
 
     public HeaderFrameWriter newHeaderFrameWriter() {
         return new HeaderFrameWriter(logger);
-    }
-
-    public EncoderInstructionsWriter newEncoderInstructionWriter() {
-        return new EncoderInstructionsWriter(logger);
     }
 
     /**
@@ -158,6 +156,7 @@ public class Encoder {
         encoderStreams = streamPairs.create(this::processDecoderAcks);
         decoderInstructionsReader = new DecoderInstructionsReader(new TableUpdatesCallback(),
                 logger);
+        encoderInstructionsWriter = new EncoderInstructionsWriter(logger);
         qpackErrorHandler = codingError;
     }
 
@@ -204,8 +203,6 @@ public class Encoder {
      * @param name               the name
      * @param value              the value
      * @param sensitive          whether the value is sensitive
-     * @param knownReceivedCount the count of received entries known to a peer decoder or
-     *                           {@code -1} to skip the dynamic table entry index check during header encoding.
      * @throws NullPointerException  if any of the arguments are {@code null}
      * @throws IllegalStateException if the encoder hasn't fully encoded the previous header, or
      *                               hasn't yet started to encode it
@@ -227,7 +224,7 @@ public class Encoder {
         // NAME_VALUE table entry type means that one of dynamic or static tables contain
         // exact name:value pair.
         if (dynamicTable.capacity() > 0L
-                && tableEntry.type() != TableEntry.EntryType.NAME_VALUE
+                && tableEntry.type() != EntryType.NAME_VALUE
                 && !sensitive && policy.shouldUpdateDynamicTable(tableEntry)) {
                 // We should check if we have an entry in dynamic table:
                 //  - If we have it - do nothing
@@ -239,7 +236,7 @@ public class Encoder {
         // First, check that found/newly inserted entry is in the dynamic table
         // and can be referenced
         if (!tableEntry.isStaticTable() && tableEntry.index() >= 0 &&
-                tableEntry.type() != TableEntry.EntryType.NEITHER) {
+                tableEntry.type() != EntryType.NEITHER) {
             long entryIndex = tableEntry.index();
             if (dynamicTable.canReferenceEntry(entryIndex)) {
                 context.registerSessionReference(entryIndex);
@@ -263,28 +260,6 @@ public class Encoder {
     }
 
     /**
-     * Encodes the {@linkplain #header(EncodingContext, CharSequence, CharSequence, boolean)
-     * set up} header into the given buffer.
-     *
-     * <p> The encoder writes as much as possible of the header's binary
-     * representation into the given buffer, starting at the buffer's position,
-     * and increments its position to reflect the bytes written. The buffer's
-     * mark and limit will not be modified.
-     *
-     * <p> Once the method has returned {@code true}, the current header is
-     * deemed encoded. A new header may be set up.
-     *
-     * @param headerFrame the buffer to encode the header into, may be empty
-     * @return {@code true} if the current header has been fully encoded,
-     * {@code false} otherwise
-     * @throws NullPointerException  if the buffer is {@code null}
-     * @throws IllegalStateException if there is no set up header
-     */
-    public boolean encode(HeaderFrameWriter writer, ByteBuffer headerFrame) {
-        return writer.write(headerFrame);
-    }
-
-    /**
      * Sets a capacity of the encoder's dynamic table and notifies the decoder by
      * issuing "Set Dynamic Table Capacity" instruction.
      *
@@ -297,7 +272,7 @@ public class Encoder {
      * @throws IllegalArgumentException if capacity is negative, or exceeds the negotiated max capacity HTTP/3 setting
      */
     public void setTableCapacity(long capacity) {
-        dynamicTable.setCapacityWithEncoderStreamUpdate(newEncoderInstructionWriter(),
+        dynamicTable.setCapacityWithEncoderStreamUpdate(encoderInstructionsWriter,
                 capacity, encoderStreams);
     }
 
@@ -331,7 +306,6 @@ public class Encoder {
 
         try (EncodingContext encodingContext = newEncodingContext(streamId,
                 dynamicTable.insertCount(), writer)) {
-            final long krc = knownReceiveCount();
             for (HttpHeaders header : headers) {
                 for (Map.Entry<String, List<String>> e : header.map().entrySet()) {
                     // RFC-9114, section 4.2: Field names are strings containing a subset of
@@ -344,8 +318,8 @@ public class Encoder {
                     // Cookie or Authorization header fields
                     final boolean sensitive = SENSITIVE_HEADER_NAMES.contains(lKey);
                     for (String value : values) {
-                        header(encodingContext, lKey, value, sensitive, krc);
-                        while (!encode(writer, buffer)) {
+                        header(encodingContext, lKey, value, sensitive);
+                        while (!writer.write(buffer)) {
                             buffer.flip();
                             buffers.add(buffer);
                             buffer = getByteBuffer(bufferSize);
@@ -404,7 +378,7 @@ public class Encoder {
                 .reduce(initial, SectionReference::reduce);
     }
 
-    private long blockedStreamsCount() {
+    long blockedStreamsCount() {
         long blockedStreams = 0;
         long krc = knownReceiveCount();
         for (var streamSections : unacknowledgedSections.values()) {
@@ -432,7 +406,7 @@ public class Encoder {
             // max() + 1 - since it is "Required Insert Count" not entry ID
             SectionReference oldestSectionRef = queue != null ? queue.poll() : null;
             long oldestNonAckedRic = oldestSectionRef != null ? oldestSectionRef.max() + 1 : -1L;
-            if (queue != null && oldestNonAckedRic == -1L) {
+            if (oldestNonAckedRic == -1L) {
                 // RFC 9204 4.4.1. Section Acknowledgment:
                 // If an encoder receives a Section Acknowledgment instruction referring
                 // to a stream on which every encoded field section with a non-zero
@@ -502,19 +476,16 @@ public class Encoder {
         long maxIndex;
         long minIndex;
         boolean blockedDecoderExpected;
-
-        final EncoderInstructionsWriter encoderInstructionWriter;
         final HeaderFrameWriter writer;
 
         public EncodingContext(long streamId, long base, HeaderFrameWriter writer) {
             this.base = base;
-            this.encoderInstructionWriter = new EncoderInstructionsWriter(logger);
             this.writer = writer;
             this.maxIndex = -1L;
             this.minIndex = Long.MAX_VALUE;
             this.streamId = streamId;
             this.referencedIndexes = liveContextReferences.computeIfAbsent(streamId,
-                    id -> new ConcurrentSkipListSet<>());
+                    _ -> new ConcurrentSkipListSet<>());
             if (logger.isLoggable(EXTRA)) {
                 logger.log(EXTRA, () -> format("Begin encoding session with base = %s stream-id = %s", base, streamId));
             }
@@ -573,7 +544,7 @@ public class Encoder {
 
         public TableEntry tryInsertEntry(TableEntry entry) {
             long idx = dynamicTable.insertWithEncoderStreamUpdate(entry,
-                                      encoderInstructionWriter, encoderStreams,
+                                      encoderInstructionsWriter, encoderStreams,
                     this);
             if (idx == DynamicTable.ENTRY_NOT_INSERTED) {
                 if (logger.isLoggable(EXTRA)) {
@@ -595,6 +566,11 @@ public class Encoder {
         private boolean canReferenceNewEntry() {
             blockedStreamsCounterLock.lock();
             try {
+                // If current encoding context is already marked as blocked we can
+                // reference new entries without analyzing number of blocked streams
+                if (blockedDecoderExpected) {
+                    return true;
+                }
                 // Number of streams with unacknowledged field line section
                 long alreadyBlocked = blockedStreamsCount();
                 // Other streams might be in progress of headers encoding

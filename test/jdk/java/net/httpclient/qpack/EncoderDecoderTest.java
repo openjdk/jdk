@@ -148,7 +148,7 @@ public class EncoderDecoderTest {
         encoder.header(context, h.name(), h.value(), false);
 
         // Write the header
-        encoder.encode(headerFrameWriter, actual);
+        headerFrameWriter.write(actual);
         assertNotEquals(actual.position(), 0);
         actual.flip();
         buffers.add(actual);
@@ -194,7 +194,7 @@ public class EncoderDecoderTest {
         encoder.header(context, name, value, sensitive);
 
         // Write the header
-        encoder.encode(headerFrameWriter, actual);
+        headerFrameWriter.write(actual);
         assertNotEquals(actual.position(), 0);
         actual.flip();
         buffers.add(actual);
@@ -237,7 +237,7 @@ public class EncoderDecoderTest {
         // Configures encoder for writing the header name:value conn
         encoder.header(context, name, value, sensitive);
         // Write the header
-        encoder.encode(headerFrameWriter, actual);
+        headerFrameWriter.write(actual);
         assertNotEquals(actual.position(), 0);
         actual.flip();
         buffers.add(actual);

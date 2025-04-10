@@ -70,19 +70,27 @@ public interface DecodingCallback {
     void onComplete();
 
     /**
-     * An error observed during the decoding process.
+     * A connection-level error observed during the decoding process.
      *
      * @param throwable  a {@code Throwable} instance
      * @param http3Error a HTTP3 error code
      */
     void onConnectionError(Throwable throwable, Http3Error http3Error);
 
+    /**
+     * A stream-level error observed during the decoding process.
+     *
+     * @param throwable  a {@code Throwable} instance
+     * @param http3Error a HTTP3 error code
+     */
     default void onStreamError(Throwable throwable, Http3Error http3Error) {
         onConnectionError(throwable, http3Error);
     }
 
     /**
-     * Reports if error has been observed during the decoding process
+     * Reports if {@linkplain #onConnectionError(Throwable, Http3Error) a connection}
+     * or {@linkplain #onStreamError(Throwable, Http3Error) a stream} error has been
+     * observed during the decoding process
      * @return true - if error was observed; false - otherwise
      */
     default boolean hasError() {
@@ -102,11 +110,6 @@ public interface DecodingCallback {
      * an intermediary. A {@code value} is sensitive if it was represented as <a
      * href="https://www.rfc-editor.org/rfc/rfc9204.html#section-7.1.3-3">Literal Header
      * Field Never Indexed</a>.
-     *
-     * <p> It is required that intermediaries MUST use the {@linkplain
-     * Encoder#header(Encoder.EncodingContext, CharSequence, CharSequence, boolean)
-     * same representation} for encoding this header field in order to protect its value which
-     * is not to be put at risk by compressing it.
      *
      * @implSpec
      *

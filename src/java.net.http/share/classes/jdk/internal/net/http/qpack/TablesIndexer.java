@@ -63,6 +63,8 @@ public final class TablesIndexer {
         String n = name.toString();
         String v = value.toString();
 
+        // Tests can use -1 known receive count value to filter dynamic table
+        // entry ids.
         boolean limitDynamicTableEntryIds = knownReceivedCount >= 0;
 
         // 1. Try exact match in the static table

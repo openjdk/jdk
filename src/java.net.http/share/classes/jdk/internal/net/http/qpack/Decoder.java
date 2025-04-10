@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static jdk.internal.net.http.http3.Http3Error.H3_CLOSED_CRITICAL_STREAM;
 import static jdk.internal.net.http.http3.frames.SettingsFrame.DEFAULT_SETTINGS_MAX_FIELD_SECTION_SIZE;
 import static jdk.internal.net.http.qpack.DynamicTable.ENTRY_SIZE;
@@ -80,10 +81,9 @@ public final class Decoder {
     private long acknowledgedInsertsCount;
     private final ReentrantLock ackInsertCountLock = new ReentrantLock();
     private final AtomicLong blockedStreamsCounter = new AtomicLong();
-    private final AtomicLong maxBlockedStreams = new AtomicLong();
+    private volatile long maxBlockedStreams;
     private final QPACKErrorHandler qpackErrorHandler;
-    private final AtomicLong maxFieldSectionSize =
-            new AtomicLong(DEFAULT_SETTINGS_MAX_FIELD_SECTION_SIZE);
+    private volatile long maxFieldSectionSize = DEFAULT_SETTINGS_MAX_FIELD_SECTION_SIZE;
     private final AtomicLong concurrentDynamicTableInsertions =
             new AtomicLong();
     private static final long MAX_LITERAL_WITH_INDEXING =
@@ -127,8 +127,8 @@ public final class Decoder {
      */
     public HeaderFrameReader newHeaderFrameReader(DecodingCallback decodingCallback) {
         return new HeaderFrameReader(dynamicTable, decodingCallback,
-                                     blockedStreamsCounter, maxBlockedStreams.get(),
-                                     maxFieldSectionSize.get(), logger);
+                                     blockedStreamsCounter, maxBlockedStreams,
+                                     maxFieldSectionSize, logger);
     }
 
     public void ackTableInsertions() {
@@ -167,12 +167,13 @@ public final class Decoder {
         // Count has already been acknowledged, this MUST be treated as a connection error of type
         // QPACK_DECODER_STREAM_ERROR.
         long prefixInsertCount = prefix.requiredInsertCount();
+        if (prefixInsertCount == 0) return;
         ackInsertCountLock.lock();
         try {
-            if (prefixInsertCount != 0 && prefixInsertCount > acknowledgedInsertsCount) {
-                var decoderInstructionsWriter = new DecoderInstructionsWriter();
-                int instrSize = decoderInstructionsWriter.configureForSectionAck(streamId);
-                submitDecoderInstruction(decoderInstructionsWriter, instrSize);
+            var decoderInstructionsWriter = new DecoderInstructionsWriter();
+            int instrSize = decoderInstructionsWriter.configureForSectionAck(streamId);
+            submitDecoderInstruction(decoderInstructionsWriter, instrSize);
+            if (prefixInsertCount > acknowledgedInsertsCount) {
                 acknowledgedInsertsCount = prefixInsertCount;
             }
         } finally {
@@ -198,13 +199,13 @@ public final class Decoder {
     public void configure(ConnectionSettings ourSettings) {
         long maxCapacity = ourSettings.qpackMaxTableCapacity();
         dynamicTable.setMaxTableCapacity(maxCapacity);
-        maxBlockedStreams.set(ourSettings.qpackBlockedStreams());
+        maxBlockedStreams = ourSettings.qpackBlockedStreams();
         long maxFieldSS = ourSettings.maxFieldSectionSize();
         if (maxFieldSS > 0) {
-            maxFieldSectionSize.set(maxFieldSS);
+            maxFieldSectionSize = maxFieldSS;
         } else {
             // Unlimited field section size
-            maxFieldSectionSize.set(-1);
+            maxFieldSectionSize = -1L;
         }
     }
 
@@ -213,14 +214,16 @@ public final class Decoder {
      *
      * <p> Suppose a header block is represented by a sequence of
      * {@code ByteBuffer}s in the form of {@code Iterator<ByteBuffer>}. And the
-     * consumer of decoded headers is represented by the callback. Then to
-     * decode the header block, the following approach might be used:
-     *
+     * consumer of decoded headers is represented by {@linkplain DecodingCallback the callback}
+     * registered within the provided {@code headerFrameReader}.
+     * Then to decode the header block, the following approach might be used:
      * <pre>{@code
-     * while (buffers.hasNext()) {
-     *     ByteBuffer input = buffers.next();
-     *     decoder.decode(input, callback, !buffers.hasNext());
-     * }
+     *     HeaderFrameReader headerFrameReader =
+     *          constructHeaderFrameReaderWithCallback(decodingCallback);
+     *     while (buffers.hasNext()) {
+     *         ByteBuffer input = buffers.next();
+     *         decoder.decodeHeader(input, !buffers.hasNext(), headerFrameReader);
+     *     }
      * }</pre>
      *
      * <p> The decoder reads as much as possible of the header block from the
@@ -230,14 +233,13 @@ public final class Decoder {
      *
      * <p> Once the method is invoked with {@code endOfHeaderBlock == true}, the
      * current header block is deemed ended, and inconsistencies, if any, are
-     * reported immediately by throwing an {@code IOException}.
+     * reported immediately via a callback registered within the {@code
+     * headerFrameReader} instance.
      *
      * <p> Each callback method is called only after the implementation has
      * processed the corresponding bytes. If the bytes revealed a decoding
-     * error, the callback method is not called.
-     *
-     * <p> In addition to exceptions thrown directly by the method, any
-     * exceptions thrown from the {@code callback} will bubble up.
+     * error it is reported via a callback registered within the {@code
+     * headerFrameReader} instance.
      *
      * @apiNote The method asks for {@code endOfHeaderBlock} flag instead of
      * returning it for two reasons. The first one is that the user of the
@@ -254,13 +256,12 @@ public final class Decoder {
      * @param endOfHeaderBlock
      *         true if the chunk is the final (or the only one) in the sequence
      * @param headerFrameReader the stateful header frame reader
-     * @throws IOException
-     *         in case of a decoding error
      * @throws NullPointerException
-     *         if either headerBlock or consumer are null
+     *         if either {@code headerBlock} or {@code headerFrameReader} are null
      */
     public void decodeHeader(ByteBuffer headerBlock, boolean endOfHeaderBlock,
                              HeaderFrameReader headerFrameReader) throws IOException {
+        requireNonNull(headerFrameReader, "headerFrameReader");
         headerFrameReader.read(headerBlock, endOfHeaderBlock);
     }
 
@@ -354,16 +355,12 @@ public final class Decoder {
         public void onInsert(String name, String value) {
             ensureInstructionsAllowed();
             incrementAndCheckDynamicTableInsertsCount();
-            try {
-                if (dynamicTable.insert(name, value) != DynamicTable.ENTRY_NOT_INSERTED) {
-                    ackTableInsertions();
-                } else {
-                    // Not enough evictable space in dynamic table to insert entry
-                    IllegalStateException ise = new IllegalStateException("Not enough space in dynamic table");
-                    throw QPackException.encoderStreamError(ise);
-                }
-            } catch (IndexOutOfBoundsException | IllegalArgumentException | IllegalStateException e) {
-                throw QPackException.encoderStreamError(e);
+            if (dynamicTable.insert(name, value) != DynamicTable.ENTRY_NOT_INSERTED) {
+                ackTableInsertions();
+            } else {
+                // Not enough evictable space in dynamic table to insert entry
+                IllegalStateException ise = new IllegalStateException("Not enough space in dynamic table");
+                throw QPackException.encoderStreamError(ise);
             }
         }
 
@@ -375,17 +372,13 @@ public final class Decoder {
             // a connection error of the appropriate type if on the encoder or decoder stream."
             ensureInstructionsAllowed();
             incrementAndCheckDynamicTableInsertsCount();
-            try {
-                if (dynamicTable.insert(nameIndex, indexInStaticTable, valueString) !=
-                        DynamicTable.ENTRY_NOT_INSERTED) {
-                    ackTableInsertions();
-                } else {
-                    // Not enough space in dynamic table to insert entry
-                    IllegalStateException ise = new IllegalStateException("Not enough space in dynamic table");
-                    throw QPackException.encoderStreamError(ise);
-                }
-            } catch (IndexOutOfBoundsException | IllegalArgumentException | IllegalStateException e) {
-                throw QPackException.encoderStreamError(e);
+            if (dynamicTable.insert(nameIndex, indexInStaticTable, valueString) !=
+                    DynamicTable.ENTRY_NOT_INSERTED) {
+                ackTableInsertions();
+            } else {
+                // Not enough space in dynamic table to insert entry
+                IllegalStateException ise = new IllegalStateException("Not enough space in dynamic table");
+                throw QPackException.encoderStreamError(ise);
             }
         }
 
@@ -408,7 +401,8 @@ public final class Decoder {
                     IllegalStateException ise = new IllegalStateException("Not enough space in dynamic table");
                     throw QPackException.encoderStreamError(ise);
                 }
-            } catch (IndexOutOfBoundsException | IllegalArgumentException | IllegalStateException e) {
+            } catch (IllegalStateException e) {
+                // Entry id requested for duplication was already evicted or doesn't exist
                 throw QPackException.encoderStreamError(e);
             }
         }
