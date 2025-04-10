@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @summary Basic tests for LazyList methods
+ * @summary Basic tests for StableList methods
  * @modules java.base/jdk.internal.lang.stable
  * @enablePreview
  * @run junit StableListTest
