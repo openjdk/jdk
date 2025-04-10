@@ -113,17 +113,6 @@ void ParallelArguments::initialize_alignments() {
 void ParallelArguments::initialize_heap_flags_and_sizes_one_pass() {
   // Do basic sizing work
   GenArguments::initialize_heap_flags_and_sizes();
-
-  // The survivor ratio's are calculated "raw", unlike the
-  // default gc, which adds 2 to the ratio value. We need to
-  // make sure the values are valid before using them.
-  if (MinSurvivorRatio < 3) {
-    FLAG_SET_ERGO(MinSurvivorRatio, 3);
-  }
-
-  if (InitialSurvivorRatio < 3) {
-    FLAG_SET_ERGO(InitialSurvivorRatio, 3);
-  }
 }
 
 void ParallelArguments::initialize_heap_flags_and_sizes() {
