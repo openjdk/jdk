@@ -1311,7 +1311,6 @@ void os::jvm_path(char *buf, jint buflen) {
     // Look for JAVA_HOME in the environment.
     char* java_home_var = ::getenv("JAVA_HOME");
     if (java_home_var != nullptr && java_home_var[0] != 0) {
-      int len;
 
       // Check the current module name "libjvm.so".
       const char* p = strrchr(buf, '/');
@@ -1326,8 +1325,7 @@ void os::jvm_path(char *buf, jint buflen) {
         return;
       }
 
-      len = strlen(buf);
-      assert(len < buflen, "Ran out of buffer room");
+      assert((int)strlen(buf) < buflen, "Ran out of buffer room");
       ss.print("%s/lib", buf);
 
       if (0 == access(buf, F_OK)) {

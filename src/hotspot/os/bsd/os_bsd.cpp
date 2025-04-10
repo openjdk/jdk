@@ -1507,7 +1507,6 @@ void os::jvm_path(char *buf, jint buflen) {
     // Look for JAVA_HOME in the environment.
     char* java_home_var = ::getenv("JAVA_HOME");
     if (java_home_var != nullptr && java_home_var[0] != 0) {
-      int len;
 
       // Check the current module name "libjvm"
       const char* p = strrchr(buf, '/');
@@ -1519,9 +1518,8 @@ void os::jvm_path(char *buf, jint buflen) {
         return;
       }
 
-      len = strlen(buf);
-      assert(len < buflen, "Ran out of buffer space");
-      // Add the appropriate library  and JVM variant subdirs
+      assert((int)strlen(buf) < buflen, "Ran out of buffer space");
+      // Add the appropriate library and JVM variant subdirs
       ss.print("%s/lib/%s", buf, Abstract_VM_Version::vm_variant());
 
       if (0 != access(buf, F_OK)) {
