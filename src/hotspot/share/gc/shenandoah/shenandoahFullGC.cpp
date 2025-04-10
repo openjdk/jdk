@@ -985,13 +985,10 @@ public:
         ShenandoahGenerationalFullGC::account_for_region(r, _young_regions, _young_usage, _young_humongous_waste);
       }
     }
-    r->set_live_data(live);
-#ifdef ASSERT
-    // Verification and assert enforcement requires TAMS to equal top() at moment live data is set and requires
-    // UWM >= TAMS
-    _mark_context->capture_top_at_mark_start(r);
-    r->set_update_watermark_at_safepoint(r->top());
-#endif
+    // We cannot modify top or TAMS because marking_context and verification and assertions and validata_after_full_gc() make use of this information.
+    // since get_live_data reported by ShenandoahHeapRegion is computed as live_data plus difference between top and TAMS, adjust the value stored as live_data.
+    size_t bytes_allocated_after_mark = pointer_delta(r->top(), _mark_context->top_at_mark_start(r)) * HeapWordSize;
+    r->set_live_data(live - bytes_allocated_after_mark);
     r->reset_alloc_metadata();
   }
 
