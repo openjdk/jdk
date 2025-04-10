@@ -101,10 +101,8 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   // Calculate start card address in "addr".
   __ shrptr(addr, CardTable::card_shift());
 
-  Register thread = LP64_ONLY(r15_thread) NOT_LP64(tmp);
-#ifndef _LP64
-  __ get_thread(thread);
-#endif
+  Register thread = r15_thread;
+
   __ movptr(tmp, Address(thread, in_bytes(G1ThreadLocalData::card_table_base_offset())));
   __ addptr(addr, tmp);
 
