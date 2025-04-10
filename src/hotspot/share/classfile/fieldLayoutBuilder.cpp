@@ -603,6 +603,7 @@ void FieldLayoutBuilder::insert_contended_padding(LayoutRawBlock* slot) {
   }
 }
 
+// Computation of regular classes layout is an evolution of the previous default layout
 // (FieldAllocationStyle 1):
 //   - primitive fields are allocated first (from the biggest to the smallest)
 //   - oop fields are allocated, either in existing gaps or at the end of
