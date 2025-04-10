@@ -166,7 +166,7 @@ import java.util.function.Supplier;
  *
  *     private static final int SIZE = 6;
  *     private static final IntFunction<Integer> ORIGINAL_POWER_OF_TWO =
- *             v -> 1 << v;
+ *         v -> 1 << v;
  *
  *     private static final IntFunction<Integer> POWER_OF_TWO =
  *             // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
