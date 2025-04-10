@@ -129,7 +129,9 @@ class ZipFileSystem extends FileSystem {
     final boolean supportPosix;
     private final UserPrincipal defaultOwner;
     private final GroupPrincipal defaultGroup;
-    // Mutable and must be cloned every time it is returned.
+    // PosixEntry requires the returned set to be mutable, so this is cloned
+    // every time it is returned. Making this an EnumSet makes that cheap. The
+    // downside is that it is mutable in the instance (but is never mutated).
     private final EnumSet<PosixFilePermission> defaultPermissions;
 
     private final Set<String> supportedFileAttributeViews;
