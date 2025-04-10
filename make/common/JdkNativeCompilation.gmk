@@ -227,6 +227,8 @@ endef
 
 GLOBAL_VERSION_INFO_RESOURCE := $(TOPDIR)/src/java.base/windows/native/common/version.rc
 
+# \xA9 is the copyright symbol in ANSI encoding (Windows-1252), which rc.exe
+# assumes the resource file is in.
 JDK_RCFLAGS=$(RCFLAGS) \
     -D"JDK_VERSION_STRING=$(VERSION_STRING)" \
     -D"JDK_COMPANY=$(JDK_RC_COMPANY_NAME)" \
