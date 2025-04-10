@@ -1166,7 +1166,7 @@ public class JavaCompiler {
                 genEndPos = true;
                 if (!taskListener.isEmpty())
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
-                deferredDiagnosticHandler = new Log.DeferredDiagnosticHandler(log);
+                deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
                 procEnvImpl.getFiler().setInitialState(initialFiles, initialClassNames);
             }
         } else { // free resources
@@ -1898,7 +1898,7 @@ public class JavaCompiler {
 
     private Name parseAndGetName(JavaFileObject fo,
                                  Function<JCTree.JCCompilationUnit, Name> tree2Name) {
-        DiagnosticHandler dh = new DiscardDiagnosticHandler(log);
+        DiagnosticHandler dh = log.new DiscardDiagnosticHandler();
         JavaFileObject prevSource = log.useSource(fo);
         try {
             JCTree.JCCompilationUnit t = parse(fo, fo.getCharContent(false), true);
