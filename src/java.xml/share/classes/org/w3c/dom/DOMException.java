@@ -66,6 +66,10 @@ public class DOMException extends RuntimeException {
        super(message);
        this.code = code;
     }
+
+    /**
+     * @serial
+     */
     public short   code;
     // ExceptionCode
     /**

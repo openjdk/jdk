@@ -462,7 +462,6 @@ java/awt/PopupMenu/PopupMenuLocation.java 8259913,8315878 windows-all,macosx-aar
 java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720,8324782 windows-all,macosx-all
 java/awt/GridLayout/ChangeGridSize/ChangeGridSize.java   8238720,8324782 windows-all,macosx-all
 java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java 8238720 windows-all
-java/awt/Headless/HeadlessMalfunctionTest.java 8349099 generic-all
 
 # Several tests which fail sometimes on macos11
 java/awt/Window/MainKeyWindowTest/TestMainKeyWindow.java 8265985 macosx-all
@@ -499,7 +498,6 @@ java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 m
 
 # Wayland related
 
-java/awt/FullScreen/FullscreenWindowProps/FullscreenWindowProps.java 8280991 linux-x64
 java/awt/FullScreen/SetFullScreenTest.java 8332155 linux-x64
 
 ############################################################################
@@ -545,9 +543,9 @@ java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
 
-sun/management/jdp/JdpDefaultsTest.java                         8308807,8241865 aix-ppc64,macosx-aarch64
-sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8308807,8241865 aix-ppc64,macosx-aarch64
-sun/management/jdp/JdpSpecificAddressTest.java                  8308807,8241865 aix-ppc64,macosx-aarch64
+sun/management/jdp/JdpDefaultsTest.java                         8308807,8241865 aix-ppc64,macosx-all
+sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8308807,8241865 aix-ppc64,macosx-all
+sun/management/jdp/JdpSpecificAddressTest.java                  8308807,8241865 aix-ppc64,macosx-all
 sun/management/jdp/JdpOffTest.java                              8308807 aix-ppc64
 
 ############################################################################
@@ -633,9 +631,6 @@ sun/security/smartcardio/TestExclusive.java                     8039280 generic-
 sun/security/smartcardio/TestMultiplePresent.java               8039280 generic-all
 sun/security/smartcardio/TestPresent.java                       8039280 generic-all
 sun/security/smartcardio/TestTransmit.java                      8039280 generic-all
-com/sun/security/sasl/gsskerb/AuthOnly.java                     8039280 generic-all
-com/sun/security/sasl/gsskerb/ConfSecurityLayer.java            8039280 generic-all
-com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-all
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
 
@@ -694,10 +689,6 @@ javax/swing/JColorChooser/Test6827032.java 8224968 windows-x64
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8293001 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 sanity/client/SwingSet/src/EditorPaneDemoTest.java 8212240 linux-x64
-
-# jdk_swing Ubuntu 23.04 specific
-
-javax/swing/JComboBox/TestComboBoxComponentRendering.java 8309734 linux-all
 
 # This test fails on macOS 14
 javax/swing/plaf/synth/7158712/bug7158712.java 8324782 macosx-all
@@ -786,6 +777,7 @@ javax/swing/JColorChooser/8065098/bug8065098.java 8065647 macosx-all
 javax/swing/JTabbedPane/4666224/bug4666224.java 8144124  macosx-all
 javax/swing/JTabbedPane/TestJTabbedPaneOpaqueColor.java 8345090 windows-all,linux-all
 javax/swing/SwingUtilities/TestTextPosInPrint.java 8227025 windows-all
+javax/swing/JInternalFrame/bug4134077.java 8184985 windows-all
 
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_1.java 7131438,8022539 generic-all
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_2.java 7131438,8022539 generic-all

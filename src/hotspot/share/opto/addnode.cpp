@@ -32,6 +32,8 @@
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "opto/utilities/xor.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -555,6 +557,22 @@ Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return commute(phase, this) ? this : nullptr;
 }
 
+//=============================================================================
+//------------------------------add_of_identity--------------------------------
+// Check for addition of the identity
+const Type* AddHFNode::add_of_identity(const Type* t1, const Type* t2) const {
+  return nullptr;
+}
+
+// Supplied function returns the sum of the inputs.
+// This also type-checks the inputs for sanity.  Guaranteed never to
+// be passed a TOP or BOTTOM type, these are filtered out by pre-check.
+const Type* AddHFNode::add_ring(const Type* t0, const Type* t1) const {
+  if (!t0->isa_half_float_constant() || !t1->isa_half_float_constant()) {
+    return bottom_type();
+  }
+  return TypeH::make(t0->getf() + t1->getf());
+}
 
 //=============================================================================
 //------------------------------add_of_identity--------------------------------
@@ -812,7 +830,7 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     Node* tn = phase->transform(and_a_b);
     return AddNode::make_not(phase, tn, T_INT);
   }
-  return nullptr;
+  return AddNode::Ideal(phase, can_reshape);
 }
 
 //------------------------------add_ring---------------------------------------
@@ -835,6 +853,12 @@ const Type *OrINode::add_ring( const Type *t0, const Type *t1 ) const {
     if ( r1 == TypeInt::BOOL ) {
       return TypeInt::ONE;
     }
+  }
+
+  // If either input is all ones, the output is all ones.
+  // x | ~0 == ~0 <==> x | -1 == -1
+  if (r0 == TypeInt::MINUS_1 || r1 == TypeInt::MINUS_1) {
+    return TypeInt::MINUS_1;
   }
 
   // If either input is not a constant, just return all integers.
@@ -886,13 +910,19 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return AddNode::make_not(phase, tn, T_LONG);
   }
 
-  return nullptr;
+  return AddNode::Ideal(phase, can_reshape);
 }
 
 //------------------------------add_ring---------------------------------------
 const Type *OrLNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeLong *r0 = t0->is_long(); // Handy access
   const TypeLong *r1 = t1->is_long();
+
+  // If either input is all ones, the output is all ones.
+  // x | ~0 == ~0 <==> x | -1 == -1
+  if (r0 == TypeLong::MINUS_1 || r1 == TypeLong::MINUS_1) {
+    return TypeLong::MINUS_1;
+  }
 
   // If either input is not a constant, just return all integers.
   if( !r0->is_con() || !r1->is_con() )
@@ -978,22 +1008,8 @@ const Type* XorINode::Value(PhaseGVN* phase) const {
   if (in1->eqv_uncast(in2)) {
     return add_id();
   }
-  // result of xor can only have bits sets where any of the
-  // inputs have bits set. lo can always become 0.
-  const TypeInt* t1i = t1->is_int();
-  const TypeInt* t2i = t2->is_int();
-  if ((t1i->_lo >= 0) &&
-      (t1i->_hi > 0)  &&
-      (t2i->_lo >= 0) &&
-      (t2i->_hi > 0)) {
-    // hi - set all bits below the highest bit. Using round_down to avoid overflow.
-    const TypeInt* t1x = TypeInt::make(0, round_down_power_of_2(t1i->_hi) + (round_down_power_of_2(t1i->_hi) - 1), t1i->_widen);
-    const TypeInt* t2x = TypeInt::make(0, round_down_power_of_2(t2i->_hi) + (round_down_power_of_2(t2i->_hi) - 1), t2i->_widen);
-    return t1x->meet(t2x);
-  }
   return AddNode::Value(phase);
 }
-
 
 //------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs IN THE CURRENT RING.  For
@@ -1004,16 +1020,20 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeInt *r0 = t0->is_int(); // Handy access
   const TypeInt *r1 = t1->is_int();
 
-  // Complementing a boolean?
-  if( r0 == TypeInt::BOOL && ( r1 == TypeInt::ONE
-                               || r1 == TypeInt::BOOL))
-    return TypeInt::BOOL;
+  if (r0->is_con() && r1->is_con()) {
+    // compute constant result
+    return TypeInt::make(r0->get_con() ^ r1->get_con());
+  }
 
-  if( !r0->is_con() || !r1->is_con() ) // Not constants
-    return TypeInt::INT;        // Any integer, but still no symbols.
+  // At least one of the arguments is not constant
 
-  // Otherwise just XOR them bits.
-  return TypeInt::make( r0->get_con() ^ r1->get_con() );
+  if (r0->_lo >= 0 && r1->_lo >= 0) {
+      // Combine [r0->_lo, r0->_hi] ^ [r0->_lo, r1->_hi] -> [0, upper_bound]
+      jint upper_bound = xor_upper_bound_for_ranges<jint, juint>(r0->_hi, r1->_hi);
+      return TypeInt::make(0, upper_bound, MAX2(r0->_widen, r1->_widen));
+  }
+
+  return TypeInt::INT;
 }
 
 //=============================================================================
@@ -1022,12 +1042,20 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeLong *r0 = t0->is_long(); // Handy access
   const TypeLong *r1 = t1->is_long();
 
-  // If either input is not a constant, just return all integers.
-  if( !r0->is_con() || !r1->is_con() )
-    return TypeLong::LONG;      // Any integer, but still no symbols.
+  if (r0->is_con() && r1->is_con()) {
+    // compute constant result
+    return TypeLong::make(r0->get_con() ^ r1->get_con());
+  }
 
-  // Otherwise just OR them bits.
-  return TypeLong::make( r0->get_con() ^ r1->get_con() );
+  // At least one of the arguments is not constant
+
+  if (r0->_lo >= 0 && r1->_lo >= 0) {
+      // Combine [r0->_lo, r0->_hi] ^ [r0->_lo, r1->_hi] -> [0, upper_bound]
+      julong upper_bound = xor_upper_bound_for_ranges<jlong, julong>(r0->_hi, r1->_hi);
+      return TypeLong::make(0, upper_bound, MAX2(r0->_widen, r1->_widen));
+  }
+
+  return TypeLong::LONG;
 }
 
 Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1063,19 +1091,7 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
   if (in1->eqv_uncast(in2)) {
     return add_id();
   }
-  // result of xor can only have bits sets where any of the
-  // inputs have bits set. lo can always become 0.
-  const TypeLong* t1l = t1->is_long();
-  const TypeLong* t2l = t2->is_long();
-  if ((t1l->_lo >= 0) &&
-      (t1l->_hi > 0)  &&
-      (t2l->_lo >= 0) &&
-      (t2l->_hi > 0)) {
-    // hi - set all bits below the highest bit. Using round_down to avoid overflow.
-    const TypeLong* t1x = TypeLong::make(0, round_down_power_of_2(t1l->_hi) + (round_down_power_of_2(t1l->_hi) - 1), t1l->_widen);
-    const TypeLong* t2x = TypeLong::make(0, round_down_power_of_2(t2l->_hi) + (round_down_power_of_2(t2l->_hi) - 1), t2l->_widen);
-    return t1x->meet(t2x);
-  }
+
   return AddNode::Value(phase);
 }
 
@@ -1505,6 +1521,33 @@ Node* MaxNode::Identity(PhaseGVN* phase) {
 }
 
 //------------------------------add_ring---------------------------------------
+const Type* MinHFNode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeH* r0 = t0->isa_half_float_constant();
+  const TypeH* r1 = t1->isa_half_float_constant();
+  if (r0 == nullptr || r1 == nullptr) {
+    return bottom_type();
+  }
+
+  if (r0->is_nan()) {
+    return r0;
+  }
+  if (r1->is_nan()) {
+    return r1;
+  }
+
+  float f0 = r0->getf();
+  float f1 = r1->getf();
+  if (f0 != 0.0f || f1 != 0.0f) {
+    return f0 < f1 ? r0 : r1;
+  }
+
+  // As per IEEE 754 specification, floating point comparison consider +ve and -ve
+  // zeros as equals. Thus, performing signed integral comparison for min value
+  // detection.
+  return (jint_cast(f0) < jint_cast(f1)) ? r0 : r1;
+}
+
+//------------------------------add_ring---------------------------------------
 const Type* MinFNode::add_ring(const Type* t0, const Type* t1 ) const {
   const TypeF* r0 = t0->isa_float_constant();
   const TypeF* r1 = t1->isa_float_constant();
@@ -1553,6 +1596,34 @@ const Type* MinDNode::add_ring(const Type* t0, const Type* t1) const {
   // handle min of 0.0, -0.0 case.
   return (jlong_cast(d0) < jlong_cast(d1)) ? r0 : r1;
 }
+
+//------------------------------add_ring---------------------------------------
+const Type* MaxHFNode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeH* r0 = t0->isa_half_float_constant();
+  const TypeH* r1 = t1->isa_half_float_constant();
+  if (r0 == nullptr || r1 == nullptr) {
+    return bottom_type();
+  }
+
+  if (r0->is_nan()) {
+    return r0;
+  }
+  if (r1->is_nan()) {
+    return r1;
+  }
+
+  float f0 = r0->getf();
+  float f1 = r1->getf();
+  if (f0 != 0.0f || f1 != 0.0f) {
+    return f0 > f1 ? r0 : r1;
+  }
+
+  // As per IEEE 754 specification, floating point comparison consider +ve and -ve
+  // zeros as equals. Thus, performing signed integral comparison for max value
+  // detection.
+  return (jint_cast(f0) > jint_cast(f1)) ? r0 : r1;
+}
+
 
 //------------------------------add_ring---------------------------------------
 const Type* MaxFNode::add_ring(const Type* t0, const Type* t1) const {
