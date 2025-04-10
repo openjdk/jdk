@@ -426,6 +426,11 @@ void CDSConfig::check_aot_flags() {
       check_aotmode_create();
     }
   }
+
+  if (FLAG_IS_DEFAULT(AOTCache) &&
+      (AOTCodeCaching || AOTStubCaching || AOTAdapterCaching)) {
+    vm_exit_during_initialization("AOTCache must be specified when using AOT code caching");
+  }
 }
 
 void CDSConfig::check_aotmode_off() {
@@ -570,29 +575,6 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   }
   if (is_using_archive() && has_unsupported_runtime_module_options()) {
     UseSharedSpaces = false;
-  }
-
-  if (is_using_archive() && !is_dumping_archive() && !FLAG_IS_DEFAULT(AOTCache)) {
-    FLAG_SET_ERGO_IF_DEFAULT(LoadAOTCode, true);
-  } else if (LoadAOTCode) {
-    log_warning(aot, codecache, init)("-XX:+LoadAOTCode requires -XX:AOTCache");
-    return false;
-  }
-  if (LoadAOTCode) {
-    log_info(aot, codecache, init)("LoadAOTCode is enabled");
-  }
-  if (is_dumping_final_static_archive()) {
-    FLAG_SET_ERGO_IF_DEFAULT(StoreAOTCode, true);
-  } else if (StoreAOTCode) {
-    log_warning(aot, codecache, init)("-XX:+StoreAOTCode requires -XX:AOTMode=create");
-    return false;
-  }
-  if (StoreAOTCode) {
-    log_info(aot, codecache, init)("StoreAOTCode is enabled");
-    FLAG_SET_ERGO_IF_DEFAULT(StoreAOTAdapters, true);
-  }
-  if (StoreAOTAdapters) {
-    log_info(aot, codecache, init)("StoreAOTAdapters is enabled");
   }
 
   if (is_dumping_archive()) {
@@ -871,22 +853,21 @@ bool CDSConfig::is_dumping_method_handles() {
 
 #endif // INCLUDE_CDS_JAVA_HEAP
 
-// Dumping AOT code is allowed by default. We disable it only in the final image dump
-// before the metadata and heap are dumped.
-static bool _is_dumping_aot_code = true;
+// AOT code generation and its archiving is disabled by default.
+// We enable it only in the final image dump after the metadata and heap are dumped.
+// This affects only JITed code because it may have embedded oops and metadata pointers
+// which AOT code encodes as offsets in final CDS archive regions.
 
-bool CDSConfig::is_dumping_aot_code() {
-  return _is_dumping_aot_code;
+static bool _is_dumping_aot_code_enabled = false;
+
+bool CDSConfig::is_dumping_aot_code_enabled() {
+  return _is_dumping_aot_code_enabled;
 }
 
 void CDSConfig::disable_dumping_aot_code() {
-  _is_dumping_aot_code = false;
+  _is_dumping_aot_code_enabled = false;
 }
 
 void CDSConfig::enable_dumping_aot_code() {
-  _is_dumping_aot_code = true;
-}
-
-bool CDSConfig::is_dumping_adapters() {
-  return (StoreAOTAdapters && is_dumping_final_static_archive());
+  _is_dumping_aot_code_enabled = true;
 }

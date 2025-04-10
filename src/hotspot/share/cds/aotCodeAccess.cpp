@@ -36,24 +36,16 @@
 #include "memory/virtualspace.hpp"
 #include "oops/instanceKlass.hpp"
 
-static size_t _aot_code_size = 0;
-
 void* AOTCodeAccess::allocate_aot_code(size_t size) {
   assert(CDSConfig::is_dumping_final_static_archive(), "must be");
   return (void*)ArchiveBuilder::ac_region_alloc(size);
 }
 
 size_t AOTCodeAccess::get_aot_code_size() {
-  return _aot_code_size;
-}
-
-void AOTCodeAccess::set_aot_code_size(size_t sz) {
-  _aot_code_size = sz;
-}
-
-bool AOTCodeAccess::is_aot_code_region_empty() {
-  assert(CDSConfig::is_dumping_final_static_archive(), "must be");
-  return ArchiveBuilder::current()->ac_region()->is_empty();
+  assert(CDSConfig::is_using_archive(), "must be");
+  FileMapInfo* mapinfo = FileMapInfo::current_info();
+  assert(mapinfo != nullptr, "must be");
+  return mapinfo->region_at(MetaspaceShared::ac)->used_aligned();
 }
 
 bool AOTCodeAccess::map_aot_code(ReservedSpace rs) {

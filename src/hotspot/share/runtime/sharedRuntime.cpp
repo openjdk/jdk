@@ -24,7 +24,6 @@
 
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
-#include "cds/cdsConfig.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
@@ -2455,7 +2454,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::lookup(AdapterFingerPrint* fp) {
 #if INCLUDE_CDS
   // if we are building the archive then the archived adapter table is
   // not valid and we need to use the ones added to the runtime table
-  if (!CDSConfig::is_dumping_adapters()) {
+  if (!AOTCodeCache::is_dumping_adapters()) {
     // Search archived table first. It is read-only table so can be searched without lock
     entry = _archived_adapter_handler_table.lookup(fp, fp->compute_hash(), 0 /* unused */);
     if (entry != nullptr) {
@@ -2851,7 +2850,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
     // and we're some non descript Java thread.
     return false;
   }
-  if (!is_transient && CDSConfig::is_dumping_adapters()) {
+  if (!is_transient && AOTCodeCache::is_dumping_adapters()) {
     // try to save generated code
     const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
     const uint32_t id = AdapterHandlerLibrary::id(handler->fingerprint());

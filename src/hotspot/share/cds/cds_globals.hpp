@@ -129,11 +129,14 @@
                                                                             \
   /* AOT Code flags */                                                      \
                                                                             \
-  product(bool, StoreAOTCode, false, DIAGNOSTIC,                            \
-          "Store AOT compiled code")                                        \
+  product(bool, AOTCodeCaching, false, DIAGNOSTIC,                          \
+          "Enable saving and restoring JIT comiled code in AOT cache")      \
                                                                             \
-  product(bool, LoadAOTCode, false, DIAGNOSTIC,                             \
-          "Load AOT compiled code")                                         \
+  product(bool, AOTAdapterCaching, false, DIAGNOSTIC,                       \
+          "Enable saving and restoring i2c2i adapters in AOT cache")        \
+                                                                            \
+  product(bool, AOTStubCaching, false, DIAGNOSTIC,                          \
+          "Enable saving and restoring stubs and code blobs in AOT cache")  \
                                                                             \
   product(uintx, AOTCodeMaxSize, 10*M, DIAGNOSTIC,                          \
           "Buffer size in bytes for AOT code caching")                      \
@@ -141,9 +144,6 @@
   product(bool, AbortVMOnAOTCodeFailure, false, DIAGNOSTIC,                 \
           "Abort VM on the first occurrence of AOT code load or store "     \
           "failure. By default VM will continue execute without AOT code.") \
-                                                                            \
-  product(bool, StoreAOTAdapters, false, DIAGNOSTIC,                        \
-          "Store AdapterFingerPrint and AdapterHandlerEntry in AOT Cache.") \
 
 // end of CDS_FLAGS
 

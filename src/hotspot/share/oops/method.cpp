@@ -31,6 +31,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -406,7 +407,7 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
 
 void Method::remove_unshareable_info() {
   unlink_method();
-  if (CDSConfig::is_dumping_adapters() && _adapter != nullptr) {
+  if (AOTCodeCache::is_dumping_adapters() && _adapter != nullptr) {
     _adapter->remove_unshareable_info();
   }
   JFR_ONLY(REMOVE_METHOD_ID(this);)
@@ -1149,7 +1150,7 @@ void Method::unlink_code() {
 void Method::unlink_method() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   _code = nullptr;
-  if (!CDSConfig::is_dumping_adapters() || AdapterHandlerLibrary::is_abstract_method_adapter(_adapter)) {
+  if (!AOTCodeCache::is_dumping_adapters() || AdapterHandlerLibrary::is_abstract_method_adapter(_adapter)) {
     _adapter = nullptr;
   }
   _i2i_entry = nullptr;

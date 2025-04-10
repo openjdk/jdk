@@ -612,7 +612,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
   // Write lambform lines into archive
   LambdaFormInvokers::dump_static_archive_invokers();
 
-  if (CDSConfig::is_dumping_adapters()) {
+  if (AOTCodeCache::is_dumping_adapters()) {
     AdapterHandlerLibrary::archive_adapter_table();
   }
 
@@ -1013,7 +1013,7 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   VM_PopulateDumpSharedSpace op(builder);
   VMThread::execute(&op);
 
-  if (StoreAOTCode && CDSConfig::is_dumping_final_static_archive()) {
+  if (AOTCodeCaching && CDSConfig::is_dumping_final_static_archive()) {
     CDSConfig::enable_dumping_aot_code();
     {
       builder.start_ac_region();
@@ -1232,8 +1232,6 @@ FileMapInfo* MetaspaceShared::open_static_archive() {
     delete(mapinfo);
     return nullptr;
   }
-  FileMapRegion* r = mapinfo->region_at(MetaspaceShared::ac);
-  AOTCodeAccess::set_aot_code_size(r->used_aligned());
   return mapinfo;
 }
 
@@ -1845,7 +1843,7 @@ void MetaspaceShared::initialize_shared_spaces() {
       SystemDictionaryShared::print_shared_archive(tty, false/*dynamic*/);
     }
 
-    if (LoadAOTCode) {
+    if (AOTCodeCache::is_dumping_code()) {
       tty->print_cr("\n\nAOT Code");
       AOTCodeCache::print_on(tty);
     }

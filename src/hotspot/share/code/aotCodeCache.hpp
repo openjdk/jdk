@@ -224,6 +224,9 @@ private:
   uint   _store_size;      // Used when writing cache
   bool   _for_read;        // Open for read
   bool   _for_write;       // Open for write
+  bool   _code_caching;
+  bool   _stub_caching;
+  bool   _adapter_caching;
   bool   _closing;         // Closing cache file
   bool   _failed;          // Failed read/write to/from cache (cache is broken?)
   bool   _lookup_failed;   // Failed to lookup for info (skip only this code load)
@@ -253,7 +256,7 @@ private:
   bool lookup_failed()   const { return _lookup_failed; }
 
 public:
-  AOTCodeCache();
+  AOTCodeCache(bool is_dumping, bool is_using);
   ~AOTCodeCache();
 
   const char* cache_buffer() const { return _load_buffer; }
@@ -275,6 +278,10 @@ public:
 
   bool for_read()  const { return _for_read  && !_failed; }
   bool for_write() const { return _for_write && !_failed; }
+
+  bool code_caching()    const { return _code_caching; }
+  bool stub_caching()    const { return _stub_caching; }
+  bool adapter_caching() const { return _adapter_caching; }
 
   bool closing()          const { return _closing; }
 
@@ -306,7 +313,7 @@ public:
 private:
   static AOTCodeCache*  _cache;
 
-  static bool open_cache();
+  static bool open_cache(bool is_dumping, bool is_using);
   static bool verify_vm_config() {
     if (is_on_for_read()) {
       return _cache->_load_header->verify_vm_config();
@@ -321,6 +328,14 @@ public:
   static bool is_on() CDS_ONLY({ return _cache != nullptr && !_cache->closing(); }) NOT_CDS_RETURN_(false);
   static bool is_on_for_read()  { return is_on() && _cache->for_read(); }
   static bool is_on_for_write() { return is_on() && _cache->for_write(); }
+
+  static bool is_dumping_code()     { return is_on_for_write() && _cache->code_caching(); }
+  static bool is_dumping_stubs()    { return is_on_for_write() && _cache->stub_caching(); }
+  static bool is_dumping_adapters() { return is_on_for_write() && _cache->adapter_caching(); }
+
+  static bool is_using_code()       { return is_on_for_read() && _cache->code_caching(); }
+  static bool is_using_stubs()      { return is_on_for_read() && _cache->stub_caching(); }
+  static bool is_using_adapters()   { return is_on_for_read() && _cache->adapter_caching(); }
 
   static void add_C_string(const char* str) NOT_CDS_RETURN;
 

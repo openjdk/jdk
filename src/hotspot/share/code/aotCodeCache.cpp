@@ -107,7 +107,9 @@ static void exit_vm_on_load_failure() {
   if (AbortVMOnAOTCodeFailure) {
     vm_exit_during_initialization("Unable to use AOT Code Cache.", nullptr);
   }
-  LoadAOTCode  = false;
+  AOTCodeCaching    = false;
+  AOTStubCaching    = false;
+  AOTAdapterCaching = false;
 }
 
 static void exit_vm_on_store_failure() {
@@ -115,9 +117,9 @@ static void exit_vm_on_store_failure() {
     tty->print_cr("Unable to create AOT Code Cache.");
     vm_abort(false);
   }
-  LoadAOTCode  = false;
-  StoreAOTCode = false;
-  StoreAOTAdapters = false;
+  AOTCodeCaching    = false;
+  AOTStubCaching    = false;
+  AOTAdapterCaching = false;
 }
 
 uint AOTCodeCache::max_aot_code_size() {
@@ -125,41 +127,47 @@ uint AOTCodeCache::max_aot_code_size() {
 }
 
 void AOTCodeCache::initialize() {
-  if (LoadAOTCode && (!CDSConfig::is_using_archive() ||
-                       AOTCodeAccess::get_aot_code_size() == 0)) {
-    if (!CDSConfig::is_using_archive()) {
-      log_warning(aot, codecache, init)("AOT Cache is not used");
-    }
-    if (AOTCodeAccess::get_aot_code_size() == 0) {
-      log_warning(aot, codecache, init)("AOT Code Cache is empty");
-    }
-    exit_vm_on_load_failure();
+  if (FLAG_IS_DEFAULT(AOTCache)) {
+    log_info(aot, codecache, init)("AOT Cache is not used");
+    return; // AOTCache must be specified to dump and use AOT code
+  }
+
+  bool is_dumping = false;
+  bool is_using   = false;
+  if (CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_aot_linked_classes()) {
+    FLAG_SET_ERGO_IF_DEFAULT(AOTCodeCaching, true);
+    FLAG_SET_ERGO_IF_DEFAULT(AOTStubCaching, true);
+    FLAG_SET_ERGO_IF_DEFAULT(AOTAdapterCaching, true);
+    is_dumping = true;
+  } else if (CDSConfig::is_using_archive() && CDSConfig::is_using_aot_linked_classes()) {
+    FLAG_SET_ERGO_IF_DEFAULT(AOTCodeCaching, true);
+    FLAG_SET_ERGO_IF_DEFAULT(AOTStubCaching, true);
+    FLAG_SET_ERGO_IF_DEFAULT(AOTAdapterCaching, true);
+    is_using = true;
+  } else {
+    log_info(aot, codecache, init)("AOT Cache is not used");
+    return; // nothing to do
+  }
+  if (!(AOTCodeCaching || AOTStubCaching || AOTAdapterCaching)) {
+    return; // AOT code caching disabled on command line
+  }
+  size_t aot_code_size = is_using ? AOTCodeAccess::get_aot_code_size() : 0;
+  if (is_using && aot_code_size == 0) {
+    log_info(aot, codecache, init)("AOT Code Cache is empty");
     return;
   }
-  if (StoreAOTCode && !CDSConfig::is_dumping_final_static_archive()) {
-    log_warning(aot, codecache, init)("AOT Cache is not used");
-    exit_vm_on_store_failure();
+  if (!open_cache(is_dumping, is_using)) {
+    if (is_using) {
+      exit_vm_on_load_failure();
+    } else {
+      exit_vm_on_store_failure();
+    }
     return;
   }
-  if (LoadAOTCode && StoreAOTCode) {
-    log_warning(aot, codecache, init)("Incremental updates to AOT Code Cache is not supported");
-    exit_vm_on_store_failure();
-    return;
+  if (is_dumping) {
+    FLAG_SET_DEFAULT(ForceUnreachable, true);
   }
-  if (LoadAOTCode || StoreAOTCode) {
-    if (!open_cache()) {
-      if (LoadAOTCode) {
-        exit_vm_on_load_failure();
-      } else {
-        exit_vm_on_store_failure();
-      }
-      return;
-    }
-    if (StoreAOTCode) {
-      FLAG_SET_DEFAULT(ForceUnreachable, true);
-    }
-    FLAG_SET_DEFAULT(DelayCompilerStubsGeneration, false);
-  }
+  FLAG_SET_DEFAULT(DelayCompilerStubsGeneration, false);
 }
 
 void AOTCodeCache::init2() {
@@ -177,8 +185,8 @@ void AOTCodeCache::init2() {
 
 AOTCodeCache* AOTCodeCache::_cache = nullptr;
 
-bool AOTCodeCache::open_cache() {
-  AOTCodeCache* cache = new AOTCodeCache();
+bool AOTCodeCache::open_cache(bool is_dumping, bool is_using) {
+  AOTCodeCache* cache = new AOTCodeCache(is_dumping, is_using);
   if (cache->failed()) {
     delete cache;
     _cache = nullptr;
@@ -189,7 +197,6 @@ bool AOTCodeCache::open_cache() {
 }
 
 void AOTCodeCache::close() {
-log_info(aot, codecache, exit)("Storing AOT Code: %s", is_on() ? "on" : "off");
   if (is_on()) {
     delete _cache; // Free memory
     _cache = nullptr;
@@ -198,7 +205,7 @@ log_info(aot, codecache, exit)("Storing AOT Code: %s", is_on() ? "on" : "off");
 
 #define DATA_ALIGNMENT HeapWordSize
 
-AOTCodeCache::AOTCodeCache() :
+AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
   _load_header(nullptr),
   _load_buffer(nullptr),
   _store_buffer(nullptr),
@@ -206,8 +213,11 @@ AOTCodeCache::AOTCodeCache() :
   _write_position(0),
   _load_size(0),
   _store_size(0),
-  _for_read (LoadAOTCode),
-  _for_write(StoreAOTCode),
+  _for_read(is_using),
+  _for_write(is_dumping),
+  _code_caching(AOTCodeCaching),
+  _stub_caching(AOTStubCaching),
+  _adapter_caching(AOTAdapterCaching),
   _closing(false),
   _failed(false),
   _lookup_failed(false),
@@ -331,62 +341,62 @@ void AOTCodeCache::Config::record() {
 bool AOTCodeCache::Config::verify() const {
 #ifdef ASSERT
   if ((_flags & debugVM) == 0) {
-    log_warning(aot, codecache, init)("Disable AOT Code Cache: it was created by product VM, it can't be used by debug VM");
+    log_info(aot, codecache, init)("Disable AOT Code Cache: it was created by product VM, it can't be used by debug VM");
     return false;
   }
 #else
   if ((_flags & debugVM) != 0) {
-    log_warning(aot, codecache, init)("Disable AOT Code Cache: it was created by debug VM, it can't be used by product VM");
+    log_info(aot, codecache, init)("Disable AOT Code Cache: it was created by debug VM, it can't be used by product VM");
     return false;
   }
 #endif
 
   CollectedHeap::Name aot_gc = (CollectedHeap::Name)_gc;
   if (aot_gc != Universe::heap()->kind()) {
-    log_warning(aot, codecache, init)("Disable AOT Code Cache: it was created with different GC: %s vs current %s", GCConfig::hs_err_name(aot_gc), GCConfig::hs_err_name());
+    log_info(aot, codecache, init)("Disable AOT Code: it was created with different GC: %s vs current %s", GCConfig::hs_err_name(aot_gc), GCConfig::hs_err_name());
     return false;
   }
 
   if (((_flags & compressedOops) != 0) != UseCompressedOops) {
-    log_warning(aot, codecache, init)("Disable AOT Code Cache: it was created with UseCompressedOops = %s", UseCompressedOops ? "false" : "true");
+    log_info(aot, codecache, init)("Disable AOT Code: it was created with UseCompressedOops = %s", UseCompressedOops ? "false" : "true");
     return false;
   }
   if (((_flags & compressedClassPointers) != 0) != UseCompressedClassPointers) {
-    log_warning(aot, codecache, init)("Disable AOT Code Cache: it was created with UseCompressedClassPointers = %s", UseCompressedClassPointers ? "false" : "true");
+    log_info(aot, codecache, init)("Disable AOT Code: it was created with UseCompressedClassPointers = %s", UseCompressedClassPointers ? "false" : "true");
     return false;
   }
 
   if (((_flags & systemClassAssertions) != 0) != JavaAssertions::systemClassDefault()) {
-    log_warning(aot, codecache, init)("Disable AOT Code Cache: it was created with JavaAssertions::systemClassDefault() = %s", JavaAssertions::systemClassDefault() ? "disabled" : "enabled");
+    log_info(aot, codecache, init)("Disable AOT Code: it was created with JavaAssertions::systemClassDefault() = %s", JavaAssertions::systemClassDefault() ? "disabled" : "enabled");
     return false;
   }
   if (((_flags & userClassAssertions) != 0) != JavaAssertions::userClassDefault()) {
-    log_warning(aot, codecache, init)("Disable AOT Code Cache: it was created with JavaAssertions::userClassDefault() = %s", JavaAssertions::userClassDefault() ? "disabled" : "enabled");
+    log_info(aot, codecache, init)("Disable AOT Code: it was created with JavaAssertions::userClassDefault() = %s", JavaAssertions::userClassDefault() ? "disabled" : "enabled");
     return false;
   }
 
   if (((_flags & enableContendedPadding) != 0) != EnableContended) {
-    log_warning(aot, codecache, init)("Disable AOT Code Cache: it was created with EnableContended = %s", EnableContended ? "false" : "true");
+    log_info(aot, codecache, init)("Disable AOT Code: it was created with EnableContended = %s", EnableContended ? "false" : "true");
     return false;
   }
   if (((_flags & restrictContendedPadding) != 0) != RestrictContended) {
-    log_warning(aot, codecache, init)("Disable AOT Code Cache: it was created with RestrictContended = %s", RestrictContended ? "false" : "true");
+    log_info(aot, codecache, init)("Disable AOT Code: it was created with RestrictContended = %s", RestrictContended ? "false" : "true");
     return false;
   }
   if (_compressedOopShift != (uint)CompressedOops::shift()) {
-    log_warning(aot, codecache, init)("Disable AOT Code Cache: it was created with CompressedOops::shift() = %d vs current %d", _compressedOopShift, CompressedOops::shift());
+    log_info(aot, codecache, init)("Disable AOT Code: it was created with CompressedOops::shift() = %d vs current %d", _compressedOopShift, CompressedOops::shift());
     return false;
   }
   if (_compressedKlassShift != (uint)CompressedKlassPointers::shift()) {
-    log_warning(aot, codecache, init)("Disable AOT Code Cache: it was created with CompressedKlassPointers::shift() = %d vs current %d", _compressedKlassShift, CompressedKlassPointers::shift());
+    log_info(aot, codecache, init)("Disable AOT Code: it was created with CompressedKlassPointers::shift() = %d vs current %d", _compressedKlassShift, CompressedKlassPointers::shift());
     return false;
   }
   if (_contendedPaddingWidth != (uint)ContendedPaddingWidth) {
-    log_warning(aot, codecache, init)("Disable AOT Code Cache: it was created with ContendedPaddingWidth = %d vs current %d", _contendedPaddingWidth, ContendedPaddingWidth);
+    log_info(aot, codecache, init)("Disable AOT Code: it was created with ContendedPaddingWidth = %d vs current %d", _contendedPaddingWidth, ContendedPaddingWidth);
     return false;
   }
   if (_objectAlignment != (uint)ObjectAlignmentInBytes) {
-    log_warning(aot, codecache, init)("Disable AOT Code Cache: it was created with ObjectAlignmentInBytes = %d vs current %d", _objectAlignment, ObjectAlignmentInBytes);
+    log_info(aot, codecache, init)("Disable AOT Code: it was created with ObjectAlignmentInBytes = %d vs current %d", _objectAlignment, ObjectAlignmentInBytes);
     return false;
   }
   return true;
@@ -394,11 +404,11 @@ bool AOTCodeCache::Config::verify() const {
 
 bool AOTCodeCache::Header::verify_config(uint load_size) const {
   if (_version != AOT_CODE_VERSION) {
-    log_warning(aot, codecache, init)("Disable AOT Code Cache: different AOT Code version %d vs %d recorded in AOT Cache", AOT_CODE_VERSION, _version);
+    log_info(aot, codecache, init)("Disable AOT Code: different AOT Code version %d vs %d recorded in AOT Cache", AOT_CODE_VERSION, _version);
     return false;
   }
   if (load_size < _cache_size) {
-    log_warning(aot, codecache, init)("Disable AOT Code Cache: AOT Code Cache size %d < %d recorded in AOT Code header", load_size, _cache_size);
+    log_info(aot, codecache, init)("Disable AOT Code: AOT Code Cache size %d < %d recorded in AOT Code header", load_size, _cache_size);
     return false;
   }
   return true;
@@ -687,9 +697,15 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   if (cache == nullptr) {
     return false;
   }
-  log_info(aot, codecache, stubs)("Writing blob '%s' to AOT Code Cache", name);
-
   assert(AOTCodeEntry::is_valid_entry_kind(entry_kind), "invalid entry_kind %d", entry_kind);
+
+  if ((entry_kind == AOTCodeEntry::Blob) && !cache->stub_caching()) {
+    return false;
+  }
+  if ((entry_kind == AOTCodeEntry::Adapter) && !cache->adapter_caching()) {
+    return false;
+  }
+  log_info(aot, codecache, stubs)("Writing blob '%s' to AOT Code Cache", name);
 
 #ifdef ASSERT
 
@@ -769,9 +785,15 @@ CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, c
   if (cache == nullptr) {
     return nullptr;
   }
-  log_info(aot, codecache, stubs)("Reading blob '%s' from AOT Code Cache", name);
-
   assert(AOTCodeEntry::is_valid_entry_kind(entry_kind), "invalid entry_kind %d", entry_kind);
+
+  if ((entry_kind == AOTCodeEntry::Blob) && !cache->stub_caching()) {
+    return nullptr;
+  }
+  if ((entry_kind == AOTCodeEntry::Adapter) && !cache->adapter_caching()) {
+    return nullptr;
+  }
+  log_info(aot, codecache, stubs)("Reading blob '%s' from AOT Code Cache", name);
 
   AOTCodeEntry* entry = cache->find_entry(entry_kind, id);
   if (entry == nullptr) {
