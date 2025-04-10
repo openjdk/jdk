@@ -54,7 +54,7 @@ public class ValidatingHeadersConsumer {
 
     // connection-specific, prohibited by RFC 9113 section 8.2.2
     private static final Set<String> PROHIBITED_HEADERS =
-            Set.of("connection","proxy-connection", "keep-alive",
+            Set.of("connection", "proxy-connection", "keep-alive",
                     "transfer-encoding", "upgrade");
 
     /** Used to check that if there are pseudo-headers, they go first */
@@ -84,10 +84,10 @@ public class ValidatingHeadersConsumer {
             } else {
                 Context expectedContext = PSEUDO_HEADERS.get(n);
                 if (expectedContext == null) {
-                throw newException("Unknown pseudo-header '%s'", n);
+                    throw newException("Unknown pseudo-header '%s'", n);
                 } else if (expectedContext != context) {
                     throw newException("Pseudo-header '%s' is not valid in context " + context, n);
-            }
+                }
             }
         } else {
             pseudoHeadersEnded = true;
