@@ -91,7 +91,7 @@ import java.util.function.Supplier;
  * <p>
  * In order to guarantee that, even under races, only one instance of {@code Logger} is
  * ever created, the {@linkplain #orElseSet(Supplier) orElseSet()} method can be used
- * instead, where the content is atomically and lazily computed via a
+ * instead, where the content is lazily computed, and atomically set, via a
  * {@linkplain Supplier supplier}. In the example below, the supplier is provided in the
  * form of a lambda expression:
  *
