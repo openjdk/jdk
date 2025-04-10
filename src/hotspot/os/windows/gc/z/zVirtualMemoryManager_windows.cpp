@@ -26,25 +26,26 @@
 #include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zMapper_windows.hpp"
 #include "gc/z/zSyscall_windows.hpp"
+#include "gc/z/zValue.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
+#include "gc/z/zVirtualMemoryManager.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
-class ZVirtualMemoryManagerImpl : public CHeapObj<mtGC> {
+class ZVirtualMemoryReserverImpl : public CHeapObj<mtGC> {
 public:
-  virtual void initialize_before_reserve() {}
-  virtual void register_callbacks(ZMemoryManager* manager) {}
+  virtual void register_callbacks(ZVirtualMemoryRegistry* registry) {}
   virtual bool reserve(zaddress_unsafe addr, size_t size) = 0;
   virtual void unreserve(zaddress_unsafe addr, size_t size) = 0;
 };
 
 // Implements small pages (paged) support using placeholder reservation.
 //
-// When a memory area is free (kept by the virtual memory manager) a
+// When a memory area is available (kept by the virtual memory manager) a
 // single placeholder is covering that memory area. When memory is
-// allocated from the manager the placeholder is split into granule
+// removed from the registry the placeholder is split into granule
 // sized placeholders to allow mapping operations on that granularity.
-class ZVirtualMemoryManagerSmallPages : public ZVirtualMemoryManagerImpl {
+class ZVirtualMemoryReserverSmallPages : public ZVirtualMemoryReserverImpl {
 private:
   class PlaceholderCallbacks : public AllStatic {
   private:
@@ -84,7 +85,7 @@ private:
     // Called when a memory area is going to be handed out to be used.
     //
     // Splits the memory area into granule-sized placeholders.
-    static void prepare_for_hand_out_callback(const ZMemory& area) {
+    static void prepare_for_hand_out_callback(const ZVirtualMemory& area) {
       assert(is_aligned(area.size(), ZGranuleSize), "Must be granule aligned");
 
       split_into_granule_sized_placeholders(area.start(), area.size());
@@ -93,7 +94,7 @@ private:
     // Called when a memory area is handed back to the memory manager.
     //
     // Combines the granule-sized placeholders into one placeholder.
-    static void prepare_for_hand_back_callback(const ZMemory& area) {
+    static void prepare_for_hand_back_callback(const ZVirtualMemory& area) {
       assert(is_aligned(area.size(), ZGranuleSize), "Must be granule aligned");
 
       coalesce_into_one_placeholder(area.start(), area.size());
@@ -103,7 +104,7 @@ private:
     // existing, adjacent memory area.
     //
     // Coalesces the underlying placeholders into one.
-    static void grow_callback(const ZMemory& from, const ZMemory& to) {
+    static void grow_callback(const ZVirtualMemory& from, const ZVirtualMemory& to) {
       assert(is_aligned(from.size(), ZGranuleSize), "Must be granule aligned");
       assert(is_aligned(to.size(), ZGranuleSize), "Must be granule aligned");
       assert(from != to, "Must have grown");
@@ -116,7 +117,7 @@ private:
     // memory area.
     //
     // Splits the memory into two placeholders.
-    static void shrink_callback(const ZMemory& from, const ZMemory& to) {
+    static void shrink_callback(const ZVirtualMemory& from, const ZVirtualMemory& to) {
       assert(is_aligned(from.size(), ZGranuleSize), "Must be granule aligned");
       assert(is_aligned(to.size(), ZGranuleSize), "Must be granule aligned");
       assert(from != to, "Must have shrunk");
@@ -129,7 +130,7 @@ private:
     }
 
   public:
-    static ZMemoryManager::Callbacks callbacks() {
+    static ZVirtualMemoryRegistry::Callbacks callbacks() {
       // Each reserved virtual memory address area registered in _manager is
       // exactly covered by a single placeholder. Callbacks are installed so
       // that whenever a memory area changes, the corresponding placeholder
@@ -153,7 +154,7 @@ private:
       // See comment in zMapper_windows.cpp explaining why placeholders are
       // split into ZGranuleSize sized placeholders.
 
-      ZMemoryManager::Callbacks callbacks;
+      ZVirtualMemoryRegistry::Callbacks callbacks;
 
       callbacks._prepare_for_hand_out = &prepare_for_hand_out_callback;
       callbacks._prepare_for_hand_back = &prepare_for_hand_back_callback;
@@ -164,8 +165,8 @@ private:
     }
   };
 
-  virtual void register_callbacks(ZMemoryManager* manager) {
-    manager->register_callbacks(PlaceholderCallbacks::callbacks());
+  virtual void register_callbacks(ZVirtualMemoryRegistry* registry) {
+    registry->register_callbacks(PlaceholderCallbacks::callbacks());
   }
 
   virtual bool reserve(zaddress_unsafe addr, size_t size) {
@@ -185,12 +186,8 @@ private:
 // ZPhysicalMemory layer needs access to the section
 HANDLE ZAWESection;
 
-class ZVirtualMemoryManagerLargePages : public ZVirtualMemoryManagerImpl {
+class ZVirtualMemoryReserverLargePages : public ZVirtualMemoryReserverImpl {
 private:
-  virtual void initialize_before_reserve() {
-    ZAWESection = ZMapper::create_shared_awe_section();
-  }
-
   virtual bool reserve(zaddress_unsafe addr, size_t size) {
     const zaddress_unsafe res = ZMapper::reserve_for_shared_awe(ZAWESection, addr, size);
 
@@ -201,27 +198,33 @@ private:
   virtual void unreserve(zaddress_unsafe addr, size_t size) {
     ZMapper::unreserve_for_shared_awe(addr, size);
   }
+
+public:
+  ZVirtualMemoryReserverLargePages() {
+    ZAWESection = ZMapper::create_shared_awe_section();
+  }
 };
 
-static ZVirtualMemoryManagerImpl* _impl = nullptr;
+static ZVirtualMemoryReserverImpl* _impl = nullptr;
 
-void ZVirtualMemoryManager::pd_initialize_before_reserve() {
+void ZVirtualMemoryReserverImpl_initialize() {
+  assert(_impl == nullptr, "Should only initialize once");
+
   if (ZLargePages::is_enabled()) {
-    _impl = new ZVirtualMemoryManagerLargePages();
+    _impl = new ZVirtualMemoryReserverLargePages();
   } else {
-    _impl = new ZVirtualMemoryManagerSmallPages();
+    _impl = new ZVirtualMemoryReserverSmallPages();
   }
-  _impl->initialize_before_reserve();
 }
 
-void ZVirtualMemoryManager::pd_register_callbacks(ZMemoryManager* manager) {
-  _impl->register_callbacks(manager);
+void ZVirtualMemoryReserver::pd_register_callbacks(ZVirtualMemoryRegistry* registry) {
+  _impl->register_callbacks(registry);
 }
 
-bool ZVirtualMemoryManager::pd_reserve(zaddress_unsafe addr, size_t size) {
+bool ZVirtualMemoryReserver::pd_reserve(zaddress_unsafe addr, size_t size) {
   return _impl->reserve(addr, size);
 }
 
-void ZVirtualMemoryManager::pd_unreserve(zaddress_unsafe addr, size_t size) {
+void ZVirtualMemoryReserver::pd_unreserve(zaddress_unsafe addr, size_t size) {
   _impl->unreserve(addr, size);
 }
