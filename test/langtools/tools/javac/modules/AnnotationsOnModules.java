@@ -599,8 +599,8 @@ public class AnnotationsOnModules extends ModuleTestBase {
                         "1 warning");
             } else if (suppress.equals(DEPRECATED_JAVADOC)) {
                 expected = Arrays.asList(
-                        "module-info.java:1:19: compiler.warn.missing.deprecated.annotation",
                         "module-info.java:2:14: compiler.warn.has.been.deprecated.module: m1x",
+                        "module-info.java:1:19: compiler.warn.missing.deprecated.annotation",
                         "2 warnings");
             } else {
                 expected = Arrays.asList("");

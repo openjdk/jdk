@@ -76,6 +76,7 @@ import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
+import com.sun.tools.javac.util.LintMapper;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 
@@ -268,12 +269,11 @@ public class JavacTaskPool {
             if (ht.get(Log.logKey) instanceof ReusableLog) {
                 //log already inited - not first round
                 Log.instance(this).clear();
+                LintMapper.instance(this).clear();
                 Enter.instance(this).newRound();
                 ((ReusableJavaCompiler)ReusableJavaCompiler.instance(this)).clear();
                 Types.instance(this).newRound();
                 Check.instance(this).newRound();
-                Check.instance(this).clear(); //clear mandatory warning handlers
-                Preview.instance(this).clear(); //clear mandatory warning handlers
                 Modules.instance(this).newRound();
                 Annotate.instance(this).newRound();
                 CompileStates.instance(this).clear();

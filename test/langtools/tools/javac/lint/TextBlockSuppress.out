@@ -1,0 +1,5 @@
+TextBlockSuppress.java:12:24: compiler.warn.trailing.white.space.will.be.removed
+TextBlockSuppress.java:38:24: compiler.warn.trailing.white.space.will.be.removed
+- compiler.err.warnings.and.werror
+1 error
+2 warnings

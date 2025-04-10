@@ -770,8 +770,8 @@ public class ImportModule extends TestRunner {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expectedErrors = List.of(
-                "module-info.java:3:18: compiler.warn.module.not.found: M1",
                 "module-info.java:6:9: compiler.err.cant.resolve: kindname.class, A, , ",
+                "module-info.java:3:18: compiler.warn.module.not.found: M1",
                 "- compiler.note.preview.filename: module-info.java, DEFAULT",
                 "- compiler.note.preview.recompile",
                 "1 error",
