@@ -271,12 +271,13 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
         max_mask_bit_width = mask_bit_width;
       } else if (mask_type->hi_as_long() < -1L) {
         // Case 2) Mask value range is less than -1, this indicates presence of at least
-        // one zero bit in the mask value, there by constraining the result of compression
+        // one zero bit in the mask value, thereby constraining the result of compression
         // to a +ve value range.
         max_mask_bit_width = mask_bit_width - 1;
       } else {
-        // Case 3) Mask value range only includes +ve values, this can again be
-        // used to ascertain known Zero bits of resultant value.
+        // Case 3) Mask value range only includes +ve values, thus we can
+        // identify leading known zero bits of mask value and use this to
+        // constrain upper bound of result value range.
         assert(mask_type->lo_as_long() >= 0, "");
         // Here, result of clz is w.r.t to long argument, hence for integer argument
         // we explicitly subtract 32 from the result.
@@ -291,7 +292,7 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
       // lower bound of the result value range to zero.
       lo = max_mask_bit_width == mask_bit_width ? lo : 0L;
 
-      // For upper bound estimation of result value range for a constant input we
+      // For upper bound estimation of result value range with a constant input we
       // pessimistically pick max_int value to prevent incorrect constant folding
       // in case input equals above estimated lower bound.
       hi = src_type->hi_as_long() == lo ? hi : src_type->hi_as_long();

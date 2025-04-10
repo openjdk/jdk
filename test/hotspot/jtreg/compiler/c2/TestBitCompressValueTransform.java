@@ -26,7 +26,7 @@
  * @bug 8350896
  * @library /test/lib /
  * @summary C2: wrong result: Integer/Long.compress gets wrong type from CompressBitsNode::Value.
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThresholdScaling=0.3 compiler.c2.TestBitCompressValueTransform
+ * @run main/othervm compiler.c2.TestBitCompressValueTransform
  */
 package compiler.c2;
 
@@ -222,7 +222,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " 0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    @IR (counts = { IRNode.COMPRESS_BITS, " 0 " })
     public int test11(int value) {
         // For constant zero input, compress is folded to zero
         int mask = Integer.min(10000, Integer.max(0, value));
@@ -239,7 +239,7 @@ public class TestBitCompressValueTransform {
     }
 
     @Test
-    @IR (counts = { IRNode.COMPRESS_BITS, " 0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    @IR (counts = { IRNode.COMPRESS_BITS, " 0 " })
     public long test12(long value) {
         // For constant zero input, compress is folded to zero
         long mask = Long.min(10000L, Long.max(0L, value));
@@ -251,6 +251,40 @@ public class TestBitCompressValueTransform {
         long res = 0;
         for (int i = -10000; i < 100000; i++) {
             res |= test12(i);
+        }
+        Asserts.assertEQ(0L, res);
+    }
+
+    @Test
+    @IR (counts = { IRNode.EXPAND_BITS, " 0 " })
+    public int test13(int value) {
+        // For constant zero input, expand is folded to zero
+        int mask = Integer.min(10000, Integer.max(0, value));
+        return Integer.expand(0, mask);
+    }
+
+    @Run(test = "test13")
+    public void run13(RunInfo info) {
+        int res = 0;
+        for (int i = -10000; i < 100000; i++) {
+            res |= test13(i);
+        }
+        Asserts.assertEQ(0, res);
+    }
+
+    @Test
+    @IR (counts = { IRNode.EXPAND_BITS, " 0 " })
+    public long test14(long value) {
+        // For constant zero input, compress is folded to zero
+        long mask = Long.min(10000L, Long.max(0L, value));
+        return Long.expand(0L, mask);
+    }
+
+    @Run(test = "test14")
+    public void run14(RunInfo info) {
+        long res = 0;
+        for (int i = -10000; i < 100000; i++) {
+            res |= test14(i);
         }
         Asserts.assertEQ(0L, res);
     }
