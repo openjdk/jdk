@@ -193,6 +193,12 @@ void ShenandoahArguments::initialize() {
       err_msg("GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes, (unsigned int) ShenandoahMinCardSizeInBytes));
   }
 
+  // We need to use the object monitor table to support self-forwarding
+  FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
+  if (!UseObjectMonitorTable) {
+    vm_exit_during_initialization("Shenandoah is not compatible with -XX:-UseObjectMonitorTable");
+  }
+
   FullGCForwarding::initialize_flags(MaxHeapSize);
 }
 

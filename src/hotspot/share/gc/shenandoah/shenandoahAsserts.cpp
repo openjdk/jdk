@@ -342,7 +342,7 @@ void ShenandoahAsserts::assert_forwarded(void* interior_loc, oop obj, const char
         return;
       }
     }
-    
+
     log_debug(gc)("Bad mark word " PTR_FORMAT ", obj->has_displaced_mark ? %s", obj->mark().value(), BOOL_TO_STR(obj->has_displaced_mark()));
     print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_forwarded failed",
                   "Object should be forwarded",
