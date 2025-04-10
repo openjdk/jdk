@@ -338,6 +338,7 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
       VectorSRegister vs_reg = vm_reg->as_VectorSRegister();
       if (vs_reg->encoding() >= VSR32->encoding() && vs_reg->encoding() <= VSR51->encoding()) {
         reg_save_index += 2;
+        align_up(reg_save_index, 2);
 
         Register spill_addr = R0;
         int spill_offset = offset - reg_save_index * BytesPerWord;

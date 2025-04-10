@@ -354,6 +354,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
     offset += reg_size;
   }
 
+  assert(is_aligned(offset, StackAlignmentInBytes), "should be");
   if (PowerArchitecturePPC64 >= 10) {
     for (int i = 0; i < vsregstosave_num; i += 2) {
       int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
@@ -444,6 +445,7 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
     offset += reg_size;
   }
 
+  assert(is_aligned(offset, StackAlignmentInBytes), "should be");
   if (PowerArchitecturePPC64 >= 10) {
     for (int i = 0; i < vsregstosave_num; i += 2) {
       int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
