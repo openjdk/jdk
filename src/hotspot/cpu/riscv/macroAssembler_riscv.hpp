@@ -670,9 +670,9 @@ class MacroAssembler: public Assembler {
   // JALR, return address stack updates:
   // | rd is x1/x5 | rs1 is x1/x5 | rd=rs1 | RAS action
   // | ----------- | ------------ | ------ |-------------
-  // |     No      |      No      |   —    | None
-  // |     No      |      Yes     |   —    | Pop
-  // |     Yes     |      No      |   —    | Push
+  // |     No      |      No      |   -    | None
+  // |     No      |      Yes     |   -    | Pop
+  // |     Yes     |      No      |   -    | Push
   // |     Yes     |      Yes     |   No   | Pop, then push
   // |     Yes     |      Yes     |   Yes  | Push
   //
