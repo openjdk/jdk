@@ -121,7 +121,7 @@ where:
 : Print the recording in JSON format.
 
 <a id="print-option-exact">`--exact`</a>
-: Pretty print numbers and timestamps in full precision.
+: Pretty-print numbers and timestamps with full precision.
 
 <a id="print-option-categories">`--categories` <*filters*></a>
 : Select events matching a category name.
