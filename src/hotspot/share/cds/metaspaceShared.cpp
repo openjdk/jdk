@@ -26,7 +26,6 @@
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotClassLocation.hpp"
-#include "cds/aotCodeAccess.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/archiveBuilder.hpp"

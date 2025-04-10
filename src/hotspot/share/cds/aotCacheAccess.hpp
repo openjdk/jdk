@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_CDS_AOTCODEACCESS_HPP
-#define SHARE_CDS_AOTCODEACCESS_HPP
+#ifndef SHARE_CDS_AOTCACHEACCESS_HPP
+#define SHARE_CDS_AOTCACHEACCESS_HPP
 
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
@@ -35,7 +35,7 @@ class ReservedSpace;
 
 // AOT Cache API for AOT compiler
 
-class AOTCodeAccess : AllStatic {
+class AOTCacheAccess : AllStatic {
 public:
   static void* allocate_aot_code(size_t size) NOT_CDS_RETURN_(nullptr);
 
@@ -44,4 +44,4 @@ public:
   static bool map_aot_code(ReservedSpace rs) NOT_CDS_RETURN_(false);
 };
 
-#endif // SHARE_CDS_AOTCODEACCESS_HPP
+#endif // SHARE_CDS_AOTCACHEACCESS_HPP
