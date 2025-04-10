@@ -478,7 +478,7 @@ void TemplateTable::condy_helper(Label& Done) {
   const Register rarg = c_rarg1;
   __ movl(rarg, (int)bytecode());
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rarg);
-  __ get_vm_result_2(flags, r15_thread);
+  __ get_vm_result_2(flags);
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
   __ movl(off, flags);
@@ -2263,12 +2263,10 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
     const Register method = temp;
     const Register klass  = temp;
-    const Register thread = r15_thread;
-    assert(thread != noreg, "x86_32 not supported");
 
     __ movptr(method, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
     __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, thread, nullptr /*L_fast_path*/, &L_clinit_barrier_slow);
+    __ clinit_barrier(klass, nullptr /*L_fast_path*/, &L_clinit_barrier_slow);
   }
 }
 
@@ -3572,7 +3570,7 @@ void TemplateTable::_new() {
   // make sure klass is initialized
   // init_state needs acquire, but x86 is TSO, and so we are already good.
   assert(VM_Version::supports_fast_class_init_checks(), "must support fast class initialization checks");
-  __ clinit_barrier(rcx, r15_thread, nullptr /*L_fast_path*/, &slow_case);
+  __ clinit_barrier(rcx, nullptr /*L_fast_path*/, &slow_case);
 
   // get instance_size in InstanceKlass (scaled to a count of bytes)
   __ movl(rdx, Address(rcx, Klass::layout_helper_offset()));
@@ -3712,7 +3710,7 @@ void TemplateTable::checkcast() {
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
 
   // vm_result_2 has metadata result
-  __ get_vm_result_2(rax, r15_thread);
+  __ get_vm_result_2(rax);
 
   __ pop_ptr(rdx); // restore receiver
   __ jmpb(resolved);
@@ -3767,9 +3765,9 @@ void TemplateTable::instanceof() {
 
   __ push(atos); // save receiver for result, and for GC
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
 
-  __ get_vm_result_2(rax, r15_thread);
+  // vm_result_2 has metadata result
+  __ get_vm_result_2(rax);
 
   __ pop_ptr(rdx); // restore receiver
   __ verify_oop(rdx);

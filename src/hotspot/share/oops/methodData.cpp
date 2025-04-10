@@ -1301,7 +1301,6 @@ void MethodData::initialize() {
   ResourceMark rm(thread);
 
   init();
-  set_creation_mileage(mileage_of(method()));
 
   // Go through the bytecodes and allocate and initialize the
   // corresponding data cells.
@@ -1406,11 +1405,6 @@ void MethodData::init() {
 
   // Initialize escape flags.
   clear_escape_info();
-}
-
-// Get a measure of how much mileage the method has on it.
-int MethodData::mileage_of(Method* method) {
-  return MAX2(method->invocation_count(), method->backedge_count());
 }
 
 bool MethodData::is_mature() const {
