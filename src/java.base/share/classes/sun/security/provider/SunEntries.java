@@ -189,9 +189,6 @@ public final class SunEntries {
         addWithAlias(p, "Signature", "ML-DSA-44", "sun.security.provider.ML_DSA_Impls$SIG2", attrs);
         addWithAlias(p, "Signature", "ML-DSA-65", "sun.security.provider.ML_DSA_Impls$SIG3", attrs);
         addWithAlias(p, "Signature", "ML-DSA-87", "sun.security.provider.ML_DSA_Impls$SIG5", attrs);
-        addWithAlias(p, "Signature", "HashML-DSA-44-SHA512", "sun.security.provider.ML_DSA_Impls$HSIG2", attrs);
-        addWithAlias(p, "Signature", "HashML-DSA-65-SHA512", "sun.security.provider.ML_DSA_Impls$HSIG3", attrs);
-        addWithAlias(p, "Signature", "HashML-DSA-87-SHA512", "sun.security.provider.ML_DSA_Impls$HSIG5", attrs);
 
         /*
          *  Key Pair Generator engines

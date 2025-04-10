@@ -26,7 +26,6 @@
 package sun.security.provider;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import sun.security.provider.SHA3.SHAKE128;
 import sun.security.provider.SHA3.SHAKE256;
 import sun.security.provider.SHA3Parallel.Shake128Parallel;
 
@@ -582,6 +581,7 @@ public class ML_DSA {
 
         byte[] mu;
         if (externalMu) {
+            assert message.length == MU_LEN;
             mu = message;
         } else {
             //Compute mu
@@ -685,6 +685,7 @@ public class ML_DSA {
 
         byte[] mu;
         if (externalMu) {
+            assert message.length == MU_LEN;
             mu = message;
         } else {
             //Generate mu

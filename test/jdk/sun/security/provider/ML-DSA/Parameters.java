@@ -25,6 +25,7 @@
  * @test
  * @bug 8351351
  * @library /test/lib
+ * @modules java.base/sun.security.util
  */
 
 import jdk.test.lib.Asserts;
@@ -33,7 +34,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPairGenerator;
 import java.security.Signature;
-import java.security.spec.SignatureParameterSpec;
+import java.security.SignatureException;
+
+import sun.security.util.SignatureParameterSpec;
 
 public class Parameters {
     public static void main(String[] args) throws Exception {
@@ -54,32 +57,39 @@ public class Parameters {
         s.update(msg);
         var sig1 = s.sign();
         s.update(msg);
-        var sig2 = s.sign();
+        Asserts.assertEqualsByteArray(sig1, s.sign());
+
         // non-deterministic, aka "hedged" as in FIPS 204
         s.setParameter(new SignatureParameterSpec(null, null));
         s.update(msg);
         var sig3 = s.sign();
+        Asserts.assertNotEqualsByteArray(sig1, sig3); // not same as deterministic
         s.update(msg);
-        var sig4 = s.sign();
-
-        Asserts.assertEqualsByteArray(sig1, sig2);
-        Asserts.assertNotEqualsByteArray(sig3, sig4);
+        Asserts.assertNotEqualsByteArray(sig3, s.sign()); // not same every time
 
         // null context is the same of empty context
         s.setParameter(new SignatureParameterSpec(null, new byte[0], "deterministic"));
         s.update(msg);
-        var sig5 = s.sign();
-        Asserts.assertEqualsByteArray(sig1, sig5);
+        Asserts.assertEqualsByteArray(sig1, s.sign());
 
-        // Unknown hash algorithm
-        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
-                () -> s.setParameter(new SignatureParameterSpec("NOHASH", null)));
-        // Unknown feature
-        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
-                () -> s.setParameter(new SignatureParameterSpec(null, null, "unknown")));
-        // externalMu without internal
-        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
-                () -> s.setParameter(new SignatureParameterSpec(null, null, "externalMu")));
+        // non-null context is different
+        s.setParameter(new SignatureParameterSpec(null, new byte[1], "deterministic"));
+        s.update(msg);
+        Asserts.assertNotEqualsByteArray(sig1, s.sign());
+
+        // externalMu requires mu length
+        s.setParameter(new SignatureParameterSpec(null, null, "internal", "externalMu"));
+        s.initSign(kp.getPrivate());
+        s.update(new byte[64]);
+        var sigXmu = s.sign();
+        s.update(new byte[63]);
+        Asserts.assertThrows(SignatureException.class, () -> s.sign());
+
+        s.initVerify(kp.getPublic());
+        s.update(new byte[64]);
+        Asserts.assertTrue(s.verify(sigXmu));
+        s.update(new byte[63]);
+        Asserts.assertThrows(SignatureException.class, () -> s.verify(sigXmu));
     }
 
     static void paramsTest() throws Exception {
@@ -96,5 +106,17 @@ public class Parameters {
                 () -> new SignatureParameterSpec(null, null, (String)null));
         Asserts.assertThrows(NullPointerException.class,
                 () -> new SignatureParameterSpec(null, null, (String[])null));
+
+        var s = Signature.getInstance("ML-DSA");
+
+        // Unknown hash algorithm
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> s.setParameter(new SignatureParameterSpec("NOHASH", null)));
+        // Unknown feature
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> s.setParameter(new SignatureParameterSpec(null, null, "unknown")));
+        // externalMu without internal
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> s.setParameter(new SignatureParameterSpec(null, null, "externalMu")));
     }
 }

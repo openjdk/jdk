@@ -23,10 +23,11 @@
  * questions.
  */
 
-package java.security.spec;
+package sun.security.util;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.List;
 
 /**

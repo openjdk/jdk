@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,9 +181,6 @@ public enum KnownOIDs {
     ML_DSA_44("2.16.840.1.101.3.4.3.17", "ML-DSA-44"),
     ML_DSA_65("2.16.840.1.101.3.4.3.18", "ML-DSA-65"),
     ML_DSA_87("2.16.840.1.101.3.4.3.19", "ML-DSA-87"),
-    HASH_ML_DSA_44_WITH_SHA_512("2.16.840.1.101.3.4.3.32", "HashML-DSA-44-SHA512"),
-    HASH_ML_DSA_65_WITH_SHA_512("2.16.840.1.101.3.4.3.33", "HashML-DSA-65-SHA512"),
-    HASH_ML_DSA_87_WITH_SHA_512("2.16.840.1.101.3.4.3.34", "HashML-DSA-87-SHA512"),
 
     // kems 2.16.840.1.101.3.4.4.*
     ML_KEM_512("2.16.840.1.101.3.4.4.1", "ML-KEM-512"),

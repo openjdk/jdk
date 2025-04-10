@@ -27,7 +27,7 @@ import jdk.test.lib.security.FixedSecureRandom;
 import java.security.*;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.NamedParameterSpec;
-import java.security.spec.SignatureParameterSpec;
+import sun.security.util.SignatureParameterSpec;
 import java.util.HashSet;
 
 import static jdk.test.lib.Utils.toByteArray;

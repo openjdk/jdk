@@ -40,7 +40,7 @@ import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.SignatureSpi;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.SignatureParameterSpec;
+import sun.security.util.SignatureParameterSpec;
 
 /// A base class for all `Signature` implementations that can be
 /// configured with a named parameter set. See [NamedKeyPairGenerator]
