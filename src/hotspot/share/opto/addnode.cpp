@@ -525,7 +525,7 @@ AddNode::Multiplication AddNode::find_power_of_two_addition_pattern(Node* n, Bas
 
     // Pattern (3)
     if (rhs.valid && rhs.variable == n->in(1)) {
-      return Multiplication{true, rhs.variable, java_add(lhs.multiplier, (jlong) 1)};
+      return Multiplication{true, rhs.variable, java_add(rhs.multiplier, (jlong) 1)};
     }
 
     // Pattern (4), which is equivalent to a simple addition pattern
