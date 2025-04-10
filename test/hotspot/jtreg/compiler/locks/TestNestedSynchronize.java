@@ -40,37 +40,33 @@
 package compiler.locks;
 
 import compiler.lib.compile_framework.*;
-import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class TestNestedSynchronize {
     static int min = 1;
     static int max = 100;
     static String test_class_name = "Test";
+    static String test_method_name = "test";
 
     // The below method generates a program of the form:
     //
     // public class Test {
     //     public static void test1() {
     //         synchronized (Test.class) {
-    //
     //         }
     //     }
-    //
     //
     //     public static void test2() {
     //         synchronized (Test.class) {
     //         synchronized (Test.class) {
-    //
     //         }
     //         }
     //     }
-    //
     //
     //     public static void test3() {
     //         synchronized (Test.class) {
     //         synchronized (Test.class) {
     //         synchronized (Test.class) {
-    //
     //         }
     //         }
     //         }
@@ -78,12 +74,10 @@ public class TestNestedSynchronize {
     //
     //     ...
     //
-    //     public static void test99() {
+    //     public static void test100() {
     //         synchronized (Test.class) {
     //         synchronized (Test.class) {
     //         synchronized (Test.class) {
-    //         ...
-    //
     //         ...
     //         }
     //         }
@@ -95,35 +89,30 @@ public class TestNestedSynchronize {
     // program in TestNestedSynchronize and instead compile and run it via the
     // CompileFramework.
     public static String generate_test() {
-        ArrayList<String> methods = new ArrayList<String>();
-        for (int i = min; i < max; i++) {
-            String inner = "";
+        LinkedList<String> acc = new LinkedList<String>();
+        for (int i = min; i <= max; i++) {
+            LinkedList<String> method = new LinkedList<String>();
             for (int j = 0; j < i; j++) {
-                inner = String.format("""
-                          synchronized (%s.class) {
-                  %s
-                          }""", test_class_name, inner);
+                method.addFirst(String.format(
+                    "        synchronized (%s.class) {", test_class_name));
+                method.addLast("        }");
             }
-            methods.add(String.format("""
-                  public static void test%d() {
-              %s
-                  }
-              """, i, inner));
+            method.addFirst(String.format(
+                "    public static void %s%d() {", test_method_name, i));
+            method.addLast("    }");
+            acc.addAll(method);
         }
-        String methods_string = String.join("\n\n", methods);
-        String test_program = String.format("""
-                public class %s {
-                %s
-                }""", test_class_name, methods_string);
-        return test_program;
+        acc.addFirst(String.format("public class %s {", test_class_name));
+        acc.addLast("}");
+        return String.join("\n", acc);
     }
 
     public static void main(String[] args) {
         CompileFramework comp = new CompileFramework();
-        comp.addJavaSourceCode("Test", generate_test());
+        comp.addJavaSourceCode(test_class_name, generate_test());
         comp.compile();
-        for (int i = min; i < max; ++i) {
-            comp.invoke("Test", "test" + i, new Object[] {});
+        for (int i = min; i <= max; i++) {
+            comp.invoke(test_class_name, test_method_name + i, new Object[] {});
         }
     }
 }
