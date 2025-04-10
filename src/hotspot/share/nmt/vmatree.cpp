@@ -72,7 +72,9 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     LEQ_A = AddressState{leqA_n->key(), leqA_n->val()};
     StateType leqA_state = leqA_n->val().out.type();
     StateType new_state = stA.out.type();
-    assert(!is_uncommit_operation || leqA_state != StateType::Released, "uncommitting a released region");
+    if (is_uncommit_operation && leqA_state == StateType::Released) {
+      return SummaryDiff(-1);
+    }
     // If we specify use_tag_inplace then the new region takes over the current tag instead of the tag in metadata.
     // This is important because the VirtualMemoryTracker API doesn't require supplying the tag for some operations.
     if (use_tag_inplace) {
@@ -134,11 +136,13 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 
   // Find all nodes between (A, B] and record their addresses and values. Also update B's
   // outgoing state.
+  bool is_remove_ok = true;
   _tree.visit_range_in_order(A + 1, B + 1, [&](TreapNode* head) {
     int cmp_B = PositionComparator::cmp(head->key(), B);
     stB.out = out_state(head);
-    tty->print_cr("uc: %d, adr: %d, st:%d", is_uncommit_operation,(int) head->key(),(int) head->val().out.type());
-    assert(!is_uncommit_operation || head->val().out.type() != StateType::Released, "uncommitting a released region");
+    if (is_uncommit_operation && head->val().out.type() == StateType::Released)  {
+      is_remove_ok = false;
+    }
     if (cmp_B < 0) {
       // Record all nodes preceding B.
       to_be_deleted_inbetween_a_b.push({head->key(), head->val()});
@@ -153,7 +157,9 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       B_needs_insert = false;
     }
   });
-
+  if (!is_remove_ok) {
+    return SummaryDiff(-1);
+  }
   // Insert B node if needed
   if (B_needs_insert && // Was not already inserted
       !stB.is_noop())   // The operation is differing

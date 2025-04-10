@@ -750,7 +750,8 @@ TEST_VM_F(NMTVMATreeTest, UncommmitReleasedRegion) {
     tree.release_mapping(50, 20);
     //0-----50....70-----100
     //   40----60
-    EXPECT_DEATH(tree.uncommit_mapping(40, 20, rd2), "");
+    VMATree::SummaryDiff diff = tree.uncommit_mapping(40, 20, rd2);
+    EXPECT_FALSE(diff.is_valid());
   }
   {
     Tree tree;
@@ -760,6 +761,7 @@ TEST_VM_F(NMTVMATreeTest, UncommmitReleasedRegion) {
     tree.release_mapping(50, 20);
     //0-----50....70-----100
     //         60----80
-    EXPECT_DEATH(tree.uncommit_mapping(60, 20, rd2), "");
+    VMATree::SummaryDiff diff = tree.uncommit_mapping(60, 20, rd2);
+    EXPECT_FALSE(diff.is_valid());
   }
 }
