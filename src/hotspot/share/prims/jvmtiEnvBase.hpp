@@ -454,6 +454,8 @@ class JvmtiEnvIterator : public StackObj {
   JvmtiEnv* next(JvmtiEnvBase* env) { return env->next_environment(); }
 };
 
+#if INCLUDE_JVMTI
+
 // This helper class marks current thread as making a Java upcall.
 // It is needed to hide JVMTI events during JVMTI operation.
 class JvmtiJavaUpcallMark : public StackObj {
@@ -471,6 +473,7 @@ class JvmtiJavaUpcallMark : public StackObj {
     _current->toggle_is_in_java_upcall();
   }
 };
+#endif // INCLUDE_JVMTI
 
 // Used in combination with the JvmtiHandshake class.
 // It is intended to support both platform and virtual threads.
