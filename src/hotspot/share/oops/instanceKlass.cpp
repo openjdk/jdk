@@ -1943,7 +1943,7 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
   if (fields_sorted.length() > 0) {
     fields_sorted.sort(compare_fields_by_offset);
     fieldDescriptor fd;
-    for (GrowableArrayIterator<FieldInfo> it = fields_sorted.begin(); it != fields_sorted.end(); ++it) {
+    for (auto it = fields_sorted.begin(); it != fields_sorted.end(); ++it) {
       fd.reinitialize(this, *it);
       assert(!fd.is_static() && fd.offset() == checked_cast<int>(it->offset()), "only nonstatic fields");
       cl->do_field(&fd);
