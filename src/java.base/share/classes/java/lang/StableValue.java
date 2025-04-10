@@ -324,7 +324,7 @@ import java.util.function.Supplier;
  *     private static final int MAX_SIZE_INT = 46;
  *
  *     private static final IntFunction<Integer> FIB =
- *             StableValue.intFunction(MAX_SIZE_INT, Fibonacci::fib);
+ *         StableValue.intFunction(MAX_SIZE_INT, Fibonacci::fib);
  *
  *     public static int fib(int n) {
  *         return n < 2
