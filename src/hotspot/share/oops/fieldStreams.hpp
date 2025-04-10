@@ -131,7 +131,7 @@ class FieldStreamBase : public StackObj {
   // bridge to a heavier API:
   fieldDescriptor& field_descriptor() const {
     fieldDescriptor& field = const_cast<fieldDescriptor&>(_fd_buf);
-    field.reinitialize(field_holder(), _index, _fi_buf);
+    field.reinitialize(field_holder(), _fi_buf);
     return field;
   }
 };
