@@ -1935,21 +1935,17 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
   ResourceMark rm;
   // In DebugInfo nonstatic fields are sorted by offset.
   GrowableArray<FieldInfo> fields_sorted;
-  int i = 0;
   for (AllFieldStream fs(this); !fs.done(); fs.next()) {
     if (!fs.access_flags().is_static()) {
       fields_sorted.push(fs.to_FieldInfo());
-      i++;
     }
   }
-  if (i > 0) {
-    int length = i;
-    assert(length == fields_sorted.length(), "duh");
+  if (fields_sorted.length() > 0) {
     fields_sorted.sort(compare_fields_by_offset);
     fieldDescriptor fd;
-    for (int i = 0; i < length; i++) {
-      fd.reinitialize(this, fields_sorted.at(i));
-      assert(!fd.is_static() && fd.offset() == checked_cast<int>(fields_sorted.at(i).offset()), "only nonstatic fields");
+    for (GrowableArrayIterator<FieldInfo> it = fields_sorted.begin(); it != fields_sorted.end(); ++it) {
+      fd.reinitialize(this, *it);
+      assert(!fd.is_static() && fd.offset() == checked_cast<int>(it->offset()), "only nonstatic fields");
       cl->do_field(&fd);
     }
   }
