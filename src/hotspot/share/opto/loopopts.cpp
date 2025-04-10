@@ -1684,8 +1684,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_CMove() &&
       !n->is_OpaqueNotNull() &&
       !n->is_OpaqueInitializedAssertionPredicate() &&
-      !n->is_OpaqueTemplateAssertionPredicate() &&
-      !n->is_Type()) {
+      !n->is_OpaqueTemplateAssertionPredicate()) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
 
