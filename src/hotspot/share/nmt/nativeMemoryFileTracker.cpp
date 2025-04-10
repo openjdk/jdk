@@ -24,7 +24,7 @@
 
 #include "memory/allocation.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/memoryFileTracker.hpp"
+#include "nmt/nativeMemoryFileTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/vmatree.hpp"
@@ -32,12 +32,12 @@
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
-MemoryFileTracker* MemoryFileTracker::Instance::_tracker = nullptr;
+NativeMemoryFileTracker* NativeMemoryFileTracker::Instance::_tracker = nullptr;
 
-MemoryFileTracker::MemoryFileTracker(bool is_detailed_mode)
+NativeMemoryFileTracker::NativeMemoryFileTracker(bool is_detailed_mode)
   : _stack_storage(is_detailed_mode), _files() {}
 
-void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
+void NativeMemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
                                         size_t size, const NativeCallStack& stack,
                                         MemTag mem_tag) {
   NativeCallStackStorage::StackIndex sidx = _stack_storage.push(stack);
@@ -50,7 +50,7 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
   }
 }
 
-void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size) {
+void NativeMemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size) {
   VMATree::SummaryDiff diff = file->_tree.release_mapping(offset, size);
   for (int i = 0; i < mt_number_of_tags; i++) {
     VirtualMemory* summary = file->_summary.by_tag(NMTUtil::index_to_tag(i));
@@ -59,7 +59,7 @@ void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size
   }
 }
 
-void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* stream, size_t scale) {
+void NativeMemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* stream, size_t scale) {
   assert(MemTracker::tracking_level() == NMT_detail, "must");
 
   stream->print_cr("Memory map of %s", file->_descriptive_name);
@@ -108,73 +108,73 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
 #endif
 }
 
-MemoryFileTracker::MemoryFile* MemoryFileTracker::make_file(const char* descriptive_name) {
+NativeMemoryFileTracker::MemoryFile* NativeMemoryFileTracker::make_file(const char* descriptive_name) {
   MemoryFile* file_place = new MemoryFile{descriptive_name};
   _files.push(file_place);
   return file_place;
 }
 
-void MemoryFileTracker::free_file(MemoryFile* file) {
+void NativeMemoryFileTracker::free_file(MemoryFile* file) {
   if (file == nullptr) return;
   _files.remove(file);
   delete file;
 }
 
-const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTracker::files() {
+const GrowableArrayCHeap<NativeMemoryFileTracker::MemoryFile*, mtNMT>& NativeMemoryFileTracker::files() {
   return _files;
 }
 
-bool MemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
+bool NativeMemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
   if (tracking_level == NMT_TrackingLevel::NMT_off) return true;
-  _tracker = static_cast<MemoryFileTracker*>(os::malloc(sizeof(MemoryFileTracker), mtNMT));
+  _tracker = static_cast<NativeMemoryFileTracker*>(os::malloc(sizeof(NativeMemoryFileTracker), mtNMT));
   if (_tracker == nullptr) return false;
-  new (_tracker) MemoryFileTracker(tracking_level == NMT_TrackingLevel::NMT_detail);
+  new (_tracker) NativeMemoryFileTracker(tracking_level == NMT_TrackingLevel::NMT_detail);
   return true;
 }
 
-void MemoryFileTracker::Instance::allocate_memory(MemoryFile* file, size_t offset,
+void NativeMemoryFileTracker::Instance::allocate_memory(MemoryFile* file, size_t offset,
                                                   size_t size, const NativeCallStack& stack,
                                                   MemTag mem_tag) {
   _tracker->allocate_memory(file, offset, size, stack, mem_tag);
 }
 
-void MemoryFileTracker::Instance::free_memory(MemoryFile* file, size_t offset, size_t size) {
+void NativeMemoryFileTracker::Instance::free_memory(MemoryFile* file, size_t offset, size_t size) {
   _tracker->free_memory(file, offset, size);
 }
 
-MemoryFileTracker::MemoryFile*
-MemoryFileTracker::Instance::make_file(const char* descriptive_name) {
+NativeMemoryFileTracker::MemoryFile*
+NativeMemoryFileTracker::Instance::make_file(const char* descriptive_name) {
   return _tracker->make_file(descriptive_name);
 }
 
-void MemoryFileTracker::Instance::free_file(MemoryFileTracker::MemoryFile* file) {
+void NativeMemoryFileTracker::Instance::free_file(NativeMemoryFileTracker::MemoryFile* file) {
   return _tracker->free_file(file);
 }
 
-void MemoryFileTracker::Instance::print_report_on(const MemoryFile* file,
+void NativeMemoryFileTracker::Instance::print_report_on(const MemoryFile* file,
                                                   outputStream* stream, size_t scale) {
   assert(file != nullptr, "must be");
   assert(stream != nullptr, "must be");
   _tracker->print_report_on(file, stream, scale);
 }
 
-void MemoryFileTracker::Instance::print_all_reports_on(outputStream* stream, size_t scale) {
-  const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& files =
-      MemoryFileTracker::Instance::files();
+void NativeMemoryFileTracker::Instance::print_all_reports_on(outputStream* stream, size_t scale) {
+  const GrowableArrayCHeap<NativeMemoryFileTracker::MemoryFile*, mtNMT>& files =
+      NativeMemoryFileTracker::Instance::files();
   stream->cr();
   stream->print_cr("Memory file details");
   stream->cr();
   for (int i = 0; i < files.length(); i++) {
-    MemoryFileTracker::MemoryFile* file = files.at(i);
-    MemoryFileTracker::Instance::print_report_on(file, stream, scale);
+    NativeMemoryFileTracker::MemoryFile* file = files.at(i);
+    NativeMemoryFileTracker::Instance::print_report_on(file, stream, scale);
   }
 }
 
-const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTracker::Instance::files() {
+const GrowableArrayCHeap<NativeMemoryFileTracker::MemoryFile*, mtNMT>& NativeMemoryFileTracker::Instance::files() {
   return _tracker->files();
 };
 
-void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const {
+void NativeMemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const {
   iterate_summary([&](MemTag tag, const VirtualMemory* current) {
     VirtualMemory* snap = snapshot->by_tag(tag);
     // Only account the committed memory.
@@ -182,6 +182,6 @@ void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const 
   });
 }
 
-void MemoryFileTracker::Instance::summary_snapshot(VirtualMemorySnapshot* snapshot) {
+void NativeMemoryFileTracker::Instance::summary_snapshot(VirtualMemorySnapshot* snapshot) {
   _tracker->summary_snapshot(snapshot);
 }

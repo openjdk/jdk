@@ -28,7 +28,7 @@
 #include "memory/reservedSpace.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "nmt/memoryFileTracker.hpp"
+#include "nmt/nativeMemoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -173,37 +173,37 @@ class MemTracker : AllStatic {
     }
   }
 
-  static inline MemoryFileTracker::MemoryFile* register_file(const char* descriptive_name) {
+  static inline NativeMemoryFileTracker::MemoryFile* register_file(const char* descriptive_name) {
     assert_post_init();
     if (!enabled()) return nullptr;
     NmtVirtualMemoryLocker nvml;
-    return MemoryFileTracker::Instance::make_file(descriptive_name);
+    return NativeMemoryFileTracker::Instance::make_file(descriptive_name);
   }
 
-  static inline void remove_file(MemoryFileTracker::MemoryFile* file) {
+  static inline void remove_file(NativeMemoryFileTracker::MemoryFile* file) {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
     NmtVirtualMemoryLocker nvml;
-    MemoryFileTracker::Instance::free_file(file);
+    NativeMemoryFileTracker::Instance::free_file(file);
   }
 
-  static inline void allocate_memory_in(MemoryFileTracker::MemoryFile* file, size_t offset, size_t size,
+  static inline void allocate_memory_in(NativeMemoryFileTracker::MemoryFile* file, size_t offset, size_t size,
                                        const NativeCallStack& stack, MemTag mem_tag) {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
     NmtVirtualMemoryLocker nvml;
-    MemoryFileTracker::Instance::allocate_memory(file, offset, size, stack, mem_tag);
+    NativeMemoryFileTracker::Instance::allocate_memory(file, offset, size, stack, mem_tag);
   }
 
-  static inline void free_memory_in(MemoryFileTracker::MemoryFile* file,
+  static inline void free_memory_in(NativeMemoryFileTracker::MemoryFile* file,
                                         size_t offset, size_t size) {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
     NmtVirtualMemoryLocker nvml;
-    MemoryFileTracker::Instance::free_memory(file, offset, size);
+    NativeMemoryFileTracker::Instance::free_memory(file, offset, size);
   }
 
   // Given an existing memory mapping registered with NMT and a splitting
