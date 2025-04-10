@@ -249,15 +249,10 @@ public:
   const VPointer& vp2() const { return *_vp2; }
 
   // Sort by summands, so that pairs with same summands (summand1, summands2) are adjacent.
-  // Internally sort by con, so that we only have increasing con.
   static int cmp_for_sort(VPointerWeakAliasingPair* pair1, VPointerWeakAliasingPair* pair2) {
     int cmp_summands1 = VPointer::cmp_summands(pair1->vp1(), pair2->vp1());
     if (cmp_summands1 != 0) { return cmp_summands1; }
-    int cmp_summands2 = VPointer::cmp_summands(pair1->vp2(), pair2->vp2());
-    if (cmp_summands2 != 0) { return cmp_summands2; }
-    int cmp_con1 = VPointer::cmp_con(pair1->vp1(), pair2->vp1());
-    if (cmp_con1 != 0) { return cmp_con1; }
-    return VPointer::cmp_con(pair1->vp2(), pair2->vp2());
+    return VPointer::cmp_summands(pair1->vp2(), pair2->vp2());
   }
 };
 
@@ -320,48 +315,78 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
     // Sort so that all pairs with the same summands (summands1, summands2)
     // are consecutive, i.e. in the same group. This allows us to do a linear
     // walk over all pairs of a group and create the union VPointers.
-    // Inside a group, we sort by constant.
     weak_aliasing_pairs.sort(VPointerWeakAliasingPair::cmp_for_sort);
 
     int group_start = 0;
     while (group_start < weak_aliasing_pairs.length()) {
       // New group: pick the first pair as the reference.
-      const VPointer& vp1 = weak_aliasing_pairs.at(group_start).vp1();
-      const VPointer& vp2 = weak_aliasing_pairs.at(group_start).vp2();
-      jint size1 = vp1.size();
-      jint size2 = vp2.size();
+      const VPointer* vp1 = &weak_aliasing_pairs.at(group_start).vp1();
+      const VPointer* vp2 = &weak_aliasing_pairs.at(group_start).vp2();
+      jint size1 = vp1->size();
+      jint size2 = vp2->size();
       int group_end = group_start + 1;
       while (group_end < weak_aliasing_pairs.length()) {
-        const VPointer& vp1_next = weak_aliasing_pairs.at(group_end).vp1();
-        const VPointer& vp2_next = weak_aliasing_pairs.at(group_end).vp2();
-        // Different summands -> different group.
-        if (VPointer::cmp_summands(vp1, vp1_next) != 0) { break; }
-        if (VPointer::cmp_summands(vp2, vp2_next) != 0) { break; }
+        const VPointer* vp1_next = &weak_aliasing_pairs.at(group_end).vp1();
+        const VPointer* vp2_next = &weak_aliasing_pairs.at(group_end).vp2();
+        jint size1_next = vp1_next->size();
+        jint size2_next = vp2_next->size();
 
-        assert(vp1.con() <= vp1_next.con(), "should be sorted");
-        assert(vp2.con() <= vp2_next.con(), "should be sorted");
-        NoOverflowInt new_size1 = NoOverflowInt(vp1_next.con()) + NoOverflowInt(vp1_next.size()) - NoOverflowInt(vp1.con());
-        NoOverflowInt new_size2 = NoOverflowInt(vp2_next.con()) + NoOverflowInt(vp2_next.size()) - NoOverflowInt(vp2.con());
-        if (new_size1.is_NaN() || new_size2.is_NaN()) { break; }
+        // Different summands -> different group.
+        if (VPointer::cmp_summands(*vp1, *vp1_next) != 0) { break; }
+        if (VPointer::cmp_summands(*vp2, *vp2_next) != 0) { break; }
+
+        // Pick the one with the lower con as the reference.
+        if (vp1->con() > vp1_next->con()) {
+          swap(vp1, vp1_next);
+          swap(size1, size1_next);
+        }
+        if (vp2->con() > vp2_next->con()) {
+          swap(vp2, vp2_next);
+          swap(size2, size2_next);
+        }
+
+        // Compute the distance from vp1 to vp1_next + size, to get a size that would include vp1_next.
+        NoOverflowInt new_size1 = NoOverflowInt(vp1_next->con()) + NoOverflowInt(vp1_next->size()) - NoOverflowInt(vp1->con());
+        NoOverflowInt new_size2 = NoOverflowInt(vp2_next->con()) + NoOverflowInt(vp2_next->size()) - NoOverflowInt(vp2->con());
+        if (new_size1.is_NaN() || new_size2.is_NaN()) { break; /* overflow -> new group */ }
 
         // The "next" VPointer indeed belong to the group.
-        size1 = new_size1.value();
-        size2 = new_size2.value();
+        //
+        // vp1:       |-------------->
+        // vp1_next:            |---------------->
+        // result:    |-------------------------->
+        //
+        // vp1:       |-------------------------->
+        // vp1_next:            |------->
+        // result:    |-------------------------->
+        //
+        size1 = MAX2(size1, new_size1.value());
+        size2 = MAX2(size2, new_size2.value());
         group_end++;
       }
       // Create "union" VPointer that cover all VPointer from the group.
-      VPointer vp_union1 = vp1.make_with_size(size1);
-      VPointer vp_union2 = vp2.make_with_size(size2);
+      const VPointer vp1_union = vp1->make_with_size(size1);
+      const VPointer vp2_union = vp2->make_with_size(size2);
 
 #ifdef ASSERT
-          if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
-            tty->print_cr("\nUnion of %d weak aliasing edges:", group_end - group_start);
-            vp_union1.print_on(tty);
-            vp_union2.print_on(tty);
-          }
+      if (_trace._speculative_aliasing_analysis || _trace._speculative_runtime_checks) {
+        tty->print_cr("\nUnion of %d weak aliasing edges:", group_end - group_start);
+        vp1_union.print_on(tty);
+        vp2_union.print_on(tty);
+      }
+
+      // Verification - union must contain all VPointer of the group.
+      for (int i = group_start; i < group_end; i++) {
+        const VPointer& vp1_i = weak_aliasing_pairs.at(i).vp1();
+        const VPointer& vp2_i = weak_aliasing_pairs.at(i).vp2();
+        assert(vp1_union.con() <= vp1_i.con(), "must start before");
+        assert(vp2_union.con() <= vp2_i.con(), "must start before");
+        assert(vp1_union.size() >= vp1_i.size(), "must end after");
+        assert(vp2_union.size() >= vp2_i.size(), "must end after");
+      }
 #endif
 
-      BoolNode* bol = vp_union1.make_speculative_aliasing_check_with(vp_union2);
+      BoolNode* bol = vp1_union.make_speculative_aliasing_check_with(vp2_union);
       add_speculative_check(bol);
 
       group_start = group_end;
