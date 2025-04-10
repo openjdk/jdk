@@ -32,6 +32,7 @@ import java.nio.file.attribute.*;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.spi.ToolProvider;
@@ -50,7 +51,9 @@ import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -353,25 +356,55 @@ public class TestPosix {
             return;
         }
 
-        Set<PosixFilePermission> permissions;
-        if (expected == checkExpects.permsPosix) {
-            try {
-                permissions = Files.getPosixFilePermissions(file);
-            } catch (IOException e) {
-                e.printStackTrace();
-                fail("Caught IOException getting permission attribute for:" + System.lineSeparator() + attrs);
-                return;
+        Set<PosixFilePermission> actual = getFilePermissions(file, expected, attrs);
+        comparePermissions(getExpectedPermissions(expected, ei), actual);
+
+        // Test that (as per the PosixEntry specification) permissions are mutable, but
+        // also ensure they are distinct from each other and don't side-effect anything.
+        if (actual != null) {
+            Set<PosixFilePermission> other = getFilePermissions(file, expected, attrs);
+            assertNotSame(actual, other);
+            assertEquals(actual, other);
+            // Flip any one of the permissions (arbitrary) to make contents non-equal.
+            if (other.contains(OTHERS_WRITE)) {
+                other.remove(OTHERS_WRITE);
+            } else {
+                other.add(OTHERS_WRITE);
             }
-            comparePermissions(ei.permsPosix, permissions);
-        } else if (expected == checkExpects.permsInZip || expected == checkExpects.noPermDataInZip) {
-            try {
-                permissions = (Set<PosixFilePermission>)Files.getAttribute(file, "zip:permissions");
-            } catch (IOException e) {
-                e.printStackTrace();
-                fail("Caught IOException getting permission attribute for:" + System.lineSeparator() + attrs);
-                return;
+            assertNotEquals(actual, other);
+            assertNotEquals(getFilePermissions(file, expected, attrs), other);
+        }
+    }
+
+    private Set<PosixFilePermission> getFilePermissions(
+            Path file, checkExpects expected, BasicFileAttributes attrs) {
+        try {
+            switch (expected) {
+                case permsPosix:
+                    return Files.getPosixFilePermissions(file);
+                case permsInZip:
+                case noPermDataInZip:
+                    return (Set<PosixFilePermission>) Files.getAttribute(file, "zip:permissions");
+                default:
+                    throw new IllegalStateException("Invalid request for file permissions");
             }
-            comparePermissions(expected == checkExpects.noPermDataInZip ? null : ei.permsInZip, permissions);
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail("Caught IOException getting permission attribute for:" + System.lineSeparator() + attrs);
+            return null;
+        }
+    }
+
+    private Set<PosixFilePermission> getExpectedPermissions(checkExpects expected, ZipFileEntryInfo ei) {
+        switch (expected) {
+            case permsPosix:
+                return ei.permsPosix;
+            case permsInZip:
+                return ei.permsInZip;
+            case noPermDataInZip:
+                return null;
+            default:
+                throw new IllegalStateException("Invalid request for expected permissions");
         }
     }
 

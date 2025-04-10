@@ -48,7 +48,7 @@ import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
@@ -123,7 +123,7 @@ class ZipFileSystem extends FileSystem {
                                                 // METHOD_DEFLATED otherwise
 
     // entryLookup is identity by default, will be overridden for multi-release jars
-    private Function<byte[], byte[]> entryLookup = Function.identity();
+    private UnaryOperator<byte[]> entryLookup = UnaryOperator.identity();
 
     // POSIX support
     final boolean supportPosix;
@@ -187,8 +187,9 @@ class ZipFileSystem extends FileSystem {
         Optional<Integer> multiReleaseVersion = determineReleaseVersion(env);
 
         // Set the version-based lookup function for multi-release JARs.
-        this.entryLookup =
-                multiReleaseVersion.map(this::createVersionedLinks).orElse(Function.identity());
+        this.entryLookup = multiReleaseVersion
+                .map(this::createVersionedLinks)
+                .orElse(UnaryOperator.identity());
 
         // We only allow read-write zip/jar files if they are not multi-release
         // JARs and the underlying file is writable.
@@ -310,14 +311,15 @@ class ZipFileSystem extends FileSystem {
 
     // Return the default permissions for files inside the zip archive.
     // If not specified in env, it will return all permissions set (i.e. "777").
-    private static EnumSet<PosixFilePermission> initPermissions(Object o) {
+    private static EnumSet<PosixFilePermission> initPermissions(Map<String, ?> env) {
+        Object o = env.get(PROPERTY_DEFAULT_PERMISSIONS);
         if (o == null) {
             return EnumSet.allOf(PosixFilePermission.class);
         }
         Set<?> toCopy;
         if (o instanceof String) {
             toCopy = PosixFilePermissions.fromString((String) o);
-        } else if ((o instanceof Set)) {
+        } else if (o instanceof Set) {
             toCopy = (Set<?>) o;
         } else {
             throw new IllegalArgumentException("Value for property " +
@@ -1446,11 +1448,11 @@ class ZipFileSystem extends FileSystem {
      * Then wrap the map in a function that getEntry can use to override root
      * entry lookup for entries that have corresponding versioned entries.
      */
-    private Function<byte[], byte[]> createVersionedLinks(int version) {
+    private UnaryOperator<byte[]> createVersionedLinks(int version) {
         IndexNode verdir = getInode(getBytes("/META-INF/versions"));
         // nothing to do, if no /META-INF/versions
         if (verdir == null) {
-            return Function.identity();
+            return UnaryOperator.identity();
         }
         // otherwise, create a map and for each META-INF/versions/{n} directory
         // put all the leaf inodes, i.e. entries, into the alias map
