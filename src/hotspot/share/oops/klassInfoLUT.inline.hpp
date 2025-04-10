@@ -51,7 +51,7 @@ ALWAYSINLINE KlassLUTEntry KlassInfoLUT::lookup(narrowKlass nk) {
     return late_register_klass(nk);
   }
 #else
-  assert(!e.is_invalid(), "must never be invalid");
+  assert(e.is_valid(), "must never be invalid");
 #endif
 
 #ifdef KLUT_ENABLE_EXPENSIVE_STATS
