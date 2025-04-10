@@ -258,6 +258,165 @@ register %{
 // Vector-Scalar Registers
 // ----------------------------
   // 1st 32 VSRs are aliases for the FPRs which are already defined above.
+  reg_def VSR0   (SOC, SOC, Op_VecX, 0, VMRegImpl::Bad());
+  reg_def VSR0_H (SOC, SOC, Op_VecX, 0, VMRegImpl::Bad());
+  reg_def VSR0_J (SOC, SOC, Op_VecX, 0, VMRegImpl::Bad());
+  reg_def VSR0_K (SOC, SOC, Op_VecX, 0, VMRegImpl::Bad());
+
+  reg_def VSR1   (SOC, SOC, Op_VecX, 1, VMRegImpl::Bad());
+  reg_def VSR1_H (SOC, SOC, Op_VecX, 1, VMRegImpl::Bad());
+  reg_def VSR1_J (SOC, SOC, Op_VecX, 1, VMRegImpl::Bad());
+  reg_def VSR1_K (SOC, SOC, Op_VecX, 1, VMRegImpl::Bad());
+
+  reg_def VSR2   (SOC, SOC, Op_VecX, 2, VMRegImpl::Bad());
+  reg_def VSR2_H (SOC, SOC, Op_VecX, 2, VMRegImpl::Bad());
+  reg_def VSR2_J (SOC, SOC, Op_VecX, 2, VMRegImpl::Bad());
+  reg_def VSR2_K (SOC, SOC, Op_VecX, 2, VMRegImpl::Bad());
+
+  reg_def VSR3   (SOC, SOC, Op_VecX, 3, VMRegImpl::Bad());
+  reg_def VSR3_H (SOC, SOC, Op_VecX, 3, VMRegImpl::Bad());
+  reg_def VSR3_J (SOC, SOC, Op_VecX, 3, VMRegImpl::Bad());
+  reg_def VSR3_K (SOC, SOC, Op_VecX, 3, VMRegImpl::Bad());
+
+  reg_def VSR4   (SOC, SOC, Op_VecX, 4, VMRegImpl::Bad());
+  reg_def VSR4_H (SOC, SOC, Op_VecX, 4, VMRegImpl::Bad());
+  reg_def VSR4_J (SOC, SOC, Op_VecX, 4, VMRegImpl::Bad());
+  reg_def VSR4_K (SOC, SOC, Op_VecX, 4, VMRegImpl::Bad());
+
+  reg_def VSR5   (SOC, SOC, Op_VecX, 5, VMRegImpl::Bad());
+  reg_def VSR5_H (SOC, SOC, Op_VecX, 5, VMRegImpl::Bad());
+  reg_def VSR5_J (SOC, SOC, Op_VecX, 5, VMRegImpl::Bad());
+  reg_def VSR5_K (SOC, SOC, Op_VecX, 5, VMRegImpl::Bad());
+
+  reg_def VSR6   (SOC, SOC, Op_VecX, 6, VMRegImpl::Bad());
+  reg_def VSR6_H (SOC, SOC, Op_VecX, 6, VMRegImpl::Bad());
+  reg_def VSR6_J (SOC, SOC, Op_VecX, 6, VMRegImpl::Bad());
+  reg_def VSR6_K (SOC, SOC, Op_VecX, 6, VMRegImpl::Bad());
+
+  reg_def VSR7   (SOC, SOC, Op_VecX, 7, VMRegImpl::Bad());
+  reg_def VSR7_H (SOC, SOC, Op_VecX, 7, VMRegImpl::Bad());
+  reg_def VSR7_J (SOC, SOC, Op_VecX, 7, VMRegImpl::Bad());
+  reg_def VSR7_K (SOC, SOC, Op_VecX, 7, VMRegImpl::Bad());
+
+  reg_def VSR8   (SOC, SOC, Op_VecX, 8, VMRegImpl::Bad());
+  reg_def VSR8_H (SOC, SOC, Op_VecX, 8, VMRegImpl::Bad());
+  reg_def VSR8_J (SOC, SOC, Op_VecX, 8, VMRegImpl::Bad());
+  reg_def VSR8_K (SOC, SOC, Op_VecX, 8, VMRegImpl::Bad());
+
+  reg_def VSR9   (SOC, SOC, Op_VecX, 9, VMRegImpl::Bad());
+  reg_def VSR9_H (SOC, SOC, Op_VecX, 9, VMRegImpl::Bad());
+  reg_def VSR9_J (SOC, SOC, Op_VecX, 9, VMRegImpl::Bad());
+  reg_def VSR9_K (SOC, SOC, Op_VecX, 9, VMRegImpl::Bad());
+
+  reg_def VSR10  (SOC, SOC, Op_VecX, 10, VMRegImpl::Bad());
+  reg_def VSR10_H(SOC, SOC, Op_VecX, 10, VMRegImpl::Bad());
+  reg_def VSR10_J(SOC, SOC, Op_VecX, 10, VMRegImpl::Bad());
+  reg_def VSR10_K(SOC, SOC, Op_VecX, 10, VMRegImpl::Bad());
+
+  reg_def VSR11  (SOC, SOC, Op_VecX, 11, VMRegImpl::Bad());
+  reg_def VSR11_H(SOC, SOC, Op_VecX, 11, VMRegImpl::Bad());
+  reg_def VSR11_J(SOC, SOC, Op_VecX, 11, VMRegImpl::Bad());
+  reg_def VSR11_K(SOC, SOC, Op_VecX, 11, VMRegImpl::Bad());
+
+  reg_def VSR12  (SOC, SOC, Op_VecX, 12, VMRegImpl::Bad());
+  reg_def VSR12_H(SOC, SOC, Op_VecX, 12, VMRegImpl::Bad());
+  reg_def VSR12_J(SOC, SOC, Op_VecX, 12, VMRegImpl::Bad());
+  reg_def VSR12_K(SOC, SOC, Op_VecX, 12, VMRegImpl::Bad());
+
+  reg_def VSR13  (SOC, SOC, Op_VecX, 13, VMRegImpl::Bad());
+  reg_def VSR13_H(SOC, SOC, Op_VecX, 13, VMRegImpl::Bad());
+  reg_def VSR13_J(SOC, SOC, Op_VecX, 13, VMRegImpl::Bad());
+  reg_def VSR13_K(SOC, SOC, Op_VecX, 13, VMRegImpl::Bad());
+
+  reg_def VSR14  (SOC, SOC, Op_VecX, 14, VMRegImpl::Bad());
+  reg_def VSR14_H(SOC, SOC, Op_VecX, 14, VMRegImpl::Bad());
+  reg_def VSR14_J(SOC, SOC, Op_VecX, 14, VMRegImpl::Bad());
+  reg_def VSR14_K(SOC, SOC, Op_VecX, 14, VMRegImpl::Bad());
+
+  reg_def VSR15  (SOC, SOC, Op_VecX, 15, VMRegImpl::Bad());
+  reg_def VSR15_H(SOC, SOC, Op_VecX, 15, VMRegImpl::Bad());
+  reg_def VSR15_J(SOC, SOC, Op_VecX, 15, VMRegImpl::Bad());
+  reg_def VSR15_K(SOC, SOC, Op_VecX, 15, VMRegImpl::Bad());
+
+  reg_def VSR16  (SOC, SOC, Op_VecX, 16, VMRegImpl::Bad());
+  reg_def VSR16_H(SOC, SOC, Op_VecX, 16, VMRegImpl::Bad());
+  reg_def VSR16_J(SOC, SOC, Op_VecX, 16, VMRegImpl::Bad());
+  reg_def VSR16_K(SOC, SOC, Op_VecX, 16, VMRegImpl::Bad());
+
+  reg_def VSR17  (SOC, SOC, Op_VecX, 17, VMRegImpl::Bad());
+  reg_def VSR17_H(SOC, SOC, Op_VecX, 17, VMRegImpl::Bad());
+  reg_def VSR17_J(SOC, SOC, Op_VecX, 17, VMRegImpl::Bad());
+  reg_def VSR17_K(SOC, SOC, Op_VecX, 17, VMRegImpl::Bad());
+
+  reg_def VSR18  (SOC, SOC, Op_VecX, 18, VMRegImpl::Bad());
+  reg_def VSR18_H(SOC, SOC, Op_VecX, 18, VMRegImpl::Bad());
+  reg_def VSR18_J(SOC, SOC, Op_VecX, 18, VMRegImpl::Bad());
+  reg_def VSR18_K(SOC, SOC, Op_VecX, 18, VMRegImpl::Bad());
+
+  reg_def VSR19  (SOC, SOC, Op_VecX, 19, VMRegImpl::Bad());
+  reg_def VSR19_H(SOC, SOC, Op_VecX, 19, VMRegImpl::Bad());
+  reg_def VSR19_J(SOC, SOC, Op_VecX, 19, VMRegImpl::Bad());
+  reg_def VSR19_K(SOC, SOC, Op_VecX, 19, VMRegImpl::Bad());
+
+  reg_def VSR20  (SOC, SOC, Op_VecX, 20, VMRegImpl::Bad());
+  reg_def VSR20_H(SOC, SOC, Op_VecX, 20, VMRegImpl::Bad());
+  reg_def VSR20_J(SOC, SOC, Op_VecX, 20, VMRegImpl::Bad());
+  reg_def VSR20_K(SOC, SOC, Op_VecX, 20, VMRegImpl::Bad());
+
+  reg_def VSR21  (SOC, SOC, Op_VecX, 21, VMRegImpl::Bad());
+  reg_def VSR21_H(SOC, SOC, Op_VecX, 21, VMRegImpl::Bad());
+  reg_def VSR21_J(SOC, SOC, Op_VecX, 21, VMRegImpl::Bad());
+  reg_def VSR21_K(SOC, SOC, Op_VecX, 21, VMRegImpl::Bad());
+
+  reg_def VSR22  (SOC, SOC, Op_VecX, 22, VMRegImpl::Bad());
+  reg_def VSR22_H(SOC, SOC, Op_VecX, 22, VMRegImpl::Bad());
+  reg_def VSR22_J(SOC, SOC, Op_VecX, 22, VMRegImpl::Bad());
+  reg_def VSR22_K(SOC, SOC, Op_VecX, 22, VMRegImpl::Bad());
+
+  reg_def VSR23  (SOC, SOC, Op_VecX, 23, VMRegImpl::Bad());
+  reg_def VSR23_H(SOC, SOC, Op_VecX, 23, VMRegImpl::Bad());
+  reg_def VSR23_J(SOC, SOC, Op_VecX, 23, VMRegImpl::Bad());
+  reg_def VSR23_K(SOC, SOC, Op_VecX, 23, VMRegImpl::Bad());
+
+  reg_def VSR24  (SOC, SOC, Op_VecX, 24, VMRegImpl::Bad());
+  reg_def VSR24_H(SOC, SOC, Op_VecX, 24, VMRegImpl::Bad());
+  reg_def VSR24_J(SOC, SOC, Op_VecX, 24, VMRegImpl::Bad());
+  reg_def VSR24_K(SOC, SOC, Op_VecX, 24, VMRegImpl::Bad());
+
+  reg_def VSR25  (SOC, SOC, Op_VecX, 25, VMRegImpl::Bad());
+  reg_def VSR25_H(SOC, SOC, Op_VecX, 25, VMRegImpl::Bad());
+  reg_def VSR25_J(SOC, SOC, Op_VecX, 25, VMRegImpl::Bad());
+  reg_def VSR25_K(SOC, SOC, Op_VecX, 25, VMRegImpl::Bad());
+
+  reg_def VSR26  (SOC, SOC, Op_VecX, 26, VMRegImpl::Bad());
+  reg_def VSR26_H(SOC, SOC, Op_VecX, 26, VMRegImpl::Bad());
+  reg_def VSR26_J(SOC, SOC, Op_VecX, 26, VMRegImpl::Bad());
+  reg_def VSR26_K(SOC, SOC, Op_VecX, 26, VMRegImpl::Bad());
+
+  reg_def VSR27  (SOC, SOC, Op_VecX, 27, VMRegImpl::Bad());
+  reg_def VSR27_H(SOC, SOC, Op_VecX, 27, VMRegImpl::Bad());
+  reg_def VSR27_J(SOC, SOC, Op_VecX, 27, VMRegImpl::Bad());
+  reg_def VSR27_K(SOC, SOC, Op_VecX, 27, VMRegImpl::Bad());
+
+  reg_def VSR28  (SOC, SOC, Op_VecX, 28, VMRegImpl::Bad());
+  reg_def VSR28_H(SOC, SOC, Op_VecX, 28, VMRegImpl::Bad());
+  reg_def VSR28_J(SOC, SOC, Op_VecX, 28, VMRegImpl::Bad());
+  reg_def VSR28_K(SOC, SOC, Op_VecX, 28, VMRegImpl::Bad());
+
+  reg_def VSR29  (SOC, SOC, Op_VecX, 29, VMRegImpl::Bad());
+  reg_def VSR29_H(SOC, SOC, Op_VecX, 29, VMRegImpl::Bad());
+  reg_def VSR29_J(SOC, SOC, Op_VecX, 29, VMRegImpl::Bad());
+  reg_def VSR29_K(SOC, SOC, Op_VecX, 29, VMRegImpl::Bad());
+
+  reg_def VSR30  (SOC, SOC, Op_VecX, 30, VMRegImpl::Bad());
+  reg_def VSR30_H(SOC, SOC, Op_VecX, 30, VMRegImpl::Bad());
+  reg_def VSR30_J(SOC, SOC, Op_VecX, 30, VMRegImpl::Bad());
+  reg_def VSR30_K(SOC, SOC, Op_VecX, 30, VMRegImpl::Bad());
+
+  reg_def VSR31  (SOC, SOC, Op_VecX, 31, VMRegImpl::Bad());
+  reg_def VSR31_H(SOC, SOC, Op_VecX, 31, VMRegImpl::Bad());
+  reg_def VSR31_J(SOC, SOC, Op_VecX, 31, VMRegImpl::Bad());
+  reg_def VSR31_K(SOC, SOC, Op_VecX, 31, VMRegImpl::Bad());
 
   // 2nd 32 VSRs are aliases for the VRs which are only defined here.
   reg_def VSR32  (SOC, SOC, Op_VecX, 32, VSR32->as_VMReg()         );
@@ -550,6 +709,38 @@ alloc_class chunk2 (
 );
 
 alloc_class chunk3 (
+  VSR0 , VSR0_H , VSR0_J , VSR0_K ,
+  VSR1 , VSR1_H , VSR1_J , VSR1_K ,
+  VSR2 , VSR2_H , VSR2_J , VSR2_K ,
+  VSR3 , VSR3_H , VSR3_J , VSR3_K ,
+  VSR4 , VSR4_H , VSR4_J , VSR4_K ,
+  VSR5 , VSR5_H , VSR5_J , VSR5_K ,
+  VSR6 , VSR6_H , VSR6_J , VSR6_K ,
+  VSR7 , VSR7_H , VSR7_J , VSR7_K ,
+  VSR8 , VSR8_H , VSR8_J , VSR8_K ,
+  VSR9 , VSR9_H , VSR9_J , VSR9_K ,
+  VSR10, VSR10_H, VSR10_J, VSR10_K,
+  VSR11, VSR11_H, VSR11_J, VSR11_K,
+  VSR12, VSR12_H, VSR12_J, VSR12_K,
+  VSR13, VSR13_H, VSR13_J, VSR13_K,
+  VSR14, VSR14_H, VSR14_J, VSR14_K,
+  VSR15, VSR15_H, VSR15_J, VSR15_K,
+  VSR16, VSR16_H, VSR16_J, VSR16_K,
+  VSR17, VSR17_H, VSR17_J, VSR17_K,
+  VSR18, VSR18_H, VSR18_J, VSR18_K,
+  VSR19, VSR19_H, VSR19_J, VSR19_K,
+  VSR20, VSR20_H, VSR20_J, VSR20_K,
+  VSR21, VSR21_H, VSR21_J, VSR21_K,
+  VSR22, VSR22_H, VSR22_J, VSR22_K,
+  VSR23, VSR23_H, VSR23_J, VSR23_K,
+  VSR24, VSR24_H, VSR24_J, VSR24_K,
+  VSR25, VSR25_H, VSR25_J, VSR25_K,
+  VSR26, VSR26_H, VSR26_J, VSR26_K,
+  VSR27, VSR27_H, VSR27_J, VSR27_K,
+  VSR28, VSR28_H, VSR28_J, VSR28_K,
+  VSR29, VSR29_H, VSR29_J, VSR29_K,
+  VSR30, VSR30_H, VSR30_J, VSR30_K,
+  VSR31, VSR31_H, VSR31_J, VSR31_K,
   VSR32, VSR32_H, VSR32_J, VSR32_K,
   VSR33, VSR33_H, VSR33_J, VSR33_K,
   VSR34, VSR34_H, VSR34_J, VSR34_K,
@@ -1737,8 +1928,8 @@ static enum RC rc_class(OptoReg::Name reg) {
 
   assert(OptoReg::is_stack(reg) || reg >= 128+8, "flags are not expected");
 
-  // We have 32 vector registers (vector-scalar register 32-63), starting at index 136.
-  if (reg < 136+128) return rc_vs;
+  // We have 64 vector-scalar registers, starting at index 136.
+  if (reg < 136+256) return rc_vs;
 
   // Special purpose registers are not allocated. We only accept stack from here.
   assert(OptoReg::is_stack(reg), "what else is it?");
