@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,10 +204,6 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
                 while (!done()) {
                     var wakeups = this.wakeups;
                     long timeout = Math.min(computeNextDeadLine(), IDLE_PERIOD_MS);
-                    // selected = 0 indicates that no key had its ready ops changed:
-                    // it doesn't mean that no key is ready. Therefore - if a key
-                    // was ready to read, and is again ready to read, it doesn't
-                    // increment the selected count.
                     if (Log.quicTimer()) {
                         Log.logQuic(String.format("%s: wait(%s) wakeups:%s (+%s), waited:%s",
                                 name(), timeout,  this.wakeups, this.wakeups - wakeups, waited));

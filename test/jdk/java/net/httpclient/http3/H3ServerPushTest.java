@@ -866,8 +866,8 @@ class H3ServerPushTest {
             log(">>> sending headers (responseIndex=%d)", responseIndex);
             exchange.sendResponseHeaders(
                     200,
-                    // Use `-1` to avoid delivering a `Content-Length` header.
-                    // Otherwise, client closes the connection after reading
+                    // Use `-1` to avoid generating a single DataFrame.
+                    // Otherwise, server closes the stream after writing
                     // the response body, and this makes it impossible to test
                     // server pushes delivered after the response body.
                     -1);
