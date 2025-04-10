@@ -52,7 +52,7 @@ public class bug4232716 {
                              "</form> </body> </html>";
                 e = new JEditorPane("text/html", html);
                 e.setEditable(false);
-                frame.getContentPane().add(e);
+                frame.add(e);
                 frame.setSize(400, 300);
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);

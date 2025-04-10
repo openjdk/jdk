@@ -57,7 +57,7 @@ public class bug4190516 {
         JDesktopPane jdp = new JDesktopPane();
         fr.getContentPane().add(jdp);
 
-        JInternalFrame  jif = new JInternalFrame("Title", true, true, true, true);
+        JInternalFrame jif = new JInternalFrame("Title", true, true, true, true);
         jdp.add(jif);
         jif.setSize(150, 150);
         jif.setVisible(true);

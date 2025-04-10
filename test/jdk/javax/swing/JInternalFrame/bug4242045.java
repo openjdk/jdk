@@ -51,7 +51,7 @@ public class bug4242045 {
         Add and remove iconify/maximize/close buttons using the buttons
         "Iconifiable", "Maximizable", "Closable" under different LookAndFeels.
         If they appears and disappears correctly then test passes. If any
-        button not appear or disappear as expected or appear with incorrect
+        button does not appear or disappear as expected or appear with incorrect
         placement then test fails.""";
 
     public static void main(String[] args) throws Exception {

@@ -24,8 +24,7 @@
 /*
  * @test
  * @bug 5027332
- * @requires (os.family == "linux")
- * @library /java/awt/regtesthelpers /test/lib
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Tests that textfield caret is placed slightly off textfield borders
  * @run main/manual bug5027332
@@ -43,23 +42,18 @@ import jtreg.SkippedException;
 public class bug5027332 {
 
     private static final String INSTRUCTIONS = """
-            This test is for GTK LookAndFeel.
-
             Click into the text field so that caret appears inside.
             The caret should be placed slightly off text field borders,
             so that it can be easily distinguished from the border.
             Test fails if the caret touches the border.""";
 
     public static void main(String[] args) throws Exception {
-        try {
-            UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
-        } catch (Exception e) {
-            throw new SkippedException("Test applicable only for GTK L&F");
-        }
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
         PassFailJFrame.builder()
                 .title("bug5027332 Instructions")
                 .instructions(INSTRUCTIONS)
+                .rows(6)
                 .columns(35)
                 .testUI(bug5027332::createTestUI)
                 .build()
@@ -67,7 +61,6 @@ public class bug5027332 {
     }
 
     private static JFrame createTestUI() {
-
         JFrame frame = new JFrame("bug5027332");
         JTextField t = new JTextField(10);
         JPanel p = new JPanel();
