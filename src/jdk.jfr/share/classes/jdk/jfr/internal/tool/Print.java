@@ -49,7 +49,7 @@ final class Print extends Command {
     @Override
     public List<String> getOptionSyntax() {
         List<String> list = new ArrayList<>();
-        list.add("[--xml|--json][--exact]");
+        list.add("[--xml|--json|--exact]");
         list.add("[--categories <filter>]");
         list.add("[--events <filter>]");
         list.add("[--stack-depth <depth>]");
