@@ -454,11 +454,6 @@ void VM_Version::c2_initialize() {
   if (FLAG_IS_DEFAULT(AlignVector)) {
     FLAG_SET_DEFAULT(AlignVector, AvoidUnalignedAccesses);
   }
-
-  if (FLAG_IS_DEFAULT(UseZicond)) {
-    FLAG_SET_DEFAULT(UseZicond, false);
-    warning("UseZicond is turned off automatically. Turn it on with -XX:+UseZicond explicitly.");
-  }
 }
 
 #endif // COMPILER2
