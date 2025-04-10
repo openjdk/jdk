@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ class JvmtiVTMSTransitionDisabler {
 
   bool _is_SR;                                           // is suspender or resumer
   bool _is_virtual;                                      // target thread is virtual
-  bool _is_self;                                         // JvmtiVTMSTransitionDisabler is a no-op for current  platform, carrier or virtual thread
+  bool _is_self;                                         // JvmtiVTMSTransitionDisabler is a no-op for current platform, carrier or virtual thread
   jthread _thread;                                       // virtual thread to disable transitions for, no-op if it is a platform thread
 
   DEBUG_ONLY(static void print_info();)

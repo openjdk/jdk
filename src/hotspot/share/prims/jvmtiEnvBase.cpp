@@ -1748,6 +1748,19 @@ JvmtiEnvBase::disable_virtual_threads_notify_jvmti() {
   return true;
 }
 
+
+/*
+ * The JVMTI Suspend/Resume support includes suspend_thread and resume_thread internal functions.
+ * A synchronization is needed between suspend_thread and resume_thread as they have to update
+ * same context atomically which includes virtual thread suspension registration and a couple of
+ * JavaThread flags, e.g. is_suspended and is_carrier_thread_suspended.
+ * In most common case this synchronization is provided by JvmtiVTMSTransitionDisabler.
+ * But a JvmtiVTMSTransitionDisabler can not be held in a case of self suspension.
+ * To support such a case the resume_thread function is executed in a context of ResumeThreadClosure.
+ * In contrast, the suspend_thread function is executed normally. To be thread safe these functions
+ * should not trigger safepoints while the suspension state is inconsistent.
+ */
+
 // java_thread - protected by ThreadsListHandle
 jvmtiError
 JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend) {
@@ -1819,6 +1832,9 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
 }
 
 // java_thread - protected by ThreadsListHandle
+// Synchronization is needed between suspend_thread and resume_thread
+// This function is executed in context of ResumeThreadClosure. In contrast, the suspend_thread
+// is executed normally without any HandshakeClosure.
 jvmtiError
 JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single_resume) {
   // current thread can be VMThread which is a NonJavaThread

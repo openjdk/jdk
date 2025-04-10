@@ -270,7 +270,7 @@ JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(jthread thread)
   _is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
 
   if (thread == nullptr ||
-      thread_oop == current->threadObj() ||
+      (!_is_virtual && thread_oop == current->threadObj()) ||
       (_is_virtual && thread_oop == current->vthread())) {
     _is_self = true;
     return; // no need for current thread to disable and enable transitions for itself
