@@ -86,7 +86,7 @@ oop fieldDescriptor::string_initial_value(TRAPS) const {
   return constants()->uncached_string_at(initial_value_index(), THREAD);
 }
 
-void fieldDescriptor::reinitialize(InstanceKlass* ik, const FieldInfo &fieldinfo) {
+void fieldDescriptor::reinitialize(InstanceKlass* ik, const FieldInfo& fieldinfo) {
   if (_cp.is_null() || field_holder() != ik) {
     _cp = constantPoolHandle(Thread::current(), ik->constants());
     // _cp should now reference ik's constant pool; i.e., ik is now field_holder.

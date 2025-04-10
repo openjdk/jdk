@@ -102,7 +102,7 @@ class fieldDescriptor {
   inline void set_has_initialized_final_update(const bool value);
 
   // Initialization
-  void reinitialize(InstanceKlass* ik, const FieldInfo &fieldinfo);
+  void reinitialize(InstanceKlass* ik, const FieldInfo& fieldinfo);
 
   // Print
   void print() const;
