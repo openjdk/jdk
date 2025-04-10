@@ -128,7 +128,7 @@ import java.util.function.Supplier;
  * <h2 id="stable-functions">Stable Functions</h2>
  * Stable values provide the foundation for higher-level functional abstractions. A
  * <em>stable supplier</em> is a supplier that computes a value and then caches it into
- * a backing stable value storage for later use. A stable supplier is created via the
+ * a backing stable value storage for subsequent use. A stable supplier is created via the
  * {@linkplain StableValue#supplier(Supplier) StableValue.supplier()} factory, by
  * providing an original {@linkplain Supplier} which is invoked when the stable supplier
  * is first accessed:
