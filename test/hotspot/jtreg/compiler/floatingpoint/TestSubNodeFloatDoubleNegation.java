@@ -55,7 +55,7 @@ public class TestSubNodeFloatDoubleNegation {
     @Test
     @IR(counts = { IRNode.SUB, "2" }, applyIfPlatform = {"x64", "true"}, applyIfCPUFeature = {"avx512_fp16", "false"})
     @IR(counts = { IRNode.SUB_HF, "2" }, applyIfPlatform = {"x64", "true"}, applyIfCPUFeature = {"avx512_fp16", "true"})
-    // TODO: uncomment once Float16 support lands in aarch64
+    // TODO: uncomment once Float16 support lands in aarch64 with JDK-8345125
     //@IR(counts = { IRNode.SUB, "2" }, applyIfPlatform = {"aarch64", "true"}, applyIfCPUFeatureAnd = {"fphp", "false", "asimdhp", "false"})
     //@IR(counts = { IRNode.SUB_HF, "2" }, applyIfPlatform = {"aarch64", "true"}, applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     @IR(counts = { IRNode.SUB, "2" }, applyIfPlatform = {"riscv64", "true"}, applyIfCPUFeature = {"zfh", "false"})
