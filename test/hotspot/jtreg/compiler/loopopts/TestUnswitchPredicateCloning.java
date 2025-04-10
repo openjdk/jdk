@@ -35,15 +35,15 @@
   */
 
 public class TestUnswitchPredicateCloning {
-    static final int WARMUP = 10_000;
     static final int SIZE = 100;
     static final int IDX = 42;
 
     public static void main(String[] strArr) {
-        TestFramework.runWithFlags("-Xcomp");
+        TestFramework.run();
     }
 
     @Run(test = "test")
+    @Warmup(0)
     private static void check() {
         int res = test(IDX);
         Asserts.assertEQ(res, SIZE * IDX);
