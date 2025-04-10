@@ -26,7 +26,7 @@ modifications:
     [$year-of-document] World Wide Web Consortium.
     https://www.w3.org/copyright/software-license-2023/"
 
-Disclaimers §anchor
+Disclaimers
 
 THIS WORK IS PROVIDED "AS IS," AND COPYRIGHT HOLDERS MAKE NO REPRESENTATIONS OR
 WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO, WARRANTIES OF
