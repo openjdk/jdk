@@ -117,7 +117,7 @@ import java.util.function.Supplier;
  * retrieve its content. If the stable value is <em>unset</em>, then {@code orElseSet()}
  * evaluates and sets the content; the content is then returned to the client. In other
  * words, {@code orElseSet()} guarantees that a stable value's content is <em>set</em>
- * before it is used.
+ * before it returns.
  * <p>
  * Furthermore, {@code orElseSet()} guarantees that the supplier provided is
  * evaluated at most once, even when {@code logger.orElseSet()} is invoked concurrently.
@@ -130,7 +130,7 @@ import java.util.function.Supplier;
  * <em>stable supplier</em> is a supplier that computes a value and then caches it into
  * a backing stable value storage for subsequent use. A stable supplier is created via the
  * {@linkplain StableValue#supplier(Supplier) StableValue.supplier()} factory, by
- * providing an original {@linkplain Supplier} which is invoked when the stable supplier
+ * providing an underlying {@linkplain Supplier} which is invoked when the stable supplier
  * is first accessed:
  *
  * {@snippet lang = java:
@@ -155,8 +155,8 @@ import java.util.function.Supplier;
  * for that parameter value. A stable {@link IntFunction} is created via the
  * {@linkplain StableValue#intFunction(int, IntFunction) StableValue.intFunction()}
  * factory. Upon creation, the input range (i.e. {@code [0, size)}) is specified together
- * with an original {@linkplain IntFunction} which is invoked at most once per input value.
- * In effect, the stable int function will act like a cache for the original
+ * with an underlying {@linkplain IntFunction} which is invoked at most once per input
+ * value. In effect, the stable int function will act like a cache for the underlying
  * {@linkplain IntFunction}:
  *
  * {@snippet lang = java:
@@ -165,12 +165,12 @@ import java.util.function.Supplier;
  *     private PowerOf2Util() {}
  *
  *     private static final int SIZE = 6;
- *     private static final IntFunction<Integer> ORIGINAL_POWER_OF_TWO =
+ *     private static final IntFunction<Integer> UNDERLYING_POWER_OF_TWO =
  *         v -> 1 << v;
  *
  *     private static final IntFunction<Integer> POWER_OF_TWO =
  *         // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
- *         StableValue.intFunction(SIZE, ORIGINAL_POWER_OF_TWO);
+ *         StableValue.intFunction(SIZE, UNDERLYING_POWER_OF_TWO);
  *
  *     public static int powerOfTwo(int a) {
  *         return POWER_OF_TWO.apply(a);
@@ -181,7 +181,7 @@ import java.util.function.Supplier;
  *
  *}
  * The {@code PowerOf2Util.powerOfTwo()} function is a <em>partial function</em> that only
- * allows a subset {@code [0, 5]} of the original function's {@code ORIGINAL_POWER_OF_TWO}
+ * allows a subset {@code [0, 5]} of the underlying function's {@code UNDERLYING_POWER_OF_TWO}
  * input range.
  *
  * <p>
@@ -189,9 +189,9 @@ import java.util.function.Supplier;
  * uses it to compute a result (of type {@code R}) that is then cached by the backing
  * stable value storage for that parameter value. A stable function is created via the
  * {@linkplain StableValue#function(Set, Function) StableValue.function()} factory.
- * Upon creation, the input {@linkplain Set} is specified together with an original
+ * Upon creation, the input {@linkplain Set} is specified together with an underlying
  * {@linkplain Function} which is invoked at most once per input value. In effect, the
- * stable function will act like a cache for the original {@linkplain Function}:
+ * stable function will act like a cache for the underlying {@linkplain Function}:
  *
  * {@snippet lang = java:
  * class Log2Util {
@@ -200,12 +200,12 @@ import java.util.function.Supplier;
  *
  *     private static final Set<Integer> KEYS =
  *         Set.of(1, 2, 4, 8, 16, 32);
- *     private static final UnaryOperator<Integer> ORIGINAL_LOG2 =
+ *     private static final UnaryOperator<Integer> UNDERLYING_LOG2 =
  *         i -> 31 - Integer.numberOfLeadingZeros(i);
  *
  *     private static final Function<Integer, Integer> LOG2 =
  *         // @link substring="function" target="#function(Set,Function)" :
- *         StableValue.function(KEYS, ORIGINAL_LOG2);
+ *         StableValue.function(KEYS, UNDERLYING_LOG2);
  *
  *     public static int log2(int a) {
  *         return LOG2.apply(a);
@@ -217,8 +217,8 @@ import java.util.function.Supplier;
  *}
  *
  * The {@code Log2Util.log2()} function is a <em>partial function</em> that only allows
- * a subset {@code {1, 2, 4, 8, 16, 32}} of the original function's
- * {@code ORIGINAL_LOG2} input range.
+ * a subset {@code {1, 2, 4, 8, 16, 32}} of the underlying function's
+ * {@code UNDERLYING_LOG2} input range.
  *
  * <h2 id="stable-collections">Stable Collections</h2>
  * Stable values can also be used as backing storage for
@@ -232,12 +232,12 @@ import java.util.function.Supplier;
  *     private PowerOf2Util() {}
  *
  *     private static final int SIZE = 6;
- *     private static final IntFunction<Integer> ORIGINAL_POWER_OF_TWO =
+ *     private static final IntFunction<Integer> UNDERLYING_POWER_OF_TWO =
  *             v -> 1 << v;
  *
  *     private static final List<Integer> POWER_OF_TWO =
  *         // @link substring="list" target="#list(int,IntFunction)" :
- *         StableValue.list(SIZE, ORIGINAL_POWER_OF_TWO);
+ *         StableValue.list(SIZE, UNDERLYING_POWER_OF_TWO);
  *
  *     public static int powerOfTwo(int a) {
  *         return POWER_OF_TWO.get(a);
@@ -259,12 +259,12 @@ import java.util.function.Supplier;
  *
  *     private static final Set<Integer> KEYS =
  *         Set.of(1, 2, 4, 8, 16, 32);
- *     private static final UnaryOperator<Integer> LOG2_ORIGINAL =
+ *     private static final UnaryOperator<Integer> UNDERLYING_LOG2 =
  *         i -> 31 - Integer.numberOfLeadingZeros(i);
  *
  *     private static final Map<Integer, INTEGER> LOG2 =
  *         // @link substring="map" target="#map(Set,Function)" :
- *         StableValue.map(CACHED_KEYS, LOG2_ORIGINAL);
+ *         StableValue.map(CACHED_KEYS, UNDERLYING_LOG2);
  *
  *     public static int log2(int a) {
  *          return LOG2.get(a);
@@ -314,8 +314,8 @@ import java.util.function.Supplier;
  * created. Upon such a creation, the dependent {@code Foo} will first be created if
  * the {@code Foo} does not already exist.
  * <p>
- * Here is another example where a more complex dependency graph is created in which
- * integers in the Fibonacci delta series are lazily computed:
+ * Another example, which has a more complex dependency graph, is to lazily computing the
+ * Fibonacci sequence:
  * {@snippet lang = java:
  * public final class Fibonacci {
  *
@@ -559,65 +559,65 @@ public sealed interface StableValue<T>
      * {@return a new stable supplier}
      * <p>
      * The returned {@linkplain Supplier supplier} is a caching supplier that records
-     * the value of the provided {@code original} supplier upon being first accessed via
+     * the value of the provided {@code underlying} supplier upon being first accessed via
      * the returned supplier's {@linkplain Supplier#get() get()} method.
      * <p>
-     * The provided {@code original} supplier is guaranteed to be successfully invoked
+     * The provided {@code underlying} supplier is guaranteed to be successfully invoked
      * at most once even in a multi-threaded environment. Competing threads invoking the
      * returned supplier's {@linkplain Supplier#get() get()} method when a value is
      * already under computation will block until a value is computed or an exception is
      * thrown by the computing thread.
      * <p>
-     * If the provided {@code original} supplier throws an exception, it is relayed
+     * If the provided {@code underlying} supplier throws an exception, it is relayed
      * to the initial caller and no content is recorded.
      * <p>
-     * If the provided {@code original} supplier recursively calls the returned
+     * If the provided {@code underlying} supplier recursively calls the returned
      * supplier, an {@linkplain IllegalStateException} will be thrown.
      *
-     * @param original supplier used to compute a cached value
-     * @param <T>      the type of results supplied by the returned supplier
+     * @param underlying supplier used to compute a cached value
+     * @param <T>        the type of results supplied by the returned supplier
      */
-    static <T> Supplier<T> supplier(Supplier<? extends T> original) {
-        Objects.requireNonNull(original);
-        return StableSupplier.of(original);
+    static <T> Supplier<T> supplier(Supplier<? extends T> underlying) {
+        Objects.requireNonNull(underlying);
+        return StableSupplier.of(underlying);
     }
 
     /**
      * {@return a new stable {@linkplain IntFunction}}
      * <p>
      * The returned function is a caching function that, for each allowed {@code int}
-     * input, records the values of the provided {@code original}
+     * input, records the values of the provided {@code underlying}
      * function upon being first accessed via the returned function's
      * {@linkplain IntFunction#apply(int) apply()} method. If the returned function is
      * invoked with an input that is not allowed, an {@link IllegalArgumentException}
      * will be thrown.
      * <p>
-     * The provided {@code original} function is guaranteed to be successfully invoked
+     * The provided {@code underlying} function is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
      * threads invoking the returned function's
      * {@linkplain IntFunction#apply(int) apply()} method when a value is already under
      * computation will block until a value is computed or an exception is thrown by
      * the computing thread.
      * <p>
-     * If the provided {@code original} function throws an exception, it is relayed
+     * If the provided {@code underlying} function throws an exception, it is relayed
      * to the initial caller and no content is recorded.
      * <p>
-     * If the provided {@code original} function recursively calls the returned
+     * If the provided {@code underlying} function recursively calls the returned
      * function for the same index, an {@linkplain IllegalStateException} will
      * be thrown.
      *
-     * @param size     the size of the allowed inputs in {@code [0, size)}
-     * @param original IntFunction used to compute cached values
-     * @param <R>      the type of results delivered by the returned IntFunction
+     * @param size       the size of the allowed inputs in {@code [0, size)}
+     * @param underlying IntFunction used to compute cached values
+     * @param <R>        the type of results delivered by the returned IntFunction
      * @throws IllegalArgumentException if the provided {@code size} is negative.
      */
     static <R> IntFunction<R> intFunction(int size,
-                                          IntFunction<? extends R> original) {
+                                          IntFunction<? extends R> underlying) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
-        Objects.requireNonNull(original);
-        return StableIntFunction.of(size, original);
+        Objects.requireNonNull(underlying);
+        return StableIntFunction.of(size, underlying);
     }
 
     /**
@@ -625,38 +625,38 @@ public sealed interface StableValue<T>
      * <p>
      * The returned function is a caching function that, for each allowed
      * input in the given set of {@code inputs}, records the values of the provided
-     * {@code original} function upon being first accessed via the returned function's
+     * {@code underlying} function upon being first accessed via the returned function's
      * {@linkplain Function#apply(Object) apply()} method. If the returned function is
      * invoked with an input that is not allowed, an {@link IllegalArgumentException}
      * will be thrown.
      * <p>
-     * The provided {@code original} function is guaranteed to be successfully invoked
+     * The provided {@code underlying} function is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
      * threads invoking the returned function's {@linkplain Function#apply(Object) apply()}
      * method when a value is already under computation will block until a value is
      * computed or an exception is thrown by the computing thread.
      * <p>
-     * If the provided {@code original} function throws an exception, it is relayed to
+     * If the provided {@code underlying} function throws an exception, it is relayed to
      * the initial caller and no content is recorded.
      * <p>
-     * If the provided {@code original} function recursively calls the returned
+     * If the provided {@code underlying} function recursively calls the returned
      * function for the same input, an {@linkplain IllegalStateException} will
      * be thrown.
      *
-     * @param inputs   the set of (non-null) allowed input values
-     * @param original Function used to compute cached values
-     * @param <T>      the type of the input to the returned Function
-     * @param <R>      the type of results delivered by the returned Function
+     * @param inputs     the set of (non-null) allowed input values
+     * @param underlying Function used to compute cached values
+     * @param <T>        the type of the input to the returned Function
+     * @param <R>        the type of results delivered by the returned Function
      * @throws NullPointerException if the provided set of {@code inputs} contains a
      *                              {@code null} element.
      */
     static <T, R> Function<T, R> function(Set<? extends T> inputs,
-                                          Function<? super T, ? extends R> original) {
+                                          Function<? super T, ? extends R> underlying) {
         Objects.requireNonNull(inputs);
-        Objects.requireNonNull(original);
+        Objects.requireNonNull(underlying);
         return inputs instanceof EnumSet<?> && !inputs.isEmpty()
-                ? StableEnumFunction.of(inputs, original)
-                : StableFunction.of(inputs, original);
+                ? StableEnumFunction.of(inputs, underlying)
+                : StableFunction.of(inputs, underlying);
     }
 
     /**
