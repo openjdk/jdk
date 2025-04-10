@@ -1017,7 +1017,8 @@ define SetupRunJtregTestBody
     $1_COMMAND_LINE := \
         for i in {0..$$(JTREG_RETRY_COUNT)}; do \
           if [ "$$$$i" != 0 ]; then \
-            $$(PRINTF) "\nRetrying Jtreg run. Attempt: $$$$i\n"; \
+            $$(ECHO) ""; \
+            $$(ECHO) "Retrying Jtreg run. Attempt: $$$$i"; \
           fi; \
           $$($1_COMMAND_LINE); \
           if [ "`$$(CAT) $$($1_EXITCODE)`" = "0" ]; then \
@@ -1030,10 +1031,12 @@ define SetupRunJtregTestBody
   ifneq ($$(JTREG_REPEAT_COUNT), 0)
     $1_COMMAND_LINE := \
         for i in {1..$$(JTREG_REPEAT_COUNT)}; do \
-          $$(PRINTF) "\nRepeating Jtreg run: $$$$i out of $$(JTREG_REPEAT_COUNT)\n"; \
+          $$(ECHO) ""; \
+          $$(ECHO) "Repeating Jtreg run: $$$$i out of $$(JTREG_REPEAT_COUNT)"; \
           $$($1_COMMAND_LINE); \
           if [ "`$$(CAT) $$($1_EXITCODE)`" != "0" ]; then \
-            $$(PRINTF) "\nFailures detected, no more repeats.\n"; \
+            $$(ECHO) ""; \
+            $$(ECHO) "Failures detected, no more repeats."; \
             break; \
           fi; \
         done
