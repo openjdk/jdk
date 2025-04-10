@@ -444,8 +444,8 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, BasicType bt) {
   }
 
   Node* con = (bt == T_INT)
-              ? (Node*) phase->intcon((jint) (mul.multiplier + 1)) // intentional type narrowing to allow overflow at max_jint
-              : (Node*) phase->longcon((mul.multiplier + 1));
+              ? (Node*) phase->intcon(java_add((jint) mul.multiplier, (jint) 1)) // intentional type narrowing to allow overflow at max_jint
+              : (Node*) phase->longcon(java_add((jlong) mul.multiplier, (jlong) 1));
   return MulNode::make(con, mul.variable, bt);
 }
 
@@ -515,17 +515,17 @@ AddNode::Multiplication AddNode::find_power_of_two_addition_pattern(Node* n, Bas
 
     // Pattern (1)
     if (lhs.valid && rhs.valid && lhs.variable == rhs.variable) {
-      return Multiplication{true, lhs.variable, lhs.multiplier + rhs.multiplier};
+      return Multiplication{true, lhs.variable, java_add(lhs.multiplier, rhs.multiplier)};
     }
 
     // Pattern (2)
     if (lhs.valid && lhs.variable == n->in(2)) {
-      return Multiplication{true, lhs.variable, lhs.multiplier + 1};
+      return Multiplication{true, lhs.variable, java_add(lhs.multiplier, (jlong) 1)};
     }
 
     // Pattern (3)
     if (rhs.valid && rhs.variable == n->in(1)) {
-      return Multiplication{true, rhs.variable, rhs.multiplier + 1};
+      return Multiplication{true, rhs.variable, java_add(lhs.multiplier, (jlong) 1)};
     }
 
     // Pattern (4), which is equivalent to a simple addition pattern
