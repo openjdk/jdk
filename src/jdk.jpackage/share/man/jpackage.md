@@ -225,7 +225,7 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 
     An expandable substring should be enclosed between the dollar
     sign character ($) and the first following non-alphanumeric
-    character. Alternatively, it can be enclosed between "${" and "}"
+    character. Alternatively, it can be enclosed between "\${" and "}"
     substrings.
 
     Expandable substrings are case-sensitive on Unix and
