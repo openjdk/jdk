@@ -258,13 +258,13 @@ import java.util.function.Supplier;
  *     private Log2Util() {}
  *
  *     private static final Set<Integer> KEYS =
- *             Set.of(1, 2, 4, 8, 16, 32);
+ *         Set.of(1, 2, 4, 8, 16, 32);
  *     private static final UnaryOperator<Integer> LOG2_ORIGINAL =
- *             i -> 31 - Integer.numberOfLeadingZeros(i);
+ *         i -> 31 - Integer.numberOfLeadingZeros(i);
  *
  *     private static final Map<Integer, INTEGER> LOG2 =
- *             // @link substring="map" target="#map(Set,Function)" :
- *             StableValue.map(CACHED_KEYS, LOG2_ORIGINAL);
+ *         // @link substring="map" target="#map(Set,Function)" :
+ *         StableValue.map(CACHED_KEYS, LOG2_ORIGINAL);
  *
  *     public static int log2(int a) {
  *          return LOG2.get(a);
