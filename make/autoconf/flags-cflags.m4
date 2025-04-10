@@ -579,6 +579,15 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -utf-8 -Zc:wchar_t-"
   fi
 
+  # Set character encoding in source
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+    CHARSET_CFLAGS="-finput-charset=utf-8"
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    CHARSET_CFLAGS="-source-charset:utf-8 -validate-charset"
+  fi
+  TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM $CHARSET_CFLAGS"
+  TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK $CHARSET_CFLAGS"
+
   # CFLAGS C language level for JDK sources (hotspot only uses C++)
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     LANGSTD_CFLAGS="-std=c11"
