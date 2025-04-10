@@ -90,7 +90,7 @@ import java.util.function.Supplier;
  * meaning the first writer wins.
  * <p>
  * In order to guarantee that, even under races, only one instance of {@code Logger} is
- * evee created, the {@linkplain #orElseSet(Supplier) orElseSet()} method can be used
+ * ever created, the {@linkplain #orElseSet(Supplier) orElseSet()} method can be used
  * instead, where the content is atomically and lazily computed via a
  * {@linkplain Supplier supplier}. In the example below, the supplier is provided in the
  * form of a lambda expression:
