@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @summary Basic tests for StableSupplierTest methods
+ * @summary Basic tests for StableSupplier methods
  * @enablePreview
  * @run junit StableSupplierTest
  */
