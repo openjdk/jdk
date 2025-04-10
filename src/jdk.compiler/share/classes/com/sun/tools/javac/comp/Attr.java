@@ -3343,7 +3343,7 @@ public class Attr extends JCTree.Visitor {
                                 // do nothing
                             }
                         }
-                        if (bound.tsym != syms.objectType.tsym || !bound.isInterface() || (bound.tsym.flags() & ANNOTATION) != 0) {
+                        if (bound.tsym != syms.objectType.tsym && (!bound.isInterface() || (bound.tsym.flags() & ANNOTATION) != 0)) {
                             // bound must be j.l.Object or an interface, but not an annotation
                             reportIntersectionError(that, "not.an.intf.component", bound);
                         }
