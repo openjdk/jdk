@@ -129,8 +129,8 @@ class ZipFileSystem extends FileSystem {
     final boolean supportPosix;
     private final UserPrincipal defaultOwner;
     private final GroupPrincipal defaultGroup;
-    // Unmodifiable set.
-    private final Set<PosixFilePermission> defaultPermissions;
+    // Mutable and must be cloned every time it is returned.
+    private final EnumSet<PosixFilePermission> defaultPermissions;
 
     private final Set<String> supportedFileAttributeViews;
 
@@ -148,7 +148,7 @@ class ZipFileSystem extends FileSystem {
         this.supportPosix = isTrue(env, PROPERTY_POSIX);
         this.defaultOwner = supportPosix ? initOwner(zfpath, env) : null;
         this.defaultGroup = supportPosix ? initGroup(zfpath, env) : null;
-        this.defaultPermissions = supportPosix ? Collections.unmodifiableSet(initPermissions(env)) : null;
+        this.defaultPermissions = supportPosix ? initPermissions(env) : null;
         this.supportedFileAttributeViews = supportPosix ?
             Set.of("basic", "posix", "zip") : Set.of("basic", "zip");
         if (Files.notExists(zfpath)) {
@@ -307,21 +307,23 @@ class ZipFileSystem extends FileSystem {
     }
 
     // Return the default permissions for files inside the zip archive.
-    // If not specified in env, it will return 777.
-    private Set<PosixFilePermission> initPermissions(Object o) {
+    // If not specified in env, it will return all permissions set (i.e. "777").
+    private static EnumSet<PosixFilePermission> initPermissions(Object o) {
         if (o == null) {
-            return PosixFilePermissions.fromString("rwxrwxrwx");
+            return EnumSet.allOf(PosixFilePermission.class);
         }
+        Set<?> toCopy;
         if (o instanceof String) {
-            return PosixFilePermissions.fromString((String)o);
-        }
-        if (!(o instanceof Set)) {
+            toCopy = PosixFilePermissions.fromString((String) o);
+        } else if ((o instanceof Set)) {
+            toCopy = (Set<?>) o;
+        } else {
             throw new IllegalArgumentException("Value for property " +
                 PROPERTY_DEFAULT_PERMISSIONS + " must be of type " + String.class +
                 " or " + Set.class);
         }
-        Set<PosixFilePermission> perms = new HashSet<>();
-        for (Object o2 : (Set<?>)o) {
+        EnumSet<PosixFilePermission> perms = EnumSet.noneOf(PosixFilePermission.class);
+        for (Object o2 : toCopy) {
             if (o2 instanceof PosixFilePermission) {
                 perms.add((PosixFilePermission)o2);
             } else {
@@ -3555,8 +3557,9 @@ class ZipFileSystem extends FileSystem {
 
         @Override
         public Set<PosixFilePermission> permissions() {
-            // supportPosix ==> (defaultPermissions != null) and it's unmodifiable.
-            return storedPermissions().orElse(defaultPermissions);
+            // supportPosix ==> (defaultPermissions != null).
+            assert defaultPermissions != null;
+            return storedPermissions().orElse(defaultPermissions.clone());
         }
     }
 
