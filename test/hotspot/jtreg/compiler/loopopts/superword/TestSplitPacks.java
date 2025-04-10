@@ -122,6 +122,13 @@ public class TestSplitPacks {
         tests.put("test4e",      () -> { return test4e(aS.clone(), bS.clone()); });
         tests.put("test4f",      () -> { return test4f(aS.clone(), bS.clone()); });
         tests.put("test4g",      () -> { return test4g(aS.clone(), bS.clone()); });
+        tests.put("test4a_alias",() -> { short[] x = aS.clone(); return test4a_alias(x, x); });
+        tests.put("test4b_alias",() -> { short[] x = aS.clone(); return test4b_alias(x, x); });
+        tests.put("test4c_alias",() -> { short[] x = aS.clone(); return test4c_alias(x, x); });
+        tests.put("test4d_alias",() -> { short[] x = aS.clone(); return test4d_alias(x, x); });
+        tests.put("test4e_alias",() -> { short[] x = aS.clone(); return test4e_alias(x, x); });
+        tests.put("test4f_alias",() -> { short[] x = aS.clone(); return test4f_alias(x, x); });
+        tests.put("test4g_alias",() -> { short[] x = aS.clone(); return test4g_alias(x, x); });
         tests.put("test5a",      () -> { return test5a(aS.clone(), bS.clone(), mS); });
         tests.put("test6a",      () -> { return test6a(aI.clone(), bI.clone()); });
         tests.put("test7a",      () -> { return test7a(aI.clone(), bI.clone()); });
@@ -153,6 +160,13 @@ public class TestSplitPacks {
                  "test4e",
                  "test4f",
                  "test4g",
+                 "test4a_alias",
+                 "test4b_alias",
+                 "test4c_alias",
+                 "test4d_alias",
+                 "test4e_alias",
+                 "test4f_alias",
+                 "test4g_alias",
                  "test5a",
                  "test6a",
                  "test7a"})
@@ -879,6 +893,181 @@ public class TestSplitPacks {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
     // Speculative aliasing check -> full vectorization.
     static Object[] test4g(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+8] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true"})
+    // Cyclic dependency with distance 2 -> split into 2-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true"})
+    // Speculative aliasing check with multiversioning -> full vectorization & split packs.
+    static Object[] test4a_alias(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+2] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true"})
+    // Cyclic dependency with distance 3 -> split into 2-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true"})
+    // Speculative aliasing check with multiversioning -> full vectorization & split packs.
+    static Object[] test4b_alias(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+3] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Cyclic dependency with distance 4 -> split into 4-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Speculative aliasing check with multiversioning -> full vectorization & split packs.
+    static Object[] test4c_alias(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+4] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Cyclic dependency with distance 5 -> split into 4-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Speculative aliasing check with multiversioning -> full vectorization & split packs.
+    static Object[] test4d_alias(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+5] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Cyclic dependency with distance 6 -> split into 4-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Speculative aliasing check with multiversioning -> full vectorization & split packs.
+    static Object[] test4e_alias(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+6] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Cyclic dependency with distance 7 -> split into 4-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Speculative aliasing check with multiversioning -> full vectorization & split packs.
+    static Object[] test4f_alias(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+7] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Cyclic dependency with distance 8 -> split into 8-packs
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"MaxVectorSize", ">=32", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+    // Speculative aliasing check with multiversioning -> full vectorization & split packs.
+    static Object[] test4g_alias(short[] a, short[] b) {
         for (int i = 0; i < RANGE-64; i++) {
           b[i+8] = a[i+0];
         }
