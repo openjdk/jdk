@@ -264,6 +264,12 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit1))));
       Node *n2 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit2))));
       res = new AddINode(n2, n1);
+
+#ifdef ASSERT
+      // JDK-8347555: ensure we Ideal() generated power-of-2 patterns expected by the serial addition optimization.
+      assert(AddNode::find_power_of_two_addition_pattern(res, T_INT).valid, "");
+#endif
+
     } else if (is_power_of_2(abs_con + 1)) {
       // Sleezy: power-of-2 - 1.  Next time be generic.
       unsigned int temp = abs_con + 1;
