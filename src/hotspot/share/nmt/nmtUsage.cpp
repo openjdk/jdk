@@ -23,7 +23,7 @@
  */
 
 #include "nmt/mallocTracker.hpp"
-#include "nmt/memoryFileTracker.hpp"
+#include "nmt/nativeMemoryFileTracker.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtUsage.hpp"
@@ -93,9 +93,9 @@ void NMTUsage::update_vm_usage() {
   }
 
   { // MemoryFileTracker addition
-    using MFT = MemoryFileTracker::Instance;
+    using NMFT = NativeMemoryFileTracker::Instance;
     MemTracker::NmtVirtualMemoryLocker nvml;
-    MFT::iterate_summary([&](MemTag tag, const VirtualMemory* vm) {
+    NMFT::iterate_summary([&](MemTag tag, const VirtualMemory* vm) {
       int i = NMTUtil::tag_to_index(tag);
       _vm_by_type[i].committed += vm->committed();
       _vm_total.committed += vm->committed();

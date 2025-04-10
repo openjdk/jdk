@@ -28,7 +28,7 @@
 #include "nmt/memTag.hpp"
 #include "nmt/memReporter.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/memoryFileTracker.hpp"
+#include "nmt/nativeMemoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/debug.hpp"
@@ -466,7 +466,7 @@ void MemDetailReporter::report_memory_file_allocations() {
   stringStream st;
   {
     MemTracker::NmtVirtualMemoryLocker nvml;
-    MemoryFileTracker::Instance::print_all_reports_on(&st, scale());
+    NativeMemoryFileTracker::Instance::print_all_reports_on(&st, scale());
   }
   output()->print_raw(st.freeze());
 }

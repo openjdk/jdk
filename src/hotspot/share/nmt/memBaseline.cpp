@@ -141,7 +141,7 @@ void MemBaseline::baseline_summary() {
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
   {
     MemTracker::NmtVirtualMemoryLocker nvml;
-    MemoryFileTracker::Instance::summary_snapshot(&_virtual_memory_snapshot);
+    NativeMemoryFileTracker::Instance::summary_snapshot(&_virtual_memory_snapshot);
   }
 
   _metaspace_stats = MetaspaceUtils::get_combined_statistics();
