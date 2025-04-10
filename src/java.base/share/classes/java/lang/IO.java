@@ -39,7 +39,9 @@ import java.nio.charset.StandardCharsets;
  * The {@link #readln()} and {@link #readln(String)} methods decode bytes read from
  * {@code System.in} into characters. The charset used for decoding is specified by the
  * {@link System#getProperties stdin.encoding} property. If this property is not present,
- * or if the charset it names cannot be loaded, then UTF-8 is used instead.
+ * or if the charset it names cannot be loaded, then UTF-8 is used instead. Decoding
+ * always replaces malformed and unmappable byte sequences with the charset's default
+ * replacement string.
  * <p>
  * Charset decoding is set up upon the first call to one of the {@code readln} methods.
  * Decoding may buffer additional bytes beyond those that have been decoded to characters
