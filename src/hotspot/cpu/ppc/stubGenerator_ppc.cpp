@@ -138,7 +138,7 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(r_frame_size, r_arg_argument_count, 1);
       __ rldicr(r_frame_size, r_frame_size, 3, 63 - 4);
 
-      // this is the pure space for arguments
+      // this is the pure space for arguments (excluding alignment padding)
       __ sldi(r_argument_size, r_arg_argument_count, 3);
 
       __ addi(r_frame_size, r_frame_size,
@@ -147,7 +147,7 @@ class StubGenerator: public StubCodeGenerator {
       // push ENTRY_FRAME
       __ push_frame(r_frame_size, R0);
 
-      // Save non-volatiles GPRs to ENTRY_FRAME (not yet pushed, but it's safe).
+      // Save non-volatiles registers to ENTRY_FRAME.
       __ save_nonvolatile_registers(r_entryframe_fp, -(frame::entry_frame_locals_size + save_nonvolatile_registers_size),
                                     true, SuperwordUseVSX);
 
