@@ -85,7 +85,7 @@ public:
   address addr() const { return _addr; }
   const char* name() const { return _name; }
   virtual bool is_CFG() const { return true; }
-  virtual bool depends_only_on_test() const { return true; }
+  virtual bool depends_only_on_test() const { return false; }
 
   ProjNode* proj_out_or_null(uint which_proj) const;
   void remove_unused_node(PhaseIterGVN* phase);
