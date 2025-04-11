@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,32 @@
 
 package java.security;
 
-import java.security.spec.AlgorithmParameterSpec;
+import jdk.internal.javac.PreviewFeature;
+
+import javax.crypto.EncryptedPrivateKeyInfo;
+import java.security.cert.X509CRL;
+import java.security.cert.X509Certificate;
+import java.security.spec.EncodedKeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 /**
- * An asymmetric key, which can be either a public key or a private key.
- * This interface contains methods that are common to either a public key or
- * a private key.
+ * This is a top-level interface for security classes that contain cryptographic
+ * data which may not be related or have a common class hierarchy.  These
+ * security objects provide standard binary encoding, like ASN.1, and type
+ * formats, like X.509 and PKCS#8.  These encodings are used in some form with
+ * {@link KeyFactory} and {@link java.security.cert.CertificateFactory},
  *
- * @since 22
+ * @see Key
+ * @see KeyPair
+ * @see EncodedKeySpec
+ * @see EncryptedPrivateKeyInfo
+ * @see X509Certificate
+ * @see X509CRL
+ *
+ * @since 24
  */
-public non-sealed interface AsymmetricKey extends Key, DEREncodable {
-    /**
-     * Returns the parameters associated with this key.
-     * The parameters are optional and may be either
-     * explicitly specified or implicitly created during
-     * key pair generation.
-     *
-     * @implSpec
-     * The default implementation returns {@code null}.
-     *
-     * @return the associated parameters, may be {@code null}
-     */
-    default AlgorithmParameterSpec getParams() {
-        return null;
-    }
+
+@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+public sealed interface DEREncodable permits AsymmetricKey, KeyPair, PEMRecord, X509CRL, X509Certificate, PKCS8EncodedKeySpec, X509EncodedKeySpec, EncryptedPrivateKeyInfo {
 }
