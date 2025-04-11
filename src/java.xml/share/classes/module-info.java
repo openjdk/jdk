@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -880,7 +880,6 @@
  * <td style="text-align:center">Yes</td>
  * <td style="text-align:center">
  *     <a href="#Transform">Transform</a><br>
- *     <a href="#XPATH">XPath</a>
  * </td>
  * <td style="text-align:center"><a href="#Processor">Method 2</a></td>
  * <td style="text-align:center">8</td>

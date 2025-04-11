@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,26 +37,16 @@ import jdk.xml.internal.JdkXmlFeatures;
 /**
  *
  * @author Ramesh Mandava
- * @LastModified: Nov 2017
+ * @LastModified: Apr 2025
  */
 public class JAXPExtensionsProvider implements ExtensionsProvider {
 
     private final XPathFunctionResolver resolver;
-    private boolean extensionInvocationDisabled = false;
 
     public JAXPExtensionsProvider(XPathFunctionResolver resolver) {
         this.resolver = resolver;
-        this.extensionInvocationDisabled = false;
     }
 
-    public JAXPExtensionsProvider(XPathFunctionResolver resolver,
-        boolean featureSecureProcessing, JdkXmlFeatures featureManager ) {
-        this.resolver = resolver;
-        if (featureSecureProcessing &&
-                !featureManager.getFeature(JdkXmlFeatures.XmlFeature.ENABLE_EXTENSION_FUNCTION)) {
-            this.extensionInvocationDisabled = true;
-        }
-    }
 
     /**
      * Is the extension function available?
@@ -111,16 +101,6 @@ public class JAXPExtensionsProvider implements ExtensionsProvider {
             //Find the XPathFunction corresponding to namespace and funcName
             javax.xml.namespace.QName myQName = new QName( ns, funcName );
 
-            // JAXP 1.3 spec says When XMLConstants.FEATURE_SECURE_PROCESSING
-            // feature is set then invocation of extension functions need to
-            // throw XPathFunctionException
-            if ( extensionInvocationDisabled ) {
-                String fmsg = XSLMessages.createXPATHMessage(
-                    XPATHErrorResources.ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED,
-                    new Object[] { myQName.toString() } );
-                throw new XPathFunctionException ( fmsg );
-            }
-
             // Assuming user is passing all the needed parameters ( including
             // default values )
             int arity = argVec.size();
@@ -166,16 +146,6 @@ public class JAXPExtensionsProvider implements ExtensionsProvider {
             int arity = extFunction.getArgCount();
             javax.xml.namespace.QName myQName =
                 new javax.xml.namespace.QName( namespace, functionName );
-
-            // JAXP 1.3 spec says  When XMLConstants.FEATURE_SECURE_PROCESSING
-            // feature is set then invocation of extension functions need to
-            // throw XPathFunctionException
-            if ( extensionInvocationDisabled ) {
-                String fmsg = XSLMessages.createXPATHMessage(
-                    XPATHErrorResources.ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED,
-                        new Object[] { myQName.toString() } );
-                throw new XPathFunctionException ( fmsg );
-            }
 
             XPathFunction xpathFunction =
                 resolver.resolveFunction( myQName, arity );

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
- * @LastModified: Nov 2024
+ * @LastModified: Apr 2025
  */
 public class XPATHErrorResources_fr extends ListResourceBundle
 {
@@ -303,7 +303,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   public static final String ER_XPATH_ERROR = "ER_XPATH_ERROR";
 
   //BEGIN: Keys needed for exception messages of  JAXP 1.3 XPath API implementation
-  public static final String ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED = "ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED";
   public static final String ER_RESOLVE_VARIABLE_RETURNS_NULL = "ER_RESOLVE_VARIABLE_RETURNS_NULL";
   public static final String ER_UNSUPPORTED_RETURN_TYPE = "ER_UNSUPPORTED_RETURN_TYPE";
   public static final String ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL = "ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL";
@@ -751,11 +750,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
         "L''\u00E9l\u00E9ment XPathResult de l''expression XPath ''{0}'' comporte un \u00E9l\u00E9ment XPathResultType de {1} qui ne peut pas \u00EAtre converti en nombre"},
 
   //BEGIN:  Definitions of error keys used  in exception messages of  JAXP 1.3 XPath API implementation
-
-  /** Field ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED                       */
-
-  { ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED,
-       "La fonction d''extension ''{0}'' ne peut pas \u00EAtre appel\u00E9e lorsque la fonctionnalit\u00E9 XMLConstants.FEATURE_SECURE_PROCESSING est d\u00E9finie sur True."},
 
   /** Field ER_RESOLVE_VARIABLE_RETURNS_NULL                       */
 
