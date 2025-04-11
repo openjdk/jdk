@@ -21,7 +21,7 @@
  * questions.
  */
 
-package micro.org.openjdk.bench.java.io;
+package org.openjdk.bench.java.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,6 +32,8 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
+
+import java.util.VariableLengthByteArray;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -51,7 +53,7 @@ import org.openjdk.jmh.annotations.Warmup;
 @Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @State(Scope.Benchmark)
-public class MemoryOutputStreamBenchmark {
+public class VariableLengthByteArrayBenchmark {
     public static class NoOpOutputStream extends OutputStream {
         public byte[] data;
 
@@ -68,10 +70,10 @@ public class MemoryOutputStreamBenchmark {
 
     public byte currentByte;
 
-    @Param(value = { "32", "128", "8192" })
+    @Param(value = { "32", "8192" })
     public int initialSize;
 
-    @Param(value = { "512", "" + (1 * 1024 * 1024) })
+    @Param(value = { "512" })
     public int inputArraySize;
 
     public byte[] inputBytes;
@@ -80,13 +82,12 @@ public class MemoryOutputStreamBenchmark {
 
     public ByteArrayOutputStream out;
 
-    @Param(value = { "base", "memory" })
+    @Param(value = { "base", "memory", "jdk_internal" })
     public String outputStreamType;
 
     public ByteArrayOutputStream populatedOutputStream;
 
-    @Param(value = { "4", "512", "4096", "" + (16 * 1024), "" + (1024 * 1024), "" + (16 * 1024 * 1024),
-            "" + (512 * 1024 * 1024) })
+    @Param(value = { "4", "" + (16 * 1024), "" + (16 * 1024 * 1024) })
     public int responseSize;
 
     public Serializable serializableTarget;
@@ -102,6 +103,8 @@ public class MemoryOutputStreamBenchmark {
             return new ByteArrayOutputStream();
         case "memory":
             return ByteArrayOutputStream.unsynchronized();
+        case "jdk_internal":
+            return VariableLengthByteArray.createByteArrayOutputStream();
         default:
             throw new RuntimeException("Unrecognized type parameter: " + outputStreamType);
         }

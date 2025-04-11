@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.VariableLengthByteArray;
 
 import org.junit.Test;
 
@@ -55,7 +56,7 @@ public class CapacityTest {
 
     @Test
     public void compareCapacity() throws IOException {
-        long mosCapacity = testOutputStreamCapacity(new MemoryOutputStream());
+        long mosCapacity = testOutputStreamCapacity(VariableLengthByteArray.createByteArrayOutputStream());
         System.out.println("MemoryOutputStream max capacity was " + (mosCapacity / 1024 / 1024) + "MB");
         long baosCapacity = testOutputStreamCapacity(new ByteArrayOutputStream());
         System.out.println("ByteArrayOutputStream max capacity was " + (baosCapacity / 1024 / 1024) + "MB");

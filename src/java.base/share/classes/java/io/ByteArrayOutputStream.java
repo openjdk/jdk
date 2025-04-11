@@ -28,6 +28,7 @@ package java.io;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.VariableLengthByteArray;
 
 import jdk.internal.util.ArraysSupport;
 
@@ -57,7 +58,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * @since 25
      */
     public static ByteArrayOutputStream unsynchronized() {
-        return new MemoryOutputStream();
+        return VariableLengthByteArray.createByteArrayOutputStream();
     }
 
     /**
@@ -70,7 +71,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * @since 25
      */
     public static ByteArrayOutputStream unsynchronized(int initialCapacity) {
-        return new MemoryOutputStream(initialCapacity);
+        return new VariableLengthByteArray(initialCapacity).asByteArrayOutputStream();
     }
 
     /**
