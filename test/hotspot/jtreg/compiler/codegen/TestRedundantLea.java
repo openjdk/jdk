@@ -27,22 +27,26 @@
  * @summary Test that we do not generate redundant leas on x86
  * @run main/othervm -Xbatch -XX:-TieredCompilation
  *      -XX:CompileCommand=compileonly,compiler.codegen.TestRedundantLea::test*
- *      -XX:CompileCommand=PrintIdealPhase,compiler.codegen.TestRedundantLea::test*,FINAL_CODE
- *      -XX:CompileCommand=print,compiler.codegen.TestRedundantLea::test*
+ *      --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
  *      compiler.codegen.TestRedundantLea
  */
 
 package compiler.codegen;
 
 import java.util.concurrent.atomic.*;
+import com.sun.tools.javac.util.*;
 
 // TODO: convert to IR test
 public class TestRedundantLea {
     public static void main(String[] args) {
+        Names names = new Names(new Context());
+        Name n1 = names.fromString("one");
+        Name n2 = names.fromString("two");
         TestRedundantLea t = new TestRedundantLea();
         for (int i = 0; i < 100000; i++) {
             t.test1();
             t.test2("test");
+            t.test3(n1, n2);
         }
     }
 
@@ -58,6 +62,10 @@ public class TestRedundantLea {
 
     public boolean test2(String baz) {
         return foo.bar(baz);
+    }
+
+    public Name test3(Name n1, Name n2) {
+        return n1.append(n2);
     }
 }
 
