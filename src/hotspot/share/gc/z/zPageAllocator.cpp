@@ -1008,7 +1008,7 @@ bool ZPartition::prime(ZWorkers* workers, size_t size) {
   // Claim virtual memory
   const size_t claimed_size = claim_virtual(size, &vmems);
 
-  // Each partition must have at least size total vmems available when priming.
+  // The partition must have size available in virtual memory when priming.
   assert(claimed_size == size, "must succeed %zx == %zx", claimed_size, size);
 
   // Increase capacity
