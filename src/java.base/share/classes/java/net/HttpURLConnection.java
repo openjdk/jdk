@@ -614,7 +614,7 @@ public abstract class HttpURLConnection extends URLConnection {
      * {@link UnsupportedOperationException}, or return
      * {@link java.security.AllPermission}.
      */
-    @Deprecated(since="25")
+    @Deprecated(since = "25")
     public Permission getPermission() throws IOException {
         int port = url.getPort();
         port = port < 0 ? 80 : port;
