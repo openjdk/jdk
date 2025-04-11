@@ -25,12 +25,16 @@
 
 package sun.awt.windows;
 
+import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.event.InvocationEvent;
 import java.io.IOException;
 import java.util.Map;
 
+import sun.awt.AppContext;
+import sun.awt.SunToolkit;
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.SunClipboard;
 
@@ -153,18 +157,25 @@ final class WClipboard extends SunClipboard {
      * Upcall from native code.
      */
     private void handleContentsChanged() {
-        if (!areFlavorListenersRegistered()) {
+        AppContext appContext = AppContext.getAppContext();
+        if (appContext == null) {
+            handleContentsChanged0();
             return;
         }
+        SunToolkit.postEvent(appContext, new InvocationEvent(Toolkit.getDefaultToolkit(), this::handleContentsChanged0));
+    }
 
+    private void handleContentsChanged0() {
         long[] formats = null;
-        try {
-            openClipboard(null);
-            formats = getClipboardFormats();
-        } catch (IllegalStateException exc) {
-            // do nothing to handle the exception, call checkChange(null)
-        } finally {
-            closeClipboard();
+        synchronized (this) {
+            try {
+                openClipboard(null);
+                formats = getClipboardFormats();
+            } catch (IllegalStateException exc) {
+                // do nothing to handle the exception, call checkChange(null)
+            } finally {
+                closeClipboard();
+            }
         }
         checkChange(formats);
     }
