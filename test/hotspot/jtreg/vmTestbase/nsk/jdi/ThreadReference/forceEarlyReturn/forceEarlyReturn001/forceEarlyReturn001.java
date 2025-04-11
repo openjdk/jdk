@@ -118,6 +118,10 @@ public class forceEarlyReturn001 extends ForceEarlyReturnDebugger {
         }
     }
 
+    //forceEarlyReturn001() {
+        //  includeVirtualThreads();
+        //}
+
     public static int run(String argv[], PrintStream out) {
         return new forceEarlyReturn001().runIt(argv, out);
     }

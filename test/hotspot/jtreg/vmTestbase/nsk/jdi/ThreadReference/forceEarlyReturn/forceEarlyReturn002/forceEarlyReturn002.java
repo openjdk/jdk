@@ -76,6 +76,10 @@ public class forceEarlyReturn002 extends ForceEarlyReturnDebugger {
         return forceEarlyReturn002a.class.getName();
     }
 
+    public forceEarlyReturn002() {
+        includeVirtualThreads();
+    }
+
     public static int run(String argv[], PrintStream out) {
         return new forceEarlyReturn002().runIt(argv, out);
     }

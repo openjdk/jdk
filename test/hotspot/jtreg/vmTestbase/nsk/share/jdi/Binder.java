@@ -63,6 +63,11 @@ public class Binder extends DebugeeBinder {
      */
     public static final String LOG_PREFIX = "binder> ";
 
+    private boolean includeVThreads = false; // true if debuggee should be launched with includevirtualthreads=y
+    public void includeVirtualThreads() {
+        includeVThreads = true;
+    }
+
     /**
      * Get version string.
      */
@@ -518,7 +523,7 @@ public class Binder extends DebugeeBinder {
 
         // This flag is needed so VirtualMachine.allThreads() includes known vthreads.
         arg = (Connector.StringArgument) arguments.get("includevirtualthreads");
-        arg.setValue("y");
+        arg.setValue(includeVThreads ? "y" : "n");
 
         String vmArgs = "";
 

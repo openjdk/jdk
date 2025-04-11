@@ -74,6 +74,7 @@
  *                       -XX:+WhiteBoxAPI ${test.vm.opts} ${test.java.opts}"
  *      -testClassPath ${test.class.path}
  *      -configFile ${test.src}/forceEarlyReturn002.tests
+ *      -includevirtualthreads
  *      -testWorkDir .
  */
 
