@@ -68,7 +68,7 @@ public class bug4230391 {
 
     static JPanel createBarSet() {
         JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
         UIManager.LookAndFeelInfo[] lafs = UIManager.getInstalledLookAndFeels();
         for (int i = 0; i < lafs.length; i++) {
@@ -82,7 +82,7 @@ public class bug4230391 {
 
     static JPanel createProgressBars(String name, String plaf) {
         JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel,BoxLayout.X_AXIS));
+        panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
         try {
             LookAndFeel save = UIManager.getLookAndFeel();
             UIManager.setLookAndFeel(plaf);
@@ -121,7 +121,7 @@ public class bug4230391 {
     static JFrame createUI() {
         JFrame frame = new JFrame("Progress Bar Insets Test");
         Container contentPane = frame.getContentPane();
-        contentPane.setLayout(new BoxLayout(contentPane,BoxLayout.X_AXIS));
+        contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.X_AXIS));
         contentPane.add(createBarSet());
         frame.setSize(400, 300);
         return frame;

@@ -78,7 +78,7 @@ public class RightLeftOrientation {
 
     static JPanel createBarSet(ComponentOrientation o) {
         JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         JLabel header;
         if (o.isLeftToRight())
@@ -101,7 +101,7 @@ public class RightLeftOrientation {
     static JPanel createProgressBars(String name, String plaf,
                                      ComponentOrientation o) {
         JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         JLabel label = new JLabel(name);
         panel.add(label);
         try {
@@ -129,7 +129,7 @@ public class RightLeftOrientation {
             panel.add(createProgressBar(false, 20, o));
 
             UIManager.setLookAndFeel(save);
-        } catch(Exception e) {
+        } catch (Exception e) {
             System.err.println(e);
         }
         return panel;
