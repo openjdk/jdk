@@ -34,6 +34,7 @@
  * @run testng TestAvailableProcessors
  */
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -62,7 +63,22 @@ public class TestAvailableProcessors {
     private static String getWindowsVersion() throws IOException {
         String systeminfoPath = "systeminfo.exe";
 
-        var processBuilder = new ProcessBuilder(systeminfoPath);
+        List<String> command = new ArrayList<>();
+
+        File systemRoot =
+            System.getenv("SystemRoot") != null ? new File(System.getenv("SystemRoot")) :
+            System.getenv("WINDIR")     != null ? new File(System.getenv ("WINDIR")) :
+            null;
+        if (systemRoot == null || ! systemRoot.isDirectory())
+            return; // Not Windows as we know it
+        String systemDirW = new File(systemRoot, "System32").getPath();
+
+        // Force language to English before running systeminfo to get the OS version
+        command.addAll(List.of("cmd.exe", "/c", "set", "PATH=%PATH%;" + systemDirW + ";" + systemDirW + "\\wbem", "&&"));
+        command.addAll(List.of("chcp", "437", ">nul", "2>&1", "&&"));
+        command.add(systeminfoPath);
+
+        var processBuilder = new ProcessBuilder(command);
         OutputAnalyzer outputAnalyzer = new OutputAnalyzer(processBuilder.start());
         outputAnalyzer.shouldHaveExitValue(0);
         outputAnalyzer.shouldContain(osVersionMessage);
