@@ -524,7 +524,7 @@ protected:
     return l2esz;
   }
   static jint array_layout_helper(jint tag, int hsize, BasicType etype, int log2_esize) {
-    return (tag        << _lh_array_tag_shift)
+    return ((juint)tag << _lh_array_tag_shift)
       |    (hsize      << _lh_header_size_shift)
       |    ((int)etype << _lh_element_type_shift)
       |    (log2_esize << _lh_log2_element_size_shift);
