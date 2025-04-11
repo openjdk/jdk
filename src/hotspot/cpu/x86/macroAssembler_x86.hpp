@@ -469,22 +469,6 @@ class MacroAssembler: public Assembler {
   void cmpss2int(XMMRegister opr1, XMMRegister opr2, Register dst, bool unordered_is_less);
   void cmpsd2int(XMMRegister opr1, XMMRegister opr2, Register dst, bool unordered_is_less);
 
-  // Load float value from 'address'. If UseSSE >= 1, the value is loaded into
-  // register xmm0. Otherwise, the value is loaded onto the FPU stack.
-  void load_float(Address src);
-
-  // Store float value to 'address'. If UseSSE >= 1, the value is stored
-  // from register xmm0. Otherwise, the value is stored from the FPU stack.
-  void store_float(Address dst);
-
-  // Load double value from 'address'. If UseSSE >= 2, the value is loaded into
-  // register xmm0. Otherwise, the value is loaded onto the FPU stack.
-  void load_double(Address src);
-
-  // Store double value to 'address'. If UseSSE >= 2, the value is stored
-  // from register xmm0. Otherwise, the value is stored from the FPU stack.
-  void store_double(Address dst);
-
   void push_IU_state();
   void pop_IU_state();
 

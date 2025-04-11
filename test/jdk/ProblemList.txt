@@ -499,6 +499,8 @@ java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 m
 # Wayland related
 
 java/awt/FullScreen/SetFullScreenTest.java 8332155 linux-x64
+sun/java2d/ClassCastExceptionForInvalidSurface.java 8354097 linux-x64
+sun/java2d/GdiRendering/ClipShapeRendering.java 8354097 linux-x64
 
 ############################################################################
 
