@@ -220,7 +220,6 @@
 //#define TRACE2d(s, p1, p2) { printf(s, p1, p2); fflush(stdout); }
 //#define TRACE3d(s, p1, p2, p3) { printf(s, p1, p2, p3); fflush(stdout); }
 //#define TRACE4d(s, p1, p2, p3, p4) { printf(s, p1, p2, p3, p4); fflush(stdout); }
-
 #ifdef P11_DEBUG
 #define TRACE0(s) { printf(s); fflush(stdout); }
 #define TRACE1(s, p1) { printf(s, p1); fflush(stdout); }
@@ -300,6 +299,7 @@ void printDebug(const char *format, ...);
 */
 
 #define CLASS_KEY_DERIVATION_STRING_DATA "sun/security/pkcs11/wrapper/CK_KEY_DERIVATION_STRING_DATA"
+#define CLASS_KEY_EXTRACT_FROM_KEY "sun/security/pkcs11/wrapper/CK_KEY_EXTRACT_FROM_KEY"
 #define CLASS_SSL3_RANDOM_DATA "sun/security/pkcs11/wrapper/CK_SSL3_RANDOM_DATA"
 // CLASS_SSL3_RANDOM_DATA is used by CLASS_SSL3_MASTER_KEY_DERIVE_PARAMS
 #define CLASS_SSL3_KEY_MAT_OUT "sun/security/pkcs11/wrapper/CK_SSL3_KEY_MAT_OUT"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,7 +313,7 @@ final class P11KeyStore extends KeyStoreSpi {
                                         aliasInfo.id,
                                         null);
                 if (h.type == ATTR_CLASS_PKEY) {
-                    return loadPkey(session, h.handle);
+                    return loadPkey(session, h.handle, aliasInfo.cert.getPublicKey());
                 }
             } else {
                 THandle h = getTokenObject(session,
@@ -968,8 +968,8 @@ final class P11KeyStore extends KeyStoreSpi {
                     throw new KeyStoreException
                         ("expected but could not find private key");
                 } else {
-                    PrivateKey pkey = loadPkey(session, h.handle);
                     Certificate[] chain = aliasInfo.chain;
+                    PrivateKey pkey = loadPkey(session, h.handle, chain[0].getPublicKey());
                     if ((pkey != null) && (chain != null)) {
                         return new KeyStore.PrivateKeyEntry(pkey, chain);
                     } else {
@@ -1305,7 +1305,7 @@ final class P11KeyStore extends KeyStoreSpi {
         return P11Key.secretKey(session, oHandle, keyType, keyLength, null);
     }
 
-    private PrivateKey loadPkey(Session session, long oHandle)
+    private PrivateKey loadPkey(Session session, long oHandle, PublicKey pk)
         throws PKCS11Exception, KeyStoreException {
 
         CK_ATTRIBUTE[] attrs = new CK_ATTRIBUTE[] {
@@ -1385,7 +1385,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 throw new KeyStoreException("Unsupported parameters", e);
             }
 
-            return P11Key.privateKey(session, oHandle, "EC", keyLength, null);
+            return P11Key.privateKey(session, oHandle, "EC", keyLength, null, pk);
 
         } else {
             if (debug != null) {
