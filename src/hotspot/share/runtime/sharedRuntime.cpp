@@ -2448,8 +2448,10 @@ static AdapterHandlerTable* _adapter_handler_table;
 static GrowableArray<AdapterHandlerEntry*>* _adapter_handler_list = nullptr;
 
 // Find a entry with the same fingerprint if it exists
-AdapterHandlerEntry* AdapterHandlerLibrary::lookup(AdapterFingerPrint* fp) {
+AdapterHandlerEntry* AdapterHandlerLibrary::lookup(int total_args_passed, BasicType* sig_bt) {
   NOT_PRODUCT(_lookups++);
+  assert_lock_strong(AdapterHandlerLibrary_lock);
+  AdapterFingerPrint* fp = AdapterFingerPrint::allocate(total_args_passed, sig_bt);
   AdapterHandlerEntry* entry = nullptr;
 #if INCLUDE_CDS
   // if we are building the archive then the archived adapter table is
@@ -2464,24 +2466,25 @@ AdapterHandlerEntry* AdapterHandlerLibrary::lookup(AdapterFingerPrint* fp) {
       }
       _archived_hits++;
 #endif
-      return entry;
     }
   }
 #endif // INCLUDE_CDS
-  assert_lock_strong(AdapterHandlerLibrary_lock);
-  AdapterHandlerEntry** entry_p = _adapter_handler_table->get(fp);
-  if (entry_p != nullptr) {
-    entry = *entry_p;
-    assert(entry->fingerprint()->equals(fp), "fingerprint mismatch key fp %s %s (hash=%d) != found fp %s %s (hash=%d)",
-           entry->fingerprint()->as_basic_args_string(), entry->fingerprint()->as_string(), entry->fingerprint()->compute_hash(),
-           fp->as_basic_args_string(), fp->as_string(), fp->compute_hash());
-#ifndef PRODUCT
-    if (fp->is_compact()) _compact++;
-    _runtime_hits++;
-#endif
-    return entry;
+  if (entry == nullptr) {
+    assert_lock_strong(AdapterHandlerLibrary_lock);
+    AdapterHandlerEntry** entry_p = _adapter_handler_table->get(fp);
+    if (entry_p != nullptr) {
+      entry = *entry_p;
+      assert(entry->fingerprint()->equals(fp), "fingerprint mismatch key fp %s %s (hash=%d) != found fp %s %s (hash=%d)",
+	     entry->fingerprint()->as_basic_args_string(), entry->fingerprint()->as_string(), entry->fingerprint()->compute_hash(),
+	     fp->as_basic_args_string(), fp->as_string(), fp->compute_hash());
+  #ifndef PRODUCT
+      if (fp->is_compact()) _compact++;
+      _runtime_hits++;
+  #endif
+    }
   }
-  return nullptr;
+  AdapterFingerPrint::deallocate(fp);
+  return entry;
 }
 
 #ifndef PRODUCT
@@ -2537,7 +2540,39 @@ static void post_adapter_creation(const AdapterBlob* new_adapter,
   }
 }
 
+void AdapterHandlerLibrary::create_abstract_method_handler() {
+  assert_lock_strong(AdapterHandlerLibrary_lock);
+  // Create a special handler for abstract methods.  Abstract methods
+  // are never compiled so an i2c entry is somewhat meaningless, but
+  // throw AbstractMethodError just in case.
+  // Pass wrong_method_abstract for the c2i transitions to return
+  // AbstractMethodError for invalid invocations.
+  address wrong_method_abstract = SharedRuntime::get_handle_wrong_method_abstract_stub();
+  _abstract_method_handler = AdapterHandlerLibrary::new_entry(AdapterFingerPrint::allocate(0, nullptr));
+  _abstract_method_handler->set_entry_points(SharedRuntime::throw_AbstractMethodError_entry(),
+                                             wrong_method_abstract,
+                                             wrong_method_abstract,
+                                             nullptr);
+}
+
 void AdapterHandlerLibrary::initialize() {
+  {
+    ResourceMark rm;
+    MutexLocker mu(AdapterHandlerLibrary_lock);
+    _adapter_handler_table = new (mtCode) AdapterHandlerTable();
+    _buffer = BufferBlob::create("adapters", AdapterHandlerLibrary_size);
+    create_abstract_method_handler();
+  }
+
+#if INCLUDE_CDS
+  // Link adapters in AOT Cache to their code in AOT Code Cache
+  if (!_archived_adapter_handler_table.empty()) {
+    link_archived_adapters();
+    lookup_simple_adapters();
+    return;
+  }
+#endif // INCLUDE_CDS
+
   ResourceMark rm;
   AdapterBlob* no_arg_blob = nullptr;
   AdapterBlob* int_arg_blob = nullptr;
@@ -2545,35 +2580,21 @@ void AdapterHandlerLibrary::initialize() {
   AdapterBlob* obj_int_arg_blob = nullptr;
   AdapterBlob* obj_obj_arg_blob = nullptr;
   {
-    _adapter_handler_table = new (mtCode) AdapterHandlerTable();
     MutexLocker mu(AdapterHandlerLibrary_lock);
 
-    // Create a special handler for abstract methods.  Abstract methods
-    // are never compiled so an i2c entry is somewhat meaningless, but
-    // throw AbstractMethodError just in case.
-    // Pass wrong_method_abstract for the c2i transitions to return
-    // AbstractMethodError for invalid invocations.
-    address wrong_method_abstract = SharedRuntime::get_handle_wrong_method_abstract_stub();
-    _abstract_method_handler = AdapterHandlerLibrary::new_entry(AdapterFingerPrint::allocate(0, nullptr));
-    _abstract_method_handler->set_entry_points(SharedRuntime::throw_AbstractMethodError_entry(),
-                                               wrong_method_abstract,
-                                               wrong_method_abstract,
-                                               nullptr);
-
-    _buffer = BufferBlob::create("adapters", AdapterHandlerLibrary_size);
-    _no_arg_handler = create_simple_adapter(no_arg_blob, 0, nullptr);
+    _no_arg_handler = create_adapter(no_arg_blob, 0, nullptr);
 
     BasicType obj_args[] = { T_OBJECT };
-    _obj_arg_handler = create_simple_adapter(obj_arg_blob, 1, obj_args);
+    _obj_arg_handler = create_adapter(obj_arg_blob, 1, obj_args);
 
     BasicType int_args[] = { T_INT };
-    _int_arg_handler = create_simple_adapter(int_arg_blob, 1, int_args);
+    _int_arg_handler = create_adapter(int_arg_blob, 1, int_args);
 
     BasicType obj_int_args[] = { T_OBJECT, T_INT };
-    _obj_int_arg_handler = create_simple_adapter(obj_int_arg_blob, 2, obj_int_args);
+    _obj_int_arg_handler = create_adapter(obj_int_arg_blob, 2, obj_int_args);
 
     BasicType obj_obj_args[] = { T_OBJECT, T_OBJECT };
-    _obj_obj_arg_handler = create_simple_adapter(obj_obj_arg_blob, 2, obj_obj_args);
+    _obj_obj_arg_handler = create_adapter(obj_obj_arg_blob, 2, obj_obj_args);
 
     assert(no_arg_blob != nullptr &&
            obj_arg_blob != nullptr &&
@@ -2588,28 +2609,6 @@ void AdapterHandlerLibrary::initialize() {
   post_adapter_creation(int_arg_blob, _int_arg_handler);
   post_adapter_creation(obj_int_arg_blob, _obj_int_arg_handler);
   post_adapter_creation(obj_obj_arg_blob, _obj_obj_arg_handler);
-}
-
-AdapterHandlerEntry* AdapterHandlerLibrary::create_simple_adapter(AdapterBlob*& adapter_blob,
-                                                                  int total_args_passed,
-                                                                  BasicType* sig_bt) {
-  AdapterFingerPrint* fp = AdapterFingerPrint::allocate(total_args_passed, sig_bt);
-  // We may find the adapter in the table if it is loaded from the AOT cache
-  AdapterHandlerEntry* entry = lookup(fp);
-  if (entry != nullptr) {
-    assert(entry->is_shared() && !entry->is_linked(), "Non null AdapterHandlerEntry should be in the AOT cache in unlinked state");
-    adapter_blob = link_adapter_handler(entry);
-    if (adapter_blob == nullptr) {
-      if (!generate_adapter_code(adapter_blob, entry, total_args_passed, sig_bt, /* is_transient */ false)) {
-        return nullptr;
-      }
-    }
-    // AdapterFingerPrint is already in the cache, no need to keep this one
-    AdapterFingerPrint::deallocate(fp);
-  } else {
-    entry = create_adapter(adapter_blob, fp, total_args_passed, sig_bt, /* is_transient */ false);
-  }
-  return entry;
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* fingerprint) {
@@ -2705,11 +2704,9 @@ const char* AdapterHandlerEntry::_entry_names[] = {
 #ifdef ASSERT
 void AdapterHandlerLibrary::verify_adapter_sharing(int total_args_passed, BasicType* sig_bt, AdapterHandlerEntry* cached_entry) {
   AdapterBlob* comparison_blob = nullptr;
-  AdapterFingerPrint* comparison_fp = AdapterFingerPrint::allocate(total_args_passed, sig_bt);
-  AdapterHandlerEntry* comparison_entry = create_adapter(comparison_blob, comparison_fp, total_args_passed, sig_bt, true);
+  AdapterHandlerEntry* comparison_entry = create_adapter(comparison_blob, total_args_passed, sig_bt, true);
   assert(comparison_blob == nullptr, "no blob should be created when creating an adapter for comparison");
   assert(comparison_entry->compare_code(cached_entry), "code must match");
-  AdapterFingerPrint::deallocate(comparison_fp);
   // Release the one just created and return the original
   AdapterHandlerEntry::deallocate(comparison_entry);
 }
@@ -2741,26 +2738,17 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
     MutexLocker mu(AdapterHandlerLibrary_lock);
 
     // Lookup method signature's fingerprint
-    AdapterFingerPrint *fp = AdapterFingerPrint::allocate(total_args_passed, sig_bt);
-    entry = lookup(fp);
+    entry = lookup(total_args_passed, sig_bt);
 
     if (entry != nullptr) {
-      if (entry->is_shared() && !entry->is_linked()) {
-        adapter_blob = link_adapter_handler(entry);
-        if (adapter_blob == nullptr) {
-          if (!generate_adapter_code(adapter_blob, entry, total_args_passed, sig_bt, /* is_transient */ false)) {
-            return nullptr;
-          }
-        }
-      }
+      assert(entry->is_linked(), "AdapterHandlerEntry must have been linked");
 #ifdef ASSERT
       if (!entry->is_shared() && VerifyAdapterSharing) {
         verify_adapter_sharing(total_args_passed, sig_bt, entry);
       }
 #endif
-      AdapterFingerPrint::deallocate(fp);
     } else {
-      entry = create_adapter(adapter_blob, fp, total_args_passed, sig_bt, /* is_transient */ false);
+      entry = create_adapter(adapter_blob, total_args_passed, sig_bt);
     }
   }
 
@@ -2874,37 +2862,29 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& adapter_blob,
-                                                           AdapterFingerPrint* fingerprint,
                                                            int total_args_passed,
                                                            BasicType* sig_bt,
                                                            bool is_transient) {
-  AdapterHandlerEntry* handler = AdapterHandlerLibrary::new_entry(fingerprint);
+  AdapterFingerPrint* fp = AdapterFingerPrint::allocate(total_args_passed, sig_bt);
+  AdapterHandlerEntry* handler = AdapterHandlerLibrary::new_entry(fp);
   if (!generate_adapter_code(adapter_blob, handler, total_args_passed, sig_bt, is_transient)) {
     AdapterHandlerEntry::deallocate(handler);
     return nullptr;
   }
   if (!is_transient) {
     assert_lock_strong(AdapterHandlerLibrary_lock);
-    _adapter_handler_table->put(fingerprint, handler);
+    _adapter_handler_table->put(fp, handler);
   }
   return handler;
 }
 
 #if INCLUDE_CDS
-AdapterBlob* AdapterHandlerLibrary::link_adapter_handler(AdapterHandlerEntry* handler) {
-#ifndef PRODUCT
-  if (TestAdapterLinkFailure) {
-    return nullptr;
-  }
-#endif
-  AdapterBlob* blob = lookup_aot_cache(handler);
-#ifndef PRODUCT
-  // debugging support
-  if ((blob != nullptr) && (PrintAdapterHandlers || PrintStubCode)) {
-    print_adapter_handler_info(handler, blob);
-  }
-#endif
-  return blob;
+void AdapterHandlerEntry::remove_unshareable_info() {
+#ifdef ASSERT
+   _saved_code = nullptr;
+   _saved_code_length = 0;
+#endif // ASSERT
+  set_entry_points(nullptr, nullptr, nullptr, nullptr, false);
 }
 
 class CopyAdapterTableToArchive : StackObj {
@@ -2953,6 +2933,97 @@ void AdapterHandlerLibrary::archive_adapter_table() {
 void AdapterHandlerLibrary::serialize_shared_table_header(SerializeClosure* soc) {
   _archived_adapter_handler_table.serialize_header(soc);
 }
+
+AdapterBlob* AdapterHandlerLibrary::link_adapter_handler(AdapterHandlerEntry* handler) {
+#ifndef PRODUCT
+  if (TestAdapterLinkFailure) {
+    return nullptr;
+  }
+#endif
+  AdapterBlob* blob = lookup_aot_cache(handler);
+#ifndef PRODUCT
+  // debugging support
+  if ((blob != nullptr) && (PrintAdapterHandlers || PrintStubCode)) {
+    print_adapter_handler_info(handler, blob);
+  }
+#endif
+  return blob;
+}
+
+// This method is used during production run to link archived adapters (stored in AOT Cache)
+// to their code in AOT Code Cache
+void AdapterHandlerEntry::link() {
+  AdapterBlob* adapter_blob = nullptr;
+  ResourceMark rm;
+  assert(_fingerprint != nullptr, "_fingerprint must not be null");
+  bool generate_code = false;
+  // Generate code only if AOTCodeCache is not available, or
+  // caching adapters is disabled, or we fail to link
+  // the AdapterHandlerEntry to its code in the AOTCodeCache
+  if (AOTCodeCache::is_using_adapters()) {
+    adapter_blob = AdapterHandlerLibrary::link_adapter_handler(this);
+    if (adapter_blob == nullptr) {
+      log_warning(cds)("Failed to link AdapterHandlerEntry (fp=%s) to its code in the AOT code cache", _fingerprint->as_basic_args_string());
+      generate_code = true;
+    }
+  } else {
+    generate_code = true;
+  }
+  if (generate_code) {
+    int nargs;
+    BasicType* bt = _fingerprint->as_basic_type(nargs);
+    if (!AdapterHandlerLibrary::generate_adapter_code(adapter_blob, this, nargs, bt, /* is_transient */ false)) {
+      // Don't throw exceptions during VM initialization because java.lang.* classes
+      // might not have been initialized, causing problems when constructing the
+      // Java exception object.
+      vm_exit_during_initialization("Out of space in CodeCache for adapters");
+    }
+  }
+  // Outside of the lock
+  if (adapter_blob != nullptr) {
+    post_adapter_creation(adapter_blob, this);
+  }
+  assert(_linked, "AdapterHandlerEntry must now be linked");
+}
+
+void AdapterHandlerLibrary::link_archived_adapters() {
+  _archived_adapter_handler_table.iterate([](AdapterHandlerEntry* entry) {
+    assert(!entry->is_linked(), "AdapterHandlerEntry is already linked!");
+    entry->link();
+  });
+}
+
+// This method is called during production run to lookup simple adapters
+// in the archived adapter handler table
+void AdapterHandlerLibrary::lookup_simple_adapters() {
+  assert(!_archived_adapter_handler_table.empty(), "archived adapter handler table is empty");
+
+  MutexLocker mu(AdapterHandlerLibrary_lock);
+  _no_arg_handler = lookup(0, nullptr);
+
+  BasicType obj_args[] = { T_OBJECT };
+  _obj_arg_handler = lookup(1, obj_args);
+
+  BasicType int_args[] = { T_INT };
+  _int_arg_handler = lookup(1, int_args);
+
+  BasicType obj_int_args[] = { T_OBJECT, T_INT };
+  _obj_int_arg_handler = lookup(2, obj_int_args);
+
+  BasicType obj_obj_args[] = { T_OBJECT, T_OBJECT };
+  _obj_obj_arg_handler = lookup(2, obj_obj_args);
+
+  assert(_no_arg_handler != nullptr &&
+         _obj_arg_handler != nullptr &&
+         _int_arg_handler != nullptr &&
+         _obj_int_arg_handler != nullptr &&
+         _obj_obj_arg_handler != nullptr, "Initial adapters not found in archived adapter handler table");
+  assert(_no_arg_handler->is_linked() &&
+         _obj_arg_handler->is_linked() &&
+         _int_arg_handler->is_linked() &&
+         _obj_int_arg_handler->is_linked() &&
+         _obj_obj_arg_handler->is_linked(), "Initial adapters not in linked state");
+}
 #endif // INCLUDE_CDS
 
 address AdapterHandlerEntry::base_address() {
@@ -2988,72 +3059,11 @@ void AdapterHandlerEntry::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_fingerprint);
 }
 
-#if INCLUDE_CDS
-void AdapterHandlerEntry::remove_unshareable_info() {
-#ifdef ASSERT
-   _saved_code = nullptr;
-   _saved_code_length = 0;
-#endif // ASSERT
-  set_entry_points(nullptr, nullptr, nullptr, nullptr, false);
-}
-
-void AdapterHandlerEntry::restore_unshareable_info(TRAPS) {
-  PerfTraceTime timer(ClassLoader::perf_method_adapters_time());
-  // A fixed set of simple adapters are eagerly linked during JVM initialization
-  // in AdapterHandlerTable::initialize().
-  // Others may already have been linked because they are shared by other methods.
-  if (is_linked()) {
-    return;
-  }
-  AdapterBlob* adapter_blob = nullptr;
-  ResourceMark rm;
-  {
-    MutexLocker mu(AdapterHandlerLibrary_lock);
-    // If some other thread beat me and did the linkage, just return
-    if (is_linked()) {
-      return;
-    }
-    assert(_fingerprint != nullptr, "_fingerprint must not be null");
-#ifdef ASSERT
-    AdapterHandlerEntry* entry = AdapterHandlerLibrary::lookup(_fingerprint);
-    assert(entry == this, "sanity check");
-#endif // ASSERT
-    bool generate_code = false;
-    // Generate code only if AOTCodeCache is not available, or
-    // we fail to link the AdapterHandlerEntry to its code in the AOTCodeCache
-    if (AOTCodeCache::is_on_for_read()) {
-      adapter_blob = AdapterHandlerLibrary::link_adapter_handler(this);
-      if (adapter_blob == nullptr) {
-        log_warning(cds)("Failed to link AdapterHandlerEntry (fp=%s) to its code in the AOT code cache", _fingerprint->as_basic_args_string());
-        generate_code = true;
-      }
-    } else {
-      generate_code = true;
-    }
-    if (generate_code) {
-      int nargs;
-      BasicType* bt = _fingerprint->as_basic_type(nargs);
-      if (!AdapterHandlerLibrary::generate_adapter_code(adapter_blob, this, nargs, bt, /* is_transient */ false)) {
-        if (!is_init_completed()) {
-          // Don't throw exceptions during VM initialization because java.lang.* classes
-          // might not have been initialized, causing problems when constructing the
-          // Java exception object.
-          vm_exit_during_initialization("Out of space in CodeCache for adapters");
-        } else {
-          THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "Out of space in CodeCache for adapters");
-        }
-      }
-    }
-  }
-  // Outside of the lock
-  if (adapter_blob != nullptr) {
-    post_adapter_creation(adapter_blob, this);
-  }
-  assert(_linked, "AdapterHandlerEntry must now be linked");
-}
-#endif // INCLUDE_CDS
-
 AdapterHandlerEntry::~AdapterHandlerEntry() {
+  if (_fingerprint != nullptr) {
+    AdapterFingerPrint::deallocate(_fingerprint);
+    _fingerprint = nullptr;
+  }
 #ifdef ASSERT
   FREE_C_HEAP_ARRAY(unsigned char, _saved_code);
 #endif

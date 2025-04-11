@@ -763,7 +763,7 @@ class AdapterHandlerEntry : public MetaspaceObj {
   MetaspaceObj::Type type() const { return AdapterHandlerEntryType; }
 
   void remove_unshareable_info() NOT_CDS_RETURN;
-  void restore_unshareable_info(TRAPS) NOT_CDS_RETURN;
+  void link() NOT_CDS_RETURN;
 };
 
 #if INCLUDE_CDS
@@ -786,16 +786,14 @@ class AdapterHandlerLibrary: public AllStatic {
 
   static BufferBlob* buffer_blob();
   static void initialize();
-  static AdapterHandlerEntry* create_simple_adapter(AdapterBlob*& new_adapter,
-                                                    int total_args_passed,
-                                                    BasicType* sig_bt);
   static AdapterHandlerEntry* get_simple_adapter(const methodHandle& method);
   static AdapterBlob* lookup_aot_cache(AdapterHandlerEntry* handler);
   static AdapterHandlerEntry* create_adapter(AdapterBlob*& new_adapter,
-                                             AdapterFingerPrint* fingerprint,
                                              int total_args_passed,
                                              BasicType* sig_bt,
-                                             bool is_transient);
+                                             bool is_transient = false);
+  static void create_abstract_method_handler();
+  static void lookup_simple_adapters() NOT_CDS_RETURN;
 #ifndef PRODUCT
   static void print_adapter_handler_info(AdapterHandlerEntry* handler, AdapterBlob* adapter_blob);
 #endif // PRODUCT
@@ -804,7 +802,7 @@ class AdapterHandlerLibrary: public AllStatic {
   static AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint);
   static void create_native_wrapper(const methodHandle& method);
   static AdapterHandlerEntry* get_adapter(const methodHandle& method);
-  static AdapterHandlerEntry* lookup(AdapterFingerPrint* fp);
+  static AdapterHandlerEntry* lookup(int total_args_passed, BasicType* sig_bt);
   static bool generate_adapter_code(AdapterBlob*& adapter_blob,
                                     AdapterHandlerEntry* handler,
                                     int total_args_passed,
@@ -829,6 +827,7 @@ class AdapterHandlerLibrary: public AllStatic {
   static AdapterBlob* link_adapter_handler(AdapterHandlerEntry* handler) NOT_CDS_RETURN_(nullptr);
   static void archive_adapter_table() NOT_CDS_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_RETURN;
+  static void link_archived_adapters() NOT_CDS_RETURN;
 };
 
 #endif // SHARE_RUNTIME_SHAREDRUNTIME_HPP
