@@ -46,7 +46,7 @@ public class MallocTestType {
 
     NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
             new String[]{"Test (reserved=384KB, committed=384KB)",
-                         "(malloc=384KB #2) (at peak)"});
+                         "(malloc=384KB tag=Test #2) (at peak)"});
 
     wb.NMTFree(memAlloc3);                           // current +256K #1 peak +384K #2
     long memAlloc1 = wb.NMTMalloc(512 * 1024);  // current +768K #2 peak +768K #2
@@ -54,13 +54,13 @@ public class MallocTestType {
 
     NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
             new String[]{"Test (reserved=512KB, committed=512KB)",
-                         "(malloc=512KB #1) (peak=768KB #2)"});
+                         "(malloc=512KB tag=Test #1) (peak=768KB #2)"});
 
     // Free the memory allocated by NMTAllocTest
     wb.NMTFree(memAlloc1); // current 0K #0 peak +768K #2
 
     NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
             new String[]{"Test (reserved=0KB, committed=0KB)",
-                         "(malloc=0KB) (peak=768KB #2)"});
+                         "(malloc=0KB tag=Test) (peak=768KB #2)"});
   }
 }
