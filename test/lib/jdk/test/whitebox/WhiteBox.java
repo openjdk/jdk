@@ -561,7 +561,7 @@ public class WhiteBox {
   public native void fullGC();
 
   // Infrastructure for waitForReferenceProcessing()
-  private Method waitForReferenceProcessingMethod = null;
+  private static Method waitForReferenceProcessingMethod = null;
 
   private Method getWaitForReferenceProcessingMethod() {
     Method wfrp = waitForReferenceProcessingMethod;
