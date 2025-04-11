@@ -161,6 +161,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     // Using a static helper method ensures there is no unintended lambda capturing of `this`
+    @ForceInline
     private static Runnable cleanupAction(long address, long newSize, Consumer<MemorySegment> cleanup) {
 
         record CleanupAction(long address, long newSize, Consumer<MemorySegment> cleanup) implements Runnable {
