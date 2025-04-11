@@ -4120,6 +4120,22 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       }
       result = result->in(MemNode::Memory);
     }
+    if (!is_instance && result->Opcode() == Op_NarrowMemProj) {
+      // Memory for non known instance can safely skip over a known instance allocation (that memory state doesn't access
+      // the result of an allocation for a known instance).
+      assert(result->as_Proj()->_con == TypeFunc::Memory, "a NarrowMemProj can only be a memory projection");
+      assert(toop != nullptr, "");
+      Node *proj_in = result->in(0);
+      if (proj_in->is_Initialize()) {
+        AllocateNode* alloc = proj_in->as_Initialize()->allocation();
+        assert(alloc->result_cast() == nullptr ||
+               ((alloc->_is_scalar_replaceable) == igvn->type(alloc->result_cast())->is_oopptr()->is_known_instance()),
+               "only scalar replaceable allocations are known instance");
+        if (alloc != nullptr && alloc->_is_scalar_replaceable) {
+          result = alloc->in(TypeFunc::Memory);
+        }
+      }
+    }
     if (!is_instance) {
       continue;  // don't search further for non-instance types
     }
@@ -4436,6 +4452,24 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       _compile->get_alias_index(tinst->add_offset(oopDesc::mark_offset_in_bytes()));
       _compile->get_alias_index(tinst->add_offset(oopDesc::klass_offset_in_bytes()));
       if (alloc->is_Allocate() && (t->isa_instptr() || t->isa_aryptr())) {
+        // Update adr type captured by NarrowMem projections to new type
+        InitializeNode* init = alloc->as_Allocate()->initialization();
+        assert(init != nullptr, "can't find Initialization node for this Allocate node");
+        for (DUIterator_Fast imax, i = init->fast_outs(imax); i < imax; i++) {
+          ProjNode* proj = init->fast_out(i)->as_Proj();
+          if (proj->Opcode() == Op_NarrowMemProj) {
+            const TypePtr* adr_type = proj->adr_type();
+            const TypePtr* new_adr_type = tinst->add_offset(adr_type->offset());
+            if (adr_type != new_adr_type) {
+              uint alias_ix = _compile->get_alias_index(new_adr_type);
+              assert(_compile->get_general_index(alias_ix) == _compile->get_alias_index(adr_type), "new adr type should be narrowed down from existing adr type");
+              igvn->hash_delete(proj);
+              ((NarrowMemProjNode*)proj)->set_adr_type(new_adr_type);
+              igvn->hash_insert(proj);
+              record_for_optimizer(proj);
+            }
+          }
+        }
 
         // First, put on the worklist all Field edges from Connection Graph
         // which is more accurate than putting immediate users from Ideal Graph.
@@ -4699,11 +4733,13 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     }
     if (n->is_Phi() || n->is_ClearArray()) {
       // we don't need to do anything, but the users must be pushed
-    } else if (n->is_MemBar()) { // Initialize, MemBar nodes
-      // we don't need to do anything, but the users must be pushed
-      n = n->as_MemBar()->proj_out_or_null(TypeFunc::Memory);
-      if (n == nullptr) {
-        continue;
+    } else if (n->is_MemBar()) { // MemBar nodes
+      if (!n->is_Initialize()) { // memory projections for Initialize pushed below (so we get to all their uses)
+        // we don't need to do anything, but the users must be pushed
+        n = n->as_MemBar()->proj_out_or_null(TypeFunc::Memory);
+        if (n == nullptr) {
+          continue;
+        }
       }
     } else if (n->is_CallLeaf()) {
       // Runtime calls with narrow memory input (no MergeMem node)
@@ -4720,6 +4756,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       // get the memory projection
       n = n->find_out_with(Op_SCMemProj);
       assert(n != nullptr && n->Opcode() == Op_SCMemProj, "memory projection required");
+    } else if (n->is_Proj()) {
+      assert(n->in(0)->is_Initialize(), "we only push memory projections for Initialize");
     } else {
 #ifdef ASSERT
       if (!n->is_Mem()) {
@@ -4761,6 +4799,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         memnode_worklist.append_if_missing(use);
       } else if (use->is_MemBar() || use->is_CallLeaf()) {
         if (use->in(TypeFunc::Memory) == n) { // Ignore precedent edge
+          memnode_worklist.append_if_missing(use);
+        }
+      } else if (use->is_Proj()) {
+        assert(n->is_Initialize(), "We only push projections of Initialize");
+        if (use->as_Proj()->_con == TypeFunc::Memory) { // Ignore precedent edge
           memnode_worklist.append_if_missing(use);
         }
 #ifdef ASSERT
@@ -4814,7 +4857,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       // First, update mergemem by moving memory nodes to corresponding slices
       // if their type became more precise since this mergemem was created.
       while (mem->is_Mem()) {
-        const Type *at = igvn->type(mem->in(MemNode::Address));
+        const Type* at = igvn->type(mem->in(MemNode::Address));
         if (at != Type::TOP) {
           assert (at->isa_ptr() != nullptr, "pointer type required.");
           uint idx = (uint)_compile->get_alias_index(at->is_ptr());
@@ -4830,7 +4873,27 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         }
         mem = mem->in(MemNode::Memory);
       }
+      if (mem->Opcode() == Op_NarrowMemProj) {
+        const TypePtr* at = mem->adr_type();
+        uint idx = (uint) _compile->get_alias_index(at->is_ptr());
+        if (idx == i) {
+          // projection for a non known allocation on a non known allocation slice: can't skip over the allocation
+          if (cur == nullptr) {
+            cur = mem;
+          }
+        } else {
+          // projection for a known allocation on a non known allocation slice: skip over the allocation
+          if (idx >= nmm->req() || nmm->is_empty_memory(nmm->in(idx))) {
+            nmm->set_memory_at(idx, mem);
+          }
+          InitializeNode* init = mem->in(0)->as_Initialize();
+          AllocateNode* alloc = init->allocation();
+          assert(alloc != nullptr, "can find Allocate node from the Initialize node");
+          mem = alloc->in(TypeFunc::Memory);
+        }
+      }
       nmm->set_memory_at(i, (cur != nullptr) ? cur : mem);
+      record_for_optimizer(nmm);
       // Find any instance of the current type if we haven't encountered
       // already a memory slice of the instance along the memory chain.
       for (uint ni = new_index_start; ni < new_index_end; ni++) {

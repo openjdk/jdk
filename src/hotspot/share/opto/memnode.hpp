@@ -1362,6 +1362,10 @@ public:
                         intptr_t header_size, Node* size_in_bytes,
                         PhaseIterGVN* phase);
 
+  // An Initialize node has multiple memory projection. Helper methods used when the node is removed.
+  void replace_mem_projs_by(Node* mem, Compile* C);
+  void replace_mem_projs_by(Node* mem, PhaseIterGVN* ivn);
+
  private:
   void remove_extra_zeroes();
 
