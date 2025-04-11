@@ -70,8 +70,8 @@ class G1RefineRegionClosure : public G1HeapRegionClosure {
         _refine_stats.inc_cards_already_refer_to_cset();
         break;
       }
-      case G1RemSet::NoInteresting: {
-        _refine_stats.inc_cards_clean_again();
+      case G1RemSet::NoCrossRegion: {
+        _refine_stats.inc_cards_no_cross_region();
         break;
       }
       case G1RemSet::CouldNotParse: {

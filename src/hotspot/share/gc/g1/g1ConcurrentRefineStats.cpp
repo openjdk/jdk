@@ -34,7 +34,7 @@ G1ConcurrentRefineStats::G1ConcurrentRefineStats() :
   _cards_not_parsable(0),
   _cards_already_refer_to_cset(0),
   _cards_refer_to_cset(0),
-  _cards_clean_again(0),
+  _cards_no_cross_region(0),
   _refine_duration(0)
 {}
 
@@ -47,7 +47,7 @@ void G1ConcurrentRefineStats::add_atomic(G1ConcurrentRefineStats* other) {
   Atomic::add(&_cards_not_parsable, other->_cards_not_parsable, memory_order_relaxed);
   Atomic::add(&_cards_already_refer_to_cset, other->_cards_already_refer_to_cset, memory_order_relaxed);
   Atomic::add(&_cards_refer_to_cset, other->_cards_refer_to_cset, memory_order_relaxed);
-  Atomic::add(&_cards_clean_again, other->_cards_clean_again, memory_order_relaxed);
+  Atomic::add(&_cards_no_cross_region, other->_cards_no_cross_region, memory_order_relaxed);
 
   Atomic::add(&_refine_duration, other->_refine_duration, memory_order_relaxed);
 }

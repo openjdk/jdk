@@ -1363,7 +1363,7 @@ G1RemSet::RefineResult G1RemSet::refine_card_concurrently(CardValue* const card_
     } else if (conc_refine_cl.has_ref_to_old()) {
       return HasRefToOld;
     } else {
-      return NoInteresting;
+      return NoCrossRegion;
     }
   }
   // If unable to process the card then we encountered an unparsable

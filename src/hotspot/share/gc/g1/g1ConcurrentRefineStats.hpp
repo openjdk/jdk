@@ -42,7 +42,7 @@ class G1ConcurrentRefineStats : public CHeapObj<mtGC> {
   size_t _cards_not_parsable;         // Number of cards we could not parse and left unrefined.
   size_t _cards_already_refer_to_cset;// Number of cards marked found to be already young.
   size_t _cards_refer_to_cset;        // Number of dirty cards that were recently found to contain a to-cset reference.
-  size_t _cards_clean_again;          // Number of dirty cards that were cleaned by the mutator.
+  size_t _cards_no_cross_region;      // Number of dirty cards that were dirtied, but then cleaned again by the mutator.
 
   jlong _refine_duration;             // Time spent during actual refinement.
 
@@ -64,7 +64,7 @@ public:
   size_t cards_not_parsable() const { return _cards_not_parsable; }
   size_t cards_already_refer_to_cset() const { return _cards_already_refer_to_cset; }
   size_t cards_refer_to_cset() const { return _cards_refer_to_cset; }
-  size_t cards_clean_again() const { return _cards_clean_again; }
+  size_t cards_no_cross_region() const { return _cards_no_cross_region; }
   // Number of cards that were marked dirty and in need of refinement. This includes cards recently
   // found to refer to the collection set as they originally were dirty.
   size_t cards_pending() const { return cards_not_clean() - _cards_already_refer_to_cset; }
@@ -80,7 +80,7 @@ public:
   void inc_cards_not_parsable() { _cards_not_parsable++; }
   void inc_cards_already_refer_to_cset() { _cards_already_refer_to_cset++; }
   void inc_cards_refer_to_cset() { _cards_refer_to_cset++; }
-  void inc_cards_clean_again() { _cards_clean_again++; }
+  void inc_cards_no_cross_region() { _cards_no_cross_region++; }
 
   void add_atomic(G1ConcurrentRefineStats* other);
 

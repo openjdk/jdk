@@ -155,12 +155,8 @@ size_t G1ConcurrentRefineSweepState::refinement_epoch() {
   return G1CollectedHeap::heap()->refinement_epoch();
 }
 
-bool G1ConcurrentRefineSweepState::in_sweep_epoch() const {
-  return _sweep_start_epoch == refinement_epoch();
-}
-
 bool G1ConcurrentRefineSweepState::advance_state(State next_state) {
-  bool result = in_sweep_epoch();
+  bool result = _sweep_start_epoch == refinement_epoch();
   if (result) {
     _state = next_state;
   } else {
@@ -200,7 +196,7 @@ bool G1ConcurrentRefineSweepState::swap_global_card_table() {
     MutexLocker mu(Threads_lock);
     // A GC that advanced the epoch might have happened, which already switched
     // The global card table. Do nothing.
-    if (in_sweep_epoch()) {
+    if (is_in_progress()) {
       G1BarrierSet::g1_barrier_set()->swap_global_card_table();
     }
   }
@@ -327,7 +323,7 @@ bool G1ConcurrentRefineSweepState::complete_work(bool concurrent, bool print_log
 
     log_debug(gc, refine)("Refinement took %.2fms (pre-sweep %.2fms card refine %.2f) "
                           "(scanned %zu clean %zu (%.2f%%) not_clean %zu (%.2f%%) not_parsable %zu "
-                          "refers_to_cset %zu (%.2f%%) still_refers_to_cset %zu (%.2f%%) clean_again %zu pending %zu)",
+                          "refers_to_cset %zu (%.2f%%) still_refers_to_cset %zu (%.2f%%) no_cross_region %zu pending %zu)",
                           get_duration(State::Idle, _state).seconds() * 1000.0,
                           get_duration(State::Idle, State::SweepRT).seconds() * 1000.0,
                           TimeHelper::counter_to_millis(s->refine_duration()),
@@ -341,12 +337,12 @@ bool G1ConcurrentRefineSweepState::complete_work(bool concurrent, bool print_log
                           percent_of(s->cards_refer_to_cset(), s->cards_not_clean()),
                           s->cards_already_refer_to_cset(),
                           percent_of(s->cards_already_refer_to_cset(), s->cards_not_clean()),
-                          s->cards_clean_again(),
+                          s->cards_no_cross_region(),
                           s->cards_pending()
                          );
   }
 
-  bool has_sweep_rt_work = is_in_progress() && _state == State::SweepRT;
+  bool has_sweep_rt_work = _state == State::SweepRT;
 
   _state = State::Idle;
   return has_sweep_rt_work;
