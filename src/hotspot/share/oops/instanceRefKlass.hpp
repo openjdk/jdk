@@ -67,23 +67,15 @@ class InstanceRefKlass: public InstanceKlass {
   // Forward iteration
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute);
 
   // Reverse iteration
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute);
 
   // Bounded range iteration
   // Iterate over all oop fields and metadata.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
-
-  // klute variants
-  template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute);
-  template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute);
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute);
 
@@ -92,41 +84,41 @@ class InstanceRefKlass: public InstanceKlass {
   // Reference processing part of the iterators.
 
   template <typename T, class OopClosureType, class Contains>
-  inline void oop_oop_iterate_ref_processing(oop obj, OopClosureType* closure, Contains& contains);
+  static inline void oop_oop_iterate_ref_processing(oop obj, OopClosureType* closure, Contains& contains);
 
   // Only perform reference processing if the referent object is within mr.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_ref_processing_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+  static inline void oop_oop_iterate_ref_processing_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
   // Reference processing
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_ref_processing(oop obj, OopClosureType* closure);
+  static inline void oop_oop_iterate_ref_processing(oop obj, OopClosureType* closure);
 
   // Building blocks for specialized handling.
   template <typename T, class OopClosureType, class Contains>
-  static void do_referent(oop obj, OopClosureType* closure, Contains& contains);
+  static inline void do_referent(oop obj, OopClosureType* closure, Contains& contains);
 
   template <typename T, class OopClosureType, class Contains>
-  static void do_discovered(oop obj, OopClosureType* closure, Contains& contains);
+  static inline void do_discovered(oop obj, OopClosureType* closure, Contains& contains);
 
   template <typename T, class OopClosureType>
-  static bool try_discover(oop obj, ReferenceType type, OopClosureType* closure);
+  static inline bool try_discover(oop obj, ReferenceType type, OopClosureType* closure);
 
   // Do discovery while handling InstanceRefKlasses. Reference discovery
   // is only done if the closure provides a ReferenceProcessor.
   template <typename T, class OopClosureType, class Contains>
-  static void oop_oop_iterate_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains);
+  static inline void oop_oop_iterate_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains);
 
   // Apply the closure to all fields. No reference discovery is done.
   template <typename T, class OopClosureType, class Contains>
-  static void oop_oop_iterate_fields(oop obj, OopClosureType* closure, Contains& contains);
+  static inline void oop_oop_iterate_fields(oop obj, OopClosureType* closure, Contains& contains);
 
   // Apply the closure to all fields, except the referent field. No reference discovery is done.
   template <typename T, class OopClosureType, class Contains>
-  static void oop_oop_iterate_fields_except_referent(oop obj, OopClosureType* closure, Contains& contains);
+  static inline void oop_oop_iterate_fields_except_referent(oop obj, OopClosureType* closure, Contains& contains);
 
   template <typename T>
-  static void trace_reference_gc(const char *s, oop obj) NOT_DEBUG_RETURN;
+  static inline void trace_reference_gc(const char *s, oop obj) NOT_DEBUG_RETURN;
 
  public:
   // Update non-static oop maps so 'referent', 'nextPending' and

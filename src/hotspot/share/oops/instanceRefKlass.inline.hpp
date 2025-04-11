@@ -106,10 +106,12 @@ void InstanceRefKlass::oop_oop_iterate_fields_except_referent(oop obj, OopClosur
 template <typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::oop_oop_iterate_ref_processing(oop obj, OopClosureType* closure, Contains& contains) {
   switch (closure->reference_iteration_mode()) {
-    case OopIterateClosure::DO_DISCOVERY:
+    case OopIterateClosure::DO_DISCOVERY: {
+      const ReferenceType reftype = InstanceKlass::cast(obj->klass())->reference_type();
       trace_reference_gc<T>("do_discovery", obj);
-      oop_oop_iterate_discovery<T>(obj, reference_type(), closure, contains);
-      break;
+      oop_oop_iterate_discovery<T>(obj, reftype, closure, contains);
+    }
+    break;
     case OopIterateClosure::DO_FIELDS:
       trace_reference_gc<T>("do_fields", obj);
       oop_oop_iterate_fields<T>(obj, closure, contains);
@@ -148,50 +150,21 @@ void InstanceRefKlass::oop_oop_iterate_ref_processing_bounded(oop obj, OopClosur
 }
 
 template <typename T, class OopClosureType>
-void InstanceRefKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  InstanceKlass::oop_oop_iterate<T>(obj, closure);
-
-  oop_oop_iterate_ref_processing<T>(obj, closure);
-}
-
-
-template <typename T, class OopClosureType>
-void InstanceRefKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
-  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure);
-
-  oop_oop_iterate_ref_processing<T>(obj, closure);
-}
-
-template <typename T, class OopClosureType>
-void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr);
-
-  oop_oop_iterate_ref_processing_bounded<T>(obj, closure, mr);
-}
-
-// klute variants
-template <typename T, class OopClosureType>
 void InstanceRefKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
   InstanceKlass::oop_oop_iterate<T>(obj, closure, klute);
-  // Todo: could oop_oop_iterate_ref_processing not be static?
-  InstanceRefKlass* const k = InstanceRefKlass::cast_exact(obj->klass());
-  k->oop_oop_iterate_ref_processing<T>(obj, closure);
+  oop_oop_iterate_ref_processing<T>(obj, closure);
 }
 
 template <typename T, class OopClosureType>
 void InstanceRefKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
   InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure, klute);
-  // Todo: for now just resolve the Klass. Maybe more parts can be made static.
-  InstanceRefKlass* const k = InstanceRefKlass::cast_exact(obj->klass());
-  k->oop_oop_iterate_ref_processing<T>(obj, closure);
+  oop_oop_iterate_ref_processing<T>(obj, closure);
 }
 
 template <typename T, class OopClosureType>
 void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute) {
   InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr, klute);
-  // Todo: for now just resolve the Klass. Maybe more parts can be made static.
-  InstanceRefKlass* const k = InstanceRefKlass::cast_exact(obj->klass());
-  k->oop_oop_iterate_ref_processing_bounded<T>(obj, closure, mr);
+  oop_oop_iterate_ref_processing_bounded<T>(obj, closure, mr);
 }
 
 #ifdef ASSERT

@@ -39,6 +39,7 @@
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -114,15 +115,15 @@ class PSPushContentsClosure: public BasicOopIterateClosure {
 // order of these function calls.
 //
 template <>
-inline void InstanceRefKlass::oop_oop_iterate_reverse<oop, PSPushContentsClosure>(oop obj, PSPushContentsClosure* closure) {
+inline void InstanceRefKlass::oop_oop_iterate_reverse<oop, PSPushContentsClosure>(oop obj, PSPushContentsClosure* closure, KlassLUTEntry klute) {
   oop_oop_iterate_ref_processing<oop>(obj, closure);
-  InstanceKlass::oop_oop_iterate_reverse<oop>(obj, closure);
+  InstanceKlass::oop_oop_iterate_reverse<oop>(obj, closure, klute);
 }
 
 template <>
-inline void InstanceRefKlass::oop_oop_iterate_reverse<narrowOop, PSPushContentsClosure>(oop obj, PSPushContentsClosure* closure) {
+inline void InstanceRefKlass::oop_oop_iterate_reverse<narrowOop, PSPushContentsClosure>(oop obj, PSPushContentsClosure* closure, KlassLUTEntry klute) {
   oop_oop_iterate_ref_processing<narrowOop>(obj, closure);
-  InstanceKlass::oop_oop_iterate_reverse<narrowOop>(obj, closure);
+  InstanceKlass::oop_oop_iterate_reverse<narrowOop>(obj, closure, klute);
 }
 
 inline void PSPromotionManager::push_contents(oop obj) {
