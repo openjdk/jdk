@@ -90,7 +90,6 @@ void InstanceStackChunkKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* c
   oop_oop_iterate_lockstack<T>(chunk, closure, mr);
 }
 
-// Klute variants don't do anything else for now. Just exist to make Dispatch happy.
 template <typename T, class OopClosureType>
 void InstanceStackChunkKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
   InstanceStackChunkKlass* const k = InstanceStackChunkKlass::cast_exact(obj->klass());
