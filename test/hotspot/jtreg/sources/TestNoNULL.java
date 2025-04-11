@@ -74,8 +74,7 @@ public class TestNoNULL {
     private static void initializeExcludedPaths(Path rootDir) {
         List<String> sourceExclusions = List.of(
                 "src/hotspot/share/prims/jvmti.xml",
-                "src/hotspot/share/prims/jvmti.xsl",
-                "src/hotspot/share/utilities/globalDefinitions_visCPP.hpp"
+                "src/hotspot/share/prims/jvmti.xsl"
         );
 
         List<String> testExclusions = List.of(
