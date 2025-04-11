@@ -77,6 +77,7 @@ public:
   int _num_method_cp_entries;
   int _num_method_cp_entries_archived;
   int _num_method_cp_entries_reverted;
+  int _num_dynamic_proxy_classes;
 
 public:
   enum { RO = 0, RW = 1 };
@@ -96,6 +97,7 @@ public:
     _num_method_cp_entries          = 0;
     _num_method_cp_entries_archived = 0;
     _num_method_cp_entries_reverted = 0;
+    _num_dynamic_proxy_classes      = 0;
   };
 
   CompactHashtableStats* symbol_stats() { return &_symbol_stats; }
@@ -145,6 +147,11 @@ public:
     _num_method_cp_entries_archived += archived ? 1 : 0;
     _num_method_cp_entries_reverted += reverted ? 1 : 0;
   }
+
+  void record_dynamic_proxy_class() {
+    _num_dynamic_proxy_classes ++;
+  }
+
 
   void print_stats(int ro_all, int rw_all);
 

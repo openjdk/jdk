@@ -68,6 +68,7 @@ class InstanceKlassFlags {
     status(has_been_redefined                , 1 << 2) /* class has been redefined */ \
     status(is_scratch_class                  , 1 << 3) /* class is the redefined scratch class */ \
     status(is_marked_dependent               , 1 << 4) /* class is the redefined scratch class */ \
+    status(has_init_deps_processed           , 1 << 5) /* all init dependencies are processed */ \
     /* end of list */
 
 #define IK_STATUS_ENUM_NAME(name, value)    _misc_##name = value,
