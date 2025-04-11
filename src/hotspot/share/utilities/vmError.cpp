@@ -524,7 +524,7 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                  VM_Version::vm_info_string(),
                  TieredCompilation ? ", tiered" : "",
 #if INCLUDE_JVMCI
-                 EnableJVMCI ? ", jvmci" : "",
+                 EnableJVMCI ? ", jvmci module" : "",
                  UseJVMCICompiler ? ", jvmci compiler" : "",
 #else
                  "", "",
