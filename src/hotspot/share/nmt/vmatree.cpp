@@ -30,8 +30,8 @@
 
 const VMATree::RegionData VMATree::empty_regiondata{NativeCallStackStorage::StackIndex{}, mtNone};
 
-const char* VMATree::statetype_strings[3] = {
-  "reserved", "committed", "released",
+const char* VMATree::statetype_strings[4] = {
+  "released","reserved", "only-committed", "committed",
 };
 
 VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
@@ -148,6 +148,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       }
       B_needs_insert = false;
     }
+    return true;
   });
 
   // Insert B node if needed
@@ -161,7 +162,6 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   // a) Delete all nodes between (A, B]. Including B in the case of a noop.
   // b) Perform summary accounting
   SummaryDiff diff;
-
   if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found) {
     // We must have smashed a hole in an existing region (or replaced it entirely).
     // LEQ_A < A < B <= C
@@ -210,8 +210,8 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   if (state == StateType::Reserved) {
     rescom.reserve += B - A;
   } else if (state == StateType::Committed) {
-    rescom.commit += B - A;
     rescom.reserve += B - A;
+    rescom.commit += B - A;
   }
   return diff;
 }
@@ -221,6 +221,7 @@ void VMATree::print_on(outputStream* out) {
   visit_in_order([&](TreapNode* current) {
     out->print("%zu (%s) - %s - ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
                statetype_to_string(out_state(current).type()));
+    return true;
   });
   out->cr();
 }
