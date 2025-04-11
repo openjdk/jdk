@@ -346,8 +346,8 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
         }
 
         // Compute the distance from vp1 to vp1_next + size, to get a size that would include vp1_next.
-        NoOverflowInt new_size1 = NoOverflowInt(vp1_next->con()) + NoOverflowInt(vp1_next->size()) - NoOverflowInt(vp1->con());
-        NoOverflowInt new_size2 = NoOverflowInt(vp2_next->con()) + NoOverflowInt(vp2_next->size()) - NoOverflowInt(vp2->con());
+        NoOverflowInt new_size1 = NoOverflowInt(vp1_next->con()) + NoOverflowInt(size1_next) - NoOverflowInt(vp1->con());
+        NoOverflowInt new_size2 = NoOverflowInt(vp2_next->con()) + NoOverflowInt(size2_next) - NoOverflowInt(vp2->con());
         if (new_size1.is_NaN() || new_size2.is_NaN()) { break; /* overflow -> new group */ }
 
         // The "next" VPointer indeed belong to the group.
