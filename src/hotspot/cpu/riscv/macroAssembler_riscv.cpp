@@ -1328,9 +1328,13 @@ void MacroAssembler::cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Regi
 }
 
 // When cmp1 <= cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
-// Clarification:
-//   java code      :  cmp2 < cmp1 ? dst : src
-//   transformed to :  CMove dst, (cmp1 le cmp2), dst, src
+// Clarification
+//   scenario 1:
+//     java code      :  cmp2 < cmp1 ? dst : src
+//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
+//   scenario 2:
+//     java code      :  cmp1 > cmp2 ? dst : src
+//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
 void MacroAssembler::cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
@@ -1355,18 +1359,14 @@ void MacroAssembler::cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Regi
   bind(no_set);
 }
 
-// Clarification:
-//   java code      :  cmp1 > cmp2 ? dst : src
-//   transformed to :  CMove dst, (cmp1 le cmp2), dst, src
-// So, cmov_le_fp is invoked instead this method.
-void MacroAssembler::cmov_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
-  Unimplemented();
-}
-
 // When cmp1 < cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
-// Clarification:
-//   java code      :  cmp2 <= cmp1 ? dst : src
-//   transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
+// Clarification
+//   scenario 1:
+//     java code      :  cmp2 <= cmp1 ? dst : src
+//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
+//   scenario 2:
+//     java code      :  cmp1 >= cmp2 ? dst : src
+//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
 void MacroAssembler::cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
   if (UseZicond) {
     if (is_single) {
@@ -1389,13 +1389,6 @@ void MacroAssembler::cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Regi
   }
   mv(dst, src);
   bind(no_set);
-}
-
-// Clarification:
-//   java code      :  cmp2 <= cmp1 ? dst : src
-//   transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
-void MacroAssembler::cmov_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
-  Unimplemented();
 }
 
 // Float compare branch instructions
