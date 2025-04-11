@@ -862,8 +862,10 @@ inline void Assembler::lvsl(  VectorRegister d, Register s1, Register s2) { emit
 inline void Assembler::lvsr(  VectorRegister d, Register s1, Register s2) { emit_int32( LVSR_OPCODE   | vrt(d) | ra0mem(s1) | rb(s2)); }
 
 // Vector-Scalar (VSX) instructions.
-inline void Assembler::lxv(     VectorSRegister d, int ui16, Register a)     { assert(is_aligned(ui16, 16), "displacement must be a multiple of 16"); emit_int32( LXV_OPCODE  | vsrt_dq(d) | ra0mem(a) | uimm(ui16, 16)); }
-inline void Assembler::stxv(    VectorSRegister d, int ui16, Register a)     { assert(is_aligned(ui16, 16), "displacement must be a multiple of 16"); emit_int32( STXV_OPCODE  | vsrs_dq(d) | ra0mem(a) | uimm(ui16, 16)); }
+inline void Assembler::lxv(     VectorSRegister d, int si16, Register a)     { assert(is_aligned(si16, 16), "displacement must be a multiple of 16"); emit_int32( LXV_OPCODE   | vsrt_dq(d) | ra0mem(a) | simm(si16, 16)); }
+inline void Assembler::stxv(    VectorSRegister d, int si16, Register a)     { assert(is_aligned(si16, 16), "displacement must be a multiple of 16"); emit_int32( STXV_OPCODE  | vsrs_dq(d) | ra0mem(a) | simm(si16, 16)); }
+inline void Assembler::lxvp(    VectorSRegister d, int si16, Register a)     { assert(is_aligned(si16, 16), "displacement must be a multiple of 16"); emit_int32( LXVP_OPCODE  | vsrtp(d)   | ra0mem(a) | simm(si16, 16)); }
+inline void Assembler::stxvp(   VectorSRegister d, int si16, Register a)     { assert(is_aligned(si16, 16), "displacement must be a multiple of 16"); emit_int32( STXVP_OPCODE | vsrsp(d)   | ra0mem(a) | simm(si16, 16)); }
 inline void Assembler::lxvl(    VectorSRegister d, Register s1, Register b)  { emit_int32( LXVL_OPCODE    | vsrt(d) | ra0mem(s1) | rb(b)); }
 inline void Assembler::stxvl(   VectorSRegister d, Register s1, Register b)  { emit_int32( STXVL_OPCODE   | vsrt(d) | ra0mem(s1) | rb(b)); }
 inline void Assembler::lxvd2x(  VectorSRegister d, Register s1)              { emit_int32( LXVD2X_OPCODE  | vsrt(d) | ra(0) | rb(s1)); }
