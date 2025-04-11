@@ -2247,3 +2247,28 @@ JNIEXPORT void JNICALL Java_sun_awt_X11InputMethod_setStatusAreaVisible
     }
     return;
 }
+
+JNIEXPORT void JNICALL Java_sun_awt_X11_XInputMethod_moveCandidateWindow
+  (JNIEnv *env, jobject this, jint x, jint y)
+{
+    X11InputMethodData *pX11IMData;
+    XVaNestedList preedit_attr;
+    XPoint nspot;
+
+    AWT_LOCK();
+
+    pX11IMData = getX11InputMethodData(env, this);
+    if ((pX11IMData == NULL) || (pX11IMData->current_ic == NULL)) {
+        AWT_UNLOCK();
+        return;
+    }
+
+    nspot.x = x;
+    nspot.y = y;
+    preedit_attr = XVaCreateNestedList(0, XNSpotLocation, &nspot, NULL);
+    XSetICValues(pX11IMData->current_ic, XNPreeditAttributes, preedit_attr, NULL);
+
+    XFree(preedit_attr);
+
+    AWT_UNLOCK();
+}
