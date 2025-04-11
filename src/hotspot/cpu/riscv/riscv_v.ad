@@ -1152,34 +1152,34 @@ instruct vand_notL(vReg dst, vReg src2, vReg src1, immL_M1 m1) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vand_notI_masked(vReg dst, vReg src2, vReg src1, immI_M1 m1, vRegMask_V0 v0) %{
+instruct vand_notI_masked(vReg dst_src1, vReg src2, immI_M1 m1, vRegMask_V0 v0) %{
   predicate(UseZvbb);
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT);
-  match(Set dst (AndV (Binary src2 (XorV (Binary src1 (Replicate m1)) v0)) v0));
-  format %{ "vand_notI_masked $dst, $src2, $src1, $v0" %}
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (Replicate m1))) v0));
+  format %{ "vand_notI_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vandn_vv(as_VectorRegister($dst$$reg),
+    __ vandn_vv(as_VectorRegister($dst_src1$$reg),
+                as_VectorRegister($dst_src1$$reg),
                 as_VectorRegister($src2$$reg),
-                as_VectorRegister($src1$$reg),
                 Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vand_notL_masked(vReg dst, vReg src2, vReg src1, immL_M1 m1, vRegMask_V0 v0) %{
+instruct vand_notL_masked(vReg dst_src1, vReg src2, immL_M1 m1, vRegMask_V0 v0) %{
   predicate(UseZvbb);
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst (AndV (Binary src2 (XorV (Binary src1 (Replicate m1)) v0)) v0));
-  format %{ "vand_notL_masked $dst, $src2, $src1, $v0" %}
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (Replicate m1))) v0));
+  format %{ "vand_notL_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
     __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
-    __ vandn_vv(as_VectorRegister($dst$$reg),
+    __ vandn_vv(as_VectorRegister($dst_src1$$reg),
+                as_VectorRegister($dst_src1$$reg),
                 as_VectorRegister($src2$$reg),
-                as_VectorRegister($src1$$reg),
                 Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
