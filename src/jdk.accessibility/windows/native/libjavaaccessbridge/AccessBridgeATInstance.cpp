@@ -158,7 +158,7 @@ DWORD JavaBridgeThreadId = 0;
 static THREAD_PROC JavaBridgeThread(LPVOID param1)
 {
     MSG msg;
-    DWORD rc = 0;
+ // DWORD rc = 0;
     while (GetMessage(&msg,        // message structure
                       NULL,                  // handle of window receiving the message
                       0,                  // lowest message to examine
@@ -172,7 +172,8 @@ static THREAD_PROC JavaBridgeThread(LPVOID param1)
                     toCopy.cbData = event_struct->bufsize;
                     toCopy.lpData = event_struct->buffer;
 
-                    LRESULT ret = SendMessage((HWND)ABLongToHandle(event_struct->winAccessBridgeWindow), WM_COPYDATA,
+                 // LRESULT ret =
+                                  SendMessage((HWND)ABLongToHandle(event_struct->winAccessBridgeWindow), WM_COPYDATA,
                                               (WPARAM)event_struct->ourAccessBridgeWindow, (LPARAM) &toCopy);
                     delete event_struct->buffer;
                     delete event_struct;
