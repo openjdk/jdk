@@ -283,6 +283,46 @@ public class SourceLauncherTest extends TestRunner {
         checkNull("exception", r.exception);
     }
 
+
+    @Test
+    public void testMainNoParams(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            "package hello;\n" +
+            "import java.util.Arrays;\n" +
+            "class World {\n" +
+            "    public static void main(String... args) {\n" +
+            "        System.out.println(\"Hello World! \" + Arrays.toString(args));\n" +
+            "    }\n" +
+            "}");
+        testSuccess(base.resolve("hello").resolve("World.java"), "Hello World! [1, 2, 3]\n");
+    }
+
+    @Test
+    public void testMainNotPublic(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            "package hello;\n" +
+            "import java.util.Arrays;\n" +
+            "class World {\n" +
+            "    static void main(String... args) {\n" +
+            "        System.out.println(\"Hello World! \" + Arrays.toString(args));\n" +
+            "    }\n" +
+            "}");
+        testSuccess(base.resolve("hello").resolve("World.java"), "Hello World! [1, 2, 3]\n");
+    }
+
+    @Test
+    public void testMainNotStatic(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            "package hello;\n" +
+            "import java.util.Arrays;\n" +
+            "class World {\n" +
+            "    public void main(String... args) {\n" +
+            "        System.out.println(\"Hello World! \" + Arrays.toString(args));\n" +
+            "    }\n" +
+            "}");
+        testSuccess(base.resolve("hello").resolve("World.java"), "Hello World! [1, 2, 3]\n");
+    }
+
     /*
      * Negative tests: such as cannot find or execute main method.
      */
@@ -302,7 +342,7 @@ public class SourceLauncherTest extends TestRunner {
             file + ":1: error: illegal character: '#'\n" +
             "#!/usr/bin/java --source " + thisVersion + "\n" +
             "^\n" +
-            file + ":1: error: class, interface, enum, or record expected\n" +
+            file + ":1: error: class, interface, annotation type, enum, record, method or field expected\n" +
             "#!/usr/bin/java --source " + thisVersion + "\n" +
             "  ^\n" +
             "2 errors\n",
@@ -516,7 +556,7 @@ public class SourceLauncherTest extends TestRunner {
             file + ":1: error: illegal character: '#'\n" +
             "#/usr/bin/java --source " + thisVersion + "\n" +
             "^\n" +
-            file + ":1: error: class, interface, enum, or record expected\n" +
+            file + ":1: error: class, interface, annotation type, enum, record, method or field expected\n" +
             "#/usr/bin/java --source " + thisVersion + "\n" +
             "  ^\n" +
             "2 errors\n",
@@ -567,25 +607,9 @@ public class SourceLauncherTest extends TestRunner {
     @Test
     public void testMainBadParams(Path base) throws IOException {
         tb.writeJavaFiles(base,
-                "class BadParams { public static void main() { } }");
+                "class BadParams { public static void main(int n) { } }");
         testError(base.resolve("BadParams.java"), "",
                 "error: can't find main(String[]) method in class: BadParams");
-    }
-
-    @Test
-    public void testMainNotPublic(Path base) throws IOException {
-        tb.writeJavaFiles(base,
-                "class NotPublic { static void main(String... args) { } }");
-        testError(base.resolve("NotPublic.java"), "",
-                "error: can't find main(String[]) method in class: NotPublic");
-    }
-
-    @Test
-    public void testMainNotStatic(Path base) throws IOException {
-        tb.writeJavaFiles(base,
-                "class NotStatic { public void main(String... args) { } }");
-        testError(base.resolve("NotStatic.java"), "",
-                "error: can't find main(String[]) method in class: NotStatic");
     }
 
     @Test

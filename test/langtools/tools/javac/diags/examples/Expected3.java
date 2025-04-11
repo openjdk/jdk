@@ -22,6 +22,7 @@
  */
 
 // key: compiler.err.expected3
-// options: --release 15
 
-int Expected3;
+public class Expected3 {
+    public void test(int i {}
+}

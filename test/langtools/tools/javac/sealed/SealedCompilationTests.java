@@ -781,7 +781,7 @@ class SealedCompilationTests extends CompilationTestCase {
             non/**/sealed class Sub extends C {}
             """
             )) {
-            assertFail("compiler.err.expected4", s);
+            assertFail("compiler.err.class.method.or.field.expected", s);
         }
     }
 
@@ -985,7 +985,7 @@ class SealedCompilationTests extends CompilationTestCase {
             non-sealed interface I extends A {}
             """
         )) {
-            assertFail("compiler.err.expected4", s);
+            assertFail("compiler.err.class.method.or.field.expected", s);
         }
     }
 
