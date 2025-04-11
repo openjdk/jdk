@@ -67,7 +67,12 @@ inline VectorSRegister as_VectorSRegister() {
 
 inline bool is_concrete() {
   assert(is_reg(), "must be");
-  return is_even(value());
+  if (is_Register() || is_FloatRegister()) return is_even(value());
+  if (is_VectorSRegister()) {
+    int base = value() - ConcreteRegisterImpl::max_fpr;
+    return (base & 3) == 0;
+  }
+  return true;
 }
 
 #endif // CPU_PPC_VMREG_PPC_HPP

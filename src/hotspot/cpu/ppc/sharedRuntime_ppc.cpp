@@ -346,40 +346,48 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
     }
 
     if (generate_oop_map) {
-      map->set_callee_saved(VMRegImpl::stack2reg(offset>>2),
+      map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2),
                             RegisterSaver_LiveRegs[i].vmreg);
-      map->set_callee_saved(VMRegImpl::stack2reg((offset + half_reg_size)>>2),
+      map->set_callee_saved(VMRegImpl::stack2reg((offset + half_reg_size) >> 2),
                             RegisterSaver_LiveRegs[i].vmreg->next());
     }
     offset += reg_size;
   }
 
+  // Note that generate_oop_map in the following loops is only used for the
+  // polling_page_vectors_safepoint_handler_blob.
+  // The order in which the vector contents are stored depends on Endianess and
+  // the utilized instructions (PowerArchitecturePPC64).
   assert(is_aligned(offset, StackAlignmentInBytes), "should be");
   if (PowerArchitecturePPC64 >= 10) {
     for (int i = 0; i < vsregstosave_num; i += 2) {
-      int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
+      int reg_num = RegisterSaver_LiveVSRegs[i].reg_num;
       assert(RegisterSaver_LiveVSRegs[i + 1].reg_num == reg_num + 1, "or use other instructions!");
 
       __ stxvp(as_VectorSRegister(reg_num), offset, R1_SP);
 
       if (generate_oop_map) {
-        map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2),
-                              RegisterSaver_LiveVSRegs[i].vmreg);
-        map->set_callee_saved(VMRegImpl::stack2reg((offset + vs_reg_size) >> 2),
-                              RegisterSaver_LiveVSRegs[i + 1].vmreg);
+        VMReg vsr = RegisterSaver_LiveVSRegs[i].vmreg;
+        for (int j = 0; j < 8; j++) {
+          map->set_callee_saved(VMRegImpl::stack2reg((offset >> 2) + j), vsr);
+          vsr = vsr->next();
+        }
       }
       offset += (2 * vs_reg_size);
     }
   } else {
     for (int i = 0; i < vsregstosave_num; i++) {
-      int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
+      int reg_num = RegisterSaver_LiveVSRegs[i].reg_num;
 
       __ li(R31, offset);
       __ stxvd2x(as_VectorSRegister(reg_num), R31, R1_SP);
 
       if (generate_oop_map) {
-        map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2),
-                              RegisterSaver_LiveVSRegs[i].vmreg);
+        VMReg vsr = RegisterSaver_LiveVSRegs[i].vmreg;
+        for (int j = 0; j < 4; j++) {
+          map->set_callee_saved(VMRegImpl::stack2reg((offset >> 2) + j), vsr);
+          vsr = vsr->next();
+        }
       }
       offset += vs_reg_size;
     }
