@@ -80,7 +80,7 @@ class UnixDomainSockets {
     }
 
     static FileDescriptor socket() throws IOException {
-        return IOUtil.newFD(socket0());
+        return NIOUtil.newFD(socket0());
     }
 
     static void bind(FileDescriptor fd, Path addr) throws IOException {
@@ -161,7 +161,7 @@ class UnixDomainSockets {
 
     static {
         // Load all required native libs
-        IOUtil.load();
+        NIOUtil.load();
         supported = init();
     }
 }

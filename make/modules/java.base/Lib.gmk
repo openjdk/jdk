@@ -75,6 +75,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
     NAME := nio, \
     OPTIMIZATION := HIGH, \
     EXTRA_HEADER_DIRS := \
+        libjava/nio/ch \
         libnio/ch \
         libnio/fs \
         libjvm, \
@@ -86,7 +87,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
     LIBS_macosx := \
         -framework CoreFoundation \
         -framework CoreServices, \
-    LIBS_windows := advapi32.lib mswsock.lib ws2_32.lib, \
+    LIBS_windows := advapi32.lib ws2_32.lib, \
 ))
 
 TARGETS += $(BUILD_LIBNIO)
