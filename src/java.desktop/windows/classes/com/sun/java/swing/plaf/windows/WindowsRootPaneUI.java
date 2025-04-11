@@ -70,7 +70,7 @@ import sun.swing.MnemonicHandler;
  * @author Mark Davidson
  * @since 1.4
  */
-public class WindowsRootPaneUI extends BasicRootPaneUI {
+public final class WindowsRootPaneUI extends BasicRootPaneUI {
 
     private static final WindowsRootPaneUI windowsRootPaneUI = new WindowsRootPaneUI();
     static final AltProcessor altProcessor = new AltProcessor();
@@ -79,7 +79,7 @@ public class WindowsRootPaneUI extends BasicRootPaneUI {
         return windowsRootPaneUI;
     }
 
-    static class AltProcessor implements KeyEventPostProcessor {
+    static final class AltProcessor implements KeyEventPostProcessor {
         static boolean altKeyPressed = false;
         static boolean menuCanceledOnPress = false;
         static JRootPane root = null;
@@ -166,6 +166,7 @@ public class WindowsRootPaneUI extends BasicRootPaneUI {
 
         }
 
+        @Override
         public boolean postProcessKeyEvent(KeyEvent ev) {
             if (ev.isConsumed()) {
                 if (ev.getKeyCode() != KeyEvent.VK_ALT) {

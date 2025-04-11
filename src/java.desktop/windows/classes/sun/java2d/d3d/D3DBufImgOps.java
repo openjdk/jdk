@@ -37,7 +37,7 @@ import sun.java2d.loops.CompositeType;
 import sun.java2d.pipe.BufferedBufImgOps;
 import static sun.java2d.d3d.D3DContext.D3DContextCaps.*;
 
-class D3DBufImgOps extends BufferedBufImgOps {
+final class D3DBufImgOps extends BufferedBufImgOps {
 
     /**
      * This method is called from D3DDrawImage.transformImage() only.  It
