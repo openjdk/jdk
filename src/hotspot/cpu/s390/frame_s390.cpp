@@ -185,7 +185,8 @@ bool frame::is_interpreted_frame() const {
 
 void frame::interpreter_frame_set_locals(intptr_t* locs)  {
   assert(is_interpreted_frame(), "interpreted frame expected");
-  ijava_state_unchecked()->locals = (uint64_t)locs;
+  // set relativized locals
+  *addr_at(_z_ijava_idx(locals)) = (intptr_t) (locs - fp());
 }
 
 // sender_sp
@@ -340,7 +341,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   if (MetaspaceObj::is_valid(cp) == false) return false;
 
   // validate locals
-  address locals = (address)(ijava_state_unchecked()->locals);
+  address locals = (address)interpreter_frame_locals();
   return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 
