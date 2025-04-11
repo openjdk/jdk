@@ -236,7 +236,7 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
     will be ignored, and these expandable substrings will be
     replaced by values calculated by the app launcher.
 
-    Prefix the dollar sign character with the backslash character (\)
+    Prefix the dollar sign character with the backslash character (\\)
     to prevent substring expansion.
 
 <a id="option-java-options">`--java-options` *options*</a>
