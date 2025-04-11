@@ -500,7 +500,7 @@ public class Gen extends JCTree.Visitor {
             c.members().enter(clinit);
             List<JCStatement> clinitStats = clinitCode.toList();
             JCBlock block = make.at(clinitStats.head.pos()).Block(0, clinitStats);
-            block.endpos = TreeInfo.endPos(clinitStats.last());
+            block.bracePos = TreeInfo.endPos(endPosTable, clinitStats.last());
             methodDefs.append(make.MethodDef(clinit, block));
 
             if (!clinitTAs.isEmpty())
@@ -553,8 +553,8 @@ public class Gen extends JCTree.Visitor {
             // Find the super() invocation and append the given initializer code.
             TreeInfo.mapSuperCalls(md.body, supercall -> make.Block(0, initCode.prepend(supercall)));
 
-            if (md.body.endpos == Position.NOPOS)
-                md.body.endpos = TreeInfo.endPos(md.body.stats.last());
+            if (md.body.bracePos == Position.NOPOS)
+                md.body.bracePos = TreeInfo.endPos(endPosTable, md.body.stats.last());
 
             md.sym.appendUniqueTypeAttributes(initTAs);
         }
@@ -961,7 +961,7 @@ public class Gen extends JCTree.Visitor {
                 // If last statement could complete normally, insert a
                 // return at the end.
                 if (code.isAlive()) {
-                    code.statBegin(TreeInfo.endPos(tree.body));
+                    code.statBegin(TreeInfo.endPos(endPosTable, tree.body));
                     if (env.enclMethod == null ||
                         env.enclMethod.sym.type.getReturnType().hasTag(VOID)) {
                         code.emitop0(return_);
@@ -1015,7 +1015,7 @@ public class Gen extends JCTree.Visitor {
                                         varDebugInfo,
                                         stackMap,
                                         debugCode,
-                                        genCrt ? new CRTable(tree, env.toplevel.endPositions)
+                                        genCrt ? new CRTable(tree, endPosTable)
                                                : null,
                                         syms,
                                         types,
@@ -1121,7 +1121,7 @@ public class Gen extends JCTree.Visitor {
         genStats(tree.stats, localEnv);
         // End the scope of all block-local variables in variable info.
         if (!env.tree.hasTag(METHODDEF)) {
-            code.statBegin(tree.endpos);
+            code.statBegin(tree.bracePos);
             code.endScopes(limit);
             code.pendingStatPos = Position.NOPOS;
         }
@@ -1450,7 +1450,7 @@ public class Gen extends JCTree.Visitor {
 
             if (swtch instanceof JCSwitchExpression) {
                  // Emit line position for the end of a switch expression
-                 code.statBegin(TreeInfo.endPos(swtch));
+                 code.statBegin(TreeInfo.endPos(endPosTable, swtch));
             }
         }
         code.endScopes(limit);
@@ -1559,9 +1559,9 @@ public class Gen extends JCTree.Visitor {
             genStat(body, env, CRT_BLOCK);
             int endpc = code.curCP();
             List<Integer> gaps = env.info.gaps.toList();
-            code.statBegin(TreeInfo.endPos(body));
+            code.statBegin(TreeInfo.endPos(endPosTable, body));
             genFinalizer(env);
-            code.statBegin(TreeInfo.endPos(env.tree));
+            code.statBegin(TreeInfo.endPos(endPosTable, env.tree));
             Chain exitChain;
             boolean actualTry = env.tree.hasTag(TRY);
             if (startpc == endpc && actualTry) {
@@ -1580,7 +1580,7 @@ public class Gen extends JCTree.Visitor {
                 genCatch(l.head, env, startpc, endpc, gaps);
                 genFinalizer(env);
                 if (hasFinalizer || l.tail.nonEmpty()) {
-                    code.statBegin(TreeInfo.endPos(env.tree));
+                    code.statBegin(TreeInfo.endPos(endPosTable, env.tree));
                     exitChain = Code.mergeChains(exitChain,
                                                  code.branch(goto_));
                 }
@@ -1608,14 +1608,14 @@ public class Gen extends JCTree.Visitor {
                                   catchallpc, 0);
                     startseg = env.info.gaps.next().intValue();
                 }
-                code.statBegin(TreeInfo.finalizerPos(env.tree, PosKind.FIRST_STAT_POS));
+                code.statBegin(TreeInfo.finalizerPos(endPosTable, env.tree, PosKind.FIRST_STAT_POS));
                 code.markStatBegin();
 
                 Item excVar = makeTemp(syms.throwableType);
                 excVar.store();
                 genFinalizer(env);
                 code.resolvePending();
-                code.statBegin(TreeInfo.finalizerPos(env.tree, PosKind.END_POS));
+                code.statBegin(TreeInfo.finalizerPos(endPosTable, env.tree, PosKind.END_POS));
                 code.markStatBegin();
 
                 excVar.load();
@@ -1631,7 +1631,7 @@ public class Gen extends JCTree.Visitor {
                     code.resolve(env.info.cont);
 
                     // Mark statement line number
-                    code.statBegin(TreeInfo.finalizerPos(env.tree, PosKind.FIRST_STAT_POS));
+                    code.statBegin(TreeInfo.finalizerPos(endPosTable, env.tree, PosKind.FIRST_STAT_POS));
                     code.markStatBegin();
 
                     // Save return address.
@@ -1718,7 +1718,7 @@ public class Gen extends JCTree.Visitor {
             code.statBegin(TreeInfo.firstStatPos(tree.body));
             genStat(tree.body, env, CRT_BLOCK);
             code.endScopes(limit);
-            code.statBegin(TreeInfo.endPos(tree.body));
+            code.statBegin(TreeInfo.endPos(endPosTable, tree.body));
         }
         // where
         List<Pair<List<Attribute.TypeCompound>, JCExpression>> catchTypesWithAnnotations(JCCatch tree) {

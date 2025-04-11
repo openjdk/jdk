@@ -141,7 +141,6 @@ class ReplParser extends JavacParser {
             storeEnd(toplevel, S.prevToken().endPos);
         }
         toplevel.lineMap = S.getLineMap();
-        this.endPosTable.setParser(null); // remove reference to parser
         toplevel.endPositions = this.endPosTable;
         return toplevel;
     }

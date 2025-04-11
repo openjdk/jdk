@@ -1608,7 +1608,7 @@ public class Lower extends TreeTranslator {
 
         //create (semi-) finally block that will be copied into the main try body:
         int oldPos = make.pos;
-        make.at(TreeInfo.endPos(block));
+        make.at(TreeInfo.endPos(endPosTable, block));
 
         // if (#resource != null) { #resource.close(); }
         JCStatement bodyCloseStatement = makeResourceCloseInvocation(resourceUse);
@@ -2060,7 +2060,7 @@ public class Lower extends TreeTranslator {
         } else {
             make_at(tree.pos());
             T result = super.translate(tree);
-            if (endPosTable != null && result != tree) {
+            if (endPosTable != null && result != null && result != tree) {
                 endPosTable.replaceTree(tree, result);
             }
             return result;
@@ -3697,7 +3697,7 @@ public class Lower extends TreeTranslator {
                                                   vardefinit).setType(tree.var.type);
             indexDef.sym = tree.var.sym;
             JCBlock body = make.Block(0, List.of(indexDef, tree.body));
-            body.endpos = TreeInfo.endPos(tree.body);
+            body.bracePos = TreeInfo.endPos(endPosTable, tree.body);
             result = translate(make.
                 ForLoop(List.of(init),
                         cond,
@@ -3855,7 +3855,7 @@ public class Lower extends TreeTranslator {
 
         for (JCCase c : convertedCases) {
             if (c.caseKind == JCCase.RULE && c.completesNormally) {
-                JCBreak b = make.at(TreeInfo.endPos(c.stats.last())).Break(null);
+                JCBreak b = make.at(TreeInfo.endPos(endPosTable, c.stats.last())).Break(null);
                 b.target = tree;
                 c.stats = c.stats.append(b);
             }
@@ -4158,7 +4158,7 @@ public class Lower extends TreeTranslator {
                 stmtList.append(switch2);
 
                 JCBlock res = make.Block(0L, stmtList.toList());
-                res.endpos = TreeInfo.endPos(tree);
+                res.bracePos = TreeInfo.endPos(endPosTable, tree);
                 return res;
             } else {
                 JCSwitchExpression switch2 = make.SwitchExpression(make.Ident(dollar_tmp), lb.toList());
@@ -4402,12 +4402,14 @@ public class Lower extends TreeTranslator {
     public JCMethodDecl translateMethod(Env<AttrContext> env, JCMethodDecl methodDecl, TreeMaker make) {
         try {
             this.attrEnv = env;
+            this.endPosTable = env.toplevel.endPositions;
             this.make = make;
             this.currentClass = methodDecl.sym.enclClass();
             proxies = new HashMap<>();
             return translate(methodDecl);
         } finally {
             this.attrEnv = null;
+            this.endPosTable = null;
             this.make = null;
             this.currentClass = null;
             // the two fields below are set when visiting the method

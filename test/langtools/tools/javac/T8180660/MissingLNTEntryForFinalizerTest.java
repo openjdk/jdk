@@ -151,7 +151,7 @@ public class MissingLNTEntryForFinalizerTest {
             com.sun.tools.javac.code.Type result = super.attribStat(tree, env);
             if (tree.hasTag(TRY)) {
                 JCTry tryTree = (JCTry)tree;
-                lineNumber = env.toplevel.lineMap.getLineNumber(tryTree.finalizer.endpos);
+                lineNumber = env.toplevel.lineMap.getLineNumber(tryTree.finalizer.bracePos);
             }
             return result;
         }
