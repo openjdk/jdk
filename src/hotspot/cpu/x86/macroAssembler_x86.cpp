@@ -2989,27 +2989,21 @@ void MacroAssembler::push_IU_state() {
 void MacroAssembler::push_cont_fastpath() {
   if (!Continuations::enabled()) return;
 
-  Register rthread = r15_thread;
-  Register rrealsp = rsp;
-
-  Label done;
-  cmpptr(rrealsp, Address(rthread, JavaThread::cont_fastpath_offset()));
-  jccb(Assembler::belowEqual, done);
-  movptr(Address(rthread, JavaThread::cont_fastpath_offset()), rrealsp);
-  bind(done);
+  Label L_done;
+  cmpptr(rsp, Address(r15_thread, JavaThread::cont_fastpath_offset()));
+  jccb(Assembler::belowEqual, L_done);
+  movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rsp);
+  bind(L_done);
 }
 
 void MacroAssembler::pop_cont_fastpath() {
   if (!Continuations::enabled()) return;
 
-  Register rthread = r15_thread;
-  Register rrealsp = rsp;
-
-  Label done;
-  cmpptr(rrealsp, Address(rthread, JavaThread::cont_fastpath_offset()));
-  jccb(Assembler::below, done);
-  movptr(Address(rthread, JavaThread::cont_fastpath_offset()), 0);
-  bind(done);
+  Label L_done;
+  cmpptr(rsp, Address(r15_thread, JavaThread::cont_fastpath_offset()));
+  jccb(Assembler::below, L_done);
+  movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
+  bind(L_done);
 }
 
 void MacroAssembler::inc_held_monitor_count() {
