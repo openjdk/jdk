@@ -26,12 +26,12 @@
 #include "nmt/memTracker.hpp"
 #include "unittest.hpp"
 
-class NMTMemoryFileTrackerTest : public testing::Test {
+class NMTNativeMemoryFileTrackerTest : public testing::Test {
 public:
   size_t sz(int x) { return (size_t) x; }
   void basics() {
-    MemoryFileTracker tracker(false);
-    MemoryFileTracker::MemoryFile* file = tracker.make_file("test");
+    NativeMemoryFileTracker tracker(false);
+    NativeMemoryFileTracker::MemoryFile* file = tracker.make_file("test");
     tracker.allocate_memory(file, 0, 100, CALLER_PC, mtTest);
     EXPECT_EQ(file->_summary.by_tag(mtTest)->committed(), sz(100));
     tracker.allocate_memory(file, 100, 100, CALLER_PC, mtTest);
@@ -47,6 +47,6 @@ public:
   };
 };
 
-TEST_VM_F(NMTMemoryFileTrackerTest, Basics) {
+TEST_VM_F(NMTNativeMemoryFileTrackerTest, Basics) {
   this->basics();
 }

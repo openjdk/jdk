@@ -28,12 +28,12 @@
 #include "gc/z/zGlobals.hpp"
 #include "memory/allStatic.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/memoryFileTracker.hpp"
+#include "nmt/nativeMemoryFileTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ZNMT : public AllStatic {
 private:
-  static MemoryFileTracker::MemoryFile* _device;
+  static NativeMemoryFileTracker::MemoryFile* _device;
 
 public:
   static void initialize();

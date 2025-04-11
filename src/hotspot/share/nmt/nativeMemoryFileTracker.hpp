@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_NMT_MEMORYFILETRACKER_HPP
-#define SHARE_NMT_MEMORYFILETRACKER_HPP
+#ifndef SHARE_NMT_NATIVEMEMORYFILETRACKER_HPP
+#define SHARE_NMT_NATIVEMEMORYFILETRACKER_HPP
 
 #include "memory/allocation.hpp"
 #include "nmt/nmtCommon.hpp"
@@ -40,7 +40,7 @@
 // A typical example of such a file is a memory mapped file.
 // All memory is accounted as committed, there is no reserved memory.
 // Any reserved memory is expected to exist in the VirtualMemoryTracker.
-class MemoryFileTracker {
+class NativeMemoryFileTracker {
   friend class NMTMemoryFileTrackerTest;
 
   // Provide caching of stacks.
@@ -48,8 +48,8 @@ class MemoryFileTracker {
 
 public:
   class MemoryFile : public CHeapObj<mtNMT> {
-    friend MemoryFileTracker;
-    friend class NMTMemoryFileTrackerTest;
+    friend NativeMemoryFileTracker;
+    friend class NMTNativeMemoryFileTrackerTest;
     const char* _descriptive_name;
     VirtualMemorySnapshot _summary;
     VMATree _tree;
@@ -64,7 +64,7 @@ private:
   GrowableArrayCHeap<MemoryFile*, mtNMT> _files;
 
 public:
-  MemoryFileTracker(bool is_detailed_mode);
+  NativeMemoryFileTracker(bool is_detailed_mode);
 
   void allocate_memory(MemoryFile* file, size_t offset, size_t size, const NativeCallStack& stack,
                        MemTag mem_tag);
@@ -91,7 +91,7 @@ public:
   const GrowableArrayCHeap<MemoryFile*, mtNMT>& files();
 
   class Instance : public AllStatic {
-    static MemoryFileTracker* _tracker;
+    static NativeMemoryFileTracker* _tracker;
 
   public:
 
@@ -118,4 +118,4 @@ public:
   };
 };
 
-#endif // SHARE_NMT_MEMORYFILETRACKER_HPP
+#endif // SHARE_NMT_NATIVEMEMORYFILETRACKER_HPP

@@ -26,10 +26,10 @@
 #include "gc/z/zNMT.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/memoryFileTracker.hpp"
+#include "nmt/nativeMemoryFileTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 
-MemoryFileTracker::MemoryFile* ZNMT::_device = nullptr;
+NativeMemoryFileTracker::MemoryFile* ZNMT::_device = nullptr;
 
 void ZNMT::initialize() {
   _device = MemTracker::register_file("ZGC heap backing file");
