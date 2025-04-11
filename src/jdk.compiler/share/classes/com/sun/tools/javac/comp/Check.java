@@ -1804,12 +1804,7 @@ public class Check {
 
         // Warn if a deprecated method overridden by a non-deprecated one.
         if (!isDeprecatedOverrideIgnorable(other, origin)) {
-            Lint prevLint = setLint(lint.augment(m));
-            try {
-                checkDeprecated(() -> TreeInfo.diagnosticPositionFor(m, tree), m, other);
-            } finally {
-                setLint(prevLint);
-            }
+            checkDeprecated(() -> TreeInfo.diagnosticPositionFor(m, tree), m, other);
         }
     }
     // where
