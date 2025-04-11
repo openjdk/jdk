@@ -53,6 +53,8 @@ final class WClipboard extends SunClipboard {
 
     WClipboard() {
         super("System");
+        // Register java side of the clipboard with the native side
+        registerClipboard();
     }
 
     @Override
@@ -214,4 +216,6 @@ final class WClipboard extends SunClipboard {
                 }
             };
     }
+
+    private native void registerClipboard();
 }

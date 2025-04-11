@@ -69,9 +69,8 @@ void AwtClipboard::RegisterClipboardViewer(JNIEnv *env, jobject jclipboard) {
         return;
     }
 
-    if (theCurrentClipboard == NULL) {
-        theCurrentClipboard = env->NewGlobalRef(jclipboard);
-    }
+    DASSERT(AwtClipboard::theCurrentClipboard != NULL);
+    DASSERT(env->IsSameObject(AwtClipboard::theCurrentClipboard, jclipboard));
 
     jclass cls = env->GetObjectClass(jclipboard);
     AwtClipboard::handleContentsChangedMID =
@@ -133,6 +132,8 @@ Java_sun_awt_windows_WClipboard_openClipboard(JNIEnv *env, jobject self,
 {
     TRY;
 
+    DASSERT(AwtClipboard::theCurrentClipboard != NULL);
+    DASSERT(newOwner == NULL || env->IsSameObject(AwtClipboard::theCurrentClipboard, newOwner));
     DASSERT(::GetOpenClipboardWindow() != AwtToolkit::GetInstance().GetHWnd());
 
     if (!::OpenClipboard(AwtToolkit::GetInstance().GetHWnd())) {
@@ -142,10 +143,6 @@ Java_sun_awt_windows_WClipboard_openClipboard(JNIEnv *env, jobject self,
     }
     if (newOwner != NULL) {
         AwtClipboard::GetOwnership();
-        if (AwtClipboard::theCurrentClipboard != NULL) {
-            env->DeleteGlobalRef(AwtClipboard::theCurrentClipboard);
-        }
-        AwtClipboard::theCurrentClipboard = env->NewGlobalRef(newOwner);
     }
 
     CATCH_BAD_ALLOC;
@@ -476,6 +473,18 @@ Java_sun_awt_windows_WClipboard_getClipboardData
     return bytes;
 
     CATCH_BAD_ALLOC_RET(NULL);
+}
+
+/*
+ * Class:     sun_awt_windows_WClipboard
+ * Method:    registerClipboard
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WClipboard_registerClipboard(JNIEnv *env, jobject self)
+{
+    DASSERT(AwtClipboard::theCurrentClipboard == NULL);
+    AwtClipboard::theCurrentClipboard = env->NewGlobalRef(self);
 }
 
 } /* extern "C" */
