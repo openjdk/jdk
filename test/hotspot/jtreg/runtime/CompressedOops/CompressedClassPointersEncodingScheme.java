@@ -137,19 +137,16 @@ public class CompressedClassPointersEncodingScheme {
             long forceAddress = 32 * G;
 
             long ccsSize = 128 * M;
-            int expectedShift = 6;
+            int expectedShift = 10;
             test(forceAddress, true, ccsSize, forceAddress, expectedShift);
 
             ccsSize = 512 * M;
-            expectedShift = 8;
             test(forceAddress, true, ccsSize, forceAddress, expectedShift);
 
             ccsSize = G;
-            expectedShift = 9;
             test(forceAddress, true, ccsSize, forceAddress, expectedShift);
 
             ccsSize = 3 * G;
-            expectedShift = 10;
             test(forceAddress, true, ccsSize, forceAddress, expectedShift);
         }
 
