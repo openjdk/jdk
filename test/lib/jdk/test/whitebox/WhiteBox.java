@@ -570,7 +570,6 @@ public class WhiteBox {
         wfrp = Reference.class.getDeclaredMethod("waitForReferenceProcessing");
         wfrp.setAccessible(true);
         assert wfrp.getReturnType() == Boolean.class;
-        assert wfrp.getParameterCount() == 0;
         Class<?>[] ev = wfrp.getExceptionTypes();
         assert ev.length == 1;
         assert ev[0] == InterruptedException.class;
@@ -592,10 +591,17 @@ public class WhiteBox {
    *
    * This method should usually be called after a call to WhiteBox.fullGC().
    */
-  public boolean waitForReferenceProcessing() {
+  public boolean waitForReferenceProcessing() throws InterruptedException {
     try {
       Method wfrp = getWaitForReferenceProcessingMethod();
       return (Boolean) wfrp.invoke(null);
+    } catch (InvocationTargetException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof InterruptedException) {
+        throw (InterruptedException) cause;
+      } else {
+        throw new RuntimeException(e);
+      }
     } catch (RuntimeException e) {
       // Just rethrow any RuntimeExceptions from getWaitForReferenceProcessingMethod()
       throw e;
