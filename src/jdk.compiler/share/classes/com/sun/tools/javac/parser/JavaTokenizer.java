@@ -1049,8 +1049,7 @@ public class JavaTokenizer extends UnicodeReader {
                 // If a text block.
                 if (isTextBlock) {
                     // Verify that the incidental indentation is consistent.
-                    Set<TextBlockSupport.WhitespaceChecks> checks =
-                            TextBlockSupport.checkWhitespace(string);
+                    Set<TextBlockSupport.WhitespaceChecks> checks = TextBlockSupport.checkWhitespace(string);
                     if (checks.contains(TextBlockSupport.WhitespaceChecks.INCONSISTENT)) {
                         log.warning(pos, LintWarnings.InconsistentWhiteSpaceIndentation);
                     }

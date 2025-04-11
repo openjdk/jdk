@@ -61,7 +61,6 @@ import java.util.*;
 
 // A collection of test utility methods for parsing, validating and
 // generating XML Signatures.
-@SuppressWarnings("dangling-doc-comments")
 public class XMLUtils {
 
     private static final XMLSignatureFactory FAC =
@@ -560,6 +559,7 @@ public class XMLUtils {
     /**
      * Adds a new rule to "jdk.xml.dsig.secureValidationPolicy"
      */
+    @SuppressWarnings("dangling-doc-comments")
     public static void addPolicy(String rule) {
         String value = Security.getProperty("jdk.xml.dsig.secureValidationPolicy");
         value = rule + "," + value;

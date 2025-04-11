@@ -113,6 +113,10 @@ public class JavacParser implements Parser {
     /** End position mappings container */
     protected final AbstractEndPosTable endPosTable;
 
+    /** A map associating "other nearby documentation comments"
+     *  with the preferred documentation comment for a declaration. */
+    protected Map<Comment, List<Comment>> danglingComments = new HashMap<>();
+
     // Because of javac's limited lookahead, some contexts are ambiguous in
     // the presence of type annotations even though they are not ambiguous
     // in the absence of type annotations.  Consider this code:
@@ -574,8 +578,16 @@ public class JavacParser implements Parser {
      *     (using {@code token.getDocComment()}.
      *  3. At the end of the "signature" of the declaration
      *     (that is, before any initialization or body for the
-     *     declaration) any other "recent" comments are
-     *     reported to the log as warnings.
+     *     declaration) any other "recent" comments are saved
+     *     in a map using the primary comment as a key,
+     *     using this method, {@code saveDanglingComments}.
+     *  4. When the tree node for the declaration is finally
+     *     available, and the primary comment, if any,
+     *     is "attached", (in {@link #attach}) any related
+     *     dangling comments are reported to the log as warnings.
+     *  5. (Later) Warnings may be generated for the dangling
+     *     comments, subject to the {@code -Xlint} and
+     *     {@code @SuppressWarnings}.
      *
      *  @param dc the primary documentation comment
      */
@@ -595,16 +607,21 @@ public class JavacParser implements Parser {
                 }
         }
 
+        var lb = new ListBuffer<Comment>();
         while (!recentComments.isEmpty()) {
             var c = recentComments.remove();
             if (c != dc) {
-                reportDanglingDocComment(c);
+                lb.add(c);
             }
         }
+        danglingComments.put(dc, lb.toList());
     }
 
     /** Make an entry into docComments hashtable,
      *  provided flag keepDocComments is set and given doc comment is non-null.
+     *  If there are any related "dangling comments", register
+     *  diagnostics to be handled later, when @SuppressWarnings
+     *  can be taken into account.
      *
      *  @param tree   The tree to be used as index in the hashtable
      *  @param dc     The doc comment to associate with the tree, or null.
@@ -614,7 +631,22 @@ public class JavacParser implements Parser {
         if (keepDocComments && dc != null) {
             docComments.putComment(tree, dc);
         }
+        reportDanglingComments(tree, dc);
         return tree;
+    }
+
+    /** Reports all dangling comments associated with the
+     *  primary comment for a declaration against the position
+     *  of the tree node for a declaration.
+     *
+     * @param tree the tree node for the declaration
+     * @param dc the primary comment for the declaration
+     */
+    void reportDanglingComments(JCTree tree, Comment dc) {
+        var list = danglingComments.remove(dc);
+        if (list != null) {
+            list.forEach(c -> reportDanglingDocComment(tree, c));
+        }
     }
 
     /**
@@ -624,9 +656,10 @@ public class JavacParser implements Parser {
      *
      * @param c the comment
      */
-    void reportDanglingDocComment(Comment c) {
+    void reportDanglingDocComment(JCTree tree, Comment c) {
         var pos = c.getPos();
         if (pos != null && !shebang(c, pos)) {
+            pos = pos.withLintPosition(tree.getStartPosition());
             S.lintWarning(pos, LintWarnings.DanglingDocComment);
         }
     }

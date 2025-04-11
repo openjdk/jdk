@@ -239,7 +239,7 @@ public class LintMapper {
 
         // Find the narrowest span in the given list that contains the given position
         static Optional<LintSpan> bestMatch(List<LintSpan> lintSpans, DiagnosticPosition pos) {
-            int position = pos.getStartPosition();
+            int position = pos.getLintPosition();
             Assert.check(position != Position.NOPOS);
             LintSpan bestSpan = null;
             for (LintSpan lintSpan : lintSpans) {
@@ -275,7 +275,7 @@ public class LintMapper {
         }
 
         boolean contains(DiagnosticPosition pos) {
-            return contains(pos.getStartPosition());
+            return contains(pos.getLintPosition());
         }
 
         boolean contains(Span that) {
