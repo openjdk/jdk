@@ -44,7 +44,6 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
     private static volatile int volatileField;
 
     public static void main(String[] args) {
-        int[] array = new int[100];
         for (int i = 0; i < 20_000; i++) {
             test1(9, 10, 1, true);
             test1(9, 10, 1, false);
@@ -72,6 +71,13 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
             test12(9, 10, 1, false);
             test13(9, 10, 1, true);
             test13(9, 10, 1, false);
+            test14(8, 0, 1, true);
+            test14(8, 0, 1, false);
+            inlined14(0, 0);
+            test15(8, 0, 1, true);
+            test15(8, 0, 1, false);
+            inlined15(0, 0);
+
         }
         try {
             test1(-1, 10, 1, true);
@@ -123,6 +129,14 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
         }
         try {
             test13(-1, 10, 1, true);
+        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+        }
+        try {
+            test14(Integer.MAX_VALUE, 10, 1, true);
+        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+        }
+        try {
+            test15(Integer.MAX_VALUE, 10, 1, true);
         } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
         }
     }
@@ -466,6 +480,72 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
         for (int k = 0; k < 10; k++) {
 
         }
+    }
+
+    // Range check cast type widen after loop opts causes control dependency to be lost
+    private static void test14(int i, int j, int flag, boolean flag2) {
+        int l = 0;
+        for (; l < 10; l++);
+        j = inlined14(j, l);
+        int[] array = new int[10];
+        notInlined(array);
+        if (flag == 0) {
+        }
+        if (flag2) {
+            float[] newArray = new float[10];
+            newArray[i+j] = 42; // i+j in [0, 9]
+            float[] otherArray = new float[i+j]; // i+j in [0, max]
+            if (flag == 0) {
+            }
+            intField = array[otherArray.length];
+        } else {
+            float[] newArray = new float[10];
+            newArray[i+j] = 42; // i+j in [0, 9]
+            float[] otherArray = new float[i+j]; // i+j in [0, max]
+            if (flag == 0) {
+            }
+            intField = array[otherArray.length];
+        }
+    }
+
+    private static int inlined14(int j, int l) {
+        if (l == 10) {
+            j = 1;
+        }
+        return j;
+    }
+
+    private static void test15(int i, int j, int flag, boolean flag2) {
+        i = Integer.max(i, Integer.MIN_VALUE + 1);
+        int l = 0;
+        for (; l < 10; l++);
+        j = inlined15(j, l);
+        int[] array = new int[10];
+        notInlined(array);
+        if (flag == 0) {
+        }
+        if (flag2) {
+            float[] newArray = new float[10];
+            newArray[i+j] = 42; // i+j in [0, 9]
+            float[] otherArray = new float[i+j]; // i+j in [0, max]
+            if (flag == 0) {
+            }
+            intField = array[otherArray.length];
+        } else {
+            float[] newArray = new float[10];
+            newArray[i+j] = 42; // i+j in [0, 9]
+            float[] otherArray = new float[i+j]; // i+j in [0, max]
+            if (flag == 0) {
+            }
+            intField = array[otherArray.length];
+        }
+    }
+
+    private static int inlined15(int j, int l) {
+        if (l == 10) {
+            j = Integer.max(j, Integer.MIN_VALUE + 10);
+        }
+        return j;
     }
 
     private static void notInlined(int[] array) {
