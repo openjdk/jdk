@@ -423,7 +423,8 @@ bool ObjectSynchronizer::quick_enter_legacy(oop obj, BasicLock* lock, JavaThread
     // Case: TLE inimical operations such as nested/recursive synchronization
 
     if (m->has_owner(current)) {
-      m->_recursions++;
+      int recursions = m->recursions();
+      m->set_recursions(++recursions);
       current->inc_held_monitor_count();
       return true;
     }
@@ -440,7 +441,7 @@ bool ObjectSynchronizer::quick_enter_legacy(oop obj, BasicLock* lock, JavaThread
     lock->set_displaced_header(markWord::unused_mark());
 
     if (!m->has_owner() && m->try_set_owner(current)) {
-      assert(m->_recursions == 0, "invariant");
+      assert(m->recursions() == 0, "invariant");
       current->inc_held_monitor_count();
       return true;
     }
