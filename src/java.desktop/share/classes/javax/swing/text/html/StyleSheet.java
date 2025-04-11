@@ -1050,12 +1050,38 @@ public class StyleSheet extends StyleContext {
     }
 
     /**
-     * Converts a color string such as "RED" or "#NNNNNN" to a Color.
-     * Note: This will only convert the HTML3.2 color strings
-     *       or a string of length 7;
-     *       otherwise, it will return null.
+     * Converts a color string such as "RED",  "rgb(r g b)", "rgb(r g b a)",
+     * "rgba(r g b a)" or "#NNN", "#NNNN", "#NNNNNN",
+     * "#NNNNNNNN" to a Color.
+     * <p>
+     * Note: This will only convert strings which use any of the following:
+     * <ul>
+     *   <li><a href="https://www.w3.org/TR/css-color-4/#named-colors">named colors</a>,</li>
+     *   <li><a href="https://www.w3.org/TR/css-color-4/#hex-notation">hex color notation</a>
+     * starting with {@code #} followed by 3, 4, 6, or 8 hexadecimal digits,</li>
+     *   <li><a href="https://www.w3.org/TR/css-color-4/#rgb-functions">`rgb()` and `rgba()`
+     * functions</a></li>
+     * </ul>
+     * as specified by the <a href="https://www.w3.org/TR/css-color-4/">CSS Color Module Level 4</a>.
+     * Otherwise, it will return null.
+     * <p>
+     * This method is case-insensitive.
+     * <p>
+     * The following code defines instances of the same color :
+     * {@snippet lang="java" :
+     *   import java.awt.Color;
+     *   import javax.swing.text.html.StyleSheet;
+     *   StyleSheet styleSheet = new StyleSheet();
+     *   // An opaque lightseagreen
+     *   Color color0 = styleSheet.stringToColor("Lightseagreen");
+     *   Color color1 = styleSheet.stringToColor("#20b2aa");
+     * }
      *
-     * @param string color string such as "RED" or "#NNNNNN"
+     * @spec https://www.w3.org/TR/css-color-4/#rgb-functions The RGB functions
+     * @spec https://www.w3.org/TR/css-color-4/#hex-notation The RGB Hexadecimal Notations
+     * @spec https://www.w3.org/TR/css-color-4/#named-colors Named Colors
+     * @param string color, string such as "RED" or "rgb(r g b)",  "rgba(r g b a)"
+     * or "#NNN", "#NNNN", "#NNNNNN", "#NNNNNNNN".
      * @return the color
      */
     public Color stringToColor(String string) {
@@ -1647,7 +1673,7 @@ public class StyleSheet extends StyleContext {
                                                 (poundIndex + 1, dotIndex));
                         }
                     }
-                    else if(poundIndex < spaceIndex) {
+                    else if (poundIndex < spaceIndex) {
                         // .#
                         if (lastIndex == dotIndex) {
                             elements.addElement("");
@@ -1797,7 +1823,7 @@ public class StyleSheet extends StyleContext {
         static SearchBuffer obtainSearchBuffer() {
             SearchBuffer sb;
             try {
-                if(!searchBuffers.empty()) {
+                if (!searchBuffers.empty()) {
                    sb = searchBuffers.pop();
                 } else {
                    sb = new SearchBuffer();
