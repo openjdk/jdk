@@ -38,6 +38,9 @@ import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
+
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.util.FileUtils;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
@@ -141,22 +144,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             Map<String, ? super Object> params) throws ConfigException {
         if (PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
             Path applicationImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
-            if (!IOUtils.exists(applicationImage)) {
-                throw new ConfigException(
-                        MessageFormat.format(I18N.getString(
-                                "message.app-image-dir-does-not-exist"),
-                                PREDEFINED_APP_IMAGE.getID(),
-                                applicationImage.toString()),
-                        MessageFormat.format(I18N.getString(
-                                "message.app-image-dir-does-not-exist.advice"),
-                                PREDEFINED_APP_IMAGE.getID()));
-            }
-            if (APP_NAME.fetchFrom(params) == null) {
-                throw new ConfigException(
-                        I18N.getString("message.app-image-requires-app-name"),
-                        I18N.getString(
-                            "message.app-image-requires-app-name.advice"));
-            }
             if (AppImageFile.load(applicationImage).isSigned()) {
                 if (!Files.exists(
                         PackageFile.getPathInAppImage(applicationImage))) {
@@ -189,11 +176,11 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             FileUtils.copyRecursive(predefinedImage, appDir,
                     LinkOption.NOFOLLOW_LINKS);
 
-            // Create PackageFile if predefined app image is not signed
-            if (!StandardBundlerParam.isRuntimeInstaller(params) &&
-                    !AppImageFile.load(predefinedImage).isSigned()) {
+            // Alter app image if predefined app image is not signed
+            if (!AppImageFile.load(predefinedImage).isSigned()) {
                 new PackageFile(APP_NAME.fetchFrom(params)).save(
                         ApplicationLayout.macAppImage().resolveAt(appDir));
+                Files.deleteIfExists(AppImageFile.getPathInAppImage(appDir));
                 // We need to re-sign app image after adding ".package" to it.
                 // We only do this if app image was not signed which means it is
                 // signed with ad-hoc signature. App bundles with ad-hoc

@@ -1376,6 +1376,10 @@ void JvmtiExport::post_class_load(JavaThread *thread, Klass* klass) {
     return;
   }
   if (thread->should_hide_jvmti_events()) {
+    // All events can be disabled if current thread is doing a Java upcall originated by JVMTI.
+    // ClassLoad events are important for JDWP agent but not expected during such upcalls.
+    // Catch if this invariant is broken.
+    assert(!thread->is_in_java_upcall(), "unexpected ClassLoad event during JVMTI upcall");
     return;
   }
 
@@ -1413,6 +1417,10 @@ void JvmtiExport::post_class_prepare(JavaThread *thread, Klass* klass) {
     return;
   }
   if (thread->should_hide_jvmti_events()) {
+    // All events can be disabled if current thread is doing a Java upcall originated by JVMTI.
+    // ClassPrepare events are important for JDWP agent but not expected during such upcalls.
+    // Catch if this invariant is broken.
+    assert(!thread->is_in_java_upcall(), "unexpected ClassPrepare event during JVMTI upcall");
     return;
   }
 

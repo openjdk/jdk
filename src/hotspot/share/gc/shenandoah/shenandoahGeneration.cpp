@@ -775,10 +775,6 @@ bool ShenandoahGeneration::is_bitmap_clear() {
   return true;
 }
 
-bool ShenandoahGeneration::is_mark_complete() {
-  return _is_marking_complete.is_set();
-}
-
 void ShenandoahGeneration::set_mark_complete() {
   _is_marking_complete.set();
 }

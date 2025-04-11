@@ -48,7 +48,6 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/perfData.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -369,19 +368,12 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
 
     if (mon->first_waiter() != nullptr) {
       // We have one or more waiters. Since this is an inflated monitor
-      // that we own, we can transfer one or more threads from the waitset
-      // to the entry_list here and now, avoiding the slow-path.
+      // that we own, we quickly notify them here and now, avoiding the slow-path.
       if (all) {
-        DTRACE_MONITOR_PROBE(notifyAll, mon, obj, current);
+        mon->quick_notifyAll(current);
       } else {
-        DTRACE_MONITOR_PROBE(notify, mon, obj, current);
+        mon->quick_notify(current);
       }
-      int free_count = 0;
-      do {
-        mon->notify_internal(current);
-        ++free_count;
-      } while (mon->first_waiter() != nullptr && all);
-      OM_PERFDATA_OP(Notifications, inc(free_count));
     }
     return true;
   }
@@ -682,7 +674,8 @@ void ObjectSynchronizer::jni_enter(Handle obj, JavaThread* current) {
     ObjectMonitor* monitor;
     bool entered;
     if (LockingMode == LM_LIGHTWEIGHT) {
-      entered = LightweightSynchronizer::inflate_and_enter(obj(), inflate_cause_jni_enter, current, current) != nullptr;
+      BasicLock lock;
+      entered = LightweightSynchronizer::inflate_and_enter(obj(), &lock, inflate_cause_jni_enter, current, current) != nullptr;
     } else {
       monitor = inflate(current, obj(), inflate_cause_jni_enter);
       entered = monitor->enter(current);
@@ -1595,9 +1588,6 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* locking_thread, oop 
       // with the ObjectMonitor, it is safe to allow async deflation:
       _in_use_list.add(m);
 
-      // Hopefully the performance counters are allocated on distinct cache lines
-      // to avoid false sharing on MP systems ...
-      OM_PERFDATA_OP(Inflations, inc());
       if (log_is_enabled(Trace, monitorinflation)) {
         ResourceMark rm;
         lsh.print_cr("inflate(has_locker): object=" INTPTR_FORMAT ", mark="
@@ -1637,9 +1627,6 @@ ObjectMonitor* ObjectSynchronizer::inflate_impl(JavaThread* locking_thread, oop 
     // with the ObjectMonitor, it is safe to allow async deflation:
     _in_use_list.add(m);
 
-    // Hopefully the performance counters are allocated on distinct
-    // cache lines to avoid false sharing on MP systems ...
-    OM_PERFDATA_OP(Inflations, inc());
     if (log_is_enabled(Trace, monitorinflation)) {
       ResourceMark rm;
       lsh.print_cr("inflate(unlocked): object=" INTPTR_FORMAT ", mark="
@@ -1866,9 +1853,6 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
   }
 
   log.end(deflated_count, unlinked_count);
-
-  OM_PERFDATA_OP(MonExtant, set_value(_in_use_list.count()));
-  OM_PERFDATA_OP(Deflations, inc(deflated_count));
 
   GVars.stw_random = os::random();
 

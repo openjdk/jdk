@@ -94,7 +94,7 @@ size_t ZPlatformAddressOffsetBits() {
   static const  size_t valid_max_address_offset_bits = probe_valid_max_address_bit() + 1;
   const size_t max_address_offset_bits = valid_max_address_offset_bits - 3;
   const size_t min_address_offset_bits = max_address_offset_bits - 2;
-  const size_t address_offset = round_up_power_of_2(MaxHeapSize * ZVirtualToPhysicalRatio);
+  const size_t address_offset = ZGlobalsPointers::min_address_offset_request();
   const size_t address_offset_bits = log2i_exact(address_offset);
   return clamp(address_offset_bits, min_address_offset_bits, max_address_offset_bits);
 }
