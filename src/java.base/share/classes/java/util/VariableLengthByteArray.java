@@ -534,7 +534,7 @@ public class VariableLengthByteArray {
 
     /**
      * Returns an {@code InputStream} based on this instance's current state.
-     * 
+     *
      * @return InputSTream view
      */
     public InputStream asInputStream() {

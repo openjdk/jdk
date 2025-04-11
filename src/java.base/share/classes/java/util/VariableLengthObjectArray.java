@@ -254,7 +254,7 @@ public class VariableLengthObjectArray<T> {
 
     /**
      * Factory method to get a List based on this new datastructure.
-     * 
+     *
      * @param <T>   type
      * @param clazz class for type
      * @return instance
@@ -485,7 +485,7 @@ public class VariableLengthObjectArray<T> {
 
     /**
      * Iterator
-     * 
+     *
      * @return iterator
      */
     Iterator<T> iterator() {
