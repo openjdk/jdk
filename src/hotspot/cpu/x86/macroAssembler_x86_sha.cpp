@@ -494,7 +494,7 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
 #ifdef _LP64
 /*
   The algorithm below is based on Intel publication:
-  "Fast SHA-256 Implementations on Intelë Architecture Processors" by Jim Guilford, Kirk Yap and Vinodh Gopal.
+  "Fast SHA-256 Implementations on Intel(R) Architecture Processors" by Jim Guilford, Kirk Yap and Vinodh Gopal.
   The assembly code was originally provided by Sean Gulley and in many places preserves
   the original assembly NAMES and comments to simplify matching Java assembly with its original.
   The Java version was substantially redesigned to replace 1200 assembly instruction with
@@ -1698,4 +1698,3 @@ void MacroAssembler::sha512_update_ni_x1(Register arg_hash, Register arg_msg, Re
 }
 
 #endif //#ifdef _LP64
-
