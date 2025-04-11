@@ -176,9 +176,14 @@ final class P11HKDF extends KDFSpi {
 
         P11SecretKeyFactory.KeyInfo ki = P11SecretKeyFactory.getKeyInfo(alg);
         if (ki == null) {
-            throw new InvalidAlgorithmParameterException("A PKCS #11 key " +
-                    "type (CKK_*) was not found for a key of the algorithm '" +
-                    alg + "'.");
+            // special handling for TLS
+            if (alg.startsWith("Tls")) {
+                ki = P11SecretKeyFactory.getKeyInfo("Generic");
+            } else {
+                throw new InvalidAlgorithmParameterException("A PKCS #11 key " +
+                        "type (CKK_*) was not found for a key of the algorithm '" +
+                        alg + "'.");
+            }
         }
         long derivedKeyType = ki.keyType;
         long derivedKeyClass = isData ? CKO_DATA : CKO_SECRET_KEY;

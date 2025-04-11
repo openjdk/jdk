@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,10 @@ import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.ProviderException;
 import java.security.spec.AlgorithmParameterSpec;
+import javax.crypto.KDF;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLHandshakeException;
@@ -69,7 +71,6 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
             case TLS13:
                 return SSLTrafficKeyDerivation.TLS13;
         }
-
         return null;
     }
 
@@ -143,16 +144,29 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
         }
 
         @Override
-        public SecretKey deriveKey(String algorithm,
-                AlgorithmParameterSpec params) throws IOException {
-            KeySchedule ks = KeySchedule.valueOf(algorithm);
+        public SecretKey deriveKey(String type) throws IOException {
+            KeySchedule ks = KeySchedule.valueOf(type);
             try {
-                HKDF hkdf = new HKDF(cs.hashAlg.name);
-                byte[] hkdfInfo =
-                        createHkdfInfo(ks.label, ks.getKeyLength(cs));
-                return hkdf.expand(secret, hkdfInfo,
-                        ks.getKeyLength(cs),
-                        ks.getAlgorithm(cs, algorithm));
+                KDF hkdf = KDF.getInstance(cs.hashAlg.hkdfAlgorithm);
+                byte[] hkdfInfo = createHkdfInfo(ks.label, ks.getKeyLength(cs));
+                HKDFParameterSpec spec = HKDFParameterSpec.expandOnly(secret,
+                        hkdfInfo, ks.getKeyLength(cs));
+                return hkdf.deriveKey(ks.getAlgorithm(cs, type), spec);
+            } catch (GeneralSecurityException gse) {
+                throw new SSLHandshakeException(
+                        "Could not generate secret", gse);
+            }
+        }
+
+        @Override
+        public byte[] deriveData(String type) throws IOException {
+            KeySchedule ks = KeySchedule.valueOf(type);
+            try {
+                KDF hkdf = KDF.getInstance(cs.hashAlg.hkdfAlgorithm);
+                byte[] hkdfInfo = createHkdfInfo(ks.label, ks.getKeyLength(cs));
+                HKDFParameterSpec spec = HKDFParameterSpec.expandOnly(secret,
+                        hkdfInfo, ks.getKeyLength(cs));
+                return hkdf.deriveData(spec);
             } catch (GeneralSecurityException gse) {
                 throw new SSLHandshakeException(
                         "Could not generate secret", gse);
@@ -171,13 +185,12 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
                 // unlikely
                 throw new RuntimeException("Unexpected exception", ioe);
             }
-
             return info;
         }
     }
 
     private enum KeySchedule {
-        // Note that we use enum name as the key/ name.
+        // Note that we use enum name as the key name.
         TlsKey              ("key", false),
         TlsIv               ("iv",  true),
         TlsUpdateNplus1     ("traffic upd", false);
@@ -285,8 +298,9 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
             }
         }
 
-        SecretKey getTrafficKey(String algorithm) {
-            switch (algorithm) {
+        @Override
+        public SecretKey deriveKey(String type) throws IOException {
+            switch (type) {
                 case "clientMacKey":
                     return keyMaterialSpec.getClientMacKey();
                 case "serverMacKey":
@@ -295,24 +309,25 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
                     return keyMaterialSpec.getClientCipherKey();
                 case "serverWriteKey":
                     return keyMaterialSpec.getServerCipherKey();
-                case "clientWriteIv":
-                    IvParameterSpec cliIvSpec = keyMaterialSpec.getClientIv();
-                    return  (cliIvSpec == null) ? null :
-                            new SecretKeySpec(cliIvSpec.getIV(), "TlsIv");
-                case "serverWriteIv":
-                    IvParameterSpec srvIvSpec = keyMaterialSpec.getServerIv();
-                    return  (srvIvSpec == null) ? null :
-                            new SecretKeySpec(srvIvSpec.getIV(), "TlsIv");
+                default:
+                    throw new SSLHandshakeException(
+                            "Cannot deriveKey for " + type);
             }
-
-            return null;
         }
 
         @Override
-        public SecretKey deriveKey(String algorithm,
-                AlgorithmParameterSpec params) throws IOException {
-            return getTrafficKey(algorithm);
+        public byte[] deriveData(String type) throws IOException {
+            switch (type) {
+                case "clientWriteIv":
+                    IvParameterSpec cliIvSpec = keyMaterialSpec.getClientIv();
+                    return  (cliIvSpec == null) ? null : cliIvSpec.getIV();
+                case "serverWriteIv":
+                    IvParameterSpec srvIvSpec = keyMaterialSpec.getServerIv();
+                    return  (srvIvSpec == null) ? null : srvIvSpec.getIV();
+                default:
+                    throw new SSLHandshakeException(
+                            "Cannot deriveData for " + type);
+            }
         }
     }
 }
-
