@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class TestRecordLinks  extends JavadocTester {
                     """,
                 """
                     <div class="block"><a href="#foo()"><code>foo()</code></a>
-                     <a href="JavadocTest.Bar.html" title="class in example"><code>JavadocTest.Bar</code></a></div>
+                    <a href="JavadocTest.Bar.html" title="class in example"><code>JavadocTest.Bar</code></a></div>
                     """);
 
         checkOutput("example/JavadocTest.Bar.html", true,
@@ -91,7 +91,7 @@ public class TestRecordLinks  extends JavadocTester {
                     """,
                 """
                     <div class="block"><a href="#bar()"><code>bar()</code></a>
-                     <a href="JavadocTest.Foo.html" title="class in example"><code>JavadocTest.Foo</code></a></div>
+                    <a href="JavadocTest.Foo.html" title="class in example"><code>JavadocTest.Foo</code></a></div>
                     """);
     }
 }

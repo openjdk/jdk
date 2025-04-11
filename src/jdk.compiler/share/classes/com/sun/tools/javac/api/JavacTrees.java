@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,8 +357,7 @@ public class JavacTrees extends DocTrees {
         if (tree instanceof DCReference dcReference) {
             JCTree qexpr = dcReference.qualifierExpression;
             if (qexpr != null) {
-                Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
-                        new Log.DeferredDiagnosticHandler(log);
+                Log.DeferredDiagnosticHandler deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
                 try {
                     Env<AttrContext> env = getAttrContext(path.getTreePath());
                     Type t = attr.attribType(dcReference.qualifierExpression, env);
@@ -388,8 +387,7 @@ public class JavacTrees extends DocTrees {
             // module name and member name without type
             return null;
         }
-        Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
-                new Log.DeferredDiagnosticHandler(log);
+        Log.DeferredDiagnosticHandler deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
         try {
             final TypeSymbol tsym;
             final Name memberName;
@@ -1068,6 +1066,11 @@ public class JavacTrees extends DocTrees {
                     // do nothing
                 }
                 return "";
+            }
+
+            @Override
+            public Comment stripIndent() {
+                return this;
             }
 
             @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -457,8 +457,8 @@ class InvokerBytecodeGenerator {
                 return resolveFrom(name, invokerType, DelegatingMethodHandle.Holder.class);
             }
             case DELEGATE:                  return resolveFrom(name, invokerType, DelegatingMethodHandle.Holder.class);
-            case ZERO:                      // fall-through
-            case IDENTITY: {
+            case IDENTITY:                  // fall-through
+            case CONSTANT: {
                 name = name + "_" + form.returnType().basicTypeChar();
                 return resolveFrom(name, invokerType, LambdaForm.Holder.class);
             }
@@ -630,10 +630,6 @@ class InvokerBytecodeGenerator {
                                 case IDENTITY:
                                     assert(name.arguments.length == 1);
                                     emitPushArguments(cob, name, 0);
-                                    continue;
-                                case ZERO:
-                                    assert(name.arguments.length == 0);
-                                    cob.loadConstant((ConstantDesc)name.type.basicTypeWrapper().zero());
                                     continue;
                                 case NONE:
                                     // no intrinsic associated

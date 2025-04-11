@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -110,10 +110,25 @@
     <Field type="ulong" contentType="address" name="address" label="Monitor Address" description="Address of object waited on" relation="JavaMonitorAddress" />
   </Event>
 
+  <Event name="JavaMonitorNotify" category="Java Application" label="Java Monitor Notify" description="Notifying a Java monitor" thread="true" stackTrace="true">
+    <Field type="Class" name="monitorClass" label="Monitor Class" description="Class of object waited on" />
+    <Field type="uint" name="notifiedCount" label="Notified Threads" description="Number of actually notified threads" />
+    <Field type="ulong" contentType="address" name="address" label="Monitor Address" description="Address of object waited on" relation="JavaMonitorAddress" />
+  </Event>
+
   <Event name="JavaMonitorInflate" category="Java Application" label="Java Monitor Inflated" thread="true" stackTrace="true">
     <Field type="Class" name="monitorClass" label="Monitor Class" />
     <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" />
     <Field type="InflateCause" name="cause" label="Monitor Inflation Cause" description="Cause of inflation" />
+  </Event>
+
+  <Event name="JavaMonitorDeflate" category="Java Application" label="Java Monitor Deflated">
+    <Field type="Class" name="monitorClass" label="Monitor Class" description="Class of the object deflated. If null or N/A, the object has been garbage collected." />
+    <Field type="ulong" contentType="address" name="address" label="Monitor Address" relation="JavaMonitorAddress" description="Address of the object deflated. If null or N/A, the object has been garbage collected."/>
+  </Event>
+
+  <Event name="JavaMonitorStatistics" category="Java Application, Statistics" label="Java Monitor Statistics" period="everyChunk">
+    <Field type="ulong" name="count" label="Monitors in Use" description="Current number of in-use monitors" />
   </Event>
 
   <Event name="SyncOnValueBasedClass" category="Java Virtual Machine, Diagnostics" label="Value Based Class Synchronization" thread="true" stackTrace="true" startTime="false" experimental="true">
@@ -1140,12 +1155,14 @@
   </Event>
 
   <Event name="ZPageAllocation" category="Java Virtual Machine, GC, Detailed" label="ZGC Page Allocation" description="Allocation of a ZPage" thread="true" stackTrace="true">
-     <Field type="ZPageTypeType" name="type" label="Type" />
-     <Field type="ulong" contentType="bytes" name="size" label="Size" />
-     <Field type="ulong" contentType="bytes" name="flushed" label="Flushed" />
-     <Field type="ulong" contentType="bytes" name="committed" label="Committed" />
-     <Field type="uint" name="segments" label="Segments" />
-     <Field type="boolean" name="nonBlocking" label="Non-blocking" />
+    <Field type="ZPageTypeType" name="type" label="Type" />
+    <Field type="ulong" contentType="bytes" name="size" label="Size" />
+    <Field type="ulong" contentType="bytes" name="harvested" label="Harvested" />
+    <Field type="ulong" contentType="bytes" name="committed" label="Committed" />
+    <Field type="uint" name="numHarvested" label="Number of harvested vmems" />
+    <Field type="boolean" name="multiPartition" label="Multi-partition allocation" />
+    <Field type="boolean" name="successful" label="Successful allocation" />
+    <Field type="boolean" name="nonBlocking" label="Non-blocking" />
   </Event>
 
   <Event name="ZRelocationSet" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set" thread="true">
@@ -1181,10 +1198,6 @@
 
   <Event name="ZUncommit" category="Java Virtual Machine, GC, Detailed" label="ZGC Uncommit" description="Uncommitting of memory" thread="true">
     <Field type="ulong" contentType="bytes" name="uncommitted" label="Uncommitted" />
-  </Event>
-
-  <Event name="ZUnmap" category="Java Virtual Machine, GC, Detailed" label="ZGC Unmap" description="Unmapping of memory" thread="true">
-    <Field type="ulong" contentType="bytes" name="unmapped" label="Unmapped" />
   </Event>
 
   <Event name="ShenandoahHeapRegionStateChange" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Heap Region State Change" description="Information about a Shenandoah heap region state change"
@@ -1239,11 +1252,6 @@
     <Field type="boolean" name="onOutOfMemoryError" label="Heap Dump on Out of Memory Error" />
     <Field type="boolean" name="overwrite" label="Overwrite" description="Heap dump overwrites previous file location if it exists" />
     <Field type="int" name="compression" label="Compression Level" description="Compression level of the dump, if larger than 0 we use gzip compression with this level" />
-  </Event>
-
-  <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" label="GC Locker" startTime="true" thread="true" stackTrace="true">
-    <Field type="uint" name="lockCount" label="Lock Count" description="The number of Java threads in a critical section when the GC locker is started" />
-    <Field type="uint" name="stallCount" label="Stall Count" description="The number of Java threads stalled by the GC locker" />
   </Event>
 
   <Event name="FinalizerStatistics" category="Java Application, Statistics" label="Finalizer Statistics" description="Per class statistics about finalizers" thread="false" startTime="false" period="endChunk">

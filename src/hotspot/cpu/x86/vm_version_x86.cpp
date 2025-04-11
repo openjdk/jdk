@@ -928,7 +928,8 @@ void VM_Version::get_processor_features() {
 
   // Check if processor has Intel Ecore
   if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && cpu_family() == 6 &&
-    (_model == 0x97 || _model == 0xAA || _model == 0xAC || _model == 0xAF)) {
+    (_model == 0x97 || _model == 0xAA || _model == 0xAC || _model == 0xAF ||
+      _model == 0xCC || _model == 0xDD)) {
     FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
   }
 
@@ -1245,6 +1246,20 @@ void VM_Version::get_processor_features() {
   }
 #endif // _LP64
 
+  // Dilithium Intrinsics
+  // Currently we only have them for AVX512
+#ifdef _LP64
+  if (supports_evex() && supports_avx512bw()) {
+      if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
+          UseDilithiumIntrinsics = true;
+      }
+  } else
+#endif
+   if (UseDilithiumIntrinsics) {
+      warning("Intrinsics for ML-DSA are not available on this CPU.");
+      FLAG_SET_DEFAULT(UseDilithiumIntrinsics, false);
+  }
+
   // Base64 Intrinsics (Check the condition for which the intrinsic will be active)
   if (UseAVX >= 2) {
     if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
@@ -1405,7 +1420,7 @@ void VM_Version::get_processor_features() {
   }
 
 #ifdef _LP64
-  if (supports_avx512ifma() && supports_avx512vlbw()) {
+  if ((supports_avx512ifma() && supports_avx512vlbw()) || supports_avxifma()) {
     if (FLAG_IS_DEFAULT(UseIntPolyIntrinsics)) {
       FLAG_SET_DEFAULT(UseIntPolyIntrinsics, true);
     }

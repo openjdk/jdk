@@ -27,6 +27,7 @@
  * @bug 8213362
  * @comment Test uses custom launcher that starts VM using JNI via libjli, only for MacOS
  * @requires os.family == "mac"
+ * @requires !jdk.static
  * @library /test/lib
  * @run main/native JniInvocationTest
  */
