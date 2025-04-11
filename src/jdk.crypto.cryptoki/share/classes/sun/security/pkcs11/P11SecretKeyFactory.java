@@ -104,12 +104,28 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
     }
 
     static sealed class KeyInfo permits PBEKeyInfo, HMACKeyInfo, HKDFKeyInfo {
+        // Java Standard Algorithm Name.
         public final String algo;
+
+        // Key type (CKK_*).
         public final long keyType;
 
+        // Mechanism for C_GenerateKey to generate a key of this type (CKM_*).
+        // While keys may be generated with other APIs and mechanisms (e.g. AES
+        // key generated with C_DeriveKey and CKM_HKDF_DERIVE instead of
+        // C_GenerateKey and CKM_AES_KEY_GEN), this information is used by
+        // P11KeyGenerator::checkKeySize in a best-effort attempt to validate
+        // that the key size is within a valid range (see CK_MECHANISM_INFO).
+        public final long keyGenMech;
+
         KeyInfo(String algo, long keyType) {
+            this(algo, keyType, CK_UNAVAILABLE_INFORMATION);
+        }
+
+        KeyInfo(String algo, long keyType, long keyGenMech) {
             this.algo = algo;
             this.keyType = keyType;
+            this.keyGenMech = keyGenMech;
         }
 
         // The P11SecretKeyFactory::convertKey method needs to know if a service
@@ -204,24 +220,26 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
     }
 
     static {
-        putKeyInfo(new KeyInfo("RC4", CKK_RC4));
-        putKeyInfo(new KeyInfo("ARCFOUR", CKK_RC4));
-        putKeyInfo(new KeyInfo("DES", CKK_DES));
-        putKeyInfo(new KeyInfo("DESede", CKK_DES3));
-        putKeyInfo(new KeyInfo("AES", CKK_AES));
-        putKeyInfo(new KeyInfo("Blowfish", CKK_BLOWFISH));
-        putKeyInfo(new KeyInfo("ChaCha20", CKK_CHACHA20));
-        putKeyInfo(new KeyInfo("ChaCha20-Poly1305", CKK_CHACHA20));
+        putKeyInfo(new KeyInfo("RC4", CKK_RC4, CKM_RC4_KEY_GEN));
+        putKeyInfo(new KeyInfo("ARCFOUR", CKK_RC4, CKM_RC4_KEY_GEN));
+        putKeyInfo(new KeyInfo("DES", CKK_DES, CKM_DES_KEY_GEN));
+        putKeyInfo(new KeyInfo("DESede", CKK_DES3, CKM_DES3_KEY_GEN));
+        putKeyInfo(new KeyInfo("AES", CKK_AES, CKM_AES_KEY_GEN));
+        putKeyInfo(new KeyInfo("Blowfish", CKK_BLOWFISH, CKM_BLOWFISH_KEY_GEN));
+        putKeyInfo(new KeyInfo("ChaCha20", CKK_CHACHA20, CKM_CHACHA20_KEY_GEN));
+        putKeyInfo(new KeyInfo("ChaCha20-Poly1305", CKK_CHACHA20,
+                CKM_CHACHA20_KEY_GEN));
 
         // we don't implement RC2 or IDEA, but we want to be able to generate
         // keys for those SSL/TLS ciphersuites.
-        putKeyInfo(new KeyInfo("RC2", CKK_RC2));
-        putKeyInfo(new KeyInfo("IDEA", CKK_IDEA));
+        putKeyInfo(new KeyInfo("RC2", CKK_RC2, CKM_RC2_KEY_GEN));
+        putKeyInfo(new KeyInfo("IDEA", CKK_IDEA, CKM_IDEA_KEY_GEN));
 
         putKeyInfo(new KeyInfo("TlsPremasterSecret", PCKK_TLSPREMASTER));
         putKeyInfo(new KeyInfo("TlsRsaPremasterSecret", PCKK_TLSRSAPREMASTER));
         putKeyInfo(new KeyInfo("TlsMasterSecret", PCKK_TLSMASTER));
-        putKeyInfo(new KeyInfo("Generic", CKK_GENERIC_SECRET));
+        putKeyInfo(new KeyInfo("Generic", CKK_GENERIC_SECRET,
+                CKM_GENERIC_SECRET_KEY_GEN));
 
         HMACKeyInfo hmacSHA1 =
                 new HMACKeyInfo("HmacSHA1", CKM_SHA_1_HMAC, 160);
@@ -549,33 +567,24 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         long keyType = ki.keyType;
         try {
             switch ((int) keyType) {
-                case (int) CKK_DES -> {
-                    keyLength =
-                            P11KeyGenerator.checkKeySize(CKM_DES_KEY_GEN, n, token);
-                    fixDESParity(encoded, 0);
-                }
-                case (int) CKK_DES3 -> {
-                    keyLength =
-                            P11KeyGenerator.checkKeySize(CKM_DES3_KEY_GEN, n, token);
-                    fixDESParity(encoded, 0);
-                    fixDESParity(encoded, 8);
-                    if (keyLength == 112) {
-                        keyType = CKK_DES2;
-                    } else {
-                        keyType = CKK_DES3;
-                        fixDESParity(encoded, 16);
+                case (int) CKK_DES, (int) CKK_DES3, (int) CKK_AES, (int) CKK_RC4,
+                        (int) CKK_BLOWFISH, (int) CKK_CHACHA20 -> {
+                    keyLength = P11KeyGenerator.checkKeySize(ki.keyGenMech, n,
+                            token);
+                    if (keyType == CKK_DES || keyType == CKK_DES3) {
+                        fixDESParity(encoded, 0);
+                    }
+                    if (keyType == CKK_DES3) {
+                        fixDESParity(encoded, 8);
+                        if (keyLength == 112) {
+                            keyType = CKK_DES2;
+                        } else {
+                            fixDESParity(encoded, 16);
+                        }
                     }
                 }
-                case (int) CKK_AES -> keyLength =
-                        P11KeyGenerator.checkKeySize(CKM_AES_KEY_GEN, n, token);
-                case (int) CKK_RC4 -> keyLength =
-                        P11KeyGenerator.checkKeySize(CKM_RC4_KEY_GEN, n, token);
-                case (int) CKK_BLOWFISH -> keyLength =
-                        P11KeyGenerator.checkKeySize(CKM_BLOWFISH_KEY_GEN, n,
-                                token);
-                case (int) CKK_CHACHA20 -> keyLength = P11KeyGenerator.checkKeySize(
-                        CKM_CHACHA20_KEY_GEN, n, token);
-                case (int) CKK_GENERIC_SECRET, (int) PCKK_TLSPREMASTER, (int) PCKK_TLSRSAPREMASTER, (int) PCKK_TLSMASTER ->
+                case (int) CKK_GENERIC_SECRET, (int) PCKK_TLSPREMASTER,
+                        (int) PCKK_TLSRSAPREMASTER, (int) PCKK_TLSMASTER ->
                         keyType = CKK_GENERIC_SECRET;
                 default -> throw new InvalidKeyException("Unknown algorithm " +
                         algorithm);
