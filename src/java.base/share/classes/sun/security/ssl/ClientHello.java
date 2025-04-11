@@ -825,6 +825,10 @@ final class ClientHello {
                     "Negotiated protocol version: " + negotiatedProtocol.name);
             }
 
+            // Protocol version is negotiated, reset locally supported
+            // signature schemes according to the protocol being used.
+            SignatureScheme.setHandshakeLocalSupportedAlgs(context);
+
             // Consume the handshake message for the specific protocol version.
             if (negotiatedProtocol.isDTLS) {
                 if (negotiatedProtocol.useTLS13PlusSpec()) {
