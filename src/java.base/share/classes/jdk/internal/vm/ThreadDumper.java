@@ -37,6 +37,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.List;
 
@@ -161,10 +163,19 @@ public class ThreadDumper {
 
     private static void dumpThread(Thread thread, PrintStream ps) {
         String suffix = thread.isVirtual() ? " virtual" : "";
-        ps.println("#" + thread.threadId() + " \"" + thread.getName() + "\"" + suffix);
-        for (StackTraceElement ste : thread.getStackTrace()) {
+        // should be jcmd command arg
+        boolean withLocks = true;
+        ThreadSnapshot snapshot = ThreadSnapshot.create(thread);
+        ps.println("Thread #" + thread.threadId() + " \"" + snapshot.getName() + "\"" + suffix + " " + snapshot.getState());
+        int depth = 0;
+        for (StackTraceElement st: snapshot.getStackTrace()) {
             ps.print("      ");
-            ps.println(ste);
+            ps.println(st);
+            for (ThreadSnapshot.ThreadLock lock: snapshot.getLocks(depth)) {
+                ps.print("      - ");
+                ps.println(lock);
+            }
+            depth++;
         }
         ps.println();
     }

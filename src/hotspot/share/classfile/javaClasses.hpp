@@ -459,7 +459,9 @@ class java_lang_Thread : AllStatic {
   static const char*  thread_status_name(oop java_thread_oop);
 
   // Fill in current stack trace, can cause GC
+  // If locks != nullptr, fill lock info
   static oop async_get_stack_trace(oop java_thread, TRAPS);
+  static oop get_thread_snapshot(jobject jthread, bool with_locks, TRAPS);
 
   JFR_ONLY(static u2 jfr_epoch(oop java_thread);)
   JFR_ONLY(static void set_jfr_epoch(oop java_thread, u2 epoch);)
