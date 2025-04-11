@@ -511,6 +511,7 @@ public abstract class HtmlDocletWriter {
                 .setStylesheets(configuration.getMainStylesheet(), additionalStylesheets, localStylesheets)
                 .setAdditionalScripts(configuration.getAdditionalScripts())
                 .setIndex(options.createIndex(), mainBodyScript)
+                .setSyntaxHighlight(options.syntaxHighlight())
                 .addContent(extraHeadContent);
 
         HtmlDocument htmlDocument = new HtmlDocument(
