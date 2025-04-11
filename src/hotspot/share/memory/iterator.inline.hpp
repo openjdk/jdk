@@ -431,9 +431,6 @@ typename OopOopIterateDispatchReturnSize<OopClosureType>::Table OopOopIterateDis
 
 template <typename OopClosureType>
 size_t OopIteratorClosureDispatch::oop_oop_iterate_size(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-
-  klute.verify_against_klass(obj->klass());
-
   return OopOopIterateDispatchReturnSize<OopClosureType>::invoke(obj, cl, klute);
 }
 
