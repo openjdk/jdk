@@ -281,7 +281,26 @@ limitation during the build.</p></li>
 possible, use an SSD. The build process is very disk intensive, and
 having slow disk access will significantly increase build times. If you
 need to use a network share for the source code, see below for
-suggestions on how to keep the build artifacts on a local disk.</p></li>
+suggestions on how to keep the build artifacts on a local disk.</p>
+<ul>
+<li>Make sure that all relevant paths have short names. Short names are
+used by the build system to create space-free alternative paths. Short
+name creation is enabled per volume. The default setting can be checked
+with the command: <code>fsutil 8dot3name query</code>. If short name
+creation was turned off when a directory was created, it will not have a
+short name. Whether a short name exists can be checked by running
+<code>dir /X</code> in the containing directory (in cmd.exe). If a short
+path is present you should see something like 'ASDF~1' being displayed
+in one of the collumns of the ouput. If a directory is missing a short
+name, the safest way to get one is to enable short names for that
+particular volume with
+<code>fsutil 8dot3name set &lt;drive   letter&gt;: 0</code> (note that
+you need to run as administrator for this), and then re-create the
+particular directory. A short name should be generated automatically
+then. Another option is to manually assign a short name to the directory
+using
+<code>fsutil file setShortName &lt;path&gt; &lt;short name&gt;</code>.</li>
+</ul></li>
 <li><p>On Windows, if using <a href="#cygwin">Cygwin</a>, extra care
 must be taken to make sure the environment is consistent. It is
 recommended that you follow this procedure:</p>

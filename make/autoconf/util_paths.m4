@@ -69,6 +69,16 @@ AC_DEFUN([UTIL_FIXUP_PATH],
         quiet_option="-q"
       fi
       imported_path=`$FIXPATH_BASE $quiet_option import "$path"`
+      [ if [[ "$imported_path" =~ " " ]]; then ]
+        if test "x$2" != "xNOFAIL"; then
+    AC_MSG_NOTICE([The path "$input_path" could not be made space-free. This is likely caused by missing short paths.
+      Check the "Special Considerations" section in doc/building for a detailed explanation on short paths.])
+          AC_MSG_ERROR([Spaces are not allowed in this path.])
+        else
+          imported_path=""
+        fi
+      fi
+
       $FIXPATH_BASE verify "$imported_path"
       if test $? -ne 0; then
         if test "x$2" != "xNOFAIL"; then

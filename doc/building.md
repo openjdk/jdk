@@ -83,6 +83,21 @@ on where and how to check out the source code.
   for the source code, see below for suggestions on how to keep the build
   artifacts on a local disk.
 
+  * Make sure that all relevant paths have short names. Short names are used by
+    the build system to create space-free alternative paths. Short name
+    creation is enabled per volume. The default setting can be checked with the
+    command: `fsutil 8dot3name query`. If short name creation was turned off
+    when a directory was created, it will not have a short name. Whether a
+    short name exists can be checked by running `dir /X` in the containing
+    directory (in cmd.exe). If a short path is present you should see something
+    like 'ASDF~1' being displayed in one of the collumns of the ouput. If a
+    directory is missing a short name, the safest way to get one is to enable
+    short names for that particular volume with `fsutil 8dot3name set <drive
+    letter>: 0` (note that you need to run as administrator for this), and then
+    re-create the particular directory. A short name should be generated
+    automatically then. Another option is to manually assign a short name to
+    the directory using `fsutil file setShortName <path> <short name>`.
+
 * On Windows, if using [Cygwin](#cygwin), extra care must be taken to make sure
   the environment is consistent. It is recommended that you follow this
   procedure:
