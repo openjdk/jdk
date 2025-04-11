@@ -107,7 +107,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, vmIntr
         // Require compiled LambdaForm class to be fully initialized.
         __ lea(rscratch2, Address(method_holder, InstanceKlass::init_state_offset()));
         __ ldarb(rscratch2, rscratch2);
-        __ subs(zr, rscratch2, InstanceKlass::fully_initialized);
+        __ cmp(rscratch2, InstanceKlass::fully_initialized);
         __ br(Assembler::EQ, L_ok);
         break;
 
@@ -121,7 +121,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, vmIntr
         // Class initialization check is too strong here. Just ensure that class initialization has been initiated.
         __ lea(rscratch2, Address(method_holder, InstanceKlass::init_state_offset()));
         __ ldarb(rscratch2, rscratch2);
-        __ subs(zr, rscratch2, InstanceKlass::being_initialized);
+        __ cmp(rscratch2, InstanceKlass::being_initialized);
         __ br(Assembler::GE, L_ok);
 
         // init_state check failed, but it may be an abstract interface method
