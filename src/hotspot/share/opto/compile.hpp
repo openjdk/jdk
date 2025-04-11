@@ -493,6 +493,8 @@ private:
 
   InlinePrinter _inline_printer;
 
+  static void check_current_compiler_c2() NOT_DEBUG({}});
+
 public:
   void* barrier_set_state() const { return _barrier_set_state; }
 
@@ -532,6 +534,7 @@ public:
 
   // The Compile instance currently active in this (compiler) thread.
   static Compile* current() {
+    check_current_compiler_c2();
     return (Compile*) ciEnv::current()->compiler_data();
   }
 
