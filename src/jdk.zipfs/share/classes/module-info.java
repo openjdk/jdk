@@ -265,7 +265,44 @@ import java.util.Set;
  *       </ul>
  *   </td>
  * </tr>
- *  </tbody>
+ * <tr>
+ *   <th scope="row">accessMode</th>
+ *   <td>{@link java.lang.String}</td>
+ *   <td>null/unset</td>
+ *   <td>
+ *       A value defining the desired read/write access mode of the file system
+ *       (either <em>read-write</em> or <em>read-only</em>).
+ *       <p>
+ *       Even if a zip file system is writable ({@code fs.isReadOnly() == false}),
+ *       this says nothing about whether individual files can be created or
+ *       modified, simply that it might be possible.
+ *       <ul>
+ *           <li>
+ *               If no value is set, the file system is created <em>read-write</em>
+ *               if possible. Use {@link java.nio.file.FileSystem#isReadOnly()
+ *               isReadOnly()} to determine the actual access mode.
+ *           </li>
+ *           <li>
+ *               If the value is {@code "readOnly"}, the file system is created
+ *               <em>read-only</em>, and {@link java.nio.file.FileSystem#isReadOnly()
+ *               isReadOnly()} will always return {@code true}.
+ *           </li>
+ *           <li>
+ *               If the value is {@code "readWrite"}, the file system is created
+ *               <em>read-write</em>, and {@link java.nio.file.FileSystem#isReadOnly()
+ *               isReadOnly()} will always return {@code false}. If a writable file
+ *               system cannot be created, an {@code IOException} will be thrown.
+ *           </li>
+ *           <li>
+ *               Any other values will cause an {@code IllegalArgumentException}
+ *               to be thrown.
+ *           </li>
+ *       </ul>
+ *       The access mode has no effect on reported Posix file permissions (in cases
+ *       where Posix support is enabled).
+ *   </td>
+ * </tr>
+ * </tbody>
  * </table>
  *
  * <h2>Examples:</h2>
