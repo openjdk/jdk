@@ -265,13 +265,19 @@ public final class Security {
         private static void loadFromPath(Path path, LoadingMode mode)
                 throws IOException {
             boolean isRegularFile = Files.isRegularFile(path);
-            if (isRegularFile) {
-                path = path.toRealPath();
-            } else if (Files.isDirectory(path)) {
+            if (!isRegularFile && Files.isDirectory(path)) {
                 throw new IOException("Is a directory");
-            } else {
-                path = path.toAbsolutePath();
             }
+            // For path canonicalization, we prefer
+            // java.io.File::getCanonicalPath over
+            // java.nio.file.Path::toRealPath because of the following reasons:
+            //   1. In Windows, File::getCanonicalPath handles restricted
+            //      permissions in parent directories. Contrarily,
+            //      Path::toRealPath fails with AccessDeniedException.
+            //   2. In Linux, File::getCanonicalPath handles non-regular files
+            //      (e.g. /dev/stdin). Contrarily, Path::toRealPath fails with
+            //      NoSuchFileException.
+            path = Path.of(path.toFile().getCanonicalPath());
             if (activePaths.contains(path)) {
                 throw new InternalError("Cyclic include of '" + path + "'");
             }
