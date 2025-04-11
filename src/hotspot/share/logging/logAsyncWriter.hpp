@@ -199,16 +199,6 @@ class AsyncLogWriter : public NonJavaThread {
     st->cr();
   }
 
-  // for testing-only
-  class BufferUpdater {
-    Buffer* _buf1;
-    Buffer* _buf2;
-
-   public:
-    BufferUpdater(size_t newsize);
-    ~BufferUpdater();
-  };
-
   static bool is_enqueue_allowed();
 
 public:
