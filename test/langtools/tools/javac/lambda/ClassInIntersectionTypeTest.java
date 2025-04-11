@@ -31,10 +31,10 @@ public class ClassInIntersectionTypeTest {
     @interface Anno {}
     @interface Anno2 {}
 
-    Anno a = (Anno & Serializable) ()-> null; // annotations not allowed
-    Anno a = (Serializable & Anno & Anno2) ()-> null; // annotations not allowed
-    Anno b = (Anno & Serializable) ClassInIntersectionTypeTest::myAnnoType; // annotations not allowed
-    Anno b = (Serializable & Anno2 & Anno) ClassInIntersectionTypeTest::myAnnoType; // annotations not allowed
+    Anno anno1 = (Anno & Serializable) ()-> null; // annotations not allowed
+    Anno anno2 = (Serializable & Anno & Anno2) ()-> null; // annotations not allowed
+    Anno anno3 = (Anno & Serializable) ClassInIntersectionTypeTest::myAnnoType; // annotations not allowed
+    Anno anno4 = (Serializable & Anno2 & Anno) ClassInIntersectionTypeTest::myAnnoType; // annotations not allowed
 
     static void bar() {
         annotationType(() -> null);
@@ -42,8 +42,8 @@ public class ClassInIntersectionTypeTest {
     }
 
     static <T extends Anno & Serializable> void annotationType(T t) {
-        t.annotationType();  // annotations not allowed
+        t.annotationType();
     }
 
-    Anno c = ()-> null; // annotations are not functional interfaces
+    Anno anno5 = ()-> null; // annotations are not functional interfaces
 }
