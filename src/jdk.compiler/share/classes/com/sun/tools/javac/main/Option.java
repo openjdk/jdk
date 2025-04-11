@@ -146,13 +146,7 @@ public enum Option {
         }
     },
 
-    // -nowarn is retained for command-line backward compatibility
-    NOWARN("-nowarn", "opt.nowarn", STANDARD, BASIC) {
-        @Override
-        public void process(OptionHelper helper, String option) {
-            helper.put("-Xlint:none", option);
-        }
-    },
+    NOWARN("-nowarn", "opt.nowarn", STANDARD, BASIC),
 
     VERBOSE("-verbose", "opt.verbose", STANDARD, BASIC),
 
