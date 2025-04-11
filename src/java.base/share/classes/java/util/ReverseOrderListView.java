@@ -32,6 +32,9 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import jdk.internal.lang.stable.StableUtil;
+import jdk.internal.lang.stable.StableValueImpl;
 import jdk.internal.util.ArraysSupport;
 
 /**
@@ -296,18 +299,24 @@ class ReverseOrderListView<E> implements List<E> {
 
     // copied from AbstractCollection
     public String toString() {
-        Iterator<E> it = iterator();
-        if (! it.hasNext())
-            return "[]";
+        if (base instanceof ImmutableCollections.StableList<E> stableList) {
+            final StableValueImpl<E>[] reversed = ArraysSupport.reverse(
+                    Arrays.copyOf(stableList.delegates, stableList.delegates.length));
+            return StableUtil.renderElements(base, "Collection", reversed);
+        } else {
+            Iterator<E> it = iterator();
+            if (!it.hasNext())
+                return "[]";
 
-        StringBuilder sb = new StringBuilder();
-        sb.append('[');
-        for (;;) {
-            E e = it.next();
-            sb.append(e == this ? "(this Collection)" : e);
-            if (! it.hasNext())
-                return sb.append(']').toString();
-            sb.append(',').append(' ');
+            StringBuilder sb = new StringBuilder();
+            sb.append('[');
+            for (; ; ) {
+                E e = it.next();
+                sb.append(e == this ? "(this Collection)" : e);
+                if (!it.hasNext())
+                    return sb.append(']').toString();
+                sb.append(',').append(' ');
+            }
         }
     }
 
