@@ -491,16 +491,18 @@ class TestMemorySegmentAliasingImpl {
         }
     }
 
-    // TODO: the limit is somehow not pre-loop independent!
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B,   "> 0",
-                  IRNode.VECTOR_CAST_I2L, "> 0",
-                  IRNode.STORE_VECTOR,    "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B,   "= 0",
+                  IRNode.VECTOR_CAST_I2L, "= 0",
+                  IRNode.STORE_VECTOR,    "= 0",
                   ".*multiversion.*",   "= 0"}, // AutoVectorization Predicate SUFFICES
         phase = CompilePhase.PRINT_IDEAL,
         applyIfPlatform = {"64-bit", "true"},
         applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // TODO: limit is not pre-loop independent.
+    //       It seems the AddI has its ctrl after the pre-loop, even though
+    //       both its inputs have their ctrl before. Needs more investigation.
     static void test_int_to_long_noaliasing(MemorySegment a, MemorySegment b) {
         long limit = a.byteSize() / 8L;
         for (long i = 0; i < limit; i++) {
