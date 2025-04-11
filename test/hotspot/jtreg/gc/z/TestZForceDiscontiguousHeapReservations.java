@@ -39,12 +39,10 @@ public class TestZForceDiscontiguousHeapReservations {
     private static void testValue(int n) throws Exception  {
         /**
          *  Xmx is picked so that it is divisible by 'ZForceDiscontiguousHeapReservations * ZGranuleSize'
-         *  Xms is picked so that it is less than '16 * Xmx / ZForceDiscontiguousHeapReservations' as ZGC
-         *   cannot currently handle a discontiguous heap with an initial size larger than the individual
-         *   reservations.
+         *  Xms is picked to be the same as Xmx
          */
         final int XmxInM = 2000;
-        final int XmsInM = Math.min(16 * XmxInM / (n + 1), XmxInM);
+        final int XmsInM = XmxInM;
         OutputAnalyzer oa = ProcessTools.executeTestJava(
             "-XX:+UseZGC",
             "-Xms" + XmsInM + "M",
