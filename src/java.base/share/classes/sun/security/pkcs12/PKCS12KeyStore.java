@@ -1280,7 +1280,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             macIterationCount = defaultMacIterationCount();
         }
         if (password != null && !macAlgorithm.equalsIgnoreCase("NONE")) {
-            macAlgorithm = defaultMacAlgorithm();
             byte[] macData = calculateMac(password, authenticatedSafe);
             pfx.write(macData);
         }
@@ -1543,7 +1542,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             try {
                  // Generate a random salt.
                  byte[] salt = getSalt();
-     
+
                  // generate MAC (MAC key is generated within JCE)
                  Mac m = Mac.getInstance(macAlgorithm);
                  PBEParameterSpec params =
@@ -1556,7 +1555,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                  }
                  m.update(data);
                  byte[] macResult = m.doFinal();
-     
+
                  // encode as MacData
                  MacData macData = new MacData(algName, macResult, salt,
                          macIterationCount);
@@ -2205,7 +2204,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                             m.update(authSafeData);
                             byte[] macResult = m.doFinal();
 
-                            if (debug != null) { 
+                            if (debug != null) {
                                 debug.println("Checking keystore integrity " +
                                         "(" + m.getAlgorithm() + " iterations: " + ic + ")");
                             }
