@@ -61,6 +61,7 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
 #include "sanitizers/ub.hpp"
+#include "services/heapDumper.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
@@ -1932,8 +1933,14 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 class VM_ReportJavaOutOfMemory : public VM_Operation {
  private:
   const char* _message;
+  bool _dumpHeap;
+  bool _abort;
  public:
-  VM_ReportJavaOutOfMemory(const char* message) { _message = message; }
+  VM_ReportJavaOutOfMemory(const char* message, bool dumpHeap, bool abort) {
+     _message  = message;
+     _dumpHeap = dumpHeap;
+     _abort    = abort;
+  }
   VMOp_Type type() const                        { return VMOp_ReportJavaOutOfMemory; }
   void doit();
 };
@@ -1945,6 +1952,15 @@ void VM_ReportJavaOutOfMemory::doit() {
   tty->print_cr("#");
   tty->print_cr("# java.lang.OutOfMemoryError: %s", _message);
   tty->print_cr("# -XX:OnOutOfMemoryError=\"%s\"", OnOutOfMemoryError);
+
+  if (_dumpHeap) {
+    HeapDumper::dump_heap_from_oome();
+  }
+
+  if (_abort) {
+    tty->print_cr("Aborting ");
+    report_fatal(OOM_JAVA_HEAP_FATAL, __FILE__, __LINE__, "OutOfMemory encountered: %s", _message);
+  }
 
   // make heap parsability
   Universe::heap()->ensure_parsability(false);  // no need to retire TLABs
@@ -1965,10 +1981,10 @@ void VM_ReportJavaOutOfMemory::doit() {
   }
 }
 
-void VMError::report_java_out_of_memory(const char* message) {
+void VMError::report_java_out_of_memory(const char* message, bool dumpHeap, bool abort) {
   if (OnOutOfMemoryError && OnOutOfMemoryError[0]) {
     MutexLocker ml(Heap_lock);
-    VM_ReportJavaOutOfMemory op(message);
+    VM_ReportJavaOutOfMemory op(message, dumpHeap, abort);
     VMThread::execute(&op);
   }
 }
