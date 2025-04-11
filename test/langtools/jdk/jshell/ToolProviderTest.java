@@ -85,7 +85,7 @@ public class ToolProviderTest extends StartOptionTest {
     protected int runShell(String... args) {
         //make sure the JShell running during the test is not using persisted preferences from the machine:
         Function<JavaShellToolBuilder, JavaShellToolBuilder> prevAugmentedToolBuilder =
-                getAndSetAugmentedToolBuilder(builder -> builder.persistence(new HashMap<>()));
+                getAndSetAugmentedToolBuilder(builder -> builder.persistence(getThisTestPersistence()));
         try {
             ServiceLoader<Tool> sl = ServiceLoader.load(Tool.class);
             for (Tool provider : sl) {

@@ -75,10 +75,14 @@ public class StartOptionTest {
                 .out(new PrintStream(cmdout), new PrintStream(console), new PrintStream(userout))
                 .err(new PrintStream(cmderr), new PrintStream(usererr))
                 .in(cmdInStream, null)
-                .persistence(testPersistence != null ? testPersistence
-                                                     : new HashMap<>())
+                .persistence(getThisTestPersistence())
                 .env(new HashMap<>())
                 .locale(Locale.ROOT);
+    }
+
+    protected Map<String, String> getThisTestPersistence() {
+        return testPersistence != null ? testPersistence
+                                       : new HashMap<>();
     }
 
     protected int runShell(String... args) {
