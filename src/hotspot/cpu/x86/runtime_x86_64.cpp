@@ -61,6 +61,9 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Setup code generation tools
   const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
   CodeBuffer buffer(name, 2048, 1024);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   assert(SimpleRuntimeFrame::framesize % 4 == 0, "sp not 16-byte aligned");
@@ -267,6 +270,9 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   // Setup code generation tools
   const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
   CodeBuffer buffer(name, 2048, 1024);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
 
