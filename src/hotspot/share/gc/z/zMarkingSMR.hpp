@@ -26,8 +26,8 @@
 
 #include "gc/z/zArray.hpp"
 #include "gc/z/zValue.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ZMarkStackListNode;
 

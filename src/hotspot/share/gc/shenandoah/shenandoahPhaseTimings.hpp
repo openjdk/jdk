@@ -26,9 +26,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPHASETIMINGS_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHPHASETIMINGS_HPP
 
-#include "jfr/jfrEvents.hpp"
-#include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "gc/shared/workerDataArray.hpp"
+#include "gc/shenandoah/shenandoahNumberSeq.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
 
 class ShenandoahCollectorPolicy;

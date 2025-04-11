@@ -32,8 +32,8 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "utilities/spinYield.hpp"
 #include "utilities/align.hpp"
+#include "utilities/spinYield.hpp"
 
 // Checks an individual oop for missing precise marks. Mark
 // may be either dirty or newgen.

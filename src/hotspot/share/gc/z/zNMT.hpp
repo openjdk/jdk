@@ -27,8 +27,8 @@
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "memory/allStatic.hpp"
-#include "nmt/memTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ZNMT : public AllStatic {

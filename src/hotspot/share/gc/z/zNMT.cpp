@@ -24,9 +24,9 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMT.hpp"
+#include "nmt/memoryFileTracker.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/memoryFileTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 MemoryFileTracker::MemoryFile* ZNMT::_device = nullptr;

@@ -27,9 +27,9 @@
 #include "gc/z/zUncoloredRoot.hpp"
 
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zBarrier.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
-#include "gc/z/zBarrier.hpp"
 #include "oops/oop.hpp"
 
 template <typename ObjectFunctionT>

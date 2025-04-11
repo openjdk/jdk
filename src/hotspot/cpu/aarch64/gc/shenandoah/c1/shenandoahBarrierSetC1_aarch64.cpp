@@ -27,9 +27,9 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
-#include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 
 #define __ masm->masm()->
 
