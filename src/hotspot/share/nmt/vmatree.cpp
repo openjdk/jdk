@@ -55,9 +55,13 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   // First handle A.
   // Find closest node that is LEQ A
   bool LEQ_A_found = false;
+  bool is_uncommit_operation = state == StateType::Reserved && use_tag_inplace;
   AddressState LEQ_A;
   TreapNode* leqA_n = _tree.closest_leq(A);
   if (leqA_n == nullptr) {
+    if (is_uncommit_operation) {
+      return SummaryDiff(-1);
+    }
     assert(!use_tag_inplace, "Cannot use the tag inplace if no pre-existing tag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
     if (use_tag_inplace) {
       log_debug(nmt)("Cannot use the tag inplace if no pre-existing tag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
@@ -71,6 +75,9 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     LEQ_A = AddressState{leqA_n->key(), leqA_n->val()};
     StateType leqA_state = leqA_n->val().out.type();
     StateType new_state = stA.out.type();
+    if (is_uncommit_operation && leqA_state == StateType::Released) {
+      return SummaryDiff(-1);
+    }
     // If we specify use_tag_inplace then the new region takes over the current tag instead of the tag in metadata.
     // This is important because the VirtualMemoryTracker API doesn't require supplying the tag for some operations.
     if (use_tag_inplace) {
@@ -132,24 +139,32 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 
   // Find all nodes between (A, B] and record their addresses and values. Also update B's
   // outgoing state.
+  bool is_remove_ok = true;
   _tree.visit_range_in_order(A + 1, B + 1, [&](TreapNode* head) {
     int cmp_B = PositionComparator::cmp(head->key(), B);
     stB.out = out_state(head);
-    if (cmp_B < 0) {
-      // Record all nodes preceding B.
-      to_be_deleted_inbetween_a_b.push({head->key(), head->val()});
-    } else if (cmp_B == 0) {
-      // Re-purpose B node, unless it would result in a noop node, in
-      // which case record old node at B for deletion and summary accounting.
-      if (stB.is_noop()) {
-        to_be_deleted_inbetween_a_b.push(AddressState{B, head->val()});
-      } else {
-        head->val() = stB;
+    if (is_uncommit_operation && head->val().out.type() == StateType::Released)  {
+      is_remove_ok = false;
+    }
+    if (is_remove_ok) {
+      if (cmp_B < 0) {
+        // Record all nodes preceding B.
+        to_be_deleted_inbetween_a_b.push({head->key(), head->val()});
+      } else if (cmp_B == 0) {
+        // Re-purpose B node, unless it would result in a noop node, in
+        // which case record old node at B for deletion and summary accounting.
+        if (stB.is_noop()) {
+          to_be_deleted_inbetween_a_b.push(AddressState{B, head->val()});
+        } else {
+          head->val() = stB;
+        }
+        B_needs_insert = false;
       }
-      B_needs_insert = false;
     }
   });
-
+  if (!is_remove_ok) {
+    return SummaryDiff(-1);
+  }
   // Insert B node if needed
   if (B_needs_insert && // Was not already inserted
       !stB.is_noop())   // The operation is differing
