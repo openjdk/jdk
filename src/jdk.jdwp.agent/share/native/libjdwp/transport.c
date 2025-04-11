@@ -33,8 +33,8 @@
 static jdwpTransportEnv *transport = NULL;
 static unsigned transportVersion = JDWPTRANSPORT_VERSION_1_0;
 
-static jrawMonitorID listenerLock;
-static jrawMonitorID sendLock;
+static DebugRawMonitor* listenerLock;
+static DebugRawMonitor* sendLock;
 
 /*
  * data structure used for passing transport info from thread to thread
@@ -392,8 +392,8 @@ void
 transport_initialize(void)
 {
     transport = NULL;
-    listenerLock = debugMonitorCreate("JDWP Transport Listener Monitor");
-    sendLock = debugMonitorCreate("JDWP Transport Send Monitor");
+    listenerLock = debugMonitorCreate(listenerLock_Rank, "JDWP Transport Listener Monitor");
+    sendLock = debugMonitorCreate(sendLock_Rank, "JDWP Transport Send Monitor");
 }
 
 void
