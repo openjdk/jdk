@@ -50,10 +50,10 @@ public class TestFloatConversionsVector {
         TestFramework framework = new TestFramework(TestFloatConversionsVector.class);
         framework.addFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3");
         switch (args[0]) {
-            case "nCOH_nAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"); }
-            case "nCOH_yAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"); }
-            case "yCOH_nAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"); }
-            case "yCOH_yAV" -> { framework.addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"); }
+            case "nCOH_nAV" -> { framework.addFlags("-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "nCOH_yAV" -> { framework.addFlags("-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"); }
+            case "yCOH_nAV" -> { framework.addFlags("-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "yCOH_yAV" -> { framework.addFlags("-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         };
         framework.start();

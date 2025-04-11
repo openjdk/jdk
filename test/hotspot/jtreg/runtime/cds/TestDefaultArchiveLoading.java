@@ -132,7 +132,6 @@ public class TestDefaultArchiveLoading {
         }
 
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-XX:+UnlockExperimentalVMOptions",
                 "-XX:" + coh + "UseCompactObjectHeaders",
                 "-XX:" + coops + "UseCompressedOops",
                 "-Xlog:cds",
