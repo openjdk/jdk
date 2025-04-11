@@ -29,7 +29,9 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.SunClipboard;
@@ -50,6 +52,8 @@ import sun.awt.datatransfer.SunClipboard;
 final class WClipboard extends SunClipboard {
 
     private boolean isClipboardViewerRegistered;
+
+    private final ReentrantLock clipboardLocked = new ReentrantLock();
 
     WClipboard() {
         super("System");
@@ -111,13 +115,32 @@ final class WClipboard extends SunClipboard {
      * @throws IllegalStateException if the clipboard has not been opened
      */
     @Override
-    public native void openClipboard(SunClipboard newOwner) throws IllegalStateException;
-    /**
-     * Call the Win32 CloseClipboard function if we have clipboard ownership,
-     * does nothing if we have not ownership.
-     */
+    public void openClipboard(SunClipboard newOwner) throws IllegalStateException {
+        if (!clipboardLocked.tryLock()) {
+            throw new IllegalStateException("Failed to acquire clipboard lock");
+        }
+        try {
+            openClipboard0(newOwner);
+        } catch (IllegalStateException ex) {
+            clipboardLocked.unlock();
+            throw ex;
+        }
+    }
+
     @Override
-    public native void closeClipboard();
+    public void closeClipboard() {
+        if(clipboardLocked.isLocked()) {
+            try {
+                closeClipboard0();
+            } finally {
+                clipboardLocked.unlock();
+            }
+        }
+    }
+
+    private native void openClipboard0(SunClipboard newOwner) throws IllegalStateException;
+    private native void closeClipboard0();
+
     /**
      * Call the Win32 SetClipboardData function.
      */
@@ -159,16 +182,12 @@ final class WClipboard extends SunClipboard {
             return;
         }
 
-        long[] formats = null;
         try {
-            openClipboard(null);
-            formats = getClipboardFormats();
-        } catch (IllegalStateException exc) {
-            // do nothing to handle the exception, call checkChange(null)
-        } finally {
-            closeClipboard();
+            long[] formats = getClipboardFormats();
+            checkChange(formats);
+        } catch (Throwable ex) {
+            System.getLogger(WClipboard.class.getName()).log(Level.WARNING, "Failed to process handleContentsChanged", ex);
         }
-        checkChange(formats);
     }
 
     /**

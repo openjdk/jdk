@@ -127,7 +127,7 @@ Java_sun_awt_windows_WClipboard_init(JNIEnv *env, jclass cls)
  * Signature: (Lsun/awt/windows/WClipboard;)V
  */
 JNIEXPORT void JNICALL
-Java_sun_awt_windows_WClipboard_openClipboard(JNIEnv *env, jobject self,
+Java_sun_awt_windows_WClipboard_openClipboard0(JNIEnv *env, jobject self,
                                               jobject newOwner)
 {
     TRY;
@@ -154,7 +154,7 @@ Java_sun_awt_windows_WClipboard_openClipboard(JNIEnv *env, jobject self,
  * Signature: ()V
  */
 JNIEXPORT void JNICALL
-Java_sun_awt_windows_WClipboard_closeClipboard(JNIEnv *env, jobject self)
+Java_sun_awt_windows_WClipboard_closeClipboard0(JNIEnv *env, jobject self)
 {
     TRY;
 
@@ -294,23 +294,25 @@ Java_sun_awt_windows_WClipboard_getClipboardFormats
 {
     TRY;
 
-    DASSERT(::GetOpenClipboardWindow() == AwtToolkit::GetInstance().GetHWnd());
+    unsigned int cFormats = 128; // Allocate enough space to hold all
+    unsigned int pcFormatsOut = 0;
+    unsigned int lpuiFormats[128] = { 0 };
 
-    jsize nFormats = ::CountClipboardFormats();
-    jlongArray formats = env->NewLongArray(nFormats);
+    VERIFY(::GetUpdatedClipboardFormats(lpuiFormats, 128, &pcFormatsOut));
+
+    jlongArray formats = env->NewLongArray(pcFormatsOut);
     if (formats == NULL) {
         throw std::bad_alloc();
     }
-    if (nFormats == 0) {
+    if (pcFormatsOut == 0) {
         return formats;
     }
     jboolean isCopy;
     jlong *lFormats = env->GetLongArrayElements(formats, &isCopy),
         *saveFormats = lFormats;
-    UINT num = 0;
 
-    for (jsize i = 0; i < nFormats; i++, lFormats++) {
-        *lFormats = num = ::EnumClipboardFormats(num);
+    for (unsigned int i = 0; i < pcFormatsOut; i++, lFormats++) {
+        *lFormats = lpuiFormats[i];
     }
 
     env->ReleaseLongArrayElements(formats, saveFormats, 0);

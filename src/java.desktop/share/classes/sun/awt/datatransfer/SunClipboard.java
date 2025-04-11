@@ -204,8 +204,9 @@ public abstract class SunClipboard extends Clipboard
         byte[] data = null;
         Transferable localeTransferable = null;
 
+        openClipboard(null);
+
         try {
-            openClipboard(null);
 
             long[] formats = getClipboardFormats();
             Long lFormat = DataTransferer.getInstance().
@@ -318,12 +319,7 @@ public abstract class SunClipboard extends Clipboard
      * @since 1.5
      */
     protected long[] getClipboardFormatsOpenClose() {
-        try {
-            openClipboard(null);
-            return getClipboardFormats();
-        } finally {
-            closeClipboard();
-        }
+        return getClipboardFormats();
     }
 
     /**
@@ -356,15 +352,7 @@ public abstract class SunClipboard extends Clipboard
         flavorListeners.add(listener);
 
         if (numberOfFlavorListeners++ == 0) {
-            long[] currentFormats = null;
-            try {
-                openClipboard(null);
-                currentFormats = getClipboardFormats();
-            } catch (final IllegalStateException ignored) {
-            } finally {
-                closeClipboard();
-            }
-            this.currentFormats = currentFormats;
+            this.currentFormats = getClipboardFormats();
 
             registerClipboardViewerChecked();
         }
