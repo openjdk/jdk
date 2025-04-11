@@ -151,12 +151,12 @@ class OopOopIterateDispatch : public DispatchBase {
 
     template <typename KlassType>
     static void init_and_execute(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-      OopOopIterateDispatch<OopClosureType>::_table.resolve_and_execute<KlassType> (obj, cl, klute);
+      OopOopIterateDispatch<OopClosureType>::_table.set_resolve_function_and_execute<KlassType> (obj, cl, klute);
     }
 
     template <typename KlassType>
-    void resolve_and_execute(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-      resolve<KlassType>();
+    void set_resolve_function_and_execute(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
+      set_resolve_function<KlassType>();
       _function[KlassType::Kind] (obj, cl, klute);
     }
 
@@ -166,7 +166,7 @@ class OopOopIterateDispatch : public DispatchBase {
     }
 
     template <typename KlassType>
-    void resolve() {
+    void set_resolve_function() {
       _function[KlassType::Kind] = UseCompressedOops ?
           &invoke<KlassType, narrowOop> :
           &invoke<KlassType, oop>;
@@ -220,12 +220,12 @@ class OopOopIterateDispatchReverse {
 
     template <typename KlassType>
     static void init_and_execute (oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-      OopOopIterateDispatchReverse<OopClosureType>::_table.resolve_and_execute<KlassType>(obj, cl, klute);
+      OopOopIterateDispatchReverse<OopClosureType>::_table.set_resolve_function_and_execute<KlassType>(obj, cl, klute);
     }
 
     template <typename KlassType>
-    void resolve_and_execute(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-      resolve<KlassType>();
+    void set_resolve_function_and_execute(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
+      set_resolve_function<KlassType>();
       _function[KlassType::Kind](obj, cl, klute);
     }
 
@@ -235,7 +235,7 @@ class OopOopIterateDispatchReverse {
     }
 
     template <typename KlassType>
-    void resolve() {
+    void set_resolve_function() {
       _function[KlassType::Kind] = UseCompressedOops ?
           &invoke<KlassType, narrowOop> :
           &invoke<KlassType, oop>;
@@ -287,12 +287,12 @@ class OopOopIterateDispatchBounded {
 
     template <typename KlassType>
     static void init_and_execute(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
-      OopOopIterateDispatchBounded<OopClosureType>::_table.resolve_and_execute<KlassType> (obj, cl, mr, klute);
+      OopOopIterateDispatchBounded<OopClosureType>::_table.set_resolve_function_and_execute<KlassType> (obj, cl, mr, klute);
     }
 
     template <typename KlassType>
-    void resolve_and_execute(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
-      resolve<KlassType>();
+    void set_resolve_function_and_execute(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
+      set_resolve_function<KlassType>();
       _function[KlassType::Kind] (obj, cl, mr, klute);
     }
 
@@ -302,7 +302,7 @@ class OopOopIterateDispatchBounded {
     }
 
     template <typename KlassType>
-    void resolve() {
+    void set_resolve_function() {
       _function[KlassType::Kind] = UseCompressedOops ?
           &invoke<KlassType, narrowOop> :
           &invoke<KlassType, oop>;
@@ -364,7 +364,7 @@ class OopOopIterateDispatchReturnSize : public DispatchBase {
 
     template <typename KlassType>
     static size_t init_and_execute (oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-      return OopOopIterateDispatchReturnSize<OopClosureType>::_table.resolve_and_execute<KlassType> (obj, cl, klute);
+      return OopOopIterateDispatchReturnSize<OopClosureType>::_table.set_resolve_function_and_execute<KlassType> (obj, cl, klute);
     }
 
     template <typename KlassType>
@@ -373,13 +373,13 @@ class OopOopIterateDispatchReturnSize : public DispatchBase {
     }
 
     template <typename KlassType>
-    size_t resolve_and_execute(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-      resolve<KlassType>();
+    size_t set_resolve_function_and_execute(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
+      set_resolve_function<KlassType>();
       return _function[KlassType::Kind] (obj, cl, klute);
     }
 
     template <typename KlassType>
-    void resolve() {
+    void set_resolve_function() {
       if (should_use_slowpath_getsize()) {
         if (UseCompressedOops) {
           _function[KlassType::Kind] = &invoke<KlassType, narrowOop>;
@@ -462,7 +462,7 @@ class OopOopIterateDispatchBoundedReturnSize : public DispatchBase {
 
     template <typename KlassType>
     static size_t init_and_execute (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
-      return OopOopIterateDispatchBoundedReturnSize<OopClosureType>::_table.resolve_and_execute<KlassType> (obj, cl, mr, klute);
+      return OopOopIterateDispatchBoundedReturnSize<OopClosureType>::_table.set_resolve_function_and_execute<KlassType> (obj, cl, mr, klute);
     }
 
     template <typename KlassType>
@@ -471,13 +471,13 @@ class OopOopIterateDispatchBoundedReturnSize : public DispatchBase {
     }
 
     template <typename KlassType>
-    size_t resolve_and_execute (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
-      resolve<KlassType>();
+    size_t set_resolve_function_and_execute (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
+      set_resolve_function<KlassType>();
       return _function[KlassType::Kind] (obj, cl, mr, klute);
     }
 
     template <typename KlassType>
-    void resolve() {
+    void set_resolve_function() {
       if (should_use_slowpath_getsize()) {
         if (UseCompressedOops) {
           _function[KlassType::Kind] = &invoke<KlassType, narrowOop>;
