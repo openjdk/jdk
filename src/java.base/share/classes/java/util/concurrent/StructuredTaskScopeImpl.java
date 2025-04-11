@@ -26,8 +26,6 @@ package java.util.concurrent;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.function.Function;
@@ -78,7 +76,7 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
      * default configuration.
      */
     static <T, R> StructuredTaskScope<T, R> open(Joiner<? super T, ? extends R> joiner,
-                                                 Function<Config, Config> configFunction) {
+                                                 Function<Configuration, Configuration> configFunction) {
         Objects.requireNonNull(joiner);
 
         var config = (ConfigImpl) configFunction.apply(ConfigImpl.defaultConfig());
@@ -395,27 +393,27 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
     }
 
     /**
-     * Config implementation.
+     * Configuration implementation.
      */
     record ConfigImpl(ThreadFactory threadFactory,
                       String name,
-                      Duration timeout) implements Config {
-        static Config defaultConfig() {
+                      Duration timeout) implements Configuration {
+        static Configuration defaultConfig() {
             return new ConfigImpl(Thread.ofVirtual().factory(), null, null);
         }
 
         @Override
-        public Config withThreadFactory(ThreadFactory threadFactory) {
+        public Configuration withThreadFactory(ThreadFactory threadFactory) {
             return new ConfigImpl(Objects.requireNonNull(threadFactory), name, timeout);
         }
 
         @Override
-        public Config withName(String name) {
+        public Configuration withName(String name) {
             return new ConfigImpl(threadFactory, Objects.requireNonNull(name), timeout);
         }
 
         @Override
-        public Config withTimeout(Duration timeout) {
+        public Configuration withTimeout(Duration timeout) {
             return new ConfigImpl(threadFactory, name, Objects.requireNonNull(timeout));
         }
     }

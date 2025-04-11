@@ -53,7 +53,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.StructuredTaskScope.TimeoutException;
-import java.util.concurrent.StructuredTaskScope.Config;
+import java.util.concurrent.StructuredTaskScope.Configuration;
 import java.util.concurrent.StructuredTaskScope.FailedException;
 import java.util.concurrent.StructuredTaskScope.Joiner;
 import java.util.concurrent.StructuredTaskScope.Subtask;
@@ -1528,7 +1528,7 @@ class StructuredTaskScopeTest {
     }
 
     /**
-     * Test the Config function apply method throwing an exception.
+     * Test the Configuration function apply method throwing an exception.
      */
     @Test
     void testConfigFunctionThrows() throws Exception {
@@ -1538,11 +1538,11 @@ class StructuredTaskScopeTest {
     }
 
     /**
-     * Test Config equals/hashCode/toString
+     * Test Configuration equals/hashCode/toString
      */
     @Test
     void testConfigMethods() throws Exception {
-        Function<Config, Config> testConfig = cf -> {
+        Function<Configuration, Configuration> testConfig = cf -> {
             var name = "duke";
             var threadFactory = Thread.ofPlatform().factory();
             var timeout = Duration.ofSeconds(10);
@@ -1592,7 +1592,7 @@ class StructuredTaskScopeTest {
             assertThrows(NullPointerException.class, () -> scope.fork((Runnable) null));
         }
 
-        // Config and withXXX methods
+        // Configuration and withXXX methods
         assertThrows(NullPointerException.class,
                 () -> StructuredTaskScope.open(Joiner.awaitAll(), cf -> null));
         assertThrows(NullPointerException.class,
