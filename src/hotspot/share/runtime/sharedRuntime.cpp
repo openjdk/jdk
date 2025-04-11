@@ -2475,8 +2475,8 @@ AdapterHandlerEntry* AdapterHandlerLibrary::lookup(int total_args_passed, BasicT
     if (entry_p != nullptr) {
       entry = *entry_p;
       assert(entry->fingerprint()->equals(fp), "fingerprint mismatch key fp %s %s (hash=%d) != found fp %s %s (hash=%d)",
-	     entry->fingerprint()->as_basic_args_string(), entry->fingerprint()->as_string(), entry->fingerprint()->compute_hash(),
-	     fp->as_basic_args_string(), fp->as_string(), fp->compute_hash());
+             entry->fingerprint()->as_basic_args_string(), entry->fingerprint()->as_string(), entry->fingerprint()->compute_hash(),
+             fp->as_basic_args_string(), fp->as_string(), fp->compute_hash());
   #ifndef PRODUCT
       if (fp->is_compact()) _compact++;
       _runtime_hits++;
