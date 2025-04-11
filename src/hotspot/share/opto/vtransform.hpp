@@ -109,19 +109,22 @@ public:
   const bool _verbose;
   const bool _rejections;
   const bool _align_vector;
+  const bool _speculative_aliasing_analysis;
   const bool _speculative_runtime_checks;
   const bool _info;
 
   VTransformTrace(const VTrace& vtrace,
                   const bool is_trace_rejections,
                   const bool is_trace_align_vector,
+                  const bool is_trace_speculative_aliasing_analysis,
                   const bool is_trace_speculative_runtime_checks,
                   const bool is_trace_info) :
     _verbose                   (vtrace.is_trace(TraceAutoVectorizationTag::ALL)),
-    _rejections                (_verbose | is_trace_vtransform(vtrace) | is_trace_rejections),
-    _align_vector              (_verbose | is_trace_vtransform(vtrace) | is_trace_align_vector),
-    _speculative_runtime_checks(_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_runtime_checks),
-    _info                      (_verbose | is_trace_vtransform(vtrace) | is_trace_info) {}
+    _rejections                    (_verbose | is_trace_vtransform(vtrace) | is_trace_rejections),
+    _align_vector                  (_verbose | is_trace_vtransform(vtrace) | is_trace_align_vector),
+    _speculative_aliasing_analysis (_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_aliasing_analysis),
+    _speculative_runtime_checks    (_verbose | is_trace_vtransform(vtrace) | is_trace_speculative_runtime_checks),
+    _info                          (_verbose | is_trace_vtransform(vtrace) | is_trace_info) {}
 
   static bool is_trace_vtransform(const VTrace& vtrace) {
     return vtrace.is_trace(TraceAutoVectorizationTag::VTRANSFORM);
@@ -161,6 +164,7 @@ public:
   DEBUG_ONLY( bool is_empty() const { return _vtnodes.is_empty(); } )
   DEBUG_ONLY( bool is_scheduled() const { return _schedule.is_nonempty(); } )
   const GrowableArray<VTransformNode*>& vtnodes() const { return _vtnodes; }
+  const GrowableArray<VTransformNode*>& get_schedule() const { return _schedule; }
 
   bool schedule();
   bool has_store_to_load_forwarding_failure(const VLoopAnalyzer& vloop_analyzer) const;
@@ -173,7 +177,7 @@ private:
   PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }
   bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
-  void collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const;
+  void collect_nodes_without_strong_dependency(GrowableArray<VTransformNode*>& stack) const;
 
   template<typename Callback>
   void for_each_memop_in_schedule(Callback callback) const;
@@ -248,7 +252,8 @@ private:
   void determine_mem_ref_and_aw_for_main_loop_alignment();
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
 
-  void apply_speculative_runtime_checks();
+  void apply_speculative_alignment_runtime_checks();
+  void apply_speculative_aliasing_runtime_checks();
   void add_speculative_alignment_check(Node* node, juint alignment);
   void add_speculative_check(BoolNode* bol);
 
@@ -259,21 +264,50 @@ private:
 // VTransform. Many such vtnodes make up the VTransformGraph. The vtnodes represent
 // the resulting scalar and vector nodes as closely as possible.
 // See description at top of this file.
+//
+// There are 3 tyes of edges:
+// - req:                        data edges, corresponding to C2 IR Node data edges.
+// - strong memory dependencies: memory edges that must be respected when scheduling.
+// - weak memory dependencies:   memory edges that can be violated, but if violated then
+//                               corresponding aliasing analysis runtime checks must be
+//                               inserted.
+//
+// Strong dependencies: union of req and strong memory dependencies.
+//
+// The C2 IR Node memory edges essencially define a linear order of all memory operations
+// (only Loads with the same memory input can be executed in an arbitrary order). This is
+// efficient, because it means ever Load and Store has exactly one input memory dependency,
+// which keeps the memory edge count linear. This is approach is too restrictive for
+// vectorization, for example, we could never vectorize stores, since they are all in a
+// dependency chain. Instead, we model the memory edges between all memory nodes, which
+// could be quadratic in the worst case. For vectorization, we must essencially reorder the
+// instructions in the graph. For this we must model all memory dependencies.
 class VTransformNode : public ArenaObj {
 public:
   const VTransformNodeIDX _idx;
 
 private:
-  // _in is split into required inputs (_req), and additional dependencies.
+  // We split _in into 3 sections:
+  // - req:                         _in[0              .. _req-1]
+  // - strong memory dependencies:  _in[_req           .. _in_strong_dep-1]
+  // - weak memory dependencies:    _in[_in_strong_dep .. _len-1]
   const uint _req;
+  uint _in_strong_dep;
   GrowableArray<VTransformNode*> _in;
+
+  // We split _out into 2 sections:
+  // - strong dependencies:  _out[0               .. _out_strong_dep-1]
+  // - weak dependencies:    _out[_out_strong_dep .. _len-1]
+  uint _out_strong_dep;
   GrowableArray<VTransformNode*> _out;
 
 public:
   VTransformNode(VTransform& vtransform, const uint req) :
     _idx(vtransform.graph().new_idx()),
     _req(req),
+    _in_strong_dep(req),
     _in(vtransform.arena(),  req, req, nullptr),
+    _out_strong_dep(0),
     _out(vtransform.arena(), 4, 0, nullptr)
   {
     vtransform.graph().add_vtnode(this);
@@ -283,7 +317,7 @@ public:
     assert(i < _req, "must be a req");
     assert(_in.at(i) == nullptr && n != nullptr, "only set once");
     _in.at_put(i, n);
-    n->add_out(this);
+    n->add_out_strong(this);
   }
 
   void swap_req(uint i, uint j) {
@@ -294,23 +328,65 @@ public:
     _in.at_put(j, tmp);
   }
 
-  void add_dependency(VTransformNode* n) {
+  void add_strong_memory_dependency(VTransformNode* n) {
     assert(n != nullptr, "no need to add nullptr");
-    _in.push(n);
-    n->add_out(this);
+    if (_in_strong_dep < (uint)_in.length()) {
+      // Put n in place of first weak dependency, and move weak
+      // the weak dependency to the end.
+      VTransformNode* first_weak = _in.at(_in_strong_dep);
+      _in.at_put(_in_strong_dep, n);
+      _in.push(first_weak);
+    } else {
+      _in.push(n);
+    }
+    _in_strong_dep++;
+    n->add_out_strong(this);
   }
 
-  void add_out(VTransformNode* n) {
+  void add_weak_memory_dependency(VTransformNode* n) {
+    assert(n != nullptr, "no need to add nullptr");
+    _in.push(n);
+    n->add_out_weak(this);
+  }
+
+  void add_out_strong(VTransformNode* n) {
+    if (_out_strong_dep < (uint)_out.length()) {
+      // Put n in place of first weak dependency, and move weak
+      // the weak dependency to the end.
+      VTransformNode* first_weak = _out.at(_out_strong_dep);
+      _out.at_put(_out_strong_dep, n);
+      _out.push(first_weak);
+    } else {
+      _out.push(n);
+    }
+    _out_strong_dep++;
+  }
+
+  void add_out_weak(VTransformNode* n) {
     _out.push(n);
   }
 
   uint req() const { return _req; }
-  VTransformNode* in(int i) const { return _in.at(i); }
-  int outs() const { return _out.length(); }
-  VTransformNode* out(int i) const { return _out.at(i); }
+  uint out_strongs() const { return _out_strong_dep; }
+  uint out_weaks() const { return _out.length() - _out_strong_dep; }
 
-  bool has_req_or_dependency() const {
-    for (int i = 0; i < _in.length(); i++) {
+  VTransformNode* in_req(uint i) const {
+    assert(i < _req, "must be a req");
+    return _in.at(i);
+  }
+
+  VTransformNode* out_strong(uint i) const {
+    assert(i < out_strongs(), "must be a strong dependency");
+    return _out.at(i);
+  }
+
+  VTransformNode* out_weak(uint i) const {
+    assert(i < out_weaks(), "must be a strong dependency");
+    return _out.at(_out_strong_dep + i);
+  }
+
+  bool has_strong_dependency() const {
+    for (uint i = 0; i < _in_strong_dep; i++) {
       if (_in.at(i) != nullptr) { return true; }
     }
     return false;
