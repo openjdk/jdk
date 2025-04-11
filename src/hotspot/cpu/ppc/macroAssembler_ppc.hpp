@@ -802,6 +802,7 @@ class MacroAssembler: public Assembler {
   inline void decode_heap_oop(Register d);
 
   // Load/Store klass oop from klass field. Compress.
+  void load_klass_no_decode(Register dst, Register src);
   void load_klass(Register dst, Register src);
   void load_narrow_klass_compact(Register dst, Register src);
   void cmp_klass(ConditionRegister dst, Register obj, Register klass, Register tmp, Register tmp2);

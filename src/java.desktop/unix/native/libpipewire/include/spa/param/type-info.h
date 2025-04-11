@@ -14,5 +14,6 @@
 #include <spa/param/profiler-types.h>
 #include <spa/param/profile-types.h>
 #include <spa/param/route-types.h>
+#include <spa/param/tag-types.h>
 
 #endif /* SPA_PARAM_TYPE_INFO_H */

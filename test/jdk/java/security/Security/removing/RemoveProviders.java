@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4963416 7054918
- * @library ../../testlibrary
+ * @library /test/lib
  * @summary make sure removeProvider() always works correctly
  * @author Andreas Sterbenz
  */
@@ -32,6 +32,7 @@
 import java.util.*;
 
 import java.security.*;
+import jdk.test.lib.security.ProvidersSnapshot;
 
 public class RemoveProviders {
 

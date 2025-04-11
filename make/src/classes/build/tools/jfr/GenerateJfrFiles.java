@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -768,9 +768,10 @@ public class GenerateJfrFiles {
             out.write("#ifndef JFRFILES_JFREVENTCLASSES_HPP");
             out.write("#define JFRFILES_JFREVENTCLASSES_HPP");
             out.write("");
-            out.write("#include \"oops/klass.hpp\"");
             out.write("#include \"jfrfiles/jfrTypes.hpp\"");
             out.write("#include \"jfr/utilities/jfrTypes.hpp\"");
+            out.write("#include \"oops/klass.hpp\"");
+            out.write("#include \"runtime/thread.hpp\"");
             out.write("#include \"utilities/macros.hpp\"");
             out.write("#include \"utilities/ticks.hpp\"");
             out.write("#if INCLUDE_JFR");
@@ -789,6 +790,7 @@ public class GenerateJfrFiles {
             out.write(" */");
             out.write("");
             printTypes(out, metadata, false);
+            printHelpers(out, false);
             out.write("");
             out.write("");
             out.write("#else // !INCLUDE_JFR");
@@ -806,11 +808,41 @@ public class GenerateJfrFiles {
             out.write("};");
             out.write("");
             printTypes(out, metadata, true);
+            printHelpers(out, true);
             out.write("");
             out.write("");
             out.write("#endif // INCLUDE_JFR");
             out.write("#endif // JFRFILES_JFREVENTCLASSES_HPP");
         }
+    }
+
+    private static void printHelpers(Printer out, boolean empty) {
+        out.write("template <typename EventType>");
+        out.write("class JfrNonReentrant : public EventType {");
+        if (!empty) {
+            out.write(" private:");
+            out.write("  Thread* const _thread;");
+            out.write("  int32_t _previous_nesting;");
+        }
+        out.write(" public:");
+        out.write("  JfrNonReentrant(EventStartTime timing = TIMED)");
+        if (empty) {
+            out.write("  {}");
+        } else {
+            out.write("    : EventType(timing), _thread(Thread::current()), _previous_nesting(JfrThreadLocal::make_non_reentrant(_thread)) {}");
+            out.write("");
+            out.write("  JfrNonReentrant(Thread* thread, EventStartTime timing = TIMED)");
+            out.write("    : EventType(timing), _thread(thread), _previous_nesting(JfrThreadLocal::make_non_reentrant(_thread)) {}");
+        }
+        if (!empty) {
+          out.write("");
+          out.write("  ~JfrNonReentrant() {");
+          out.write("    if (_previous_nesting != -1) {");
+          out.write("      JfrThreadLocal::make_reentrant(_thread, _previous_nesting);");
+          out.write("    }");
+          out.write("  }");
+        }
+        out.write("}; ");
     }
 
     private static void printTypes(Printer out, Metadata metadata, boolean empty) {
