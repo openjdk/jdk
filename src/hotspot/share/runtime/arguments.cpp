@@ -524,6 +524,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseOprofile",                  JDK_Version::jdk(25), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 #endif
   { "LockingMode",                  JDK_Version::jdk(24), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+#ifdef _LP64
+  { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(26), JDK_Version::undefined() },
+#endif
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
 
