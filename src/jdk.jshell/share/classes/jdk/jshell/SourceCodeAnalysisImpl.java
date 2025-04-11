@@ -81,6 +81,7 @@ import java.util.function.Predicate;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
@@ -248,6 +249,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     private Tree.Kind guessKind(String code) {
+        return guessKind(code, null);
+    }
+
+    private Tree.Kind guessKind(String code, boolean[] moduleImport) {
         return proc.taskFactory.parse(code, pt -> {
             List<? extends Tree> units = pt.units();
             if (units.isEmpty()) {
@@ -255,6 +260,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             }
             Tree unitTree = units.get(0);
             proc.debug(DBG_COMPA, "Kind: %s -- %s\n", unitTree.getKind(), unitTree);
+            if (moduleImport != null && unitTree.getKind() == Kind.IMPORT) {
+                moduleImport[0] = ((ImportTree) unitTree).isModule();
+            }
             return unitTree.getKind();
         });
     }
@@ -290,23 +298,26 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         if (code.trim().isEmpty()) { //TODO: comment handling
             code += ";";
         }
-        OuterWrap codeWrap = switch (guessKind(code)) {
-            case IMPORT -> proc.outerMap.wrapImport(Wrap.simpleWrap(code + "any.any"), null);
+        boolean[] moduleImport = new boolean[1];
+        OuterWrap codeWrap = switch (guessKind(code, moduleImport)) {
+            case IMPORT -> moduleImport[0] ? proc.outerMap.wrapImport(Wrap.simpleWrap(code), null)
+                                           : proc.outerMap.wrapImport(Wrap.simpleWrap(code + "any.any"), null);
             case CLASS, METHOD -> proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(code));
             default -> proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
         };
         String requiredPrefix = identifier;
         return computeSuggestions(codeWrap, cursor, anchor).stream()
-                .filter(s -> s.continuation().startsWith(requiredPrefix) && !s.continuation().equals(REPL_DOESNOTMATTER_CLASS_NAME))
+                .filter(s -> s.filteringText.startsWith(requiredPrefix) && !s.continuation().equals(REPL_DOESNOTMATTER_CLASS_NAME))
                 .sorted(Comparator.comparing(Suggestion::continuation))
+                .map(s -> (Suggestion) s)
                 .toList();
     }
 
-    private List<Suggestion> computeSuggestions(OuterWrap code, int cursor, int[] anchor) {
+    private List<SuggestionImpl> computeSuggestions(OuterWrap code, int cursor, int[] anchor) {
         return proc.taskFactory.analyze(code, at -> {
             SourcePositions sp = at.trees().getSourcePositions();
             CompilationUnitTree topLevel = at.firstCuTree();
-            List<Suggestion> result = new ArrayList<>();
+            List<SuggestionImpl> result = new ArrayList<>();
             TreePath tp = pathFor(topLevel, sp, code, cursor);
             if (tp != null) {
                 Scope scope = at.trees().getScope(tp);
@@ -393,6 +404,16 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                         TypeMirror site = at.trees().getTypeMirror(exprPath);
                         boolean staticOnly = isStaticContext(at, exprPath);
                         ImportTree it = findImport(tp);
+
+                        if (it != null && it.isModule()) {
+                            String fullCode = code.wrapped();
+                            int selectStart = (int) sp.getStartPosition(topLevel, tp.getLeaf());
+                            int selectEnd   = (int) sp.getEndPosition(topLevel, tp.getLeaf());
+                            String qualifiedPrefix = fullCode.substring(selectStart, selectEnd);
+
+                            addModuleElements(at, qualifiedPrefix, result);
+                        }
+
                         boolean isImport = it != null;
 
                         List<? extends Element> members = membersOf(at, site, staticOnly && !isImport && tp.getLeaf().getKind() == Kind.MEMBER_SELECT);
@@ -452,18 +473,25 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                         }
                         ImportTree it = findImport(tp);
                         if (it != null) {
-                            // the context of the identifier is an import, look for
-                            // package names that start with the identifier.
-                            // If and when Java allows imports from the default
-                            // package to the default package which would allow
-                            // JShell to change to use the default package, and that
-                            // change is done, then this should use some variation
-                            // of membersOf(at, at.getElements().getPackageElement("").asType(), false)
-                            addElements(listPackages(at, ""),
-                                    it.isStatic()
-                                            ? STATIC_ONLY.and(accessibility)
-                                            : accessibility,
-                                    smartFilter, result);
+                            if (it.isModule()) {
+                                addModuleElements(at, "", result);
+                            } else {
+                                // the context of the identifier is an import, look for
+                                // package names that start with the identifier.
+                                // If and when Java allows imports from the default
+                                // package to the default package which would allow
+                                // JShell to change to use the default package, and that
+                                // change is done, then this should use some variation
+                                // of membersOf(at, at.getElements().getPackageElement("").asType(), false)
+                                addElements(listPackages(at, ""),
+                                        it.isStatic()
+                                                ? STATIC_ONLY.and(accessibility)
+                                                : accessibility,
+                                        smartFilter, result);
+
+                                //check source level(!)
+                                result.add(new SuggestionImpl("module", false));
+                            }
                         }
                         break;
                     case CLASS: {
@@ -977,10 +1005,18 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     private final Function<Boolean, String> DEFAULT_PAREN = hasParams -> hasParams ? "(" : "()";
     private final Function<Boolean, String> NO_PAREN = hasParams -> "";
 
-    private void addElements(Iterable<? extends Element> elements, Predicate<Element> accept, Predicate<Element> smart, List<Suggestion> result) {
+    private void addElements(Iterable<? extends Element> elements,
+                             Predicate<Element> accept,
+                             Predicate<Element> smart,
+                             List<SuggestionImpl> result) {
         addElements(elements, accept, smart, DEFAULT_PAREN, result);
     }
-    private void addElements(Iterable<? extends Element> elements, Predicate<Element> accept, Predicate<Element> smart, Function<Boolean, String> paren, List<Suggestion> result) {
+
+    private void addElements(Iterable<? extends Element> elements,
+                             Predicate<Element> accept,
+                             Predicate<Element> smart,
+                             Function<Boolean, String> paren,
+                             List<SuggestionImpl> result) {
         Set<String> hasParams = Util.stream(elements)
                 .filter(accept)
                 .filter(IS_CONSTRUCTOR.or(IS_METHOD))
@@ -1009,6 +1045,19 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     break;
             }
             result.add(new SuggestionImpl(simpleName, smart.test(c)));
+        }
+    }
+
+    private void addModuleElements(AnalyzeTask at,
+                                   String prefix,
+                                   List<SuggestionImpl> result) {
+        for (ModuleElement me : at.getElements().getAllModuleElements()) {
+            if (!me.getQualifiedName().toString().startsWith(prefix)) {
+                continue;
+            }
+            result.add(new SuggestionImpl(me.getQualifiedName().toString(),
+                                          me.getSimpleName().toString(),
+                                          false));
         }
     }
 
@@ -1372,7 +1421,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         };
     }
 
-    private void addScopeElements(AnalyzeTask at, Scope scope, Function<Element, Iterable<? extends Element>> elementConvertor, Predicate<Element> filter, Predicate<Element> smartFilter, List<Suggestion> result) {
+    private void addScopeElements(AnalyzeTask at, Scope scope,
+                                  Function<Element, Iterable<? extends Element>> elementConvertor,
+                                  Predicate<Element> filter, Predicate<Element> smartFilter,
+                                  List<SuggestionImpl> result) {
         addElements(scopeContent(at, scope, elementConvertor), filter, smartFilter, result);
     }
 
@@ -2153,6 +2205,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     private static class SuggestionImpl implements Suggestion {
 
         private final String continuation;
+        private final String filteringText;
         private final boolean matchesType;
 
         /**
@@ -2162,7 +2215,20 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
          * @param matchesType does the candidate match the target type
          */
         public SuggestionImpl(String continuation, boolean matchesType) {
+            this(continuation, continuation, matchesType);
+        }
+
+        /**
+         * Create a {@code Suggestion} instance.
+         *
+         * @param continuation a candidate continuation of the user's input
+         * @param filteringText a filtering prefix
+         * @param matchesType does the candidate match the target type
+         */
+        public SuggestionImpl(String continuation, String filteringText,
+                              boolean matchesType) {
             this.continuation = continuation;
+            this.filteringText = filteringText;
             this.matchesType = matchesType;
         }
 
