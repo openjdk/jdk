@@ -638,7 +638,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
      * Returns the baseline for the specified tab.
      *
      * @param tab index of tab to get baseline for
-     * @exception IndexOutOfBoundsException if index is out of range
+     * @throws IndexOutOfBoundsException if index is out of range
      *            (index < 0 || index >= tab count)
      * @return baseline or a value &lt; 0 indicating there is no reasonable
      *                  baseline
