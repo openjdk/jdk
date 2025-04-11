@@ -98,15 +98,15 @@ public class BufImgSurfaceData extends SurfaceData {
             sData = createDataIC(bufImg, SurfaceType.IntArgbPre, scaleX, scaleY);
             break;
         case BufferedImage.TYPE_3BYTE_BGR:
-            sData = createDataBC(bufImg, SurfaceType.ThreeByteBgr, 2,
+            sData = createDataBC(bufImg, SurfaceType.ThreeByteBgr,
                                  scaleX, scaleY);
             break;
         case BufferedImage.TYPE_4BYTE_ABGR:
-            sData = createDataBC(bufImg, SurfaceType.FourByteAbgr, 3,
+            sData = createDataBC(bufImg, SurfaceType.FourByteAbgr,
                                  scaleX, scaleY);
             break;
         case BufferedImage.TYPE_4BYTE_ABGR_PRE:
-            sData = createDataBC(bufImg, SurfaceType.FourByteAbgrPre, 3,
+            sData = createDataBC(bufImg, SurfaceType.FourByteAbgrPre,
                                  scaleX, scaleY);
             break;
         case BufferedImage.TYPE_USHORT_565_RGB:
@@ -137,11 +137,11 @@ public class BufImgSurfaceData extends SurfaceData {
                 default:
                     throw new InternalError("Unrecognized transparency");
                 }
-                sData = createDataBC(bufImg, sType, 0, scaleX, scaleY);
+                sData = createDataBC(bufImg, sType, scaleX, scaleY);
             }
             break;
         case BufferedImage.TYPE_BYTE_GRAY:
-            sData = createDataBC(bufImg, SurfaceType.ByteGray, 0,
+            sData = createDataBC(bufImg, SurfaceType.ByteGray,
                                  scaleX, scaleY);
             break;
         case BufferedImage.TYPE_USHORT_GRAY:
@@ -173,13 +173,10 @@ public class BufImgSurfaceData extends SurfaceData {
             {
                 Raster raster = bufImg.getRaster();
                 int numBands = raster.getNumBands();
-                if (raster instanceof IntegerComponentRaster &&
-                    raster.getNumDataElements() == 1 &&
-                    ((IntegerComponentRaster)raster).getPixelStride() == 1)
-                {
+                if (raster instanceof IntegerComponentRaster icr) {
                     SurfaceType sType = SurfaceType.AnyInt;
-                    if (cm instanceof DirectColorModel) {
-                        DirectColorModel dcm = (DirectColorModel) cm;
+                    if (cm instanceof DirectColorModel dcm &&
+                        icr.getNumDataElements() == 1 && icr.getPixelStride() == 1) {
                         int aMask = dcm.getAlphaMask();
                         int rMask = dcm.getRedMask();
                         int gMask = dcm.getGreenMask();
@@ -204,47 +201,57 @@ public class BufImgSurfaceData extends SurfaceData {
                     }
                     sData = createDataIC(bufImg, sType, scaleX, scaleY);
                     break;
-                } else if (raster instanceof ShortComponentRaster &&
-                           raster.getNumDataElements() == 1 &&
-                           ((ShortComponentRaster)raster).getPixelStride() == 1)
-                {
+                } else if (raster instanceof ShortComponentRaster scr) {
                     SurfaceType sType = SurfaceType.AnyShort;
                     IndexColorModel icm = null;
-                    if (cm instanceof DirectColorModel) {
-                        DirectColorModel dcm = (DirectColorModel) cm;
-                        int aMask = dcm.getAlphaMask();
-                        int rMask = dcm.getRedMask();
-                        int gMask = dcm.getGreenMask();
-                        int bMask = dcm.getBlueMask();
-                        if (numBands == 3 &&
-                            aMask == 0 &&
-                            rMask == DCM_555X_RED_MASK &&
-                            gMask == DCM_555X_GREEN_MASK &&
-                            bMask == DCM_555X_BLUE_MASK)
-                        {
-                            sType = SurfaceType.Ushort555Rgbx;
-                        } else
-                        if (numBands == 4 &&
-                            aMask == DCM_4444_ALPHA_MASK &&
-                            rMask == DCM_4444_RED_MASK &&
-                            gMask == DCM_4444_GREEN_MASK &&
-                            bMask == DCM_4444_BLUE_MASK)
-                        {
-                            sType = SurfaceType.Ushort4444Argb;
-                        }
-                    } else if (cm instanceof IndexColorModel) {
-                        icm = (IndexColorModel)cm;
-                        if (icm.getPixelSize() == 12) {
-                            if (isOpaqueGray(icm)) {
-                                sType = SurfaceType.Index12Gray;
-                            } else {
-                                sType = SurfaceType.UshortIndexed;
+                    if (scr.getNumDataElements() == 1 && scr.getPixelStride() == 1) {
+                        if (cm instanceof DirectColorModel dcm) {
+                            int aMask = dcm.getAlphaMask();
+                            int rMask = dcm.getRedMask();
+                            int gMask = dcm.getGreenMask();
+                            int bMask = dcm.getBlueMask();
+                            if (numBands == 3 &&
+                                aMask == 0 &&
+                                rMask == DCM_555X_RED_MASK &&
+                                gMask == DCM_555X_GREEN_MASK &&
+                                bMask == DCM_555X_BLUE_MASK)
+                            {
+                                sType = SurfaceType.Ushort555Rgbx;
+                            } else
+                            if (numBands == 4 &&
+                                aMask == DCM_4444_ALPHA_MASK &&
+                                rMask == DCM_4444_RED_MASK &&
+                                gMask == DCM_4444_GREEN_MASK &&
+                                bMask == DCM_4444_BLUE_MASK)
+                            {
+                                sType = SurfaceType.Ushort4444Argb;
                             }
-                        } else {
-                            icm = null;
+                        } else if (cm instanceof IndexColorModel) {
+                            icm = (IndexColorModel)cm;
+                            if (icm.getPixelSize() == 12) {
+                                if (isOpaqueGray(icm)) {
+                                    sType = SurfaceType.Index12Gray;
+                                } else {
+                                    sType = SurfaceType.UshortIndexed;
+                                }
+                            } else {
+                                icm = null;
+                            }
                         }
                     }
                     sData = createDataSC(bufImg, sType, icm, scaleX, scaleY);
+                    break;
+                } else if (raster instanceof ByteComponentRaster bcr) {
+                    SurfaceType sType = SurfaceType.AnyByte;
+                    if (bcr.getPixelStride() == 4) {
+                        sType = SurfaceType.Any4Byte;
+                    } else if (bcr.getPixelStride() == 3) {
+                        sType = SurfaceType.Any3Byte;
+                    }
+                    sData = createDataBC(bufImg, sType, scaleX, scaleY);
+                    break;
+                } else if (raster instanceof BytePackedRaster) {
+                    sData = createDataBP(bufImg, SurfaceType.AnyByteBinary, scaleX, scaleY);
                     break;
                 }
                 sData = new BufImgSurfaceData(raster.getDataBuffer(), bufImg,
@@ -261,6 +268,23 @@ public class BufImgSurfaceData extends SurfaceData {
         throw new InternalError("SurfaceData not implemented for Raster/CM");
     }
 
+    /**
+     * Calculate pixel-aligned data offset for interleaved raster
+     * from the array of data offsets for each band and pixel stride.
+     * Returns -1 for non-pixel interleaved configurations.
+     */
+    private static int getPixelDataOffset(int[] dataOffsets, int pixelStride) {
+        int min = dataOffsets[0], max = min;
+        for (int i = 1; i < dataOffsets.length; i++) {
+            int offset = dataOffsets[i];
+            if (offset < min) min = offset;
+            else if (offset > max) max = offset;
+        }
+        min = (min / pixelStride) * pixelStride;
+        if (max - min >= pixelStride) return -1;
+        return min;
+    }
+
     public static SurfaceData createDataIC(BufferedImage bImg,
                                            SurfaceType sType,
                                            double scaleX,
@@ -271,13 +295,16 @@ public class BufImgSurfaceData extends SurfaceData {
         BufImgSurfaceData bisd =
             new BufImgSurfaceData(icRaster.getDataBuffer(), bImg, sType,
                                   scaleX, scaleY);
-        bisd.initRaster(icRaster.getDataStorage(),
-                        icRaster.getDataOffset(0) * 4, 0,
-                        icRaster.getWidth(),
-                        icRaster.getHeight(),
-                        icRaster.getPixelStride() * 4,
-                        icRaster.getScanlineStride() * 4,
-                        null);
+        int offset = getPixelDataOffset(icRaster.getDataOffsets(), icRaster.getPixelStride());
+        if (offset != -1) {
+            bisd.initRaster(icRaster.getDataStorage(),
+                            offset * 4, 0,
+                            icRaster.getWidth(),
+                            icRaster.getHeight(),
+                            icRaster.getPixelStride() * 4,
+                            icRaster.getScanlineStride() * 4,
+                            null);
+        }
         return bisd;
     }
 
@@ -291,19 +318,21 @@ public class BufImgSurfaceData extends SurfaceData {
         BufImgSurfaceData bisd =
             new BufImgSurfaceData(scRaster.getDataBuffer(), bImg, sType,
                                   scaleX, scaleY);
-        bisd.initRaster(scRaster.getDataStorage(),
-                        scRaster.getDataOffset(0) * 2, 0,
-                        scRaster.getWidth(),
-                        scRaster.getHeight(),
-                        scRaster.getPixelStride() * 2,
-                        scRaster.getScanlineStride() * 2,
-                        icm);
+        int offset = getPixelDataOffset(scRaster.getDataOffsets(), scRaster.getPixelStride());
+        if (offset != -1) {
+            bisd.initRaster(scRaster.getDataStorage(),
+                            offset * 2, 0,
+                            scRaster.getWidth(),
+                            scRaster.getHeight(),
+                            scRaster.getPixelStride() * 2,
+                            scRaster.getScanlineStride() * 2,
+                            icm);
+        }
         return bisd;
     }
 
     public static SurfaceData createDataBC(BufferedImage bImg,
                                            SurfaceType sType,
-                                           int primaryBank,
                                            double scaleX, double scaleY)
     {
         ByteComponentRaster bcRaster =
@@ -311,17 +340,20 @@ public class BufImgSurfaceData extends SurfaceData {
         BufImgSurfaceData bisd =
             new BufImgSurfaceData(bcRaster.getDataBuffer(), bImg, sType,
                                   scaleX, scaleY);
-        ColorModel cm = bImg.getColorModel();
-        IndexColorModel icm = ((cm instanceof IndexColorModel)
-                               ? (IndexColorModel) cm
-                               : null);
-        bisd.initRaster(bcRaster.getDataStorage(),
-                        bcRaster.getDataOffset(primaryBank), 0,
-                        bcRaster.getWidth(),
-                        bcRaster.getHeight(),
-                        bcRaster.getPixelStride(),
-                        bcRaster.getScanlineStride(),
-                        icm);
+        int offset = getPixelDataOffset(bcRaster.getDataOffsets(), bcRaster.getPixelStride());
+        if (offset != -1) {
+            ColorModel cm = bImg.getColorModel();
+            IndexColorModel icm = ((cm instanceof IndexColorModel)
+                    ? (IndexColorModel) cm
+                    : null);
+            bisd.initRaster(bcRaster.getDataStorage(),
+                            offset, 0,
+                            bcRaster.getWidth(),
+                            bcRaster.getHeight(),
+                            bcRaster.getPixelStride(),
+                            bcRaster.getScanlineStride(),
+                            icm);
+        }
         return bisd;
     }
 
