@@ -74,14 +74,13 @@ void VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
   apply_summary_diff(diff);
 }
 
-void VirtualMemoryTracker::Instance::set_reserved_region_tag(address addr, MemTag mem_tag) {
+void VirtualMemoryTracker::Instance::set_reserved_region_tag(address addr, size_t size, MemTag mem_tag) {
   assert(_tracker != nullptr, "Sanity check");
-  _tracker->set_reserved_region_tag(addr, mem_tag);
+  _tracker->set_reserved_region_tag(addr, size, mem_tag);
 }
 
-void VirtualMemoryTracker::set_reserved_region_tag(address addr, MemTag mem_tag) {
-    ReservedMemoryRegion rgn = tree()->find_reserved_region(addr);
-    VMATree::SummaryDiff diff = tree()->set_tag((VMATree::position) addr, rgn.size(), mem_tag);
+void VirtualMemoryTracker::set_reserved_region_tag(address addr, size_t size, MemTag mem_tag) {
+    VMATree::SummaryDiff diff = tree()->set_tag((VMATree::position) addr, size, mem_tag);
     apply_summary_diff(diff);
 }
 
@@ -109,8 +108,8 @@ void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
     reserve_delta = diff.tag[i].reserve;
     commit_delta = diff.tag[i].commit;
     tag = NMTUtil::index_to_tag(i);
-    reserved = VirtualMemorySummary::as_snapshot()->by_type(tag)->reserved();
-    committed = VirtualMemorySummary::as_snapshot()->by_type(tag)->committed();
+    reserved = VirtualMemorySummary::as_snapshot()->by_tag(tag)->reserved();
+    committed = VirtualMemorySummary::as_snapshot()->by_tag(tag)->committed();
     if (reserve_delta != 0) {
       if (reserve_delta > 0) {
         VirtualMemorySummary::record_reserved_memory(reserve_delta, tag);

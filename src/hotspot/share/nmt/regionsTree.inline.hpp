@@ -37,7 +37,7 @@ void RegionsTree::visit_committed_regions(const ReservedMemoryRegion& rgn, F fun
   visit_range_in_order(start, end, [&](Node* node) {
     NodeHelper curr(node);
     if (prev.is_valid() && prev.is_committed_begin()) {
-      CommittedMemoryRegion cmr((address)prev.position(), curr.distance_from(prev), stack(curr));
+      CommittedMemoryRegion cmr((address)prev.position(), curr.distance_from(prev), stack(prev));
       if (!func(cmr)) {
         return false;
       }
@@ -62,7 +62,7 @@ void RegionsTree::visit_reserved_regions(F func) {
     }
     prev = curr;
     if (curr.is_released_begin() || begin_node.out_tag() != curr.out_tag()) {
-      auto st = stack(curr);
+      auto st = stack(begin_node);
       if (rgn_size == 0) {
         prev.clear_node();
         return true;

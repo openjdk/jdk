@@ -230,7 +230,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::set_reserved_region_type((address)addr, size, mem_tag);
+      VirtualMemoryTracker::Instance::set_reserved_region_tag((address)addr, size, mem_tag);
     }
   }
 

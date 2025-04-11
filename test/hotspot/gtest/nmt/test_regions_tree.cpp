@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@ class NMTRegionsTreeTest : public testing::Test {
 };
 
 TEST_VM_F(NMTRegionsTreeTest, ReserveCommitTwice) {
-  tty->print_cr("Skipped.");
-  return;
   NativeCallStack ncs;
   VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
   VMATree::RegionData rd2 = rt.make_region_data(ncs, mtGC);
@@ -54,16 +52,14 @@ TEST_VM_F(NMTRegionsTreeTest, ReserveCommitTwice) {
   EXPECT_EQ(-100, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
   EXPECT_EQ(100, diff.tag[NMTUtil::tag_to_index(mtGC)].reserve);
   diff = rt.commit_region(0, 50, ncs);
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtGC)].reserve);
+  EXPECT_EQ(50, diff.tag[NMTUtil::tag_to_index(mtGC)].commit);
   diff = rt.commit_region(0, 50, ncs);
   EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
   EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
 }
 
 TEST_VM_F(NMTRegionsTreeTest, CommitUncommitRegion) {
-  tty->print_cr("Skipped.");
-  return;
   NativeCallStack ncs;
   VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
   rt.reserve_mapping(0, 100, rd);
