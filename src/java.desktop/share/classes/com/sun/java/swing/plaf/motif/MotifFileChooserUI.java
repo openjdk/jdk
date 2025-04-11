@@ -656,6 +656,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             setText(getFileChooser().getName((File) value));
             setInheritsPopupMenu(true);
+            this.putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
             return this;
         }
     }
@@ -668,6 +669,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             setText(getFileChooser().getName((File) value));
             setInheritsPopupMenu(true);
+            this.putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
             return this;
         }
     }
