@@ -392,9 +392,9 @@ public class VariableLengthByteArray {
      * {@code off} to this {@code VariableLengthByteArray}. Guaranteed to allocate 0
      * or 1 segments.
      *
-     * @param b   {@inheritDoc}
-     * @param off {@inheritDoc}
-     * @param len {@inheritDoc}
+     * @param b   array to add
+     * @param off offset
+     * @param len length
      * @throws NullPointerException      if {@code b} is {@code null}.
      * @throws IndexOutOfBoundsException if {@code off} is negative, {@code len} is
      *                                   negative, or {@code len} is greater than
