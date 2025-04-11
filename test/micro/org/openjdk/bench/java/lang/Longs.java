@@ -93,6 +93,20 @@ public class Longs {
         }
     }
 
+    @Benchmark
+    public void toHexStringSmall(Blackhole bh) {
+        for (long value : longArraySmall) {
+            bh.consume(Long.toHexString(value));
+        }
+    }
+
+    @Benchmark
+    public void toHexStringBig(Blackhole bh) {
+        for (long value : longArrayBig) {
+            bh.consume(Long.toHexString(value));
+        }
+    }
+
     /** Performs expand on small values */
     @Benchmark
     public void expand(Blackhole bh) {
