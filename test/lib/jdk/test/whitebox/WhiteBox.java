@@ -563,7 +563,7 @@ public class WhiteBox {
   // Infrastructure for waitForReferenceProcessing()
   private static Method waitForReferenceProcessingMethod = null;
 
-  private Method getWaitForReferenceProcessingMethod() {
+  private static Method getWaitForReferenceProcessingMethod() {
     Method wfrp = waitForReferenceProcessingMethod;
     if (wfrp == null) {
       try {
