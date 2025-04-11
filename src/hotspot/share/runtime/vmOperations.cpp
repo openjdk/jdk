@@ -100,6 +100,13 @@ void VM_ClearICs::doit() {
   }
 }
 
+void VM_RelocateNMethod::doit() {
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  if (_nm != nullptr && _nm->is_relocatable()) {
+    _nm_copy = _nm->clone(_code_blob_type);
+  }
+}
+
 void VM_CleanClassLoaderDataMetaspaces::doit() {
   ClassLoaderDataGraph::walk_metadata_and_clean_metaspaces();
 }

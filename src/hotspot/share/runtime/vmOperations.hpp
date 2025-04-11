@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_VMOPERATIONS_HPP
 #define SHARE_RUNTIME_VMOPERATIONS_HPP
 
+#include "code/codeBlob.hpp"
 #include "oops/oop.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/vmOperation.hpp"
@@ -80,6 +81,20 @@ class VM_ClearICs: public VM_Operation {
   void doit();
   VMOp_Type type() const { return VMOp_ClearICs; }
 };
+
+class VM_RelocateNMethod: public VM_Operation {
+  private:
+   nmethod* _nm;
+   nmethod* _nm_copy;
+   CodeBlobType _code_blob_type;
+  public:
+   VM_RelocateNMethod(nmethod* nm, CodeBlobType code_blob_type)
+    : _nm(nm), _nm_copy(nullptr), _code_blob_type(code_blob_type)
+   {}
+   void doit();
+   VMOp_Type type() const { return VMOp_RelocateNMethod; }
+   nmethod* getRelocatedNMethod() { return _nm_copy; }
+ };
 
 // Base class for invoking parts of a gtest in a safepoint.
 // Derived classes provide the doit method.
