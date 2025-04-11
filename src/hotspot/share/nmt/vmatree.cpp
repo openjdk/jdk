@@ -143,18 +143,20 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     if (is_uncommit_operation && head->val().out.type() == StateType::Released)  {
       is_remove_ok = false;
     }
-    if (cmp_B < 0) {
-      // Record all nodes preceding B.
-      to_be_deleted_inbetween_a_b.push({head->key(), head->val()});
-    } else if (cmp_B == 0) {
-      // Re-purpose B node, unless it would result in a noop node, in
-      // which case record old node at B for deletion and summary accounting.
-      if (stB.is_noop()) {
-        to_be_deleted_inbetween_a_b.push(AddressState{B, head->val()});
-      } else {
-        head->val() = stB;
+    if (is_remove_ok) {
+      if (cmp_B < 0) {
+        // Record all nodes preceding B.
+        to_be_deleted_inbetween_a_b.push({head->key(), head->val()});
+      } else if (cmp_B == 0) {
+        // Re-purpose B node, unless it would result in a noop node, in
+        // which case record old node at B for deletion and summary accounting.
+        if (stB.is_noop()) {
+          to_be_deleted_inbetween_a_b.push(AddressState{B, head->val()});
+        } else {
+          head->val() = stB;
+        }
+        B_needs_insert = false;
       }
-      B_needs_insert = false;
     }
   });
   if (!is_remove_ok) {

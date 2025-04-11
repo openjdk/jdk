@@ -764,4 +764,22 @@ TEST_VM_F(NMTVMATreeTest, UncommmitReleasedRegion) {
     VMATree::SummaryDiff diff = tree.uncommit_mapping(60, 20, rd2);
     EXPECT_FALSE(diff.is_valid());
   }
+  {
+    Tree tree;
+    VMATree::RegionData rd(si[0], mtTest);
+    VMATree::RegionData rd2(si[0], mtNone);
+    tree.reserve_mapping(0, 100, rd);
+    tree.release_mapping(50, 20);
+    tree.set_tag(70, 30, mtClass);
+    // mtTest    mtNone     mtClass
+    //0-------50.........70---------100
+    //    40-------------70
+    // Node 70 should not be changed
+    VMATree::SummaryDiff diff = tree.uncommit_mapping(40, 30, rd2);
+    EXPECT_FALSE(diff.is_valid());
+    VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(70);
+    ASSERT_TRUE(r.start != nullptr);
+    EXPECT_TRUE(r.start->val().out.type() == VMATree::StateType::Reserved);
+    EXPECT_EQ(r.start->val().out.mem_tag(), mtClass);
+  }
 }
