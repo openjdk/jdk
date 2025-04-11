@@ -36,7 +36,7 @@ import java.util.function.IntFunction;
 
 import static jdk.incubator.vector.Util.requires;
 import static jdk.incubator.vector.VectorOperators.*;
-import static jdk.internal.util.Architecture.isX64;
+import static jdk.internal.util.Architecture.*;
 import static jdk.internal.vm.vector.Utils.debug;
 
 /**
@@ -154,6 +154,9 @@ import static jdk.internal.vm.vector.Utils.debug;
             if (vspecies.length() > maxLaneCount) {
                 return false; // lacking vector support
             }
+            if (vspecies == DoubleVector.SPECIES_64) {
+                return false; // 64-bit double vectors are not supported
+            }
             if (vspecies.vectorBitSize() == 512) {
                 if (op == LOG || op == LOG10 || op == POW) {
                     return CPUFeatures.X64.SUPPORTS_AVX512DQ; // requires AVX512DQ CPU support
@@ -172,13 +175,13 @@ import static jdk.internal.vm.vector.Utils.debug;
      *     <T>      is optional to indicate float/double
      *              "f/d" for vector float/double operation
      *     <N>      is the number of elements in the vector
-     *              "2/4" for neon, and "x" for sve
+     *              "2/4" for neon, and "x" for sve/rvv
      *     <U>      is the precision level
      *              "u10/u05" represents 1.0/0.5 ULP error bounds
      *               We use "u10" for all operations by default
      *               But for those functions do not have u10 support, we use "u05" instead
-     *     <suffix> indicates neon/sve
-     *              "sve/advsimd" for sve/neon implementations
+     *     <suffix> indicates neon/sve/rvv
+     *              "sve/advsimd/rvv" for sve/neon/rvv implementations
      *     e.g. sinfx_u10sve is the method for computing vector float sin using SVE instructions
      *          cosd2_u10advsimd is the method for computing 2 elements vector double cos using NEON instructions
      */
@@ -188,7 +191,19 @@ import static jdk.internal.vm.vector.Utils.debug;
         }
 
         private static String suffix(VectorShape vshape) {
-            return (vshape.vectorBitSize() > 128 ? "sve" : "advsimd");
+            if (isAARCH64()) {
+                if (vshape.vectorBitSize() <= 128) {
+                    return "advsimd";
+                } else {
+                    assert (vshape == VectorShape.S_Max_BIT) : "not supported: " + vshape;
+                    return "sve";
+                }
+            } else if (isRISCV64()) {
+                assert (vshape == VectorShape.S_Max_BIT) : "not supported: " + vshape;
+                return "rvv";
+            } else {
+                throw new InternalError("unsupported platform");
+            }
         }
 
         private static String precisionLevel(Operator op) {
@@ -197,9 +212,11 @@ import static jdk.internal.vm.vector.Utils.debug;
 
         @Override
         public String symbolName(Operator op, VectorSpecies<?> vspecies) {
-            return String.format("%s%s%d_%s%s", op.operatorName(),
+            int vlen = (vspecies == FloatVector.SPECIES_64 ? 4 : vspecies.length()); // reuse 128-bit variant for 64-bit float vectors
+            boolean isShapeAgnostic = isRISCV64() || (isAARCH64() && vspecies.vectorBitSize() > 128);
+            return String.format("%s%s%s_%s%s", op.operatorName(),
                                  (vspecies.elementType() == float.class ? "f" : "d"),
-                                 vspecies.length(),
+                                 (isShapeAgnostic ? "x" : Integer.toString(vlen)),
                                  precisionLevel(op),
                                  suffix(vspecies.vectorShape()));
         }
@@ -214,8 +231,16 @@ import static jdk.internal.vm.vector.Utils.debug;
             if (vspecies.length() > maxLaneCount) {
                 return false; // lacking vector support
             }
-            if (vspecies.vectorBitSize() < 128) {
-                return false; // 64-bit vectors are not supported
+            if (vspecies.vectorShape() != VectorShape.S_Max_BIT) {
+                if (isRISCV64()) {
+                    return false; // FIXME: only MAX shapes are supported on RISC-V
+                }
+                if (isAARCH64() && vspecies.vectorBitSize() > 128) {
+                    return false; // FIXME: SVE support only for MAX shapes
+                }
+                if (vspecies == DoubleVector.SPECIES_64) {
+                    return false; // 64-bit double vectors are not supported
+                }
             }
             if (op == TANH) {
                 return false; // skip due to performance considerations
