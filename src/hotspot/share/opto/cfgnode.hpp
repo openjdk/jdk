@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "opto/multnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/predicates_enums.hpp"
 #include "opto/type.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -58,10 +59,7 @@ class       JumpProjNode;
 class     SCMemProjNode;
 class PhaseIdealLoop;
 enum class AssertionPredicateType;
-
-// The success projection of a Parse Predicate is always an IfTrueNode and the uncommon projection an IfFalseNode
-typedef IfTrueNode ParsePredicateSuccessProj;
-typedef IfFalseNode ParsePredicateUncommonProj;
+enum class PredicateState;
 
 //------------------------------RegionNode-------------------------------------
 // The class of RegionNodes, which can be mapped to basic blocks in the
@@ -181,6 +179,8 @@ class PhiNode : public TypeNode {
   static Node* merge_through_phi(Node* root_phi, PhaseIterGVN* igvn);
 
   bool must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const;
+
+  bool is_split_through_mergemem_terminating() const;
 
 public:
   // Node layout (parallels RegionNode):
@@ -428,7 +428,7 @@ public:
   IfNode(Node* control, Node* bol, float p, float fcnt);
   IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type);
 
-  static IfNode* make_with_same_profile(IfNode* if_node_profile, Node* ctrl, BoolNode* bol);
+  static IfNode* make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Node* bol);
 
   virtual int Opcode() const;
   virtual bool pinned() const { return true; }
@@ -486,7 +486,11 @@ public:
 // More information about predicates can be found in loopPredicate.cpp.
 class ParsePredicateNode : public IfNode {
   Deoptimization::DeoptReason _deopt_reason;
-  bool _useless; // If the associated loop dies, this parse predicate becomes useless and can be cleaned up by Value().
+
+  // When a Parse Predicate loses its connection to a loop head, it will be marked useless by
+  // EliminateUselessPredicates and cleaned up by Value(). It can also become useless when cloning it to both loops
+  // during Loop Multiversioning - we no longer use the old version.
+  PredicateState _predicate_state;
  public:
   ParsePredicateNode(Node* control, Deoptimization::DeoptReason deopt_reason, PhaseGVN* gvn);
   virtual int Opcode() const;
@@ -497,15 +501,21 @@ class ParsePredicateNode : public IfNode {
   }
 
   bool is_useless() const {
-    return _useless;
+    return _predicate_state == PredicateState::Useless;
   }
 
-  void mark_useless() {
-    _useless = true;
+  void mark_useless(PhaseIterGVN& igvn);
+
+  void mark_maybe_useful() {
+    _predicate_state = PredicateState::MaybeUseful;
+  }
+
+  bool is_useful() const {
+    return _predicate_state == PredicateState::Useful;
   }
 
   void mark_useful() {
-    _useless = false;
+    _predicate_state = PredicateState::Useful;
   }
 
   // Return the uncommon trap If projection of this Parse Predicate.
