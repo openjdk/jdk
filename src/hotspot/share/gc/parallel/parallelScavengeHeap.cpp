@@ -669,19 +669,15 @@ void ParallelScavengeHeap::print_on(outputStream* st) const {
   if (old_gen() != nullptr) {
     old_gen()->print_on(st);
   }
-  MetaspaceUtils::print_on(st);
 }
 
 void ParallelScavengeHeap::print_on_error(outputStream* st) const {
-  print_on(st);
-  st->cr();
-
   BarrierSet* bs = BarrierSet::barrier_set();
   if (bs != nullptr) {
     bs->print_on(st);
   }
-
   st->cr();
+
   PSParallelCompact::print_on_error(st);
 }
 

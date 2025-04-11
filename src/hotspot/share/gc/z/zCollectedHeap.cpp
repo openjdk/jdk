@@ -356,14 +356,10 @@ void ZCollectedHeap::prepare_for_verify() {
 }
 
 void ZCollectedHeap::print_on(outputStream* st) const {
-  StreamAutoIndentor auto_indentor(st);
-
   _heap.print_on(st);
 }
 
 void ZCollectedHeap::print_on_error(outputStream* st) const {
-  StreamAutoIndentor auto_indentor(st);
-
   _heap.print_on_error(st);
 }
 

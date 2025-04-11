@@ -806,14 +806,9 @@ void SerialHeap::print_on(outputStream* st) const {
 
   _young_gen->print_on(st);
   _old_gen->print_on(st);
-
-  MetaspaceUtils::print_on(st);
 }
 
 void SerialHeap::print_on_error(outputStream* st) const {
-  print_on(st);
-  st->cr();
-
   BarrierSet* bs = BarrierSet::barrier_set();
   if (bs != nullptr) {
     bs->print_on(st);

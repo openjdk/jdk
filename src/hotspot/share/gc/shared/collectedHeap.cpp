@@ -59,6 +59,7 @@
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
+#include "utilities/ostream.hpp"
 
 class ClassLoaderData;
 
@@ -111,7 +112,12 @@ void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
                  heap->total_collections(),
                  heap->total_full_collections());
 
-  heap->print_on(&st);
+  {
+    StreamAutoIndentor indentor(&st, 1);
+    heap->print_on(&st);
+    MetaspaceUtils::print_on(&st);
+  }
+
   st.print_cr("}");
 }
 
@@ -164,7 +170,10 @@ void CollectedHeap::print_heap_before_gc() {
     LogStream ls(lt);
     ls.print_cr("Heap before GC invocations=%u (full %u):", total_collections(), total_full_collections());
     ResourceMark rm;
+
+    StreamAutoIndentor indentor(&ls, 1);
     print_on(&ls);
+    MetaspaceUtils::print_on(&ls);
   }
 
   if (_gc_heap_log != nullptr) {
@@ -178,7 +187,10 @@ void CollectedHeap::print_heap_after_gc() {
     LogStream ls(lt);
     ls.print_cr("Heap after GC invocations=%u (full %u):", total_collections(), total_full_collections());
     ResourceMark rm;
+
+    StreamAutoIndentor indentor(&ls, 1);
     print_on(&ls);
+    MetaspaceUtils::print_on(&ls);
   }
 
   if (_gc_heap_log != nullptr) {

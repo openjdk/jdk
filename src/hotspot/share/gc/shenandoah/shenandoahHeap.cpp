@@ -639,7 +639,6 @@ void ShenandoahHeap::print_on(outputStream* st) const {
   }
 
   st->cr();
-  MetaspaceUtils::print_on(st);
 
   if (Verbose) {
     st->cr();
@@ -648,8 +647,6 @@ void ShenandoahHeap::print_on(outputStream* st) const {
 }
 
 void ShenandoahHeap::print_on_error(outputStream* st) const {
-  print_on(st);
-  st->cr();
   print_heap_regions_on(st);
 }
 

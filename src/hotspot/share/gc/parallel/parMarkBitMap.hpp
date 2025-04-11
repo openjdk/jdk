@@ -60,7 +60,9 @@ public:
 
   void print_on_error(outputStream* st) const {
     st->print_cr("Marking Bits: (ParMarkBitMap*) " PTR_FORMAT, p2i(this));
-    _beg_bits.print_on_error(st, " Begin Bits: ");
+
+    StreamAutoIndentor indentor(st, 1);
+    _beg_bits.print_on_error(st, "Begin Bits: ");
   }
 
 #ifdef  ASSERT
