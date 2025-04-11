@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,18 @@ import java.util.Arrays;
 
 public class SHAKEsqueeze {
     public static void main(String[] args) throws Exception {
+        resetFix();
+        random();
+    }
+
+    static void resetFix() throws Exception {
+        var s = new SHA3.SHAKE256();
+        var d1 = s.squeeze(10);
+        s.reset();
+        Asserts.assertEqualsByteArray(d1, s.squeeze(10));
+    }
+
+    static void random() throws Exception {
         var r = SeededSecureRandom.one();
         var atlast = 0;
         // Random test on SHAKE
