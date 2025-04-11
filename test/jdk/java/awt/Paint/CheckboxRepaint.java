@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,32 @@
  * questions.
  */
 
-import java.awt.*;
+import java.awt.Checkbox;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.Graphics;
 
 /**
  * @test
  * @key headful
  * @bug 7090424
- * @author Sergey Bylokhov
  */
 public final class CheckboxRepaint extends Checkbox {
 
     public static void main(final String[] args) {
         for (int i = 0; i < 10; ++i) {
-            final Frame frame = new Frame();
-            frame.setSize(300, 300);
-            frame.setLocationRelativeTo(null);
-            CheckboxRepaint checkbox = new CheckboxRepaint();
-            frame.add(checkbox);
-            frame.setVisible(true);
-            sleep();
-            checkbox.test();
-            frame.dispose();
+            Frame frame = new Frame();
+            try {
+                frame.setSize(300, 300);
+                frame.setLocationRelativeTo(null);
+                CheckboxRepaint checkbox = new CheckboxRepaint();
+                frame.add(checkbox);
+                frame.setVisible(true);
+                sleep();
+                checkbox.test();
+            } finally {
+                frame.dispose();
+            }
         }
     }
 
