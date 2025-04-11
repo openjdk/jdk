@@ -670,6 +670,10 @@ Node* PhaseGVN::apply_ideal(Node* k, bool can_reshape) {
   return i;
 }
 
+Node* PhaseGVN::apply_identity(Node* k) {
+  return k->Identity(this);
+}
+
 //------------------------------transform--------------------------------------
 // Return a node which computes the same function as this node, but
 // in a faster or cheaper fashion.
@@ -721,7 +725,7 @@ Node* PhaseGVN::transform(Node* n) {
   }
 
   // Now check for Identities
-  i = k->Identity(this);        // Look for a nearby replacement
+  i = apply_identity(k);        // Look for a nearby replacement
   if (i != k) {                 // Found? Return replacement!
     NOT_PRODUCT(set_progress();)
     return i;
@@ -1261,7 +1265,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   }
 
   // Now check for Identities
-  i = k->Identity(this);      // Look for a nearby replacement
+  i = apply_identity(k);       // Look for a nearby replacement
   if (i != k) {                // Found? Return replacement!
     NOT_PRODUCT(set_progress();)
     add_users_to_worklist(k);
@@ -2312,6 +2316,44 @@ void PhasePeephole::print_statistics() {
 }
 #endif
 
+Node* PhaseLowering::apply_ideal(Node* k, bool can_reshape) {
+  Node* lowered = lower_node(k);
+  if (lowered != nullptr) {
+    return lowered;
+  }
+
+  // Run the lowered Ideal method to continue doing transformations on the node, while avoiding existing ideal transforms
+  // that may undo the changes done during lowering.
+
+  return k->LoweredIdeal(this);
+}
+
+Node* PhaseLowering::apply_identity(Node* k) {
+  return k;
+}
+
+Node* PhaseLowering::lower_node(Node* n) {
+  // Apply shared lowering transforms
+
+  // Apply backend-specific lowering transforms
+  return lower_node_platform(n);
+}
+
+void PhaseLowering::lower() {
+  if (!should_lower()) {
+    return;
+  }
+
+  // Worklist should be empty before lowering
+  _worklist.ensure_empty();
+
+  C->identify_useful_nodes(_worklist);
+
+  optimize();
+
+  // Worklist should be empty after lowering
+  _worklist.ensure_empty();
+}
 
 //=============================================================================
 //------------------------------set_req_X--------------------------------------
