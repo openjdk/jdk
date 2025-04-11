@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-import jdk.internal.misc.MethodFinder;
 import jdk.internal.misc.VM;
 
 /**
@@ -191,7 +190,7 @@ public final class SourceLauncher {
             throw new Fault(Errors.CantFindClass(firstClassName));
         }
 
-        Method mainMethod = MethodFinder.findMainMethod(firstClass);
+        Method mainMethod = firstClass.getMainMethod();
         if (mainMethod == null) {
             // 2. If the first class doesn't have a main method, look for a class with a matching name
             var compilationUnitName = program.fileObject().getFile().getFileName().toString();
@@ -212,7 +211,7 @@ public final class SourceLauncher {
             } catch (ClassNotFoundException ignore) {
                 throw new Fault(Errors.CantFindClass(actualName));
             }
-            mainMethod = MethodFinder.findMainMethod(actualClass);
+            mainMethod = actualClass.getMainMethod();
             if (mainMethod == null) {
                 throw new Fault(Errors.CantFindMainMethod(actualName));
             }
