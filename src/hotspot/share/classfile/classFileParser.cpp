@@ -5240,6 +5240,8 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   // in order for it to not be destroyed in the ClassFileParser destructor.
   set_klass_to_deallocate(nullptr);
 
+  ik->register_with_klut();
+
   // it's official
   set_klass(ik);
 

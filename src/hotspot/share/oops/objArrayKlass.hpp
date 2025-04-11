@@ -26,6 +26,7 @@
 #define SHARE_OOPS_OBJARRAYKLASS_HPP
 
 #include "oops/arrayKlass.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "utilities/macros.hpp"
 
 class ClassLoaderData;
@@ -37,7 +38,7 @@ class ObjArrayKlass : public ArrayKlass {
   friend class JVMCIVMStructs;
 
  public:
-  static const KlassKind Kind = ObjArrayKlassKind;
+  static constexpr KlassKind Kind = ObjArrayKlassKind;
 
  private:
   // If you add a new field that points to any metaspace object, you
@@ -118,29 +119,37 @@ class ObjArrayKlass : public ArrayKlass {
 
   // Iterate over oop elements and metadata.
   template <typename T, typename OopClosureType>
-  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure);
 
   // Iterate over oop elements and metadata.
   template <typename T, typename OopClosureType>
-  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
 
   // Iterate over oop elements within mr, and metadata.
   template <typename T, typename OopClosureType>
-  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
   // Iterate over oop elements within [start, end), and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end);
+  static inline void oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end);
+
+  // klute variants
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute);
 
  public:
   // Iterate over all oop elements.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure);
+  static inline void oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure);
 
  private:
   // Iterate over all oop elements with indices within mr.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
+  static inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
 
  public:
   u2 compute_modifier_flags() const;
@@ -161,6 +170,10 @@ class ObjArrayKlass : public ArrayKlass {
   void verify_on(outputStream* st);
 
   void oop_verify_on(oop obj, outputStream* st);
+
+  DECLARE_EXACT_CAST_FUNCTIONS(ObjArrayKlass)
+  DECLARE_NARROW_KLASS_UTILITY_FUNCTIONS(ObjArrayKlass)
+
 };
 
 #endif // SHARE_OOPS_OBJARRAYKLASS_HPP

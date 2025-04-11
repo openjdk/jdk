@@ -29,6 +29,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/accessDecorators.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/objLayout.hpp"
@@ -82,6 +83,8 @@ class oopDesc {
   // Used only to re-initialize the mark word (e.g., of promoted
   // objects during a GC) -- requires a valid klass pointer
   inline void init_mark();
+
+  inline KlassLUTEntry get_klute() const;
 
   inline Klass* klass() const;
   inline Klass* klass_or_null() const;
@@ -300,9 +303,6 @@ class oopDesc {
 
   template <typename OopClosureType>
   inline void oop_iterate_backwards(OopClosureType* cl);
-
-  template <typename OopClosureType>
-  inline void oop_iterate_backwards(OopClosureType* cl, Klass* klass);
 
   inline static bool is_instanceof_or_null(oop obj, Klass* klass);
 

@@ -26,6 +26,7 @@
 #define SHARE_OOPS_INSTANCESTACKCHUNKKLASS_HPP
 
 #include "oops/instanceKlass.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -105,7 +106,7 @@ class InstanceStackChunkKlass: public InstanceKlass {
   friend class Continuations;
 
 public:
-  static const KlassKind Kind = InstanceStackChunkKlassKind;
+  static constexpr KlassKind Kind = InstanceStackChunkKlassKind;
 
 private:
   static int _offset_of_stack;
@@ -149,19 +150,27 @@ public:
   // Forward iteration
   // Iterate over the oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute);
 
   // Reverse iteration
   // Iterate over the oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute);
 
   // Bounded range iteration
   // Iterate over the oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute);
 
 private:
+
+  template <typename T, class OopClosureType>
+  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
+  template <typename T, class OopClosureType>
+  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+  template <typename T, class OopClosureType>
+  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_header(stackChunkOop chunk, OopClosureType* closure);
 
@@ -183,6 +192,12 @@ private:
   void do_methods(stackChunkOop chunk, OopIterateClosure* cl);
 
   void oop_oop_iterate_stack_slow(stackChunkOop chunk, OopIterateClosure* closure, MemRegion mr);
+
+ public:
+
+  DECLARE_EXACT_CAST_FUNCTIONS(InstanceStackChunkKlass)
+  DECLARE_NARROW_KLASS_UTILITY_FUNCTIONS(InstanceStackChunkKlass)
+
 };
 
 #endif // SHARE_OOPS_INSTANCESTACKCHUNKKLASS_HPP

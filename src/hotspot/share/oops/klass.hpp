@@ -26,6 +26,7 @@
 #define SHARE_OOPS_KLASS_HPP
 
 #include "oops/klassFlags.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
@@ -65,19 +66,57 @@ class Klass : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
  public:
-  // Klass Kinds for all subclasses of Klass
+
+#define KLASS_ALL_KINDS_DO(what)        \
+  what(InstanceKlass, IK)               \
+  what(InstanceRefKlass, IRK)           \
+  what(InstanceMirrorKlass, IMK)        \
+  what(InstanceClassLoaderKlass, ICLK)  \
+  what(InstanceStackChunkKlass, ISCK)   \
+  what(TypeArrayKlass, TAK)             \
+  what(ObjArrayKlass, OAK)
+
   enum KlassKind : u2 {
-    InstanceKlassKind,
-    InstanceRefKlassKind,
-    InstanceMirrorKlassKind,
-    InstanceClassLoaderKlassKind,
-    InstanceStackChunkKlassKind,
-    TypeArrayKlassKind,
-    ObjArrayKlassKind,
+#define WHAT(name, shortname) name ## Kind,
+    KLASS_ALL_KINDS_DO(WHAT)
+#undef WHAT
     UnknownKlassKind
   };
 
   static const uint KLASS_KIND_COUNT = ObjArrayKlassKind + 1;
+
+  // TODO simplify cleanup
+
+#define DECLARE_EXACT_CAST_FUNCTIONS(TYPE)                               \
+  static inline const TYPE* cast_exact(const Klass* k);                  \
+  static inline       TYPE* cast_exact(      Klass* k);
+
+#define DEFINE_EXACT_CAST_FUNCTIONS(TYPE)                                \
+	inline const TYPE* TYPE::cast_exact(const Klass* k) {                  \
+    assert(k != nullptr, "klass null");                                  \
+    assert(k->kind() == Klass::TYPE ## Kind,                             \
+           "Klass @" PTR_FORMAT ": wrong kind %d", p2i(k), k->kind()) ;  \
+    return static_cast<const TYPE*>(k);                                  \
+  }                                                                      \
+  inline TYPE* TYPE::cast_exact(Klass* k) {                              \
+    const TYPE* const ck = TYPE::cast_exact((const Klass*)k);            \
+    return const_cast<TYPE*>(ck);                                        \
+  }
+
+#define DECLARE_NARROW_KLASS_UTILITY_FUNCTIONS(TYPE)                     \
+  static inline const TYPE* narrow_klass_to_const_klass(narrowKlass nk); \
+  static inline       TYPE* narrow_klass_to_klass(narrowKlass nk);
+
+#define DEFINE_NARROW_KLASS_UTILITY_FUNCTIONS(TYPE)                      \
+	inline const TYPE* TYPE::narrow_klass_to_const_klass(narrowKlass nk) { \
+    const Klass* const k = CompressedKlassPointers::decode_not_null(nk); \
+    return cast_exact(k);                                                \
+  }                                                                      \
+  inline TYPE* TYPE::narrow_klass_to_klass(narrowKlass nk) {             \
+    Klass* const k = CompressedKlassPointers::decode_not_null(nk);       \
+    return cast_exact(k);                                                \
+  }                                                                      \
+
  protected:
 
   // If you add a new field that points to any metaspace object, you
@@ -114,6 +153,9 @@ class Klass : public Metadata {
   // Final note:  This comes first, immediately after C++ vtable,
   // because it is frequently queried.
   jint _layout_helper;
+
+  // KLUT entry
+  KlassLUTEntry _klute;
 
   // Klass kind used to resolve the runtime type of the instance.
   //  - Used to implement devirtualized oop closure dispatching.
@@ -209,12 +251,16 @@ protected:
   Klass();
 
  public:
-  int kind() { return _kind; }
+  int kind() const { return _kind; }
 
   enum class DefaultsLookupMode { find, skip };
   enum class OverpassLookupMode { find, skip };
   enum class StaticLookupMode   { find, skip };
   enum class PrivateLookupMode  { find, skip };
+
+  // Klute handling
+  KlassLUTEntry klute() const { return _klute; }
+  void register_with_klut();
 
   virtual bool is_klass() const { return true; }
 

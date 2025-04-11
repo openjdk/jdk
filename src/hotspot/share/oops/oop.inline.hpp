@@ -34,6 +34,8 @@
 #include "oops/arrayOop.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klassInfoLUT.inline.hpp"
+#include "oops/klassInfoLUTEntry.inline.hpp"
 #include "oops/objLayout.inline.hpp"
 #include "oops/markWord.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -93,6 +95,17 @@ markWord oopDesc::prototype_mark() const {
 
 void oopDesc::init_mark() {
   set_mark(prototype_mark());
+}
+
+KlassLUTEntry oopDesc::get_klute() const {
+  switch (ObjLayout::klass_mode()) {
+    case ObjLayout::Compact:
+      return KlassInfoLUT::lookup(mark().narrow_klass());
+    case ObjLayout::Compressed:
+      return CompressedKlassPointers::decode_not_null(_metadata._compressed_klass)->klute();
+    default:
+      return _metadata._klass->klute();
+  }
 }
 
 Klass* oopDesc::klass() const {
@@ -229,11 +242,21 @@ bool oopDesc::is_instance()    const { return klass()->is_instance_klass();     
 bool oopDesc::is_instanceRef() const { return klass()->is_reference_instance_klass();   }
 bool oopDesc::is_stackChunk()  const { return klass()->is_stack_chunk_instance_klass(); }
 bool oopDesc::is_array()       const { return klass()->is_array_klass();                }
-bool oopDesc::is_objArray()    const { return klass()->is_objArray_klass();             }
-bool oopDesc::is_typeArray()   const { return klass()->is_typeArray_klass();            }
+
+bool oopDesc::is_objArray() const {
+  const bool rc = get_klute().is_obj_array();
+  assert(rc == klass()->is_objArray_klass(), "Sanity");
+  return rc;
+}
+
+bool oopDesc::is_typeArray() const {
+  const bool rc = get_klute().is_type_array();
+  assert(rc == klass()->is_typeArray_klass(), "Sanity");
+  return rc;
+}
 
 template<typename T>
-T*       oopDesc::field_addr(int offset)     const { return reinterpret_cast<T*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
+T*       oopDesc::field_addr(int offset_bytes)     const { return reinterpret_cast<T*>(cast_from_oop<intptr_t>(as_oop()) + offset_bytes); }
 
 template <typename T>
 size_t   oopDesc::field_offset(T* p) const { return pointer_delta((void*)p, (void*)this, 1); }
@@ -374,40 +397,32 @@ void oopDesc::incr_age() {
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate(OopClosureType* cl) {
-  OopIteratorClosureDispatch::oop_oop_iterate(cl, this, klass());
+  const KlassLUTEntry klute = get_klute();
+  OopIteratorClosureDispatch::oop_oop_iterate(this, cl, klute);
 }
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate(OopClosureType* cl, MemRegion mr) {
-  OopIteratorClosureDispatch::oop_oop_iterate(cl, this, klass(), mr);
+  const KlassLUTEntry klute = get_klute();
+  OopIteratorClosureDispatch::oop_oop_iterate_bounded(this, cl, mr, klute);
 }
 
 template <typename OopClosureType>
 size_t oopDesc::oop_iterate_size(OopClosureType* cl) {
-  Klass* k = klass();
-  size_t size = size_given_klass(k);
-  OopIteratorClosureDispatch::oop_oop_iterate(cl, this, k);
-  return size;
+  const KlassLUTEntry klute = get_klute();
+  return OopIteratorClosureDispatch::oop_oop_iterate_size(this, cl, klute);
 }
 
 template <typename OopClosureType>
 size_t oopDesc::oop_iterate_size(OopClosureType* cl, MemRegion mr) {
-  Klass* k = klass();
-  size_t size = size_given_klass(k);
-  OopIteratorClosureDispatch::oop_oop_iterate(cl, this, k, mr);
-  return size;
+  const KlassLUTEntry klute = get_klute();
+  return OopIteratorClosureDispatch::oop_oop_iterate_bounded_size(this, cl, mr, klute);
 }
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate_backwards(OopClosureType* cl) {
-  oop_iterate_backwards(cl, klass());
-}
-
-template <typename OopClosureType>
-void oopDesc::oop_iterate_backwards(OopClosureType* cl, Klass* k) {
-  // In this assert, we cannot safely access the Klass* with compact headers.
-  assert(k == klass(), "wrong klass");
-  OopIteratorClosureDispatch::oop_oop_iterate_backwards(cl, this, k);
+  const KlassLUTEntry klute = get_klute();
+  OopIteratorClosureDispatch::oop_oop_iterate_reverse(this, cl, klute);
 }
 
 bool oopDesc::is_instanceof_or_null(oop obj, Klass* klass) {

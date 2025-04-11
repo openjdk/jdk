@@ -95,9 +95,6 @@ class Klass;
 // 0x8_0000_0000                      0x8_4800_0000                            0x9_0000_0000
 //
 
-// If compressed klass pointers then use narrowKlass.
-typedef juint  narrowKlass;
-
 // For UseCompressedClassPointers.
 class CompressedKlassPointers : public AllStatic {
   friend class VMStructs;
@@ -208,6 +205,9 @@ public:
   //  will encounter (and the implicit promise that there will be no Klass
   //  structures outside this range).
   static void initialize(address addr, size_t len);
+
+  static bool pre_initialized()   { return _narrow_klass_pointer_bits != -1; }
+  static bool fully_initialized() { return _base != (address)-1; }
 
   static void     print_mode(outputStream* st);
 

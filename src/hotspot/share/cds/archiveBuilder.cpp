@@ -52,6 +52,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -778,6 +779,8 @@ void ArchiveBuilder::make_klasses_shareable() {
     if (k->is_instance_klass()) {
       InstanceKlass::cast(k)->constants()->remove_unshareable_info();
     }
+    // every archived Klass shall carry a valid KLUTE.
+    DEBUG_ONLY(k->klute().verify_against_klass(k);)
   }
 
   for (int i = 0; i < klasses()->length(); i++) {

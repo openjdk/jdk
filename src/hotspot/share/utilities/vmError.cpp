@@ -1213,6 +1213,11 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->print_cr("Metaspace:");
     MetaspaceUtils::print_basic_report(st, 0);
 
+  STEP_IF("printing KLUT information", _verbose && Universe::is_fully_initialized())
+    if (Universe::is_fully_initialized()) {
+      KlassInfoLUT::print_statistics(st);
+    }
+
   STEP_IF("printing code cache information", _verbose && Universe::is_fully_initialized())
     // print code cache information before vm abort
     CodeCache::print_summary(st);
@@ -1395,6 +1400,12 @@ void VMError::print_vm_info(outputStream* st) {
   if (Universe::is_fully_initialized()) {
     st->print_cr("Metaspace:");
     MetaspaceUtils::print_basic_report(st, 0);
+  }
+
+  // STEP("printing KLUT information")
+
+  if (Universe::is_fully_initialized()) {
+    KlassInfoLUT::print_statistics(st);
   }
 
   // STEP("printing code cache information")

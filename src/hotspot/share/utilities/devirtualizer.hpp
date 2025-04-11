@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_DEVIRTUALIZER_HPP
 #define SHARE_UTILITIES_DEVIRTUALIZER_HPP
 
+#include "oops/klassInfoLUTEntry.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/bitMap.hpp"
 

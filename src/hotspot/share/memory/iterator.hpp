@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "oops/klassInfoLUT.hpp"
 
 class CodeBlob;
 class nmethod;
@@ -139,6 +140,11 @@ class DerivedOopClosure : public Closure {
 class KlassClosure : public Closure {
  public:
   virtual void do_klass(Klass* k) = 0;
+};
+
+class ConstKlassClosure : public Closure {
+ public:
+  virtual void do_klass(const Klass* k) = 0;
 };
 
 class CLDClosure : public Closure {
@@ -314,9 +320,12 @@ public:
 
 class OopIteratorClosureDispatch {
  public:
-  template <typename OopClosureType> static void oop_oop_iterate(OopClosureType* cl, oop obj, Klass* klass);
-  template <typename OopClosureType> static void oop_oop_iterate(OopClosureType* cl, oop obj, Klass* klass, MemRegion mr);
-  template <typename OopClosureType> static void oop_oop_iterate_backwards(OopClosureType* cl, oop obj, Klass* klass);
+  template <typename OopClosureType> static void    oop_oop_iterate              (oop obj, OopClosureType* cl, KlassLUTEntry klute);
+  template <typename OopClosureType> static void    oop_oop_iterate_reverse      (oop obj, OopClosureType* cl, KlassLUTEntry klute);
+  template <typename OopClosureType> static void    oop_oop_iterate_bounded      (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute);
+  template <typename OopClosureType> static size_t  oop_oop_iterate_size         (oop obj, OopClosureType* cl, KlassLUTEntry klute);
+  template <typename OopClosureType> static size_t  oop_oop_iterate_bounded_size (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute);
+
 };
 
 #endif // SHARE_MEMORY_ITERATOR_HPP

@@ -61,6 +61,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/klassInfoLUT.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/objLayout.hpp"
 #include "oops/oop.inline.hpp"
@@ -885,6 +886,9 @@ jint universe_init() {
   Universe::initialize_tlab();
 
   Metaspace::global_initialize();
+
+  // Initialize KLUT before starting to create any Klass
+  KlassInfoLUT::initialize();
 
   // Initialize performance counters for metaspaces
   MetaspaceCounters::initialize_performance_counters();

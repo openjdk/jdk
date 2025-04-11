@@ -106,10 +106,12 @@ void InstanceRefKlass::oop_oop_iterate_fields_except_referent(oop obj, OopClosur
 template <typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::oop_oop_iterate_ref_processing(oop obj, OopClosureType* closure, Contains& contains) {
   switch (closure->reference_iteration_mode()) {
-    case OopIterateClosure::DO_DISCOVERY:
+    case OopIterateClosure::DO_DISCOVERY: {
+      const ReferenceType reftype = InstanceKlass::cast(obj->klass())->reference_type();
       trace_reference_gc<T>("do_discovery", obj);
-      oop_oop_iterate_discovery<T>(obj, reference_type(), closure, contains);
-      break;
+      oop_oop_iterate_discovery<T>(obj, reftype, closure, contains);
+    }
+    break;
     case OopIterateClosure::DO_FIELDS:
       trace_reference_gc<T>("do_fields", obj);
       oop_oop_iterate_fields<T>(obj, closure, contains);
@@ -148,23 +150,20 @@ void InstanceRefKlass::oop_oop_iterate_ref_processing_bounded(oop obj, OopClosur
 }
 
 template <typename T, class OopClosureType>
-void InstanceRefKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  InstanceKlass::oop_oop_iterate<T>(obj, closure);
-
+void InstanceRefKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
+  InstanceKlass::oop_oop_iterate<T>(obj, closure, klute);
   oop_oop_iterate_ref_processing<T>(obj, closure);
 }
 
 template <typename T, class OopClosureType>
-void InstanceRefKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
-  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure);
-
+void InstanceRefKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
+  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure, klute);
   oop_oop_iterate_ref_processing<T>(obj, closure);
 }
 
 template <typename T, class OopClosureType>
-void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr);
-
+void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute) {
+  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr, klute);
   oop_oop_iterate_ref_processing_bounded<T>(obj, closure, mr);
 }
 
@@ -189,5 +188,8 @@ void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
   }
 }
 #endif
+
+DEFINE_EXACT_CAST_FUNCTIONS(InstanceRefKlass)
+DEFINE_NARROW_KLASS_UTILITY_FUNCTIONS(InstanceRefKlass)
 
 #endif // SHARE_OOPS_INSTANCEREFKLASS_INLINE_HPP

@@ -46,6 +46,8 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/klassInfoLUT.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -1005,9 +1007,12 @@ jint Klass::jvmti_class_status() const {
 void Klass::print_on(outputStream* st) const {
   ResourceMark rm;
   // print title
-  st->print("%s", internal_name());
+  st->print("Klass: %s", internal_name());
   print_address_on(st);
   st->cr();
+  st->print(" - kind:              %d", kind());                               st->cr();
+  st->print(" - layouthelper raw 0x%x", layout_helper());                      st->cr();
+  st->print(" - name:              "); name()->print_value_on(st);             st->cr();
 }
 
 #define BULLET  " - "
@@ -1341,4 +1346,8 @@ void Klass::on_secondary_supers_verification_failure(Klass* super, Klass* sub, b
   sub->print();
   fatal("%s: %s implements %s: linear_search: %d; table_lookup: %d",
         msg, sub->external_name(), super->external_name(), linear_result, table_result);
+}
+
+void Klass::register_with_klut() {
+  _klute = KlassInfoLUT::register_klass(this);
 }
