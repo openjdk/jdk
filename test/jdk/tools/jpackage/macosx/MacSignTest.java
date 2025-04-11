@@ -21,23 +21,25 @@
  * questions.
  */
 
-import static jdk.internal.util.OperatingSystem.MACOS;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.MacSign;
+import jdk.jpackage.test.MacSign.CertificateRequest;
+import jdk.jpackage.test.MacSignVerify;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
@@ -97,7 +99,7 @@ public class MacSignTest {
         });
     }
 
-    @Test(ifOS = MACOS)
+    @Test
     @Parameter({"IMAGE", "EXPIRED_SIGNING_KEY_USER_NAME"})
     @Parameter({"MAC_DMG", "EXPIRED_SIGNING_KEY_USER_NAME"})
     @Parameter({"MAC_PKG", "EXPIRED_SIGNING_KEY_USER_NAME", "EXPIRED_SIGNING_KEY_USER_NAME_PKG"})
@@ -130,7 +132,7 @@ public class MacSignTest {
         });
     }
 
-    @Test(ifOS = MACOS)
+    @Test
     @Parameter({"IMAGE", "GOOD_SIGNING_KEY_USER_NAME"})
     @Parameter({"MAC_DMG", "GOOD_SIGNING_KEY_USER_NAME"})
     @Parameter({"MAC_PKG", "GOOD_SIGNING_KEY_USER_NAME_PKG", "GOOD_SIGNING_KEY_USER_NAME"})
@@ -154,6 +156,35 @@ public class MacSignTest {
                 return JPackageStringBundle.MAIN.cannedFormattedString("error.multiple.certs.found", opt.identityName(), keychain.name());
             }).execute(1);
         });
+    }
+
+    @Test
+    @ParameterSupplier
+    public static void testSelectSigningIdentity(String signingKeyUserName, CertificateRequest certRequest) {
+
+        final var keychain = SigningBase.StandardKeychain.MAIN.spec().keychain();
+
+        MacSign.Keychain.withAddedKeychains(List.of(keychain), () -> {
+            final var cmd = JPackageCommand.helloAppImage()
+                    .setFakeRuntime()
+                    .addArguments("--mac-sign")
+                    .addArguments("--mac-signing-keychain", keychain.name())
+                    .addArguments("--mac-signing-key-user-name", signingKeyUserName);
+
+            cmd.executeAndAssertHelloAppImageCreated();
+
+            MacSignVerify.assertSigned(cmd.outputBundle(), certRequest);
+        });
+    }
+
+    public static Collection<Object[]> testSelectSigningIdentity() {
+        return Stream.of(
+                SigningBase.StandardCertificateRequest.CODESIGN, 
+                SigningBase.StandardCertificateRequest.CODESIGN_UNICODE
+        ).map(SigningBase.StandardCertificateRequest::spec).<Object[]>mapMulti((certRequest, acc) -> {
+            acc.accept(new Object[] {certRequest.shortName(), certRequest});
+            acc.accept(new Object[] {certRequest.name(), certRequest});
+        }).toList();
     }
 
     enum SignOption {
