@@ -35,7 +35,7 @@
 class G1ConcurrentRefineStats : public CHeapObj<mtGC> {
   jlong _sweep_duration;              // Time spent sweeping the table finding non-clean cards
                                       // and refining them.
-  jlong _yield_duration;              // Time spent yielding during the sweep (not doing the sweep).
+  jlong _yield_during_sweep_duration; // Time spent yielding during the sweep (not doing the sweep).
 
   size_t _cards_scanned;              // Total number of cards scanned.
   size_t _cards_clean;                // Number of cards found clean.
@@ -51,8 +51,8 @@ public:
 
   // Time spent performing sweeping the refinement table (includes actual refinement,
   // but not yield time).
-  jlong sweep_duration() const { return _sweep_duration - _yield_duration; }
-  jlong yield_duration() const { return _yield_duration; }
+  jlong sweep_duration() const { return _sweep_duration - _yield_during_sweep_duration; }
+  jlong yield_during_sweep_duration() const { return _yield_during_sweep_duration; }
   jlong refine_duration() const { return _refine_duration; }
 
   // Number of refined cards.
@@ -72,7 +72,7 @@ public:
   size_t cards_to_cset() const { return _cards_already_refer_to_cset + _cards_refer_to_cset; }
 
   void inc_sweep_time(jlong t) { _sweep_duration += t; }
-  void inc_yield_duration(jlong t) { _yield_duration += t; }
+  void inc_yield_during_sweep_duration(jlong t) { _yield_during_sweep_duration += t; }
   void inc_refine_duration(jlong t) { _refine_duration += t; }
 
   void inc_cards_scanned(size_t increment) { _cards_scanned += increment; }

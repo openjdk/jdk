@@ -178,7 +178,7 @@ public:
   G1ConcurrentRefineStats* stats() { return &_stats; }
   void reset_stats();
 
-  void add_yield_duration(jlong duration);
+  void add_yield_during_sweep_duration(jlong duration);
 
   bool is_in_progress() const;
   bool are_java_threads_synched() const;

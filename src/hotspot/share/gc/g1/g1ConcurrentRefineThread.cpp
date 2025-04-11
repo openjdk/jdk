@@ -169,7 +169,7 @@ void G1ConcurrentRefineThread::do_refinement() {
   jlong epoch_yield_duration = g1h->yield_duration_in_refinement_epoch();
   jlong next_epoch_start = os::elapsed_counter();
 
-  jlong synchronize_duration_at_sweep_start = g1h->safepoint_duration();
+  jlong total_yield_during_sweep_duration = 0;
 
   // 4. Snapshot heap.
   state.snapshot_heap();
@@ -187,7 +187,7 @@ void G1ConcurrentRefineThread::do_refinement() {
     }
 
     if (SuspendibleThreadSet::should_yield()) {
-      jlong yield_start = os::elapsed_counter();
+      jlong yield_during_sweep_start = os::elapsed_counter();
       SuspendibleThreadSet::yield();
 
       // The yielding may have completed the task, check.
@@ -196,15 +196,16 @@ void G1ConcurrentRefineThread::do_refinement() {
         interrupted_by_gc = true;
         break;
       } else {
-        jlong yield_duration = os::elapsed_counter() - yield_start;
+        jlong yield_during_sweep_duration = os::elapsed_counter() - yield_during_sweep_start;
         log_debug(gc, refine)("Yielded from card table sweeping for %.2fms, no GC inbetween, continue",
-                              TimeHelper::counter_to_millis(yield_duration));
+                              TimeHelper::counter_to_millis(yield_during_sweep_duration));
+        total_yield_during_sweep_duration += yield_during_sweep_duration;
       }
     }
   }
 
   if (!interrupted_by_gc) {
-    state.add_yield_duration(G1CollectedHeap::heap()->safepoint_duration() - synchronize_duration_at_sweep_start);
+    state.add_yield_during_sweep_duration(total_yield_during_sweep_duration);
 
     state.complete_work(true);
 

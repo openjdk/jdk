@@ -1165,7 +1165,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _workers(nullptr),
   _refinement_epoch(0),
   _last_synchronized_start(0),
-  _safepoint_duration(0),
   _last_refinement_epoch_start(0),
   _yield_duration_in_refinement_epoch(0),
   _last_safepoint_refinement_epoch(0),
@@ -1533,8 +1532,6 @@ void G1CollectedHeap::safepoint_synchronize_begin() {
 void G1CollectedHeap::safepoint_synchronize_end() {
   jlong now = os::elapsed_counter();
   jlong synchronize_duration = now - _last_synchronized_start;
-
-  _safepoint_duration += synchronize_duration;
 
   if (_last_safepoint_refinement_epoch == refinement_epoch()) {
     _yield_duration_in_refinement_epoch += synchronize_duration;

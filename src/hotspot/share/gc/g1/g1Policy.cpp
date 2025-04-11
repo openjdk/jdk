@@ -608,7 +608,7 @@ static void log_refinement_stats(const G1ConcurrentRefineStats& stats) {
   log_debug(gc, refine, stats)
            ("Refinement: sweep: %.2fms, yield: %.2fms refined: %zu, dirtied: %zu",
             TimeHelper::counter_to_millis(stats.sweep_duration()),
-            TimeHelper::counter_to_millis(stats.yield_duration()),
+            TimeHelper::counter_to_millis(stats.yield_during_sweep_duration()),
             stats.refined_cards(),
             stats.cards_pending());
 }

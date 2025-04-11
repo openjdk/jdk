@@ -186,7 +186,6 @@ private:
   // The following members are for tracking safepoint durations between garbage
   // collections.
   jlong _last_synchronized_start;
-  jlong _safepoint_duration;                       // Time spent in safepoints since start of VM.
 
   jlong _last_refinement_epoch_start;
   jlong _yield_duration_in_refinement_epoch;       // Time spent in safepoints since beginning of last refinement epoch.
@@ -915,7 +914,6 @@ public:
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
 
-  jlong safepoint_duration() const { return _safepoint_duration; }
   jlong last_refinement_epoch_start() const { return _last_refinement_epoch_start; }
   void set_last_refinement_epoch_start(jlong epoch_start, jlong last_yield_duration);
   jlong yield_duration_in_refinement_epoch();

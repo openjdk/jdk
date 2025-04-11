@@ -28,7 +28,7 @@
 
 G1ConcurrentRefineStats::G1ConcurrentRefineStats() :
   _sweep_duration(0),
-  _yield_duration(0),
+  _yield_during_sweep_duration(0),
   _cards_scanned(0),
   _cards_clean(0),
   _cards_not_parsable(0),
@@ -40,7 +40,7 @@ G1ConcurrentRefineStats::G1ConcurrentRefineStats() :
 
 void G1ConcurrentRefineStats::add_atomic(G1ConcurrentRefineStats* other) {
   Atomic::add(&_sweep_duration, other->_sweep_duration, memory_order_relaxed);
-  Atomic::add(&_yield_duration, other->_yield_duration, memory_order_relaxed);
+  Atomic::add(&_yield_during_sweep_duration, other->_yield_during_sweep_duration, memory_order_relaxed);
 
   Atomic::add(&_cards_scanned, other->_cards_scanned, memory_order_relaxed);
   Atomic::add(&_cards_clean, other->_cards_clean, memory_order_relaxed);

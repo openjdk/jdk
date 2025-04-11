@@ -147,8 +147,8 @@ void G1ConcurrentRefineSweepState::reset_stats() {
   stats()->reset();
 }
 
-void G1ConcurrentRefineSweepState::add_yield_duration(jlong duration) {
-  stats()->inc_yield_duration(duration);
+void G1ConcurrentRefineSweepState::add_yield_during_sweep_duration(jlong duration) {
+  stats()->inc_yield_during_sweep_duration(duration);
 }
 
 size_t G1ConcurrentRefineSweepState::refinement_epoch() {
