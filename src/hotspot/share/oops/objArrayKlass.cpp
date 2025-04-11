@@ -97,6 +97,8 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
     }
     new_str[idx++] = '\0';
     name = SymbolTable::new_symbol(new_str);
+    // While we have the name and an RM, log
+    log_info(class, load)("%s: Created.", name->as_C_string());
   }
 
   // Initialize instance variables
