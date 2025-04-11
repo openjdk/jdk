@@ -1159,10 +1159,10 @@
     <Field type="ulong" contentType="bytes" name="size" label="Size" />
     <Field type="ulong" contentType="bytes" name="harvested" label="Harvested" />
     <Field type="ulong" contentType="bytes" name="committed" label="Committed" />
-    <Field type="uint" name="numHarvested" label="Number of harvested vmems" />
-    <Field type="boolean" name="multiPartition" label="Multi-partition allocation" />
-    <Field type="boolean" name="successful" label="Successful allocation" />
-    <Field type="boolean" name="nonBlocking" label="Non-blocking" />
+    <Field type="uint" name="harvestedRanges" label="Harvested Ranges" description="Number of harvested memory ranges" />
+    <Field type="boolean" name="multiPartition" label="Multi-Partition" />
+    <Field type="boolean" name="successful" label="Successful" />
+    <Field type="boolean" name="nonBlocking" label="Non-Blocking" />
   </Event>
 
   <Event name="ZRelocationSet" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set" thread="true">
