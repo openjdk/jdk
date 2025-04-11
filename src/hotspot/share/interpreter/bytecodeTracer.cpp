@@ -228,16 +228,15 @@ void BytecodePrinter::print_constant(int cp_index, outputStream* st) {
   } else if (tag.is_klass()) {
     st->print_cr(" %s", constants->resolved_klass_at(cp_index)->external_name());
   } else if (tag.is_unresolved_klass()) {
-    st->print_cr(" %s", constants->klass_at_noresolve(cp_index)->as_quoted_ascii());
+    st->print_cr(" %s", constants->klass_name_at(cp_index)->as_quoted_ascii());
   } else if (tag.is_method_type()) {
-    int i2 = constants->method_type_index_at(cp_index);
-    st->print(" <MethodType> %d", i2);
-    st->print_cr(" %s", constants->symbol_at(i2)->as_quoted_ascii());
+    MethodTypeReference ref(constants, cp_index);
+    st->print(" <MethodType> %d", ref.signature_index());
+    st->print_cr(" %s", ref.signature(constants)->as_quoted_ascii());
   } else if (tag.is_method_handle()) {
-    int kind = constants->method_handle_ref_kind_at(cp_index);
-    int i2 = constants->method_handle_index_at(cp_index);
-    st->print(" <MethodHandle of kind %d index at %d>", kind, i2);
-    print_field_or_method(i2, st);
+    MethodHandleReference ref(constants, cp_index);
+    st->print(" <MethodHandle of kind %d index at %d>", ref.ref_kind(), ref.ref_index());
+    print_field_or_method(ref.ref_index(), st);
   } else if (tag.is_dynamic_constant()) {
     print_dynamic(cp_index, st);
     if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_DYNAMIC)) {
@@ -263,9 +262,10 @@ void BytecodePrinter::print_field_or_method(int cp_index, outputStream* st) {
     return;
   }
 
-  Symbol* name = constants->uncached_name_ref_at(cp_index);
-  Symbol* signature = constants->uncached_signature_ref_at(cp_index);
-  Symbol* klass = constants->klass_name_at(constants->uncached_klass_ref_index_at(cp_index));
+  FMReference ref(constants, cp_index);
+  Symbol* name      = ref.name(constants);
+  Symbol* signature = ref.signature(constants);
+  Symbol* klass     = ref.klass_name(constants);
   const char* sep = (tag.is_field() ? ":" : "");
   st->print_cr(" %d <%s.%s%s%s> ", cp_index, klass->as_C_string(), name->as_C_string(), sep, signature->as_C_string());
 }
@@ -284,11 +284,11 @@ void BytecodePrinter::print_dynamic(int cp_index, outputStream* st) {
     return;
   }
 
-  int bsm = constants->bootstrap_method_ref_index_at(cp_index);
-  st->print(" bsm=%d", bsm);
+  BootstrapReference ref(constants, cp_index);
+  st->print(" bsm=%d", ref.bsme(constants)->bootstrap_method_index());
 
-  Symbol* name = constants->uncached_name_ref_at(cp_index);
-  Symbol* signature = constants->uncached_signature_ref_at(cp_index);
+  Symbol* name = ref.name(constants);
+  Symbol* signature = ref.signature(constants);
   const char* sep = tag.is_dynamic_constant() ? ":" : "";
   st->print_cr(" %d <%s%s%s>", cp_index, name->as_C_string(), sep, signature->as_C_string());
 }
@@ -309,10 +309,11 @@ void BytecodePrinter::print_invokedynamic(int indy_index, int cp_index, outputSt
 
 // cp_index: must be the cp_index of a JVM_CONSTANT_{Dynamic, DynamicInError, InvokeDynamic}
 void BytecodePrinter::print_bsm(int cp_index, outputStream* st) {
-  assert(constants()->tag_at(cp_index).has_bootstrap(), "must be");
-  int bsm = constants()->bootstrap_method_ref_index_at(cp_index);
+  BootstrapReference indy(constants(), cp_index);
+  BSMAttributeEntry* bsme = indy.bsme(constants());
+  MethodHandleReference bsmh = bsme->bootstrap_method(constants());
   const char* ref_kind = "";
-  switch (constants()->method_handle_ref_kind_at(bsm)) {
+  switch (bsmh.ref_kind()) {
   case JVM_REF_getField         : ref_kind = "REF_getField"; break;
   case JVM_REF_getStatic        : ref_kind = "REF_getStatic"; break;
   case JVM_REF_putField         : ref_kind = "REF_putField"; break;
@@ -325,13 +326,13 @@ void BytecodePrinter::print_bsm(int cp_index, outputStream* st) {
   default                       : ShouldNotReachHere();
   }
   st->print("  BSM: %s", ref_kind);
-  print_field_or_method(constants()->method_handle_index_at(bsm), st);
-  int argc = constants()->bootstrap_argument_count_at(cp_index);
+  print_field_or_method(bsmh.ref_index(), st);
+  int argc = bsme->argument_count();;
   st->print("  arguments[%d] = {", argc);
   if (argc > 0) {
     st->cr();
     for (int arg_i = 0; arg_i < argc; arg_i++) {
-      int arg = constants()->bootstrap_argument_index_at(cp_index, arg_i);
+      int arg = bsme->argument_index(arg_i);
       st->print("    ");
       print_constant(arg, st);
     }

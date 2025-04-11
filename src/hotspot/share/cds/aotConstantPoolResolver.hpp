@@ -76,8 +76,8 @@ class AOTConstantPoolResolver :  AllStatic {
 
   static bool check_methodtype_signature(ConstantPool* cp, Symbol* sig, Klass** return_type_ret = nullptr);
   static bool check_lambda_metafactory_signature(ConstantPool* cp, Symbol* sig);
-  static bool check_lambda_metafactory_methodtype_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i);
-  static bool check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i);
+  static bool check_lambda_metafactory_methodtype_arg(ConstantPool* cp, int bsme_index, int arg_i);
+  static bool check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, int bsme_index, int arg_i);
 
 public:
   static void initialize();

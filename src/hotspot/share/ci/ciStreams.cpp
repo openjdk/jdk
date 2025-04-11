@@ -252,8 +252,7 @@ ciConstant ciBytecodeStream::get_constant() {
   if (has_cache_index()) {
     cache_index = pool_index;
     pool_index = cpool->object_to_cp_index(cache_index);
-  } else if (cpool->tag_at(pool_index).is_dynamic_constant() ||
-             cpool->tag_at(pool_index).is_dynamic_constant_in_error()) {
+  } else if (cpool->tag_at(pool_index).is_dynamic_constant_or_error()) {
     // Condy with primitive type is not quickened, so the index into resolved reference cache should be reconstructed.
     assert(is_java_primitive(cpool->basic_type_for_constant_at(pool_index)), "not quickened");
     cache_index = cpool->cp_to_object_index(pool_index);
@@ -342,7 +341,7 @@ ciInstanceKlass* ciBytecodeStream::get_declared_field_holder() {
 int ciBytecodeStream::get_field_holder_index() {
   GUARDED_VM_ENTRY(
     ConstantPool* cpool = _holder->get_instanceKlass()->constants();
-    return cpool->klass_ref_index_at(get_field_index(), _bc);
+    return FMReference(cpool, get_field_index(), _bc).klass_index();
   )
 }
 
@@ -526,7 +525,7 @@ ciKlass* ciBytecodeStream::get_declared_method_holder() {
 // deoptimization information.
 int ciBytecodeStream::get_method_holder_index() {
   ConstantPool* cpool = _method->get_Method()->constants();
-  return cpool->klass_ref_index_at(get_method_index(), _bc);
+  return FMReference(cpool, get_method_index(), _bc).klass_index();
 }
 
 // ------------------------------------------------------------------
@@ -537,8 +536,7 @@ int ciBytecodeStream::get_method_holder_index() {
 // deoptimization information.
 int ciBytecodeStream::get_method_signature_index(const constantPoolHandle& cpool) {
   GUARDED_VM_ENTRY(
-    const int method_index = get_method_index();
-    const int name_and_type_index = cpool->name_and_type_ref_index_at(method_index, _bc);
-    return cpool->signature_ref_index_at(name_and_type_index);
+    // use RawReference because this could be invokedynamic
+    return RawReference(cpool, get_method_index(), _bc).signature_index();
   )
 }
