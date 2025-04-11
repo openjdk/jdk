@@ -27,7 +27,6 @@
  * @summary Checks that JLayer inside JViewport works is correctly laid out
  * @author Alexander Potochkin
  * @library /lib/client/
- * @build ExtendedRobot
  * @run main bug6824395
  */
 
@@ -72,7 +71,7 @@ public class bug6824395 {
                 }
             });
             try {
-                 ExtendedRobot robot = new ExtendedRobot();
+                 Robot robot = new Robot();
                  robot.waitForIdle(300);
              }catch(Exception ex) {
                  ex.printStackTrace();

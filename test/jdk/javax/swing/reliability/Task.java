@@ -31,9 +31,9 @@ import java.awt.*;
 public abstract class Task <T extends Frame> {
 
     protected T gui;
-    protected ExtendedRobot robot;
+    protected Robot robot;
 
-    public Task(Class guiClass, ExtendedRobot robot) throws Exception {
+    public Task(Class guiClass, Robot robot) throws Exception {
         this.robot = robot;
         SwingUtilities.invokeAndWait( () -> {
             try {

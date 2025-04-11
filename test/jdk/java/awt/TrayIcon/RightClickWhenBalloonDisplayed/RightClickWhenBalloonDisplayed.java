@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import java.awt.Robot;
 import java.awt.TrayIcon;
 import java.awt.SystemTray;
 import java.awt.EventQueue;
@@ -41,14 +42,14 @@ import java.awt.image.BufferedImage;
  * @library /java/awt/patchlib
  * @library /lib/client ../
  * @build java.desktop/java.awt.Helper
- * @build ExtendedRobot SystemTrayIconHelper
+ * @build SystemTrayIconHelper
  * @run main RightClickWhenBalloonDisplayed
  */
 
 public class RightClickWhenBalloonDisplayed {
 
     TrayIcon icon;
-    ExtendedRobot robot;
+    Robot robot;
     int actionPerformedCount = -1;
 
     public static void main(String[] args) throws Exception {
@@ -68,7 +69,7 @@ public class RightClickWhenBalloonDisplayed {
     }
 
     RightClickWhenBalloonDisplayed() throws Exception {
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait(this::initializeGUI);
         robot.waitForIdle(1000);
     }

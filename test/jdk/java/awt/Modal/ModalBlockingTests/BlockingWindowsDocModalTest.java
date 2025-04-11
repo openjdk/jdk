@@ -40,7 +40,7 @@ public class BlockingWindowsDocModalTest {
 
 
     private static final int delay = 500;
-    private final ExtendedRobot robot;
+    private final Robot robot;
 
     private List<Window> allWindows;
 
@@ -51,7 +51,7 @@ public class BlockingWindowsDocModalTest {
 
         root = p;
 
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeLater(this::createGUI);
     }
 

@@ -34,7 +34,6 @@
  * @build LWComponent
  * @build LWButton
  * @build LWList
- * @build ExtendedRobot
  * @run main/timeout=300 KeyMaskTest
  */
 
@@ -47,6 +46,7 @@ import java.awt.Frame;
 import java.awt.GridLayout;
 import java.awt.List;
 import java.awt.Point;
+import java.awt.Robot;
 import java.awt.TextArea;
 import java.awt.TextField;
 import java.awt.event.InputEvent;
@@ -75,7 +75,7 @@ public class KeyMaskTest extends KeyAdapter {
     List      list;
     LWList    listLW;
 
-    ExtendedRobot robot;
+    Robot robot;
 
     private final static int robotDelay = 500;
     private final static int waitDelay  = 3500;
@@ -87,7 +87,7 @@ public class KeyMaskTest extends KeyAdapter {
 
     KeyMaskTest() throws Exception {
         lock = new Object();
-        robot = new ExtendedRobot();
+        robot = new Robot();
         EventQueue.invokeAndWait( this::createGUI );
     }
 
@@ -188,7 +188,7 @@ public class KeyMaskTest extends KeyAdapter {
             Point center = new Point(xc, yc);
 
             robot.delay(robotDelay);
-            robot.glide(origin, center);
+            robot.glide(origin.x, origin.y, center.x, center.y);
             robot.click();
             robot.delay(robotDelay);
 
