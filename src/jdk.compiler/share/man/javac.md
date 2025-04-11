@@ -561,8 +561,10 @@ file system locations may be directories, JAR files or JMOD files.
     warnings is recommended.
 
 <a id="option-Xlint-custom">`-Xlint:`\[`-`\]*key*(`,`\[`-`\]*key*)\*</a>
-:   Specifies warning categories to enable or disable, separated by comma.
-    Precede a key by a hyphen (`-`) to disable the specified category.
+:   Enables and/or disables warning categories using the one or more of the keys described
+    below separated by commas. The keys `all` and `none` enable or disable all categories
+    (respectively); other keys enable the corresponding category, or disable it if preceded
+    by a hyphen (`-`).
 
     Supported values for *key* are:
 
