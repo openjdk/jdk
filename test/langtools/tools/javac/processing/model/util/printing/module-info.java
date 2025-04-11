@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8173609
  * @summary printing of modules
- * @compile/ref=module-info.out -Xprint p/P.java module-info.java
+ * @compile/ref=module-info.out -Xprint p/P.java -Xlint:-module module-info.java
  */
 
 /**

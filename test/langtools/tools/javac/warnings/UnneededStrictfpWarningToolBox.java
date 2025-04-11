@@ -116,8 +116,8 @@ public class UnneededStrictfpWarningToolBox extends TestRunner {
         var expected = List.of("UnneededStrictfpWarning1.java:1:17: compiler.warn.strictfp",
                                "UnneededStrictfpWarning1.java:10:10: compiler.warn.strictfp",
                                "UnneededStrictfpWarning1.java:12:29: compiler.warn.strictfp",
-                               "UnneededStrictfpWarning1.java:16:28: compiler.warn.strictfp",
                                "UnneededStrictfpWarning1.java:18:21: compiler.warn.strictfp",
+                               "UnneededStrictfpWarning1.java:16:28: compiler.warn.strictfp",
                                "5 warnings");
         checkLog(log, expected);
     }

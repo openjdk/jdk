@@ -22,8 +22,6 @@
  */
 
  // key: compiler.err.bad.file.name
- // key: compiler.note.preview.filename
- // key: compiler.note.preview.recompile
  // options: -source ${jdk.version} --enable-preview
 
 public static void main(String... args) {
