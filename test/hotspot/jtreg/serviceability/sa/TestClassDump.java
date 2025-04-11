@@ -37,6 +37,7 @@ import jtreg.SkippedException;
  * @bug 8184982
  * @summary Test ClassDump tool
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestClassDump
  */
