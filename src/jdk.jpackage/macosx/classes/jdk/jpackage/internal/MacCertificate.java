@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,21 +39,25 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
-import java.util.HexFormat;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class MacCertificate {
     private final String certificate;
+    private final Optional<String> keychainName;
 
-    public MacCertificate(String certificate) {
-        this.certificate = certificate;
+    public MacCertificate(String certificate, String keychainName) {
+        this.certificate = Objects.requireNonNull(certificate);
+        this.keychainName = Optional.ofNullable(keychainName);
     }
 
     public boolean isValid() {
-        return verifyCertificate(this.certificate);
+        return verifyCertificate();
     }
 
     public static String findCertificateKey(String keyPrefix, String teamName,
@@ -295,7 +299,7 @@ public final class MacCertificate {
         return result;
     }
 
-    private boolean verifyCertificate(String certificate) {
+    private boolean verifyCertificate() {
         boolean result = false;
 
         try {
@@ -303,7 +307,7 @@ public final class MacCertificate {
             Date certificateDate = null;
 
             try {
-                file = getFindCertificateOutputPEM(certificate, null);
+                file = getFindCertificateOutputPEM(certificate, keychainName.orElse(null));
 
                 if (file != null) {
                     certificateDate = findCertificateDate(
