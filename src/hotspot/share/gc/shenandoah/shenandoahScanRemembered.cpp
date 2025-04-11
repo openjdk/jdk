@@ -615,8 +615,6 @@ void ShenandoahDirectCardMarkRememberedSet::merge_write_table(HeapWord* start, s
   for (size_t i = 0; i < num; i++) {
     read_table[i] &= write_table[i];
   }
-
-  log_info(gc, remset)("Finished merging write_table into read_table.");
 }
 
 void ShenandoahDirectCardMarkRememberedSet::swap_card_tables() {
@@ -642,8 +640,6 @@ void ShenandoahDirectCardMarkRememberedSet::swap_card_tables() {
 
   // Iterate on threads and adjust thread local data
   Threads::threads_do(&swap_it);
-
-  log_info(gc, barrier)("Current write_card_table: " PTR_FORMAT, p2i(swap_it._new_ptr));
 }
 
 ShenandoahScanRememberedTask::ShenandoahScanRememberedTask(ShenandoahObjToScanQueueSet* queue_set,
