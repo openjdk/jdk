@@ -59,6 +59,9 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   AddressState LEQ_A;
   TreapNode* leqA_n = _tree.closest_leq(A);
   if (leqA_n == nullptr) {
+    if (is_uncommit_operation) {
+      return SummaryDiff(-1);
+    }
     assert(!use_tag_inplace, "Cannot use the tag inplace if no pre-existing tag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
     if (use_tag_inplace) {
       log_debug(nmt)("Cannot use the tag inplace if no pre-existing tag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);

@@ -180,12 +180,12 @@ public:
         tag[i] = SingleDiff{init, init};
       }
     }
-    bool is_valid() const {
+    bool has_error() const {
       for (int i = 0; i < mt_number_of_tags; i++) {
         if (tag[i].reserve >= 0 || tag[i].commit >= 0)
-          return true;
+          return false;
       }
-      return false;
+      return true;
     }
     void add(SummaryDiff& other) {
       for (int i = 0; i < mt_number_of_tags; i++) {
