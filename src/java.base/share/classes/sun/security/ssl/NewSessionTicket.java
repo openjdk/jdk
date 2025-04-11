@@ -289,7 +289,8 @@ final class NewSessionTicket {
     private static SecretKey derivePreSharedKey(CipherSuite.HashAlg hashAlg,
             SecretKey resumptionMasterSecret, byte[] nonce) throws IOException {
         try {
-            KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg.name));
+            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
+
             byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
                     "tls13 resumption".getBytes(), nonce, hashAlg.hashLength);
             // SSLSessionImpl.write() uses the PreSharedKey encoding for

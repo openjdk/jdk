@@ -33,6 +33,7 @@ import javax.crypto.KDF;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.HKDFParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLProtocolException;
 import static sun.security.ssl.ClientAuthType.CLIENT_AUTH_REQUIRED;
@@ -42,6 +43,8 @@ import sun.security.ssl.SSLExtension.SSLExtensionSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.ssl.SessionTicketExtension.SessionTicketSpec;
 import sun.security.util.HexDumpEncoder;
+
+import jdk.internal.access.SharedSecrets;
 
 import static sun.security.ssl.SSLExtension.*;
 import static sun.security.ssl.SignatureScheme.CERTIFICATE_SCOPE;
@@ -568,11 +571,17 @@ final class PreSharedKeyExtension {
         }
 
         SecretKey binderKey = deriveBinderKey(shc, psk, session);
-        byte[] computedBinder =
-                computeBinder(shc, binderKey, session, pskBinderHash);
-        if (!MessageDigest.isEqual(binder, computedBinder)) {
-            throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Incorrect PSK binder value");
+        try {
+            byte[] computedBinder =
+                    computeBinder(shc, binderKey, session, pskBinderHash);
+            if (!MessageDigest.isEqual(binder, computedBinder)) {
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                        "Incorrect PSK binder value");
+            }
+        } finally {
+            if (binderKey instanceof SecretKeySpec s) {
+                SharedSecrets.getJavaxCryptoSpecAccess().clearSecretKeySpec(s);
+            }
         }
     }
 
@@ -721,21 +730,28 @@ final class PreSharedKeyExtension {
 
             SecretKey binderKey =
                     deriveBinderKey(chc, psk, chc.resumingSession);
-            ClientHelloMessage clientHello = (ClientHelloMessage)message;
-            CHPreSharedKeySpec pskPrototype = createPskPrototype(
-                chc.resumingSession.getSuite().hashAlg.hashLength, identities);
-            HandshakeHash pskBinderHash = chc.handshakeHash.copy();
+            try {
+                ClientHelloMessage clientHello = (ClientHelloMessage)message;
+                CHPreSharedKeySpec pskPrototype = createPskPrototype(
+                    chc.resumingSession.getSuite().hashAlg.hashLength, identities);
+                HandshakeHash pskBinderHash = chc.handshakeHash.copy();
 
-            byte[] binder = computeBinder(chc, binderKey, pskBinderHash,
-                    chc.resumingSession, chc, clientHello, pskPrototype);
+                byte[] binder = computeBinder(chc, binderKey, pskBinderHash,
+                        chc.resumingSession, chc, clientHello, pskPrototype);
 
-            List<byte[]> binders = new ArrayList<>();
-            binders.add(binder);
+                List<byte[]> binders = new ArrayList<>();
+                binders.add(binder);
 
-            CHPreSharedKeySpec pskMessage =
-                    new CHPreSharedKeySpec(identities, binders);
-            chc.handshakeExtensions.put(CH_PRE_SHARED_KEY, pskMessage);
-            return pskMessage.getEncoded();
+                CHPreSharedKeySpec pskMessage =
+                        new CHPreSharedKeySpec(identities, binders);
+                chc.handshakeExtensions.put(CH_PRE_SHARED_KEY, pskMessage);
+                return pskMessage.getEncoded();
+            } finally {
+                if (binderKey instanceof SecretKeySpec s) {
+                    SharedSecrets.getJavaxCryptoSpecAccess()
+                            .clearSecretKeySpec(s);
+                }
+            }
         }
 
         private CHPreSharedKeySpec createPskPrototype(
@@ -789,7 +805,7 @@ final class PreSharedKeyExtension {
             SSLSessionImpl session, byte[] digest) throws IOException {
         try {
             CipherSuite.HashAlg hashAlg = session.getSuite().hashAlg;
-            KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg.name));
+            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             byte[] label = ("tls13 finished").getBytes();
             byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
                     label, new byte[0], hashAlg.hashLength);
@@ -805,6 +821,11 @@ final class PreSharedKeyExtension {
                 return hmac.doFinal(digest);
             } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
                 throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
+            } finally {
+                if (finishedKey instanceof SecretKeySpec s) {
+                    SharedSecrets.getJavaxCryptoSpecAccess()
+                            .clearSecretKeySpec(s);
+                }
             }
         } catch (GeneralSecurityException ex) {
             throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
@@ -813,11 +834,12 @@ final class PreSharedKeyExtension {
 
     private static SecretKey deriveBinderKey(HandshakeContext context,
             SecretKey psk, SSLSessionImpl session) throws IOException {
+        SecretKey earlySecret = null;
         try {
             CipherSuite.HashAlg hashAlg = session.getSuite().hashAlg;
-            KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg.name));
+            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             byte[] zeros = new byte[hashAlg.hashLength];
-            SecretKey earlySecret = hkdf.deriveKey("TlsEarlySecret",
+            earlySecret = hkdf.deriveKey("TlsEarlySecret",
                     HKDFParameterSpec.ofExtract().addSalt(zeros).addIKM(psk)
                     .extractOnly());
             byte[] label = ("tls13 res binder").getBytes();
@@ -829,6 +851,10 @@ final class PreSharedKeyExtension {
                     hashAlg.hashLength));
         } catch (GeneralSecurityException ex) {
             throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
+        } finally {
+            if (earlySecret instanceof SecretKeySpec s) {
+                SharedSecrets.getJavaxCryptoSpecAccess().clearSecretKeySpec(s);
+            }
         }
     }
 

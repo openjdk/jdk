@@ -54,6 +54,8 @@ import sun.security.ssl.SSLCipher.SSLWriteCipher;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
 import sun.security.util.HexDumpEncoder;
 
+import jdk.internal.access.SharedSecrets;
+
 /**
  * Pack of the Finished handshake message.
  */
@@ -339,8 +341,7 @@ final class Finished {
             SecretKey secret = isValidation ?
                     context.baseReadSecret : context.baseWriteSecret;
             SSLBasicKeyDerivation kdf = new SSLBasicKeyDerivation(
-                    secret, hashAlg.name,
-                    hkdfLabel, hkdfContext, hashAlg.hashLength);
+                    secret, hashAlg, hkdfLabel, hkdfContext);
             SecretKey finishedSecret = kdf.deriveKey("TlsFinishedSecret");
 
             String hmacAlg =
@@ -352,6 +353,11 @@ final class Finished {
             } catch (NoSuchAlgorithmException |InvalidKeyException ex) {
                 throw new ProviderException(
                         "Failed to generate verify_data", ex);
+            } finally {
+                if (finishedSecret instanceof SecretKeySpec s) {
+                    SharedSecrets.getJavaxCryptoSpecAccess()
+                            .clearSecretKeySpec(s);
+                }
             }
         }
     }
@@ -798,20 +804,18 @@ final class Finished {
                         shc.negotiatedProtocol);
             }
 
-            // derive salt secret
+            SecretKey saltSecret = null;
             try {
-                SecretKey saltSecret = kd.deriveKey("TlsSaltSecret");
+                // derive salt secret
+                saltSecret = kd.deriveKey("TlsSaltSecret");
 
                 // derive application secrets
                 HashAlg hashAlg = shc.negotiatedCipherSuite.hashAlg;
-                KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg.name));
+                KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
                 byte[] zeros = new byte[hashAlg.hashLength];
-                SecretKeySpec sharedSecret =
-                        new SecretKeySpec(zeros, "TlsZeroSecret");
                 SecretKey masterSecret = hkdf.deriveKey("TlsMasterSecret",
-                        HKDFParameterSpec.ofExtract()
-                                         .addSalt(saltSecret)
-                                         .addIKM(sharedSecret).extractOnly());
+                        HKDFParameterSpec.ofExtract().addSalt(saltSecret)
+                        .addIKM(zeros).extractOnly());
                 SSLKeyDerivation secretKD =
                         new SSLSecretDerivation(shc, masterSecret);
 
@@ -845,6 +849,11 @@ final class Finished {
             } catch (GeneralSecurityException gse) {
                 throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Failure to derive application secrets", gse);
+            } finally {
+                if (saltSecret instanceof SecretKeySpec s) {
+                    SharedSecrets.getJavaxCryptoSpecAccess()
+                            .clearSecretKeySpec(s);
+                }
             }
 
             /*
@@ -953,21 +962,19 @@ final class Finished {
                         engineGetClientSessionContext()).
                         put(chc.handshakeSession);
             }
-
-            // derive salt secret
+            SecretKey saltSecret = null;
             try {
-                SecretKey saltSecret = kd.deriveKey("TlsSaltSecret");
+                // derive salt secret
+                saltSecret = kd.deriveKey("TlsSaltSecret");
 
                 // derive application secrets
                 HashAlg hashAlg = chc.negotiatedCipherSuite.hashAlg;
-                KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg.name));
+                KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
                 byte[] zeros = new byte[hashAlg.hashLength];
-                SecretKeySpec sharedSecret =
-                        new SecretKeySpec(zeros, "TlsZeroSecret");
                 SecretKey masterSecret = hkdf.deriveKey("TlsMasterSecret",
                         HKDFParameterSpec.ofExtract()
                                          .addSalt(saltSecret)
-                                         .addIKM(sharedSecret).extractOnly());
+                                         .addIKM(zeros).extractOnly());
 
                 SSLKeyDerivation secretKD =
                         new SSLSecretDerivation(chc, masterSecret);
@@ -1001,6 +1008,11 @@ final class Finished {
             } catch (GeneralSecurityException gse) {
                 throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Failure to derive application secrets", gse);
+            } finally {
+                if (saltSecret instanceof SecretKeySpec s) {
+                    SharedSecrets.getJavaxCryptoSpecAccess()
+                            .clearSecretKeySpec(s);
+                }
             }
 
             //

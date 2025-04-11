@@ -1218,7 +1218,7 @@ final class ServerHello {
 
         try {
             CipherSuite.HashAlg hashAlg = hc.negotiatedCipherSuite.hashAlg;
-            KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg.name));
+            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             SecretKey earlySecret = hkdf.deriveKey("TlsEarlySecret",
                     HKDFParameterSpec.ofExtract().addIKM(psk)
                     .extractOnly());

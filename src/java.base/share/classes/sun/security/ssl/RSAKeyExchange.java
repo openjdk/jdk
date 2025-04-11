@@ -292,7 +292,7 @@ final class RSAKeyExchange {
             }
 
             @Override
-            public SecretKey deriveKey(String type) throws IOException {
+            public SecretKey deriveKey(String typeNotUsed) throws IOException {
                 SSLMasterKeyDerivation mskd =
                         SSLMasterKeyDerivation.valueOf(
                                 context.negotiatedProtocol);

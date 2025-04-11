@@ -1199,11 +1199,13 @@ enum CipherSuite {
         final String name;
         final int hashLength;
         final int blockSize;
+        final String hkdfAlgorithm;
 
         HashAlg(String hashAlg, int hashLength, int blockSize) {
             this.name = hashAlg;
             this.hashLength = hashLength;
             this.blockSize = blockSize;
+            this.hkdfAlgorithm = "HKDF-" + hashAlg.replace("-", "");
         }
 
         @Override

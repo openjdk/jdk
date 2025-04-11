@@ -42,6 +42,8 @@ import javax.crypto.spec.HKDFParameterSpec;
 import sun.security.jca.JCAUtil;
 import sun.security.util.*;
 
+import jdk.internal.access.SharedSecrets;
+
 // Implementing DHKEM defined inside https://www.rfc-editor.org/rfc/rfc9180.html,
 // without the AuthEncap and AuthDecap functions
 public class DHKEM implements KEMSpi {
@@ -249,8 +251,15 @@ public class DHKEM implements KEMSpi {
                 throws NoSuchAlgorithmException, InvalidKeyException {
             KDF hkdf = KDF.getInstance(hkdfAlgorithm);
             SecretKey eae_prk = LabeledExtract(hkdf, suiteId, EAE_PRK, dh);
-            return LabeledExpand(hkdf, suiteId, eae_prk, SHARED_SECRET,
-                    kem_context, Nsecret);
+            try {
+                return LabeledExpand(hkdf, suiteId, eae_prk, SHARED_SECRET,
+                        kem_context, Nsecret);
+            } finally {
+                if (eae_prk instanceof SecretKeySpec s) {
+                    SharedSecrets.getJavaxCryptoSpecAccess()
+                            .clearSecretKeySpec(s);
+                }
+            }
         }
 
         private PublicKey getPublicKey(PrivateKey sk)
@@ -279,29 +288,39 @@ public class DHKEM implements KEMSpi {
         public KeyPair deriveKeyPair(byte[] ikm) throws Exception {
             KDF hkdf = KDF.getInstance(hkdfAlgorithm);
             SecretKey dkp_prk = LabeledExtract(hkdf, suiteId, DKP_PRK, ikm);
-            if (isEC()) {
-                NamedCurve curve = (NamedCurve) spec;
-                BigInteger sk = BigInteger.ZERO;
-                int counter = 0;
-                while (sk.signum() == 0 || sk.compareTo(curve.getOrder()) >= 0) {
-                    if (counter > 255) {
-                        throw new RuntimeException();
+            try {
+                if (isEC()) {
+                    NamedCurve curve = (NamedCurve) spec;
+                    BigInteger sk = BigInteger.ZERO;
+                    int counter = 0;
+                    while (sk.signum() == 0 ||
+                            sk.compareTo(curve.getOrder()) >= 0) {
+                        if (counter > 255) {
+                            throw new RuntimeException();
+                        }
+                        byte[] bytes = LabeledExpand(hkdf, suiteId, dkp_prk,
+                                CANDIDATE, I2OSP(counter, 1), Nsk);
+                        // bitmask is defined to be 0xFF for P-256 and P-384,
+                        // and 0x01 for P-521
+                        if (this == Params.P521) {
+                            bytes[0] = (byte) (bytes[0] & 0x01);
+                        }
+                        sk = new BigInteger(1, (bytes));
+                        counter = counter + 1;
                     }
-                    byte[] bytes = LabeledExpand(hkdf, suiteId, dkp_prk,
-                            CANDIDATE, I2OSP(counter, 1), Nsk);
-                    // bitmask is defined to be 0xFF for P-256 and P-384, and 0x01 for P-521
-                    if (this == Params.P521) {
-                        bytes[0] = (byte) (bytes[0] & 0x01);
-                    }
-                    sk = new BigInteger(1, (bytes));
-                    counter = counter + 1;
+                    PrivateKey k = DeserializePrivateKey(sk.toByteArray());
+                    return new KeyPair(getPublicKey(k), k);
+                } else {
+                    byte[] sk = LabeledExpand(hkdf, suiteId, dkp_prk, SK, EMPTY,
+                            Nsk);
+                    PrivateKey k = DeserializePrivateKey(sk);
+                    return new KeyPair(getPublicKey(k), k);
                 }
-                PrivateKey k = DeserializePrivateKey(sk.toByteArray());
-                return new KeyPair(getPublicKey(k), k);
-            } else {
-                byte[] sk = LabeledExpand(hkdf, suiteId, dkp_prk, SK, EMPTY, Nsk);
-                PrivateKey k = DeserializePrivateKey(sk);
-                return new KeyPair(getPublicKey(k), k);
+            } finally {
+                if (dkp_prk instanceof SecretKeySpec s) {
+                    SharedSecrets.getJavaxCryptoSpecAccess()
+                            .clearSecretKeySpec(s);
+                }
             }
         }
 
@@ -382,15 +401,17 @@ public class DHKEM implements KEMSpi {
 
     private static SecretKey LabeledExtract(KDF hkdf, byte[] suite_id,
             byte[] label, byte[] ikm) throws InvalidKeyException {
-        SecretKey s = new SecretKeySpec(concat(HPKE_V1, suite_id, label, ikm),
-                "IKM");
+        SecretKeySpec s = new SecretKeySpec(concat(HPKE_V1, suite_id, label,
+                ikm), "IKM");
         try {
             HKDFParameterSpec spec =
                     HKDFParameterSpec.ofExtract().addIKM(s).extractOnly();
-            return hkdf.deriveKey("HKDF-PRK", spec);
+            return hkdf.deriveKey("Generic", spec);
         } catch (InvalidAlgorithmParameterException |
                  NoSuchAlgorithmException e) {
             throw new InvalidKeyException(e.getMessage(), e);
+        } finally {
+            SharedSecrets.getJavaxCryptoSpecAccess().clearSecretKeySpec(s);
         }
     }
 

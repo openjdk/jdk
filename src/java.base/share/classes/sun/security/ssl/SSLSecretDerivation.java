@@ -108,7 +108,7 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
             } else {
                 expandContext = transcriptHash;
             }
-            KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(hashAlg.name));
+            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             byte[] hkdfInfo = createHkdfInfo(ks.label,
                     expandContext, hashAlg.hashLength);
             return hkdf.deriveKey(type, HKDFParameterSpec.expandOnly(

@@ -147,8 +147,7 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
         public SecretKey deriveKey(String type) throws IOException {
             KeySchedule ks = KeySchedule.valueOf(type);
             try {
-                KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(
-                        cs.hashAlg.name));
+                KDF hkdf = KDF.getInstance(cs.hashAlg.hkdfAlgorithm);
                 byte[] hkdfInfo = createHkdfInfo(ks.label, ks.getKeyLength(cs));
                 HKDFParameterSpec spec = HKDFParameterSpec.expandOnly(secret,
                         hkdfInfo, ks.getKeyLength(cs));
@@ -163,8 +162,7 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
         public byte[] deriveData(String type) throws IOException {
             KeySchedule ks = KeySchedule.valueOf(type);
             try {
-                KDF hkdf = KDF.getInstance(Utilities.digest2HKDF(
-                        cs.hashAlg.name));
+                KDF hkdf = KDF.getInstance(cs.hashAlg.hkdfAlgorithm);
                 byte[] hkdfInfo = createHkdfInfo(ks.label, ks.getKeyLength(cs));
                 HKDFParameterSpec spec = HKDFParameterSpec.expandOnly(secret,
                         hkdfInfo, ks.getKeyLength(cs));
