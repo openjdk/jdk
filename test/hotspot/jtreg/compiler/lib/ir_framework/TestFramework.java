@@ -146,6 +146,7 @@ public class TestFramework {
                     "UseRVV",
                     "UseZbb",
                     "UseZfh",
+                    "UseZicond",
                     "UseZvbb"
             )
     );
