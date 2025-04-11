@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 package jdk.vm.ci.code;
 
+import java.util.List;
 import jdk.vm.ci.code.CallingConvention.Type;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
@@ -71,28 +72,28 @@ public interface RegisterConfig {
      * @return the ordered set of registers that may be used to pass parameters in a call conforming
      *         to {@code type}
      */
-    RegisterArray getCallingConventionRegisters(Type type, JavaKind kind);
+    List<Register> getCallingConventionRegisters(Type type, JavaKind kind);
 
     /**
      * Gets the set of all registers that might be used by the register allocator.
      */
-    RegisterArray getAllocatableRegisters();
+    List<Register> getAllocatableRegisters();
 
     /**
      * Filters a set of registers and returns only those that can be used by the register allocator
      * for a value of a particular kind.
      */
-    RegisterArray filterAllocatableRegisters(PlatformKind kind, RegisterArray registers);
+    List<Register> filterAllocatableRegisters(PlatformKind kind, List<Register> registers);
 
     /**
      * Gets the registers whose values must be preserved by a method across any call it makes.
      */
-    RegisterArray getCallerSaveRegisters();
+    List<Register> getCallerSaveRegisters();
 
     /**
      * Gets the registers whose values must be preserved by the callee.
      */
-    RegisterArray getCalleeSaveRegisters();
+    List<Register> getCalleeSaveRegisters();
 
     /**
      * Gets a map from register {@linkplain Register#number numbers} to register
