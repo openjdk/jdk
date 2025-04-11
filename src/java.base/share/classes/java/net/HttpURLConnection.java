@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -606,11 +606,20 @@ public abstract class HttpURLConnection extends URLConnection {
      * @return a {@code SocketPermission} object representing the
      *         permission necessary to connect to the destination
      *         host and port.
+     *
+     * @deprecated
+     * Permissions can no longer be used for controlling access to resources
+     * as the Security Manager is no longer supported. This method may be
+     * changed in the future to unconditionally throw
+     * {@link UnsupportedOperationException}, or return
+     * {@link java.security.AllPermission}.
      */
+    @Deprecated(since="25")
     public Permission getPermission() throws IOException {
         int port = url.getPort();
         port = port < 0 ? 80 : port;
         String host = url.getHost() + ":" + port;
+        @SuppressWarnings("removal")
         Permission permission = new SocketPermission(host, "connect");
         return permission;
     }

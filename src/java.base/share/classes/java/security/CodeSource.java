@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ public class CodeSource implements java.io.Serializable {
     private transient java.security.cert.Certificate[] certs = null;
 
     // cached SocketPermission used for matchLocation
+    @SuppressWarnings("removal")
     private transient SocketPermission sp;
 
     // for generating cert paths
@@ -456,12 +457,16 @@ public class CodeSource implements java.io.Serializable {
                     return false;
                 }
                 if (this.sp == null) {
-                    this.sp = new SocketPermission(thisHost, "resolve");
+                    @SuppressWarnings("removal")
+                    var _ = this.sp = new SocketPermission(thisHost, "resolve");
                 }
                 if (that.sp == null) {
-                    that.sp = new SocketPermission(thatHost, "resolve");
+                    @SuppressWarnings("removal")
+                    var _ = that.sp = new SocketPermission(thatHost, "resolve");
                 }
-                return this.sp.implies(that.sp);
+                @SuppressWarnings("removal")
+                var result = this.sp.implies(that.sp);
+                return result;
             }
         }
         // everything matches
