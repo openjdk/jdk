@@ -392,7 +392,7 @@ issues.
 
 | Operating system   | Toolchain version                           |
 | ------------------ | ------------------------------------------- |
-| Linux              | gcc 13.2.0                                  |
+| Linux              | gcc 14.2.0                                  |
 | macOS              | Apple Xcode 14.3.1 (using clang 14.0.3)     |
 | Windows            | Microsoft Visual Studio 2022 version 17.6.5 |
 
@@ -404,7 +404,7 @@ C, and C++14 for C++.
 The minimum accepted version of gcc is 10.0. Older versions will not be accepted
 by `configure`.
 
-The JDK is currently known to compile successfully with gcc version 13.2 or
+The JDK is currently known to compile successfully with gcc version 14.2 or
 newer.
 
 In general, any version between these two should be usable.
