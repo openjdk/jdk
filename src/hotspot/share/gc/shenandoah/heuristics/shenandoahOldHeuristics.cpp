@@ -324,7 +324,7 @@ void ShenandoahOldHeuristics::slide_pinned_regions_to_front() {
 }
 
 void ShenandoahOldHeuristics::recalibrate_old_collection_candidates_live_memory() {
-  size_t total_live_data;
+  size_t total_live_data = 0;
   for (uint i = _next_old_collection_candidate; i < _last_old_collection_candidate; i++) {
     ShenandoahHeapRegion* r = _region_data[i].get_region();
     size_t region_live = r->get_live_data_bytes();
