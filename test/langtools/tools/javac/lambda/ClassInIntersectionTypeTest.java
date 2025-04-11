@@ -29,8 +29,12 @@ public class ClassInIntersectionTypeTest {
 
     static Class<? extends Annotation> myAnnoType() { return null; }
     @interface Anno {}
+    @interface Anno2 {}
+
     Anno a = (Anno & Serializable) ()-> null; // annotations not allowed
+    Anno a = (Serializable & Anno & Anno2) ()-> null; // annotations not allowed
     Anno b = (Anno & Serializable) ClassInIntersectionTypeTest::myAnnoType; // annotations not allowed
+    Anno b = (Serializable & Anno2 & Anno) ClassInIntersectionTypeTest::myAnnoType; // annotations not allowed
 
     static void bar() {
         annotationType(() -> null);
