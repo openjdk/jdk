@@ -22,10 +22,14 @@
  */
 package org.openjdk.bench.java.lang.foreign.points.support;
 
-import java.lang.foreign.*;
-
 import org.openjdk.bench.java.lang.foreign.CLayouts;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 

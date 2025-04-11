@@ -23,20 +23,18 @@
 
 package org.openjdk.bench.java.lang.foreign.xor;
 
-import org.openjdk.bench.java.lang.foreign.Utils;
 import jdk.internal.misc.Unsafe;
+import org.openjdk.bench.java.lang.foreign.Utils;
 import org.openjdk.jmh.annotations.Fork;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
-import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.Linker.Option.critical;
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static org.openjdk.bench.java.lang.foreign.CLayouts.*;
+import static org.openjdk.bench.java.lang.foreign.CLayouts.C_INT;
+import static org.openjdk.bench.java.lang.foreign.CLayouts.C_POINTER;
 
 @Fork(value = 3, jvmArgs = {"--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"})
 public class GetArrayUnsafeXorOpImpl implements XorOp {

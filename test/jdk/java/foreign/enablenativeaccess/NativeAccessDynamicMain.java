@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,16 @@
  * questions.
  */
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.lang.Module;
-import java.lang.ModuleLayer;
-import java.lang.module.ModuleFinder;
-import java.lang.module.ModuleReference;
 import java.io.File;
+import java.lang.module.ModuleFinder;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 // This class creates a dynamic module layer and loads the
 // panama_module in it. enableNativeAccess on that dynamic

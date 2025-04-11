@@ -37,15 +37,15 @@
  * @summary Basic test for java --enable-native-access
  */
 
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
 import java.util.List;
 import java.util.stream.Stream;
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Basic test of --enable-native-access with expected behaviour:

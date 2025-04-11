@@ -30,14 +30,14 @@
 
 import org.testng.annotations.Test;
 
-import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertTrue;
 
 public class TestNULLAddress {
 

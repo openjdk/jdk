@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,14 @@
  *   TestStressAllowHeap
  */
 
-import java.lang.foreign.*;
-import java.lang.invoke.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-
-import static jdk.test.lib.Asserts.*;
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.SymbolLookup;
+import java.lang.invoke.MethodHandle;
 
 /**
  * Test verifies the GCLocker::lock_critical slow path with FFM.

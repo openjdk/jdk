@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,16 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestHeapAlignment
  */
 
-import java.lang.foreign.AddressLayout;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static org.testng.Assert.fail;
 
