@@ -30,6 +30,7 @@
  * @library /test/lib
  * @requires vm.flagless
  * @requires vm.debug == true
+ * @requires vm.compiler2.enabled
  *
  * @run driver compiler.inlining.LateInlinePrinting
  */

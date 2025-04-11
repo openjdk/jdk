@@ -25,6 +25,7 @@
  * @test id=vanilla-A
  * @bug 8298935 8308606 8310308 8312570 8310190
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vanilla-A
@@ -34,6 +35,7 @@
  * @test id=vanilla-U
  * @bug 8298935 8308606 8310308 8312570 8310190
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
  * @run driver compiler.loopopts.superword.TestDependencyOffsets vanilla-U

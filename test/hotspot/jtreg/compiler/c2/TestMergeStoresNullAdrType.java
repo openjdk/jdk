@@ -27,6 +27,7 @@ package compiler.c2;
  * @test
  * @bug 8318446 8331085
  * @summary Test merge stores, when "adr_type() == nullptr" because of TOP somewhere in the address.
+ * @requires vm.compiler2.enabled
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.c2.TestMergeStoresNullAdrType::test
  *                   -XX:-TieredCompilation -Xcomp
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:+StressCCP

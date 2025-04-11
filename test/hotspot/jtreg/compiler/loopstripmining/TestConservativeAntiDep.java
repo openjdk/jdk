@@ -25,6 +25,7 @@
  * @test
  * @bug 8231550
  * @summary C2: ShouldNotReachHere() in verify_strip_mined_scheduling
+ * @requires vm.compiler2.enabled
  *
  * @run main/othervm -XX:-BackgroundCompilation -XX:LoopMaxUnroll=0 TestConservativeAntiDep
  *

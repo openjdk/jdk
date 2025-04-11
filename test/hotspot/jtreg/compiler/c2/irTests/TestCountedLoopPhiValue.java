@@ -29,6 +29,7 @@ import compiler.lib.ir_framework.*;
  * @test
  * @bug 8281429
  * @summary PhiNode::Value() is too conservative for tripcount of CountedLoop
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestCountedLoopPhiValue
  */

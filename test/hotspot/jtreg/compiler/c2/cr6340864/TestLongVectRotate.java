@@ -25,6 +25,7 @@
  * @test
  * @bug 8248830
  * @summary Implement Rotate vectorization optimizations in hotspot-server
+ * @requires vm.compiler2.enabled
  *
  * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m compiler.c2.cr6340864.TestLongVectRotate
  * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:MaxVectorSize=8 compiler.c2.cr6340864.TestLongVectRotate

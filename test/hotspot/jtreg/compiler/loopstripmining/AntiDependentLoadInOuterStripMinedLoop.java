@@ -25,6 +25,7 @@
  * @test
  * @bug 8229483
  * @summary Sinking load out of loop may trigger: assert(found_sfpt) failed: no node in loop that's not input to safepoint
+ * @requires vm.compiler2.enabled
  *
  * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:LoopMaxUnroll=0 AntiDependentLoadInOuterStripMinedLoop
  *

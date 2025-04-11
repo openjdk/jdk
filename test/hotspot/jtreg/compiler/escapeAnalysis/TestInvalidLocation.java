@@ -25,6 +25,7 @@
  * @test
  * @bug 8323190
  * @summary C2 Segfaults during code generation because of unhandled SafePointScalarMerge monitor debug info.
+ * @requires vm.compiler2.enabled
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xcomp -XX:+ReduceAllocationMerges TestInvalidLocation
  */
 

@@ -39,6 +39,7 @@
  * @test
  * @bug 8282555
  * @summary intermittent, check that spilling MoveF2I etc produce memory edge
+ * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  *

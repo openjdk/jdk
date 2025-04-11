@@ -25,6 +25,7 @@
  * @test
  * @bug 8346184
  * @summary C2: assert(has_node(i)) failed during split thru phi
+ * @requires vm.compiler2.enabled
  *
  * @run main/othervm -XX:-BackgroundCompilation TestLoadSplitThruPhiNull
  * @run main/othervm -XX:-BackgroundCompilation -XX:-ReduceFieldZeroing TestLoadSplitThruPhiNull

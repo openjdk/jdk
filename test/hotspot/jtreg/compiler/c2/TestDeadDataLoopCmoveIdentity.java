@@ -26,6 +26,7 @@
  * @key stress randomness
  * @bug 8271056
  * @summary A dead data loop is created when applying an unsafe case of Cmov'ing identity.
+ * @requires vm.compiler2.enabled
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,compiler.c2.TestDeadDataLoopCmoveIdentity::*
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:StressSeed=359948366 compiler.c2.TestDeadDataLoopCmoveIdentity
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,compiler.c2.TestDeadDataLoopCmoveIdentity::*

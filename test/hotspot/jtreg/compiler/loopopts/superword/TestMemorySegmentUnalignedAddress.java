@@ -44,6 +44,7 @@ import java.lang.foreign.*;
  * @test id=byte-buffer-direct-AlignVector
  * @bug 8323582
  * @summary Test vectorization of loops over MemorySegment, with native memory where the address is not always aligned.
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegmentUnalignedAddress ByteBufferDirect AlignVector
  */
@@ -67,6 +68,7 @@ import java.lang.foreign.*;
 /*
  * @test id=native-AlignVector
  * @bug 8323582
+ * @requires vm.compiler2.enabled
  * @summary Test vectorization of loops over MemorySegment, with native memory where the address is not always aligned.
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegmentUnalignedAddress Native AlignVector
