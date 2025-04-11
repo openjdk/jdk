@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,45 +24,9 @@ package org.openjdk.bench.javax.crypto.small;
 
 import org.openjdk.jmh.annotations.Param;
 
-public abstract class SignatureBench extends org.openjdk.bench.javax.crypto.full.SignatureBench {
+public class KEMBench extends org.openjdk.bench.javax.crypto.full.KEMBench {
 
-    public static class RSA extends SignatureBench {
-
-        @Param({"SHA256withRSA"})
-        private String algorithm;
-
-        @Param({"2048"})
-        private int keyLength;
-
-        @Param({"1024"})
-        int dataSize;
-
-    }
-
-    public static class DSA extends SignatureBench {
-
-        @Param({"SHA256withDSA"})
-        private String algorithm;
-
-        @Param({"1024"})
-        int dataSize;
-
-        @Param({"1024"})
-        private int keyLength;
-
-    }
-
-    public static class MLDSA extends SignatureBench {
-
-        @Param({"ML-DSA-65" })
-        private String algorithm;
-
-        @Param({"1024"})
-        int dataSize;
-
-        @Param({"0"}) // ML-DSA key length is not supported
-        private int keyLength;
-    }
-
+    @Param({"ML-KEM-768"})
+    private String algorithm;
 
 }
