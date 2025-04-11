@@ -119,8 +119,6 @@ void ShenandoahDirectCardMarkRememberedSet::mark_read_table_as_clean() {
   while (bp <= end_bp) {
     *bp++ = CardTable::clean_card_val();
   }
-
-  log_info(gc, barrier)("Cleaned read_table from " PTR_FORMAT " to " PTR_FORMAT, p2i(&(read_table)[0]), p2i(end_bp));
 }
 
 // No lock required because arguments align with card boundaries.
