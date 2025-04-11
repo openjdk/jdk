@@ -26,11 +26,15 @@ import jdk.test.lib.Asserts;
 import javax.crypto.Cipher;
 import javax.crypto.spec.HPKEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.spec.InvalidParameterSpecException;
+import java.security.spec.NamedParameterSpec;
 
 import static javax.crypto.spec.HPKEParameterSpec.AEAD_AES_256_GCM;
 import static javax.crypto.spec.HPKEParameterSpec.EXPORT_ONLY;
@@ -100,6 +104,13 @@ public class Compliance {
         Asserts.assertTrue(spec.authKey(kp.getPrivate()).authKey() != null);
         Asserts.assertTrue(spec.authKey(kp.getPublic()).authKey() != null);
         Asserts.assertTrue(spec.authKey(kp.getPrivate()).authKey(null).authKey() == null);
+
+        Asserts.assertTrue(defaultParams.toString().contains("kem_id=32, kdf_id=1, aead_id=2"));
+        Asserts.assertTrue(defaultParams.info(new byte[3]).toString().contains("info=000000"));
+        Asserts.assertTrue(defaultParams.toString().contains("mode_base}"));
+        Asserts.assertTrue(defaultParams.psk(psk, psk_id).toString().contains("mode_psk}"));
+        Asserts.assertTrue(defaultParams.authKey(kp.getPrivate()).toString().contains("mode_auth}"));
+        Asserts.assertTrue(defaultParams.authKey(kp.getPrivate()).psk(psk, psk_id).toString().contains("mode_auth_psk}"));
 
         // Info can be empty but not null
         Asserts.assertThrows(NullPointerException.class, () -> spec.info(null));
@@ -249,6 +260,22 @@ public class Compliance {
         checkEncryptDecrypt(kp,
                 defaultParams,
                 defaultParams.psk(null, new byte[0]));
+
+        // HPKEParameters
+        var ap = AlgorithmParameters.getInstance("HPKE");
+        Asserts.assertThrows(IOException.class, () -> ap.init(new byte[100]));
+        Asserts.assertThrows(InvalidParameterSpecException.class,
+                () -> ap.init(NamedParameterSpec.X25519));
+        Asserts.assertThrows(InvalidParameterSpecException.class,
+                () -> ap.init(emptyParams));
+        Asserts.assertTrue(ap.toString() == null);
+
+        ap.init(defaultParams);
+        var actual = ap.getParameterSpec(HPKEParameterSpec.class);
+        Asserts.assertEquals(KEM_DHKEM_X25519_HKDF_SHA256, actual.kem_id());
+        Asserts.assertEquals(KDF_HKDF_SHA256, actual.kdf_id());
+        Asserts.assertEquals(AEAD_AES_256_GCM, actual.aead_id());
+        Asserts.assertEquals(actual.toString(), ap.toString());
     }
 
     static void checkEncryptDecrypt(KeyPair kp, HPKEParameterSpec ps,

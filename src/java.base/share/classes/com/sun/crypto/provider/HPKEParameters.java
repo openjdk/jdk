@@ -45,6 +45,10 @@ public class HPKEParameters extends AlgorithmParametersSpi {
         if (!(paramSpec instanceof HPKEParameterSpec hspec)) {
             throw new InvalidParameterSpecException("Not an HPKEParameterSpec");
         }
+        if (hspec.kem_id() == -1 || hspec.kdf_id() == -1 || hspec.aead_id() == -1) {
+            throw new InvalidParameterSpecException(
+                    "HPKEParameterSpec algorithm identifiers not specified");
+        }
         this.spec = hspec;
     }
 
@@ -85,6 +89,9 @@ public class HPKEParameters extends AlgorithmParametersSpi {
 
     @Override
     protected String engineToString() {
-        return "HPKE";
+        if (spec == null) {
+            return "Not initialized";
+        }
+        return spec.toString();
     }
 }

@@ -248,7 +248,16 @@ public class HPKE extends CipherSpi {
         if (state == BEGIN) {
             throw new IllegalStateException("State: " + state);
         } else {
-            return impl.context.Export(context, algorithm, length);
+            return impl.context.ExportKey(context, algorithm, length);
+        }
+    }
+
+    //@Override
+    protected byte[] engineExportData(byte[] context, int length) {
+        if (state == BEGIN) {
+            throw new IllegalStateException("State: " + state);
+        } else {
+            return impl.context.ExportData(context, length);
         }
     }
 
@@ -324,10 +333,21 @@ public class HPKE extends CipherSpi {
                 this.exporter_secret = exporter_secret;
             }
 
-            SecretKey Export(byte[] exporter_context, String algorithm, int L) {
+            SecretKey ExportKey(byte[] exporter_context, String algorithm, int L) {
                 try {
                     var kdf = KDF.getInstance(kdfAlg);
                     return kdf.deriveKey(algorithm, DHKEM.labeledExpand(
+                            exporter_secret, suite_id, SEC, exporter_context, L));
+                } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
+                    // algorithm not accepted by HKDF, L too big or too small
+                    throw new IllegalArgumentException("Invalid input", e);
+                }
+            }
+
+            byte[] ExportData(byte[] exporter_context, int L) {
+                try {
+                    var kdf = KDF.getInstance(kdfAlg);
+                    return kdf.deriveData(DHKEM.labeledExpand(
                             exporter_secret, suite_id, SEC, exporter_context, L));
                 } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
                     // algorithm not accepted by HKDF, L too big or too small

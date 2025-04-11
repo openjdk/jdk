@@ -26,9 +26,11 @@ package javax.crypto.spec;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import java.security.AsymmetricKey;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.HexFormat;
 import java.util.Objects;
 
 /**
@@ -75,9 +77,9 @@ import java.util.Objects;
  * <li>
  * If HPKE modes {@code mode_auth} or {@code mode_auth_psk} are used,
  * the asymmetric keys for authentication must be provided using the
- * {@link #authKey(Key)} method. Precisely, the sender must call this method
- * with its own private key and the recipient must call it with the sender's
- * public key.
+ * {@link #authKey(AsymmetricKey)} method. Precisely, the sender must call
+ * this method with its own private key and the recipient must call it with
+ * the sender's public key.
  * <li>
  * If HPKE modes {@code mode_psk} or {@code mode_auth_psk} are used,
  * the pre-shared key for authentication and its identifier must be provided
@@ -252,12 +254,12 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
     private final byte[] info; // never null, can be empty
     private final SecretKey psk; // null if not used
     private final byte[] psk_id; // never null, can be empty
-    private final Key kS; // null if not used
+    private final AsymmetricKey kS; // null if not used
     private final byte[] encapsulation; // null if none
 
     // Note: this constructor does not clone array arguments.
     private HPKEParameterSpec(int kem_id, int kdf_id, int aead_id, byte[] info,
-            SecretKey psk, byte[] psk_id, Key kS, byte[] encapsulation) {
+            SecretKey psk, byte[] psk_id, AsymmetricKey kS, byte[] encapsulation) {
         this.kem_id = kem_id;
         this.kdf_id = kdf_id;
         this.aead_id = aead_id;
@@ -380,7 +382,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      *          authentication key is cleared.
      * @return a new {@code HPKEParameterSpec} object
      */
-    public HPKEParameterSpec authKey(Key kS) {
+    public HPKEParameterSpec authKey(AsymmetricKey kS) {
         return new HPKEParameterSpec(kem_id, kdf_id, aead_id,
                 info, psk, psk_id, kS, encapsulation);
     }
@@ -430,7 +432,7 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
     /**
      * {@return the key for authentication, {@code null} if none}
      */
-    public Key authKey() {
+    public AsymmetricKey authKey() {
         return kS;
     }
 
@@ -439,5 +441,17 @@ public final class HPKEParameterSpec implements AlgorithmParameterSpec {
      */
     public byte[] encapsulation() {
         return encapsulation == null ? null : encapsulation.clone();
+    }
+
+    @Override
+    public String toString() {
+        return "HPKEParameterSpec{" +
+                "kem_id=" + kem_id +
+                ", kdf_id=" + kdf_id +
+                ", aead_id=" + aead_id +
+                ", info=" + HexFormat.of().formatHex(info) +
+                ", " + (psk == null
+                        ? (kS == null ? "mode_base" : "mode_auth")
+                        : (kS == null ? "mode_psk" : "mode_auth_psk")) + "}";
     }
 }
