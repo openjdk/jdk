@@ -691,17 +691,17 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_max:
   case vmIntrinsics::_min_strict:
   case vmIntrinsics::_max_strict:
-    return inline_min_max(intrinsic_id());
-
-  case vmIntrinsics::_maxF:
+  case vmIntrinsics::_minL:
+  case vmIntrinsics::_maxL:
   case vmIntrinsics::_minF:
-  case vmIntrinsics::_maxD:
+  case vmIntrinsics::_maxF:
   case vmIntrinsics::_minD:
-  case vmIntrinsics::_maxF_strict:
+  case vmIntrinsics::_maxD:
   case vmIntrinsics::_minF_strict:
-  case vmIntrinsics::_maxD_strict:
+  case vmIntrinsics::_maxF_strict:
   case vmIntrinsics::_minD_strict:
-      return inline_fp_min_max(intrinsic_id());
+  case vmIntrinsics::_maxD_strict:
+    return inline_min_max(intrinsic_id());
 
   case vmIntrinsics::_VectorUnaryOp:
     return inline_vector_nary_operation(1);
@@ -1721,20 +1721,6 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
   return true;
 }
 
-//--------------------------round_double_node--------------------------------
-// Round a double node if necessary.
-Node* LibraryCallKit::round_double_node(Node* n) {
-  if (Matcher::strict_fp_requires_explicit_rounding) {
-#ifdef IA32
-    if (UseSSE < 2) {
-      n = _gvn.transform(new RoundDoubleNode(nullptr, n));
-    }
-#else
-    Unimplemented();
-#endif // IA32
-  }
-  return n;
-}
 
 //------------------------------inline_math-----------------------------------
 // public static double Math.abs(double)
@@ -1743,7 +1729,7 @@ Node* LibraryCallKit::round_double_node(Node* n) {
 // public static double Math.log10(double)
 // public static double Math.round(double)
 bool LibraryCallKit::inline_double_math(vmIntrinsics::ID id) {
-  Node* arg = round_double_node(argument(0));
+  Node* arg = argument(0);
   Node* n = nullptr;
   switch (id) {
   case vmIntrinsics::_dabs:   n = new AbsDNode(                arg);  break;
@@ -1754,7 +1740,7 @@ bool LibraryCallKit::inline_double_math(vmIntrinsics::ID id) {
   case vmIntrinsics::_floor:  n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_floor); break;
   case vmIntrinsics::_rint:   n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_rint); break;
   case vmIntrinsics::_roundD: n = new RoundDNode(arg); break;
-  case vmIntrinsics::_dcopySign: n = CopySignDNode::make(_gvn, arg, round_double_node(argument(2))); break;
+  case vmIntrinsics::_dcopySign: n = CopySignDNode::make(_gvn, arg, argument(2)); break;
   case vmIntrinsics::_dsignum: n = SignumDNode::make(_gvn, arg); break;
   default:  fatal_unexpected_iid(id);  break;
   }
@@ -1788,8 +1774,8 @@ bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, c
          "must be (DD)D or (D)D type");
 
   // Inputs
-  Node* a = round_double_node(argument(0));
-  Node* b = (call_type == OptoRuntime::Math_DD_D_Type()) ? round_double_node(argument(2)) : nullptr;
+  Node* a = argument(0);
+  Node* b = (call_type == OptoRuntime::Math_DD_D_Type()) ? argument(2) : nullptr;
 
   const TypePtr* no_memory_effects = nullptr;
   Node* trig = make_runtime_call(RC_LEAF, call_type, funcAddr, funcName,
@@ -1807,17 +1793,17 @@ bool LibraryCallKit::runtime_math(const TypeFunc* call_type, address funcAddr, c
 
 //------------------------------inline_math_pow-----------------------------
 bool LibraryCallKit::inline_math_pow() {
-  Node* exp = round_double_node(argument(2));
+  Node* exp = argument(2);
   const TypeD* d = _gvn.type(exp)->isa_double_constant();
   if (d != nullptr) {
     if (d->getd() == 2.0) {
       // Special case: pow(x, 2.0) => x * x
-      Node* base = round_double_node(argument(0));
+      Node* base = argument(0);
       set_result(_gvn.transform(new MulDNode(base, base)));
       return true;
     } else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
       // Special case: pow(x, 0.5) => sqrt(x)
-      Node* base = round_double_node(argument(0));
+      Node* base = argument(0);
       Node* zero = _gvn.zerocon(T_DOUBLE);
 
       RegionNode* region = new RegionNode(3);
@@ -1942,11 +1928,89 @@ bool LibraryCallKit::inline_notify(vmIntrinsics::ID id) {
 
 //----------------------------inline_min_max-----------------------------------
 bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {
-  set_result(generate_min_max(id, argument(0), argument(1)));
+  Node* a = nullptr;
+  Node* b = nullptr;
+  Node* n = nullptr;
+  switch (id) {
+    case vmIntrinsics::_min:
+    case vmIntrinsics::_max:
+    case vmIntrinsics::_minF:
+    case vmIntrinsics::_maxF:
+    case vmIntrinsics::_minF_strict:
+    case vmIntrinsics::_maxF_strict:
+    case vmIntrinsics::_min_strict:
+    case vmIntrinsics::_max_strict:
+      assert(callee()->signature()->size() == 2, "minF/maxF has 2 parameters of size 1 each.");
+      a = argument(0);
+      b = argument(1);
+      break;
+    case vmIntrinsics::_minD:
+    case vmIntrinsics::_maxD:
+    case vmIntrinsics::_minD_strict:
+    case vmIntrinsics::_maxD_strict:
+      assert(callee()->signature()->size() == 4, "minD/maxD has 2 parameters of size 2 each.");
+      a = argument(0);
+      b = argument(2);
+      break;
+    case vmIntrinsics::_minL:
+    case vmIntrinsics::_maxL:
+      assert(callee()->signature()->size() == 4, "minL/maxL has 2 parameters of size 2 each.");
+      a = argument(0);
+      b = argument(2);
+      break;
+    default:
+      fatal_unexpected_iid(id);
+      break;
+  }
+
+  switch (id) {
+    case vmIntrinsics::_min:
+    case vmIntrinsics::_min_strict:
+      n = new MinINode(a, b);
+      break;
+    case vmIntrinsics::_max:
+    case vmIntrinsics::_max_strict:
+      n = new MaxINode(a, b);
+      break;
+    case vmIntrinsics::_minF:
+    case vmIntrinsics::_minF_strict:
+      n = new MinFNode(a, b);
+      break;
+    case vmIntrinsics::_maxF:
+    case vmIntrinsics::_maxF_strict:
+      n = new MaxFNode(a, b);
+      break;
+    case vmIntrinsics::_minD:
+    case vmIntrinsics::_minD_strict:
+      n = new MinDNode(a, b);
+      break;
+    case vmIntrinsics::_maxD:
+    case vmIntrinsics::_maxD_strict:
+      n = new MaxDNode(a, b);
+      break;
+    case vmIntrinsics::_minL:
+      n = new MinLNode(_gvn.C, a, b);
+      break;
+    case vmIntrinsics::_maxL:
+      n = new MaxLNode(_gvn.C, a, b);
+      break;
+    default:
+      fatal_unexpected_iid(id);
+      break;
+  }
+
+  set_result(_gvn.transform(n));
   return true;
 }
 
-void LibraryCallKit::inline_math_mathExact(Node* math, Node *test) {
+bool LibraryCallKit::inline_math_mathExact(Node* math, Node* test) {
+  if (builtin_throw_too_many_traps(Deoptimization::Reason_intrinsic,
+                                   env()->ArithmeticException_instance())) {
+    // It has been already too many times, but we cannot use builtin_throw (e.g. we care about backtraces),
+    // so let's bail out intrinsic rather than risking deopting again.
+    return false;
+  }
+
   Node* bol = _gvn.transform( new BoolNode(test, BoolTest::overflow) );
   IfNode* check = create_and_map_if(control(), bol, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
   Node* fast_path = _gvn.transform( new IfFalseNode(check));
@@ -1960,12 +2024,14 @@ void LibraryCallKit::inline_math_mathExact(Node* math, Node *test) {
     set_control(slow_path);
     set_i_o(i_o());
 
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_none);
+    builtin_throw(Deoptimization::Reason_intrinsic,
+                  env()->ArithmeticException_instance(),
+                  /*allow_too_many_traps*/ false);
   }
 
   set_control(fast_path);
   set_result(math);
+  return true;
 }
 
 template <typename OverflowOp>
@@ -1975,8 +2041,7 @@ bool LibraryCallKit::inline_math_overflow(Node* arg1, Node* arg2) {
   MathOp* mathOp = new MathOp(arg1, arg2);
   Node* operation = _gvn.transform( mathOp );
   Node* ofcheck = _gvn.transform( new OverflowOp(arg1, arg2) );
-  inline_math_mathExact(operation, ofcheck);
-  return true;
+  return inline_math_mathExact(operation, ofcheck);
 }
 
 bool LibraryCallKit::inline_math_addExactI(bool is_increment) {
@@ -2019,25 +2084,6 @@ bool LibraryCallKit::inline_math_multiplyHigh() {
 bool LibraryCallKit::inline_math_unsignedMultiplyHigh() {
   set_result(_gvn.transform(new UMulHiLNode(argument(0), argument(2))));
   return true;
-}
-
-Node*
-LibraryCallKit::generate_min_max(vmIntrinsics::ID id, Node* x0, Node* y0) {
-  Node* result_val = nullptr;
-  switch (id) {
-  case vmIntrinsics::_min:
-  case vmIntrinsics::_min_strict:
-    result_val = _gvn.transform(new MinINode(x0, y0));
-    break;
-  case vmIntrinsics::_max:
-  case vmIntrinsics::_max_strict:
-    result_val = _gvn.transform(new MaxINode(x0, y0));
-    break;
-  default:
-    fatal_unexpected_iid(id);
-    break;
-  }
-  return result_val;
 }
 
 inline int
@@ -3102,7 +3148,8 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   set_control(is_notified);
 
   // Reset notified state.
-  Node* notified_reset_memory = store_to_memory(control(), notified_offset, _gvn.intcon(0), T_BOOLEAN, MemNode::unordered);
+  store_to_memory(control(), notified_offset, _gvn.intcon(0), T_BOOLEAN, MemNode::unordered);
+  Node* notified_reset_memory = reset_memory();
 
   // Iff notified, the return address of the commit method is the current position of the backing java buffer. This is used to reset the event writer.
   Node* current_pos_X = _gvn.transform(new LoadXNode(control(), input_memory_state, java_buffer_pos_offset, TypeRawPtr::NOTNULL, TypeX_X, MemNode::unordered));
@@ -3120,12 +3167,10 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   Node* next_pos_X = _gvn.transform(ConvL2X(arg));
 
   // Store the next_position to the underlying jfr java buffer.
-  Node* commit_memory;
-#ifdef _LP64
-  commit_memory = store_to_memory(control(), java_buffer_pos_offset, next_pos_X, T_LONG, MemNode::release);
-#else
-  commit_memory = store_to_memory(control(), java_buffer_pos_offset, next_pos_X, T_INT, MemNode::release);
-#endif
+  store_to_memory(control(), java_buffer_pos_offset, next_pos_X, LP64_ONLY(T_LONG) NOT_LP64(T_INT), MemNode::release);
+
+  Node* commit_memory = reset_memory();
+  set_all_memory(commit_memory);
 
   // Now load the flags from off the java buffer and decide if the buffer is a lease. If so, it needs to be returned post-commit.
   Node* java_buffer_flags_offset = _gvn.transform(new AddPNode(top(), java_buffer, _gvn.transform(MakeConX(in_bytes(JFR_BUFFER_FLAGS_OFFSET)))));
@@ -4260,12 +4305,7 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
   if (obj != nullptr && is_array_ctrl != nullptr && is_array_ctrl != top()) {
     // Keep track of the fact that 'obj' is an array to prevent
     // array specific accesses from floating above the guard.
-    Node* cast = _gvn.transform(new CastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
-    // Check for top because in rare cases, the type system can determine that
-    // the object can't be an array but the layout helper check is not folded.
-    if (!cast->is_top()) {
-      *obj = cast;
-    }
+    *obj = _gvn.transform(new CastPPNode(is_array_ctrl, *obj, TypeAryPtr::BOTTOM));
   }
   return ctrl;
 }
@@ -4456,7 +4496,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
     if (!stopped()) {
       // How many elements will we copy from the original?
       // The answer is MinI(orig_tail, length).
-      Node* moved = generate_min_max(vmIntrinsics::_min, orig_tail, length);
+      Node* moved = _gvn.transform(new MinINode(orig_tail, length));
 
       // Generate a direct call to the right arraycopy function(s).
       // We know the copy is disjoint but we might not know if the
@@ -6564,7 +6604,7 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
  * int java.util.zip.CRC32.update(int crc, int b)
  */
 bool LibraryCallKit::inline_updateCRC32() {
-  assert(UseCRC32Intrinsics, "need AVX and LCMUL instructions support");
+  assert(UseCRC32Intrinsics, "need AVX and CLMUL instructions support");
   assert(callee()->signature()->size() == 2, "update has 2 parameters");
   // no receiver since it is static method
   Node* crc  = argument(0); // type: int
@@ -6599,7 +6639,7 @@ bool LibraryCallKit::inline_updateCRC32() {
  * int java.util.zip.CRC32.updateBytes(int crc, byte[] buf, int off, int len)
  */
 bool LibraryCallKit::inline_updateBytesCRC32() {
-  assert(UseCRC32Intrinsics, "need AVX and LCMUL instructions support");
+  assert(UseCRC32Intrinsics, "need AVX and CLMUL instructions support");
   assert(callee()->signature()->size() == 4, "updateBytes has 4 parameters");
   // no receiver since it is static method
   Node* crc     = argument(0); // type: int
@@ -6643,7 +6683,7 @@ bool LibraryCallKit::inline_updateBytesCRC32() {
  * int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
  */
 bool LibraryCallKit::inline_updateByteBufferCRC32() {
-  assert(UseCRC32Intrinsics, "need AVX and LCMUL instructions support");
+  assert(UseCRC32Intrinsics, "need AVX and CLMUL instructions support");
   assert(callee()->signature()->size() == 5, "updateByteBuffer has 4 parameters and one is long");
   // no receiver since it is static method
   Node* crc     = argument(0); // type: int
@@ -8432,9 +8472,9 @@ bool LibraryCallKit::inline_fma(vmIntrinsics::ID id) {
   case vmIntrinsics::_fmaD:
     assert(callee()->signature()->size() == 6, "fma has 3 parameters of size 2 each.");
     // no receiver since it is static method
-    a = round_double_node(argument(0));
-    b = round_double_node(argument(2));
-    c = round_double_node(argument(4));
+    a = argument(0);
+    b = argument(2);
+    c = argument(4);
     result = _gvn.transform(new FmaDNode(a, b, c));
     break;
   case vmIntrinsics::_fmaF:
@@ -8473,91 +8513,6 @@ bool LibraryCallKit::inline_character_compare(vmIntrinsics::ID id) {
       fatal_unexpected_iid(id);
   }
 
-  set_result(_gvn.transform(n));
-  return true;
-}
-
-//------------------------------inline_fp_min_max------------------------------
-bool LibraryCallKit::inline_fp_min_max(vmIntrinsics::ID id) {
-/* DISABLED BECAUSE METHOD DATA ISN'T COLLECTED PER CALL-SITE, SEE JDK-8015416.
-
-  // The intrinsic should be used only when the API branches aren't predictable,
-  // the last one performing the most important comparison. The following heuristic
-  // uses the branch statistics to eventually bail out if necessary.
-
-  ciMethodData *md = callee()->method_data();
-
-  if ( md != nullptr && md->is_mature() && md->invocation_count() > 0 ) {
-    ciCallProfile cp = caller()->call_profile_at_bci(bci());
-
-    if ( ((double)cp.count()) / ((double)md->invocation_count()) < 0.8 ) {
-      // Bail out if the call-site didn't contribute enough to the statistics.
-      return false;
-    }
-
-    uint taken = 0, not_taken = 0;
-
-    for (ciProfileData *p = md->first_data(); md->is_valid(p); p = md->next_data(p)) {
-      if (p->is_BranchData()) {
-        taken = ((ciBranchData*)p)->taken();
-        not_taken = ((ciBranchData*)p)->not_taken();
-      }
-    }
-
-    double balance = (((double)taken) - ((double)not_taken)) / ((double)md->invocation_count());
-    balance = balance < 0 ? -balance : balance;
-    if ( balance > 0.2 ) {
-      // Bail out if the most important branch is predictable enough.
-      return false;
-    }
-  }
-*/
-
-  Node *a = nullptr;
-  Node *b = nullptr;
-  Node *n = nullptr;
-  switch (id) {
-  case vmIntrinsics::_maxF:
-  case vmIntrinsics::_minF:
-  case vmIntrinsics::_maxF_strict:
-  case vmIntrinsics::_minF_strict:
-    assert(callee()->signature()->size() == 2, "minF/maxF has 2 parameters of size 1 each.");
-    a = argument(0);
-    b = argument(1);
-    break;
-  case vmIntrinsics::_maxD:
-  case vmIntrinsics::_minD:
-  case vmIntrinsics::_maxD_strict:
-  case vmIntrinsics::_minD_strict:
-    assert(callee()->signature()->size() == 4, "minD/maxD has 2 parameters of size 2 each.");
-    a = round_double_node(argument(0));
-    b = round_double_node(argument(2));
-    break;
-  default:
-    fatal_unexpected_iid(id);
-    break;
-  }
-  switch (id) {
-  case vmIntrinsics::_maxF:
-  case vmIntrinsics::_maxF_strict:
-    n = new MaxFNode(a, b);
-    break;
-  case vmIntrinsics::_minF:
-  case vmIntrinsics::_minF_strict:
-    n = new MinFNode(a, b);
-    break;
-  case vmIntrinsics::_maxD:
-  case vmIntrinsics::_maxD_strict:
-    n = new MaxDNode(a, b);
-    break;
-  case vmIntrinsics::_minD:
-  case vmIntrinsics::_minD_strict:
-    n = new MinDNode(a, b);
-    break;
-  default:
-    fatal_unexpected_iid(id);
-    break;
-  }
   set_result(_gvn.transform(n));
   return true;
 }

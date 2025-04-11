@@ -839,13 +839,6 @@ bool os::create_attached_thread(JavaThread* thread) {
 
   thread->set_osthread(osthread);
 
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
-
   // initialize signal mask for this thread
   // and save the caller's signal mask
   PosixSignals::hotspot_sigmask(thread);
@@ -1313,59 +1306,38 @@ void os::jvm_path(char *buf, jint buflen) {
   char* rp = os::realpath((char *)dlinfo.dli_fname, buf, buflen);
   assert(rp != nullptr, "error in realpath(): maybe the 'path' argument is too long?");
 
-  if (Arguments::sun_java_launcher_is_altjvm()) {
-    // Support for the java launcher's '-XXaltjvm=<path>' option. Typical
-    // value for buf is "<JAVA_HOME>/jre/lib/<vmtype>/libjvm.so".
-    // If "/jre/lib/" appears at the right place in the string, then
-    // assume we are installed in a JDK and we're done. Otherwise, check
-    // for a JAVA_HOME environment variable and fix up the path so it
-    // looks like libjvm.so is installed there (append a fake suffix
-    // hotspot/libjvm.so).
-    const char *p = buf + strlen(buf) - 1;
-    for (int count = 0; p > buf && count < 4; ++count) {
-      for (--p; p > buf && *p != '/'; --p)
-        /* empty */ ;
-    }
+  // If executing unit tests we require JAVA_HOME to point to the real JDK.
+  if (Arguments::executing_unit_tests()) {
+    // Look for JAVA_HOME in the environment.
+    char* java_home_var = ::getenv("JAVA_HOME");
+    if (java_home_var != nullptr && java_home_var[0] != 0) {
 
-    if (strncmp(p, "/jre/lib/", 9) != 0) {
-      // Look for JAVA_HOME in the environment.
-      char* java_home_var = ::getenv("JAVA_HOME");
-      if (java_home_var != nullptr && java_home_var[0] != 0) {
-        char* jrelib_p;
-        int len;
+      // Check the current module name "libjvm.so".
+      const char* p = strrchr(buf, '/');
+      if (p == nullptr) {
+        return;
+      }
+      assert(strstr(p, "/libjvm") == p, "invalid library name");
 
-        // Check the current module name "libjvm.so".
-        p = strrchr(buf, '/');
-        if (p == nullptr) {
-          return;
-        }
-        assert(strstr(p, "/libjvm") == p, "invalid library name");
+      stringStream ss(buf, buflen);
+      rp = os::realpath(java_home_var, buf, buflen);
+      if (rp == nullptr) {
+        return;
+      }
 
-        rp = os::realpath(java_home_var, buf, buflen);
+      assert((int)strlen(buf) < buflen, "Ran out of buffer room");
+      ss.print("%s/lib", buf);
+
+      if (0 == access(buf, F_OK)) {
+        // Use current module name "libjvm.so"
+        ss.print("/%s/libjvm%s", Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+               "buf has been truncated");
+      } else {
+        // Go back to path of .so
+        rp = os::realpath((char *)dlinfo.dli_fname, buf, buflen);
         if (rp == nullptr) {
           return;
-        }
-
-        // determine if this is a legacy image or modules image
-        // modules image doesn't have "jre" subdirectory
-        len = strlen(buf);
-        assert(len < buflen, "Ran out of buffer room");
-        jrelib_p = buf + len;
-        snprintf(jrelib_p, buflen-len, "/jre/lib");
-        if (0 != access(buf, F_OK)) {
-          snprintf(jrelib_p, buflen-len, "/lib");
-        }
-
-        if (0 == access(buf, F_OK)) {
-          // Use current module name "libjvm.so"
-          len = strlen(buf);
-          snprintf(buf + len, buflen-len, "/hotspot/libjvm.so");
-        } else {
-          // Go back to path of .so
-          rp = os::realpath((char *)dlinfo.dli_fname, buf, buflen);
-          if (rp == nullptr) {
-            return;
-          }
         }
       }
     }

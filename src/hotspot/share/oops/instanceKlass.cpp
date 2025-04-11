@@ -2699,7 +2699,7 @@ void InstanceKlass::remove_unshareable_info() {
   _methods_jmethod_ids = nullptr;
   _jni_ids = nullptr;
   _oop_map_cache = nullptr;
-  if (CDSConfig::is_dumping_invokedynamic() && HeapShared::is_lambda_proxy_klass(this)) {
+  if (CDSConfig::is_dumping_method_handles() && HeapShared::is_lambda_proxy_klass(this)) {
     // keep _nest_host
   } else {
     // clear _nest_host to ensure re-load at runtime
@@ -3503,7 +3503,7 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
   for (int l = CompLevel_limited_profile; l < n->comp_level(); l++) {
     nmethod *inv = lookup_osr_nmethod(n->method(), n->osr_entry_bci(), l, true);
     if (inv != nullptr && inv->is_in_use()) {
-      inv->make_not_entrant();
+      inv->make_not_entrant("OSR invalidation of lower levels");
     }
   }
 }
@@ -3763,7 +3763,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   InstanceKlass* ik = const_cast<InstanceKlass*>(this);
   ik->print_nonstatic_fields(&print_nonstatic_field);
 
-  st->print(BULLET"non-static oop maps: ");
+  st->print(BULLET"non-static oop maps (%d entries): ", nonstatic_oop_map_count());
   OopMapBlock* map     = start_of_nonstatic_oop_maps();
   OopMapBlock* end_map = map + nonstatic_oop_map_count();
   while (map < end_map) {

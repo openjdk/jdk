@@ -90,6 +90,10 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(in(IfTrue))    == Type::TOP) {
     return nullptr;
   }
+  Node* progress = TypeNode::Ideal(phase, can_reshape);
+  if (progress != nullptr) {
+    return progress;
+  }
 
   // Check for Min/Max patterns. This is called before constants are pushed to the right input, as that transform can
   // make BoolTests non-canonical.
@@ -186,7 +190,7 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
 // Make a correctly-flavored CMove.  Since _type is directly determined
 // from the inputs we do not need to specify it here.
 CMoveNode* CMoveNode::make(Node* bol, Node* left, Node* right, const Type* t) {
-  switch( t->basic_type() ) {
+  switch (t->basic_type()) {
     case T_INT:     return new CMoveINode(bol, left, right, t->is_int());
     case T_FLOAT:   return new CMoveFNode(bol, left, right, t);
     case T_DOUBLE:  return new CMoveDNode(bol, left, right, t);
@@ -195,8 +199,23 @@ CMoveNode* CMoveNode::make(Node* bol, Node* left, Node* right, const Type* t) {
     case T_ADDRESS: return new CMovePNode(bol, left, right, t->is_ptr());
     case T_NARROWOOP: return new CMoveNNode(bol, left, right, t);
     default:
-    ShouldNotReachHere();
-    return nullptr;
+      ShouldNotReachHere();
+      return nullptr;
+  }
+}
+
+bool CMoveNode::supported(const Type* t) {
+  switch (t->basic_type()) {
+    case T_INT:     return Matcher::match_rule_supported(Op_CMoveI);
+    case T_FLOAT:   return Matcher::match_rule_supported(Op_CMoveF);
+    case T_DOUBLE:  return Matcher::match_rule_supported(Op_CMoveD);
+    case T_LONG:    return Matcher::match_rule_supported(Op_CMoveL);
+    case T_OBJECT:  return Matcher::match_rule_supported(Op_CMoveP);
+    case T_ADDRESS: return Matcher::match_rule_supported(Op_CMoveP);
+    case T_NARROWOOP: return Matcher::match_rule_supported(Op_CMoveN);
+    default:
+      ShouldNotReachHere();
+      return false;
   }
 }
 

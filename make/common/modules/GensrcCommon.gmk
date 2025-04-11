@@ -41,8 +41,8 @@ include $(TOPDIR)/make/ToolsJdk.gmk
 define SetupVersionProperties
   $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/$$(strip $2):
 	$$(call MakeTargetDir)
-	$(PRINTF) "jdk=$(VERSION_NUMBER)\nfull=$(VERSION_STRING)\nrelease=$(VERSION_SHORT)\n" \
-	    > $$@
+	$(PRINTF) "jdk=%s\nfull=%s\nrelease=%s\n" \
+	    $(VERSION_NUMBER) $(VERSION_STRING) $(VERSION_SHORT) > $$@
 
   $$(strip $1) += $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/$$(strip $2)
 endef

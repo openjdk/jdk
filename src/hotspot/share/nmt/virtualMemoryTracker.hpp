@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,12 +111,12 @@ class VirtualMemorySnapshot : public ResourceObj {
   VirtualMemory  _virtual_memory[mt_number_of_tags];
 
  public:
-  inline VirtualMemory* by_type(MemTag mem_tag) {
+  inline VirtualMemory* by_tag(MemTag mem_tag) {
     int index = NMTUtil::tag_to_index(mem_tag);
     return &_virtual_memory[index];
   }
 
-  inline const VirtualMemory* by_type(MemTag mem_tag) const {
+  inline const VirtualMemory* by_tag(MemTag mem_tag) const {
     int index = NMTUtil::tag_to_index(mem_tag);
     return &_virtual_memory[index];
   }
@@ -148,19 +148,19 @@ class VirtualMemorySummary : AllStatic {
  public:
 
   static inline void record_reserved_memory(size_t size, MemTag mem_tag) {
-    as_snapshot()->by_type(mem_tag)->reserve_memory(size);
+    as_snapshot()->by_tag(mem_tag)->reserve_memory(size);
   }
 
   static inline void record_committed_memory(size_t size, MemTag mem_tag) {
-    as_snapshot()->by_type(mem_tag)->commit_memory(size);
+    as_snapshot()->by_tag(mem_tag)->commit_memory(size);
   }
 
   static inline void record_uncommitted_memory(size_t size, MemTag mem_tag) {
-    as_snapshot()->by_type(mem_tag)->uncommit_memory(size);
+    as_snapshot()->by_tag(mem_tag)->uncommit_memory(size);
   }
 
   static inline void record_released_memory(size_t size, MemTag mem_tag) {
-    as_snapshot()->by_type(mem_tag)->release_memory(size);
+    as_snapshot()->by_tag(mem_tag)->release_memory(size);
   }
 
   // Move virtual memory from one memory tag to another.
@@ -168,13 +168,13 @@ class VirtualMemorySummary : AllStatic {
   // as 'unknown'. Once the memory is tagged, the virtual memory will be moved from 'unknown'
   // tag to specified memory tag.
   static inline void move_reserved_memory(MemTag from, MemTag to, size_t size) {
-    as_snapshot()->by_type(from)->release_memory(size);
-    as_snapshot()->by_type(to)->reserve_memory(size);
+    as_snapshot()->by_tag(from)->release_memory(size);
+    as_snapshot()->by_tag(to)->reserve_memory(size);
   }
 
   static inline void move_committed_memory(MemTag from, MemTag to, size_t size) {
-    as_snapshot()->by_type(from)->uncommit_memory(size);
-    as_snapshot()->by_type(to)->commit_memory(size);
+    as_snapshot()->by_tag(from)->uncommit_memory(size);
+    as_snapshot()->by_tag(to)->commit_memory(size);
   }
 
   static void snapshot(VirtualMemorySnapshot* s);
