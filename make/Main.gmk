@@ -52,6 +52,7 @@ endif
 
 # All modules for the current target platform.
 ALL_MODULES := $(call FindAllModules)
+#$(info ALL_MODULES $(ALL_MODULES))
 
 ################################################################################
 #

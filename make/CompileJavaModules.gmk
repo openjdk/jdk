@@ -106,7 +106,7 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
     FAIL_NO_SRC := $(FAIL_NO_SRC), \
     BIN := $(if $($(MODULE)_BIN), $($(MODULE)_BIN), $(JDK_OUTPUTDIR)/modules), \
     HEADERS := $(SUPPORT_OUTPUTDIR)/headers, \
-    CREATE_API_DIGEST := true, \
+    CREATE_API_DIGEST := $(if $(CREATE_API_DIGEST), $(CREATE_API_DIGEST), true), \
     CLEAN := $(CLEAN), \
     CLEAN_FILES := $(CLEAN_FILES), \
     COPY := $(COPY), \
@@ -118,7 +118,7 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
         $(DOCLINT) \
         $(JAVAC_FLAGS) \
         --module-source-path $(MODULESOURCEPATH) \
-        --module-path $(MODULEPATH) \
+        --module-path $(MODULEPATH):$(MODULEPATH_EXTRA) \
         --system none, \
 ))
 
