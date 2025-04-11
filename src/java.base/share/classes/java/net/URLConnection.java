@@ -825,11 +825,9 @@ public abstract class URLConnection {
      *
      * @deprecated
      * Permissions can no longer be used for controlling access to resources
-     * as the Security Manager is no longer supported. This method may be
-     * changed in the future to unconditionally throw
-     * {@link UnsupportedOperationException}.
+     * as the Security Manager is no longer supported.
      */
-    @Deprecated(since = "25")
+    @Deprecated(since = "25", forRemoval = true)
     public Permission getPermission() throws IOException {
         return SecurityConstants.ALL_PERMISSION;
     }

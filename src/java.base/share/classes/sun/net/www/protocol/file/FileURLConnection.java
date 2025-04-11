@@ -205,7 +205,7 @@ public class FileURLConnection extends URLConnection {
      * relevant
      */
     @Override
-    @Deprecated(since = "25")
+    @Deprecated(since = "25", forRemoval = true)
     @SuppressWarnings("removal")
     public Permission getPermission() throws IOException {
         if (permission == null) {

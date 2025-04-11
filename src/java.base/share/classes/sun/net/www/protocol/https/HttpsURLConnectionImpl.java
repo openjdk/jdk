@@ -356,7 +356,8 @@ public class HttpsURLConnectionImpl
     }
 
     @Override
-    @Deprecated(since = "25")
+    @Deprecated(since = "25", forRemoval = true)
+    @SuppressWarnings("removal")
     public Permission getPermission() throws IOException {
         return delegate.getPermission();
     }

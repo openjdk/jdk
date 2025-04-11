@@ -609,17 +609,14 @@ public abstract class HttpURLConnection extends URLConnection {
      *
      * @deprecated
      * Permissions can no longer be used for controlling access to resources
-     * as the Security Manager is no longer supported. This method may be
-     * changed in the future to unconditionally throw
-     * {@link UnsupportedOperationException}, or return
-     * {@link java.security.AllPermission}.
+     * as the Security Manager is no longer supported.
      */
-    @Deprecated(since = "25")
+    @Deprecated(since = "25", forRemoval = true)
+    @SuppressWarnings("removal")
     public Permission getPermission() throws IOException {
         int port = url.getPort();
         port = port < 0 ? 80 : port;
         String host = url.getHost() + ":" + port;
-        @SuppressWarnings("removal")
         Permission permission = new SocketPermission(host, "connect");
         return permission;
     }
