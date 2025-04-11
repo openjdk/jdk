@@ -106,11 +106,11 @@ public class GathererTest {
     }
 
     final Gatherer<Integer,Void,Integer> addOne = Gatherer.of(
-            Gatherer.Integrator.<Void,Integer,Integer>ofGreedy((vöid, element, downstream) -> downstream.push(element + 1))
+            Gatherer.Integrator.<Void,Integer,Integer>ofGreedy((void_state, element, downstream) -> downstream.push(element + 1))
     );
 
     final Gatherer<Integer,Void,Integer> timesTwo = Gatherer.of(
-            Gatherer.Integrator.<Void,Integer,Integer>ofGreedy((vöid, element, downstream) -> downstream.push(element * 2))
+            Gatherer.Integrator.<Void,Integer,Integer>ofGreedy((void_state, element, downstream) -> downstream.push(element * 2))
     );
 
     @ParameterizedTest
