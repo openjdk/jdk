@@ -25,37 +25,43 @@
 
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
+import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
+import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
+import static jdk.jpackage.internal.StandardBundlerParam.OUTPUT_DIR;
+import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
+import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Optional;
 import jdk.jpackage.internal.model.ConfigException;
 
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
-import static jdk.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
-
 public class MacAppBundler extends AppImageBundler {
      public MacAppBundler() {
-        setAppImageSupplier(imageOutDir -> {
-            return new MacAppImageBuilder(imageOutDir, isDependentTask());
-        });
-        setParamsValidator(MacAppBundler::doValidate);
+         setAppImageSupplier((params, output) -> {
+
+             // Order is important!
+             final var app = MacFromParams.APPLICATION.fetchFrom(params);
+             final BuildEnv env;
+
+             if (StandardBundlerParam.hasPredefinedAppImage(params)) {
+                 env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
+                 final var pkg = MacPackagingPipeline.createSignAppImagePackage(app, env);
+                 MacPackagingPipeline.build(Optional.of(pkg)).create().execute(env, pkg, output);
+             } else {
+                 env = BuildEnv.withAppImageDir(BuildEnvFromParams.BUILD_ENV.fetchFrom(params), output);
+                 MacPackagingPipeline.build(Optional.empty())
+                         .excludeDirFromCopying(output.getParent())
+                         .excludeDirFromCopying(OUTPUT_DIR.fetchFrom(params)).create().execute(env, app);
+             }
+
+         });
+         setParamsValidator(MacAppBundler::doValidate);
     }
 
-    private static final String TEMPLATE_BUNDLE_ICON = "JavaApp.icns";
-
-    public static final BundlerParamInfo<String> DEFAULT_ICNS_ICON =
-            new StandardBundlerParam<>(
-            ".mac.default.icns",
-            String.class,
-            params -> TEMPLATE_BUNDLE_ICON,
-            (s, p) -> s);
-
     public static final BundlerParamInfo<String> DEVELOPER_ID_APP_SIGNING_KEY =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             "mac.signing-key-developer-id-app",
             String.class,
             params -> {
@@ -85,31 +91,6 @@ public class MacAppBundler extends AppImageBundler {
                     return result;
                 },
             (s, p) -> s);
-
-    public static final BundlerParamInfo<String> APP_IMAGE_SIGN_IDENTITY =
-            new StandardBundlerParam<>(
-            Arguments.CLIOptions.MAC_APP_IMAGE_SIGN_IDENTITY.getId(),
-            String.class,
-            params -> "",
-            null);
-
-    public static final BundlerParamInfo<String> BUNDLE_ID_SIGNING_PREFIX =
-            new StandardBundlerParam<>(
-            Arguments.CLIOptions.MAC_BUNDLE_SIGNING_PREFIX.getId(),
-            String.class,
-            params -> getIdentifier(params) + ".",
-            (s, p) -> s);
-
-    static String getIdentifier(Map<String, ? super Object> params) {
-        String s = MAIN_CLASS.fetchFrom(params);
-        if (s == null) return null;
-
-        int idx = s.lastIndexOf(".");
-        if (idx >= 1) {
-            return s.substring(0, idx);
-        }
-        return s;
-    }
 
     private static void doValidate(Map<String, ? super Object> params)
             throws ConfigException {
