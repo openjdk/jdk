@@ -452,7 +452,7 @@ public class TestCyclicDependency {
         applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     @IR(counts = {IRNode.ADD_VI, "> 0",
-                  IRNode.ADD_VF, "> 0",
+                  IRNode.ADD_VF, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
                   ".*multiversion.*", "= 0"},
         phase = CompilePhase.PRINT_IDEAL,
         applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
@@ -492,7 +492,7 @@ public class TestCyclicDependency {
         applyIfAnd = {"AlignVector", "false", "UseAutoVectorizationSpeculativeAliasingChecks", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     @IR(counts = {IRNode.ADD_VI, "> 0",
-                  IRNode.ADD_VF, "> 0",
+                  IRNode.ADD_VF, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0",
                   IRNode.ADD_VF, IRNode.VECTOR_SIZE + "2", "> 0",
                   ".*multiversion.*", "> 0"},
         phase = CompilePhase.PRINT_IDEAL,
