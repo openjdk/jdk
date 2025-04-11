@@ -1076,6 +1076,11 @@ public class JavacTrees extends DocTrees {
             }
 
             @Override
+            public Comment stripIndent() {
+                return this;
+            }
+
+            @Override
             public JCDiagnostic.DiagnosticPosition getPos() {
                 return null;
             }

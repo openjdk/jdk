@@ -78,6 +78,11 @@ void ShenandoahOldGC::op_final_mark() {
     if (VerifyAfterGC) {
       Universe::verify();
     }
+
+    {
+      ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_mark_propagate_gc_state);
+      heap->propagate_gc_state_to_all_threads();
+    }
   }
 }
 
@@ -137,7 +142,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // return from here with weak roots in progress. This is not a valid gc state
   // for any young collections (or allocation failures) that interrupt the old
   // collection.
-  vmop_entry_final_roots();
+  heap->concurrent_final_roots();
 
   // We do not rebuild_free following increments of old marking because memory has not been reclaimed. However, we may
   // need to transfer memory to OLD in order to efficiently support the mixed evacuations that might immediately follow.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,13 @@ public class ToStringBench {
     public void localTimeToString(Blackhole bh) {
         for (LocalTime localTime : LOCAL_TIMES) {
             bh.consume(localTime.toString());
+        }
+    }
+
+    @Benchmark
+    public void instantToString(Blackhole bh) {
+        for (Instant instant : INSTANTS) {
+            bh.consume(instant.toString());
         }
     }
 }

@@ -21,20 +21,32 @@
  * questions.
  */
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
-#include "gc/z/zNUMA.hpp"
+#include "gc/z/zNUMA.inline.hpp"
+#include "utilities/macros.hpp"
 
 bool ZNUMA::_enabled;
+uint32_t ZNUMA::_count;
 
 void ZNUMA::initialize() {
   pd_initialize();
 
   log_info_p(gc, init)("NUMA Support: %s", to_string());
+
   if (_enabled) {
-    log_info_p(gc, init)("NUMA Nodes: %u", count());
+    assert(!is_faked(), "Currently not supported");
+    log_info_p(gc, init)("NUMA Nodes: %u", _count);
+
+  } else if (is_faked()) {
+    log_info_p(gc, init)("Fake NUMA Nodes: %u", count());
   }
 }
 
 const char* ZNUMA::to_string() {
+  if (is_faked()) {
+    return "Faked";
+  }
+
   return _enabled ? "Enabled" : "Disabled";
 }

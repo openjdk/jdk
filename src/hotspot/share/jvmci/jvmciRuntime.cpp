@@ -30,8 +30,8 @@
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
-#include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
+#include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "logging/log.hpp"
@@ -1569,7 +1569,7 @@ bool JVMCIRuntime::destroy_shared_library_javavm() {
   guarantee(_num_attached_threads == cannot_be_attached,
       "cannot destroy JavaVM for JVMCI runtime %d with %d attached threads", _id, _num_attached_threads);
   JavaVM* javaVM;
-  int javaVM_id = _shared_library_javavm_id;
+  jlong javaVM_id = _shared_library_javavm_id;
   {
     // Exactly one thread can destroy the JavaVM
     // and release the handle to it.
@@ -1588,9 +1588,9 @@ bool JVMCIRuntime::destroy_shared_library_javavm() {
       result = javaVM->DestroyJavaVM();
     }
     if (result == JNI_OK) {
-      JVMCI_event_1("destroyed JavaVM[%d]@" PTR_FORMAT " for JVMCI runtime %d", javaVM_id, p2i(javaVM), _id);
+      JVMCI_event_1("destroyed JavaVM[" JLONG_FORMAT "]@" PTR_FORMAT " for JVMCI runtime %d", javaVM_id, p2i(javaVM), _id);
     } else {
-      warning("Non-zero result (%d) when calling JNI_DestroyJavaVM on JavaVM[%d]@" PTR_FORMAT, result, javaVM_id, p2i(javaVM));
+      warning("Non-zero result (%d) when calling JNI_DestroyJavaVM on JavaVM[" JLONG_FORMAT "]@" PTR_FORMAT, result, javaVM_id, p2i(javaVM));
     }
     return true;
   }
@@ -2195,8 +2195,8 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
               char *method_name = method->name_and_sig_as_C_string();
               tty->print_cr("Replacing method %s", method_name);
             }
-            if (old != nullptr ) {
-              old->make_not_entrant();
+            if (old != nullptr) {
+              old->make_not_entrant("JVMCI register method");
             }
 
             LogTarget(Info, nmethod, install) lt;

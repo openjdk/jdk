@@ -814,22 +814,6 @@ public class Log extends AbstractLog {
         diagnosticHandler.flushLintWaiters();
     }
 
-    /**
-     * Reset the state of this instance.
-     */
-    public void clear() {
-        recorded.clear();
-        sourceMap.clear();
-        nerrors = 0;
-        nwarnings = 0;
-        nsuppressederrors = 0;
-        nsuppressedwarns = 0;
-        while (diagnosticHandler.prev != null)
-            popDiagnosticHandler(diagnosticHandler);
-        aggregators.values().forEach(MandatoryWarningAggregator::clear);
-        suppressedDeferredMandatory.clear();
-    }
-
     // Apply the given Lint configuration to the diagnostic and, if it survives, pass on downstream
     private void applyLint(Lint lint, JCDiagnostic diag, Consumer<? super JCDiagnostic> downstream) {
         LintCategory category = diag.getLintCategory();
@@ -899,6 +883,22 @@ public class Log extends AbstractLog {
         case REMOVAL, UNCHECKED -> aggregators.computeIfAbsent(lc, c -> new MandatoryWarningAggregator(this, null, c));
         case null, default -> null;
         };
+    }
+
+    /**
+     * Reset the state of this instance.
+     */
+    public void clear() {
+        recorded.clear();
+        sourceMap.clear();
+        nerrors = 0;
+        nwarnings = 0;
+        nsuppressederrors = 0;
+        nsuppressedwarns = 0;
+        while (diagnosticHandler.prev != null)
+            popDiagnosticHandler(diagnosticHandler);
+        aggregators.values().forEach(MandatoryWarningAggregator::clear);
+        suppressedDeferredMandatory.clear();
     }
 
 // DefaultDiagnosticHandler
