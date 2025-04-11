@@ -217,6 +217,7 @@ private:
 
   DumpRegion _rw_region;
   DumpRegion _ro_region;
+  DumpRegion _ac_region; // AOT code
 
   // Combined bitmap to track pointers in both RW and RO regions. This is updated
   // as objects are copied into RW and RO.
@@ -372,6 +373,7 @@ public:
   DumpRegion* pz_region() { return &_pz_region; }
   DumpRegion* rw_region() { return &_rw_region; }
   DumpRegion* ro_region() { return &_ro_region; }
+  DumpRegion* ac_region() { return &_ac_region; }
 
   static char* rw_region_alloc(size_t num_bytes) {
     return current()->rw_region()->allocate(num_bytes);
@@ -379,6 +381,12 @@ public:
   static char* ro_region_alloc(size_t num_bytes) {
     return current()->ro_region()->allocate(num_bytes);
   }
+  static char* ac_region_alloc(size_t num_bytes) {
+    return current()->ac_region()->allocate(num_bytes);
+  }
+
+  void start_ac_region();
+  void end_ac_region();
 
   template <typename T>
   static Array<T>* new_ro_array(int length) {
@@ -425,6 +433,8 @@ public:
   template <typename T> void mark_and_relocate_to_buffered_addr(T ptr_location) {
     mark_and_relocate_to_buffered_addr((address*)ptr_location);
   }
+
+  bool has_been_archived(address src_addr) const;
 
   bool has_been_buffered(address src_addr) const;
   template <typename T> bool has_been_buffered(T src_addr) const {
