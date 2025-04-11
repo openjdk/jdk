@@ -643,7 +643,7 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
   size = MAX2((size_t)1, size);
 
   // Observe MallocLimit
-  if (MemTracker::check_exceeds_limit(size, mem_tag)) {
+  if (MemTracker::check_exceeds_limit(size, mem_tag, NMemType::Malloc)) {
     return nullptr;
   }
 
@@ -707,7 +707,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     const size_t old_size = MallocTracker::malloc_header(memblock)->size();
 
     // Observe MallocLimit
-    if ((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, mem_tag)) {
+    if ((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, mem_tag, NMemType::Malloc)) {
       return nullptr;
     }
 

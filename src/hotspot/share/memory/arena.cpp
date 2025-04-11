@@ -24,6 +24,7 @@
  */
 
 #include "compiler/compilationMemoryStatistic.hpp"
+#include "nmt/nMemLimit.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
@@ -303,7 +304,7 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   // (Note: all chunk sizes have to be 64-bit aligned)
   size_t len = MAX2(ARENA_ALIGN(x), (size_t) Chunk::size);
 
-  if (MemTracker::check_exceeds_limit(x, _mem_tag)) {
+  if (MemTracker::check_exceeds_limit(x, _mem_tag, NMemType::Malloc)) {
     return nullptr;
   }
 
