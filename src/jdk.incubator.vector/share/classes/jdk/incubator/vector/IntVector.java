@@ -689,7 +689,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
             }
         }
@@ -717,7 +717,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
             }
         }
@@ -727,6 +727,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
             this, m,
             UN_IMPL.find(op, opc, IntVector::unaryOperations));
     }
+
 
     private static final
     ImplCache<Unary, UnaryOperation<IntVector, VectorMask<Integer>>>
@@ -824,6 +825,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
                     = this.compare(EQ, (int) 0, m);
                 return this.blend(that, mask);
             }
+
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
                 // This allows the JIT to ignore some ISA details.
@@ -849,6 +851,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
             this, that, m,
             BIN_IMPL.find(op, opc, IntVector::binaryOperations));
     }
+
 
     private static final
     ImplCache<Binary, BinaryOperation<IntVector, VectorMask<Integer>>>
