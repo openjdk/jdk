@@ -71,11 +71,6 @@ class MacroAssembler: public Assembler {
 
   void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions = true);
 
-  // helpers for FPU flag access
-  // tmp is a temporary register, if none is available use noreg
-  void save_rax   (Register tmp);
-  void restore_rax(Register tmp);
-
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
@@ -460,39 +455,6 @@ class MacroAssembler: public Assembler {
   // Division by power of 2, rounding towards 0
   void division_with_shift(Register reg, int shift_value);
 
-#ifndef _LP64
-  // Compares the top-most stack entries on the FPU stack and sets the eflags as follows:
-  //
-  // CF (corresponds to C0) if x < y
-  // PF (corresponds to C2) if unordered
-  // ZF (corresponds to C3) if x = y
-  //
-  // The arguments are in reversed order on the stack (i.e., top of stack is first argument).
-  // tmp is a temporary register, if none is available use noreg (only matters for non-P6 code)
-  void fcmp(Register tmp);
-  // Variant of the above which allows y to be further down the stack
-  // and which only pops x and y if specified. If pop_right is
-  // specified then pop_left must also be specified.
-  void fcmp(Register tmp, int index, bool pop_left, bool pop_right);
-
-  // Floating-point comparison for Java
-  // Compares the top-most stack entries on the FPU stack and stores the result in dst.
-  // The arguments are in reversed order on the stack (i.e., top of stack is first argument).
-  // (semantics as described in JVM spec.)
-  void fcmp2int(Register dst, bool unordered_is_less);
-  // Variant of the above which allows y to be further down the stack
-  // and which only pops x and y if specified. If pop_right is
-  // specified then pop_left must also be specified.
-  void fcmp2int(Register dst, bool unordered_is_less, int index, bool pop_left, bool pop_right);
-
-  // Floating-point remainder for Java (ST0 = ST0 fremr ST1, ST1 is empty afterwards)
-  // tmp is a temporary register, if none is available use noreg
-  void fremr(Register tmp);
-
-  // only if +VerifyFPU
-  void verify_FPU(int stack_depth, const char* s = "illegal FPU state");
-#endif // !LP64
-
   // dst = c = a * b + c
   void fmad(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c);
   void fmaf(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c);
@@ -506,18 +468,6 @@ class MacroAssembler: public Assembler {
   // same as fcmp2int, but using SSE2
   void cmpss2int(XMMRegister opr1, XMMRegister opr2, Register dst, bool unordered_is_less);
   void cmpsd2int(XMMRegister opr1, XMMRegister opr2, Register dst, bool unordered_is_less);
-
-  // branch to L if FPU flag C2 is set/not set
-  // tmp is a temporary register, if none is available use noreg
-  void jC2 (Register tmp, Label& L);
-  void jnC2(Register tmp, Label& L);
-
-#ifndef _LP64
-  // Pop ST (ffree & fincstp combined)
-  void fpop();
-
-  void empty_FPU_stack();
-#endif // !_LP64
 
   void push_IU_state();
   void pop_IU_state();
@@ -1078,27 +1028,6 @@ public:
   void comisd(XMMRegister dst, XMMRegister    src) { Assembler::comisd(dst, src); }
   void comisd(XMMRegister dst, Address        src) { Assembler::comisd(dst, src); }
   void comisd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
-
-#ifndef _LP64
-  void fadd_s(Address        src) { Assembler::fadd_s(src); }
-  void fadd_s(AddressLiteral src) { Assembler::fadd_s(as_Address(src)); }
-
-  void fldcw(Address        src) { Assembler::fldcw(src); }
-  void fldcw(AddressLiteral src);
-
-  void fld_s(int index)          { Assembler::fld_s(index); }
-  void fld_s(Address        src) { Assembler::fld_s(src); }
-  void fld_s(AddressLiteral src);
-
-  void fld_d(Address        src) { Assembler::fld_d(src); }
-  void fld_d(AddressLiteral src);
-
-  void fld_x(Address        src) { Assembler::fld_x(src); }
-  void fld_x(AddressLiteral src) { Assembler::fld_x(as_Address(src)); }
-
-  void fmul_s(Address        src) { Assembler::fmul_s(src); }
-  void fmul_s(AddressLiteral src) { Assembler::fmul_s(as_Address(src)); }
-#endif // !_LP64
 
   void cmp32_mxcsr_std(Address mxcsr_save, Register tmp, Register rscratch = noreg);
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }

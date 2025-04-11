@@ -60,19 +60,6 @@
     do_arch_entry(x86, initial, double_sign_flip, double_sign_flip,     \
                   double_sign_flip)                                     \
   )                                                                     \
-  NOT_LP64(                                                             \
-    do_stub(initial, verify_fpu_cntrl_word)                             \
-    do_arch_entry(x86, initial, verify_fpu_cntrl_word,                  \
-                  verify_fpu_cntrl_wrd_entry,                           \
-                  verify_fpu_cntrl_wrd_entry)                           \
-    do_stub(initial, d2i_wrapper)                                       \
-    do_arch_entry(x86, initial, d2i_wrapper, d2i_wrapper,               \
-                  d2i_wrapper)                                          \
-    do_stub(initial, d2l_wrapper)                                       \
-    do_arch_entry(x86, initial, d2l_wrapper, d2l_wrapper,               \
-                  d2l_wrapper)                                          \
-  )                                                                     \
-
 
 #define STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,                     \
                                            do_arch_blob,                \
