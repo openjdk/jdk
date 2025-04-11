@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 package sun.font;
 
 import java.awt.geom.Point2D;
+
+import jdk.internal.foreign.SegmentFactories;
 import sun.font.GlyphLayout.GVData;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
@@ -37,7 +39,6 @@ import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import static java.lang.foreign.MemorySegment.NULL;
-import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.UnionLayout;
@@ -48,7 +49,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 
-import java.util.Optional;
 import java.util.WeakHashMap;
 
 public class HBShaper {
@@ -339,8 +339,7 @@ public class HBShaper {
 
         Font2D font2D = scopedVars.get().font();
         int glyphID = font2D.charToGlyph(unicode);
-        @SuppressWarnings("restricted")
-        MemorySegment glyphIDPtr = glyph.reinterpret(4);
+        var glyphIDPtr = reinterpret(glyph, 4);
         glyphIDPtr.setAtIndex(JAVA_INT, 0, glyphID);
         return (glyphID != 0) ? 1 : 0;
     }
@@ -355,14 +354,13 @@ public class HBShaper {
     ) {
         Font2D font2D = scopedVars.get().font();
         int glyphID = font2D.charToVariationGlyph(unicode, variation_selector);
-        @SuppressWarnings("restricted")
-        MemorySegment glyphIDPtr = glyph.reinterpret(4);
+        var glyphIDPtr = reinterpret(glyph, 4);
         glyphIDPtr.setAtIndex(JAVA_INT, 0, glyphID);
         return (glyphID != 0) ? 1 : 0;
     }
 
     private static final float HBFloatToFixedScale = ((float)(1 << 16));
-    private static final int HBFloatToFixed(float f) {
+    private static int HBFloatToFixed(float f) {
         return ((int)((f) * HBFloatToFixedScale));
     }
 
@@ -392,11 +390,7 @@ public class HBShaper {
     /*
      * This class exists to make the code that uses it less verbose
      */
-    private static class IntPtr {
-        MemorySegment seg;
-        IntPtr(MemorySegment seg) {
-        }
-
+    private record IntPtr(MemorySegment seg) {
         void set(int i) {
             seg.setAtIndex(JAVA_INT, 0, i);
         }
@@ -475,7 +469,7 @@ public class HBShaper {
                      baseIndex, startX, startY, flags, slot,
                      hb_jdk_font_funcs_struct,
                      store_layout_results_stub);
-            } catch (Throwable t) {
+            } catch (Throwable _) {
             }
         });
     }
@@ -489,8 +483,7 @@ public class HBShaper {
          * so it will be freed by the caller using native free - when it is
          * done with it.
          */
-        @SuppressWarnings("restricted")
-        MemorySegment data_ptr = data_ptr_out.reinterpret(ADDRESS.byteSize());
+        var data_ptr = reinterpret(data_ptr_out, ADDRESS.byteSize());
         if (tag == 0) {
             data_ptr.setAtIndex(ADDRESS, 0, NULL);
             return 0;
@@ -510,8 +503,7 @@ public class HBShaper {
             data_ptr.setAtIndex(ADDRESS, 0, NULL);
             return 0;
         }
-        @SuppressWarnings("restricted")
-        MemorySegment mem = zero_len.reinterpret(len);
+        var mem = reinterpret(zero_len, len);
         MemorySegment.copy(data, 0, mem, JAVA_BYTE, 0, len);
         data_ptr.setAtIndex(ADDRESS, 0, mem);
         return len;
@@ -579,7 +571,7 @@ public class HBShaper {
         public void dispose() {
             try {
                 dispose_face_handle.invokeExact(face);
-            } catch (Throwable t) {
+            } catch (Throwable _) {
             }
         }
     }
@@ -607,7 +599,7 @@ public class HBShaper {
 
         int initialCount = gvdata._count;
 
-        int maxGlyphs = (charCount > glyphCount) ? charCount : glyphCount;
+        int maxGlyphs = Math.max(charCount, glyphCount);
         int maxStore = maxGlyphs + initialCount;
         boolean needToGrow = (maxStore > gvdata._glyphs.length) ||
                              ((maxStore * 2 + 2) > gvdata._positions.length);
@@ -617,12 +609,10 @@ public class HBShaper {
 
         int glyphPosLen = glyphCount * 2 + 2;
         long posSize = glyphPosLen * PositionLayout.byteSize();
-        @SuppressWarnings("restricted")
-        MemorySegment glyphPosArr = glyphPos.reinterpret(posSize);
+        var glyphPosArr = reinterpret(glyphPos, posSize);
 
         long glyphInfoSize = glyphCount * GlyphInfoLayout.byteSize();
-        @SuppressWarnings("restricted")
-        MemorySegment glyphInfoArr = glyphInfo.reinterpret(glyphInfoSize);
+        var glyphInfoArr = reinterpret(glyphInfo, glyphInfoSize);
 
          for (int i = 0; i < glyphCount; i++) {
              int storei = i + initialCount;
@@ -655,4 +645,9 @@ public class HBShaper {
         startPt.x = advX;
         startPt.y = advY;
     }
+
+    private static MemorySegment reinterpret(MemorySegment segment, long len) {
+        return SegmentFactories.makeNativeSegmentUnchecked(segment.address(), len);
+    }
+
 }

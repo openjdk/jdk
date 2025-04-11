@@ -47,7 +47,7 @@ public class FileFontStrike extends PhysicalStrike {
      */
     static final int INVISIBLE_GLYPHS = 0x0fffe;
 
-    private FileFont fileFont;
+    private final FileFont fileFont;
 
     /* REMIND: replace this scheme with one that installs a cache
      * instance of the appropriate type. It will require changes in
@@ -65,7 +65,7 @@ public class FileFontStrike extends PhysicalStrike {
     private static final int SEGSHIFT = 5;
     private static final int SEGSIZE  = 1 << SEGSHIFT;
 
-    private boolean segmentedCache;
+    private final boolean segmentedCache;
     private int[][] segIntGlyphImages;
     private long[][] segLongGlyphImages;
 
@@ -337,7 +337,7 @@ public class FileFontStrike extends PhysicalStrike {
 
     long getGlyphImagePtr(int glyphCode) {
         if (glyphCode >= INVISIBLE_GLYPHS) {
-            return StrikeCache.invisibleGlyphPtr;
+            return StrikeCache.INVISIBLE_GLYPH_PTR;
         }
         long glyphPtr = 0L;
         if ((glyphPtr = getCachedGlyphPtr(glyphCode)) != 0L) {
@@ -363,7 +363,7 @@ public class FileFontStrike extends PhysicalStrike {
         for (int i=0; i<len; i++) {
             int glyphCode = glyphCodes[i];
             if (glyphCode >= INVISIBLE_GLYPHS) {
-                images[i] = StrikeCache.invisibleGlyphPtr;
+                images[i] = StrikeCache.INVISIBLE_GLYPH_PTR;
                 continue;
             } else if ((images[i] = getCachedGlyphPtr(glyphCode)) != 0L) {
                 continue;
@@ -394,7 +394,7 @@ public class FileFontStrike extends PhysicalStrike {
                 convertedCnt++;
             }
             if (glyphCode >= INVISIBLE_GLYPHS) {
-                images[i] = StrikeCache.invisibleGlyphPtr;
+                images[i] = StrikeCache.INVISIBLE_GLYPH_PTR;
                 continue;
             } else if ((images[i] = getCachedGlyphPtr(glyphCode)) != 0L) {
                 continue;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,8 @@
 
 package sun.font;
 
-import java.awt.Font;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -38,7 +35,7 @@ public abstract class PhysicalStrike extends FontStrike {
     static final long INTMASK = 0xffffffffL;
     static boolean longAddresses;
     static {
-        switch (StrikeCache.nativeAddressSize) {
+        switch (StrikeCache.NATIVE_ADDRESS_SIZE) {
         case 8: longAddresses = true; break;
         case 4: longAddresses = false; break;
         default: throw new RuntimeException("Unexpected address size");

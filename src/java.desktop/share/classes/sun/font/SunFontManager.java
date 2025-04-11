@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,7 +267,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         // so there's no need to do anything explicit here.
         initIDs();
 
-        switch (StrikeCache.nativeAddressSize) {
+        switch (StrikeCache.NATIVE_ADDRESS_SIZE) {
         case 8: longAddresses = true; break;
         case 4: longAddresses = false; break;
         default: throw new RuntimeException("Unexpected address size");
