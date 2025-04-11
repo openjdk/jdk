@@ -60,28 +60,6 @@ inline void InstanceClassLoaderKlass::oop_oop_iterate_metadata_bounded(oop obj, 
 
 #define NO_METADATA_ITERATION   assert(!Devirtualizer::do_metadata(closure), "Code to handle metadata is not implemented");
 
-// External entries implementation: klute variants
-
-template <typename T, class OopClosureType>
-inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  InstanceKlass::oop_oop_iterate<T>(obj, closure);
-  oop_oop_iterate_metadata<T>(obj, closure);
-}
-
-template <typename T, class OopClosureType>
-inline void InstanceClassLoaderKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
-  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure);
-  NO_METADATA_ITERATION
-}
-
-template <typename T, class OopClosureType>
-inline void InstanceClassLoaderKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr);
-  oop_oop_iterate_metadata_bounded<T>(obj, closure, mr);
-}
-
-// External entries implementation: klute variants
-
 template <typename T, class OopClosureType>
 inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
   InstanceKlass::oop_oop_iterate<T>(obj, closure, klute);

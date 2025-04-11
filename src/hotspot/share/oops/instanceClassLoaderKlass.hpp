@@ -59,29 +59,19 @@ public:
   // The InstanceClassLoaderKlass iterators also visit the CLD pointer
 
   // Forward iteration
-  // Iterate over the oop fields and metadata.
+  // Iterate over the oop fields and metadata
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute);
 
   // Reverse iteration
-  // Iterate over the oop fields and metadata.
+  // Iterate over the oop fields and metadata
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute);
 
   // Bounded range iteration
   // Iterate over the oop fields and metadata.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
-
-  // klute variants
-  template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute);
-  template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute);
-  template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute);
-
-
 
   DECLARE_EXACT_CAST_FUNCTIONS(InstanceClassLoaderKlass)
   DECLARE_NARROW_KLASS_UTILITY_FUNCTIONS(InstanceClassLoaderKlass)
