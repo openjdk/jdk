@@ -2197,6 +2197,13 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "dilithiumNttMult") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "dilithiumMontMulByConstant") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "dilithiumDecomposePoly") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "kyberNtt") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "kyberInverseNtt") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "kyberNttMult") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "kyberAddPoly_2") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "kyberAddPoly_3") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "kyber12To16") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "kyberBarrettReduce") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "encodeBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "decodeBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "md5_implCompress") == 0 ||
