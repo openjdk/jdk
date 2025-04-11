@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,32 +21,11 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-package com.sun.hotspot.igv.layout;
+package com.sun.hotspot.igv.data.services;
 
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.util.List;
-import java.util.Set;
+import com.sun.hotspot.igv.data.InputGraph;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public interface Cluster extends Comparable<Cluster> {
-
-    void setBounds(Rectangle r);
-
-    void setPosition(Point p);
-
-    Point getPosition();
-
-    Rectangle getBounds();
-
-    List<? extends Vertex> getVertices();
-
-    Set<? extends Cluster> getSuccessors();
-
-    int getLiveRangeSeparation();
+public interface PreProcessor {
+    public void preProcess(InputGraph graph);
 }

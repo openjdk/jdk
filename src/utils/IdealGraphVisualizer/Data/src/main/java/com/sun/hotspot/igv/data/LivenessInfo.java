@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,29 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.layout;
+package com.sun.hotspot.igv.data;
 
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public interface Cluster extends Comparable<Cluster> {
+public class LivenessInfo {
 
-    void setBounds(Rectangle r);
+    public Integer def;
+    public Set<Integer> use;
+    public Set<Integer> kill;
+    public Set<Integer> join;
+    public Set<Integer> livein;
+    public Set<Integer> liveout;
 
-    void setPosition(Point p);
+    public LivenessInfo() {}
 
-    Point getPosition();
+    @Override
+    public String toString() {
+        return "def: " + def +
+            ", use: " + use +
+            ", kill: " + kill +
+            ", join: " + join +
+            ", livein: " + livein +
+            ", liveout: " + liveout;
+    }
 
-    Rectangle getBounds();
-
-    List<? extends Vertex> getVertices();
-
-    Set<? extends Cluster> getSuccessors();
-
-    int getLiveRangeSeparation();
 }
