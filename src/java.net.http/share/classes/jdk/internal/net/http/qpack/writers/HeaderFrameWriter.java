@@ -67,6 +67,24 @@ public class HeaderFrameWriter {
         };
     }
 
+    /**
+     * Writes the {@linkplain #configure(TableEntry, boolean, long)
+     * set up} header into the given buffer.
+     *
+     * <p> The method writes as much as possible of the header's binary
+     * representation into the given buffer, starting at the buffer's position,
+     * and increments its position to reflect the bytes written. The buffer's
+     * mark and limit will not be modified.
+     *
+     * <p> Once the method has returned {@code true}, the configured header is
+     * deemed encoded. A new header may be set up.
+     *
+     * @param headerFrame the buffer to encode the header into, may be empty
+     * @return {@code true} if the current header has been fully encoded,
+     * {@code false} otherwise
+     * @throws NullPointerException  if the buffer is {@code null}
+     * @throws IllegalStateException if there is no set up header
+     */
     public boolean write(ByteBuffer headerFrame) {
         if (!encoding) {
             throw new IllegalStateException("A header hasn't been set up");

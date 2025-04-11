@@ -94,7 +94,7 @@ public class BlockingDecodingTest {
         var header = TestHeader.withId(0);
         encoder.header(context, header.name(), header.value(),
                 false, IGNORE_RECEIVED_COUNT_CHECK);
-        encoder.encode(headerFrameWriter, headersBb);
+        headerFrameWriter.write(headersBb);
         assertNotEquals(headersBb.position(), 0);
         headersBb.flip();
         buffers.add(headersBb);
@@ -149,7 +149,7 @@ public class BlockingDecodingTest {
         var expectedHeader = TestHeader.withId(0);
         encoder.header(context, expectedHeader.name,
                 expectedHeader.value, false, IGNORE_RECEIVED_COUNT_CHECK);
-        encoder.encode(headerFrameWriter, headersBb);
+        headerFrameWriter.write(headersBb);
         assertNotEquals(headersBb.position(), 0);
         headersBb.flip();
         buffers.add(headersBb);
@@ -223,7 +223,7 @@ public class BlockingDecodingTest {
                     for (var header : expectedHeaders) {
                         encoder.header(context, header.name, header.value, false,
                                 IGNORE_RECEIVED_COUNT_CHECK);
-                        encoder.encode(headerFrameWriter, headersBb);
+                        headerFrameWriter.write(headersBb);
                     }
                     assertNotEquals(headersBb.position(), 0);
                     headersBb.flip();

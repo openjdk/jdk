@@ -46,15 +46,15 @@ public final class QPackException extends RuntimeException {
     }
 
     public static QPackException encoderStreamError(Throwable cause) {
-        return new QPackException(Http3Error.QPACK_ENCODER_STREAM_ERROR, cause, true);
+        throw new QPackException(Http3Error.QPACK_ENCODER_STREAM_ERROR, cause, true);
     }
 
     public static QPackException decoderStreamError(Throwable cause) {
-        return new QPackException(Http3Error.QPACK_DECODER_STREAM_ERROR, cause, true);
+        throw new QPackException(Http3Error.QPACK_DECODER_STREAM_ERROR, cause, true);
     }
 
     public static QPackException decompressionFailed(Throwable cause, boolean isConnectionError) {
-        return new QPackException(Http3Error.QPACK_DECOMPRESSION_FAILED, cause, isConnectionError);
+        throw new QPackException(Http3Error.QPACK_DECOMPRESSION_FAILED, cause, isConnectionError);
     }
 
 

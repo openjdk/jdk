@@ -143,12 +143,10 @@ public final class StaticTable implements HeadersTable {
 
     private final List<HeaderField> headerFields;
     private final Map<String, Map<String, Integer>> indicesMap;
-    private final int tableSize;
 
     private StaticTable(List<HeaderField> headerFields) {
         this.headerFields = headerFields;
         this.indicesMap = buildIndicesMap(headerFields);
-        this.tableSize = headerFields.size();
     }
 
     @Override
@@ -156,7 +154,7 @@ public final class StaticTable implements HeadersTable {
         if (index >= headerFields.size()) {
             throw new IllegalArgumentException("Invalid static table entry index");
         }
-        return headerFields.get((int) checkIndex(index));
+        return headerFields.get((int)index);
     }
 
     @Override
@@ -181,24 +179,14 @@ public final class StaticTable implements HeadersTable {
         return searchResult;
     }
 
-    private long checkIndex(long index) {
-        Objects.checkIndex(index, tableSize);
-        return index;
-    }
-
     private static Map<String, Map<String, Integer>> buildIndicesMap(List<HeaderField> fields) {
         int numEntries = fields.size();
         Map<String, Map<String, Integer>> map = new HashMap<>(numEntries);
         for (int i = 0; i < numEntries; i++) {
             HeaderField f = fields.get(i);
-            Map<String, Integer> values = map.computeIfAbsent(f.name(), k -> new HashMap<>());
+            Map<String, Integer> values = map.computeIfAbsent(f.name(), _ -> new HashMap<>());
             values.put(f.value(), i);
         }
-        // create an immutable deep copy
-        Map<String, Map<String, Integer>> copy = new HashMap<>(map.size());
-        for (Map.Entry<String, Map<String, Integer>> e : map.entrySet()) {
-            copy.put(e.getKey(), Map.copyOf(e.getValue()));
-        }
-        return Map.copyOf(copy);
+        return map;
     }
 }

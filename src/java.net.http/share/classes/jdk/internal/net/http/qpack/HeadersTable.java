@@ -48,22 +48,17 @@ public sealed interface HeadersTable permits StaticTable, DynamicTable {
     /**
      * Returns an index for name:value pair, or just name in a headers table.
      * The contract for return values is the following:
-     * - a positive integer i where i (i = [1..Integer.MAX_VALUE]) is an
-     * index of an entry with a header (n, v), where n.equals(name) &&
-     * v.equals(value).
-     * The range is mapped to the following table indices range:
-     * [1..Integer.MAX_VALUE - 1]
+     * - a positive integer {@code i} where {@code i - 1} is an index of an
+     * entry with a header (n, v), where {@code n.equals(name) && v.equals(value)}.
      * <p>
-     * - a negative integer j where j (j = [-Integer.MAX_VALUE..-1]) is an
-     * index of an entry with a header (n, v), where n.equals(name)
-     * The range is mapped to the same table indices range:
-     * [0..Integer.MAX_VALUE - 1]
+     * - a negative integer {@code j} where {@code -j - 1} is an index of an entry with
+     * a header (n, v), where {@code n.equals(name)}.
      * <p>
-     * - 0 if there's no entry e such that e.getName().equals(name)
+     * - {@code 0} if there's no entry 'e' found such that {@code e.getName().equals(name)}
      *
      * @param name  a name to search for
      * @param value a value to search for
-     * @return an index of found entry, 0 if nothing found
+     * @return a non-zero value if a matching entry is found, 0 otherwise
      */
     long search(String name, String value);
 }

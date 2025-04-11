@@ -177,7 +177,7 @@ public class EncoderTest {
                 encoder.newEncodingContext(0, 0, headerFrameWriter);
 
         encoder.header(context, h.name(), h.value(), false);
-        encoder.encode(headerFrameWriter, actual);
+        headerFrameWriter.write(actual);
         assertNotEquals(actual.position(), 0);
         actual.flip();
 
@@ -203,7 +203,7 @@ public class EncoderTest {
         Encoder.EncodingContext context =
                 encoder.newEncodingContext(0, 0, headerFrameWriter);
         encoder.header(context, name, value, false);
-        encoder.encode(headerFrameWriter, actual);
+        headerFrameWriter.write(actual);
         assertNotEquals(actual.position(), 0);
         actual.flip();
 
@@ -231,7 +231,7 @@ public class EncoderTest {
         Encoder.EncodingContext context =
                 encoder.newEncodingContext(0, 0, headerFrameWriter);
         encoder.header(context, name, value, sensitive);
-        encoder.encode(headerFrameWriter, actual);
+        headerFrameWriter.write(actual);
         assertNotEquals(actual.position(), 0);
         actual.flip();
 
@@ -255,7 +255,7 @@ public class EncoderTest {
         Encoder.EncodingContext context =
                 encoder.newEncodingContext(0, 0, headerFrameWriter);
         encoder.header(context, name, value, false);
-        encoder.encode(headerFrameWriter, actual);
+        headerFrameWriter.write(actual);
         assertNotEquals(actual.position(), 0);
         actual.flip();
         TestQuicStreamWriter quicStreamWriter = quicConnection.sender.writer;
@@ -280,7 +280,7 @@ public class EncoderTest {
         Encoder.EncodingContext context =
                 encoder.newEncodingContext(0, 0, headerFrameWriter);
         encoder.header(context, name, value, sensitive);
-        encoder.encode(headerFrameWriter, actual);
+        headerFrameWriter.write(actual);
         assertNotEquals(actual.position(), 0);
         actual.flip();
 

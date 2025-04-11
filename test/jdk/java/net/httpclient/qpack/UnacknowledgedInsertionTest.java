@@ -98,7 +98,7 @@ public class UnacknowledgedInsertionTest {
             } else {
                 encoder.header(context, name, value, false, krcToUse);
             }
-            encoder.encode(headerFrameWriter, headersBb);
+            headerFrameWriter.write(headersBb);
         }
 
         // Only two entries are expected to be inserted to the dynamic table

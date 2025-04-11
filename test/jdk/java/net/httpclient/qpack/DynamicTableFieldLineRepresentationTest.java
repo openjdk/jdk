@@ -68,8 +68,7 @@ public class DynamicTableFieldLineRepresentationTest {
 
     //4.5.2.  Indexed Field Line
     @Test
-    public void indexedFieldLineOnDynamicTable(
-    ) throws IOException {
+    public void indexedFieldLineOnDynamicTable() throws IOException {
         boolean sensitive = RANDOM.nextBoolean();
         List<ByteBuffer> buffers = new ArrayList<>();
         AtomicReference<Throwable> error = new AtomicReference<>();
@@ -106,7 +105,7 @@ public class DynamicTableFieldLineRepresentationTest {
         encoder.header(context, name, value, sensitive, -1);
 
         // Write the header
-        encoder.encode(headerFrameWriter, headersBb);
+        headerFrameWriter.write(headersBb);
         assertNotEquals(headersBb.position(), 0);
         headersBb.flip();
         buffers.add(headersBb);
@@ -122,8 +121,7 @@ public class DynamicTableFieldLineRepresentationTest {
 
     //4.5.3.  Indexed Field Line with Post-Base Index
     @Test
-    public void indexedFieldLineOnDynamicTablePostBase(
-    ) throws IOException {
+    public void indexedFieldLineOnDynamicTablePostBase() throws IOException {
         System.err.println("start indexedFieldLineOnDynamicTablePostBase");
         boolean sensitive = RANDOM.nextBoolean();
 
@@ -162,7 +160,7 @@ public class DynamicTableFieldLineRepresentationTest {
         encoder.header(context, name, value, sensitive, -1);
 
         // Write the header
-        encoder.encode(headerFrameWriter, headersBb);
+        headerFrameWriter.write(headersBb);
         assertNotEquals(headersBb.position(), 0);
         headersBb.flip();
         buffers.add(headersBb);
@@ -223,7 +221,7 @@ public class DynamicTableFieldLineRepresentationTest {
         encoder.header(context, name, value, sensitive, -1);
 
         // Write the header
-        encoder.encode(headerFrameWriter, headersBb);
+        headerFrameWriter.write(headersBb);
         assertNotEquals(headersBb.position(), 0);
         headersBb.flip();
         buffers.add(headersBb);
@@ -278,7 +276,7 @@ public class DynamicTableFieldLineRepresentationTest {
         encoder.header(context, name, value, sensitive, -1);
 
         // Write the header
-        encoder.encode(headerFrameWriter, headersBb);
+        headerFrameWriter.write(headersBb);
         assertNotEquals(headersBb.position(), 0);
         headersBb.flip();
         buffers.add(headersBb);
