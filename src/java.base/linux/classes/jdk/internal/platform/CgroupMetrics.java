@@ -120,6 +120,7 @@ public class CgroupMetrics implements Metrics {
         return subsystem.getEffectiveCpuSetMems();
     }
 
+    @Override
     public long getMemoryFailCount() {
         return subsystem.getMemoryFailCount();
     }
@@ -200,7 +201,8 @@ public class CgroupMetrics implements Metrics {
 
     private static native boolean isUseContainerSupport();
     private static native boolean isContainerized0();
-    private static native long getTotalMemorySize0();
-    private static native long getTotalSwapSize0();
+    public static native long getTotalMemorySize0();
+    public static native long getTotalSwapSize0();
+    public static native int getTotalCpuCount0();
 
 }

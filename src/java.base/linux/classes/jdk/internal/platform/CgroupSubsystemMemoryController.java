@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,21 +23,22 @@
  * questions.
  */
 
-/*
- * @test
- * @key cgroups
- * @requires os.family == "linux"
- * @modules java.base/jdk.internal.platform
- * @library /test/lib
- * @run main TestCgroupMetrics
- */
+package jdk.internal.platform;
 
-import jdk.test.lib.containers.cgroup.MetricsTester;
+public interface CgroupSubsystemMemoryController extends CgroupSubsystemController {
 
-public class TestCgroupMetrics {
+    public long getMemoryLimit(long physicalMemory);
 
-    public static void main(String[] args) throws Exception {
-        MetricsTester.main(args);
-    }
+    public long getMemoryUsage();
+
+    public long getTcpMemoryUsage();
+
+    public long getMemoryAndSwapLimit(long hostMemory, long hostSwap);
+
+    public long getMemoryAndSwapUsage();
+
+    public long getMemorySoftLimit(long hostMemory);
+
+    public long getMemoryFailCount();
 
 }
