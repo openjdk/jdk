@@ -33,13 +33,12 @@ import java.awt.KeyboardFocusManager;
 import java.awt.Robot;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -55,6 +54,7 @@ public class bug8033699 {
     private static JRadioButton radioBtn2;
     private static JRadioButton radioBtn3;
     private static JRadioButton radioBtnSingle;
+    private static KeyboardFocusManager focusManager;
 
     public static void main(String[] args) throws Throwable {
         robot = new Robot();
@@ -68,6 +68,10 @@ public class bug8033699 {
 
     private static void testLaF(UIManager.LookAndFeelInfo laf) throws Exception {
         try {
+            SwingUtilities.invokeAndWait(() -> {
+                focusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+            });
+
             System.out.println("Testing LaF: " + laf.getName());
             SwingUtilities.invokeAndWait(() -> {
                 setLookAndFeel(laf);
@@ -97,11 +101,13 @@ public class bug8033699 {
             runTest5();
             robot.delay(100);
 
-            // tab from radio button in group to next component in the middle of button group layout
+            // tab from radio button in group to next component in the middle of
+            // button group layout
             runTest6();
             robot.delay(100);
 
-            // tab to radio button in group from component in the middle of button group layout
+            // tab to radio button in group from component in the middle of
+            // button group layout
             runTest7();
             robot.delay(100);
 
@@ -109,7 +115,8 @@ public class bug8033699 {
             runTest8();
             robot.delay(100);
 
-            // Verify that ActionListener is called when a RadioButton is selected using arrow key.
+            // Verify that ActionListener is called when a RadioButton is
+            // selected using arrow key
             runTest9();
             robot.delay(100);
         } catch (Exception e) {
@@ -135,13 +142,12 @@ public class bug8033699 {
     }
 
     private static void createAndShowGUI() {
-        mainFrame = new JFrame("Bug 8033699 - 8 Tests for Grouped/Non Group Radio Buttons");
+        mainFrame = new JFrame("Radio Button Focus Tests");
         btnStart = new JButton("Start");
         btnEnd = new JButton("End");
         btnMiddle = new JButton("Middle");
 
-        JPanel box = new JPanel();
-        box.setLayout(new BoxLayout(box, BoxLayout.Y_AXIS));
+        Box box = Box.createVerticalBox();
         box.setBorder(BorderFactory.createTitledBorder("Grouped Radio Buttons"));
         radioBtn1 = new JRadioButton("A");
         radioBtn2 = new JRadioButton("B");
@@ -170,7 +176,9 @@ public class bug8033699 {
         btnStart.requestFocus();
 
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        mainFrame.setLayout(new BoxLayout(mainFrame.getContentPane(), BoxLayout.Y_AXIS));
+        mainFrame.getContentPane()
+                 .setLayout(new BoxLayout(mainFrame.getContentPane(),
+                                          BoxLayout.Y_AXIS));
 
         mainFrame.setSize(300, 300);
         mainFrame.setLocationRelativeTo(null);
@@ -185,33 +193,41 @@ public class bug8033699 {
         hitKey(KeyEvent.VK_TAB);
 
         SwingUtilities.invokeAndWait(() -> {
-            if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != radioBtnSingle) {
-                System.out.println("Radio Button Group Go To Next Component through Tab Key failed");
-                throw new RuntimeException("Focus is not on Radio Button Single as Expected");
+            if (focusManager.getFocusOwner() != radioBtnSingle) {
+                System.out.println("Radio Button Group Go To "
+                                   + "Next Component through Tab Key failed");
+                throw new RuntimeException("Focus is not on "
+                                           + "Radio Button Single as Expected");
             }
         });
     }
 
-    // Non-Grouped Radio button as a single component when traversing through tab key
+    // Non-Grouped Radio button as a single component when traversing through
+    // tab key
     private static void runTest2() throws Exception {
         hitKey(KeyEvent.VK_TAB);
         SwingUtilities.invokeAndWait(() -> {
-            if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != btnEnd) {
-                System.out.println("Non Grouped Radio Button Go To Next Component through Tab Key failed");
-                throw new RuntimeException("Focus is not on Button End as Expected");
+            if (focusManager.getFocusOwner() != btnEnd) {
+                System.out.println("Non Grouped Radio Button Go To "
+                                   + "Next Component through Tab Key failed");
+                throw new RuntimeException("Focus is not on Button End "
+                                            + "as Expected");
             }
         });
     }
 
-    // Non-Grouped Radio button and Group Radio button as a single component when traversing through shift-tab key
+    // Non-Grouped Radio button and Group Radio button as a single component
+    // when traversing through shift-tab key
     private static void runTest3() throws Exception {
         hitKey(KeyEvent.VK_SHIFT, KeyEvent.VK_TAB);
         hitKey(KeyEvent.VK_SHIFT, KeyEvent.VK_TAB);
         hitKey(KeyEvent.VK_SHIFT, KeyEvent.VK_TAB);
         SwingUtilities.invokeAndWait(() -> {
-            if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != radioBtn1) {
-                System.out.println("Radio button Group/Non Grouped Radio Button SHIFT-Tab Key Test failed");
-                throw new RuntimeException("Focus is not on Radio Button A as Expected");
+            if (focusManager.getFocusOwner() != radioBtn1) {
+                System.out.println("Radio button Group/Non Grouped "
+                                   + "Radio Button SHIFT-Tab Key Test failed");
+                throw new RuntimeException("Focus is not on Radio Button A "
+                                           + "as Expected");
             }
         });
     }
@@ -221,9 +237,11 @@ public class bug8033699 {
         hitKey(KeyEvent.VK_DOWN);
         hitKey(KeyEvent.VK_RIGHT);
         SwingUtilities.invokeAndWait(() -> {
-            if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != radioBtn3) {
-                System.out.println("Radio button Group UP/LEFT Arrow Key Move Focus Failed");
-                throw new RuntimeException("Focus is not on Radio Button C as Expected");
+            if (focusManager.getFocusOwner() != radioBtn3) {
+                System.out.println("Radio button Group UP/LEFT Arrow Key "
+                                   + "Move Focus Failed");
+                throw new RuntimeException("Focus is not on Radio Button C "
+                                           + "as Expected");
             }
         });
     }
@@ -232,9 +250,11 @@ public class bug8033699 {
         hitKey(KeyEvent.VK_UP);
         hitKey(KeyEvent.VK_LEFT);
         SwingUtilities.invokeAndWait(() -> {
-            if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != radioBtn1) {
-                System.out.println("Radio button Group Left/Up Arrow Key Move Focus Failed");
-                throw new RuntimeException("Focus is not on Radio Button A as Expected");
+            if (focusManager.getFocusOwner() != radioBtn1) {
+                System.out.println("Radio button Group Left/Up Arrow Key "
+                                   + "Move Focus Failed");
+                throw new RuntimeException("Focus is not on Radio Button A "
+                                           + "as Expected");
             }
         });
     }
@@ -243,9 +263,11 @@ public class bug8033699 {
         hitKey(KeyEvent.VK_UP);
         hitKey(KeyEvent.VK_UP);
         SwingUtilities.invokeAndWait(() -> {
-            if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != radioBtn2) {
-                System.out.println("Radio button Group Circle Back To First Button Test");
-                throw new RuntimeException("Focus is not on Radio Button B as Expected");
+            if (focusManager.getFocusOwner() != radioBtn2) {
+                System.out.println("Radio button Group Circle Back To "
+                                   + "First Button Test");
+                throw new RuntimeException("Focus is not on Radio Button B "
+                                           + "as Expected");
             }
         });
     }
@@ -253,9 +275,11 @@ public class bug8033699 {
     private static void runTest7() throws Exception {
         hitKey(KeyEvent.VK_TAB);
         SwingUtilities.invokeAndWait(() -> {
-            if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != btnMiddle) {
-                System.out.println("Separate Component added in button group layout");
-                throw new RuntimeException("Focus is not on Middle Button as Expected");
+            if (focusManager.getFocusOwner() != btnMiddle) {
+                System.out.println("Separate Component added in"
+                                   + " button group layout");
+                throw new RuntimeException("Focus is not on Middle Button"
+                                           + " as Expected");
             }
         });
     }
@@ -263,9 +287,11 @@ public class bug8033699 {
     private static void runTest8() throws Exception {
         hitKey(KeyEvent.VK_TAB);
         SwingUtilities.invokeAndWait(() -> {
-            if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() != radioBtnSingle) {
-                System.out.println("Separate Component added in button group layout");
-                throw new RuntimeException("Focus is not on Radio Button Single as Expected");
+            if (focusManager.getFocusOwner() != radioBtnSingle) {
+                System.out.println("Separate Component added in"
+                                   + " button group layout");
+                throw new RuntimeException("Focus is not on Radio Button Single"
+                                           + " as Expected");
             }
         });
     }
@@ -274,7 +300,8 @@ public class bug8033699 {
     private static boolean actRB2 = false;
     private static boolean actRB3 = false;
 
-    // JDK-8226892: Verify that ActionListener is called when a RadioButton is selected using arrow key.
+    // JDK-8226892: Verify that ActionListener is called when a RadioButton
+    // is selected using arrow key
     private static void runTest9() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             radioBtn1.setSelected(true);
@@ -293,7 +320,8 @@ public class bug8033699 {
         hitKey(KeyEvent.VK_DOWN);
         hitKey(KeyEvent.VK_DOWN);
 
-        String failMessage = "ActionListener not invoked when selected using arrow key.";
+        String failMessage = "ActionListener not invoked when selected using "
+                             + "arrow key.";
         if (!actRB2) {
             throw new RuntimeException("RadioButton 2: " + failMessage);
         }
