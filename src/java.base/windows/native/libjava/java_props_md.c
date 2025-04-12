@@ -641,6 +641,7 @@ GetJavaProperties(JNIEnv* env)
 
         {
             char * display_encoding;
+            char * format_encoding;
             HANDLE hStdOutErr;
 
             // Windows UI Language selection list only cares "language"
@@ -660,7 +661,7 @@ GetJavaProperties(JNIEnv* env)
                            &sprops.format_script,
                            &sprops.format_country,
                            &sprops.format_variant,
-                           &sprops.encoding);
+                           &format_encoding);
             SetupI18nProps(userDefaultUILCID,
                            &sprops.display_language,
                            &sprops.display_script,
@@ -668,14 +669,11 @@ GetJavaProperties(JNIEnv* env)
                            &sprops.display_variant,
                            &display_encoding);
 
-            if (sprops.encoding == NULL) {
-                sprops.encoding = "UTF-8";
-            }
-
             sprops.sun_jnu_encoding = getEncodingInternal(0);
             if (sprops.sun_jnu_encoding == NULL) {
                 sprops.sun_jnu_encoding = "UTF-8";
             }
+            sprops.encoding = sprops.sun_jnu_encoding;
 
             if (LANGIDFROMLCID(userDefaultLCID) == 0x0c04 && majorVersion == 6) {
                 // MS claims "Vista has built-in support for HKSCS-2004.
