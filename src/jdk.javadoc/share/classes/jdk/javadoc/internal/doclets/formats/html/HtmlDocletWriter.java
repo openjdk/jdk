@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,7 @@ public abstract class HtmlDocletWriter {
         this.pathToRoot = path.parent().invert();
         this.docPaths = configuration.docPaths;
         this.mainBodyScript = new Script();
-        this.tableOfContents = new TableOfContents(this);
+        this.tableOfContents = createTableOfContents();
 
         if (generating) {
             writeGenerating();
@@ -1563,7 +1563,8 @@ public abstract class HtmlDocletWriter {
                             super.visit(text);
                         }
                     }.visit(heading);
-                    tableOfContents.addLink(id, Text.of(headingContent));
+                    tableOfContents.addLink(id, Text.of(headingContent),
+                            TableOfContents.Level.forHeading(htag));
                 }
             }
 
@@ -1833,6 +1834,16 @@ public abstract class HtmlDocletWriter {
                  .findFirst();
     }
 
+    /**
+     * Creates table of contents for this writer. Can be overridden to return {@code null} in
+     * subclasses that don't require a table of contents.
+     *
+     * @return a table of contents
+     */
+    protected TableOfContents createTableOfContents() {
+        return new TableOfContents(this);
+    }
+
     private void createSectionIdAndIndex(StartElementTree node, List<? extends DocTree> trees, Content attrs,
                                          Element element, TagletWriter.Context context) {
         // Use existing id attribute if available
@@ -1879,23 +1890,22 @@ public abstract class HtmlDocletWriter {
         }
         // Generate index item
         if (!headingContent.isEmpty() && configuration.indexBuilder != null) {
-            String tagText = headingContent.replaceAll("\\s+", " ");
+            String tagText = utils.normalizeWhitespace(headingContent);
             IndexItem item = IndexItem.of(element, node, tagText,
                     getTagletWriterInstance(context).getHolderName(element),
-                    resources.getText("doclet.Section"),
+                    "",
                     new DocLink(path, id));
             configuration.indexBuilder.add(item);
         }
-        if (includeHeadingInTableOfContents(node.getName())) {
-            tableOfContents.addLink(HtmlId.of(id), Text.of(headingContent));
+        if (includeHeadingInTableOfContents(tagName)) {
+            tableOfContents.addLink(HtmlId.of(id), Text.of(headingContent),
+                    TableOfContents.Level.forHeading(tagName));
         }
     }
 
-    private boolean includeHeadingInTableOfContents(CharSequence tag) {
-        // Record second-level headings for use in table of contents
-        // TODO: maybe extend this to all headings up to a given level
-        return tableOfContents != null
-                && tag.toString().equalsIgnoreCase("h2");
+    private boolean includeHeadingInTableOfContents(String tag) {
+        // Record second- and third-level headings for use in table of contents
+        return tableOfContents != null &&  ("h2".equals(tag) || "h3".equals(tag));
     }
 
     /**

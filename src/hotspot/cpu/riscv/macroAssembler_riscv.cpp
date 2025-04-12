@@ -183,7 +183,6 @@ void MacroAssembler::set_membar_kind(address addr, uint32_t order_kind) {
   Assembler::sd_instr(membar, insn);
 }
 
-
 static void pass_arg0(MacroAssembler* masm, Register arg) {
   if (c_rarg0 != arg) {
     masm->mv(c_rarg0, arg);
@@ -2594,6 +2593,14 @@ void MacroAssembler::movptr2(Register Rd, uint64_t addr, int32_t &offset, Regist
 }
 
 // floating point imm move
+bool MacroAssembler::can_hf_imm_load(short imm) {
+  jshort h_bits = (jshort)imm;
+  if (h_bits == 0) {
+    return true;
+  }
+  return can_zfa_zli_half_float(imm);
+}
+
 bool MacroAssembler::can_fp_imm_load(float imm) {
   jint f_bits = jint_cast(imm);
   if (f_bits == 0) {
@@ -2608,6 +2615,17 @@ bool MacroAssembler::can_dp_imm_load(double imm) {
     return true;
   }
   return can_zfa_zli_double(imm);
+}
+
+void MacroAssembler::fli_h(FloatRegister Rd, short imm) {
+  jshort h_bits = (jshort)imm;
+  if (h_bits == 0) {
+    fmv_h_x(Rd, zr);
+    return;
+  }
+  int Rs = zfa_zli_lookup_half_float(h_bits);
+  assert(Rs != -1, "Must be");
+  _fli_h(Rd, Rs);
 }
 
 void MacroAssembler::fli_s(FloatRegister Rd, float imm) {
@@ -3346,71 +3364,6 @@ void MacroAssembler::store_heap_oop_null(Address dst) {
   access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg, noreg);
 }
 
-int MacroAssembler::corrected_idivl(Register result, Register rs1, Register rs2,
-                                    bool want_remainder, bool is_signed)
-{
-  // Full implementation of Java idiv and irem.  The function
-  // returns the (pc) offset of the div instruction - may be needed
-  // for implicit exceptions.
-  //
-  // input : rs1: dividend
-  //         rs2: divisor
-  //
-  // result: either
-  //         quotient  (= rs1 idiv rs2)
-  //         remainder (= rs1 irem rs2)
-
-
-  int idivl_offset = offset();
-  if (!want_remainder) {
-    if (is_signed) {
-      divw(result, rs1, rs2);
-    } else {
-      divuw(result, rs1, rs2);
-    }
-  } else {
-    // result = rs1 % rs2;
-    if (is_signed) {
-      remw(result, rs1, rs2);
-    } else {
-      remuw(result, rs1, rs2);
-    }
-  }
-  return idivl_offset;
-}
-
-int MacroAssembler::corrected_idivq(Register result, Register rs1, Register rs2,
-                                    bool want_remainder, bool is_signed)
-{
-  // Full implementation of Java ldiv and lrem.  The function
-  // returns the (pc) offset of the div instruction - may be needed
-  // for implicit exceptions.
-  //
-  // input : rs1: dividend
-  //         rs2: divisor
-  //
-  // result: either
-  //         quotient  (= rs1 idiv rs2)
-  //         remainder (= rs1 irem rs2)
-
-  int idivq_offset = offset();
-  if (!want_remainder) {
-    if (is_signed) {
-      div(result, rs1, rs2);
-    } else {
-      divu(result, rs1, rs2);
-    }
-  } else {
-    // result = rs1 % rs2;
-    if (is_signed) {
-      rem(result, rs1, rs2);
-    } else {
-      remu(result, rs1, rs2);
-    }
-  }
-  return idivq_offset;
-}
-
 // Look up the method for a megamorphic invokeinterface call.
 // The target method is determined by <intf_klass, itable_index>.
 // The receiver klass is in recv_klass.
@@ -3602,6 +3555,14 @@ void MacroAssembler::lookup_virtual_method(Register recv_klass,
 }
 
 void MacroAssembler::membar(uint32_t order_constraint) {
+  if (UseZtso && ((order_constraint & StoreLoad) != StoreLoad)) {
+    // TSO allows for stores to be reordered after loads. When the compiler
+    // generates a fence to disallow that, we are required to generate the
+    // fence for correctness.
+    BLOCK_COMMENT("elided tso membar");
+    return;
+  }
+
   address prev = pc() - MacroAssembler::instruction_size;
   address last = code()->last_insn();
 
@@ -3610,15 +3571,14 @@ void MacroAssembler::membar(uint32_t order_constraint) {
     // can do this simply by ORing them together.
     set_membar_kind(prev, get_membar_kind(prev) | order_constraint);
     BLOCK_COMMENT("merged membar");
-  } else {
-    code()->set_last_insn(pc());
-
-    uint32_t predecessor = 0;
-    uint32_t successor = 0;
-
-    membar_mask_to_pred_succ(order_constraint, predecessor, successor);
-    fence(predecessor, successor);
+    return;
   }
+
+  code()->set_last_insn(pc());
+  uint32_t predecessor = 0;
+  uint32_t successor = 0;
+  membar_mask_to_pred_succ(order_constraint, predecessor, successor);
+  fence(predecessor, successor);
 }
 
 void MacroAssembler::cmodx_fence() {
