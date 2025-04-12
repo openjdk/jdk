@@ -52,7 +52,6 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.doclint.DocLint;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;

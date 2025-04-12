@@ -787,12 +787,7 @@ public class Modules extends JCTree.Visitor {
             sym.requires = List.nil();
             sym.exports = List.nil();
             sym.opens = List.nil();
-            Lint prevLint = chk.setLint(lint.augment(sym));
-            try {
-                tree.directives.forEach(t -> t.accept(this));
-            } finally {
-                chk.setLint(prevLint);
-            }
+            tree.directives.forEach(t -> t.accept(this));
             sym.requires = sym.requires.reverse();
             sym.exports = sym.exports.reverse();
             sym.opens = sym.opens.reverse();

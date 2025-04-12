@@ -34,7 +34,6 @@ import javax.tools.JavaFileObject;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Directive.ExportsDirective;
 import com.sun.tools.javac.code.Directive.RequiresDirective;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Scope.ImportFilter;
 import com.sun.tools.javac.code.Scope.NamedImportScope;
 import com.sun.tools.javac.code.Scope.StarImportScope;
@@ -108,7 +107,6 @@ public class TypeEnter implements Completer {
     private final Annotate annotate;
     private final TypeAnnotations typeAnnotations;
     private final Types types;
-    private final Lint lint;
     private final TypeEnvs typeEnvs;
     private final Dependencies dependencies;
 
@@ -134,7 +132,6 @@ public class TypeEnter implements Completer {
         annotate = Annotate.instance(context);
         typeAnnotations = TypeAnnotations.instance(context);
         types = Types.instance(context);
-        lint = Lint.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         dependencies = Dependencies.instance(context);
         Source source = Source.instance(context);
@@ -361,7 +358,6 @@ public class TypeEnter implements Completer {
 
             ImportFilter prevStaticImportFilter = staticImportFilter;
             ImportFilter prevTypeImportFilter = typeImportFilter;
-            Lint prevLint = chk.setLint(lint);
             Env<AttrContext> prevEnv = this.env;
             try {
                 this.env = env;
@@ -392,7 +388,6 @@ public class TypeEnter implements Completer {
                 }
             } finally {
                 this.env = prevEnv;
-                chk.setLint(prevLint);
                 this.staticImportFilter = prevStaticImportFilter;
                 this.typeImportFilter = prevTypeImportFilter;
             }

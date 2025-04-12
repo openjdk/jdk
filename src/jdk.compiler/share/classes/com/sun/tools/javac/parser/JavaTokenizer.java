@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.parser;
 
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Source.Feature;
