@@ -136,7 +136,8 @@ public class AllBitsSetVectorMatchRuleTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VAND_NOT_I_MASKED, " >= 1" })
+    @IR(counts = { IRNode.VAND_NOT_I_MASKED, " >= 1" }, applyIfPlatform = {"aarch64", "true"}, applyIf = {"UseSVE", "> 0"})
+    @IR(counts = { IRNode.VAND_NOT_I_MASKED, " >= 1" }, applyIfPlatform = {"riscv64", "true"})
     public static void testVectorVAndNotIMasked() {
         VectorMask<Integer> avm = VectorMask.fromArray(I_SPECIES, ma, 0);
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
@@ -153,7 +154,8 @@ public class AllBitsSetVectorMatchRuleTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { IRNode.VAND_NOT_L_MASKED, " >= 1" })
+    @IR(counts = { IRNode.VAND_NOT_I_MASKED, " >= 1" }, applyIfPlatform = {"aarch64", "true"}, applyIf = {"UseSVE", "> 0"})
+    @IR(counts = { IRNode.VAND_NOT_I_MASKED, " >= 1" }, applyIfPlatform = {"riscv64", "true"})
     public static void testVectorVAndNotLMasked() {
         VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
