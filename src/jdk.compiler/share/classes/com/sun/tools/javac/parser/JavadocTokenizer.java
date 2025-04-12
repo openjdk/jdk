@@ -305,14 +305,14 @@ public class JavadocTokenizer extends JavaTokenizer {
             need += size;
             int grow = map.length;
 
-            while (need > grow) {
+            while (need > grow && grow <= Integer.MAX_VALUE/2) {
                 grow <<= 1;
             }
 
             // Handle overflow.
-            if (grow < map.length) {
-                throw new IndexOutOfBoundsException();
-            } else if (grow != map.length) {
+            if (grow < need) {
+                throw new IllegalArgumentException();
+            } else if (grow > map.length) {
                 map = Arrays.copyOf(map, grow);
             }
         }
