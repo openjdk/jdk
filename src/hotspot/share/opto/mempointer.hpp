@@ -41,9 +41,9 @@
 //  - alignment                  -> find an alignment solution for all memops in a vectorized loop
 //  - detect partial overlap     -> indicates store-to-load-forwarding failures
 //
-// A more advanced use case is proving that some loop induction variable (iv) dependent pointers
-// have a linear form, which allows us to formulate speculative aliasing runtime checks for two
-// or more memory operations in a loop where we cannot statically prove that they never overlap.
+// A more advanced use case of MemPointers is speculative aliasing analysis. If we can prove that
+// the MemPointer has a linear form in the loop induction variable (iv), we can formulate runtime
+// checks to establish that two MemPointer never overlap for all iterations, i.e. for all iv values.
 //
 // -----------------------------------------------------------------------------------------
 //
@@ -162,7 +162,7 @@
 //
 //     pointer = SUM(summands) + con
 //
-//   Where each summand_i in summands has the form:
+//   Where each summand_i in summands has the MemPointerSummand form:
 //
 //     summand_i = scale_i * variable_i
 //
@@ -694,16 +694,16 @@ public:
 // we need to track the scale inside (scaleI) and outside (scaleL) the
 // ConvI2L. With the example from above:
 //
+//   pointer = base + 2L * ConvI2L(i + 4 * j + con1) + con2
+//
 //   _variable  = base  _variable  = i  _variable  = j  _variable  = null  _variable  = null
-//   _scaleI    = 1     _scaleI    = 1  _scaleI    = 4  _scaleI    = con1  _scaleI    = con2
-//   _scaleL    = 1     _scaleL    = 2  _scaleL    = 2  _scaleL    = 2     _scaleL    = 1
+//   _scaleI    = 1     _scaleI    = 1  _scaleI    = 4  _scaleI    = con1  _scaleI    = 1
+//   _scaleL    = 1     _scaleL    = 2  _scaleL    = 2  _scaleL    = 2     _scaleL    = con2
 //   _int_group = 0     _int_group = 1  _int_group = 1  _int_group = 1     _int_group = 0
 //
 // Note: we also need to track constants as separate raw summands. For
 //       this, we say that a raw summand tracks a constant iff _variable == null,
 //       and we store the constant value in _scaleI.
-//
-// TODO: move this to the top of the file? Restructure???
 //
 class MemPointerRawSummand : public StackObj {
 private:
@@ -880,11 +880,20 @@ public:
   };
 
 private:
+  // Raw summands: represent the pointer form exactly, allowing the reconstruction of the
+  //               pointer expression. Overflows inside the "int groups" (i.e. ConvI2L)
+  //               are preserved, and there may be multiple constants.
   MemPointerRawSummand _raw_summands[RAW_SUMMANDS_SIZE];
+
+  // Summands:     Simplified form, with only a single constant. Makes aliasing analysis
+  //               much simpler.
   MemPointerSummand _summands[SUMMANDS_SIZE];
   const NoOverflowInt _con;
   const Base _base;
+
+  // Size in bytes for the referenced memory region: [pointer, pointer + size)
   const jint _size;
+
   NOT_PRODUCT( const TraceMemPointer& _trace; )
 
   // Default / trivial: pointer = 0 + 1 * pointer
