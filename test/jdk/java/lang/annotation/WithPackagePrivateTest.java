@@ -41,7 +41,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test public annotations that has elements of package-private types.
+ * Test public annotations that have elements of package-private types.
  */
 @WithPackagePrivateTest.InaccessibleElement(WithPackagePrivateTest.MySecretEnum.FIRST)
 @WithPackagePrivateTest.InaccessibleElement(WithPackagePrivateTest.MySecretEnum.SECOND)
