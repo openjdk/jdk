@@ -81,7 +81,7 @@ private:
   void set_req_with_vector(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies, const int index);
   void set_all_req_with_scalars(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
   void set_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies);
-  void add_dependencies_of_node_to_vtnode(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
+  void add_memory_dependencies_of_node_to_vtnode(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
 };
 
 #endif // SHARE_OPTO_SUPERWORD_VTRANSFORM_BUILDER_HPP
