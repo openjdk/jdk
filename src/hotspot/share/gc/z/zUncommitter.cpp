@@ -75,6 +75,9 @@ void ZUncommitter::run_thread() {
       }
 
       total_uncommitted += uncommitted;
+
+      // Wait until next uncommit
+      wait(timeout);
     }
 
     if (total_uncommitted > 0) {
