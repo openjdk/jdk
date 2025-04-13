@@ -23,17 +23,19 @@
 
 /*
  * @test
- * @bug 8333854
+ * @bug 8333854 8349716
  * @summary Test invoking a method in a proxy interface with package-private
  *          classes or interfaces in its method type
  * @run junit NonPublicMethodTypeTest
  */
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.reflect.Proxy;
 
-import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.*;
 
 public final class NonPublicMethodTypeTest {
     interface NonPublicWorker {
@@ -44,16 +46,39 @@ public final class NonPublicMethodTypeTest {
         void accept(NonPublicWorker worker);
     }
 
+    public interface PublicWorkerFactory {
+        NonPublicWorker provide();
+    }
+
     @Test
-    public void test() {
+    public void passParameter() {
         PublicWorkable proxy = (PublicWorkable) Proxy.newProxyInstance(
                NonPublicMethodTypeTest.class.getClassLoader(),
                new Class[] {PublicWorkable.class},
                (_, _, _) -> null);
-        assertNotSame(NonPublicWorker.class.getPackage(),
-                proxy.getClass().getPackage(),
-                "Proxy class should not be able to access method parameter " +
-                        "NonPublic type's package");
         proxy.accept(() -> {}); // Call should not fail
+    }
+
+    @Test
+    public void obtainReturn() {
+        PublicWorkerFactory proxy = (PublicWorkerFactory) Proxy.newProxyInstance(
+               NonPublicMethodTypeTest.class.getClassLoader(),
+               new Class[] {PublicWorkerFactory.class},
+               (_, _, _) -> (NonPublicWorker) () -> {});
+        assertNotNull(proxy.provide()); // Call should not fail
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {PublicWorkable.class, PublicWorkerFactory.class})
+    public void inspectReflectively(Class<?> intf) {
+        var proxy = Proxy.newProxyInstance(
+                NonPublicMethodTypeTest.class.getClassLoader(),
+                new Class[] {intf},
+                (_, _, _) -> null);
+
+        assertSame(NonPublicWorker.class.getPackage(),
+                   proxy.getClass().getPackage(),
+                   "Proxy class must be able to access method parameter " +
+                           "NonPublic type's package");
     }
 }
