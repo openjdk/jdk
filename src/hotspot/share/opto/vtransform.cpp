@@ -266,8 +266,8 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
     }
 #endif
 
-    // TODO: ResourceMark, collides with resource allocation in PhaseIdealLoop::set_idom
-    //ResourceMark rm;
+    // It would be nice to add a ResourceMark here. But it would collide with resource allocation
+    // in PhaseIdealLoop::set_idom for _idom and _dom_depth. See also JDK-8337015.
     VectorSet visited;
     GrowableArray<VPointerWeakAliasingPair> weak_aliasing_pairs;
 
