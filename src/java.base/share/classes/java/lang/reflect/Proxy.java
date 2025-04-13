@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  * on its {@code Class} object will return an array containing the same
  * list of interfaces (in the order specified at its creation), invoking
  * {@link Class#getMethods getMethods} on its {@code Class} object will return
- * an array of {@code Method} objects that include all of the
+ * an array of {@code Method} objects that include all of the public non-static
  * methods in those interfaces, and invoking {@code getMethod} will
  * find methods in the proxy interfaces as would be expected.
  *
@@ -165,40 +165,36 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  *
  * The package and module to which a proxy class belongs are chosen such that
  * the accessibility of the proxy class is in line with the accessibility of
- * the proxy interfaces. Specifically, the package and the module membership
- * of a proxy class defined via the
+ * the proxy interfaces and all classes and interfaces referenced by signatures
+ * of all public non-static methods from the proxy interfaces. Specifically, the
+ * package and the module membership of a proxy class defined via the
  * {@link Proxy#getProxyClass(ClassLoader, Class[])} or
  * {@link Proxy#newProxyInstance(ClassLoader, Class[], InvocationHandler)}
  * methods is specified as follows:
  *
  * <ol>
- * <li>If all the proxy interfaces are in <em>exported</em> or <em>open</em>
- *     packages:
+ * <li>If some of these classes and interfaces are <em>non-public</em>, all
+ *     non-public classes and interfaces must be in the same package and module,
+ *     and that module must be able to access all public classes, some of which
+ *     may be in <em>non-exported</em> and <em>non-open</em> packages.
+ *     Otherwise, proxying is {@linkplain ##restrictions not possible}.
+ *     The proxy class is <em>non-public</em> in the same package and module as
+ *     the non-public classes and interfaces.
+ *     </li>
+ * <li>Otherwise, all these classes and interfaces are <em>public</em>, and all
+ *     proxy interfaces are public.
  * <ol type="a">
- * <li>if all the proxy interfaces are <em>public</em>, then the proxy class is
- *     <em>public</em> in an unconditionally exported but non-open package.
- *     The name of the package and the module are unspecified.</li>
- *
- * <li>if at least one of all the proxy interfaces is <em>non-public</em>, then
- *     the proxy class is <em>non-public</em> in the package and module of the
- *     non-public interfaces. All the non-public interfaces must be in the same
- *     package and module; otherwise, proxying them is
- *     <a href="#restrictions">not possible</a>.</li>
- * </ol>
- * </li>
- * <li>If at least one proxy interface is in a package that is
- *     <em>non-exported</em> and <em>non-open</em>:
- * <ol type="a">
- * <li>if all the proxy interfaces are <em>public</em>, then the proxy class is
+ * <li>If all proxy interfaces are in <em>exported</em> or <em>open</em>
+ *     packages, the proxy class is <em>public</em> in an unconditionally
+ *     exported but non-open package in a {@linkplain ##dynamicmodule
+ *     <em>dynamic module</em>}. The names of the package and the module are
+ *     unspecified. (In this case, any of the referenced class or interface that
+ *     is not a proxied interface may be non-exported and non-open.)</li>
+ * <li>Otherwise, at least one of the proxy interfaces is in a package that is
+ *     <em>non-exported</em> and <em>non-open</em>, and the proxy class is
  *     <em>public</em> in a <em>non-exported</em>, <em>non-open</em> package of
- *     <a href="#dynamicmodule"><em>dynamic module</em>.</a>
- *     The names of the package and the module are unspecified.</li>
- *
- * <li>if at least one of all the proxy interfaces is <em>non-public</em>, then
- *     the proxy class is <em>non-public</em> in the package and module of the
- *     non-public interfaces. All the non-public interfaces must be in the same
- *     package and module; otherwise, proxying them is
- *     <a href="#restrictions">not possible</a>.</li>
+ *     a {@linkplain ##dynamicmodule <em>dynamic module</em>}. The names of the
+ *     package and the module are unspecified.</li>
  * </ol>
  * </li>
  * </ol>
@@ -544,7 +540,7 @@ public class Proxy implements java.io.Serializable {
         private final List<Class<?>> interfaces;
         private final ProxyClassContext context;
         ProxyBuilder(ClassLoader loader, List<Class<?>> interfaces) {
-            Objects.requireNonNull(interfaces);
+            Objects.requireNonNull(interfaces); // trusted immutable list
             if (!VM.isModuleSystemInited()) {
                 throw new InternalError("Proxy is not supported until "
                         + "module system is fully initialized");
@@ -554,7 +550,7 @@ public class Proxy implements java.io.Serializable {
                         + interfaces.size());
             }
 
-            Set<Class<?>> refTypes = referencedTypes(loader, interfaces);
+            Set<Class<?>> refTypes = referencedTypes(interfaces);
 
             // IAE if violates any restrictions specified in newProxyInstance
             validateProxyInterfaces(loader, interfaces, refTypes);
@@ -617,12 +613,6 @@ public class Proxy implements java.io.Serializable {
                 }
 
                 /*
-                 * Verify that the class loader resolves the name of this
-                 * interface to the same Class object.
-                 */
-                ensureVisible(loader, intf);
-
-                /*
                  * Verify that this interface is not a duplicate.
                  */
                 if (interfaceSet.put(intf, Boolean.TRUE) != null) {
@@ -631,17 +621,22 @@ public class Proxy implements java.io.Serializable {
             }
 
             for (Class<?> type : refTypes) {
+                /*
+                 * Verify that the class loader resolves the name of a class or
+                 * interface that appear in descriptors to the desired Class object,
+                 * or the name of implemented interfaces.
+                 */
                 ensureVisible(loader, type);
             }
         }
 
         /*
          * Returns all types referenced by all public non-static method signatures of
-         * the proxy interfaces
+         * the proxy interfaces and the interface themselves. Required to ensure
+         * the generated class files have no format errors.
          */
-        private static Set<Class<?>> referencedTypes(ClassLoader loader,
-                                                     List<Class<?>> interfaces) {
-            var types = new HashSet<Class<?>>();
+        private static Set<Class<?>> referencedTypes(List<Class<?>> interfaces) {
+            var types = new HashSet<>(interfaces);
             for (var intf : interfaces) {
                 for (Method m : intf.getMethods()) {
                     if (!Modifier.isStatic(m.getModifiers())) {
@@ -671,75 +666,74 @@ public class Proxy implements java.io.Serializable {
 
         /**
          * Returns the context for the generated proxy class, including the
-         * module and the package it belongs to and whether it is package-private.
+         * module and the package it belongs to and whether it is
+         * package-private.
          *
-         * If any of proxy interface is package-private, then the proxy class
-         * is in the same package and module as the package-private interface.
+         * If any of the referenced types is package-private, then the proxy
+         * class is in the same package and module as the package-private type.
+         * Validation is performed to ensure the package-private types specify
+         * exactly one package and module, and ensures accessibility.
+         * In particular, if all proxy interfaces are public but some proxy
+         * method refers to a package-private type, package access is required
+         * to interact with such a type in class files.
          *
-         * If all proxy interfaces are public and in exported packages,
-         * then the proxy class is in a dynamic module in an unconditionally
-         * exported package.
+         * Otherwise, all proxy interfaces are public, and the proxy class is in
+         * a dynamic module. Reads edge and qualified exports are added for
+         * dynamic module to access.
+         * 1. If proxy interfaces are all in exported packages, then the proxy
+         *    class is in an unconditionally exported package. This is safe even
+         *    if some referenced type is public in a non-exported package per
+         *    Java access control, as no additional method is exposed.
+         * 2. Otherwise, at least one in a non-exported package, then the proxy
+         *    class is in a non-exported package. This ensures that public
+         *    methods from non-exported packages won't be accessible on the
+         *    returned proxy.
          *
-         * If all proxy interfaces are public and at least one in a non-exported
-         * package, then the proxy class is in a dynamic module in a
-         * non-exported package.
-         *
-         * The package of proxy class is open to java.base for deep reflective access.
-         *
-         * Reads edge and qualified exports are added for dynamic module to access.
+         * The package of proxy class is open to java.base for deep reflective
+         * access for implementation support.
          */
         private static ProxyClassContext proxyClassContext(ClassLoader loader,
                                                            List<Class<?>> interfaces,
                                                            Set<Class<?>> refTypes) {
-            Map<Class<?>, Module> packagePrivateTypes = new HashMap<>();
-            boolean nonExported = false;
+            Class<?> packagePrivateTarget = null;
 
-            for (Class<?> intf : interfaces) {
-                Module m = intf.getModule();
-                if (!Modifier.isPublic(intf.getModifiers())) {
-                    packagePrivateTypes.put(intf, m);
-                } else {
-                    if (!intf.getModule().isExported(intf.getPackageName())) {
-                        // module-private types
-                        nonExported = true;
+            for (Class<?> type : refTypes) {
+                if (!Modifier.isPublic(type.getModifiers())) {
+                    var m = type.getModule();
+                    if (packagePrivateTarget == null) {
+                        packagePrivateTarget = type;
+
+                        if (m.getClassLoader() != loader) {
+                            // the specified loader is not the same class loader
+                            // of the non-public interface
+                            throw new IllegalArgumentException(
+                                    "non-public interface is not defined by the given loader");
+                        }
+                    } else {
+                        // all package-private types must be in the same runtime package
+                        // i.e. same package name and same module (named or unnamed)
+                        // Same module implies same loader, then the same interned package name is
+                        // sufficient to ensure the run-time package is the same
+                        if ((packagePrivateTarget.getModule() != m) ||
+                            (packagePrivateTarget.getPackageName() != type.getPackageName())) {
+                            throw new IllegalArgumentException(
+                                    "cannot have non-public interfaces in different packages");
+                        }
                     }
                 }
             }
 
-            if (packagePrivateTypes.size() > 0) {
-                // all package-private types must be in the same runtime package
-                // i.e. same package name and same module (named or unnamed)
-                //
-                // Configuration will fail if M1 and in M2 defined by the same loader
-                // and both have the same package p (so no need to check class loader)
-                Module targetModule = null;
-                String targetPackageName = null;
-                for (Map.Entry<Class<?>, Module> e : packagePrivateTypes.entrySet()) {
-                    Class<?> intf = e.getKey();
-                    Module m = e.getValue();
-                    if ((targetModule != null && targetModule != m) ||
-                        (targetPackageName != null && targetPackageName != intf.getPackageName())) {
-                        throw new IllegalArgumentException(
-                                "cannot have non-public interfaces in different packages");
-                    }
-                    if (m.getClassLoader() != loader) {
-                        // the specified loader is not the same class loader
-                        // of the non-public interface
-                        throw new IllegalArgumentException(
-                                "non-public interface is not defined by the given loader");
-                    }
+            if (packagePrivateTarget != null) {
+                Module targetModule = packagePrivateTarget.getModule();
+                String targetPackageName = packagePrivateTarget.getPackageName();
 
-                    targetModule = m;
-                    targetPackageName = e.getKey().getPackageName();
-                }
-
-                // validate if the target module can access all other interfaces
-                for (Class<?> intf : interfaces) {
-                    Module m = intf.getModule();
+                // validate if the target module can access all other referenced types
+                for (Class<?> type : refTypes) {
+                    Module m = type.getModule();
                     if (m == targetModule) continue;
 
-                    if (!targetModule.canRead(m) || !m.isExported(intf.getPackageName(), targetModule)) {
-                        throw new IllegalArgumentException(targetModule + " can't access " + intf.getName());
+                    if (!targetModule.canRead(m) || !m.isExported(type.getPackageName(), targetModule)) {
+                        throw new IllegalArgumentException(targetModule + " can't access " + type.getName());
                     }
                 }
 
@@ -751,15 +745,21 @@ public class Proxy implements java.io.Serializable {
                 return new ProxyClassContext(targetModule, targetPackageName, 0);
             }
 
+            boolean nonExported = false;
+            for (var intf : interfaces) {
+                if (!intf.getModule().isExported(intf.getPackageName())) {
+                    // module-private types
+                    nonExported = true;
+                }
+            }
+
             // All proxy interfaces are public.  So maps to a dynamic proxy module
             // and add reads edge and qualified exports, if necessary
             Module targetModule = getDynamicModule(loader);
 
             // set up proxy class access to proxy interfaces and types
             // referenced in the method signature
-            Set<Class<?>> types = new HashSet<>(interfaces);
-            types.addAll(refTypes);
-            for (Class<?> c : types) {
+            for (Class<?> c : refTypes) {
                 ensureAccess(targetModule, c);
             }
 
@@ -867,12 +867,12 @@ public class Proxy implements java.io.Serializable {
      * and those inherited by their superinterfaces
      * must be visible by name through the specified class loader.
      *
-     * <li>All non-public interfaces must be in the same package
-     * and module, defined by the specified class loader and
-     * the module of the non-public interfaces can access all of
-     * the interface types; otherwise, it would not be possible for
-     * the proxy class to implement all of the interfaces,
-     * regardless of what package it is defined in.
+     * <li>All non-public interfaces and all non-public classes and interfaces
+     * referenced by all public non-static method signatures must be in the same
+     * package and module, defined by the specified class loader and can access
+     * all of the interfaces and the referenced classes and interfaces; otherwise,
+     * it would not be possible for the proxy class to implement all of the
+     * interfaces, regardless of what package it is defined in.
      *
      * <li>For any set of member methods of the specified interfaces
      * that have the same signature:
