@@ -26,7 +26,7 @@
  * @bug 4151419, 4090870, 4169733
  * @summary Ensures that KeyEvent has right results for the following
  *          keys  -=\[];,./
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual KeyTest
  */
