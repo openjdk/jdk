@@ -1065,7 +1065,7 @@ public class TestSplitPacks {
         phase = CompilePhase.PRINT_IDEAL,
         applyIfAnd = {"MaxVectorSize", ">=32", "UseAutoVectorizationSpeculativeAliasingChecks", "true"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true", "rvv", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     // Speculative aliasing check with multiversioning -> full vectorization & split packs.
     static Object[] test4g_alias(short[] a, short[] b) {
         for (int i = 0; i < RANGE-64; i++) {
