@@ -778,14 +778,12 @@ size_t ZPartition::uncommit(uint64_t* timeout) {
       // We are in the uncommit phase
       const size_t num_uncommits_left = _to_uncommit / limit;
       const double time_left = double(ZUncommitDelay) - time_since_last_uncommit;
-      if (time_left < *timeout * num_uncommits_left) {
-        // Running out of time, speed up.
-        uint64_t new_timeout = uint64_t(std::floor(time_left / double(num_uncommits_left + 1)));
-        *timeout = new_timeout;
-      }
+
+      // Update timeout for the remaining uncommit
+      *timeout = uint64_t(std::floor(time_left / double(num_uncommits_left + 1)));
     } else {
       // We are about to start uncommitting
-      _to_uncommit = _cache.reset_min();
+      _to_uncommit = MIN2(_capacity - _min_capacity, _cache.reset_min());
       _last_uncommit = now;
 
       const size_t split = _to_uncommit / limit + 1;
