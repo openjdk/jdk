@@ -974,7 +974,6 @@ private:
   {
     assert(!_con.is_NaN(), "non-NaN constant");
 
-    // TODO: how to adjust com?
     for (int i = 0; i < RAW_SUMMANDS_SIZE; i++) {
       _raw_summands[i] = old.raw_summands_at(i);
     }

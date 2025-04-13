@@ -624,13 +624,12 @@ bool VPointer::can_make_speculative_aliasing_check_with(const VPointer& other) c
   // The pointers never overlap -> a speculative check would always succeed.
   assert(!vp1.never_overlaps_with(vp2), "ensured by caller");
 
-  // The check happens before the main-loop, and even before the pre-loop,
-  // either at the AutoVectorization Predicate or the multiversion_if.
-  // From the construction of VPointer, we already know that all its variables
-  // (except iv) are pre-loop invariant.
-  // As proven above, we can replace iv with init. And depending on the case,
-  // we also need to use the limit.
-  // TODO: more precision here!
+  // The speculative aliasing check happens either at the AutoVectorization predicate
+  // or at the multiversion_if. That is before the pre-loop. From the construction of
+  // VPointer, we already know that all its variables (except iv) are pre-loop invariant.
+  // For the check, we are going to replace the iv with init, and in some cases we also
+  // use the limit in the check. Hence, we must check that the init is also pre-loop
+  // invariant, and if the limit is used it must also be pre-loop invarinat.
   Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
   Node* init = pre_opaq->in(1);
   Node* limit = _vloop.cl()->limit();
@@ -675,11 +674,9 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
   PhaseIdealLoop* phase = _vloop.phase();
   PhaseIterGVN& igvn = phase->igvn();
 
-  // init: cannot take the main-init, because it depends on the pre-loop
-  //       trip-count. But the limit_pre should be independent, and we
-  //       know that the main-init >= limit_pre. TODO: details.
-  // TODO: check if limit is really ok, or if we have to adjust slightly.
-  //       also we have to check that we don't create cycles ...
+  // The main-init is usually dependent on the pre-loop iv, and so it is not pre-loop independent,
+  // i.e. we canot use it before the pre-loop. But we can use the pre-loop limit, it is pre-loop
+  // independent in most cases.
   Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
   Node* init = pre_opaq->in(1);
   Node* limit = _vloop.cl()->limit();
@@ -769,7 +766,10 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
   }
 #endif
 
-  // Convert bol back to int value that we can OR.
+  // Construct "condition1 OR condition2". Convert the bol value back to an int value
+  // that we can "OR" to create a single bol value. On x64, the two CMove are converted
+  // to two setbe instructions which capture the condition bits to a register, meaning
+  // we only have a single branch in the end.
   Node* zero = igvn.intcon(0);
   Node* one  = igvn.intcon(1);
   Node* cmov1 = new CMoveINode(condition1, zero, one, TypeInt::INT);
@@ -778,7 +778,6 @@ BoolNode* VPointer::make_speculative_aliasing_check_with(const VPointer& other) 
   phase->register_new_node_with_ctrl_of(cmov2, init);
 
   Node* c1_or_c2 = new OrINode(cmov1, cmov2);
-  //tty->print("c1_or_c2 "); c1_or_c2->dump();
   Node* cmp = CmpNode::make(c1_or_c2, zero, T_INT);
   BoolNode* bol = new BoolNode(cmp, BoolTest::ne);
   phase->register_new_node_with_ctrl_of(c1_or_c2, init);
@@ -802,11 +801,6 @@ Node* VPointer::make_pointer_expression(Node* iv_value) const {
     phase->register_new_node(add, ctrl);
     return add;
   };
-
-  // TODO: better printing?
-  //tty->print_cr("VPointer::make_pointer_expression");
-  //tty->print("iv_value "); iv_value->dump();
-  //print_on(tty);
 
   Node* expression = nullptr;
   mem_pointer().for_each_raw_summand_of_int_group(0, [&] (const MemPointerRawSummand& s) {

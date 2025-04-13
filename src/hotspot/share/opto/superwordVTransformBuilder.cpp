@@ -310,14 +310,9 @@ void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtnode(Node* n, VTr
 
     VTransformNode* dependency = get_vtnode(pred);
 
-    // TODO: bogus check?
-    // Reduction self-cycle?
-    if (vtn == dependency && _vloop_analyzer.reductions().is_marked_reduction(n)) { continue; }
-
     // Add every dependency only once per vtn.
     if (vtn_dependencies.test_set(dependency->_idx)) { continue; }
 
-    // TODO: verify weak / strong with VPointer of vectors!
     if (are_speculative_checks_possible && preds.is_current_weak_edge()) {
       vtn->add_weak_memory_dependency(dependency);
     } else {
