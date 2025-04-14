@@ -52,6 +52,8 @@ public class bug4247610 {
     private static JButton damager;
     private static volatile Point loc;
     private static volatile Dimension size;
+    private static volatile boolean traced;
+    private static volatile boolean failed;
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
@@ -81,8 +83,8 @@ public class bug4247610 {
             final Random random = new Random();
 
             damager.addActionListener((e) -> {
-                System.out.println("traceRepaints called");
-                traceRepaints();
+                System.out.println("trace paints enabled");
+                traced = true;
                 damagee.setText(Integer.toString(random.nextInt()));
             });
             frame.setContentPane(pane);
@@ -101,27 +103,11 @@ public class bug4247610 {
         robot.delay(200);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        if (failed()) {
+        if (failed) {
             throw new RuntimeException("Failed: unnecessary repaint occured");
         }
     }
 
-    private static volatile boolean traceFlag;
-    private static volatile boolean passFlag = true;
-
-    private static synchronized void traceRepaints() {
-        traceFlag = true;
-    }
-    private static synchronized boolean repaintsTraced() {
-        return traceFlag;
-    }
-
-    private static synchronized boolean failed() {
-        return !passFlag;
-    }
-    private static synchronized void fail() {
-        passFlag = false;
-    }
 
     static class InternalFramePanel extends JPanel {
         final AtomicInteger repaintCounter = new AtomicInteger(0);
@@ -134,8 +120,8 @@ public class bug4247610 {
             super.paintComponent(g);
             repaintCounter.incrementAndGet();
             System.out.println("repaintCounter " + repaintCounter.intValue());
-            if (repaintsTraced()) {
-                fail();
+            if (traced) {
+                failed = true;
             }
         }
     }
