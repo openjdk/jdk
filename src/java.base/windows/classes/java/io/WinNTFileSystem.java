@@ -368,16 +368,13 @@ final class WinNTFileSystem extends FileSystem {
         if (ENABLE_ADS)
             return false;
 
-        // Invalid if there is a ":" at a position greater than 1, or if there
+        // Invalid if there is a ":" at a position other than 1, or if there
         // is a ":" at position 1 and the first character is not a letter
         String pathname = f.getPath();
         int lastColon = pathname.lastIndexOf(":");
-
-        // Valid if there is no ":" present or if the last ":" present is
-        // at index 1 and the first character is a latter
-        if (lastColon < 0 ||
-            (lastColon == 1 && isLetter(pathname.charAt(0))))
-            return false;
+        if (lastColon >= 0 &&
+            (lastColon != 1 || !isLetter(pathname.charAt(0))))
+            return true;
 
         // Invalid if path creation fails
         Path path = null;
