@@ -156,13 +156,13 @@ inline size_t ShenandoahHeapRegion::get_live_data_bytes() const {
 }
 
 inline size_t ShenandoahHeapRegion::get_mixed_candidate_live_data_bytes() const {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at Shenandoah safepoint");
+  shenandoah_assert_heaplocked_or_safepoint();
   assert(used() >= _mixed_candidate_garbage_words * HeapWordSize, "used must exceed garbage");
   return used() - _mixed_candidate_garbage_words * HeapWordSize;
 }
 
 inline size_t ShenandoahHeapRegion::get_mixed_candidate_live_data_words() const {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at Shenandoah safepoint");
+  shenandoah_assert_heaplocked_or_safepoint();
   assert(used() >= _mixed_candidate_garbage_words * HeapWordSize, "used must exceed garbage");
   return used() / HeapWordSize - _mixed_candidate_garbage_words;
 }
@@ -181,7 +181,7 @@ inline size_t ShenandoahHeapRegion::garbage() const {
          "Live Data must be a subset of used() live: %zu used: %zu",
          get_live_data_bytes(), used());
   size_t result = used() - get_live_data_bytes();
-#define KELVIN_CANDIDATE_GARBAGE
+#undef KELVIN_CANDIDATE_GARBAGE
 #ifdef KELVIN_CANDIDATE_GARBAGE
   if (result > 0) {
     log_info(gc)("R%zu::G%zu=U%zu-L%zu,T" PTR_FORMAT,

@@ -231,12 +231,21 @@ public:
   }
 
   inline void set_capacity_of(ShenandoahFreeSetPartitionId which_partition, size_t value) {
+#undef KELVIN_DEBUG_CAPACITY
+#ifdef KELVIN_DEBUG_CAPACITY
+    extern const char* partition_name(ShenandoahFreeSetPartitionId t);
+    log_info(gc)("K sco c[%c]: %zu", partition_name(which_partition)[0], value);
+#endif
     assert (which_partition < NumPartitions, "selected free set must be valid");
     shenandoah_assert_heaplocked_or_safepoint();
     _capacity[int(which_partition)] = value;
   }
 
   inline void set_used_by(ShenandoahFreeSetPartitionId which_partition, size_t value) {
+#ifdef KELVIN_DEBUG_CAPACITY
+    extern const char* partition_name(ShenandoahFreeSetPartitionId t);
+    log_info(gc)("K sub u[%c]: %zu", partition_name(which_partition)[0], value);
+#endif
     assert (which_partition < NumPartitions, "selected free set must be valid");
     shenandoah_assert_heaplocked_or_safepoint();
     _used[int(which_partition)] = value;
@@ -455,7 +464,7 @@ public:
   // Acquire heap lock and log status, assuming heap lock is not acquired by the caller.
   void log_status_under_lock();
 
-  // Note that capacity is the number of regions that had available memory at most recent rebuild.  It is not the
+  // Note that capacity is the number of bytes in regions that had available memory at most recent rebuild.  It is not the
   // entire size of the young or global generation.  (Regions within the generation that were fully utilized at time of
   // rebuild are not counted as part of capacity.)
   inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator); }

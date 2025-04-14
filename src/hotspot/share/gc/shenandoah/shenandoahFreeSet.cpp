@@ -38,6 +38,20 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/orderAccess.hpp"
 
+#undef KELVIN_DEBUG_CAPACITY
+#ifdef KELVIN_DEBUG_CAPACITY
+const char* partition_name(ShenandoahFreeSetPartitionId t) {
+  switch (t) {
+    case ShenandoahFreeSetPartitionId::NotFree: return "NotFree";
+    case ShenandoahFreeSetPartitionId::Mutator: return "Mutator";
+    case ShenandoahFreeSetPartitionId::Collector: return "Collector";
+    case ShenandoahFreeSetPartitionId::OldCollector: return "OldCollector";
+    default:
+      ShouldNotReachHere();
+      return "Unrecognized";
+  }
+}
+#else
 static const char* partition_name(ShenandoahFreeSetPartitionId t) {
   switch (t) {
     case ShenandoahFreeSetPartitionId::NotFree: return "NotFree";
@@ -49,6 +63,7 @@ static const char* partition_name(ShenandoahFreeSetPartitionId t) {
       return "Unrecognized";
   }
 }
+#endif
 
 class ShenandoahLeftRightIterator {
 private:
@@ -230,6 +245,10 @@ void ShenandoahRegionPartitions::make_all_regions_unavailable() {
     _capacity[partition_id] = 0;
     _used[partition_id] = 0;
   }
+#undef KELVIN_CAPACITY
+#ifdef KELVIN_CAPACITY
+  log_info(gc)("K:maru all c:0 u:0");
+#endif
   _region_counts[int(ShenandoahFreeSetPartitionId::Mutator)] = _region_counts[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
 }
 
@@ -255,6 +274,11 @@ void ShenandoahRegionPartitions::establish_mutator_intervals(idx_t mutator_leftm
   _region_counts[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
   _used[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
   _capacity[int(ShenandoahFreeSetPartitionId::Collector)] = 0;
+#ifdef KELVIN_CAPACITY
+  log_info(gc)("K:emi c[M]:%zu u[M]:%zu",
+               _capacity[int(ShenandoahFreeSetPartitionId::Mutator)], _used[int(ShenandoahFreeSetPartitionId::Mutator)]);
+  log_info(gc)("        sets _used[Collector] and _capacity[Collector] to zero");
+#endif
 }
 
 void ShenandoahRegionPartitions::establish_old_collector_intervals(idx_t old_collector_leftmost, idx_t old_collector_rightmost,
@@ -271,12 +295,21 @@ void ShenandoahRegionPartitions::establish_old_collector_intervals(idx_t old_col
   _region_counts[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_region_count;
   _used[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_used;
   _capacity[int(ShenandoahFreeSetPartitionId::OldCollector)] = old_collector_region_count * _region_size_bytes;
+#ifdef KELVIN_CAPACITY
+  log_info(gc)("K eoci c[O]:%zu u[O]:%zu",
+               _capacity[int(ShenandoahFreeSetPartitionId::OldCollector)], _used[int(ShenandoahFreeSetPartitionId::OldCollector)]);
+#endif
 }
 
 void ShenandoahRegionPartitions::increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
   shenandoah_assert_heaplocked_or_safepoint();
   assert (which_partition < NumPartitions, "Partition must be valid");
   _used[int(which_partition)] += bytes;
+#undef KELVIN_CAPACITY
+#ifdef KELVIN_CAPACITY
+  log_info(gc)("K iu u[%c]:%zu (+%zu)",
+               partition_name(which_partition)[0], _used[int(which_partition)], bytes);
+#endif
   assert (_used[int(which_partition)] <= _capacity[int(which_partition)],
           "Must not use (%zu) more than capacity (%zu) after increase by %zu",
           _used[int(which_partition)], _capacity[int(which_partition)], bytes);
@@ -437,6 +470,11 @@ void ShenandoahRegionPartitions::make_free(idx_t idx, ShenandoahFreeSetPartition
   _membership[int(which_partition)].set_bit(idx);
   _capacity[int(which_partition)] += _region_size_bytes;
   _used[int(which_partition)] += _region_size_bytes - available;
+#ifdef KELVIN_CAPACITY
+  log_info(gc)("K mf(r %zu) c[%c]:%zu , u[]:%zu (+ %zu)",
+               idx, partition_name(which_partition)[0], _capacity[int(which_partition)], _used[int(which_partition)],
+               _region_size_bytes - available);
+#endif
   expand_interval_if_boundary_modified(which_partition, idx, available);
   _region_counts[int(which_partition)]++;
 }
@@ -506,6 +544,13 @@ void ShenandoahRegionPartitions::move_from_partition_to_partition(idx_t idx, She
   _used[int(new_partition)] += used;
   expand_interval_if_boundary_modified(new_partition, idx, available);
 
+#ifdef KELVIN_CAPACITY
+  log_info(gc)("K mfptp (%c->%c) (+%zu)"
+               " %c c:%zu, u:%zu, %c c: %zu, u: %zu",
+               partition_name(orig_partition)[0], partition_name(new_partition)[0], used,
+               partition_name(orig_partition)[0], _capacity[int(orig_partition)], _used[int(orig_partition)],
+               partition_name(new_partition)[0], _capacity[int(new_partition)], _used[int(new_partition)]);
+#endif
   _region_counts[int(orig_partition)]--;
   _region_counts[int(new_partition)]++;
 }

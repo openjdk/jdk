@@ -2582,9 +2582,10 @@ void ShenandoahHeap::rebuild_free_set_within_phase() {
     log_info(gc)("  young generation has used: %zu", young_gen->used_including_humongous_waste());
 #endif
 
+    old_heuristics->recalibrate_old_collection_candidates_live_memory();
     size_t mixed_candidate_live_words = old_heuristics->unprocessed_old_collection_candidates_live_memory() / HeapWordSize;
     size_t mixed_candidate_garbage_words = old_heuristics->unprocessed_old_collection_candidates_garbage() / HeapWordSize;
-#define KELVIN_CANDIDATE_GARBAGE
+#undef KELVIN_CANDIDATE_GARBAGE
 #ifdef KELVIN_CANDIDATE_GARBAGE
     log_info(gc)("Recomputing OldEvacRatio, mixed_candidate_live_words: %zu, garbage_words: %zu",
                  mixed_candidate_live_words, mixed_candidate_garbage_words);

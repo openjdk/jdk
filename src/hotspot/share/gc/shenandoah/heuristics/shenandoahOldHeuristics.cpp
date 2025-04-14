@@ -207,15 +207,7 @@ void ShenandoahOldHeuristics::slide_pinned_regions_to_front() {
   _next_old_collection_candidate = write_index + 1;
 }
 
-bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
-  if (unprocessed_old_collection_candidates() == 0) {
-    return false;
-  }
-
-  // Between consecutive mixed-evacuation cycles, the live data within each candidate region may change due to
-  // promotions and old-gen evacuations.  Re-sort the candidate regions in order to first evacuate regions that have
-  // the smallest amount of live data.  These are easiest to evacuate with least effort.  Doing these first allows
-  // us to more quickly replenish free memory with empty regions.
+void ShenandoahOldHeuristics::recalibrate_old_collection_candidates_live_memory() {
   size_t total_live_data;
   for (uint i = _next_old_collection_candidate; i < _last_old_collection_candidate; i++) {
     ShenandoahHeapRegion* r = _region_data[i].get_region();
@@ -226,6 +218,12 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
   QuickSort::sort<RegionData>(_region_data + _next_old_collection_candidate, unprocessed_old_collection_candidates(),
                               compare_by_live);
   _live_bytes_in_unprocessed_candidates = total_live_data;
+}
+
+bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
+  if (unprocessed_old_collection_candidates() == 0) {
+    return false;
+  }
 
   _first_pinned_candidate = NOT_FOUND;
 
@@ -295,7 +293,7 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
     _evacuated_old_bytes += live_data_for_evacuation;
     size_t region_garbage = r->used() - live_data_for_evacuation;
     _collected_old_bytes += region_garbage;
-#define KELVIN_CANDIDATE_GARBAGE
+#undef KELVIN_CANDIDATE_GARBAGE
 #ifdef KELVIN_CANDIDATE_GARBAGE
     log_info(gc)("Adding old candidate region %zu to cset with live: %zu (of total: %zu), garbage: %zu (of total: %zu)",
                  r->index(), live_data_for_evacuation, _evacuated_old_bytes, region_garbage, _collected_old_bytes);
@@ -491,7 +489,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     r->capture_mixed_candidate_garbage();
     candidates_garbage += region_garbage;
     unfragmented += region_free;
-#define KELVIN_CANDIDATE_GARBAGE
+#undef KELVIN_CANDIDATE_GARBAGE
 #ifdef KELVIN_CANDIDATE_GARBAGE
     log_info(gc)("Legit candidate region %zu has garbage: %zu (out of total: %zu), free: %zu (out of total: %zu), live: %zu",
                  r->index(), region_garbage, candidates_garbage, region_free, unfragmented, live);
