@@ -714,12 +714,14 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
     }
     case vmIntrinsics::_dsqrt:
     case vmIntrinsics::_dsqrt_strict: {
+      if (true) {
       assert(x->number_of_arguments() == 1, "wrong type");
       LIRItem value(x->argument_at(0), this);
       value.load_item();
       LIR_Opr dst = rlock_result(x);
       __ sqrt(value.result(), dst, LIR_OprFact::illegalOpr);
       break;
+      } // else fallthru
     }
     case vmIntrinsics::_dsin:   // fall through
     case vmIntrinsics::_dcos:   // fall through

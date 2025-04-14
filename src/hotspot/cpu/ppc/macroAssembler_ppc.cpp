@@ -1580,10 +1580,8 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
                                                    Register addr_base, Register tmp1, Register tmp2, Register tmp3,
                                                    bool cmpxchgx_hint, bool is_add, int size) {
   // Sub-word instructions are available since Power 8.
-  // For older processors, instruction_type != size holds, and we
-  // emulate the sub-word instructions by constructing a 4-byte value
-  // that leaves the other bytes unchanged.
 
+  const int instruction_type = size;
   Label retry;
   Register shift_amount = noreg,
            val32 = dest_current_value,
@@ -1593,7 +1591,22 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
   // atomic emulation loop
   bind(retry);
 
+  switch (instruction_type) {
+    case 4: lwarx(val32, addr_base, cmpxchgx_hint); break;
+    case 2: lharx(val32, addr_base, cmpxchgx_hint); break;
+    case 1: lbarx(val32, addr_base, cmpxchgx_hint); break;
+    default: ShouldNotReachHere();
+  }
+
   if (is_add) { add(modval, dest_current_value, exchange_value); }
+
+
+  switch (instruction_type) {
+    case 4: stwcx_(modval, addr_base); break;
+    case 2: sthcx_(modval, addr_base); break;
+    case 1: stbcx_(modval, addr_base); break;
+    default: ShouldNotReachHere();
+  }
 
   if (UseStaticBranchPredictionInCompareAndSwapPPC64) {
     bne_predict_not_taken(CR0, retry); // StXcx_ sets CR0.
@@ -1612,12 +1625,10 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
 // Temps, addr_base and exchange_value are killed if size < 4 and processor does not support respective instructions.
 // Only signed types are supported with size < 4.
 void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
-                                      RegisterOrConstant compare_value, Register exchange_value,
-                                      Register addr_base, Label &retry, Label &failed, bool cmpxchgx_hint, int size) {
+                                       RegisterOrConstant compare_value, Register exchange_value,
+                                       Register addr_base, Label &retry, Label &failed, bool cmpxchgx_hint, int size) {
   // Sub-word instructions are available since Power 8.
-  // For older processors, instruction_type != size holds, and we
-  // emulate the sub-word instructions by constructing a 4-byte value
-  // that leaves the other bytes unchanged.
+  const int instruction_type = size;
 
   Register shift_amount = noreg,
            val32 = dest_current_value,
@@ -1625,6 +1636,13 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
 
   // atomic emulation loop
   bind(retry);
+
+    switch (instruction_type) {
+    case 4: lwarx(val32, addr_base, cmpxchgx_hint); break;
+    case 2: lharx(val32, addr_base, cmpxchgx_hint); break;
+    case 1: lbarx(val32, addr_base, cmpxchgx_hint); break;
+    default: ShouldNotReachHere();
+  }
 
   if (size == 1) {
     extsb(dest_current_value, dest_current_value);
@@ -1640,6 +1658,13 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
   }
   // branch to done  => (flag == ne), (dest_current_value != compare_value)
   // fall through    => (flag == eq), (dest_current_value == compare_value)
+
+    switch (instruction_type) {
+    case 4: stwcx_(modval, addr_base); break;
+    case 2: sthcx_(modval, addr_base); break;
+    case 1: stbcx_(modval, addr_base); break;
+    default: ShouldNotReachHere();
+  }
 
 }
 
