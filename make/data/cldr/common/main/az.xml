@@ -2511,9 +2511,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Pnom Pen</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderböri</exemplarCity>
-			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Kirimati</exemplarCity>
 			</zone>
@@ -5486,7 +5483,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} millimol/litr</unitPattern>
 				<unitPattern count="other">{0} millimol/litr</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>milyonda hissəcik</displayName>
 				<unitPattern count="one">{0} milyonda hissəcik</unitPattern>
 				<unitPattern count="other">{0} milyonda hissəcik</unitPattern>
@@ -6093,7 +6090,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} işıq</unitPattern>
 				<unitPattern count="other">{0} işıq</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>bir milyarda düşən hissə sayı</displayName>
 				<unitPattern count="one">bir milyarda düşən {0} hissə</unitPattern>
 				<unitPattern count="other">bir milyarda düşən {0} hissə</unitPattern>
@@ -6220,7 +6217,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} element</unitPattern>
 				<unitPattern count="other">{0} element</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>hissəcik/milyon</displayName>
 				<unitPattern count="one">{0} hs/mln</unitPattern>
 				<unitPattern count="other">{0} hs/mln</unitPattern>
@@ -6662,7 +6659,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} işıq</unitPattern>
 				<unitPattern count="other">{0} işıq</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>hissə/milyard</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -6707,7 +6704,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ft²</unitPattern>
 				<unitPattern count="other">{0} ft²</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0} hs/mln</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>

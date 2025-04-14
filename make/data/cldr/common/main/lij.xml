@@ -4160,7 +4160,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0} elemento</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} elementi</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName draft="unconfirmed">parte pe mion</displayName>
 				<unitPattern count="one" draft="unconfirmed">{0} parte pe mion</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} parte pe mion</unitPattern>
@@ -5262,7 +5262,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="unconfirmed">{0}elem</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}elem</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one" draft="unconfirmed">{0}ppm</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0}ppm</unitPattern>
 			</unit>

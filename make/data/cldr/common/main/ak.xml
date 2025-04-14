@@ -4179,7 +4179,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">adeɛ {0}</unitPattern>
 				<unitPattern count="other">adeɛ {0}</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>paat ɔpepem biara</displayName>
 				<unitPattern count="one">paat ɔpepem biara {0}</unitPattern>
 				<unitPattern count="other">paat ɔpepem biara {0}</unitPattern>
@@ -4644,7 +4644,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">kanea {0}</unitPattern>
 				<unitPattern count="other">kanea {0}</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>paat ɔpepepem biara</displayName>
 				<unitPattern count="one">paat ɔpepepem biara {0}</unitPattern>
 				<unitPattern count="other">paat ɔpepepem biara {0}</unitPattern>
@@ -4692,7 +4692,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">adeɛ {0}</unitPattern>
 				<unitPattern count="other">adeɛ {0}</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>paat ɔpepem biara</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -4893,7 +4893,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">kanea {0}</unitPattern>
 				<unitPattern count="other">kanea {0}</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>paat ɔpepepem biara</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -4933,7 +4933,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">adeɛ {0}</unitPattern>
 				<unitPattern count="other">adeɛ {0}</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>paat ɔpepem biara</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -5097,7 +5097,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">kanea {0}</unitPattern>
 				<unitPattern count="other">kanea {0}</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>paat ɔpepepem biara</displayName>
 			</unit>
 			<unit type="duration-night">

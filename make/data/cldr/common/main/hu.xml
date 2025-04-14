@@ -1168,13 +1168,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Nagybetűs szavak rendezése előre</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Kis- és nagybetűket meg nem különböztető rendezés</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Rendezés kisbetű-nagybetű szerint</type>
-			<type key="collation" type="big5han">Hagyományos kínai sorrend - Big5</type>
 			<type key="collation" type="compat">Előző rendezési sorrend a kompatibilitás érdekében</type>
 			<type key="collation" type="dictionary">Szótári rendezési sorrend</type>
 			<type key="collation" type="ducet">Alapértelmezett Unicode rendezési sorrend</type>
 			<type key="collation" type="emoji" draft="contributed">Emodzsi rendezési sorrend</type>
 			<type key="collation" type="eor">Európai rendezési szabályok</type>
-			<type key="collation" type="gb2312han">Egyszerűsített kínai sorrend - GB2312</type>
 			<type key="collation" type="phonebook">Telefonkönyv sorrend</type>
 			<type key="collation" type="phonetic">Fonetikus rendezési sorrend</type>
 			<type key="collation" type="pinyin">Pinyin sorrend</type>
@@ -2581,9 +2579,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Bishkek">
 				<exemplarCity>Biskek</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Kiritimati-sziget</exemplarCity>
@@ -5254,7 +5249,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="terminative">{0} itemig</unitPattern>
 				<unitPattern count="other" case="translative">{0} itemmé</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0} részecske/millió</unitPattern>
 				<unitPattern count="one" case="accusative">{0} részecske/milliót</unitPattern>
 				<unitPattern count="one" case="instrumental">{0} részecske/millióval</unitPattern>
@@ -6867,7 +6862,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mmol/l</unitPattern>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>részecske/millió</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -7235,7 +7230,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-millimole-per-liter">
 				<displayName>mmol/l</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 			</unit>
 			<unit type="concentr-percent">

@@ -912,10 +912,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">Clasificar primeiro as maiúsculas</type>
 			<type key="colCaseLevel" type="no">Clasificar sen distinguir entre maiúsculas e minúsculas</type>
 			<type key="colCaseLevel" type="yes">Clasificar distinguindo entre maiúsculas e minúsculas</type>
-			<type key="collation" type="big5han">Orde de clasificación chinesa tradicional - Big5</type>
 			<type key="collation" type="dictionary">Criterio de ordenación do dicionario</type>
 			<type key="collation" type="ducet">criterio de ordenación Unicode predeterminado</type>
-			<type key="collation" type="gb2312han">orde de clasifcación chinesa simplificada - GB2312</type>
 			<type key="collation" type="phonebook">orde de clasificación da guía telefónica</type>
 			<type key="collation" type="phonetic">Orde de clasificación fonética</type>
 			<type key="collation" type="pinyin">Orde de clasificación pinyin</type>
@@ -2297,9 +2295,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Amman">
 				<exemplarCity>Amán</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Comores</exemplarCity>
@@ -4794,7 +4789,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} unidade</unitPattern>
 				<unitPattern count="other">{0} unidades</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>partes por millón</displayName>
 				<unitPattern count="one">{0} parte por millón</unitPattern>
 				<unitPattern count="other">{0} partes por millón</unitPattern>
@@ -5585,7 +5580,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} luz</unitPattern>
 				<unitPattern count="other">{0} luz</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>partes por mil millóns</displayName>
 				<unitPattern count="one">{0} parte por mil millóns</unitPattern>
 				<unitPattern count="other">{0} partes por mil millóns</unitPattern>
@@ -6049,7 +6044,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} luz</unitPattern>
 				<unitPattern count="other">{0} luz</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>partes/mil millóns</displayName>
 				<unitPattern count="one">{0} ppmm</unitPattern>
 				<unitPattern count="other">{0} ppmm</unitPattern>
@@ -6245,7 +6240,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} luz</unitPattern>
 				<unitPattern count="other">{0} luz</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ppmm</displayName>
 				<unitPattern count="one">{0} ppmm</unitPattern>
 				<unitPattern count="other">{0} ppmm</unitPattern>

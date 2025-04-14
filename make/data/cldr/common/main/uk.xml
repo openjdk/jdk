@@ -1158,13 +1158,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">сортувати спершу за великими символами</type>
 			<type key="colCaseLevel" type="no" draft="contributed">сортувати без урахування регістру</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">сортувати з урахуванням регістру</type>
-			<type key="collation" type="big5han">китайський традиційний порядок сортування Big5</type>
 			<type key="collation" type="compat">попередній порядок сортування, для сумісності</type>
 			<type key="collation" type="dictionary">порядок сортування за словником</type>
 			<type key="collation" type="ducet">типовий порядок сортування Юнікод</type>
 			<type key="collation" type="emoji" draft="contributed">порядок сортування за емодзі</type>
 			<type key="collation" type="eor" draft="contributed">європейські правила упорядкування</type>
-			<type key="collation" type="gb2312han">китайський спрощений порядок сортування - GB2312</type>
 			<type key="collation" type="phonebook">порядок сортування за телефонним довідником</type>
 			<type key="collation" type="phonetic">фонетичний порядок сортування</type>
 			<type key="collation" type="pinyin">порядок сортування піньїнь</type>
@@ -3812,9 +3810,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Пномпень</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Ендербері</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>Кантон</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -7822,7 +7817,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="instrumental">{0} елемента</unitPattern>
 				<unitPattern count="other" case="locative">{0} елемента</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>feminine</gender>
 				<unitPattern count="one">{0} мільйонна доля</unitPattern>
 				<unitPattern count="one" case="accusative">{0} мільйонну долю</unitPattern>
@@ -10994,7 +10989,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} англійських кварт</unitPattern>
 				<unitPattern count="other">{0} англійської кварти</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>feminine</gender>
 				<displayName>частини на мільярд</displayName>
 				<unitPattern count="one">{0} частина на мільярд</unitPattern>
@@ -11304,7 +11299,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ел.</unitPattern>
 				<unitPattern count="other">{0} ел.</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>м. д.</displayName>
 				<unitPattern count="one">{0} м. д.</unitPattern>
 				<unitPattern count="few">{0} м. д.</unitPattern>
@@ -12422,7 +12417,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} англ. кварт</unitPattern>
 				<unitPattern count="other">{0} англ. кварти</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>частини/млрд</displayName>
 				<unitPattern count="one">{0} част/млрд</unitPattern>
 				<unitPattern count="few">{0} част/млрд</unitPattern>
@@ -12582,7 +12577,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0}ел.</unitPattern>
 				<unitPattern count="other">{0}ел.</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>м.д.</displayName>
 				<unitPattern count="one">{0}м.д.</unitPattern>
 				<unitPattern count="few">{0}м.д.</unitPattern>
@@ -13636,7 +13631,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0}англ.квар.</unitPattern>
 				<unitPattern count="other">{0}англ.квар.</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ч/млрд</displayName>
 				<unitPattern count="one">{0} ч/млрд</unitPattern>
 				<unitPattern count="few">{0} ч/млрд</unitPattern>

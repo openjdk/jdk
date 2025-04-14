@@ -2582,9 +2582,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Пномпень</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Эндербери</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>Кантон</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -4902,7 +4899,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">литрине {0} миллимоль</unitPattern>
 				<unitPattern count="other">литрине {0} миллимоль</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>миллионго бөлүктөр</displayName>
 				<unitPattern count="one">миллионго {0} бөлүк</unitPattern>
 				<unitPattern count="other">миллионго {0} бөлүк</unitPattern>
@@ -5527,7 +5524,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} жарык</unitPattern>
 				<unitPattern count="other">{0} жарык</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>мкг/л</displayName>
 				<unitPattern count="one">{0} мкг/л</unitPattern>
 				<unitPattern count="other">{0} мкг/л</unitPattern>
@@ -5692,7 +5689,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} нерсе</unitPattern>
 				<unitPattern count="other">{0} нерсе</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>миллионго/бөлүк</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -6353,7 +6350,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} жарык</unitPattern>
 				<unitPattern count="other">{0} жарык</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>мкг/л</displayName>
 				<unitPattern count="one">{0} мкг/л</unitPattern>
 				<unitPattern count="other">{0} мкг/л</unitPattern>
@@ -6545,7 +6542,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} жарык</unitPattern>
 				<unitPattern count="other">{0} жарык</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>мкг/л</displayName>
 				<unitPattern count="one">{0} мкг/л</unitPattern>
 				<unitPattern count="other">{0} мкг/л</unitPattern>

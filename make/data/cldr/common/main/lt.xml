@@ -1238,12 +1238,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">Rikiuoti suteikiant pirmumą didžiosioms raidėms</type>
 			<type key="colCaseLevel" type="no">Rikiuoti neskiriant didžiųjų ir mažųjų raidžių</type>
 			<type key="colCaseLevel" type="yes">Rikiuoti skiriant didžiąsias ir mažąsias raides</type>
-			<type key="collation" type="big5han">įprasta kiniška rūšiavimo tvarka - Big5</type>
 			<type key="collation" type="compat">ankstesnė rūšiavimo tvarka, skirta suderinamumui</type>
 			<type key="collation" type="dictionary">žodyno rūšiavimo tvarka</type>
 			<type key="collation" type="ducet">numatytasis unikodo rikiavimas</type>
 			<type key="collation" type="eor">rūšiavimo tvarka daugiakalbės Europos dokumentų</type>
-			<type key="collation" type="gb2312han">supaprastinta kiniška rūšiavimo tvarka - GB2312</type>
 			<type key="collation" type="phonebook">telefonų knygos rūšiavimo tvarka</type>
 			<type key="collation" type="phonetic">Fonetinė rikiavimo tvarka</type>
 			<type key="collation" type="pinyin">supaprastinta kiniškų hieroglifų rūšiavimo tvarka</type>
@@ -3459,9 +3457,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Pnompenis</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderburis</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Kiritimatis</exemplarCity>
@@ -7929,7 +7924,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="instrumental">{0} elementų</unitPattern>
 				<unitPattern count="other" case="locative">{0} elementų</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>feminine</gender>
 				<displayName>milijoninės dalys</displayName>
 				<unitPattern count="one">{0} milijoninė dalis</unitPattern>
@@ -11032,7 +11027,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} imp. kvortos</unitPattern>
 				<unitPattern count="other">{0} imp. kvortų</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>feminine</gender>
 				<displayName>milijoninės dalelytės</displayName>
 				<unitPattern count="one">{0} milijoninė dalelytė</unitPattern>
@@ -11693,7 +11688,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} imp. kv.</unitPattern>
 				<unitPattern count="other">{0} imp. kv.</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>dalelytė/mln.</displayName>
 				<unitPattern count="one">{0} dalelytė/mln.</unitPattern>
 				<unitPattern count="few">{0} dalelytės/mln.</unitPattern>
@@ -11808,7 +11803,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>dalelytė/mln.</displayName>
 				<unitPattern count="one">{0} dalelytė/mln.</unitPattern>
 				<unitPattern count="few">{0} dalelytės/mln.</unitPattern>

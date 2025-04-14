@@ -2645,9 +2645,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Pnompen</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderberi</exemplarCity>
-			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Komor adalary</exemplarCity>
 			</zone>
@@ -5120,7 +5117,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} millimol/litr</unitPattern>
 				<unitPattern count="other">{0} millimol/litr</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0} bölejik/million</unitPattern>
 				<unitPattern count="other">{0} bölejik/million</unitPattern>
 			</unit>
@@ -5885,7 +5882,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ýagtylyk</unitPattern>
 				<unitPattern count="other">{0} ýagtylyk</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>bölejik/milliard</displayName>
 				<unitPattern count="one">milliardda {0} bölejik</unitPattern>
 				<unitPattern count="other">milliardda {0} bölejik</unitPattern>
@@ -5962,7 +5959,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-millimole-per-liter">
 				<displayName>millimol/litr</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>bölejik/million</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -6486,7 +6483,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ýagtylyk</unitPattern>
 				<unitPattern count="other">{0} ýagtylyk</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>bölejik/milliard</displayName>
 				<unitPattern count="one">{0} bölejik/milliard</unitPattern>
 				<unitPattern count="other">{0} bölejik/milliard</unitPattern>
@@ -6683,7 +6680,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ýagtylyk</unitPattern>
 				<unitPattern count="other">{0} ýagtylyk</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>bmlrd</displayName>
 				<unitPattern count="one">{0} bmlrd</unitPattern>
 				<unitPattern count="other">{0} bmlrd</unitPattern>

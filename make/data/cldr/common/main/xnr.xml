@@ -893,9 +893,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="roc">चीनी गणतंत्र पंचांग</type>
 			<type key="cf" type="account">लेखांकन मुद्रा प्रारूप</type>
 			<type key="cf" type="standard">मानक मुद्रा प्रारूप</type>
-			<type key="collation" type="big5han">पारम्पारिक चीनी वर्गीकरण</type>
 			<type key="collation" type="ducet">डिफ़ॉल्ट यूनिकोड सॉर्ट क्रम</type>
-			<type key="collation" type="gb2312han">सरलीकृत चीनी वर्गीकरण</type>
 			<type key="collation" type="phonebook">फोनबुक छंटाई क्रम</type>
 			<type key="collation" type="pinyin">पिनयीन वर्गीकरण</type>
 			<type key="collation" type="search">सामान्य-उद्देश्य खोज</type>
@@ -2344,7 +2342,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>नोम पेन्ह</exemplarCity>
 			</zone>
-			<zone type="Pacific/Kanton">
+			<zone type="Pacific/Enderbury">
 				<exemplarCity>कैंटन</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">

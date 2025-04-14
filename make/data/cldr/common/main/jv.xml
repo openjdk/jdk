@@ -1936,9 +1936,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Rome">
 				<exemplarCity>Roma</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
-			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Komoro</exemplarCity>
 			</zone>
@@ -3668,7 +3665,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>milimol saben liter</displayName>
 				<unitPattern count="other">{0} milimol saben liter</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>bagean saben yuta</displayName>
 				<unitPattern count="other">{0} bagean saben yuta</unitPattern>
 			</unit>
@@ -4200,7 +4197,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>iji</displayName>
 				<unitPattern count="other">{0} iji</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>bagean/yuta</displayName>
 				<unitPattern count="other">{0}bpj</unitPattern>
 			</unit>

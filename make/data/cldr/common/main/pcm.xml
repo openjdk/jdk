@@ -2266,9 +2266,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Fnọ́m Pẹn</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Ẹ́ndábẹ́ri</exemplarCity>
-			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Kritímáti</exemplarCity>
 			</zone>
@@ -4749,7 +4746,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} Mílimol Fọ Ẹ́vrí Líta</unitPattern>
 				<unitPattern count="other">{0} Mílimol Fọ Ẹ́vrí Líta</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>Pat-dẹm Fọ Ích Míliọn</displayName>
 				<unitPattern count="one">{0} Pat Fọ Ích Míliọn</unitPattern>
 				<unitPattern count="other">{0} Pat Fọ Ích Míliọn</unitPattern>
@@ -5525,7 +5522,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} laít</unitPattern>
 				<unitPattern count="other">{0} laít</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>pat fọ ích bíliọn</displayName>
 				<unitPattern count="one">{0} pat fọ ích bíliọn</unitPattern>
 				<unitPattern count="other">{0} pat fọ ích bíliọn</unitPattern>
@@ -5679,7 +5676,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-millimole-per-liter">
 				<displayName>Mílimol/Líta</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>Pat/Míliọn</displayName>
 				<unitPattern count="one">{0} pfim</unitPattern>
 				<unitPattern count="other">{0} pfim</unitPattern>
@@ -5982,7 +5979,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Sólá Luminósítis</displayName>
 			</unit>
 			<unit type="mass-tonne">
-				<displayName>T</displayName>
+				<displayName>M. Tọn-dẹm</displayName>
+				<unitPattern count="one">{0} M. Tọn</unitPattern>
+				<unitPattern count="other">{0} M. Tọn</unitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>Grams</displayName>
@@ -6220,7 +6219,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} laít</unitPattern>
 				<unitPattern count="other">{0} laít</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>pat/bíliọn</displayName>
 				<unitPattern count="one">{0} pfib</unitPattern>
 				<unitPattern count="other">{0} pfib</unitPattern>
@@ -6263,7 +6262,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} kárá</unitPattern>
 				<unitPattern count="other">{0} kárá</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>Pfim</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -6434,7 +6433,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}laít</unitPattern>
 				<unitPattern count="other">{0}laít</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>pfib</displayName>
 				<unitPattern count="one">{0}pfib</unitPattern>
 				<unitPattern count="other">{0}pfib</unitPattern>

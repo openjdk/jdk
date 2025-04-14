@@ -999,13 +999,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="roc">минго цаглавар</type>
 			<type key="cf" type="account">мөнгөн тэмдэгтийн нягтлан бодох бүртгэлийн хэлбэр</type>
 			<type key="cf" type="standard">мөнгөн тэмдэгтийн стандарт хэлбэр</type>
-			<type key="collation" type="big5han">Хуучин хятад Эрэмбэлэх дараалал - Том5</type>
 			<type key="collation" type="compat">Нийцлийн үүднээс өмнөх эрэмбэлэх дараалал</type>
 			<type key="collation" type="dictionary">Тольны эрэмбэлэх дараалал</type>
 			<type key="collation" type="ducet">юникодын үндсэн эрэмбэлэх дараалал</type>
 			<type key="collation" type="emoji">Эможи эрэмбэлэх дараалал</type>
 			<type key="collation" type="eor">Европийн эрэмбэлэх дүрэм</type>
-			<type key="collation" type="gb2312han">Хялбаршуулсан хятад Эрэмбэлэх дараалал - GB2312</type>
 			<type key="collation" type="phonebook">Утасны дэвтрийн эрэмбэлэх дараалал</type>
 			<type key="collation" type="pinyin">Пиньян эрэмбэлэх дараалал</type>
 			<type key="collation" type="search">ерөнхий хайлт</type>
@@ -2682,9 +2680,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Пномпень</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Эндербери</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>Кантон</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -5005,7 +5000,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">литр тутамд {0} миллимоль</unitPattern>
 				<unitPattern count="other">литр тутамд {0} миллимоль</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>саяны хувь</displayName>
 				<unitPattern count="one">саяны {0} хувь</unitPattern>
 				<unitPattern count="other">саяны {0} хувь</unitPattern>
@@ -5652,7 +5647,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<displayName>Том куарт</displayName>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>мкг/кг</displayName>
 				<unitPattern count="one">{0} мкг/кг</unitPattern>
 				<unitPattern count="other">{0} мкг/кг</unitPattern>
@@ -5863,7 +5858,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} зүйл</unitPattern>
 				<unitPattern count="other">{0} зүйл</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>хувь/сая</displayName>
 				<unitPattern count="one">саяны {0} хувь</unitPattern>
 				<unitPattern count="other">{0}x10⁻⁶</unitPattern>
@@ -6616,7 +6611,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} том куарт</unitPattern>
 				<unitPattern count="other">{0} том куарт</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>мкг/кг</displayName>
 				<unitPattern count="one">{0} мкг/кг</unitPattern>
 				<unitPattern count="other">{0} мкг/кг</unitPattern>
@@ -6660,7 +6655,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} фт²</unitPattern>
 				<unitPattern count="other">{0} фт²</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
@@ -6827,7 +6822,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} аяга</unitPattern>
 				<unitPattern count="other">{0} аяга</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>мкг/кг</displayName>
 				<unitPattern count="one">{0} мкг/кг</unitPattern>
 				<unitPattern count="other">{0} мкг/кг</unitPattern>

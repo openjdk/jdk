@@ -913,8 +913,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="islamic-civil" draft="provisional">Bürgerlich islaamisch Kaländer</type>
 			<type key="calendar" type="japanese">Japaanisch Kaländer</type>
 			<type key="calendar" type="roc">Kaländer vor Republik Chiina</type>
-			<type key="collation" type="big5han">Tradizionells Chineesisch - Big5</type>
-			<type key="collation" type="gb2312han">Veräifachts Chineesisch - GB2312</type>
 			<type key="collation" type="phonebook">Telifonbuech-Sortiirregle</type>
 			<type key="collation" type="pinyin">Pinyin-Sortiirregle</type>
 			<type key="collation" type="stroke">Strichfolg</type>

@@ -2356,7 +2356,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>milimol pur litru</displayName>
 				<unitPattern count="other">{0} milimol pur litru</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>parti pur milhãu</displayName>
 				<unitPattern count="other">{0} parti pur milhãu</unitPattern>
 			</unit>
@@ -3000,7 +3000,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>milimol/litru</displayName>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>parti/milhãu</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">

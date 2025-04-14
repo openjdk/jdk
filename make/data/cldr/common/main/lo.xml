@@ -1159,10 +1159,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="roc">ປະຕິທິນໄຕ້ຫວັນ</type>
 			<type key="cf" type="account">ຮູບແບບສະກຸນເງິນການບັນຊີ</type>
 			<type key="cf" type="standard">ຮູບແບບສະກຸນເງິນມາດຕະຖານ</type>
-			<type key="collation" type="big5han">ລຽງຕາມອັກສອນຈີນດັ້ງເດີມ</type>
 			<type key="collation" type="dictionary">ລຽງຕາມພົດຈະນານຸກົມ</type>
 			<type key="collation" type="ducet">ຮຽງຕາມລຳດັບຢູນິໂຄດເລີ່ມຕົ້ນ</type>
-			<type key="collation" type="gb2312han">ລຽງຕາມອັກສອນຈີນປະຍຸກ</type>
 			<type key="collation" type="phonebook">ລຽງຕາມສະໝຸດໂທລະສັບ</type>
 			<type key="collation" type="pinyin">ລຽງຕາມການອອກສຽງພາສາຈີນ</type>
 			<type key="collation" type="search">ການຊອກຫາທົ່ວໄປ</type>
@@ -3377,9 +3375,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ພະນົມເປັນ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>ເອັນເດີເບີລີ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>ແຄນຕອນ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -6164,7 +6159,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ມິລິໂມລຕໍ່ລິດ</displayName>
 				<unitPattern count="other">{0} ມິລິໂມລຕໍ່ລິດ</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ພາດຕໍ່ລ້ານ</displayName>
 				<unitPattern count="other">{0} ພາດຕໍ່ລ້ານ</unitPattern>
 			</unit>
@@ -6519,7 +6514,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ແສງ</displayName>
 				<unitPattern count="other">{0} ແສງ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ສ່ວນໃນພັນລ້ານສ່ວນ</displayName>
 				<unitPattern count="other">{0} ສ່ວນໃນພັນລ້ານສ່ວນ</unitPattern>
 			</unit>
@@ -6676,7 +6671,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ອັນ</displayName>
 				<unitPattern count="other">{0} ອັນ</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ພາດ/ລ້ານ</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -6970,7 +6965,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ແສງ</displayName>
 				<unitPattern count="other">{0} ແສງ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ສ່ວນ/ພັນລ້ານສ່ວນ</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -7094,7 +7089,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ແສງ</displayName>
 				<unitPattern count="other">{0} ແສງ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ສ່ວນ/ພັນລ້ານສ່ວນ</displayName>
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>

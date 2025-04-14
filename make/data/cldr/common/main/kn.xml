@@ -1099,12 +1099,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">ಮೊದಲು ಅಪ್ಪರ್‌ಕೇಸ್ ಅನ್ನು ವಿಂಗಡಿಸಿ</type>
 			<type key="colCaseLevel" type="no">ಕೇಸ್ ಇನ್‌ಸೆಂಟೀವ್ ಅನ್ನು ವಿಂಗಡಿಸಿ</type>
 			<type key="colCaseLevel" type="yes">ಕೇಸ್‌ ಸೆನ್ಸಿಟೀವ್‌‌ ವಿಂಗಡಿಸಿ</type>
-			<type key="collation" type="big5han">ಸಾಂಪ್ರದಾಯಿಕ ಚೀನಾದ ಅನುಕ್ರಮ ವಿನ್ಯಾಸ - ದೊಡ್ಡ ಐದು</type>
 			<type key="collation" type="compat" draft="contributed">ಹೊಂದಾಣಿಕೆಯ ಸಲುವಾಗಿ ಹಿಂದಿನ ವಿಂಗಡಣಾ ಕ್ರಮ</type>
 			<type key="collation" type="dictionary">ಡಿಕ್ಷನರಿ ಅನುಕ್ರಮ ವಿನ್ಯಾಸ</type>
 			<type key="collation" type="ducet">ಡೀಫಾಲ್ಟ್ ಯೂನಿಕೋಡ್ ವಿಂಗಡಣೆ ಕ್ರಮ</type>
 			<type key="collation" type="eor" draft="contributed">ಯುರೋಪಿನ ಅನುಕ್ರಮ ನಿಯಮಗಳು</type>
-			<type key="collation" type="gb2312han">ಸರಳೀಕೃತ ಚೈನೀಸ್ ವಿಂಗಡಣೆ ಕ್ರಮ - GB2312</type>
 			<type key="collation" type="phonebook">ಫೋನ್‌ಬುಕ್ ವಿಂಗಡಣೆ ಕ್ರಮ</type>
 			<type key="collation" type="phonetic">ಉಚ್ಛಾರಣಾನುರೂಪವಾಗಿ ವಿಂಗಡಣೆ ಕ್ರಮ</type>
 			<type key="collation" type="pinyin">ಪಿನ್‌ಯಿನ್ ವಿಂಗಡಣೆ ಕ್ರಮ</type>
@@ -2703,9 +2701,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ನೋಮ್ ಪೆನ್</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>ಎಂಡರ್ಬರಿ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>ಕ್ಯಾಂಟನ್</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -5611,7 +5606,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} ವಸ್ತುಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ವಸ್ತುಗಳಲ್ಲಿ</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>neuter</gender>
 				<displayName>ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಗಳು</displayName>
 				<unitPattern count="one">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗವು</unitPattern>
@@ -7307,7 +7302,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} ಲೈಟ್‌‌ನ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಲೈಟ್‌ನಲ್ಲಿ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>neuter</gender>
 				<displayName>ಪಾರ್ಟ್ಸ್ ಪರ್ ಬಿಲಿಯನ್</displayName>
 				<unitPattern count="one">{0} ಪಾರ್ಟ್ಸ್ ಪರ್ ಬಿಲಿಯನ್</unitPattern>
@@ -7530,7 +7525,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ವಸ್ತು</unitPattern>
 				<unitPattern count="other">{0} ವಸ್ತು</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ಭಾಗಗಳು/ಮಿಲಿಯನ್</displayName>
 				<unitPattern count="one">{0} ಭಾಪ್ರಮಿ</unitPattern>
 				<unitPattern count="other">{0} ಭಾಪ್ರಮಿ</unitPattern>
@@ -8322,7 +8317,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ಲೈಟ್</unitPattern>
 				<unitPattern count="other">{0} ಲೈಟ್</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ಪಾರ್ಟ್ಸ್/ಬಿಲಿಯನ್</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -8479,7 +8474,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ವಸ್ತು</unitPattern>
 				<unitPattern count="other">{0}ವಸ್ತು</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ಭಾಪ್ರಮಿ</displayName>
 				<unitPattern count="one">{0}ಭಾಪ್ರಮಿ</unitPattern>
 				<unitPattern count="other">{0}ಭಾಪ್ರಮಿ</unitPattern>

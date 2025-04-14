@@ -912,13 +912,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">Uppercase Muna ang Pag-uri-uriin</type>
 			<type key="colCaseLevel" type="no">Pag-uri-uriin ang Hindi Case Sensitive</type>
 			<type key="colCaseLevel" type="yes">Pag-uri-uriin ang Case Sensitive</type>
-			<type key="collation" type="big5han">Pagkakasunod-sunod ng Pag-uuri ng Tradisyunal na Chinese - Big5</type>
 			<type key="collation" type="compat" draft="contributed">Nakaraang Pagkakasunud-sunod ng Pag-uuri, para sa compatibility</type>
 			<type key="collation" type="dictionary">Pagkakasunud-sunod ng Pag-uuri ng Diksyunaryo</type>
 			<type key="collation" type="ducet">Default na Pagkakasunud-sunod ng Ayos ng Unicode</type>
 			<type key="collation" type="emoji" draft="contributed">Pagkakasunud-sunod ng Pag-uuri ng Emoji</type>
 			<type key="collation" type="eor" draft="contributed">Mga Tuntunin ng European na Pagkakasunud-sunod</type>
-			<type key="collation" type="gb2312han">Pagkakasunud-sunod ng Pag-uuri ng Pinasimpleng Chinese - GB2312</type>
 			<type key="collation" type="phonebook">Pagkakasunud-sunod ng Pag-uuri ng Phonebook</type>
 			<type key="collation" type="phonetic">Phonetic na Ayos ng Pag-uuri-uri</type>
 			<type key="collation" type="pinyin">Pagkakasunud-sunod ng Pag-uuri ng Pinyin</type>
@@ -2205,9 +2203,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<long>
 					<daylight>Standard na Oras sa Ireland</daylight>
 				</long>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Asia/Qostanay">
 				<exemplarCity>Kostanay</exemplarCity>
@@ -4305,7 +4300,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} item</unitPattern>
 				<unitPattern count="other">{0} na item</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>parts per million</displayName>
 				<unitPattern count="one">{0} part per million</unitPattern>
 				<unitPattern count="other">{0} parts per million</unitPattern>
@@ -5052,7 +5047,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Imp. na kuwart</unitPattern>
 				<unitPattern count="other">{0} Imp. na kuwart</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>parts per billion</displayName>
 				<unitPattern count="one">{0} part per billion</unitPattern>
 				<unitPattern count="other">{0} parts per billion</unitPattern>
@@ -5126,7 +5121,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-karat">
 				<displayName>karat</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>parts/million</displayName>
 			</unit>
 			<unit type="concentr-permyriad">
@@ -5485,7 +5480,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<displayName>Imp na kuwart</displayName>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>parts/billion</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -5563,7 +5558,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} item</unitPattern>
 				<unitPattern count="other">{0}item</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 			</unit>
 			<unit type="concentr-permyriad">
@@ -5936,7 +5931,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} qt Imp.</unitPattern>
 				<unitPattern count="other">{0}qt-Imp.</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>

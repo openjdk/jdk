@@ -1102,12 +1102,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">முதலில் பேரெழுத்துகளை வரிசைப்படுத்து</type>
 			<type key="colCaseLevel" type="no">எழுத்து உணர்வின்றி வரிசைபடுத்து</type>
 			<type key="colCaseLevel" type="yes">எழுத்து உணர்வில் வரிசைபடுத்து</type>
-			<type key="collation" type="big5han">பாரம்பரிய சீன வரிசை வடிவம் - Big5</type>
 			<type key="collation" type="compat" draft="contributed">முந்தைய வரிசை வடிவம், இணக்கத்தன்மைக்கு</type>
 			<type key="collation" type="dictionary">அகராதி வரிசை முறை</type>
 			<type key="collation" type="ducet">இயல்புநிலை யுனிகோட் வரிசை முறை</type>
 			<type key="collation" type="eor" draft="contributed">ஐரோப்பிய வரிசைப்படுத்தல் விதிகள்</type>
-			<type key="collation" type="gb2312han">எளிமையாக்கப்பட்ட சீன வரிசை வடிவம் - GB2312</type>
 			<type key="collation" type="phonebook">தொலைபேசி புத்தக வரிசை முறை</type>
 			<type key="collation" type="phonetic">ஒலியியல் வரிசைப்படுத்தல் முறை</type>
 			<type key="collation" type="pinyin">பின்யின் வரிசை முறை</type>
@@ -3183,9 +3181,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ஃப்னோம் பென்</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>எண்டர்பரி</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>கேன்டன்</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -6016,7 +6011,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="accusative">{0} உருப்படிகளை</unitPattern>
 				<unitPattern count="other" case="dative">{0} உருப்படிகளுக்கு</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>பகுதிகள்/மில்லியன்</displayName>
 				<unitPattern count="one">{0} பகுதி/மில்லியன்</unitPattern>
 				<unitPattern count="one" case="ablative">{0} பகுதி/மில்லியனில்</unitPattern>
@@ -7438,7 +7433,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="accusative" draft="contributed">{0} ஒளிவேகத்தை</unitPattern>
 				<unitPattern count="other" case="dative" draft="contributed">{0} ஒளிவேகத்திற்கு</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>பார்ட்ஸ்/பில்லியன்</displayName>
 				<unitPattern count="one" draft="contributed">{0} பார்ட்ஸ்/பில்லியன்</unitPattern>
 				<unitPattern count="one" case="ablative" draft="contributed">{0} பார்ட்ஸ்/பில்லியனில்</unitPattern>
@@ -7673,7 +7668,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} உருப்படி</unitPattern>
 				<unitPattern count="other">{0} உருப்படி</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ப./மி.</displayName>
 				<unitPattern count="one">{0} ப./மி.</unitPattern>
 				<unitPattern count="other">{0} ப./மி.</unitPattern>
@@ -8451,7 +8446,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ஒளிவேகம்</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ஒளிவேகம்</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName draft="contributed">பார்ட்ஸ்/பில்லியன்</displayName>
 				<unitPattern count="one">{0} பார்ட்ஸ்/பில்லியன்</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} பார்ட்ஸ்/பில்லியன்</unitPattern>
@@ -8546,7 +8541,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}உருப்படி</unitPattern>
 				<unitPattern count="other">{0}உருப்படி</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0}ப./மி.</unitPattern>
 				<unitPattern count="other">{0}ப./மி.</unitPattern>
 			</unit>
@@ -9168,7 +9163,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0}ஒ.வே</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}ஒ.வே</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName draft="contributed">பா/பி</displayName>
 				<unitPattern count="one" draft="contributed">{0} பா/பி</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} பா/பி</unitPattern>

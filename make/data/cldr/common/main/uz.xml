@@ -2392,9 +2392,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Pnompen</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderberi oroli</exemplarCity>
-			</zone>
 			<zone type="Pacific/Tarawa">
 				<exemplarCity>Tarava</exemplarCity>
 			</zone>
@@ -5032,7 +5029,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<displayName>imp.kvarta</displayName>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>qism/milliard</displayName>
 				<unitPattern count="one">{0} ta qism/milliard</unitPattern>
 				<unitPattern count="other">{0} ta qism/milliard</unitPattern>
@@ -5138,7 +5135,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} element</unitPattern>
 				<unitPattern count="other">{0} ta element</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>milliondan ulush</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -5716,7 +5713,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} imp. kvarta</unitPattern>
 				<unitPattern count="other">{0} imp. kvarta</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>qism/milliard</displayName>
 				<unitPattern count="one">{0} ta qism/mlrd</unitPattern>
 				<unitPattern count="other">{0} ta qism/mlrd</unitPattern>
@@ -5760,7 +5757,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ft²</unitPattern>
 				<unitPattern count="other">{0} ft²</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
@@ -5838,7 +5835,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<displayName>imp.kvarta</displayName>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>qism/milliard</displayName>
 				<unitPattern count="one">{0} ta qism/mlrd</unitPattern>
 				<unitPattern count="other">{0} ta qism/mlrd</unitPattern>

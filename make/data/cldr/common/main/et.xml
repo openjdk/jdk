@@ -1283,13 +1283,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">suurtäht järjestuses eespool</type>
 			<type key="colCaseLevel" type="no">tõstutundetu järjestus</type>
 			<type key="colCaseLevel" type="yes">tõstutundlik järjestus</type>
-			<type key="collation" type="big5han">hiina traditsiooniline sortimisjärjestus (Big5)</type>
 			<type key="collation" type="compat">varasem sortimisjärjestus (ühilduvuse jaoks)</type>
 			<type key="collation" type="dictionary">sõnastiku sortimisjärjestus</type>
 			<type key="collation" type="ducet">Unicode’i vaikejärjestus</type>
 			<type key="collation" type="emoji">emoji sortimisjärjestus</type>
 			<type key="collation" type="eor">Euroopa järjestusreeglid</type>
-			<type key="collation" type="gb2312han">hiina lihtsustatud sortimisjärjestus (GB2312)</type>
 			<type key="collation" type="phonebook">telefoniraamatu sortimisjärjestus</type>
 			<type key="collation" type="phonetic">foneetiline sortimisjärjestus</type>
 			<type key="collation" type="pinyin">pinyin’i sortimisjärjestus</type>
@@ -2776,9 +2774,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Biškek</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>Abariringa</exemplarCity>
 			</zone>
 			<zone type="America/St_Kitts">
@@ -5599,7 +5594,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} millimool liitri kohta</unitPattern>
 				<unitPattern count="other">{0} millimooli liitri kohta</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>osa miljoni kohta</displayName>
 				<unitPattern count="one">{0} osa miljoni kohta</unitPattern>
 				<unitPattern count="other">{0} osa miljoni kohta</unitPattern>
@@ -6372,7 +6367,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} inglise kvart</unitPattern>
 				<unitPattern count="other">{0} inglise kvarti</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>miljardikosa</displayName>
 				<unitPattern count="one">{0} miljardikosa</unitPattern>
 				<unitPattern count="other">{0} miljardikosa</unitPattern>
@@ -6452,7 +6447,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} üksus</unitPattern>
 				<unitPattern count="other">{0} üksust</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>osa/miljon</displayName>
 			</unit>
 			<unit type="concentr-permyriad">
@@ -6820,7 +6815,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ingl kvart</unitPattern>
 				<unitPattern count="other">{0} ingl kvarti</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>osakesed/miljard</displayName>
 				<unitPattern count="one">{0} miljardikosa</unitPattern>
 				<unitPattern count="other">{0} miljardikosa</unitPattern>

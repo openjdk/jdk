@@ -1352,13 +1352,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="roc">fakalepupelika siaina</type>
 			<type key="cf" type="account">anga paʻanga-kalake</type>
 			<type key="cf" type="standard">anga paʻanga-sīpinga</type>
-			<type key="collation" type="big5han" draft="unconfirmed">siaina-nimalahi</type>
 			<type key="collation" type="compat" draft="unconfirmed">ki muʻa, hoa</type>
 			<type key="collation" type="dictionary" draft="unconfirmed">tikisinale</type>
 			<type key="collation" type="ducet">ʻunikōti</type>
 			<type key="collation" type="emoji" draft="unconfirmed">ngaahi ongo</type>
 			<type key="collation" type="eor" draft="unconfirmed">fakaʻeulope</type>
-			<type key="collation" type="gb2312han" draft="unconfirmed">siaina-fakafaingofua</type>
 			<type key="collation" type="phonebook">fika telefoni</type>
 			<type key="collation" type="pinyin" draft="unconfirmed">piniini</type>
 			<type key="collation" type="reformed" draft="unconfirmed">fakafoʻou</type>
@@ -2797,9 +2795,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Loma</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>ʻEnitipulī</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>Kanitoni</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -4281,7 +4276,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kongokonga</displayName>
 				<unitPattern count="other">kongokonga ʻe {0}</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>konga he miliona</displayName>
 				<unitPattern count="other">konga ʻe {0} he miliona</unitPattern>
 			</unit>
@@ -4904,7 +4899,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">vavemaama</displayName>
 				<unitPattern count="other" draft="unconfirmed">vavemaama ʻe {0}</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName draft="unconfirmed">konga ʻi he piliona</displayName>
 				<unitPattern count="other" draft="unconfirmed">konga ʻe {0} ʻi he piliona</unitPattern>
 			</unit>
@@ -5015,7 +5010,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kkonga</displayName>
 				<unitPattern count="other">kkonga ʻe {0}</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>khm</displayName>
 				<unitPattern count="other">khm ʻe {0}</unitPattern>
 			</unit>
@@ -5715,7 +5710,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kk</displayName>
 				<unitPattern count="other">kk ʻe {0}</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="other">{0} khm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">

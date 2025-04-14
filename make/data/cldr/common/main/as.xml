@@ -876,9 +876,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="roc">চীনা প্ৰজাতন্ত্ৰৰ কেলেণ্ডাৰ</type>
 			<type key="cf" type="account">গাণনিক মুদ্ৰা সজ্জা</type>
 			<type key="cf" type="standard">মান্য মুদ্ৰা সজ্জা</type>
-			<type key="collation" type="big5han" draft="contributed">পৰম্পৰাগত চীনা শৃঙ্খলাবদ্ধ কৰাৰ ক্ৰম - Big5</type>
 			<type key="collation" type="ducet">ডিফ’ল্ট ইউনিকোড সজোৱা ক্ৰম</type>
-			<type key="collation" type="gb2312han" draft="contributed">সৰল চীনা শৃঙ্খলাবদ্ধ কৰাৰ ক্ৰম - GB2312</type>
 			<type key="collation" type="phonebook" draft="contributed">টেলিফোন বহিৰ মতেশৃঙ্খলাবদ্ধ কৰাৰ ক্ৰম</type>
 			<type key="collation" type="pinyin" draft="contributed">পিন্‌য়িন শৃঙ্খলাবদ্ধ কৰাৰ ক্ৰম</type>
 			<type key="collation" type="search">সাধাৰণ উদ্দেশ্যে অনুসন্ধান</type>
@@ -1201,27 +1199,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">am</dayPeriod>
-							<dayPeriod type="pm">pm</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
+							<dayPeriod type="am">পূৰ্বাহ্ন</dayPeriod>
+							<dayPeriod type="pm">অপৰাহ্ন</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -2423,9 +2403,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>নোম পেন্‌হ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>এণ্ডৰবাৰী</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>কেণ্টন</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -4754,7 +4731,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-item">
 				<displayName>আইটেমসমূহ</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>প্ৰতি মিলিয়নত ভাগ</displayName>
 				<unitPattern count="one">প্ৰতি মিলিয়নত {0} ভাগ</unitPattern>
 				<unitPattern count="other">প্ৰতি মিলিয়নত {0} ভাগ</unitPattern>
@@ -5339,7 +5316,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} আলোক</unitPattern>
 				<unitPattern count="other">{0} আলোক</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>প্ৰতি বিলিয়নত অংশ</displayName>
 				<unitPattern count="one">{0} প্ৰতি বিলিয়নত অংশ</unitPattern>
 				<unitPattern count="other">{0} প্ৰতি বিলিয়নত অংশ</unitPattern>
@@ -5542,7 +5519,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} টা আইটেম</unitPattern>
 				<unitPattern count="other">{0} টা আইটেম</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ভাগ/মিলিয়ন</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -6264,7 +6241,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} আলোক</unitPattern>
 				<unitPattern count="other">{0} আলোক</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>অংশ/বিলিয়ন</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -6367,7 +6344,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
@@ -6520,7 +6497,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}আলোক</unitPattern>
 				<unitPattern count="other">{0}আলোক</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>

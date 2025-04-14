@@ -1139,12 +1139,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Ταξινόμηση κεφαλαίων χαρακτήρων πρώτα</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Ταξινόμηση με διάκριση χαρακτήρων</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Ταξινόμηση χαρακτήρων διάκρισης</type>
-			<type key="collation" type="big5han">Σειρά ταξινόμησης Παραδοσιακών Κινεζικών - Big5</type>
 			<type key="collation" type="compat">Προηγούμενη σειρά ταξινόμησης, για συμβατότητα</type>
 			<type key="collation" type="dictionary">Σειρά ταξινόμησης λεξικού</type>
 			<type key="collation" type="ducet">Προεπιλεγμένη σειρά ταξινόμησης Unicode</type>
 			<type key="collation" type="eor" draft="contributed">Ευρωπαϊκοί κανόνες ταξινόμησης</type>
-			<type key="collation" type="gb2312han">Σειρά ταξινόμησης Απλοποιημένων Κινεζικών - GB2312</type>
 			<type key="collation" type="phonebook">Σειρά ταξινόμησης τηλεφωνικού καταλόγου</type>
 			<type key="collation" type="phonetic">Φωνητική σειρά ταξινόμησης</type>
 			<type key="collation" type="pinyin">Σειρά ταξινόμησης Πινγίν</type>
@@ -3202,9 +3200,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Πνομ Πενχ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Έντερμπερι</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>Καντών</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -6635,7 +6630,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="accusative">{0} στοιχεία</unitPattern>
 				<unitPattern count="other" case="genitive">{0} στοιχείων</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>neuter</gender>
 				<displayName>μέρη ανά εκατομμύριο</displayName>
 				<unitPattern count="one">{0} μέρος ανά εκατομμύριο</unitPattern>
@@ -7915,7 +7910,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="accusative">{0} φως</unitPattern>
 				<unitPattern count="other" case="genitive">{0} φωτός</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>neuter</gender>
 				<displayName>μέρη στο δισεκατομμύριο</displayName>
 				<unitPattern count="one">{0} μέρος στο δισεκατομμύριο</unitPattern>
@@ -8136,7 +8131,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} στοιχείο</unitPattern>
 				<unitPattern count="other">{0} στοιχεία</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>μέρη/εκατ.</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -8669,7 +8664,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} φως</unitPattern>
 				<unitPattern count="other">{0} φως</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>μέρη/δισεκατομμύριο</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -8801,7 +8796,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-square-inch">
 				<displayName>τ. ίντσες</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 			</unit>
 			<unit type="concentr-percent">

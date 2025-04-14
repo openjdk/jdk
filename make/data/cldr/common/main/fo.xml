@@ -2311,9 +2311,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Jamaica">
 				<exemplarCity>Jamaika</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
-			</zone>
 			<zone type="Asia/Kuwait">
 				<exemplarCity>Kuvait</exemplarCity>
 			</zone>
@@ -4204,7 +4201,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} lutur</unitPattern>
 				<unitPattern count="other">{0} lutir</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>partar fyri hvørja millión</displayName>
 				<unitPattern count="one">{0} partur fyri hvørja millión</unitPattern>
 				<unitPattern count="other">{0} partar fyri hvørja millión</unitPattern>
@@ -4857,7 +4854,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ljós</unitPattern>
 				<unitPattern count="other">{0} ljós</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>partar fyri hvørja milliard</displayName>
 				<unitPattern count="one">{0} part fyri hvørja milliard</unitPattern>
 				<unitPattern count="other">{0} partar fyri hvørja milliard</unitPattern>
@@ -4958,7 +4955,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} lutur</unitPattern>
 				<unitPattern count="other">{0} lutir</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>partar/millión</displayName>
 				<unitPattern count="one">{0} pt./mill.</unitPattern>
 				<unitPattern count="other">{0} pt./mill.</unitPattern>
@@ -5456,7 +5453,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ljós</unitPattern>
 				<unitPattern count="other">{0} ljós</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>partar/milliard</displayName>
 				<unitPattern count="one">{0} part/mia.</unitPattern>
 				<unitPattern count="other">{0} partar/mia.</unitPattern>
@@ -5565,7 +5562,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}lutur</unitPattern>
 				<unitPattern count="other">{0} lutir</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>pt./mill.</displayName>
 				<unitPattern count="one">{0}pt./mill</unitPattern>
 				<unitPattern count="other">{0}pt./mill</unitPattern>
@@ -6046,7 +6043,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}ljós</unitPattern>
 				<unitPattern count="other">{0}ljós</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>partar/mia.</displayName>
 				<unitPattern count="one">{0}part/mia.</unitPattern>
 				<unitPattern count="other">{0}partar/mia.</unitPattern>

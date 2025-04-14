@@ -1140,9 +1140,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Coordinated Universal Time</standard>
 				</long>
 			</zone>
-			<zone type="Etc/Unknown">
-				<exemplarCity>Unknown City</exemplarCity>
-			</zone>
 			<zone type="Europe/London">
 				<long>
 					<daylight>British Summer Time</daylight>

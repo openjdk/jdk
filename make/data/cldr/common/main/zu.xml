@@ -1128,13 +1128,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">Hlela Izinhlamvu Ezinkulu Kuqala</type>
 			<type key="colCaseLevel" type="no">Hlela Okungancikile Ezinkinobhweni</type>
 			<type key="colCaseLevel" type="yes">Hlela Okuncike Ekumeni Kwezinkinobho</type>
-			<type key="collation" type="big5han">Ukuhlunga kwe-Traditional Chinese - Big5</type>
 			<type key="collation" type="compat">Ukuhlunga Kwangaphambilini, ngokusebenzisana</type>
 			<type key="collation" type="dictionary">Uhlelo Lokuhlunga Lesichazamazwi</type>
 			<type key="collation" type="ducet">Ukuhlunga okuzenzakalelayo kwe-Unicode</type>
 			<type key="collation" type="emoji">Uhlelo Lokuhlunga le-Emoji</type>
 			<type key="collation" type="eor">Imithetho Yokuhlunga ye-European</type>
-			<type key="collation" type="gb2312han">Ukuhlunga kwe-Simplified Chinese - GB2312</type>
 			<type key="collation" type="phonebook">Ukuhlunga kwebhuku lefoni</type>
 			<type key="collation" type="phonetic">Hlela Ngokwefonetiki</type>
 			<type key="collation" type="pinyin">Ukuhlunga nge-Pinyin</type>
@@ -2769,9 +2767,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>i-Phnom Penh</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>i-Enderbury</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>i-Kiritimati</exemplarCity>
@@ -5056,7 +5051,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} i-karat</unitPattern>
 				<unitPattern count="other">{0} ama-karats</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 			</unit>
 			<unit type="concentr-permille">
@@ -5212,7 +5207,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-karat">
 				<displayName>karats</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>izingxenye/izigidi</displayName>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
@@ -5385,7 +5380,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}mg/dL</unitPattern>
 				<unitPattern count="other">{0}mg/dL</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0}item</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>

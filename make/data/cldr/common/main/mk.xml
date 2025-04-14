@@ -1201,13 +1201,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="roc">Мингуо-календар</type>
 			<type key="cf" type="account">Сметководствен формат на валута</type>
 			<type key="cf" type="standard">Стандарден формат на валута</type>
-			<type key="collation" type="big5han">Традиционално кинеско сортирање</type>
 			<type key="collation" type="compat" draft="contributed">Претходно подредување</type>
 			<type key="collation" type="dictionary" draft="contributed">Подредување по азбучен редослед</type>
 			<type key="collation" type="ducet">Стандардно подредување во уникод</type>
 			<type key="collation" type="emoji" draft="contributed">Подредување емотикони</type>
 			<type key="collation" type="eor" draft="contributed">Европски правила за подредување</type>
-			<type key="collation" type="gb2312han">Поедноставено кинеско сортирање</type>
 			<type key="collation" type="phonebook">Азбучен редослед</type>
 			<type key="collation" type="pinyin">Сортирање Pinyin</type>
 			<type key="collation" type="reformed" draft="contributed">Реформирано подредување</type>
@@ -3514,9 +3512,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Пном Пен</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Ендербери</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>Кантон</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -6414,7 +6409,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-item">
 				<displayName>ставки</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>делови на милион</displayName>
 				<unitPattern count="one">{0} дел на милион</unitPattern>
 				<unitPattern count="other">{0} дела на милион</unitPattern>
@@ -7209,7 +7204,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} светлина</unitPattern>
 				<unitPattern count="other">{0} светлини</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>делови на милијарда</displayName>
 				<unitPattern count="one">{0} дел на милијарда</unitPattern>
 				<unitPattern count="other">{0} дела на милијарда</unitPattern>

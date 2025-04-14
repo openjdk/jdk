@@ -1118,12 +1118,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Сортирај прво велика слова</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Сортирај без обзира на велика и мала слова</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Сортирај мала и велика слова</type>
-			<type key="collation" type="big5han">традиционално кинеско сортирање</type>
 			<type key="collation" type="compat">претходни редослед сортирања, због компатибилности</type>
 			<type key="collation" type="dictionary">редослед сортирања у речнику</type>
 			<type key="collation" type="ducet">подразумевани Unicode редослед сортирања</type>
 			<type key="collation" type="eor" draft="contributed">европска правила редоследа</type>
-			<type key="collation" type="gb2312han">поједностављено кинеско сортирање</type>
 			<type key="collation" type="phonebook">сортирање као телефонски именик</type>
 			<type key="collation" type="phonetic">фонетски редослед сортирања</type>
 			<type key="collation" type="pinyin">пинјин сортирање</type>
@@ -3303,9 +3301,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Пном Пен</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Ендербери</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>Кантон</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -7318,7 +7313,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} ставки</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} ставки</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>feminine</gender>
 				<displayName>честица на милион</displayName>
 				<unitPattern count="one">{0} честица на милион</unitPattern>
@@ -9220,7 +9215,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} светала</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} светала</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>inanimate</gender>
 				<displayName>делови на милијарду</displayName>
 				<unitPattern count="one">{0} део на милијарду</unitPattern>
@@ -9591,7 +9586,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} светла</unitPattern>
 				<unitPattern count="other">{0} светала</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>делови/милијарда</displayName>
 			</unit>
 			<unit type="duration-night">

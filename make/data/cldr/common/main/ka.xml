@@ -1124,10 +1124,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="roc">ჩინეთის რესპუბლიკის კალენდარი</type>
 			<type key="cf" type="account">ვალუტის ბუღალტრული ფორმატი</type>
 			<type key="cf" type="standard">ვალუტის სტანდარტული ფორმატი</type>
-			<type key="collation" type="big5han">ტრადიციული ჩინური</type>
 			<type key="collation" type="dictionary" draft="unconfirmed">ლექსიკონით</type>
 			<type key="collation" type="ducet">უნიკოდის ნაგულისხმევი დახარისხების თანმიმდევრობა</type>
-			<type key="collation" type="gb2312han">გამარტივებული ჩინური</type>
 			<type key="collation" type="phonebook" draft="unconfirmed">ტელეფონის წიგნით</type>
 			<type key="collation" type="pinyin" draft="unconfirmed">პინ-ინი</type>
 			<type key="collation" type="reformed" draft="unconfirmed">რეფორმირებული</type>
@@ -2736,9 +2734,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>პნომპენი</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>ენდერბური</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>კანტონი</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -5327,7 +5322,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ერთეული</unitPattern>
 				<unitPattern count="other">{0} ერთეული</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ნაწილი მილიონზე</displayName>
 				<unitPattern count="one">{0} ნაწილი მილიონზე</unitPattern>
 				<unitPattern count="other">{0} ნაწილი მილიონზე</unitPattern>
@@ -5993,7 +5988,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ბრიტანული კვარტი</unitPattern>
 				<unitPattern count="other">{0} ბრიტანული კვარტი</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ნაწილი მილიარდზე</displayName>
 				<unitPattern count="one">{0} ნაწილი მილიარდზე</unitPattern>
 				<unitPattern count="other">{0} ნაწილი მილიარდზე</unitPattern>
@@ -6214,7 +6209,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ერთე.</unitPattern>
 				<unitPattern count="other">{0} ერთე.</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ნაწილი/მილიონზე</displayName>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
@@ -6974,7 +6969,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ბრიტ. კვარტი</unitPattern>
 				<unitPattern count="other">{0} ბრიტ. კვარტი</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ნაწილი/მილიარდზე</displayName>
 				<unitPattern count="one">{0} ნ/მ</unitPattern>
 				<unitPattern count="other">{0} ნ/მ</unitPattern>
@@ -7063,7 +7058,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ლ</unitPattern>
 				<unitPattern count="other">{0}ლ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ნ/მ</displayName>
 			</unit>
 			<unit type="duration-night">

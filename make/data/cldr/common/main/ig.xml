@@ -1829,9 +1829,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Oge Okpomọkụ Ireland</daylight>
 				</long>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
-			</zone>
 			<metazone type="Afghanistan">
 				<long>
 					<standard>Oge Afghanistan</standard>
@@ -3436,7 +3433,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ìhè</displayName>
 				<unitPattern count="other">{0} ìhè</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>akụkụ kwa ijeri</displayName>
 				<unitPattern count="other">{0} akụkụ kwa ijeri</unitPattern>
 			</unit>
@@ -3500,7 +3497,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ìhè</displayName>
 				<unitPattern count="other">{0} ìhè</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>akụkụ/ijeri</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -3516,7 +3513,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-item">
 				<unitPattern count="other">{0}ihe</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
 			<unit type="duration-quarter">
@@ -3574,7 +3571,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ìhè</displayName>
 				<unitPattern count="other">{0}ìhè</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>akụkụ/ijeri</displayName>
 			</unit>
 			<unit type="duration-night">

@@ -1123,13 +1123,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="roc">Мингуо күнтізбесі</type>
 			<type key="cf" type="account">Есептік валюта форматы</type>
 			<type key="cf" type="standard">Стандартты валюта форматы</type>
-			<type key="collation" type="big5han" draft="contributed">Дәстүрлі қытай тілінің сұрыптау реті - Big5</type>
 			<type key="collation" type="compat" draft="contributed">Сәйкестікке арналған алдыңғы сұрыптау реті</type>
 			<type key="collation" type="dictionary" draft="contributed">Сөздік бойынша сұрыптау реті</type>
 			<type key="collation" type="ducet">Әдепкі уникод сұрыптау реті</type>
 			<type key="collation" type="emoji" draft="contributed">Эмоджи сұрыптау реті</type>
 			<type key="collation" type="eor" draft="contributed">Еуропалық реттеу ережелері</type>
-			<type key="collation" type="gb2312han" draft="contributed">Жеңілдетілген қытай тілінің сұрыптау реті - GB2312</type>
 			<type key="collation" type="phonebook" draft="contributed">Телефон кітапшасының сұрыптау реті</type>
 			<type key="collation" type="pinyin" draft="contributed">Пиньинь сұрыптау реті</type>
 			<type key="collation" type="reformed" draft="contributed">Қайта қарастырылған сұрыптау реті</type>
@@ -3142,9 +3140,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Пномпень</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Эндербери</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>Кантон</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -5486,7 +5481,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} миллимоль/литр</unitPattern>
 				<unitPattern count="other">{0} миллимоль/литр</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>миллиондық үлес</displayName>
 				<unitPattern count="one">{0} миллиондық үлес</unitPattern>
 				<unitPattern count="other">{0} миллиондық үлес</unitPattern>
@@ -6137,7 +6132,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} жарық</unitPattern>
 				<unitPattern count="other">{0} жарық</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>миллиардтағы бөлік</displayName>
 				<unitPattern count="one">{0} б/млрд</unitPattern>
 				<unitPattern count="other">{0} б/млрд</unitPattern>
@@ -7140,7 +7135,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} жарық</unitPattern>
 				<unitPattern count="other">{0} жарық</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>бөлік/миллиард</displayName>
 				<unitPattern count="one">{0} б/млрд</unitPattern>
 				<unitPattern count="other">{0} б/млрд</unitPattern>
@@ -7298,7 +7293,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} жарық</unitPattern>
 				<unitPattern count="other">{0} жарық</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>б/млрд</displayName>
 				<unitPattern count="one">{0} б/млрд</unitPattern>
 				<unitPattern count="other">{0} б/млрд</unitPattern>

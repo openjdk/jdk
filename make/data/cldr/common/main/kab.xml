@@ -2299,9 +2299,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Nairobi">
 				<exemplarCity draft="unconfirmed">Nayrubi</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity draft="unconfirmed">Enderbury</exemplarCity>
-			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity draft="unconfirmed">Kumuṛ</exemplarCity>
 			</zone>

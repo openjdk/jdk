@@ -1970,9 +1970,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Tokyo">
 				<exemplarCity>Tokio</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
-			</zone>
 			<zone type="America/St_Kitts">
 				<exemplarCity>San Cristobal</exemplarCity>
 			</zone>
@@ -3775,7 +3772,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>imakuna</displayName>
 				<unitPattern count="other">{0} imakuna</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>partes por millon</displayName>
 				<unitPattern count="other">{0} partes por millon</unitPattern>
 			</unit>
@@ -4139,7 +4136,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ima</displayName>
 				<unitPattern count="other">{0} ima</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>partes/millon</displayName>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">

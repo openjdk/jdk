@@ -2414,9 +2414,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Bishkek">
 				<exemplarCity>Biškek</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
-			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Komory</exemplarCity>
 			</zone>
@@ -5199,7 +5196,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} kuski</unitPattern>
 				<unitPattern count="other">{0} kuskow</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>milionśiny</displayName>
 				<unitPattern count="one">{0} milionśina</unitPattern>
 				<unitPattern count="two">{0} milionśinje</unitPattern>
@@ -6323,7 +6320,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} spěšnosći swětła</unitPattern>
 				<unitPattern count="other">{0} spěšnosćow swětła</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>miliardnina</displayName>
 				<unitPattern count="one">{0} miliardnina</unitPattern>
 				<unitPattern count="two">{0} miliardninje</unitPattern>
@@ -6761,7 +6758,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} spěšnosći sw.</unitPattern>
 				<unitPattern count="other">{0} spěšnosćow sw.</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>nano</displayName>
 				<unitPattern count="one">{0} nano</unitPattern>
 				<unitPattern count="two">{0} nano</unitPattern>
@@ -6853,7 +6850,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} c</unitPattern>
 				<unitPattern count="other">{0} c</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>n</displayName>
 				<unitPattern count="one">{0} n</unitPattern>
 				<unitPattern count="two">{0} n</unitPattern>

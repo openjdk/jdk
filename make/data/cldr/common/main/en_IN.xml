@@ -321,9 +321,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</calendar>
 		</calendars>
 		<timeZoneNames>
-			<zone type="Asia/Qyzylorda">
-				<exemplarCity>Kyzylorda</exemplarCity>
-			</zone>
 			<zone type="Asia/Hovd">
 				<exemplarCity>Khovd</exemplarCity>
 			</zone>
@@ -331,13 +328,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<short>
 					<standard>GST</standard>
 				</short>
-			</metazone>
-			<metazone type="Hovd">
-				<long>
-					<generic>Khovd Time</generic>
-					<standard>Khovd Standard Time</standard>
-					<daylight>Khovd Summer Time</daylight>
-				</long>
 			</metazone>
 			<metazone type="India">
 				<short>

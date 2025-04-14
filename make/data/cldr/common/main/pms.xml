@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2025 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="pms"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="pms">piemontèis</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[aà b c {cc} {ch} d eéèë {eu} f g {gg} {gh} iì j l m n {n\-} oò p q r s {s\-c} {ss} t uù v z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[h]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ — , ; \: ! ? . … '’ &quot;“” « » ( ) \[ \] \{ \} @ /]</exemplarCharacters>
+	</characters>
+</ldml>

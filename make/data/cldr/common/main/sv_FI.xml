@@ -19,8 +19,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<key type="timezone" draft="contributed">tidszon</key>
 		</keys>
 		<types>
-			<type key="collation" type="big5han" draft="unconfirmed">kinesiska i big5-sorteringsordning</type>
-			<type key="collation" type="gb2312han" draft="unconfirmed">kinesiska i gb2312-sorteringsordning</type>
 			<type key="collation" type="pinyin" draft="unconfirmed">kinesiska i pinyin-sorteringsordning</type>
 			<type key="collation" type="stroke" draft="unconfirmed">kinesiska i strecksorteringsordning</type>
 		</types>

@@ -2353,9 +2353,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ဖနွမ်ပင်</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>အန်ဒါဘူရီ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>ကန်တွန်</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -4723,7 +4720,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>တစ်လီတာရှိ မီလီမိုးလ်</displayName>
 				<unitPattern count="other">တစ်လီတာရှိ {0} မီလီမိုးလ်</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="other">တစ်သန်းပုံ {0} ပုံ</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
@@ -5218,7 +5215,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>အလင်း</displayName>
 				<unitPattern count="other">{0} အလင်း</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>သန်းတစ်ထောင်ပုံ တစ်ပုံ</displayName>
 				<unitPattern count="other">သန်းတစ်ထောင်ပုံ {0} ပုံ</unitPattern>
 			</unit>
@@ -5285,7 +5282,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-karat">
 				<displayName>ကာရက်</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>တစ်သန်းပုံ တစ်ပုံ</displayName>
 			</unit>
 			<unit type="concentr-permyriad">
@@ -5696,7 +5693,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>အလင်း</displayName>
 				<unitPattern count="other">{0} အလင်း</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>သန်းတစ်ထောင်ပုံ တစ်ပုံ</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -5845,7 +5842,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>အလင်း</displayName>
 				<unitPattern count="other">{0}အလင်း</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>
 			<unit type="duration-night">

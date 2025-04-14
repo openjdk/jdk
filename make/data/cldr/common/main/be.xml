@@ -2797,9 +2797,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Пнампень</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Эндэрберы</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>Кантон</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -5893,7 +5890,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} элементаў</unitPattern>
 				<unitPattern count="other">{0} элемента</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>часткі на мільён</displayName>
 				<unitPattern count="one">{0} частка на мільён</unitPattern>
 				<unitPattern count="few">{0} часткі на мільён</unitPattern>
@@ -6932,7 +6929,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<displayName>брыт. кварты</displayName>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>частак на мільярд</displayName>
 				<unitPattern count="one">{0} частка на мільярд</unitPattern>
 				<unitPattern count="few">{0} часткі на мільярд</unitPattern>
@@ -8300,7 +8297,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} брыт. кварт</unitPattern>
 				<unitPattern count="other">{0} брыт. кварты</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>частак/мільярд</displayName>
 				<unitPattern count="one">{0} ч/млрд</unitPattern>
 				<unitPattern count="few">{0} ч/млрд</unitPattern>
@@ -8354,7 +8351,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} дэс. лыжак</unitPattern>
 				<unitPattern count="other">{0} дэс. лыжкі</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ч/млрд</displayName>
 				<unitPattern count="one">{0} ч/млрд</unitPattern>
 				<unitPattern count="few">{0} ч/млрд</unitPattern>

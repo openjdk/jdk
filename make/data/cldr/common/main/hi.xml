@@ -1117,12 +1117,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">पहले अपरकेस क्रमित करें</type>
 			<type key="colCaseLevel" type="no" draft="contributed">केस असंवेदी क्रमित करें</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">केस संवेदी को क्रमित करें</type>
-			<type key="collation" type="big5han">पारम्परिक चीनी वर्गीकरण क्रम</type>
 			<type key="collation" type="compat">संगतता के लिए पिछला वर्गीकरण क्रम</type>
 			<type key="collation" type="dictionary">शब्दकोश वर्गीकरण क्रम</type>
 			<type key="collation" type="ducet">डिफ़ॉल्ट यूनिकोड वर्गीकरण क्रम</type>
 			<type key="collation" type="eor" draft="contributed">यूरोपीय क्रमण नियम</type>
-			<type key="collation" type="gb2312han">सरलीकृत चीनी वर्गीकरण क्रम</type>
 			<type key="collation" type="phonebook">फ़ोनबुक वर्गीकरण क्रम</type>
 			<type key="collation" type="phonetic">ध्वन्यात्मक वर्गीकरण क्रम</type>
 			<type key="collation" type="pinyin">पिनयिन वर्गीकरण क्रम</type>
@@ -3166,9 +3164,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>नॉम पेन्ह</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>एंडरबरी</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>कैंटन</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -5709,7 +5704,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-item">
 				<gender>masculine</gender>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>masculine</gender>
 				<unitPattern count="one">{0} हिस्सा प्रति दस लाख</unitPattern>
 				<unitPattern count="one" case="oblique">{0} हिस्सा प्रति दस लाख</unitPattern>
@@ -6735,7 +6730,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} लाइट</unitPattern>
 				<unitPattern count="other" case="oblique">{0} लाइट</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>masculine</gender>
 				<displayName>पार्ट्स प्रति बिलियन</displayName>
 				<unitPattern count="one">{0} पार्ट प्रति बिलियन</unitPattern>
@@ -6958,7 +6953,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} आइटम</unitPattern>
 				<unitPattern count="other">{0} आइटम</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>हिस्सा प्रति दस लाख</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -7541,7 +7536,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} लाइट</unitPattern>
 				<unitPattern count="other">{0} लाइट</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>पार्ट्स/बिलियन</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -7703,7 +7698,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} व इं</unitPattern>
 				<unitPattern count="other">{0} व इं</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 			</unit>
 			<unit type="concentr-percent">

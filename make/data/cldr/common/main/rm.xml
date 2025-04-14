@@ -1048,9 +1048,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="roc">chalender da la Republica Chinaisa</type>
 			<type key="cf" type="account">format da valuta per la contabilitad</type>
 			<type key="cf" type="standard">format da valuta da standard</type>
-			<type key="collation" type="big5han" draft="contributed">chinaisa tradiziunala - Big5</type>
 			<type key="collation" type="ducet">zavrada unicode standard</type>
-			<type key="collation" type="gb2312han" draft="contributed">chinaisa simplifitgada - GB2312</type>
 			<type key="collation" type="phonebook" draft="contributed">cudesch da telefon</type>
 			<type key="collation" type="pinyin" draft="contributed">Pinyin</type>
 			<type key="collation" type="search">tschertga generala</type>

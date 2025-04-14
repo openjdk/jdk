@@ -1033,11 +1033,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="roc">Calendr Gweriniaeth Tseina</type>
 			<type key="cf" type="account">Fformat Arian Cyfrifeg</type>
 			<type key="cf" type="standard">Fformat Arian Safonol</type>
-			<type key="collation" type="big5han">Trefn Traddodiadol Tsieina - Big5</type>
 			<type key="collation" type="dictionary">Trefn Geiriadur</type>
 			<type key="collation" type="ducet">Trefn Rhagosodedig Unicode</type>
 			<type key="collation" type="eor">Rheolau trefnu Ewropeaidd</type>
-			<type key="collation" type="gb2312han">Trefn Symledig Tsieina - GB2312</type>
 			<type key="collation" type="phonebook">Trefn Llyfr Ffôn</type>
 			<type key="collation" type="pinyin">Trefn Pinyin</type>
 			<type key="collation" type="search">Chwilio at Ddibenion Cyffredinol</type>
@@ -2591,9 +2589,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Rome">
 				<exemplarCity>Rhufain</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Asia/Qostanay">
 				<exemplarCity>Kostanay</exemplarCity>
@@ -6380,7 +6375,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} mmol/L</unitPattern>
 				<unitPattern count="other">{0} milimôl y litr</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>rhannau pob miliwn</displayName>
 				<unitPattern count="zero">{0} rhan pob miliwn</unitPattern>
 				<unitPattern count="one">{0} rhan pob miliwn</unitPattern>
@@ -7655,7 +7650,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">golau</unitPattern>
 				<unitPattern count="other">{0} golau</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>rhannau fesul biliwn</displayName>
 				<unitPattern count="zero">ppb</unitPattern>
 				<unitPattern count="one">{0} rhan fesul biliwn</unitPattern>
@@ -7798,7 +7793,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} eitem</unitPattern>
 				<unitPattern count="other">{0} eitem</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>rhan/miliwn</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -8375,7 +8370,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} golau</unitPattern>
 				<unitPattern count="other">{0} golau</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>rhannau/biliwn</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -9493,7 +9488,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} golau</unitPattern>
 				<unitPattern count="other">{0} golau</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="zero">{0} ppb</unitPattern>
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="two">{0} ppb</unitPattern>

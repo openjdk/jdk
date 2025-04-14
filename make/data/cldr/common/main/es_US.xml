@@ -842,7 +842,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one" draft="provisional">{0} luz</unitPattern>
 				<unitPattern count="other">{0} de luces</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>partes/mil millones</displayName>
 			</unit>
 		</unitLength>

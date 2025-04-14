@@ -1248,13 +1248,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">מיין תחילה לפי אותיות רישיות</type>
 			<type key="colCaseLevel" type="no" draft="contributed">מיין באופן שאינו תלוי רישיות</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">מיין באופן תלוי רישיות</type>
-			<type key="collation" type="big5han">מיון סינית מסורתית</type>
 			<type key="collation" type="compat">סדר מיון קודם, עבור תאימות</type>
 			<type key="collation" type="dictionary">סדר מיון במילון</type>
 			<type key="collation" type="ducet">סדר מיון Unicode המוגדר כברירת מחדל</type>
 			<type key="collation" type="emoji" draft="contributed">סדר מיון אימוג׳י</type>
 			<type key="collation" type="eor">חוקי סדר אירופיים</type>
-			<type key="collation" type="gb2312han">סדר מיון סיני פשוט - GB2312</type>
 			<type key="collation" type="phonebook">מיון ספר טלפונים</type>
 			<type key="collation" type="phonetic">סדר מיון פונטי</type>
 			<type key="collation" type="pinyin">מיון פיניין</type>
@@ -3539,9 +3537,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>פנום פן</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>אנדרבורי</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>קנטון</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -6289,7 +6284,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>פריטים</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>masculine</gender>
 				<displayName>חלקים למיליון</displayName>
 				<unitPattern count="one">{0} חלקים למיליון</unitPattern>
@@ -7420,7 +7415,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="two">{0} אור</unitPattern>
 				<unitPattern count="other">{0} אור</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>masculine</gender>
 				<displayName>חלקים למיליארד</displayName>
 				<unitPattern count="one">{0} חלקים למיליארד</unitPattern>

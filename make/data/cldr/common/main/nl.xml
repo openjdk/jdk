@@ -1343,13 +1343,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Eerst sorteren op hoofdletters</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Niet hoofdlettergevoelig sorteren</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Hoofdlettergevoelig sorteren</type>
-			<type key="collation" type="big5han">Traditioneel-Chinese sorteervolgorde - Big5</type>
 			<type key="collation" type="compat">vorige sorteervolgorde, voor compatibiliteit</type>
 			<type key="collation" type="dictionary">Woordenboeksorteervolgorde</type>
 			<type key="collation" type="ducet">standaard Unicode-sorteervolgorde</type>
 			<type key="collation" type="emoji" draft="contributed">emojisorteervolgorde</type>
 			<type key="collation" type="eor" draft="contributed">Europese sorteerregels</type>
-			<type key="collation" type="gb2312han">Vereenvoudigd-Chinese sorteervolgorde - GB2312</type>
 			<type key="collation" type="phonebook">Telefoonboeksorteervolgorde</type>
 			<type key="collation" type="phonetic">Fonetische sorteervolgorde</type>
 			<type key="collation" type="pinyin">Pinyinsorteervolgorde</type>
@@ -3703,9 +3701,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Bishkek">
 				<exemplarCity>Bisjkek</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="America/St_Kitts">
 				<exemplarCity>Saint Kitts</exemplarCity>
@@ -6181,7 +6176,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ond.</unitPattern>
 				<unitPattern count="other">{0} onderdelen</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>common</gender>
 			</unit>
 			<unit type="concentr-percent">
@@ -7095,7 +7090,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} licht</unitPattern>
 				<unitPattern count="other">{0} licht</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>common</gender>
 			</unit>
 			<unit type="duration-night">

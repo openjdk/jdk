@@ -1059,9 +1059,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="roc">मिंगुव’ फान्जामुथि</type>
 			<type key="cf" type="account">मुद्रानि नुथायखौ हिसाब लाखिनाय</type>
 			<type key="cf" type="standard">थाखोआरि मुद्रानि नुथाय</type>
-			<type key="collation" type="big5han">पारम्पारिक चीनी वर्गीकरण बीग फ़ाईव</type>
 			<type key="collation" type="ducet">गरहाजिर इउनिकड रान्नायनि फारि</type>
-			<type key="collation" type="gb2312han">सरलीकृत चीनी वर्गीकरण जीबी2312</type>
 			<type key="collation" type="phonebook">दूरभाष निर्देशिका वर्गीकरण</type>
 			<type key="collation" type="pinyin">पिनयीन वर्गीकरण</type>
 			<type key="collation" type="search">सादारन-जाहोननि नायगिरनाय</type>
@@ -2575,9 +2573,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>नॉम पेन</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>एन्डारबारी</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>केन्ट’न</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">

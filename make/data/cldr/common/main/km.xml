@@ -2401,9 +2401,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ភ្នំពេញ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>អ៊ីនដឺប៊ូរី</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>កាន់តុន</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -4663,7 +4660,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>មិល្លីម៉ូលក្នុងមួយលីត្រ</displayName>
 				<unitPattern count="other">{0} មិល្លីម៉ូលក្នុងមួយលីត្រ</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ផ្នែកក្នុងមួយលាន</displayName>
 				<unitPattern count="other">{0} ផ្នែកក្នុងមួយលាន</unitPattern>
 			</unit>
@@ -5178,7 +5175,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ពន្លឺ</displayName>
 				<unitPattern count="other">{0} ពន្លឺ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ផ្នែកក្នុងមួយប៊ីលាន</displayName>
 				<unitPattern count="other">{0} ផ្នែកក្នុងមួយប៊ីលាន</unitPattern>
 			</unit>
@@ -5486,7 +5483,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ពន្លឺ</displayName>
 				<unitPattern count="other">{0} ពន្លឺ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ផ្នែក/ប៊ីលាន</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -5629,7 +5626,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ពន្លឺ</displayName>
 				<unitPattern count="other">{0} ពន្លឺ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>
 			<unit type="duration-night">

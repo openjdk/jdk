@@ -1195,12 +1195,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">대문자 우선 정렬</type>
 			<type key="colCaseLevel" type="no" draft="contributed">대/소문자 무시 정렬</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">대/소문자 구분 정렬</type>
-			<type key="collation" type="big5han">중국어 번체 정렬 순서 (Big5)</type>
 			<type key="collation" type="compat">호환성을 위해 이전 정렬 순서</type>
 			<type key="collation" type="dictionary">사전 정렬순</type>
 			<type key="collation" type="ducet">기본 유니코드 정렬 순서</type>
 			<type key="collation" type="eor" draft="contributed">유럽 정렬 규칙</type>
-			<type key="collation" type="gb2312han">중국어 간체 정렬 순서 (GB2312)</type>
 			<type key="collation" type="phonebook">전화번호부순</type>
 			<type key="collation" type="phonetic">소리나는 대로 정렬 순서</type>
 			<type key="collation" type="pinyin">병음순</type>
@@ -3594,9 +3592,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>프놈펜</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>엔더베리</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>칸톤</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -6942,7 +6937,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>영국 쿼트</displayName>
 				<unitPattern count="other">{0}영국 쿼트</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>
 			<unit type="duration-night">
@@ -7026,7 +7021,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>항목</displayName>
 				<unitPattern count="other">{0}개 항목</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
@@ -7527,7 +7522,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<unitPattern count="other">{0}qt Imp.</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>
 			<unit type="duration-night">
@@ -7577,7 +7572,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dsp Imp</displayName>
 				<unitPattern count="other">{0}dsp-Imp</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>
 			<unit type="duration-night">

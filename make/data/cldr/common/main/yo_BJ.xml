@@ -1975,7 +1975,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ìmɔ́lɛ̀</displayName>
 				<unitPattern count="other">{0} ìmɔ́lɛ̀</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ɛ̀yà nínú ìdá blíɔ̀nù</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -1985,7 +1985,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="short">
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ara/milíɔ̀nù</displayName>
 			</unit>
 			<unit type="concentr-permille">

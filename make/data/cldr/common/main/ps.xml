@@ -2360,9 +2360,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>پنوم پن</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>انډربري</exemplarCity>
-			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>کيريټماټي</exemplarCity>
 			</zone>
@@ -4929,7 +4926,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-item">
 				<displayName>توکي</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>پارټتس في مليون</displayName>
 				<unitPattern count="one">{0} پارټ في مليون</unitPattern>
 				<unitPattern count="other">{0} پارټس في مليون</unitPattern>
@@ -5711,7 +5708,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} توکی</unitPattern>
 				<unitPattern count="other">{0} توکی</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>پارټس/مليون</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -5999,7 +5996,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} چنه</unitPattern>
 				<unitPattern count="other">{0} چنه</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>p/b</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -6139,7 +6136,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}dsp-Imp</unitPattern>
 				<unitPattern count="other">{0}dsp-Imp</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>p/b</displayName>
 			</unit>
 			<unit type="duration-night">

@@ -1253,11 +1253,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="colCaseFirst" type="upper" draft="contributed">優先排序大寫</type>
 			<type key="colCaseLevel" type="no" draft="contributed">不分大小寫排序</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">依大小寫排序</type>
-			<type key="collation" type="big5han">繁體中文排序 - Big5</type>
 			<type key="collation" type="dictionary">字典排序</type>
 			<type key="collation" type="ducet">預設 Unicode 排序</type>
 			<type key="collation" type="eor" draft="contributed">歐洲排序規則</type>
-			<type key="collation" type="gb2312han">簡體中文排序 - GB2312</type>
 			<type key="collation" type="phonebook">電話簿排序</type>
 			<type key="collation" type="phonetic">發音排序</type>
 			<type key="collation" type="pinyin">拼音排序</type>
@@ -3870,9 +3868,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>金邊</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>恩得伯理島</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>坎頓</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -6597,7 +6592,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>光速</displayName>
 				<unitPattern count="other">{0} 光速</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>十億分點濃度</displayName>
 				<unitPattern count="other">{0} 十億分點濃度</unitPattern>
 			</unit>
@@ -6801,7 +6796,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>項</displayName>
 				<unitPattern count="other">{0} 項</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>百萬分率</displayName>
 				<unitPattern count="other">{0} 百萬分率</unitPattern>
 			</unit>
@@ -7409,7 +7404,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>光速</displayName>
 				<unitPattern count="other">{0} 光速</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>濃度/十億</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -7481,7 +7476,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>光速</displayName>
 				<unitPattern count="other">{0}光速</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>
 			<unit type="duration-night">

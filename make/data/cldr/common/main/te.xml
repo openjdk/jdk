@@ -1109,12 +1109,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">ముందు అప్పర్‌కేస్‌ని క్రమబద్ధీకరించు</type>
 			<type key="colCaseLevel" type="no">కేస్ ఇన్‌సెన్సిటివ్‌ను క్రమబద్ధీకరించు</type>
 			<type key="colCaseLevel" type="yes">కేస్ సెన్సిటివ్‌ని క్రమబద్ధీకరించు</type>
-			<type key="collation" type="big5han">సాంప్రదాయ చైనీస్ క్రమబద్ధీకరణ క్రమం - Big5</type>
 			<type key="collation" type="compat" draft="contributed">మునుపటి క్రమబద్ధీకరణ క్రమం, అనుకూలం</type>
 			<type key="collation" type="dictionary">నిఘంటువు క్రమబద్ధీకరణ క్రమం</type>
 			<type key="collation" type="ducet">డిఫాల్ట్ యూనీకోడ్ క్రమబద్ధీకరణ క్రమం</type>
 			<type key="collation" type="eor" draft="contributed">యురోపియన్ క్రమబద్ధీకరణ నిబంధనలు</type>
-			<type key="collation" type="gb2312han">సరళీకృత చైనీస్ క్రమబద్ధీకరణ క్రమం - GB2312</type>
 			<type key="collation" type="phonebook">ఫోన్‌బుక్ క్రమబద్ధీకరణ క్రమం</type>
 			<type key="collation" type="phonetic">ధ్వని ఉచ్ఛారిత క్రమబద్ధీకరణ క్రమం</type>
 			<type key="collation" type="pinyin">పిన్‌యిన్ క్రమబద్ధీకరణ క్రమం</type>
@@ -2923,9 +2921,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>నోమ్‌పెన్హ్</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>ఎండర్బెరీ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>కాంతోన్</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -5705,7 +5700,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ఐటమ్</unitPattern>
 				<unitPattern count="other">{0} ఐటమ్‌లు</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0} భాగం/మిలియన్</unitPattern>
 				<unitPattern count="other">{0} భాగాలు/మిలియన్</unitPattern>
 			</unit>
@@ -6474,7 +6469,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} లైట్</unitPattern>
 				<unitPattern count="other">{0} లైట్</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ప్రతి బిలియన్‌కి భాగాలు</displayName>
 				<unitPattern count="one">ప్రతి బిలియన్‌కి {0} భాగం</unitPattern>
 				<unitPattern count="other">ప్రతి బిలియన్‌కి {0} భాగాలు</unitPattern>
@@ -6694,7 +6689,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ఐటమ్</unitPattern>
 				<unitPattern count="other">{0} ఐటమ్</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>భాగాలు/మిలియన్</displayName>
 				<unitPattern count="one">{0} భా./మి.</unitPattern>
 				<unitPattern count="other">{0} భా./మి.</unitPattern>
@@ -7465,7 +7460,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} లైట్</unitPattern>
 				<unitPattern count="other">{0} లైట్</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>భాగాలు/బిలియన్</displayName>
 			</unit>
 			<unit type="duration-night">

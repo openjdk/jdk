@@ -1098,12 +1098,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">प्रथम अपरकेस क्रमवारी लावा</type>
 			<type key="colCaseLevel" type="no">केस संवेदी क्रमवारी लावा</type>
 			<type key="colCaseLevel" type="yes">केस संवेदी क्रमवारी लावा</type>
-			<type key="collation" type="big5han">पारंपारिक चिनी क्रमवारी क्रम - Big5</type>
 			<type key="collation" type="compat" draft="contributed">अनुकूलतेसाठी आधीची क्रमवारी</type>
 			<type key="collation" type="dictionary">शब्दकोश अनुक्रम</type>
 			<type key="collation" type="ducet">डीफॉल्ट युनिकोड क्रमवारी क्रम</type>
 			<type key="collation" type="eor" draft="contributed">युरोपियन क्रमवारी नियम</type>
-			<type key="collation" type="gb2312han">सरलीकृत चिनी क्रमवारी क्रम - GB2312</type>
 			<type key="collation" type="phonebook">फोनबुक अनुक्रम</type>
 			<type key="collation" type="phonetic">ध्वनीविचार क्रमवारी क्रम</type>
 			<type key="collation" type="pinyin">पिनयिन अनुक्रम</type>
@@ -3092,9 +3090,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>प्नोम पेन्ह</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>एंडरबरी</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>कँटन</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -6074,7 +6069,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} आयटमचे</unitPattern>
 				<unitPattern count="other" case="locative">{0} आयटममध्ये</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>neuter</gender>
 				<displayName>भाग प्रति दशलक्ष</displayName>
 				<unitPattern count="one">{0} भाग प्रति दशलक्ष</unitPattern>
@@ -8106,7 +8101,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive" draft="contributed">{0} प्रकाशांचे</unitPattern>
 				<unitPattern count="other" case="locative" draft="contributed">{0} प्रकाशामध्ये</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>neuter</gender>
 				<displayName>भाग प्रति अब्ज</displayName>
 				<unitPattern count="one">{0} भाग प्रति अब्ज</unitPattern>
@@ -8311,7 +8306,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} आयटम</unitPattern>
 				<unitPattern count="other">{0} आयटम</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>भाग/दशलक्ष</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -8824,7 +8819,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0} प्रकाश</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} प्रकाश</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>भाग/अब्ज</displayName>
 				<unitPattern count="one" draft="contributed">{0} भाग प्रति अब्ज</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} भाप्रअ</unitPattern>
@@ -8921,7 +8916,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}आयटम</unitPattern>
 				<unitPattern count="other">{0}आयटम</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
@@ -9221,7 +9216,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0} प्रकाश</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} प्रकाश</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>भाग/अब्ज</displayName>
 				<unitPattern count="one" draft="contributed">{0} भाग/अब्ज</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} भाग/अब्ज</unitPattern>

@@ -1256,11 +1256,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Ordina prima lettere minuscole</type>
 			<type key="colCaseLevel" type="no">Ordina senza distinzione tra maiuscole e minuscole</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Ordina distinzione tra maiuscole e minuscole</type>
-			<type key="collation" type="big5han">Ordinamento Cinese tradizionale - Big5</type>
 			<type key="collation" type="compat">Ordinamento precedente, per compatibilità</type>
 			<type key="collation" type="dictionary">Ordinamento dizionario</type>
 			<type key="collation" type="ducet">Ordinamento Unicode predefinito</type>
-			<type key="collation" type="gb2312han">Ordinamento Cinese semplificato - GB2312</type>
 			<type key="collation" type="phonebook">Ordinamento Elenco telefonico</type>
 			<type key="collation" type="phonetic">Ordinamento fonetico</type>
 			<type key="collation" type="pinyin">Ordinamento pinyin</type>
@@ -2615,12 +2613,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Jamaica">
 				<exemplarCity>Giamaica</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
-				<exemplarCity>Canton</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Comore</exemplarCity>
@@ -5199,7 +5191,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} elemento</unitPattern>
 				<unitPattern count="other">{0} elementi</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>feminine</gender>
 				<displayName>parti per milione</displayName>
 				<unitPattern count="one">{0} parte per milione</unitPattern>
@@ -6141,7 +6133,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0} alla velocità della luce</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} alla velocità della luce</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>feminine</gender>
 				<displayName>parti per miliardo</displayName>
 				<unitPattern count="one">{0} parte per miliardo</unitPattern>
@@ -6569,7 +6561,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}elem.</unitPattern>
 				<unitPattern count="other">{0}elem.</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
@@ -7235,7 +7227,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0}l</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}l</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>

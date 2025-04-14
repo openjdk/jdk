@@ -910,10 +910,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">Sorteer hoofletters eerste</type>
 			<type key="colCaseLevel" type="no">Sorteer nie kassensitief nie</type>
 			<type key="colCaseLevel" type="yes">Sorteer kassensitief</type>
-			<type key="collation" type="big5han">Tradisionele Chinese sorteervolgorde - Groot5</type>
 			<type key="collation" type="dictionary">Woordeboek-sorteervolgorde</type>
 			<type key="collation" type="ducet">Verstek Unicode-rangskikvolgorde</type>
-			<type key="collation" type="gb2312han">Vereenvoudigde Chinese sorteervolgorde - GB2312</type>
 			<type key="collation" type="phonebook">Foonboek-sorteervolgorde</type>
 			<type key="collation" type="phonetic">Fonetiese sorteerorde</type>
 			<type key="collation" type="pinyin">Pinyin-sorteervolgorde</type>
@@ -2192,9 +2190,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Bishkek">
 				<exemplarCity>Bisjkek</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Comore</exemplarCity>
@@ -4098,7 +4093,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} item</unitPattern>
 				<unitPattern count="other">{0} items</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>dele per miljoen</displayName>
 				<unitPattern count="one">{0} deel per miljoen</unitPattern>
 				<unitPattern count="other">{0} dele per miljoen</unitPattern>
@@ -4830,7 +4825,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} lig</unitPattern>
 				<unitPattern count="other">{0} lig</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>deeltjies per miljard</displayName>
 				<unitPattern count="one">{0} deeltjie per miljard</unitPattern>
 				<unitPattern count="other">{0} deeltjies per miljard</unitPattern>
@@ -4927,7 +4922,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mmol/l</unitPattern>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>dele/miljoen</displayName>
 				<unitPattern count="one">{0} d.p.m.</unitPattern>
 				<unitPattern count="other">{0} d.p.m.</unitPattern>
@@ -5427,7 +5422,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} lig</unitPattern>
 				<unitPattern count="other">{0} lig</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>deeltjies/miljard</displayName>
 				<unitPattern count="one">{0} deeltjie/miljard</unitPattern>
 				<unitPattern count="other">{0} deeltjies/miljard</unitPattern>
@@ -5537,7 +5532,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}item</unitPattern>
 				<unitPattern count="other">{0}item</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>d.p.m.</displayName>
 				<unitPattern count="one">{0}d.p.m.</unitPattern>
 				<unitPattern count="other">{0} d.p.m.</unitPattern>
@@ -6166,7 +6161,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} lig</unitPattern>
 				<unitPattern count="other">{0} lig</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>deeltjies/miljard</displayName>
 				<unitPattern count="one">{0}deeltjie/miljard</unitPattern>
 				<unitPattern count="other">{0}deeltjies/miljard</unitPattern>

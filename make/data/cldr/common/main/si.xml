@@ -2419,9 +2419,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>නොම් පෙන්</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>එන්ඩර්බරි</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>කැන්ටන්</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -4774,7 +4771,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-item">
 				<displayName>අයිතම</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>මිලියනයට කොටස්</displayName>
 				<unitPattern count="one">මිලියනයට කොටස් {0}</unitPattern>
 				<unitPattern count="other">මිලියනයට කොටස් {0}</unitPattern>
@@ -5485,7 +5482,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ආලෝකය</unitPattern>
 				<unitPattern count="other">ආලෝකය {0}</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>බිලියනයකට කොටස්</displayName>
 				<unitPattern count="one">බිලියනයකට කොටස් {0}</unitPattern>
 				<unitPattern count="other">බිලියනයකට කොටස් {0}</unitPattern>
@@ -5702,7 +5699,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} අයිතමයක්</unitPattern>
 				<unitPattern count="other">අයිතම {0}ක්</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>කොටස්/මිලියනය</displayName>
 				<unitPattern count="one">{0} මිලිකො</unitPattern>
 				<unitPattern count="other">{0} මිලිකො</unitPattern>
@@ -6504,7 +6501,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">ආලෝකය {0}</unitPattern>
 				<unitPattern count="other">ආලෝකය {0}</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>කොටස්/බිලියනය</displayName>
 				<unitPattern count="one">බිකො {0}</unitPattern>
 				<unitPattern count="other">බිකො {0}</unitPattern>
@@ -6608,7 +6605,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}වඅඟ²</unitPattern>
 				<perUnitPattern>{0}/වඅඟ²</perUnitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>මිලිකො</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -6793,7 +6790,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">ආලෝකය {0}</unitPattern>
 				<unitPattern count="other">ආලෝකය {0}</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>බිකො</displayName>
 				<unitPattern count="one">බිකො {0}</unitPattern>
 				<unitPattern count="other">බිකො {0}</unitPattern>

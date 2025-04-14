@@ -695,6 +695,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Bass" draft="unconfirmed">bassa</script>
 			<script type="Batk">batak</script>
 			<script type="Beng">bengali</script>
+			<script type="Berf" draft="provisional">beria erfe</script>
 			<script type="Bhks" draft="unconfirmed">bhaïksouki</script>
 			<script type="Blis">symboles Bliss</script>
 			<script type="Bopo">bopomofo</script>
@@ -707,6 +708,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Cari">carien</script>
 			<script type="Cham">cham</script>
 			<script type="Cher">cherokee</script>
+			<script type="Chis" draft="provisional">chisoi</script>
 			<script type="Chrs" draft="provisional">chorasmien</script>
 			<script type="Cirt">cirth</script>
 			<script type="Copt">copte</script>
@@ -841,6 +843,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Shaw">shavien</script>
 			<script type="Shrd" draft="unconfirmed">charada</script>
 			<script type="Sidd" draft="unconfirmed">siddham</script>
+			<script type="Sidt" draft="provisional">sidétique</script>
 			<script type="Sind" draft="unconfirmed">sindhi</script>
 			<script type="Sinh">cingalais</script>
 			<script type="Sogd" draft="unconfirmed">sogdien</script>
@@ -861,6 +864,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Taml">tamoul</script>
 			<script type="Tang" draft="unconfirmed">tangoute</script>
 			<script type="Tavt">taï viêt</script>
+			<script type="Tayo" draft="provisional">taï yo</script>
 			<script type="Telu">télougou</script>
 			<script type="Teng">tengwar</script>
 			<script type="Tfng">tifinagh</script>
@@ -871,6 +875,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Tirh" draft="unconfirmed">tirhouta</script>
 			<script type="Tnsa" draft="provisional">tangsa</script>
 			<script type="Todr" draft="provisional">todhri</script>
+			<script type="Tols" draft="provisional">tolong siki</script>
 			<script type="Toto" draft="provisional">toto</script>
 			<script type="Tutg" draft="provisional">tulu-tigalari</script>
 			<script type="Ugar">ougaritique</script>
@@ -1364,13 +1369,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Trier avec les majuscules d’abord</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Trier sans tenir compte de la casse</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Trier en tenant compte de la casse</type>
-			<type key="collation" type="big5han">ordre chinois traditionnel - Big5</type>
 			<type key="collation" type="compat">ancien ordre de tri pour compatibilité</type>
 			<type key="collation" type="dictionary">ordre du dictionnaire</type>
 			<type key="collation" type="ducet">ordre de tri Unicode par défaut</type>
 			<type key="collation" type="emoji" draft="unconfirmed">ordre des emoji</type>
 			<type key="collation" type="eor" draft="contributed">règles de classement européen</type>
-			<type key="collation" type="gb2312han">ordre chinois simplifié - GB2312</type>
 			<type key="collation" type="phonebook">ordre de l’annuaire</type>
 			<type key="collation" type="phonetic">ordre de tri phonétique</type>
 			<type key="collation" type="pinyin">ordre pinyin</type>
@@ -3522,12 +3525,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Bishkek">
 				<exemplarCity>Bichkek</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
-				<exemplarCity>Canton</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Comores</exemplarCity>
@@ -6754,7 +6751,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} item</unitPattern>
 				<unitPattern count="other">{0} items</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>feminine</gender>
 				<displayName>parts par million</displayName>
 				<unitPattern count="one">{0} part par million</unitPattern>
@@ -7721,7 +7718,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} lumière</unitPattern>
 				<unitPattern count="other">{0} lumière</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>feminine</gender>
 				<displayName>parts par milliard</displayName>
 				<unitPattern count="one">{0} part par milliard</unitPattern>
@@ -7837,7 +7834,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} items</unitPattern>
 				<unitPattern count="other">{0} items</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
@@ -8630,7 +8627,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}item</unitPattern>
 				<unitPattern count="other">{0}items</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
@@ -9232,7 +9229,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} lumière</unitPattern>
 				<unitPattern count="other">{0} lumière</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>

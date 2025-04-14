@@ -1013,13 +1013,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="roc" draft="unconfirmed">Миньго çулталăк кĕнеки</type>
 			<type key="cf" type="account" draft="unconfirmed">финанс формачӗ</type>
 			<type key="cf" type="standard" draft="unconfirmed">валюта стандартлӑ формачӗ</type>
-			<type key="collation" type="big5han" draft="unconfirmed">йӑлана кӗнӗ китай - big5</type>
 			<type key="collation" type="compat" draft="unconfirmed">иртнĕ сортировка йӗрки</type>
 			<type key="collation" type="dictionary" draft="unconfirmed">сортировка йӗрки словарĕ</type>
 			<type key="collation" type="ducet" draft="unconfirmed">Юникодри яланхи сортировка йӗрки</type>
 			<type key="collation" type="emoji" draft="unconfirmed">эмодзи сортировка йӗрки</type>
 			<type key="collation" type="eor" draft="unconfirmed">Европа сортировка правилисем</type>
-			<type key="collation" type="gb2312han" draft="unconfirmed">китай сортировкӑн ансат йӗрки - GB2312</type>
 			<type key="collation" type="phonebook" draft="unconfirmed">телефон кӗнекине сортировка йӗрке</type>
 			<type key="collation" type="pinyin" draft="unconfirmed">пиньинь сортировка йӗрки</type>
 			<type key="collation" type="search" draft="unconfirmed">шырани</type>
@@ -4431,7 +4429,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Пномпень</exemplarCity>
 			</zone>
-			<zone type="Pacific/Kanton">
+			<zone type="Pacific/Enderbury">
 				<exemplarCity>Кантон</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -8031,7 +8029,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">объект</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} объект</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName draft="unconfirmed">миллионмĕш пайĕ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} миллионмĕш пайĕ</unitPattern>
 			</unit>
@@ -8689,7 +8687,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">ҫутӑ хӑвӑртлӑхӗ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ҫутӑ хӑвӑртлӑхӗ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName draft="unconfirmed">миллиардмĕш пайĕ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} миллиардмĕш пайĕ</unitPattern>
 			</unit>

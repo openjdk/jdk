@@ -1101,11 +1101,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">Сортиране първо по горен регистър</type>
 			<type key="colCaseLevel" type="no">Сортиране без различаване на регистъра на буквите</type>
 			<type key="colCaseLevel" type="yes">Сортиране с различаване на регистъра на буквите</type>
-			<type key="collation" type="big5han">Традиционен китайски (Big5)</type>
 			<type key="collation" type="compat">предишен ред на сортиране, за съвместимост</type>
 			<type key="collation" type="dictionary">Речников ред на сортиране</type>
 			<type key="collation" type="ducet">ред на сортиране в Unicode по подразбиране</type>
-			<type key="collation" type="gb2312han">Опростен китайски (GB2312)</type>
 			<type key="collation" type="phonebook">Азбучен ред</type>
 			<type key="collation" type="phonetic">Фонетичен ред на сортиране</type>
 			<type key="collation" type="pinyin">Сортиране Пинин</type>
@@ -3178,9 +3176,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Пном Пен</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Ендърбъри</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>Кантон</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -6395,7 +6390,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} единица</unitPattern>
 				<unitPattern count="other">{0} единици</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>части на милион</displayName>
 				<unitPattern count="one">{0} част на милион</unitPattern>
 				<unitPattern count="other">{0} части на милион</unitPattern>
@@ -7195,7 +7190,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} светлина</unitPattern>
 				<unitPattern count="other">{0} светлина</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>части на милиард</displayName>
 				<unitPattern count="one">{0} част на милиард</unitPattern>
 				<unitPattern count="other">{0} части на милиард</unitPattern>
@@ -7559,7 +7554,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} светлина</unitPattern>
 				<unitPattern count="other">{0} светлина</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>части/милиард</displayName>
 			</unit>
 			<unit type="duration-night">

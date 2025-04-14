@@ -1374,13 +1374,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">isot kirjaimet edeltävät pieniä</type>
 			<type key="colCaseLevel" type="no">isojen ja pienten kirjainten lajittelu yhdessä</type>
 			<type key="colCaseLevel" type="yes">isojen ja pienten kirjainten lajittelu erikseen</type>
-			<type key="collation" type="big5han">perinteinen kiinalainen järjestys Big5</type>
 			<type key="collation" type="compat">aiempi lajittelujärjestys yhteensopivuutta varten</type>
 			<type key="collation" type="dictionary">sanakirjajärjestys</type>
 			<type key="collation" type="ducet">Unicoden oletusjärjestys</type>
 			<type key="collation" type="emoji">emojien lajittelujärjestys</type>
 			<type key="collation" type="eor">yleiseurooppalainen lajittelujärjestys</type>
-			<type key="collation" type="gb2312han">yksinkertaistettu kiinalainen järjestys GB2312</type>
 			<type key="collation" type="phonebook">puhelinluettelojärjestys</type>
 			<type key="collation" type="phonetic">äänteellinen järjestys</type>
 			<type key="collation" type="pinyin">pinyin-järjestys</type>
@@ -2063,7 +2061,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="sat">la</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">sunnuntai</day>
+							<day type="sun">sunnuntaina</day>
 							<day type="mon">maanantaina</day>
 							<day type="tue">tiistaina</day>
 							<day type="wed">keskiviikkona</day>
@@ -3356,9 +3354,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Bishkek">
 				<exemplarCity>Biškek</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Komorit</exemplarCity>
@@ -6583,7 +6578,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="illative">{0} kohteeseen</unitPattern>
 				<unitPattern count="other" case="partitive">{0} kohdetta</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>miljoonasosat</displayName>
 				<unitPattern count="one">{0} miljoonasosa</unitPattern>
 				<unitPattern count="one" case="elative">{0} miljoonasosasta</unitPattern>
@@ -8157,7 +8152,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} br. neljännesgallona</unitPattern>
 				<unitPattern count="other">{0} br. neljännesgallonaa</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>miljardisosat</displayName>
 				<unitPattern count="one">{0} miljardisosa</unitPattern>
 				<unitPattern count="one" case="elative">{0} miljardisosasta</unitPattern>
@@ -8664,7 +8659,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kohde</unitPattern>
 				<unitPattern count="other">{0} kohdetta</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>

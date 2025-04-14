@@ -2774,9 +2774,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ଫନୋମ୍‌ ପେନହ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>ଏଣ୍ଡେରବୁରି</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>କ୍ୟାଣ୍ଟନ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -5208,7 +5205,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ଆଇଟମ୍</unitPattern>
 				<unitPattern count="other">{0} ଆଇଟମ୍‌ଗୁଡିକ</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ଅଂଶ ପ୍ରତି ନିୟୁତ</displayName>
 				<unitPattern count="one">{0} ଅଂଶ ପ୍ରତି ନିୟୁତ</unitPattern>
 				<unitPattern count="other">{0} ଅଂଶ ପ୍ରତି ନିୟୁତ</unitPattern>
@@ -5874,7 +5871,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ଆଲୋକ</unitPattern>
 				<unitPattern count="other">{0} ଆଲୋକ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ବିଲିୟନ ପ୍ରତି ଅଂଶଗୁଡିକ</displayName>
 				<unitPattern count="one">{0} ପାର୍ଟ୍ସ ପ୍ରତି ବିଲିୟନ୍</unitPattern>
 				<unitPattern count="other">{0} ପାର୍ଟ୍ସ ପ୍ରତି ବିଲିୟନ୍</unitPattern>
@@ -6058,7 +6055,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ଆଇଟମ୍</unitPattern>
 				<unitPattern count="other">{0} ଆଇଟମ୍</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ଅଂଶ/ନିୟୁତ</displayName>
 				<unitPattern count="one">{0} ପିପିଏମ୍</unitPattern>
 				<unitPattern count="other">{0} ପିପିଏମ୍</unitPattern>
@@ -6670,7 +6667,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ଆଲୋକ</unitPattern>
 				<unitPattern count="other">{0} ଆଲୋକ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ପାର୍ଟ୍ସ/ବିଲିୟନ୍</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -6818,7 +6815,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ଆଇଟମ୍</unitPattern>
 				<unitPattern count="other">{0}ଆଇଟମ୍</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ପିପିଏମ୍</displayName>
 				<unitPattern count="one">{0}ପିପିଏମ୍</unitPattern>
 				<unitPattern count="other">{0}ପିପିଏମ୍</unitPattern>
@@ -7228,7 +7225,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ଆଲୋକ</unitPattern>
 				<unitPattern count="other">{0} ଆଲୋକ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>

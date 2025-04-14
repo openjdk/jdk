@@ -1888,7 +1888,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>ܦܢܘܡ ܦܢ</exemplarCity>
 			</zone>
-			<zone type="Pacific/Kanton">
+			<zone type="Pacific/Enderbury">
 				<exemplarCity>ܟܐܢܬܘܢ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -3676,7 +3676,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">ܚܕ ܡܠܘܐܐ</unitPattern>
 				<unitPattern count="other">{0} ܡܠܘܐ̈ܐ</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ܡܢܘ̈ܬܐ ܒܡܠܝܘܢ</displayName>
 				<unitPattern count="one">{0} ܡܢܬܐ ܒܡܠܝܘܢ</unitPattern>
 				<unitPattern count="other">{0} ܡܢܘ̈ܬܐ ܒܡܠܝܘܢ</unitPattern>

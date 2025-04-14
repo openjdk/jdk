@@ -1293,13 +1293,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">先对大写字母进行排序</type>
 			<type key="colCaseLevel" type="no" draft="contributed">不区分大小写进行排序</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">区分大小写进行排序</type>
-			<type key="collation" type="big5han">繁体中文排序 - Big5</type>
 			<type key="collation" type="compat">基于兼容性沿用既往排序</type>
 			<type key="collation" type="dictionary">字典排序</type>
 			<type key="collation" type="ducet">默认 Unicode 排序</type>
 			<type key="collation" type="emoji" draft="contributed">表情符号排序</type>
 			<type key="collation" type="eor">欧洲排序规则</type>
-			<type key="collation" type="gb2312han">简体中文排序 - GB2312</type>
 			<type key="collation" type="phonebook">电话簿排序</type>
 			<type key="collation" type="phonetic">语音排序</type>
 			<type key="collation" type="pinyin">拼音排序</type>
@@ -4195,9 +4193,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>金边</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>恩德伯里</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>坎顿岛</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -7034,7 +7029,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>毫摩尔/升</displayName>
 				<unitPattern count="other">每升{0}毫摩尔</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="other">百万分之{0}</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
@@ -7368,7 +7363,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>光</displayName>
 				<unitPattern count="other">{0}光</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>十亿分比</displayName>
 				<unitPattern count="other">十亿分之{0}</unitPattern>
 			</unit>
@@ -7454,7 +7449,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>项</displayName>
 				<unitPattern count="other">{0}项</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
 			<unit type="digital-byte">

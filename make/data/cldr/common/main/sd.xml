@@ -2148,9 +2148,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>فنام پينه</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>اينڊربري</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>ڪانٽن</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -4453,7 +4450,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} مليگرام في ڊيسيليٽر</unitPattern>
 				<unitPattern count="other">{0} ملي گرامز في ڊيسي ليٽر</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>حصا في ملين</displayName>
 				<unitPattern count="one">{0} حصو في ملين</unitPattern>
 				<unitPattern count="other">{0} حصا في ملين</unitPattern>
@@ -4845,7 +4842,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} نوري</unitPattern>
 				<unitPattern count="other">{0} نوري</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>حصا في ارب</displayName>
 				<unitPattern count="one">{0} حصو في ارب</unitPattern>
 				<unitPattern count="other">{0} حصا في ارب</unitPattern>
@@ -5529,7 +5526,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} نوري</unitPattern>
 				<unitPattern count="other">{0} نوري</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>حصا/ارب</displayName>
 				<unitPattern count="one">{0} ح ف ا</unitPattern>
 				<unitPattern count="other">{0} ح ف ا</unitPattern>
@@ -5703,7 +5700,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}نوري</unitPattern>
 				<unitPattern count="other">{0}نوري</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ح ف ا</displayName>
 				<unitPattern count="one">{0}ح ف ا</unitPattern>
 				<unitPattern count="other">{0}ح ف ا</unitPattern>

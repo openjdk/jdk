@@ -1862,9 +1862,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Пномпень</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Эндерберин, гӀ-е</exemplarCity>
-			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Киритимати</exemplarCity>
 			</zone>

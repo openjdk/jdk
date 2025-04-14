@@ -1137,12 +1137,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Classificar por maiúsculas</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Classificação sem diferenciação de maiúsculas e minúsculas</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Classificação com diferenciação de maiúsculas e minúsculas</type>
-			<type key="collation" type="big5han">Ordem do Chinês Tradicional - Big5</type>
 			<type key="collation" type="compat">Ordem anterior, para compatibilidade</type>
 			<type key="collation" type="dictionary">Ordem do dicionário</type>
 			<type key="collation" type="ducet">Ordem padrão do Unicode</type>
 			<type key="collation" type="eor" draft="contributed">Regras europeias de ordenação</type>
-			<type key="collation" type="gb2312han">Ordem do Chinês Simplificado - GB2312</type>
 			<type key="collation" type="phonebook">Ordem de lista telefônica</type>
 			<type key="collation" type="phonetic">Ordem de classificação fonética</type>
 			<type key="collation" type="pinyin">Ordem Pin-yin</type>
@@ -2565,9 +2563,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Africa/Nairobi">
 				<exemplarCity>Nairóbi</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Pacific/Tarawa">
 				<exemplarCity>Taraua</exemplarCity>
@@ -5598,7 +5593,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>itens</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>feminine</gender>
 				<displayName>partes por milhão</displayName>
 				<unitPattern count="one">{0} parte por milhão</unitPattern>
@@ -6507,7 +6502,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} luz</unitPattern>
 				<unitPattern count="other">{0} luzes</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>feminine</gender>
 				<displayName>partes por bilhão</displayName>
 				<unitPattern count="one">{0} parte por bilhão</unitPattern>
@@ -6601,7 +6596,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} item</unitPattern>
 				<unitPattern count="other">{0} itens</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>partes/milhão</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -7048,7 +7043,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} luz</unitPattern>
 				<unitPattern count="other">{0} luzes</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>partes/bilhão</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -7112,7 +7107,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-millimole-per-liter">
 				<displayName>mmol/l</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 			</unit>
 			<unit type="concentr-percent">

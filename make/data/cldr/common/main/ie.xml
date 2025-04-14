@@ -687,11 +687,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="persian" draft="unconfirmed">persian calendare</type>
 			<type key="cf" type="account" draft="unconfirmed">formate por contation</type>
 			<type key="cf" type="standard" draft="unconfirmed">standard valuta-formate</type>
-			<type key="collation" type="big5han" draft="unconfirmed">órdine Big5</type>
 			<type key="collation" type="dictionary" draft="unconfirmed">órdine de dictionarium</type>
 			<type key="collation" type="ducet" draft="unconfirmed">órdine predefinit de Unicode</type>
 			<type key="collation" type="eor" draft="unconfirmed">órdine paneuropan</type>
-			<type key="collation" type="gb2312han" draft="unconfirmed">órdine GB2312</type>
 			<type key="collation" type="phonebook" draft="unconfirmed">órdine de numerarium</type>
 			<type key="collation" type="pinyin" draft="unconfirmed">órdine pinyin</type>
 			<type key="collation" type="search" draft="unconfirmed">órdine por sercha</type>

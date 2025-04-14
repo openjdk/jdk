@@ -1108,13 +1108,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="roc">Féilire Téavánach</type>
 			<type key="cf" type="account">Formáid Airgeadra don Chuntasaíocht</type>
 			<type key="cf" type="standard">Formáid Airgeadra Caighdeánach</type>
-			<type key="collation" type="big5han">Ord sórtála Síneach traidisiúnta - Big5</type>
 			<type key="collation" type="compat">Ord Sórtála Roimhe Seo, ar son na comhoiriúnachta</type>
 			<type key="collation" type="dictionary">Ord Sórtála Foclóirí</type>
 			<type key="collation" type="ducet">Ord Sórtála Réamhshocraithe Unicode</type>
 			<type key="collation" type="emoji">Ord Sórtála Emoji</type>
 			<type key="collation" type="eor">Rialacha Ordaithe Eorpacha</type>
-			<type key="collation" type="gb2312han">Ord sórtála Síneach simplithe - GB 2312</type>
 			<type key="collation" type="phonebook">Ord sórtála an eolaire teileafóin</type>
 			<type key="collation" type="pinyin">Ord sórtála pinyin</type>
 			<type key="collation" type="search">Cuardach Ilfhóinteach</type>
@@ -2762,9 +2760,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Tokyo">
 				<exemplarCity>Tóiceo</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Oileáin Chomóra</exemplarCity>
@@ -6423,7 +6418,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} milleamól sa lítear</unitPattern>
 				<unitPattern count="other">{0} milleamól sa lítear</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>codanna sa mhilliún</displayName>
 				<unitPattern count="one">{0} chuid sa mhilliún</unitPattern>
 				<unitPattern count="two">{0} chuid sa mhilliún</unitPattern>
@@ -7565,7 +7560,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-millimole-per-liter">
 				<displayName>milleamól/lítear</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>codanna/milliún</displayName>
 				<unitPattern count="one">{0}/milliún</unitPattern>
 				<unitPattern count="two">{0}/milliún</unitPattern>

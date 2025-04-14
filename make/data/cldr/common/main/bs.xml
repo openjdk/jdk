@@ -1262,13 +1262,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">Poredaj prvo velika slova</type>
 			<type key="colCaseLevel" type="no">Poredaj zanemarujući veličinu</type>
 			<type key="colCaseLevel" type="yes">Poredaj u skladu s veličinom slova</type>
-			<type key="collation" type="big5han">Tradicionalno kinesko sortiranje</type>
 			<type key="collation" type="compat">Prethodno sortiranje radi usklađenosti</type>
 			<type key="collation" type="dictionary">Rječničko sortiranje</type>
 			<type key="collation" type="ducet">standardno Unicode sortiranje</type>
 			<type key="collation" type="emoji">Sortiranje po emoji sličicama</type>
 			<type key="collation" type="eor">Evropska pravila sortiranja</type>
-			<type key="collation" type="gb2312han">Pojednostavljeno kinesko sortiranje - GB2312</type>
 			<type key="collation" type="phonebook">Sortiranje kao telefonski imenik</type>
 			<type key="collation" type="phonetic">Fonetsko sortiranje</type>
 			<type key="collation" type="pinyin">Pinjin sortiranje</type>
@@ -3049,9 +3047,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Pnom Pen</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Asia/Pyongyang">
 				<exemplarCity>Pjongjang</exemplarCity>
@@ -6640,7 +6635,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} milimola po litru</unitPattern>
 				<unitPattern count="other">{0} milimola po litru</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>dijelovi na milion</displayName>
 				<unitPattern count="one">{0} dio na milion</unitPattern>
 				<unitPattern count="few">{0} dijela na milion</unitPattern>
@@ -7602,7 +7597,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} stavke</unitPattern>
 				<unitPattern count="other">{0} stavki</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>dijelovi/milion</displayName>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
@@ -8001,7 +7996,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} ac</unitPattern>
 				<unitPattern count="other">{0} ac</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 			</unit>
 			<unit type="digital-byte">

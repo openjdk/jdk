@@ -1242,12 +1242,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Ordena amb majúscules primer</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Ordena sense distingir majúscules i minúscules</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Ordena amb detecció de majúscules i minúscules</type>
-			<type key="collation" type="big5han">ordre del xinès tradicional - Big5</type>
 			<type key="collation" type="compat">ordre anterior, per a compatibilitat</type>
 			<type key="collation" type="dictionary">ordre de diccionari</type>
 			<type key="collation" type="ducet">ordre Unicode predeterminat</type>
 			<type key="collation" type="eor" draft="contributed">normes europees d’ordenació</type>
-			<type key="collation" type="gb2312han">ordre del xinès simplificat - GB2312</type>
 			<type key="collation" type="phonebook">ordre de la guia telefònica</type>
 			<type key="collation" type="phonetic">ordre fonètic</type>
 			<type key="collation" type="pinyin">ordre pinyin</type>
@@ -2734,12 +2732,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Tokyo">
 				<exemplarCity>Tòquio</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
-				<exemplarCity>Canton</exemplarCity>
 			</zone>
 			<zone type="America/St_Kitts">
 				<exemplarCity>Saint Kitts</exemplarCity>
@@ -5730,7 +5722,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-item">
 				<gender>masculine</gender>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>masculine</gender>
 				<displayName>parts per milió</displayName>
 				<unitPattern count="one">{0} part per milió</unitPattern>
@@ -6630,7 +6622,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} llum</unitPattern>
 				<unitPattern count="other">{0} llum</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>masculine</gender>
 				<displayName>part per mil milions</displayName>
 				<unitPattern count="one">{0} part per mil milions</unitPattern>
@@ -6700,7 +6692,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ítem</unitPattern>
 				<unitPattern count="other">{0} ítems</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>parts/milió</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -7071,7 +7063,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} llum</unitPattern>
 				<unitPattern count="other">{0} llum</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>part/mil milions</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -7118,7 +7110,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-millimole-per-liter">
 				<displayName>mM/l</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 			</unit>
 			<unit type="concentr-percent">

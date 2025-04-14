@@ -146,10 +146,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VN">Vietnam</territory>
 		</territories>
 		<types>
-			<type key="collation" type="big5han">ordre de tri chinois traditionnel - Big5</type>
 			<type key="collation" type="dictionary">ordre de tri du dictionnaire</type>
 			<type key="collation" type="eor">ordre multilingue européen</type>
-			<type key="collation" type="gb2312han">ordre de tri chinois simplifié - GB2312</type>
 			<type key="collation" type="phonebook">ordre de tri de l’annuaire</type>
 			<type key="collation" type="pinyin">ordre de tri pinyin</type>
 			<type key="collation" type="searchjl" draft="contributed">Rechercher par consonne initiale en hangeul</type>
@@ -2084,7 +2082,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} pouce carré</unitPattern>
 				<unitPattern count="other">{0} pouces carrés</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>parties par million</displayName>
 				<unitPattern count="one">{0} partie par million</unitPattern>
 				<unitPattern count="other">{0} parties par million</unitPattern>
@@ -2506,7 +2504,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} pinte impériale</unitPattern>
 				<unitPattern count="other">{0} pintes impériales</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>parties par milliard</displayName>
 				<unitPattern count="one">{0} partie par milliard</unitPattern>
 				<unitPattern count="other">{0} parties par milliard</unitPattern>
@@ -3015,7 +3013,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} pte imp</unitPattern>
 				<unitPattern count="other">{0} pte imp</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>p.p. 10⁹</displayName>
 				<unitPattern count="one">{0} p.p. 10⁹</unitPattern>
 				<unitPattern count="other">{0} p.p. 10⁹</unitPattern>
@@ -3248,7 +3246,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}pte imp</unitPattern>
 				<unitPattern count="other">{0}pte imp</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>p.p. 10⁹</displayName>
 				<unitPattern count="one">{0}pp10⁹</unitPattern>
 				<unitPattern count="other">{0}pp10⁹</unitPattern>

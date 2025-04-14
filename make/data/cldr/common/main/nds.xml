@@ -918,8 +918,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="iso8601" draft="unconfirmed">ISO-8601-Klenner</type>
 			<type key="calendar" type="japanese" draft="unconfirmed">Japaansch Klenner</type>
 			<type key="calendar" type="roc" draft="unconfirmed">Klenner vun de Republik China</type>
-			<type key="collation" type="big5han" draft="unconfirmed">Traditschonell Chineesch Sorteerregeln - Big5</type>
-			<type key="collation" type="gb2312han" draft="unconfirmed">Vereenfacht Chineesch Sorteerregeln - GB2312</type>
 			<type key="collation" type="phonebook" draft="unconfirmed">Telefonbook-Sorteerregeln</type>
 			<type key="collation" type="pinyin" draft="unconfirmed">Pinyin-Sorteerregeln</type>
 			<type key="collation" type="standard" draft="unconfirmed">Standard-Sorteerreeg</type>

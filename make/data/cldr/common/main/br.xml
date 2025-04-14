@@ -1147,12 +1147,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="roc">deiziadur Republik Sina</type>
 			<type key="cf" type="account">furmad unanenn jediñ</type>
 			<type key="cf" type="standard">furmad moneiz standart</type>
-			<type key="collation" type="big5han">urzh rummañ sinaek hengounel - Big5</type>
 			<type key="collation" type="dictionary">urzh rummañ ar geriadur</type>
 			<type key="collation" type="ducet">urzh rummañ Unicode dre ziouer</type>
 			<type key="collation" type="emoji">urzh rummañ ar fromlunioù</type>
 			<type key="collation" type="eor">reolennoù urzhiañ europat</type>
-			<type key="collation" type="gb2312han">urzh rummañ sinaek eeunaet - GB2312</type>
 			<type key="collation" type="phonebook">urzh rummañ al levr-pellgomz</type>
 			<type key="collation" type="pinyin">urzh rummañ pinyin</type>
 			<type key="collation" type="search">enklask hollek</type>
@@ -8651,7 +8649,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0}mmol/l</unitPattern>
 				<unitPattern count="other">{0}mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="two">{0}ppm</unitPattern>
 				<unitPattern count="few">{0}ppm</unitPattern>

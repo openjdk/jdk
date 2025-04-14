@@ -128,10 +128,10 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   <xs:element name="version">
     <xs:complexType>
       <xs:attribute name="number" use="required"/>
-      <xs:attribute default="47" name="cldrVersion">
+      <xs:attribute default="48" name="cldrVersion">
         <xs:simpleType>
           <xs:restriction base="xs:string">
-            <xs:enumeration value="47"/>
+            <xs:enumeration value="48"/>
           </xs:restriction>
         </xs:simpleType>
       </xs:attribute>
@@ -4512,6 +4512,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="hoursFormat"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="gmtFormat"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="gmtZeroFormat"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="gmtUnknownFormat"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="regionFormat"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="fallbackFormat"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="fallbackRegionFormat"/>
@@ -4613,6 +4614,28 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   
   
   <xs:element name="gmtZeroFormat">
+    <xs:complexType mixed="true">
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="gmtUnknownFormat">
     <xs:complexType mixed="true">
       <xs:attribute name="alt" type="xs:NMTOKENS"/>
       <xs:attribute name="draft">

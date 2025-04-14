@@ -1099,13 +1099,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="roc" draft="unconfirmed">Almenak Bingkok</type>
 			<type key="cf" type="account" draft="unconfirmed">Pormat Mata Uang Pembukuan</type>
 			<type key="cf" type="standard" draft="unconfirmed">Pormat Mata Uang Pakem</type>
-			<type key="collation" type="big5han" draft="unconfirmed">Rèntètan Sortir Tionghoa Terdisionil - Big5</type>
 			<type key="collation" type="compat" draft="unconfirmed">Rèntètan Sortir Sebelonnya, bakal kecocokan</type>
 			<type key="collation" type="dictionary" draft="unconfirmed">Rèntètan Sortir Kamus</type>
 			<type key="collation" type="ducet" draft="unconfirmed">Rèntètan Sortir Bawaan Unicode</type>
 			<type key="collation" type="emoji" draft="unconfirmed">Rèntètan Sortir Émoji</type>
 			<type key="collation" type="eor" draft="unconfirmed">Aturan Pengrèntètan Èropa</type>
-			<type key="collation" type="gb2312han" draft="unconfirmed">Rèntètan Sortir Tionghoa Ringkes - GB2312</type>
 			<type key="collation" type="phonebook" draft="unconfirmed">Rèntètan Sortir Buku Telepon</type>
 			<type key="collation" type="pinyin" draft="unconfirmed">Rèntètan Sortir Pin-in</type>
 			<type key="collation" type="reformed" draft="unconfirmed">Rèntètan Sortir Kerobah</type>
@@ -4939,7 +4937,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">milimol per lèter</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} milimol per lèter</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName draft="unconfirmed">bagèan per juta</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} bagèan per juta</unitPattern>
 			</unit>
@@ -5567,7 +5565,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">biji</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} biji</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName draft="unconfirmed">bagèan/juta</displayName>
 			</unit>
 			<unit type="concentr-percent">

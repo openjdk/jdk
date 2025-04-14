@@ -1248,12 +1248,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Sortowanie od wielkich liter</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Sortowanie bez rozróżniania wielkości liter</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Sortowanie z rozróżnianiem wielkości liter</type>
-			<type key="collation" type="big5han">chiński tradycyjny porządek sortowania - Big5</type>
 			<type key="collation" type="compat">poprzedni porządek sortowania, dla zgodności</type>
 			<type key="collation" type="dictionary">sortowanie słownikowe</type>
 			<type key="collation" type="ducet">domyślna kolejność sortowania Unicode</type>
 			<type key="collation" type="eor" draft="contributed">europejskie reguły określania kolejności</type>
-			<type key="collation" type="gb2312han">chiński uproszczony porządek sortowania - GB2312</type>
 			<type key="collation" type="phonebook">porządek sortowania książki telefonicznej</type>
 			<type key="collation" type="phonetic">sortowanie fonetyczne</type>
 			<type key="collation" type="pinyin">porządek sortowania pinyin</type>
@@ -2910,9 +2908,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Bishkek">
 				<exemplarCity>Biszkek</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Komory</exemplarCity>
@@ -6518,7 +6513,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="accusative">{0} sztuki</unitPattern>
 				<unitPattern count="other" case="genitive">{0} sztuki</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>feminine</gender>
 				<displayName>części na milion</displayName>
 				<unitPattern count="one">{0} część na milion</unitPattern>
@@ -9540,7 +9535,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="accusative">{0} światła</unitPattern>
 				<unitPattern count="other" case="genitive">{0} światła</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>feminine</gender>
 				<displayName>części na miliard</displayName>
 				<unitPattern count="one">{0} część na miliard</unitPattern>

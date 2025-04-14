@@ -1085,13 +1085,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">প্রথমে বড়হাতের অক্ষর বাছাই করুন</type>
 			<type key="colCaseLevel" type="no" draft="contributed">কেস অসংবেদী বাছাই করুন</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">কেস সংবেদী বাছাই করুন</type>
-			<type key="collation" type="big5han">প্রথাগত চীনা সজ্জাক্রম - বিগ৫</type>
 			<type key="collation" type="compat" draft="contributed">আগের বাছাইয়ের ক্রম, সামঞ্জস্যের জন্য</type>
 			<type key="collation" type="dictionary" draft="contributed">অভিধান বাছাই বিন্যাস</type>
 			<type key="collation" type="ducet">ডিফল্ট ইউনিকোড বাছাই বিন্যাস</type>
 			<type key="collation" type="emoji" draft="contributed">ইমোজি বাছাই ক্রম</type>
 			<type key="collation" type="eor" draft="contributed">ইউরোপীয় ক্রম বিন্যাসের নিয়মাবলী</type>
-			<type key="collation" type="gb2312han">সাধারণ চীনা সজ্জাক্রম - জিবি২৩১২</type>
 			<type key="collation" type="phonebook">ফোনবুক সজ্জাক্রম</type>
 			<type key="collation" type="phonetic" draft="contributed">ধ্বনি নির্দেশক বাছাই ক্রম</type>
 			<type key="collation" type="pinyin" draft="contributed">পিনিন সজ্জাক্রম</type>
@@ -2934,9 +2932,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>নম পেন</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>এন্ডারবারি</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>ক্যান্টন</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -5721,7 +5716,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} মিলিমোল, প্রতি লিটারে</unitPattern>
 				<unitPattern count="other">{0} মিলিমোল, প্রতি লিটারে</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ভাগ, প্রতি মিলিয়নে</displayName>
 				<unitPattern count="one">{0} ভাগ, প্রতি মিলিয়নে</unitPattern>
 				<unitPattern count="other">{0} ভাগ, প্রতি মিলিয়নে</unitPattern>
@@ -6355,7 +6350,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Imp. quart</unitPattern>
 				<unitPattern count="other">{0} Imp. quart</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>পার্ট প্রতি বিলিয়ন</displayName>
 				<unitPattern count="one">{0} পার্ট প্রতি বিলিয়ন</unitPattern>
 				<unitPattern count="other">{0} পার্ট প্রতি বিলিয়ন</unitPattern>
@@ -6862,7 +6857,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} চিমটে</unitPattern>
 				<unitPattern count="other">{0} চিমটে</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>পার্ট/ বিলিয়ন</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -7165,7 +7160,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}fl.dr.</unitPattern>
 				<unitPattern count="other">{0}fl.dr.</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="other">{0} ppb</unitPattern>
 			</unit>

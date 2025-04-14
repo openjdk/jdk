@@ -3892,9 +3892,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>𞤆𞤢𞤲𞤮𞤥-𞤆𞤫𞤲</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>𞤉𞤲𞤣𞤫𞤪𞤦𞤵𞥅𞤪𞤭</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>𞤑𞤢𞤲𞤼𞤮𞤲</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -6912,7 +6909,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} 𞤨𞤭𞤪𞤰𞤵</unitPattern>
 				<unitPattern count="other">{0} 𞤨𞤭𞤪𞤰𞤭</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>𞤺𞤫𞤩𞤫 𞤳𞤢𞤤𞤢 𞤣𞤵𞤦𞤵𞥅𞤪𞤫</displayName>
 				<unitPattern count="one">{0} 𞤺𞤫𞤩𞤢𞤤 𞤳𞤢𞤤𞤢 𞤣𞤵𞤦𞤵𞥅𞤪𞤫</unitPattern>
 				<unitPattern count="other">{0} 𞤺𞤫𞤩𞤫 𞤳𞤢𞤤𞤢 𞤣𞤵𞤦𞤵𞥅𞤪𞤫</unitPattern>
@@ -7920,7 +7917,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} 𞤨𞤭𞤪</unitPattern>
 				<unitPattern count="other">{0} 𞤨𞤭𞤪</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>𞤺𞤫𞤩𞤫/𞤣𞤵𞤦𞤵𞥅𞤪𞤫</displayName>
 				<unitPattern count="one">{0} 𞤺𞤳𞤣</unitPattern>
 				<unitPattern count="other">{0} 𞤺𞤳𞤣</unitPattern>
@@ -8846,7 +8843,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}𞤨𞤭𞤪</unitPattern>
 				<unitPattern count="other">{0}𞤨𞤭𞤪</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>𞤺𞤳𞤣</displayName>
 				<unitPattern count="one">{0}𞤺𞤳𞤣</unitPattern>
 				<unitPattern count="other">{0}𞤺𞤳𞤣</unitPattern>

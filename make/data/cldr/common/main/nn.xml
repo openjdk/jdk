@@ -210,9 +210,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</keys>
 		<types>
 			<type key="cf" type="account">valutaformat for rekneskapsføring</type>
-			<type key="collation" type="big5han">tradisjonell kinesisk sortering</type>
 			<type key="collation" type="ducet">standard Unicode-sorteringsrekkjefølgje</type>
-			<type key="collation" type="gb2312han">forenkla kinesisk sortering</type>
 			<type key="collation" type="pinyin">pinyin-sortering</type>
 			<type key="collation" type="standard">standard sorteringsrekkjefølgje</type>
 			<type key="d0" type="fwidth">full breidd</type>
@@ -2142,7 +2140,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} element</unitPattern>
 				<unitPattern count="other" case="genitive">{0} elements</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>delar per million</displayName>
 				<unitPattern count="one">{0} del per million</unitPattern>
 				<unitPattern count="one" case="genitive">{0} del per millions</unitPattern>
@@ -2694,7 +2692,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} b. quart</unitPattern>
 				<unitPattern count="other">{0} b. quart</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>delar/milliard</displayName>
 			</unit>
 		</unitLength>

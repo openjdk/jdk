@@ -1342,13 +1342,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Sortera versaler först</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Sortera oavsett skiftläge</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Sortera efter skiftläge</type>
-			<type key="collation" type="big5han">big5-sorteringsordning</type>
 			<type key="collation" type="compat">bakåtkompatibel sorteringsordning</type>
 			<type key="collation" type="dictionary">ordbokssorteringsordning</type>
 			<type key="collation" type="ducet">grundläggande Unicode-sorteringsordning</type>
 			<type key="collation" type="emoji">emojisorteringsordning</type>
 			<type key="collation" type="eor" draft="contributed">sorteringsordning för flerspråkliga europeiska dokument</type>
-			<type key="collation" type="gb2312han">gb2312-sorteringsordning</type>
 			<type key="collation" type="phonebook">telefonkatalogssorteringsordning</type>
 			<type key="collation" type="phonetic">fonetisk sorteringsordning</type>
 			<type key="collation" type="pinyin">pinyin-sorteringsordning</type>
@@ -3551,9 +3549,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Bishkek">
 				<exemplarCity>Bisjkek</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Komorerna</exemplarCity>
@@ -6591,7 +6586,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} objekt</unitPattern>
 				<unitPattern count="other" case="genitive">{0} objekts</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>common</gender>
 				<unitPattern count="one">{0} miljondel</unitPattern>
 				<unitPattern count="one" case="genitive">{0} miljondels</unitPattern>
@@ -7685,7 +7680,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ljus</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ljus</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>common</gender>
 				<displayName>miljarddelar</displayName>
 				<unitPattern count="one">{0} miljarddel</unitPattern>
@@ -7776,7 +7771,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} objekt</unitPattern>
 				<unitPattern count="other">{0} objekt</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>miljondelar</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -8301,7 +8296,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}mmol/l</unitPattern>
 				<unitPattern count="other">{0}mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
@@ -8959,7 +8954,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ljs</unitPattern>
 				<unitPattern count="other">{0}ljs</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>

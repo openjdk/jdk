@@ -992,7 +992,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} onza fluida</unitPattern>
 				<unitPattern count="other">{0} onzas fluidas</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>partes por mil millones</displayName>
 				<unitPattern count="one">{0} parte por mil millones</unitPattern>
 				<unitPattern count="other">{0} partes por mil millones</unitPattern>

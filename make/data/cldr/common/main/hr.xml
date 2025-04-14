@@ -1178,12 +1178,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Poredaj prvo velika slova</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Poredaj zanemarujući veličinu</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Poredaj u skladu s veličinom slova</type>
-			<type key="collation" type="big5han">razvrstavanje prema tradicionalnom kineskom - Big5</type>
 			<type key="collation" type="compat">prethodni redoslijed razvrstavanja, radi kompatibilnosti</type>
 			<type key="collation" type="dictionary">rječničko razvrstavanje</type>
 			<type key="collation" type="ducet">standardno unicode razvrstavanje</type>
 			<type key="collation" type="eor" draft="contributed">Europska pravila razvrstavanja</type>
-			<type key="collation" type="gb2312han">razvrstavanje prema pojednostavljenom kineskom - GB2312</type>
 			<type key="collation" type="phonebook">razvrstavanje po abecedi</type>
 			<type key="collation" type="phonetic">fonetsko razvrstavanje</type>
 			<type key="collation" type="pinyin">pinyin razvrstavanje</type>
@@ -3011,9 +3009,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Bishkek">
 				<exemplarCity>Biškek</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Asia/Pyongyang">
 				<exemplarCity>Pjongjang</exemplarCity>
@@ -6602,7 +6597,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} stavki</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} stavki</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>inanimate</gender>
 				<displayName>dijelovi na milijun</displayName>
 				<unitPattern count="one">{0} dio na milijun</unitPattern>
@@ -8562,7 +8557,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} svjetala</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} svjetala</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>inanimate</gender>
 				<displayName>dijelovi na milijardu</displayName>
 				<unitPattern count="one">{0} dio na milijardu</unitPattern>
@@ -9009,7 +9004,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} svjetla</unitPattern>
 				<unitPattern count="other">{0} svjetala</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>dijelovi/milijarda</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -9131,7 +9126,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} svjetla</unitPattern>
 				<unitPattern count="other">{0} svjetala</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>dijelovi/milijarda</displayName>
 			</unit>
 			<unit type="duration-night">

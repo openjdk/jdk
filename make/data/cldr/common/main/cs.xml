@@ -1213,12 +1213,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Nejdříve řadit velká písmena</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Nerozlišovat při řazení velká a malá písmena</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Rozlišovat při řazení velká a malá písmena</type>
-			<type key="collation" type="big5han">Řazení pro tradiční čínštinu – Big5</type>
 			<type key="collation" type="compat">Předchozí řazení, kompatibilita</type>
 			<type key="collation" type="dictionary">Slovníkové řazení</type>
 			<type key="collation" type="ducet">Výchozí řazení Unicode</type>
 			<type key="collation" type="eor">Evropské řazení</type>
-			<type key="collation" type="gb2312han">Řazení pro zjednodušenou čínštinu – GB2312</type>
 			<type key="collation" type="phonebook">Řazení telefonního seznamu</type>
 			<type key="collation" type="phonetic">Fonetické řazení</type>
 			<type key="collation" type="pinyin">Řazení podle pchin-jinu</type>
@@ -3049,9 +3047,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Phnompenh</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Komory</exemplarCity>
@@ -7288,7 +7283,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="instrumental">{0} položkami</unitPattern>
 				<unitPattern count="other" case="locative">{0} položkách</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>inanimate</gender>
 				<displayName>díly z milionu</displayName>
 				<unitPattern count="one">{0} díl z milionu</unitPattern>
@@ -10561,7 +10556,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="instrumental">{0} světly</unitPattern>
 				<unitPattern count="other" case="locative">{0} světlech</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>feminine</gender>
 				<displayName>částice na miliardu</displayName>
 				<unitPattern count="one">{0} částice na miliardu</unitPattern>
@@ -11022,7 +11017,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} světla</unitPattern>
 				<unitPattern count="other">{0} světel</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>částic/mld.</displayName>
 				<unitPattern count="one">{0} částice na mld</unitPattern>
 				<unitPattern count="few">{0} částice na mld</unitPattern>

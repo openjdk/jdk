@@ -1029,13 +1029,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="roc">Habeentiriska Minguwo</type>
 			<type key="cf" type="account">Habka Xisaabinta Lacagta</type>
 			<type key="cf" type="standard">Habka Heerka Lacagta</type>
-			<type key="collation" type="big5han">Isku hagaajinta Shiineeskii Hore - Big5</type>
 			<type key="collation" type="compat">Iswaafajinta Isku hajintii hore</type>
 			<type key="collation" type="dictionary">Isku hagaajinta Qaamuuska</type>
 			<type key="collation" type="ducet">Lambar Sireedka Caalamiga ee Kala Soocidda Dalabka</type>
 			<type key="collation" type="emoji">Isku hagaajinta Emojiga</type>
 			<type key="collation" type="eor">Xeerarka Dalabka Yurub</type>
-			<type key="collation" type="gb2312han">Isku hagaajinta Farta shiineeska</type>
 			<type key="collation" type="phonebook">Isku hagaajinta foonbuuga</type>
 			<type key="collation" type="pinyin">Isku hagaajinta Pinyin</type>
 			<type key="collation" type="search">Raadinta Guud</type>
@@ -3180,9 +3178,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>Benom Ben</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderburi</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>Kantoon</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -6027,7 +6022,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} shay</unitPattern>
 				<unitPattern count="other">{0} shayo</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>qeyb milyankiiba</displayName>
 				<unitPattern count="one">{0} qeyb milyankiiba</unitPattern>
 				<unitPattern count="other">{0} qeyb milyankiiba</unitPattern>
@@ -6750,7 +6745,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} nal</unitPattern>
 				<unitPattern count="other">{0} nal</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>qeybaha bilyankiiba</displayName>
 				<unitPattern count="one">{0} qeybaha bilyankiiba</unitPattern>
 				<unitPattern count="other">{0} qeybaha bilyankiiba</unitPattern>
@@ -6844,7 +6839,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} shay</unitPattern>
 				<unitPattern count="other">{0} shay</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>qeyb/milyankiiba</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -7326,7 +7321,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} nal</unitPattern>
 				<unitPattern count="other">{0} nal</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>qeybaha/bilyan</displayName>
 				<unitPattern count="one">{0} qb</unitPattern>
 				<unitPattern count="other">{0} qb</unitPattern>
@@ -7357,7 +7352,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}shay</unitPattern>
 				<unitPattern count="other">{0}shay</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm#</unitPattern>
@@ -7567,7 +7562,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}nal</unitPattern>
 				<unitPattern count="other">{0}nal</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>qb</displayName>
 				<unitPattern count="one">{0}qb</unitPattern>
 				<unitPattern count="other">{0}qb</unitPattern>

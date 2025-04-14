@@ -1061,12 +1061,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">Raða hástöfum fyrst</type>
 			<type key="colCaseLevel" type="no">Raða óháð hástöfum og lágstöfum</type>
 			<type key="colCaseLevel" type="yes">Raða stafrétt</type>
-			<type key="collation" type="big5han">hefðbundin kínversk röðun - Big5</type>
 			<type key="collation" type="compat">Fyrri röðun, til samræmis</type>
 			<type key="collation" type="dictionary">Orðabókarröð</type>
 			<type key="collation" type="ducet">Sjálfgefin Unicode-röðun</type>
 			<type key="collation" type="eor">Evrópskar reglur um röðun</type>
-			<type key="collation" type="gb2312han">einfölduð kínversk röðun - GB2312</type>
 			<type key="collation" type="phonebook">Símaskráarröðun</type>
 			<type key="collation" type="phonetic">Hljóðfræðileg röð</type>
 			<type key="collation" type="pinyin">Pinyin-röðun</type>
@@ -2635,9 +2633,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Tokyo">
 				<exemplarCity>Tókýó</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="America/St_Kitts">
 				<exemplarCity>Sankti Kitts</exemplarCity>
@@ -5204,7 +5199,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} atriðum</unitPattern>
 				<unitPattern count="other" case="genitive">{0} atriða</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>masculine</gender>
 				<unitPattern count="one">{0} milljónarhluti</unitPattern>
 				<unitPattern count="one" case="accusative">{0} milljónarhluta</unitPattern>
@@ -6640,7 +6635,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-pinch">
 				<displayName>klípur</displayName>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>masculine</gender>
 				<displayName>hlutar á milljarð</displayName>
 				<unitPattern count="one">{0} hluti á milljarð</unitPattern>
@@ -6763,7 +6758,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} atriði</unitPattern>
 				<unitPattern count="other">{0} atriði</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>milljónarhlutar</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -7316,7 +7311,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}mmól/l</unitPattern>
 				<unitPattern count="other">{0}mmól/l</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>

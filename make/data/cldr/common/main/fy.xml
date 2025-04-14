@@ -1133,10 +1133,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="colCaseFirst" type="upper" draft="contributed">Eerst sortearje op haadletters</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Net haadlettergefoelich sortearje</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Hoofdlettergevoelig sortearje</type>
-			<type key="collation" type="big5han" draft="contributed">Tradisjonele-Sineeske soartear oarder - Big5</type>
 			<type key="collation" type="dictionary" draft="contributed">Wurdboeksortearfolgorde</type>
 			<type key="collation" type="ducet" draft="contributed">Standert Unikoade-sortearfolgorde</type>
-			<type key="collation" type="gb2312han" draft="contributed">Ferienfâldigde-Sineeske sortearfolgorde - GB2312</type>
 			<type key="collation" type="phonebook" draft="contributed">Telefoanboeksortearfolgorde</type>
 			<type key="collation" type="phonetic" draft="contributed">Fonetyske sortearfolgorde</type>
 			<type key="collation" type="pinyin" draft="contributed">Pinyinvolgorde</type>

@@ -997,13 +997,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="roc">Mingu-Chini sáldar</type>
 			<type key="cf" type="account">Hesáb, Zarr Káleb</type>
 			<type key="cf" type="standard">Zarray anjárén káleb</type>
-			<type key="collation" type="big5han">Chini Rabyati Red o band</type>
 			<type key="collation" type="compat">Pésari Red o band, pa hamdapiá</type>
 			<type key="collation" type="dictionary">Labzbaladi Red o band</type>
 			<type key="collation" type="ducet">Aslén Yunikodi Red o band</type>
 			<type key="collation" type="emoji">Emóji Red o band</type>
 			<type key="collation" type="eor">Yuropi Red o bandi Rahband</type>
-			<type key="collation" type="gb2312han">Sádah kortagén Chini Red o band - GB2312</type>
 			<type key="collation" type="phonebook">Pawnbokki Red o band</type>
 			<type key="collation" type="pinyin">Pinyi Red o band</type>
 			<type key="collation" type="search">Ám Kári Shóház</type>

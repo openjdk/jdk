@@ -1102,13 +1102,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="roc">calendàriu minguo</type>
 			<type key="cf" type="account">formadu de valuta contàbile</type>
 			<type key="cf" type="standard">formadu de valuta istandard</type>
-			<type key="collation" type="big5han">ordinamentu de su tzinesu traditzionale - Big5</type>
 			<type key="collation" type="compat">ordinamentu antepostu, pro cumpatibilitade</type>
 			<type key="collation" type="dictionary">ordinamentu de su ditzionàriu</type>
 			<type key="collation" type="ducet">ordinamentu Unicode predefinidu</type>
 			<type key="collation" type="emoji">ordinamentu de sas emoji</type>
 			<type key="collation" type="eor">règulas de ordinamentu europeas</type>
-			<type key="collation" type="gb2312han">ordinamentu de su tzinesu semplificadu - GB2312</type>
 			<type key="collation" type="phonebook">ordinamentu de s’elencu telefònicu</type>
 			<type key="collation" type="pinyin">ordinamentu pinyin</type>
 			<type key="collation" type="search">chirca genèrica</type>
@@ -3078,12 +3076,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Rome">
 				<exemplarCity>Roma</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
-				<exemplarCity>Canton</exemplarCity>
 			</zone>
 			<zone type="America/St_Kitts">
 				<exemplarCity>Santu Cristolu</exemplarCity>
@@ -6063,7 +6055,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} elementu</unitPattern>
 				<unitPattern count="other">{0} elementos</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>partes pro millione</displayName>
 				<unitPattern count="one">{0} parte pro millione</unitPattern>
 				<unitPattern count="other">{0} partes pro millione</unitPattern>
@@ -6864,7 +6856,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} a sa velotzidade de sa lughe</unitPattern>
 				<unitPattern count="other">{0} a sa velotzidade de sa lughe</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>partes pro milliardu</displayName>
 				<unitPattern count="one">{0} parte pro milliardu</unitPattern>
 				<unitPattern count="other">{0} partes pro milliardu</unitPattern>
@@ -7212,7 +7204,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} lughe</unitPattern>
 				<unitPattern count="other">{0} lughe</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>partes/milliardu</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -7306,7 +7298,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}elem.</unitPattern>
 				<unitPattern count="other">{0}elem.</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
@@ -7946,7 +7938,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}l</unitPattern>
 				<unitPattern count="other">{0}l</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2025 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="kek"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="kek">Qʼeqchiʼ</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a {aa} {bʼ} c {ch} {ch’} e {ee} h i {ii} j k {k’} l m n o {oo} p q {q’} r s t {t’} {tz} {tz’} u {uu} w x y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[d f g v z]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . … ’ “” ( ) \[ \] \{ \} /]</exemplarCharacters>
+	</characters>
+</ldml>

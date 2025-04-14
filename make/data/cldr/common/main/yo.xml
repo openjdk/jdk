@@ -3820,7 +3820,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ìmọ́lẹ̀</displayName>
 				<unitPattern count="other">{0} ìmọ́lẹ̀</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ẹ̀yà nínú ìdá blíọ̀nù</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -3864,7 +3864,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ohun</displayName>
 				<unitPattern count="other">{0} ohun</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ara/milíọ̀nù</displayName>
 			</unit>
 			<unit type="concentr-permille">
@@ -4100,7 +4100,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-item">
 				<unitPattern count="other">{0}ohun</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
 			<unit type="concentr-permille">

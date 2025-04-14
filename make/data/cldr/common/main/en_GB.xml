@@ -180,15 +180,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>BST</daylight>
 				</short>
 			</zone>
-			<zone type="America/Bahia_Banderas">
-				<exemplarCity>Bahia Banderas</exemplarCity>
-			</zone>
-			<zone type="America/Merida">
-				<exemplarCity>Merida</exemplarCity>
-			</zone>
-			<zone type="America/Cancun">
-				<exemplarCity>Cancun</exemplarCity>
-			</zone>
 			<metazone type="Europe_Central">
 				<short>
 					<generic>CET</generic>

@@ -1007,13 +1007,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="roc">kalendar minguo</type>
 			<type key="cf" type="account">format valutor llogaritës</type>
 			<type key="cf" type="standard">format valutor standard</type>
-			<type key="collation" type="big5han">Radhitje e kinezishtes tradicionale - Big5</type>
 			<type key="collation" type="compat">Radhitja e mëparshme, për pajtueshmëri</type>
 			<type key="collation" type="dictionary">Radhitje fjalori</type>
 			<type key="collation" type="ducet">radhitje unikode e parazgjedhur</type>
 			<type key="collation" type="emoji">Radhitje Emoji</type>
 			<type key="collation" type="eor">Rregulla evropiane radhitjeje</type>
-			<type key="collation" type="gb2312han">Radhitje e kinezishtes së thjeshtësuar - GB2312</type>
 			<type key="collation" type="phonebook">Radhitje libri telefonik</type>
 			<type key="collation" type="pinyin">Radhitje pinini</type>
 			<type key="collation" type="search">kërkim i përgjithshëm</type>
@@ -2597,9 +2595,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Pnom-Pen</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbur</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Kiritimat</exemplarCity>
@@ -5215,7 +5210,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} milimol për litër</unitPattern>
 				<unitPattern count="other">{0} milimolë për litër</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>pjesë për milion</displayName>
 				<unitPattern count="one">{0} pjesë për milion</unitPattern>
 				<unitPattern count="other">{0} pjesë për milion</unitPattern>
@@ -5981,7 +5976,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} çerek imperial</unitPattern>
 				<unitPattern count="other">{0} çerekë imperialë</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>pjesë për miliard</displayName>
 				<unitPattern count="one">{0} pjesë për miliard</unitPattern>
 				<unitPattern count="other">{0} pjesë për miliard</unitPattern>

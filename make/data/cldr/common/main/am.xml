@@ -988,10 +988,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">አቢይ ሆሄ መጀመሪያ ደርድር</type>
 			<type key="colCaseLevel" type="no">ያለመልከፊደል ትብ ደርድር</type>
 			<type key="colCaseLevel" type="yes">በመልከፊደል ትብ ደርድር</type>
-			<type key="collation" type="big5han">የባህላዊ ቻይንኛ የድርድር ቅደም ተከተል - ትልቅ5</type>
 			<type key="collation" type="dictionary">የመዝገበ ቃላት የድርድር ቅደም ተከተል</type>
 			<type key="collation" type="ducet">የነባሪ ዩኒኮድ የድርድር ቅደም ተከተል</type>
-			<type key="collation" type="gb2312han">የቀለለ የቻይንኛ የድርደራ ቅደም ተከተል - GB2312</type>
 			<type key="collation" type="phonebook">የስልክ ደብተር ድርድር ቅደም ተከተል</type>
 			<type key="collation" type="phonetic">የፎነቲክ ድርደራ ቅደም ተከተል</type>
 			<type key="collation" type="pinyin">ፒንይን የድርድር ቅደም ተከተል</type>
@@ -2611,9 +2609,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>ፍኖም ፔንህ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>ኢንደርበሪ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>ካንቶን</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -4940,7 +4935,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ንጥሎች</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ንጥሎች</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0} ppm</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ክፍል በየሚሊዮን</unitPattern>
 				<unitPattern count="other">{0} ppm</unitPattern>

@@ -2660,9 +2660,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ᎿᎻ ᏇᏂ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>ᎡᏂᏇᎵ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>ᎧᏛᏂ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -5042,7 +5039,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ᏌᏉ ᎢᏯᎦᎨᎵᏁᎢ ᎼᎵ ᎵᏔᎢ ᎢᏳᏓᎵ</unitPattern>
 				<unitPattern count="other">{0} ᏌᏉ ᎢᏯᎦᎨᎵᏁᎢ ᎠᏂᎼᎵ ᎵᏔᎢ ᎢᏳᏓᎵ</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ᏚᏙᏢᏒ ᎢᏳᏆᏗᏅᏛ ᎢᏳᏓᎵ</displayName>
 				<unitPattern count="one">{0} ᎤᏙᏢᏒ ᎢᏳᏆᏗᏅᏛ ᎢᏳᏓᎵ</unitPattern>
 				<unitPattern count="other">{0} ᏚᏙᏢᏒ ᎢᏳᏆᏗᏅᏛ ᎢᏳᏓᎵ</unitPattern>
@@ -5801,7 +5798,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ᎠᏨᏍᏗ</unitPattern>
 				<unitPattern count="other">{0} ᎠᏨᏍᏗ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ᏚᏙᏢᏒ ᎢᏳᏓᎵ ᎢᏳᏔᎵᎳᏗᏅᏛ</displayName>
 				<unitPattern count="one">{0} ᎤᏙᏢᏒ ᎢᏳᏓᎵ ᎢᏳᏔᎵᎳᏗᏅᏛ</unitPattern>
 				<unitPattern count="other">{0} ᏚᏙᏢᏒ ᎢᏳᏓᎵ ᎢᏳᏔᎵᎳᏗᏅᏛ</unitPattern>
@@ -5893,7 +5890,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ᏑᏓᎴᎩ</unitPattern>
 				<unitPattern count="other">{0} ᎢᏳᏓᎴᎩ</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ᏚᏙᏢᏒ/ᎢᏳᏆᏗᏅᏛ</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -6283,7 +6280,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ᎠᏨᏍᏗ</unitPattern>
 				<unitPattern count="other">{0} ᎠᏨᏍᏗ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ᏚᏙᏢᏒ/ᎢᏳᏔᎵᎳᏗᏅᏛ</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -6394,7 +6391,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}mmol/L</unitPattern>
 				<unitPattern count="other">{0}mmol/L</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
@@ -7113,7 +7110,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}ᎠᏨᏍᏗ</unitPattern>
 				<unitPattern count="other">{0}ᎠᏨᏍᏗ</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>

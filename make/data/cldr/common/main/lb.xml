@@ -1120,11 +1120,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="japanese">Japanesche Kalenner</type>
 			<type key="calendar" type="persian">Persesche Kalenner</type>
 			<type key="calendar" type="roc">Kalenner vun der Republik China</type>
-			<type key="collation" type="big5han">Traditionellt Chinesesch - Big5</type>
 			<type key="collation" type="dictionary">Lexikographesch Zortéierreiefolleg</type>
 			<type key="collation" type="ducet">Unicode-Zortéierung</type>
 			<type key="collation" type="eor">Europäesch Zortéierregelen</type>
-			<type key="collation" type="gb2312han">Vereinfacht Chinesesch - GB2312</type>
 			<type key="collation" type="phonebook">Telefonsbuch-Zortéierung</type>
 			<type key="collation" type="pinyin">Pinyin-Zortéierregelen</type>
 			<type key="collation" type="search">Allgemeng Sich</type>

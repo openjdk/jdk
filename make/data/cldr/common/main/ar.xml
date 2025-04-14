@@ -1105,11 +1105,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">تصنيف الأحرف الكبيرة أولاً</type>
 			<type key="colCaseLevel" type="no" draft="contributed">تصنيف بحسب الأحرف غير الحساسة لحالة الأحرف</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">تصنيف بحسب حساسية الأحرف</type>
-			<type key="collation" type="big5han">الترتيب حسب اللغة الصينية التقليدية (Big5)</type>
 			<type key="collation" type="compat">ترتيب الفرز السابق: للتوافق</type>
 			<type key="collation" type="dictionary">الترتيب حسب القاموس</type>
 			<type key="collation" type="ducet">ترتيب فرز Unicode الافتراضي</type>
-			<type key="collation" type="gb2312han">الترتيب حسب اللغة الصينية المبسّطة (GB2312)</type>
 			<type key="collation" type="phonebook">الترتيب حسب دليل الهاتف</type>
 			<type key="collation" type="phonetic">الترتيب حسب اللفظ</type>
 			<type key="collation" type="pinyin">الترتيب حسب نظام بنيين الصيني</type>
@@ -3433,9 +3431,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>بنوم بنه</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>اندربيرج</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>كانتون</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -6492,7 +6487,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} عنصرًا</unitPattern>
 				<unitPattern count="other">{0} عنصر</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>masculine</gender>
 				<displayName>جزء في المليون</displayName>
 				<unitPattern count="zero">{0} جزء في المليون</unitPattern>
@@ -7461,7 +7456,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} رشّة</unitPattern>
 				<unitPattern count="other">{0} رشّة</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>masculine</gender>
 				<displayName>جزء بالمليار</displayName>
 				<unitPattern count="zero">{0} جزء بالمليار</unitPattern>
@@ -7781,7 +7776,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} عنصرًا</unitPattern>
 				<unitPattern count="other">{0} عنصر</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>جزء/مليون</displayName>
 				<unitPattern count="zero">{0} جزء/مليون</unitPattern>
 				<unitPattern count="one">{0} جزء/مليون</unitPattern>
@@ -9243,7 +9238,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ربع غالون إمبراطوري</unitPattern>
 				<unitPattern count="other">{0} ربع غالون إمبراطوري</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>جزء/مليار</displayName>
 				<unitPattern count="zero">{0} جزء/مليار</unitPattern>
 				<unitPattern count="one">{0} جزء/مليار</unitPattern>
@@ -9683,7 +9678,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} قدح</unitPattern>
 				<unitPattern count="other">{0} قدح</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>جزء/مليار</displayName>
 				<unitPattern count="zero">{0} جزء/مليار</unitPattern>
 				<unitPattern count="one">{0} جزء/مليار</unitPattern>

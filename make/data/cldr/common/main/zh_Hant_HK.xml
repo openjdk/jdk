@@ -204,9 +204,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<types>
 			<type key="calendar" type="ethiopic">埃塞俄比亞曆</type>
 			<type key="calendar" type="ethiopic-amete-alem">埃塞俄比亞阿美德阿萊姆曆</type>
-			<type key="collation" type="big5han">繁體中文排序 (Big5)</type>
 			<type key="collation" type="dictionary">詞典排序</type>
-			<type key="collation" type="gb2312han">簡體中文排序 (GB2312)</type>
 			<type key="ms" type="uksystem">英制</type>
 			<type key="ms" type="ussystem">美制</type>
 			<type key="numbers" type="deva">天城體數字</type>
@@ -1095,9 +1093,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Asia/Bishkek">
 				<exemplarCity>比斯凱克</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>恩德伯里島</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>科摩羅</exemplarCity>
@@ -2310,7 +2305,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="concentr-item">
 				<unitPattern count="other">{0} 個項目</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
@@ -2418,7 +2413,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="speed-light-speed">
 				<unitPattern count="other">{0}夜</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>濃度/十億</displayName>
 			</unit>
 			<coordinateUnit>

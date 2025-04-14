@@ -1035,10 +1035,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="colCaseFirst" type="upper">𑄜𑄪𑄣𑄴𑄣𑄳𑄠𑄬 𑄝𑄧𑄢𑄧𑄦𑄘𑄧𑄢𑄴 𑄦𑄧𑄢𑄧𑄇𑄴 𑄝𑄬𑄭𑄣𑄧𑄚</type>
 			<type key="colCaseLevel" type="no">𑄇𑄬𑄥𑄴 𑄃𑄧𑄥𑄧𑄁𑄝𑄬𑄘𑄩 𑄝𑄬𑄭𑄣𑄧𑄚</type>
 			<type key="colCaseLevel" type="yes">𑄇𑄬𑄥𑄴 𑄥𑄧𑄁𑄝𑄘𑄩 𑄝𑄬𑄭𑄣𑄧𑄚</type>
-			<type key="collation" type="big5han">𑄛𑄳𑄢𑄧𑄗𑄉𑄧𑄖𑄧 𑄌𑄩𑄚 𑄥𑄧𑄎𑄴𑄎𑄇𑄳𑄢𑄟𑄴-𑄝𑄨𑄉𑄴𑄻</type>
 			<type key="collation" type="dictionary">𑄇𑄧𑄙𑄖𑄢 𑄝𑄬𑄭𑄣𑄧𑄚𑄢𑄴 𑄚𑄨𑄠𑄮𑄟𑄴</type>
 			<type key="collation" type="ducet">𑄓𑄨𑄜𑄧𑄣𑄴𑄑𑄴 𑄃𑄨𑄃𑄪𑄚𑄨𑄇𑄮𑄓𑄴 𑄝𑄬𑄭𑄣𑄧𑄚</type>
-			<type key="collation" type="gb2312han">𑄃𑄧𑄎𑄬𑄃𑄧𑄌𑄴 𑄌𑄩𑄚 𑄥𑄎𑄚-𑄎𑄨𑄝𑄨𑄸𑄹𑄷𑄸</type>
 			<type key="collation" type="phonebook">𑄜𑄮𑄚𑄴𑄝𑄪𑄇𑄴 𑄥𑄎𑄚</type>
 			<type key="collation" type="phonetic">𑄢𑄳𑄦𑄧 𑄝𑄬𑄭𑄣𑄧𑄚</type>
 			<type key="collation" type="pinyin">𑄛𑄨𑄚𑄨𑄚𑄴 𑄥𑄎𑄚</type>
@@ -5070,7 +5068,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} 𑄟𑄨𑄣𑄨𑄟𑄮𑄣𑄴, 𑄛𑄳𑄢𑄧𑄖𑄨 𑄣𑄨𑄑𑄢𑄬</unitPattern>
 				<unitPattern count="other">{0} 𑄟𑄨𑄣𑄨𑄟𑄮𑄣𑄴, 𑄛𑄳𑄢𑄧𑄖𑄨 𑄣𑄨𑄑𑄢𑄬</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>𑄞𑄇𑄴, 𑄛𑄳𑄢𑄧𑄖𑄨 𑄘𑄧𑄌𑄴 𑄣𑄬𑄉</displayName>
 				<unitPattern count="one">{0} 𑄞𑄧𑄇𑄴, 𑄛𑄳𑄢𑄧𑄖𑄨 𑄘𑄧𑄌𑄴 𑄣𑄉𑄬</unitPattern>
 				<unitPattern count="other">{0} 𑄞𑄧𑄇𑄴, 𑄛𑄳𑄢𑄧𑄖𑄨 𑄘𑄧𑄌𑄴 𑄣𑄉𑄬</unitPattern>

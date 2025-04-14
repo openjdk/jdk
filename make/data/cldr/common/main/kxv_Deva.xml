@@ -1606,7 +1606,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>पनॉम पेन्ह</exemplarCity>
 			</zone>
-			<zone type="Pacific/Kanton">
+			<zone type="Pacific/Enderbury">
 				<exemplarCity>केंटन</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">

@@ -914,12 +914,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">پہلے بالائی حروف کی چھٹائی کریں</type>
 			<type key="colCaseLevel" type="no">حروف کی عدم حساسیت کی چھٹائی کریں</type>
 			<type key="colCaseLevel" type="yes">حروف کے تئیں حساس کی چھٹائی کریں</type>
-			<type key="collation" type="big5han">روایتی چینی کی چھٹائی کی ترتیب - Big5</type>
 			<type key="collation" type="compat" draft="contributed">سابقہ چھٹائی کی ترتیب، مطابقت کیلئے</type>
 			<type key="collation" type="dictionary">لغت کی چھٹنی کی ترتیب</type>
 			<type key="collation" type="ducet">ڈیفالٹ یونی کوڈ چھانٹی کی ترتیب</type>
 			<type key="collation" type="eor" draft="contributed">یورپی ترتیبی قوانین</type>
-			<type key="collation" type="gb2312han">آسان چینی کی چھٹائی کی ترتیب - GB2312</type>
 			<type key="collation" type="phonebook">فون بک کی چھٹنی کی ترتیب</type>
 			<type key="collation" type="phonetic">صوتی چھٹائی کی ترتیب</type>
 			<type key="collation" type="pinyin">پن ین کی چھٹنی کی ترتیب</type>
@@ -2674,9 +2672,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>پنوم پن</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>اینڈربری</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>کانٹن</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -5110,7 +5105,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>masculine</gender>
 				<displayName>آئٹمز</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>feminine</gender>
 				<displayName>فی ملین حصے</displayName>
 				<unitPattern count="one">{0} فی ملین حصے</unitPattern>
@@ -5907,7 +5902,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} روشنی</unitPattern>
 				<unitPattern count="other">{0} روشنی</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>masculine</gender>
 				<displayName>اجزا فی بلین</displayName>
 				<unitPattern count="one">{0} جزو فی بلین</unitPattern>
@@ -6019,7 +6014,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} آئٹم</unitPattern>
 				<unitPattern count="other">{0} آئٹمز</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>حصے/ملین</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -6424,7 +6419,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} روشنی</unitPattern>
 				<unitPattern count="other">{0} روشنی</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>اجزا/بلین</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -6493,7 +6488,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-dunam">
 				<displayName>دُنام</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -6750,7 +6745,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} روشنی</unitPattern>
 				<unitPattern count="other">{0} روشنی</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>

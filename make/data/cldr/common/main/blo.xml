@@ -1825,7 +1825,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Nɔm Pɛn</exemplarCity>
 			</zone>
-			<zone type="Pacific/Kanton">
+			<zone type="Pacific/Enderbury">
 				<exemplarCity>Kantɔn</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -5385,7 +5385,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">item {0}</unitPattern>
 				<unitPattern count="other">item {0}</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="zero">ppm {0}</unitPattern>
 				<unitPattern count="one">ppm {0}</unitPattern>
 				<unitPattern count="other">ppm {0}</unitPattern>
@@ -6020,7 +6020,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">light {0}</unitPattern>
 				<unitPattern count="other">light {0}</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="zero">ppb {0}</unitPattern>
 				<unitPattern count="one">ppb {0}</unitPattern>
 				<unitPattern count="other">ppb {0}</unitPattern>
@@ -6140,7 +6140,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">item{0}</unitPattern>
 				<unitPattern count="other">item{0}</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="zero">ppm{0}</unitPattern>
 				<unitPattern count="one">ppm{0}</unitPattern>
 				<unitPattern count="other">ppm{0}</unitPattern>
@@ -6768,7 +6768,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">light{0}</unitPattern>
 				<unitPattern count="other">light{0}</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="zero">ppb{0}</unitPattern>
 				<unitPattern count="one">ppb{0}</unitPattern>
 				<unitPattern count="other">ppb{0}</unitPattern>

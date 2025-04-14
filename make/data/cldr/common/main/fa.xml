@@ -1117,13 +1117,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">مرتب‌سازی بر اساس حرف بزرگ در ابتدا</type>
 			<type key="colCaseLevel" type="no">مرتب‌سازی بدون توجه به کوچک و بزرگی حروف</type>
 			<type key="colCaseLevel" type="yes">مرتب‌سازی با حساسیت به اندازه حروف</type>
-			<type key="collation" type="big5han">ترتیب چینی سنتی - Big5</type>
 			<type key="collation" type="compat" draft="contributed">ترتیب پیشین، برای سازگاری</type>
 			<type key="collation" type="dictionary">ترتیب فرهنگ لغت</type>
 			<type key="collation" type="ducet">ترتیب پیش‌فرض یونی‌کد</type>
 			<type key="collation" type="emoji">ترتیب ایموجی</type>
 			<type key="collation" type="eor" draft="contributed">قوانین ترتیب اروپایی</type>
-			<type key="collation" type="gb2312han">ترتیب چینی ساده‌شده - GB2312</type>
 			<type key="collation" type="phonebook">ترتیب دفتر تلفن</type>
 			<type key="collation" type="phonetic">مرتب کردن بر اساس آوایی</type>
 			<type key="collation" type="pinyin">ترتیب پین‌یین</type>
@@ -3334,9 +3332,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>پنوم‌پن</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>اندربری</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>کانتون</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -5875,7 +5870,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} میلی‌مول در لیتر</unitPattern>
 				<unitPattern count="other">{0} میلی‌مول در لیتر</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>بخش در میلیون</displayName>
 				<unitPattern count="one">{0} بخش در میلیون</unitPattern>
 				<unitPattern count="other">{0} بخش در میلیون</unitPattern>
@@ -6231,7 +6226,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} درم</unitPattern>
 				<unitPattern count="other">{0} درم</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>بخش در بیلیون</displayName>
 				<unitPattern count="one">{0} بخش در بیلیون</unitPattern>
 				<unitPattern count="other">{0} بخش در بیلیون</unitPattern>
@@ -6451,7 +6446,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} مورد</unitPattern>
 				<unitPattern count="other">{0} مورد</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>بخش/میلیون</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -7200,7 +7195,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} کوارت انگلیسی</unitPattern>
 				<unitPattern count="other">{0} کوارت انگلیسی</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>بخش در بیلیون</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -7387,7 +7382,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}مورد</unitPattern>
 				<unitPattern count="other">{0}مورد</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
@@ -7898,7 +7893,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}qt-Imp.</unitPattern>
 				<unitPattern count="other">{0}qt-Imp.</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>بخش در بیلیون</displayName>
 			</unit>
 			<unit type="duration-night">

@@ -1155,13 +1155,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">Isih Huruf Besar Dahulu</type>
 			<type key="colCaseLevel" type="no">Isih Tidak Sensitif Atur</type>
 			<type key="colCaseLevel" type="yes">Isih Sensitif Atur</type>
-			<type key="collation" type="big5han">Aturan Isih Cina Tradisional - Big5</type>
 			<type key="collation" type="compat">Tertib Isihan Sebelumnya</type>
 			<type key="collation" type="dictionary">Aturan Isih Kamus</type>
 			<type key="collation" type="ducet">Tertib Isih Unikod Lalai</type>
 			<type key="collation" type="emoji">Aturan Isih Emoji</type>
 			<type key="collation" type="eor">Peraturan Isihan Eropah</type>
-			<type key="collation" type="gb2312han">Aturan Isih Bahasa Cina Ringkas - GB2312</type>
 			<type key="collation" type="phonebook">Aturan Isih Buku Telefon</type>
 			<type key="collation" type="phonetic">Urutan Isih Fonetik</type>
 			<type key="collation" type="pinyin">Aturan Isih Pinyin</type>
@@ -2538,9 +2536,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity>Baitulmuqaddis</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Asia/Qostanay">
 				<exemplarCity>Kostanay</exemplarCity>
@@ -4304,7 +4299,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>milimol setiap liter</displayName>
 				<unitPattern count="other">{0} milimol setiap liter</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>bahagian setiap juta</displayName>
 				<unitPattern count="other">{0} bahagian setiap juta</unitPattern>
 			</unit>
@@ -4875,7 +4870,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>cahaya</displayName>
 				<unitPattern count="other">{0} cahaya</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>bahagian per bilion</displayName>
 				<unitPattern count="other">{0} bahagian per bilion</unitPattern>
 			</unit>
@@ -5215,7 +5210,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>cahaya</displayName>
 				<unitPattern count="other">{0} cahaya</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>bahagian/bilion</displayName>
 			</unit>
 			<unit type="duration-night">

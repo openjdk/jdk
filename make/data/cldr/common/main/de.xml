@@ -1262,13 +1262,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Großbuchstaben zuerst aufführen</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Ohne Groß-/Kleinschreibung sortieren</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Nach Groß-/Kleinschreibung sortieren</type>
-			<type key="collation" type="big5han">Traditionelle chinesische Sortierung (Big5)</type>
 			<type key="collation" type="compat">Vorherige Sortierung, Kompatibilität</type>
 			<type key="collation" type="dictionary">Lexikografische Sortierung</type>
 			<type key="collation" type="ducet">Unicode-Sortierung</type>
 			<type key="collation" type="emoji" draft="unconfirmed">Emoji-Sortierung</type>
 			<type key="collation" type="eor" draft="contributed">Europäische Sortierregeln</type>
-			<type key="collation" type="gb2312han">Vereinfachte chinesische Sortierung (GB2312)</type>
 			<type key="collation" type="phonebook">Telefonbuch-Sortierung</type>
 			<type key="collation" type="phonetic">Phonetische Sortierung</type>
 			<type key="collation" type="pinyin">Pinyin-Sortierung</type>
@@ -3415,9 +3413,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Bishkek">
 				<exemplarCity>Bischkek</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Komoren</exemplarCity>
@@ -6405,7 +6400,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative" draft="contributed">{0} Elementen</unitPattern>
 				<unitPattern count="other" case="genitive" draft="contributed">{0} Elemente</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>neuter</gender>
 				<displayName>Millionstel</displayName>
 				<unitPattern count="one">{0} Millionstel</unitPattern>
@@ -8173,7 +8168,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} Imp. Quart</unitPattern>
 				<unitPattern count="other" case="genitive">{0} Imp. Quart</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>neuter</gender>
 				<displayName>Milliardstel</displayName>
 				<unitPattern count="one">{0} Milliardstel</unitPattern>
@@ -8615,7 +8610,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Imp.qt.</unitPattern>
 				<unitPattern count="other">{0} Imp.qt.</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>Milliardstel</displayName>
 				<unitPattern count="one">{0} Milliardstel</unitPattern>
 				<unitPattern count="other">{0} Milliardstel</unitPattern>

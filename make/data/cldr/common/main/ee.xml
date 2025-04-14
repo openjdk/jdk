@@ -730,10 +730,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="japanese">japantɔwo ƒe kalenda</type>
 			<type key="calendar" type="persian">persiatɔwo ƒe kalenda</type>
 			<type key="calendar" type="roc">china repɔbliktɔwo ƒe kalenda tso 1912</type>
-			<type key="collation" type="big5han">blema chinatɔwo ƒe ɖoɖomɔ nu</type>
 			<type key="collation" type="dictionary">nuɖoɖo ɖe nyagɔmeɖegbalẽ ƒe ɖoɖomɔ nu</type>
 			<type key="collation" type="ducet">nuɖoɖo ɖe unicode ƒe ɖoɖo nu</type>
-			<type key="collation" type="gb2312han">chinagbe yeye ƒe ɖoɖomɔ nu</type>
 			<type key="collation" type="phonebook">fonegbalẽ me ɖoɖomɔ nu</type>
 			<type key="collation" type="pinyin">pinyin ɖoɖomɔ nu</type>
 			<type key="collation" type="search">nudidi hena zazã gbadza</type>
@@ -1903,9 +1901,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<daylight>Ireland nutome gaƒoƒo me</daylight>
 				</long>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Macau</exemplarCity>

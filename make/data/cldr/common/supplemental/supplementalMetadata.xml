@@ -552,6 +552,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="xss" replacement="zko" reason="deprecated"/> <!-- Assan ⇒ Kott -->
 			<languageAlias type="zkb" replacement="kjh" reason="deprecated"/> <!-- Koibal ⇒ Khakas -->
 
+			<!-- more deprecated 2024-09-09 -->
+			<languageAlias type="dek" replacement="sqm" reason="deprecated"/> <!-- South Levantine Arabic ⇒ Suma -->
+			<languageAlias type="nte" replacement="eko" reason="deprecated"/> <!-- Nathembo ⇒ Koti -->
+
             <!-- scripts -->
             <scriptAlias type="Qaai" replacement="Zinh" reason="deprecated"/>
             <!-- deprecated ISO territories in 3066 + CLDR ones (older deprecated ISO codes -->
@@ -1893,21 +1897,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			hsb_DE ht_HT hu_HU hy_AM
 			ia_001 id_ID ie_EE ife_TG ig_NG ii_CN io_001 is_IS it_IT iu_CA iu_Latn_CA
 			ja_JP jbo_001 jgo_CM jmc_TZ jv_ID
-			ka_GE kaa_Cyrl kaa_Cyrl_UZ kaa_Latn_UZ kab_DZ kaj_NG kam_KE kcg_NG kde_TZ kea_CV ken_CM kgp_BR
+			ka_GE kaa_Cyrl kaa_Cyrl_UZ kaa_Latn_UZ kab_DZ kaj_NG kam_KE kcg_NG kde_TZ kea_CV kek_GT ken_CM kgp_BR
 			khq_ML ki_KE
 			kk_Arab_CN kk_Cyrl kk_Cyrl_KZ
 			kkj_CM kl_GL kln_KE km_KH kn_IN ko_KR kok_Deva kok_Deva_IN kok_Latn_IN kpe_LR ks_Arab
 			ks_Arab_IN ks_Deva_IN ksb_TZ ksf_CM ksh_DE ku_TR kw_GB kxv_Deva_IN kxv_Latn
 			kxv_Latn_IN	kxv_Orya_IN kxv_Telu_IN ky_KG
 			la_VA lag_TZ lb_LU lg_UG lij_IT lkt_US lld_IT lmo_IT ln_CD lo_LA lrc_IR
-			lt_LT ltg_LV lu_CD luo_KE luy_KE lv_LV
+			lt_LT ltg_LV lu_CD luo_KE luy_KE lv_LV lzz_TR
 			mai_IN mas_KE mdf_RU mer_KE mfe_MU mg_MG mgh_MZ mgo_CM mhn_IT mi_NZ mic_CA mk_MK ml_IN
 			mn_MN mn_Mong_CN mni_Beng mni_Beng_IN mni_Mtei_IN moh_CA mr_IN ms_Arab_MY ms_MY
 			mt_MT mua_CM mus_US my_MM myv_RU mzn_IR
 			naq_NA nb nb_NO nd_ZW nds_DE ne_NP nl_NL nmg_CM nn_NO nnh_CM nqo_GN nr_ZA
 			nso_ZA nus_SS nv_US ny_MW nyn_UG
 			oc_FR om_ET or_IN os_GE osa_US
-			pa_Arab_PK pa_Guru pa_Guru_IN pap_CW pcm_NG pis_SB pl_PL prg_PL ps_AF pt_BR
+			pa_Arab_PK pa_Guru pa_Guru_IN pap_CW pcm_NG pis_SB pl_PL pms_IT prg_PL ps_AF pt_BR
 			qu_PE quc_GT
 			raj_IN rhg_Rohg rhg_Rohg_MM rif_MA rm_CH rn_BI ro_RO rof_TZ ru_RU rw_RW rwk_TZ
 			sa_IN sah_RU saq_KE sat_Deva_IN sat_Olck sat_Olck_IN sbp_TZ sc_IT scn_IT

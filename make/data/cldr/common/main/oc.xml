@@ -3500,7 +3500,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">milimòls per litres</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} milimòls per litres</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName draft="unconfirmed">partidas per milions</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} partidas per milions</unitPattern>
 			</unit>

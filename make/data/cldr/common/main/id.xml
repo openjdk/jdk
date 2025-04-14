@@ -1233,13 +1233,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper">Sortir Huruf Besar Dahulu</type>
 			<type key="colCaseLevel" type="no">Sortir Tidak Peka Huruf Besar</type>
 			<type key="colCaseLevel" type="yes">Sortir Peka Huruf Besar</type>
-			<type key="collation" type="big5han">Aturan Pengurutan Tionghoa Tradisional - Big5</type>
 			<type key="collation" type="compat">Aturan Pengurutan Sebelumnya, untuk kompatibilitas</type>
 			<type key="collation" type="dictionary">Aturan Pengurutan Kamus</type>
 			<type key="collation" type="ducet">Aturan Pengurutan Unicode Default</type>
 			<type key="collation" type="emoji" draft="contributed">Urutan Sortir Emoji</type>
 			<type key="collation" type="eor">Aturan Pengurutan Eropa</type>
-			<type key="collation" type="gb2312han">Aturan Pengurutan Tionghoa (Sederhana) - GB2312</type>
 			<type key="collation" type="phonebook">Aturan Pengurutan Buku Telepon</type>
 			<type key="collation" type="phonetic">Aturan Pengurutan Fonetik</type>
 			<type key="collation" type="pinyin">Aturan Pengurutan Pinyin</type>
@@ -2888,9 +2886,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Rome">
 				<exemplarCity>Roma</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Komoro</exemplarCity>
@@ -5172,7 +5167,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>millimol per liter</displayName>
 				<unitPattern count="other">{0} millimol per liter</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>bagian per juta</displayName>
 				<unitPattern count="other">{0} bagian per juta</unitPattern>
 			</unit>
@@ -5762,7 +5757,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>cahaya</displayName>
 				<unitPattern count="other">{0} cahaya</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>bagian per miliar</displayName>
 				<unitPattern count="other">{0} bagian per miliar</unitPattern>
 			</unit>
@@ -5825,7 +5820,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-millimole-per-liter">
 				<displayName>millimol/liter</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>bagian/juta</displayName>
 			</unit>
 			<unit type="concentr-percent">
@@ -6143,7 +6138,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>cahaya</displayName>
 				<unitPattern count="other">{0} cahaya</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>bagian/miliar</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -6188,7 +6183,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-millimole-per-liter">
 				<displayName>mmol/L</displayName>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>ppm</displayName>
 			</unit>
 			<unit type="concentr-percent">

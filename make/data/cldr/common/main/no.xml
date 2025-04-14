@@ -1275,13 +1275,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Sortér store bokstaver først</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Sortér uavhengig av store og små bokstaver.</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Sortér med skille mellom små og store bokstaver</type>
-			<type key="collation" type="big5han">tradisjonell kinesisk sortering - Big 5</type>
 			<type key="collation" type="compat">forrige sorteringsrekkefølge (for kompatibilitet)</type>
 			<type key="collation" type="dictionary">ordlistesortering</type>
 			<type key="collation" type="ducet">standard Unicode-sorteringsrekkefølge</type>
 			<type key="collation" type="emoji" draft="contributed">emoji-sorteringsrekkefølge</type>
 			<type key="collation" type="eor" draft="contributed">sorteringsrekkefølge for flerspråklige europeiske dokumenter</type>
-			<type key="collation" type="gb2312han">forenklet kinesisk sortering - GB2312</type>
 			<type key="collation" type="phonebook">telefonkatalogsortering</type>
 			<type key="collation" type="phonetic">fonetisk sortering</type>
 			<type key="collation" type="pinyin">pinyinsortering</type>
@@ -3350,9 +3348,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Bisjkek</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>Kantonøya</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
@@ -6957,7 +6952,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} item</unitPattern>
 				<unitPattern count="other" case="genitive">{0} items</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>masculine</gender>
 				<displayName>deler per million</displayName>
 				<unitPattern count="one">{0} del per million</unitPattern>
@@ -8054,7 +8049,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} lys</unitPattern>
 				<unitPattern count="other" case="genitive">{0} lys'</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>masculine</gender>
 				<displayName>deler per milliard</displayName>
 				<unitPattern count="one">{0} del per milliard</unitPattern>
@@ -8560,7 +8555,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} lys</unitPattern>
 				<unitPattern count="other">{0} lys</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>deler/milliard</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -8643,7 +8638,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}mmol/l</unitPattern>
 				<unitPattern count="other">{0}mmol/l</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="one">{0}ppm</unitPattern>
 				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
@@ -9101,7 +9096,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}lys</unitPattern>
 				<unitPattern count="other">{0}lys</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<unitPattern count="one">{0}ppb</unitPattern>
 				<unitPattern count="other">{0}ppb</unitPattern>
 			</unit>

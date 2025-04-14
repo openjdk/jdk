@@ -1257,13 +1257,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="colCaseFirst" type="upper" draft="contributed">Ordonați mai întâi majusculele</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Ordonați neținând seama de diferența dintre majuscule/minuscule</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Ordonați ținând seama de diferența dintre majuscule/minuscule</type>
-			<type key="collation" type="big5han">ordine de sortare a chinezei tradiționale - Big5</type>
 			<type key="collation" type="compat">ordine de sortare anterioară, pentru compatibilitate</type>
 			<type key="collation" type="dictionary">ordine de sortare a dicționarului</type>
 			<type key="collation" type="ducet">ordine de sortare Unicode implicită</type>
 			<type key="collation" type="emoji" draft="contributed">ordine de sortare a emojiurilor</type>
 			<type key="collation" type="eor" draft="contributed">regulile europene de sortare</type>
-			<type key="collation" type="gb2312han">ordine de sortare a chinezei simplificate - GB2312</type>
 			<type key="collation" type="phonebook">ordine de sortare după cartea de telefon</type>
 			<type key="collation" type="phonetic">ordine de sortare fonetică</type>
 			<type key="collation" type="pinyin">ordine de sortare pinyin</type>
@@ -2981,9 +2979,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Bishkek">
 				<exemplarCity>Bișkek</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Comore</exemplarCity>
@@ -5979,7 +5974,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de itemi</unitPattern>
 				<unitPattern count="other" case="genitive">{0} de itemi</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<gender>feminine</gender>
 				<displayName>părți pe milion</displayName>
 				<unitPattern count="one">{0} parte pe milion</unitPattern>
@@ -7356,7 +7351,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} lumină</unitPattern>
 				<unitPattern count="other" case="genitive">{0} lumină</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<gender>feminine</gender>
 				<displayName>părți pe miliard</displayName>
 				<unitPattern count="one">{0} parte pe miliard</unitPattern>
@@ -7795,7 +7790,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} lumină</unitPattern>
 				<unitPattern count="other">{0} lumină</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>părți/miliard</displayName>
 			</unit>
 			<unit type="duration-night">
@@ -7989,7 +7984,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} lumină</unitPattern>
 				<unitPattern count="other">{0} lumină</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>părți/miliard</displayName>
 			</unit>
 			<unit type="duration-night">

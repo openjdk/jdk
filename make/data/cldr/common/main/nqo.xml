@@ -1710,7 +1710,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>ߔߑߣߐ߲߫ ߔߍ߲߫</exemplarCity>
 			</zone>
-			<zone type="Pacific/Kanton">
+			<zone type="Pacific/Enderbury">
 				<exemplarCity>ߞߊ߲ߕߐ߲߫</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
