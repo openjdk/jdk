@@ -58,12 +58,12 @@ public:
                                size_t size,
                                size_t alignment,
                                size_t page_size,
-                               MemTag mem_tag = mtNone);
+                               MemTag mem_tag);
 
   static ReservedSpace reserve(size_t size,
                                size_t alignment,
                                size_t page_size,
-                               MemTag mem_tag = mtNone);
+                               MemTag mem_tag);
 
   static ReservedSpace reserve(size_t size,
                                MemTag mem_tag);
