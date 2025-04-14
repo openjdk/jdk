@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,20 +146,19 @@ Java_jdk_internal_util_SystemProps_00024Raw_platformProperties(JNIEnv *env, jcla
     PUTPROP(propArray, _path_separator_NDX, sprops->path_separator);
     PUTPROP(propArray, _line_separator_NDX, sprops->line_separator);
 
+    /* basic encoding properties, always non-NULL */
 #ifdef MACOSX
     /*
      * Since sun_jnu_encoding is now hard-coded to UTF-8 on Mac, we don't
-     * want to use it to overwrite file.encoding
+     * want to use it to overwrite native.encoding
      */
-    PUTPROP(propArray, _file_encoding_NDX, sprops->encoding);
+    PUTPROP(propArray, _native_encoding_NDX, sprops->encoding);
 #else
-    PUTPROP(propArray, _file_encoding_NDX, sprops->sun_jnu_encoding);
+    PUTPROP(propArray, _native_encoding_NDX, sprops->sun_jnu_encoding);
 #endif
     PUTPROP(propArray, _sun_jnu_encoding_NDX, sprops->sun_jnu_encoding);
 
-    /*
-     * file encoding for stdout and stderr
-     */
+    /* encodings for standard streams, may be NULL */
     PUTPROP(propArray, _stdout_encoding_NDX, sprops->stdout_encoding);
     PUTPROP(propArray, _stderr_encoding_NDX, sprops->stderr_encoding);
 

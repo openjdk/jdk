@@ -59,13 +59,10 @@ class MacroAssembler: public Assembler {
   // may customize this version by overriding it for its purposes (e.g., to save/restore
   // additional registers when doing a VM call).
   //
-  // If no java_thread register is specified (noreg) than rdi will be used instead. call_VM_base
-  // returns the register which contains the thread upon return. If a thread register has been
-  // specified, the return value will correspond to that register. If no last_java_sp is specified
-  // (noreg) than rsp will be used instead.
+  // call_VM_base returns the register which contains the thread upon return.
+  // If no last_java_sp is specified (noreg) than rsp will be used instead.
   virtual void call_VM_base(           // returns the register containing the thread upon return
     Register oop_result,               // where an oop-result ends up if any; use noreg otherwise
-    Register java_thread,              // the thread if computed before     ; use noreg otherwise
     Register last_java_sp,             // to set up last_Java_frame in stubs; use noreg otherwise
     address  entry_point,              // the entry point
     int      number_of_arguments,      // the number of arguments (w/o thread) to pop after the call
@@ -74,19 +71,14 @@ class MacroAssembler: public Assembler {
 
   void call_VM_helper(Register oop_result, address entry_point, int number_of_arguments, bool check_exceptions = true);
 
-  // helpers for FPU flag access
-  // tmp is a temporary register, if none is available use noreg
-  void save_rax   (Register tmp);
-  void restore_rax(Register tmp);
-
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
  // These routines should emit JVMTI PopFrame and ForceEarlyReturn handling code.
  // The implementation is only non-empty for the InterpreterMacroAssembler,
  // as only the interpreter handles PopFrame and ForceEarlyReturn requests.
- virtual void check_and_handle_popframe(Register java_thread);
- virtual void check_and_handle_earlyret(Register java_thread);
+ virtual void check_and_handle_popframe();
+ virtual void check_and_handle_earlyret();
 
   Address as_Address(AddressLiteral adr);
   Address as_Address(ArrayAddress adr, Register rscratch);
@@ -224,9 +216,10 @@ class MacroAssembler: public Assembler {
   void enter();
   void leave();
 
-  // Support for getting the JavaThread pointer (i.e.; a reference to thread-local information)
-  // The pointer will be loaded into the thread register.
-  void get_thread(Register thread);
+  // Support for getting the JavaThread pointer (i.e.; a reference to thread-local information).
+  // The pointer will be loaded into the thread register. This is a slow version that does native call.
+  // Normally, JavaThread pointer is available in r15_thread, use that where possible.
+  void get_thread_slow(Register thread);
 
 #ifdef _LP64
   // Support for argument shuffling
@@ -291,8 +284,8 @@ class MacroAssembler: public Assembler {
                Register arg_1, Register arg_2, Register arg_3,
                bool check_exceptions = true);
 
-  void get_vm_result  (Register oop_result, Register thread);
-  void get_vm_result_2(Register metadata_result, Register thread);
+  void get_vm_result  (Register oop_result);
+  void get_vm_result_2(Register metadata_result);
 
   // These always tightly bind to MacroAssembler::call_VM_base
   // bypassing the virtual implementation
@@ -323,35 +316,22 @@ class MacroAssembler: public Assembler {
   void super_call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3);
   void super_call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3, Register arg_4);
 
-  // last Java Frame (fills frame anchor)
-  void set_last_Java_frame(Register thread,
-                           Register last_java_sp,
-                           Register last_java_fp,
-                           address  last_java_pc,
-                           Register rscratch);
-
-  // thread in the default location (r15_thread on 64bit)
   void set_last_Java_frame(Register last_java_sp,
                            Register last_java_fp,
                            address  last_java_pc,
                            Register rscratch);
 
-#ifdef _LP64
   void set_last_Java_frame(Register last_java_sp,
                            Register last_java_fp,
                            Label &last_java_pc,
                            Register scratch);
-#endif
 
-  void reset_last_Java_frame(Register thread, bool clear_fp);
-
-  // thread in the default location (r15_thread on 64bit)
   void reset_last_Java_frame(bool clear_fp);
 
   // jobjects
   void clear_jobject_tag(Register possibly_non_local);
-  void resolve_jobject(Register value, Register thread, Register tmp);
-  void resolve_global_jobject(Register value, Register thread, Register tmp);
+  void resolve_jobject(Register value, Register tmp);
+  void resolve_global_jobject(Register value, Register tmp);
 
   // C 'boolean' to Java boolean: x == 0 ? 0 : 1
   void c2bool(Register x);
@@ -386,14 +366,12 @@ class MacroAssembler: public Assembler {
   void cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2);
 
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
-                      Register tmp1, Register thread_tmp);
+                      Register tmp1);
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
-  void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
-                     Register thread_tmp = noreg, DecoratorSet decorators = 0);
-  void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
-                              Register thread_tmp = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop(Register dst, Address src, Register tmp1 = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg, DecoratorSet decorators = 0);
   void store_heap_oop(Address dst, Register val, Register tmp1 = noreg,
                       Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
 
@@ -477,39 +455,6 @@ class MacroAssembler: public Assembler {
   // Division by power of 2, rounding towards 0
   void division_with_shift(Register reg, int shift_value);
 
-#ifndef _LP64
-  // Compares the top-most stack entries on the FPU stack and sets the eflags as follows:
-  //
-  // CF (corresponds to C0) if x < y
-  // PF (corresponds to C2) if unordered
-  // ZF (corresponds to C3) if x = y
-  //
-  // The arguments are in reversed order on the stack (i.e., top of stack is first argument).
-  // tmp is a temporary register, if none is available use noreg (only matters for non-P6 code)
-  void fcmp(Register tmp);
-  // Variant of the above which allows y to be further down the stack
-  // and which only pops x and y if specified. If pop_right is
-  // specified then pop_left must also be specified.
-  void fcmp(Register tmp, int index, bool pop_left, bool pop_right);
-
-  // Floating-point comparison for Java
-  // Compares the top-most stack entries on the FPU stack and stores the result in dst.
-  // The arguments are in reversed order on the stack (i.e., top of stack is first argument).
-  // (semantics as described in JVM spec.)
-  void fcmp2int(Register dst, bool unordered_is_less);
-  // Variant of the above which allows y to be further down the stack
-  // and which only pops x and y if specified. If pop_right is
-  // specified then pop_left must also be specified.
-  void fcmp2int(Register dst, bool unordered_is_less, int index, bool pop_left, bool pop_right);
-
-  // Floating-point remainder for Java (ST0 = ST0 fremr ST1, ST1 is empty afterwards)
-  // tmp is a temporary register, if none is available use noreg
-  void fremr(Register tmp);
-
-  // only if +VerifyFPU
-  void verify_FPU(int stack_depth, const char* s = "illegal FPU state");
-#endif // !LP64
-
   // dst = c = a * b + c
   void fmad(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c);
   void fmaf(XMMRegister dst, XMMRegister a, XMMRegister b, XMMRegister c);
@@ -523,34 +468,6 @@ class MacroAssembler: public Assembler {
   // same as fcmp2int, but using SSE2
   void cmpss2int(XMMRegister opr1, XMMRegister opr2, Register dst, bool unordered_is_less);
   void cmpsd2int(XMMRegister opr1, XMMRegister opr2, Register dst, bool unordered_is_less);
-
-  // branch to L if FPU flag C2 is set/not set
-  // tmp is a temporary register, if none is available use noreg
-  void jC2 (Register tmp, Label& L);
-  void jnC2(Register tmp, Label& L);
-
-  // Load float value from 'address'. If UseSSE >= 1, the value is loaded into
-  // register xmm0. Otherwise, the value is loaded onto the FPU stack.
-  void load_float(Address src);
-
-  // Store float value to 'address'. If UseSSE >= 1, the value is stored
-  // from register xmm0. Otherwise, the value is stored from the FPU stack.
-  void store_float(Address dst);
-
-  // Load double value from 'address'. If UseSSE >= 2, the value is loaded into
-  // register xmm0. Otherwise, the value is loaded onto the FPU stack.
-  void load_double(Address src);
-
-  // Store double value to 'address'. If UseSSE >= 2, the value is stored
-  // from register xmm0. Otherwise, the value is stored from the FPU stack.
-  void store_double(Address dst);
-
-#ifndef _LP64
-  // Pop ST (ffree & fincstp combined)
-  void fpop();
-
-  void empty_FPU_stack();
-#endif // !_LP64
 
   void push_IU_state();
   void pop_IU_state();
@@ -603,7 +520,6 @@ public:
 
   // allocation
   void tlab_allocate(
-    Register thread,                   // Current thread
     Register obj,                      // result: pointer to object after successful allocation
     Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
     int      con_size_in_bytes,        // object size in bytes if   known at compile time
@@ -762,7 +678,6 @@ public:
                            Label& L_success);
 
   void clinit_barrier(Register klass,
-                      Register thread,
                       Label* L_fast_path = nullptr,
                       Label* L_slow_path = nullptr);
 
@@ -837,7 +752,7 @@ public:
   // Check for reserved stack access in method being exited (for JIT)
   void reserved_stack_check();
 
-  void safepoint_poll(Label& slow_path, Register thread_reg, bool at_return, bool in_nmethod);
+  void safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod);
 
   void verify_tlab();
 
@@ -1114,27 +1029,6 @@ public:
   void comisd(XMMRegister dst, Address        src) { Assembler::comisd(dst, src); }
   void comisd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
-#ifndef _LP64
-  void fadd_s(Address        src) { Assembler::fadd_s(src); }
-  void fadd_s(AddressLiteral src) { Assembler::fadd_s(as_Address(src)); }
-
-  void fldcw(Address        src) { Assembler::fldcw(src); }
-  void fldcw(AddressLiteral src);
-
-  void fld_s(int index)          { Assembler::fld_s(index); }
-  void fld_s(Address        src) { Assembler::fld_s(src); }
-  void fld_s(AddressLiteral src);
-
-  void fld_d(Address        src) { Assembler::fld_d(src); }
-  void fld_d(AddressLiteral src);
-
-  void fld_x(Address        src) { Assembler::fld_x(src); }
-  void fld_x(AddressLiteral src) { Assembler::fld_x(as_Address(src)); }
-
-  void fmul_s(Address        src) { Assembler::fmul_s(src); }
-  void fmul_s(AddressLiteral src) { Assembler::fmul_s(as_Address(src)); }
-#endif // !_LP64
-
   void cmp32_mxcsr_std(Address mxcsr_save, Register tmp, Register rscratch = noreg);
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
   void ldmxcsr(AddressLiteral src, Register rscratch = noreg);
@@ -1348,6 +1242,14 @@ public:
   void vmovdqu(XMMRegister dst, XMMRegister    src);
   void vmovdqu(XMMRegister dst, AddressLiteral src,                 Register rscratch = noreg);
   void vmovdqu(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+  void vmovdqu(XMMRegister dst, XMMRegister    src, int vector_len);
+  void vmovdqu(XMMRegister dst, Address        src, int vector_len);
+  void vmovdqu(Address     dst, XMMRegister    src, int vector_len);
+
+  // AVX Aligned forms
+  using Assembler::vmovdqa;
+  void vmovdqa(XMMRegister dst, AddressLiteral src,                 Register rscratch = noreg);
+  void vmovdqa(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   // AVX512 Unaligned
   void evmovdqu(BasicType type, KRegister kmask, Address     dst, XMMRegister src, bool merge, int vector_len);
@@ -1404,6 +1306,7 @@ public:
   void evmovdquq(XMMRegister dst, Address        src, int vector_len) { Assembler::evmovdquq(dst, src, vector_len); }
   void evmovdquq(Address     dst, XMMRegister    src, int vector_len) { Assembler::evmovdquq(dst, src, vector_len); }
   void evmovdquq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+  void evmovdqaq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
   void evmovdquq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
     if (dst->encoding() != src->encoding() || mask != k0) {
@@ -1413,6 +1316,7 @@ public:
   void evmovdquq(Address     dst, KRegister mask, XMMRegister    src, bool merge, int vector_len) { Assembler::evmovdquq(dst, mask, src, merge, vector_len); }
   void evmovdquq(XMMRegister dst, KRegister mask, Address        src, bool merge, int vector_len) { Assembler::evmovdquq(dst, mask, src, merge, vector_len); }
   void evmovdquq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register rscratch = noreg);
+  void evmovdqaq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register rscratch = noreg);
 
   // Move Aligned Double Quadword
   void movdqa(XMMRegister dst, XMMRegister    src) { Assembler::movdqa(dst, src); }
@@ -2237,8 +2141,8 @@ public:
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
-  void lightweight_lock(Register basic_lock, Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
-  void lightweight_unlock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow);
+  void lightweight_lock(Register basic_lock, Register obj, Register reg_rax, Register tmp, Label& slow);
+  void lightweight_unlock(Register obj, Register reg_rax, Register tmp, Label& slow);
 
 #ifdef _LP64
   void save_legacy_gprs();

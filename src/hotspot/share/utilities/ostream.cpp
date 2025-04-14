@@ -437,6 +437,13 @@ char* stringStream::as_string(bool c_heap) const {
   return copy;
 }
 
+char* stringStream::as_string(Arena* arena) const {
+  char* copy = NEW_ARENA_ARRAY(arena, char, _written + 1);
+  ::memcpy(copy, _buffer, _written);
+  copy[_written] = '\0';  // terminating null
+  return copy;
+}
+
 stringStream::~stringStream() {
   if (!_is_fixed && _buffer != _small_buffer) {
     FREE_C_HEAP_ARRAY(char, _buffer);
