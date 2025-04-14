@@ -1787,8 +1787,8 @@ public class Test {
         }
     }
 
-    // 8353013 - java.net.URI.create(String) may have low performance to scan the host/domain name from
-    //           URI string when the hostname starts with number
+    // 8353013 - Increase test coverage for cases where the authority component of a hierarchical
+    // URI has a host component that starts with a number.
     private static void b8353013() {
         testCreate("https://0.0.0.1").s("https").h("0.0.0.1").p("").z();
         testCreate("https://00.0.0.2").s("https").h("00.0.0.2").p("").z();
@@ -1807,6 +1807,17 @@ public class Test {
         testCreate("https://123.example.com").s("https").h("123.example.com").p("").z();
         testCreate("https://1234.example.com").s("https").h("1234.example.com").p("").z();
         testCreate("https://12345.example.com").s("https").h("12345.example.com").p("").z();
+
+        testCreate("https://98765432101.example.com").s("https").h("98765432101.example.com").p("").z();
+        testCreate("https://98765432101.www.example.com/").s("https").h("98765432101.www.example.com").p("/").z();
+        testCreate("https://98765432101.www.example.com").s("https").h("98765432101.www.example.com").p("").z();
+
+        testCreate("https://9223372036854775808.example.com").s("https").h("9223372036854775808.example.com").p("").z();
+        testCreate("https://9223372036854775808.www.example.com").s("https").h("9223372036854775808.www.example.com").p("").z();
+        testCreate("https://9223372036854775808.xyz.abc.com").s("https").h("9223372036854775808.xyz.abc.com").p("").z();
+        testCreate("https://9223372036854775808.xyz.abc.pqr.com").s("https").h("9223372036854775808.xyz.abc.pqr.com").p("").z();
+
+        testCreate("https://256.example.com").s("https").h("256.example.com").p("").z();
     }
 
     public static void main(String[] args) throws Exception {
