@@ -251,45 +251,44 @@ public final class FilePermission extends Permission implements Serializable {
     }
 
     // Construct a new Permission with altPath
-    // Package private for use by test FilePermissionCollectionMerge
-    static FilePermission newPermPlusAltPath(FilePermission input) {
-        if (!input.invalid && input.npath2 == null && !input.allFiles) {
-            Path npath2 = altPath(input.npath);
+    // Used by test FilePermissionCollectionMerge
+    private FilePermission newPermPlusAltPath() {
+        System.err.println("PlusAlt path: " + this + ", npath: " + npath);
+        if (nb && !invalid && npath2 == null && !allFiles) {
+            Path npath2 = altPath(npath);
             if (npath2 != null) {
                 // Please note the name of the new permission is
                 // different than the original so that when one is
                 // added to a FilePermissionCollection it will not
                 // be merged with the original one.
-                return new FilePermission(input.getName() + "#plus",
-                        input,
-                        input.npath,
+                return new FilePermission(getName() + "#plus",
+                        this,
+                        npath,
                         npath2,
-                        input.mask,
-                        input.actions);
+                        mask,
+                        actions);
             }
         }
-        return input;
+        return this;
     }
 
     // Construct a new Permission adding altPath
-    // Package private for use by test FilePermissionCollectionMerge
-    static FilePermission newPermUsingAltPath(FilePermission input) {
-        if (!nb) {
-            return input;
-        }
-        if (!input.invalid && !input.allFiles) {
-            Path npath2 = altPath(input.npath);
+    // Used by test FilePermissionCollectionMerge
+    private FilePermission newPermUsingAltPath() {
+        System.err.println("Alt path: " + this + ", npath: " + npath);
+        if (!invalid && !allFiles) {
+            Path npath2 = altPath(npath);
             if (npath2 != null) {
                 // New name, see above.
-                return new FilePermission(input.getName() + "#using",
-                        input,
+                return new FilePermission(getName() + "#using",
+                        this,
                         npath2,
                         null,
-                        input.mask,
-                        input.actions);
+                        mask,
+                        actions);
             }
         }
-        return null;
+        return this;
 }
 
 

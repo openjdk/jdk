@@ -57,17 +57,17 @@ public class FilePermissionCollectionMerge {
         Method altPathMethod;
         Method plusAltPathMethod;
         try {
-            altPathMethod = FilePermission.class.getDeclaredMethod("newPermUsingAltPath", FilePermission.class);
+            altPathMethod = FilePermission.class.getDeclaredMethod("newPermUsingAltPath");
             altPathMethod.setAccessible(true);
-            plusAltPathMethod = FilePermission.class.getDeclaredMethod("newPermPlusAltPath", FilePermission.class);
+            plusAltPathMethod = FilePermission.class.getDeclaredMethod("newPermPlusAltPath");
             plusAltPathMethod.setAccessible(true);
         } catch (Exception ex) {
             System.err.println("File permission compatibility initialization failed");
             throw ex;
         }
         FilePermission fp1 = new FilePermission(arg, "read");
-        FilePermission fp2 = (FilePermission) altPathMethod.invoke(null, fp1);
-        FilePermission fp3 = (FilePermission) plusAltPathMethod.invoke(null, fp1);
+        FilePermission fp2 = (FilePermission) altPathMethod.invoke(fp1);
+        FilePermission fp3 = (FilePermission) plusAltPathMethod.invoke(fp1);
 
         // All 3 are different
         Asserts.assertNE(fp1, fp2);
