@@ -1085,7 +1085,7 @@ Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const Type
   }
 }
 
-bool VectorNode::is_commutative() {
+bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
   // Predicated vector operations are sensitive to ordering of inputs.
   // When the mask corresponding to a vector lane is false then
   // the result of the operation is corresponding lane of its first operand.
@@ -1141,7 +1141,7 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // Sort inputs of commutative non-predicated vector operations to help value numbering.
-  if (is_commutative()) {
+  if (should_swap_inputs_to_help_global_value_numbering()) {
     swap_edges(1, 2);
   }
   return nullptr;
@@ -2249,10 +2249,11 @@ static Node* UMinMaxV_Ideal(Node* n, PhaseGVN* phase, bool can_reshape) {
   if (lopc == Op_UMinV && ropc == Op_UMaxV) {
     umin = n->in(1);
     umax = n->in(2);
-  }
-  else if (lopc == Op_UMaxV && ropc == Op_UMinV) {
+  } else if (lopc == Op_UMaxV && ropc == Op_UMinV) {
     umin = n->in(2);
     umax = n->in(1);
+  } else {
+    return nullptr;
   }
 
   // UMin (UMin(a, b), UMax(a, b))  => UMin(a, b)
@@ -2270,11 +2271,14 @@ static Node* UMinMaxV_Ideal(Node* n, PhaseGVN* phase, bool can_reshape) {
     }
   }
 
-  return static_cast<VectorNode*>(n)->VectorNode::Ideal(phase, can_reshape);
+  return nullptr;
 }
 
 Node* UMinVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return UMinMaxV_Ideal(this, phase, can_reshape);
+  Node* progress = UMinMaxV_Ideal(this, phase, can_reshape);
+  if (progress != nullptr) return progress;
+
+  return VectorNode::Ideal(phase, can_reshape);
 }
 
 Node* UMinVNode::Identity(PhaseGVN* phase) {
@@ -2286,7 +2290,10 @@ Node* UMinVNode::Identity(PhaseGVN* phase) {
 }
 
 Node* UMaxVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return UMinMaxV_Ideal(this, phase, can_reshape);
+  Node* progress = UMinMaxV_Ideal(this, phase, can_reshape);
+  if (progress != nullptr) return progress;
+
+  return VectorNode::Ideal(phase, can_reshape);
 }
 
 Node* UMaxVNode::Identity(PhaseGVN* phase) {
