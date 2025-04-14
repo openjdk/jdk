@@ -30,6 +30,7 @@
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psClosure.inline.hpp"
 #include "gc/parallel/psCompactionManager.hpp"
+#include "gc/parallel/psCompactionManagerNew.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psRootType.hpp"
@@ -204,7 +205,7 @@ class ParallelScavengeRefProcProxyTask : public RefProcProxyTask {
 public:
   ParallelScavengeRefProcProxyTask(uint max_workers)
     : RefProcProxyTask("ParallelScavengeRefProcProxyTask", max_workers),
-      _terminator(max_workers, ParCompactionManager::marking_stacks()) {}
+      _terminator(max_workers, UseNewCode ? ParCompactionManagerNew::marking_stacks() : ParCompactionManager::marking_stacks()) {}
 
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
