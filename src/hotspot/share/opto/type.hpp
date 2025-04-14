@@ -1928,8 +1928,10 @@ public:
 // Class of Array Types
 class TypeFunc : public Type {
   TypeFunc( const TypeTuple *domain, const TypeTuple *range ) : Type(Function),  _domain(domain), _range(range) {}
+public:
   virtual bool eq( const Type *t ) const;
   virtual uint hash() const;             // Type specific hashing
+private:
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 

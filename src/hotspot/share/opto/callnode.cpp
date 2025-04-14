@@ -50,6 +50,13 @@
 // Optimization - Graph Style
 
 uint PureCallNode::size_of() const { return sizeof(*this); }
+bool PureCallNode::cmp(const Node& n) const {
+  const PureCallNode& call = static_cast<const PureCallNode&>(n);
+  return Opcode() == call.Opcode() && _tf->eq(call._tf) && _addr == call._addr && _name == call._name;
+}
+uint PureCallNode::hash() const {
+  return Node::hash() + _tf->hash() + reinterpret_cast<uintptr_t>(_addr) + reinterpret_cast<uintptr_t>(_name);
+}
 PureCallNode::PureCallNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name) : Node(required) {
   init_class_id(Class_PureCall);
   add_flag(Flag_is_macro);
