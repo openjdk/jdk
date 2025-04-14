@@ -24,10 +24,12 @@
 /**
  * @test
  * @bug 8350582
- * @library /test/lib /javax/net/ssl/templates ../../
- * @summary Verify debug output for different javax.net.debug scenarios
+ * @library /test/lib /javax/net/ssl/templates
+ * @summary Correct the parsing of the ssl value in javax.net.debug
  * @run junit DebugPropertyValuesTest
  */
+
+// A test to verify debug output for different javax.net.debug scenarios
 
 import jdk.test.lib.process.ProcessTools;
 
@@ -39,6 +41,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -47,6 +50,34 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class DebugPropertyValuesTest extends SSLSocketTemplate {
 
     private static final Path LOG_FILE = Path.of("logging.conf");
+    private static final HashMap<String, List<String>> debugMessages = new HashMap<>();
+
+    static {
+        debugMessages.put("handshake",
+                List.of("Produced ClientHello handshake message",
+                        "supported_versions"));
+        debugMessages.put("keymanager", List.of("choosing key:"));
+        debugMessages.put("plaintext", List.of("Plaintext before ENCRYPTION"));
+        debugMessages.put("record", List.of("handshake, length =", "WRITE:"));
+        debugMessages.put("sslctx", List.of("trigger seeding of SecureRandom"));
+        debugMessages.put("ssl", List.of("jdk.tls.keyLimits:"));
+        debugMessages.put("trustmanager", List.of("adding as trusted certificates"));
+        debugMessages.put("handshake-expand",
+                List.of("\"logger\".*: \"javax.net.ssl\",",
+                        "\"message\".*: \"Produced ClientHello handshake message"));
+        debugMessages.put("record-expand",
+                List.of("\"logger\".*: \"javax.net.ssl\",",
+                        "\"message\".*: \"READ: TLSv1.2 application_data"));
+        debugMessages.put("help",
+                List.of("print the help messages",
+                        "debugging can be widened with:"));
+        debugMessages.put("javax.net.debug",
+                List.of("properties: Initial security property:",
+                        "certpath: Cert path validation succeeded"));
+        debugMessages.put("logger",
+                List.of("FINE: adding as trusted certificates",
+                        "FINE: WRITE: TLSv1.3 application_data"));
+    }
 
     @BeforeAll
     static void setup() throws Exception {
@@ -56,116 +87,81 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
     }
 
     private static Stream<Arguments> patternMatches() {
-        // "Plaintext before ENCRYPTION" comes from "ssl:record:plaintext" option
-        // "handshake, length =" comes from "ssl:record" option
-        // "matching alias:" comes from ssl:keymanager option
-        // "trigger seeding of SecureRandom" comes from ssl:sslctx option
-        // "jdk.tls.keyLimits:" comes from the plain "ssl" option
         return Stream.of(
                 // all should print everything
                 Arguments.of(List.of("-Djavax.net.debug=all"),
-                        List.of("Plaintext before ENCRYPTION",
-                                "trigger seeding of SecureRandom",
-                                "adding as trusted certificates",
-                                "supported_versions"),
-                        null),
+                        List.of("handshake", "keymanager", "plaintext", "record", "ssl",
+                                "sslctx", "trustmanager")),
                 // ssl should print most details except verbose details
                 Arguments.of(List.of("-Djavax.net.debug=ssl"),
-                        List.of("adding as trusted certificates",
-                                "trigger seeding of SecureRandom",
-                                "supported_versions"),
-                        List.of("Plaintext before ENCRYPTION")),
+                        List.of("handshake", "keymanager", "record", "ssl", "sslctx",
+                                "trustmanager")),
                 // allow expand option for more verbose output
                 Arguments.of(List.of("-Djavax.net.debug=ssl,handshake,expand"),
-                        List.of("\"logger\".*: \"javax.net.ssl\",",
-                                "\"message\".*: \"Produced ClientHello handshake message",
-                                "adding as trusted certificates",
-                                "trigger seeding of SecureRandom",
-                                "supported_versions"),
-                        List.of("Plaintext before ENCRYPTION")),
+                        List.of("handshake", "handshake-expand", "keymanager", "record",
+                                "record-expand", "ssl", "sslctx", "trustmanager")),
                 // filtering on record option, with expand
                 Arguments.of(List.of("-Djavax.net.debug=ssl:record,expand"),
-                        List.of("\"logger\".*: \"javax.net.ssl\",",
-                                "\"message\".*: \"READ: TLSv1.2 application_data"),
-                        List.of("Plaintext before ENCRYPTION",
-                                "\"message\".*: \"Produced ClientHello handshake message:")),
-                // "all ssl" mode only true if "ssl" is javax.net.debug value
+                        List.of("handshake", "handshake-expand", "keymanager", "record",
+                                "record-expand", "ssl", "sslctx", "trustmanager")),
                 // this test is equivalent to ssl:record mode
                 Arguments.of(List.of("-Djavax.net.debug=ssl,record"),
-                        List.of("handshake, length =",
-                                "WRITE:"),
-                        List.of("matching alias:",
-                                "Plaintext before ENCRYPTION")),
+                        List.of("handshake", "keymanager", "record", "ssl", "sslctx",
+                                "trustmanager")),
+                // example of test where no "ssl" value is passed
+                Arguments.of(List.of("-Djavax.net.debug=record"),
+                        List.of("record")),
                 // ignore bad sub-option. treat like "ssl"
                 Arguments.of(List.of("-Djavax.net.debug=ssl,typo"),
-                        List.of("adding as trusted certificates",
-                                "trigger seeding of SecureRandom",
-                                "supported_versions"),
-                        List.of("Plaintext before ENCRYPTION")),
+                        List.of("handshake", "keymanager", "record", "ssl", "sslctx",
+                                "trustmanager")),
                 // ssltypo contains "ssl". Treat like "ssl"
                 Arguments.of(List.of("-Djavax.net.debug=ssltypo"),
-                        List.of("adding as trusted certificates",
-                                "trigger seeding of SecureRandom",
-                                "supported_versions"),
-                        List.of("Plaintext before ENCRYPTION")),
+                        List.of("handshake", "keymanager", "record", "ssl", "sslctx",
+                                "trustmanager")),
                 // plaintext is valid for record option
                 Arguments.of(List.of("-Djavax.net.debug=ssl:record:plaintext"),
-                        List.of("Plaintext before ENCRYPTION",
-                                "length ="),
-                        List.of("matching alias:")),
+                        List.of("handshake", "keymanager", "plaintext", "record",
+                                "ssl", "sslctx", "trustmanager")),
                 Arguments.of(List.of("-Djavax.net.debug=ssl:trustmanager"),
-                        List.of("adding as trusted certificates"),
-                        List.of("Plaintext before ENCRYPTION")),
+                        List.of("handshake", "keymanager", "record", "ssl", "sslctx",
+                                "trustmanager")),
                 Arguments.of(List.of("-Djavax.net.debug=ssl:sslctx"),
-                        List.of("trigger seeding of SecureRandom"),
-                        List.of("Plaintext before ENCRYPTION")),
+                        List.of("handshake", "keymanager", "record", "ssl", "sslctx",
+                                "trustmanager")),
                 // help message test. Should exit without running test
                 Arguments.of(List.of("-Djavax.net.debug=help"),
-                        List.of("print the help messages",
-                                "debugging can be widened with:"),
-                        List.of("Plaintext before ENCRYPTION",
-                                "adding as trusted certificates")),
+                        List.of("help")),
                 // add in javax.net.debug sanity test
                 Arguments.of(List.of("-Djavax.net.debug=ssl:trustmanager",
                                 "-Djava.security.debug=all"),
-                        List.of("adding as trusted certificates",
-                                "properties: Initial security property:",
-                                "certpath: Cert path validation succeeded"),
-                        List.of("Plaintext before ENCRYPTION")),
+                        List.of("handshake", "javax.net.debug", "keymanager", "record",
+                                "ssl", "sslctx", "trustmanager")),
                 // empty invokes System.Logger use
                 Arguments.of(List.of("-Djavax.net.debug",
                         "-Djava.util.logging.config.file=" + LOG_FILE),
-                        List.of("FINE: adding as trusted certificates",
-                        "FINE: WRITE: TLSv1.3 application_data",
-                        "supported_versions"),
-                        null)
-                );
+                        List.of("handshake", "keymanager", "logger", "plaintext",
+                                "record", "ssl", "sslctx", "trustmanager"))
+        );
     }
 
     @ParameterizedTest
     @MethodSource("patternMatches")
-    public void checkDebugOutput(List<String> params, List<String> expected,
-                                 List<String> notExpected) throws Exception {
+    public void checkDebugOutput(List<String> params,
+                                 List<String> expected) throws Exception {
 
         List<String> args = new ArrayList<>(params);
         args.add("DebugPropertyValuesTest");
         OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(args);
         outputAnalyzer.shouldHaveExitValue(0);
-        if (expected != null) {
-            for (String s : expected) {
-                outputAnalyzer.shouldMatch(s);
+        for (String s : debugMessages.keySet()) {
+            for (String output : debugMessages.get(s)) {
+                if (expected.contains(s)) {
+                    outputAnalyzer.shouldMatch(output);
+                } else {
+                    outputAnalyzer.shouldNotMatch(output);
+                }
             }
         }
-        if (notExpected != null) {
-            for (String s : notExpected) {
-                outputAnalyzer.shouldNotMatch(s);
-            }
-        } else {
-            outputAnalyzer.stderrShouldNotBeEmpty();
-        }
-    }
-
-    public static void main(String[] args) throws Exception {
-        new DebugPropertyValuesTest().run();
     }
 }
