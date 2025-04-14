@@ -1345,7 +1345,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
         if (prot_zone_size > 0) {
           assert(prot_zone_size >= os::vm_allocation_granularity(), "must be"); // not just page size!
           char* p = os::attempt_reserve_memory_at(mapped_base_address, prot_zone_size,
-                                                  false, MemTag::mtClassShared);
+                                                  mtClassShared, false);
           assert(p == mapped_base_address || p == nullptr, "must be");
           if (p == nullptr) {
             log_debug(cds)("Failed to re-reserve protection zone");
