@@ -122,10 +122,11 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
 
         case "type":
             // for LocaleNames/CalendarNames
-            // copy string
+            // copy string, ignoring "scope=core"
             {
                 String key = convertOldKeyName(attributes.getValue("key"));
-                if (key.length() == 2) {
+                String scope = attributes.getValue("scope");
+                if (key.length() == 2 && !"core".equals(scope)) {
                     pushStringEntry(qName, attributes,
                     CLDRConverter.LOCALE_TYPE_PREFIX + key + "." +
                     attributes.getValue("type"));
