@@ -2021,7 +2021,7 @@ const Type* SqrtHFNode::Value(PhaseGVN* phase) const {
   return TypeH::make((float)sqrt((double)f));
 }
 
-const Type* reverse_bytes(int opcode, const Type* con) {
+static const Type* reverse_bytes(int opcode, const Type* con) {
   switch (opcode) {
     case Op_ReverseBytesS:  return TypeInt::make(byteswap(checked_cast<jshort>(con->is_int()->get_con())));
     case Op_ReverseBytesUS: return TypeInt::make(byteswap(checked_cast<jchar>(con->is_int()->get_con())));
