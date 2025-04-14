@@ -529,7 +529,7 @@ bool PSParallelCompactNew::invoke_no_policy(bool clear_all_soft_refs, bool seria
                                         Threads::number_of_non_daemon_threads());
     ParallelScavengeHeap::heap()->workers().set_active_workers(active_workers);
 
-    if (serial || check_maximum_compaction()) {
+    if (serial /*|| check_maximum_compaction()*/) {
       // Serial compaction executes the forwarding and compaction phases serially,
       // thus achieving perfect compaction.
       // Marking and ajust-references would still be executed in parallel threads.
