@@ -25,13 +25,16 @@
  * @test
  * @bug 8350830
  * @summary TLS 1.2 Client session resumption having ServerNameIndication
- * @run main/othervm ResumeClientTLS12withSNI
+ * @modules java.base/sun.security.tools.keytool
+ * @run main/othervm -Djavax.net.debug=all ResumeClientTLS12withSNI
  */
 
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.util.*;
@@ -41,18 +44,7 @@ public class ResumeClientTLS12withSNI {
     /*
      * Enables logging of the SSLEngine operations.
      */
-    private static final boolean logging = false;
-
-    /*
-     * Enables the JSSE system debugging system property:
-     *
-     *     -Djavax.net.debug=ssl:handshake
-     *
-     * This gives a lot of low-level information about operations underway,
-     * including specific handshake messages, and might be best examined
-     * after gaining some familiarity with this application.
-     */
-    private static final boolean debug = true;
+    private static final boolean logging = true;
 
     private static SSLContext sslc;
 
@@ -70,15 +62,12 @@ public class ResumeClientTLS12withSNI {
     private ByteBuffer cTOs; // "reliable" transport client->server
     private ByteBuffer sTOc; // "reliable" transport server->client
 
-
-    private byte[] previousSessionId;
-
     /*
      * The following is to set up the keystores.
      */
     private static final String pathToStores = System.getProperty("test.src", ".");
-    private static final String keyStoreFile = "keystore_san.p12";
-    private static final String trustStoreFile = "keystore_san.p12";
+    private static final String keyStoreFile = "ks_san.p12";
+    private static final String trustStoreFile = "ks_san.p12";
     private static final char[] passphrase = "123456".toCharArray();
 
     private static final String keyFilename =
@@ -88,21 +77,28 @@ public class ResumeClientTLS12withSNI {
 
     private static final String HOST_NAME = "arf.yak.foo.localhost123456.localhost123456.localhost123456.localhost123456.localhost123456.localhost123456."
             + "localhost123456.localhost123456.localhost123456.localhost123456.localhost123456.localhost123456";
-    private static final SNIHostName SNI_NAME = new SNIHostName(HOST_NAME);
     private static final SNIMatcher SNI_MATCHER = SNIHostName.createSNIMatcher("arf\\.yak\\.foo.*");
 
     /*
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
-        if (debug) {
-            System.setProperty("javax.net.debug", "ssl");
-        }
+        Files.deleteIfExists(Path.of(keyFilename));
 
+        sun.security.tools.keytool.Main.main(
+                ("-keystore " + keyFilename + " -storepass 123456 -keypass 123456 -dname"
+                 + " CN=test" + " -alias ks_san -genkeypair -keyalg rsa -ext "
+                 + "san=dns:localhost123.localhost123.localhost123.localhost123."
+                 + "localhost123.localhost123.localhost123.localhost123.localhost123."
+                 + "localhost123.localhost123.localhost123.localhost123.localhost123."
+                 + "localhost123.localhost123.localhost123.localhost123.localhost123.com,"
+                 + "dns:localhost456").split(" "));
         final ResumeClientTLS12withSNI clientSession = new ResumeClientTLS12withSNI("TLSv1.2");
         for (int i = 0; i < 2; i++) {
             clientSession.runTest();
         }
+
+        Files.deleteIfExists(Path.of(keyFilename));
     }
 
     public ResumeClientTLS12withSNI(final String sslProtocol) throws Exception {
@@ -183,10 +179,6 @@ public class ResumeClientTLS12withSNI {
             log("================");
 
             clientResult = clientEngine.wrap(clientOut, cTOs);
-            if (clientResult.getHandshakeStatus() == HandshakeStatus.FINISHED) {
-                this.verifySessionResumption(this.previousSessionId, clientEngine);
-                this.previousSessionId = clientEngine.getSession().getId();
-            }
             log("client wrap: ", clientResult);
             runDelegatedTasks(clientResult, clientEngine);
 
@@ -200,10 +192,6 @@ public class ResumeClientTLS12withSNI {
             log("-------");
 
             clientResult = clientEngine.unwrap(sTOc, clientIn);
-            if (clientResult.getHandshakeStatus() == HandshakeStatus.FINISHED) {
-                this.verifySessionResumption(this.previousSessionId, clientEngine);
-                this.previousSessionId = clientEngine.getSession().getId();
-            }
             log("client unwrap: ", clientResult);
             runDelegatedTasks(clientResult, clientEngine);
 
@@ -262,10 +250,9 @@ public class ResumeClientTLS12withSNI {
         /*
          * Similar to above, but using client mode instead.
          */
-        clientEngine = sslc.createSSLEngine("client", 80);
+        clientEngine = sslc.createSSLEngine(HOST_NAME, 80);
         clientEngine.setUseClientMode(true);
         SSLParameters cliSSLParams = clientEngine.getSSLParameters();
-        cliSSLParams.setServerNames(List.of(SNI_NAME));
         clientEngine.setSSLParameters(cliSSLParams);
     }
 
@@ -375,21 +362,6 @@ public class ResumeClientTLS12withSNI {
     private static void log(String str) {
         if (logging) {
             System.out.println(str);
-        }
-    }
-
-    private void verifySessionResumption(final byte[] expected, final SSLEngine engine) {
-        if (expected == null) {
-            // we haven't yet created a session previously, so there isn't any
-            // session to be expected to resume
-            return;
-        }
-        final byte[] sessionId = engine.getSession().getId();
-        // compare and verify if they are same
-        if (Arrays.equals(expected, sessionId)) {
-            System.out.println(this.sslc.getProvider().getName() + " " + this.sslc.getProtocol() + " - Session resumption SUCCEEDED");
-        } else {
-            System.out.println(this.sslc.getProvider().getName() + " " + this.sslc.getProtocol() + " - Session resumption FAILED");
         }
     }
 }
