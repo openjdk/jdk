@@ -165,20 +165,22 @@ public class TestEventMetadata {
         System.out.println("Verifying label: " + label);
         Asserts.assertNotEquals(label, null, "Label not allowed to be null");
         Asserts.assertTrue(label.length() > 1, "Label must be at least two characters");
-        Asserts.assertTrue(label.length() < 45, "Label should not exceed 45 characters, use description to explain");
-        Asserts.assertTrue(label.length() == label.trim().length(), "Label should not have superflous whitespace at start or end");
+        Asserts.assertTrue(label.length() <= 45, "Label should not exceed 45 characters, use description to explain");
+        Asserts.assertTrue(label.length() == label.trim().length(), "Label should not have superfluous whitespace at start or end");
 
         String[] words = label.split(" ");
         String[] middleWords = words.length > 2 ? Arrays.copyOfRange(words, 1, words.length - 1) : new String[0];
         String firstWord = words[0];
         String lastWord = words[words.length - 1];
         Asserts.assertTrue(isCapitalized(firstWord), "Label should capitalize first word");
+
+        // The isNumeric check is a workaround so "GC Phase Pause Level 1" doesn't fail.
         if (!isNumeric(lastWord)) {
             Asserts.assertTrue(isCapitalized(lastWord), "Label should capitalize last word");
         }
         for (String word : words) {
             Asserts.assertFalse(word.endsWith("-") || word.startsWith("-"), "Word in label should not start or end with hyphen");
-            Asserts.assertTrue(word.length() != 0, "Label should not contain superflous whitespace");
+            Asserts.assertTrue(word.length() != 0, "Label should not contain superfluous whitespace");
             if (isCapitalized(word)) {
                 for (String w : word.split("-")) {
                     Asserts.assertTrue(isCapitalized(w), "Label should capitalize all words in a hyphenated word");
@@ -191,7 +193,7 @@ public class TestEventMetadata {
             }
         }
         for (char c : label.toCharArray()) {
-            Asserts.assertTrue(isAllowedCharacter(c), "Label should only consist of letters, numbers, hyphens, parantheses or whitespace, found '" + c + "'");
+            Asserts.assertTrue(isAllowedCharacter(c), "Label should only consist of letters, numbers, hyphens, parentheses or whitespace, found '" + c + "'");
         }
     }
 
@@ -209,7 +211,7 @@ public class TestEventMetadata {
     }
 
     private static boolean isShortCommonPreposition(String word) {
-        String[] prepositions = { "in", "on", "at", "by", "to", "of"};
+        String[] prepositions = { "in", "on", "at", "by", "to", "of" };
         return containsWord(prepositions, word);
     }
 
@@ -226,7 +228,7 @@ public class TestEventMetadata {
         String name = eventType.getName().substring(EventNames.PREFIX.length());
         Asserts.assertFalse(isReservedKeyword(name),"Name must not be reserved keyword in the Java language (" + name + ")");
         checkCommonAbbreviations(name);
-          char firstChar = name.charAt(0);
+        char firstChar = name.charAt(0);
         Asserts.assertFalse(name.contains("ID"), "'ID' should not be used in name, consider using 'Id'");
         Asserts.assertTrue(Character.isAlphabetic(firstChar), "Name " + name + " must start with a character");
         Asserts.assertTrue(Character.isUpperCase(firstChar), "Name " + name + " must start with upper case letter");
