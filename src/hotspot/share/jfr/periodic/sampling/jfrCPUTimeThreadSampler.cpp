@@ -73,7 +73,7 @@ static JavaThread* get_java_thread_if_valid() {
   return jt;
 }
 
- JfrCPUTimeTraceQueue::JfrCPUTimeTraceQueue(u4 capacity) : _capacity(capacity), _head(0), _lost_samples(0) {
+JfrCPUTimeTraceQueue::JfrCPUTimeTraceQueue(u4 capacity) : _capacity(capacity), _head(0), _lost_samples(0) {
   _data = JfrCHeapObj::new_array<JfrCPUTimeSampleRequest>(capacity);
 }
 
@@ -94,20 +94,19 @@ bool JfrCPUTimeTraceQueue::enqueue(JfrCPUTimeSampleRequest& request) {
   return true;
 }
 
-JfrCPUTimeSampleRequest* JfrCPUTimeTraceQueue::dequeue() {
-  assert(Thread::current()->is_Java_thread(), "invariant");
-  assert(JavaThread::current()->is_cpu_time_jfr_dequeue_locked(), "invariant");
-  if (_head > 0) {
-    _head--;
-    return &_data[_head];
-  }
-  return nullptr;
+JfrCPUTimeSampleRequest& JfrCPUTimeTraceQueue::at(u4 index) {
+  assert(index < _head, "invariant");
+  return _data[index];
 }
 
 volatile u4 _lost_samples_sum = 0;
 
 u4 JfrCPUTimeTraceQueue::size() const {
   return Atomic::load(&_head);
+}
+
+void JfrCPUTimeTraceQueue::set_size(u4 size) {
+  Atomic::release_store(&_head, size);
 }
 
 u4 JfrCPUTimeTraceQueue::capacity() const {
@@ -139,8 +138,12 @@ void JfrCPUTimeTraceQueue::increment_lost_samples() {
   Atomic::inc(&_lost_samples);
 }
 
-void JfrCPUTimeTraceQueue::reset_lost_samples() {
-  Atomic::release_store(&_lost_samples, 0);
+u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples() {
+  s4 lost_samples = Atomic::load_acquire(&_lost_samples);
+  while (Atomic::cmpxchg(&_lost_samples, lost_samples, 0) != lost_samples) {
+    lost_samples = Atomic::load_acquire(&_lost_samples);
+  }
+  return lost_samples;
 }
 
 void JfrCPUTimeTraceQueue::ensure_capacity(u4 capacity) {
@@ -174,6 +177,7 @@ class JfrCPUTimeThreadSampler : public NonJavaThread {
   volatile bool _disenrolled;
   volatile bool _stop_signals = false;
   volatile int _active_signal_handlers;
+  volatile bool _is_out_of_safepoint_sampling_triggered = false;
 
   JfrCPUTimeThreadSampler(double rate, bool autoadapt);
   ~JfrCPUTimeThreadSampler();
@@ -191,6 +195,11 @@ class JfrCPUTimeThreadSampler : public NonJavaThread {
 
   void sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt);
 
+  // sample all marked threads out of safepoint
+  void sample_out_of_safepoint();
+
+  void sample_out_of_safepoint(JavaThread* thread);
+
 protected:
   virtual void post_run();
 public:
@@ -205,6 +214,7 @@ public:
   void init_timers();
   void stop_timer();
 
+  void trigger_out_of_safepoint_sampling();
 };
 
 
@@ -219,6 +229,10 @@ JfrCPUTimeThreadSampler::JfrCPUTimeThreadSampler(double rate, bool autoadapt) :
 }
 
 JfrCPUTimeThreadSampler::~JfrCPUTimeThreadSampler() {
+}
+
+void JfrCPUTimeThreadSampler::trigger_out_of_safepoint_sampling() {
+  Atomic::release_store(&_is_out_of_safepoint_sampling_triggered, true);
 }
 
 void JfrCPUTimeThreadSampler::on_javathread_create(JavaThread* thread) {
@@ -239,6 +253,10 @@ void JfrCPUTimeThreadSampler::on_javathread_terminate(JavaThread* thread) {
     timer_delete(thread->jfr_thread_local()->timerid());
     thread->jfr_thread_local()->unset_timerid();
     thread->disable_cpu_time_jfr_queue();
+  }
+  s4 lost_samples = thread->cpu_time_jfr_queue().lost_samples();
+  if (lost_samples > 0) {
+    JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), JfrThreadLocal::thread_id(thread), lost_samples);
   }
 }
 
@@ -290,9 +308,82 @@ void JfrCPUTimeThreadSampler::run() {
       last_autoadapt_check = os::javaTimeNanos();
     }
 
+    if (Atomic::load_acquire(&_is_out_of_safepoint_sampling_triggered)) {
+      Atomic::release_store(&_is_out_of_safepoint_sampling_triggered, false);
+      sample_out_of_safepoint();
+    }
+
     os::naked_sleep(10);
   }
 }
+
+void JfrCPUTimeThreadSampler::sample_out_of_safepoint() {
+  ResourceMark rm;
+  MutexLocker tlock(Threads_lock);
+  ThreadsListHandle tlh;
+  for (size_t i = 0; i < tlh.list()->length(); i++) {
+    JavaThread* jt = tlh.list()->thread_at(i);
+    if (jt->wants_out_of_safepoint_sampling()) {
+      if (!jt->acquire_cpu_time_jfr_native_lock()) {
+        continue;
+      }
+      jt->set_wants_out_of_safepoint_sampling(false);
+      sample_out_of_safepoint(jt);
+      jt->release_cpu_time_jfr_queue_lock();
+    }
+  }
+}
+
+// equals operator for JfrSampleRequest
+inline bool operator==(const JfrSampleRequest& lhs, const JfrSampleRequest& rhs) {
+  return lhs._sample_sp == rhs._sample_sp &&
+         lhs._sample_pc == rhs._sample_pc &&
+         lhs._sample_bcp == rhs._sample_bcp;
+}
+
+void JfrCPUTimeThreadSampler::sample_out_of_safepoint(JavaThread* thread) {
+  JfrCPUTimeTraceQueue& queue = thread->cpu_time_jfr_queue();
+  assert(!queue.is_empty(), "invariant");
+  if (queue.is_empty()) {
+    return;
+  }
+  JfrCPUTimeSampleRequest& request = queue.at(queue.size() - 1);
+  // find the first that is equal
+  // idea: this ensures that the frames happened in native
+  // maybe we can wrap this in #ifdef ASSERT if first_index is always 0
+  s4 first_index = queue.size() - 1;
+  for (s4 i = queue.size() - 1; i >= 0; i--) {
+    if (queue.at(i)._request == request._request) {
+      first_index = i;
+    } else {
+      break;
+    }
+  }
+  assert(first_index == 0, "invariant");
+
+  // now obtain the single stack trace
+
+  const frame top_frame = thread->last_frame();
+  for (u4 i = first_index; i < queue.size(); i++) {
+    const JfrTicks now = JfrTicks::now();
+    JfrCPUTimeSampleRequest& request = queue.at(i);
+    JfrStackTrace stacktrace;
+    traceid tid = JfrThreadLocal::thread_id(thread);
+    if (!stacktrace.record_inner(thread, top_frame, 0)) {
+      log_info(jfr)("Unable to record native stacktrace for thread %s in CPU time sampler", thread->name());
+      JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, now, tid, request._cpu_time_period);
+    } else {
+      traceid sid = JfrStackTraceRepository::add(stacktrace);
+      JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, now, sid, tid, request._cpu_time_period, false);
+    }
+  }
+  if (queue.lost_samples() > 0) {
+    const JfrTicks now = JfrTicks::now();
+    JfrCPUTimeThreadSampling::send_lost_event(now, JfrThreadLocal::thread_id(thread), queue.get_and_reset_lost_samples());
+  }
+  queue.set_size(first_index);
+}
+
 
 static volatile size_t count = 0;
 
@@ -308,6 +399,9 @@ void JfrCPUTimeThreadSampling::send_empty_event(const JfrTicks &start_time, cons
   event.commit();
 }
 
+
+static volatile size_t biased_count = 0;
+
 void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, const JfrTicks &end_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased) {
   EventCPUTimeSample event(UNTIMED);
   event.set_failed(false);
@@ -319,8 +413,11 @@ void JfrCPUTimeThreadSampling::send_event(const JfrTicks &start_time, const JfrT
   event.set_biased(biased);
   event.commit();
   Atomic::inc(&count);
+  if (biased) {
+    Atomic::inc(&biased_count);
+  }
   if (Atomic::load(&count) % 1000 == 0) {
-    log_info(jfr)("CPU thread sampler sent %ld events, lost %d\n", Atomic::load(&count), Atomic::load(&_lost_samples_sum));
+    log_info(jfr)("CPU thread sampler sent %ld events, lost %d, biased %ld\n", Atomic::load(&count), Atomic::load(&_lost_samples_sum), Atomic::load(&biased_count));
   }
 }
 
@@ -417,6 +514,12 @@ void JfrCPUTimeThreadSampling::on_javathread_terminate(JavaThread *thread) {
   }
 }
 
+void JfrCPUTimeThreadSampling::trigger_out_of_safepoint_sampling() {
+  if (_instance != nullptr && _instance->_sampler != nullptr) {
+    _instance->_sampler->trigger_out_of_safepoint_sampling();
+  }
+}
+
 void handle_timer_signal(int signo, siginfo_t* info, void* context) {
   assert(_instance != nullptr, "invariant");
   _instance->handle_timer_signal(info, context);
@@ -437,14 +540,30 @@ void JfrCPUTimeThreadSampler::sample_thread(JfrSampleRequest& request, void* uco
   JfrSampleRequestBuilder::build_cpu_time_sample_request(request, ucontext, jt);
 }
 
+volatile size_t count__ = 0;
+
+static bool check_state(JavaThread* thread) {
+  switch (thread->thread_state()) {
+    case _thread_in_Java:
+    case _thread_in_native:
+      return true;
+    case _thread_in_vm:
+    default:
+      return false;
+  }
+}
 
 void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context) {
   JavaThread* jt = get_java_thread_if_valid();
   if (jt == nullptr) {
     return;
   }
-  if (jt->is_at_poll_safepoint() || !jt->acquire_cpu_time_jfr_enqueue_lock()) {
+  if (!check_state(jt) ||
+      jt->is_at_poll_safepoint() ||
+      jt->is_JfrRecorder_thread() || jt->is_JfrSampler_thread() ||
+      !jt->acquire_cpu_time_jfr_enqueue_lock()) {
     jt->cpu_time_jfr_queue().increment_lost_samples();
+    jt->set_wants_out_of_safepoint_sampling(false);
     return;
   }
   NoResourceMark rm;
@@ -456,14 +575,27 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
   // so samples might be skipped and we have to compute the actual period
   int64_t period = get_sampling_period() * (info->si_overrun + 1);
   request._cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
-
   sample_thread(request._request, context, jt);
+
   if (jt->cpu_time_jfr_queue().enqueue(request)) {
     jt->set_has_cpu_time_jfr_requests(true);
     SafepointMechanism::arm_local_poll_release(jt);
   } else {
     jt->cpu_time_jfr_queue().increment_lost_samples();
   }
+
+  if (jt->thread_state() == _thread_in_native &&
+    jt->cpu_time_jfr_queue().size() > jt->cpu_time_jfr_queue().capacity() / 2) {
+    // we are in native code and the queue is getting full
+    // worst case, we're having 10s of samples in the queue to fill it up
+    // so this triggers after around 5s of being in native code
+    // the sampler thread has then at least 5s to sample the task
+    jt->set_wants_out_of_safepoint_sampling(true);
+    JfrCPUTimeThreadSampling::trigger_out_of_safepoint_sampling();
+  } else {
+    jt->set_wants_out_of_safepoint_sampling(false);
+  }
+
   jt->release_cpu_time_jfr_queue_lock();
 }
 

@@ -2654,6 +2654,11 @@ WB_ENTRY(void, WB_WaitUnsafe(JNIEnv* env, jobject wb, jint time))
     os::naked_short_sleep(time);
 WB_END
 
+JNIEXPORT void JNICALL WB_WasteCPU(JNIEnv* env, jobject wb, jint time) {
+    u8 start = os::javaTimeNanos();
+    while (os::javaTimeNanos() - start < (u8)time * 1000000);
+}
+
 WB_ENTRY(jstring, WB_GetLibcName(JNIEnv* env, jobject o))
   ThreadToNativeFromVM ttn(thread);
   jstring info_string = env->NewStringUTF(XSTR(LIBC));
@@ -3000,6 +3005,7 @@ static JNINativeMethod methods[] = {
 
   {CC"isJVMTIIncluded", CC"()Z",                      (void*)&WB_IsJVMTIIncluded},
   {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},
+  {CC"wasteCPU", CC"(I)V",                            (void*)&WB_WasteCPU},
   {CC"getLibcName",     CC"()Ljava/lang/String;",     (void*)&WB_GetLibcName},
 
   {CC"pinObject",       CC"(Ljava/lang/Object;)V",    (void*)&WB_PinObject},

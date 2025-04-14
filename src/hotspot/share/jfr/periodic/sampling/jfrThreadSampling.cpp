@@ -173,7 +173,6 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
   if (sampled_cb == nullptr) {
     // No code blob... probably native code. Perform a biased sample.
     top_frame = jt->last_frame();
-    *biased = true;
     return true;
   }
 
@@ -221,8 +220,6 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
     stream.next(); // skip the SafepointBlob stub frame
   }
 
-  *biased = true;
-
   assert(!stream.current()->is_safepoint_blob_frame(), "invariant");
 
   // Search the first frame that is above the sampled sp.
@@ -238,6 +235,7 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
       // The sample didn't have an nmethod; we decide to trace from its sender.
       // Another instance of safepoint bias.
       top_frame = *current;
+      *biased = true;
       return true;
     }
 
@@ -256,6 +254,7 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
     // A mismatched sample in which case we trace from the sender.
     // Yet another instance of safepoint bias,to be addressed with
     // more exact and stricter versions when parsable blobs become available.
+    *biased = true;
     top_frame = *current;
     return true;
   }
@@ -291,30 +290,30 @@ static void record_thread_in_java(const JfrSampleRequest& request, const JfrTick
 }
 
 #ifdef LINUX
-static void record_cpu_time_thread(const JfrCPUTimeSampleRequest* request, const JfrTicks& now, JavaThread* jt, Thread* current) {
+static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const JfrTicks& now, JavaThread* jt, Thread* current) {
   assert(jt != nullptr, "invariant");
   assert(current != nullptr, "invariant");
   frame top_frame;
   const traceid tid = JfrThreadLocal::thread_id(jt);
-  bool biased;
-  if (!compute_top_frame(request->_request, top_frame, jt, &biased)) {
-    JfrCPUTimeThreadSampling::send_empty_event(request->_request._sample_ticks, now, tid, request->_cpu_time_period);
+  bool biased = false;
+  if (!compute_top_frame(request._request, top_frame, jt, &biased)) {
+    JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, now, tid, request._cpu_time_period);
     return;
   }
   traceid sid;
   {
     ResourceMark rm(current);
     JfrStackTrace stacktrace;
-    if (!stacktrace.record(jt, top_frame, request->_request)) {
+    if (!stacktrace.record(jt, top_frame, request._request)) {
       // Unable to record stacktrace. Fail.
-      JfrCPUTimeThreadSampling::send_empty_event(request->_request._sample_ticks, now, tid, request->_cpu_time_period);
+      JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, now, tid, request._cpu_time_period);
       return;
     }
     sid = JfrStackTraceRepository::add(stacktrace);
   }
   assert(sid != 0, "invariant");
-  JfrCPUTimeThreadSampling::send_event(request->_request._sample_ticks, now, sid, tid, request->_cpu_time_period, biased);
-  send_safepoint_latency_event(request->_request, now, sid, jt);
+  JfrCPUTimeThreadSampling::send_event(request._request._sample_ticks, now, sid, tid, request._cpu_time_period, biased);
+  send_safepoint_latency_event(request._request, now, sid, jt);
 }
 #endif
 
@@ -343,16 +342,15 @@ static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl,
   if (jt->has_cpu_time_jfr_requests()) {
     JfrTicks now = JfrTicks::now();
     jt->acquire_cpu_time_jfr_dequeue_lock();
-    JfrCPUTimeSampleRequest* request;
     JfrCPUTimeTraceQueue& queue = jt->cpu_time_jfr_queue();
-    while ((request = queue.dequeue()) != nullptr) {
-      record_cpu_time_thread(request, now, jt, current);
+    for (u4 i = 0; i < queue.size(); i++) {
+      record_cpu_time_thread(queue.at(i), now, jt, current);
     }
+    queue.set_size(0);
     assert(queue.is_empty(), "invariant");
     jt->set_has_cpu_time_jfr_requests(false);
     if (queue.lost_samples() > 0) {
-      JfrCPUTimeThreadSampling::send_lost_event( now, JfrThreadLocal::thread_id(jt), queue.lost_samples());
-      queue.reset_lost_samples();
+      JfrCPUTimeThreadSampling::send_lost_event( now, JfrThreadLocal::thread_id(jt), queue.get_and_reset_lost_samples());
     }
     queue.clear();
     jt->release_cpu_time_jfr_queue_lock();

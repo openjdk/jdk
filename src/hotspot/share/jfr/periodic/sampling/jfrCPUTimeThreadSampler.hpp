@@ -66,10 +66,11 @@ public:
   // signal safe, but can't be interleaved with dequeue
   bool enqueue(JfrCPUTimeSampleRequest& trace);
 
-  // only usable if dequeue lock aquired
-  JfrCPUTimeSampleRequest* dequeue();
+  JfrCPUTimeSampleRequest& at(u4 index);
 
   u4 size() const;
+
+  void set_size(u4 size);
 
   u4 capacity() const;
 
@@ -84,7 +85,8 @@ public:
 
   void increment_lost_samples();
 
-  void reset_lost_samples();
+  // returns the previous lost samples count
+  u4 get_and_reset_lost_samples();
 
   void ensure_capacity(u4 capacity);
 
@@ -124,6 +126,8 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void send_empty_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid tid, Tickspan cpu_time_period);
   static void send_event(const JfrTicks& start_time, const JfrTicks& end_time, traceid sid, traceid tid, Tickspan cpu_time_period, bool biased);
   static void send_lost_event(const JfrTicks& time, traceid tid, s4 lost_samples);
+
+  static void trigger_out_of_safepoint_sampling();
 };
 
 #else

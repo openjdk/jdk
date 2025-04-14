@@ -1323,11 +1323,14 @@ private:
     // locked for enqueuing
     ENQUEUE,
     // locked for dequeuing
-    DEQUEUE
+    DEQUEUE,
+    // locked for writing native event out of safepoint
+    NATIVE
   };
   volatile CPUTimeLockState _cpu_time_jfr_locked = UNLOCKED;
   volatile bool _has_cpu_time_jfr_requests = false;
   JfrCPUTimeTraceQueue _cpu_time_jfr_queue{0};
+  volatile bool _wants_out_of_safepoint_sampling = false;
 
 public:
 
@@ -1337,6 +1340,10 @@ public:
 
   bool acquire_cpu_time_jfr_enqueue_lock() {
     return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, ENQUEUE) == UNLOCKED;
+  }
+
+  bool acquire_cpu_time_jfr_native_lock() {
+    return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, NATIVE) == UNLOCKED;
   }
 
   void acquire_cpu_time_jfr_dequeue_lock() {
@@ -1359,6 +1366,14 @@ public:
 
   void disable_cpu_time_jfr_queue() {
     cpu_time_jfr_queue().ensure_capacity(0);
+  }
+
+  void set_wants_out_of_safepoint_sampling(bool wants) {
+    Atomic::release_store(&_wants_out_of_safepoint_sampling, wants);
+  }
+
+  bool wants_out_of_safepoint_sampling() {
+    return Atomic::load(&_wants_out_of_safepoint_sampling);
   }
 
 #else
