@@ -715,7 +715,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       if test "x$FLAGS_CPU" = xppc64; then
         # -mminimal-toc fixes `relocation truncated to fit' error for gcc 4.1.
         # Use ppc64 instructions, but schedule for power5
-        $1_CFLAGS_CPU="-mcpu=powerpc64 -mtune=power8"
+        $1_CFLAGS_CPU="-mcpu=power8 -mtune=power8"
         $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -mminimal-toc"
       elif test "x$FLAGS_CPU" = xppc64le; then
         # Little endian machine uses ELFv2 ABI.
