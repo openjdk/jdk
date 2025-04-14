@@ -25,15 +25,23 @@
  * @test
  * @bug 8349139
  * @summary C2: Div looses dependency on condition that guarantees divisor not null in counted loop
+ * @library /test/lib /
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestDivDependentOnMainLoopGuard::*
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=139899009 TestDivDependentOnMainLoopGuard
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=35878193 TestDivDependentOnMainLoopGuard
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestDivDependentOnMainLoopGuard::*
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM TestDivDependentOnMainLoopGuard
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestDivDependentOnMainLoopGuard::* TestDivDependentOnMainLoopGuard
+ *                    
  */
+
+import jdk.test.lib.Utils;
+import java.util.Random;
 
 public class TestDivDependentOnMainLoopGuard {
 
     public static final int N = 400;
+    private static final Random RANDOM = Utils.getRandomInstance();
+    public static final int stop = RANDOM.nextInt(0, 68);
 
     public int iArrFld[]=new int[N];
 
@@ -47,7 +55,7 @@ public class TestDivDependentOnMainLoopGuard {
             do {
                 i1 <<= i3;
             } while (++i2 < 68);
-            for (i23 = 68; i23 > 2; otherPhi=i23-1, i23--) {
+            for (i23 = 68; i23 > stop; otherPhi=i23-1, i23--) {
                 bArr[i23 + 1] = true;
                 try {
                     i1 = (-42360 / i23);
