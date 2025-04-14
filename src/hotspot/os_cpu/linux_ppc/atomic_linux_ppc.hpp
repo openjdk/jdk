@@ -252,12 +252,12 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
   __asm__ __volatile__ (
     /* atomic loop */
     "1:                                                   \n"
-    "   lbarx   %[old_value], 0, %[dest]               \n"
+    "   lbarx   %[old_value], 0, %[dest]                  \n"
     /* extract byte and compare */
     "   cmpw    %[compare_value], %[old_value] \n"
     "   bne-    2f                                        \n"
     /* replace byte and try to store */
-    "   stbcx.  %[exchange_value], 0, %[dest]               \n"
+    "   stbcx.  %[exchange_value], 0, %[dest]             \n"
     "   bne-    1b                                        \n"
     /* exit */
     "2:                                                   \n"

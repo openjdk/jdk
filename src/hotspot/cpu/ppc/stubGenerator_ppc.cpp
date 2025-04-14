@@ -1528,7 +1528,6 @@ class StubGenerator: public StubCodeGenerator {
         __ load_const_optimized(tmp2, VM_Version::_dscr_val);
         __ mtdscr(tmp2);
 
-
       __ cmpwi(CR0, R5_ARG3, 0);
       __ beq(CR0, l_6);
 
