@@ -640,8 +640,8 @@ GetJavaProperties(JNIEnv* env)
         LCID userDefaultUILCID = MAKELCID(userDefaultUILang, SORTIDFROMLCID(userDefaultLCID));
 
         {
-            char * display_encoding;
-            char * format_encoding;
+            char * display_encoding_unused;
+            char * format_encoding_unused;
             HANDLE hStdOutErr;
 
             // Windows UI Language selection list only cares "language"
@@ -661,13 +661,13 @@ GetJavaProperties(JNIEnv* env)
                            &sprops.format_script,
                            &sprops.format_country,
                            &sprops.format_variant,
-                           &format_encoding);
+                           &format_encoding_unused);
             SetupI18nProps(userDefaultUILCID,
                            &sprops.display_language,
                            &sprops.display_script,
                            &sprops.display_country,
                            &sprops.display_variant,
-                           &display_encoding);
+                           &display_encoding_unused);
 
             sprops.sun_jnu_encoding = getEncodingInternal(0);
             if (sprops.sun_jnu_encoding == NULL) {
