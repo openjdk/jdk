@@ -27,9 +27,12 @@
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/machnode.hpp"
 #include "opto/parse.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/threadSMR.hpp"
+#include "utilities/decoder.hpp"
 #include "utilities/stringUtils.hpp"
+#include "utilities/vmError.hpp"
 
 #ifndef PRODUCT
 
@@ -49,6 +52,10 @@ const char *IdealGraphPrinter::REMOVE_EDGE_ELEMENT = "removeEdge";
 const char *IdealGraphPrinter::REMOVE_NODE_ELEMENT = "removeNode";
 const char *IdealGraphPrinter::COMPILATION_ID_PROPERTY = "compilationId";
 const char *IdealGraphPrinter::COMPILATION_OSR_PROPERTY = "osr";
+const char *IdealGraphPrinter::COMPILATION_ARGUMENTS_PROPERTY = "arguments";
+const char *IdealGraphPrinter::COMPILATION_MACHINE_PROPERTY = "machine";
+const char *IdealGraphPrinter::COMPILATION_VM_VERSION_PROPERTY = "vm";
+const char *IdealGraphPrinter::COMPILATION_DATE_TIME_PROPERTY = "dateTime";
 const char *IdealGraphPrinter::METHOD_NAME_PROPERTY = "name";
 const char *IdealGraphPrinter::METHOD_IS_PUBLIC_PROPERTY = "public";
 const char *IdealGraphPrinter::METHOD_IS_STATIC_PROPERTY = "static";
@@ -335,6 +342,37 @@ void IdealGraphPrinter::begin_method() {
   }
 
   print_prop(COMPILATION_ID_PROPERTY, C->compile_id());
+
+  stringStream args;
+  Arguments::print_jvm_args_on(&args);
+  print_prop(COMPILATION_ARGUMENTS_PROPERTY, args.freeze());
+
+  stringStream machine;
+  buffer[0] = 0;
+  os::print_summary_info(&machine, buffer, sizeof(buffer) - 1);
+  print_prop(COMPILATION_MACHINE_PROPERTY, machine.freeze());
+
+  stringStream version;
+  buffer[0] = 0;
+  JDK_Version::current().to_string(buffer, sizeof(buffer) - 1);
+  const char* runtime_name = JDK_Version::runtime_name() != nullptr ?
+    JDK_Version::runtime_name() : "";
+  const char* runtime_version = JDK_Version::runtime_version() != nullptr ?
+    JDK_Version::runtime_version() : "";
+  const char* vendor_version = JDK_Version::runtime_vendor_version() != nullptr ?
+    JDK_Version::runtime_vendor_version() : "";
+  const char* jdk_debug_level = VM_Version::printable_jdk_debug_level() != nullptr ?
+    VM_Version::printable_jdk_debug_level() : "";
+
+  version.print_cr("%s%s%s (%s) (%sbuild %s)", runtime_name,
+                   (*vendor_version != '\0') ? " " : "", vendor_version,
+                   buffer, jdk_debug_level, runtime_version);
+  print_prop(COMPILATION_VM_VERSION_PROPERTY, version.freeze());
+
+  stringStream time;
+  buffer[0] = 0;
+  os::print_date_and_time(&time, buffer, sizeof(buffer) - 1);
+  print_prop(COMPILATION_DATE_TIME_PROPERTY, time.freeze());
 
   tail(PROPERTIES_ELEMENT);
 
@@ -862,23 +900,84 @@ void IdealGraphPrinter::walk_nodes(Node* start, bool edges) {
   }
 }
 
-void IdealGraphPrinter::print_graph(const char* name) {
+static bool skip_frame(const char* name) {
+  return strstr(name, "IdealGraphPrinter") != nullptr ||
+         strstr(name, "Compile::print_method") != nullptr;
+}
+
+static bool stop_frame_walk(const char* name) {
+  return strstr(name, "C2Compiler::compile_method") != nullptr;
+}
+
+void IdealGraphPrinter::print_stack(frame fr, outputStream* graph_name) {
+  char buf[O_BUFLEN];
+  Thread* _current = Thread::current_or_null();
+  int count = 0;
+  int frame = 0;
+  while (count++ < StackPrintLimit && fr.pc() != nullptr) {
+    int offset;
+    buf[0] = '\0';
+    bool found = os::dll_address_to_function_name(fr.pc(), buf, sizeof(buf), &offset);
+    if (!found || stop_frame_walk(buf)) {
+      break;
+    }
+    if (!skip_frame(buf)) {
+      stringStream frame_loc;
+      frame_loc.print("%s", buf);
+      buf[0] = '\0';
+      int line_no;
+      if (Decoder::get_source_info(fr.pc(), buf, sizeof(buf), &line_no, count != 1)) {
+        frame_loc.print(" (%s:%d)", buf, line_no);
+        if (graph_name != nullptr) {
+          // Extract a debug graph name and return.
+          graph_name->print("%s:%d", buf, line_no);
+          return;
+        }
+      }
+      if (graph_name == nullptr) {
+        // Print frame as IGV property and continue to the next frame.
+        stringStream frame_number_str;
+        frame_number_str.print("frame %d:", frame);
+        print_prop(frame_number_str.freeze(), frame_loc.freeze());
+        frame++;
+      }
+    }
+    fr = frame::next_frame(fr, _current);
+  }
+}
+
+void IdealGraphPrinter::print_graph(const char* name, frame* fr) {
   ResourceMark rm;
   GrowableArray<const Node*> empty_list;
-  print(name, (Node*) C->root(), empty_list);
+  print(name, (Node*) C->root(), empty_list, fr);
 }
 
 // Print current ideal graph
-void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes) {
+void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes, frame* fr) {
 
   if (!_current_method || !_should_send_method || node == nullptr) return;
+
+  frame current = fr == nullptr ? os::current_frame() : *fr;
+
+  if (name == nullptr) {
+    stringStream graph_name;
+    print_stack(current, &graph_name);
+    name = graph_name.freeze();
+    if (strlen(name) == 0) {
+      name = "Debug";
+    }
+  }
 
   // Warning, unsafe cast?
   _chaitin = (PhaseChaitin *)C->regalloc();
 
   begin_head(GRAPH_ELEMENT);
-  print_attr(GRAPH_NAME_PROPERTY, (const char *)name);
+  print_attr(GRAPH_NAME_PROPERTY, name);
   end_head();
+
+  head(PROPERTIES_ELEMENT);
+  print_stack(current, nullptr);
+  tail(PROPERTIES_ELEMENT);
 
   head(NODES_ELEMENT);
   if (C->cfg() != nullptr) {

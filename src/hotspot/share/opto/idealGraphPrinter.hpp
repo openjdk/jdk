@@ -67,6 +67,10 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   static const char *ALL_PROPERTY;
   static const char *COMPILATION_ID_PROPERTY;
   static const char *COMPILATION_OSR_PROPERTY;
+  static const char *COMPILATION_ARGUMENTS_PROPERTY;
+  static const char *COMPILATION_MACHINE_PROPERTY;
+  static const char *COMPILATION_VM_VERSION_PROPERTY;
+  static const char *COMPILATION_DATE_TIME_PROPERTY;
   static const char *METHOD_NAME_PROPERTY;
   static const char *BLOCK_NAME_PROPERTY;
   static const char *BLOCK_DOMINATOR_PROPERTY;
@@ -110,6 +114,10 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   double _max_freq;
   bool _append;
 
+  // Walk the native stack and print relevant C2 frames as IGV properties (if
+  // graph_name == nullptr) or the graph name based on the highest C2 frame (if
+  // graph_name != nullptr).
+  void print_stack(frame fr, outputStream* graph_name);
   void print_method(ciMethod* method, int bci, InlineTree* tree);
   void print_inline_tree(InlineTree* tree);
   void visit_node(Node* n, bool edges);
@@ -149,8 +157,8 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   void print_inlining();
   void begin_method();
   void end_method();
-  void print_graph(const char* name);
-  void print(const char* name, Node* root, GrowableArray<const Node*>& hidden_nodes);
+  void print_graph(const char* name, frame* fr = nullptr);
+  void print(const char* name, Node* root, GrowableArray<const Node*>& hidden_nodes, frame* fr = nullptr);
   void set_compile(Compile* compile) {C = compile; }
   void update_compiled_method(ciMethod* current_method);
 };
