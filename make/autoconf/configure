@@ -49,7 +49,9 @@ fi
 export CONFIG_SHELL=$BASH
 export _as_can_reexec=no
 
-# Make sure all shell commands are executed with the C locale
+# Save user's current locale, but make sure all future shell commands are
+# executed with the C locale
+export USER_LOCALE=$LC_ALL
 export LC_ALL=C
 
 if test "x$CUSTOM_CONFIG_DIR" != x; then
