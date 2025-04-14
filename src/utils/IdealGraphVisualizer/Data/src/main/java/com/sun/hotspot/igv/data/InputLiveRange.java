@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,34 +21,51 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.view;
+package com.sun.hotspot.igv.data;
 
-import com.sun.hotspot.igv.data.InputBlock;
-import com.sun.hotspot.igv.data.InputGraph;
-import java.util.*;
+import java.util.Objects;
 
-public class BlockQuickSearch extends SimpleQuickSearch {
+public class InputLiveRange extends Properties.Entity {
 
-    @Override
-    String prefix() {
-        return "B";
+    private int id;
+
+    public InputLiveRange(InputLiveRange n) {
+        super(n);
+        setId(n.id);
+    }
+
+    public InputLiveRange(int id) {
+        setId(id);
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
     }
 
     @Override
-    String id(Object entity) {
-        assert entity instanceof InputBlock;
-        return ((InputBlock)entity).getName();
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        InputLiveRange other = (InputLiveRange) obj;
+        return id == other.id &&
+                Objects.equals(getProperties(), other.getProperties());
     }
 
     @Override
-    Collection<Object> getAllEntities(InputGraph inputGraph) {
-        return new ArrayList<>(inputGraph.getBlocks());
+    public int hashCode() {
+        return Objects.hash(id, getProperties());
     }
 
     @Override
-    void selectEntity(EditorTopComponent editor, Object entity) {
-        assert entity instanceof InputBlock;
-        editor.addSelectedNodes(((InputBlock)entity).getNodes(), true);
-        editor.centerSelectedNodes();
+    public String toString() {
+        return "L" + id + " " + getProperties().toString();
     }
 }

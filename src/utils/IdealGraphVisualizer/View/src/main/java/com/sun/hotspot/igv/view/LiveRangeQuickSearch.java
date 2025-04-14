@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,34 @@
  */
 package com.sun.hotspot.igv.view;
 
-import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.InputGraph;
+import com.sun.hotspot.igv.data.InputLiveRange;
 import java.util.*;
 
-public class BlockQuickSearch extends SimpleQuickSearch {
+public class LiveRangeQuickSearch extends SimpleQuickSearch {
 
     @Override
     String prefix() {
-        return "B";
+        return "L";
     }
 
     @Override
     String id(Object entity) {
-        assert entity instanceof InputBlock;
-        return ((InputBlock)entity).getName();
+        assert entity instanceof InputLiveRange;
+        return Integer.toString(((InputLiveRange)entity).getId());
     }
 
     @Override
     Collection<Object> getAllEntities(InputGraph inputGraph) {
-        return new ArrayList<>(inputGraph.getBlocks());
+        return new ArrayList<>(inputGraph.getLiveRanges());
     }
 
     @Override
     void selectEntity(EditorTopComponent editor, Object entity) {
-        assert entity instanceof InputBlock;
-        editor.addSelectedNodes(((InputBlock)entity).getNodes(), true);
-        editor.centerSelectedNodes();
+        assert entity instanceof InputLiveRange;
+        Set<InputLiveRange> entitySingleton = new HashSet<>();
+        entitySingleton.add((InputLiveRange)entity);
+        editor.addSelectedLiveRanges(entitySingleton, true);
+        editor.centerSelectedLiveRanges();
     }
 }

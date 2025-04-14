@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,24 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.layout;
+package com.sun.hotspot.igv.graph;
 
-import java.awt.Point;
-import java.awt.Rectangle;
+import com.sun.hotspot.igv.data.Properties;
+import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
 import java.util.List;
-import java.util.Set;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public interface Cluster extends Comparable<Cluster> {
+public class LiveRangeMatcherSelector implements LiveRangeSelector {
 
-    void setBounds(Rectangle r);
+    private PropertyMatcher matcher;
 
-    void setPosition(Point p);
+    public LiveRangeMatcherSelector(PropertyMatcher matcher) {
+        this.matcher = matcher;
+    }
 
-    Point getPosition();
-
-    Rectangle getBounds();
-
-    List<? extends Vertex> getVertices();
-
-    Set<? extends Cluster> getSuccessors();
-
-    int getLiveRangeSeparation();
+    @Override
+    public List<LiveRangeSegment> selected(Diagram d) {
+        Properties.PropertySelector<LiveRangeSegment> selector = new Properties.PropertySelector<>(d.getLiveRangeSegments());
+        List<LiveRangeSegment> list = selector.selectMultiple(matcher);
+        return list;
+    }
 }
