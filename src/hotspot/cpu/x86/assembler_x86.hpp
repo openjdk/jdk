@@ -808,10 +808,13 @@ private:
                              InstructionAttr *attributes, bool src_is_gpr = false, bool nds_is_ndd = false, bool no_flags = false);
 
   int  evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                  InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false, bool demote = true);
+                                  InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
 
   int  evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, VexSimdPrefix pre, VexOpcode opc,
-                                  InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false, bool demote = true);
+                                  InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
+
+  int  evex_prefix_and_encode_ndd(int dst_enc, VexSimdPrefix pre, VexOpcode opc,
+                                  InstructionAttr *attributes, bool no_flags = false);
 
   int  evex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                  InstructionAttr *attributes, bool no_flags = false);
