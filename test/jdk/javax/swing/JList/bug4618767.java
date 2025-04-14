@@ -46,13 +46,14 @@ import java.util.concurrent.TimeUnit;
 
 public class bug4618767 {
     private static JFrame f;
-    private static JList list;
+    private static final JList list = new
+        JList(new String[] {"one", "two", "three", "four"});
     private static boolean menuSelected;
-    private static boolean failed;
-    private static CountDownLatch listGainedFocusLatch;
+    private static volatile boolean failed;
+    private static CountDownLatch listGainedFocusLatch = new CountDownLatch(1);
+
     public static void main(String[] args) throws Exception {
         try {
-            listGainedFocusLatch = new CountDownLatch(1);
             createUI();
             runTest();
         } finally {
@@ -83,7 +84,6 @@ public class bug4618767 {
                 }
             });
 
-            list = new JList(new String[] {"one", "two", "three", "four"});
             list.addFocusListener(new FocusAdapter() {
                 @Override
                 public void focusGained(FocusEvent e) {
@@ -104,7 +104,7 @@ public class bug4618767 {
                 " focus for list");
         }
         Robot robot = new Robot();
-        robot.setAutoDelay(500);
+        robot.setAutoDelay(200);
         robot.waitForIdle();
         robot.keyPress(KeyEvent.VK_O);
         robot.keyRelease(KeyEvent.VK_O);

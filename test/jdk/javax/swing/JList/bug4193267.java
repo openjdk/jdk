@@ -59,6 +59,7 @@ public class bug4193267 {
         PassFailJFrame.builder()
             .title("bug4193267 Instructions")
             .instructions(INSTRUCTIONS)
+            .positionTestUI(WindowLayouts::rightOneRow)
             .columns(35)
             .testUI(initialize())
             .build()
@@ -81,15 +82,15 @@ public class bug4193267 {
         lst.setVisibleRowCount(4);
         jsp = new JScrollPane(lst);
         fr[0].add(jsp);
-        fr[0].setSize(400,200);
+        fr[0].setSize(400, 200);
 
         JPanel pL = new JPanel();
-        pL.setLayout(new GridLayout(2,1));
+        pL.setLayout(new GridLayout(2, 1));
         pL.add(new JLabel("First Visible Index"));
         pL.add(new JLabel("Last Visible Index"));
 
         JPanel p = new JPanel();
-        p.setLayout(new GridLayout(2,1));
+        p.setLayout(new GridLayout(2, 1));
         first = new JTextField("0", 2);
         first.setEditable(false);
         first.setBackground(Color.white);
@@ -100,7 +101,7 @@ public class bug4193267 {
         p.add(last);
 
         fr[1] = new JFrame("Index");
-        fr[1].setSize(200,200);
+        fr[1].setSize(200, 200);
         fr[1].setLayout(new FlowLayout());
         fr[1].add(pL);
         fr[1].add(p);
