@@ -366,8 +366,10 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
       __ stxvp(as_VectorSRegister(reg_num), offset, R1_SP);
       // Note: The contents were read in the same order (see loadV16_Power9 node in ppc.ad).
       if (generate_oop_map) {
-        map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2), RegisterSaver_LiveVSRegs[i].vmreg);
-        map->set_callee_saved(VMRegImpl::stack2reg((offset + vs_reg_size) >> 2), RegisterSaver_LiveVSRegs[i + 1].vmreg);
+        map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2),
+                              RegisterSaver_LiveVSRegs[i LITTLE_ENDIAN_ONLY(+1) ].vmreg);
+        map->set_callee_saved(VMRegImpl::stack2reg((offset + vs_reg_size) >> 2),
+                              RegisterSaver_LiveVSRegs[i BIG_ENDIAN_ONLY(+1) ].vmreg);
       }
       offset += (2 * vs_reg_size);
     }
