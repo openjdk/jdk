@@ -136,7 +136,7 @@ public:
   // What is the type of the value in memory?  (T_VOID mean "unspecified".)
   // The returned type is a property of the value that is loaded/stored and
   // not the memory that is accessed. For mismatched memory accesses
-  // they might differ. For instance, a value of type 'short' may be stoted
+  // they might differ. For instance, a value of type 'short' may be stored
   // into an array of elements of type 'long'.
   virtual BasicType value_basic_type() const = 0;
   virtual int memory_size() const {
