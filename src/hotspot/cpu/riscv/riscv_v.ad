@@ -1121,33 +1121,33 @@ instruct vxor_regL_masked(vReg dst_src, iRegL src, vRegMask_V0 v0) %{
 
 // vector and not
 
-instruct vand_notI(vReg dst, vReg src2, vReg src1, immI_M1 m1) %{
+instruct vand_notI(vReg dst, vReg src1, vReg src2, immI_M1 m1) %{
   predicate(UseZvbb);
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_SHORT);
-  match(Set dst (AndV src2 (XorV src1 (Replicate m1))));
-  format %{ "vand_notI $dst, $src2, $src1" %}
+  match(Set dst (AndV src1 (XorV src2 (Replicate m1))));
+  format %{ "vand_notI $dst, $src1, $src2" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vandn_vv(as_VectorRegister($dst$$reg),
-                as_VectorRegister($src2$$reg),
-                as_VectorRegister($src1$$reg));
+                as_VectorRegister($src1$$reg),
+                as_VectorRegister($src2$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vand_notL(vReg dst, vReg src2, vReg src1, immL_M1 m1) %{
+instruct vand_notL(vReg dst, vReg src1, vReg src2, immL_M1 m1) %{
   predicate(UseZvbb);
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst (AndV src2 (XorV src1 (Replicate m1))));
-  format %{ "vand_notL $dst, $src2, $src1" %}
+  match(Set dst (AndV src1 (XorV src2 (Replicate m1))));
+  format %{ "vand_notL $dst, $src1, $src2" %}
   ins_encode %{
     __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
     __ vandn_vv(as_VectorRegister($dst$$reg),
-                as_VectorRegister($src2$$reg),
-                as_VectorRegister($src1$$reg));
+                as_VectorRegister($src1$$reg),
+                as_VectorRegister($src2$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
