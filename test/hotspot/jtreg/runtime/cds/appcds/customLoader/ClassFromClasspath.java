@@ -21,9 +21,6 @@
  * questions.
  */
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import jdk.test.lib.process.OutputAnalyzer;
 
 /**
