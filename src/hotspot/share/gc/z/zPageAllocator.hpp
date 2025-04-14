@@ -68,9 +68,6 @@ private:
   volatile size_t       _capacity;
   volatile size_t       _claimed;
   size_t                _used;
-  double                _last_commit;
-  double                _last_uncommit;
-  size_t                _to_uncommit;
   const uint32_t        _numa_id;
 
   const ZVirtualMemoryManager& virtual_memory_manager() const;
@@ -102,7 +99,9 @@ public:
   void claim_from_cache_or_increase_capacity(ZMemoryAllocation* allocation);
   bool claim_capacity(ZMemoryAllocation* allocation);
 
-  size_t uncommit(uint64_t* timeout);
+  template <typename Fn>
+  void evaluate_under_lock(Fn function) const;
+  size_t uncommit();
 
   void sort_segments_physical(const ZVirtualMemory& vmem);
 

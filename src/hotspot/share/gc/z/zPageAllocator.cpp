@@ -609,9 +609,6 @@ ZPartition::ZPartition(uint32_t numa_id, ZPageAllocator* page_allocator)
     _capacity(0),
     _claimed(0),
     _used(0),
-    _last_commit(0.0),
-    _last_uncommit(0.0),
-    _to_uncommit(0),
     _numa_id(numa_id) {}
 
 uint32_t ZPartition::numa_id() const {
@@ -629,9 +626,8 @@ size_t ZPartition::increase_capacity(size_t size) {
     // Update atomically since we have concurrent readers
     Atomic::add(&_capacity, increased);
 
-    _last_commit = os::elapsedTime();
-    _last_uncommit = 0;
     _cache.reset_min();
+    _uncommitter.cancel_uncommit_cycle();
   }
 
   return increased;
@@ -740,7 +736,7 @@ bool ZPartition::claim_capacity(ZMemoryAllocation* allocation) {
   return true;
 }
 
-size_t ZPartition::uncommit(uint64_t* timeout) {
+size_t ZPartition::uncommit() {
   ZArray<ZVirtualMemory> flushed_vmems;
   size_t flushed = 0;
 
@@ -750,13 +746,8 @@ size_t ZPartition::uncommit(uint64_t* timeout) {
     SuspendibleThreadSetJoiner sts_joiner;
     ZLocker<ZLock> locker(&_page_allocator->_lock);
 
-    const double now = os::elapsedTime();
-    const double time_since_last_commit = std::floor(now - _last_commit);
-    const double time_since_last_uncommit = std::floor(now - _last_uncommit);
-
-    if (time_since_last_commit < double(ZUncommitDelay)) {
+    if (_uncommitter.uncommit_cycle_is_canceled()) {
       // We have committed within the delay, stop uncommitting.
-      *timeout = uint64_t(double(ZUncommitDelay) - time_since_last_commit);
       return 0;
     }
 
@@ -769,35 +760,28 @@ size_t ZPartition::uncommit(uint64_t* timeout) {
     if (limit == 0) {
       // This may occur if the current max capacity for this partition is 0
 
-      // Set timeout to ZUncommitDelay
-      *timeout = ZUncommitDelay;
+      _cache.reset_min();
+      _uncommitter.cancel_uncommit_cycle();
       return 0;
     }
 
-    if (time_since_last_uncommit < double(ZUncommitDelay)) {
-      // We are in the uncommit phase
-      const size_t num_uncommits_left = _to_uncommit / limit;
-      const double time_left = double(ZUncommitDelay) - time_since_last_uncommit;
-
-      // Update timeout for the remaining uncommit
-      *timeout = uint64_t(std::floor(time_left / double(num_uncommits_left + 1)));
-    } else {
-      // We are about to start uncommitting
-      _to_uncommit = MIN2(_capacity - _min_capacity, _cache.reset_min());
-      _last_uncommit = now;
-
-      const size_t split = _to_uncommit / limit + 1;
-      uint64_t new_timeout = ZUncommitDelay / split;
-      *timeout = new_timeout;
+    if (!_uncommitter.uncommit_cycle_is_active()) {
+      // We are activating a new cycle
+      const size_t to_uncommit = MIN2(_capacity - _min_capacity, _cache.reset_min());
+      _uncommitter.activate_uncommit_cycle(to_uncommit);
     }
+
+    const size_t to_uncommit = _uncommitter.to_uncommit();
 
     // Never uncommit below min capacity.
     const size_t retain = MAX2(_used, _min_capacity);
     const size_t release = _capacity - retain;
-    const size_t flush = MIN3(release, limit, _to_uncommit);
+    const size_t flush = MIN3(release, limit, to_uncommit);
 
     if (flush == 0) {
       // Nothing to flush
+      _cache.reset_min();
+      _uncommitter.cancel_uncommit_cycle();
       return 0;
     }
 
@@ -805,12 +789,13 @@ size_t ZPartition::uncommit(uint64_t* timeout) {
     flushed = _cache.remove_from_min(flush, &flushed_vmems);
     if (flushed == 0) {
       // Nothing flushed
+      _cache.reset_min();
+      _uncommitter.cancel_uncommit_cycle();
       return 0;
     }
 
     // Record flushed memory as claimed and how much we've flushed for this partition
     Atomic::add(&_claimed, flushed);
-    _to_uncommit -= flushed;
   }
 
   // Unmap and uncommit flushed memory
@@ -828,6 +813,7 @@ size_t ZPartition::uncommit(uint64_t* timeout) {
     // Adjust claimed and capacity to reflect the uncommit
     Atomic::sub(&_claimed, flushed);
     decrease_capacity(flushed, false /* set_max_capacity */);
+    _uncommitter.register_uncommit(flushed);
   }
 
   return flushed;

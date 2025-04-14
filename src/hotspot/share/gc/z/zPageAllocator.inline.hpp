@@ -26,6 +26,12 @@
 
 #include "gc/z/zPageAllocator.hpp"
 
+template <typename Fn>
+void ZPartition::evaluate_under_lock(Fn function) const {
+  ZLocker<ZLock> locker(&_page_allocator->_lock);
+  function();
+}
+
 inline ZPageAllocatorStats::ZPageAllocatorStats(size_t min_capacity,
                                                 size_t max_capacity,
                                                 size_t soft_max_capacity,
