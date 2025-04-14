@@ -82,7 +82,7 @@
  * test, you will need to mount the NVRAM device, which will typically appear as
  * /dev/pmem0, to the directory /mnt/pmem. Once that is done, you can follow the
  * instructions above to create a test directory and remove the ignore tag.
- * 
+ *
  * @test
  * @summary Testing NVRAM mapped byte buffer support
  * @run main/manual PmemTest
