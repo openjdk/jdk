@@ -21,66 +21,72 @@
  * questions.
  */
 
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.event.InputEvent;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
 /*
  * @test
  * @bug 8322754
+ * @key headful
  * @summary Verifies clicking JComboBox during frame closure causes Exception
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual ComboPopupBug
+ * @library /javax/swing/regtesthelpers
+ * @build JRobot
+ * @run main ComboPopupBug
  */
 
 public class ComboPopupBug {
-    private static final String instructionsText = """
-            This test is used to verify that clicking on JComboBox
-            when frame containing it is about to close should not
-            cause IllegalStateException.
-
-            A JComboBox is shown with Close button at the bottom.
-            Click on Close and then click on JComboBox arrow button
-            to try to show combobox popup.
-            If IllegalStateException is thrown, test will automatically Fail
-            otherwise click Pass.""";
+    private static JFrame frame;
+    private static JButton closeButton;
+    private static JComboBox<String> comboBox;
+    private static Point comboBoxLocation;
+    private static Dimension comboBoxSize;
+    private static JRobot robot;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame.builder()
-                .title("ComboPopup Instructions")
-                .instructions(instructionsText)
-                .testTimeOut(5)
-                .rows(10)
-                .columns(35)
-                .testUI(ComboPopupBug::createUI)
-                .build()
-                .awaitAndCheck();
+        robot = JRobot.getRobot();
+        SwingUtilities.invokeAndWait(() -> {
+            frame = new JFrame("ComboPopup");
+
+            comboBox = new JComboBox<>();
+            comboBox.setEditable(true);
+            comboBox.addItem("test");
+            comboBox.addItem("test2");
+            comboBox.addItem("test3");
+
+            closeButton = new JButton("Close");
+            closeButton.addActionListener((e) -> {
+                        clickComboBox();
+                        frame.setVisible(false);
+                    });
+
+            frame.getContentPane().add(comboBox, "North");
+            frame.getContentPane().add(closeButton, "South");
+            frame.setSize(200, 200);
+            frame.setVisible(true);
+        });
+
+        comboBoxLocation = comboBox.getLocationOnScreen();
+        comboBoxSize = comboBox.getSize();
+
+        try {
+            SwingUtilities.invokeAndWait(() -> closeButton.doClick());
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        finally {
+            SwingUtilities.invokeAndWait(() -> frame.dispose());
+        }
     }
 
-    private static JFrame createUI() {
-        JFrame frame = new JFrame("ComboPopup");
-
-        JComboBox<String> cb = new JComboBox<>();
-        cb.setEditable(true);
-        cb.addItem("test");
-        cb.addItem("test2");
-        cb.addItem("test3");
-
-        JButton b = new JButton("Close");
-        b.addActionListener(
-                (e)->{
-                    try {
-                        Thread.sleep(3000);
-                    } catch (Exception ignored) {
-                    }
-                    frame.setVisible(false);
-                });
-
-        frame.getContentPane().add(cb, "North");
-        frame.getContentPane().add(b, "South");
-        frame.setSize(200, 200);
-
-        return frame;
+    public static void clickComboBox() {
+        int padding = 10;
+        robot.mouseMove(comboBoxLocation.x + comboBoxSize.width - padding, comboBoxLocation.y + comboBoxSize.height / 2);
+        robot.clickMouse(InputEvent.BUTTON1_MASK);
     }
 }
