@@ -104,9 +104,9 @@ public class TestClipboard {
             // Get the current contents of the clipboard
             Transferable theTransfer = theClipboard.getContents(this);
 
-            // See if the flavor is supported. This will result in a null
-            // pointer exception on Solaris, but not NT
-            boolean isSupported = theTransfer.isDataFlavorSupported(myFlavor);
+            // See if the flavor is supported. This may result in a null
+            // pointer exception.
+            theTransfer.isDataFlavorSupported(myFlavor);
             PassFailJFrame.log("Test Passed");
         }
     }
