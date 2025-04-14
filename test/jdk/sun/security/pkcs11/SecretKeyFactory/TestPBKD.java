@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc.
+ * Copyright (c) 2023, 2025, Red Hat, Inc.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,9 +22,6 @@
  * questions.
  */
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.ReflectiveOperationException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
@@ -75,15 +72,14 @@ public final class TestPBKD extends PKCS11Test {
             BigInteger expectedKey) {}
 
     private static AssertionData pbkd2AssertionData(String algo,
-            char[] password, int keyLen, String kdfAlgo,
-            String staticExpectedKeyString) {
+            char[] password, int keyLen, String staticExpectedKeyString) {
         PBEKeySpec keySpec = new PBEKeySpec(password, salt, iterations, keyLen);
         BigInteger staticExpectedKey = new BigInteger(staticExpectedKeyString,
                 16);
         BigInteger expectedKey = null;
         if (sunJCE != null) {
             try {
-                expectedKey = i(SecretKeyFactory.getInstance(kdfAlgo, sunJCE)
+                expectedKey = i(SecretKeyFactory.getInstance(algo, sunJCE)
                         .generateSecret(keySpec).getEncoded());
                 checkAssertionValues(expectedKey, staticExpectedKey);
             } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
@@ -115,54 +111,57 @@ public final class TestPBKD extends PKCS11Test {
 
     // Generated with SunJCE. Keep a reference to some
     // entries for tests executing invalid conditions.
+    private static final AssertionData pbkdf2WithHmacSHA512Data =
+            pbkd2AssertionData("PBKDF2WithHmacSHA512", pwd, 256,
+                    "845560159e2f3f51dad8d6e0feccc8987e3077595f90b60ab96d4f29" +
+                    "203927b0");
     private static final AssertionData pbkdf2WithHmacSHA256Data =
             pbkd2AssertionData("PBKDF2WithHmacSHA256", pwd, 384,
-                    "PBKDF2WithHmacSHA256", "6851e387278dd5a3a0d05e4d742f59d8" +
-                    "44984e3e9b619488a42b93dd6453f630ae3e2ad7ed809fa9e98a7921" +
-                    "87d62e84");
+                    "6851e387278dd5a3a0d05e4d742f59d844984e3e9b619488a42b93dd" +
+                    "6453f630ae3e2ad7ed809fa9e98a792187d62e84");
     private static final AssertionData[] assertionData = new AssertionData[]{
             pbkd2AssertionData("PBKDF2WithHmacSHA1", pwd, 128,
-                    "PBKDF2WithHmacSHA1", "29958f3f1c942e50903189eb7f1ba09d"),
-            pbkd2AssertionData("PBKDF2WithHmacSHA1", pwd, 240,
-                    "PBKDF2WithHmacSHA1", "29958f3f1c942e50903189eb7f1ba09d40" +
-                    "b5552da5e645dad4b5911ce0f2"),
-            pbkd2AssertionData("PBKDF2WithHmacSHA1", pwd, 256,
-                    "PBKDF2WithHmacSHA1", "29958f3f1c942e50903189eb7f1ba09d40" +
-                    "b5552da5e645dad4b5911ce0f2f06b"),
+                    "29958f3f1c942e50903189eb7f1ba09d"),
             pbkd2AssertionData("PBKDF2WithHmacSHA224", pwd, 128,
-                    "PBKDF2WithHmacSHA224", "e328140e31f4ffb15af806986c23ee4e"),
-            pbkd2AssertionData("PBKDF2WithHmacSHA224", pwd, 256,
-                    "PBKDF2WithHmacSHA224", "e328140e31f4ffb15af806986c23ee4e" +
-                    "7daa2119fee8c64aef7c1f4c1871724e"),
-            pbkd2AssertionData("PBKDF2WithHmacSHA224", pwd, 336,
-                    "PBKDF2WithHmacSHA224", "e328140e31f4ffb15af806986c23ee4e" +
-                    "7daa2119fee8c64aef7c1f4c1871724e0ea628577e0ab54fa7c6"),
+                    "e328140e31f4ffb15af806986c23ee4e"),
             pbkd2AssertionData("PBKDF2WithHmacSHA256", pwd, 128,
-                    "PBKDF2WithHmacSHA256", "6851e387278dd5a3a0d05e4d742f59d8"),
-            pbkd2AssertionData("PBKDF2WithHmacSHA256", pwd, 256,
-                    "PBKDF2WithHmacSHA256", "6851e387278dd5a3a0d05e4d742f59d8" +
-                    "44984e3e9b619488a42b93dd6453f630"),
-            pbkdf2WithHmacSHA256Data,
+                    "6851e387278dd5a3a0d05e4d742f59d8"),
             pbkd2AssertionData("PBKDF2WithHmacSHA384", pwd, 128,
-                    "PBKDF2WithHmacSHA384", "5570e2fb1a664910f055b71643b52351"),
+                    "5570e2fb1a664910f055b71643b52351"),
+            pbkd2AssertionData("PBKDF2WithHmacSHA512", pwd, 128,
+                    "845560159e2f3f51dad8d6e0feccc898"),
+            pbkd2AssertionData("PBKDF2WithHmacSHA1", pwd, 256,
+                    "29958f3f1c942e50903189eb7f1ba09d40" +
+                    "b5552da5e645dad4b5911ce0f2f06b"),
+            pbkd2AssertionData("PBKDF2WithHmacSHA224", pwd, 256,
+                    "e328140e31f4ffb15af806986c23ee4e" +
+                    "7daa2119fee8c64aef7c1f4c1871724e"),
+            pbkd2AssertionData("PBKDF2WithHmacSHA256", pwd, 256,
+                    "6851e387278dd5a3a0d05e4d742f59d8" +
+                    "44984e3e9b619488a42b93dd6453f630"),
             pbkd2AssertionData("PBKDF2WithHmacSHA384", pwd, 256,
-                    "PBKDF2WithHmacSHA384", "5570e2fb1a664910f055b71643b52351" +
+                    "5570e2fb1a664910f055b71643b52351" +
                     "d7d0ad3a18912086f80d974f2acc2efb"),
+            pbkdf2WithHmacSHA512Data,
+            pbkd2AssertionData("PBKDF2WithHmacSHA1", pwd, 240,
+                    "29958f3f1c942e50903189eb7f1ba09d40b5552da5e645dad4b5911c" +
+                    "e0f2"),
+            pbkd2AssertionData("PBKDF2WithHmacSHA224", pwd, 336,
+                    "e328140e31f4ffb15af806986c23ee4e7daa2119fee8c64aef7c1f4c" +
+                    "1871724e0ea628577e0ab54fa7c6"),
+            pbkdf2WithHmacSHA256Data,
             pbkd2AssertionData("PBKDF2WithHmacSHA384", pwd, 576,
-                    "PBKDF2WithHmacSHA384", "5570e2fb1a664910f055b71643b52351" +
-                    "d7d0ad3a18912086f80d974f2acc2efba52650d4bf872455820f24c8" +
-                    "46742161da84a1b4c3f197f4347308e8841a8971cf686aef29107396"),
-            pbkd2AssertionData("PBKDF2WithHmacSHA512", pwd, 256,
-                    "PBKDF2WithHmacSHA512", "845560159e2f3f51dad8d6e0feccc898" +
-                    "7e3077595f90b60ab96d4f29203927b0"),
+                    "5570e2fb1a664910f055b71643b52351d7d0ad3a18912086f80d974f" +
+                    "2acc2efba52650d4bf872455820f24c846742161da84a1b4c3f197f4" +
+                    "347308e8841a8971cf686aef29107396"),
             pbkd2AssertionData("PBKDF2WithHmacSHA512", pwd, 768,
-                    "PBKDF2WithHmacSHA512", "845560159e2f3f51dad8d6e0feccc898" +
-                    "7e3077595f90b60ab96d4f29203927b00aa1a11e4d19d4f275a7f453" +
-                    "14be500dacc3c1de9f704827b396463ccaa8957344d41bd64d9d09ff" +
-                    "474e776469d326b1ee6ee5a5d854b86d3d7a25084afd6d6f"),
+                    "845560159e2f3f51dad8d6e0feccc8987e3077595f90b60ab96d4f29" +
+                    "203927b00aa1a11e4d19d4f275a7f45314be500dacc3c1de9f704827" +
+                    "b396463ccaa8957344d41bd64d9d09ff474e776469d326b1ee6ee5a5" +
+                    "d854b86d3d7a25084afd6d6f"),
             pbkd2AssertionData("PBKDF2WithHmacSHA512", emptyPwd, 256,
-                    "PBKDF2WithHmacSHA512", "3a5c5fd11e4d381b32e11baa93d7b128" +
-                    "09e016e48e0542c5d3453fc240a0fa76"),
+                    "3a5c5fd11e4d381b32e11baa93d7b12809e016e48e0542c5d3453fc2" +
+                    "40a0fa76"),
     };
 
     public void main(Provider sunPKCS11) throws Exception {
@@ -333,18 +332,41 @@ public final class TestPBKD extends PKCS11Test {
         System.out.println(sep + System.lineSeparator()
                 + "Invalid SecretKeyFactory::translateKey tests");
 
+        SecretKeyFactory skf1 = SecretKeyFactory.getInstance(
+                pbkdf2WithHmacSHA512Data.algo, sunPKCS11);
         SecretKeyFactory skf2 = SecretKeyFactory.getInstance("AES", sunPKCS11);
         SecretKeyFactory skf3 = SecretKeyFactory.getInstance(
                 pbkdf2WithHmacSHA256Data.algo, sunPKCS11);
-        PBEKey p11PbeKey = (PBEKey) skf3.translateKey(getAnonymousPBEKey(
+        PBEKey p11PbkdfKey = (PBEKey) skf3.translateKey(getAnonymousPBEKey(
                 skf3.getAlgorithm(), pbkdf2WithHmacSHA256Data.keySpec));
 
         Class<?> e = InvalidKeyException.class;
 
         System.out.println(" * Non-PBEKey key to PBE SecretKeyFactory");
-        assertThrows(e, "Cannot use a AES key for a " +
-                pbkdf2WithHmacSHA256Data.algo + " service",
-                () -> skf3.translateKey(new SecretKeySpec(new byte[10], "AES")));
+        assertThrows(e, "PBE service requires a PBE key",
+                () -> skf3.translateKey(new SecretKeySpec(
+                        new byte[10], skf3.getAlgorithm())));
+
+        System.out.println(" * PBEKey key to PBE SecretKeyFactory of a " +
+                "different algorithm");
+        assertThrows(e, "Cannot use a " + pbkdf2WithHmacSHA256Data.algo +
+                " key for a " + pbkdf2WithHmacSHA512Data.algo + " service",
+                () -> skf1.translateKey(p11PbkdfKey));
+
+        System.out.println(" * Non-AES PBEKey key to AES SecretKeyFactory");
+        String keyAlg1 = "HmacPBESHA1";
+        PBEKeySpec kSpec1 = new PBEKeySpec(pwd, salt, 1, 16);
+        assertThrows(e, "Cannot use a " + keyAlg1 + " key for a " +
+                skf2.getAlgorithm() + " service", () ->
+                skf2.translateKey(getAnonymousPBEKey(keyAlg1, kSpec1)));
+
+        System.out.println(" * Inconsistent key length between key and its " +
+                "algorithm");
+        String keyAlg2 = "PBEWithHmacSHA1AndAES_128";
+        assertThrows(e, InvalidKeySpecException.class.getName() + ": Key " +
+                "length is invalid for " + keyAlg2 + " (expecting 128 but " +
+                "was " + kSpec1.getKeyLength() + ")", () ->
+                skf2.translateKey(getAnonymousPBEKey(keyAlg2, kSpec1)));
 
         System.out.println(" * Invalid key length in bits");
         PBEKeySpec kSpec2 = new PBEKeySpec(pwd, salt, 1);
@@ -361,22 +383,26 @@ public final class TestPBKD extends PKCS11Test {
         System.out.println(sep + System.lineSeparator()
                 + "Invalid SecretKeyFactory::generateSecret tests");
 
-        SecretKeyFactory skf3 = SecretKeyFactory.getInstance(
-                "PBKDF2WithHmacSHA512", sunPKCS11);
-        SecretKeyFactory skf4 = SecretKeyFactory.getInstance("AES", sunPKCS11);
+        SecretKeyFactory skf1 = SecretKeyFactory.getInstance(
+                pbkdf2WithHmacSHA512Data.algo, sunPKCS11);
+        SecretKeyFactory skf2 = SecretKeyFactory.getInstance("AES", sunPKCS11);
         Class<?> e = InvalidKeySpecException.class;
+
+        System.out.println(" * Missing salt and iteration count");
+        assertThrows(e, "Salt not found",
+                () -> skf1.generateSecret(new PBEKeySpec(pwd)));
 
         System.out.println(" * Invalid key length in bits");
         String msg = "Key length must be multiple of 8 and greater than zero";
         assertThrows(e, msg,
-                () -> skf3.generateSecret(new PBEKeySpec(pwd, salt, 1)));
+                () -> skf1.generateSecret(new PBEKeySpec(pwd, salt, 1)));
         assertThrows(e, msg,
-                () -> skf3.generateSecret(new PBEKeySpec(pwd, salt, 1, 3)));
+                () -> skf1.generateSecret(new PBEKeySpec(pwd, salt, 1, 3)));
 
         System.out.println(" * PBEKeySpec to non-PBE SecretKeyFactory");
         PBEKeySpec kSpec = new PBEKeySpec(pwd, salt, 1, 16);
         assertThrows(e, "Unsupported spec: javax.crypto.spec.PBEKeySpec",
-                () -> skf4.generateSecret(kSpec));
+                () -> skf2.generateSecret(kSpec));
 
         System.out.println();
     }
@@ -390,13 +416,13 @@ public final class TestPBKD extends PKCS11Test {
                 pbkdf2WithHmacSHA256Data.algo, sunPKCS11);
         SecretKeyFactory skf2 = SecretKeyFactory.getInstance(
                 "AES", sunPKCS11);
-        PBEKey p11PbeKey = (PBEKey) skf1.translateKey(getAnonymousPBEKey(
+        PBEKey p11PbkdfKey = (PBEKey) skf1.translateKey(getAnonymousPBEKey(
                 skf1.getAlgorithm(), pbkdf2WithHmacSHA256Data.keySpec));
         Class<?> e = InvalidKeySpecException.class;
 
         System.out.println(" * null KeySpec class");
         assertThrows(e, "key and keySpec must not be null",
-                () -> skf1.getKeySpec(p11PbeKey, null));
+                () -> skf1.getKeySpec(p11PbkdfKey, null));
 
         System.out.println(" * Invalid key type for PBEKeySpec");
         assertThrows(e, "Unsupported spec: " + PBEKeySpec.class.getName(),
@@ -406,7 +432,7 @@ public final class TestPBKD extends PKCS11Test {
         System.out.println(" * Invalid PBE key and PBEKeySpec for " +
                 skf2.getAlgorithm() + " SecretKeyFactory");
         assertThrows(e, "Unsupported spec: " + PBEKeySpec.class.getName(),
-                () -> skf2.getKeySpec(p11PbeKey, PBEKeySpec.class));
+                () -> skf2.getKeySpec(p11PbkdfKey, PBEKeySpec.class));
 
         System.out.println();
     }
