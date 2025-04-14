@@ -506,7 +506,7 @@ template<int N> bool vs_write_before_read(const VSeq<N>& vout, const VSeq<N>& vi
   return false;
 }
 
-// convenience methods for splitting 8-way of 4-way vector register
+// convenience methods for splitting 8-way or 4-way vector register
 // sequences in half -- needed because vector operations can normally
 // benefit from 4-way instruction parallelism or, occasionally, 2-way
 // parallelism

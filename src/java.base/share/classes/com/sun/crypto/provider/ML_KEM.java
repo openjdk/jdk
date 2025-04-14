@@ -649,7 +649,7 @@ public final class ML_KEM {
         }
 
         mlKemG.update(seed);
-        mlKemG.update((byte)mlKem_k);
+//        mlKemG.update((byte)mlKem_k);
 
         var rhoSigma = mlKemG.digest();
         var rho = Arrays.copyOfRange(rhoSigma, 0, 32);
@@ -1008,6 +1008,7 @@ public final class ML_KEM {
     // The elements of poly should be in the range [-mlKem_q, mlKem_q]
     // The elements of poly at return will be in the range of [0, mlKem_q]
     private void mlKemNTT(short[] poly) {
+        assert poly.length == ML_KEM_N;
         implKyberNtt(poly, montZetasForVectorNttArr);
         mlKemBarrettReduce(poly);
     }
@@ -1032,6 +1033,7 @@ public final class ML_KEM {
     // Works in place, but also returns its (modified) input so that it can
     // be used in expressions
     private short[] mlKemInverseNTT(short[] poly) {
+        assert(poly.length == ML_KEM_N);
         implKyberInverseNtt(poly, montZetasForVectorInverseNttArr);
         return poly;
     }
@@ -1149,6 +1151,8 @@ public final class ML_KEM {
     // The result is a representation of the product still in the NTT domain.
     // The coefficients in the result are in the range (-mlKem_q, mlKem_q).
     private void nttMult(short[] result, short[] ntta, short[] nttb) {
+        assert (result.length == ML_KEM_N) && (ntta.length == ML_KEM_N &&
+                (nttb.length == ML_KEM_N));
         implKyberNttMult(result, ntta, nttb, montZetasForVectorNttMultArr);
     }
 
@@ -1186,7 +1190,8 @@ public final class ML_KEM {
     // greater than -ML_KEM_Q and less than ML_KEM_Q in b.
     // The coefficients in the result are greater than -ML_KEM_Q.
     private short[] mlKemAddPoly(short[] a, short[] b) {
-                    implKyberAddPoly(a, a, b);
+        assert (a.length == ML_KEM_N) && (b.length == ML_KEM_N);
+        implKyberAddPoly(a, a, b);
         return a;
     }
 
@@ -1209,6 +1214,8 @@ public final class ML_KEM {
     // greater than -ML_KEM_Q and less than ML_KEM_Q.
     // The coefficients in the result are nonnegative and less than ML_KEM_Q.
     private short[] mlKemAddPoly(short[] a, short[] b, short[] c) {
+        assert (a.length == ML_KEM_N) && (b.length == ML_KEM_N) &&
+                (c.length == ML_KEM_N);
         implKyberAddPoly(a, a, b, c);
         mlKemBarrettReduce(a);
         return a;
@@ -1361,11 +1368,8 @@ public final class ML_KEM {
         if (remainder != 0) {
             i++;
         }
-        if (((remainder != 0) && (remainder != 48)) ||
-            index + i * 96 > condensed.length) {
-            // this should never happen
-            throw new ProviderException("Bad parameters");
-        }
+        assert (((remainder != 0) && (remainder != 48)) ||
+            index + i * 96 > condensed.length);
         implKyber12To16(condensed, index, parsed, parsedLength);
     }
 
@@ -1530,6 +1534,7 @@ public final class ML_KEM {
     // will be in the range [0, ML_KEM_Q), i.e. it will be the canonical
     // representative of its residue class.
     private static void mlKemBarrettReduce(short[] poly) {
+        assert poly.length == ML_KEM_N;
         implKyberBarrettReduce(poly);
     }
 
