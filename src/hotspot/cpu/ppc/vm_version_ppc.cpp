@@ -160,9 +160,8 @@ void VM_Version::initialize() {
   // Create and print feature-string.
   char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
-               "ppc64%s%s%s%s%s",
+               "ppc64%s%s%s%s",
                (has_lxarxeh() ? " lxarxeh" : ""),
-               (has_mfdscr()  ? " mfdscr"  : ""),
                (has_vshasig() ? " sha"     : ""),
                (has_darn()    ? " darn"    : ""),
                (has_brw()     ? " brw"     : "")

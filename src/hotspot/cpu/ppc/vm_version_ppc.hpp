@@ -103,7 +103,6 @@ public:
   // CPU instruction support
   static bool has_fsqrts()  { return (_features & fsqrts_m) != 0; }
   static bool has_lxarxeh() { return (_features & lxarxeh_m) !=0; }
-  static bool has_mfdscr()  { return (_features & mfdscr_m) != 0; }
   static bool has_vshasig() { return (_features & vshasig_m) != 0; }
   static bool has_darn()    { return (_features & darn_m) != 0; }
   static bool has_brw()     { return (_features & brw_m) != 0; }
