@@ -37,7 +37,7 @@ import org.xml.sax.XMLReader;
  * Creates XMLReader objects and caches them for re-use.
  * This class follows the singleton pattern.
  *
- * @LastModified: Mar 2025
+ * @LastModified: Apr 2025
  */
 public class XMLReaderManager {
 
@@ -84,9 +84,8 @@ public class XMLReaderManager {
 
     /**
      * Retrieves a cached XMLReader for this thread, or creates a new
-     * XMLReader, if the existing reader is in use.  When the caller no
-     * longer needs the reader, it must release it with a call to
-     * {@link #releaseXMLReader}.
+     * XMLReader. When the caller no longer needs the reader, it must
+     * release it with a call to {@link #releaseXMLReader}.
      */
     public XMLReader getXMLReader() throws SAXException {
         XMLReader reader;
@@ -98,7 +97,7 @@ public class XMLReaderManager {
         }
         /**
          * Constructs a new XMLReader if:
-         * (1) the cached reader for this thread is in use, or
+         * (1) the cached reader for this thread is not defined, or
          * (2) the requirement for overriding has changed,
          * (3) the cached reader isn't an instance of the class set in the
          * 'org.xml.sax.driver' property
@@ -143,7 +142,7 @@ public class XMLReaderManager {
      */
     public void releaseXMLReader(XMLReader reader) {
         // If the reader that's being released is the cached reader
-        // for this thread, remove it.
+        // for this thread, reset it.
         ReaderWrapper rw = m_readers.get();
         if (rw != null && rw.reader == reader && reader != null) {
             // reset the reader for reuse
