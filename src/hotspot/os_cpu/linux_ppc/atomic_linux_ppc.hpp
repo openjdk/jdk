@@ -265,7 +265,7 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
     : [old_value]           "=&r"   (old_value),
       [loaded_value]             "=&r"   (loaded_value),
                             "=m"    (*dest)
-  /* in */
+    /* in */
     : [dest]            "b"     (dest),
       [compare_value]   "r"     (compare_value),
       [exchange_value]  "r"     (exchange_value),
