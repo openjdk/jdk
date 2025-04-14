@@ -80,7 +80,7 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
   HeapWord* high_bound = _whole_heap.end();
 
   const size_t rs_align = MAX2(_page_size, os::vm_allocation_granularity());
-  ReservedSpace rs = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size);
+  ReservedSpace rs = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size, mtGC);
 
   if (!rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for the "

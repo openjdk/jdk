@@ -45,7 +45,7 @@ void ShenandoahCardTable::initialize() {
   // ReservedSpace constructor would assert rs_align >= os::vm_page_size().
   const size_t rs_align = MAX2(_page_size, granularity);
 
-  ReservedSpace write_space = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size);
+  ReservedSpace write_space = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size, mtGC);
   initialize(write_space);
 
   // The assembler store_check code will do an unsigned shift of the oop,
@@ -60,7 +60,7 @@ void ShenandoahCardTable::initialize() {
   _write_byte_map = _byte_map;
   _write_byte_map_base = _byte_map_base;
 
-  ReservedSpace read_space = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size);
+  ReservedSpace read_space = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size, mtGC);
   initialize(read_space);
 
   _read_byte_map = (CardValue*) read_space.base();
