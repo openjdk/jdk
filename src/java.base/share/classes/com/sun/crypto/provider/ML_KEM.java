@@ -649,7 +649,7 @@ public final class ML_KEM {
         }
 
         mlKemG.update(seed);
-//        mlKemG.update((byte)mlKem_k);
+        mlKemG.update((byte)mlKem_k);
 
         var rhoSigma = mlKemG.digest();
         var rho = Arrays.copyOfRange(rhoSigma, 0, 32);

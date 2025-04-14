@@ -5692,6 +5692,8 @@ class StubGenerator: public StubCodeGenerator {
     // load 16 zetas
     vs_ldpq_post(vz, zetas);
     // load 2 sets of 32 coefficients from the two input arrays
+    // interleaved as shorts. i.e. pairs of shorts adjacent in memory
+    // are striped across pairs of vector registers
     vs_ld2_post(vs_front(vs1), __ T8H, ntta);
     vs_ld2_post(vs_back(vs1), __ T8H, nttb);
     vs_ld2_post(vs_front(vs4), __ T8H, ntta);
