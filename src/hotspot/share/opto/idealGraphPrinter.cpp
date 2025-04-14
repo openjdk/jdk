@@ -32,7 +32,6 @@
 #include "runtime/threadSMR.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/stringUtils.hpp"
-#include "utilities/vmError.hpp"
 
 #ifndef PRODUCT
 
