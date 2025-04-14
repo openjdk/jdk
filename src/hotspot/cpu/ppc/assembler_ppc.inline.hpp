@@ -864,6 +864,8 @@ inline void Assembler::lvsr(  VectorRegister d, Register s1, Register s2) { emit
 // Vector-Scalar (VSX) instructions.
 inline void Assembler::lxv(     VectorSRegister d, int si16, Register a)     { assert(is_aligned(si16, 16), "displacement must be a multiple of 16"); emit_int32( LXV_OPCODE   | vsrt_dq(d) | ra0mem(a) | simm(si16, 16)); }
 inline void Assembler::stxv(    VectorSRegister d, int si16, Register a)     { assert(is_aligned(si16, 16), "displacement must be a multiple of 16"); emit_int32( STXV_OPCODE  | vsrs_dq(d) | ra0mem(a) | simm(si16, 16)); }
+inline void Assembler::lxvx(    VectorSRegister d, Register a, Register b)   { emit_int32( LXVX_OPCODE    | vsrt(d) | ra0mem(a)  | rb(b)); }
+inline void Assembler::stxvx(   VectorSRegister d, Register a, Register b)   { emit_int32( STXVX_OPCODE   | vsrs(d) | ra0mem(a)  | rb(b)); }
 inline void Assembler::lxvp(    VectorSRegister d, int si16, Register a)     { assert(is_aligned(si16, 16), "displacement must be a multiple of 16"); emit_int32( LXVP_OPCODE  | vsrtp(d)   | ra0mem(a) | simm(si16, 16)); }
 inline void Assembler::stxvp(   VectorSRegister d, int si16, Register a)     { assert(is_aligned(si16, 16), "displacement must be a multiple of 16"); emit_int32( STXVP_OPCODE | vsrsp(d)   | ra0mem(a) | simm(si16, 16)); }
 inline void Assembler::lxvl(    VectorSRegister d, Register s1, Register b)  { emit_int32( LXVL_OPCODE    | vsrt(d) | ra0mem(s1) | rb(b)); }
@@ -1141,6 +1143,10 @@ inline void Assembler::stb(  Register d, int si16   ) { emit_int32( STB_OPCODE  
 inline void Assembler::std(  Register d, int si16   ) { emit_int32( STD_OPCODE  | rs(d) | ds(si16));}
 inline void Assembler::stdx( Register d, Register s2) { emit_int32( STDX_OPCODE | rs(d) | rb(s2));}
 inline void Assembler::stdbrx(Register d, Register s2){ emit_int32(STDBRX_OPCODE| rs(d) | rb(s2));}
+
+inline void Assembler::lxvx( VectorSRegister d, Register b) { emit_int32( LXVX_OPCODE  | vsrt(d) | rb(b)); }
+inline void Assembler::stxvx(VectorSRegister d, Register b) { emit_int32( STXVX_OPCODE | vsrs(d) | rb(b)); }
+
 
 // ra0 version
 inline void Assembler::icbi(    Register s2)          { emit_int32( ICBI_OPCODE   | rb(s2)           ); }

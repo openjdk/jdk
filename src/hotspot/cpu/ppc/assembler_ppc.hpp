@@ -535,11 +535,13 @@ class Assembler : public AbstractAssembler {
 
     // Vector-Scalar (VSX) instruction support.
     LXV_OPCODE     = (61u << OPCODE_SHIFT |    1u     ),
-    LXVL_OPCODE    = (31u << OPCODE_SHIFT |  269u << 1),
     STXV_OPCODE    = (61u << OPCODE_SHIFT |    5u     ),
-    STXVL_OPCODE   = (31u << OPCODE_SHIFT |  397u << 1),
+    LXVX_OPCODE    = (31u << OPCODE_SHIFT |   12u << 1 | 4u << 7),
+    STXVX_OPCODE   = (31u << OPCODE_SHIFT |  396u << 1),
     LXVP_OPCODE    = ( 6u << OPCODE_SHIFT             ),
     STXVP_OPCODE   = ( 6u << OPCODE_SHIFT |    1u     ),
+    LXVL_OPCODE    = (31u << OPCODE_SHIFT |  269u << 1),
+    STXVL_OPCODE   = (31u << OPCODE_SHIFT |  397u << 1),
     LXVD2X_OPCODE  = (31u << OPCODE_SHIFT |  844u << 1),
     STXVD2X_OPCODE = (31u << OPCODE_SHIFT |  972u << 1),
     MTVSRD_OPCODE  = (31u << OPCODE_SHIFT |  179u << 1),
@@ -2365,16 +2367,24 @@ class Assembler : public AbstractAssembler {
   inline void mfvscr(   VectorRegister d);
 
   // Vector-Scalar (VSX) instructions.
-  inline void lxv(      VectorSRegister d, int si16, Register a);
-  inline void stxv(     VectorSRegister d, int si16, Register a);
-  inline void lxvp(     VectorSRegister d, int si16, Register a);
-  inline void stxvp(    VectorSRegister d, int si16, Register a);
-  inline void lxvl(     VectorSRegister d, Register a, Register b);
-  inline void stxvl(    VectorSRegister d, Register a, Register b);
+  // Power8
   inline void lxvd2x(   VectorSRegister d, Register a);
   inline void lxvd2x(   VectorSRegister d, Register a, Register b);
   inline void stxvd2x(  VectorSRegister d, Register a);
   inline void stxvd2x(  VectorSRegister d, Register a, Register b);
+
+  // Power9
+  inline void lxv(      VectorSRegister d, int si16, Register a);
+  inline void stxv(     VectorSRegister d, int si16, Register a);
+  inline void lxvx(     VectorSRegister d, Register a, Register b);
+  inline void stxvx(    VectorSRegister d, Register a, Register b);
+  inline void lxvl(     VectorSRegister d, Register a, Register b);
+  inline void stxvl(    VectorSRegister d, Register a, Register b);
+
+  // Power10
+  inline void lxvp(     VectorSRegister d, int si16, Register a);
+  inline void stxvp(    VectorSRegister d, int si16, Register a);
+
   inline void mtvrwz(   VectorRegister  d, Register a);
   inline void mfvrwz(   Register        a, VectorRegister d);
   inline void mtvrd(    VectorRegister  d, Register a);
@@ -2490,6 +2500,9 @@ class Assembler : public AbstractAssembler {
   inline void stdx( Register d, Register s2);
   inline void std(  Register d, int si16);
   inline void stdbrx( Register d, Register s2);
+
+  inline void lxvx( VectorSRegister d, Register b);
+  inline void stxvx(VectorSRegister d, Register b);
 
   // PPC 2, section 3.2.1 Instruction Cache Instructions
   inline void icbi(    Register s2);

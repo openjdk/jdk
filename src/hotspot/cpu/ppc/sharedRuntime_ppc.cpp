@@ -348,30 +348,26 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
     if (generate_oop_map) {
       map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2),
                             RegisterSaver_LiveRegs[i].vmreg);
-      map->set_callee_saved(VMRegImpl::stack2reg((offset + half_reg_size) >> 2),
-                            RegisterSaver_LiveRegs[i].vmreg->next());
     }
     offset += reg_size;
   }
 
-  // Note that generate_oop_map in the following loops is only used for the
+  // Note that generate_oop_map in the following loop is only used for the
   // polling_page_vectors_safepoint_handler_blob.
   // The order in which the vector contents are stored depends on Endianess and
   // the utilized instructions (PowerArchitecturePPC64).
   assert(is_aligned(offset, StackAlignmentInBytes), "should be");
   if (PowerArchitecturePPC64 >= 10) {
+    assert(is_even(vsregstosave_num), "expectation");
     for (int i = 0; i < vsregstosave_num; i += 2) {
       int reg_num = RegisterSaver_LiveVSRegs[i].reg_num;
       assert(RegisterSaver_LiveVSRegs[i + 1].reg_num == reg_num + 1, "or use other instructions!");
 
       __ stxvp(as_VectorSRegister(reg_num), offset, R1_SP);
-
+      // Note: The contents were read in the same order (see loadV16_Power9 node in ppc.ad).
       if (generate_oop_map) {
-        VMReg vsr = RegisterSaver_LiveVSRegs[i].vmreg;
-        for (int j = 0; j < 8; j++) {
-          map->set_callee_saved(VMRegImpl::stack2reg((offset >> 2) + j), vsr);
-          vsr = vsr->next();
-        }
+        map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2), RegisterSaver_LiveVSRegs[i].vmreg);
+        map->set_callee_saved(VMRegImpl::stack2reg((offset + vs_reg_size) >> 2), RegisterSaver_LiveVSRegs[i + 1].vmreg);
       }
       offset += (2 * vs_reg_size);
     }
@@ -379,15 +375,16 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
     for (int i = 0; i < vsregstosave_num; i++) {
       int reg_num = RegisterSaver_LiveVSRegs[i].reg_num;
 
-      __ li(R31, offset);
-      __ stxvd2x(as_VectorSRegister(reg_num), R31, R1_SP);
-
+      if (PowerArchitecturePPC64 >= 9) {
+        __ stxv(as_VectorSRegister(reg_num), offset, R1_SP);
+      } else {
+        __ li(R31, offset);
+        __ stxvd2x(as_VectorSRegister(reg_num), R31, R1_SP);
+      }
+      // Note: The contents were read in the same order (see loadV16_Power8 / loadV16_Power9 node in ppc.ad).
       if (generate_oop_map) {
         VMReg vsr = RegisterSaver_LiveVSRegs[i].vmreg;
-        for (int j = 0; j < 4; j++) {
-          map->set_callee_saved(VMRegImpl::stack2reg((offset >> 2) + j), vsr);
-          vsr = vsr->next();
-        }
+        map->set_callee_saved(VMRegImpl::stack2reg(offset >> 2), vsr);
       }
       offset += vs_reg_size;
     }
@@ -467,8 +464,12 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
     for (int i = 0; i < vsregstosave_num; i++) {
       int reg_num  = RegisterSaver_LiveVSRegs[i].reg_num;
 
-      __ li(R31, offset);
-      __ lxvd2x(as_VectorSRegister(reg_num), R31, R1_SP);
+      if (PowerArchitecturePPC64 >= 9) {
+        __ lxv(as_VectorSRegister(reg_num), offset, R1_SP);
+      } else {
+        __ li(R31, offset);
+        __ lxvd2x(as_VectorSRegister(reg_num), R31, R1_SP);
+      }
 
       offset += vs_reg_size;
     }

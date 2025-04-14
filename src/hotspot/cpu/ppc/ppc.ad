@@ -2009,15 +2009,23 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
     else if (src_lo_rc == rc_vs && dst_lo_rc == rc_stack) {
       VectorSRegister Rsrc = as_VectorSRegister(Matcher::_regEncode[src_lo]);
       int dst_offset = ra_->reg2offset(dst_lo);
-      if (PowerArchitecturePPC64 >= 9 && is_aligned(dst_offset, 16)) {
-        if (masm) {
-          __ stxv(Rsrc, dst_offset, R1_SP);
+      if (PowerArchitecturePPC64 >= 9) {
+        if (is_aligned(dst_offset, 16)) {
+          if (masm) {
+            __ stxv(Rsrc, dst_offset, R1_SP); // matches storeV16_Power9
+          }
+          size += 4;
+        } else {
+          if (masm) {
+            __ addi(R0, R1_SP, dst_offset);
+            __ stxvx(Rsrc, R0); // matches storeV16_Power9 (regarding element ordering)
+          }
+          size += 8;
         }
-        size += 4;
       } else {
         if (masm) {
           __ addi(R0, R1_SP, dst_offset);
-          __ stxvd2x(Rsrc, R0);
+          __ stxvd2x(Rsrc, R0); // matches storeV16_Power8
         }
         size += 8;
       }
@@ -2026,11 +2034,19 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
     else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vs) {
       VectorSRegister Rdst = as_VectorSRegister(Matcher::_regEncode[dst_lo]);
       int src_offset = ra_->reg2offset(src_lo);
-      if (PowerArchitecturePPC64 >= 9 && is_aligned(src_offset, 16)) {
-        if (masm) {
-          __ lxv(Rdst, src_offset, R1_SP);
+      if (PowerArchitecturePPC64 >= 9) {
+        if (is_aligned(src_offset, 16)) {
+          if (masm) {
+            __ lxv(Rdst, src_offset, R1_SP);
+          }
+          size += 4;
+        } else {
+          if (masm) {
+            __ addi(R0, R1_SP, src_offset);
+            __ lxvx(Rdst, R0);
+          }
+          size += 8;
         }
-        size += 4;
       } else {
         if (masm) {
           __ addi(R0, R1_SP, src_offset);
@@ -5631,8 +5647,9 @@ instruct loadV8(iRegLdst dst, memoryAlg4 mem) %{
 %}
 
 // Load Aligned Packed Byte
-instruct loadV16(vecX dst, indirect mem) %{
-  predicate(n->as_LoadVector()->memory_size() == 16);
+// Note: The Power8 instruction loads the contents in a special order in Little Endian mode.
+instruct loadV16_Power8(vecX dst, indirect mem) %{
+  predicate(n->as_LoadVector()->memory_size() == 16 && PowerArchitecturePPC64 == 8);
   match(Set dst (LoadVector mem));
   ins_cost(MEMORY_REF_COST);
 
@@ -5640,6 +5657,19 @@ instruct loadV16(vecX dst, indirect mem) %{
   size(4);
   ins_encode %{
     __ lxvd2x($dst$$VectorSRegister, $mem$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct loadV16_Power9(vecX dst, indirect mem) %{
+  predicate(n->as_LoadVector()->memory_size() == 16 && PowerArchitecturePPC64 >= 9);
+  match(Set dst (LoadVector mem));
+  ins_cost(MEMORY_REF_COST);
+
+  format %{ "LXV      $dst, $mem \t// load 16-byte Vector" %}
+  size(4);
+  ins_encode %{
+    __ lxv($dst$$VectorSRegister, 0, $mem$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6657,8 +6687,9 @@ instruct storeA8B(memoryAlg4 mem, iRegLsrc src) %{
 %}
 
 // Store Packed Byte long register to memory
-instruct storeV16(indirect mem, vecX src) %{
-  predicate(n->as_StoreVector()->memory_size() == 16);
+// Note: The Power8 instruction stores the contents in a special order in Little Endian mode.
+instruct storeV16_Power8(indirect mem, vecX src) %{
+  predicate(n->as_StoreVector()->memory_size() == 16 && PowerArchitecturePPC64 == 8);
   match(Set mem (StoreVector mem src));
   ins_cost(MEMORY_REF_COST);
 
@@ -6666,6 +6697,19 @@ instruct storeV16(indirect mem, vecX src) %{
   size(4);
   ins_encode %{
     __ stxvd2x($src$$VectorSRegister, $mem$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct storeV16_Power9(indirect mem, vecX src) %{
+  predicate(n->as_StoreVector()->memory_size() == 16 && PowerArchitecturePPC64 >= 9);
+  match(Set mem (StoreVector mem src));
+  ins_cost(MEMORY_REF_COST);
+
+  format %{ "STXV     $mem, $src \t// store 16-byte Vector" %}
+  size(4);
+  ins_encode %{
+    __ stxv($src$$VectorSRegister, 0, $mem$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
