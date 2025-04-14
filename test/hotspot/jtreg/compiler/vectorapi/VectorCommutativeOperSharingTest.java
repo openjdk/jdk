@@ -579,7 +579,7 @@ public class VectorCommutativeOperSharingTest {
     public void testVectorIRSharing20(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
-        // UMax ((UMax vec1 vec2), (UMax vec2 vec1))
+        // UMax ((UMax vec1, vec2), (UMax vec2, vec1))
         vec1.lanewise(VectorOperators.UMAX, vec2)
             .lanewise(VectorOperators.UMAX, vec2.lanewise(VectorOperators.UMAX, vec1))
             .intoArray(ir1, index);
@@ -604,7 +604,7 @@ public class VectorCommutativeOperSharingTest {
     public void testVectorIRSharing21(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
-        // UMIN ((UMIN vec1 vec2), (UMIN vec2 vec1))
+        // UMin ((UMin vec1, vec2), (UMin vec2, vec1))
         vec1.lanewise(VectorOperators.UMIN, vec2)
             .lanewise(VectorOperators.UMIN, vec2.lanewise(VectorOperators.UMIN, vec1))
             .intoArray(ir1, index);
