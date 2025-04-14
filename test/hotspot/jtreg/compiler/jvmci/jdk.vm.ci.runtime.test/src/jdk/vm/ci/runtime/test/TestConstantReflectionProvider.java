@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,7 @@ import org.junit.Test;
 import java.lang.reflect.Array;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Tests for {@link ConstantReflectionProvider}. It assumes an implementation of the interface that
@@ -137,5 +133,27 @@ public class TestConstantReflectionProvider extends TypeUniverse {
         }
 
         assertNull(constantReflection.unboxPrimitive(JavaConstant.NULL_POINTER));
+    }
+
+    static class ArrayConstants {
+        static final byte[] BYTE_ARRAY_CONST = new byte[]{0};
+        static final Object[] OBJECT_ARRAY_CONST = new Object[]{null};
+    }
+
+    @Test
+    public void readAfterLastArrayElementTest() {
+        for (ConstantValue cv : readConstants(ArrayConstants.class)) {
+            if (cv.boxed != null && cv.boxed.getClass().isArray()) {
+                JavaKind kind = metaAccess.lookupJavaType(cv.value).getComponentType().getJavaKind();
+                long offset = metaAccess.getArrayBaseOffset(kind) + (long) metaAccess.getArrayIndexScale(kind) * Array.getLength(cv.boxed);
+                assertThrows(IllegalArgumentException.class, () -> {
+                    if (kind == JavaKind.Object) {
+                        constantReflection.getMemoryAccessProvider().readObjectConstant(cv.value, offset);
+                    } else {
+                        constantReflection.getMemoryAccessProvider().readPrimitiveConstant(kind, cv.value, offset, kind.getBitCount());
+                    }
+                });
+            }
+        }
     }
 }
