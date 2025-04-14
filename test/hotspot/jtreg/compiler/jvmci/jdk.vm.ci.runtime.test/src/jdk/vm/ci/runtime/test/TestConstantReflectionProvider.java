@@ -141,11 +141,12 @@ public class TestConstantReflectionProvider extends TypeUniverse {
     }
 
     @Test
-    public void readAfterLastArrayElementTest() {
+    public void readOnePastLastArrayElementTest() {
         for (ConstantValue cv : readConstants(ArrayConstants.class)) {
             if (cv.boxed != null && cv.boxed.getClass().isArray()) {
                 JavaKind kind = metaAccess.lookupJavaType(cv.value).getComponentType().getJavaKind();
                 long offset = metaAccess.getArrayBaseOffset(kind) + (long) metaAccess.getArrayIndexScale(kind) * Array.getLength(cv.boxed);
+                // read array[array.length]
                 assertThrows(IllegalArgumentException.class, () -> {
                     if (kind == JavaKind.Object) {
                         constantReflection.getMemoryAccessProvider().readObjectConstant(cv.value, offset);
@@ -154,6 +155,21 @@ public class TestConstantReflectionProvider extends TypeUniverse {
                     }
                 });
             }
+        }
+    }
+
+    static class IntArrayConstants {
+        static final int[] INT_ARRAY_CONST = new int[]{0};
+    }
+
+    @Test
+    public void readPartiallyOutOfBoundsTest() {
+        for (ConstantValue cv : readConstants(IntArrayConstants.class)) {
+            JavaKind kind = metaAccess.lookupJavaType(cv.value).getComponentType().getJavaKind();
+            long offset = metaAccess.getArrayBaseOffset(kind) + (long) metaAccess.getArrayIndexScale(kind) * (Array.getLength(cv.boxed) - 1);
+            // read a long from array[array.length - 1], which is partially out of bounds
+            JavaKind accessKind = JavaKind.Long;
+            assertThrows(IllegalArgumentException.class, () -> constantReflection.getMemoryAccessProvider().readPrimitiveConstant(accessKind, cv.value, offset, accessKind.getBitCount()));
         }
     }
 }
