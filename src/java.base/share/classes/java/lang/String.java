@@ -173,12 +173,14 @@ public final class String
     private final byte coder;
 
     /** Cache the hash code for the string */
+    @Stable
     private int hash; // Default to 0
 
     /**
      * Cache if the hash has been calculated as actually being zero, enabling
      * us to avoid recalculating this.
      */
+    @Stable
     private boolean hashIsZero; // Default to false;
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
