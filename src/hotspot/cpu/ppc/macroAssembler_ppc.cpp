@@ -1637,7 +1637,7 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
   // atomic emulation loop
   bind(retry);
 
-    switch (instruction_type) {
+  switch (instruction_type) {
     case 4: lwarx(val32, addr_base, cmpxchgx_hint); break;
     case 2: lharx(val32, addr_base, cmpxchgx_hint); break;
     case 1: lbarx(val32, addr_base, cmpxchgx_hint); break;
@@ -1659,13 +1659,12 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
   // branch to done  => (flag == ne), (dest_current_value != compare_value)
   // fall through    => (flag == eq), (dest_current_value == compare_value)
 
-    switch (instruction_type) {
+  switch (instruction_type) {
     case 4: stwcx_(modval, addr_base); break;
     case 2: sthcx_(modval, addr_base); break;
     case 1: stbcx_(modval, addr_base); break;
     default: ShouldNotReachHere();
   }
-
 }
 
 // CmpxchgX sets condition register to cmpX(current, compare).
