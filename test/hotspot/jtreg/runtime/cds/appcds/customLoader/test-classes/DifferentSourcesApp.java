@@ -30,12 +30,12 @@ import java.net.URLClassLoader;
  * See ../DifferentSourcesTest.java for details.
  */
 public class DifferentSourcesApp {
-  public static void main(String args[]) throws Exception {
-    Path base = FileSystems.getDefault().getPath("base.jar");
-    Path sub = FileSystems.getDefault().getPath("sub.jar");
-    URL[] urls = new URL[] { base.toUri().toURL(), sub.toUri().toURL() };
-    URLClassLoader cl = new URLClassLoader(urls, /* parent = */ null);
-    Class<?> cls = cl.loadClass("CustomLoadee5Child");
-    System.out.println(cls.getName());
-  }
+    public static void main(String args[]) throws Exception {
+        Path base = FileSystems.getDefault().getPath("base.jar");
+        Path sub = FileSystems.getDefault().getPath("sub.jar");
+        URL[] urls = new URL[] { base.toUri().toURL(), sub.toUri().toURL() };
+        URLClassLoader cl = new URLClassLoader(urls, /* parent = */ null);
+        Class<?> cls = cl.loadClass("CustomLoadee5Child");
+        System.out.println(cls.getName());
+    }
 }
