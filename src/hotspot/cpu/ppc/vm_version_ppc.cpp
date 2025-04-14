@@ -95,20 +95,12 @@ void VM_Version::initialize() {
     FLAG_SET_ERGO(TrapBasedRangeChecks, false);
   }
 
-  if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
-    FLAG_SET_ERGO(UsePopCountInstruction, true);
-  }
-
-
   if (FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
     FLAG_SET_ERGO(ConditionalMoveLimit, 0);
   }
 
-  if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
-    FLAG_SET_ERGO(SuperwordUseVSX, true);
-  }
 
-  MaxVectorSize = SuperwordUseVSX ? 16 : 8;
+  MaxVectorSize = 16;
 
   if (PowerArchitecturePPC64 >= 9) {
     if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstructionsPPC64)) {
@@ -117,13 +109,8 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseCharacterCompareIntrinsics)) {
       FLAG_SET_ERGO(UseCharacterCompareIntrinsics, true);
     }
-    if (SuperwordUseVSX) {
-      if (FLAG_IS_DEFAULT(UseVectorByteReverseInstructionsPPC64)) {
-        FLAG_SET_ERGO(UseVectorByteReverseInstructionsPPC64, true);
-      }
-    } else if (UseVectorByteReverseInstructionsPPC64) {
-      warning("UseVectorByteReverseInstructionsPPC64 specified, but needs SuperwordUseVSX.");
-      FLAG_SET_DEFAULT(UseVectorByteReverseInstructionsPPC64, false);
+    if (FLAG_IS_DEFAULT(UseVectorByteReverseInstructionsPPC64)) {
+      FLAG_SET_ERGO(UseVectorByteReverseInstructionsPPC64, true);
     }
     if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
       FLAG_SET_ERGO(UseBASE64Intrinsics, true);
