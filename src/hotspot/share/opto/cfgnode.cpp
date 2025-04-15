@@ -3109,7 +3109,7 @@ void NeverBranchNode::format( PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-Node* BlackholeNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* BlackholeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 #ifndef PRODUCT
