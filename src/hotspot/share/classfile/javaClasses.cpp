@@ -1879,13 +1879,14 @@ oop java_lang_Thread::park_blocker(oop java_thread) {
 
 struct LockInfo {
   enum { // should be synced with jdk.internal.vm.ThreadSnapshot.ThreadLock constants
-    PARKING_TO_WAIT = 1,
-    ELEMINATED_SCALAR_REPLACED = 2,
-    ELEMINATED_MONITOR = 3,
-    LOCKED = 4,
-    WAITING_TO_LOCK = 5,
-    WAITING_ON = 6,
-    WAITING_TO_RELOCK = 7,
+    PARKING_TO_WAIT = 0,
+    ELEMINATED_SCALAR_REPLACED = 1,
+    ELEMINATED_MONITOR = 2,
+    LOCKED = 3,
+    WAITING_TO_LOCK = 4,
+    WAITING_ON = 5,
+    WAITING_TO_RELOCK = 6,
+    OWNABLE_SYNCHRONIZER = 7,
   };
 
   int _depth;
@@ -2290,6 +2291,18 @@ oop java_lang_Thread::get_thread_snapshot(jobject jthread, bool with_locks, TRAP
     oop element = java_lang_StackTraceElement::create(method, cl._bcis->at(i), CHECK_NULL);
     trace->obj_at_put(i, element);
   }
+  // call static StackTraceElement[] of(StackTraceElement[] stackTrace)
+  // to properly initialize STE.
+  {
+    JavaValue result(T_OBJECT);
+    JavaCalls::call_static(&result,
+                           k, // vmClasses::StackTraceElement_klass()
+                           vmSymbols::java_lang_StackTraceElement_of_name(),
+                           vmSymbols::java_lang_StackTraceElement_of_signature(),
+                           trace,
+                           CHECK_NULL);
+    // the method return the same trace object
+  }
 
   objArrayHandle locks;
   int lock_index = 0;
@@ -2301,7 +2314,6 @@ oop java_lang_Thread::get_thread_snapshot(jobject jthread, bool with_locks, TRAP
       Handle lock_object = Handle(THREAD, o);
 
       // TODO: allocate and fill in the VM
-      JavaValue result(T_OBJECT);
       JavaCallArguments args;
       args.push_int(lock_info->_depth);
       args.push_int(lock_info->_type);
@@ -2320,7 +2332,6 @@ oop java_lang_Thread::get_thread_snapshot(jobject jthread, bool with_locks, TRAP
   }
 
   // TODO: allocate and fill in the VM
-  JavaValue result(T_OBJECT);
   JavaCallArguments args;
   args.push_oop(trace);
   args.push_oop(locks);

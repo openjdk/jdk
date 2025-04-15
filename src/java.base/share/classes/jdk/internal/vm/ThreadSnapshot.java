@@ -69,7 +69,7 @@ public class ThreadSnapshot {
         return jdk.internal.misc.VM.toThreadState(threadStatus);
     }
 
-    List<StackTraceElement>    getStackTrace() {
+    List<StackTraceElement> getStackTrace() {
         return Arrays.asList(ste);
     }
 
@@ -87,56 +87,38 @@ public class ThreadSnapshot {
         return getLocks(depth);
     }
 
+    public static enum LockType {
+        // Park blocker
+        PARKING_TO_WAIT,
+        // Lock object is a class of the eliminated monitor
+        ELEMINATED_SCALAR_REPLACED,
+        ELEMINATED_MONITOR,
+        LOCKED,
+        WAITING_TO_LOCK,
+        WAITING_ON,
+        WAITING_TO_RELOCK,
+        // No corresponding stack frame, depth is always == -1
+        OWNABLE_SYNCHRONIZER
+    }
 
-    public static class ThreadLock {
-        private static final int PARKING_TO_WAIT = 1;
-        private static final int ELEMINATED_SCALAR_REPLACED = 2;
-        private static final int ELEMINATED_MONITOR = 3;
-        private static final int LOCKED = 4;
-        private static final int WAITING_TO_LOCK = 5;
-        private static final int WAITING_ON = 6;
-        private static final int WAITING_TO_RELOCK = 7;
-
-        public final int depth;
-        public final int lockType;
-        public final Object lock;
-
-        private ThreadLock(int depth, int type, Object lock) {
-            this.depth = depth;
-            this.lockType = type;
-            this.lock = lock;
+    public static record ThreadLock(int depth, LockType type, Object obj) {
+        private static final LockType[] lockTypeValues = LockType.values(); // cache
+        private ThreadLock(int depth, int typeOrdinal, Object obj) {
+            this(depth, lockTypeValues[typeOrdinal], obj);
         }
 
-        public String toString() {
-            switch (lockType) {
-            case PARKING_TO_WAIT:
-                return "parking to wait for " + lockString(lock);
-            case ELEMINATED_SCALAR_REPLACED:
-                // lock is the klass
-                return "eliminated, owner is scalar replaced (" + ((Class)lock).getName() + ")";
-            case ELEMINATED_MONITOR:
-                return "eliminated " + lockString(lock);
-            case LOCKED:
-                return "locked " + lockString(lock);
-            case WAITING_TO_LOCK:
-                return "waiting to lock  " + lockString(lock);
-            case WAITING_ON:
-                // lock is null if there is no reference
-                return "waiting on  " + lockString(lock);
-            case WAITING_TO_RELOCK:
-                return "waiting to re-lock in wait " + lockString(lock);
+        public Object lockObject() {
+            if (type == LockType.ELEMINATED_SCALAR_REPLACED) {
+                // we have no lock object, lock contains lock class
+                return null;
             }
-            return "Unknown lock (type " + lockType + "), lock=" + lockString(lock);
+            return obj;
         }
-
-        public String lockString(Object lock) {
-            if (lock == null) {
-                return "<no object reference available>";
+        public Class<?> lockClass() {
+            if (type == LockType.ELEMINATED_SCALAR_REPLACED) {
+                return (Class)obj;
             }
-            // TODO: need to generate unique object id instead of hash
-            long id = lock.hashCode();
-            return "0x" + HexFormat.of().toHexDigits(id, 16)
-                    + " (" + lock.getClass().getName() + ")";
+            return obj == null ? null : obj.getClass();
         }
     }
 }
