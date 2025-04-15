@@ -26,7 +26,7 @@
  * @bug 4183379
  * @summary JList has wrong scrolling behavior when you click in the "troth"
  * of a scrollbar, in a scrollpane.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4183379
  */
