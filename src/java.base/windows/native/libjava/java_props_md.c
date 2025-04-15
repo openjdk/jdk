@@ -26,6 +26,7 @@
 #include "jni.h"
 #include "jni_util.h"
 
+#include <assert.h>
 #include <windows.h>
 #include <shlobj.h>
 #include <objidl.h>
@@ -667,10 +668,15 @@ GetJavaProperties(JNIEnv* env)
                            &sprops.display_variant,
                            &display_encoding);
 
+            if (sprops.encoding == NULL) {
+                sprops.encoding = "UTF-8";
+            }
+
             sprops.sun_jnu_encoding = getEncodingInternal(0);
             if (sprops.sun_jnu_encoding == NULL) {
                 sprops.sun_jnu_encoding = "UTF-8";
             }
+
             if (LANGIDFROMLCID(userDefaultLCID) == 0x0c04 && majorVersion == 6) {
                 // MS claims "Vista has built-in support for HKSCS-2004.
                 // All of the HKSCS-2004 characters have Unicode 4.1.
@@ -682,6 +688,9 @@ GetJavaProperties(JNIEnv* env)
                 sprops.encoding = "MS950_HKSCS";
                 sprops.sun_jnu_encoding = "MS950_HKSCS";
             }
+
+            assert(sprops.encoding != NULL);
+            assert(sprops.sun_jnu_encoding != NULL);
 
             hStdOutErr = GetStdHandle(STD_OUTPUT_HANDLE);
             if (hStdOutErr != INVALID_HANDLE_VALUE &&

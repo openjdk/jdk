@@ -39,6 +39,7 @@ import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.util.*;
+import javax.tools.Diagnostic;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
@@ -1004,7 +1005,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 Assert.checkNonNull(deferredDiagnosticHandler);
                 this.deferredDiagnosticHandler = deferredDiagnosticHandler;
             } else {
-                this.deferredDiagnosticHandler = new Log.DeferredDiagnosticHandler(log);
+                this.deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
                 compiler.setDeferredDiagnosticHandler(this.deferredDiagnosticHandler);
             }
 
@@ -1107,21 +1108,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             if (messager.errorRaised())
                 return true;
 
-            for (JCDiagnostic d: deferredDiagnosticHandler.getDiagnostics()) {
-                switch (d.getKind()) {
-                    case WARNING:
-                        if (werror)
-                            return true;
-                        break;
-
-                    case ERROR:
-                        if (fatalErrors || !d.isFlagSet(RECOVERABLE))
-                            return true;
-                        break;
-                }
-            }
-
-            return false;
+            return deferredDiagnosticHandler.getDiagnostics().stream()
+              .anyMatch(d -> (d.getKind() == Diagnostic.Kind.WARNING && werror) ||
+                             (d.getKind() == Diagnostic.Kind.ERROR && (fatalErrors || !d.isFlagSet(RECOVERABLE))));
         }
 
         /** Find the set of annotations present in the set of top level
