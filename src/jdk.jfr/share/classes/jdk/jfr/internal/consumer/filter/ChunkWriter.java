@@ -32,6 +32,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 import java.util.function.Predicate;
 
 import jdk.jfr.consumer.RecordedEvent;
@@ -51,6 +52,28 @@ import jdk.jfr.internal.consumer.Reference;
  * All positional values are relative to file start, not the chunk.
  */
 public final class ChunkWriter implements Closeable {
+    public static class RemovedEvents implements Comparable<RemovedEvents> {
+        public final String name;
+        private long count;
+        private long removed;
+
+        private RemovedEvents(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String share() {
+            return removed + "/" + count;
+        }
+
+        @Override
+        public int compareTo(RemovedEvents that) {
+            return this.getName().compareTo(that.getName());
+        }
+    }
     private LongMap<Constants> pools = new LongMap<>();
     private final Deque<CheckpointEvent> checkpoints = new ArrayDeque<>();
     private final Path destination;
@@ -58,6 +81,7 @@ public final class ChunkWriter implements Closeable {
     private final RecordingOutput output;
     private final Predicate<RecordedEvent> filter;
     private final Map<String, Long> waste = new HashMap<>();
+    private final LongMap<RemovedEvents> removedEvents = new LongMap<>();
 
     private long chunkStartPosition;
     private boolean chunkComplete;
@@ -87,7 +111,22 @@ public final class ChunkWriter implements Closeable {
     }
 
     public boolean accept(RecordedEvent event) {
-        return filter.test(event);
+        long id = event.getEventType().getId();
+        RemovedEvents r = removedEvents.get(id);
+        if (r == null) {
+            r = new RemovedEvents(event.getEventType().getName());
+            removedEvents.put(id, r);
+        }
+        r.count++;
+        if (filter.test(event)) {
+            return true;
+        }
+        r.removed++;
+        return false;
+    }
+
+    public List<RemovedEvents> getRemovedEventTypes() {
+        return removedEvents.values().stream().filter(r -> r.removed > 0).sorted().toList();
     }
 
     public void touch(Object object) {
