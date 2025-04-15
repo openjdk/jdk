@@ -564,7 +564,7 @@ address StubGenerator::generate_intpoly_montgomeryMult_P256() {
   address start = __ pc();
   __ enter();
 
-  if (EnableX86ECoreOpts && UseAVX > 1) {
+  if (VM_Version::supports_avxifma()) {
     __ push(r12);
     __ push(r13);
     __ push(r14);
@@ -608,6 +608,7 @@ address StubGenerator::generate_intpoly_montgomeryMult_P256() {
     __ pop(r13);
     __ pop(r12);
   } else {
+    assert(VM_Version::supports_avx512ifma() && VM_Version::supports_avx512vlbw(), "Require AVX512 support");
     // Register Map
     const Register aLimbs  = c_rarg0; // rdi | rcx
     const Register bLimbs  = c_rarg1; // rsi | rdx
