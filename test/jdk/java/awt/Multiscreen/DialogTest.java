@@ -66,7 +66,8 @@ public class DialogTest {
     public static void main(String[] args) throws Exception {
         gds = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
         if (gds.length < 2) {
-            throw new SkippedException("You have only one monitor in your system - test skipped");
+            throw new SkippedException("You have only one monitor in your system" +
+                                       " - test skipped");
         }
 
         String INSTRUCTIONS = """
@@ -222,15 +223,17 @@ public class DialogTest {
                 }
             }
 
-            d.setLocation(new Point((int) (gc.getBounds().getX() + 20), (int) (gc.getBounds().getY() + 20)));
+            d.setLocation(new Point((int) (gc.getBounds().getX() + 20)
+                          , (int) (gc.getBounds().getY() + 20)));
             d.setSize(300, 100);
 
             return d;
         }
 
         public String toString() {
-            return "Screen " + num + (frameOwned ? " Frame-owned" : " Dialog-owned") + (modal ? " modal " : " non-modal ") +
-                    (swing ? "JDialog" : "Dialog");
+            return "Screen " + num + (frameOwned ? " Frame-owned" : " Dialog-owned")
+                    + (modal ? " modal " : " non-modal ")
+                    + (swing ? "JDialog" : "Dialog");
         }
     }
 }

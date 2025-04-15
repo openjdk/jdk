@@ -54,7 +54,8 @@ public class FillThisScreen {
     public static void main(String[] args) throws Exception {
         gs = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
         if (gs.length < 2) {
-            throw new SkippedException("You have only one monitor in your system - test skipped");
+            throw new SkippedException("You have only one monitor in your system" +
+                                       " - test skipped");
         }
 
         String INSTRUCTIONS = """

@@ -49,9 +49,11 @@ public class IMCandidateWindowTest {
     static GraphicsConfiguration gc;
 
     public static void main(String[] args) throws Exception {
-        GraphicsDevice[] gds = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
+        GraphicsDevice[] gds = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                               .getScreenDevices();
         if (gds.length < 2) {
-            throw new SkippedException("You have only one monitor in your system - test skipped");
+            throw new SkippedException("You have only one monitor in your system" +
+                                       " - test skipped");
         }
 
         GraphicsDevice gd = null;
