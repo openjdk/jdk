@@ -762,10 +762,23 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   pthread_t tid = 0;
 
   if (ret == 0) {
-    int limit = 3;
-    do {
+    int trials_remaining = 3;
+    useconds_t next_delay = 256;
+    while (true) {
       ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
-    } while (ret == EAGAIN && limit-- > 0);
+
+      if (ret != EAGAIN) {
+        break;
+      }
+
+      if (trials_remaining-- <= 0) {
+        break;
+      }
+
+      log_warning(os, thread)("Failed to start native thread (%s), retrying after %dus.", os::errno_name(ret), next_delay);
+      ::usleep(next_delay);
+      next_delay *= 2;
+    }
   }
 
   if (ret == 0) {

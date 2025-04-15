@@ -760,16 +760,35 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   const unsigned initflag = CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION;
   HANDLE thread_handle;
-  int limit = 3;
-  do {
-    thread_handle =
-      (HANDLE)_beginthreadex(nullptr,
-                             (unsigned)stack_size,
-                             &thread_native_entry,
-                             thread,
-                             initflag,
-                             &thread_id);
-  } while (thread_handle == nullptr && errno == EAGAIN && limit-- > 0);
+  {
+    int trials_remaining = 3;
+    useconds_t next_delay = 256;
+    while (true) {
+      thread_handle =
+        (HANDLE)_beginthreadex(nullptr,
+                              (unsigned)stack_size,
+                              &thread_native_entry,
+                              thread,
+                              initflag,
+                              &thread_id);
+
+      if (thread_handle != nullptr) {
+        break;
+      }
+
+      if (errno != EAGAIN) {
+        break;
+      }
+
+      if (trials_remaining-- <= 0) {
+        break;
+      }
+
+      log_warning(os, thread)("Failed to start native thread (%s), retrying after %dus.", os::errno_name(ret), next_delay);
+      ::usleep(next_delay);
+      next_delay *= 2;
+    }
+  }
 
   ResourceMark rm;
   char buf[64];
