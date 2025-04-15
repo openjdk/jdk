@@ -76,6 +76,7 @@ public class CloneTest {
                             if (!str.equals(dfString)) {
                                 mismatchCount.getAndIncrement();
                                 System.err.println("mismatch: str = " + str + " dfString = " + dfString);
+                                break;
                             }
                         }
                     } catch (InterruptedException e) {
