@@ -29,6 +29,13 @@
  * @run main bug4133768
  */
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import javax.swing.AbstractButton;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -38,20 +45,14 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.GridLayout;
-import java.awt.Point;
-import java.awt.Robot;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 
 public class bug4133768 {
     private static Icon RED, GREEN;
     private static JFrame f;
     private static AbstractButton[] buttons;
-    private static Point buttonLocation;
-    private static int buttonWidth, buttonHeight;
+    private static volatile Point buttonLocation;
+    private static volatile int buttonWidth;
+    private static volatile int buttonHeight;
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {

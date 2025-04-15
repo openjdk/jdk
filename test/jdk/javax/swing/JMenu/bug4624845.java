@@ -30,30 +30,30 @@
  * @run main bug4624845
  */
 
+import java.awt.Color;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import java.awt.Color;
-import java.awt.Point;
-import java.awt.Robot;
-import java.awt.event.InputEvent;
 
 public class bug4624845 {
     private static JFrame f;
     private static JMenu menu, subMenu;
     private static JMenuItem menuItem;
-    private static Point menuLocation;
-    private static Point subMenuLocation;
-    private static Point menuItemLocation;
-    private static int menuWidth;
-    private static int menuHeight;
-    private static int subMenuWidth;
-    private static int subMenuHeight;
-    private static int menuItemWidth;
-    private static int menuItemHeight;
+    private static volatile Point menuLocation;
+    private static volatile Point subMenuLocation;
+    private static volatile Point menuItemLocation;
+    private static volatile int menuWidth;
+    private static volatile int menuHeight;
+    private static volatile int subMenuWidth;
+    private static volatile int subMenuHeight;
+    private static volatile int menuItemWidth;
+    private static volatile int menuItemHeight;
     private static Color menuItemColor;
     private static Color subMenuColor;
     private static boolean passed;
