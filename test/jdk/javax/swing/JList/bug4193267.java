@@ -31,6 +31,10 @@
  * @run main/manual bug4193267
  */
 
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -39,9 +43,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import java.awt.Color;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
 
 public class bug4193267 {
     public static void main(String[] args) throws Exception {
@@ -61,26 +62,24 @@ public class bug4193267 {
             .instructions(INSTRUCTIONS)
             .positionTestUI(WindowLayouts::rightOneRow)
             .columns(35)
-            .testUI(initialize())
+            .testUI(bug4193267::initialize)
             .build()
             .awaitAndCheck();
     }
 
-    private static JFrame[] initialize() {
+    private static List initialize() {
         String[] data = {"000000000000000", "111111111111111",
             "222222222222222", "333333333333333",
             "444444444444444", "555555555555555",
             "666666666666666", "777777777777777",
             "888888888888888", "999999999999999"};
-        JList lst;
-        JScrollPane jsp;
-        JTextField first, last;
+
         JFrame[] fr = new JFrame[2];
         fr[0] = new JFrame("JList");
-        lst = new JList(data);
+        JList lst = new JList(data);
         lst.setLayoutOrientation(JList.VERTICAL_WRAP);
         lst.setVisibleRowCount(4);
-        jsp = new JScrollPane(lst);
+        JScrollPane jsp = new JScrollPane(lst);
         fr[0].add(jsp);
         fr[0].setSize(400, 200);
 
@@ -91,11 +90,11 @@ public class bug4193267 {
 
         JPanel p = new JPanel();
         p.setLayout(new GridLayout(2, 1));
-        first = new JTextField("0", 2);
+        JTextField first = new JTextField("0", 2);
         first.setEditable(false);
         first.setBackground(Color.white);
         p.add(first);
-        last = new JTextField("9", 2);
+        JTextField last = new JTextField("9", 2);
         last.setEditable(false);
         last.setBackground(Color.white);
         p.add(last);
@@ -112,6 +111,7 @@ public class bug4193267 {
                 last.setText(String.valueOf(lst.getLastVisibleIndex()));
             }
         });
-        return fr;
+        List frameList = List.of(fr[0], fr[1]);
+        return frameList;
     }
 }

@@ -30,14 +30,14 @@
  * @run main/manual bug4249161
  */
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JList;
-import javax.swing.JScrollPane;
 import java.awt.BorderLayout;
 import java.awt.ComponentOrientation;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JList;
+import javax.swing.JScrollPane;
 
 public class bug4249161 {
     public static void main(String[] args) throws Exception {
@@ -56,7 +56,7 @@ public class bug4249161 {
             .title("bug4249161 Instructions")
             .instructions(INSTRUCTIONS)
             .columns(35)
-            .testUI(initialize())
+            .testUI(bug4249161::initialize)
             .build()
             .awaitAndCheck();
     }
