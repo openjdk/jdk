@@ -36,7 +36,7 @@
  * @run main/othervm
  *          -XX:CompileOnly=MissingOptWithShiftConvAnd::test
  *          -XX:-TieredCompilation -Xbatch
- *          -XX:VerifyIterativeGVN=10
+ *          -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=10
  *          MissingOptWithShiftConvAnd
  */
 
