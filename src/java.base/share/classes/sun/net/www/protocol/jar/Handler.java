@@ -200,7 +200,7 @@ public class Handler extends java.net.URLStreamHandler {
             if (bangSlash == -1) {
                 throw new NullPointerException(
                     formatMsg("malformed context url%s : no !/",
-                              filterJarName(url.toString()).prefixWith(": ")));
+                              filterJarName(String.valueOf(url)).prefixWith(": ")));
             }
             ctxFile = ctxFile.substring(0, bangSlash);
         } else {
@@ -209,7 +209,7 @@ public class Handler extends java.net.URLStreamHandler {
             if (lastSlash == -1) {
                 throw new NullPointerException(
                     formatMsg("malformed context url%s",
-                              filterJarName(url.toString()).prefixWith(": ")));
+                              filterJarName(String.valueOf(url)).prefixWith(": ")));
             } else if (lastSlash < ctxFile.length() - 1) {
                 ctxFile = ctxFile.substring(0, lastSlash + 1);
             }

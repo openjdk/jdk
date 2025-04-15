@@ -98,8 +98,7 @@ public class Proxy {
         if ((type == Type.DIRECT) || !(sa instanceof InetSocketAddress)) {
             throw new IllegalArgumentException(
                 formatMsg("type " + type + " is not compatible with address %s",
-                          filterNetInfo(sa.toString())
-                               .replaceWith("type " + sa.getClass().toString())));
+                          filterNetInfo(String.valueOf(sa))));
         }
         this.type = type;
         this.sa = sa;

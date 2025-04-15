@@ -250,12 +250,9 @@ public final class Exceptions {
         String[] args = new String[infos.length];
 
         int i = 0;
-        boolean enhanced = true;
 
         for (SensitiveInfo info : infos) {
             args[i++] = info.output();
-            if (!info.enhanced())
-                enhanced = false;
         }
         return trim(String.format(format, (Object[])args));
     }
