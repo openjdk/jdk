@@ -596,7 +596,8 @@ char *os::strdup(const char *str, MemTag mem_tag) {
   size_t size = strlen(str);
   char *dup_str = (char *)malloc(size + 1, mem_tag);
   if (dup_str == nullptr) return nullptr;
-  strcpy(dup_str, str);
+  memcpy(dup_str, str, size);
+  *(dup_str + size) = '\0';
   return dup_str;
 }
 
