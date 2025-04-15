@@ -384,7 +384,7 @@ enum SignatureScheme {
         if (hc.localSupportedSignAlgs != null
                 && hc.localSupportedCertSignAlgs != null
                 && (hc.negotiatedProtocol == null
-                || (hc.activeProtocols.size() == 1))) {
+                || hc.activeProtocols.size() == 1)) {
             return;
         }
 
