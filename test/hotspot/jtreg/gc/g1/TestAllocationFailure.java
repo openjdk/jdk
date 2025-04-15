@@ -31,7 +31,7 @@ package gc.g1;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm gc.g1.TestAllocationFailure
+ * @run driver gc.g1.TestAllocationFailure
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
