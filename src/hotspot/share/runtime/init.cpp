@@ -191,7 +191,6 @@ jint init_globals2() {
   }
   compiler_stubs_init(false /* in_compiler_thread */); // compiler's intrinsics stubs
   final_stubs_init();    // final StubRoutines stubs
-//  AOTCodeCache::init_stubs_table();
   MethodHandles::generate_adapters();
 
   // All the flags that get adjusted by VM_Version_init and os::init_2

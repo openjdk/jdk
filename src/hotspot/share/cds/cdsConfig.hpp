@@ -181,7 +181,7 @@ public:
   static void stop_dumping_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
   static void stop_using_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
 
-  // --- AOT compiler
+  // --- AOT code
 
   static bool is_dumping_aot_code_enabled()                  NOT_CDS_RETURN_(false);
   static void disable_dumping_aot_code()                     NOT_CDS_RETURN;
