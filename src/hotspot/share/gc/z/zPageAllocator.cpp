@@ -626,7 +626,7 @@ size_t ZPartition::increase_capacity(size_t size) {
     // Update atomically since we have concurrent readers
     Atomic::add(&_capacity, increased);
 
-    _cache.reset_min();
+    _cache.reset_uncommit_cycle();
     _uncommitter.cancel_uncommit_cycle();
   }
 
@@ -760,14 +760,14 @@ size_t ZPartition::uncommit() {
     if (limit == 0) {
       // This may occur if the current max capacity for this partition is 0
 
-      _cache.reset_min();
+      _cache.reset_uncommit_cycle();
       _uncommitter.cancel_uncommit_cycle();
       return 0;
     }
 
     if (!_uncommitter.uncommit_cycle_is_active()) {
       // We are activating a new cycle
-      const size_t to_uncommit = MIN2(_capacity - _min_capacity, _cache.reset_min());
+      const size_t to_uncommit = MIN2(_capacity - _min_capacity, _cache.reset_uncommit_cycle());
       _uncommitter.activate_uncommit_cycle(to_uncommit);
     }
 
@@ -780,16 +780,16 @@ size_t ZPartition::uncommit() {
 
     if (flush == 0) {
       // Nothing to flush
-      _cache.reset_min();
+      _cache.reset_uncommit_cycle();
       _uncommitter.cancel_uncommit_cycle();
       return 0;
     }
 
     // Flush memory from the mapped cache to uncommit
-    flushed = _cache.remove_from_min(flush, &flushed_vmems);
+    flushed = _cache.remove_for_uncommit(flush, &flushed_vmems);
     if (flushed == 0) {
       // Nothing flushed
-      _cache.reset_min();
+      _cache.reset_uncommit_cycle();
       _uncommitter.cancel_uncommit_cycle();
       return 0;
     }
