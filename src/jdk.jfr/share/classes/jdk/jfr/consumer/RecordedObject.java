@@ -154,7 +154,7 @@ public sealed class RecordedObject
 
             @Override
             public List<RemovedEvents> write(RecordingFile file, Path output, Predicate<RecordedEvent> filter) throws IOException {
-                return file.writeWithResults(output, filter);
+                return file.write(output, filter, true);
             }
         };
         JdkJfrConsumer.setAccess(access);

@@ -82,16 +82,18 @@ public final class ChunkWriter implements Closeable {
     private final Predicate<RecordedEvent> filter;
     private final Map<String, Long> waste = new HashMap<>();
     private final LongMap<RemovedEvents> removedEvents = new LongMap<>();
+    private final boolean collectResults;
 
     private long chunkStartPosition;
     private boolean chunkComplete;
     private long lastCheckpoint;
 
-    public ChunkWriter(Path source, Path destination, Predicate<RecordedEvent> filter) throws IOException {
+    public ChunkWriter(Path source, Path destination, Predicate<RecordedEvent> filter, boolean collectResults) throws IOException {
         this.destination = destination;
         this.output = new RecordingOutput(destination.toFile());
         this.input = new RecordingInput(source.toFile());
         this.filter = filter;
+        this.collectResults = collectResults;
     }
 
     Constants getPool(Type type) {
@@ -111,6 +113,9 @@ public final class ChunkWriter implements Closeable {
     }
 
     public boolean accept(RecordedEvent event) {
+        if (!collectResults) {
+            return filter.test(event);
+        }
         long id = event.getEventType().getId();
         RemovedEvents r = removedEvents.get(id);
         if (r == null) {
