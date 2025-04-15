@@ -54,7 +54,7 @@ public class CloneTest {
         // This initial use of the formatter initialises its internal state, which could
         // subsequently be shared across clones. This is key to reproducing this specific
         // issue.
-        String _ = df.format(Math.PI); // Initial use of formatter
+        String _ = df.format(Math.PI);
 
         try (var ex = Executors.newThreadPerTaskExecutor(Thread.ofPlatform().factory())) {
             for (int i = 0; i < 5; i++) {
@@ -79,7 +79,7 @@ public class CloneTest {
                             }
                         }
                     } catch (InterruptedException e) {
-                        // just end
+                        throw new RuntimeException(e);
                     }
                 };
                 ex.execute(task);
