@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8354522
- * @summary Check parseStrict correctness for DecimalFormat.equals()
+ * @summary Check for cloning interference
  * @run junit CloneTest
  */
 
