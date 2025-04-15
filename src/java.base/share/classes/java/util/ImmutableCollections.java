@@ -1160,6 +1160,26 @@ class ImmutableCollections {
         }
 
         @Override
+        public Set<K> keySet() {
+            Set<K> ks = keySet;
+            if (ks == null) {
+                ks = Set.of(k0);
+                this.keySet = ks;
+            }
+            return ks;
+        }
+
+        @Override
+        public Collection<V> values() {
+            Collection<V> vs = values;
+            if (vs == null) {
+                vs = List.of(v0);
+                this.values = vs;
+            }
+            return vs;
+        }
+
+        @Override
         public V get(Object o) {
             return o.equals(k0) ? v0 : null; // implicit nullcheck of o
         }
