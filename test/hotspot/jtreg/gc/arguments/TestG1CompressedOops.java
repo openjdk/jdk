@@ -27,10 +27,8 @@ package gc.arguments;
 /*
  * @test TestG1CompressedOops
  * @bug 8354145
- * @requires vm.gc.G1 & vm.opt.G1HeapRegionSize == null
+ * @requires vm.flagless
  * @summary Verify that the flag TestG1CompressedOops is updated properly
- * @modules java.base/jdk.internal.misc
- * @modules java.management/sun.management
  * @library /test/lib
  * @library /
  * @run driver gc.arguments.TestG1CompressedOops
