@@ -36,7 +36,7 @@ import compiler.lib.ir_framework.*;
 public class DeadBhElimination {
     public static void main(String[] args) {
         TestFramework.runWithFlags(
-                "-Xcomp",
+                "-XX:CompileThreshold=100",
                 "-XX:-TieredCompilation",
                 "-XX:+UnlockExperimentalVMOptions",
                 "-XX:CompileCommand=blackhole,compiler.blackhole.DeadBhElimination::iAmABlackhole"
