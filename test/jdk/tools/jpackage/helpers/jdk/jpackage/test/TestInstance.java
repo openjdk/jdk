@@ -253,7 +253,7 @@ final class TestInstance implements ThrowingRunnable {
                 status = Status.Failed;
             }
 
-            if (!KEEP_WORK_DIR.contains(status)) {
+            if (!KEEP_WORK_DIR.contains(status) && Files.isDirectory(workDir)) {
                 if (Files.isSameFile(workDir, Path.of("."))) {
                     // 1. If the work directory is the current directory, don't
                     // delete it, just clean as deleting it would be confusing.

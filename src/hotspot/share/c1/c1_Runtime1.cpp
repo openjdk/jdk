@@ -49,8 +49,8 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/objArrayOop.inline.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
@@ -229,12 +229,12 @@ CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, C1StubId id, const ch
                                                  CodeOffsets::frame_never_safe,
                                                  frame_size,
                                                  oop_maps,
-                                                 must_gc_arguments);
-  assert(blob != nullptr, "blob must exist");
+                                                 must_gc_arguments,
+                                                 false /* alloc_fail_is_fatal */ );
   return blob;
 }
 
-void Runtime1::generate_blob_for(BufferBlob* buffer_blob, C1StubId id) {
+bool Runtime1::generate_blob_for(BufferBlob* buffer_blob, C1StubId id) {
   assert(C1StubId::NO_STUBID < id && id < C1StubId::NUM_STUBIDS, "illegal stub id");
   bool expect_oop_map = true;
 #ifdef ASSERT
@@ -257,14 +257,19 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, C1StubId id) {
   CodeBlob* blob = generate_blob(buffer_blob, id, name_for(id), expect_oop_map, &cl);
   // install blob
   _blobs[(int)id] = blob;
+  return blob != nullptr;
 }
 
-void Runtime1::initialize(BufferBlob* blob) {
+bool Runtime1::initialize(BufferBlob* blob) {
   // platform-dependent initialization
   initialize_pd();
   // generate stubs
   int limit = (int)C1StubId::NUM_STUBIDS;
-  for (int id = 0; id < limit; id++) generate_blob_for(blob, (C1StubId)id);
+  for (int id = 0; id < limit; id++) {
+    if (!generate_blob_for(blob, (C1StubId) id)) {
+      return false;
+    }
+  }
   // printing
 #ifndef PRODUCT
   if (PrintSimpleStubs) {
@@ -278,7 +283,7 @@ void Runtime1::initialize(BufferBlob* blob) {
   }
 #endif
   BarrierSetC1* bs = BarrierSet::barrier_set()->barrier_set_c1();
-  bs->generate_c1_runtime_stubs(blob);
+  return bs->generate_c1_runtime_stubs(blob);
 }
 
 CodeBlob* Runtime1::blob_for(C1StubId id) {

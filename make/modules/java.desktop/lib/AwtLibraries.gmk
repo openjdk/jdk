@@ -231,9 +231,13 @@ ifeq ($(call isTargetOs, windows macosx)+$(ENABLE_HEADLESS_ONLY), false+false)
       common/font \
       common/java2d/opengl \
       common/java2d/x11 \
-      libpipewire/include \
       java.base:libjvm \
       #
+
+  # exclude pipewire from the AIX build, no Wayland support
+  ifeq ($(call isTargetOs, aix), false)
+    LIBAWT_XAWT_EXTRA_HEADER_DIRS += libpipewire/include
+  endif
 
   ifeq ($(call isTargetOs, linux), true)
     ifeq ($(DISABLE_XRENDER), true)
