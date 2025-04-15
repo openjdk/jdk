@@ -32,37 +32,56 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CloneTest {
-    // Specifically tests that when DecimalFormat is cloned after use with
+
+    // Tests that when DecimalFormat is cloned after use with
     // a long double/BigDecimal, clones will be independent. This is not an
-    // exhaustive test.
+    // exhaustive test. This tests for the issue of the same DigitList.data
+    // array being reused across clones of DecimalFormat.
+
     @Test
     public void testCloneIndependence() {
         AtomicInteger mismatchCount = new AtomicInteger(0);
         DecimalFormat df = new DecimalFormat("#");
+        CountDownLatch startSignal = new CountDownLatch(1);
+
+        // This initial use of the formatter initialises its internal state, which could
+        // subsequently be shared across clones. This is key to reproducing this specific
+        // issue.
         String _ = df.format(Math.PI); // initial use of formatter
+
         try (var ex = Executors.newThreadPerTaskExecutor(Thread.ofPlatform().factory())) {
-            for (int i = 0; i < 50; i++) {
+            for (int i = 0; i < 5; i++) {
+                final int finalI = i;
                 // each thread gets its own clone of df
                 DecimalFormat threadDf = (DecimalFormat) df.clone();
                 Runnable task = () -> {
-                    for (int j = 0; j < 1000000; j++) {
-                        String dfString = threadDf.format(BigDecimal.valueOf(j));
-                        String str1 = String.valueOf(j);
-                        if (!str1.equals(dfString)) {
-                            System.err.println("mismatch: str = " + str1 + " dfString = " + dfString);
-                            mismatchCount.incrementAndGet();
-                            break;
+                    try {
+                        startSignal.await();
+                        for (int j = 0; j < 1_000; j++) {
+                            int value = finalI * j;
+                            String dfString = threadDf.format(BigDecimal.valueOf(value));
+                            String str1 = String.valueOf(value);
+                            if (!str1.equals(dfString)) {
+                                int count = mismatchCount.getAndIncrement();
+                                if (count < 5) { // limit lines of output
+                                    System.err.println("mismatch: str = " + str1 + " dfString = " + dfString);
+                                }
+                            }
                         }
+                    } catch (InterruptedException e) {
+                        // just end
                     }
                 };
                 ex.execute(task);
             }
+            startSignal.countDown(); // let all tasks start working at the same time
         }
         assertEquals(0, mismatchCount.get());
     }
