@@ -1728,6 +1728,27 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
+
+  /* AndNode has a special handling when one of the operands is a LShiftNode:
+   * (LHS << s) & RHS
+   * if RHS fits in less than s bits, the value of this expression is 0.
+   * The difficulty is that there might be a conversion node (ConvI2L) between
+   * the LShiftINode and the AndLNode, like so:
+   * AndLNode(ConvI2L(LShiftI(LHS, s)), RHS)
+   * This case is handled by And[IL]Node::Value(PhaseGVN*)
+   * (see `AndIL_min_trailing_zeros`).
+   *
+   * But, when the shift is updated during IGVN, pushing the user (ConvI2L)
+   * is not enough: there might be no update happening there. We need to
+   * directly push the And[IL]Node on the worklist, jumping over ConvI2L.
+   *
+   */
+  if (use_op == Op_ConvI2L && use->outcnt() == 1) {
+    Node* and_node = use->unique_out();
+    if (and_node->Opcode() == Op_AndL) {
+      worklist.push(and_node);
+    }
+  }
 }
 
 /**
