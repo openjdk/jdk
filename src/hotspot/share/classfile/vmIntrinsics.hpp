@@ -189,6 +189,8 @@ class methodHandle;
   do_intrinsic(_minF,                     java_lang_Math,         min_name,           float2_float_signature,    F_S)   \
   do_intrinsic(_maxD,                     java_lang_Math,         max_name,           double2_double_signature,  F_S)   \
   do_intrinsic(_minD,                     java_lang_Math,         min_name,           double2_double_signature,  F_S)   \
+  do_intrinsic(_maxL,                     java_lang_Math,         max_name,           long2_long_signature,      F_S)   \
+  do_intrinsic(_minL,                     java_lang_Math,         min_name,           long2_long_signature,      F_S)   \
   do_intrinsic(_roundD,                   java_lang_Math,         round_name,         double_long_signature,     F_S)   \
   do_intrinsic(_roundF,                   java_lang_Math,         round_name,         float_int_signature,       F_S)   \
   do_intrinsic(_dcopySign,                java_lang_Math,         copySign_name,      double2_double_signature,  F_S)   \
@@ -530,7 +532,7 @@ class methodHandle;
   /* support for sun.security.util.math.intpoly.MontgomeryIntegerPolynomialP256 */                                      \
   do_class(sun_security_util_math_intpoly_MontgomeryIntegerPolynomialP256, "sun/security/util/math/intpoly/MontgomeryIntegerPolynomialP256")  \
   do_intrinsic(_intpoly_montgomeryMult_P256, sun_security_util_math_intpoly_MontgomeryIntegerPolynomialP256, intPolyMult_name, intPolyMult_signature, F_R) \
-  do_name(intPolyMult_name, "multImpl")                                                                                     \
+  do_name(intPolyMult_name, "mult")                                                                                     \
   do_signature(intPolyMult_signature, "([J[J[J)V")                                                                      \
                                                                                                                         \
   do_class(sun_security_util_math_intpoly_IntegerPolynomial, "sun/security/util/math/intpoly/IntegerPolynomial")        \
@@ -568,7 +570,7 @@ class methodHandle;
    do_signature(chacha20Block_signature, "([I[B)I")                                                                    \
                                                                                                                         \
   /* support for sun.security.provider.ML_DSA */                                                                        \
- do_class(sun_security_provider_ML_DSA,      "sun/security/provider/ML_DSA")                                            \
+  do_class(sun_security_provider_ML_DSA,      "sun/security/provider/ML_DSA")                                           \
    do_signature(IaII_signature, "([II)I")                                                                               \
    do_signature(IaIaI_signature, "([I[I)I")                                                                             \
    do_signature(IaIaIaI_signature, "([I[I[I)I")                                                                         \

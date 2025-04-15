@@ -182,7 +182,7 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   __ verify_oop(method_temp);
   __ access_load_at(T_ADDRESS, IN_HEAP, method_temp,
                     Address(method_temp, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset())),
-                    noreg, noreg);
+                    noreg);
 
   if (VerifyMethodHandles && !for_compiler_entry) {
     // make sure recv is already on stack
@@ -212,7 +212,7 @@ void MethodHandles::jump_to_native_invoker(MacroAssembler* _masm, Register nep_r
   __ verify_oop(nep_reg);
   __ access_load_at(T_ADDRESS, IN_HEAP, temp_target,
                     Address(nep_reg, NONZERO(jdk_internal_foreign_abi_NativeEntryPoint::downcall_stub_address_offset_in_bytes())),
-                    noreg, noreg);
+                    noreg);
 
   __ jmp(temp_target);
   BLOCK_COMMENT("} jump_to_native_invoker");
@@ -420,7 +420,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp3);
       }
       __ load_heap_oop(rbx_method, member_vmtarget);
-      __ access_load_at(T_ADDRESS, IN_HEAP, rbx_method, vmtarget_method, noreg, noreg);
+      __ access_load_at(T_ADDRESS, IN_HEAP, rbx_method, vmtarget_method, noreg);
       break;
 
     case vmIntrinsics::_linkToStatic:
@@ -428,7 +428,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp3);
       }
       __ load_heap_oop(rbx_method, member_vmtarget);
-      __ access_load_at(T_ADDRESS, IN_HEAP, rbx_method, vmtarget_method, noreg, noreg);
+      __ access_load_at(T_ADDRESS, IN_HEAP, rbx_method, vmtarget_method, noreg);
       break;
 
     case vmIntrinsics::_linkToVirtual:
@@ -442,7 +442,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
       // pick out the vtable index from the MemberName, and then we can discard it:
       Register temp2_index = temp2;
-      __ access_load_at(T_ADDRESS, IN_HEAP, temp2_index, member_vmindex, noreg, noreg);
+      __ access_load_at(T_ADDRESS, IN_HEAP, temp2_index, member_vmindex, noreg);
 
       if (VerifyMethodHandles) {
         Label L_index_ok;
@@ -474,7 +474,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       __ verify_klass_ptr(temp3_intf);
 
       Register rbx_index = rbx_method;
-      __ access_load_at(T_ADDRESS, IN_HEAP, rbx_index, member_vmindex, noreg, noreg);
+      __ access_load_at(T_ADDRESS, IN_HEAP, rbx_index, member_vmindex, noreg);
       if (VerifyMethodHandles) {
         Label L;
         __ cmpl(rbx_index, 0);
@@ -651,17 +651,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
 
   // save FP result, valid at some call sites (adapter_opt_return_float, ...)
   __ decrement(rsp, 2 * wordSize);
-#ifdef _LP64
   __ movdbl(Address(rsp, 0), xmm0);
-#else
-  if  (UseSSE >= 2) {
-    __ movdbl(Address(rsp, 0), xmm0);
-  } else if (UseSSE == 1) {
-    __ movflt(Address(rsp, 0), xmm0);
-  } else {
-    __ fst_d(Address(rsp, 0));
-  }
-#endif // LP64
 
   // Incoming state:
   // rcx: method handle
@@ -676,17 +666,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub_wrapper), rsp);
   __ increment(rsp, sizeof(MethodHandleStubArguments));
 
-#ifdef _LP64
   __ movdbl(xmm0, Address(rsp, 0));
-#else
-  if  (UseSSE >= 2) {
-    __ movdbl(xmm0, Address(rsp, 0));
-  } else if (UseSSE == 1) {
-    __ movflt(xmm0, Address(rsp, 0));
-  } else {
-    __ fld_d(Address(rsp, 0));
-  }
-#endif // LP64
   __ increment(rsp, 2 * wordSize);
 
   __ popa();

@@ -823,6 +823,7 @@ private:
   void emit_arith_b(int op1, int op2, Register dst, int imm8);
 
   void emit_arith(int op1, int op2, Register dst, int32_t imm32);
+  void emit_arith_ndd(int op1, int op2, Register dst, int32_t imm32);
   // Force generation of a 4 byte immediate value even if it fits into 8bit
   void emit_arith_imm32(int op1, int op2, Register dst, int32_t imm32);
   void emit_arith(int op1, int op2, Register dst, Register src);
@@ -1396,135 +1397,6 @@ private:
  public:
 #ifndef _LP64
   void emms();
-
-  void fabs();
-
-  void fadd(int i);
-
-  void fadd_d(Address src);
-  void fadd_s(Address src);
-
-  // "Alternate" versions of x87 instructions place result down in FPU
-  // stack instead of on TOS
-
-  void fadda(int i); // "alternate" fadd
-  void faddp(int i = 1);
-
-  void fchs();
-
-  void fcom(int i);
-
-  void fcomp(int i = 1);
-  void fcomp_d(Address src);
-  void fcomp_s(Address src);
-
-  void fcompp();
-
-  void fcos();
-
-  void fdecstp();
-
-  void fdiv(int i);
-  void fdiv_d(Address src);
-  void fdivr_s(Address src);
-  void fdiva(int i);  // "alternate" fdiv
-  void fdivp(int i = 1);
-
-  void fdivr(int i);
-  void fdivr_d(Address src);
-  void fdiv_s(Address src);
-
-  void fdivra(int i); // "alternate" reversed fdiv
-
-  void fdivrp(int i = 1);
-
-  void ffree(int i = 0);
-
-  void fild_d(Address adr);
-  void fild_s(Address adr);
-
-  void fincstp();
-
-  void finit();
-
-  void fist_s (Address adr);
-  void fistp_d(Address adr);
-  void fistp_s(Address adr);
-
-  void fld1();
-
-  void fld_s(Address adr);
-  void fld_s(int index);
-
-  void fldcw(Address src);
-
-  void fldenv(Address src);
-
-  void fldlg2();
-
-  void fldln2();
-
-  void fldz();
-
-  void flog();
-  void flog10();
-
-  void fmul(int i);
-
-  void fmul_d(Address src);
-  void fmul_s(Address src);
-
-  void fmula(int i);  // "alternate" fmul
-
-  void fmulp(int i = 1);
-
-  void fnsave(Address dst);
-
-  void fnstcw(Address src);
-  void fprem1();
-
-  void frstor(Address src);
-
-  void fsin();
-
-  void fsqrt();
-
-  void fst_d(Address adr);
-  void fst_s(Address adr);
-
-  void fstp_s(Address adr);
-
-  void fsub(int i);
-  void fsub_d(Address src);
-  void fsub_s(Address src);
-
-  void fsuba(int i);  // "alternate" fsub
-
-  void fsubp(int i = 1);
-
-  void fsubr(int i);
-  void fsubr_d(Address src);
-  void fsubr_s(Address src);
-
-  void fsubra(int i); // "alternate" reversed fsub
-
-  void fsubrp(int i = 1);
-
-  void ftan();
-
-  void ftst();
-
-  void fucomi(int i = 1);
-  void fucomip(int i = 1);
-
-  void fwait();
-
-  void fxch(int i = 1);
-
-  void fyl2x();
-  void frndint();
-  void f2xm1();
-  void fldl2e();
 #endif // !_LP64
 
   // operands that only take the original 32bit registers
@@ -1757,6 +1629,10 @@ private:
   void vmovdqu(XMMRegister dst, Address src);
   void vmovdqu(XMMRegister dst, XMMRegister src);
 
+  // Move Aligned 256bit Vector
+  void vmovdqa(XMMRegister dst, Address src);
+  void vmovdqa(Address dst, XMMRegister src);
+
    // Move Unaligned 512bit Vector
   void evmovdqub(XMMRegister dst, XMMRegister src, int vector_len);
   void evmovdqub(XMMRegister dst, Address src, int vector_len);
@@ -1789,6 +1665,10 @@ private:
   void evmovdquq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evmovdquq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
   void evmovdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+
+  // Move Aligned 512bit Vector
+  void evmovdqaq(XMMRegister dst, Address src, int vector_len);
+  void evmovdqaq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
 
   // Move lower 64bit to high 64bit in 128bit register
   void movlhps(XMMRegister dst, XMMRegister src);
@@ -2879,6 +2759,24 @@ private:
   void evplzcntd(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evplzcntq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
 
+  // Float16 Vector instructions.
+  void evaddph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evaddph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evsubph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evsubph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evdivph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evdivph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evmulph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evmulph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evminph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evminph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evmaxph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evmaxph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evfmadd132ph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evfmadd132ph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evsqrtph(XMMRegister dst, XMMRegister src1, int vector_len);
+  void evsqrtph(XMMRegister dst, Address src1, int vector_len);
+
   // Sub packed integers
   void psubb(XMMRegister dst, XMMRegister src);
   void psubw(XMMRegister dst, XMMRegister src);
@@ -3185,6 +3083,12 @@ private:
   void vcmpps(XMMRegister dst, XMMRegister nds, XMMRegister src, int comparison, int vector_len);
   void evcmpps(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
                ComparisonPredicateFP comparison, int vector_len);
+
+  void evcmpph(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
+               ComparisonPredicateFP comparison, int vector_len);
+
+  void evcmpsh(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
+               ComparisonPredicateFP comparison);
 
   // Vector integer compares
   void vpcmpgtd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
