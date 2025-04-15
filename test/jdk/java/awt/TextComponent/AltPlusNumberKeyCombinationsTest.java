@@ -40,7 +40,7 @@ public class AltPlusNumberKeyCombinationsTest {
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
                 [WINDOWS PLATFORM ONLY]
-                Please do the following steps for the both TextField and TextArea:
+                Please do the following steps for both TextField and TextArea:
                 1. Hold down ALT and press a NON-NUMPAD right arrow, then release
                    ALT key. If any symbol is typed the test failed.
                 2. Hold down ALT and press one after another the following

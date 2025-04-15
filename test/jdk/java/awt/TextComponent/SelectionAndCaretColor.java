@@ -96,7 +96,8 @@ public class SelectionAndCaretColor {
                 i = 1 - i;
             } else {
                 throw new RuntimeException("Invalid color detected: " +
-                        Integer.toString(c, 16) + " instead of " + Integer.toString(fb[i], 16));
+                        Integer.toString(c, 16) + " instead of " +
+                        Integer.toString(fb[i], 16));
             }
         }
         return flips;
@@ -109,8 +110,10 @@ public class SelectionAndCaretColor {
             System.out.println("TextArea testing ...");
         }
 
-        // now passing along the component's vertical center, skipping 5px from both sides,
-        // we should see bg - textcolor - bg - selcolor - seltextcolor - selcolor - bg
+        // now passing along the component's vertical center,
+        // skipping 5px from both sides,
+        // we should see bg - textcolor - bg - selcolor -
+        // seltextcolor - selcolor - bg
         // that is bg-fg-bg-fg-bg-fg-bg, 6 flips
 
         EventQueue.invokeAndWait(() -> {
@@ -127,7 +130,8 @@ public class SelectionAndCaretColor {
             flips = countFlips(tc);
         });
         if (flips != 6) {
-            throw new RuntimeException("Invalid number of flips: " + flips + " instead of 6");
+            throw new RuntimeException("Invalid number of flips: "
+                    + flips + " instead of 6");
         }
         EventQueue.invokeAndWait(() -> {
             // same for caret: spaces in the tc, caret in the middle
@@ -151,7 +155,8 @@ public class SelectionAndCaretColor {
             if (flips == 0) {
                 continue;
             }
-            throw new RuntimeException("Invalid number of flips: " + flips + " instead of 2");
+            throw new RuntimeException("Invalid number of flips: "
+                    + flips + " instead of 2");
         }
     }
 }
