@@ -24,6 +24,8 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "asm/codeBuffer.hpp"
+#include "code/codeCache.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
