@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.Robot;
 import java.awt.event.InputEvent;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -35,7 +36,6 @@ import javax.swing.SwingUtilities;
  * @key headful
  * @summary Verifies clicking JComboBox during frame closure causes Exception
  * @library /javax/swing/regtesthelpers
- * @build JRobot
  * @run main ComboPopupBug
  */
 
@@ -45,10 +45,11 @@ public class ComboPopupBug {
     private static JComboBox<String> comboBox;
     private static Point comboBoxLocation;
     private static Dimension comboBoxSize;
-    private static JRobot robot;
+    private static Robot robot;
+    private static final int PADDING = 10;
 
     public static void main(String[] args) throws Exception {
-        robot = JRobot.getRobot();
+        robot = new Robot();
         SwingUtilities.invokeAndWait(() -> {
             frame = new JFrame("ComboPopup");
 
@@ -70,14 +71,15 @@ public class ComboPopupBug {
             frame.setVisible(true);
         });
 
-        comboBoxLocation = comboBox.getLocationOnScreen();
-        comboBoxSize = comboBox.getSize();
+        robot.waitForIdle();
+        robot.delay(1000);
 
         try {
-            SwingUtilities.invokeAndWait(() -> closeButton.doClick());
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
+            SwingUtilities.invokeAndWait(() -> {
+                comboBoxLocation = comboBox.getLocationOnScreen();
+                comboBoxSize = comboBox.getSize();
+                closeButton.doClick();
+            });
         }
         finally {
             SwingUtilities.invokeAndWait(() -> frame.dispose());
@@ -85,8 +87,9 @@ public class ComboPopupBug {
     }
 
     public static void clickComboBox() {
-        int padding = 10;
-        robot.mouseMove(comboBoxLocation.x + comboBoxSize.width - padding, comboBoxLocation.y + comboBoxSize.height / 2);
-        robot.clickMouse(InputEvent.BUTTON1_MASK);
+        robot.mouseMove(comboBoxLocation.x + comboBoxSize.width - PADDING,
+                comboBoxLocation.y + comboBoxSize.height / 2);
+        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_MASK);
     }
 }
