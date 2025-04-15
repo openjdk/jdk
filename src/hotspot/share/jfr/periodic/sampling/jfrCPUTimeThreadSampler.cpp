@@ -254,6 +254,7 @@ void JfrCPUTimeThreadSampler::on_javathread_terminate(JavaThread* thread) {
     thread->jfr_thread_local()->unset_timerid();
     thread->disable_cpu_time_jfr_queue();
   }
+  thread->acquire_cpu_time_jfr_dequeue_lock(); // make sure we are not sampling
   s4 lost_samples = thread->cpu_time_jfr_queue().lost_samples();
   if (lost_samples > 0) {
     JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), JfrThreadLocal::thread_id(thread), lost_samples);
@@ -312,8 +313,7 @@ void JfrCPUTimeThreadSampler::run() {
       Atomic::release_store(&_is_out_of_safepoint_sampling_triggered, false);
       sample_out_of_safepoint();
     }
-
-    os::naked_sleep(10);
+    os::naked_sleep(100);
   }
 }
 
@@ -585,11 +585,8 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
   }
 
   if (jt->thread_state() == _thread_in_native &&
-    jt->cpu_time_jfr_queue().size() > jt->cpu_time_jfr_queue().capacity() / 2) {
+    jt->cpu_time_jfr_queue().size() > jt->cpu_time_jfr_queue().capacity() * 2 / 3) {
     // we are in native code and the queue is getting full
-    // worst case, we're having 10s of samples in the queue to fill it up
-    // so this triggers after around 5s of being in native code
-    // the sampler thread has then at least 5s to sample the task
     jt->set_wants_out_of_safepoint_sampling(true);
     JfrCPUTimeThreadSampling::trigger_out_of_safepoint_sampling();
   } else {
