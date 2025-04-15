@@ -72,6 +72,10 @@ public:
                    ShenandoahStringDedup::is_enabled() ? ENQUEUE_DEDUP : NO_DEDUP,
                    &requests);
   }
+
+  TaskTerminator* terminator() {
+    return _terminator;
+  }
 };
 
 class ShenandoahSATBAndRemarkThreadsClosure : public ThreadClosure {
@@ -125,6 +129,10 @@ public:
                    _dedup_string ? ENQUEUE_DEDUP : NO_DEDUP,
                    &requests);
     assert(_cm->task_queues()->is_empty(), "Should be empty");
+  }
+
+  TaskTerminator* terminator() {
+    return _terminator;
   }
 };
 

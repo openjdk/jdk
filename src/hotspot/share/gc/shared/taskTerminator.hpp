@@ -54,6 +54,7 @@ class Thread;
  * detecting new tasks for stealing and termination condition.
  */
 class TaskTerminator : public CHeapObj<mtGC> {
+  friend class TaskTerminationTracker;
   class DelayContext {
     uint _yield_count;
     // Number of hard spin loops done since last yield
@@ -69,23 +70,6 @@ class TaskTerminator : public CHeapObj<mtGC> {
     bool needs_sleep() const;
     // Perform one delay iteration.
     void do_step();
-  };
-
-  class TerminationTracker :public StackObj {
-    friend class TaskTerminator;
-    TaskTerminator* _terminator;
-    double start;
-    TerminationTracker(TaskTerminator* task_terminator): _terminator(task_terminator) {
-      start = os::elapsedTime();
-    }
-
-    ~TerminationTracker() {
-      const double elapsed = os::elapsedTime() - start;
-      // May not be executed by a WorkerThread when _n_threads is 1
-      const uint worker_id = _terminator->_n_threads > 1 ? WorkerThread::worker_id() : 0;
-      _terminator->_terminations->set_or_add(worker_id, elapsed);
-      _terminator->_terminations->set_or_add_thread_work_item(worker_id, 1);
-    }
   };
 
   uint _n_threads;
@@ -139,6 +123,25 @@ public:
   // Same as above but the number of parallel threads is set to the
   // given number.
   void reset_for_reuse(uint n_threads);
+};
+
+class TaskTerminationTracker :public StackObj {
+  friend class TaskTerminator;
+  TaskTerminator* _terminator;
+  uint (*_worker_id)();
+  double start;
+  TaskTerminationTracker(TaskTerminator* task_terminator, uint (*worker_id)()):
+  _terminator(task_terminator), _worker_id(worker_id) {
+    start = os::elapsedTime();
+  }
+
+  ~TaskTerminationTracker() {
+    const double elapsed = os::elapsedTime() - start;
+    // May not be executed by a WorkerThread when _n_threads is 1
+    const uint idx = _terminator->_n_threads > 1 ? _worker_id() : 0;
+    _terminator->_terminations->set_or_add(idx, elapsed);
+    _terminator->_terminations->set_or_add_thread_work_item(idx, 1);
+  }
 };
 
 #endif // SHARE_GC_SHARED_TASKTERMINATOR_HPP

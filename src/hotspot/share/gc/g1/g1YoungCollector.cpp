@@ -687,6 +687,10 @@ public:
 
     end_work(worker_id);
   }
+
+  TaskTerminator * terminator() {
+    return &_terminator;
+  }
 };
 
 class G1EvacuateRegionsTask : public G1EvacuateRegionsBaseTask {
@@ -967,6 +971,10 @@ public:
 
     // We have completed copying any necessary live referent objects.
     assert(pss->queue_is_empty(), "both queue and overflow should be empty");
+  }
+
+  TaskTerminator * terminator() override {
+    return &_terminator;
   }
 
   void prepare_run_task_hook() override {

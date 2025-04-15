@@ -61,3 +61,7 @@ void G1FullGCMarkTask::work(uint worker_id) {
   assert(marker->objarray_stack()->is_empty(), "Array marking should have completed");
   log_task("Marking task", worker_id, start);
 }
+
+TaskTerminator * G1FullGCMarkTask::terminator() {
+  return &_terminator;
+}

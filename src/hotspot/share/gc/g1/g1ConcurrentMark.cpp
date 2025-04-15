@@ -1853,6 +1853,10 @@ public:
     task->record_end_time();
   }
 
+  TaskTerminator * terminator() {
+    return &_cm->_terminator;
+  }
+
   G1CMRemarkTask(G1ConcurrentMark* cm, uint active_workers) :
     WorkerTask("Par Remark"), _cm(cm) {
     _cm->terminator()->reset_for_reuse(active_workers);

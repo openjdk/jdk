@@ -1258,6 +1258,10 @@ public:
       steal_marking_work(_terminator, worker_id);
     }
   }
+
+  TaskTerminator * terminator() {
+    return &_terminator;
+  }
 };
 
 class ParallelCompactRefProcProxyTask : public RefProcProxyTask {
@@ -1274,6 +1278,10 @@ public:
     BarrierEnqueueDiscoveredFieldClosure enqueue;
     ParCompactionManager::FollowStackClosure complete_gc(cm, (_tm == RefProcThreadModel::Single) ? nullptr : &_terminator, worker_id);
     _rp_task->rp_work(worker_id, PSParallelCompact::is_alive_closure(), &cm->_mark_and_push_closure, &enqueue, &complete_gc);
+  }
+
+  TaskTerminator * terminator() override {
+    return &_terminator;
   }
 
   void prepare_run_task_hook() override {
@@ -1803,6 +1811,10 @@ public:
     }
     compaction_with_stealing_work(&_terminator, worker_id);
   }
+
+  TaskTerminator * terminator() {
+    return &_terminator;
+  };
 };
 
 void PSParallelCompact::fill_range_in_dense_prefix(HeapWord* start, HeapWord* end) {

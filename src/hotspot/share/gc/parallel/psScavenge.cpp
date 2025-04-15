@@ -216,6 +216,10 @@ public:
     _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, &complete_gc);
   }
 
+  TaskTerminator * terminator() override {
+    return &_terminator;
+  }
+
   void prepare_run_task_hook() override {
     _terminator.reset_for_reuse(_queue_count);
   }
@@ -314,6 +318,10 @@ public:
     if (_active_workers > 1) {
       steal_work(_terminator, worker_id);
     }
+  }
+
+  TaskTerminator * terminator() {
+    return &_terminator;
   }
 };
 

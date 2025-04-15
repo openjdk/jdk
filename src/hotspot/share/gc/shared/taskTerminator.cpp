@@ -145,7 +145,7 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   assert(_n_threads > 0, "Initialization is incorrect");
   assert(_offered_termination < _n_threads, "Invariant");
 
-  TerminationTracker termination_tracker(this);
+  TaskTerminationTracker termination_tracker(this, WorkerThread::worker_id);
   // Single worker, done
   if (_n_threads == 1) {
     _offered_termination = 1;
