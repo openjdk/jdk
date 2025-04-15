@@ -1602,8 +1602,7 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
 
     // invoked when ByteBuffers containing the next payload bytes for the
     // given partial header frame are received
-    void receiveHeaders(HeadersFrame headers, List<ByteBuffer> payload)
-            throws IOException {
+    void receiveHeaders(HeadersFrame headers, List<ByteBuffer> payload) {
         if (debug.on())
             debug.log("receive headers: buffer list: " + payload);
         boolean completed = headers.remaining() == 0;

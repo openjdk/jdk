@@ -260,7 +260,7 @@ public final class Decoder {
      *         if either {@code headerBlock} or {@code headerFrameReader} are null
      */
     public void decodeHeader(ByteBuffer headerBlock, boolean endOfHeaderBlock,
-                             HeaderFrameReader headerFrameReader) throws IOException {
+                             HeaderFrameReader headerFrameReader) {
         requireNonNull(headerFrameReader, "headerFrameReader");
         headerFrameReader.read(headerBlock, endOfHeaderBlock);
     }
