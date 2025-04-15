@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4151419, 4090870, 4169733
+ * @bug 4151419 4090870 4169733
  * @summary Ensures that KeyEvent has right results for the following
  *          keys  -=\[];,./
  * @library /java/awt/regtesthelpers
