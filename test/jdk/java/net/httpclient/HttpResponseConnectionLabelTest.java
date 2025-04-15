@@ -28,13 +28,11 @@
  *          /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
- *        SystemDiagnosticsCollector
  *
  * @comment Use a higher idle timeout to increase the chances of the same connection being used for sequential HTTP requests
  * @run junit/othervm -Djdk.httpclient.keepalive.timeout=120 HttpResponseConnectionLabelTest
  */
 
-import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.internal.net.http.common.Logger;
@@ -57,7 +55,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.Charset;
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -73,18 +70,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class HttpResponseConnectionLabelTest {
-
-    private static final boolean DIAGNOSTICS_ENABLED = false;
-
-    static {
-        if (DIAGNOSTICS_ENABLED) {
-            HttpServerAdapters.enableServerLogging();
-        }
-    }
-
-    private static final SystemDiagnosticsCollector DIAGNOSTICS_COLLECTOR = DIAGNOSTICS_ENABLED
-            ? new SystemDiagnosticsCollector(HttpResponseConnectionLabelTest.class, Duration.ofSeconds(5))
-            : null;
 
     private static final String CLASS_NAME = HttpResponseConnectionLabelTest.class.getSimpleName();
 
@@ -256,12 +241,7 @@ class HttpResponseConnectionLabelTest {
     }
 
     @AfterAll
-    static void closeResources() {
-        closeServers();
-        if (DIAGNOSTICS_ENABLED) { DIAGNOSTICS_COLLECTOR.close(); }
-    }
-
-    private static void closeServers() {
+    static void closeServers() {
         Exception[] exceptionRef = {null};
         Stream
                 .of(PRI_HTTP1, PRI_HTTPS1, PRI_HTTP2, PRI_HTTPS2, SEC_HTTP1, SEC_HTTPS1, SEC_HTTP2, SEC_HTTPS2)
@@ -325,7 +305,6 @@ class HttpResponseConnectionLabelTest {
         pair.serverResponseLatchRef.set(latch);
 
         // Fire requests
-        if (DIAGNOSTICS_ENABLED) { DIAGNOSTICS_COLLECTOR.dumpDiagnostics(); }
         LOGGER.log("Firing request 1...");
         CompletableFuture<HttpResponse<String>> response1Future =
                 client.sendAsync(pair.request, BodyHandlers.ofString(CHARSET));
@@ -334,7 +313,6 @@ class HttpResponseConnectionLabelTest {
                 client.sendAsync(pair.request, BodyHandlers.ofString(CHARSET));
 
         // Release latches to allow the server handlers to proceed
-        if (DIAGNOSTICS_ENABLED) { DIAGNOSTICS_COLLECTOR.dumpDiagnostics(); }
         latch.countDown();
         latch.countDown();
 
