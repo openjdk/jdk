@@ -61,9 +61,8 @@ import javax.swing.event.PopupMenuListener;
  *
  * 2. The mouse is clicked on another component.
  *
- * @test
- *
  */
+
 public class bug4234793 extends JFrame implements PopupMenuListener {
 
     static final String INSTRUCTIONS = """
@@ -122,7 +121,7 @@ public class bug4234793 extends JFrame implements PopupMenuListener {
 
         // CTRL-down will show the popup.
         panel.getInputMap().put(KeyStroke.getKeyStroke(
-                   KeyEvent.VK_DOWN,InputEvent.CTRL_MASK),"OPEN_POPUP");
+                   KeyEvent.VK_DOWN, InputEvent.CTRL_MASK), "OPEN_POPUP");
         panel.getActionMap().put("OPEN_POPUP", new PopupHandler());
         panel.addMouseListener(new PopupListener(popupMenu));
         panel.setPreferredSize(new Dimension(400, 300));
@@ -155,10 +154,10 @@ public class bug4234793 extends JFrame implements PopupMenuListener {
         }
     }
 
-    static class PopupHandler extends AbstractAction{
-        public void actionPerformed(ActionEvent e){
-            if(!popupMenu.isVisible())
-                popupMenu.show((Component)e.getSource(),40,40);
+    static class PopupHandler extends AbstractAction {
+        public void actionPerformed(ActionEvent e) {
+            if (!popupMenu.isVisible())
+                popupMenu.show((Component)e.getSource(), 40, 40);
         }
     }
 
@@ -175,25 +174,13 @@ public class bug4234793 extends JFrame implements PopupMenuListener {
         JPanel comboPanel = new JPanel();
         comboPanel.add(combo);
 
-        //JLabel message = new JLabel("Message area");
-
         JPanel panel = new JPanel(new BorderLayout());
 
         panel.add(new JLabel("Right click on the panel to show the PopupMenu"), BorderLayout.NORTH);
         panel.add(comboPanel, BorderLayout.CENTER);
-        //panel.add(message, BorderLayout.SOUTH);
 
         return panel;
     }
-
-    public void setMessage(String msg) {
-        PassFailJFrame.log(msg);
-        //System.out.println(msg);
-
-        //message.setText(msg);
-        //message.repaint();
-    }
-
 
     static JMenuBar createMenuBar() {
         JMenuBar menubar = new JMenuBar();
@@ -204,7 +191,7 @@ public class bug4234793 extends JFrame implements PopupMenuListener {
         menu.getPopupMenu().addPopupMenuListener(frame);
 
         menubar.add(menu);
-        for(int i = 0; i < 10; i ++) {
+        for (int i = 0; i < 10; i ++) {
             menuitem = new JMenuItem("1 JMenuItem" + i);
             menuitem.setMnemonic('0' + i);
             menu.add(menuitem);
@@ -238,18 +225,18 @@ public class bug4234793 extends JFrame implements PopupMenuListener {
 
     // PopupMenuListener methods.
 
-    public void popupMenuWillBecomeVisible(PopupMenuEvent e)  {
+    public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
         Object source = e.getSource();
-        setMessage("popupmenu visible: " + source.getClass().getName());
+        PassFailJFrame.log("popupmenu visible: " + source.getClass().getName());
     }
 
     public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
         Object source = e.getSource();
-        System.out.println("popupMenuWillBecomeInvisible: " + source.getClass().getName());
+        PassFailJFrame.log("popupMenuWillBecomeInvisible: " + source.getClass().getName());
     }
 
     public void popupMenuCanceled(PopupMenuEvent e) {
         Object source = e.getSource();
-        setMessage("POPUPMENU CANCELED: " + source.getClass().getName());
+        PassFailJFrame.log("POPUPMENU CANCELED: " + source.getClass().getName());
     }
 }

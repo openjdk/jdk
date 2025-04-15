@@ -47,11 +47,11 @@ import javax.swing.UIManager;
 
 public class bug4212464 extends JFrame implements ActionListener {
 
-    static String           strMotif = "Motif";
-    static String           motifClassName = "com.sun.java.swing.plaf.motif.MotifLookAndFeel";
+    static String strMotif = "Motif";
+    static String motifClassName = "com.sun.java.swing.plaf.motif.MotifLookAndFeel";
 
-    static String           strMetal = "Metal";
-    static String           metalClassName = "javax.swing.plaf.metal.MetalLookAndFeel";
+    static String strMetal = "Metal";
+    static String metalClassName = "javax.swing.plaf.metal.MetalLookAndFeel";
 
     static bug4212464 frame;
     static JPopupMenu popup;
@@ -122,7 +122,7 @@ public class bug4212464 extends JFrame implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
         String str = e.getActionCommand();
-        if(str.equals(metalClassName) || str.equals(motifClassName)) {
+        if (str.equals(metalClassName) || str.equals(motifClassName)) {
             changeLNF(str);
         } else {
             System.out.println("ActionEvent: " + str);
