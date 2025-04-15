@@ -5436,7 +5436,13 @@ void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
     shlq(r, CompressedKlassPointers::shift());
   }
   if (CompressedKlassPointers::base() != nullptr) {
-    mov64(tmp, (int64_t)CompressedKlassPointers::base());
+    if (AOTCodeCache::is_on_for_dump()) {
+      address ccp_base_addr = AOTRuntimeConstants::ccp_base_address();
+      lea(tmp, ExternalAddress(ccp_base_addr));
+      movptr(tmp, Address(tmp, 0));
+    } else {
+      mov64(tmp, (int64_t)CompressedKlassPointers::base());
+    }
     addq(r, tmp);
   }
 }

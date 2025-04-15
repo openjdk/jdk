@@ -99,6 +99,9 @@ class RuntimeStub;     // for as_runtime_stub()
 class JavaFrameAnchor; // for UpcallStub::jfa_for_frame
 class AdapterBlob;
 class ExceptionBlob;
+class DeoptimizationBlob;
+class SafepointBlob;
+class UncommonTrapBlob;
 
 class CodeBlob {
   friend class VMStructs;
@@ -205,8 +208,12 @@ public:
   nmethod* as_nmethod() const                 { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
   CodeBlob* as_codeblob() const               { return (CodeBlob*) this; }
   AdapterBlob* as_adapter_blob() const        { assert(is_adapter_blob(), "must be adapter blob"); return (AdapterBlob*) this; }
+  ExceptionBlob* as_exception_blob() const    { assert(is_exception_stub(), "must be exception stub"); return (ExceptionBlob*) this; }
+  DeoptimizationBlob* as_deoptimization_blob() const { assert(is_deoptimization_stub(), "must be deopt stub"); return (DeoptimizationBlob*) this; }
+  SafepointBlob* as_safepoint_blob() const    { assert(is_safepoint_stub(), "must be safepoint stub"); return (SafepointBlob*) this; }
   UpcallStub* as_upcall_stub() const          { assert(is_upcall_stub(), "must be upcall stub"); return (UpcallStub*) this; }
   RuntimeStub* as_runtime_stub() const        { assert(is_runtime_stub(), "must be runtime blob"); return (RuntimeStub*) this; }
+  UncommonTrapBlob* as_uncommon_trap_blob() const { assert(is_uncommon_trap_stub(), "must be uncommon trap stub"); return (UncommonTrapBlob*) this; }
 
   // Boundaries
   address    header_begin() const             { return (address)    this; }

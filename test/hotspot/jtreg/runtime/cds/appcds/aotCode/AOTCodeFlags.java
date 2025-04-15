@@ -40,21 +40,45 @@
  * @run driver AOTCodeFlags
  */
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class AOTCodeFlags {
-    public static int flag_sign = 0;
     public static void main(String... args) throws Exception {
         Tester t = new Tester();
-        for (int i = 0; i < 2; i++) {
-            flag_sign = i;
+        for (int mode = 0; mode < 3; mode++) {
+            t.setTestMode(mode);
             t.run(new String[] {"AOT"});
         }
     }
     static class Tester extends CDSAppTester {
+        private int testMode;
+
         public Tester() {
-            super("AOTCodeFlags" + flag_sign);
+            super("AOTCodeFlags");
+            testMode = 0;
+        }
+
+        boolean isAdapterCachingOn() {
+            return (testMode & 0x1) != 0;
+        }
+
+        boolean isStubCachingOn() {
+            return (testMode & 0x2) != 0;
+        }
+
+        public void setTestMode(int mode) {
+            testMode = mode;
+        }
+
+        public List<String> getVMArgsForTestMode() {
+            List<String> list = new ArrayList<String>();
+            list.add(isAdapterCachingOn() ? "-XX:+AOTAdapterCaching" : "-XX:-AOTAdapterCaching");
+            list.add(isStubCachingOn() ? "-XX:+AOTStubCaching" : "-XX:-AOTStubCaching");
+            return list;
         }
 
         @Override
@@ -66,13 +90,13 @@ public class AOTCodeFlags {
         public String[] vmArgs(RunMode runMode) {
             switch (runMode) {
             case RunMode.ASSEMBLY:
-            case RunMode.PRODUCTION:
-                return new String[] {
-                    "-XX:+UnlockDiagnosticVMOptions",
-                    "-XX:" + (flag_sign == 0 ? "-" : "+") + "AOTAdapterCaching",
-                    "-Xlog:aot+codecache+init=debug",
-                    "-Xlog:aot+codecache+exit=debug",
-                };
+            case RunMode.PRODUCTION: {
+                    List<String> args = getVMArgsForTestMode();
+                    args.addAll(List.of("-XX:+UnlockDiagnosticVMOptions",
+                                        "-Xlog:aot+codecache+init=debug",
+                                        "-Xlog:aot+codecache+exit=debug"));
+                    return args.toArray(new String[0]);
+                }
             }
             return new String[] {};
         }
@@ -86,21 +110,65 @@ public class AOTCodeFlags {
 
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
-            if (flag_sign == 0) {
+            if (!isAdapterCachingOn() && !isStubCachingOn()) { // this is equivalent to completely disable AOT code cache
                 switch (runMode) {
                 case RunMode.ASSEMBLY:
+                    out.shouldNotMatch("Wrote .* bytes to AOT Code Cache");
+                    break;
                 case RunMode.PRODUCTION:
-                    out.shouldNotContain("Adapters:  total");
+                    out.shouldNotMatch("Read blob .* kind=Adapter");
+                    out.shouldNotMatch("Read blob .* kind=SharedBlob");
+                    out.shouldNotMatch("Read blob .* kind=C1Blob");
+                    out.shouldNotMatch("Read blob .* kind=C2Blob");
                     break;
                 }
-
             } else {
-                switch (runMode) {
-                case RunMode.ASSEMBLY:
-                case RunMode.PRODUCTION:
-                    out.shouldContain("Adapters:  total");
-                    break;
-                }
+		if (isAdapterCachingOn()) {
+		    switch (runMode) {
+		    case RunMode.ASSEMBLY:
+			out.shouldMatch("Adapters:\\s+total=[1-9][0-9]+");
+			break;
+		    case RunMode.PRODUCTION:
+			out.shouldMatch("Read blob .* kind=Adapter");
+			break;
+		    }
+		} else {
+		    switch (runMode) {
+		    case RunMode.ASSEMBLY:
+			out.shouldMatch("Adapters:\\s+total=0");
+			break;
+		    case RunMode.PRODUCTION:
+			out.shouldNotMatch("Read blob .* kind=Adapter");
+			break;
+		    }
+		}
+		if (isStubCachingOn()) {
+		    switch (runMode) {
+		    case RunMode.ASSEMBLY:
+			out.shouldMatch("Shared Blobs:\\s+total=[1-9][0-9]+");
+			out.shouldMatch("C1 Blobs:\\s+total=[1-9][0-9]+");
+			out.shouldMatch("C2 Blobs:\\s+total=[1-9][0-9]+");
+			break;
+		    case RunMode.PRODUCTION:
+			out.shouldMatch("Read blob .* kind=SharedBlob");
+			out.shouldMatch("Read blob .* kind=C1Blob");
+			out.shouldMatch("Read blob .* kind=C2Blob");
+			break;
+		    }
+		} else {
+		    switch (runMode) {
+		    case RunMode.ASSEMBLY:
+			out.shouldMatch("Shared Blobs:\\s+total=0");
+			out.shouldMatch("C1 Blobs:\\s+total=0");
+			out.shouldMatch("C2 Blobs:\\s+total=0");
+			break;
+		    case RunMode.PRODUCTION:
+			out.shouldNotMatch("Read blob .* kind=SharedBlob");
+			out.shouldNotMatch("Read blob .* kind=C1Blob");
+			out.shouldNotMatch("Read blob .* kind=C2Blob");
+			break;
+		    }
+		}
             }
         }
 
