@@ -87,6 +87,10 @@ public class ThreadSnapshot {
         return getLocks(depth);
     }
 
+    List<ThreadLock> getOwnableSynchronizers() {
+        return getLocks(-1);
+    }
+
     public static enum LockType {
         // Park blocker
         PARKING_TO_WAIT,
