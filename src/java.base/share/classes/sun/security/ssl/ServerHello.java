@@ -360,9 +360,9 @@ final class ServerHello {
                 shc.negotiatedProtocol =
                         shc.resumingSession.getProtocolVersion();
 
-                // Protocol version is negotiated, reset locally supported
+                // Protocol version is negotiated, update locally supported
                 // signature schemes according to the protocol being used.
-                SignatureScheme.setHandshakeLocalSupportedAlgs(shc);
+                SignatureScheme.updateHandshakeLocalSupportedAlgs(shc);
 
                 shc.negotiatedCipherSuite = shc.resumingSession.getSuite();
                 shc.handshakeHash.determine(
@@ -576,9 +576,9 @@ final class ServerHello {
                 shc.negotiatedProtocol =
                         shc.resumingSession.getProtocolVersion();
 
-                // Protocol version is negotiated, reset locally supported
+                // Protocol version is negotiated, update locally supported
                 // signature schemes according to the protocol being used.
-                SignatureScheme.setHandshakeLocalSupportedAlgs(shc);
+                SignatureScheme.updateHandshakeLocalSupportedAlgs(shc);
 
                 shc.negotiatedCipherSuite = shc.resumingSession.getSuite();
                 shc.handshakeHash.determine(
@@ -969,9 +969,9 @@ final class ServerHello {
                     "Negotiated protocol version: " + serverVersion.name);
             }
 
-            // Protocol version is negotiated, reset locally supported
+            // Protocol version is negotiated, update locally supported
             // signature schemes according to the protocol being used.
-            SignatureScheme.setHandshakeLocalSupportedAlgs(chc);
+            SignatureScheme.updateHandshakeLocalSupportedAlgs(chc);
 
             // TLS 1.3 key share extension may have produced client
             // possessions for TLS 1.3 key exchanges.
@@ -1024,9 +1024,9 @@ final class ServerHello {
                     "Negotiated protocol version: " + serverVersion.name);
             }
 
-            // Protocol version is negotiated, reset locally supported
+            // Protocol version is negotiated, update locally supported
             // signature schemes according to the protocol being used.
-            SignatureScheme.setHandshakeLocalSupportedAlgs(chc);
+            SignatureScheme.updateHandshakeLocalSupportedAlgs(chc);
 
             if (serverHello.serverRandom.isVersionDowngrade(chc)) {
                 throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,

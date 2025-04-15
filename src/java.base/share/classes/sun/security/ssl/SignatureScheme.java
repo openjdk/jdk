@@ -550,9 +550,20 @@ enum SignatureScheme {
         return null;
     }
 
-    // Convenience method to set all locally supported signature schemes for
+    // Convenience method to update all locally supported signature schemes for
     // a given HandshakeContext.
-    static void setHandshakeLocalSupportedAlgs(HandshakeContext hc) {
+    static void updateHandshakeLocalSupportedAlgs(HandshakeContext hc) {
+        // To improve performance we only update when necessary.
+        // No need to do anything if we already computed the local supported
+        // algorithms when the only active protocol ends up to be the
+        // negotiated protocol.
+        if (hc.localSupportedSignAlgs != null
+                && hc.localSupportedCertSignAlgs != null
+                && hc.activeProtocols.size() == 1
+                && hc.activeProtocols.get(0).equals(hc.negotiatedProtocol)) {
+            return;
+        }
+
         List<ProtocolVersion> protocols = hc.negotiatedProtocol != null ?
                 List.of(hc.negotiatedProtocol) :
                 hc.activeProtocols;
