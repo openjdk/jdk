@@ -203,6 +203,8 @@ public class Encoder {
      * @param name               the name
      * @param value              the value
      * @param sensitive          whether the value is sensitive
+     * @param knownReceivedCount the count of received entries known to a peer decoder or
+     *                           {@code -1} to skip the dynamic table entry index check during header encoding.
      * @throws NullPointerException  if any of the arguments are {@code null}
      * @throws IllegalStateException if the encoder hasn't fully encoded the previous header, or
      *                               hasn't yet started to encode it
