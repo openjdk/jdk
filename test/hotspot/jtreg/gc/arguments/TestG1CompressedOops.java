@@ -28,7 +28,7 @@ package gc.arguments;
  * @test TestG1CompressedOops
  * @bug 8354145
  * @requires vm.flagless
- * @summary Verify that the flag TestG1CompressedOops is updated properly
+ * @summary Verify that the flag UseCompressedOops is updated properly
  * @library /test/lib
  * @library /
  * @run driver gc.arguments.TestG1CompressedOops
