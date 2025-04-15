@@ -327,7 +327,10 @@ public final class PBEUtil {
         }
     }
 
-    // converts the password char[] to the UTF-8 encoded byte[]
+    /*
+     * Converts the password char[] to the UTF-8 encoded byte[]. Used by PBEKey
+     * and PBKDF2KeyImpl (SunJCE).
+     */
     public static byte[] encodePassword(char[] passwd) {
         ByteBuffer bb = StandardCharsets.UTF_8.encode(CharBuffer.wrap(passwd));
         int len = bb.limit();
