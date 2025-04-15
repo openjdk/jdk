@@ -34,50 +34,33 @@
  * @bug 7149464
  * @requires vm.flagless
  * @library /test/lib
+ * @compile OOMCrashClass4000_1.jasm
  * @modules java.base/jdk.internal.misc
  *          java.desktop
  *          java.management
  * @run driver JsrRewriting
  */
 
-import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import java.io.File;
 
 public class JsrRewriting {
 
     public static void main(String[] args) throws Exception {
 
-        // ======= Configure the test
-        String jarFile = System.getProperty("test.src") +
-            File.separator + "JsrRewritingTestCase.jar";
+        // Compiled from jasm
         String className = "OOMCrashClass4000_1";
-
-        // limit is 768MB in native words
-        int mallocMaxTestWords = (1024 * 1024 * 768 / 4);
-        if (Platform.is64bit())
-            mallocMaxTestWords = (mallocMaxTestWords / 2);
-
-        // ======= extract the test class
-        ProcessBuilder pb = new ProcessBuilder(new String[] {
-            JDKToolFinder.getJDKTool("jar"),
-            "xvf", jarFile } );
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
 
         // ======= execute the test
         // We run the test with MallocLimit set to 768m in oom mode,
         // in order to trigger and observe a fake os::malloc oom. This needs NMT.
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-cp", ".",
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:NativeMemoryTracking=summary",
             "-XX:MallocLimit=768m:oom",
             className);
 
-        output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
         String[] expectedMsgs = {
             "java.lang.LinkageError",

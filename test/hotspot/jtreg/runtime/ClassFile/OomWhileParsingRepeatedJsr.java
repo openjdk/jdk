@@ -35,14 +35,13 @@
  * @bug 8016029
  * @requires vm.flagless
  * @library /test/lib
+ * @compile OOMCrashClass1960_2.jasm
  * @modules java.base/jdk.internal.misc
  *          java.desktop
  *          java.management
  * @run driver OomWhileParsingRepeatedJsr
  */
 
-import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -50,28 +49,19 @@ public class OomWhileParsingRepeatedJsr {
 
     public static void main(String[] args) throws Exception {
 
-        // ======= Configure the test
-        String jarFile = System.getProperty("test.src") + "/testcase.jar";
+        // ======= Compiled from jasm
         String className = "OOMCrashClass1960_2";
-
-        // ======= extract the test class
-        ProcessBuilder pb = new ProcessBuilder(new String[] {
-            JDKToolFinder.getJDKTool("jar"),
-            "xvf", jarFile } );
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
 
         // ======= execute the test
         // We run the test with MallocLimit set to 768m in oom mode,
         // in order to trigger and observe a fake os::malloc oom. This needs NMT.
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-cp", ".",
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:NativeMemoryTracking=summary",
             "-XX:MallocLimit=768m:oom",
             className );
 
-        output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotHaveExitValue(0);
         output.shouldContain("Cannot reserve enough memory");
     }
