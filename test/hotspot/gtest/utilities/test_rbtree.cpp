@@ -33,9 +33,15 @@
 
 class RBTreeTest : public testing::Test {
 public:
+  using RBTreeIntNode = RBNode<int, int>;
+
   struct Cmp {
     static int cmp(int a, int b) {
       return a - b;
+    }
+
+    static bool cmp(const RBTreeIntNode* a, const RBTreeIntNode* b) {
+      return a->key() < b->key();
     }
   };
 
@@ -73,7 +79,6 @@ struct ArrayAllocator {
 };
 
   using RBTreeInt = RBTreeCHeap<int, int, Cmp, mtTest>;
-  using RBTreeIntNode = RBNode<int, int>;
   using IntrusiveTreeNode = IntrusiveRBNode;
 
   struct IntrusiveHolder {
@@ -91,6 +96,10 @@ struct ArrayAllocator {
   struct IntrusiveCmp {
     static int cmp(int a, const IntrusiveTreeNode* b) {
       return a - IntrusiveHolder::cast_to_self(b)->key;
+    }
+
+    static int cmp(int a, int b) {
+      return a - b;
     }
 
     // true if a < b
@@ -298,6 +307,42 @@ public:
         EXPECT_EQ(10 - i - 1, seen.at(i));
       }
     }
+  }
+
+  void test_visit_outside_range() {
+    RBTreeInt rbtree;
+    using Node = RBTreeIntNode;
+
+    rbtree.upsert(2, 0);
+    rbtree.upsert(5, 0);
+
+    rbtree.visit_range_in_order(0, 0, [&](const Node* x) {
+      EXPECT_TRUE(false) << "Range should not visit nodes";
+    });
+    rbtree.visit_range_in_order(0, 1, [&](const Node* x) {
+      EXPECT_TRUE(false) << "Range should not visit nodes";
+    });
+    rbtree.visit_range_in_order(1, 1, [&](const Node* x) {
+      EXPECT_TRUE(false) << "Range should not visit nodes";
+    });
+    rbtree.visit_range_in_order(3, 3, [&](const Node* x) {
+      EXPECT_TRUE(false) << "Range should not visit nodes";
+    });
+    rbtree.visit_range_in_order(3, 4, [&](const Node* x) {
+      EXPECT_TRUE(false) << "Range should not visit nodes";
+    });
+    rbtree.visit_range_in_order(4, 4, [&](const Node* x) {
+      EXPECT_TRUE(false) << "Range should not visit nodes";
+    });
+    rbtree.visit_range_in_order(6,6, [&](const Node* x) {
+      EXPECT_TRUE(false) << "Range should not visit nodes";
+    });
+    rbtree.visit_range_in_order(6, 7, [&](const Node* x) {
+      EXPECT_TRUE(false) << "Range should not visit nodes";
+    });
+    rbtree.visit_range_in_order(7, 7, [&](const Node* x) {
+      EXPECT_TRUE(false) << "Range should not visit nodes";
+    });
   }
 
   void test_closest_leq() {
@@ -800,6 +845,10 @@ TEST_VM_F(RBTreeTest, TestFind) {
 
 TEST_VM_F(RBTreeTest, TestVisitors) {
   this->test_visitors();
+}
+
+TEST_VM_F(RBTreeTest, TestVisitOutsideRange) {
+  this->test_visit_outside_range();
 }
 
 TEST_VM_F(RBTreeTest, TestClosestLeq) {
