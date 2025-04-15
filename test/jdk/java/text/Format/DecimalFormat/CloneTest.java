@@ -54,25 +54,28 @@ public class CloneTest {
         // This initial use of the formatter initialises its internal state, which could
         // subsequently be shared across clones. This is key to reproducing this specific
         // issue.
-        String _ = df.format(Math.PI); // initial use of formatter
+        String _ = df.format(Math.PI); // Initial use of formatter
 
         try (var ex = Executors.newThreadPerTaskExecutor(Thread.ofPlatform().factory())) {
             for (int i = 0; i < 5; i++) {
                 final int finalI = i;
-                // each thread gets its own clone of df
+                // Each thread gets its own clone of df
                 DecimalFormat threadDf = (DecimalFormat) df.clone();
                 Runnable task = () -> {
                     try {
                         startSignal.await();
                         for (int j = 0; j < 1_000; j++) {
+                            if (mismatchCount.get() > 0) {
+                                // Exit early if mismatch has already occurred
+                                break;
+                            }
+
                             int value = finalI * j;
                             String dfString = threadDf.format(BigDecimal.valueOf(value));
-                            String str1 = String.valueOf(value);
-                            if (!str1.equals(dfString)) {
-                                int count = mismatchCount.getAndIncrement();
-                                if (count < 5) { // limit lines of output
-                                    System.err.println("mismatch: str = " + str1 + " dfString = " + dfString);
-                                }
+                            String str = String.valueOf(value);
+                            if (!str.equals(dfString)) {
+                                mismatchCount.getAndIncrement();
+                                System.err.println("mismatch: str = " + str + " dfString = " + dfString);
                             }
                         }
                     } catch (InterruptedException e) {
