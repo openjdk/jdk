@@ -99,13 +99,7 @@ final class CertSignAlgsExtension {
             }
 
             // Produce the extension.
-            if (chc.localSupportedCertSignAlgs == null) {
-                chc.localSupportedCertSignAlgs =
-                        SignatureScheme.getSupportedAlgorithms(
-                                chc.sslConfig,
-                                chc.algorithmConstraints, chc.activeProtocols,
-                                CERTIFICATE_SCOPE);
-            }
+            SignatureScheme.updateHandshakeLocalSupportedAlgs(chc);
 
             int vectorLen = SignatureScheme.sizeInRecord() *
                     chc.localSupportedCertSignAlgs.size();
@@ -245,14 +239,7 @@ final class CertSignAlgsExtension {
             }
 
             // Produce the extension.
-            if (shc.localSupportedCertSignAlgs == null) {
-                shc.localSupportedCertSignAlgs =
-                        SignatureScheme.getSupportedAlgorithms(
-                                shc.sslConfig,
-                                shc.algorithmConstraints,
-                                List.of(shc.negotiatedProtocol),
-                                CERTIFICATE_SCOPE);
-            }
+            SignatureScheme.updateHandshakeLocalSupportedAlgs(shc);
 
             int vectorLen = SignatureScheme.sizeInRecord()
                     * shc.localSupportedCertSignAlgs.size();

@@ -25,9 +25,6 @@
 
 package sun.security.ssl;
 
-import static sun.security.ssl.SignatureScheme.CERTIFICATE_SCOPE;
-import static sun.security.ssl.SignatureScheme.HANDSHAKE_SCOPE;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
@@ -272,21 +269,7 @@ final class ServerHello {
                         "Not resumption, and no new session is allowed");
                 }
 
-                if (shc.localSupportedSignAlgs == null) {
-                    shc.localSupportedSignAlgs =
-                        SignatureScheme.getSupportedAlgorithms(
-                                shc.sslConfig,
-                                shc.algorithmConstraints, shc.activeProtocols,
-                                HANDSHAKE_SCOPE);
-                }
-
-                if (shc.localSupportedCertSignAlgs == null) {
-                    shc.localSupportedCertSignAlgs =
-                            SignatureScheme.getSupportedAlgorithms(
-                                    shc.sslConfig,
-                                    shc.algorithmConstraints, shc.activeProtocols,
-                                    CERTIFICATE_SCOPE);
-                }
+                SignatureScheme.updateHandshakeLocalSupportedAlgs(shc);
 
                 SSLSessionImpl session =
                         new SSLSessionImpl(shc, CipherSuite.C_NULL);
@@ -527,21 +510,7 @@ final class ServerHello {
                         "Not resumption, and no new session is allowed");
                 }
 
-                if (shc.localSupportedSignAlgs == null) {
-                    shc.localSupportedSignAlgs =
-                        SignatureScheme.getSupportedAlgorithms(
-                                shc.sslConfig,
-                                shc.algorithmConstraints, shc.activeProtocols,
-                                HANDSHAKE_SCOPE);
-                }
-
-                if (shc.localSupportedCertSignAlgs == null) {
-                    shc.localSupportedCertSignAlgs =
-                            SignatureScheme.getSupportedAlgorithms(
-                                    shc.sslConfig,
-                                    shc.algorithmConstraints, shc.activeProtocols,
-                                    CERTIFICATE_SCOPE);
-                }
+                SignatureScheme.updateHandshakeLocalSupportedAlgs(shc);
 
                 SSLSessionImpl session =
                         new SSLSessionImpl(shc, CipherSuite.C_NULL);
