@@ -82,8 +82,8 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
   __ verify_oop(obj);
   __ testptr(obj, obj);
   __ jcc(Assembler::zero, L_bad);
-#define PUSH { __ push(temp); LP64_ONLY(  __ push(rscratch1); )               }
-#define POP  {                LP64_ONLY(  __ pop(rscratch1);  ) __ pop(temp); }
+#define PUSH { __ push(temp); __ push(rscratch1);               }
+#define POP  {                __ pop(rscratch1);  __ pop(temp); }
   PUSH;
   __ load_klass(temp, obj, rscratch1);
   __ cmpptr(temp, ExternalAddress((address) klass_addr), rscratch1);
@@ -139,15 +139,9 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     // JVMTI events, such as single-stepping, are implemented partly by avoiding running
     // compiled code in threads for which the event is enabled.  Check here for
     // interp_only_mode if these events CAN be enabled.
-#ifdef _LP64
-    Register rthread = r15_thread;
-#else
-    Register rthread = temp;
-    __ get_thread(rthread);
-#endif
     // interp_only is an int, on little endian it is sufficient to test the byte only
     // Is a cmpl faster?
-    __ cmpb(Address(rthread, JavaThread::interp_only_mode_offset()), 0);
+    __ cmpb(Address(r15_thread, JavaThread::interp_only_mode_offset()), 0);
     __ jccb(Assembler::zero, run_compiled_code);
     __ jmp(Address(method, Method::interpreter_entry_offset()));
     __ BIND(run_compiled_code);
@@ -324,7 +318,6 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   assert(is_signature_polymorphic(iid), "expected invoke iid");
   Register rbx_method = rbx;   // eventual target of this invocation
   // temps used in this code are not used in *either* compiled or interpreted calling sequences
-#ifdef _LP64
   Register temp1 = rscratch1;
   Register temp2 = rscratch2;
   Register temp3 = rax;
@@ -333,19 +326,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     assert_different_registers(temp1,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5);
     assert_different_registers(temp2,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5);
     assert_different_registers(temp3,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5);
-  }
-#else
-  Register temp1 = (for_compiler_entry ? rsi : rdx);
-  Register temp2 = rdi;
-  Register temp3 = rax;
-  if (for_compiler_entry) {
-    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic || iid == vmIntrinsics::_linkToNative ? noreg : rcx), "only valid assignment");
-    assert_different_registers(temp1,        rcx, rdx);
-    assert_different_registers(temp2,        rcx, rdx);
-    assert_different_registers(temp3,        rcx, rdx);
-  }
-#endif
-  else {
+  } else {
     assert_different_registers(temp1, temp2, temp3, saved_last_sp_register());  // don't trash lastSP
   }
   assert_different_registers(temp1, temp2, temp3, receiver_reg);
