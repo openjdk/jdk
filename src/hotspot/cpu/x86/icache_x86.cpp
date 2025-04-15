@@ -50,6 +50,9 @@ void x86_generate_icache_fence(MacroAssembler* _masm) {
       __ pop(rbx);
       __ pop(rax);
       break;
+    case 5:
+      __ serialize();
+      break;
     default:
       ShouldNotReachHere();
   }

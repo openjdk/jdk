@@ -195,8 +195,10 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(int, X86ICacheSync, -1, DIAGNOSTIC,                               \
              "Select the X86 ICache sync mechanism: -1 = auto-select; "     \
              "0 = none (dangerous); 1 = CLFLUSH loop; 2 = CLFLUSHOPT loop; "\
-             "3 = CLWB loop; 4 = single CPUID.")                            \
-             range(-1, 4)                                                   \
+             "3 = CLWB loop; 4 = single CPUID; 5 = single SERIALIZE. "      \
+             "Explicitly selected mechanism will fail at startup if "       \
+             "hardware does not support it.")                               \
+             range(-1, 5)                                                   \
                                                                             \
 // end of ARCH_FLAGS
 
