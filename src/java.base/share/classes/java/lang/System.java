@@ -575,17 +575,22 @@ public final class System {
      * <tr><th scope="row">{@systemProperty user.dir}</th>
      *     <td>User's current working directory</td></tr>
      * <tr><th scope="row">{@systemProperty native.encoding}</th>
-     *     <td>Character encoding name derived from the host environment and/or
-     *     the user's settings. Setting this system property has no effect.</td></tr>
+     *     <td>Character encoding name derived from the host environment and
+     *     the user's settings. Setting this system property on the command line
+     *     has no effect.</td></tr>
+     * <tr><th scope="row">{@systemProperty stdin.encoding}</th>
+     *     <td>Character encoding name for {@link System#in System.in}.
+     *     The Java runtime can be started with the system property set to {@code UTF-8}.
+     *     Starting it with the property set to another value results in unspecified behavior.
      * <tr><th scope="row">{@systemProperty stdout.encoding}</th>
      *     <td>Character encoding name for {@link System#out System.out} and
      *     {@link System#console() System.console()}.
-     *     The Java runtime can be started with the system property set to {@code UTF-8},
-     *     starting it with the property set to another value leads to undefined behavior.
+     *     The Java runtime can be started with the system property set to {@code UTF-8}.
+     *     Starting it with the property set to another value results in unspecified behavior.
      * <tr><th scope="row">{@systemProperty stderr.encoding}</th>
      *     <td>Character encoding name for {@link System#err System.err}.
-     *     The Java runtime can be started with the system property set to {@code UTF-8},
-     *     starting it with the property set to another value leads to undefined behavior.
+     *     The Java runtime can be started with the system property set to {@code UTF-8}.
+     *     Starting it with the property set to another value results in unspecified behavior.
      * </tbody>
      * </table>
      * <p>
@@ -639,7 +644,7 @@ public final class System {
      *     the value {@code COMPAT} then the value is replaced with the
      *     value of the {@code native.encoding} property during startup.
      *     Setting the property to a value other than {@code UTF-8} or
-     *     {@code COMPAT} leads to unspecified behavior.
+     *     {@code COMPAT} results in unspecified behavior.
      *     </td></tr>
      * </tbody>
      * </table>

@@ -634,6 +634,7 @@ GetJavaProperties(JNIEnv* env)
         LCID userDefaultUILCID = MAKELCID(userDefaultUILang, SORTIDFROMLCID(userDefaultLCID));
 
         {
+            HANDLE hStdIn;
             HANDLE hStdOutErr;
 
             // Windows UI Language selection list only cares "language"
@@ -677,6 +678,11 @@ GetJavaProperties(JNIEnv* env)
                 sprops.sun_jnu_encoding = "MS950_HKSCS";
             }
 
+            hStdIn = GetStdHandle(STD_INPUT_HANDLE);
+            if (hStdIn != INVALID_HANDLE_VALUE &&
+                GetFileType(hStdIn) == FILE_TYPE_CHAR) {
+                sprops.stdin_encoding = getConsoleEncoding(FALSE);
+            }
             hStdOutErr = GetStdHandle(STD_OUTPUT_HANDLE);
             if (hStdOutErr != INVALID_HANDLE_VALUE &&
                 GetFileType(hStdOutErr) == FILE_TYPE_CHAR) {
