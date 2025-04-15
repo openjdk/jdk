@@ -1807,11 +1807,7 @@ public class Code {
             for (int i=0; i<stacksize; ) {
                 Type t = stack[i];
                 Type tother = other.stack[i];
-                Type result =
-                    t==tother ? t :
-                    types.isSubtype(t, tother) ? tother :
-                    types.isSubtype(tother, t) ? t :
-                    commonSuperClass(t, tother);
+                Type result = commonSuperClass(t, tother);
                 int w = width(result);
                 stack[i] = result;
                 if (w == 2) Assert.checkNull(stack[i+1]);
@@ -1821,14 +1817,22 @@ public class Code {
         }
 
         private Type commonSuperClass(Type t1, Type t2) {
-            Type lub = types.lub(t1, t2);
+            if (t1 == t2) {
+                return t1;
+            } else if (types.isSubtype(t1, t2)) {
+                return t2;
+            } else if (types.isSubtype(t2, t1)) {
+                return t1;
+            } else {
+                Type lub = types.lub(t1, t2);
 
-            if (lub.hasTag(BOT)) {
-                throw Assert.error("Cannot find a common super class of: " +
-                                   t1 + " and " + t2);
+                if (lub.hasTag(BOT)) {
+                    throw Assert.error("Cannot find a common super class of: " +
+                                       t1 + " and " + t2);
+                }
+
+                return types.erasure(lub);
             }
-
-            return types.erasure(lub);
         }
 
         void dump() {
