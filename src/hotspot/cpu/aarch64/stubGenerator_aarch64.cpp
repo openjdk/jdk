@@ -5689,40 +5689,67 @@ class StubGenerator: public StubCodeGenerator {
     __ ldr(v27, __ Q, kyberConsts);
 
     __ BIND(kyberNttMult_loop);
+
     // load 16 zetas
     vs_ldpq_post(vz, zetas);
+
     // load 2 sets of 32 coefficients from the two input arrays
     // interleaved as shorts. i.e. pairs of shorts adjacent in memory
     // are striped across pairs of vector registers
-    vs_ld2_post(vs_front(vs1), __ T8H, ntta);
-    vs_ld2_post(vs_back(vs1), __ T8H, nttb);
-    vs_ld2_post(vs_front(vs4), __ T8H, ntta);
-    vs_ld2_post(vs_back(vs4), __ T8H, nttb);
-    // montmul the first and second pair of values loaded into vs1
-    // in order and then with one pair reversed storing the  two
-    // results in vs3
+    vs_ld2_post(vs_front(vs1), __ T8H, ntta); // <a0, a1> x 8H
+    vs_ld2_post(vs_back(vs1), __ T8H, nttb);  // <b0, b1> x 8H
+    vs_ld2_post(vs_front(vs4), __ T8H, ntta); // <a2, a3> x 8H
+    vs_ld2_post(vs_back(vs4), __ T8H, nttb);  // <b2, b3> x 8H
+
+    // compute 4 montmul cross-products for pairs (a0,a1) and (b0,b1)
+    // i.e. montmul the first and second halves of vs1 in order and
+    // then with one sequence reversed storing the two results in vs3
+    //
+    // vs3[0] <- montmul(a0, b0)
+    // vs3[1] <- montmul(a1, b1)
+    // vs3[2] <- montmul(a0, b1)
+    // vs3[3] <- montmul(a1, b0)
     kyber_montmul16(vs_front(vs3), vs_front(vs1), vs_back(vs1), vs_front(vs2), vq);
     kyber_montmul16(vs_back(vs3),
                     vs_front(vs1), vs_reverse(vs_back(vs1)), vs_back(vs2), vq);
-    // montmul the first and second pair of values loaded into vs4
-    // in order and then with one pair reversed storing the two
-    // results in vs1
+
+    // compute 4 montmul cross-products for pairs (a2,a3) and (b2,b3)
+    // i.e. montmul the first and second halves of vs4 in order and
+    // then with one sequence reversed storing the two results in vs1
+    //
+    // vs1[0] <- montmul(a2, b2)
+    // vs1[1] <- montmul(a3, b3)
+    // vs1[2] <- montmul(a2, b3)
+    // vs1[3] <- montmul(a3, b2)
     kyber_montmul16(vs_front(vs1), vs_front(vs4), vs_back(vs4), vs_front(vs2), vq);
     kyber_montmul16(vs_back(vs1),
                     vs_front(vs4), vs_reverse(vs_back(vs4)), vs_back(vs2), vq);
-    // for each pair of results pick the second value in the first
-    // pair to create a sequence that we montmul by the zetas
-    // i.e. we want sequence <vs3[1], vs1[1]>
+
+    // montmul result 2 of each cross-product i.e. (a1*b1, a3*b3) by a zeta.
+    // We can schedule two montmuls at a time if we use a suitable vector
+    // sequence <vs3[1], vs1[1]>.
     int delta = vs1[1]->encoding() - vs3[1]->encoding();
     VSeq<2> vs5(vs3[1], delta);
+
+    // vs3[1] <- montmul(montmul(a1, b1), z0)
+    // vs1[1] <- montmul(montmul(a3, b3), z1)
     kyber_montmul16(vs5, vz, vs5, vs_front(vs2), vq);
+
     // add results in pairs storing in vs3
+    // vs3[0] <- montmul(a0, b0) + montmul(montmul(a1, b1), z0);
+    // vs3[1] <- montmul(a0, b1) + montmul(a1, b0);
     vs_addv(vs_front(vs3), __ T8H, vs_even(vs3), vs_odd(vs3));
+
+    // vs3[2] <- montmul(a2, b2) + montmul(montmul(a3, b3), z1);
+    // vs3[3] <- montmul(a2, b3) + montmul(a3, b2);
     vs_addv(vs_back(vs3), __ T8H, vs_even(vs1), vs_odd(vs1));
-    // montmul result by constant vc and store result in vs1
+
+    // vs1 <- montmul(vs3, montRSquareModQ)
     kyber_montmul32(vs1, vs3, vc, vs2, vq);
-    // store the four results as two interleaved pairs of
-    // quadwords
+
+    // store back the two pairs of result vectors de-interleaved as 8H elements
+    // i.e. storing each pairs of shorts striped across a register pair adjacent
+    // in memory
     vs_st2_post(vs1, __ T8H, result);
 
     __ cmp(result, limit);
