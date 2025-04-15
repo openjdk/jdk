@@ -182,7 +182,7 @@ public final class Http3Connection implements AutoCloseable {
         this.client = client;
         this.connection = connection;
         this.quicConnection = connection.quicConnection();
-        var qdb = quicConnection.dbgTag();
+        var qdb = quicConnection.label();
         this.dbgTag = "H3(" + qdb +")";
         this.pushManager = new Http3PushManager(this); // OK to leak this
         controlFramesDecoder = new FramesDecoder("H3-control("+qdb+")",
@@ -1507,7 +1507,7 @@ public final class Http3Connection implements AutoCloseable {
      * @param pushId the pushId
      */
     PushId newPushId(long pushId) {
-        return new Http3PushId(pushId, connection.connectionLabel());
+        return new Http3PushId(pushId, connection.label());
     }
 
     /**

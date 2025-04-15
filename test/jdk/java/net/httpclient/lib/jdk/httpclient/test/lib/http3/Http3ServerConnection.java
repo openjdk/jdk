@@ -207,7 +207,7 @@ public class Http3ServerConnection {
         this.quicConnection = connection;
         this.quicConnTerminator = connection.connectionTerminator();
         this.peerAddress = peerAddress;
-        var qtag = connection.dbgTag();
+        var qtag = connection.label();
         dbgTag = "H3-Server(" + qtag + ")";
         debug = Utils.getDebugLogger(this::dbgTag);
         controlFramesDecoder = new FramesDecoder("H3-Server-control("+qtag+")",

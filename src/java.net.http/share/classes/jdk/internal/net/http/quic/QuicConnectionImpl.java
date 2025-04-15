@@ -230,7 +230,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         DEFAULT_DATAGRAM_SIZE = size;
     }
 
-    protected final Logger debug = Utils.getDebugLogger(this::dbgTag);
+    protected final Logger debug = Utils.getDebugLogger(this::label);
 
     final QuicRttEstimator rttEstimator = new QuicRttEstimator();
     final QuicCongestionController congestionController;
@@ -1691,7 +1691,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return packetSpaces.get(packetNumberSpace);
     }
 
-    public String dbgTag() { return dbgTag; }
+    public String label() { return dbgTag; }
 
     public String streamDbgTag(long streamId, String direction) {
         String dir = direction == null || direction.isEmpty()
@@ -2835,7 +2835,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         // log exception if still opened
         if (stateHandle.opened()) {
             if (Log.errors()) {
-                Log.logError("%s: Failed to write datagram: %s", dbgTag(), t );
+                Log.logError("%s: Failed to write datagram: %s", label(), t );
                 Log.logError(t);
             } else if (debug.on()) {
                 debug.log("Failed to write datagram", t);

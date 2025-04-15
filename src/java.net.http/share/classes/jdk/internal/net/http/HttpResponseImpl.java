@@ -52,7 +52,6 @@ final class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider 
     final URI uri;
     final HttpClient.Version version;
     final RawChannelProvider rawChannelProvider;
-    final String connectionLabel;
     final T body;
 
     public HttpResponseImpl(HttpRequest initialRequest,
@@ -71,21 +70,6 @@ final class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider 
         this.version = response.version();
         this.rawChannelProvider = RawChannelProvider.create(response, exch);
         this.body = body;
-        this.connectionLabel = connectionLabel(exch);
-    }
-
-    private static String connectionLabel(Exchange<?> exchange) {
-        if (exchange == null) return null;
-        var exchImpl = exchange.exchImpl;
-        if (exchImpl == null) return null;
-        var connection = exchImpl.connection();
-        if (connection == null) return null;
-        return connection.connectionLabel();
-    }
-
-    @Override
-    public Optional<String> connectionLabel() {
-        return Optional.ofNullable(connectionLabel);
     }
 
     private static Optional<String> connectionLabel(Exchange<?> exchange) {

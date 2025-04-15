@@ -134,28 +134,6 @@ abstract class HttpConnection implements Closeable {
         return id;
     }
 
-    /**
-     * {@return a label identifying the connection on which the
-     * response was received. The format of the string is opaque, but should
-     * be unique for the life of the {@link HttpClient} instance}.
-     * May return {@code null} if not available.
-     */
-    public String connectionLabel() {
-        // TODO: ideally should be something that makes some kind of sense to
-        //       the user. Something that would be used in the logs to
-        //       identify the connection, or that can at least be related
-        //       to what appears in the logs.
-        //       We may want to sanitize logging at some point - ans find
-        //       a way to identify connections with maybe a less verbose
-        //       tag... e.g: client-1-connection-2 - but then we would
-        //       need to make sure that such connection also uses socket-2
-        //       (for socket tube)
-        //       For HTTP/3 we may also include the connectionId
-        //       hex string, as it is also exposed in the Http3PushID record.
-        //       e.g. client-1-connection-2[connectionId=0xff3e5678....]
-        return dbgString();
-    }
-
     private static final class TrailingOperations {
         private final Map<CompletionStage<?>, Boolean> operations =
                 new IdentityHashMap<>();

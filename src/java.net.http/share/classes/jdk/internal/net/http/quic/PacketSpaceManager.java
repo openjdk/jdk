@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -893,7 +893,7 @@ public sealed class PacketSpaceManager implements PacketSpace
         this(packetNumberSpace, connection.emitter(), TimeSource.source(),
                 connection.rttEstimator, connection.congestionController, connection.getTLSEngine(),
                 connection.connectionTerminator(),
-                () -> connection.dbgTag() + "[" + packetNumberSpace.name() + "]");
+                () -> connection.label() + "[" + packetNumberSpace.name() + "]");
     }
 
     /**

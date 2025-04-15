@@ -99,24 +99,6 @@ public interface HttpResponse<T> {
      */
     public int statusCode();
 
-
-    /**
-     * {@return if present, a label identifying the connection on which the
-     * response was received}
-     * <p>
-     * The format of the string is opaque, but should
-     * be unique for the life of the {@link HttpClient} instance.
-     *
-     * @implSpec
-     * The default implementation of this method returns {@link Optional#empty()
-     * Optional.empty()}.
-     *
-     * @since TBD
-     */
-    public default Optional<String> connectionLabel() {
-        return Optional.empty();
-    }
-
     /**
      * {@return if present, a label identifying the connection on which the
      * response was received}

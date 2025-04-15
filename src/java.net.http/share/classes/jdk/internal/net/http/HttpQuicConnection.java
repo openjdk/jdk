@@ -89,7 +89,7 @@ abstract class HttpQuicConnection extends HttpConnection {
 
     HttpQuicConnection(InetSocketAddress address, HttpClientImpl client,
                        QuicConnection quicConnection, AltService sourceAltService) {
-        super(address, client);
+        super(address, client, "Http" + quicConnection.label());
         Objects.requireNonNull(quicConnection);
         this.quicConnection = quicConnection;
         this.quicConnTerminator = quicConnection.connectionTerminator();
@@ -120,7 +120,7 @@ abstract class HttpQuicConnection extends HttpConnection {
 
     final String quicDbgString() {
         String tag = dbgTag;
-        if (tag == null) tag = dbgTag = "Http" + quicConnection.dbgTag();
+        if (tag == null) tag = dbgTag = "Http" + quicConnection.label();
         return tag;
     }
 
@@ -689,16 +689,4 @@ abstract class HttpQuicConnection extends HttpConnection {
         return quicDbgString();
     }
 
-    @Override
-    public String connectionLabel() {
-        // The quicDbgString() appears in the logs, the toHexString() is
-        // returned as part of Http3PushId - so here we return a combination
-        // of both
-        //
-        // TODO: possibly log the correspondence between
-        //       quicDbgString and toHexString when creating the
-        //       connection, and then only use toHexString here?
-        //
-        return quicDbgString() + "[connectionId=" + toHexString() + "]";
-    }
 }
