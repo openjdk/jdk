@@ -1033,7 +1033,7 @@ public final class ML_KEM {
     // Works in place, but also returns its (modified) input so that it can
     // be used in expressions
     private short[] mlKemInverseNTT(short[] poly) {
-        assert(poly.length == ML_KEM_N);
+        assert poly.length == ML_KEM_N;
         implKyberInverseNtt(poly, montZetasForVectorInverseNttArr);
         return poly;
     }
@@ -1151,8 +1151,8 @@ public final class ML_KEM {
     // The result is a representation of the product still in the NTT domain.
     // The coefficients in the result are in the range (-mlKem_q, mlKem_q).
     private void nttMult(short[] result, short[] ntta, short[] nttb) {
-        assert (result.length == ML_KEM_N) && (ntta.length == ML_KEM_N &&
-                (nttb.length == ML_KEM_N));
+        assert (result.length == ML_KEM_N) && (ntta.length == ML_KEM_N) &&
+                (nttb.length == ML_KEM_N);
         implKyberNttMult(result, ntta, nttb, montZetasForVectorNttMultArr);
     }
 
@@ -1368,8 +1368,8 @@ public final class ML_KEM {
         if (remainder != 0) {
             i++;
         }
-        assert (((remainder != 0) && (remainder != 48)) ||
-            index + i * 96 > condensed.length);
+        assert ((remainder == 0) || (remainder == 48)) &&
+                (index + i * 96 <= condensed.length);
         implKyber12To16(condensed, index, parsed, parsedLength);
     }
 
