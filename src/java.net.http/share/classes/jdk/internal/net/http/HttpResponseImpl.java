@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import jdk.internal.net.http.websocket.RawChannel;
 final class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
 
     final int responseCode;
+    private final String connectionLabel;
     final HttpRequest initialRequest;
     final HttpResponse<T> previousResponse; // may be null;
     final HttpHeaders headers;
@@ -60,6 +61,7 @@ final class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider 
                             T body,
                             Exchange<T> exch) {
         this.responseCode = response.statusCode();
+        this.connectionLabel = connectionLabel(exch).orElse(null);
         this.initialRequest = initialRequest;
         this.previousResponse = previousResponse;
         this.headers = response.headers();
@@ -86,9 +88,21 @@ final class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider 
         return Optional.ofNullable(connectionLabel);
     }
 
+    private static Optional<String> connectionLabel(Exchange<?> exchange) {
+        return Optional.ofNullable(exchange)
+                .map(e -> e.exchImpl)
+                .map(ExchangeImpl::connection)
+                .map(HttpConnection::label);
+    }
+
     @Override
     public int statusCode() {
         return responseCode;
+    }
+
+    @Override
+    public Optional<String> connectionLabel() {
+        return Optional.ofNullable(connectionLabel);
     }
 
     @Override

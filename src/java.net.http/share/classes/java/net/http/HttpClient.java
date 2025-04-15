@@ -426,6 +426,8 @@ public abstract class HttpClient implements AutoCloseable {
          * the {@link Authenticator} is not invoked for the corresponding
          * authentication. In this case, any authentication errors are returned
          * to the user and requests are not automatically retried.
+         * Additionally, the JDK built-in implementation currently only supports HTTP
+         * {@code Basic} authentication.
          *
          * @param authenticator the Authenticator
          * @return this builder

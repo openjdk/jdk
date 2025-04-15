@@ -1666,6 +1666,9 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
           // Entering may create an invalid lock stack. Inflate the lock if it
           // was fast_locked to restore the valid lock stack.
           if (UseObjectMonitorTable) {
+            // UseObjectMonitorTable expects the BasicLock cache to be either a
+            // valid ObjectMonitor* or nullptr. Right now it is garbage, set it
+            // to nullptr.
             lock->clear_object_monitor_cache();
           }
           ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
