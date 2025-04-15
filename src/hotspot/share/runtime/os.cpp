@@ -2535,7 +2535,7 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
       if ((start = strrchr(lib_name, *os::file_separator())) != nullptr) {
         lib_name = ++start;
       }
-#ifdef WINDOWS
+#ifdef _WINDOWS
       else { // Need to check for drive prefix e.g. C:L.dll
         if ((start = strchr(lib_name, ':')) != nullptr) {
           lib_name = ++start;
