@@ -2571,7 +2571,7 @@ void ObjectMonitor::print_on(outputStream* st) const {
   st->print("{contentions=0x%08x,waiters=0x%08x"
             ",recursions=%zd,owner=" INT64_FORMAT "}",
             contentions(), waiters(), recursions(),
-            owner());
+            owner_raw());
 }
 void ObjectMonitor::print() const { print_on(tty); }
 

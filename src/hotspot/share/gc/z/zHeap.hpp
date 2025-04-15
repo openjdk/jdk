@@ -67,7 +67,6 @@ public:
   void out_of_memory();
 
   // Heap metrics
-  size_t initial_capacity() const;
   size_t min_capacity() const;
   size_t max_capacity() const;
   size_t soft_max_capacity() const;
@@ -104,8 +103,8 @@ public:
   // Page allocation
   ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);
   void undo_alloc_page(ZPage* page);
-  void free_page(ZPage* page, bool allow_defragment);
-  size_t free_empty_pages(const ZArray<ZPage*>* pages);
+  void free_page(ZPage* page);
+  size_t free_empty_pages(ZGenerationId id, const ZArray<ZPage*>* pages);
 
   // Object allocation
   bool is_alloc_stalling() const;

@@ -87,10 +87,6 @@ inline BitMap::idx_t ZLiveMap::next_live_segment(BitMap::idx_t segment) const {
   return segment_live_bits().find_first_set_bit(segment + 1, NumSegments);
 }
 
-inline BitMap::idx_t ZLiveMap::segment_size() const {
-  return _bitmap_size / NumSegments;
-}
-
 inline BitMap::idx_t ZLiveMap::index_to_segment(BitMap::idx_t index) const {
   return index >> _segment_shift;
 }
@@ -125,11 +121,11 @@ inline void ZLiveMap::inc_live(uint32_t objects, size_t bytes) {
 }
 
 inline BitMap::idx_t ZLiveMap::segment_start(BitMap::idx_t segment) const {
-  return segment_size() * segment;
+  return segment * _segment_size;
 }
 
 inline BitMap::idx_t ZLiveMap::segment_end(BitMap::idx_t segment) const {
-  return segment_start(segment) + segment_size();
+  return segment_start(segment) + _segment_size;
 }
 
 inline size_t ZLiveMap::do_object(ObjectClosure* cl, zaddress addr) const {

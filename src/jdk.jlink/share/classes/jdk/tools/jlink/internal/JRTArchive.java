@@ -45,6 +45,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -76,6 +77,7 @@ public class JRTArchive implements Archive {
     private final Map<String, ResourceDiff> resDiff;
     private final boolean errorOnModifiedFile;
     private final TaskHelper taskHelper;
+    private final Set<String> upgradeableFiles;
 
     /**
      * JRTArchive constructor
@@ -86,12 +88,15 @@ public class JRTArchive implements Archive {
      *        install aborts the link.
      * @param perModDiff The lib/modules (a.k.a jimage) diff for this module,
      *                   possibly an empty list if there are no differences.
+     * @param taskHelper The task helper instance.
+     * @param upgradeableFiles The set of files that are allowed for upgrades.
      */
     JRTArchive(String module,
                Path path,
                boolean errorOnModifiedFile,
                List<ResourceDiff> perModDiff,
-               TaskHelper taskHelper) {
+               TaskHelper taskHelper,
+               Set<String> upgradeableFiles) {
         this.module = module;
         this.path = path;
         this.ref = ModuleFinder.ofSystem()
@@ -105,6 +110,7 @@ public class JRTArchive implements Archive {
         this.resDiff = Objects.requireNonNull(perModDiff).stream()
                             .collect(Collectors.toMap(ResourceDiff::getName, Function.identity()));
         this.taskHelper = taskHelper;
+        this.upgradeableFiles = upgradeableFiles;
     }
 
     @Override
@@ -217,7 +223,8 @@ public class JRTArchive implements Archive {
 
                         // Read from the base JDK image.
                         Path path = BASE.resolve(m.resPath);
-                        if (shaSumMismatch(path, m.hashOrTarget, m.symlink)) {
+                        if (!isUpgradeableFile(m.resPath) &&
+                                shaSumMismatch(path, m.hashOrTarget, m.symlink)) {
                             if (errorOnModifiedFile) {
                                 String msg = taskHelper.getMessage("err.runtime.link.modified.file", path.toString());
                                 IOException cause = new IOException(msg);
@@ -237,6 +244,17 @@ public class JRTArchive implements Archive {
                  })
                  .toList());
         }
+    }
+
+    /**
+     * Certain files in a module are considered upgradeable. That is,
+     * their hash sums aren't checked.
+     *
+     * @param resPath The resource path of the file to check for upgradeability.
+     * @return {@code true} if the file is upgradeable. {@code false} otherwise.
+     */
+    private boolean isUpgradeableFile(String resPath) {
+        return upgradeableFiles.contains(resPath);
     }
 
     static boolean shaSumMismatch(Path res, String expectedSha, boolean isSymlink) {

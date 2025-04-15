@@ -1271,7 +1271,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseBASE64Intrinsics, false);
   }
 
-  if (supports_fma() && UseSSE >= 2) { // Check UseSSE since FMA code uses SSE instructions
+  if (supports_fma()) {
     if (FLAG_IS_DEFAULT(UseFMA)) {
       UseFMA = true;
     }
@@ -1340,22 +1340,9 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-#ifdef COMPILER2
-  if (UseFPUForSpilling) {
-    if (UseSSE < 2) {
-      // Only supported with SSE2+
-      FLAG_SET_DEFAULT(UseFPUForSpilling, false);
-    }
-  }
-#endif
-
 #if COMPILER2_OR_JVMCI
   int max_vector_size = 0;
-  if (UseSSE < 2) {
-    // Vectors (in XMM) are only supported with SSE2+
-    // SSE is always 2 on x64.
-    max_vector_size = 0;
-  } else if (UseAVX == 0 || !os_supports_avx_vectors()) {
+  if (UseAVX == 0 || !os_supports_avx_vectors()) {
     // 16 byte vectors (in XMM) are supported with SSE2+
     max_vector_size = 16;
   } else if (UseAVX == 1 || UseAVX == 2) {
@@ -1870,7 +1857,7 @@ void VM_Version::get_processor_features() {
 #endif
 
   // Use XMM/YMM MOVDQU instruction for Object Initialization
-  if (!UseFastStosb && UseSSE >= 2 && UseUnalignedLoadStores) {
+  if (!UseFastStosb && UseUnalignedLoadStores) {
     if (FLAG_IS_DEFAULT(UseXMMForObjInit)) {
       UseXMMForObjInit = true;
     }
@@ -1985,22 +1972,18 @@ void VM_Version::get_processor_features() {
 #endif
     log->cr();
     log->print("Allocation");
-    if (AllocatePrefetchStyle <= 0 || (UseSSE == 0 && !supports_3dnow_prefetch())) {
+    if (AllocatePrefetchStyle <= 0) {
       log->print_cr(": no prefetching");
     } else {
       log->print(" prefetching: ");
-      if (UseSSE == 0 && supports_3dnow_prefetch()) {
+      if (AllocatePrefetchInstr == 0) {
+        log->print("PREFETCHNTA");
+      } else if (AllocatePrefetchInstr == 1) {
+        log->print("PREFETCHT0");
+      } else if (AllocatePrefetchInstr == 2) {
+        log->print("PREFETCHT2");
+      } else if (AllocatePrefetchInstr == 3) {
         log->print("PREFETCHW");
-      } else if (UseSSE >= 1) {
-        if (AllocatePrefetchInstr == 0) {
-          log->print("PREFETCHNTA");
-        } else if (AllocatePrefetchInstr == 1) {
-          log->print("PREFETCHT0");
-        } else if (AllocatePrefetchInstr == 2) {
-          log->print("PREFETCHT2");
-        } else if (AllocatePrefetchInstr == 3) {
-          log->print("PREFETCHW");
-        }
       }
       if (AllocatePrefetchLines > 1) {
         log->print_cr(" at distance %d, %d lines of %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);
@@ -3079,6 +3062,10 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
     result |= CPU_TSCINV_BIT;
   if (std_cpuid1_ecx.bits.aes != 0)
     result |= CPU_AES;
+  if (ext_cpuid1_ecx.bits.lzcnt != 0)
+    result |= CPU_LZCNT;
+  if (ext_cpuid1_ecx.bits.prefetchw != 0)
+    result |= CPU_3DNOW_PREFETCH;
   if (sef_cpuid7_ebx.bits.erms != 0)
     result |= CPU_ERMS;
   if (sef_cpuid7_edx.bits.fast_short_rep_mov != 0)
@@ -3097,48 +3084,36 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
     result |= CPU_FMA;
   if (sef_cpuid7_ebx.bits.clflushopt != 0)
     result |= CPU_FLUSHOPT;
+  if (sef_cpuid7_ebx.bits.clwb != 0)
+    result |= CPU_CLWB;
   if (ext_cpuid1_edx.bits.rdtscp != 0)
     result |= CPU_RDTSCP;
   if (sef_cpuid7_ecx.bits.rdpid != 0)
     result |= CPU_RDPID;
 
-  // AMD|Hygon features.
+  // AMD|Hygon additional features.
   if (is_amd_family()) {
-    if ((ext_cpuid1_edx.bits.tdnow != 0) ||
-        (ext_cpuid1_ecx.bits.prefetchw != 0))
+    // PREFETCHW was checked above, check TDNOW here.
+    if ((ext_cpuid1_edx.bits.tdnow != 0))
       result |= CPU_3DNOW_PREFETCH;
-    if (ext_cpuid1_ecx.bits.lzcnt != 0)
-      result |= CPU_LZCNT;
     if (ext_cpuid1_ecx.bits.sse4a != 0)
       result |= CPU_SSE4A;
   }
 
-  // Intel features.
+  // Intel additional features.
   if (is_intel()) {
-    if (ext_cpuid1_ecx.bits.lzcnt != 0) {
-      result |= CPU_LZCNT;
-    }
-    if (ext_cpuid1_ecx.bits.prefetchw != 0) {
-      result |= CPU_3DNOW_PREFETCH;
-    }
-    if (sef_cpuid7_ebx.bits.clwb != 0) {
-      result |= CPU_CLWB;
-    }
     if (sef_cpuid7_edx.bits.serialize != 0)
       result |= CPU_SERIALIZE;
-
     if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0)
       result |= CPU_AVX512_FP16;
   }
 
-  // ZX features.
+  // ZX additional features.
   if (is_zx()) {
-    if (ext_cpuid1_ecx.bits.lzcnt != 0) {
-      result |= CPU_LZCNT;
-    }
-    if (ext_cpuid1_ecx.bits.prefetchw != 0) {
-      result |= CPU_3DNOW_PREFETCH;
-    }
+    // We do not know if these are supported by ZX, so we cannot trust
+    // common CPUID bit for them.
+    assert((result & CPU_CLWB) == 0, "Check if it is supported?");
+    result &= ~CPU_CLWB;
   }
 
   // Protection key features.

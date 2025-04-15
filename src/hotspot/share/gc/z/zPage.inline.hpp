@@ -30,27 +30,13 @@
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLiveMap.inline.hpp"
-#include "gc/z/zNUMA.hpp"
-#include "gc/z/zPhysicalMemory.inline.hpp"
 #include "gc/z/zRememberedSet.inline.hpp"
-#include "gc/z/zUtils.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
-#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
-
-inline ZPageType ZPage::type_from_size(size_t size) const {
-  if (size == ZPageSizeSmall) {
-    return ZPageType::small;
-  } else if (size == ZPageSizeMedium) {
-    return ZPageType::medium;
-  } else {
-    return ZPageType::large;
-  }
-}
 
 inline const char* ZPage::type_to_string() const {
   switch (type()) {
@@ -170,20 +156,16 @@ inline const ZVirtualMemory& ZPage::virtual_memory() const {
   return _virtual;
 }
 
-inline const ZPhysicalMemory& ZPage::physical_memory() const {
-  return _physical;
+inline uint32_t ZPage::single_partition_id() const {
+  return _single_partition_id;
 }
 
-inline ZPhysicalMemory& ZPage::physical_memory() {
-  return _physical;
+inline bool ZPage::is_multi_partition() const {
+  return _multi_partition_tracker != nullptr;
 }
 
-inline uint8_t ZPage::numa_id() {
-  if (_numa_id == (uint8_t)-1) {
-    _numa_id = checked_cast<uint8_t>(ZNUMA::memory_id(untype(ZOffset::address(start()))));
-  }
-
-  return _numa_id;
+inline ZMultiPartitionTracker* ZPage::multi_partition_tracker() const {
+  return _multi_partition_tracker;
 }
 
 inline ZPageAge ZPage::age() const {
@@ -200,14 +182,6 @@ inline bool ZPage::is_allocating() const {
 
 inline bool ZPage::is_relocatable() const {
   return _seqnum < generation()->seqnum();
-}
-
-inline uint64_t ZPage::last_used() const {
-  return _last_used;
-}
-
-inline void ZPage::set_last_used() {
-  _last_used = (uint64_t)ceil(os::elapsedTime());
 }
 
 inline bool ZPage::is_in(zoffset offset) const {

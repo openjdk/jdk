@@ -1014,8 +1014,6 @@ void Compile::Init(bool aliasing) {
   _matcher = nullptr;  // filled in later
   _cfg     = nullptr;  // filled in later
 
-  IA32_ONLY( set_24_bit_selection_and_mode(true, false); )
-
   _node_note_array = nullptr;
   _default_node_notes = nullptr;
   DEBUG_ONLY( _modified_nodes = nullptr; ) // Used in Optimize()
@@ -4099,17 +4097,6 @@ bool Compile::final_graph_reshaping() {
       m->disconnect_inputs(this);
     }
   }
-
-#ifdef IA32
-  // If original bytecodes contained a mixture of floats and doubles
-  // check if the optimizer has made it homogeneous, item (3).
-  if (UseSSE == 0 &&
-      frc.get_float_count() > 32 &&
-      frc.get_double_count() == 0 &&
-      (10 * frc.get_call_count() < frc.get_float_count()) ) {
-    set_24_bit_selection_and_mode(false, true);
-  }
-#endif // IA32
 
   set_java_calls(frc.get_java_call_count());
   set_inner_loops(frc.get_inner_loop_count());

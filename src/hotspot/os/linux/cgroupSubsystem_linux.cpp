@@ -357,7 +357,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
         all_required_controllers_enabled = all_required_controllers_enabled && cg_infos[i]._enabled;
       }
       if (log_is_enabled(Debug, os, container) && !cg_infos[i]._enabled) {
-        log_debug(os, container)("controller %s is not enabled\n", cg_controller_name[i]);
+        log_debug(os, container)("controller %s is not enabled", cg_controller_name[i]);
       }
     }
   }

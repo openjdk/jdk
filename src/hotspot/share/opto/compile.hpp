@@ -1300,21 +1300,6 @@ public:
   bool needs_clinit_barrier(ciMethod* ik,        ciMethod* accessing_method);
   bool needs_clinit_barrier(ciInstanceKlass* ik, ciMethod* accessing_method);
 
-#ifdef IA32
- private:
-  bool _select_24_bit_instr;   // We selected an instruction with a 24-bit result
-  bool _in_24_bit_fp_mode;     // We are emitting instructions with 24-bit results
-
-  // Remember if this compilation changes hardware mode to 24-bit precision.
-  void set_24_bit_selection_and_mode(bool selection, bool mode) {
-    _select_24_bit_instr = selection;
-    _in_24_bit_fp_mode   = mode;
-  }
-
- public:
-  bool select_24_bit_instr() const { return _select_24_bit_instr; }
-  bool in_24_bit_fp_mode() const   { return _in_24_bit_fp_mode; }
-#endif // IA32
 #ifdef ASSERT
   VerifyMeetResult* _type_verify;
   void set_exception_backedge() { _exception_backedge = true; }

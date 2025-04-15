@@ -23,6 +23,7 @@
 
 package jdk.jfr.event.metadata;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -51,7 +52,7 @@ public class TestEventMetadata {
      * ----
      *
      * Symbolic name that is used to identify an event, or a field. Referred to
-     * as "id" and "field" in trace.xml-files and @Name in the Java API. If it is
+     * as "name" in metadata.xml and @Name in the Java API. If it is
      * the name of an event, the name should be prefixed "jdk.", which
      * happens automatically for native events.
      *
@@ -61,10 +62,10 @@ public class TestEventMetadata {
      * "allocationRate" for a field. Do not use "_" and don't add the word
      * "Event" to the event name.
      *
-     * Abbreviations should be avoided, but may be acceptable if the name
-     * becomes long, or if it is a well established acronym. Write whole words,
-     * i.e. "allocation" instead of "alloc". The name should not be a reserved
-     * Java keyword, i.e "void" or "class".
+     * Abbreviations, such as info, alloc, num, gen, conf, stat, and evac, should
+     * be avoided. For example, use "allocation" instead of "alloc". Acronyms should be
+     * avoided unless they are well-established. The name should not be a reserved
+     * Java keyword, such as "void" or "class".
      *
      * Label
      * -----
@@ -84,8 +85,8 @@ public class TestEventMetadata {
      * period should not be included.
      *
      *
-     * Do not forget to set proper units for fields, i.e "NANOS", "MILLS",
-     * "TICKSPAN" ,"BYETS", "PECENTAGE" etc. in native and @Timespan, @Timespan
+     * Do not forget to set proper units for fields, such as "NANOS", "MILLIS",
+     * "TICKSPAN", "BYTES", and "PERCENTAGE", in native and @Timespan, @Timespan
      * etc. in Java.
      */
     public static void main(String[] args) throws Exception {
@@ -161,16 +162,61 @@ public class TestEventMetadata {
     }
 
     private static void verifyLabel(String label) {
+        System.out.println("Verifying label: " + label);
         Asserts.assertNotEquals(label, null, "Label not allowed to be null");
-        Asserts.assertTrue(label.length() > 1, "Name must be at least two characters");
-        Asserts.assertTrue(label.length() < 45, "Label should not exceed 45 characters, use description to explain " + label);
-        Asserts.assertTrue(label.length() == label.trim().length(), "Label should not have trim character at start and end");
-        Asserts.assertTrue(Character.isUpperCase(label.charAt(0)), "Label should start with upper case letter");
-        for (int i = 0; i < label.length(); i++) {
-            char c = label.charAt(i);
-            Asserts.assertTrue(Character.isDigit(c) || Character.isAlphabetic(label.charAt(i)) || c == ' ' || c == '(' || c == ')' || c == '-', "Label should only consist of letters or space, found '" + label.charAt(i)
-                    + "'");
+        Asserts.assertTrue(label.length() > 1, "Label must be at least two characters");
+        Asserts.assertTrue(label.length() <= 45, "Label should not exceed 45 characters, use description to explain");
+        Asserts.assertTrue(label.length() == label.trim().length(), "Label should not have superfluous whitespace at start or end");
+
+        String[] words = label.split(" ");
+        String[] middleWords = words.length > 2 ? Arrays.copyOfRange(words, 1, words.length - 1) : new String[0];
+        String firstWord = words[0];
+        String lastWord = words[words.length - 1];
+        Asserts.assertTrue(isCapitalized(firstWord), "Label should capitalize first word");
+
+        // The isNumeric check is a workaround so "GC Phase Pause Level 1" doesn't fail.
+        if (!isNumeric(lastWord)) {
+            Asserts.assertTrue(isCapitalized(lastWord), "Label should capitalize last word");
         }
+        for (String word : words) {
+            Asserts.assertFalse(word.endsWith("-") || word.startsWith("-"), "Word in label should not start or end with hyphen");
+            Asserts.assertTrue(word.length() != 0, "Label should not contain superfluous whitespace");
+            if (isCapitalized(word)) {
+                for (String w : word.split("-")) {
+                    Asserts.assertTrue(isCapitalized(w), "Label should capitalize all words in a hyphenated word");
+                }
+            }
+        }
+        for (String word : middleWords) {
+            if (isShortCommonPreposition(word)) {
+                Asserts.assertFalse(isCapitalized(word), "Preposition in label should be lower case, unless first and last word");
+            }
+        }
+        for (char c : label.toCharArray()) {
+            Asserts.assertTrue(isAllowedCharacter(c), "Label should only consist of letters, numbers, hyphens, parentheses or whitespace, found '" + c + "'");
+        }
+    }
+
+    private static boolean isAllowedCharacter(char c) {
+        return Character.isDigit(c) || Character.isAlphabetic(c) || c == ' ' || c == '(' || c == ')' || c == '-';
+    }
+
+    private static boolean isCapitalized(String word) {
+        String w = word.replace("(", "").replace(")", "");
+        return !w.isEmpty() && Character.isUpperCase(w.charAt(0));
+    }
+
+    private static boolean isNumeric(String word) {
+        return word.chars().allMatch(Character::isDigit);
+    }
+
+    private static boolean isShortCommonPreposition(String word) {
+        String[] prepositions = { "in", "on", "at", "by", "to", "of" };
+        return containsWord(prepositions, word);
+    }
+
+    private static boolean containsWord(String[] words, String match) {
+        return Arrays.asList(words).contains(match);
     }
 
     private static void verifyEventType(EventType eventType) {
@@ -182,7 +228,7 @@ public class TestEventMetadata {
         String name = eventType.getName().substring(EventNames.PREFIX.length());
         Asserts.assertFalse(isReservedKeyword(name),"Name must not be reserved keyword in the Java language (" + name + ")");
         checkCommonAbbreviations(name);
-          char firstChar = name.charAt(0);
+        char firstChar = name.charAt(0);
         Asserts.assertFalse(name.contains("ID"), "'ID' should not be used in name, consider using 'Id'");
         Asserts.assertTrue(Character.isAlphabetic(firstChar), "Name " + name + " must start with a character");
         Asserts.assertTrue(Character.isUpperCase(firstChar), "Name " + name + " must start with upper case letter");
@@ -198,12 +244,7 @@ public class TestEventMetadata {
                 "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "default", "do", "double", "else", "enum",
                 "extends", "false", "final", "finally", "float", "for", "goto", "if", "implements", "import", "instanceof", "int", "interface", "long", "native", "new", "null", "package", "private",
                 "protected", "public", "return", "short", "static", "strictfp", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "true", "try", "void", "volatile", "while" };
-        for (int i = 0; i < keywords.length; i++) {
-            if (s.equals(keywords[i])) {
-                return true;
-            }
-        }
-        return false;
+        return containsWord(keywords, s);
     }
 
     private static void checkCommonAbbreviations(String name) {

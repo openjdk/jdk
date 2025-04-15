@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.jvm.hotspot.gc.z;
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObject;
+import sun.jvm.hotspot.runtime.VMObjectFactory;
 import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
@@ -36,8 +37,8 @@ import sun.jvm.hotspot.types.TypeDataBase;
 public class ZPageAllocator extends VMObject {
 
     private static CIntegerField maxCapacityField;
-    private static CIntegerField capacityField;
-    private static CIntegerField usedField;
+    private static long partitionsOffset;
+    private static long numaCount;
 
     static {
         VM.registerVMInitializedObserver((o, d) -> initialize(VM.getVM().getTypeDataBase()));
@@ -47,8 +48,13 @@ public class ZPageAllocator extends VMObject {
         Type type = db.lookupType("ZPageAllocator");
 
         maxCapacityField = type.getCIntegerField("_max_capacity");
-        capacityField = type.getCIntegerField("_capacity");
-        usedField = type.getCIntegerField("_used");
+        partitionsOffset = type.getAddressField("_partitions").getOffset();
+        numaCount = ZNUMA.count();
+    }
+
+    private ZPerNUMAZPartition partitions() {
+        Address partitionsAddr = addr.addOffsetTo(partitionsOffset);
+        return VMObjectFactory.newObject(ZPerNUMAZPartition.class, partitionsAddr);
     }
 
     public long maxCapacity() {
@@ -56,11 +62,19 @@ public class ZPageAllocator extends VMObject {
     }
 
     public long capacity() {
-        return capacityField.getValue(addr);
+        long total_capacity = 0;
+        for (int id = 0; id < numaCount; id++) {
+          total_capacity += partitions().value(id).capacity();
+        }
+        return total_capacity;
     }
 
     public long used() {
-        return usedField.getValue(addr);
+        long total_used = 0;
+        for (int id = 0; id < numaCount; id++) {
+          total_used += partitions().value(id).used();
+        }
+        return total_used;
     }
 
     public ZPageAllocator(Address addr) {

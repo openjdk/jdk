@@ -468,7 +468,15 @@ AC_DEFUN_ONCE([BASIC_SETUP_PANDOC],
     AC_MSG_CHECKING([if the pandoc smart extension needs to be disabled for markdown])
     if $PANDOC --list-extensions | $GREP -q '+smart'; then
       AC_MSG_RESULT([yes])
-      PANDOC_MARKDOWN_FLAG="markdown-smart"
+      PANDOC_MARKDOWN_FLAG="$PANDOC_MARKDOWN_FLAG-smart"
+    else
+      AC_MSG_RESULT([no])
+    fi
+
+    AC_MSG_CHECKING([if the pandoc tex_math_dollars extension needs to be disabled for markdown])
+    if $PANDOC --list-extensions | $GREP -q '+tex_math_dollars'; then
+      AC_MSG_RESULT([yes])
+      PANDOC_MARKDOWN_FLAG="$PANDOC_MARKDOWN_FLAG-tex_math_dollars"
     else
       AC_MSG_RESULT([no])
     fi

@@ -61,7 +61,7 @@ Robin Watts (Artifex)
 Shawn Pedersen
 Andrew Brygin
 Samuli Suominen
-Florian Hˆch
+Florian Höch
 Aurelien Jarno
 Claudiu Cebuc
 Michael Vhrel (Artifex)
@@ -69,7 +69,7 @@ Michal Cihar
 Daniel Kaneider
 Mateusz Jurczyk (Google)
 Paul Miller
-SÈbastien LÈon
+Sébastien Léon
 Christian Schmitz
 XhmikosR
 Stanislav Brabec (SuSe)
