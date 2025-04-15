@@ -671,6 +671,12 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
         n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
     }
 #endif
+#ifdef _AIX
+    // workaround AIX bug where IP_ADD_MEMBERSHIP fails intermittently
+    if (n < 0 && errno == EAGAIN) {
+        n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
+    }
+#endif
 
     if (n < 0) {
         if (join && (errno == ENOPROTOOPT || errno == EOPNOTSUPP))
