@@ -26,6 +26,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "gc/shared/workerDataArray.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.hpp"
@@ -72,9 +73,13 @@ TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
   _queue_set(queue_set),
   _offered_termination(0),
   _blocker(Mutex::nosafepoint, "TaskTerminator_lock"),
-  _spin_master(nullptr) { }
+  _spin_master(nullptr),
+  _terminations(new WorkerDataArray<double>("TaskTerminator", "Terminations", n_threads)) {
+  _terminations->create_thread_work_items("Termination attempts");
+}
 
 TaskTerminator::~TaskTerminator() {
+  delete _terminations;
   if (_offered_termination != 0) {
     assert(_offered_termination == _n_threads, "Must be terminated or aborted");
   }
@@ -88,17 +93,25 @@ void TaskTerminator::assert_queue_set_empty() const {
 }
 #endif
 
-void TaskTerminator::reset_for_reuse() {
+void TaskTerminator::reset_for_reuse(const bool reset_termination_data_array) {
   if (_offered_termination != 0) {
     assert(_offered_termination == _n_threads,
            "Only %u of %u threads offered termination", _offered_termination, _n_threads);
     assert(_spin_master == nullptr, "Leftover spin master " PTR_FORMAT, p2i(_spin_master));
     _offered_termination = 0;
+    if (reset_termination_data_array) {
+      _terminations->reset();
+    }
   }
 }
 
 void TaskTerminator::reset_for_reuse(uint n_threads) {
-  reset_for_reuse();
+  reset_for_reuse(false);
+  if (n_threads != _n_threads) {
+    delete _terminations;
+    _terminations = new WorkerDataArray<double>("TaskTerminator", "Terminations", n_threads);
+    _terminations->create_thread_work_items("Termination attempts");
+  }
   _n_threads = n_threads;
 }
 
@@ -132,6 +145,7 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   assert(_n_threads > 0, "Initialization is incorrect");
   assert(_offered_termination < _n_threads, "Invariant");
 
+  TerminationTracker termination_tracker(this);
   // Single worker, done
   if (_n_threads == 1) {
     _offered_termination = 1;
