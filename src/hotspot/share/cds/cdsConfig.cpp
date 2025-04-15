@@ -402,6 +402,11 @@ void CDSConfig::check_aot_flags() {
   CHECK_SINGLE_PATH(AOTCache);
   CHECK_SINGLE_PATH(AOTConfiguration);
 
+  if (FLAG_IS_DEFAULT(AOTCache) &&
+      (AOTCodeCaching || AOTStubCaching || AOTAdapterCaching)) {
+    vm_exit_during_initialization("AOTCache must be specified when using AOT code caching");
+  }
+
   if (FLAG_IS_DEFAULT(AOTCache) && FLAG_IS_DEFAULT(AOTConfiguration) && FLAG_IS_DEFAULT(AOTMode)) {
     // AOTCache/AOTConfiguration/AOTMode not used.
     return;
@@ -425,11 +430,6 @@ void CDSConfig::check_aot_flags() {
       assert(strcmp(AOTMode, "create") == 0, "checked by AOTModeConstraintFunc");
       check_aotmode_create();
     }
-  }
-
-  if (FLAG_IS_DEFAULT(AOTCache) &&
-      (AOTCodeCaching || AOTStubCaching || AOTAdapterCaching)) {
-    vm_exit_during_initialization("AOTCache must be specified when using AOT code caching");
   }
 }
 
