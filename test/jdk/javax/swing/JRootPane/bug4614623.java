@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class bug4614623 {
 
             Check if the following is true.
             1) Press Alt key. The letter 'F' (menu mnemonic) of
-            the File menu should now be underlined.
+            the "File" menu should now be underlined.
             2) Release the Alt key, the selection background (light grey)
             should appear around the File menu. Compare "About" menu
             with "File" menu to see the light grey selection background.

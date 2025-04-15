@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class bug4419914 {
             For JDialog:
             END  CENTER  START
 
-        3. Press on the "START" button in case JWindow & JDialog and "NORTH"
+        3. Press on the "START" button in case of JWindow & JDialog and "NORTH"
            in case of JFrame, confirm that the respective button is focused.
 
         4. Press TAB repeatedly and confirm that the TAB focus moves
@@ -76,7 +76,7 @@ public class bug4419914 {
             (NORTH - START - CENTER - END - SOUTH - NORTH - START - CENTER - ...)
 
             For JWindow:
-            (START - CENTER - END - Quit - START - CENTER - END - Quit - ...)
+            (START - CENTER - END - QUIT - START - CENTER - END - QUIT - ...)
 
             For JDialog:
             (START - CENTER - END - START - CENTER - END - ...)
@@ -88,11 +88,10 @@ public class bug4419914 {
         PassFailJFrame.builder()
                 .title("Tab movement Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(45)
-                .testTimeOut(15)
+                .testTimeOut(10)
                 .testUI(bug4419914::createAndShowUI)
-                .positionTestUI(WindowLayouts::rightOneRow)
+                .positionTestUI(WindowLayouts::rightOneColumn)
                 .build()
                 .awaitAndCheck();
     }
