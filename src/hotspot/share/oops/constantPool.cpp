@@ -570,8 +570,9 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
 
   if (!can_archive) {
     int resolved_klass_index = klass_slot_at(cp_index).resolved_klass_index();
-    resolved_klasses()->at_put(resolved_klass_index, nullptr);
+    // This might be at a safepoint but do this in the right order.
     tag_at_put(cp_index, JVM_CONSTANT_UnresolvedClass);
+    resolved_klasses()->at_put(resolved_klass_index, nullptr);
   }
 
   LogStreamHandle(Trace, cds, resolve) log;
@@ -650,7 +651,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   // the unresolved_klasses() array.
   if (this_cp->tag_at(cp_index).is_klass()) {
     Klass* klass = this_cp->resolved_klasses()->at(resolved_klass_index);
-    assert(klass != nullptr, "must be non null if resolved");
+    assert(klass != nullptr, "must be resolved");
     return klass;
   }
 
@@ -718,7 +719,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   // We need to recheck exceptions from racing thread and return the same.
   if (old_tag == JVM_CONSTANT_UnresolvedClassInError) {
     // Remove klass.
-    this_cp->resolved_klasses()->at_put(resolved_klass_index, nullptr);
+    Atomic::store(adr, (Klass*)nullptr);
     throw_resolution_error(this_cp, cp_index, CHECK_NULL);
   }
 
@@ -738,7 +739,7 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
 
   if (this_cp->tag_at(which).is_klass()) {
     Klass* k = this_cp->resolved_klasses()->at(resolved_klass_index);
-    assert(k != nullptr, "should be resolved");
+    assert(k != nullptr, "must be resolved");
     return k;
   } else if (this_cp->tag_at(which).is_unresolved_klass_in_error()) {
     return nullptr;
@@ -1127,16 +1128,8 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     // don't trigger resolution if the constant might need it
     switch (tag.value()) {
     case JVM_CONSTANT_Class:
-    {
-      CPKlassSlot kslot = this_cp->klass_slot_at(cp_index);
-      int resolved_klass_index = kslot.resolved_klass_index();
-      if (this_cp->resolved_klasses()->at(resolved_klass_index) == nullptr) {
-        (*status_return) = false;
-        return nullptr;
-      }
-      // the klass is waiting in the CP; go get it
+      assert(this_cp->resolved_klass_at(cp_index) != nullptr, "must be resolved");
       break;
-    }
     case JVM_CONSTANT_String:
     case JVM_CONSTANT_Integer:
     case JVM_CONSTANT_Float:
