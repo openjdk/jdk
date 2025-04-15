@@ -522,6 +522,10 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
       $ADDITIONAL_UBSAN_CHECKS"
   UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-stringop-truncation -Wno-format-overflow -Wno-array-bounds -Wno-stringop-overflow -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
   UBSAN_LDFLAGS="$UBSAN_CHECKS"
+  if test "x$TOOLCHAIN_TYPE" = "xclang" && test "x$OPENJDK_TARGET_OS" = "xaix"; then
+      UBSAN_CFLAGS="$UBSAN_CFLAGS -fno-sanitize=function,vptr -DLLVM_SYMBOLIZER=$(dirname $(dirname $CC))/tools/ibm-llvm-symbolizer"
+      UBSAN_LDFLAGS="$UBSAN_LDFLAGS -fno-sanitize=function,vptr -Wl,-bbigtoc"
+  fi
   UTIL_ARG_ENABLE(NAME: ubsan, DEFAULT: false, RESULT: UBSAN_ENABLED,
       DESC: [enable UndefinedBehaviorSanitizer],
       CHECK_AVAILABLE: [

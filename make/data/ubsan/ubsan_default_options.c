@@ -43,6 +43,14 @@
 #define ATTRIBUTE_USED
 #endif
 
+#ifdef LLVM_SYMBOLIZER
+#define _LLVM_SYMBOLIZER(X) ",external_symbolizer_path=" X_LLVM_SYMBOLIZER(X)
+#define X_LLVM_SYMBOLIZER(X) #X
+#else
+#define LLVM_SYMBOLIZER
+#define _LLVM_SYMBOLIZER(X)
+#endif
+
 // Override weak symbol exposed by UBSan to override default options. This is called by UBSan
 // extremely early during library loading, before main is called. We need to override the default
 // options because by default UBSan only prints a warning for each occurrence. We want jtreg tests
@@ -50,5 +58,5 @@
 // thread so it is easier to track down. You can override these options by setting the environment
 // variable UBSAN_OPTIONS.
 ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __ubsan_default_options() {
-  return "halt_on_error=1,print_stacktrace=1";
+  return "halt_on_error=1,print_stacktrace=1" _LLVM_SYMBOLIZER(LLVM_SYMBOLIZER);
 }
