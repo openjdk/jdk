@@ -25,7 +25,7 @@
  * @test
  * @bug 4165874
  * @summary Adds a MouseListener to the splitpane divider.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual AddMouseListenerTest
  */

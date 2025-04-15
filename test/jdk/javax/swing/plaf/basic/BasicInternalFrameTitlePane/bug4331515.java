@@ -26,7 +26,7 @@
  * @bug 4331515
  * @requires (os.family == "windows")
  * @summary System menu of an internal frame shouldn't have duplicated items in Win L&F
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4331515
  */

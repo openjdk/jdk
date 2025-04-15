@@ -25,7 +25,7 @@
  * @test
  * @bug 4305622
  * @summary MetalToolBarUI.installUI invokeLater causes flickering
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4305622
  */

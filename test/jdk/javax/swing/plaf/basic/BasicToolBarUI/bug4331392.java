@@ -26,7 +26,7 @@
  * @bug 4331392
  * @summary Tests if BasicToolBarUI has bogus logic that prevents vertical
  *          toolbars from docking
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4331392
  */
