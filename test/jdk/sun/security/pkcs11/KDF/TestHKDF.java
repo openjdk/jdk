@@ -314,7 +314,8 @@ public final class TestHKDF extends PKCS11Test {
             // Expected.
         } catch (Exception e) {
             reportTestFailure(new Exception(errorMsg + " expected to throw " +
-                    "InvalidAlgorithmParameterException.", e));
+                    "InvalidAlgorithmParameterException for key algorithm '" +
+                    keyAlg + "'.", e));
         }
     }
 
@@ -640,6 +641,14 @@ public final class TestHKDF extends PKCS11Test {
                 "PBKDF2WithHmacSHA1",
                 32,
                 "Derivation of an invalid key algorithm");
+    }
+
+    private static void test_invalid_aes_key_algorithm_derivation() {
+        executeInvalidKeyDerivationTest(
+                "Test derivation of an invalid AES key",
+                "PBEWithHmacSHA224AndAES_256",
+                32,
+                "Derivation of an invalid AES key");
     }
 
     private static void test_invalid_AES_key_size() {

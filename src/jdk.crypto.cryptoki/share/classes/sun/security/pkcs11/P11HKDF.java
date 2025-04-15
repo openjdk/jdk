@@ -164,7 +164,7 @@ final class P11HKDF extends KDFSpi {
                     "type (CKK_*) was not found for a key of the algorithm '" +
                     alg + "'.");
         }
-        long derivedKeyType = getDerivedKeyType(ki, alg);
+        checkDerivedKeyType(ki, alg);
         P11KeyGenerator.checkKeySize(ki.keyGenMech, outLen * 8, token);
 
         P11Key p11BaseKey = convertKey(baseKey, (isExtract ? "IKM" : "PRK") +
@@ -187,7 +187,7 @@ final class P11HKDF extends KDFSpi {
         long derivedKeyClass = isData ? CKO_DATA : CKO_SECRET_KEY;
         CK_ATTRIBUTE[] attrs = new CK_ATTRIBUTE[] {
                 new CK_ATTRIBUTE(CKA_CLASS, derivedKeyClass),
-                new CK_ATTRIBUTE(CKA_KEY_TYPE, derivedKeyType),
+                new CK_ATTRIBUTE(CKA_KEY_TYPE, ki.keyType),
                 new CK_ATTRIBUTE(CKA_VALUE_LEN, outLen)
         };
         Session session = null;
@@ -198,7 +198,7 @@ final class P11HKDF extends KDFSpi {
                     svcKi.hmacMech, saltType, saltBytes, p11SaltKey != null ?
                     p11SaltKey.getKeyID() : 0L, info);
             attrs = token.getAttributes(O_GENERATE, derivedKeyClass,
-                    derivedKeyType, attrs);
+                    ki.keyType, attrs);
             long derivedObjectID = token.p11.C_DeriveKey(session.id(),
                     new CK_MECHANISM(mechanism, params), baseKeyID, attrs);
             Object ret;
@@ -234,24 +234,21 @@ final class P11HKDF extends KDFSpi {
         }
     }
 
-    private long getDerivedKeyType(P11SecretKeyFactory.KeyInfo ki, String alg)
+    private static boolean canDeriveKeyInfoType(long t) {
+        return (t == CKK_DES || t == CKK_DES3 || t == CKK_AES ||
+                t == CKK_RC4 || t == CKK_BLOWFISH || t == CKK_CHACHA20 ||
+                t == CKK_GENERIC_SECRET);
+    }
+
+    private void checkDerivedKeyType(P11SecretKeyFactory.KeyInfo ki, String alg)
             throws InvalidAlgorithmParameterException {
-        switch ((int) ki.keyType) {
-            case (int) CKK_DES, (int) CKK_DES3, (int) CKK_AES, (int) CKK_RC4,
-                    (int) CKK_BLOWFISH, (int) CKK_CHACHA20,
-                    (int) CKK_GENERIC_SECRET -> {
-                if (ki.keyType != CKK_GENERIC_SECRET ||
-                        alg.equalsIgnoreCase("Generic")) {
-                    return ki.keyType;
-                }
-            }
-            case (int) PCKK_TLSPREMASTER, (int) PCKK_TLSRSAPREMASTER,
-                    (int) PCKK_TLSMASTER -> {
-                return CKK_GENERIC_SECRET;
-            }
+        Class<?> kiClass = ki.getClass();
+        if (!kiClass.equals(P11SecretKeyFactory.TLSKeyInfo.class) &&
+                !(kiClass.equals(P11SecretKeyFactory.KeyInfo.class) &&
+                        canDeriveKeyInfoType(ki.keyType))) {
+            throw new InvalidAlgorithmParameterException("A key of algorithm " +
+                    "'" + alg + "' is not valid for derivation.");
         }
-        throw new InvalidAlgorithmParameterException("A key of algorithm '" +
-                alg + "' is not valid for derivation.");
     }
 
     private P11Key.P11SecretKey convertKey(SecretKey key, String errorMessage) {

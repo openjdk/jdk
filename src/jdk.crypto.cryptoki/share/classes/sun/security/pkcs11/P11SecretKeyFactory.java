@@ -103,7 +103,8 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         keyInfo.put(ki.algo.toUpperCase(Locale.ENGLISH), ki);
     }
 
-    static sealed class KeyInfo permits PBEKeyInfo, HMACKeyInfo, HKDFKeyInfo {
+    static sealed class KeyInfo permits PBEKeyInfo, HMACKeyInfo, HKDFKeyInfo,
+            TLSKeyInfo {
         // Java Standard Algorithm Name.
         public final String algo;
 
@@ -147,6 +148,12 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
             // RC4 vs ARCFOUR) and mixed PBE - non-PBE cases (i.e.: a
             // PBE-derived AES key used in an AES Cipher service).
             return ki.keyType == si.keyType;
+        }
+    }
+
+    static final class TLSKeyInfo extends KeyInfo {
+        TLSKeyInfo(String algo) {
+            super(algo, CKK_GENERIC_SECRET);
         }
     }
 
@@ -235,9 +242,9 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         putKeyInfo(new KeyInfo("RC2", CKK_RC2, CKM_RC2_KEY_GEN));
         putKeyInfo(new KeyInfo("IDEA", CKK_IDEA, CKM_IDEA_KEY_GEN));
 
-        putKeyInfo(new KeyInfo("TlsPremasterSecret", PCKK_TLSPREMASTER));
-        putKeyInfo(new KeyInfo("TlsRsaPremasterSecret", PCKK_TLSRSAPREMASTER));
-        putKeyInfo(new KeyInfo("TlsMasterSecret", PCKK_TLSMASTER));
+        putKeyInfo(new TLSKeyInfo("TlsPremasterSecret"));
+        putKeyInfo(new TLSKeyInfo("TlsRsaPremasterSecret"));
+        putKeyInfo(new TLSKeyInfo("TlsMasterSecret"));
         putKeyInfo(new KeyInfo("Generic", CKK_GENERIC_SECRET,
                 CKM_GENERIC_SECRET_KEY_GEN));
 
@@ -583,9 +590,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
                         }
                     }
                 }
-                case (int) CKK_GENERIC_SECRET, (int) PCKK_TLSPREMASTER,
-                        (int) PCKK_TLSRSAPREMASTER, (int) PCKK_TLSMASTER ->
-                        keyType = CKK_GENERIC_SECRET;
+                case (int) CKK_GENERIC_SECRET -> {}
                 default -> throw new InvalidKeyException("Unknown algorithm " +
                         algorithm);
             }
