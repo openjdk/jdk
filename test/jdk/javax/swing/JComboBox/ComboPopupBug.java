@@ -75,11 +75,7 @@ public class ComboPopupBug {
         robot.delay(1000);
 
         try {
-            SwingUtilities.invokeAndWait(() -> {
-                comboBoxLocation = comboBox.getLocationOnScreen();
-                comboBoxSize = comboBox.getSize();
-                closeButton.doClick();
-            });
+            SwingUtilities.invokeAndWait(() -> closeButton.doClick());
         }
         finally {
             SwingUtilities.invokeAndWait(() -> frame.dispose());
@@ -87,6 +83,9 @@ public class ComboPopupBug {
     }
 
     public static void clickComboBox() {
+        comboBoxLocation = comboBox.getLocationOnScreen();
+        comboBoxSize = comboBox.getSize();
+
         robot.mouseMove(comboBoxLocation.x + comboBoxSize.width - PADDING,
                 comboBoxLocation.y + comboBoxSize.height / 2);
         robot.mousePress(InputEvent.BUTTON1_MASK);
