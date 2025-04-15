@@ -21,19 +21,19 @@
  * questions.
  */
 
-package org.openjdk.bench.java.util;
+package org.openjdk.bench.java.io;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.io.VariableLengthByteArray;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
-import java.util.VariableLengthByteArray;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -82,7 +82,7 @@ public class VariableLengthByteArrayBenchmark {
 
     public ByteArrayOutputStream out;
 
-    @Param(value = { "base", "memory", "jdk_internal" })
+    @Param(value = { "BOAS", "VLBA" })
     public String outputStreamType;
 
     public ByteArrayOutputStream populatedOutputStream;
@@ -99,11 +99,9 @@ public class VariableLengthByteArrayBenchmark {
 
     private ByteArrayOutputStream getNewOutputStream() {
         switch (outputStreamType) {
-        case "base":
+        case "BOAS":
             return new ByteArrayOutputStream();
-        case "memory":
-            return ByteArrayOutputStream.unsynchronized();
-        case "jdk_internal":
+        case "VLBA":
             return VariableLengthByteArray.createByteArrayOutputStream();
         default:
             throw new RuntimeException("Unrecognized type parameter: " + outputStreamType);

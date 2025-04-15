@@ -28,7 +28,6 @@ package java.io;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.VariableLengthByteArray;
 
 import jdk.internal.util.ArraysSupport;
 
@@ -48,31 +47,6 @@ import jdk.internal.util.ArraysSupport;
  */
 
 public class ByteArrayOutputStream extends OutputStream {
-
-    /**
-     * Returns an instance of
-     * {@code ByteArrayOutputStream} that is entirely unsynchronized, and is free to use an alternative (faster) datastructure.
-     *
-     * @return a new instance of java.io.ByteArrayOutputStream
-     *
-     * @since 25
-     */
-    public static ByteArrayOutputStream unsynchronized() {
-        return VariableLengthByteArray.createByteArrayOutputStream();
-    }
-
-    /**
-     * Returns an instance of {@code ByteArrayOutputStream} that is entirely
-     * unsynchronized, and is free to use an alternative (faster) datastructure.
-     *
-     * @param initialCapacity caller-provided hint about the total payload capacity
-     * @return a new instance of java.io.ByteArrayOutputStream
-     *
-     * @since 25
-     */
-    public static ByteArrayOutputStream unsynchronized(int initialCapacity) {
-        return new VariableLengthByteArray(initialCapacity).asByteArrayOutputStream();
-    }
 
     /**
      * The buffer where data is stored.

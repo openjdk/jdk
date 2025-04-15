@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import java.util.VariableLengthObjectArray;
 import java.util.concurrent.TimeUnit;
 
@@ -55,22 +56,25 @@ import org.openjdk.jmh.annotations.Warmup;
 @State(Scope.Benchmark)
 public class VariableLengthObjectArrayBenchmark {
 
-    @Param(value = { "4", "" + (16 * 1024), "" + (16 * 1024 * 1024) })
+    @Param(value = {
+//            "4",
+//            "" + (16 * 1024),
+            "" + (16 * 1024 * 1024),
+            "" + (256 * 1024 * 1024)
+            })
     public int finalListSize;
 
     public String input = new String();
 
     public List<String> list;
 
-    @Param(value = { "array", "linked", "jdk_internal" })
+    @Param(value = { "ArrayList", "LinkedList", "VLOA" })
     public String listType;
 
-    /**
-     * This test is prone to the loop being optimized; calculating each byte avoids
-     * that.
-     *
-     */
-    @Measurement(iterations = 4, time = 1, timeUnit = TimeUnit.SECONDS)
+    public List<String> populatedList;
+
+    public Random random;
+
     @Benchmark
     public void add() {
         list = getNewList();
@@ -79,23 +83,13 @@ public class VariableLengthObjectArrayBenchmark {
         }
     }
 
-    public List<String> populatedList;
-
-    @Setup
-    public void prepareTestObjects() {
-        populatedList = getNewList();
-        for (int i = 0; i < finalListSize; i++) {
-            populatedList.add(input);
-        }
-    }
-
     private List<String> getNewList() {
         switch (listType) {
-        case "array":
+        case "ArrayList":
             return new ArrayList<>();
-        case "linked":
+        case "LinkedList":
             return new LinkedList<>();
-        case "jdk_internal":
+        case "VLOA":
             return VariableLengthObjectArray.asList(String.class);
         default:
             throw new RuntimeException("Unrecognized type parameter: " + listType);
@@ -111,6 +105,26 @@ public class VariableLengthObjectArrayBenchmark {
             if (entry == null) {
                 throw new RuntimeException("Benchmark encountered invalid result");
             }
+        }
+    }
+
+    @Setup
+    public void setup() {
+        if ("LinkedList".equals(listType) && finalListSize > 1024 * 1024) {
+            throw new UnsupportedOperationException("LinkedList is too slow to test at this scale");
+        }
+        populatedList = getNewList();
+        for (int i = 0; i < finalListSize; i++) {
+            populatedList.add(input);
+        }
+
+        random = new Random(17);
+    }
+
+    @Benchmark
+    public void get() {
+        for (int i = 0; i < 10000; i++) {
+            populatedList.get(random.nextInt(finalListSize));
         }
     }
 

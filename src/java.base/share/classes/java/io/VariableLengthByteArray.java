@@ -21,13 +21,10 @@
  * questions.
  */
 
-package java.util;
+package java.io;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 
@@ -40,7 +37,7 @@ public class VariableLengthByteArray {
      * Functional interface to act upon each segment. Internal only.
      */
     private static interface ApplyBySegmentFunction {
-        public void apply(byte[] segment, int offset, int length) throws IOException;
+        public void apply(byte[] segment, int offset, int length);
     }
 
     /**
@@ -84,7 +81,7 @@ public class VariableLengthByteArray {
          */
         @Override
         public String toString() {
-            return new String(toByteArray());
+            return VariableLengthByteArray.this.toString();
         }
 
         /**
@@ -92,7 +89,7 @@ public class VariableLengthByteArray {
          */
         @Override
         public String toString(Charset charset) {
-            return new String(toByteArray(), charset);
+            return VariableLengthByteArray.this.toString(charset);
         }
 
         /**
@@ -101,6 +98,9 @@ public class VariableLengthByteArray {
         @SuppressWarnings("deprecation")
         @Override
         public String toString(int hibyte) {
+            if (completedSegmentCount == 0) {
+                return new String(currentSegment, hibyte, 0, currentSegmentCount);
+            }
             return new String(VariableLengthByteArray.this.toArray(), hibyte, 0, count);
         }
 
@@ -109,7 +109,7 @@ public class VariableLengthByteArray {
          */
         @Override
         public String toString(String charsetName) throws UnsupportedEncodingException {
-            return new String(toByteArray(), charsetName);
+            return VariableLengthByteArray.this.toString(charsetName);
         }
 
         /**
@@ -134,7 +134,51 @@ public class VariableLengthByteArray {
         @Override
         public void writeTo(OutputStream out) throws IOException {
             VariableLengthByteArray.this
-                    .applyBySegment((segment, offset, length) -> out.write(segment, offset, length));
+                    .applyBySegmentWithException((segment, offset, length) -> out.write(segment, offset, length));
+        }
+
+    }
+
+    private class SeekableByteChannelView implements SeekableByteChannel {
+
+        @Override
+        public boolean isOpen() {
+            return true;
+        }
+
+        @Override
+        public void close() throws IOException {
+            // no-op
+        }
+
+        @Override
+        public int read(ByteBuffer dst) throws IOException {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+
+        @Override
+        public int write(ByteBuffer src) throws IOException {
+            return VariableLengthByteArray.this.add(src);
+        }
+
+        @Override
+        public long position() throws IOException {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+
+        @Override
+        public SeekableByteChannel position(long newPosition) throws IOException {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+
+        @Override
+        public long size() throws IOException {
+            return VariableLengthByteArray.this.size();
+        }
+
+        @Override
+        public SeekableByteChannel truncate(long size) throws IOException {
+            throw new UnsupportedOperationException("Not yet implemented");
         }
 
     }
@@ -143,23 +187,32 @@ public class VariableLengthByteArray {
      * This view is NOT thread-safe, mutations during the lifetime of the view will
      * cause problems.
      */
-    private class InputStreamView extends InputStream {
+    private class InputStreamView extends ByteArrayInputStream {
+        public InputStreamView() {
+            super(null);
+        }
+
         private long position;
+
+        private long mark;
+
+        private long size;
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public int available() throws IOException {
+        public int available() {
             // check whether response fits into available()
-            return (int) (size() - position);
+            long remaining = (size - position);
+            return (int) Math.min(remaining, Integer.MAX_VALUE);
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public void close() throws IOException {
+        public void close() {
             // no-op
         }
 
@@ -168,7 +221,7 @@ public class VariableLengthByteArray {
          */
         @Override
         public void mark(int readlimit) {
-            throw new UnsupportedOperationException("Not yet implemented");
+            this.mark = position;
         }
 
         /**
@@ -183,7 +236,15 @@ public class VariableLengthByteArray {
          * {@inheritDoc}
          */
         @Override
-        public int read() throws IOException {
+        public int read() {
+            return get(position++);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int read(byte[] b, int off, int len) {
             throw new UnsupportedOperationException("Not yet implemented");
         }
 
@@ -191,15 +252,7 @@ public class VariableLengthByteArray {
          * {@inheritDoc}
          */
         @Override
-        public int read(byte[] b, int off, int len) throws IOException {
-            throw new UnsupportedOperationException("Not yet implemented");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public byte[] readAllBytes() throws IOException {
+        public byte[] readAllBytes() {
             return VariableLengthByteArray.this.toArray();
 
         }
@@ -208,7 +261,7 @@ public class VariableLengthByteArray {
          * {@inheritDoc}
          */
         @Override
-        public int readNBytes(byte[] b, int off, int len) throws IOException {
+        public int readNBytes(byte[] b, int off, int len) {
             throw new UnsupportedOperationException("Not yet implemented");
         }
 
@@ -216,7 +269,7 @@ public class VariableLengthByteArray {
          * {@inheritDoc}
          */
         @Override
-        public byte[] readNBytes(int len) throws IOException {
+        public byte[] readNBytes(int len) {
             throw new UnsupportedOperationException("Not yet implemented");
         }
 
@@ -224,23 +277,25 @@ public class VariableLengthByteArray {
          * {@inheritDoc}
          */
         @Override
-        public void reset() throws IOException {
-            throw new UnsupportedOperationException("Not yet implemented");
+        public void reset() {
+            position = mark;
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public long skip(long n) throws IOException {
-            throw new UnsupportedOperationException("Not yet implemented");
+        public long skip(long n) {
+            long currentPosition = position;
+            position = Math.min(VariableLengthByteArray.this.size(), position + n);
+            return position - currentPosition;
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public void skipNBytes(long n) throws IOException {
+        public void skipNBytes(long n) {
             throw new UnsupportedOperationException("Not yet implemented");
         }
 
@@ -269,6 +324,13 @@ public class VariableLengthByteArray {
             System.arraycopy(segment, 0, output, nextWritePosition, length);
             nextWritePosition += length;
         }
+    }
+
+    /**
+     * Functional interface to act upon each segment. Internal only.
+     */
+    private static interface ApplyBySegmentWithExceptionFunction {
+        public void apply(byte[] segment, int offset, int length) throws IOException;
     }
 
     /**
@@ -392,9 +454,9 @@ public class VariableLengthByteArray {
      * {@code off} to this {@code VariableLengthByteArray}. Guaranteed to allocate 0
      * or 1 segments.
      *
-     * @param b   array to add
-     * @param off offset
-     * @param len length
+     * @param b   {@inheritDoc}
+     * @param off {@inheritDoc}
+     * @param len {@inheritDoc}
      * @throws NullPointerException      if {@code b} is {@code null}.
      * @throws IndexOutOfBoundsException if {@code off} is negative, {@code len} is
      *                                   negative, or {@code len} is greater than
@@ -470,7 +532,7 @@ public class VariableLengthByteArray {
      * @throws NullPointerException if {@code out} is {@code null}.
      * @throws IOException          if an I/O error occurs.
      */
-    private void applyBySegment(ApplyBySegmentFunction f) throws IOException {
+    private void applyBySegment(ApplyBySegmentFunction f) {
         // write each of the previous, fully-populated segments
         for (int i = 0; i < completedSegmentCount; i++) {
             byte[] segment = completedSegments[i];
@@ -528,17 +590,35 @@ public class VariableLengthByteArray {
      *
      * @return ByteArrayOutputStream view
      */
-    public ByteArrayOutputStream asByteArrayOutputStream() {
+    public ByteArrayOutputStream asOutputStream() {
         return new ByteArrayOutputStreamView();
     }
 
     /**
      * Returns an {@code InputStream} based on this instance's current state.
      *
-     * @return InputSTream view
+     * @return InputStream view
      */
     public InputStream asInputStream() {
         return new InputStreamView();
+    }
+
+    /**
+     * View this data as a {@code ByteBuffer}.
+     *
+     * @return ByteBuffer
+     */
+    public ByteBuffer asByteBuffer() {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    /**
+     * View this data as a {@code ByteChannel}.
+     *
+     * @return SeekableByteChannel
+     */
+    public SeekableByteChannel asByteChannel() {
+        return new SeekableByteChannelView();
     }
 
     /**
@@ -649,11 +729,7 @@ public class VariableLengthByteArray {
     public byte[] toArray() {
         int currentSize = sizeAsInt();
         WriteToArrayFunction writeFunction = new WriteToArrayFunction(currentSize);
-        try {
-            applyBySegment(writeFunction);
-        } catch (IOException ioe) {
-            throw new RuntimeException("toArray failed", ioe);
-        }
+        applyBySegment(writeFunction);
         byte[] out = writeFunction.output;
 
         return out;
@@ -667,6 +743,82 @@ public class VariableLengthByteArray {
             throw new IndexOutOfBoundsException("Index was " + index
                     + " but must be non-negative and less than the current length (" + size() + ")");
         }
+    }
+
+    /**
+     * Writes the contents of this {@code VariableLengthByteArray} to the specified
+     * output stream argument by calling the output stream's
+     * {@code out.write(buf, 0, count)} once per segment. Note that segment lengths
+     * are variable, so the calls to {@code out.write} may as well.
+     *
+     * @param out the output stream to which to write the data.
+     * @throws NullPointerException if {@code out} is {@code null}.
+     * @throws IOException          if an I/O error occurs.
+     */
+    private void applyBySegmentWithException(ApplyBySegmentWithExceptionFunction f) throws IOException {
+        // write each of the previous, fully-populated segments
+        for (int i = 0; i < completedSegmentCount; i++) {
+            byte[] segment = completedSegments[i];
+            f.apply(segment, 0, segment.length);
+        }
+
+        // write the valid portion of the current segment
+        f.apply(currentSegment, 0, currentSegmentCount);
+    }
+
+    /**
+     * Writes the valid contents of the buffer.
+     *
+     * @param buffer input data
+     * @return number of bytes added
+     */
+    public int add(ByteBuffer buffer) {
+        // same logic as with add(byte[]) - just read the channel instead of a byte[]
+
+        return buffer.position();
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        if (completedSegmentCount == 0) {
+            return new String(currentSegment, 0, currentSegmentCount);
+        }
+        return new String(toArray());
+    }
+
+    /**
+     * Creates a String using the specified charset.
+     *
+     * @param charset Which charset to use
+     * @return completed string
+     * @throws IllegalStateException if payload size is too large to express as a
+     *                               string
+     */
+    public String toString(Charset charset) {
+        if (completedSegmentCount == 0) {
+            return new String(currentSegment, 0, currentSegmentCount, charset);
+        }
+        return new String(toArray(), charset);
+    }
+
+    /**
+     * Creates a String using the specified charset.
+     *
+     * @param charsetName Which charset to use
+     * @return completed string
+     * @throws IllegalStateException        if payload size is too large to express
+     *                                      as a string
+     * @throws UnsupportedEncodingException if an invalid charset name is specified
+     */
+    public String toString(String charsetName) throws UnsupportedEncodingException {
+        if (completedSegmentCount == 0) {
+            return new String(currentSegment, 0, currentSegmentCount, charsetName);
+        }
+        return new String(toArray(), charsetName);
     }
 
 }

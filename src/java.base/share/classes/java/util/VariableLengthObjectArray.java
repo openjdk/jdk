@@ -25,11 +25,6 @@ package java.util;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
 
 /**
  * Efficient and scalable structure for storing a variable number of Objects,
@@ -58,20 +53,21 @@ public class VariableLengthObjectArray<T> {
      * a prototype.
      */
     private class EntryIterator implements Iterator<T> {
-        int overallPosition;
         int segmentContentIndex;
         int segmentIndex;
+        int segmentLength;
         T[] segment;
 
         /**
          * Default constructor.
          */
         public EntryIterator() {
+            advanceToNextSegment();
         }
 
         @Override
         public boolean hasNext() {
-            return (overallPosition < size());
+            return segment != null;
         }
 
         @Override
@@ -81,17 +77,37 @@ public class VariableLengthObjectArray<T> {
                 throw new IllegalStateException("Iterator has exceeded length - pay attention to hasNext()!");
             }
             T entry;
-            if (segment == null) {
-                if (segmentIndex < completedSegmentCount) {
-                    segment = completedSegments[segmentIndex];
-                } else {
-                    segment = currentSegment;
-                }
-                segmentContentIndex = 0;
-            }
+
             entry = segment[segmentContentIndex++];
-            overallPosition++;
+
+            if (segmentContentIndex == segmentLength) {
+                advanceToNextSegment();
+            }
+
             return entry;
+        }
+
+        private void advanceToNextSegment() {
+            if (segment == currentSegment) {
+                // finished the last segment
+                segment = null;
+                return;
+            } else if (segmentIndex < completedSegmentCount) {
+                // use the next completed segment
+                segment = completedSegments[segmentIndex++];
+                segmentLength = segment.length;
+                segmentContentIndex = 0;
+            } else {
+                // use the current segment
+                if (currentSegmentCount > 0) {
+                    segment = currentSegment;
+                    segmentLength = currentSegmentCount;
+                    segmentContentIndex = 0;
+                } else {
+                    // the current segment has 0 bytes
+                    segment = null;
+                }
+            }
         }
     }
 
@@ -254,7 +270,7 @@ public class VariableLengthObjectArray<T> {
 
     /**
      * Factory method to get a List based on this new datastructure.
-     *
+     * 
      * @param <T>   type
      * @param clazz class for type
      * @return instance
@@ -312,7 +328,7 @@ public class VariableLengthObjectArray<T> {
     private final Class<T> clazz;
 
     /**
-     * Creates a new {@code VariableLengthObjectArray} with a default initial capacity.
+     * Creates a new {@code MemoryOutputStream} with a default initial capacity.
      */
     VariableLengthObjectArray(Class<T> clazz) {
         this(clazz, 32);
@@ -381,7 +397,7 @@ public class VariableLengthObjectArray<T> {
     }
 
     /**
-     * Writes the contents of this {@code VariableLengthObjectArray} to the specified
+     * Writes the contents of this {@code MemoryOutputStream} to the specified
      * output stream argument by calling the output stream's
      * {@code out.write(buf, 0, count)} once per segment. Note that segment lengths
      * are variable, so the calls to {@code out.write} may as well.
@@ -443,7 +459,7 @@ public class VariableLengthObjectArray<T> {
     }
 
     /**
-     * Resets the various fields of this {@code VariableLengthObjectArray} such that length
+     * Resets the various fields of this {@code MemoryOutputStream} such that length
      * is zero and most objects are released.
      */
     void clear() {
@@ -485,7 +501,7 @@ public class VariableLengthObjectArray<T> {
 
     /**
      * Iterator
-     *
+     * 
      * @return iterator
      */
     Iterator<T> iterator() {
@@ -537,7 +553,7 @@ public class VariableLengthObjectArray<T> {
 
     /**
      * Creates a newly allocated T array populated with the accumulated data of this
-     * {@code VariableLengthObjectArray}. The output of this method is likely to be the
+     * {@code MemoryOutputStream}. The output of this method is likely to be the
      * single largest object associated with the stream.
      * <p>
      * Throws {@code  IllegalStateException} if the payload size is greater than the
