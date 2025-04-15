@@ -596,6 +596,11 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             // if an exception is raised before the first INITIAL packet is
             // acked by the peer.
             handshakeCF.whenComplete((r, t) -> {
+                if (Log.quicHandshake()) {
+                    Log.logQuic("{0} handshake completed {1}",
+                            logTag(),
+                            t == null ? "succesfully" : ("exceptionally: " + t));
+                }
                 if (t != null) {
                     handshakeReachedPeerCF.completeExceptionally(t);
                 }

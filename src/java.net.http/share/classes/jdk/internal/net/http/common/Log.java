@@ -29,6 +29,7 @@ import java.net.http.HttpHeaders;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -41,11 +42,14 @@ import jdk.internal.net.http.frame.Http2Frame;
 import jdk.internal.net.http.frame.WindowUpdateFrame;
 import jdk.internal.net.http.quic.frames.AckFrame;
 import jdk.internal.net.http.quic.frames.CryptoFrame;
+import jdk.internal.net.http.quic.frames.HandshakeDoneFrame;
 import jdk.internal.net.http.quic.frames.PaddingFrame;
 import jdk.internal.net.http.quic.frames.PingFrame;
 import jdk.internal.net.http.quic.frames.QuicFrame;
 import jdk.internal.net.http.quic.frames.StreamFrame;
+import jdk.internal.net.http.quic.packets.PacketSpace;
 import jdk.internal.net.http.quic.packets.QuicPacket;
+import jdk.internal.net.http.quic.packets.QuicPacket.PacketType;
 
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLParameters;
@@ -54,7 +58,7 @@ import javax.net.ssl.SSLParameters;
  * -Djdk.httpclient.HttpClient.log=
  *          errors,requests,headers,
  *          frames[:control:data:window:all..],content,ssl,trace,channel,
- *          quic[:control:processed:retransmit:ack:crypto:data:cc:dbb:ping:all]
+ *          quic[:control:processed:retransmit:ack:crypto:data:cc:hs:dbb:ping:all]
  *
  * Any of errors, requests, headers or content are optional.
  *
@@ -99,11 +103,13 @@ public abstract class Log implements System.Logger {
     public static final int QUIC_CC         = 128;
     public static final int QUIC_TIMER      = 256;
     public static final int QUIC_DIRECT_BUFFER_POOL = 512;
+    public static final int QUIC_HANDSHAKE = 1024;
     public static final int QUIC_ALL = QUIC_CONTROL
             | QUIC_PROCESSED | QUIC_RETRANSMIT
             | QUIC_DATA | QUIC_CRYPTO
             | QUIC_ACK | QUIC_PING | QUIC_CC
-            | QUIC_TIMER | QUIC_DIRECT_BUFFER_POOL;
+            | QUIC_TIMER | QUIC_DIRECT_BUFFER_POOL
+            | QUIC_HANDSHAKE;
     static int quictypes;
 
 
@@ -204,6 +210,9 @@ public abstract class Log implements System.Logger {
                                 case "cc":
                                     quictypes |= QUIC_CC;
                                     break;
+                                case "hs":
+                                    quictypes |= QUIC_HANDSHAKE;
+                                    break;
                                 case "ack":
                                     quictypes |= QUIC_ACK;
                                     break;
@@ -267,6 +276,11 @@ public abstract class Log implements System.Logger {
         return (logging & QUIC) != 0 && (quictypes & QUIC_RETRANSMIT) != 0;
     }
 
+    // not called directly - but impacts isLogging(QuicFrame)
+    public static boolean quicHandshake() {
+        return (logging & QUIC) != 0 && (quictypes & QUIC_HANDSHAKE) != 0;
+    }
+
     public static boolean quicProcessed() {
         return (logging & QUIC) != 0 && (quictypes & QUIC_PROCESSED) != 0;
     }
@@ -317,16 +331,23 @@ public abstract class Log implements System.Logger {
         if (frame instanceof AckFrame)
             return (quictypes & QUIC_ACK) != 0;
         if (frame instanceof CryptoFrame)
-            return (quictypes & QUIC_CRYPTO) != 0;
+            return (quictypes & QUIC_CRYPTO) != 0
+                    || (quictypes & QUIC_HANDSHAKE) != 0;
         if (frame instanceof PingFrame)
             return (quictypes & QUIC_PING) != 0;
         if (frame instanceof PaddingFrame) return false;
+        if (frame instanceof HandshakeDoneFrame && quicHandshake())
+            return true;
         return (quictypes & QUIC_CONTROL) != 0;
     }
+
+    private static final EnumSet<PacketType> HS_TYPES = EnumSet.complementOf(
+            EnumSet.of(PacketType.ONERTT));
 
     private static boolean quicPacketLoggable(QuicPacket packet) {
         return (logging & QUIC) != 0
                 && (quictypes == QUIC_ALL
+                || quicHandshake() && HS_TYPES.contains(packet.packetType())
                 || stream(packet.frames()).anyMatch(Log::isLogging));
     }
 

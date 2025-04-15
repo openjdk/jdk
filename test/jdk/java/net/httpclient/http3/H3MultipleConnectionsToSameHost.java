@@ -86,7 +86,7 @@
  *                     -Djdk.httpclient.quic.maxEndpoints=1
  *                     -Djdk.httpclient.quic.maxBidiStreams=2
  *                     -Djdk.httpclient.retryOnStreamlimit=50
- *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:cc,retransmit
+ *                     -Djdk.httpclient.HttpClient.log=errors,http3,quic:hs:retransmit
  *                     -Dsimpleget.requests=100
  *                     H3MultipleConnectionsToSameHost
  * @summary Send 100 large concurrent requests, with connections whose max stream
