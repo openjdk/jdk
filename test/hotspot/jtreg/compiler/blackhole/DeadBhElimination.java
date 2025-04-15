@@ -36,9 +36,12 @@ import compiler.lib.ir_framework.*;
 public class DeadBhElimination {
     public static void main(String[] args) {
         TestFramework.runWithFlags(
-                "-XX:CompileThreshold=100",
                 "-XX:-TieredCompilation",
                 "-XX:+UnlockExperimentalVMOptions",
+                // Prevent the dead branches to be compiled into an uncommon trap
+                // instead of generating a BlackholeNode.
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:PerMethodSpecTrapLimit=0",
                 "-XX:CompileCommand=blackhole,compiler.blackhole.DeadBhElimination::iAmABlackhole"
         );
     }
