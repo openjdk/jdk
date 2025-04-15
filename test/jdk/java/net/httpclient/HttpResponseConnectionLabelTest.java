@@ -28,12 +28,14 @@
  *          /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
+ *        SystemDiagnosticsCollector
  *
- * @comment `othervm` usage is intentional since this test uses `ForkJoinPool.commonPool()`
  * @comment Use a higher idle timeout to increase the chances of the same connection being used for sequential HTTP requests
  * @run junit/othervm -Djdk.httpclient.keepalive.timeout=120 HttpResponseConnectionLabelTest
  */
 
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
@@ -47,6 +49,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
@@ -54,10 +57,13 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
@@ -68,8 +74,21 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class HttpResponseConnectionLabelTest {
 
-    private static final Logger LOGGER =
-            Utils.getDebugLogger(HttpResponseConnectionLabelTest.class.getSimpleName()::toString, Utils.DEBUG);
+    private static final boolean DIAGNOSTICS_ENABLED = false;
+
+    static {
+        if (DIAGNOSTICS_ENABLED) {
+            HttpServerAdapters.enableServerLogging();
+        }
+    }
+
+    private static final SystemDiagnosticsCollector DIAGNOSTICS_COLLECTOR = DIAGNOSTICS_ENABLED
+            ? new SystemDiagnosticsCollector(HttpResponseConnectionLabelTest.class, Duration.ofSeconds(5))
+            : null;
+
+    private static final String CLASS_NAME = HttpResponseConnectionLabelTest.class.getSimpleName();
+
+    private static final Logger LOGGER = Utils.getDebugLogger(CLASS_NAME::toString, Utils.DEBUG);
 
     private static final Charset CHARSET = US_ASCII;
 
@@ -112,83 +131,120 @@ class HttpResponseConnectionLabelTest {
 
     private record ServerRequestPair(
             HttpTestServer server,
+            ExecutorService executor,
             HttpRequest request,
             boolean secure,
-            CountDownLatch[] serverResponseLatchRef) {
+            AtomicReference<CountDownLatch> serverResponseLatchRef) {
 
         private static final AtomicInteger SERVER_COUNTER = new AtomicInteger();
 
         private static final AtomicInteger SERVER_RESPONSE_COUNTER = new AtomicInteger();
 
-        private ServerRequestPair {
-            try {
-                server.start();
-            } catch (Exception serverException) {
-                throw new RuntimeException("failed closing server", serverException);
-            }
-        }
-
         private static ServerRequestPair of(Version version, boolean secure) {
 
             // Create the server and the request URI
             SSLContext sslContext = secure ? SSL_CONTEXT : null;
-            HttpTestServer server = createServer(version, sslContext);
-            String handlerPath = "/" + /* salting the path: */ HttpResponseConnectionLabelTest.class.getSimpleName();
+            String serverId = "" + SERVER_COUNTER.getAndIncrement();
+            ExecutorService[] executorRef = {null};
+            HttpTestServer server = createServer(version, secure, sslContext, serverId, executorRef);
+            String handlerPath = "/%s/".formatted(CLASS_NAME);
             String requestUriScheme = secure ? "https" : "http";
-            URI requestUri = URI.create(requestUriScheme + "://" + server.serverAuthority() + handlerPath);
+            URI requestUri = URI.create("%s://%s%sx".formatted(requestUriScheme, server.serverAuthority(), handlerPath));
 
             // Register the request handler
-            String serverId = "" + SERVER_COUNTER.getAndIncrement();
-            CountDownLatch[] serverResponseLatchRef = new CountDownLatch[1];
-            server.addHandler(
-                    (exchange) -> {
-                        String responseBody = "" + SERVER_RESPONSE_COUNTER.getAndIncrement();
-                        String connectionKey = exchange.getConnectionKey();
-                        try (exchange) {
-
-                            // Participate in the latch count down
-                            if (serverResponseLatchRef[0] != null) {
-                                serverResponseLatchRef[0].countDown();
-                                LOGGER.log(
-                                        "Server[%s] is waiting for the latch... (connectionKey=%s, responseBody=%s)",
-                                        serverId, connectionKey, responseBody);
-                                serverResponseLatchRef[0].await();
-                            }
-
-                            // Write the response
-                            LOGGER.log(
-                                    "Server[%s] is responding... (connectionKey=%s, responseBody=%s)",
-                                    serverId, connectionKey, responseBody);
-                            exchange.getResponseHeaders().addHeader(CONNECTION_KEY_HEADER_NAME, connectionKey);
-                            exchange.getResponseHeaders().addHeader(SERVER_ID_HEADER_NAME, serverId);
-                            byte[] responseBodyBytes = responseBody.getBytes(CHARSET);
-                            exchange.sendResponseHeaders(200, responseBodyBytes.length);
-                            exchange.getResponseBody().write(responseBodyBytes);
-
-                        } catch (IOException ioe) {
-                            String message = "Server[%s] has failed! (connectionKey=%s, responseBody=%s)"
-                                    .formatted(serverId, connectionKey, responseBody);
-                            throw new RuntimeException(message, ioe);
-                        } catch (InterruptedException _) {
-                            Thread.currentThread().interrupt(); // Restore the interrupt
-                        }
-                    },
-                    handlerPath);
+            AtomicReference<CountDownLatch> serverResponseLatchRef = new AtomicReference<>();
+            server.addHandler(createServerHandler(serverId, serverResponseLatchRef), handlerPath);
 
             // Create the client and the request
             HttpRequest request = HttpRequest.newBuilder(requestUri).version(version).build();
 
             // Create the pair
-            return new ServerRequestPair(server, request, secure, serverResponseLatchRef);
+            ServerRequestPair pair = new ServerRequestPair(
+                    server,
+                    executorRef[0],
+                    request,
+                    secure,
+                    serverResponseLatchRef);
+            pair.server.start();
+            LOGGER.log("Server[%s] is started at `%s`", serverId, server.serverAuthority());
+            return pair;
 
         }
 
-        private static HttpTestServer createServer(Version version, SSLContext sslContext) {
+        private static HttpTestServer createServer(
+                Version version,
+                boolean secure,
+                SSLContext sslContext,
+                String serverId,
+                ExecutorService[] executorRef) {
             try {
-                return HttpTestServer.create(version, sslContext, ForkJoinPool.commonPool());
+                // Only create a dedicated executor for HTTP/1.1, because
+                //
+                // - Only the HTTP/1.1 test server gets wedged when running
+                //   tests involving parallel request handling.
+                //
+                // - The HTTP/2 test server creates its own sufficiently sized
+                //   executor, and the thread names used there makes it easy to
+                //   find which server they belong to.
+                executorRef[0] = Version.HTTP_1_1.equals(version)
+                        ? createExecutor(version, secure, serverId)
+                        : null;
+                return HttpTestServer.create(version, sslContext, executorRef[0]);
             } catch (IOException exception) {
                 throw new UncheckedIOException(exception);
             }
+        }
+
+        private static ExecutorService createExecutor(Version version, boolean secure, String serverId) {
+            return Executors.newThreadPerTaskExecutor(runnable -> {
+                String name = "%s-%s-%c-%s".formatted(
+                        CLASS_NAME, version, secure ? 's' : 'c', serverId);
+                Thread thread = new Thread(runnable, name);
+                thread.setDaemon(true);     // Avoid blocking the JVM exit
+                return thread;
+            });
+        }
+
+        private static HttpTestHandler createServerHandler(
+                String serverId,
+                AtomicReference<CountDownLatch> serverResponseLatchRef) {
+            return (exchange) -> {
+                String responseBody = "" + SERVER_RESPONSE_COUNTER.getAndIncrement();
+                String connectionKey = exchange.getConnectionKey();
+                LOGGER.log("Server[%d] has received request (connectionKey=%s)", serverId, connectionKey);
+                try (exchange) {
+
+                    // Participate in the latch count down
+                    CountDownLatch serverResponseLatch = serverResponseLatchRef.get();
+                    if (serverResponseLatch != null) {
+                        serverResponseLatch.countDown();
+                        LOGGER.log(
+                                "Server[%s] is waiting for the latch... (connectionKey=%s, responseBody=%s)",
+                                serverId, connectionKey, responseBody);
+                        serverResponseLatch.await();
+                    }
+
+                    // Write the response
+                    LOGGER.log(
+                            "Server[%s] is responding... (connectionKey=%s, responseBody=%s)",
+                            serverId, connectionKey, responseBody);
+                    exchange.getResponseHeaders().addHeader(CONNECTION_KEY_HEADER_NAME, connectionKey);
+                    exchange.getResponseHeaders().addHeader(SERVER_ID_HEADER_NAME, serverId);
+                    byte[] responseBodyBytes = responseBody.getBytes(CHARSET);
+                    exchange.sendResponseHeaders(200, responseBodyBytes.length);
+                    exchange.getResponseBody().write(responseBodyBytes);
+
+                } catch (Exception exception) {
+                    String message = "Server[%s] has failed! (connectionKey=%s, responseBody=%s)"
+                            .formatted(serverId, connectionKey, responseBody);
+                    LOGGER.log(Level.ERROR, message, exception);
+                    if (exception instanceof InterruptedException) {
+                        // Restore the interrupt
+                        Thread.currentThread().interrupt();
+                    }
+                    throw new RuntimeException(message, exception);
+                }
+            };
         }
 
         @Override
@@ -200,13 +256,21 @@ class HttpResponseConnectionLabelTest {
     }
 
     @AfterAll
-    static void closeServers() {
+    static void closeResources() {
+        closeServers();
+        if (DIAGNOSTICS_ENABLED) { DIAGNOSTICS_COLLECTOR.close(); }
+    }
+
+    private static void closeServers() {
         Exception[] exceptionRef = {null};
         Stream
                 .of(PRI_HTTP1, PRI_HTTPS1, PRI_HTTP2, PRI_HTTPS2, SEC_HTTP1, SEC_HTTPS1, SEC_HTTP2, SEC_HTTPS2)
-                .forEach(pair -> {
+                .flatMap(pair -> Stream.<Runnable>of(
+                        pair.server::stop,
+                        () -> { if (pair.executor != null) { pair.executor.shutdownNow(); } }))
+                .forEach(terminator -> {
                     try {
-                        pair.server.stop();
+                        terminator.run();
                     } catch (Exception exception) {
                         if (exceptionRef[0] == null) {
                             exceptionRef[0] = exception;
@@ -216,7 +280,7 @@ class HttpResponseConnectionLabelTest {
                     }
                 });
         if (exceptionRef[0] != null) {
-            throw new RuntimeException("failed closing one or more server-request pairs", exceptionRef[0]);
+            throw new RuntimeException("failed closing one or more server resources", exceptionRef[0]);
         }
     }
 
@@ -257,9 +321,11 @@ class HttpResponseConnectionLabelTest {
         //   Hence, client won't be able to reuse the connection, but create a new one.
         //
         // - Client waits for the rendezvous before consuming responses.
-        CountDownLatch latch = pair.serverResponseLatchRef[0] = new CountDownLatch(4);
+        CountDownLatch latch = new CountDownLatch(4);
+        pair.serverResponseLatchRef.set(latch);
 
         // Fire requests
+        if (DIAGNOSTICS_ENABLED) { DIAGNOSTICS_COLLECTOR.dumpDiagnostics(); }
         LOGGER.log("Firing request 1...");
         CompletableFuture<HttpResponse<String>> response1Future =
                 client.sendAsync(pair.request, BodyHandlers.ofString(CHARSET));
@@ -268,6 +334,7 @@ class HttpResponseConnectionLabelTest {
                 client.sendAsync(pair.request, BodyHandlers.ofString(CHARSET));
 
         // Release latches to allow the server handlers to proceed
+        if (DIAGNOSTICS_ENABLED) { DIAGNOSTICS_COLLECTOR.dumpDiagnostics(); }
         latch.countDown();
         latch.countDown();
 
@@ -304,10 +371,10 @@ class HttpResponseConnectionLabelTest {
         // Verify that connection labels differ; that is, requests are served through different connections
         String label1 = response1.connectionLabel().orElse(null);
         assertNotNull(label1);
-        LOGGER.log("connection label 1: %s", label1);
+        LOGGER.log("Connection label 1: %s", label1);
         String label2 = response2.connectionLabel().orElse(null);
         assertNotNull(label2);
-        LOGGER.log("connection label 2: %s", label2);
+        LOGGER.log("Connection label 2: %s", label2);
         assertNotEquals(label1, label2);
 
     }
@@ -337,7 +404,9 @@ class HttpResponseConnectionLabelTest {
         //   Hence, client won't be able to reuse the connection, but create a new one.
         //
         // - Client waits for the rendezvous before consuming responses.
-        CountDownLatch latch = pair1.serverResponseLatchRef[0] = pair2.serverResponseLatchRef[0] = new CountDownLatch(4);
+        CountDownLatch latch = new CountDownLatch(4);
+        pair1.serverResponseLatchRef.set(latch);
+        pair2.serverResponseLatchRef.set(latch);
 
         // Fire requests
         LOGGER.log("Firing request 1...");
@@ -384,10 +453,10 @@ class HttpResponseConnectionLabelTest {
         // Verify that connection labels differ; that is, requests are served through different connections
         String label1 = response1.connectionLabel().orElse(null);
         assertNotNull(label1);
-        LOGGER.log("connection label 1: %s", label1);
+        LOGGER.log("Connection label 1: %s", label1);
         String label2 = response2.connectionLabel().orElse(null);
         assertNotNull(label2);
-        LOGGER.log("connection label 2: %s", label2);
+        LOGGER.log("Connection label 2: %s", label2);
         assertNotEquals(label1, label2);
 
     }
@@ -401,7 +470,7 @@ class HttpResponseConnectionLabelTest {
     void testSerialRequestsToSameServer(ServerRequestPair pair) throws Exception {
 
         // Disarm the synchronization point
-        pair.serverResponseLatchRef[0] = null;
+        pair.serverResponseLatchRef.set(null);
 
         // Fire requests
         LOGGER.log("Firing request 1...");
@@ -433,10 +502,10 @@ class HttpResponseConnectionLabelTest {
         // Verify that connection labels match; that is, requests are served through the same connection
         String label1 = response1.connectionLabel().orElse(null);
         assertNotNull(label1);
-        LOGGER.log("connection label 1: %s", label1);
+        LOGGER.log("Connection label 1: %s", label1);
         String label2 = response2.connectionLabel().orElse(null);
         assertNotNull(label2);
-        LOGGER.log("connection label 2: %s", label2);
+        LOGGER.log("Connection label 2: %s", label2);
         assertEquals(label1, label2);
 
     }
