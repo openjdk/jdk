@@ -32,22 +32,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * @requires os.family == "windows"
  * @summary Verify behavior for file names with a trailing space
  * @run junit WinTrailingSpace
- * @run junit/othervm -Djdk.io.File.enableADS WinTrailingSpace
- * @run junit/othervm -Djdk.io.File.enableADS=false  WinTrailingSpace
  */
 public class WinTrailingSpace {
-    private static final boolean FAILURE_EXPECTED;
     private static final String FILENAME_TRAILING_SPACE = "foobargus ";
     private static final String FILENAME_NO_TRAILING_SPACE = "foobargus";
-
-    static {
-        final String enableADS = System.getProperty("jdk.io.File.enableADS");
-        if (enableADS != null) {
-            FAILURE_EXPECTED = enableADS.equalsIgnoreCase(Boolean.FALSE.toString());
-        } else {
-            FAILURE_EXPECTED = false;
-        }
-    }
 
     @Test
     public void noTrailingSpace() throws IOException {
@@ -70,10 +58,8 @@ public class WinTrailingSpace {
             f = new File(".", FILENAME_TRAILING_SPACE);
             f.delete();
             f.createNewFile();
-            assertEquals(FAILURE_EXPECTED, !f.exists());
-        } catch (IOException e) {
-            if (!FAILURE_EXPECTED)
-                throw e;
+            assertFalse(f.exists()); // should not reach here
+        } catch (IOException expected) {
         } finally {
             if (f != null)
                 f.delete();

@@ -365,21 +365,26 @@ final class WinNTFileSystem extends FileSystem {
         if (f.getPath().indexOf('\u0000') >= 0)
             return true;
 
+        // Invalid if the pathname has a trailing space
+        String pathname = f.getPath();
+        int len = pathname.length();
+        if (len > 0 && pathname.charAt(len - 1) == ' ')
+            return true;
+
+        // The remaining checks are irrelevant for alternate data streams (ADS)
         if (ENABLE_ADS)
             return false;
 
         // Invalid if there is a ":" at a position other than 1, or if there
         // is a ":" at position 1 and the first character is not a letter
-        String pathname = f.getPath();
         int lastColon = pathname.lastIndexOf(":");
         if (lastColon >= 0 &&
             (lastColon != 1 || !isLetter(pathname.charAt(0))))
             return true;
 
-        // Invalid if path creation fails
-        Path path = null;
+        // Invalid if the path string cannot be converted to a Path
         try {
-            path = sun.nio.fs.DefaultFileSystemProvider.theFileSystem().getPath(pathname);
+            Path path = sun.nio.fs.DefaultFileSystemProvider.theFileSystem().getPath(pathname);
             return false;
         } catch (InvalidPathException ignored) {
         }
