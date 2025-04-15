@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package jdk.test.lib.dcmd;
 
 import jdk.test.lib.process.ProcessTools;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -33,17 +34,15 @@ import java.util.List;
  */
 public class PidJcmdExecutor extends JcmdExecutor {
     protected final long pid;
+    // jcmd output for many commands may be lengthy when command is executed against main test process
+    protected boolean disableStreamingOutput = true;
 
     /**
      * Instantiates a new PidJcmdExecutor targeting the current VM
      */
     public PidJcmdExecutor() {
         super();
-        try {
-            pid = ProcessTools.getProcessId();
-        } catch (Exception e) {
-            throw new CommandExecutorException("Could not determine own pid", e);
-        }
+        pid = getCurrentPid();
     }
 
     /**
@@ -54,10 +53,27 @@ public class PidJcmdExecutor extends JcmdExecutor {
     public PidJcmdExecutor(String target) {
         super();
         pid = Long.valueOf(target);
+        disableStreamingOutput = (pid == getCurrentPid());
+    }
+
+    private static long getCurrentPid() {
+        try {
+            return ProcessTools.getProcessId();
+        } catch (Exception e) {
+            throw new CommandExecutorException("Could not determine own pid", e);
+        }
     }
 
     protected List<String> createCommandLine(String cmd) throws CommandExecutorException {
-        return Arrays.asList(jcmdBinary, Long.toString(pid), cmd);
+        List<String> commandLine = new ArrayList<>();
+        commandLine.add(jcmdBinary);
+        if (disableStreamingOutput) {
+            commandLine.add(jcmdDisableStreamingOption);
+        }
+        commandLine.add(Long.toString(pid));
+        commandLine.add(cmd);
+        return commandLine;
+        //return Arrays.asList(jcmdBinary, Long.toString(pid), cmd);
     }
 
 }

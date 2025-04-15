@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ public class TestThreadDumpSMRInfo {
     // so use getTestJDKTool() instead of getCompileJDKTool() or even
     // getJDKTool() which can fall back to "compile.jdk".
     final static String JSTACK = JDKToolFinder.getTestJDKTool("jstack");
+    // jstack output may be lengthy, disable streaming output to avoid deadlocks
+    final static String DISABLE_STREAMING_OUTPUT = "-J-Djdk.attach.allowStreamingOutput=false";
     final static String PID = "" + ProcessHandle.current().pid();
 
     // Here's a sample "Threads class SMR info" section:
@@ -70,7 +72,7 @@ public class TestThreadDumpSMRInfo {
             }
         }
 
-        ProcessBuilder pb = new ProcessBuilder(JSTACK, PID);
+        ProcessBuilder pb = new ProcessBuilder(JSTACK, DISABLE_STREAMING_OUTPUT, PID);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         if (verbose) {
