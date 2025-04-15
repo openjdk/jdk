@@ -140,7 +140,7 @@ public class bug4419914 {
         window.add(new JButton("CENTER"), BorderLayout.CENTER);
         window.add(new JButton("END"), BorderLayout.LINE_END);
 
-        JButton quitButton = new JButton("Quit");
+        JButton quitButton = new JButton("QUIT");
         quitButton.addActionListener(e1 -> window.dispose());
         window.add(quitButton, BorderLayout.SOUTH);
         window.setSize(300, 153);
