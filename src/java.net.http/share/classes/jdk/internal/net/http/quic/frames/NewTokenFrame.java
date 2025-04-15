@@ -65,7 +65,6 @@ public final class NewTokenFrame extends QuicFrame {
      * Outgoing NEW_TOKEN frame whose token is the given ByteBuffer
      * (position to limit)
      */
-    // TODO: this is only used in tests. See if we really need this constructor
     public NewTokenFrame(final ByteBuffer tokenBuf) {
         super(NEW_TOKEN);
         Objects.requireNonNull(tokenBuf);
