@@ -253,11 +253,10 @@ void JfrCPUTimeThreadSampler::on_javathread_terminate(JavaThread* thread) {
     timer_delete(thread->jfr_thread_local()->timerid());
     thread->jfr_thread_local()->unset_timerid();
     thread->disable_cpu_time_jfr_queue();
-  }
-  thread->acquire_cpu_time_jfr_dequeue_lock(); // make sure we are not sampling
-  s4 lost_samples = thread->cpu_time_jfr_queue().lost_samples();
-  if (lost_samples > 0) {
-    JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), JfrThreadLocal::thread_id(thread), lost_samples);
+    s4 lost_samples = thread->cpu_time_jfr_queue().lost_samples();
+    if (lost_samples > 0) {
+      JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), JfrThreadLocal::thread_id(thread), lost_samples);
+    }
   }
 }
 
@@ -560,16 +559,17 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
   }
   if (!check_state(jt) ||
       jt->is_at_poll_safepoint() ||
-      jt->is_JfrRecorder_thread() || jt->is_JfrSampler_thread() ||
-      !jt->acquire_cpu_time_jfr_enqueue_lock()) {
+      jt->is_JfrRecorder_thread() || jt->is_JfrSampler_thread()) {
     jt->cpu_time_jfr_queue().increment_lost_samples();
     jt->set_wants_out_of_safepoint_sampling(false);
     return;
   }
-  NoResourceMark rm;
-  if (jt->cpu_time_jfr_queue().is_full()) {
+  if (!jt->acquire_cpu_time_jfr_enqueue_lock()) {
     jt->cpu_time_jfr_queue().increment_lost_samples();
+    return;
   }
+
+  NoResourceMark rm;
   JfrCPUTimeSampleRequest request;
   // the sampling period might be too low for the current Linux configuration
   // so samples might be skipped and we have to compute the actual period
