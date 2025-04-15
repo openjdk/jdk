@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4308606
- * @summary   Tests whether the keys on the numeric keyboard work
+ * @summary Tests whether the keys on the numeric keyboard work
  *            correctly under French input locale.
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
@@ -67,3 +67,4 @@ public class FrenchKeyboard extends Frame {
                 .awaitAndCheck();
     }
 }
+

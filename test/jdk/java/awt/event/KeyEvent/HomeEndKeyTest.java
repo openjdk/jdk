@@ -104,9 +104,6 @@ public class HomeEndKeyTest extends Frame implements KeyListener {
         case KeyEvent.KEY_RELEASED:
             str = "KEY_RELEASED";
             break;
-        case KeyEvent.KEY_TYPED:
-            str = "KEY_TYPED";
-            break;
         default:
             str = "unknown type";
         }

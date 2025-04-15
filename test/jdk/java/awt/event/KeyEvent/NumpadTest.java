@@ -87,7 +87,7 @@ public class NumpadTest extends Frame implements KeyListener {
     }
 
     protected void printKey(KeyEvent evt) {
-        switch(evt.getID()) {
+        switch (evt.getID()) {
           case KeyEvent.KEY_TYPED:
             break;
           case KeyEvent.KEY_PRESSED:
