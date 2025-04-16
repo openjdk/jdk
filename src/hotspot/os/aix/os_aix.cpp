@@ -763,7 +763,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   if (ret == 0) {
     int trials_remaining = 3;
-    useconds_t next_delay = 256;
+    useconds_t next_delay = 1000;
     while (true) {
       ret = pthread_create(&tid, &attr, (void* (*)(void*)) thread_native_entry, thread);
 

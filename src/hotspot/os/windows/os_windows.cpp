@@ -762,7 +762,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   HANDLE thread_handle;
   {
     int trials_remaining = 3;
-    useconds_t next_delay = 256;
+    DWORD next_delay_ms = 1;
     while (true) {
       thread_handle =
         (HANDLE)_beginthreadex(nullptr,
@@ -784,9 +784,9 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
         break;
       }
 
-      log_warning(os, thread)("Failed to start native thread (%s), retrying after %dus.", os::errno_name(ret), next_delay);
-      ::usleep(next_delay);
-      next_delay *= 2;
+      log_warning(os, thread)("Failed to start native thread (%s), retrying after %dms.", os::errno_name(errno), next_delay_ms);
+      Sleep(next_delay_ms);
+      next_delay_ms *= 2;
     }
   }
 
