@@ -229,9 +229,9 @@ void TaskTerminator::emit_termination_statistics(const char* task_name) {
       event.set_taskName(task_name);
       event.set_nThreads(timings.count);
       //Timings
-      event.set_minTime(timings.min);
-      event.set_avgTime(timings.sum / (double) timings.count);
-      event.set_maxTime(timings.max);
+      event.set_minTime(timings.min * 1000);
+      event.set_avgTime(timings.sum * 1000 / (double) timings.count);
+      event.set_maxTime(timings.max * 1000);
       //Attempts
       event.set_minAttempts(attempts.min);
       event.set_avgAttempts((double) attempts.sum / (double) attempts.count);
