@@ -24,6 +24,7 @@ package org.openjdk.bench.java.net;
 
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -47,16 +48,15 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class URIAuthorityParsingBenchmark {
 
-    private final String NUMERIC_HOST_URI = "https://98765432101.abc.xyz.com";
-    private final String STANDARD_HOST_URI = "https://xxxxx.abc.xyz.com";
+    @Param({
+            "https://98765432101.abc.xyz.com",
+            "https://ABCDEFGHIJK.abc.xyz.com"
+    })
+    private String uri;
 
     @Benchmark
-    public void createUriWithNumericHostPrefix(Blackhole blackhole) {
-        blackhole.consume(URI.create(NUMERIC_HOST_URI));
+    public void create(Blackhole blackhole) {
+        blackhole.consume(URI.create(uri));
     }
 
-    @Benchmark
-    public void createUriWithStandardHost(Blackhole blackhole) {
-        blackhole.consume(URI.create(STANDARD_HOST_URI));
-    }
 }
