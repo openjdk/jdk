@@ -102,7 +102,11 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
     Klass* k = _all_klasses->at(i);
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
-      if (!ik->is_shared_unregistered_class() && !ik->is_hidden()) {
+      if (ik->is_shared_unregistered_class()) {
+        SystemDictionaryShared::init_dumptime_info(ik);
+        SystemDictionaryShared::add_unregistered_class(THREAD, ik);
+        SystemDictionaryShared::copy_unregistered_class_size_and_crc32(ik);
+      } else if (!ik->is_hidden()) {
         Klass* actual = SystemDictionary::resolve_or_fail(ik->name(), class_loader, true, CHECK);
         if (actual != ik) {
           ResourceMark rm(THREAD);
