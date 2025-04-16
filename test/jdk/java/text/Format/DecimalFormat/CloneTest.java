@@ -25,10 +25,11 @@
  * @test
  * @bug 8354522
  * @summary Check for cloning interference
+ * @library /test/lib
  * @run junit/othervm --add-opens=java.base/java.text=ALL-UNNAMED CloneTest
  */
 
-import org.junit.jupiter.api.BeforeAll;
+import jtreg.SkippedException;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -41,73 +42,85 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CloneTest {
-    private static Field DIGIT_LIST_FIELD;
-    private static Class<?> DIGIT_LIST_CLASS;
 
-    @BeforeAll
-    static void setup() throws Exception {
-        DIGIT_LIST_FIELD = DecimalFormat.class.getDeclaredField("digitList");
-        DIGIT_LIST_FIELD.setAccessible(true);
-
-        DecimalFormat df = new DecimalFormat();
-        Object digitList = DIGIT_LIST_FIELD.get(df);
-
-        DIGIT_LIST_CLASS = digitList.getClass();
-    }
-
-    // Tests that when DecimalFormat is cloned after use with
-    // a long double/BigDecimal, clones will be independent. This is not an
-    // exhaustive test. This tests for the issue of the same DigitList.data
-    // array being reused across clones of DecimalFormat.
-
+    // Note: this is a white-box test that may fail if the implementation is changed
     @Test
-    public void testClone() throws Exception {
+    public void testClone() {
         DecimalFormat df = new DecimalFormat("#");
-        assertCloneValidity(df);
+        new CloneTester(df).testClone();
     }
 
+    // Note: this is a white-box test that may fail if the implementation is changed
     @Test
-    public void testCloneAfterInit() throws Exception {
+    public void testCloneAfterInit() {
         DecimalFormat df = new DecimalFormat("#");
 
         // This initial use of the formatter initialises its internal state, which could
         // subsequently be shared across clones. This is key to reproducing this specific
         // issue.
         String _ = df.format(Math.PI);
-        assertCloneValidity(df);
+        new CloneTester(df).testClone();
     }
 
-    private static void assertCloneValidity(DecimalFormat df) throws Exception {
-        DecimalFormat dfClone = (DecimalFormat) df.clone();
+    private static class CloneTester {
+        private final Field digitListField;
+        private final Class<?> digitListClass;
+        private final DecimalFormat original;
 
-        Object digits = valFromDigitList(df, "digits");
-        assertNotSame(digits, valFromDigitList(dfClone, "digits"));
+        public CloneTester(DecimalFormat original) {
+            this.original = original;
+            try {
+                digitListField = DecimalFormat.class.getDeclaredField("digitList");
+                digitListField.setAccessible(true);
 
+                DecimalFormat df = new DecimalFormat();
+                Object digitList = digitListField.get(df);
 
-        Object data = valFromDigitList(df, "data");
-        if (data != null) {
-            assertNotSame(data, valFromDigitList(dfClone, "data"));
+                digitListClass = digitList.getClass();
+            } catch (NoSuchFieldException e) {
+                throw new RuntimeException(e);
+            } catch (ReflectiveOperationException e) {
+                throw new SkippedException("reflective access in white-box test failed", e);
+            }
         }
 
-        Object tempBuilder = valFromDigitList(df, "tempBuilder");
-        if (tempBuilder != null) {
-            assertNotSame(data, valFromDigitList(dfClone, "data"));
+        public void testClone() {
+            try {
+                DecimalFormat dfClone = (DecimalFormat) original.clone();
+
+                Object digits = valFromDigitList(original, "digits");
+                assertNotSame(digits, valFromDigitList(dfClone, "digits"));
+
+
+                Object data = valFromDigitList(original, "data");
+                if (data != null) {
+                    assertNotSame(data, valFromDigitList(dfClone, "data"));
+                }
+
+                Object tempBuilder = valFromDigitList(original, "tempBuilder");
+                if (tempBuilder != null) {
+                    assertNotSame(data, valFromDigitList(dfClone, "data"));
+                }
+
+                assertEquals(digitListField.get(original), digitListField.get(dfClone));
+            } catch (ReflectiveOperationException e) {
+                throw new SkippedException("reflective access in white-box test failed", e);
+            }
         }
 
-        assertEquals(DIGIT_LIST_FIELD.get(df), DIGIT_LIST_FIELD.get(dfClone));
-    }
-
-    private static Object valFromDigitList(DecimalFormat df, String fieldName) {
-        try {
-            Object digitList = DIGIT_LIST_FIELD.get(df);
-            Field field = DIGIT_LIST_CLASS.getDeclaredField(fieldName);
+        private Object valFromDigitList(DecimalFormat df, String fieldName) throws ReflectiveOperationException {
+            Object digitList = digitListField.get(df);
+            Field field = digitListClass.getDeclaredField(fieldName);
             field.setAccessible(true);
 
             return field.get(digitList);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
         }
     }
+
+    // Tests that when DecimalFormat is cloned after use with
+    // a long double/BigDecimal, clones will be independent. This is not an
+    // exhaustive test. This tests for the issue of the same DigitList.data
+    // array being reused across clones of DecimalFormat.
 
     @Test
     public void testCloneIndependence() {
