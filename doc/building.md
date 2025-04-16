@@ -1472,7 +1472,7 @@ vs_buildtools.exe --quiet --wait --norestart --nocache ^
 ```
 
 To generate Windows AArch64 builds using Cygwin on a Windows x64 machine,
-you must set the proper target platform by adding 
+you must set the proper target platform by adding
 `--openjdk-target=aarch64-unknown-cygwin` to your configure command line.
 
 ## Build Performance
