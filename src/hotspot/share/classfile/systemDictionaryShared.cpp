@@ -349,6 +349,12 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     }
   }
 
+  if (UnregisteredClasses::check_for_exclusion(k)) {
+    ResourceMark rm;
+    log_info(cds)("Skipping %s: used only when dumping CDS archive", k->name()->as_C_string());
+    return true;
+  }
+
   InstanceKlass* super = k->java_super();
   if (super != nullptr && check_for_exclusion(super, nullptr)) {
     ResourceMark rm;
@@ -365,12 +371,6 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
       log_warning(cds)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
       return true;
     }
-  }
-
-  if (k == UnregisteredClasses::UnregisteredClassLoader_klass()) {
-    ResourceMark rm;
-    log_info(cds)("Skipping %s: used only when dumping CDS archive", k->name()->as_C_string());
-    return true;
   }
 
   return false; // false == k should NOT be excluded

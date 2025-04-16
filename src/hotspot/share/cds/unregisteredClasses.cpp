@@ -35,22 +35,32 @@
 #include "runtime/javaCalls.hpp"
 #include "services/threadService.hpp"
 
-InstanceKlass* UnregisteredClasses::_UnregisteredClassLoader_klass = nullptr;
+static InstanceKlass* _UnregisteredClassLoader_klass;
+static InstanceKlass* _UnregisteredClassLoader_Source_klass;
 static OopHandle _unregistered_class_loader;
 
 void UnregisteredClasses::initialize(TRAPS) {
-  if (_UnregisteredClassLoader_klass == nullptr) {
-    // no need for synchronization as this function is called single-threaded.
-    Symbol* klass_name = SymbolTable::new_symbol("jdk/internal/misc/CDS$UnregisteredClassLoader");
-    Klass* k = SystemDictionary::resolve_or_fail(klass_name, true, CHECK);
-    _UnregisteredClassLoader_klass = InstanceKlass::cast(k);
-
-    precond(_unregistered_class_loader.is_empty());
-    HandleMark hm(THREAD);
-    const Handle cl = JavaCalls::construct_new_instance(UnregisteredClassLoader_klass(),
-                                                        vmSymbols::void_method_signature(), CHECK);
-    _unregistered_class_loader = OopHandle(Universe::vm_global(), cl());
+  if (_UnregisteredClassLoader_klass != nullptr) {
+    return;
   }
+
+  Symbol* klass_name;
+  Klass* k;
+
+  // no need for synchronization as this function is called single-threaded.
+  klass_name = SymbolTable::new_symbol("jdk/internal/misc/CDS$UnregisteredClassLoader");
+  k = SystemDictionary::resolve_or_fail(klass_name, true, CHECK);
+  _UnregisteredClassLoader_klass = InstanceKlass::cast(k);
+
+  klass_name = SymbolTable::new_symbol("jdk/internal/misc/CDS$UnregisteredClassLoader$Source");
+  k = SystemDictionary::resolve_or_fail(klass_name, true, CHECK);
+  _UnregisteredClassLoader_Source_klass = InstanceKlass::cast(k);
+
+  precond(_unregistered_class_loader.is_empty());
+  HandleMark hm(THREAD);
+  const Handle cl = JavaCalls::construct_new_instance(_UnregisteredClassLoader_klass,
+                                                      vmSymbols::void_method_signature(), CHECK);
+  _unregistered_class_loader = OopHandle(Universe::vm_global(), cl());
 }
 
 // Load the class of the given name from the location given by path. The path is specified by
@@ -76,7 +86,7 @@ InstanceKlass* UnregisteredClasses::load_class(Symbol* name, const char* path, T
   JavaValue result(T_OBJECT);
   JavaCalls::call_virtual(&result,
                           classloader,
-                          UnregisteredClassLoader_klass(),
+                          _UnregisteredClassLoader_klass,
                           methodName,
                           methodSignature,
                           ext_class_name,
@@ -85,4 +95,12 @@ InstanceKlass* UnregisteredClasses::load_class(Symbol* name, const char* path, T
   assert(result.get_type() == T_OBJECT, "just checking");
 
   return InstanceKlass::cast(java_lang_Class::as_Klass(result.get_oop()));
+}
+
+bool UnregisteredClasses::check_for_exclusion(const InstanceKlass* k) {
+  if (_UnregisteredClassLoader_klass == nullptr) {
+    return false; // Uninitialized
+  }
+  return k == _UnregisteredClassLoader_klass ||
+         k->implements_interface(_UnregisteredClassLoader_Source_klass);
 }

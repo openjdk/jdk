@@ -35,13 +35,8 @@ class UnregisteredClasses: AllStatic {
 public:
   static InstanceKlass* load_class(Symbol* name, const char* path, TRAPS);
   static void initialize(TRAPS);
-  static InstanceKlass* UnregisteredClassLoader_klass() {
-    return _UnregisteredClassLoader_klass;
-  }
-
-private:
-  // Don't put this in vmClasses as it's used only with CDS dumping.
-  static InstanceKlass* _UnregisteredClassLoader_klass;
+  // Returns true if the class is loaded internally for dumping unregistered classes.
+  static bool check_for_exclusion(const InstanceKlass* k);
 };
 
 #endif // SHARE_CDS_UNREGISTEREDCLASSES_HPP
