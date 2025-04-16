@@ -75,8 +75,8 @@ public class bug4201964 {
         panel.add(comboBox);
 
         frame.add(panel);
-        frame.setLocationRelativeTo(null);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         return frame;
     }
 }

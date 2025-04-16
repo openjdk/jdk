@@ -34,33 +34,33 @@ import javax.swing.table.AbstractTableModel;
  * @summary Tests that mouse wheel events cancel popups
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual bug4368848
+ * @run main bug4368848
  */
 
 public class bug4368848 {
     static final String[] names = {"First Name", "Last Name", "Veggy"};
     static Object[][] data = {
-            {"Mark", "Andrews", new Boolean(false)},
-            {"Tom", "Ball", new Boolean(false)},
-            {"Alan", "Chung", new Boolean(false)},
-            {"Jeff", "Dinkins", new Boolean(false)},
-            {"Amy", "Fowler", new Boolean(false)},
-            {"Brian", "Gerhold", new Boolean(false)},
-            {"James", "Gosling", new Boolean(false)},
-            {"David", "Karlton", new Boolean(false)},
-            {"Dave", "Kloba", new Boolean(false)},
-            {"Peter", "Korn", new Boolean(false)},
-            {"Phil", "Milne", new Boolean(false)},
-            {"Dave", "Moore", new Boolean(false)},
-            {"Hans", "Muller", new Boolean(false)},
-            {"Rick", "Levenson", new Boolean(false)},
-            {"Tim", "Prinzing", new Boolean(false)},
-            {"Chester", "Rose", new Boolean(false)},
-            {"Ray", "Ryan", new Boolean(false)},
-            {"Georges", "Saab", new Boolean(false)},
-            {"Willie", "Walker", new Boolean(false)},
-            {"Kathy", "Walrath", new Boolean(false)},
-            {"Arnaud", "Weber", new Boolean(false)}
+            {"Mark", "Andrews", false},
+            {"Tom", "Ball", false},
+            {"Alan", "Chung", false},
+            {"Jeff", "Dinkins", false},
+            {"Amy", "Fowler", false},
+            {"Brian", "Gerhold", false},
+            {"James", "Gosling", false},
+            {"David", "Karlton", false},
+            {"Dave", "Kloba", false},
+            {"Peter", "Korn", false},
+            {"Phil", "Milne", false},
+            {"Dave", "Moore", false},
+            {"Hans", "Muller", false},
+            {"Rick", "Levenson", false},
+            {"Tim", "Prinzing", false},
+            {"Chester", "Rose", false},
+            {"Ray", "Ryan", false},
+            {"Georges", "Saab", false},
+            {"Willie", "Walker", false},
+            {"Kathy", "Walrath", false},
+            {"Arnaud", "Weber", false}
     };
 
     private static final String INSTRUCTIONS = """
@@ -84,15 +84,15 @@ public class bug4368848 {
         ExampleTableModel dataModel = new ExampleTableModel();
 
         JComboBox _editor = new JComboBox();
-        _editor.addItem(new Boolean(false));
-        _editor.addItem(new Boolean(true));
+        _editor.addItem(false);
+        _editor.addItem(true);
 
         JTable tableView = new JTable(dataModel);
         tableView.setDefaultEditor(Boolean.class, new DefaultCellEditor(_editor));
 
         frame.getContentPane().add(new JScrollPane(tableView));
-        frame.setLocationRelativeTo(null);
         frame.setSize(200, 200);
+        frame.setLocationRelativeTo(null);
         return frame;
     }
 

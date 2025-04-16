@@ -35,7 +35,7 @@ import jtreg.SkippedException;
  * @summary Tests that Windows editable combo box selects text picked from its list
  * @library /java/awt/regtesthelpers /test/lib
  * @build PassFailJFrame
- * @run main/manual bug4249732
+ * @run main bug4249732
  */
 
 public class bug4249732 {
@@ -53,7 +53,7 @@ public class bug4249732 {
         }
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
-                .rows(50)
+                .rows(30)
                 .columns(40)
                 .testUI(bug4249732::createTestUI)
                 .build()
@@ -67,8 +67,8 @@ public class bug4249732 {
         cb.setEditable(true);
 
         frame.add(cb, BorderLayout.NORTH);
-        frame.setLocationRelativeTo(null);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         return frame;
     }
 }

@@ -91,8 +91,8 @@ public class bug4185024 {
 
         addFrame("Months", desktop, months);
 
-        frame.setLocationRelativeTo(null);
         frame.setSize(300, 300);
+        frame.setLocationRelativeTo(null);
         return frame;
     }
 
