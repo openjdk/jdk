@@ -143,26 +143,6 @@ void MacroAssembler::extend_sign(Register hi, Register lo) {
   }
 }
 
-void MacroAssembler::jC2(Register tmp, Label& L) {
-  // set parity bit if FPU flag C2 is set (via rax)
-  save_rax(tmp);
-  fwait(); fnstsw_ax();
-  sahf();
-  restore_rax(tmp);
-  // branch
-  jcc(Assembler::parity, L);
-}
-
-void MacroAssembler::jnC2(Register tmp, Label& L) {
-  // set parity bit if FPU flag C2 is set (via rax)
-  save_rax(tmp);
-  fwait(); fnstsw_ax();
-  sahf();
-  restore_rax(tmp);
-  // branch
-  jcc(Assembler::noParity, L);
-}
-
 // 32bit can do a case table jump in one instruction but we no longer allow the base
 // to be installed in the Address class
 void MacroAssembler::jump(ArrayAddress entry, Register rscratch) {
@@ -2054,115 +2034,6 @@ void MacroAssembler::fat_nop() {
   }
 }
 
-#ifndef _LP64
-void MacroAssembler::fcmp(Register tmp) {
-  fcmp(tmp, 1, true, true);
-}
-
-void MacroAssembler::fcmp(Register tmp, int index, bool pop_left, bool pop_right) {
-  assert(!pop_right || pop_left, "usage error");
-  if (VM_Version::supports_cmov()) {
-    assert(tmp == noreg, "unneeded temp");
-    if (pop_left) {
-      fucomip(index);
-    } else {
-      fucomi(index);
-    }
-    if (pop_right) {
-      fpop();
-    }
-  } else {
-    assert(tmp != noreg, "need temp");
-    if (pop_left) {
-      if (pop_right) {
-        fcompp();
-      } else {
-        fcomp(index);
-      }
-    } else {
-      fcom(index);
-    }
-    // convert FPU condition into eflags condition via rax,
-    save_rax(tmp);
-    fwait(); fnstsw_ax();
-    sahf();
-    restore_rax(tmp);
-  }
-  // condition codes set as follows:
-  //
-  // CF (corresponds to C0) if x < y
-  // PF (corresponds to C2) if unordered
-  // ZF (corresponds to C3) if x = y
-}
-
-void MacroAssembler::fcmp2int(Register dst, bool unordered_is_less) {
-  fcmp2int(dst, unordered_is_less, 1, true, true);
-}
-
-void MacroAssembler::fcmp2int(Register dst, bool unordered_is_less, int index, bool pop_left, bool pop_right) {
-  fcmp(VM_Version::supports_cmov() ? noreg : dst, index, pop_left, pop_right);
-  Label L;
-  if (unordered_is_less) {
-    movl(dst, -1);
-    jcc(Assembler::parity, L);
-    jcc(Assembler::below , L);
-    movl(dst, 0);
-    jcc(Assembler::equal , L);
-    increment(dst);
-  } else { // unordered is greater
-    movl(dst, 1);
-    jcc(Assembler::parity, L);
-    jcc(Assembler::above , L);
-    movl(dst, 0);
-    jcc(Assembler::equal , L);
-    decrementl(dst);
-  }
-  bind(L);
-}
-
-void MacroAssembler::fld_d(AddressLiteral src) {
-  fld_d(as_Address(src));
-}
-
-void MacroAssembler::fld_s(AddressLiteral src) {
-  fld_s(as_Address(src));
-}
-
-void MacroAssembler::fldcw(AddressLiteral src) {
-  fldcw(as_Address(src));
-}
-
-void MacroAssembler::fpop() {
-  ffree();
-  fincstp();
-}
-
-void MacroAssembler::fremr(Register tmp) {
-  save_rax(tmp);
-  { Label L;
-    bind(L);
-    fprem();
-    fwait(); fnstsw_ax();
-    sahf();
-    jcc(Assembler::parity, L);
-  }
-  restore_rax(tmp);
-  // Result is in ST0.
-  // Note: fxch & fpop to get rid of ST1
-  // (otherwise FPU stack could overflow eventually)
-  fxch(1);
-  fpop();
-}
-
-void MacroAssembler::empty_FPU_stack() {
-  if (VM_Version::supports_mmx()) {
-    emms();
-  } else {
-    for (int i = 8; i-- > 0; ) ffree(i);
-  }
-}
-#endif // !LP64
-
 void MacroAssembler::mulpd(XMMRegister dst, AddressLiteral src, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
   if (reachable(src)) {
@@ -2989,91 +2860,39 @@ void MacroAssembler::push_IU_state() {
 void MacroAssembler::push_cont_fastpath() {
   if (!Continuations::enabled()) return;
 
-#ifndef _LP64
-  Register rthread = rax;
-  Register rrealsp = rbx;
-  push(rthread);
-  push(rrealsp);
-
-  get_thread(rthread);
-
-  // The code below wants the original RSP.
-  // Move it back after the pushes above.
-  movptr(rrealsp, rsp);
-  addptr(rrealsp, 2*wordSize);
-#else
-  Register rthread = r15_thread;
-  Register rrealsp = rsp;
-#endif
-
-  Label done;
-  cmpptr(rrealsp, Address(rthread, JavaThread::cont_fastpath_offset()));
-  jccb(Assembler::belowEqual, done);
-  movptr(Address(rthread, JavaThread::cont_fastpath_offset()), rrealsp);
-  bind(done);
-
-#ifndef _LP64
-  pop(rrealsp);
-  pop(rthread);
-#endif
+  Label L_done;
+  cmpptr(rsp, Address(r15_thread, JavaThread::cont_fastpath_offset()));
+  jccb(Assembler::belowEqual, L_done);
+  movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rsp);
+  bind(L_done);
 }
 
 void MacroAssembler::pop_cont_fastpath() {
   if (!Continuations::enabled()) return;
 
-#ifndef _LP64
-  Register rthread = rax;
-  Register rrealsp = rbx;
-  push(rthread);
-  push(rrealsp);
-
-  get_thread(rthread);
-
-  // The code below wants the original RSP.
-  // Move it back after the pushes above.
-  movptr(rrealsp, rsp);
-  addptr(rrealsp, 2*wordSize);
-#else
-  Register rthread = r15_thread;
-  Register rrealsp = rsp;
-#endif
-
-  Label done;
-  cmpptr(rrealsp, Address(rthread, JavaThread::cont_fastpath_offset()));
-  jccb(Assembler::below, done);
-  movptr(Address(rthread, JavaThread::cont_fastpath_offset()), 0);
-  bind(done);
-
-#ifndef _LP64
-  pop(rrealsp);
-  pop(rthread);
-#endif
+  Label L_done;
+  cmpptr(rsp, Address(r15_thread, JavaThread::cont_fastpath_offset()));
+  jccb(Assembler::below, L_done);
+  movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
+  bind(L_done);
 }
 
 void MacroAssembler::inc_held_monitor_count() {
-#ifdef _LP64
   incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
-#endif
 }
 
 void MacroAssembler::dec_held_monitor_count() {
-#ifdef _LP64
   decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
-#endif
 }
 
 #ifdef ASSERT
 void MacroAssembler::stop_if_in_cont(Register cont, const char* name) {
-#ifdef _LP64
   Label no_cont;
   movptr(cont, Address(r15_thread, JavaThread::cont_entry_offset()));
   testl(cont, cont);
   jcc(Assembler::zero, no_cont);
   stop(name);
   bind(no_cont);
-#else
-  Unimplemented();
-#endif
 }
 #endif
 
@@ -3090,19 +2909,9 @@ void MacroAssembler::reset_last_Java_frame(bool clear_fp) { // determine java_th
   vzeroupper();
 }
 
-void MacroAssembler::restore_rax(Register tmp) {
-  if (tmp == noreg) pop(rax);
-  else if (tmp != rax) mov(rax, tmp);
-}
-
 void MacroAssembler::round_to(Register reg, int modulus) {
   addptr(reg, modulus - 1);
   andptr(reg, -modulus);
-}
-
-void MacroAssembler::save_rax(Register tmp) {
-  if (tmp == noreg) push(rax);
-  else if (tmp != rax) mov(tmp, rax);
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod) {
@@ -5788,85 +5597,6 @@ void MacroAssembler::print_CPU_state() {
   pop_CPU_state();
 }
 
-
-#ifndef _LP64
-static bool _verify_FPU(int stack_depth, char* s, CPU_State* state) {
-  static int counter = 0;
-  FPU_State* fs = &state->_fpu_state;
-  counter++;
-  // For leaf calls, only verify that the top few elements remain empty.
-  // We only need 1 empty at the top for C2 code.
-  if( stack_depth < 0 ) {
-    if( fs->tag_for_st(7) != 3 ) {
-      printf("FPR7 not empty\n");
-      state->print();
-      assert(false, "error");
-      return false;
-    }
-    return true;                // All other stack states do not matter
-  }
-
-  assert((fs->_control_word._value & 0xffff) == StubRoutines::x86::fpu_cntrl_wrd_std(),
-         "bad FPU control word");
-
-  // compute stack depth
-  int i = 0;
-  while (i < FPU_State::number_of_registers && fs->tag_for_st(i)  < 3) i++;
-  int d = i;
-  while (i < FPU_State::number_of_registers && fs->tag_for_st(i) == 3) i++;
-  // verify findings
-  if (i != FPU_State::number_of_registers) {
-    // stack not contiguous
-    printf("%s: stack not contiguous at ST%d\n", s, i);
-    state->print();
-    assert(false, "error");
-    return false;
-  }
-  // check if computed stack depth corresponds to expected stack depth
-  if (stack_depth < 0) {
-    // expected stack depth is -stack_depth or less
-    if (d > -stack_depth) {
-      // too many elements on the stack
-      printf("%s: <= %d stack elements expected but found %d\n", s, -stack_depth, d);
-      state->print();
-      assert(false, "error");
-      return false;
-    }
-  } else {
-    // expected stack depth is stack_depth
-    if (d != stack_depth) {
-      // wrong stack depth
-      printf("%s: %d stack elements expected but found %d\n", s, stack_depth, d);
-      state->print();
-      assert(false, "error");
-      return false;
-    }
-  }
-  // everything is cool
-  return true;
-}
-
-void MacroAssembler::verify_FPU(int stack_depth, const char* s) {
-  if (!VerifyFPU) return;
-  push_CPU_state();
-  push(rsp);                // pass CPU state
-  ExternalAddress msg((address) s);
-  // pass message string s
-  pushptr(msg.addr(), noreg);
-  push(stack_depth);        // pass stack depth
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, _verify_FPU)));
-  addptr(rsp, 3 * wordSize);   // discard arguments
-  // check for error
-  { Label L;
-    testl(rax, rax);
-    jcc(Assembler::notZero, L);
-    int3();                  // break if error condition
-    bind(L);
-  }
-  pop_CPU_state();
-}
-#endif // _LP64
-
 void MacroAssembler::restore_cpu_control_state_after_jni(Register rscratch) {
   // Either restore the MXCSR register after returning from the JNI Call
   // or verify that it wasn't changed (with -Xcheck:jni flag).
@@ -5879,14 +5609,6 @@ void MacroAssembler::restore_cpu_control_state_after_jni(Register rscratch) {
   }
   // Clear upper bits of YMM registers to avoid SSE <-> AVX transition penalty.
   vzeroupper();
-
-#ifndef _LP64
-  // Either restore the x87 floating pointer control word after returning
-  // from the JNI call or verify that it wasn't changed.
-  if (CheckJNICalls) {
-    call(RuntimeAddress(StubRoutines::x86::verify_fpu_cntrl_wrd_entry()));
-  }
-#endif // _LP64
 }
 
 // ((OopHandle)result).resolve();

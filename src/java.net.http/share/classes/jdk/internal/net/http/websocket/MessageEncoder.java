@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,7 +257,7 @@ public class MessageEncoder {
 
     private int maskAvailable(ByteBuffer src, ByteBuffer dst) {
         int r0 = dst.remaining();
-        payloadMasker.transferMasking(src, dst);
+        payloadMasker.applyMask(src, dst);
         int masked = r0 - dst.remaining();
         return src.hasRemaining() ? -masked : masked;
     }
@@ -393,6 +393,6 @@ public class MessageEncoder {
                     .write(headerBuffer);
         }
         headerBuffer.flip();
-        payloadMasker.mask(mask);
+        payloadMasker.setMask(mask);
     }
 }
