@@ -25,7 +25,8 @@ import java.io.File;
 import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /* @test
  * @bug 8354450
@@ -34,8 +35,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * @run junit WinTrailingSpace
  */
 public class WinTrailingSpace {
-    private static final String FILENAME_TRAILING_SPACE = "foobargus ";
     private static final String FILENAME_NO_TRAILING_SPACE = "foobargus";
+    private static final String FILENAME_TRAILING_SPACE = "foobargus ";
+    private static final String DIRNAME_TRAILING_SPACE = "foo \\bar\\gus";
 
     @Test
     public void noTrailingSpace() throws IOException {
@@ -58,8 +60,21 @@ public class WinTrailingSpace {
             f = new File(".", FILENAME_TRAILING_SPACE);
             f.delete();
             f.createNewFile();
-            assertFalse(f.exists()); // should not reach here
+            assertFalse(f.exists(), "Creation of " + f + " should have failed");
         } catch (IOException expected) {
+        } finally {
+            if (f != null)
+                f.delete();
+        }
+    }
+
+    @Test
+    public void dirTrailingSpace() throws IOException {
+        File f = null;
+        try {
+            f = new File(".", DIRNAME_TRAILING_SPACE);
+            f.delete();
+            assertFalse(f.mkdirs(), "Creation of " + f + " should have failed");
         } finally {
             if (f != null)
                 f.delete();
