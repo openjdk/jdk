@@ -588,6 +588,26 @@ class methodHandle;
   do_intrinsic(_dilithiumDecomposePoly, sun_security_provider_ML_DSA,                                                   \
                 dilithiumDecomposePoly_name, IaIaIaIII_signature, F_S)                                                  \
    do_name(dilithiumDecomposePoly_name,                    "implDilithiumDecomposePoly")                                \
+  /* support for com.sun.crypto.provider.ML_KEM */                                                                      \
+  do_class(com_sun_crypto_provider_ML_KEM,      "com/sun/crypto/provider/ML_KEM")                                       \
+   do_signature(SaSaSaSaI_signature, "([S[S[S[S)I")                                                                     \
+   do_signature(BaISaII_signature, "([BI[SI)I")                                                                         \
+   do_signature(SaSaSaI_signature, "([S[S[S)I")                                                                         \
+   do_signature(SaSaI_signature, "([S[S)I")                                                                             \
+   do_signature(SaI_signature, "([S)I")                                                                                 \
+   do_name(kyberAddPoly_name,                             "implKyberAddPoly")                                           \
+  do_intrinsic(_kyberNtt, com_sun_crypto_provider_ML_KEM, kyberNtt_name, SaSaI_signature, F_S)                          \
+   do_name(kyberNtt_name,                                  "implKyberNtt")                                              \
+  do_intrinsic(_kyberInverseNtt, com_sun_crypto_provider_ML_KEM, kyberInverseNtt_name, SaSaI_signature, F_S)            \
+   do_name(kyberInverseNtt_name,                           "implKyberInverseNtt")                                       \
+  do_intrinsic(_kyberNttMult, com_sun_crypto_provider_ML_KEM, kyberNttMult_name, SaSaSaSaI_signature, F_S)              \
+   do_name(kyberNttMult_name,                              "implKyberNttMult")                                          \
+  do_intrinsic(_kyberAddPoly_2, com_sun_crypto_provider_ML_KEM, kyberAddPoly_name, SaSaSaI_signature, F_S)              \
+  do_intrinsic(_kyberAddPoly_3, com_sun_crypto_provider_ML_KEM, kyberAddPoly_name, SaSaSaSaI_signature, F_S)            \
+  do_intrinsic(_kyber12To16, com_sun_crypto_provider_ML_KEM, kyber12To16_name, BaISaII_signature, F_S)                  \
+   do_name(kyber12To16_name,                             "implKyber12To16")                                             \
+  do_intrinsic(_kyberBarrettReduce, com_sun_crypto_provider_ML_KEM, kyberBarrettReduce_name, SaI_signature, F_S)        \
+   do_name(kyberBarrettReduce_name,                        "implKyberBarrettReduce")                                    \
                                                                                                                         \
   /* support for java.util.zip */                                                                                       \
   do_class(java_util_zip_CRC32,           "java/util/zip/CRC32")                                                        \

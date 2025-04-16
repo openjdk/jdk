@@ -111,6 +111,7 @@ private:
 
 private:
   static uint32_t _dilithiumConsts[];
+  static uint16_t  _kyberConsts[];
   static juint    _crc_table[];
   static jubyte   _adler_table[];
   // begin trigonometric tables block. See comments in .cpp file

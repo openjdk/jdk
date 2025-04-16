@@ -328,6 +328,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseDilithiumIntrinsics, false, DIAGNOSTIC,                  \
           "Use intrinsics for the vectorized version of Dilithium")         \
                                                                             \
+  product(bool, UseKyberIntrinsics, false, DIAGNOSTIC,                      \
+          "Use intrinsics for the vectorized version of Kyber")             \
+                                                                            \
   product(bool, UseMD5Intrinsics, false, DIAGNOSTIC,                        \
           "Use intrinsics for MD5 crypto hash function")                    \
                                                                             \
