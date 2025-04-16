@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/os.hpp"
 
 class TaskQueueSetSuper;
 class TerminatorTerminator;
