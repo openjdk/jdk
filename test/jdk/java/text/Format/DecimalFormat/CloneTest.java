@@ -77,8 +77,6 @@ public class CloneTest {
                 Object digitList = digitListField.get(df);
 
                 digitListClass = digitList.getClass();
-            } catch (NoSuchFieldException e) {
-                throw new RuntimeException(e);
             } catch (ReflectiveOperationException e) {
                 throw new SkippedException("reflective access in white-box test failed", e);
             }
