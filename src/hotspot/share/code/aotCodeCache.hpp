@@ -53,9 +53,8 @@ public:
 
 private:
   AOTCodeEntry* _next;
-  Kind   _kind;        //
-  uint   _id;          // vmIntrinsic::ID for stub or name's hash for nmethod
-
+  Kind   _kind;
+  uint   _id;          // Adapter's id, vmIntrinsic::ID for stub or name's hash for nmethod
   uint   _offset;      // Offset to entry
   uint   _size;        // Entry size
   uint   _name_offset; // Code blob name
@@ -73,7 +72,6 @@ public:
     _next         = nullptr;
     _kind         = kind;
     _id           = id;
-
     _offset       = offset;
     _size         = size;
     _name_offset  = name_offset;
@@ -224,7 +222,6 @@ private:
   uint   _store_size;      // Used when writing cache
   bool   _for_use;         // AOT cache is open for using AOT code
   bool   _for_dump;        // AOT cache is open for dumping AOT code
-  bool   _stub_caching;
   bool   _adapter_caching;
   bool   _closing;         // Closing cache file
   bool   _failed;          // Failed read/write to/from cache (cache is broken?)
@@ -278,7 +275,6 @@ public:
   bool for_use()  const { return _for_use  && !_failed; }
   bool for_dump() const { return _for_dump && !_failed; }
 
-  bool stub_caching()    const { return _stub_caching; }
   bool adapter_caching() const { return _adapter_caching; }
 
   bool closing()          const { return _closing; }
@@ -296,8 +292,16 @@ public:
   bool write_relocations(CodeBlob& code_blob);
   bool write_oop_map_set(CodeBlob& cb);
 
-  static bool store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind, uint id, const char* name, int entry_offset_count, int* entry_offsets) NOT_CDS_RETURN_(false);
-  static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind, uint id, const char* name, int entry_offset_count, int* entry_offsets) NOT_CDS_RETURN_(nullptr);
+  static bool store_code_blob(CodeBlob& blob,
+                              AOTCodeEntry::Kind entry_kind,
+                              uint id, const char* name,
+                              int entry_offset_count,
+                              int* entry_offsets) NOT_CDS_RETURN_(false);
+
+  static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
+                                  uint id, const char* name,
+                                  int entry_offset_count,
+                                  int* entry_offsets) NOT_CDS_RETURN_(nullptr);
 
   static uint store_entries_cnt() {
     if (is_on_for_dump()) {
@@ -327,10 +331,8 @@ public:
   static bool is_on_for_use()  { return is_on() && _cache->for_use(); }
   static bool is_on_for_dump() { return is_on() && _cache->for_dump(); }
 
-  static bool is_dumping_stubs()    { return is_on_for_dump() && _cache->stub_caching(); }
   static bool is_dumping_adapters() { return is_on_for_dump() && _cache->adapter_caching(); }
 
-  static bool is_using_stubs()      { return is_on_for_use() && _cache->stub_caching(); }
   static bool is_using_adapters()   { return is_on_for_use() && _cache->adapter_caching(); }
 
   static const char* add_C_string(const char* str) NOT_CDS_RETURN_(str);
@@ -364,4 +366,4 @@ public:
 
   void fix_relocations(CodeBlob* code_blob);
 };
-#endif // SHARE_CODE_AOTCODECACHE_HPP
+#endif // SHARE_CODE_AOTCODECACH_HPP

@@ -402,8 +402,7 @@ void CDSConfig::check_aot_flags() {
   CHECK_SINGLE_PATH(AOTCache);
   CHECK_SINGLE_PATH(AOTConfiguration);
 
-  if (FLAG_IS_DEFAULT(AOTCache) &&
-      (AOTStubCaching || AOTAdapterCaching)) {
+  if (FLAG_IS_DEFAULT(AOTCache) && AOTAdapterCaching) {
     vm_exit_during_initialization("AOTCache must be specified when using AOT code caching");
   }
 

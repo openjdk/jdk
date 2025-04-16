@@ -56,7 +56,6 @@ static void exit_vm_on_load_failure() {
   if (AbortVMOnAOTCodeFailure) {
     vm_exit_during_initialization("Unable to use AOT Code Cache.", nullptr);
   }
-  AOTStubCaching    = false;
   AOTAdapterCaching = false;
 }
 
@@ -65,7 +64,6 @@ static void exit_vm_on_store_failure() {
     tty->print_cr("Unable to create AOT Code Cache.");
     vm_abort(false);
   }
-  AOTStubCaching    = false;
   AOTAdapterCaching = false;
 }
 
@@ -91,7 +89,7 @@ void AOTCodeCache::initialize() {
     log_info(aot, codecache, init)("AOT Cache is not used");
     return; // nothing to do
   }
-  if (!(AOTStubCaching || AOTAdapterCaching)) {
+  if (!AOTAdapterCaching) {
     return; // AOT code caching disabled on command line
   }
   size_t aot_code_size = is_using ? AOTCacheAccess::get_aot_code_size() : 0;
@@ -158,7 +156,6 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
   _store_size(0),
   _for_use(is_using),
   _for_dump(is_dumping),
-  _stub_caching(AOTStubCaching),
   _adapter_caching(AOTAdapterCaching),
   _closing(false),
   _failed(false),
@@ -642,9 +639,6 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   }
   assert(AOTCodeEntry::is_valid_entry_kind(entry_kind), "invalid entry_kind %d", entry_kind);
 
-  if ((entry_kind == AOTCodeEntry::Blob) && !cache->stub_caching()) {
-    return false;
-  }
   if ((entry_kind == AOTCodeEntry::Adapter) && !cache->adapter_caching()) {
     return false;
   }
@@ -730,9 +724,6 @@ CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, c
   }
   assert(AOTCodeEntry::is_valid_entry_kind(entry_kind), "invalid entry_kind %d", entry_kind);
 
-  if ((entry_kind == AOTCodeEntry::Blob) && !cache->stub_caching()) {
-    return nullptr;
-  }
   if ((entry_kind == AOTCodeEntry::Adapter) && !cache->adapter_caching()) {
     return nullptr;
   }
