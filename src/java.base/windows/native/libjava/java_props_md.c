@@ -26,7 +26,6 @@
 #include "jni.h"
 #include "jni_util.h"
 
-#include <assert.h>
 #include <windows.h>
 #include <shlobj.h>
 #include <objidl.h>
@@ -686,9 +685,6 @@ GetJavaProperties(JNIEnv* env)
                 sprops.encoding = "MS950_HKSCS";
                 sprops.sun_jnu_encoding = "MS950_HKSCS";
             }
-
-            assert(sprops.encoding != NULL);
-            assert(sprops.sun_jnu_encoding != NULL);
 
             hStdOutErr = GetStdHandle(STD_OUTPUT_HANDLE);
             if (hStdOutErr != INVALID_HANDLE_VALUE &&

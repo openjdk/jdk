@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include <assert.h>
 #include <string.h>
 
 #include "jni.h"
@@ -147,6 +148,8 @@ Java_jdk_internal_util_SystemProps_00024Raw_platformProperties(JNIEnv *env, jcla
     PUTPROP(propArray, _line_separator_NDX, sprops->line_separator);
 
     /* basic encoding properties, always non-NULL */
+    assert(sprops->encoding != NULL);
+    assert(sprops->sun_jnu_encoding != NULL);
     PUTPROP(propArray, _native_encoding_NDX, sprops->encoding);
     PUTPROP(propArray, _sun_jnu_encoding_NDX, sprops->sun_jnu_encoding);
 
