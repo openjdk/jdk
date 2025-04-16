@@ -124,7 +124,7 @@ public:
   // given number.
   void reset_for_reuse(uint n_threads);
 
-  void emit_termination_statistics(char* gc_phase = nullptr);
+  void emit_termination_statistics(const char* task_name = nullptr);
 };
 
 class TaskTerminationTracker :public StackObj {

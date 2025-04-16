@@ -1240,13 +1240,13 @@
 
   <Event name="GCTaskTerminationStatistics" category="Java Virtual Machine, GC, TaskTerminator"  label="GC Task Termination Statistic Information" startTime="false">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
-    <Field type="string" name="gcPhase" label="GC phase"/>
+    <Field type="string" name="taskName" label="GC task name"/>
     <Field type="uint"  name="nThreads" label="Number of threads to run the GC task"/>
     <Field type="double" name="maxTime" label="Maximum time on task termination in ms"/>
     <Field type="double" name="minTime" label="Minimum time on task termination in ms"/>
     <Field type="double" name="avgTime" label="Average time on task termination in ms"/>
-    <Field type="double" name="maxAttempts" label="Maximum attempts task termination"/>
-    <Field type="double" name="minAttempts" label="Minimum attempts on task termination"/>
+    <Field type="ulong" name="maxAttempts" label="Maximum attempts task termination"/>
+    <Field type="ulong" name="minAttempts" label="Minimum attempts on task termination"/>
     <Field type="double" name="avgAttempts" label="Average attempts on task termination"/>
   </Event>
 

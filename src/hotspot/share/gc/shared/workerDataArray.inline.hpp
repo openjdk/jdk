@@ -167,10 +167,10 @@ WorkerDataStats<T> WorkerDataArray<T>::get_worker_stats() const {
         contributing_threads++;
       }
     }
-    return WorkerDataStats<T>(min, max, sum, contributing_threads);
+    return { min, max, sum, contributing_threads };
   }
 
-  return WorkerDataStats<T>(0, 0, 0, 0u);
+  return { 0, 0, 0, 0u };
 }
 
 template <typename T>
