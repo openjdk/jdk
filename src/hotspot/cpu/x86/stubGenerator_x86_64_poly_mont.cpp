@@ -573,7 +573,7 @@ address StubGenerator::generate_intpoly_montgomeryMult_P256() {
 
     montgomeryMultiply(aLimbs, bLimbs, rLimbs, tmp, _masm);
   } else {
-    assert(VM_Version::supports_avxifma(), "Require AVXIFMA support");
+    assert(VM_Version::supports_avxifma(), "Require AVX_IFMA support");
     __ push(r12);
     __ push(r13);
     __ push(r14);
