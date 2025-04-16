@@ -462,7 +462,7 @@ public:
   // field of `mirror` to prevent it from being called.
   // If `deoptimize` is true, the nmethod is immediately deoptimized.
   // The HotSpotNmethod.address field is zero upon returning.
-  void invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimze, JVMCI_TRAPS);
+  void invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimze, nmethod::NMethodChangeReason statusReason, JVMCI_TRAPS);
 
   void initialize_installed_code(JVMCIObject installed_code, CodeBlob* cb, JVMCI_TRAPS);
 

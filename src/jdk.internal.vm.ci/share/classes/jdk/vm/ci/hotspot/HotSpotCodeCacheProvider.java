@@ -155,10 +155,10 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
     }
 
     @Override
-    public void invalidateInstalledCode(InstalledCode installedCode) {
+    public void invalidateInstalledCode(InstalledCode installedCode, int statusReason) {
         if (installedCode instanceof HotSpotNmethod) {
             HotSpotNmethod nmethod = (HotSpotNmethod) installedCode;
-            nmethod.invalidate(true);
+            nmethod.invalidate(true, statusReason);
         } else {
             throw new IllegalArgumentException("Cannot invalidate a " + Objects.requireNonNull(installedCode).getClass().getName());
         }

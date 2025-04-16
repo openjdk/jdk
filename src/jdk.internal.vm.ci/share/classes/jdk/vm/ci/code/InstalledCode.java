@@ -47,6 +47,11 @@ public class InstalledCode {
     protected final String name;
 
     /**
+     * Identify the reason that caused this installed code to change.
+     */
+    protected int statusReason;
+
+    /**
      * The maximum length of an InstalledCode name. This name is typically installed into
      * the code cache so it should have a reasonable limit.
      */
@@ -119,6 +124,14 @@ public class InstalledCode {
         return address != 0;
     }
 
+    public int getStatusReason() {
+        return statusReason;
+    }
+
+    public String getStatusReasonDescription() {
+        return null;
+    }
+
     /**
      * Returns a copy of this installed code if it is {@linkplain #isValid() valid}, null otherwise.
      */
@@ -127,10 +140,10 @@ public class InstalledCode {
     }
 
     /**
-     * Equivalent to calling {@link #invalidate(boolean)} with a {@code true} argument.
+     * Equivalent to calling {@link #invalidate(boolean, int)} with {@code true} and {@code -1} argument.
      */
     public void invalidate() {
-        invalidate(true);
+        invalidate(true, -1);
     }
 
     /**
@@ -147,7 +160,7 @@ public class InstalledCode {
      *            there is a subsequent call to this method with {@code deoptimize == true} before
      *            the invocation completes.
      */
-    public void invalidate(boolean deoptimize) {
+    public void invalidate(boolean deoptimize, int statusReason) {
         throw new UnsupportedOperationException();
     }
 

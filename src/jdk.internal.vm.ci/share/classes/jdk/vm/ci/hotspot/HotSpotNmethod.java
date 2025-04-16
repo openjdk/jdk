@@ -123,8 +123,8 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
     }
 
     @Override
-    public void invalidate(boolean deoptimize) {
-        compilerToVM().invalidateHotSpotNmethod(this, deoptimize);
+    public void invalidate(boolean deoptimize, int statusReason) {
+        compilerToVM().invalidateHotSpotNmethod(this, deoptimize, statusReason);
     }
 
     @Override

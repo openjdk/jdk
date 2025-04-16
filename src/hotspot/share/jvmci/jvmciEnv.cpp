@@ -1743,6 +1743,7 @@ void JVMCIEnv::initialize_installed_code(JVMCIObject installed_code, CodeBlob* c
   } else {
     set_InstalledCode_entryPoint(installed_code, (jlong) cb->code_begin());
   }
+  set_InstalledCode_statusReason(installed_code, nmethod::JVMCI_new_installation);
   set_InstalledCode_address(installed_code, (jlong) cb);
   set_HotSpotInstalledCode_size(installed_code, cb->size());
   set_HotSpotInstalledCode_codeStart(installed_code, (jlong) cb->code_begin());
@@ -1750,7 +1751,7 @@ void JVMCIEnv::initialize_installed_code(JVMCIObject installed_code, CodeBlob* c
 }
 
 
-void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JVMCI_TRAPS) {
+void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, nmethod::NMethodChangeReason statusReason, JVMCI_TRAPS) {
   if (mirror.is_null()) {
     JVMCI_THROW(NullPointerException);
   }
@@ -1773,7 +1774,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
 
   if (!deoptimize) {
     // Prevent future executions of the nmethod but let current executions complete.
-    nm->make_not_entrant("JVMCI invalidate nmethod mirror");
+    nm->make_not_entrant(statusReason);
 
     // Do not clear the address field here as the Java code may still
     // want to later call this method with deoptimize == true. That requires
@@ -1782,7 +1783,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
     // Deoptimize the nmethod immediately.
     DeoptimizationScope deopt_scope;
     deopt_scope.mark(nm);
-    nm->make_not_entrant("JVMCI invalidate nmethod mirror");
+    nm->make_not_entrant(statusReason);
     nm->make_deoptimized();
     deopt_scope.deoptimize_marked();
 

@@ -82,4 +82,9 @@ public abstract class HotSpotInstalledCode extends InstalledCode {
     public byte[] getCode() {
         return compilerToVM().getCode(this);
     }
+
+    @Override
+    public String getStatusReasonDescription() {
+        return compilerToVM().getCodeStatusDescription(this.getStatusReason());
+    }
 }

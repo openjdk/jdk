@@ -28,6 +28,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "code/scopeDesc.hpp"
+#include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compilerOracle.hpp"
@@ -1198,7 +1199,7 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
         assert(JVMCIENV->isa_HotSpotNmethod(installed_code_handle), "wrong type");
         // Clear the link to an old nmethod first
         JVMCIObject nmethod_mirror = installed_code_handle;
-        JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, true, JVMCI_CHECK_0);
+        JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, true, nmethod::JVMCI_replacing_with_new_code, JVMCI_CHECK_0);
       } else {
         assert(JVMCIENV->isa_InstalledCode(installed_code_handle), "wrong type");
       }
@@ -1207,6 +1208,60 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
     }
   }
   return result;
+C2V_END
+
+C2V_VMENTRY_0(jobject,  getCodeStatusDescription, (JNIEnv *env, jobject, jint status_reason_code))
+  HandleMark hm(THREAD);
+  JNIHandleMark jni_hm(thread);
+  JVMCIObject desc = JVMCIENV->create_string("unknown", JVMCI_CHECK_NULL);
+  if (status_reason_code == nmethod::NMethodChangeReason::C1_deoptimize) {
+    desc = JVMCIENV->create_string("C1 deoptimized", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::C1_codepatch) {
+    desc = JVMCIENV->create_string("C1 code patch", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::C1_predicate_failed_trap) {
+    desc = JVMCIENV->create_string("C1 predicate failed trap", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::C1_deoptimize_for_patching) {
+    desc = JVMCIENV->create_string("C1 deoptimize for patching", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::CI_replay) {
+    desc = JVMCIENV->create_string("CI replay", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::marked_for_deoptimization) {
+    desc = JVMCIENV->create_string("marked for deoptimization", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::not_used) {
+    desc = JVMCIENV->create_string("not used", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::OSR_invalidation_for_compiling_with_C1) {
+    desc = JVMCIENV->create_string("OSR invalidation for compiling with C1", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::OSR_invalidation_back_branch) {
+    desc = JVMCIENV->create_string("OSR invalidation back branch", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_reprofile) {
+    desc = JVMCIENV->create_string("JVMCI reprofile", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_materialize_virtual_object) {
+    desc = JVMCIENV->create_string("JVMCI materialize virtual object", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_invalidate_nmethod_mirror) {
+    desc = JVMCIENV->create_string("JVMCI invalidate nmethod mirror", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_register_method) {
+    desc = JVMCIENV->create_string("JVMCI register method", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::OSR_invalidation_of_lower_level) {
+    desc = JVMCIENV->create_string("OSR invalidation of lower level", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::set_native_function) {
+    desc = JVMCIENV->create_string("set native function", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::whitebox_deoptimization) {
+    desc = JVMCIENV->create_string("whitebox deoptimization", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::missing_exception_handler) {
+    desc = JVMCIENV->create_string("missing exception handler", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::uncommon_trap) {
+    desc = JVMCIENV->create_string("uncommon trap", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::zombie) {
+    desc = JVMCIENV->create_string("zombie", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::gc_unlinking) {
+    desc = JVMCIENV->create_string("GC unlinking", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::gc_unlinking_cold) {
+    desc = JVMCIENV->create_string("GC unlinking cold nmethod", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_new_installation) {
+    desc = JVMCIENV->create_string("JVMCI new installation", JVMCI_CHECK_NULL);
+  } else if (status_reason_code == nmethod::NMethodChangeReason::JVMCI_replacing_with_new_code) {
+    desc = JVMCIENV->create_string("JVMCI replacing with new code", JVMCI_CHECK_NULL);
+  }
+  return JVMCIENV->get_jobject(desc);
 C2V_END
 
 C2V_VMENTRY(void, resetCompilationStatistics, (JNIEnv* env, jobject))
@@ -1374,7 +1429,7 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
 
   nmethod* code = method->code();
   if (code != nullptr) {
-    code->make_not_entrant("JVMCI reprofile");
+    code->make_not_entrant(nmethod::JVMCI_reprofile);
   }
 
   MethodData* method_data = method->method_data();
@@ -1387,9 +1442,9 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
 C2V_END
 
 
-C2V_VMENTRY(void, invalidateHotSpotNmethod, (JNIEnv* env, jobject, jobject hs_nmethod, jboolean deoptimize))
+C2V_VMENTRY(void, invalidateHotSpotNmethod, (JNIEnv* env, jobject, jobject hs_nmethod, jboolean deoptimize, jint statusReason))
   JVMCIObject nmethod_mirror = JVMCIENV->wrap(hs_nmethod);
-  JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, deoptimize, JVMCI_CHECK);
+  JVMCIENV->invalidate_nmethod_mirror(nmethod_mirror, deoptimize, (nmethod::NMethodChangeReason) statusReason, JVMCI_CHECK);
 C2V_END
 
 C2V_VMENTRY_NULL(jlongArray, collectCounters, (JNIEnv* env, jobject))
@@ -1814,7 +1869,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
     if (!fst.current()->is_compiled_frame()) {
       JVMCI_THROW_MSG(IllegalStateException, "compiled stack frame expected");
     }
-    fst.current()->cb()->as_nmethod()->make_not_entrant("JVMCI materialize virtual objects");
+    fst.current()->cb()->as_nmethod()->make_not_entrant(nmethod::JVMCI_materialize_virtual_object);
   }
   Deoptimization::deoptimize(thread, *fst.current(), Deoptimization::Reason_none);
   // look for the frame again as it has been updated by deopt (pc, deopt state...)
@@ -2257,16 +2312,6 @@ static jobject read_field_value(Handle obj, long displacement, jchar type_char, 
   bool aligned = (displacement % basic_type_elemsize) == 0;
   if (!aligned) {
     JVMCI_THROW_MSG_NULL(IllegalArgumentException, "read is unaligned");
-  }
-  if (obj->is_array()) {
-    // Disallow reading after the last element of an array
-    size_t array_length = arrayOop(obj())->length();
-    int lh = obj->klass()->layout_helper();
-    size_t size_in_bytes = array_length << Klass::layout_helper_log2_element_size(lh);
-    size_in_bytes += Klass::layout_helper_header_size(lh);
-    if ((size_t) displacement + basic_type_elemsize > size_in_bytes) {
-      JVMCI_THROW_MSG_NULL(IllegalArgumentException, "reading after last array element");
-    }
   }
   if (basic_type == T_OBJECT) {
     if (obj->is_objArray()) {
@@ -3322,6 +3367,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getResolvedJavaType0",                         CC "(Ljava/lang/Object;JZ)" HS_KLASS,                                                 FN_PTR(getResolvedJavaType0)},
   {CC "readConfiguration",                            CC "()[" OBJECT,                                                                      FN_PTR(readConfiguration)},
   {CC "installCode0",                                 CC "(JJZ" HS_COMPILED_CODE "[" OBJECT INSTALLED_CODE "J[B)I",                         FN_PTR(installCode0)},
+  {CC "getCodeStatusDescription",                     CC "(I)" STRING,                                                                      FN_PTR(getCodeStatusDescription)},
   {CC "getInstallCodeFlags",                          CC "()I",                                                                             FN_PTR(getInstallCodeFlags)},
   {CC "resetCompilationStatistics",                   CC "()V",                                                                             FN_PTR(resetCompilationStatistics)},
   {CC "disassembleCodeBlob",                          CC "(" INSTALLED_CODE ")" STRING,                                                     FN_PTR(disassembleCodeBlob)},
@@ -3330,7 +3376,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getLocalVariableTableStart",                   CC "(" HS_METHOD2 ")J",                                                               FN_PTR(getLocalVariableTableStart)},
   {CC "getLocalVariableTableLength",                  CC "(" HS_METHOD2 ")I",                                                               FN_PTR(getLocalVariableTableLength)},
   {CC "reprofile",                                    CC "(" HS_METHOD2 ")V",                                                               FN_PTR(reprofile)},
-  {CC "invalidateHotSpotNmethod",                     CC "(" HS_NMETHOD "Z)V",                                                              FN_PTR(invalidateHotSpotNmethod)},
+  {CC "invalidateHotSpotNmethod",                     CC "(" HS_NMETHOD "ZI)V",                                                             FN_PTR(invalidateHotSpotNmethod)},
   {CC "collectCounters",                              CC "()[J",                                                                            FN_PTR(collectCounters)},
   {CC "getCountersSize",                              CC "()I",                                                                             FN_PTR(getCountersSize)},
   {CC "setCountersSize",                              CC "(I)Z",                                                                            FN_PTR(setCountersSize)},

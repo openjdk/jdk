@@ -1973,14 +1973,12 @@ void nmethod::invalidate_osr_method() {
   }
 }
 
-void nmethod::log_state_change(const char* reason) const {
-  assert(reason != nullptr, "Must provide a reason");
-
+void nmethod::log_state_change(NMethodChangeReason statusReason) const {
   if (LogCompilation) {
     if (xtty != nullptr) {
       ttyLocker ttyl;  // keep the following output all in one block
-      xtty->begin_elem("make_not_entrant thread='%zu' reason='%s'",
-                       os::current_thread_id(), reason);
+      xtty->begin_elem("make_not_entrant thread='%zu' reason='%d'",
+                       os::current_thread_id(), statusReason);
       log_identity(xtty);
       xtty->stamp();
       xtty->end_elem();
@@ -1989,7 +1987,7 @@ void nmethod::log_state_change(const char* reason) const {
 
   ResourceMark rm;
   stringStream ss(NEW_RESOURCE_ARRAY(char, 256), 256);
-  ss.print("made not entrant: %s", reason);
+  ss.print("made not entrant: %d", statusReason);
 
   CompileTask::print_ul(this, ss.freeze());
   if (PrintCompilation) {
@@ -2004,9 +2002,7 @@ void nmethod::unlink_from_method() {
 }
 
 // Invalidate code
-bool nmethod::make_not_entrant(const char* reason) {
-  assert(reason != nullptr, "Must provide a reason");
-
+bool nmethod::make_not_entrant(NMethodChangeReason statusReason) {
   // This can be called while the system is already at a safepoint which is ok
   NoSafepointVerifier nsv;
 
@@ -2075,7 +2071,7 @@ bool nmethod::make_not_entrant(const char* reason) {
     assert(success, "Transition can't fail");
 
     // Log the transition once
-    log_state_change(reason);
+    log_state_change(statusReason);
 
     // Remove nmethod from method.
     unlink_from_method();
@@ -2086,7 +2082,7 @@ bool nmethod::make_not_entrant(const char* reason) {
   // Invalidate can't occur while holding the NMethodState_lock
   JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
   if (nmethod_data != nullptr) {
-    nmethod_data->invalidate_nmethod_mirror(this);
+    nmethod_data->invalidate_nmethod_mirror(this, statusReason);
   }
 #endif
 
@@ -2124,7 +2120,7 @@ void nmethod::unlink() {
   // Clear the link between this nmethod and a HotSpotNmethod mirror
   JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
   if (nmethod_data != nullptr) {
-    nmethod_data->invalidate_nmethod_mirror(this);
+    nmethod_data->invalidate_nmethod_mirror(this, is_cold() ? nmethod::gc_unlinking_cold : nmethod::gc_unlinking);
   }
 #endif
 

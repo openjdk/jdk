@@ -92,6 +92,7 @@
     long_field(InstalledCode, entryPoint)                                                                     \
     long_field(InstalledCode, version)                                                                        \
     object_field(InstalledCode, name, "Ljava/lang/String;")                                                   \
+    int_field(InstalledCode, statusReason)                                                                    \
   end_class                                                                                                   \
   start_class(HotSpotInstalledCode, jdk_vm_ci_hotspot_HotSpotInstalledCode)                                   \
     int_field(HotSpotInstalledCode, size)                                                                     \
