@@ -48,9 +48,9 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.MethodModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodTransform;
 import java.lang.classfile.instruction.InvokeInstruction;
 import java.net.URI;
 import java.nio.file.Files;
@@ -140,7 +140,7 @@ public class ValidateISO4217 {
             System.getProperty("test.classes", ".") + "/java/util/";
 
     // Classes that should mock System.currentTimeMillis()
-    private static final String[] mockedClasses =
+    private static final String[] CLASSES =
             Stream.concat(
                 Stream.of("Currency.class"),
                 Arrays.stream(Currency.class.getDeclaredClasses())
@@ -150,11 +150,11 @@ public class ValidateISO4217 {
     @BeforeAll
     static void setUp() throws Exception {
         checkUsage();
-        setUpMockedClasses();
+        setUpPatchedClasses();
         setUpTestingData();
     }
 
-    // Enforce correct usage of test
+    // Enforce correct usage of ValidateISO4217
     static void checkUsage() {
         if (System.getProperty("MOCKED.TIME") == null) {
             throw new SkippedException(
@@ -162,42 +162,32 @@ public class ValidateISO4217 {
         }
     }
 
-    // Mock the relevant classes required for module patch
-    static void setUpMockedClasses() throws IOException {
+    // Patch the relevant classes required for module patch
+    static void setUpPatchedClasses() throws IOException {
         if (System.getProperty("MOCKED.TIME").equals("false")) {
             new File(MODULE_PATCH_LOCATION).mkdirs();
-            for (String s : mockedClasses) {
-                mockClass(s);
+            for (String s : CLASSES) {
+                patchClass(s);
             }
         }
     }
 
     // Mock calls of System.currentTimeMillis() within Currency to Long.MAX_VALUE.
     // This effectively ensures that we are always past any cut-over dates.
-    private static void mockClass(String name) throws IOException {
-        ClassFile cf = ClassFile.of();
-        ClassModel classModel = cf.parse(Files.readAllBytes(
-                Paths.get(URI.create("jrt:/java.base/java/util/" + name))));
-        byte[] newBytes = cf.transformClass(classModel, (classBuilder, ce) -> {
-            if (ce instanceof MethodModel mm) {
-                classBuilder.transformMethod(mm, (methodBuilder, me)-> {
-                    if (me instanceof CodeModel cm) {
-                        methodBuilder.transformCode(cm, (codeBuilder, e) -> {
-                            switch (e) {
-                                case InvokeInstruction i
-                                        when i.name().stringValue().equals("currentTimeMillis")
-                                        -> codeBuilder.loadConstant(Long.MAX_VALUE);
-                                default -> codeBuilder.with(e);
-                            }
-                        });
-                    }
-                    else
-                        methodBuilder.with(me);
-                });
+    private static void patchClass(String name) throws IOException {
+        CodeTransform codeTransform = (codeBuilder, e) -> {
+            switch (e) {
+                case InvokeInstruction i when i.name().stringValue().equals("currentTimeMillis") ->
+                        codeBuilder.loadConstant(Long.MAX_VALUE); // mock
+                default -> codeBuilder.accept(e);
             }
-            else
-                classBuilder.with(ce);
-        });
+        };
+        MethodTransform methodTransform = MethodTransform.transformingCode(codeTransform);
+        ClassTransform classTransform = ClassTransform.transformingMethods(methodTransform);
+        ClassFile cf = ClassFile.of();
+        byte[] newBytes = cf.transformClass(cf.parse(
+                Files.readAllBytes(Paths.get(URI.create("jrt:/java.base/java/util/" + name)))), classTransform);
+
         String patchedClass = MODULE_PATCH_LOCATION + name;
         var file = new File(patchedClass);
         try (FileOutputStream fos = new FileOutputStream(file)) {
