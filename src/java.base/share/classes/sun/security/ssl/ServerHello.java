@@ -269,8 +269,6 @@ final class ServerHello {
                         "Not resumption, and no new session is allowed");
                 }
 
-                SignatureScheme.updateHandshakeLocalSupportedAlgs(shc);
-
                 SSLSessionImpl session =
                         new SSLSessionImpl(shc, CipherSuite.C_NULL);
                 session.setMaximumPacketSize(shc.sslConfig.maximumPacketSize);
@@ -342,10 +340,6 @@ final class ServerHello {
                 shc.handshakeSession = shc.resumingSession;
                 shc.negotiatedProtocol =
                         shc.resumingSession.getProtocolVersion();
-
-                // Protocol version is negotiated, update locally supported
-                // signature schemes according to the protocol being used.
-                SignatureScheme.updateHandshakeLocalSupportedAlgs(shc);
 
                 shc.negotiatedCipherSuite = shc.resumingSession.getSuite();
                 shc.handshakeHash.determine(
@@ -510,8 +504,6 @@ final class ServerHello {
                         "Not resumption, and no new session is allowed");
                 }
 
-                SignatureScheme.updateHandshakeLocalSupportedAlgs(shc);
-
                 SSLSessionImpl session =
                         new SSLSessionImpl(shc, CipherSuite.C_NULL);
                 session.setMaximumPacketSize(shc.sslConfig.maximumPacketSize);
@@ -544,10 +536,6 @@ final class ServerHello {
 
                 shc.negotiatedProtocol =
                         shc.resumingSession.getProtocolVersion();
-
-                // Protocol version is negotiated, update locally supported
-                // signature schemes according to the protocol being used.
-                SignatureScheme.updateHandshakeLocalSupportedAlgs(shc);
 
                 shc.negotiatedCipherSuite = shc.resumingSession.getSuite();
                 shc.handshakeHash.determine(
