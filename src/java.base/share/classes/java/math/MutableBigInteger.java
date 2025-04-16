@@ -1930,7 +1930,12 @@ class MutableBigInteger {
                     if (Long.compareUnsigned(rToN, x) <= 0)
                         return new MutableBigInteger(rLong);
 
-                    rLong -= Long.divideUnsigned(rToN - x, n * rToN1);
+                    // compute rLong - ceil((rToN - x) / (n * rToN1))
+                    long dividend = rToN - x, divisor = n * rToN1;
+                    if (Long.remainderUnsigned(dividend, divisor) != 0)
+                        rLong--;
+
+                    rLong -= Long.divideUnsigned(dividend, divisor);
                 } while (true);
             } else { // r^n could overflow long range, use MutableBigInteger loop instead
                 r = new MutableBigInteger(rLong);
@@ -1962,11 +1967,12 @@ class MutableBigInteger {
             if (rToN.compare(this) <= 0)
                 return r;
 
-            MutableBigInteger rToN1TimesN = new MutableBigInteger(rToN1.multiply(n).mag);
-
+            // compute ceil((rToN - this) / (n * rToN1))
             MutableBigInteger delta = new MutableBigInteger();
+            MutableBigInteger divisor = new MutableBigInteger(rToN1.multiply(n).mag);
             rToN.subtract(this);
-            rToN.divide(rToN1TimesN, delta, false);
+            if(!rToN.divide(divisor, delta).isZero())
+                r.subtract(ONE);
 
             r.subtract(delta);
         } while (true);
