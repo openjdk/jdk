@@ -868,14 +868,15 @@
  * </tr>
  * <tr>
  * <td id="ExtFunc">{@systemProperty jdk.xml.enableExtensionFunctions}</td>
- * <td>Determines if XSLT and XPath extension functions are to be allowed.
+ * <td>Determines whether extension functions in the Transform API are to be allowed.
+ * The extension functions in the XPath API are not affected by this property.
  * </td>
  * <td style="text-align:center" rowspan="5">yes</td>
  * <td style="text-align:center" rowspan="3">Boolean</td>
  * <td>
  * true or false. True indicates that extension functions are allowed; False otherwise.
  * </td>
- * <td style="text-align:center">true</td>
+ * <td style="text-align:center">false</td>
  * <td style="text-align:center">false</td>
  * <td style="text-align:center">Yes</td>
  * <td style="text-align:center">
