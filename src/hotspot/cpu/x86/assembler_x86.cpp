@@ -7643,15 +7643,8 @@ void Assembler::xorb(Register dst, Address src) {
 }
 
 void Assembler::exorb(Register dst, Register src1, Address src2, bool no_flags) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
-    return xorb(dst, src2);
-  }
   InstructionMark im(this);
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_8bit);
-  evex_prefix_ndd(src2, dst->encoding(), src1->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
-  emit_int8(0x32);
-  emit_operand(src1, src2, 0);
+  evex_prefix_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, 0x32, no_flags, false /* is_map1 */, EVEX_8bit);
 }
 
 void Assembler::xorb(Address dst, Register src) {
@@ -7679,17 +7672,8 @@ void Assembler::xorw(Register dst, Address src) {
 }
 
 void Assembler::exorw(Register dst, Register src1, Address src2, bool no_flags) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
-    return xorw(dst, src2);
-  }
   InstructionMark im(this);
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, /* input_size_in_bits */ EVEX_16bit);
-  // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
-  // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-  evex_prefix_ndd(src2, dst->encoding(), src1->encoding(), VEX_SIMD_66, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
-  emit_int8(0x33);
-  emit_operand(src1, src2, 0);
+  evex_prefix_ndd_and_int8(dst, src1, src2, VEX_SIMD_66, VEX_OPCODE_0F_3C, 0x33, no_flags, false /* is_map1 */, EVEX_16bit);
 }
 
 // AVX 3-operands scalar float-point arithmetic instructions
@@ -13667,14 +13651,17 @@ void Assembler::evex_prefix_ndd_and_int8_common(Register dst, Register src1, Add
   emit_operand(src1, src2, 0);
 }
 
-void Assembler::evex_prefix_ndd_and_int8(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc, int b1, bool no_flags, bool is_map1) {
+void Assembler::evex_prefix_ndd_and_int8(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc, int b1, bool no_flags, bool is_map1, int input_size_in_bits) {
   if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    if (input_size_in_bits == EVEX_16bit) {
+      emit_int8(0x66);
+    }
     prefix(src2, dst, false, is_map1);
     emit_int8(b1);
     emit_operand(dst, src2, 0);
     return;
   }
-  evex_prefix_ndd_and_int8_common(dst, src1, src2, pre, opc, b1, no_flags, EVEX_32bit, /* vex_w */ false);
+  evex_prefix_ndd_and_int8_common(dst, src1, src2, pre, opc, b1, no_flags, input_size_in_bits, /* vex_w */ false);
 }
 
 void Assembler::evex_prefixq_ndd_and_int8(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc, int b1, bool no_flags, bool is_map1) {

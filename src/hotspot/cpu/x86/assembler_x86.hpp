@@ -801,7 +801,7 @@ private:
                        int b1, bool no_flags, int input_size_in_bits, bool vex_w);
 
   void evex_prefix_ndd_and_int8(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc,
-                       int b1, bool no_flags = false, bool is_map1 = false);
+                       int b1, bool no_flags = false, bool is_map1 = false, int input_size_in_bits = EVEX_32bit);
 
   void evex_prefixq_ndd_and_int8(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc,
                        int b1, bool no_flags = false, bool is_map1 = false);
