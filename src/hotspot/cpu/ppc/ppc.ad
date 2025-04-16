@@ -4380,6 +4380,15 @@ operand immL16Alg4() %{
   interface(CONST_INTER);
 %}
 
+// Long Immediate: 16-bit, 16-aligned
+operand immL16Alg16() %{
+  predicate(Assembler::is_simm(n->get_long(), 16) && ((n->get_long() & 0xf) == 0));
+  match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Long Immediate: 32-bit, where lowest 16 bits are 0x0000.
 operand immL32hi16() %{
   predicate(Assembler::is_simm(n->get_long(), 32) && ((n->get_long() & 0xffffL) == 0L));
@@ -4898,6 +4907,20 @@ operand indOffset16Alg4(iRegPsrc reg, immL16Alg4 offset) %{
   %}
 %}
 
+// Indirect with 16-aligned Offset
+operand indOffset16Alg16(iRegPsrc reg, immL16Alg16 offset) %{
+  constraint(ALLOC_IN_RC(bits64_reg_ro));
+  match(AddP reg offset);
+  op_cost(100);
+  format %{ "[$reg + $offset]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0x0);
+    scale(0x0);
+    disp($offset);
+  %}
+%}
+
 //----------Complex Operands for Compressed OOPs-------------------------------
 // Compressed OOPs with narrow_oop_shift == 0.
 
@@ -5107,6 +5130,7 @@ operand cmpOp() %{
 opclass memory(indirect, indOffset16 /*, indIndex, tlsReference*/, indirectNarrow, indirectNarrow_klass, indOffset16Narrow, indOffset16Narrow_klass);
 // Memory operand where offsets are 4-aligned. Required for ld, std.
 opclass memoryAlg4(indirect, indOffset16Alg4, indirectNarrow, indOffset16NarrowAlg4, indOffset16NarrowAlg4_klass);
+opclass memoryAlg16(indirect, indOffset16Alg16);
 opclass indirectMemory(indirect, indirectNarrow);
 
 // Special opclass for I and ConvL2I.
@@ -5661,7 +5685,7 @@ instruct loadV16_Power8(vecX dst, indirect mem) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct loadV16_Power9(vecX dst, indirect mem) %{
+instruct loadV16_Power9(vecX dst, memoryAlg16 mem) %{
   predicate(n->as_LoadVector()->memory_size() == 16 && PowerArchitecturePPC64 >= 9);
   match(Set dst (LoadVector mem));
   ins_cost(MEMORY_REF_COST);
@@ -5669,7 +5693,7 @@ instruct loadV16_Power9(vecX dst, indirect mem) %{
   format %{ "LXV      $dst, $mem \t// load 16-byte Vector" %}
   size(4);
   ins_encode %{
-    __ lxv($dst$$VectorSRegister, 0, $mem$$Register);
+    __ lxv($dst$$VectorSRegister, $mem$$disp, $mem$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6701,7 +6725,7 @@ instruct storeV16_Power8(indirect mem, vecX src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct storeV16_Power9(indirect mem, vecX src) %{
+instruct storeV16_Power9(memoryAlg16 mem, vecX src) %{
   predicate(n->as_StoreVector()->memory_size() == 16 && PowerArchitecturePPC64 >= 9);
   match(Set mem (StoreVector mem src));
   ins_cost(MEMORY_REF_COST);
@@ -6709,7 +6733,7 @@ instruct storeV16_Power9(indirect mem, vecX src) %{
   format %{ "STXV     $mem, $src \t// store 16-byte Vector" %}
   size(4);
   ins_encode %{
-    __ stxv($src$$VectorSRegister, 0, $mem$$Register);
+    __ stxv($src$$VectorSRegister, $mem$$disp, $mem$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
