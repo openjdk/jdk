@@ -91,4 +91,3 @@ public class MemorySegmentZeroUnsafe {
         UNSAFE.setMemory(address, size, (byte) 0);
     }
 }
-
