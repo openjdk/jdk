@@ -392,6 +392,7 @@ class VectorSRegister {
   // accessors
   constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
   inline VMReg as_VMReg() const;
+  VectorSRegister successor() const { return VectorSRegister(encoding() + 1); }
 
   // testers
   constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
