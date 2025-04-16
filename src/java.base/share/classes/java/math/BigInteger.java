@@ -2718,7 +2718,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             if (exp > 0) {
                 // adjust exp to fit x^expAdj into a double
                 int expAdj = exp <= maxExp ? exp : exp >>> 1;
-                
+
                 // don't use fp arithmetic if expAdj <= 3
                 long xToExp = expAdj == 1 ? x :
                              (expAdj == 2 ? x*x :
@@ -2796,7 +2796,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * denotes the real {@code n}th root of {@code x} treated as a real. If {@code n}
      * is even and this BigInteger is negative, an {@code ArithmeticException} will be
      * thrown.
-     * 
+     *
      * <p>Note that the magnitude of the integer {@code n}th root will be less than
      * the magnitude of the real {@code n}th root if the latter is not representable
      * as an integral value.

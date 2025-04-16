@@ -1929,7 +1929,7 @@ class MutableBigInteger {
                     long rToN = rToN1 * rLong;
                     if (Long.compareUnsigned(rToN, x) <= 0)
                         return new MutableBigInteger(rLong);
-                        
+
                     rLong -= Long.divideUnsigned(rToN - x, n * rToN1);
                 } while (true);
             } else { // r^n could overflow long range, use MutableBigInteger loop instead
