@@ -1097,7 +1097,7 @@ int AOTCodeCache::store_strings() {
     }
     for (int i = 0; i < _C_strings_used; i++) {
       const char* str = _C_strings[_C_strings_s[i]];
-      uint len = strlen(str) + 1;
+      uint len = (uint)strlen(str) + 1;
       length += len;
       assert(len < 1000, "big string: %s", str);
       lengths[i] = len;

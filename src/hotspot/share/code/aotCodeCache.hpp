@@ -333,7 +333,7 @@ public:
   static bool is_using_stubs()      { return is_on_for_use() && _cache->stub_caching(); }
   static bool is_using_adapters()   { return is_on_for_use() && _cache->adapter_caching(); }
 
-  static const char* add_C_string(const char* str) NOT_CDS_RETURN;
+  static const char* add_C_string(const char* str) NOT_CDS_RETURN_(str);
 
   static void print_on(outputStream* st) NOT_CDS_RETURN;
 };
