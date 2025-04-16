@@ -411,8 +411,8 @@ final class SignatureAlgorithmsExtension {
             }
 
             // Produce the extension.
-            SignatureScheme.updateHandshakeLocalSupportedAlgs(shc);
-
+            // localSupportedSignAlgs has been already updated when we
+            // set the negotiated protocol.
             int vectorLen = SignatureScheme.sizeInRecord()
                     * shc.localSupportedSignAlgs.size();
             byte[] extData = new byte[vectorLen + 2];

@@ -239,8 +239,8 @@ final class CertSignAlgsExtension {
             }
 
             // Produce the extension.
-            SignatureScheme.updateHandshakeLocalSupportedAlgs(shc);
-
+            // localSupportedCertSignAlgs has been already updated when we set
+            // the negotiated protocol.
             int vectorLen = SignatureScheme.sizeInRecord()
                     * shc.localSupportedCertSignAlgs.size();
             byte[] extData = new byte[vectorLen + 2];
