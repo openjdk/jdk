@@ -177,36 +177,6 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_bounded(oop obj, OopCl
   }
 }
 
-template <typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  if (Devirtualizer::do_metadata(closure)) {
-    Devirtualizer::do_klass(closure, this);
-  }
-
-  oop_oop_iterate_oop_maps<T>(obj, closure);
-}
-
-template <typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
-  assert(!Devirtualizer::do_metadata(closure),
-      "Code to handle metadata is not implemented");
-
-  oop_oop_iterate_oop_maps_reverse<T>(obj, closure);
-}
-
-template <typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  if (Devirtualizer::do_metadata(closure)) {
-    if (mr.contains(obj)) {
-      Devirtualizer::do_klass(closure, this);
-    }
-  }
-
-  oop_oop_iterate_oop_maps_bounded<T>(obj, closure, mr);
-}
-
-// Klute variants
-
 ALWAYSINLINE ClassLoaderData* InstanceKlass::cld_from_klut_or_klass(oop obj, KlassLUTEntry klute) {
   const unsigned perma_cld_index = klute.loader_index();
   ClassLoaderData* cld = KlassInfoLUT::lookup_cld(perma_cld_index);

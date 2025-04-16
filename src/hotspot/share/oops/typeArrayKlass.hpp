@@ -84,27 +84,16 @@ class TypeArrayKlass : public ArrayKlass {
   static inline void oop_oop_iterate_impl(oop obj, OopIterateClosure* closure);
 
  public:
-  // Wraps oop_oop_iterate_impl to conform to macros.
-  template <typename T, typename OopClosureType>
-  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
 
-  // Wraps oop_oop_iterate_impl to conform to macros.
-  template <typename T, typename OopClosureType>
-  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
-
-  // Wraps oop_oop_iterate_impl to conform to macros.
-  template <typename T, typename OopClosureType>
-  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
-
-  // klute variants
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute);
+
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute);
+
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute);
 
- public:
   static TypeArrayKlass* cast(Klass* k) {
     return const_cast<TypeArrayKlass*>(cast(const_cast<const Klass*>(k)));
   }

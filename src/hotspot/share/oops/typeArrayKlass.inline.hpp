@@ -41,23 +41,6 @@ inline void TypeArrayKlass::oop_oop_iterate_impl(oop obj, OopIterateClosure* clo
 }
 
 template <typename T, typename OopClosureType>
-void TypeArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  oop_oop_iterate_impl(obj, closure);
-}
-
-template <typename T, typename OopClosureType>
-void TypeArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  oop_oop_iterate_impl(obj, closure);
-}
-
-template <typename T, typename OopClosureType>
-void TypeArrayKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
-  oop_oop_iterate_impl(obj, closure);
-}
-
-// Klute variant does nothing special, since there is nothing in the klute that would help
-// us here. It only exists to make the dispatcher happy.
-template <typename T, typename OopClosureType>
 inline void TypeArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
   oop_oop_iterate_impl(obj, closure);
 }
