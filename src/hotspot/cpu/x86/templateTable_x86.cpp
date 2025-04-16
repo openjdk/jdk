@@ -3680,7 +3680,6 @@ void TemplateTable::checkcast() {
   __ push(atos); // save receiver for result, and for GC
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
 
-  // vm_result_2 has metadata result
   __ get_vm_result_metadata(rax);
 
   __ pop_ptr(rdx); // restore receiver

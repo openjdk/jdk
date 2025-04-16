@@ -4143,7 +4143,6 @@ void TemplateTable::checkcast() {
 
   __ push(atos);
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
   __ get_vm_result_metadata(Rsuper, Robj);
   __ pop_ptr(Robj);
   __ b(resolved);
@@ -4214,7 +4213,6 @@ void TemplateTable::instanceof() {
 
   __ push(atos);
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
   __ get_vm_result_metadata(Rsuper, Robj);
   __ pop_ptr(Robj);
   __ b(resolved);

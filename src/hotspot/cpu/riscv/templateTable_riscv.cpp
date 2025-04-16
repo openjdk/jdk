@@ -3657,7 +3657,6 @@ void TemplateTable::checkcast() {
 
   __ push(atos); // save receiver for result, and for GC
   call_VM(x10, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
   __ get_vm_result_metadata(x10, xthread);
   __ pop_reg(x13); // restore receiver
   __ j(resolved);
@@ -3712,7 +3711,6 @@ void TemplateTable::instanceof() {
 
   __ push(atos); // save receiver for result, and for GC
   call_VM(x10, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
   __ get_vm_result_metadata(x10, xthread);
   __ pop_reg(x13); // restore receiver
   __ verify_oop(x13);
