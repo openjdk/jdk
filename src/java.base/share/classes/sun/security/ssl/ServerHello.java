@@ -340,7 +340,6 @@ final class ServerHello {
                 shc.handshakeSession = shc.resumingSession;
                 shc.negotiatedProtocol =
                         shc.resumingSession.getProtocolVersion();
-
                 shc.negotiatedCipherSuite = shc.resumingSession.getSuite();
                 shc.handshakeHash.determine(
                         shc.negotiatedProtocol, shc.negotiatedCipherSuite);
