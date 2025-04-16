@@ -1471,13 +1471,6 @@ vs_buildtools.exe --quiet --wait --norestart --nocache ^
 --add Microsoft.VisualStudio.Component.Windows11SDK.22621
 ```
 
-When installation is complete, configure the build using the same command used
-with a full Visual Studio installation:
-
-```
-bash configure --with-boot-jdk=$BOOT_JDK
-```
-
 To generate Windows AArch64 builds using Cygwin on a Windows x64 machine,
 you must set the proper target platform by adding 
 `--openjdk-target=aarch64-unknown-cygwin` to your configure command line.

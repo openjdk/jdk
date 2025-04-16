@@ -1732,16 +1732,10 @@ the installer as follows in a Windows command prompt:</p>
 --add Microsoft.VisualStudio.Component.VC.CoreBuildTools ^
 --add Microsoft.VisualStudio.Component.VC.Tools.ARM64 ^
 --add Microsoft.VisualStudio.Component.Windows11SDK.22621</code></pre>
-<p>When installation is complete, configure the build using the same
-command used with a full Visual Studio installation:</p>
-<pre><code>bash configure --with-boot-jdk=$BOOT_JDK</code></pre>
 <p>To generate Windows AArch64 builds using Cygwin on a Windows x64
-machine, the target platform needs to be set to
-<code>aarch64-unknown-cygwin</code> to enable cross compilation.
-Configure the build with <code>--openjdk-target</code>:</p>
-<pre><code>bash configure \
-  --with-boot-jdk=$BOOT_JDK \
-  --openjdk-target=aarch64-unknown-cygwin</code></pre>
+machine, you must set the proper target platform by adding
+<code>--openjdk-target=aarch64-unknown-cygwin</code> to your configure
+command line.</p>
 <h2 id="build-performance">Build Performance</h2>
 <p>Building the JDK requires a lot of horsepower. Some of the build
 tools can be adjusted to utilize more or less of resources such as
