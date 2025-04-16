@@ -282,6 +282,7 @@ public:
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
+  static InstanceKlass* get_unregistered_class(Symbol* name);
 
   static void finish_exclusion_checks();
   static DumpTimeSharedClassTable* dumptime_table() { return _dumptime_table; }

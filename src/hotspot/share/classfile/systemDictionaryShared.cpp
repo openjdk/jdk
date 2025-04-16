@@ -491,6 +491,15 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
   return (klass == *v);
 }
 
+InstanceKlass* SystemDictionaryShared::get_unregistered_class(Symbol* name) {
+  assert(CDSConfig::is_dumping_archive() || ClassListWriter::is_enabled(), "sanity");
+  if (_unregistered_classes_table == nullptr) {
+    return nullptr;
+  }
+  InstanceKlass** k = _unregistered_classes_table->get(name);
+  return k != nullptr ? *k : nullptr;
+}
+
 void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(!is_builtin(k), "must be unregistered class");

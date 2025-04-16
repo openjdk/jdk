@@ -504,6 +504,22 @@ void ClassListParser::constant_pool_resolution_warning(const char* msg, ...) {
   va_end(ap);
 }
 
+// If an unregistered class U is specified to have a registered supertype S1
+// named SN but an unregistered class S2 also named SN has already been loaded
+// S2 will be incorrectly used as the supertype of U instead of S1 due to
+// limitations in the loading mechanism of unregistered classes.
+void ClassListParser::check_supertype_overshadowing(int supertype_id, const InstanceKlass* supertype, TRAPS) {
+  const InstanceKlass* overshadower = SystemDictionaryShared::get_unregistered_class(supertype->name());
+  if (overshadower == nullptr || overshadower == supertype) {
+    return;
+  }
+  assert(!supertype->is_shared_unregistered_class(), "unregistered supertype cannot be overshadowed");
+  ResourceMark rm;
+  THROW_MSG(vmSymbols::java_lang_UnsupportedOperationException(),
+            err_msg("%s (id %d) has super-type %s (id %d) overshadowed by another class with the same name",
+                    _class_name, _id, supertype->external_name(), supertype_id));
+}
+
 // This function is used for loading classes for customized class loaders
 // during archive dumping.
 InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS) {
@@ -530,6 +546,10 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
   ResourceMark rm;
   InstanceKlass* specified_super = lookup_class_by_id(_super);
   GrowableArray<InstanceKlass*> specified_interfaces = get_specified_interfaces();
+  check_supertype_overshadowing(_super, specified_super, CHECK_NULL);
+  for (int i = 0; i < _interfaces->length(); i++) {
+    check_supertype_overshadowing(_interfaces->at(i), specified_interfaces.at(i), CHECK_NULL);
+  }
 
   const char* source_path = ClassLoader::uri_to_path(_source);
   InstanceKlass* k = UnregisteredClasses::load_class(class_name, source_path, CHECK_NULL);
