@@ -54,7 +54,6 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/basicLock.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -764,10 +763,6 @@ JRT_BLOCK_ENTRY(void, Runtime1::monitorenter(JavaThread* current, oopDesc* obj, 
 #endif
   if (LockingMode == LM_MONITOR) {
     lock->set_obj(obj);
-  }
-  if (UseObjectMonitorTable) {
-    // C1 fast-path does not use the BasicLock monitor cache.
-    lock->lock()->clear_object_monitor_cache();
   }
   assert(obj == lock->obj(), "must match");
   SharedRuntime::monitor_enter_helper(obj, lock->lock(), current);

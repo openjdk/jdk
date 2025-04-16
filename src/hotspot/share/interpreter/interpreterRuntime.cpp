@@ -56,7 +56,6 @@
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/basicLock.inline.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -725,10 +724,6 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, B
 #ifdef ASSERT
   current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
-  if (UseObjectMonitorTable) {
-    // Interpreter fast-path does not use the BasicLock monitor cache.
-    elem->lock()->clear_object_monitor_cache();
-  }
   Handle h_obj(current, elem->obj());
   assert(Universe::heap()->is_in_or_null(h_obj()),
          "must be null or an object");
