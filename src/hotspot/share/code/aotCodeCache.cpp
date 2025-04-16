@@ -1056,8 +1056,6 @@ static const char* _C_strings[MAX_STR_COUNT] = {nullptr};
 static int _C_strings_count = 0;
 static int _C_strings_s[MAX_STR_COUNT] = {0};
 static int _C_strings_id[MAX_STR_COUNT] = {0};
-static int _C_strings_len[MAX_STR_COUNT] = {0};
-static int _C_strings_hash[MAX_STR_COUNT] = {0};
 static int _C_strings_used = 0;
 
 void AOTCodeCache::load_strings() {
@@ -1066,25 +1064,21 @@ void AOTCodeCache::load_strings() {
     return;
   }
   uint strings_offset = _load_header->strings_offset();
-  uint strings_size   = _load_header->entries_offset() - strings_offset;
-  uint data_size = (uint)(strings_count * sizeof(uint));
-  uint* sizes = (uint*)addr(strings_offset);
-  uint* hashs = (uint*)addr(strings_offset + data_size);
-  strings_size -= 2 * data_size;
+  uint* string_lengths = (uint*)addr(strings_offset);
+  strings_offset += (strings_count * sizeof(uint));
+  uint strings_size = _load_header->entries_offset() - strings_offset;
   // We have to keep cached strings longer than _cache buffer
   // because they are refernced from compiled code which may
   // still be executed on VM exit after _cache is freed.
   char* p = NEW_C_HEAP_ARRAY(char, strings_size+1, mtCode);
-  memcpy(p, addr(strings_offset + 2 * data_size), strings_size);
+  memcpy(p, addr(strings_offset), strings_size);
   _C_strings_buf = p;
   assert(strings_count <= MAX_STR_COUNT, "sanity");
   for (uint i = 0; i < strings_count; i++) {
     _C_strings[i] = p;
-    uint len = sizes[i];
+    uint len = string_lengths[i];
     _C_strings_s[i] = i;
     _C_strings_id[i] = i;
-    _C_strings_len[i] = len;
-    _C_strings_hash[i] = hashs[i];
     p += len;
   }
   assert((uint)(p - _C_strings_buf) <= strings_size, "(" INTPTR_FORMAT " - " INTPTR_FORMAT ") = %d > %d ", p2i(p), p2i(_C_strings_buf), (uint)(p - _C_strings_buf), strings_size);
@@ -1094,29 +1088,20 @@ void AOTCodeCache::load_strings() {
 }
 
 int AOTCodeCache::store_strings() {
-  uint offset = _write_position;
-  uint length = 0;
   if (_C_strings_used > 0) {
-    // Write sizes first
+    uint offset = _write_position;
+    uint length = 0;
+    uint* lengths = (uint *)reserve_bytes(sizeof(uint) * _C_strings_used);
+    if (lengths == nullptr) {
+      return -1;
+    }
     for (int i = 0; i < _C_strings_used; i++) {
-      uint len = _C_strings_len[i] + 1; // Include 0
+      const char* str = _C_strings[_C_strings_s[i]];
+      uint len = strlen(str) + 1;
       length += len;
-      assert(len < 1000, "big string: %s", _C_strings[_C_strings_s[i]]);
-      uint n = write_bytes(&len, sizeof(uint));
-      if (n != sizeof(uint)) {
-        return -1;
-      }
-    }
-    // Write hashs
-    for (int i = 0; i < _C_strings_used; i++) {
-      uint n = write_bytes(&(_C_strings_hash[i]), sizeof(uint));
-      if (n != sizeof(uint)) {
-        return -1;
-      }
-    }
-    for (int i = 0; i < _C_strings_used; i++) {
-      uint len = _C_strings_len[i] + 1; // Include 0
-      uint n = write_bytes(_C_strings[_C_strings_s[i]], len);
+      assert(len < 1000, "big string: %s", str);
+      lengths[i] = len;
+      uint n = write_bytes(str, len);
       if (n != len) {
         return -1;
       }
@@ -1127,18 +1112,21 @@ int AOTCodeCache::store_strings() {
   return _C_strings_used;
 }
 
-void AOTCodeCache::add_C_string(const char* str) {
+const char* AOTCodeCache::add_C_string(const char* str) {
   if (is_on_for_dump()) {
-    _cache->_table->add_C_string(str);
+    return _cache->_table->add_C_string(str);
   }
+  return str;
 }
 
-void AOTCodeAddressTable::add_C_string(const char* str) {
+const char* AOTCodeAddressTable::add_C_string(const char* str) {
   if (str != nullptr && _extrs_complete) {
     // Check previous strings address
     for (int i = 0; i < _C_strings_count; i++) {
       if (_C_strings[i] == str) {
-        return; // Found existing one
+        return str; // Found existing one
+      } else if (!strcmp(_C_strings[i], str)) {
+        return _C_strings[i];
       }
     }
     // Add new one
@@ -1148,6 +1136,7 @@ void AOTCodeAddressTable::add_C_string(const char* str) {
       _C_strings[_C_strings_count++] = str;
     }
   }
+  return str;
 }
 
 int AOTCodeAddressTable::id_for_C_string(address str) {
@@ -1158,21 +1147,10 @@ int AOTCodeAddressTable::id_for_C_string(address str) {
         assert(id < _C_strings_used, "%d >= %d", id , _C_strings_used);
         return id; // Found recorded
       }
-      // Search for the same string content
-      int len = (int)strlen((const char*)str);
-      int hash = java_lang_String::hash_code((const jbyte*)str, len);
-      for (int j = 0; j < _C_strings_used; j++) {
-        if ((_C_strings_len[j] == len) && (_C_strings_hash[j] == hash)) {
-          _C_strings_id[i] = j; // Found match
-          return j;
-        }
-      }
       // Not found in recorded, add new
       id = _C_strings_used++;
       _C_strings_s[id] = i;
       _C_strings_id[i] = id;
-      _C_strings_len[id] = len;
-      _C_strings_hash[id] = hash;
       return id;
     }
   }
