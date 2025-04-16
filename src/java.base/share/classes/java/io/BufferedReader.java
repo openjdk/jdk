@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.io;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -74,6 +76,8 @@ import java.util.stream.StreamSupport;
  */
 
 public class BufferedReader extends Reader {
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
+
     private Reader in;
 
     private char[] cb;
@@ -394,10 +398,72 @@ public class BufferedReader extends Reader {
      *
      * @throws     IOException  If an I/O error occurs
      *
+     * @see #readAllLines
      * @see java.nio.file.Files#readAllLines
      */
     public String readLine() throws IOException {
         return readLine(false, null);
+    }
+
+    /**
+     * Reads all lines of text. A line is considered to be terminated by any
+     * one of a line feed ('\n'), a carriage return ('\r'), a carriage return
+     * followed immediately by a line feed, or by reaching the end-of-file
+     * (EOF).
+     *
+     * <p> This method works as if invoking it were equivalent to evaluating
+     * the expression:
+     * <blockquote>{@link #lines()}.toList()</blockquote>
+     *
+     * @apiNote
+     * <p> This method is intended for simple cases where it is convenient
+     * to read all lines in a single operation. It is not intended for
+     * reading a large number of lines.
+     *
+     * @return     the lines of text as a {@code List}; whether the
+     *             {@code List} is modifiable is implementation dependent,
+     *             hence not specified
+     *
+     * @throws     IOException  If an I/O error occurs
+     *
+     * @see java.nio.file.Files#readAllLines
+     *
+     * @since 25
+     */
+    public List<String> readAllLines() throws IOException {
+        return lines().toList();
+    }
+
+    /**
+     * Reads all characters into a string.
+     *
+     * <p> This method reads all content including the line separators in
+     * the middle and/or at the end. The resulting string will contain line
+     * separators as they appear in the original content.
+     *
+     * @apiNote
+     * This method is intended for simple cases where it is appropriate and
+     * convenient to read all lines into a String. It is not intended for
+     * reading a large number of lines.
+     *
+     * @return     a String containing all lines
+     *
+     * @throws     IOException       If an I/O error occurs
+     * @throws     OutOfMemoryError  If the content is extremely large,
+     *                               for example larger than {@code 2GB}
+     *
+     * @see java.nio.file.Files#readString
+     *
+     * @since 25
+     */
+    public  String readString() throws IOException {
+        StringBuilder result = new StringBuilder();
+        char[] str = new char[DEFAULT_BUFFER_SIZE];
+        int n;
+        while ((n = read(str)) != -1) {
+            result.append(str, 0, n);
+        }
+        return result.toString();
     }
 
     /**
