@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.lang.invoke.VarHandle;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.function.Function;
-import jdk.internal.misc.InnocuousThread;
 import jdk.internal.misc.ThreadFlock;
 import jdk.internal.invoke.MhUtil;
 
@@ -162,12 +161,13 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
      */
     private void scheduleTimeout(Duration timeout) {
         assert Thread.currentThread() == flock.owner() && timerTask == null;
-        timerTask = TimerSupport.schedule(timeout, () -> {
+        long nanos = TimeUnit.NANOSECONDS.convert(timeout);
+        timerTask = ForkJoinPool.commonPool().schedule(() -> {
             if (!cancelled) {
                 timeoutExpired = true;
                 cancel();
             }
-        });
+        }, nanos, TimeUnit.NANOSECONDS);
     }
 
     /**
@@ -415,28 +415,6 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
         @Override
         public Configuration withTimeout(Duration timeout) {
             return new ConfigImpl(threadFactory, name, Objects.requireNonNull(timeout));
-        }
-    }
-
-    /**
-     * Used to schedule a task to cancel the scope when a timeout expires.
-     */
-    private static class TimerSupport {
-        private static final ScheduledExecutorService DELAYED_TASK_SCHEDULER;
-        static {
-            ScheduledThreadPoolExecutor stpe = (ScheduledThreadPoolExecutor)
-                    Executors.newScheduledThreadPool(1, task -> {
-                        Thread t = InnocuousThread.newThread("StructuredTaskScope-Timer", task);
-                        t.setDaemon(true);
-                        return t;
-                    });
-            stpe.setRemoveOnCancelPolicy(true);
-            DELAYED_TASK_SCHEDULER = stpe;
-        }
-
-        static Future<?> schedule(Duration timeout, Runnable task) {
-            long nanos = TimeUnit.NANOSECONDS.convert(timeout);
-            return DELAYED_TASK_SCHEDULER.schedule(task, nanos, TimeUnit.NANOSECONDS);
         }
     }
 }

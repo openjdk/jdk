@@ -493,8 +493,8 @@ public sealed interface StructuredTaskScope<T, R>
      * where the results from the {@link StructuredTaskScope#join() join} method are
      * processed. It should be clear what the {@code Joiner} does vs. the application
      * code at the use-site. In general, the {@code Joiner} implementation is not the
-     * place to code "business logic". A {@code Joiner} should be designed to be as
-     * general purpose as possible.
+     * place for "business logic". A {@code Joiner} should be designed to be as general
+     * purpose as possible.
      *
      * @param <T> the result type of subtasks executed in the scope
      * @param <R> the result type of the scope
@@ -560,9 +560,9 @@ public sealed interface StructuredTaskScope<T, R>
          *
          * <p> In normal usage, this method will be called at most once by the {@code join}
          * method to produce the result (or exception). The behavior of this method when
-         * invoked directly, and invoked more than once, is not specified. Where possible,
-         * an implementation should return an equal result (or throw the same exception)
-         * on second or subsequent calls to produce the outcome.
+         * invoked directly, and invoked more than once, is undefined. Where possible, an
+         * implementation should return an equal result (or throw the same exception) on
+         * second or subsequent calls to produce the outcome.
          *
          * @apiNote This method is invoked by the {@code join} method. It should not be
          * invoked directly.
@@ -803,7 +803,7 @@ public sealed interface StructuredTaskScope<T, R>
          *
          * @param  cause the cause, can be {@code null}
          */
-        public FailedException(Throwable cause) {
+        FailedException(Throwable cause) {
             super(cause);
         }
     }
@@ -823,7 +823,7 @@ public sealed interface StructuredTaskScope<T, R>
         /**
          * Constructs a {@code TimeoutException} with no detail message.
          */
-        public TimeoutException() { }
+        TimeoutException() { }
     }
 
     /**
@@ -945,7 +945,7 @@ public sealed interface StructuredTaskScope<T, R>
      *
      * <p> This method returns the {@link Subtask Subtask} object. In some usages, this
      * object may be used to get its result. In other cases it may be used for correlation
-     * or just discarded. To ensure correct usage, the {@link Subtask#get() Subtask.get()}
+     * or be discarded. To ensure correct usage, the {@link Subtask#get() Subtask.get()}
      * method may only be called by the scope owner to get the result after it has
      * waited for subtasks to complete with the {@link #join() join} method and the subtask
      * completed successfully. Similarly, the {@link Subtask#exception() Subtask.exception()}

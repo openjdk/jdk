@@ -187,7 +187,7 @@ class Joiners {
     /**
      * A joiner that returns a stream of all subtasks.
      */
-    static class AllSubtasks<T> implements Joiner<T, Stream<Subtask<T>>> {
+    static final class AllSubtasks<T> implements Joiner<T, Stream<Subtask<T>>> {
         private final Predicate<Subtask<? extends T>> isDone;
 
         // list of forked subtasks, only accessed by owner thread

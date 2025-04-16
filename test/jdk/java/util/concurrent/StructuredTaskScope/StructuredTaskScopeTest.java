@@ -269,9 +269,7 @@ class StructuredTaskScopeTest {
 
             // fork subtask, the scope should be cancelled when the subtask completes
             var subtask1 = scope.fork(() -> "foo");
-            while (!scope.isCancelled()) {
-                Thread.sleep(20);
-            }
+            awaitCancelled(scope);
 
             assertEquals(1, countingThreadFactory.threadCount());
             assertEquals(1, testJoiner.onForkCount());
@@ -388,9 +386,7 @@ class StructuredTaskScopeTest {
         try (var scope = StructuredTaskScope.open(Joiner.anySuccessfulResultOrThrow(),
                 cf -> cf.withTimeout(Duration.ofMillis(100)))) {
             // wait for scope to be cancelled by timeout
-            while (!scope.isCancelled()) {
-                Thread.sleep(20);
-            }
+            awaitCancelled(scope);
             assertThrows(TimeoutException.class, scope::join);
 
             // join already called
@@ -493,9 +489,7 @@ class StructuredTaskScopeTest {
 
             // fork subtask, the scope should be cancelled when the subtask completes
             var subtask1 = scope.fork(() -> "foo");
-            while (!scope.isCancelled()) {
-                Thread.sleep(20);
-            }
+            awaitCancelled(scope);
 
             // fork second subtask, it should not run
             var subtask2 = scope.fork(() -> {
@@ -616,9 +610,7 @@ class StructuredTaskScopeTest {
 
             // fork subtask2, the scope should be cancelled when the subtask completes
             var subtask2 = scope.fork(() -> "bar");
-            while (!scope.isCancelled()) {
-                Thread.sleep(20);
-            }
+            awaitCancelled(scope);
 
             // subtask1 should be interrupted
             interrupted.await();
@@ -651,9 +643,8 @@ class StructuredTaskScopeTest {
                 return null;
             });
 
-            while (!scope.isCancelled()) {
-                Thread.sleep(50);
-            }
+            // wait for scope to be cancelled by timeout
+            awaitCancelled(scope);
 
             // if subtask started then it should be interrupted
             if (started.get()) {
@@ -781,9 +772,7 @@ class StructuredTaskScopeTest {
 
             // fork second subtask, the scope should be cancelled when this subtask completes
             scope.fork(() -> "bar");
-            while (!scope.isCancelled()) {
-                Thread.sleep(20);
-            }
+            awaitCancelled(scope);
 
             scope.join();
 
@@ -832,9 +821,7 @@ class StructuredTaskScopeTest {
 
             // fork second subtask, the scope should be cancelled when this subtask completes
             scope.fork(() -> "bar");
-            while (!scope.isCancelled()) {
-                Thread.sleep(20);
-            }
+            awaitCancelled(scope);
 
             scope.join();
 
@@ -973,9 +960,7 @@ class StructuredTaskScopeTest {
         try (var scope = StructuredTaskScope.open(joiner)) {
             assertFalse(scope.isCancelled());
             scope.fork(() -> "foo");
-            while (!scope.isCancelled()) {
-                Thread.sleep(10);
-            }
+            awaitCancelled(scope);
             scope.join();
         }
     }
@@ -1082,9 +1067,7 @@ class StructuredTaskScopeTest {
     void testSubtaskWhenCancelled(ThreadFactory factory) throws Exception {
         try (var scope = StructuredTaskScope.open(new CancelAfterOneJoiner<String>())) {
             scope.fork(() -> "foo");
-            while (!scope.isCancelled()) {
-                Thread.sleep(20);
-            }
+            awaitCancelled(scope);
 
             var subtask = scope.fork(() -> "foo");
 
@@ -1365,8 +1348,8 @@ class StructuredTaskScopeTest {
             var subtasks = scope.join().toList();
             assertEquals(2, subtasks.size());
 
-            assertTrue(subtasks.get(0) == subtask1);
-            assertTrue(subtasks.get(1) == subtask2);
+            assertSame(subtask1, subtasks.get(0));
+            assertSame(subtask2, subtasks.get(1));
             assertEquals("foo", subtask1.get());
             assertTrue(subtask2.exception() instanceof FooException);
         }
@@ -1390,8 +1373,8 @@ class StructuredTaskScopeTest {
             var subtasks = scope.join().toList();
 
             assertEquals(2, subtasks.size());
-            assertTrue(subtasks.get(0) == subtask1);
-            assertTrue(subtasks.get(1) == subtask2);
+            assertSame(subtask1, subtasks.get(0));
+            assertSame(subtask2, subtasks.get(1));
             assertEquals("foo", subtask1.get());
             assertEquals(Subtask.State.UNAVAILABLE, subtask2.state());
         }
@@ -1423,7 +1406,7 @@ class StructuredTaskScopeTest {
                 scope.fork(() -> "foo");
                 scope.fork(() -> { throw new FooException(); });
                 forkCount += 2;
-                Thread.sleep(Duration.ofMillis(10));
+                Thread.sleep(Duration.ofMillis(20));
             }
 
             var subtasks = scope.join().toList();
@@ -1463,9 +1446,7 @@ class StructuredTaskScopeTest {
 
             // need subtasks to test default methods
             var subtask1 = scope.fork(() -> "foo");
-            while (!scope.isCancelled()) {
-                Thread.sleep(20);
-            }
+            awaitCancelled(scope);
             var subtask2 = scope.fork(() -> "bar");
             scope.join();
 
@@ -1728,6 +1709,15 @@ class StructuredTaskScopeTest {
         assertTrue(duration <= max,
                 "Duration " + duration + "ms, expected <= " + max + "ms");
         return duration;
+    }
+
+    /**
+     * Wait for the given scope to be cancelled.
+     */
+    private static void awaitCancelled(StructuredTaskScope<?, ?> scope) throws InterruptedException {
+        while (!scope.isCancelled()) {
+            Thread.sleep(Duration.ofMillis(20));
+        }
     }
 
     /**
