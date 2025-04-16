@@ -42,7 +42,7 @@ public class TestUnswitchPredicateCloning {
         TestFramework.run();
     }
 
-    @Run(test = {"testUnswitchingBeforePredication", "testPredicationBeforeUnswitching"})
+    @Run(test = {"testUnswitchingBeforePredication", "testPredicationBeforeUnswitching", "testUnswitchingUncounted"})
     @Warmup(0)
     private static void runNoWarmup() {
         int res = testUnswitchingBeforePredication(IDX);
@@ -50,6 +50,8 @@ public class TestUnswitchPredicateCloning {
         final boolean cond = false;
         res = testPredicationBeforeUnswitching(IDX, cond);
         Asserts.assertEQ(res, (SIZE * (SIZE - 1)) / 2 + (cond ? SIZE * IDX : 0));
+        res = testUnswitchingUncounted(cond);
+        Asserts.assertEQ(res, (SIZE * (SIZE - 1)) / 2 + (cond ? SIZE : 0));
     }
 
 
@@ -67,18 +69,18 @@ public class TestUnswitchPredicateCloning {
     // Check that Loop Unswitching doubled the number of Parse Predicates: We have
     // them at the true- and false-path-loop. Note that the Loop Limit Check Parse
     // Predicate is not cloned when we already have a counted loop.
-    @IR(counts = {IRNode.LOOP_PARSE_PREDICATE, "3",
-                  IRNode.PROFILED_LOOP_PARSE_PREDICATE, "3",
-                  IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "3",
-                  IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "3"},
+    @IR(counts = { IRNode.LOOP_PARSE_PREDICATE, "3",
+                   IRNode.PROFILED_LOOP_PARSE_PREDICATE, "3",
+                   IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "3",
+                   IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "3" },
         phase = CompilePhase.BEFORE_LOOP_UNSWITCHING)
     // Since we know that predication happens after unswitching, we can test the
     // predicate cloning before predication, such that the useless, killed predicates
     // have already been removed in the beautify loop phase.
-    @IR(counts = {IRNode.LOOP_PARSE_PREDICATE, "4",
-                  IRNode.PROFILED_LOOP_PARSE_PREDICATE, "4",
-                  IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "3",
-                  IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "4"},
+    @IR(counts = { IRNode.LOOP_PARSE_PREDICATE, "4",
+                   IRNode.PROFILED_LOOP_PARSE_PREDICATE, "4",
+                   IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "3",
+                   IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "4" },
         phase = CompilePhase.BEFORE_LOOP_PREDICATION_IC)
     // Check that opaque template assertion predicated are added in loop predication
     // even if loop predication only happens after loop unswitching.
@@ -122,14 +124,14 @@ public class TestUnswitchPredicateCloning {
                    IRNode.LOOP_PARSE_PREDICATE, "1",
                    IRNode.PROFILED_LOOP_PARSE_PREDICATE, "1",
                    IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "1",
-                   IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "1"},
+                   IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "1" },
         phase = CompilePhase.BEFORE_LOOP_UNSWITCHING)
     // After loop unswitching and after removing the killed predicates.
     @IR(counts = { IRNode.OPAQUE_TEMPLATE_ASSERTION_PREDICATE, "4",
                    IRNode.LOOP_PARSE_PREDICATE, "2",
                    IRNode.PROFILED_LOOP_PARSE_PREDICATE, "2",
                    IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "1",
-                   IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "2"},
+                   IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "2" },
         phase = CompilePhase.BEFORE_LOOP_PREDICATION_IC)
     static int testPredicationBeforeUnswitching(int j, boolean cond) {
         int[] arr = getArr();
@@ -140,6 +142,40 @@ public class TestUnswitchPredicateCloning {
             }
             res += arr[i];
         }
+        return res;
+    }
+
+    @Test
+    // Check that Loop Unswitching doubled the number of all parse predicates.
+    // Since this is not counted loop, the Loop Limit Check parse predicate
+    // has to be cloned to both unswitched loops.
+    @IR(counts = { IRNode.LOOP_PARSE_PREDICATE, "1",
+                   IRNode.PROFILED_LOOP_PARSE_PREDICATE, "1",
+                   IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "1",
+                   IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "1" },
+        phase = CompilePhase.BEFORE_LOOP_UNSWITCHING)
+    // After loop unswitching and after removing the killed predicates all
+    // parse predicates are doubled..
+    @IR(counts = { IRNode.LOOP_PARSE_PREDICATE, "2",
+                   IRNode.PROFILED_LOOP_PARSE_PREDICATE, "2",
+                   IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "2",
+                   IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "2" },
+        failOn = { IRNode.COUNTED_LOOP },
+        phase = CompilePhase.PHASEIDEALLOOP1)
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    static int testUnswitchingUncounted(boolean cond) {
+        int[] arr = getArr();
+        int res = 0;
+        int i = 0;
+        while (i < arr.length) {
+            if (cond) {
+                res += 1;
+            }
+            res += arr[i];
+
+            i = arr[i] + 1; // effectively i += 1, but don't tell the compiler!
+        }
+
         return res;
     }
 }
