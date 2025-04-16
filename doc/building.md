@@ -1479,14 +1479,8 @@ bash configure --with-boot-jdk=$BOOT_JDK
 ```
 
 To generate Windows AArch64 builds using Cygwin on a Windows x64 machine,
-the target platform needs to be set to `aarch64-unknown-cygwin` to enable
-cross compilation. Configure the build with `--openjdk-target`:
-
-```
-bash configure \
-  --with-boot-jdk=$BOOT_JDK \
-  --openjdk-target=aarch64-unknown-cygwin
-```
+you must set the proper target platform by adding 
+`--openjdk-target=aarch64-unknown-cygwin` to your configure command line.
 
 ## Build Performance
 
