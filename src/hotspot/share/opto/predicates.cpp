@@ -29,6 +29,7 @@
 #include "opto/node.hpp"
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
+#include "runtime/deoptimization.hpp"
 
 // Walk over all Initialized Assertion Predicates and return the entry into the first Initialized Assertion Predicate
 // (i.e. not belonging to an Initialized Assertion Predicate anymore)
@@ -1095,9 +1096,14 @@ CloneUnswitchedLoopPredicatesVisitor::CloneUnswitchedLoopPredicatesVisitor(
       _clone_predicate_to_false_path_loop(false_path_loop_head, node_in_false_path_loop_body, phase),
       _phase(phase) {}
 
-// Keep track of whether we are in the correct Predicate Block where Template Assertion Predicates can be found.
 // The PredicateIterator will always start at the loop entry and first visits the Loop Limit Check Predicate Block.
+// Does not clone Loop Limit Check parse predicates, because a loop limit check before the unswitched loop selector
+// covers both unswitched counted loops
 void CloneUnswitchedLoopPredicatesVisitor::visit(const ParsePredicate& parse_predicate) {
+  Deoptimization::DeoptReason deopt_reason = parse_predicate.head()->deopt_reason();
+  if (deopt_reason == Deoptimization::Reason_loop_limit_check) {
+    return;
+  }
   _clone_predicate_to_true_path_loop.clone_parse_predicate(parse_predicate, false);
   _clone_predicate_to_false_path_loop.clone_parse_predicate(parse_predicate, true);
   parse_predicate.kill(_phase->igvn());
