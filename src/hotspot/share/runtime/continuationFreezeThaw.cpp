@@ -573,8 +573,8 @@ static void assert_frames_in_continuation_are_safe(JavaThread* thread) {
                   RegisterMap::ProcessFrames::skip,
                   RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
+  StackWatermark* watermark = StackWatermarkSet::get(thread, StackWatermarkKind::gc);
   for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
-    StackWatermark* watermark = StackWatermarkSet::get(thread, StackWatermarkKind::gc);
     if (watermark != nullptr) {
       watermark->assert_is_frame_safe(f);
     }
