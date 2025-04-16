@@ -80,6 +80,10 @@ const char *IdealGraphPrinter::BLOCK_ELEMENT = "block";
 const char *IdealGraphPrinter::SUCCESSORS_ELEMENT = "successors";
 const char *IdealGraphPrinter::SUCCESSOR_ELEMENT = "successor";
 const char *IdealGraphPrinter::ASSEMBLY_ELEMENT = "assembly";
+const char *IdealGraphPrinter::LIVEOUT_ELEMENT = "liveOut";
+const char *IdealGraphPrinter::LIVE_RANGE_ELEMENT = "lrg";
+const char *IdealGraphPrinter::LIVE_RANGE_ID_PROPERTY = "id";
+const char *IdealGraphPrinter::LIVE_RANGES_ELEMENT = "liveRanges";
 
 int IdealGraphPrinter::_file_count = 0;
 
@@ -542,6 +546,31 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
     assert(s2.size() < sizeof(buffer), "size in range");
     print_prop("dump_spec", buffer);
 
+    const TypePtr* adr_type = node->adr_type();
+    if (adr_type != nullptr && C->have_alias_type(adr_type)) {
+      Compile::AliasType* at = C->alias_type(adr_type);
+      if (at != nullptr) {
+        print_prop("alias_index", at->index());
+        // The value of at->field(), if present, is already dumped in the
+        // "source"/"destination" properties.
+        const Type* element = at->element();
+        if (element != nullptr) {
+          stringStream element_stream;
+          element->dump_on(&element_stream);
+          print_prop("alias_element", element_stream.freeze());
+        }
+        if (at->is_rewritable()) {
+          print_prop("alias_is_rewritable", "true");
+        }
+        if (at->is_volatile()) {
+          print_prop("alias_is_volatile", "true");
+        }
+        if (at->general_index() != at->index()) {
+          print_prop("alias_general_index", at->general_index());
+        }
+      }
+    }
+
     if (node->is_block_proj()) {
       print_prop("is_block_proj", "true");
     }
@@ -640,6 +669,15 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         lrg_id = _chaitin->_lrg_map.live_range_id(node);
       }
       print_prop("lrg", lrg_id);
+    }
+
+    if (node->is_MachSafePoint()) {
+      const OopMap* oopmap = node->as_MachSafePoint()->oop_map();
+      if (oopmap != nullptr) {
+        stringStream oopmap_stream;
+        oopmap->print_on(&oopmap_stream);
+        print_prop("oopmap", oopmap_stream.freeze());
+      }
     }
 
     Compile::current()->_in_dump_cnt--;
@@ -781,6 +819,12 @@ Node* IdealGraphPrinter::get_load_node(const Node* node) {
   return load;
 }
 
+bool IdealGraphPrinter::has_liveness_info() const {
+  return _chaitin &&
+    _chaitin != (PhaseChaitin *)((intptr_t)0xdeadbeef) &&
+    _chaitin->get_live() != nullptr;
+}
+
 void IdealGraphPrinter::walk_nodes(Node* start, bool edges) {
   VectorSet visited;
   GrowableArray<Node *> nodeStack(Thread::current()->resource_area(), 0, 0, nullptr);
@@ -877,6 +921,19 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
       }
       tail(NODES_ELEMENT);
 
+      if (has_liveness_info()) {
+        head(LIVEOUT_ELEMENT);
+        const IndexSet* liveout = _chaitin->get_live()->live(block);
+        IndexSetIterator lrgs(liveout);
+        uint lrg;
+        while ((lrg = lrgs.next()) != 0) {
+          begin_elem(LIVE_RANGE_ELEMENT);
+          print_attr(LIVE_RANGE_ID_PROPERTY, lrg);
+          end_elem();
+        }
+        tail(LIVEOUT_ELEMENT);
+      }
+
       tail(BLOCK_ELEMENT);
     }
     tail(CONTROL_FLOW_ELEMENT);
@@ -900,6 +957,91 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
     tail(STATE_ELEMENT);
     tail(GRAPH_STATES_ELEMENT);
   }
+
+  if (has_liveness_info()) {
+    head(LIVE_RANGES_ELEMENT);
+    for (uint i = 1; i < _chaitin->_lrg_map.max_lrg_id(); i++) {
+      begin_head(LIVE_RANGE_ELEMENT);
+      print_attr(LIVE_RANGE_ID_PROPERTY, i);
+      end_head();
+      head(PROPERTIES_ELEMENT);
+      const LRG& lrg = _chaitin->lrgs(i);
+      buffer[0] = 0;
+      stringStream lrg_mask_stream(buffer, sizeof(buffer) - 1);
+      lrg.mask().dump(&lrg_mask_stream);
+      print_prop("mask", buffer);
+      print_prop("mask_size", lrg.mask_size());
+      if (lrg._degree_valid) {
+        print_prop("degree", lrg.degree());
+      }
+      print_prop("num_regs", lrg.num_regs());
+      print_prop("reg_pressure", lrg.reg_pressure());
+      print_prop("cost", lrg._cost);
+      print_prop("area", lrg._area);
+      print_prop("score", lrg.score());
+      if (lrg._risk_bias != 0) {
+        print_prop("risk_bias", lrg._risk_bias);
+      }
+      if (lrg._copy_bias != 0) {
+        print_prop("copy_bias", lrg._copy_bias);
+      }
+      if (lrg.is_singledef()) {
+        print_prop("is_singledef", TRUE_VALUE);
+      }
+      if (lrg.is_multidef()) {
+        print_prop("is_multidef", TRUE_VALUE);
+      }
+      if (lrg._is_oop) {
+        print_prop("is_oop", TRUE_VALUE);
+      }
+      if (lrg._is_float) {
+        print_prop("is_float", TRUE_VALUE);
+      }
+      if (lrg._is_vector) {
+        print_prop("is_vector", TRUE_VALUE);
+      }
+      if (lrg._is_predicate) {
+        print_prop("is_predicate", TRUE_VALUE);
+      }
+      if (lrg._is_scalable) {
+        print_prop("is_scalable", TRUE_VALUE);
+      }
+      if (lrg._was_spilled1) {
+        print_prop("was_spilled1", TRUE_VALUE);
+      }
+      if (lrg._was_spilled2) {
+        print_prop("was_spilled2", TRUE_VALUE);
+      }
+      if (lrg._direct_conflict) {
+        print_prop("direct_conflict", TRUE_VALUE);
+      }
+      if (lrg._fat_proj) {
+        print_prop("fat_proj", TRUE_VALUE);
+      }
+      if (lrg._was_lo) {
+        print_prop("_was_lo", TRUE_VALUE);
+      }
+      if (lrg._has_copy) {
+        print_prop("has_copy", TRUE_VALUE);
+      }
+      if (lrg._at_risk) {
+        print_prop("at_risk", TRUE_VALUE);
+      }
+      if (lrg._must_spill) {
+        print_prop("must_spill", TRUE_VALUE);
+      }
+      if (lrg._is_bound) {
+        print_prop("is_bound", TRUE_VALUE);
+      }
+      if (lrg._msize_valid && lrg._degree_valid && lrg.lo_degree()) {
+        print_prop("trivial", TRUE_VALUE);
+      }
+      tail(PROPERTIES_ELEMENT);
+      tail(LIVE_RANGE_ELEMENT);
+    }
+    tail(LIVE_RANGES_ELEMENT);
+  }
+
   tail(GRAPH_ELEMENT);
   _xml->flush();
 }

@@ -49,6 +49,7 @@ bool ConstantTable::Constant::operator==(const Constant& other) {
 
   // For floating point values we compare the bit pattern.
   switch (type()) {
+  case T_SHORT:   return (_v._value.i == other._v._value.i);
   case T_INT:     return (_v._value.i == other._v._value.i);
   case T_FLOAT:   return jint_cast(_v._value.f) == jint_cast(other._v._value.f);
   case T_LONG:    return (_v._value.j == other._v._value.j);
@@ -102,6 +103,7 @@ static int constant_size(ConstantTable::Constant* con) {
     return con->get_array()->length();
   }
   switch (con->type()) {
+  case T_SHORT:   return sizeof(jint   );
   case T_INT:     return sizeof(jint   );
   case T_LONG:    return sizeof(jlong  );
   case T_FLOAT:   return sizeof(jfloat );
@@ -167,6 +169,7 @@ bool ConstantTable::emit(C2_MacroAssembler* masm) const {
       constant_addr = masm->array_constant(con.get_array(), con.alignment());
     } else {
       switch (con.type()) {
+      case T_SHORT:  constant_addr = masm->int_constant(   con.get_jint()   ); break;
       case T_INT:    constant_addr = masm->int_constant(   con.get_jint()   ); break;
       case T_LONG:   constant_addr = masm->long_constant(  con.get_jlong()  ); break;
       case T_FLOAT:  constant_addr = masm->float_constant( con.get_jfloat() ); break;
@@ -281,6 +284,7 @@ ConstantTable::Constant ConstantTable::add(MachConstantNode* n, MachOper* oper) 
   BasicType type = oper->type()->basic_type();
   switch (type) {
   case T_LONG:    value.j = oper->constantL(); break;
+  case T_SHORT:   value.i = oper->constantH(); break;
   case T_INT:     value.i = oper->constant();  break;
   case T_FLOAT:   value.f = oper->constantF(); break;
   case T_DOUBLE:  value.d = oper->constantD(); break;

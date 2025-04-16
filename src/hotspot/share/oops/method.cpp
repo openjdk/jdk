@@ -433,7 +433,7 @@ void Method::set_itable_index(int index) {
     // itable index should be the same as the runtime index.
     assert(_vtable_index == itable_index_max - index,
            "archived itable index is different from runtime index");
-    return; // don’t write into the shared class
+    return; // don't write into the shared class
   } else {
     _vtable_index = itable_index_max - index;
   }
@@ -970,7 +970,7 @@ void Method::set_native_function(address function, bool post_event_flag) {
   // If so, we have to make it not_entrant.
   nmethod* nm = code(); // Put it into local variable to guard against concurrent updates
   if (nm != nullptr) {
-    nm->make_not_entrant();
+    nm->make_not_entrant("set native function");
   }
 }
 
@@ -1918,39 +1918,6 @@ void Method::clear_all_breakpoints() {
 }
 
 #endif // INCLUDE_JVMTI
-
-int Method::invocation_count() const {
-  MethodCounters* mcs = method_counters();
-  MethodData* mdo = method_data();
-  if (((mcs != nullptr) ? mcs->invocation_counter()->carry() : false) ||
-      ((mdo != nullptr) ? mdo->invocation_counter()->carry() : false)) {
-    return InvocationCounter::count_limit;
-  } else {
-    return ((mcs != nullptr) ? mcs->invocation_counter()->count() : 0) +
-           ((mdo != nullptr) ? mdo->invocation_counter()->count() : 0);
-  }
-}
-
-int Method::backedge_count() const {
-  MethodCounters* mcs = method_counters();
-  MethodData* mdo = method_data();
-  if (((mcs != nullptr) ? mcs->backedge_counter()->carry() : false) ||
-      ((mdo != nullptr) ? mdo->backedge_counter()->carry() : false)) {
-    return InvocationCounter::count_limit;
-  } else {
-    return ((mcs != nullptr) ? mcs->backedge_counter()->count() : 0) +
-           ((mdo != nullptr) ? mdo->backedge_counter()->count() : 0);
-  }
-}
-
-int Method::highest_comp_level() const {
-  const MethodCounters* mcs = method_counters();
-  if (mcs != nullptr) {
-    return mcs->highest_comp_level();
-  } else {
-    return CompLevel_none;
-  }
-}
 
 int Method::highest_osr_comp_level() const {
   const MethodCounters* mcs = method_counters();

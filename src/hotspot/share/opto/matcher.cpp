@@ -60,7 +60,7 @@ const uint Matcher::_end_rematerialize   = _END_REMATERIALIZE;
 //---------------------------Matcher-------------------------------------------
 Matcher::Matcher()
 : PhaseTransform( Phase::Ins_Select ),
-  _states_arena(Chunk::medium_size, mtCompiler),
+  _states_arena(Chunk::medium_size, mtCompiler, Arena::Tag::tag_states),
   _new_nodes(C->comp_arena()),
   _visited(&_states_arena),
   _shared(&_states_arena),
@@ -2304,8 +2304,10 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_EncodeISOArray:
     case Op_FmaD:
     case Op_FmaF:
+    case Op_FmaHF:
     case Op_FmaVD:
     case Op_FmaVF:
+    case Op_FmaVHF:
     case Op_MacroLogicV:
     case Op_VectorCmpMasked:
     case Op_CompressV:
@@ -2476,8 +2478,10 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
     }
     case Op_FmaD:
     case Op_FmaF:
+    case Op_FmaHF:
     case Op_FmaVD:
-    case Op_FmaVF: {
+    case Op_FmaVF:
+    case Op_FmaVHF: {
       // Restructure into a binary tree for Matching.
       Node* pair = new BinaryNode(n->in(1), n->in(2));
       n->set_req(2, pair);
