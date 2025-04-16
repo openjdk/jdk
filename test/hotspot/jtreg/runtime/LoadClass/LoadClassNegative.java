@@ -40,8 +40,13 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class LoadClassNegative {
 
   public static void main(String args[]) throws Exception {
-    String bootCP = "-Xbootclasspath/a:" + System.getProperty("test.src")
-                       + File.separator + "dummy.jar";
+    final String filename =  System.getProperty("test.src") + File.separator + "dummy.jar";
+    String bootCP = "-Xbootclasspath/a:" + filename;
+
+    File dummyFile = new File(filename);
+
+    boolean fileCreated = dummyFile.createNewFile();
+
     ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         bootCP,
         "TestForName");
@@ -49,5 +54,9 @@ public class LoadClassNegative {
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldContain("ClassNotFoundException");
     output.shouldHaveExitValue(0);
+
+    if(fileCreated) {
+      dummyFile.delete();
+    }
   }
 }
