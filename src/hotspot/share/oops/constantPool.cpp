@@ -705,12 +705,12 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
     trace_class_resolution(this_cp, k);
   }
 
-  Klass** adr = this_cp->resolved_klasses()->adr_at(resolved_klass_index);
-  Atomic::release_store(adr, k);
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* stored in _resolved_klasses is non-null, so we need
   // hardware store ordering here.
   // We also need to CAS to not overwrite an error from a racing thread.
+  Klass** adr = this_cp->resolved_klasses()->adr_at(resolved_klass_index);
+  Atomic::release_store(adr, k);
 
   jbyte old_tag = Atomic::cmpxchg((jbyte*)this_cp->tag_addr_at(cp_index),
                                   (jbyte)JVM_CONSTANT_UnresolvedClass,
