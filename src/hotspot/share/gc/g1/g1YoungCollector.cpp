@@ -287,8 +287,6 @@ class G1PrepareEvacuationTask : public WorkerTask {
   class G1PrepareRegionsClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
     G1PrepareEvacuationTask* _parent_task;
-    G1EvacFailureRegions* _evac_failure_regions;
-    uint _worker_id;
     uint _worker_humongous_total;
     uint _worker_humongous_candidates;
 
@@ -363,14 +361,9 @@ class G1PrepareEvacuationTask : public WorkerTask {
     }
 
   public:
-    G1PrepareRegionsClosure(G1CollectedHeap* g1h,
-                            G1PrepareEvacuationTask* parent_task,
-                            G1EvacFailureRegions* evac_failure_regions,
-                            uint worker_id) :
+    G1PrepareRegionsClosure(G1CollectedHeap* g1h, G1PrepareEvacuationTask* parent_task) :
       _g1h(g1h),
       _parent_task(parent_task),
-      _evac_failure_regions(evac_failure_regions),
-      _worker_id(worker_id),
       _worker_humongous_total(0),
       _worker_humongous_candidates(0) { }
 
@@ -380,13 +373,6 @@ class G1PrepareEvacuationTask : public WorkerTask {
     }
 
     virtual bool do_heap_region(G1HeapRegion* hr) {
-      // All pinned regions in the collection set must be registered as failed
-      // regions here as there is no guarantee that there is a reference
-      // reachable by Java code (i.e. only by native code).
-      if (hr->in_collection_set() && hr->has_pinned_objects()) {
-        _evac_failure_regions->record(_worker_id, hr->hrm_index(), true /* cause_pinned */);
-      }
-
       // First prepare the region for scanning
       _g1h->rem_set()->prepare_region_for_scan(hr);
 
@@ -429,7 +415,6 @@ class G1PrepareEvacuationTask : public WorkerTask {
   };
 
   G1CollectedHeap* _g1h;
-  G1EvacFailureRegions* _evac_failure_regions;
   G1HeapRegionClaimer _claimer;
   volatile uint _humongous_total;
   volatile uint _humongous_candidates;
@@ -437,17 +422,15 @@ class G1PrepareEvacuationTask : public WorkerTask {
   G1MonotonicArenaMemoryStats _all_card_set_stats;
 
 public:
-  G1PrepareEvacuationTask(G1CollectedHeap* g1h, G1EvacFailureRegions* evac_failure_regions) :
+  G1PrepareEvacuationTask(G1CollectedHeap* g1h) :
     WorkerTask("Prepare Evacuation"),
     _g1h(g1h),
-    _evac_failure_regions(evac_failure_regions),
     _claimer(_g1h->workers()->active_workers()),
     _humongous_total(0),
-    _humongous_candidates(0),
-    _all_card_set_stats() { }
+    _humongous_candidates(0) { }
 
   void work(uint worker_id) {
-    G1PrepareRegionsClosure cl(_g1h, this, _evac_failure_regions, worker_id);
+    G1PrepareRegionsClosure cl(_g1h, this);
     _g1h->heap_region_par_iterate_from_worker_offset(&cl, &_claimer, worker_id);
 
     MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
@@ -489,8 +472,7 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
   log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->max_workers());
 }
 
-void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info,
-                                                   G1EvacFailureRegions* evac_failure_regions) {
+void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) {
   // Flush various data in thread-local buffers to be able to determine the collection
   // set
   {
@@ -529,7 +511,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info,
   }
 
   {
-    G1PrepareEvacuationTask g1_prep_task(_g1h, evac_failure_regions);
+    G1PrepareEvacuationTask g1_prep_task(_g1h);
     Tickspan task_time = run_task_timed(&g1_prep_task);
 
     G1MonotonicArenaMemoryStats sampled_card_set_stats = g1_prep_task.all_card_set_stats();
@@ -605,14 +587,36 @@ public:
 };
 
 class G1EvacuateRegionsBaseTask : public WorkerTask {
+
+  // All pinned regions in the collection set must be registered as failed
+  // regions as there is no guarantee that there is a reference reachable by
+  // Java code (i.e. only by native code) that adds it to the evacuation failed
+  // regions.
+  void record_pinned_regions(G1ParScanThreadState* pss, uint worker_id) {
+    class RecordPinnedRegionClosure : public G1HeapRegionClosure {
+      G1ParScanThreadState* _pss;
+      uint _worker_id;
+
+    public:
+      RecordPinnedRegionClosure(G1ParScanThreadState* pss, uint worker_id) : _pss(pss), _worker_id(worker_id) { }
+
+      bool do_heap_region(G1HeapRegion* r) {
+        if (r->has_pinned_objects()) {
+          _pss->record_evacuation_failed_region(r, _worker_id, true /* cause_pinned */);
+        }
+        return false;
+      }
+    } cl(pss, worker_id);
+
+    _g1h->collection_set_iterate_increment_from(&cl, worker_id);
+  }
+
 protected:
   G1CollectedHeap* _g1h;
   G1ParScanThreadStateSet* _per_thread_states;
 
   G1ScannerTasksQueueSet* _task_queues;
   TaskTerminator _terminator;
-
-  uint _num_workers;
 
   void evacuate_live_objects(G1ParScanThreadState* pss,
                              uint worker_id,
@@ -649,6 +653,9 @@ protected:
 
   virtual void evacuate_live_objects(G1ParScanThreadState* pss, uint worker_id) = 0;
 
+private:
+  volatile bool _pinned_regions_recorded;
+
 public:
   G1EvacuateRegionsBaseTask(const char* name,
                             G1ParScanThreadStateSet* per_thread_states,
@@ -659,7 +666,7 @@ public:
     _per_thread_states(per_thread_states),
     _task_queues(task_queues),
     _terminator(num_workers, _task_queues),
-    _num_workers(num_workers)
+    _pinned_regions_recorded(false)
   { }
 
   void work(uint worker_id) {
@@ -671,6 +678,9 @@ public:
       G1ParScanThreadState* pss = _per_thread_states->state_for_worker(worker_id);
       pss->set_ref_discoverer(_g1h->ref_processor_stw());
 
+      if (!Atomic::cmpxchg(&_pinned_regions_recorded, false, true)) {
+        record_pinned_regions(pss, worker_id);
+      }
       scan_roots(pss, worker_id);
       evacuate_live_objects(pss, worker_id);
     }
@@ -1122,7 +1132,7 @@ void G1YoungCollector::collect() {
     // other trivial setup above).
     policy()->record_young_collection_start();
 
-    pre_evacuate_collection_set(jtm.evacuation_info(), &_evac_failure_regions);
+    pre_evacuate_collection_set(jtm.evacuation_info());
 
     G1ParScanThreadStateSet per_thread_states(_g1h,
                                               workers()->active_workers(),

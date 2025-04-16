@@ -499,6 +499,8 @@ java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 m
 # Wayland related
 
 java/awt/FullScreen/SetFullScreenTest.java 8332155 linux-x64
+sun/java2d/ClassCastExceptionForInvalidSurface.java 8354097 linux-x64
+sun/java2d/GdiRendering/ClipShapeRendering.java 8354097 linux-x64
 
 ############################################################################
 
@@ -536,9 +538,8 @@ java/io/IO/IO.java                                              8337935 linux-pp
 
 # jdk_management
 
-# First bug for AIX, second for Windows
-com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957,8351002 aix-all,windows-all
-com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957,8351002 aix-all,windows-all
+com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
+com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
@@ -726,6 +727,7 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 # jdk_util
 java/util/zip/CloseInflaterDeflaterTest.java  8339216 linux-s390x
+java/util/logging/LoggingDeadlock5.java       8354424 generic-all
 
 ############################################################################
 
@@ -757,9 +759,6 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8338127 generic-
 jdk/jfr/event/oldobject/TestShenandoah.java                     8342951 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
-jdk/jfr/api/consumer/streaming/TestJVMCrash.java                8344671 macosx-all
-jdk/jfr/api/consumer/streaming/TestJVMExit.java                 8344671 macosx-all
-jdk/jfr/api/consumer/streaming/TestOutOfProcessMigration.java   8344671 macosx-all
 
 ############################################################################
 
@@ -778,9 +777,11 @@ jdk/jfr/api/consumer/streaming/TestOutOfProcessMigration.java   8344671 macosx-a
 
 javax/swing/JFileChooser/6698013/bug6698013.java 8024419 macosx-all
 javax/swing/JColorChooser/8065098/bug8065098.java 8065647 macosx-all
+javax/swing/JTabbedPane/bug4499556.java 8267500 macosx-all
 javax/swing/JTabbedPane/4666224/bug4666224.java 8144124  macosx-all
 javax/swing/JTabbedPane/TestJTabbedPaneOpaqueColor.java 8345090 windows-all,linux-all
 javax/swing/SwingUtilities/TestTextPosInPrint.java 8227025 windows-all
+javax/swing/JInternalFrame/bug4134077.java 8184985 windows-all
 
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_1.java 7131438,8022539 generic-all
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_2.java 7131438,8022539 generic-all
