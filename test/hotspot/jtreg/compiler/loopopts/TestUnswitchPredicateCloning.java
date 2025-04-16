@@ -21,22 +21,26 @@
  * questions.
  */
 
- package compiler.loopopts;
+package compiler.loopopts;
 
- import compiler.lib.ir_framework.*;
- import jdk.test.lib.Asserts;
+import compiler.lib.ir_framework.*;
+import java.util.Random;
+import jdk.test.lib.Utils;
+import jdk.test.lib.Asserts;
 
- /*
-  * @test
-  * @bug 8346552
-  * @summary Test that all parse predicates are cloned after loop unswitching.
-  * @library /test/lib /
-  * @run driver compiler.loopopts.TestUnswitchPredicateCloning
-  */
+/*
+ * @test
+ * @bug 8346552
+ * @summary Test that all parse predicates are cloned after loop unswitching.
+ * @key randomness
+ * @library /test/lib /
+ * @run driver compiler.loopopts.TestUnswitchPredicateCloning
+ */
 
 public class TestUnswitchPredicateCloning {
     static final int SIZE = 100;
-    static final int IDX = 42;
+
+    private static final Random random = Utils.getRandomInstance();
 
     public static void main(String[] strArr) {
         TestFramework.run();
@@ -45,15 +49,15 @@ public class TestUnswitchPredicateCloning {
     @Run(test = {"testUnswitchingBeforePredication", "testPredicationBeforeUnswitching", "testUnswitchingUncounted"})
     @Warmup(0)
     private static void runNoWarmup() {
-        int res = testUnswitchingBeforePredication(IDX);
-        Asserts.assertEQ(res, SIZE * IDX);
-        final boolean cond = false;
-        res = testPredicationBeforeUnswitching(IDX, cond);
-        Asserts.assertEQ(res, (SIZE * (SIZE - 1)) / 2 + (cond ? SIZE * IDX : 0));
+        final int idx = random.nextInt(SIZE);
+        final boolean cond = random.nextBoolean();
+        int res = testUnswitchingBeforePredication(idx);
+        Asserts.assertEQ(SIZE * idx, res);
+        res = testPredicationBeforeUnswitching(idx, cond);
+        Asserts.assertEQ((SIZE * (SIZE - 1)) / 2 + (cond ? SIZE * idx : 0), res);
         res = testUnswitchingUncounted(cond);
-        Asserts.assertEQ(res, (SIZE * (SIZE - 1)) / 2 + (cond ? SIZE : 0));
+        Asserts.assertEQ((SIZE * (SIZE - 1)) / 2 + (cond ? SIZE : 0), res);
     }
-
 
     @DontInline
     private static int[] getArr() {
