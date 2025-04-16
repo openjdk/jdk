@@ -27,6 +27,8 @@ package java.lang.runtime;
 
 import java.lang.Enum.EnumDesc;
 import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -48,6 +50,7 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.Label;
 import java.lang.classfile.instruction.SwitchCase;
 
+import jdk.internal.classfile.impl.DirectCodeBuilder;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
@@ -103,6 +106,13 @@ public final class SwitchBootstraps {
     private static final MethodType MT_TYPE_SWITCH = MethodType.methodType(int.class,
             Object.class,
             int.class);
+    private static final List<StackMapFrameInfo.VerificationTypeInfo> TYPE_SWITCH_LOCALS = List.of(
+            StackMapFrameInfo.ObjectVerificationTypeInfo.of(CD_Object), StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER
+    );
+    private static final List<StackMapFrameInfo.VerificationTypeInfo> TYPE_SWITCH_EXTRA_LOCALS = List.of(
+            StackMapFrameInfo.ObjectVerificationTypeInfo.of(CD_Object), StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER,
+            StackMapFrameInfo.ObjectVerificationTypeInfo.of(CD_BiPredicate), StackMapFrameInfo.ObjectVerificationTypeInfo.of(CD_List)
+    );
 
     private static class StaticHolders {
         private static final MethodHandle MAPPED_ENUM_SWITCH;
@@ -482,25 +492,33 @@ public final class SwitchBootstraps {
         int ENUM_CACHE          = 2;
         int EXTRA_CLASS_LABELS  = 3;
 
+        var locals = enumDescs == null && extraClassLabels == null ? TYPE_SWITCH_LOCALS : TYPE_SWITCH_EXTRA_LOCALS;
+        int maxLocals = locals.size();
+
         return cb -> {
             // Objects.checkIndex(RESTART_IDX, labelConstants + 1)
+            var stackMapFrames = new ArrayList<StackMapFrameInfo>(labelConstants.length * 2);
             cb.iload(RESTART_IDX)
               .loadConstant(labelConstants.length + 1)
               .invokestatic(CD_Objects, "checkIndex", CHECK_INDEX_DESCRIPTOR)
               .pop()
               .aload(SELECTOR_OBJ);
             Label nonNullLabel = cb.newLabel();
+            stackMapFrames.add(StackMapFrameInfo.of(nonNullLabel, locals, List.of()));
             cb.ifnonnull(nonNullLabel)
               .iconst_m1()
               .ireturn()
               .labelBinding(nonNullLabel);
             if (labelConstants.length == 0) {
                 cb.loadConstant(0)
-                  .ireturn();
+                  .ireturn()
+                  .with(StackMapTableAttribute.of(stackMapFrames));
+                DirectCodeBuilder.withMaxs(cb, 2, locals.size()); // checkIndex uses 2
                 return;
             }
             cb.iload(RESTART_IDX);
             Label dflt = cb.newLabel();
+            stackMapFrames.add(StackMapFrameInfo.of(dflt, locals, List.of()));
             Label[] caseTargets = new Label[labelConstants.length];
             Label[] caseNext = new Label[labelConstants.length];
             Object[] caseLabels = new Object[labelConstants.length];
@@ -509,6 +527,7 @@ public final class SwitchBootstraps {
             for (int idx = labelConstants.length - 1; idx >= 0; idx--) {
                 Object currentLabel = labelConstants[idx];
                 Label target = cb.newLabel();
+                stackMapFrames.add(StackMapFrameInfo.of(target, locals, List.of()));
                 Label next;
                 if (lastLabel == null) {
                     next = dflt;
@@ -542,6 +561,7 @@ public final class SwitchBootstraps {
                             // Integer i = ... or int i = ...
                             // o instanceof float
                             Label notNumber = cb.newLabel();
+                            stackMapFrames.add(StackMapFrameInfo.of(notNumber, locals, List.of()));
                             cb.aload(SELECTOR_OBJ)
                               .instanceOf(CD_Number);
                             if (selectorType == long.class || selectorType == float.class || selectorType == double.class ||
@@ -566,6 +586,7 @@ public final class SwitchBootstraps {
                                         MethodTypeDesc.of(CD_double));
                             } else {
                                 Label compare = cb.newLabel();
+                                stackMapFrames.add(StackMapFrameInfo.of(compare, locals, List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER)));
                                 cb.invokevirtual(CD_Number,
                                         "intValue",
                                         MethodTypeDesc.of(CD_int))
@@ -639,6 +660,8 @@ public final class SwitchBootstraps {
                 } else if (caseLabel instanceof Integer integerLabel) {
                     Label compare = cb.newLabel();
                     Label notNumber = cb.newLabel();
+                    stackMapFrames.add(StackMapFrameInfo.of(notNumber, locals, List.of()));
+                    stackMapFrames.add(StackMapFrameInfo.of(compare, locals, List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER)));
                     cb.aload(SELECTOR_OBJ)
                       .instanceOf(CD_Number)
                       .ifeq(notNumber)
@@ -690,7 +713,9 @@ public final class SwitchBootstraps {
             }
             cb.labelBinding(dflt)
               .loadConstant(labelConstants.length)
-              .ireturn();
+              .ireturn()
+              .with(StackMapTableAttribute.of(stackMapFrames));
+            DirectCodeBuilder.withMaxs(cb, 3, locals.size()); // enum labels use 3 stack, others use 2
         };
     }
 
@@ -702,7 +727,7 @@ public final class SwitchBootstraps {
         List<EnumDesc<?>> enumDescs = addExtraInfo ? new ArrayList<>() : null;
         List<Class<?>> extraClassLabels = addExtraInfo ? new ArrayList<>() : null;
 
-        byte[] classBytes = ClassFile.of().build(ConstantUtils.binaryNameToDesc(typeSwitchClassName(caller.lookupClass())),
+        byte[] classBytes = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS).build(ConstantUtils.binaryNameToDesc(typeSwitchClassName(caller.lookupClass())),
                 clb -> {
                     clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
                        .withMethodBody("typeSwitch",
