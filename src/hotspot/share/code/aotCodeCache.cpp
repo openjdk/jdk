@@ -48,57 +48,6 @@
 #if INCLUDE_ZGC
 #include "gc/z/zBarrierSetRuntime.hpp"
 #endif
-/*
-#include "asm/macroAssembler.hpp"
-#include "cds/cdsAccess.hpp"
-#include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
-#include "ci/ciConstant.hpp"
-#include "ci/ciEnv.hpp"
-#include "ci/ciField.hpp"
-#include "ci/ciMethod.hpp"
-#include "ci/ciMethodData.hpp"
-#include "ci/ciObject.hpp"
-#include "ci/ciUtilities.inline.hpp"
-#include "classfile/javaAssertions.hpp"
-#include "classfile/stringTable.hpp"
-#include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "classfile/vmClasses.hpp"
-#include "classfile/vmIntrinsics.hpp"
-#include "code/aotCodeCache.hpp"
-#include "code/codeBlob.hpp"
-#include "code/codeCache.hpp"
-#include "code/oopRecorder.inline.hpp"
-#include "compiler/abstractCompiler.hpp"
-#include "compiler/compilationPolicy.hpp"
-#include "compiler/compileBroker.hpp"
-#include "compiler/compileTask.hpp"
-#include "gc/g1/g1BarrierSetRuntime.hpp"
-#include "gc/shared/gcConfig.hpp"
-#include "logging/log.hpp"
-#include "memory/memoryReserver.hpp"
-#include "memory/universe.hpp"
-#include "oops/klass.inline.hpp"
-#include "oops/method.inline.hpp"
-#include "oops/trainingData.hpp"
-#include "prims/jvmtiThreadState.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/flags/flagSetting.hpp"
-#include "runtime/globals_extension.hpp"
-#include "runtime/handles.inline.hpp"
-#include "runtime/java.hpp"
-#include "runtime/jniHandles.inline.hpp"
-#include "runtime/os.inline.hpp"
-#include "runtime/sharedRuntime.hpp"
-#include "runtime/stubCodeGenerator.hpp"
-#include "runtime/stubRoutines.hpp"
-#include "runtime/timerTrace.hpp"
-#include "runtime/threadIdentifier.hpp"
-#include "utilities/ostream.hpp"
-#include "utilities/spinYield.hpp"
-*/
 
 #include <sys/stat.h>
 #include <errno.h>
@@ -337,62 +286,62 @@ void AOTCodeCache::Config::record() {
 bool AOTCodeCache::Config::verify() const {
 #ifdef ASSERT
   if ((_flags & debugVM) == 0) {
-    log_info(aot, codecache, init)("Disable AOT Code Cache: it was created by product VM, it can't be used by debug VM");
+    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created by product VM, it can't be used by debug VM");
     return false;
   }
 #else
   if ((_flags & debugVM) != 0) {
-    log_info(aot, codecache, init)("Disable AOT Code Cache: it was created by debug VM, it can't be used by product VM");
+    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created by debug VM, it can't be used by product VM");
     return false;
   }
 #endif
 
   CollectedHeap::Name aot_gc = (CollectedHeap::Name)_gc;
   if (aot_gc != Universe::heap()->kind()) {
-    log_info(aot, codecache, init)("Disable AOT Code: it was created with different GC: %s vs current %s", GCConfig::hs_err_name(aot_gc), GCConfig::hs_err_name());
+    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with different GC: %s vs current %s", GCConfig::hs_err_name(aot_gc), GCConfig::hs_err_name());
     return false;
   }
 
   if (((_flags & compressedOops) != 0) != UseCompressedOops) {
-    log_info(aot, codecache, init)("Disable AOT Code: it was created with UseCompressedOops = %s", UseCompressedOops ? "false" : "true");
+    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCompressedOops = %s", UseCompressedOops ? "false" : "true");
     return false;
   }
   if (((_flags & compressedClassPointers) != 0) != UseCompressedClassPointers) {
-    log_info(aot, codecache, init)("Disable AOT Code: it was created with UseCompressedClassPointers = %s", UseCompressedClassPointers ? "false" : "true");
+    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCompressedClassPointers = %s", UseCompressedClassPointers ? "false" : "true");
     return false;
   }
 
   if (((_flags & systemClassAssertions) != 0) != JavaAssertions::systemClassDefault()) {
-    log_info(aot, codecache, init)("Disable AOT Code: it was created with JavaAssertions::systemClassDefault() = %s", JavaAssertions::systemClassDefault() ? "disabled" : "enabled");
+    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with JavaAssertions::systemClassDefault() = %s", JavaAssertions::systemClassDefault() ? "disabled" : "enabled");
     return false;
   }
   if (((_flags & userClassAssertions) != 0) != JavaAssertions::userClassDefault()) {
-    log_info(aot, codecache, init)("Disable AOT Code: it was created with JavaAssertions::userClassDefault() = %s", JavaAssertions::userClassDefault() ? "disabled" : "enabled");
+    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with JavaAssertions::userClassDefault() = %s", JavaAssertions::userClassDefault() ? "disabled" : "enabled");
     return false;
   }
 
   if (((_flags & enableContendedPadding) != 0) != EnableContended) {
-    log_info(aot, codecache, init)("Disable AOT Code: it was created with EnableContended = %s", EnableContended ? "false" : "true");
+    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with EnableContended = %s", EnableContended ? "false" : "true");
     return false;
   }
   if (((_flags & restrictContendedPadding) != 0) != RestrictContended) {
-    log_info(aot, codecache, init)("Disable AOT Code: it was created with RestrictContended = %s", RestrictContended ? "false" : "true");
+    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with RestrictContended = %s", RestrictContended ? "false" : "true");
     return false;
   }
   if (_compressedOopShift != (uint)CompressedOops::shift()) {
-    log_info(aot, codecache, init)("Disable AOT Code: it was created with CompressedOops::shift() = %d vs current %d", _compressedOopShift, CompressedOops::shift());
+    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedOops::shift() = %d vs current %d", _compressedOopShift, CompressedOops::shift());
     return false;
   }
   if (_compressedKlassShift != (uint)CompressedKlassPointers::shift()) {
-    log_info(aot, codecache, init)("Disable AOT Code: it was created with CompressedKlassPointers::shift() = %d vs current %d", _compressedKlassShift, CompressedKlassPointers::shift());
+    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with CompressedKlassPointers::shift() = %d vs current %d", _compressedKlassShift, CompressedKlassPointers::shift());
     return false;
   }
   if (_contendedPaddingWidth != (uint)ContendedPaddingWidth) {
-    log_info(aot, codecache, init)("Disable AOT Code: it was created with ContendedPaddingWidth = %d vs current %d", _contendedPaddingWidth, ContendedPaddingWidth);
+    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with ContendedPaddingWidth = %d vs current %d", _contendedPaddingWidth, ContendedPaddingWidth);
     return false;
   }
   if (_objectAlignment != (uint)ObjectAlignmentInBytes) {
-    log_info(aot, codecache, init)("Disable AOT Code: it was created with ObjectAlignmentInBytes = %d vs current %d", _objectAlignment, ObjectAlignmentInBytes);
+    log_info(aot, codecache, init)("AOT Code Cache disabled: it was created with ObjectAlignmentInBytes = %d vs current %d", _objectAlignment, ObjectAlignmentInBytes);
     return false;
   }
   return true;
@@ -400,11 +349,11 @@ bool AOTCodeCache::Config::verify() const {
 
 bool AOTCodeCache::Header::verify_config(uint load_size) const {
   if (_version != AOT_CODE_VERSION) {
-    log_info(aot, codecache, init)("Disable AOT Code: different AOT Code version %d vs %d recorded in AOT Cache", AOT_CODE_VERSION, _version);
+    log_info(aot, codecache, init)("AOT Code Cache disabled: different AOT Code version %d vs %d recorded in AOT Code header", AOT_CODE_VERSION, _version);
     return false;
   }
   if (load_size < _cache_size) {
-    log_info(aot, codecache, init)("Disable AOT Code: AOT Code Cache size %d < %d recorded in AOT Code header", load_size, _cache_size);
+    log_info(aot, codecache, init)("AOT Code Cache disabled: AOT Code Cache size %d < %d recorded in AOT Code header", load_size, _cache_size);
     return false;
   }
   return true;
@@ -498,6 +447,7 @@ address AOTCodeCache::reserve_bytes(uint nbytes) {
     return nullptr;
   }
   address buffer = (address)(_store_buffer + _write_position);
+  log_trace(aot, codecache)("Reserved %d bytes at offset %d in AOT Code Cache", nbytes, _write_position);
   _write_position += nbytes;
   if (_store_size < _write_position) {
     _store_size = _write_position;
@@ -513,7 +463,7 @@ uint AOTCodeCache::write_bytes(const void* buffer, uint nbytes) {
   uint new_position = _write_position + nbytes;
   if (new_position >= (uint)((char*)_store_entries - _store_buffer)) {
     log_warning(aot, codecache)("Failed to write %d bytes at offset %d to AOT Code Cache. Increase AOTCodeMaxSize.",
-                     nbytes, _write_position);
+                                nbytes, _write_position);
     set_failed();
     exit_vm_on_store_failure();
     return 0;
@@ -1143,7 +1093,7 @@ void AOTCodeCache::load_strings() {
   assert((uint)(p - _C_strings_buf) <= strings_size, "(" INTPTR_FORMAT " - " INTPTR_FORMAT ") = %d > %d ", p2i(p), p2i(_C_strings_buf), (uint)(p - _C_strings_buf), strings_size);
   _C_strings_count = strings_count;
   _C_strings_used  = strings_count;
-  log_info(aot, codecache, init)("Load %d C strings at offset %d from AOT Code Cache", _C_strings_count, strings_offset);
+  log_info(aot, codecache, init)("Loaded %d C strings at offset %d from AOT Code Cache", _C_strings_count, strings_offset);
 }
 
 int AOTCodeCache::store_strings() {
@@ -1154,7 +1104,7 @@ int AOTCodeCache::store_strings() {
     for (int i = 0; i < _C_strings_used; i++) {
       uint len = _C_strings_len[i] + 1; // Include 0
       length += len;
-      assert(len < 1000, "big string: %s", _C_strings[i]);
+      assert(len < 1000, "big string: %s", _C_strings[_C_strings_s[i]]);
       uint n = write_bytes(&len, sizeof(uint));
       if (n != sizeof(uint)) {
         return -1;

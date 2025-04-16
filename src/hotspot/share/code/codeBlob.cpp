@@ -810,13 +810,6 @@ void CodeBlob::print_value_on_impl(outputStream* st) const {
   st->print_cr("[CodeBlob]");
 }
 
-void CodeBlob::print_relocs(outputStream* st) const {
-  if (PrintRelocations && relocation_size() > 0) {
-    RelocIterator iter((CodeBlob*)this);
-    iter.print_on(st);
-  }
-}
-
 void CodeBlob::print_block_comment(outputStream* stream, address block_begin) const {
 #if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
   if (is_nmethod()) {

@@ -2707,7 +2707,7 @@ void AdapterHandlerLibrary::verify_adapter_sharing(int total_args_passed, BasicT
   AdapterHandlerEntry* comparison_entry = create_adapter(comparison_blob, total_args_passed, sig_bt, true);
   assert(comparison_blob == nullptr, "no blob should be created when creating an adapter for comparison");
   assert(comparison_entry->compare_code(cached_entry), "code must match");
-  // Release the one just created and return the original
+  // Release the one just created
   AdapterHandlerEntry::deallocate(comparison_entry);
 }
 #endif /* ASSERT*/

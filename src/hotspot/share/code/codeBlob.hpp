@@ -140,7 +140,6 @@ protected:
 
   void print_on_impl(outputStream* st) const;
   void print_value_on_impl(outputStream* st) const;
-  void print_relocs(outputStream* st) const;
 
   class Vptr {
    public:

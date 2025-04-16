@@ -281,11 +281,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   assert(SimpleRuntimeFrame::framesize % 4 == 0, "sp not 16-byte aligned");
 
-  // Allocate space for the code
-  ResourceMark rm;
-  // Setup code generation tools
   const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
-  CodeBuffer buffer(name, 2048, 1024);
 
   int pc_offset = 0;
   {
@@ -295,6 +291,10 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
     }
   }
 
+  // Allocate space for the code
+  ResourceMark rm;
+  CodeBuffer buffer(name, 2048, 1024);
+  // Setup code generation tools
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   // TODO check various assumptions made here
