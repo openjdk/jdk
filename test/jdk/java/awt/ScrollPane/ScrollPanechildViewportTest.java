@@ -103,7 +103,6 @@ class Test extends Frame implements ActionListener {
         validate();
 
         Dimension pd = ((ScrollPane) p.getParent()).getViewportSize();
-        Dimension d = pd;
 
         if (source.equals(b1)) {
             p.setBackground(Color.green);
@@ -128,18 +127,18 @@ class Test extends Frame implements ActionListener {
             Dimension d = null;
             Dimension pd = ((ScrollPane) getParent()).getViewportSize();
             switch (state) {
-                case 0:
+                case 0 -> {
                     d = new Dimension(pd.width + 2, pd.height + 2);
                     System.out.println("Preferred size: " + d);
-                    break;
-                case 1:
+                }
+                case 1 -> {
                     d = new Dimension(pd.width - 2, pd.height - 2);
                     System.out.println("Preferred size: " + d);
-                    break;
-                case 2:
+                }
+                case 2 -> {
                     d = new Dimension(50, 50);
                     System.out.println("Preferred size: " + d);
-                    break;
+                }
             }
             return d;
         }

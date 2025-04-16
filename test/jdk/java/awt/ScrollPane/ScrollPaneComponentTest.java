@@ -49,7 +49,7 @@ public class ScrollPaneComponentTest {
                 1. Notice the scrollbars (horizontal and vertical)
                    in the Frame titled 'ScrollPane Component Test'
                 2. Click the button labeled 'Remove and add back
-                   ScrollPane Contents
+                   ScrollPane Contents'
                 3. If the Scrollbars (horizontal or vertical or both)
                    disappears in the Frame, then press FAIL, else press PASS.
                                    """;

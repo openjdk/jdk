@@ -93,7 +93,5 @@ class TestPanel extends Panel {
         add(b1 = new Button("Button1"));
         add(b2 = new Button("Button2"));
         add(b3 = new Button("Button3"));
-
-        setBackground(Color.white);
     }
 }
