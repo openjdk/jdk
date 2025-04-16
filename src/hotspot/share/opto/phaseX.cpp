@@ -1742,12 +1742,19 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
    * is not enough: there might be no update happening there. We need to
    * directly push the And[IL]Node on the worklist, jumping over ConvI2L.
    *
+   * Moreover we can have ConstraintCasts in between. It may look like
+   * ConstraintCast+ -> ConvI2L -> ConstraintCast+ -> And
+   * and And[IL]Node::Value(PhaseGVN*) still handles that by looking through casts.
+   * So we must deal with that as well.
    */
-  if (use_op == Op_ConvI2L && use->outcnt() == 1) {
-    Node* and_node = use->unique_out();
-    if (and_node->Opcode() == Op_AndL) {
-      worklist.push(and_node);
-    }
+  if (use->is_ConstraintCast() || use_op == Op_ConvI2L) {
+    auto is_boundary = [](Node* n){ return !n->is_ConstraintCast() && n->Opcode() != Op_ConvI2L; };
+    auto push_and_to_worklist = [&worklist](Node* n){
+      if (n->Opcode() == Op_AndL || n->Opcode() == Op_AndI) {
+        worklist.push(n);
+      }
+    };
+    use->visit_uses(push_and_to_worklist, is_boundary);
   }
 }
 
