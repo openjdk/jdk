@@ -124,7 +124,7 @@ public class LoggingDeadlock5 {
         // immediately (if it occurs), but tests are run under very high loads
         // in higher tiers, so it's necessary to be a bit pessimistic here.
         private final static Duration JOIN_WAIT =
-                Duration.ofMillis(Utils.adjustTimeout(1000));
+                Duration.ofMillis(Utils.adjustTimeout(2000));
 
         private final Semaphore readyToDeadlock = new Semaphore(0);
         private final Semaphore userLockIsHeld = new Semaphore(0);
