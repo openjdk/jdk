@@ -91,7 +91,7 @@ public interface CodeCacheProvider {
      * raised the next time {@code installedCode} is
      * {@linkplain InstalledCode#executeVarargs(Object...) executed}.
      */
-    void invalidateInstalledCode(InstalledCode installedCode);
+    void invalidateInstalledCode(InstalledCode installedCode, int statusReason);
 
     /**
      * Gets a name for a {@link Mark} mark.

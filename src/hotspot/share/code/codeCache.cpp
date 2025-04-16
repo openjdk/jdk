@@ -1361,7 +1361,7 @@ void CodeCache::make_marked_nmethods_deoptimized() {
   while(iter.next()) {
     nmethod* nm = iter.method();
     if (nm->is_marked_for_deoptimization() && !nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
-      nm->make_not_entrant("marked for deoptimization");
+      nm->make_not_entrant(nmethod::marked_for_deoptimization);
       nm->make_deoptimized();
     }
   }
