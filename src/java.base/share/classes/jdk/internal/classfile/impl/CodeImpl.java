@@ -29,6 +29,7 @@ import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.StackMapTableAttribute;
+import java.lang.classfile.attribute.UnknownAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.instruction.*;
 import java.util.ArrayList;
@@ -168,6 +169,7 @@ public final class CodeImpl
         generateCatchTargets(consumer);
         if (classReader.context().passDebugElements())
             generateDebugElements(consumer);
+        generateUserAttributes(consumer);
         for (int pos=codeStart; pos<codeEnd; ) {
             if (labels[pos - codeStart] != null)
                 consumer.accept(labels[pos - codeStart]);
@@ -202,6 +204,14 @@ public final class CodeImpl
             exceptionTable = Collections.unmodifiableList(exceptionTable);
         }
         return exceptionTable;
+    }
+
+    private void generateUserAttributes(Consumer<? super CodeElement> consumer) {
+        for (var attr : attributes) {
+            if (attr instanceof CustomAttribute || attr instanceof UnknownAttribute) {
+                consumer.accept((CodeElement) attr);
+            }
+        }
     }
 
     public boolean compareCodeBytes(BufWriterImpl buf, int offset, int len) {

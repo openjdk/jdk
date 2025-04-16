@@ -565,6 +565,13 @@ public:
 
   void select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
 
+  void evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
+
+  void evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, Address src2, int vlen_enc);
+
+  void vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                          KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
+
   void scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
-                           KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
+                          KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2);
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

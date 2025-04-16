@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,15 +38,10 @@ inline void BasicLock::set_displaced_header(markWord header) {
   Atomic::store(&_metadata, header.value());
 }
 
-inline ObjectMonitor* BasicLock::object_monitor_cache() {
+inline ObjectMonitor* BasicLock::object_monitor_cache() const {
   assert(UseObjectMonitorTable, "must be");
 #if !defined(ZERO) && (defined(X86) || defined(AARCH64) || defined(RISCV64) || defined(PPC64) || defined(S390))
-  ObjectMonitor* monitor = reinterpret_cast<ObjectMonitor*>(get_metadata());
-  if (monitor != nullptr && monitor->is_being_async_deflated()) {
-    clear_object_monitor_cache();
-    return nullptr;
-  }
-  return monitor;
+  return reinterpret_cast<ObjectMonitor*>(get_metadata());
 #else
   // Other platforms do not make use of the cache yet,
   // and are not as careful with maintaining the invariant
