@@ -135,13 +135,9 @@ void AOTCodeCache::initialize() {
   bool is_dumping = false;
   bool is_using   = false;
   if (CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_aot_linked_classes()) {
-    FLAG_SET_ERGO_IF_DEFAULT(AOTCodeCaching, true);
-    FLAG_SET_ERGO_IF_DEFAULT(AOTStubCaching, true);
     FLAG_SET_ERGO_IF_DEFAULT(AOTAdapterCaching, true);
     is_dumping = true;
   } else if (CDSConfig::is_using_archive() && CDSConfig::is_using_aot_linked_classes()) {
-    FLAG_SET_ERGO_IF_DEFAULT(AOTCodeCaching, true);
-    FLAG_SET_ERGO_IF_DEFAULT(AOTStubCaching, true);
     FLAG_SET_ERGO_IF_DEFAULT(AOTAdapterCaching, true);
     is_using = true;
   } else {
@@ -213,8 +209,8 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
   _write_position(0),
   _load_size(0),
   _store_size(0),
-  _for_read(is_using),
-  _for_write(is_dumping),
+  _for_use(is_using),
+  _for_dump(is_dumping),
   _code_caching(AOTCodeCaching),
   _stub_caching(AOTStubCaching),
   _adapter_caching(AOTAdapterCaching),
@@ -229,7 +225,7 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
   _store_entries_cnt(0)
 {
   // Read header at the begining of cache
-  if (_for_read) {
+  if (_for_use) {
     // Read cache
     size_t load_size = AOTCacheAccess::get_aot_code_size();
     ReservedSpace rs = MemoryReserver::reserve(load_size, mtCode);
@@ -258,7 +254,7 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
     // Read strings
     load_strings();
   }
-  if (_for_write) {
+  if (_for_dump) {
     _C_store_buffer = NEW_C_HEAP_ARRAY(char, max_aot_code_size() + DATA_ALIGNMENT, mtCode);
     _store_buffer = align_up(_C_store_buffer, DATA_ALIGNMENT);
     // Entries allocated at the end of buffer in reverse (as on stack).
@@ -290,7 +286,7 @@ AOTCodeCache::~AOTCodeCache() {
   _closing = true;
 
   MutexLocker ml(Compile_lock);
-  if (for_write()) { // Finalize cache
+  if (for_dump()) { // Finalize cache
     finish_write();
   }
   _load_buffer = nullptr;
@@ -414,15 +410,15 @@ bool AOTCodeCache::Header::verify_config(uint load_size) const {
   return true;
 }
 
-AOTCodeCache* AOTCodeCache::open_for_read() {
-  if (AOTCodeCache::is_on_for_read()) {
+AOTCodeCache* AOTCodeCache::open_for_use() {
+  if (AOTCodeCache::is_on_for_use()) {
     return AOTCodeCache::cache();
   }
   return nullptr;
 }
 
-AOTCodeCache* AOTCodeCache::open_for_write() {
-  if (AOTCodeCache::is_on_for_write()) {
+AOTCodeCache* AOTCodeCache::open_for_dump() {
+  if (AOTCodeCache::is_on_for_dump()) {
     AOTCodeCache* cache = AOTCodeCache::cache();
     cache->clear_lookup_failed(); // Reset bit
     return cache;
@@ -492,7 +488,7 @@ bool AOTCodeCache::align_write() {
 
 // Check to see if AOT code cache has required space to store "nbytes" of data
 address AOTCodeCache::reserve_bytes(uint nbytes) {
-  assert(for_write(), "Code Cache file is not created");
+  assert(for_dump(), "Code Cache file is not created");
   uint new_position = _write_position + nbytes;
   if (new_position >= (uint)((char*)_store_entries - _store_buffer)) {
     log_warning(aot,codecache)("Failed to ensure %d bytes at offset %d in AOT Code Cache. Increase AOTCodeMaxSize.",
@@ -510,7 +506,7 @@ address AOTCodeCache::reserve_bytes(uint nbytes) {
 }
 
 uint AOTCodeCache::write_bytes(const void* buffer, uint nbytes) {
-  assert(for_write(), "Code Cache file is not created");
+  assert(for_dump(), "Code Cache file is not created");
   if (nbytes == 0) {
     return 0;
   }
@@ -544,7 +540,7 @@ static bool check_entry(AOTCodeEntry::Kind kind, uint id, AOTCodeEntry* entry) {
 }
 
 AOTCodeEntry* AOTCodeCache::find_entry(AOTCodeEntry::Kind kind, uint id) {
-  assert(_for_read, "sanity");
+  assert(_for_use, "sanity");
   uint count = _load_header->entries_count();
   if (_load_entries == nullptr) {
     // Read it
@@ -693,7 +689,7 @@ bool AOTCodeCache::finish_write() {
 //------------------Store/Load AOT code ----------------------
 
 bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind, uint id, const char* name, int entry_offset_count, int* entry_offsets) {
-  AOTCodeCache* cache = open_for_write();
+  AOTCodeCache* cache = open_for_dump();
   if (cache == nullptr) {
     return false;
   }
@@ -781,7 +777,7 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
 }
 
 CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, const char* name, int entry_offset_count, int* entry_offsets) {
-  AOTCodeCache* cache = open_for_read();
+  AOTCodeCache* cache = open_for_use();
   if (cache == nullptr) {
     return nullptr;
   }
@@ -1185,7 +1181,7 @@ int AOTCodeCache::store_strings() {
 }
 
 void AOTCodeCache::add_C_string(const char* str) {
-  if (is_on_for_write()) {
+  if (is_on_for_dump()) {
     _cache->_table->add_C_string(str);
   }
 }
@@ -1346,7 +1342,7 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
 }
 
 void AOTCodeCache::print_on(outputStream* st) {
-  AOTCodeCache* cache = open_for_read();
+  AOTCodeCache* cache = open_for_use();
   if (cache != nullptr) {
     uint count = cache->_load_header->entries_count();
     uint* search_entries = (uint*)cache->addr(cache->_load_header->entries_offset()); // [id, index]

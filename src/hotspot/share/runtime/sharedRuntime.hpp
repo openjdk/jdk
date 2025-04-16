@@ -781,7 +781,7 @@ class AdapterHandlerLibrary: public AllStatic {
   static AdapterHandlerEntry* _obj_int_arg_handler;
   static AdapterHandlerEntry* _obj_obj_arg_handler;
 #if INCLUDE_CDS
-  static ArchivedAdapterTable _archived_adapter_handler_table;
+  static ArchivedAdapterTable _aot_adapter_handler_table;
 #endif // INCLUDE_CDS
 
   static BufferBlob* buffer_blob();
@@ -824,10 +824,10 @@ class AdapterHandlerLibrary: public AllStatic {
 
   static bool is_abstract_method_adapter(AdapterHandlerEntry* adapter);
 
-  static AdapterBlob* link_adapter_handler(AdapterHandlerEntry* handler) NOT_CDS_RETURN_(nullptr);
-  static void archive_adapter_table() NOT_CDS_RETURN;
+  static AdapterBlob* link_aot_adapter_handler(AdapterHandlerEntry* handler) NOT_CDS_RETURN_(nullptr);
+  static void dump_aot_adapter_table() NOT_CDS_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_RETURN;
-  static void link_archived_adapters() NOT_CDS_RETURN;
+  static void link_aot_adapters() NOT_CDS_RETURN;
 };
 
 #endif // SHARE_RUNTIME_SHAREDRUNTIME_HPP

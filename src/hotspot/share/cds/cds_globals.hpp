@@ -144,6 +144,9 @@
   product(bool, AbortVMOnAOTCodeFailure, false, DIAGNOSTIC,                 \
           "Abort VM on the first occurrence of AOT code load or store "     \
           "failure. By default VM will continue execute without AOT code.") \
+                                                                            \
+  develop(bool, TestAOTAdapterLinkFailure, false,                           \
+          "Test failure of adapter linking when loading from AOT cache.")   \
 
 // end of CDS_FLAGS
 

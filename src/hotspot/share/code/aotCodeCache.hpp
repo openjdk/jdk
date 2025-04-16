@@ -222,8 +222,8 @@ private:
   uint   _write_position;  // Position in _store_buffer
   uint   _load_size;       // Used when reading cache
   uint   _store_size;      // Used when writing cache
-  bool   _for_read;        // Open for read
-  bool   _for_write;       // Open for write
+  bool   _for_use;         // AOT cache is open for using AOT code
+  bool   _for_dump;        // AOT cache is open for dumping AOT code
   bool   _code_caching;
   bool   _stub_caching;
   bool   _adapter_caching;
@@ -239,8 +239,8 @@ private:
   const char*   _C_strings_buf;  // Loaded buffer for _C_strings[] table
   uint          _store_entries_cnt;
 
-  static AOTCodeCache* open_for_read();
-  static AOTCodeCache* open_for_write();
+  static AOTCodeCache* open_for_use();
+  static AOTCodeCache* open_for_dump();
 
   bool set_write_position(uint pos);
   bool align_write();
@@ -276,8 +276,8 @@ public:
 
   address address_for_id(int id) const { return _table->address_for_id(id); }
 
-  bool for_read()  const { return _for_read  && !_failed; }
-  bool for_write() const { return _for_write && !_failed; }
+  bool for_use()  const { return _for_use  && !_failed; }
+  bool for_dump() const { return _for_dump && !_failed; }
 
   bool code_caching()    const { return _code_caching; }
   bool stub_caching()    const { return _stub_caching; }
@@ -302,7 +302,7 @@ public:
   static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind, uint id, const char* name, int entry_offset_count, int* entry_offsets) NOT_CDS_RETURN_(nullptr);
 
   static uint store_entries_cnt() {
-    if (is_on_for_write()) {
+    if (is_on_for_dump()) {
       return cache()->_store_entries_cnt;
     }
     return -1;
@@ -315,7 +315,7 @@ private:
 
   static bool open_cache(bool is_dumping, bool is_using);
   static bool verify_vm_config() {
-    if (is_on_for_read()) {
+    if (is_on_for_use()) {
       return _cache->_load_header->verify_vm_config();
     }
     return true;
@@ -326,16 +326,16 @@ public:
   static void init2() NOT_CDS_RETURN;
   static void close() NOT_CDS_RETURN;
   static bool is_on() CDS_ONLY({ return _cache != nullptr && !_cache->closing(); }) NOT_CDS_RETURN_(false);
-  static bool is_on_for_read()  { return is_on() && _cache->for_read(); }
-  static bool is_on_for_write() { return is_on() && _cache->for_write(); }
+  static bool is_on_for_use()  { return is_on() && _cache->for_use(); }
+  static bool is_on_for_dump() { return is_on() && _cache->for_dump(); }
 
-  static bool is_dumping_code()     { return is_on_for_write() && _cache->code_caching(); }
-  static bool is_dumping_stubs()    { return is_on_for_write() && _cache->stub_caching(); }
-  static bool is_dumping_adapters() { return is_on_for_write() && _cache->adapter_caching(); }
+  static bool is_dumping_code()     { return is_on_for_dump() && _cache->code_caching(); }
+  static bool is_dumping_stubs()    { return is_on_for_dump() && _cache->stub_caching(); }
+  static bool is_dumping_adapters() { return is_on_for_dump() && _cache->adapter_caching(); }
 
-  static bool is_using_code()       { return is_on_for_read() && _cache->code_caching(); }
-  static bool is_using_stubs()      { return is_on_for_read() && _cache->stub_caching(); }
-  static bool is_using_adapters()   { return is_on_for_read() && _cache->adapter_caching(); }
+  static bool is_using_code()       { return is_on_for_use() && _cache->code_caching(); }
+  static bool is_using_stubs()      { return is_on_for_use() && _cache->stub_caching(); }
+  static bool is_using_adapters()   { return is_on_for_use() && _cache->adapter_caching(); }
 
   static void add_C_string(const char* str) NOT_CDS_RETURN;
 

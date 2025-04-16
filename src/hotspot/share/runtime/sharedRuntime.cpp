@@ -2458,7 +2458,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::lookup(int total_args_passed, BasicT
   // not valid and we need to use the ones added to the runtime table
   if (!AOTCodeCache::is_dumping_adapters()) {
     // Search archived table first. It is read-only table so can be searched without lock
-    entry = _archived_adapter_handler_table.lookup(fp, fp->compute_hash(), 0 /* unused */);
+    entry = _aot_adapter_handler_table.lookup(fp, fp->compute_hash(), 0 /* unused */);
     if (entry != nullptr) {
 #ifndef PRODUCT
       if (fp->is_compact()) {
@@ -2511,7 +2511,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::_obj_arg_handler = nullptr;
 AdapterHandlerEntry* AdapterHandlerLibrary::_obj_int_arg_handler = nullptr;
 AdapterHandlerEntry* AdapterHandlerLibrary::_obj_obj_arg_handler = nullptr;
 #if INCLUDE_CDS
-ArchivedAdapterTable AdapterHandlerLibrary::_archived_adapter_handler_table;
+ArchivedAdapterTable AdapterHandlerLibrary::_aot_adapter_handler_table;
 #endif // INCLUDE_CDS
 static const int AdapterHandlerLibrary_size = 16*K;
 BufferBlob* AdapterHandlerLibrary::_buffer = nullptr;
@@ -2566,8 +2566,8 @@ void AdapterHandlerLibrary::initialize() {
 
 #if INCLUDE_CDS
   // Link adapters in AOT Cache to their code in AOT Code Cache
-  if (!_archived_adapter_handler_table.empty()) {
-    link_archived_adapters();
+  if (!_aot_adapter_handler_table.empty()) {
+    link_aot_adapters();
     lookup_simple_adapters();
     return;
   }
@@ -2922,21 +2922,21 @@ public:
   }
 };
 
-void AdapterHandlerLibrary::archive_adapter_table() {
+void AdapterHandlerLibrary::dump_aot_adapter_table() {
   CompactHashtableStats stats;
   CompactHashtableWriter writer(_adapter_handler_table->number_of_entries(), &stats);
   CopyAdapterTableToArchive copy(&writer);
   _adapter_handler_table->iterate(&copy);
-  writer.dump(&_archived_adapter_handler_table, "archived adapter table");
+  writer.dump(&_aot_adapter_handler_table, "archived adapter table");
 }
 
 void AdapterHandlerLibrary::serialize_shared_table_header(SerializeClosure* soc) {
-  _archived_adapter_handler_table.serialize_header(soc);
+  _aot_adapter_handler_table.serialize_header(soc);
 }
 
-AdapterBlob* AdapterHandlerLibrary::link_adapter_handler(AdapterHandlerEntry* handler) {
-#ifndef PRODUCT
-  if (TestAdapterLinkFailure) {
+AdapterBlob* AdapterHandlerLibrary::link_aot_adapter_handler(AdapterHandlerEntry* handler) {
+#ifdef ASSERT
+  if (TestAOTAdapterLinkFailure) {
     return nullptr;
   }
 #endif
@@ -2961,7 +2961,7 @@ void AdapterHandlerEntry::link() {
   // caching adapters is disabled, or we fail to link
   // the AdapterHandlerEntry to its code in the AOTCodeCache
   if (AOTCodeCache::is_using_adapters()) {
-    adapter_blob = AdapterHandlerLibrary::link_adapter_handler(this);
+    adapter_blob = AdapterHandlerLibrary::link_aot_adapter_handler(this);
     if (adapter_blob == nullptr) {
       log_warning(cds)("Failed to link AdapterHandlerEntry (fp=%s) to its code in the AOT code cache", _fingerprint->as_basic_args_string());
       generate_code = true;
@@ -2986,8 +2986,8 @@ void AdapterHandlerEntry::link() {
   assert(_linked, "AdapterHandlerEntry must now be linked");
 }
 
-void AdapterHandlerLibrary::link_archived_adapters() {
-  _archived_adapter_handler_table.iterate([](AdapterHandlerEntry* entry) {
+void AdapterHandlerLibrary::link_aot_adapters() {
+  _aot_adapter_handler_table.iterate([](AdapterHandlerEntry* entry) {
     assert(!entry->is_linked(), "AdapterHandlerEntry is already linked!");
     entry->link();
   });
@@ -2996,7 +2996,7 @@ void AdapterHandlerLibrary::link_archived_adapters() {
 // This method is called during production run to lookup simple adapters
 // in the archived adapter handler table
 void AdapterHandlerLibrary::lookup_simple_adapters() {
-  assert(!_archived_adapter_handler_table.empty(), "archived adapter handler table is empty");
+  assert(!_aot_adapter_handler_table.empty(), "archived adapter handler table is empty");
 
   MutexLocker mu(AdapterHandlerLibrary_lock);
   _no_arg_handler = lookup(0, nullptr);
@@ -3376,7 +3376,7 @@ bool AdapterHandlerLibrary::contains(const CodeBlob* b) {
   auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
     return (found = (b == CodeCache::find_blob(handler->get_i2c_entry())));
   };
-  _archived_adapter_handler_table.iterate(findblob_archived_table);
+  _aot_adapter_handler_table.iterate(findblob_archived_table);
 #endif // INCLUDE_CDS
   if (!found) {
     auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {
@@ -3411,7 +3411,7 @@ void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b
 
     }
   };
-  _archived_adapter_handler_table.iterate(findblob_archived_table);
+  _aot_adapter_handler_table.iterate(findblob_archived_table);
 #endif // INCLUDE_CDS
   if (!found) {
     auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {

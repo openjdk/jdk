@@ -612,7 +612,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables(AOTClassLocationConfig*&
   LambdaFormInvokers::dump_static_archive_invokers();
 
   if (AOTCodeCache::is_dumping_adapters()) {
-    AdapterHandlerLibrary::archive_adapter_table();
+    AdapterHandlerLibrary::dump_aot_adapter_table();
   }
 
   // Write the other data to the output array.
@@ -1012,7 +1012,7 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   VM_PopulateDumpSharedSpace op(builder);
   VMThread::execute(&op);
 
-  if (AOTCodeCaching && CDSConfig::is_dumping_final_static_archive()) {
+  if (AOTCodeCache::is_on_for_dump() && CDSConfig::is_dumping_final_static_archive()) {
     CDSConfig::enable_dumping_aot_code();
     {
       builder.start_ac_region();
