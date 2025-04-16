@@ -268,7 +268,7 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
         if (stopping) {
             return false;
         }
-        debug.log("New connection %s accepted from %s", quicConn.label(), source);
+        debug.log("New connection %s accepted from %s", quicConn.dbgTag(), source);
         quicConn.onSuccessfulHandshake(() -> {
             var http3Connection = new Http3ServerConnection(this, quicConn, source);
             http3Connection.start();

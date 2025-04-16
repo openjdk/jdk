@@ -230,7 +230,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         DEFAULT_DATAGRAM_SIZE = size;
     }
 
-    protected final Logger debug = Utils.getDebugLogger(this::label);
+    protected final Logger debug = Utils.getDebugLogger(this::dbgTag);
 
     final QuicRttEstimator rttEstimator = new QuicRttEstimator();
     final QuicCongestionController congestionController;
@@ -302,6 +302,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     private final ReentrantLock handshakeLock = new ReentrantLock();
     private final String cachedToString;
     private final String logTag;
+    private final long labelId;
     // incoming PATH_CHALLENGE frames waiting for PATH_RESPONSE
     private final Queue<PathChallengeFrame> pathChallengeFrameQueue = new ConcurrentLinkedQueue<>();
 
@@ -317,7 +318,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                                  final InetSocketAddress peerAddress,
                                  final String peerName,
                                  final SSLParameters sslParameters,
-                                 String logTag) {
+                                 final String logTagFormat,
+                                 final long labelId) {
+        this.labelId = labelId;
         this.quicInstance = Objects.requireNonNull(quicInstance, "quicInstance");
         try {
             this.endpoint = quicInstance.getEndpoint();
@@ -329,10 +332,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 ? MAX_IPV6_MTU
                 : MAX_IPV4_MTU;
         this.pathMTU = Math.clamp(DEFAULT_DATAGRAM_SIZE, SMALLEST_MAXIMUM_DATAGRAM_SIZE, maxConnectionMTU);
-        this.cachedToString = String.format("QuicConnection(%s:%s)",
+        this.cachedToString = String.format(logTagFormat.formatted("quic:%s:%s:%s"), labelId,
                 Arrays.toString(sslParameters.getApplicationProtocols()), peerAddress);
         this.connectionId = this.endpoint.idFactory().newConnectionId();
-        this.logTag = logTag;
+        this.logTag = logTagFormat.formatted(labelId);
         this.dbgTag = dbgTag(quicInstance, logTag);
         this.congestionController = new QuicRenoCongestionController(dbgTag);
         this.originalVersion = this.quicVersion = firstFlightVersion == null
@@ -364,6 +367,11 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 ? new QuicTransportParameters()
                 : quicInstance.getTransportParameters();
         if (debug.on()) debug.log("Quic Connection Created");
+    }
+
+    @Override
+    public final long uniqueId() {
+        return labelId;
     }
 
     /**
@@ -1691,7 +1699,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return packetSpaces.get(packetNumberSpace);
     }
 
-    public String label() { return dbgTag; }
+    public String dbgTag() { return dbgTag; }
 
     public String streamDbgTag(long streamId, String direction) {
         String dir = direction == null || direction.isEmpty()
@@ -2835,7 +2843,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         // log exception if still opened
         if (stateHandle.opened()) {
             if (Log.errors()) {
-                Log.logError("%s: Failed to write datagram: %s", label(), t );
+                Log.logError("%s: Failed to write datagram: %s", dbgTag(), t );
                 Log.logError(t);
             } else if (debug.on()) {
                 debug.log("Failed to write datagram", t);

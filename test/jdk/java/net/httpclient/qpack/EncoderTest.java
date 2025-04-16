@@ -400,7 +400,7 @@ public class EncoderTest {
         }
 
         @Override
-        public String label() { return null; }
+        public String dbgTag() { return null; }
 
         @Override
         public String logTag() {

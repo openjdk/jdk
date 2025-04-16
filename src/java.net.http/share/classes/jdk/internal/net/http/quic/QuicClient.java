@@ -222,7 +222,8 @@ public final class QuicClient implements QuicInstance, AutoCloseable {
         }
         final SSLParameters sslParameters = createSSLParameters(new String[]{alpn});
         return new QuicConnectionImpl(null, this, peerAddress,
-                service.origin().host(), sslParameters, "QuicClientConnection(" + CONNECTIONS.incrementAndGet() + ")");
+                service.origin().host(), sslParameters, "QuicClientConnection(%s)",
+                CONNECTIONS.incrementAndGet());
     }
 
     /**
@@ -244,7 +245,7 @@ public final class QuicClient implements QuicInstance, AutoCloseable {
         }
         final SSLParameters sslParameters = createSSLParameters(alpns);
         return new QuicConnectionImpl(null, this, peerAddress, peerAddress.getHostString(),
-                sslParameters, "QuicClientConnection(" + CONNECTIONS.incrementAndGet() + ")");
+                sslParameters, "QuicClientConnection(%s)", CONNECTIONS.incrementAndGet());
     }
 
     private SSLParameters createSSLParameters(final String[] alpns) {

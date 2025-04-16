@@ -115,7 +115,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
                          byte[] initialToken,
                          QuicServer.RetryData retryData) {
         super(quicVersion, server, peerAddress, null, sslParameters,
-                "QuicServerConnection(" + CONNECTIONS.incrementAndGet() + ")");
+                "QuicServerConnection(%s)", CONNECTIONS.incrementAndGet());
         this.preferredQuicVersion = preferredQuicVersion;
         // this should have been first statement in this constructor but compiler doesn't allow it
         Objects.requireNonNull(quicVersion, "quic version");

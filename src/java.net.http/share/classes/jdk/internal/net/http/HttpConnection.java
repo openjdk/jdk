@@ -114,7 +114,11 @@ abstract class HttpConnection implements Closeable {
     }
 
     private static String nextLabel() {
-        return "" + LABEL_COUNTER.incrementAndGet();
+        return nextLabel("");
+    }
+
+    private static String nextLabel(String prefix) {
+        return prefix + LABEL_COUNTER.incrementAndGet();
     }
 
     /**
@@ -362,7 +366,7 @@ abstract class HttpConnection implements Closeable {
                                                    String[] alpn,
                                                    HttpRequestImpl request,
                                                    HttpClientImpl client) {
-        String label = nextLabel();
+        String label = nextLabel("tls:");
         if (proxy != null)
             return new AsyncSSLTunnelConnection(addr, client, alpn, proxy,
                                                 proxyTunnelHeaders(request),
@@ -442,7 +446,7 @@ abstract class HttpConnection implements Closeable {
                                                      InetSocketAddress proxy,
                                                      HttpRequestImpl request,
                                                      HttpClientImpl client) {
-        String label = nextLabel();
+        String label = nextLabel("tcp:");
         if (request.isWebSocket() && proxy != null)
             return new PlainTunnelingConnection(addr, proxy, client,
                                                 proxyTunnelHeaders(request),

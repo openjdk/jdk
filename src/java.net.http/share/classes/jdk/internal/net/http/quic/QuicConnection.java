@@ -27,7 +27,6 @@ package jdk.internal.net.http.quic;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.time.Duration;
-import java.util.HexFormat;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -176,18 +175,30 @@ public abstract class QuicConnection {
     public abstract boolean isOpen();
 
     /**
-     * {@return a debug tag to be used with a {@code DebugLogger}}
+     * {@return a long identifier that can be used to uniquely
+     * identify a quic connection in the context of the
+     * {@link QuicInstance} that created it}
      */
-    public abstract String label();
+    public long uniqueId() { return 0; }
+
+    /**
+     * {@return a debug tag to be used with {@linkplain
+     * jdk.internal.net.http.common.Logger lower level logging}}
+     * This typically includes both the connection {@link #uniqueId()}
+     * and the {@link QuicInstance#instanceId()}.
+     */
+    public abstract String dbgTag();
 
     /**
      * {@return a debug tag}
+     * Typically used with {@linkplain jdk.internal.net.http.common.Log
+     * higher level logging}
      */
     public abstract String logTag();
 
     /**
-     * {@return the {@link TerminationCause} if the connection has closed or is being closed,
-     * otherwise returns null}
+     * {@return the {@link TerminationCause} if the connection has
+     * closed or is being closed, otherwise returns null}
      */
     public abstract TerminationCause terminationCause();
 
@@ -224,22 +235,6 @@ public abstract class QuicConnection {
      * The default implementation of this method returns null
      */
     public QuicConnectionId localConnectionId() { return null; }
-
-    /**
-     * {@return an hexadecimal string to identify this connection}
-     * @apiNote Usually this is the {@linkplain QuicConnectionId#toHexString()
-     * hexadecimal representation of ths connection connection id}.
-     */
-    public String toHexString() {
-        Object lid = localConnectionId();
-        if (lid instanceof QuicConnectionId cid) {
-            return cid.toHexString();
-        } else {
-            // shouldn't happen except in tests where localConnectionId() may
-            // return null
-            return HexFormat.of().toHexDigits(hashCode());
-        }
-    }
 
     // registers a listener which will be notified just before the QUIC connection
     // will be silently terminated due to being idle for longer than the max_idle_timeout.

@@ -29,8 +29,10 @@
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
  *
- * @comment Use a higher idle timeout to increase the chances of the same connection being used for sequential HTTP requests
- * @run junit/othervm -Djdk.httpclient.keepalive.timeout=120 HttpResponseConnectionLabelTest
+ * @comment Use a higher idle timeout to increase the chances of
+ *    the same connection being used for sequential HTTP requests
+ * @run junit/othervm -Djdk.httpclient.keepalive.timeout=120
+ *                    HttpResponseConnectionLabelTest
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
@@ -210,7 +212,7 @@ class HttpResponseConnectionLabelTest {
             return (exchange) -> {
                 String responseBody = "" + SERVER_RESPONSE_COUNTER.getAndIncrement();
                 String connectionKey = exchange.getConnectionKey();
-                LOGGER.log("Server[%d] has received request (connectionKey=%s)", serverId, connectionKey);
+                LOGGER.log("Server[%s] has received request (connectionKey=%s)", serverId, connectionKey);
                 try (exchange) {
 
                     // Participate in the latch count down

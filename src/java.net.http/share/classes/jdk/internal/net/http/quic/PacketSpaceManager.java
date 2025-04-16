@@ -893,7 +893,7 @@ public sealed class PacketSpaceManager implements PacketSpace
         this(packetNumberSpace, connection.emitter(), TimeSource.source(),
                 connection.rttEstimator, connection.congestionController, connection.getTLSEngine(),
                 connection.connectionTerminator(),
-                () -> connection.label() + "[" + packetNumberSpace.name() + "]");
+                () -> connection.dbgTag() + "[" + packetNumberSpace.name() + "]");
     }
 
     /**

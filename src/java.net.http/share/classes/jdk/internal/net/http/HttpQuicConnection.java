@@ -89,7 +89,7 @@ abstract class HttpQuicConnection extends HttpConnection {
 
     HttpQuicConnection(InetSocketAddress address, HttpClientImpl client,
                        QuicConnection quicConnection, AltService sourceAltService) {
-        super(address, client, "Http" + quicConnection.label());
+        super(address, client, "quic:" + quicConnection.uniqueId());
         Objects.requireNonNull(quicConnection);
         this.quicConnection = quicConnection;
         this.quicConnTerminator = quicConnection.connectionTerminator();
@@ -120,7 +120,7 @@ abstract class HttpQuicConnection extends HttpConnection {
 
     final String quicDbgString() {
         String tag = dbgTag;
-        if (tag == null) tag = dbgTag = "Http" + quicConnection.label();
+        if (tag == null) tag = dbgTag = "Http" + quicConnection.dbgTag();
         return tag;
     }
 
@@ -172,16 +172,6 @@ abstract class HttpQuicConnection extends HttpConnection {
 
     QuicConnection quicConnection() {
         return quicConnection;
-    }
-
-    /**
-     * {@return an hexadecimal string identifying the underlying
-     *          quic connection}
-     * @apiNote This is usually the string representation of the
-     *          underlying local quic connection id bytes.
-     */
-    public String toHexString() {
-        return quicConnection.toHexString();
     }
 
     /**

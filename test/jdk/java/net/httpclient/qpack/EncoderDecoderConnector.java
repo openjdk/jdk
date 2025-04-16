@@ -312,7 +312,7 @@ public class EncoderDecoderConnector {
         }
 
         @Override
-        public String label() {
+        public String dbgTag() {
             return null;
         }
 
