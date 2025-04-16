@@ -70,6 +70,7 @@ import com.sun.tools.javac.util.Pair;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import static com.sun.tools.javac.util.Position.NOPOS;
 
 /**
  * Looks for possible 'this' escapes and generates corresponding warnings.
@@ -171,9 +172,9 @@ public class ThisEscapeAnalyzer extends TreeScanner {
      */
     private final Map<Symbol, MethodInfo> methodMap = new LinkedHashMap<>();
 
-    /** Contains symbols of fields and constructors that have warnings suppressed.
+    /** Contains symbols of fields that have warnings suppressed.
      */
-    private final Set<Symbol> suppressed = new HashSet<>();
+    private final Set<VarSymbol> suppressedFields = new HashSet<>();
 
     /** Contains classes whose outer instance (if any) is non-public.
      */
@@ -271,7 +272,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         Assert.check(methodMap.isEmpty());      // we are not prepared to be used more than once
 
         // Short circuit if warnings are totally disabled
-        if (!isWarningEnabled(env.tree))
+        if (!isWarningEnabledAt(env.tree))
             return;
 
         // Determine which packages are exported by the containing module, if any.
@@ -286,7 +287,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
 
         // Build a mapping from symbols of methods to their declarations.
         // Classify all ctors and methods as analyzable and/or invokable.
-        // Track which constructors and fields have warnings suppressed.
+        // Track which constructors and fields don't need to be analyzed.
         // Record classes whose outer instance (if any) is non-public.
         new TreeScanner() {
 
@@ -318,8 +319,8 @@ public class ThisEscapeAnalyzer extends TreeScanner {
             public void visitVarDef(JCVariableDecl tree) {
 
                 // Track warning suppression of fields
-                if (tree.sym.owner.kind == TYP && !isWarningEnabled(tree))
-                    suppressed.add(tree.sym);
+                if (tree.sym.owner.kind == TYP && !isWarningEnabledAt(tree))
+                    suppressedFields.add(tree.sym);
 
                 // Recurse
                 super.visitVarDef(tree);
@@ -328,24 +329,21 @@ public class ThisEscapeAnalyzer extends TreeScanner {
             @Override
             public void visitMethodDef(JCMethodDecl tree) {
 
-                // Track warning suppression of constructors
-                if (TreeInfo.isConstructor(tree) && !isWarningEnabled(tree))
-                    suppressed.add(tree.sym);
+                // Gather some useful info
+                boolean constructor = TreeInfo.isConstructor(tree);
+                boolean extendableClass = currentClassIsExternallyExtendable();
+                boolean nonPrivate = (tree.sym.flags() & (Flags.PUBLIC | Flags.PROTECTED)) != 0;
+                boolean finalish = (tree.mods.flags & (Flags.STATIC | Flags.PRIVATE | Flags.FINAL)) != 0;
+                boolean suppressed = !isWarningEnabledAt(tree);
 
                 // Determine if this is a constructor we should analyze
-                boolean extendable = currentClassIsExternallyExtendable();
-                boolean analyzable = extendable &&
-                    TreeInfo.isConstructor(tree) &&
-                    (tree.sym.flags() & (Flags.PUBLIC | Flags.PROTECTED)) != 0 &&
-                    !suppressed.contains(tree.sym);
+                boolean analyzable = extendableClass && constructor && nonPrivate && !suppressed;
 
-                // Determine if this method is "invokable" in an analysis (can't be overridden)
-                boolean invokable = !extendable ||
-                    TreeInfo.isConstructor(tree) ||
-                    (tree.mods.flags & (Flags.STATIC | Flags.PRIVATE | Flags.FINAL)) != 0;
+                // Determine if it's safe to "invoke" the method in an analysis (i.e., it can't be overridden)
+                boolean invokable = !extendableClass || constructor || finalish;
 
-                // Add method or constructor to map
-                methodMap.put(tree.sym, new MethodInfo(currentClass, tree, analyzable, invokable));
+                // Add this method or constructor to our map
+                methodMap.put(tree.sym, new MethodInfo(currentClass, tree, constructor, analyzable, invokable, suppressed));
 
                 // Recurse
                 super.visitMethodDef(tree);
@@ -365,32 +363,29 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         // Analyze non-static field initializers and initialization blocks,
         // but only for classes having at least one analyzable constructor.
         methodMap.values().stream()
-                .filter(MethodInfo::analyzable)
-                .map(MethodInfo::declaringClass)
-                .distinct()
-                .forEach(klass -> {
-            for (List<JCTree> defs = klass.defs; defs.nonEmpty(); defs = defs.tail) {
-
-                // Ignore static stuff
-                if ((TreeInfo.flags(defs.head) & Flags.STATIC) != 0)
-                    continue;
+          .filter(MethodInfo::analyzable)
+          .map(MethodInfo::declaringClass)
+          .distinct()
+          .forEach(klass -> {
+            klass.defs.stream()
+              .filter(decl -> (TreeInfo.flags(decl) & Flags.STATIC) == 0)
+              .forEach(decl -> {
+                switch (decl) {
 
                 // Handle field initializers
-                if (defs.head instanceof JCVariableDecl vardef) {
-                    visitTopLevel(env, klass, () -> {
-                        scan(vardef);
+                case JCVariableDecl varDecl when !suppressedFields.contains(varDecl.sym)
+                    -> visitTopLevel(env, klass, () -> {
+                        scan(varDecl);
                         copyPendingWarning();
                     });
-                    continue;
-                }
 
                 // Handle initialization blocks
-                if (defs.head instanceof JCBlock block) {
-                    visitTopLevel(env, klass, () -> analyzeStatements(block.stats));
-                    continue;
+                case JCBlock block -> visitTopLevel(env, klass, () -> analyzeStatements(block.stats));
+
+                default -> { }
                 }
-            }
-        });
+              });
+          });
 
         // Analyze all of the analyzable constructors we found
         methodMap.values().stream()
@@ -438,16 +433,16 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         DiagnosticPosition[] previous = null;
         for (DiagnosticPosition[] warning : warningList) {
 
-            // Skip duplicates
+            // Skip duplicates, i.e., when the current stack extends the previous stack
             if (previous != null && extendsAsPrefix.test(previous, warning))
                 continue;
             previous = warning;
 
             // Emit warnings showing the entire stack trace
-            JCDiagnostic.Warning key = LintWarnings.PossibleThisEscape;
+            JCDiagnostic.LintWarning key = LintWarnings.PossibleThisEscape;
             int remain = warning.length;
             do {
-                DiagnosticPosition pos = warning[--remain];
+                DiagnosticPosition pos = warning[--remain].withLintPosition(NOPOS); // skip the normal Lint suppression logic
                 log.warning(pos, key);
                 key = LintWarnings.PossibleThisEscapeLocation;
             } while (remain > 0);
@@ -528,7 +523,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
     private void visitVarDef(VarSymbol sym, JCExpression expr) {
 
         // Skip if ignoring warnings for this field
-        if (suppressed.contains(sym))
+        if (suppressedFields.contains(sym))
             return;
 
         // Scan initializer, if any
@@ -574,10 +569,6 @@ public class ThisEscapeAnalyzer extends TreeScanner {
 
     private void invoke(JCTree site, Symbol sym, List<JCExpression> args, RefSet<ThisRef> receiverRefs) {
 
-        // Skip if ignoring warnings for a constructor invoked via 'this()'
-        if (suppressed.contains(sym))
-            return;
-
         // Ignore final methods in java.lang.Object (getClass(), notify(), etc.)
         if (sym != null &&
             sym.owner.kind == TYP &&
@@ -588,6 +579,10 @@ public class ThisEscapeAnalyzer extends TreeScanner {
 
         // See if this method is known because it's declared somewhere in our file
         MethodInfo methodInfo = methodMap.get(sym);
+
+        // If the method is a constructor with "this-escape" suppressed, skip it
+        if (methodInfo != null && methodInfo.constructor && methodInfo.suppressed)
+            return;
 
         // If the method is not matched exactly, look a little harder. This especially helps
         // with anonymous interface classes, where the method symbols won't match.
@@ -612,7 +607,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         }
 
         // Analyze method if possible, otherwise assume nothing
-        if (methodInfo != null && methodInfo.invokable())
+        if (methodInfo != null && methodInfo.invokable)
             invokeInvokable(site, args, receiverRefs, methodInfo);
         else
             invokeUnknown(site, args, receiverRefs);
@@ -631,7 +626,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
     // Handle the invocation of a local analyzable method or constructor
     private void invokeInvokable(JCTree site, List<JCExpression> args,
             RefSet<ThisRef> receiverRefs, MethodInfo methodInfo) {
-        Assert.check(methodInfo.invokable());
+        Assert.check(methodInfo.invokable);
 
         // Collect 'this' references found in method parameters
         JCMethodDecl method = methodInfo.declaration();
@@ -740,7 +735,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         RefSet<ThisRef> receiverRefs = receiverRefsForConstructor(tree.encl, tsym);
 
         // "Invoke" the constructor
-        if (methodInfo != null && methodInfo.invokable())
+        if (methodInfo != null && methodInfo.invokable)
             invokeInvokable(tree, tree.args, receiverRefs, methodInfo);
         else
             invokeUnknown(tree, tree.args, receiverRefs);
@@ -1244,7 +1239,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
             refs.add(new ThisRef(targetClass.sym, EnumSet.of(Indirection.DIRECT)));
 
             // Perform action
-            this.visitScoped(false, action);
+            visitScoped(false, action);
         } finally {
             Assert.check(depth == -1);
             attrEnv = null;
@@ -1378,7 +1373,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
     }
 
     // Determine if the "this-escape" warning is enabled at the given tree's source code position
-    private boolean isWarningEnabled(JCTree tree) {
+    private boolean isWarningEnabledAt(JCTree tree) {
         return lintMapper.lintAt(log.currentSourceFile(), tree.pos()).get().isEnabled(LintCategory.THIS_ESCAPE);
     };
 
@@ -1784,15 +1779,19 @@ public class ThisEscapeAnalyzer extends TreeScanner {
     private record MethodInfo(
         JCClassDecl declaringClass,     // the class declaring "declaration"
         JCMethodDecl declaration,       // the method or constructor itself
+        boolean constructor,            // the method is a constructor
         boolean analyzable,             // it's a constructor that we should analyze
-        boolean invokable) {            // it may be safely "invoked" during analysis
+        boolean invokable,              // it may be safely "invoked" during analysis
+        boolean suppressed) {           // the "this-escape" warning is not enabled
 
         @Override
         public String toString() {
             return "MethodInfo"
               + "[method=" + declaringClass.sym.flatname + "." + declaration.sym
+              + ",constructor=" + constructor
               + ",analyzable=" + analyzable
               + ",invokable=" + invokable
+              + ",suppressed=" + suppressed
               + "]";
         }
     }
