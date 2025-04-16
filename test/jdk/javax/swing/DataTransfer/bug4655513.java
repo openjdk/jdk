@@ -73,9 +73,11 @@ public class bug4655513 {
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.delay(500);
 
-            if (!editor.getText().contains(LINK_URL)) {
-                throw new RuntimeException("Test Failed! Drag & Drop did not work.");
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                if (!editor.getText().contains(LINK_URL)) {
+                    throw new RuntimeException("Test Failed! Drag & Drop did not work.");
+                }
+            });
         } finally {
             SwingUtilities.invokeAndWait(frame::dispose);
         }
