@@ -190,8 +190,6 @@ public class DialogTest {
 
         public Dialog createDialog() {
             GraphicsConfiguration gc = gds[num].getDefaultConfiguration();
-            String title = toString();
-
 
             Dialog d;
 
