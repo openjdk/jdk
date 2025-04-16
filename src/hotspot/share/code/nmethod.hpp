@@ -469,6 +469,31 @@ class nmethod : public CodeBlob {
   void oops_do_set_strong_done(nmethod* old_head);
 
 public:
+  enum NMethodChangeReason : s4 {
+    C1_deoptimize = 0,
+    C1_codepatch,
+    C1_predicate_failed_trap,
+    C1_deoptimize_for_patching,
+    CI_replay,
+    marked_for_deoptimization,
+    not_used,
+    OSR_invalidation_for_compiling_with_C1,
+    OSR_invalidation_back_branch,
+    JVMCI_reprofile,
+    JVMCI_materialize_virtual_object,
+    JVMCI_invalidate_nmethod_mirror,
+    JVMCI_register_method,
+    OSR_invalidation_of_lower_level,
+    set_native_function,
+    whitebox_deoptimization,
+    missing_exception_handler,
+    uncommon_trap,
+    zombie,
+    JVMCI_invalidate_nmethod,
+    JVMCI_new_installation,
+    JVMCI_replacing_with_new_code,
+  };
+
   // create nmethod with entry_bci
   static nmethod* new_nmethod(const methodHandle& method,
                               int compile_id,
@@ -631,8 +656,8 @@ public:
   // alive.  It is used when an uncommon trap happens.  Returns true
   // if this thread changed the state of the nmethod or false if
   // another thread performed the transition.
-  bool  make_not_entrant(const char* reason);
-  bool  make_not_used()    { return make_not_entrant("not used"); }
+  bool  make_not_entrant(NMethodChangeReason reason);
+  bool  make_not_used()    { return make_not_entrant(nmethod::not_used); }
 
   bool  is_marked_for_deoptimization() const { return deoptimization_status() != not_marked; }
   bool  has_been_deoptimized() const { return deoptimization_status() == deoptimize_done; }
@@ -945,7 +970,7 @@ public:
   // Logging
   void log_identity(xmlStream* log) const;
   void log_new_nmethod() const;
-  void log_state_change(const char* reason) const;
+  void log_state_change(NMethodChangeReason reason) const;
 
   // Prints block-level comments, including nmethod specific block labels:
   void print_nmethod_labels(outputStream* stream, address block_begin, bool print_section_labels=true) const;

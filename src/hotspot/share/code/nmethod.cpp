@@ -1964,13 +1964,11 @@ void nmethod::invalidate_osr_method() {
   }
 }
 
-void nmethod::log_state_change(const char* reason) const {
-  assert(reason != nullptr, "Must provide a reason");
-
+void nmethod::log_state_change(NMethodChangeReason reason) const {
   if (LogCompilation) {
     if (xtty != nullptr) {
       ttyLocker ttyl;  // keep the following output all in one block
-      xtty->begin_elem("make_not_entrant thread='%zu' reason='%s'",
+      xtty->begin_elem("make_not_entrant thread='%zu' reason='%d'",
                        os::current_thread_id(), reason);
       log_identity(xtty);
       xtty->stamp();
@@ -1980,7 +1978,7 @@ void nmethod::log_state_change(const char* reason) const {
 
   ResourceMark rm;
   stringStream ss(NEW_RESOURCE_ARRAY(char, 256), 256);
-  ss.print("made not entrant: %s", reason);
+  ss.print("made not entrant: %d", reason);
 
   CompileTask::print_ul(this, ss.freeze());
   if (PrintCompilation) {
@@ -1995,9 +1993,7 @@ void nmethod::unlink_from_method() {
 }
 
 // Invalidate code
-bool nmethod::make_not_entrant(const char* reason) {
-  assert(reason != nullptr, "Must provide a reason");
-
+bool nmethod::make_not_entrant(NMethodChangeReason reason) {
   // This can be called while the system is already at a safepoint which is ok
   NoSafepointVerifier nsv;
 
