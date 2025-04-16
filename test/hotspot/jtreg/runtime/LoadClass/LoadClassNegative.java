@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,14 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class LoadClassNegative {
 
   public static void main(String args[]) throws Exception {
-    final String filename =  System.getProperty("test.src") + File.separator + "dummy.jar";
-    String bootCP = "-Xbootclasspath/a:" + filename;
 
+    // Create a dummy file in the scratch directory
+    final String filename = "dummy.jar";
     File dummyFile = new File(filename);
+    dummyFile.createNewFile();
 
-    boolean fileCreated = dummyFile.createNewFile();
+    // Explicitly tell to use it for class loading
+    String bootCP = "-Xbootclasspath/a:" + dummyFile.getAbsolutePath();
 
     ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         bootCP,
@@ -55,8 +57,5 @@ public class LoadClassNegative {
     output.shouldContain("ClassNotFoundException");
     output.shouldHaveExitValue(0);
 
-    if(fileCreated) {
-      dummyFile.delete();
-    }
   }
 }
