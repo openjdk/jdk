@@ -62,14 +62,11 @@ public class AltPlusNumberKeyCombinationsTest {
     }
 
     public static Frame initialize() {
-        Frame f;
-        TextField tf;
-        TextArea ta;
-        f = new Frame("key combination test");
+        Frame f = new Frame("key combination test");
         f.setLayout(new FlowLayout());
-        tf = new TextField("TextField");
+        TextField tf = new TextField("TextField");
         f.add(tf);
-        ta = new TextArea("TextArea");
+        TextArea ta = new TextArea("TextArea");
         f.add(ta);
         f.setSize(200, 200);
         return f;
