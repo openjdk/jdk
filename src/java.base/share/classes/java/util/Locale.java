@@ -1972,7 +1972,8 @@ public final class Locale implements Cloneable, Serializable {
      * @throws    NullPointerException if {@code inLocale} is {@code null}
      */
     public String getDisplayLanguage(Locale inLocale) {
-        return getDisplayString(baseLocale.getLanguage(), null, inLocale, DISPLAY_LANGUAGE);
+        return getDisplayString(baseLocale.getLanguage(), null, inLocale, DISPLAY_LANGUAGE)
+            .orElse(baseLocale.getLanguage());
     }
 
     /**
@@ -2002,7 +2003,8 @@ public final class Locale implements Cloneable, Serializable {
      * @since 1.7
      */
     public String getDisplayScript(Locale inLocale) {
-        return getDisplayString(baseLocale.getScript(), null, inLocale, DISPLAY_SCRIPT);
+        return getDisplayString(baseLocale.getScript(), null, inLocale, DISPLAY_SCRIPT)
+            .orElse(baseLocale.getScript());
     }
 
     /**
@@ -2043,15 +2045,16 @@ public final class Locale implements Cloneable, Serializable {
      * @throws    NullPointerException if {@code inLocale} is {@code null}
      */
     public String getDisplayCountry(Locale inLocale) {
-        return getDisplayString(baseLocale.getRegion(), null, inLocale, DISPLAY_COUNTRY);
+        return getDisplayString(baseLocale.getRegion(), null, inLocale, DISPLAY_COUNTRY)
+            .orElse(baseLocale.getRegion());
     }
 
-    private String getDisplayString(String code, String cat, Locale inLocale, int type) {
+    private Optional<String> getDisplayString(String code, String cat, Locale inLocale, int type) {
         Objects.requireNonNull(inLocale);
         Objects.requireNonNull(code);
 
         if (code.isEmpty()) {
-            return "";
+            return Optional.of("");
         }
 
         LocaleServiceProviderPool pool =
@@ -2060,7 +2063,7 @@ public final class Locale implements Cloneable, Serializable {
         String result = pool.getLocalizedObject(
                                 LocaleNameGetter.INSTANCE,
                                 inLocale, rbKey, type, code, cat);
-        return result != null ? result : code;
+        return Optional.ofNullable(result);
     }
 
     /**
@@ -2197,7 +2200,7 @@ public final class Locale implements Cloneable, Serializable {
         // add Unicode extensions
         if (localeExtensions != null) {
             localeExtensions.getUnicodeLocaleAttributes().stream()
-                .map(key -> getDisplayString(key, null, inLocale, DISPLAY_UEXT_KEY))
+                .map(key -> getDisplayString(key, null, inLocale, DISPLAY_UEXT_KEY).orElse(key))
                 .forEach(names::add);
             localeExtensions.getUnicodeLocaleKeys().stream()
                 .map(key -> getDisplayKeyTypeExtensionString(key, lr, inLocale))
@@ -2336,8 +2339,9 @@ public final class Locale implements Cloneable, Serializable {
         // For each variant token, lookup the display name.  If
         // not found, use the variant name itself.
         for (int i=0; i<names.length; ++i) {
-            names[i] = getDisplayString(tokenizer.nextToken(), null,
-                                inLocale, DISPLAY_VARIANT);
+            var code = tokenizer.nextToken();
+            names[i] = getDisplayString(code, null,
+                           inLocale, DISPLAY_VARIANT).orElse(code);
         }
 
         return names;
@@ -2345,34 +2349,26 @@ public final class Locale implements Cloneable, Serializable {
 
     private String getDisplayKeyTypeExtensionString(String key, LocaleResources lr, Locale inLocale) {
         String type = localeExtensions.getUnicodeLocaleType(key);
-        String ret = getDisplayString(type, key, inLocale, DISPLAY_UEXT_TYPE);
+        String displayString = getDisplayString(type, key + "-core", inLocale, DISPLAY_UEXT_TYPE)
+            .or(() -> getDisplayString(type, key, inLocale, DISPLAY_UEXT_TYPE)).orElse(null);
 
-        if (ret == null || ret.equals(type)) {
+        if (displayString == null) {
             // no localization for this type. try combining key/type separately
-            String displayType = type;
-            switch (key) {
-            case "cu":
-                displayType = lr.getCurrencyName(type.toLowerCase(Locale.ROOT));
-                break;
-            case "rg":
-                if (type != null &&
-                    // UN M.49 code should not be allowed here
-                    type.matches("^[a-zA-Z]{2}[zZ]{4}$")) {
-                        displayType = lr.getLocaleName(type.substring(0, 2).toUpperCase(Locale.ROOT));
-                }
-                break;
-            case "tz":
-                displayType = TimeZoneNameUtility.convertLDMLShortID(type)
+            displayString = switch (key) {
+                case "cu" -> lr.getCurrencyName(type.toLowerCase(Locale.ROOT));
+                case "rg" -> type != null &&
+                        type.matches("^[a-zA-Z]{2}[zZ]{4}$") ?// UN M.49 code should not be allowed here
+                    lr.getLocaleName(type.substring(0, 2).toUpperCase(Locale.ROOT)) : type;
+                case "tz" -> TimeZoneNameUtility.convertLDMLShortID(type)
                     .map(id -> TimeZoneNameUtility.retrieveGenericDisplayName(id, TimeZone.LONG, inLocale))
                     .orElse(type);
-                break;
-            }
-            ret = MessageFormat.format(lr.getLocaleName("ListKeyTypePattern"),
-                getDisplayString(key, null, inLocale, DISPLAY_UEXT_KEY),
-                Optional.ofNullable(displayType).orElse(type));
+                default -> type;
+            };
         }
 
-        return ret;
+        return MessageFormat.format(lr.getLocaleName("ListKeyTypePattern"),
+            getDisplayString(key, null, inLocale, DISPLAY_UEXT_KEY).orElse(key),
+            displayString);
     }
 
     /**
