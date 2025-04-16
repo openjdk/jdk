@@ -111,7 +111,7 @@ public class AddopensOption {
           .shouldMatch(versionPattern)
           .shouldContain(subgraphCannotBeUsed);
 
-        // dump an archive with -add-opens java.base/java.nio=ALL-UNNAMED 
+        // dump an archive with -add-opens java.base/java.nio=ALL-UNNAMED
         archiveName = TestCommon.getNewArchiveName("addopens-java-nio");
         TestCommon.setCurrentArchiveName(archiveName);
         oa = TestCommon.dumpBaseArchive(
