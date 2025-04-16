@@ -45,26 +45,8 @@ import javax.swing.event.DocumentListener;
 
 public class bug4530952 {
     static JFrame frame;
-    static JButton btnAction = new JButton("Action");
-    static JComboBox cmbAction = new JComboBox();
-    static Point loc;
-    static ActionListener al = e -> pass();
-    static DocumentListener dl = new DocumentListener() {
-        @Override
-        public void changedUpdate(DocumentEvent evt) {
-            resetButtons();
-        }
-
-        @Override
-        public void insertUpdate(DocumentEvent evt) {
-            resetButtons();
-        }
-
-        @Override
-        public void removeUpdate(DocumentEvent evt) {
-            resetButtons();
-        }
-    };
+    static JButton btnAction;
+    static volatile Point loc;
 
     private static boolean flag = false;
     private static boolean passed() {
@@ -111,6 +93,27 @@ public class bug4530952 {
     public static void createTestUI() {
         frame = new JFrame("bug4530952");
         frame.setLayout(new FlowLayout());
+
+        btnAction = new JButton("Action");
+        JComboBox cmbAction = new JComboBox();
+
+        ActionListener al = e -> pass();
+        DocumentListener dl = new DocumentListener() {
+            @Override
+            public void changedUpdate(DocumentEvent evt) {
+                resetButtons();
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent evt) {
+                resetButtons();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent evt) {
+                resetButtons();
+            }
+        };
 
         // Add an editable combo box
         cmbAction.setEditable(true);

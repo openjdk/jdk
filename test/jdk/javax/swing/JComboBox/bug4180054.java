@@ -42,7 +42,7 @@ import javax.swing.event.ListDataListener;
 public class bug4180054 {
     static JFrame frame;
     static JComboBox comboBox;
-    static int numberOfContentsChangedEvents = 0;
+    static volatile int numberOfContentsChangedEvents = 0;
 
     public static void main(String[] args) throws Exception {
         try {
