@@ -1893,6 +1893,86 @@ class MutableBigInteger {
     }
 
     /**
+     * Calculate the integer {@code n}th root {@code floor(nthRoot(this, n))} where
+     * {@code nthRoot(., n)} denotes the mathematical {@code n}th root. The contents of
+     * {@code this} are <b>not</b> changed. The value of {@code this} is assumed
+     * to be non-negative and the root degree {@code n >= 3}.
+     *
+     * @implNote The implementation is based on the material in Henry S. Warren,
+     * Jr., <i>Hacker's Delight (2nd ed.)</i> (Addison Wesley, 2013), 279-282.
+     *
+     * @return the integer {@code n}th of {@code this}
+     */
+    MutableBigInteger nthRoot(int n) {
+        // Special cases.
+        if (this.isZero() || this.isOne())
+            return this;
+
+        final int bitLength = (int) this.bitLength();
+        // if this < 2^n, result is unity
+        if (bitLength <= n)
+            return new MutableBigInteger(1);
+
+        MutableBigInteger r;
+        if (bitLength <= Long.SIZE) {
+            // Initial estimate is the root of the unsigned long value.
+            final long x = this.toLong();
+            // Use fp arithmetic to get an upper bound of the root
+            final double base = Math.nextUp(x >= 0 ? x : x + 0x1p64);
+            final double exp = Math.nextUp(1.0 / n);
+            long rLong = (long) Math.ceil(Math.nextUp(Math.pow(base, exp)));
+
+            if (BigInteger.bitLengthForLong(rLong) * n <= Long.SIZE) {
+                // Refine the estimate.
+                do {
+                    long rToN1 = BigInteger.unsignedLongPow(rLong, n - 1);
+                    long rToN = rToN1 * rLong;
+                    if (Long.compareUnsigned(rToN, x) <= 0)
+                        return new MutableBigInteger(rLong);
+                        
+                    rLong -= Long.divideUnsigned(rToN - x, n * rToN1);
+                } while (true);
+            } else { // r^n could overflow long range, use MutableBigInteger loop instead
+                r = new MutableBigInteger(rLong);
+            }
+        } else {
+            // Set up the initial estimate of the iteration.
+            // Determine an even valued right shift into unsigned long range.
+            int shift = bitLength - Long.SIZE;
+            shift += shift & 1;
+
+            // Shift the value into unsigned long range.
+            r = new MutableBigInteger(this);
+            r.rightShift(shift);
+
+            // Use the root of the shifted value as an estimate.
+            final double base = Math.nextUp(r.toLong() + 0x1p64);
+            final double exp = Math.nextUp(1.0 / n);
+            r = new MutableBigInteger((long) Math.ceil(Math.nextUp(Math.pow(base, exp))));
+
+            // Shift the approximate root back into the original range.
+            r.leftShift(shift >> 1);
+        }
+
+        // Refine the estimate.
+        do {
+            BigInteger rBig = r.toBigInteger();
+            BigInteger rToN1 = rBig.pow(n - 1);
+            MutableBigInteger rToN = new MutableBigInteger(rToN1.multiply(rBig).mag);
+            if (rToN.compare(this) <= 0)
+                return r;
+
+            MutableBigInteger rToN1TimesN = new MutableBigInteger(rToN1.multiply(n).mag);
+
+            MutableBigInteger delta = new MutableBigInteger();
+            rToN.subtract(this);
+            rToN.divide(rToN1TimesN, delta, false);
+
+            r.subtract(delta);
+        } while (true);
+    }
+
+    /**
      * Calculate the integer square root {@code floor(sqrt(this))} and the remainder
      * if needed, where {@code sqrt(.)} denotes the mathematical square root.
      * The contents of {@code this} are <em>not</em> changed.
