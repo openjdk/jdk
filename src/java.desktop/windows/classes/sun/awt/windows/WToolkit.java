@@ -600,6 +600,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
                 return cachedVal;
             }
         }
+
         FontPeer retval = new WFontPeer(name, style);
         if (null == cacheFontPeer) {
             cacheFontPeer = new Hashtable<>(5, 0.9f);
