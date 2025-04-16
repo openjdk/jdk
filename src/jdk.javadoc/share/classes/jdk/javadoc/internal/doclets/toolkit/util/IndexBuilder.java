@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ public abstract class IndexBuilder {
      * Should this element be added to the index?
      */
     private boolean shouldIndex(Element element) {
-        if (utils.hasHiddenTag(element)) {
+        if (utils.isHidden(element)) {
             return false;
         }
 

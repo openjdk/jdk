@@ -1003,36 +1003,43 @@ bool ZPartition::prime(ZWorkers* workers, size_t size) {
     return true;
   }
 
+  ZArray<ZVirtualMemory> vmems;
+
   // Claim virtual memory
-  const ZVirtualMemory vmem = claim_virtual(size);
+  const size_t claimed_size = claim_virtual(size, &vmems);
+
+  // The partition must have size available in virtual memory when priming.
+  assert(claimed_size == size, "must succeed %zx == %zx", claimed_size, size);
 
   // Increase capacity
-  increase_capacity(size);
+  increase_capacity(claimed_size);
 
-  // Claim the backing physical memory
-  claim_physical(vmem);
+  for (ZVirtualMemory vmem : vmems) {
+    // Claim the backing physical memory
+    claim_physical(vmem);
 
-  // Commit the claimed physical memory
-  const size_t committed = commit_physical(vmem);
+    // Commit the claimed physical memory
+    const size_t committed = commit_physical(vmem);
 
-  if (committed != vmem.size()) {
-    // This is a failure state. We do not cleanup the maybe partially committed memory.
-    return false;
+    if (committed != vmem.size()) {
+      // This is a failure state. We do not cleanup the maybe partially committed memory.
+      return false;
+    }
+
+    map_virtual(vmem);
+
+    check_numa_mismatch(vmem, _numa_id);
+
+    if (AlwaysPreTouch) {
+      // Pre-touch memory
+      ZPreTouchTask task(vmem.start(), vmem.end());
+      workers->run_all(&task);
+    }
+
+    // We don't have to take a lock here as no other threads will access the cache
+    // until we're finished
+    _cache.insert(vmem);
   }
-
-  map_virtual(vmem);
-
-  check_numa_mismatch(vmem, _numa_id);
-
-  if (AlwaysPreTouch) {
-    // Pre-touch memory
-    ZPreTouchTask task(vmem.start(), vmem.end());
-    workers->run_all(&task);
-  }
-
-  // We don't have to take a lock here as no other threads will access the cache
-  // until we're finished
-  _cache.insert(vmem);
 
   return true;
 }
