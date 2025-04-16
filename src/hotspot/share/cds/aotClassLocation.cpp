@@ -703,8 +703,8 @@ void AOTClassLocationConfig::check_nonempty_dirs() const {
 
 // It's possible to use reflection+setAccessible to call into ClassLoader::defineClass() to
 // pretend that a dynamically generated class comes from a JAR file in the classpath.
-// Detect such classes and exclude them from the archive.
-void AOTClassLocationConfig::check_invalid_classpath_index(int classpath_index, InstanceKlass* ik) {
+// Detect such classes so that they can be excluded from the archive.
+bool AOTClassLocationConfig::is_valid_classpath_index(int classpath_index, InstanceKlass* ik) {
   if (1 <= classpath_index && classpath_index < length()) {
     ClassPathZipEntry *zip = _dumptime_jar_files->at(classpath_index);
     if (zip != nullptr) {
@@ -716,10 +716,12 @@ void AOTClassLocationConfig::check_invalid_classpath_index(int classpath_index, 
       if (!zip->has_entry(current, file_name)) {
         log_warning(cds)("class %s cannot be archived because it was not defined from %s as claimed",
                          class_name, zip->name());
-        ik->set_shared_classpath_index(-1);
+        return false;
       }
     }
   }
+
+  return true;
 }
 
 AOTClassLocationConfig* AOTClassLocationConfig::write_to_archive() const {

@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotClassLinker.hpp"
+#include "cds/aotClassLocation.hpp"
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassInitializer.hpp"
 #include "cds/dumpTimeClassInfo.inline.hpp"

@@ -267,7 +267,7 @@ public:
   // Functions used only during runtime
   bool validate(bool has_aot_linked_classes, bool* has_extra_module_paths) const;
 
-  void check_invalid_classpath_index(int classpath_index, InstanceKlass* ik);
+  bool is_valid_classpath_index(int classpath_index, InstanceKlass* ik);
 };
 
 
