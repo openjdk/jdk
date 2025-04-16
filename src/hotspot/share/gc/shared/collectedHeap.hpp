@@ -440,6 +440,8 @@ protected:
   // The default behavior is to call print_on() on tty.
   virtual void print() const;
 
+  // Print additional information about the GC that is not included in print_on().
+  // Generally used for printing information in case of a fatal error.
   virtual void print_on_error(outputStream* st) const = 0;
 
   // Used to print information about locations in the hs_err file.
