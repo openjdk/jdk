@@ -24,6 +24,7 @@
 
 #include "cds/cdsConfig.hpp"
 #include "ci/ciMethodData.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -1838,7 +1839,8 @@ public:
 Mutex* MethodData::extra_data_lock() {
   Mutex* lock = Atomic::load(&_extra_data_lock);
   if (lock == nullptr) {
-    lock = new Mutex(Mutex::nosafepoint, "MDOExtraData_lock");
+    // This lock could be acquired while we are holding DumpTimeTable_lock/nosafepoint
+    lock = new Mutex(Mutex::nosafepoint-1, "MDOExtraData_lock");
     Mutex* old = Atomic::cmpxchg(&_extra_data_lock, (Mutex*)nullptr, lock);
     if (old != nullptr) {
       // Another thread created the lock before us. Use that lock instead.
@@ -1864,7 +1866,12 @@ void MethodData::clean_extra_data(CleanExtraDataClosure* cl) {
       SpeculativeTrapData* data = new SpeculativeTrapData(dp);
       Method* m = data->method();
       assert(m != nullptr, "should have a method");
-      if (!cl->is_live(m)) {
+      bool exclude = false;
+      if (SafepointSynchronize::is_at_safepoint() && CDSConfig::is_dumping_archive()) {
+        InstanceKlass* holder = m->method_holder();
+        exclude = (holder == nullptr || !holder->is_loaded() || SystemDictionaryShared::check_for_exclusion(holder, nullptr));
+      }
+      if (exclude || !cl->is_live(m)) {
         // "shift" accumulates the number of cells for dead
         // SpeculativeTrapData entries that have been seen so
         // far. Following entries must be shifted left by that many

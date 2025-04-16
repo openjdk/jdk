@@ -203,6 +203,9 @@ CompileTrainingData* CompileTrainingData::make(CompileTask* task) {
   int compile_id = task->compile_id();
   Thread* thread = Thread::current();
   methodHandle m(thread, task->method());
+  if (m->method_holder() == nullptr) {
+    return nullptr; // do not record (dynamically generated method)
+  }
   MethodTrainingData* mtd = MethodTrainingData::make(m);
   if (mtd == nullptr) {
     return nullptr; // allocation failure
