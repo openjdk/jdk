@@ -45,7 +45,6 @@
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/reservedSpace.hpp"
-#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -169,7 +168,6 @@ void CollectedHeap::print_heap_before_gc() {
   if (lt.is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("Heap before GC invocations=%u (full %u):", total_collections(), total_full_collections());
-    ResourceMark rm;
 
     StreamAutoIndentor indentor(&ls, 1);
     print_on(&ls);
@@ -186,7 +184,6 @@ void CollectedHeap::print_heap_after_gc() {
   if (lt.is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("Heap after GC invocations=%u (full %u):", total_collections(), total_full_collections());
-    ResourceMark rm;
 
     StreamAutoIndentor indentor(&ls, 1);
     print_on(&ls);
