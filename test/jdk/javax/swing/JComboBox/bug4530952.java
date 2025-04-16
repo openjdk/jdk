@@ -110,20 +110,20 @@ public class bug4530952 {
 
     public static void createTestUI() {
         frame = new JFrame("bug4530952");
-        frame.getContentPane().setLayout(new FlowLayout());
+        frame.setLayout(new FlowLayout());
 
         // Add an editable combo box
         cmbAction.setEditable(true);
-        frame.getContentPane().add(cmbAction);
+        frame.add(cmbAction);
 
         btnAction.setEnabled(false);
-        frame.getContentPane().add(btnAction);
+        frame.add(btnAction);
 
         btnAction.addActionListener(al);
         ((JTextField) cmbAction.getEditor().getEditorComponent()).
                 getDocument().addDocumentListener(dl);
-        frame.setLocationRelativeTo(null);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 

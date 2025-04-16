@@ -40,30 +40,34 @@ import javax.swing.SwingUtilities;
 public class bug4166593 {
     static JFrame frame;
     static JComboBox comboBox;
-    static int numberOfActionEvents = 0;
+    static volatile int numberOfActionEvents = 0;
 
     public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
-        SwingUtilities.invokeAndWait(() -> createTestUI());
-        robot.waitForIdle();
-        robot.delay(250);
+        try {
+            Robot robot = new Robot();
+            SwingUtilities.invokeAndWait(() -> createTestUI());
+            robot.waitForIdle();
+            robot.delay(250);
 
-        // change selected index 3 times
-        SwingUtilities.invokeAndWait(() -> {
-            comboBox.setSelectedIndex(1);
-            comboBox.setSelectedIndex(3);
-            comboBox.setSelectedIndex(2);
-        });
-        robot.waitForIdle();
-        robot.delay(250);
+            // change selected index 3 times
+            SwingUtilities.invokeAndWait(() -> {
+                comboBox.setSelectedIndex(1);
+                comboBox.setSelectedIndex(3);
+                comboBox.setSelectedIndex(2);
+            });
+            robot.waitForIdle();
+            robot.delay(250);
 
-        if (numberOfActionEvents != 3) {
-            throw new RuntimeException("Unexpected number of Action Events!\n" +
-                    "Expected: 3\nActual: " + numberOfActionEvents);
-        }
-
-        if (frame != null) {
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
+            if (numberOfActionEvents != 3) {
+                throw new RuntimeException("Unexpected number of Action Events!\n" +
+                        "Expected: 3\nActual: " + numberOfActionEvents);
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
@@ -86,9 +90,9 @@ public class bug4166593 {
         panel.add(comboBox);
         panel.add(label);
 
-        frame.getContentPane().add(panel);
-        frame.setLocationRelativeTo(null);
+        frame.add(panel);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }

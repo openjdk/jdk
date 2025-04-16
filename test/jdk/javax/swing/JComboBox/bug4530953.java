@@ -39,44 +39,48 @@ import javax.swing.SwingUtilities;
 public class bug4530953 {
     static JFrame frame;
     static JComboBox combo;
-    static String[] data = { "Apple", "Orange", "Cherry" };
+    static String[] data = {"Apple", "Orange", "Cherry"};
 
     public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
-        SwingUtilities.invokeAndWait(() -> createTestUI());
-        robot.waitForIdle();
-        robot.delay(250);
+        try {
+            Robot robot = new Robot();
+            SwingUtilities.invokeAndWait(() -> createTestUI());
+            robot.waitForIdle();
+            robot.delay(250);
 
-        // enter some text in combo box editor
-        robot.keyPress(KeyEvent.VK_A);
-        robot.keyRelease(KeyEvent.VK_A);
-        robot.keyPress(KeyEvent.VK_A);
-        robot.keyRelease(KeyEvent.VK_A);
-        robot.keyPress(KeyEvent.VK_ENTER);
-        robot.keyRelease(KeyEvent.VK_ENTER);
-        robot.waitForIdle();
-        robot.delay(250);
+            // enter some text in combo box editor
+            robot.keyPress(KeyEvent.VK_A);
+            robot.keyRelease(KeyEvent.VK_A);
+            robot.keyPress(KeyEvent.VK_A);
+            robot.keyRelease(KeyEvent.VK_A);
+            robot.keyPress(KeyEvent.VK_ENTER);
+            robot.keyRelease(KeyEvent.VK_ENTER);
+            robot.waitForIdle();
+            robot.delay(250);
 
-        // select orange in combo box
-        robot.keyPress(KeyEvent.VK_DOWN);
-        robot.keyRelease(KeyEvent.VK_DOWN);
-        robot.keyPress(KeyEvent.VK_DOWN);
-        robot.keyRelease(KeyEvent.VK_DOWN);
-        robot.keyPress(KeyEvent.VK_DOWN);
-        robot.keyRelease(KeyEvent.VK_DOWN);
-        robot.keyPress(KeyEvent.VK_ENTER);
-        robot.keyRelease(KeyEvent.VK_ENTER);
-        robot.waitForIdle();
-        robot.delay(250);
+            // select orange in combo box
+            robot.keyPress(KeyEvent.VK_DOWN);
+            robot.keyRelease(KeyEvent.VK_DOWN);
+            robot.keyPress(KeyEvent.VK_DOWN);
+            robot.keyRelease(KeyEvent.VK_DOWN);
+            robot.keyPress(KeyEvent.VK_DOWN);
+            robot.keyRelease(KeyEvent.VK_DOWN);
+            robot.keyPress(KeyEvent.VK_ENTER);
+            robot.keyRelease(KeyEvent.VK_ENTER);
+            robot.waitForIdle();
+            robot.delay(250);
 
-        String currSelection = (String) combo.getEditor().getItem();
-        if (!currSelection.equals("Orange")) {
-            throw new RuntimeException("Unexpected Selection.\n" +
-                    "Expected: Orange\nActual: " + currSelection);
-        }
-
-        if (frame != null) {
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
+            String currSelection = (String) combo.getEditor().getItem();
+            if (!currSelection.equals("Orange")) {
+                throw new RuntimeException("Unexpected Selection.\n" +
+                        "Expected: Orange\nActual: " + currSelection);
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
@@ -85,10 +89,10 @@ public class bug4530953 {
         combo = new JComboBox(data);
         combo.setEditable(true);
         combo.setSelectedIndex(1);
-        frame.getContentPane().setLayout(new FlowLayout());
-        frame.getContentPane().add(combo);
-        frame.setLocationRelativeTo(null);
+        frame.setLayout(new FlowLayout());
+        frame.add(combo);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }

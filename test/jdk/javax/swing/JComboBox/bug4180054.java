@@ -45,27 +45,32 @@ public class bug4180054 {
     static int numberOfContentsChangedEvents = 0;
 
     public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
-        SwingUtilities.invokeAndWait(() -> createTestUI());
-        robot.waitForIdle();
-        robot.delay(250);
+        try {
+            Robot robot = new Robot();
+            SwingUtilities.invokeAndWait(() -> createTestUI());
+            robot.waitForIdle();
+            robot.delay(250);
 
-        // change selected index 3 times
-        SwingUtilities.invokeAndWait(() -> {
-            comboBox.setSelectedIndex(1);
-            comboBox.setSelectedIndex(3);
-            comboBox.setSelectedIndex(2);
-        });
-        robot.waitForIdle();
-        robot.delay(250);
+            // change selected index 3 times
+            SwingUtilities.invokeAndWait(() -> {
+                comboBox.setSelectedIndex(1);
+                comboBox.setSelectedIndex(3);
+                comboBox.setSelectedIndex(2);
+                comboBox.setSelectedIndex(2);
+            });
+            robot.waitForIdle();
+            robot.delay(250);
 
-        if (numberOfContentsChangedEvents != 3) {
-            throw new RuntimeException("Unexpected number of Contents Changed Events!\n" +
-                    "Expected: 3\nActual: " + numberOfContentsChangedEvents);
-        }
-
-        if (frame != null) {
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
+            if (numberOfContentsChangedEvents != 3) {
+                throw new RuntimeException("Unexpected number of Contents Changed Events!\n" +
+                        "Expected: 3\nActual: " + numberOfContentsChangedEvents);
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
@@ -99,9 +104,9 @@ public class bug4180054 {
         panel.add(comboBox);
         panel.add(label);
 
-        frame.getContentPane().add(panel);
-        frame.setLocationRelativeTo(null);
+        frame.add(panel);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }
