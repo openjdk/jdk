@@ -31,6 +31,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "jfr/jfrEvents.hpp"
 
 TaskTerminator::DelayContext::DelayContext() {
   _yield_count = 0;
@@ -214,5 +215,26 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
         return false;
       }
     }
+  }
+}
+
+void TaskTerminator::emit_termination_statistics(char* gc_phase) {
+  EventGCTaskTerminationStatistics event;
+  if (event.should_commit()) {
+    WorkerDataStats<double> timings = _terminations->get_worker_stats();
+    WorkerDataStats<size_t> attempts = _terminations->thread_work_items()->get_worker_stats();
+    assert(timings.count == attempts.count, "Sanity check");
+
+    event.set_gcId(GCId::current());
+    event.set_gcPhase(gc_phase);
+    event.set_nThreads(timings.count);
+    event.set_minTime(timings.min);
+    event.set_avgTime(timings.sum / (double) timings.count);
+    event.set_maxTime(timings.max);
+    event.set_minAttempts(attempts.min);
+    event.set_avgAttempts((double) attempts.sum / (double) attempts.count);
+    event.set_maxAttempts(attempts.max);
+
+    event.commit();
   }
 }
