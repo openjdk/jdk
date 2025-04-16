@@ -137,7 +137,7 @@ main: MAKEOVERRIDES :=
 main: $(INIT_TARGETS)
         ifneq ($(SEQUENTIAL_TARGETS)$(PARALLEL_TARGETS), )
 	  $(call RotateLogFiles)
-	  $(PRINTF) "Building $(TARGET_DESCRIPTION)\n" $(BUILD_LOG_PIPE_SIMPLE)
+	  $(ECHO) "Building $(TARGET_DESCRIPTION)" $(BUILD_LOG_PIPE_SIMPLE)
           ifneq ($(SEQUENTIAL_TARGETS), )
             # Don't touch build output dir since we might be cleaning. That
             # means no log pipe.
@@ -158,7 +158,8 @@ main: $(INIT_TARGETS)
 	            -f make/Main.gmk $(USER_MAKE_VARS) \
 	            $(PARALLEL_TARGETS) $(COMPARE_BUILD_MAKE) $(BUILD_LOG_PIPE) || \
 	        ( exitcode=$$? && \
-	        $(PRINTF) "\nERROR: Build failed for $(TARGET_DESCRIPTION) (exit code $$exitcode) \n" \
+	        $(ECHO) "" $(BUILD_LOG_PIPE_SIMPLE) && \
+	        $(ECHO) "ERROR: Build failed for $(TARGET_DESCRIPTION) (exit code $$exitcode)" \
 	            $(BUILD_LOG_PIPE_SIMPLE) && \
 	        cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -j 1 -f make/Init.gmk \
 	            on-failure ; \
@@ -170,7 +171,7 @@ main: $(INIT_TARGETS)
 	  if test -f $(MAKESUPPORT_OUTPUTDIR)/exit-with-error ; then \
 	    exit 1 ; \
 	  fi
-	  $(PRINTF) "Finished building $(TARGET_DESCRIPTION)\n" $(BUILD_LOG_PIPE_SIMPLE)
+	  $(ECHO) "Finished building $(TARGET_DESCRIPTION)" $(BUILD_LOG_PIPE_SIMPLE)
 	  $(call ReportProfileTimes)
         endif
 
@@ -181,7 +182,8 @@ on-failure:
 	$(call PrintFailureReports)
 	$(call PrintBuildLogFailures)
 	$(call ReportProfileTimes)
-	$(PRINTF) "HELP: Run 'make doctor' to diagnose build problems.\n\n"
+	$(ECHO) "HELP: Run 'make doctor' to diagnose build problems."
+	$(ECHO) ""
         ifneq ($(COMPARE_BUILD), )
 	  $(call CleanupCompareBuild)
         endif

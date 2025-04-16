@@ -115,15 +115,16 @@ class ObjectMonitorTable : AllStatic {
   };
 
   static void inc_items_count() {
-    Atomic::inc(&_items_count);
+    Atomic::inc(&_items_count, memory_order_relaxed);
   }
 
   static void dec_items_count() {
-    Atomic::dec(&_items_count);
+    Atomic::dec(&_items_count, memory_order_relaxed);
   }
 
   static double get_load_factor() {
-    return (double)_items_count / (double)_table_size;
+    size_t count = Atomic::load(&_items_count);
+    return (double)count / (double)_table_size;
   }
 
   static size_t table_size(Thread* current = Thread::current()) {
@@ -518,8 +519,12 @@ class LightweightSynchronizer::CacheSetter : StackObj {
     // Only use the cache if using the table.
     if (UseObjectMonitorTable) {
       if (_monitor != nullptr) {
-        _thread->om_set_monitor_cache(_monitor);
-        _lock->set_object_monitor_cache(_monitor);
+        // If the monitor is already in the BasicLock cache then it is most
+        // likely in the thread cache, do not set it again to avoid reordering.
+        if (_monitor != _lock->object_monitor_cache()) {
+          _thread->om_set_monitor_cache(_monitor);
+          _lock->set_object_monitor_cache(_monitor);
+        }
       } else {
         _lock->clear_object_monitor_cache();
       }
@@ -532,6 +537,16 @@ class LightweightSynchronizer::CacheSetter : StackObj {
   }
 
 };
+
+// Reads first from the BasicLock cache then from the OMCache in the current thread.
+// C2 fast-path may have put the monitor in the cache in the BasicLock.
+inline static ObjectMonitor* read_caches(JavaThread* current, BasicLock* lock, oop object) {
+  ObjectMonitor* monitor = lock->object_monitor_cache();
+  if (monitor == nullptr) {
+    monitor = current->om_get_from_monitor_cache(object);
+  }
+  return monitor;
+}
 
 class LightweightSynchronizer::VerifyThreadState {
   bool _no_safepoint;
@@ -614,14 +629,13 @@ bool LightweightSynchronizer::fast_lock_spin_enter(oop obj, LockStack& lock_stac
 
 void LightweightSynchronizer::enter_for(Handle obj, BasicLock* lock, JavaThread* locking_thread) {
   assert(LockingMode == LM_LIGHTWEIGHT, "must be");
+  assert(!UseObjectMonitorTable || lock->object_monitor_cache() == nullptr, "must be cleared");
   JavaThread* current = JavaThread::current();
   VerifyThreadState vts(locking_thread, current);
 
   if (obj->klass()->is_value_based()) {
     ObjectSynchronizer::handle_sync_on_value_based_class(obj, locking_thread);
   }
-
-  CacheSetter cache_setter(locking_thread, lock);
 
   LockStack& lock_stack = locking_thread->lock_stack();
 
@@ -639,7 +653,7 @@ void LightweightSynchronizer::enter_for(Handle obj, BasicLock* lock, JavaThread*
   }
 
   assert(monitor != nullptr, "LightweightSynchronizer::enter_for must succeed");
-  cache_setter.set_monitor(monitor);
+  assert(!UseObjectMonitorTable || lock->object_monitor_cache() == nullptr, "unused. already cleared");
 }
 
 void LightweightSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current) {
@@ -740,12 +754,9 @@ void LightweightSynchronizer::exit(oop object, BasicLock* lock, JavaThread* curr
   // The monitor exists
   ObjectMonitor* monitor;
   if (UseObjectMonitorTable) {
-    monitor = lock->object_monitor_cache();
+    monitor = read_caches(current, lock, object);
     if (monitor == nullptr) {
-      monitor = current->om_get_from_monitor_cache(object);
-      if (monitor == nullptr) {
-        monitor = get_monitor_from_table(current, object);
-      }
+      monitor = get_monitor_from_table(current, object);
     }
   } else {
     monitor = ObjectSynchronizer::read_monitor(mark);
@@ -1018,10 +1029,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_and_enter(oop object, BasicLock*
   // There's no need to use the cache if we are locking
   // on behalf of another thread.
   if (current == locking_thread) {
-    monitor = lock->object_monitor_cache();
-    if (monitor == nullptr) {
-      monitor = current->om_get_from_monitor_cache(object);
-    }
+    monitor = read_caches(current, lock, object);
   }
 
   // Get or create the monitor
@@ -1042,6 +1050,9 @@ ObjectMonitor* LightweightSynchronizer::inflate_and_enter(oop object, BasicLock*
   if (monitor->is_being_async_deflated()) {
     // The MonitorDeflation thread is deflating the monitor. The locking thread
     // must spin until further progress has been made.
+
+    // Clear the BasicLock cache as it may contain this monitor.
+    lock->clear_object_monitor_cache();
 
     const markWord mark = object->mark_acquire();
 
@@ -1203,12 +1214,7 @@ bool LightweightSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread* 
   if (mark.has_monitor()) {
     ObjectMonitor* monitor;
     if (UseObjectMonitorTable) {
-      // C2 fast-path may have put the monitor in the cache in the BasicLock.
-      monitor = lock->object_monitor_cache();
-      if (monitor == nullptr) {
-        // Otherwise look up the monitor in the thread's OMCache.
-        monitor = current->om_get_from_monitor_cache(obj);
-      }
+      monitor = read_caches(current, lock, obj);
     } else {
       monitor = ObjectSynchronizer::read_monitor(mark);
     }
@@ -1219,6 +1225,11 @@ bool LightweightSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread* 
     }
 
     if (UseObjectMonitorTable) {
+      // Set the monitor regardless of success.
+      // Either we successfully lock on the monitor, or we retry with the
+      // monitor in the slow path. If the monitor gets deflated, it will be
+      // cleared, either by the CacheSetter if we fast lock in enter or in
+      // inflate_and_enter when we see that the monitor is deflated.
       lock->set_object_monitor_cache(monitor);
     }
 

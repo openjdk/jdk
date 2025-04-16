@@ -24,10 +24,20 @@
 #ifndef ZUNITTEST_HPP
 #define ZUNITTEST_HPP
 
-#include "gc/z/zAddress.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zArguments.hpp"
 #include "gc/z/zInitialize.hpp"
+#include "gc/z/zNUMA.hpp"
+#include "gc/z/zRangeRegistry.hpp"
+#include "gc/z/zVirtualMemory.inline.hpp"
+#include "runtime/os.hpp"
 #include "unittest.hpp"
+
+#include <ostream>
+
+inline std::ostream& operator<<(std::ostream& str, const ZVirtualMemory& vmem) {
+  return str << "ZVirtualMemory{start=" << (void*)untype(vmem.start()) << ", size=" << vmem.size() << "}";
+}
 
 class ZAddressOffsetMaxSetter {
   friend class ZTest;
@@ -52,10 +62,12 @@ public:
 class ZTest : public testing::Test {
 private:
   ZAddressOffsetMaxSetter _zaddress_offset_max_setter;
+  unsigned int _rand_seed;
 
 protected:
   ZTest()
-    : _zaddress_offset_max_setter(ZAddressOffsetMax) {
+    : _zaddress_offset_max_setter(ZAddressOffsetMax),
+      _rand_seed(static_cast<unsigned int>(::testing::UnitTest::GetInstance()->random_seed())) {
     if (!is_os_supported()) {
       // If the OS does not support ZGC do not run initialization, as it may crash the VM.
       return;
@@ -64,6 +76,7 @@ protected:
     // Initialize ZGC subsystems for gtests, may only be called once per process.
     static bool runs_once = [&]() {
       ZInitialize::pd_initialize();
+      ZNUMA::pd_initialize();
       ZGlobalsPointers::initialize();
 
       // ZGlobalsPointers::initialize() sets ZAddressOffsetMax, make sure the
@@ -72,6 +85,12 @@ protected:
       _zaddress_offset_max_setter._old_mask = ZAddressOffsetMask;
       return true;
     }();
+  }
+
+  int random() {
+    const int next_seed = os::next_random(_rand_seed);
+    _rand_seed = static_cast<unsigned int>(next_seed);
+    return next_seed;
   }
 
   bool is_os_supported() {

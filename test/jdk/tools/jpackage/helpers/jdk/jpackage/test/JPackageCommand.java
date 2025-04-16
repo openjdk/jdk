@@ -859,6 +859,32 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public static enum Macro {
+        APPDIR(cmd -> {
+            return cmd.appLayout().appDirectory().toString();
+        }),
+        BINDIR(cmd -> {
+            return cmd.appLayout().launchersDirectory().toString();
+        }),
+        ROOTDIR(cmd -> {
+            return (cmd.isImagePackageType() ? cmd.outputBundle() : cmd.appInstallationDirectory()).toString();
+        });
+
+        private Macro(Function<JPackageCommand, String> getValue) {
+            this.getValue = Objects.requireNonNull(getValue);
+        }
+
+        String value(JPackageCommand cmd) {
+            return getValue.apply(cmd);
+        }
+
+        private final Function<JPackageCommand, String> getValue;
+    }
+
+    public String macroValue(Macro macro) {
+        return macro.value(this);
+    }
+
     public static enum AppLayoutAssert {
         APP_IMAGE_FILE(JPackageCommand::assertAppImageFile),
         PACKAGE_FILE(JPackageCommand::assertPackageFile),
