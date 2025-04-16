@@ -68,11 +68,14 @@ public class TestUnswitchPredicateCloning {
                  IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "3",
                  IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "3"},
         phase = CompilePhase.BEFORE_LOOP_UNSWITCHING)
-    @IR(counts = {IRNode.LOOP_PARSE_PREDICATE, "5",
-                 IRNode.PROFILED_LOOP_PARSE_PREDICATE, "5",
-                 IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "5",
-                 IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "5"},
-        phase = CompilePhase.AFTER_LOOP_UNSWITCHING)
+    // Since we know that predication happens after unswitching, we can test the
+    // predicate cloning before predication, such that the useless, killed predicates
+    // have already been removed in the beautify loop phase.
+    @IR(counts = {IRNode.LOOP_PARSE_PREDICATE, "4",
+                 IRNode.PROFILED_LOOP_PARSE_PREDICATE, "4",
+                 IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "3",
+                 IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "4"},
+        phase = CompilePhase.BEFORE_LOOP_PREDICATION_IC)
     // Check that opaque template assertion predicated are added in loop predication
     // even if loop predication only happens after loop unswitching.
     @IR(failOn = { IRNode.OPAQUE_TEMPLATE_ASSERTION_PREDICATE },
