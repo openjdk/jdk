@@ -55,6 +55,8 @@ const char *IdealGraphPrinter::COMPILATION_ARGUMENTS_PROPERTY = "arguments";
 const char *IdealGraphPrinter::COMPILATION_MACHINE_PROPERTY = "machine";
 const char *IdealGraphPrinter::COMPILATION_VM_VERSION_PROPERTY = "vm";
 const char *IdealGraphPrinter::COMPILATION_DATE_TIME_PROPERTY = "dateTime";
+const char *IdealGraphPrinter::COMPILATION_PROCESS_ID_PROPERTY = "processId";
+const char *IdealGraphPrinter::COMPILATION_THREAD_ID_PROPERTY = "threadId";
 const char *IdealGraphPrinter::METHOD_NAME_PROPERTY = "name";
 const char *IdealGraphPrinter::METHOD_IS_PUBLIC_PROPERTY = "public";
 const char *IdealGraphPrinter::METHOD_IS_STATIC_PROPERTY = "static";
@@ -372,6 +374,9 @@ void IdealGraphPrinter::begin_method() {
   buffer[0] = 0;
   os::print_date_and_time(&time, buffer, sizeof(buffer) - 1);
   print_prop(COMPILATION_DATE_TIME_PROPERTY, time.freeze());
+
+  print_prop(COMPILATION_PROCESS_ID_PROPERTY, os::current_process_id());
+  print_prop(COMPILATION_THREAD_ID_PROPERTY, os::current_thread_id());
 
   tail(PROPERTIES_ELEMENT);
 

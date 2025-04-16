@@ -71,6 +71,8 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   static const char *COMPILATION_MACHINE_PROPERTY;
   static const char *COMPILATION_VM_VERSION_PROPERTY;
   static const char *COMPILATION_DATE_TIME_PROPERTY;
+  static const char *COMPILATION_PROCESS_ID_PROPERTY;
+  static const char *COMPILATION_THREAD_ID_PROPERTY;
   static const char *METHOD_NAME_PROPERTY;
   static const char *BLOCK_NAME_PROPERTY;
   static const char *BLOCK_DOMINATOR_PROPERTY;
