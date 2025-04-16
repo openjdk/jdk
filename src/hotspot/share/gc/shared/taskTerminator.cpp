@@ -218,7 +218,7 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   }
 }
 
-void TaskTerminator::emit_termination_statistics(char* gc_phase) {
+void TaskTerminator::emit_termination_statistics(const char* task_name) {
   EventGCTaskTerminationStatistics event;
   if (event.should_commit()) {
     WorkerDataStats<double> timings = _terminations->get_worker_stats();
@@ -226,11 +226,13 @@ void TaskTerminator::emit_termination_statistics(char* gc_phase) {
     assert(timings.count == attempts.count, "Sanity check");
 
     event.set_gcId(GCId::current());
-    event.set_gcPhase(gc_phase);
+    event.set_taskName(task_name);
     event.set_nThreads(timings.count);
+    //Timings
     event.set_minTime(timings.min);
     event.set_avgTime(timings.sum / (double) timings.count);
     event.set_maxTime(timings.max);
+    //Attempts
     event.set_minAttempts(attempts.min);
     event.set_avgAttempts((double) attempts.sum / (double) attempts.count);
     event.set_maxAttempts(attempts.max);
