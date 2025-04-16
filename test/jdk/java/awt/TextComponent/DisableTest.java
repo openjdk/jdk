@@ -85,7 +85,8 @@ public class DisableTest {
         p.add(bd);
         ActionListener al = ev -> {
             boolean enable = (ev.getSource() == be);
-            Iterator iterator = comps.iterator(); while(iterator.hasNext()) {
+            Iterator iterator = comps.iterator();
+            while (iterator.hasNext()) {
                 Component c = (Component) iterator.next();
                 c.setEnabled(enable);
             }

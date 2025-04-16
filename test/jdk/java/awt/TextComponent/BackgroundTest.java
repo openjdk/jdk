@@ -49,19 +49,19 @@ public class BackgroundTest {
                 1. When the frame appears, it should have a blue background.
                 2. The first TextField and TextArea will be the default color.
                    The second TextField and TextArea will be green.
-                4. Press the "DisableText" button.
+                3. Press the "DisableText" button.
                    The first TextField and TextArea should change colors to the
                    default disabled color.  On Windows, this is usually gray.
                    On linux and macos it will match the environment settings.
                    If the TextField or the TextArea do not change colors as described,
                    the test FAILS.
-                5. The second TextField and TextArea should still be green.
+                4. The second TextField and TextArea should still be green.
                    If either of them are not green, the test FAILS.
                    Press the "EnableText" button (same button as before).
                    The first TextField and TextArea should return to their
                    original colors as described in the first paragraph. If they
                    do not, the test FAILS.
-                6. The second TextField and TextArea should still be green.
+                5. The second TextField and TextArea should still be green.
                    If either of them are not green, the test FAILS.
                    Otherwise, the test PASSES.
                 """;
