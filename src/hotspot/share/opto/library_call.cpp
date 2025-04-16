@@ -6650,8 +6650,8 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
         Node* objb_adr_mem = memory(C->get_alias_index(objb_adr_t));
 
         Node* vmask      = _gvn.transform(VectorMaskGenNode::make(ConvI2X(casted_length), elem_bt));
-        Node* vload_obja = _gvn.transform(new LoadVectorMaskedNode(control(), obja_adr_mem, obja_adr, obja_adr_t, vt, vmask));
-        Node* vload_objb = _gvn.transform(new LoadVectorMaskedNode(control(), objb_adr_mem, objb_adr, objb_adr_t, vt, vmask));
+        Node* vload_obja = _gvn.transform(new LoadVectorMaskedNode(control(), obja_adr_mem, obja_adr, obja_adr_t, vt, vmask, LoadNode::UnknownControl));
+        Node* vload_objb = _gvn.transform(new LoadVectorMaskedNode(control(), objb_adr_mem, objb_adr, objb_adr_t, vt, vmask, LoadNode::UnknownControl));
         Node* result     = _gvn.transform(new VectorCmpMaskedNode(vload_obja, vload_objb, vmask, TypeInt::INT));
 
         exit_block->init_req(inline_path, control());

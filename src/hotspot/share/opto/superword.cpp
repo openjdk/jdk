@@ -2699,6 +2699,19 @@ LoadNode::ControlDependency SuperWordVTransformBuilder::load_control_dependency(
   return dep;
 }
 
+bool SuperWordVTransformBuilder::rc_constant_folded(const Node_List* pack) const {
+  bool rc_constant_folded = true;
+  for (uint i = 0; i < pack->size(); i++) {
+    Node* n = pack->at(i);
+    assert(n->is_Load(), "only meaningful for loads");
+    if (!n->as_Load()->rc_constant_folded()) {
+      rc_constant_folded = false;
+    }
+  }
+  assert(rc_constant_folded == pack->at(0)->as_Load()->rc_constant_folded(), "all load of the pack should be similar");
+  return rc_constant_folded;
+}
+
 // Find the memop pack with the maximum vector width, unless they were already
 // determined (e.g. by SuperWord::filter_packs_for_alignment()).
 void VTransform::determine_vpointer_and_aw_for_main_loop_alignment() {

@@ -921,14 +921,15 @@ uint8_t MemNode::barrier_data(const Node* n) {
 //=============================================================================
 // Should LoadNode::Ideal() attempt to remove control edges?
 bool LoadNode::can_remove_control() const {
-  return !has_pinned_control_dependency();
+  return depends_only_on_test();
 }
 uint LoadNode::size_of() const { return sizeof(*this); }
 bool LoadNode::cmp(const Node &n) const {
   LoadNode& load = (LoadNode &)n;
   return Type::equals(_type, load._type) &&
          _control_dependency == load._control_dependency &&
-         _mo == load._mo;
+         _mo == load._mo
+         DEBUG_ONLY(&& _rc_constant_folded == load._rc_constant_folded);
 }
 const Type *LoadNode::bottom_type() const { return _type; }
 uint LoadNode::ideal_reg() const {
@@ -955,6 +956,11 @@ void LoadNode::dump_spec(outputStream *st) const {
     }
     st->print(")");
   }
+#ifdef ASSERT
+  if (_rc_constant_folded) {
+    st->print(" rc_constant_folded");
+  }
+#endif
 }
 #endif
 
@@ -987,7 +993,7 @@ bool LoadNode::is_immutable_value(Node* adr) {
 //----------------------------LoadNode::make-----------------------------------
 // Polymorphic factory method:
 Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, BasicType bt, MemOrd mo,
-                     ControlDependency control_dependency, bool require_atomic_access, bool unaligned, bool mismatched, bool unsafe, uint8_t barrier_data) {
+                     ControlDependency control_dependency, bool require_atomic_access, bool unaligned, bool mismatched, bool unsafe, uint8_t barrier_data, bool rc_constant_folded) {
   Compile* C = gvn.C;
 
   // sanity check the alias category against the created node type
@@ -1004,25 +1010,25 @@ Node* LoadNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypeP
           "raw memory operations should have control edge");
   LoadNode* load = nullptr;
   switch (bt) {
-  case T_BOOLEAN: load = new LoadUBNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
-  case T_BYTE:    load = new LoadBNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
-  case T_INT:     load = new LoadINode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
-  case T_CHAR:    load = new LoadUSNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
-  case T_SHORT:   load = new LoadSNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
-  case T_LONG:    load = new LoadLNode (ctl, mem, adr, adr_type, rt->is_long(), mo, control_dependency, require_atomic_access); break;
-  case T_FLOAT:   load = new LoadFNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency); break;
-  case T_DOUBLE:  load = new LoadDNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency, require_atomic_access); break;
-  case T_ADDRESS: load = new LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr(),  mo, control_dependency); break;
+  case T_BOOLEAN: load = new LoadUBNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency, rc_constant_folded); break;
+  case T_BYTE:    load = new LoadBNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency, rc_constant_folded); break;
+  case T_INT:     load = new LoadINode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency, rc_constant_folded); break;
+  case T_CHAR:    load = new LoadUSNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency, rc_constant_folded); break;
+  case T_SHORT:   load = new LoadSNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency, rc_constant_folded); break;
+  case T_LONG:    load = new LoadLNode (ctl, mem, adr, adr_type, rt->is_long(), mo, control_dependency, require_atomic_access, rc_constant_folded); break;
+  case T_FLOAT:   load = new LoadFNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency, rc_constant_folded); break;
+  case T_DOUBLE:  load = new LoadDNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency, require_atomic_access, rc_constant_folded); break;
+  case T_ADDRESS: load = new LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr(),  mo, control_dependency, rc_constant_folded); break;
   case T_OBJECT:
   case T_NARROWOOP:
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
-      load = new LoadNNode(ctl, mem, adr, adr_type, rt->make_narrowoop(), mo, control_dependency);
+      load = new LoadNNode(ctl, mem, adr, adr_type, rt->make_narrowoop(), mo, control_dependency, rc_constant_folded);
     } else
 #endif
     {
       assert(!adr->bottom_type()->is_ptr_to_narrowoop() && !adr->bottom_type()->is_ptr_to_narrowklass(), "should have got back a narrow oop");
-      load = new LoadPNode(ctl, mem, adr, adr_type, rt->is_ptr(), mo, control_dependency);
+      load = new LoadPNode(ctl, mem, adr, adr_type, rt->is_ptr(), mo, control_dependency, rc_constant_folded);
     }
     break;
   default:
@@ -1065,6 +1071,25 @@ static bool skip_through_membars(Compile::AliasType* atp, const TypeInstPtr* tp,
   }
 
   return false;
+}
+
+LoadNode* LoadNode::pin_array_access_node() const {
+  const TypePtr* adr_type = this->adr_type();
+  if (adr_type != nullptr && adr_type->isa_aryptr()) {
+    return clone_pinned();
+  }
+  return nullptr;
+}
+
+LoadNode* LoadNode::with_rc_constant_folded() const {
+#ifdef ASSERT
+  if (!_rc_constant_folded) {
+    LoadNode* ld = clone()->as_Load();
+    ld->_rc_constant_folded = true;
+    return ld;
+  }
+#endif
+  return nullptr;
 }
 
 // Is the value loaded previously stored by an arraycopy? If so return
@@ -1373,6 +1398,30 @@ Node* LoadNode::Identity(PhaseGVN* phase) {
       }
     }
   }
+  if (in(0) != nullptr && adr_type() != nullptr && !adr_type()->isa_rawptr()) {
+    for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
+      Node* use = mem->fast_out(i);
+      if (use != this &&
+          use->Opcode() == Opcode() &&
+          use->in(0) != nullptr &&
+          use->in(0) != in(0) &&
+          use->in(Address) == in(Address) &&
+          phase->is_dominator(use->in(0), in(0))) {
+        bool skip = false;
+        for (uint i = Address + 1; i < req() && !skip; i++) {
+          if (in(i) != use->in(i)) {
+            skip = true;
+          }
+        }
+        if (!skip) {
+          return use;
+        } else {
+          assert(Opcode() == Op_LoadVectorGather || Opcode() == Op_LoadVectorGatherMasked, "");
+        }
+      }
+    }
+  }
+
 
   return this;
 }
@@ -1392,7 +1441,8 @@ Node* LoadNode::convert_to_unsigned_load(PhaseGVN& gvn) {
   }
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
                         raw_adr_type(), rt, bt, _mo, _control_dependency,
-                        false /*require_atomic_access*/, is_unaligned_access(), is_mismatched_access());
+                        false /*require_atomic_access*/, is_unaligned_access(), is_mismatched_access(),
+                        is_unsafe_access(), barrier_data(), rc_constant_folded());
 }
 
 // Construct an equivalent signed load.
@@ -1412,7 +1462,8 @@ Node* LoadNode::convert_to_signed_load(PhaseGVN& gvn) {
   }
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
                         raw_adr_type(), rt, bt, _mo, _control_dependency,
-                        false /*require_atomic_access*/, is_unaligned_access(), is_mismatched_access());
+                        false /*require_atomic_access*/, is_unaligned_access(), is_mismatched_access(),
+                        is_unsafe_access(), barrier_data(), rc_constant_folded());
 }
 
 bool LoadNode::has_reinterpret_variant(const Type* rt) {
@@ -1440,7 +1491,9 @@ Node* LoadNode::convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt) {
                                (op == Op_LoadD && ((LoadDNode*)this)->require_atomic_access());
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
                         raw_adr_type(), rt, bt, _mo, _control_dependency,
-                        require_atomic_access, is_unaligned_access(), is_mismatched);
+                        require_atomic_access, is_unaligned_access(), is_mismatched,
+                        is_unsafe_access(), barrier_data(), rc_constant_folded());
+
 }
 
 bool StoreNode::has_reinterpret_variant(const Type* vt) {
@@ -1720,7 +1773,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
 
   // Do nothing here if Identity will find a value
   // (to avoid infinite chain of value phis generation).
-  if (this != Identity(phase)) {
+  if (this != Identity(phase)/* && !ignore_missing_instance_id*/) {
     return nullptr;
   }
 
@@ -1949,29 +2002,6 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (t_oop->is_ptr_to_boxed_value()) {
         Node* result = eliminate_autobox(igvn);
         if (result != nullptr) return result;
-      }
-    }
-  }
-
-  // Is there a dominating load that loads the same value?  Leave
-  // anything that is not a load of a field/array element (like
-  // barriers etc.) alone
-  if (in(0) != nullptr && !adr_type()->isa_rawptr() && can_reshape) {
-    for (DUIterator_Fast imax, i = mem->fast_outs(imax); i < imax; i++) {
-      Node *use = mem->fast_out(i);
-      if (use != this &&
-          use->Opcode() == Opcode() &&
-          use->in(0) != nullptr &&
-          use->in(0) != in(0) &&
-          use->in(Address) == in(Address)) {
-        Node* ctl = in(0);
-        for (int i = 0; i < 10 && ctl != nullptr; i++) {
-          ctl = IfNode::up_one_dom(ctl);
-          if (ctl == use->in(0)) {
-            set_req(0, use->in(0));
-            return this;
-          }
-        }
       }
     }
   }

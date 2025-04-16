@@ -2269,10 +2269,18 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       if (mode == IgnoreStripMined && idx == 0) {
         LoopNode *head = loop->_head->as_Loop();
         if (head->is_strip_mined() && is_dominator(head->outer_loop_exit(), prev)) {
+          Node* ctrl = head->outer_loop_exit();
           // That node is outside the inner loop, leave it outside the
           // outer loop as well to not confuse verification code.
           assert(!loop->_parent->is_member(use_loop), "should be out of the outer loop");
-          _igvn.replace_input_of(use, 0, head->outer_loop_exit());
+          Node* clone = use->pin_array_access_node();
+          if (clone != nullptr) {
+            clone->set_req(0, ctrl);
+            register_new_node(clone, ctrl);
+            _igvn.replace_node(use, clone);
+          } else {
+            _igvn.replace_input_of(use, 0, ctrl);
+          }
           continue;
         }
       }
@@ -2724,6 +2732,14 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
           uint uses_found = 0;
           if (useuse->in(0) == use) {
             useuse->set_req(0, r);
+            if (useuse->depends_only_on_test()) {
+              Node* clone = useuse->pin_array_access_node();
+              if (clone != nullptr) {
+                register_new_node(clone, get_ctrl(useuse));
+                _igvn.replace_node(useuse, clone);
+                useuse = clone;
+              }
+            }
             uses_found++;
             if (useuse->is_CFG()) {
               // This is not a dom_depth > dd_r because when new

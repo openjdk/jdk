@@ -427,7 +427,7 @@ public:
     C->record_for_igvn(n);
   }
 
-  bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, true); }
+  virtual bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, true); }
 
   // Helper to call Node::Ideal() and BarrierSetC2::ideal_node().
   Node* apply_ideal(Node* i, bool can_reshape);

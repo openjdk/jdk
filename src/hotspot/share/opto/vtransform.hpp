@@ -947,6 +947,7 @@ public:
 class VTransformLoadVectorNode : public VTransformMemVectorNode {
 private:
   const LoadNode::ControlDependency _control_dependency;
+  bool _rc_constant_folded;
 
 public:
   // req = 3 -> [ctrl, mem, adr]
@@ -954,8 +955,9 @@ public:
                            const VTransformVectorNodeProperties properties,
                            const VPointer& vpointer,
                            const TypePtr* adr_type,
-                           const LoadNode::ControlDependency control_dependency) :
-    VTransformMemVectorNode(vtransform, 3, properties, vpointer, adr_type), _control_dependency(control_dependency) {}
+                           const LoadNode::ControlDependency control_dependency,
+                           bool rc_constant_folded) :
+    VTransformMemVectorNode(vtransform, 3, properties, vpointer, adr_type), _control_dependency(control_dependency), _rc_constant_folded(rc_constant_folded) {}
   LoadNode::ControlDependency control_dependency() const;
   virtual VTransformLoadVectorNode* isa_LoadVector() override { return this; }
   virtual bool is_load_in_loop() const override { return true; }
