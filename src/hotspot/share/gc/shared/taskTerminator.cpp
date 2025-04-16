@@ -224,19 +224,20 @@ void TaskTerminator::emit_termination_statistics(const char* task_name) {
     WorkerDataStats<double> timings = _terminations->get_worker_stats();
     WorkerDataStats<size_t> attempts = _terminations->thread_work_items()->get_worker_stats();
     assert(timings.count == attempts.count, "Sanity check");
+    if (timings.count > 0) {
+      event.set_gcId(GCId::current());
+      event.set_taskName(task_name);
+      event.set_nThreads(timings.count);
+      //Timings
+      event.set_minTime(timings.min);
+      event.set_avgTime(timings.sum / (double) timings.count);
+      event.set_maxTime(timings.max);
+      //Attempts
+      event.set_minAttempts(attempts.min);
+      event.set_avgAttempts((double) attempts.sum / (double) attempts.count);
+      event.set_maxAttempts(attempts.max);
 
-    event.set_gcId(GCId::current());
-    event.set_taskName(task_name);
-    event.set_nThreads(timings.count);
-    //Timings
-    event.set_minTime(timings.min);
-    event.set_avgTime(timings.sum / (double) timings.count);
-    event.set_maxTime(timings.max);
-    //Attempts
-    event.set_minAttempts(attempts.min);
-    event.set_avgAttempts((double) attempts.sum / (double) attempts.count);
-    event.set_maxAttempts(attempts.max);
-
-    event.commit();
+      event.commit();
+    }
   }
 }
