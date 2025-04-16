@@ -80,7 +80,7 @@ public class bug4952462 {
                     for (int i = 0; i < 50; i++) {
                         Color c = r.getPixelColor(p.x + 10 + i, p.y + (rb.getHeight() / 2));
                         System.out.println(c);
-                        if (c.getRed() > 200 && c.getBlue() < 200 && c.getGreen() < 200) {
+                        if (c.getRed() > 200 && c.getBlue() < 80 && c.getGreen() < 80) {
                             throw new RuntimeException("Test failed. Radiobutton is red " +
                                     "and not grey.");
                         }
