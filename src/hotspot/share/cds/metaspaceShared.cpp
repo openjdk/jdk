@@ -1842,7 +1842,7 @@ void MetaspaceShared::initialize_shared_spaces() {
       SystemDictionaryShared::print_shared_archive(tty, false/*dynamic*/);
     }
 
-    if (AOTCodeCache::is_dumping_code()) {
+    if (AOTCodeCache::is_on_for_use()) {
       tty->print_cr("\n\nAOT Code");
       AOTCodeCache::print_on(tty);
     }

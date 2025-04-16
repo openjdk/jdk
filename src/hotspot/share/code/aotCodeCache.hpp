@@ -224,7 +224,6 @@ private:
   uint   _store_size;      // Used when writing cache
   bool   _for_use;         // AOT cache is open for using AOT code
   bool   _for_dump;        // AOT cache is open for dumping AOT code
-  bool   _code_caching;
   bool   _stub_caching;
   bool   _adapter_caching;
   bool   _closing;         // Closing cache file
@@ -279,7 +278,6 @@ public:
   bool for_use()  const { return _for_use  && !_failed; }
   bool for_dump() const { return _for_dump && !_failed; }
 
-  bool code_caching()    const { return _code_caching; }
   bool stub_caching()    const { return _stub_caching; }
   bool adapter_caching() const { return _adapter_caching; }
 
@@ -329,11 +327,9 @@ public:
   static bool is_on_for_use()  { return is_on() && _cache->for_use(); }
   static bool is_on_for_dump() { return is_on() && _cache->for_dump(); }
 
-  static bool is_dumping_code()     { return is_on_for_dump() && _cache->code_caching(); }
   static bool is_dumping_stubs()    { return is_on_for_dump() && _cache->stub_caching(); }
   static bool is_dumping_adapters() { return is_on_for_dump() && _cache->adapter_caching(); }
 
-  static bool is_using_code()       { return is_on_for_use() && _cache->code_caching(); }
   static bool is_using_stubs()      { return is_on_for_use() && _cache->stub_caching(); }
   static bool is_using_adapters()   { return is_on_for_use() && _cache->adapter_caching(); }
 

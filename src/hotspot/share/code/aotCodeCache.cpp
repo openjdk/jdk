@@ -56,7 +56,6 @@ static void exit_vm_on_load_failure() {
   if (AbortVMOnAOTCodeFailure) {
     vm_exit_during_initialization("Unable to use AOT Code Cache.", nullptr);
   }
-  AOTCodeCaching    = false;
   AOTStubCaching    = false;
   AOTAdapterCaching = false;
 }
@@ -66,7 +65,6 @@ static void exit_vm_on_store_failure() {
     tty->print_cr("Unable to create AOT Code Cache.");
     vm_abort(false);
   }
-  AOTCodeCaching    = false;
   AOTStubCaching    = false;
   AOTAdapterCaching = false;
 }
@@ -93,7 +91,7 @@ void AOTCodeCache::initialize() {
     log_info(aot, codecache, init)("AOT Cache is not used");
     return; // nothing to do
   }
-  if (!(AOTCodeCaching || AOTStubCaching || AOTAdapterCaching)) {
+  if (!(AOTStubCaching || AOTAdapterCaching)) {
     return; // AOT code caching disabled on command line
   }
   size_t aot_code_size = is_using ? AOTCacheAccess::get_aot_code_size() : 0;
@@ -160,7 +158,6 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
   _store_size(0),
   _for_use(is_using),
   _for_dump(is_dumping),
-  _code_caching(AOTCodeCaching),
   _stub_caching(AOTStubCaching),
   _adapter_caching(AOTAdapterCaching),
   _closing(false),
@@ -795,7 +792,7 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, int entry_offset_co
   for (int i = 0; i < stored_count; i++) {
     uint32_t off = *(uint32_t*)addr(offset);
     offset += sizeof(uint32_t);
-    const char* entry_name = AdapterHandlerEntry::entry_name(i);
+    const char* entry_name = (_entry->kind() == AOTCodeEntry::Adapter) ? AdapterHandlerEntry::entry_name(i) : "";
     log_debug(aot, codecache, stubs)("Reading adapter '%s:%s' (0x%x) offset: 0x%x from AOT Code Cache",
                                       stored_name, entry_name, _entry->id(), off);
     entry_offsets[i] = off;
@@ -1307,9 +1304,8 @@ void AOTCodeCache::print_on(outputStream* st) {
       uint name_offset = entry->name_offset() + entry_position;
       const char* saved_name = cache->addr(name_offset);
 
-      st->print_cr("%4u: %4u: K%u I%u size=%u '%s'",
+      st->print_cr("%4u: entry_idx:%4u Kind:%u Id:%u size=%u '%s'",
                    i, index, entry->kind(), entry->id(), entry->size(), saved_name);
-      st->print_raw("         ");
     }
   } else {
     st->print_cr("failed to map code cache");
