@@ -324,11 +324,11 @@ void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
 
 
 void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
-  if (breakAtEntry || VerifyFPU) {
+  if (breakAtEntry) {
     // Verified Entry first instruction should be 5 bytes long for correct
     // patching by patch_verified_entry().
     //
-    // Breakpoint and VerifyFPU have one byte first instruction.
+    // Breakpoint has one byte first instruction.
     // Also first instruction will be one byte "push(rbp)" if stack banging
     // code is not generated (see build_frame() above).
     // For all these cases generate long instruction first.
@@ -336,7 +336,6 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   }
   if (breakAtEntry) int3();
   // build frame
-  IA32_ONLY( verify_FPU(0, "method_entry"); )
 }
 
 void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
