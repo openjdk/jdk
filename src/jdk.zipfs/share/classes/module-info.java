@@ -153,8 +153,11 @@ import java.util.Set;
  *   <td>{@link java.lang.String} or {@link java.lang.Boolean}</td>
  *   <td>false</td>
  *   <td>
- *       If the value is {@code true}, the ZIP file system provider
- *       creates a new ZIP or JAR file if it does not exist.
+ *       If the value is {@code true}, the ZIP file system provider creates a
+ *       new ZIP or JAR file if it does not exist. The resulting file system
+ *       will always be opened <em>read-write</em> (see {@code "accessMode"}
+ *       below), regardless of whether the underlying ZIP already existed or
+ *       not.
  *   </td>
  * </tr>
  * <tr>
@@ -285,7 +288,11 @@ import java.util.Set;
  *           <li>
  *               If the value is {@code "readOnly"}, the file system is created
  *               <em>read-only</em>, and {@link java.nio.file.FileSystem#isReadOnly()
- *               isReadOnly()} will always return {@code true}.
+ *               isReadOnly()} will always return {@code true}. Creating a
+ *               <em>read-only</em> file system requires the underlying ZIP file to
+ *               already exist, and is incompatible with {@code "create"=true}.
+ *               Specifying both will cause an {@code IllegalArgumentException}
+ *               to be thrown.
  *           </li>
  *           <li>
  *               If the value is {@code "readWrite"}, the file system is created
@@ -298,8 +305,8 @@ import java.util.Set;
  *               to be thrown.
  *           </li>
  *       </ul>
- *       The access mode has no effect on reported Posix file permissions (in cases
- *       where Posix support is enabled).
+ *       The access mode has no effect on reported POSIX file permissions (in cases
+ *       where POSIX support is enabled).
  *   </td>
  * </tr>
  * </tbody>

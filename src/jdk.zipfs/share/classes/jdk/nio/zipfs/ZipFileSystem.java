@@ -197,12 +197,19 @@ class ZipFileSystem extends FileSystem {
         this.defaultGroup = supportPosix ? initGroup(zfpath, env) : null;
         this.defaultPermissions = supportPosix ? Collections.unmodifiableSet(initPermissions(env)) : null;
         this.supportedFileAttributeViews = supportPosix ?
-            Set.of("basic", "posix", "zip") : Set.of("basic", "zip");
+                Set.of("basic", "posix", "zip") : Set.of("basic", "zip");
+
+        // 'create=true' is semantically the same as StandardOpenOption.CREATE,
+        // and can only be used to create a writable file system (whether the
+        // underlying ZIP file exists or not), and is always incompatible with
+        // 'accessMode=readOnly').
+        boolean shouldCreate = isTrue(env, "create");
+        if (shouldCreate && forceReadOnly) {
+            throw new IllegalArgumentException(
+                    "Specifying 'accessMode=readOnly' is incompatible with 'create=true'");
+        }
         if (Files.notExists(zfpath)) {
-            if (forceReadOnly) {
-                throw new IllegalArgumentException(
-                        "A read-only ZIP file system requires an existing ZIP file: " + zfpath);
-            } else if (isTrue(env, "create")) {
+            if (shouldCreate) {
                 try (OutputStream os = Files.newOutputStream(zfpath, CREATE_NEW, WRITE)) {
                     new END().write(os, 0, forceEnd64);
                 }
@@ -254,7 +261,7 @@ class ZipFileSystem extends FileSystem {
 
     /**
      * Return the compression method to use (STORED or DEFLATED).  If the
-     * property {@code commpressionMethod} is set use its value to determine
+     * property {@code compressionMethod} is set use its value to determine
      * the compression method to use.  If the property is not set, then the
      * default compression is DEFLATED unless the property {@code noCompression}
      * is set which is supported for backwards compatibility.
