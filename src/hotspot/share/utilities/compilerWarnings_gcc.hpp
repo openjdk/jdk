@@ -129,6 +129,7 @@
 //
 // clang's warning in this case is arguably a clang bug.
 // https://github.com/llvm/llvm-project/issues/135481
+// This issue has been fixed, with the fix probably appearing in clang 21.
 #if defined(__clang__) && defined(_FORTIFY_SOURCE)
 #if _FORTIFY_SOURCE > 0
 #define FORBIDDEN_FUNCTION_IGNORE_CLANG_FORTIFY_WARNING \
