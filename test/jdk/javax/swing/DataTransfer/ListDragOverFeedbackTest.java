@@ -113,7 +113,7 @@ public class ListDragOverFeedbackTest {
 
         frame.add(label, BorderLayout.NORTH);
         frame.add(wrapper);
-        frame.setSize(400, 450);
+        frame.setSize(400, 500);
         return frame;
     }
 }

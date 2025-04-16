@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4967768
+ * @requires (os.family != "mac")
  * @summary Tests that underline is painted correctly in mnemonics
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
