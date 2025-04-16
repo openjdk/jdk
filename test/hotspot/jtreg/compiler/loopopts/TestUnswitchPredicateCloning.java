@@ -42,12 +42,16 @@ public class TestUnswitchPredicateCloning {
         TestFramework.run();
     }
 
-    @Run(test = "test")
+    @Run(test = {"testUnswitchingBeforePredication", "testPredicationBeforeUnswitching"})
     @Warmup(0)
-    private static void check() {
-        int res = test(IDX);
+    private static void runNoWarmup() {
+        int res = testUnswitchingBeforePredication(IDX);
         Asserts.assertEQ(res, SIZE * IDX);
+        final boolean cond = false;
+        res = testPredicationBeforeUnswitching(IDX, cond);
+        Asserts.assertEQ(res, (SIZE * (SIZE - 1)) / 2 + (cond ? SIZE * IDX : 0));
     }
+
 
     @DontInline
     private static int[] getArr() {
@@ -64,17 +68,17 @@ public class TestUnswitchPredicateCloning {
     // them at the true- and false-path-loop. Note that the Loop Limit Check Parse
     // Predicate is not cloned when we already have a counted loop.
     @IR(counts = {IRNode.LOOP_PARSE_PREDICATE, "3",
-                 IRNode.PROFILED_LOOP_PARSE_PREDICATE, "3",
-                 IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "3",
-                 IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "3"},
+                  IRNode.PROFILED_LOOP_PARSE_PREDICATE, "3",
+                  IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "3",
+                  IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "3"},
         phase = CompilePhase.BEFORE_LOOP_UNSWITCHING)
     // Since we know that predication happens after unswitching, we can test the
     // predicate cloning before predication, such that the useless, killed predicates
     // have already been removed in the beautify loop phase.
     @IR(counts = {IRNode.LOOP_PARSE_PREDICATE, "4",
-                 IRNode.PROFILED_LOOP_PARSE_PREDICATE, "4",
-                 IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "3",
-                 IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "4"},
+                  IRNode.PROFILED_LOOP_PARSE_PREDICATE, "4",
+                  IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "3",
+                  IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "4"},
         phase = CompilePhase.BEFORE_LOOP_PREDICATION_IC)
     // Check that opaque template assertion predicated are added in loop predication
     // even if loop predication only happens after loop unswitching.
@@ -82,7 +86,7 @@ public class TestUnswitchPredicateCloning {
         phase = CompilePhase.AFTER_LOOP_UNSWITCHING)
     @IR(counts = { IRNode.OPAQUE_TEMPLATE_ASSERTION_PREDICATE, "2" },
         phase = CompilePhase.AFTER_LOOP_PREDICATION_RC)
-    static int test(int j) {
+    static int testUnswitchingBeforePredication(int j) {
         int zero = 34;
         int limit = 2;
 
@@ -105,6 +109,37 @@ public class TestUnswitchPredicateCloning {
             }
         }
 
+        return res;
+    }
+
+    @Test
+    // Check that Loop Unswitching doubled the number of parse and tempalte
+    // assertion predicates. Again, the Loop Limit Check Parse Predicate
+    // remains at the Loop Selector since this is a counted loop.
+    @IR(failOn = { IRNode.OPAQUE_TEMPLATE_ASSERTION_PREDICATE },
+        phase = CompilePhase.BEFORE_LOOP_PREDICATION_RC)
+    @IR(counts = { IRNode.OPAQUE_TEMPLATE_ASSERTION_PREDICATE, "2",
+                   IRNode.LOOP_PARSE_PREDICATE, "1",
+                   IRNode.PROFILED_LOOP_PARSE_PREDICATE, "1",
+                   IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "1",
+                   IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "1"},
+        phase = CompilePhase.BEFORE_LOOP_UNSWITCHING)
+    // After loop unswitching and after removing the killed predicates.
+    @IR(counts = { IRNode.OPAQUE_TEMPLATE_ASSERTION_PREDICATE, "4",
+                   IRNode.LOOP_PARSE_PREDICATE, "2",
+                   IRNode.PROFILED_LOOP_PARSE_PREDICATE, "2",
+                   IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "1",
+                   IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "2"},
+        phase = CompilePhase.BEFORE_LOOP_PREDICATION_IC)
+    static int testPredicationBeforeUnswitching(int j, boolean cond) {
+        int[] arr = getArr();
+        int res = 0;
+        for (int i = 0; i < arr.length; i++) {
+            if (cond) {
+                res += arr[j];
+            }
+            res += arr[i];
+        }
         return res;
     }
 }
