@@ -25,6 +25,7 @@
  * @test
  * @bug 8320909
  * @summary Similar to MissingOptWithShiftConvAnd, but with Cast_II on the way.
+ * @library /test/lib
  *
  * @run main/othervm
  *          -XX:CompileOnly=MissingOptWithShiftConvCastAnd::test
@@ -33,11 +34,21 @@
  *          MissingOptWithShiftConvCastAnd
  */
 
-    public class MissingOptWithShiftConvCastAnd {
+import jdk.test.lib.Utils;
+
+public class MissingOptWithShiftConvCastAnd {
     static long instanceCount;
 
-    public static void main(String[] strArr) {
-        test(0);
+    public static void main(String[] args) throws Exception {
+        Thread thread = new Thread() {
+            public void run() {
+                test(0);
+            }
+        };
+        // Give thread some time to trigger compilation
+        thread.setDaemon(true);
+        thread.start();
+        Thread.sleep(Utils.adjustTimeout(500));
     }
 
     static void test(int x) {
