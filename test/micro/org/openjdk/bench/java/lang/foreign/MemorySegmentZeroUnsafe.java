@@ -50,7 +50,7 @@ public class MemorySegmentZeroUnsafe {
     static final Unsafe UNSAFE = Utils.unsafe;
     long src;
 
-    @Param({"255"})
+    @Param({"1", "2", "3", "4", "5", "6", "7", "8", "15", "16", "63", "64", "255", "256"})
     public int size;
 
     @Param({"true", "false"})
@@ -81,13 +81,14 @@ public class MemorySegmentZeroUnsafe {
         address = segment.address();
     }
 
-//     @Benchmark
-//     public void panama() {
-//         segment.fill((byte) 0);
-//     }
+    @Benchmark
+    public void panama() {
+        segment.fill((byte) 0);
+    }
 
     @Benchmark
     public void unsafe() {
         UNSAFE.setMemory(address, size, (byte) 0);
     }
 }
+
