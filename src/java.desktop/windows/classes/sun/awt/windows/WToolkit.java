@@ -593,15 +593,14 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     @Override
     public FontPeer getFontPeer(String name, int style) {
-        FontPeer retval;
         String lcName = name.toLowerCase();
         if (null != cacheFontPeer) {
-            retval = cacheFontPeer.get(lcName + style);
-            if (null != retval) {
-                return retval;
+            FontPeer cachedVal = cacheFontPeer.get(lcName + style);
+            if (null != cachedVal) {
+                return cachedVal;
             }
         }
-        retval = new WFontPeer(name, style);
+        FontPeer retval = new WFontPeer(name, style);
         if (null == cacheFontPeer) {
             cacheFontPeer = new Hashtable<>(5, 0.9f);
         }
