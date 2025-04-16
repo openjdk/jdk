@@ -184,7 +184,7 @@ template <class T>
 void WorkerDataArray<T>::print_summary_on(outputStream* out, bool print_sum) const {
   out->print("%-30s", title());
 
-  WorkerStats<T> summary = get_worker_stats();
+  WorkerDataStats<T> summary = get_worker_stats();
   if (summary.count != 0u) {
     T diff = summary.max - summary.min;
     double avg = (double) summary.sum / (double) summary.count;
