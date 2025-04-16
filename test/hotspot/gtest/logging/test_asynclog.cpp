@@ -247,7 +247,7 @@ TEST_VM_F(AsyncLogTest, logBuffer) {
 TEST_VM_F(AsyncLogTest, droppingMessage) {
   if (AsyncLogWriter::instance() == nullptr) return;
   if (LogConfiguration::async_mode() != LogConfiguration::AsyncMode::Drop) {
-    EXPECT_TRUE(false) << "This test must be run in drop mode if async UL is activated";
+    FAIL() << "This test must be run in drop mode if async UL is activated";
     return;
   }
 
