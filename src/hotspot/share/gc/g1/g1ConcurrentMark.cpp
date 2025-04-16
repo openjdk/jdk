@@ -1006,6 +1006,10 @@ public:
     _cm->update_accum_task_vtime(worker_id, end_vtime - start_vtime);
   }
 
+  TaskTerminator* terminator() {
+   return _cm->terminator();
+  }
+
   G1CMConcurrentMarkingTask(G1ConcurrentMark* cm) :
       WorkerTask("Concurrent Mark"), _cm(cm) { }
 

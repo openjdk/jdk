@@ -1238,16 +1238,16 @@
     <Field type="ulong" contentType="bytes" name="immediateBytes" label="Immediate Bytes" />
   </Event>
 
-  <Event name="GCTaskTerminationStatistics" category="Java Virtual Machine, GC, TaskTerminator"  label="GC Task Termination Statistic Information" startTime="false">
+  <Event name="GCTaskTerminationStatistics" category="Java Virtual Machine, GC, Task Terminator"  label="GC Task Termination Statistics" startTime="false">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="string" name="taskName" label="GC task name"/>
-    <Field type="uint"  name="nThreads" label="Number of threads to run the GC task"/>
-    <Field type="double" name="maxTime" label="Maximum time on task termination in ms"/>
-    <Field type="double" name="minTime" label="Minimum time on task termination in ms"/>
-    <Field type="double" name="avgTime" label="Average time on task termination in ms"/>
-    <Field type="ulong" name="maxAttempts" label="Maximum attempts task termination"/>
-    <Field type="ulong" name="minAttempts" label="Minimum attempts on task termination"/>
-    <Field type="double" name="avgAttempts" label="Average attempts on task termination"/>
+    <Field type="uint"  name="nThreads" label="Number of worker threads"/>
+    <Field type="double" name="maxTime" label="Maximum time in ms"/>
+    <Field type="double" name="minTime" label="Minimum time in ms"/>
+    <Field type="double" name="avgTime" label="Average time in ms"/>
+    <Field type="ulong" name="maxAttempts" label="Maximum attempts"/>
+    <Field type="ulong" name="minAttempts" label="Minimum attempts"/>
+    <Field type="double" name="avgAttempts" label="Average attempts"/>
   </Event>
 
   <Event name="Flush" category="Flight Recorder" label="Flush" thread="false" experimental="true">
