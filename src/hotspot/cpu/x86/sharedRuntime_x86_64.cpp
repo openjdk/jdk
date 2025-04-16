@@ -2280,10 +2280,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ inc_held_monitor_count();
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      if (UseObjectMonitorTable) {
-        // Clear cache in case we need to take the slow-path.
-        __ movptr(Address(lock_reg, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))), 0);
-      }
       __ lightweight_lock(lock_reg, obj_reg, swap_reg, rscratch1, slow_path_lock);
     }
 

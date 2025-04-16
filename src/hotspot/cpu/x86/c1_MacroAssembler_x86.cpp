@@ -55,11 +55,6 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 
   null_check_offset = offset();
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case we need to take the slow-path.
-    movptr(Address(disp_hdr, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))), 0);
-  }
-
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(hdr, obj, rscratch1);
     testb(Address(hdr, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
