@@ -61,7 +61,7 @@ public class DeadBhElimination {
         // b == 77, known after first loop opts round
         // loop is detected as empty loop
 
-        if(b == 78) { // dead
+        if (b == 78) { // dead
             iAmABlackhole(a);
         }
     }
