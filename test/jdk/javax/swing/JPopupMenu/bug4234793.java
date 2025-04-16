@@ -94,15 +94,15 @@ public class bug4234793 extends JFrame implements PopupMenuListener {
             .awaitAndCheck();
     }
 
-    private static String[] numData =  {
+    private static String[] numData = {
         "One", "Two", "Three", "Four", "Five", "Six", "Seven"
     };
 
-    private static String[] dayData =  {
+    private static String[] dayData = {
         "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
     };
 
-    private static char[] mnDayData =  {
+    private static char[] mnDayData = {
         'M', 'T', 'W', 'R', 'F', 'S', 'U'
     };
 
