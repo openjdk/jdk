@@ -714,7 +714,7 @@ void AOTClassLocationConfig::check_invalid_classpath_index(int classpath_index, 
       const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
                                                                           ik->name()->utf8_length());
       if (!zip->has_entry(current, file_name)) {
-        log_warning(cds)("class %s cannot be archived because it was not define from %s as claimed",
+        log_warning(cds)("class %s cannot be archived because it was not defined from %s as claimed",
                          class_name, zip->name());
         ik->set_shared_classpath_index(-1);
       }
