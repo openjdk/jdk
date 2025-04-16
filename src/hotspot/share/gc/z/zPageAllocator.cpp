@@ -1148,7 +1148,7 @@ void ZPartition::threads_do(ThreadClosure* tc) const {
 }
 
 void ZPartition::print_on(outputStream* st) const {
-  st->print("Partition %u", _numa_id);
+  st->print("Partition %u ", _numa_id);
   st->fill_to(17);
   st->print_cr("used %zuM, capacity %zuM, max capacity %zuM",
                _used / M, _capacity / M, _max_capacity / M);
@@ -2415,7 +2415,7 @@ void ZPageAllocator::print_on(outputStream* st) const {
 
 void ZPageAllocator::print_heap_info_on(outputStream* st) const {
   // Print total usage
-  st->print("ZHeap");
+  st->print("ZHeap ");
   st->fill_to(17);
   st->print_cr("used %zuM, capacity %zuM, max capacity %zuM",
                used() / M, capacity() / M, max_capacity() / M);

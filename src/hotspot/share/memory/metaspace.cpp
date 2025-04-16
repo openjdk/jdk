@@ -217,7 +217,7 @@ void MetaspaceUtils::print_on(outputStream* out) {
 
   // First prints out totals, then, separately, the class space portion.
   MetaspaceCombinedStats stats = get_combined_statistics();
-  out->print("Metaspace");
+  out->print("Metaspace ");
   out->fill_to(17);
   out->print_cr("used %zuK, "
                 "committed %zuK, "
@@ -228,7 +228,7 @@ void MetaspaceUtils::print_on(outputStream* out) {
 
   if (Metaspace::using_class_space()) {
     StreamAutoIndentor indentor(out, 1);
-    out->print("class space");
+    out->print("class space ");
     out->fill_to(17);
     out->print_cr("used %zuK, "
                   "committed %zuK, "
