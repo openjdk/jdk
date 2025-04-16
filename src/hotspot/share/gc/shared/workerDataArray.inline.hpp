@@ -148,16 +148,7 @@ T WorkerDataArray<T>::sum() const {
 }
 
 template <typename T>
-void WorkerDataArray<T>::set_all(T value) {
-  for (uint i = 0; i < _length; i++) {
-    _data[i] = value;
-  }
-}
-
-template <class T>
-void WorkerDataArray<T>::print_summary_on(outputStream* out, bool print_sum) const {
-  out->print("%-30s", title());
-
+WorkerDataStats<T> WorkerDataArray<T>::get_worker_stats() const {
   uint start = 0;
   while (start < _length && get(start) == uninitialized()) {
     start++;
@@ -176,11 +167,29 @@ void WorkerDataArray<T>::print_summary_on(outputStream* out, bool print_sum) con
         contributing_threads++;
       }
     }
-    T diff = max - min;
-    assert(contributing_threads != 0, "Must be since we found a used value for the start index");
-    double avg = (double) sum / (double) contributing_threads;
-    WDAPrinter::summary(out, min, avg, max, diff, sum, print_sum);
-    out->print_cr(", Workers: %d", contributing_threads);
+    return WorkerDataStats<T>(min, max, sum, contributing_threads);
+  }
+
+  return WorkerDataStats<T>(0, 0, 0, 0u);
+}
+
+template <typename T>
+void WorkerDataArray<T>::set_all(T value) {
+  for (uint i = 0; i < _length; i++) {
+    _data[i] = value;
+  }
+}
+
+template <class T>
+void WorkerDataArray<T>::print_summary_on(outputStream* out, bool print_sum) const {
+  out->print("%-30s", title());
+
+  WorkerStats<T> summary = get_worker_stats();
+  if (summary.count != 0u) {
+    T diff = summary.max - summary.min;
+    double avg = (double) summary.sum / (double) summary.count;
+    WDAPrinter::summary(out, summary.min, avg, summary.max, diff, summary.sum, print_sum);
+    out->print_cr(", Workers: %d", summary.count);
   } else {
     // No data for this phase.
     out->print_cr(" skipped");
