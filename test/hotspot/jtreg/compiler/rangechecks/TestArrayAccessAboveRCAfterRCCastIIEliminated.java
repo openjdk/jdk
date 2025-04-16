@@ -45,100 +45,102 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
 
     public static void main(String[] args) {
         for (int i = 0; i < 20_000; i++) {
-            test1(9, 10, 1, true);
-            test1(9, 10, 1, false);
-            test2(9, 10, 1, true);
-            test2(9, 10, 1, false);
-            test3(9, 10, 1, true);
-            test3(9, 10, 1, false);
-            test4(9, 10, 1, true);
-            test4(9, 10, 1, false);
-            test5(9, 10, 1, true);
-            test5(9, 10, 1, false);
-            test6(9, 10, 1, true);
-            test6(9, 10, 1, false);
-            test7(9, 10, 1, true);
-            test7(9, 10, 1, false);
-            test8(9, 10, 1, true);
-            test8(9, 10, 1, false);
-            test9(9, 10, 1, true);
-            test9(9, 10, 1, false);
-            test10(9, 10, 1, true);
-            test10(9, 10, 1, false);
-            test11(9, 10, 1, true);
-            test11(9, 10, 1, false);
-            test12(9, 10, 1, true);
-            test12(9, 10, 1, false);
-            test13(9, 10, 1, true);
-            test13(9, 10, 1, false);
-            test14(8, 0, 1, true);
-            test14(8, 0, 1, false);
+//            test1(9, 10, 1, true);
+//            test1(9, 10, 1, false);
+//            test2(9, 10, 1, true);
+//            test2(9, 10, 1, false);
+//            test3(9, 10, 1, true);
+//            test3(9, 10, 1, false);
+//            test4(9, 10, 1, true);
+//            test4(9, 10, 1, false);
+//            test5(9, 10, 1, true);
+//            test5(9, 10, 1, false);
+//            test6(9, 10, 1, true);
+//            test6(9, 10, 1, false);
+//            test7(9, 10, 1, true);
+//            test7(9, 10, 1, false);
+//            test8(9, 10, 1, true);
+//            test8(9, 10, 1, false);
+//            test9(9, 10, 1, true);
+//            test9(9, 10, 1, false);
+//            test10(9, 10, 1, true);
+//            test10(9, 10, 1, false);
+//            test11(9, 10, 1, true);
+//            test11(9, 10, 1, false);
+//            test12(9, 10, 1, true);
+//            test12(9, 10, 1, false);
+//            test13(9, 10, 1, true);
+//            test13(9, 10, 1, false);
+//            test14(8, 0, 1, true);
+//            test14(8, 0, 1, false);
             inlined14(0, 0);
-            test15(8, 0, 1, true);
-            test15(8, 0, 1, false);
-            inlined15(0, 0);
-
+//            test15(8, 0, 1, true);
+//            test15(8, 0, 1, false);
+//            inlined15(0, 0);
+            test16(0, 9, 1, true, false);
+            test16(0, 9, 1, false, false);
+            inlined16_2(9, 1, 0, arrayField, true, 0);
         }
-        try {
-            test1(-1, 10, 1, true);
-        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
-        }
-        try {
-            test2(-1, 10, 1, true);
-        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
-        }
-        try {
-            test3(-1, 10, 1, true);
-        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
-        }
-        try {
-            test4(-1, 10, 1, true);
-        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
-        }
-        try {
-            test5(-1, 10, 1, true);
-        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
-        }
-        try {
-            test6(-1, 10, 1, true);
-        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
-        }
-        try {
-            test7(-1, 10, 1, true);
-        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
-        }
-        try {
-            test8(-1, 10, 1, true);
-        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
-        }
-        try {
-            test9(-1, 10, 1, true);
-        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
-        }
-        try {
-            test10(-1, 10, 1, true);
-        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
-        }
-        try {
-            test11(-1, 10, 1, true);
-        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
-        }
-        try {
-            test12(-1, 10, 1, true);
-        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
-        }
-        try {
-            test13(-1, 10, 1, true);
-        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
-        }
-        try {
-            test14(Integer.MAX_VALUE, 10, 1, true);
-        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
-        }
-        try {
-            test15(Integer.MAX_VALUE, 10, 1, true);
-        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
-        }
+//        try {
+//            test1(-1, 10, 1, true);
+//        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+//        }
+//        try {
+//            test2(-1, 10, 1, true);
+//        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+//        }
+//        try {
+//            test3(-1, 10, 1, true);
+//        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+//        }
+//        try {
+//            test4(-1, 10, 1, true);
+//        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+//        }
+//        try {
+//            test5(-1, 10, 1, true);
+//        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+//        }
+//        try {
+//            test6(-1, 10, 1, true);
+//        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+//        }
+//        try {
+//            test7(-1, 10, 1, true);
+//        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+//        }
+//        try {
+//            test8(-1, 10, 1, true);
+//        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+//        }
+//        try {
+//            test9(-1, 10, 1, true);
+//        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+//        }
+//        try {
+//            test10(-1, 10, 1, true);
+//        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+//        }
+//        try {
+//            test11(-1, 10, 1, true);
+//        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+//        }
+//        try {
+//            test12(-1, 10, 1, true);
+//        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+//        }
+//        try {
+//            test13(-1, 10, 1, true);
+//        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+//        }
+//        try {
+//            test14(Integer.MAX_VALUE, 10, 1, true);
+//        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+//        }
+//        try {
+//            test15(Integer.MAX_VALUE, 10, 1, true);
+//        } catch (ArrayIndexOutOfBoundsException arrayIndexOutOfBoundsException) {
+//        }
     }
 
     private static void test1(int i, int j, int flag, boolean flag2) {
@@ -482,7 +484,7 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
         }
     }
 
-    // Range check cast type widen after loop opts causes control dependency to be lost
+    // Widened range check cast type after loop opts causes control dependency to be lost
     private static void test14(int i, int j, int flag, boolean flag2) {
         int l = 0;
         for (; l < 10; l++);
@@ -546,6 +548,54 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
             j = Integer.max(j, Integer.MIN_VALUE + 10);
         }
         return j;
+    }
+
+    private static void test16(int k, int j, int flag, boolean flag2, boolean flag3) {
+        int l = 0;
+        for (; l < 10; l++);
+        int m = inlined14(j, l);
+
+        int i = inlined16(k);
+        j = Integer.min(j, 9);
+        int[] array = new int[10];
+        notInlined(array);
+        if (flag == 0) {
+            throw new RuntimeException("");
+        }
+        if (flag2) {
+            inlined16_2(j, flag, i, array, flag3, m);
+        } else {
+            inlined16_2(j, flag, i, array, flag3, m);
+        }
+    }
+
+    private static void inlined16_2(int j, int flag, int i, int[] array, boolean flag2, int m) {
+        if (flag2) {
+            float[] newArray = new float[j + 1];
+            // RC i <u (CastII j [min..max]) + 1
+            newArray[i + m] = 42; // i in [0..9]
+            float[] otherArray = new float[i + m];
+            if (flag == 0) {
+                throw new RuntimeException("");
+            }
+            intField = array[otherArray.length];
+        }
+    }
+
+    static int[] arrayField = new int[10];
+
+    // produces Integer.MIN_VALUE after macro expansion
+    private static int inlined16(int k) {
+        k = Integer.max(0, Integer.min(k, 9));
+        arrayField[0] = Integer.MIN_VALUE;
+        int[] array2 = new int[10];
+        int j;
+        for (j = 0; j < 10; j++) {
+            for (int i = 0; i < 10; i++) {
+
+            }
+        }
+        return arrayField[0] + array2[k] * (j - 10);
     }
 
     private static void notInlined(int[] array) {

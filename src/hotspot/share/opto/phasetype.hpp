@@ -121,7 +121,7 @@
 
 #define table_entry(name, description) PHASE_##name,
 enum CompilerPhaseType {
-  COMPILER_PHASES(table_entry)
+  COMPILER_PHASES(table_entry)    
   PHASE_NUM_TYPES,
   PHASE_NONE
 };
