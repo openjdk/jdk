@@ -39,6 +39,10 @@ public class ExactOptionMatch {
     record Option(String cmdLine, String property, String valueA, String valueB) {}
 
     static Option[] allOptions = new Option[] {
+        new Option("--add-opens",
+                   "jdk.module.addopens",
+                   "java.base/java.util.concurrent.regex=ALL-UNNAMED",
+                   "java.base/sun.security.x509=ALL-UNNAMED"),
         new Option("--add-exports",
                    "jdk.module.addexports",
                    "java.base/jdk.internal.misc=ALL-UNNAMED",
