@@ -347,10 +347,9 @@ public class VectorSupport {
     @IntrinsicCandidate
     public static
     <V extends Vector<E>, E>
-    V libraryUnaryOp(long addr, Class<? extends V> vClass, Class<E> eClass, int length,
+    V libraryUnaryOp(long addr, Class<? extends V> vClass, Class<E> eClass, int length, String debugName,
                      V v,
-                     UnaryOperation<V,?> defaultImpl,
-                     String debugName) {
+                     UnaryOperation<V,?> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v, null);
     }
@@ -386,10 +385,9 @@ public class VectorSupport {
     @IntrinsicCandidate
     public static
     <V extends VectorPayload, E>
-    V libraryBinaryOp(long addr, Class<? extends V> vClass, Class<E> eClass, int length,
+    V libraryBinaryOp(long addr, Class<? extends V> vClass, Class<E> eClass, int length, String debugName,
                       V v1, V v2,
-                      BinaryOperation<V,?> defaultImpl,
-                      String debugName) {
+                      BinaryOperation<V,?> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v1, v2, null);
     }

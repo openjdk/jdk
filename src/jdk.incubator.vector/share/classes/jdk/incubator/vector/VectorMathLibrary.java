@@ -301,10 +301,9 @@ import static jdk.internal.vm.vector.Utils.debug;
             @SuppressWarnings({"unchecked"})
             Class<V> vt = (Class<V>)vspecies.vectorType();
             return VectorSupport.libraryUnaryOp(
-                    entry.entry.address(), vt, vspecies.elementType(), vspecies.length(),
+                    entry.entry.address(), vt, vspecies.elementType(), vspecies.length(), entry.name,
                     v,
-                    entry.impl,
-                    entry.name);
+                    entry.impl);
         } else {
             return entry.impl.apply(v, null);
         }
@@ -323,10 +322,9 @@ import static jdk.internal.vm.vector.Utils.debug;
             @SuppressWarnings({"unchecked"})
             Class<V> vt = (Class<V>)vspecies.vectorType();
             return VectorSupport.libraryBinaryOp(
-                    entry.entry.address(), vt, vspecies.elementType(), vspecies.length(),
+                    entry.entry.address(), vt, vspecies.elementType(), vspecies.length(), entry.name,
                     v1, v2,
-                    entry.impl,
-                    entry.name);
+                    entry.impl);
         } else {
             return entry.impl.apply(v1, v2, null);
         }

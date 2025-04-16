@@ -1007,9 +1007,9 @@ class methodHandle;
                                          "Ljava/lang/Class;"                                                                                   \
                                          "Ljava/lang/Class;"                                                                                   \
                                          "I"                                                                                                   \
+                                         "Ljava/lang/String;"                                                                                  \
                                          "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                       \
-                                         "Ljdk/internal/vm/vector/VectorSupport$UnaryOperation;"                                               \
-                                         "Ljava/lang/String;)"                                                                                 \
+                                         "Ljdk/internal/vm/vector/VectorSupport$UnaryOperation;)"                                              \
                                          "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                      \
    do_name(vector_unary_lib_op_name, "libraryUnaryOp")                                                                                         \
                                                                                                                                                \
@@ -1018,10 +1018,10 @@ class methodHandle;
                                           "Ljava/lang/Class;"                                                                                  \
                                           "Ljava/lang/Class;"                                                                                  \
                                           "I"                                                                                                  \
+                                          "Ljava/lang/String;"                                                                                 \
                                           "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;"                                               \
                                           "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;"                                               \
-                                          "Ljdk/internal/vm/vector/VectorSupport$BinaryOperation;"                                             \
-                                          "Ljava/lang/String;)"                                                                                \
+                                          "Ljdk/internal/vm/vector/VectorSupport$BinaryOperation;)"                                            \
                                           "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;")                                              \
    do_name(vector_binary_lib_op_name, "libraryBinaryOp")                                                                                       \
                                                                                                                                                \
