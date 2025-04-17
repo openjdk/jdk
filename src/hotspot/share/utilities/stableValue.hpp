@@ -27,10 +27,6 @@
 
 #include "globalDefinitions.hpp"
 
-#include <stddef.h>
-#include <stdint.h>
-#include <type_traits>
-
 // Pre-C++17 hack: Use  __builtin_launder when available.
 // Replace this with std::launder when we've upgraded.
 #if (defined(__GNUC__) || defined(__clang__))
