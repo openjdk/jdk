@@ -710,13 +710,13 @@ struct ps_prochandle* Pgrab_core(const char* exec_file, const char* core_file) {
 
   struct ps_prochandle* ph = (struct ps_prochandle*) calloc(1, sizeof(struct ps_prochandle));
   if (ph == NULL) {
-    print_debug("can't allocate ps_prochandle\n");
+    print_error("can't allocate ps_prochandle\n");
     return NULL;
   }
 
   if ((ph->core = (struct core_data*) calloc(1, sizeof(struct core_data))) == NULL) {
     free(ph);
-    print_debug("can't allocate ps_prochandle\n");
+    print_error("can't allocate ps_prochandle\n");
     return NULL;
   }
 
@@ -738,12 +738,12 @@ struct ps_prochandle* Pgrab_core(const char* exec_file, const char* core_file) {
 
   // read core file header
   if (read_macho64_header(ph->core->core_fd, &core_header) != true || core_header.filetype != MH_CORE) {
-    print_debug("core file is not a valid Mach-O file\n");
+    print_error("core file is not a valid Mach-O file\n");
     goto err;
   }
 
   if ((ph->core->exec_fd = open(exec_file, O_RDONLY)) < 0) {
-    print_error("can't open executable file\n");
+    print_error("can't open executable file: %s\n", strerror(errno));
     goto err;
   }
 
@@ -779,7 +779,7 @@ struct ps_prochandle* Pgrab_core(const char* exec_file, const char* core_file) {
   }
 
   if (init_classsharing_workaround(ph) != true) {
-    print_error("failed to workaround classshareing\n");
+    print_error("failed to workaround class sharing\n");
     goto err;
   }
 

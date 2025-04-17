@@ -30,6 +30,7 @@
 #include <stddef.h>
 #include <elf.h>
 #include <link.h>
+#include <errno.h>
 #include "libproc_impl.h"
 #include "ps_core_common.h"
 #include "proc_service.h"
@@ -732,13 +733,13 @@ Pgrab_core(const char* exec_file, const char* core_file) {
 
   struct ps_prochandle* ph = (struct ps_prochandle*) calloc(1, sizeof(struct ps_prochandle));
   if (ph == NULL) {
-    print_debug("can't allocate ps_prochandle\n");
+    print_error("can't allocate ps_prochandle\n");
     return NULL;
   }
 
   if ((ph->core = (struct core_data*) calloc(1, sizeof(struct core_data))) == NULL) {
     free(ph);
-    print_debug("can't allocate ps_prochandle\n");
+    print_error("can't allocate ps_prochandle\n");
     return NULL;
   }
 
@@ -750,39 +751,42 @@ Pgrab_core(const char* exec_file, const char* core_file) {
 
   // open the core file
   if ((ph->core->core_fd = open(core_file, O_RDONLY)) < 0) {
-    print_debug("can't open core file\n");
+    print_error("can't open core file: %s\n", strerror(errno));
     goto err;
   }
 
   // read core file ELF header
   if (read_elf_header(ph->core->core_fd, &core_ehdr) != true || core_ehdr.e_type != ET_CORE) {
-    print_debug("core file is not a valid ELF ET_CORE file\n");
+    print_error("core file is not a valid ELF ET_CORE file\n");
     goto err;
   }
 
   if ((ph->core->exec_fd = open(exec_file, O_RDONLY)) < 0) {
-    print_debug("can't open executable file\n");
+    print_error("can't open executable file: %s\n", strerror(errno));
     goto err;
   }
 
   if (read_elf_header(ph->core->exec_fd, &exec_ehdr) != true ||
       ((exec_ehdr.e_type != ET_EXEC) && (exec_ehdr.e_type != ET_DYN))) {
-    print_debug("executable file is not a valid ELF file\n");
+    print_error("executable file is not a valid ELF file\n");
     goto err;
   }
 
   // process core file segments
   if (read_core_segments(ph, &core_ehdr) != true) {
+    print_error("failed to read core segments\n");
     goto err;
   }
 
   // process exec file segments
   uintptr_t exec_base_addr = read_exec_segments(ph, &exec_ehdr);
   if (exec_base_addr == 0L) {
+    print_error("failed to read exec segments\n");
     goto err;
   }
   print_debug("exec_base_addr = 0x%lx\n", exec_base_addr);
   if (add_lib_info_fd(ph, exec_file, ph->core->exec_fd, exec_base_addr) == NULL) {
+    print_error("failed to add lib info\n");
     goto err;
   }
 
@@ -790,19 +794,23 @@ Pgrab_core(const char* exec_file, const char* core_file) {
   // here because read_shared_lib_info needs to read from debuggee
   // address space
   if (sort_map_array(ph) != true) {
+    print_error("failed to sort segment map array\n");
     goto err;
   }
 
   if (read_shared_lib_info(ph) != true) {
+    print_error("failed to read libraries\n");
     goto err;
   }
 
   // sort again because we have added more mappings from shared objects
   if (sort_map_array(ph) != true) {
+    print_error("failed to sort segment map array\n");
     goto err;
   }
 
   if (init_classsharing_workaround(ph) != true) {
+    print_error("failed to workaround class sharing\n");
     goto err;
   }
 
