@@ -591,19 +591,19 @@ void CDSConfig::setup_compiler_args() {
 
   if (is_dumping_preimage_static_archive() && can_dump_profiles) {
     // JEP 483 workflow -- training
-    FLAG_SET_ERGO_IF_DEFAULT(RecordTraining, true);
-    FLAG_SET_ERGO(ReplayTraining, false);
+    FLAG_SET_ERGO_IF_DEFAULT(AOTRecordTraining, true);
+    FLAG_SET_ERGO(AOTReplayTraining, false);
   } else if (is_dumping_final_static_archive() && can_dump_profiles) {
     // JEP 483 workflow -- assembly
-    FLAG_SET_ERGO(RecordTraining, false); // This will be updated inside MetaspaceShared::preload_and_dump()
-    FLAG_SET_ERGO_IF_DEFAULT(ReplayTraining, true);
+    FLAG_SET_ERGO(AOTRecordTraining, false); // This will be updated inside MetaspaceShared::preload_and_dump()
+    FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
   } else if (is_using_archive() && new_aot_flags_used()) {
     // JEP 483 workflow -- production
-    FLAG_SET_ERGO(RecordTraining, false);
-    FLAG_SET_ERGO_IF_DEFAULT(ReplayTraining, true);
+    FLAG_SET_ERGO(AOTRecordTraining, false);
+    FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
   } else {
-    FLAG_SET_ERGO(ReplayTraining, false);
-    FLAG_SET_ERGO(RecordTraining, false);
+    FLAG_SET_ERGO(AOTReplayTraining, false);
+    FLAG_SET_ERGO(AOTRecordTraining, false);
   }
 }
 

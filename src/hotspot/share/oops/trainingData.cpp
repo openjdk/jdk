@@ -493,7 +493,7 @@ void TrainingData::init_dumptime_table(TRAPS) {
       }
     });
 
-    if (VerifyTrainingData) {
+    if (AOTVerifyTrainingData) {
       training_data_set()->verify();
     }
   }

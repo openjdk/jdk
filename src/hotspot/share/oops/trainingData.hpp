@@ -262,8 +262,8 @@ private:
   // Key::EMPTY if it is not installed.
   const Key* key() const { return &_key; }
 
-  static bool have_data() { return ReplayTraining;  } // Going to read
-  static bool need_data() { return RecordTraining;  } // Going to write
+  static bool have_data() { return AOTReplayTraining;  } // Going to read
+  static bool need_data() { return AOTRecordTraining;  } // Going to write
 
   template<typename Function>
   static void iterate(const Function& fn) { iterate(const_cast<Function&>(fn)); }

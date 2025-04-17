@@ -393,20 +393,6 @@
           "If compilation is stopped with an error, capture diagnostic "    \
           "information at the bailout point")                               \
                                                                             \
-  /* flags to control training and deployment modes  */                     \
-                                                                            \
-  product(bool, RecordTraining, false, DIAGNOSTIC,                          \
-          "Request output of training data for improved deployment.")       \
-                                                                            \
-  product(bool, ReplayTraining, false, DIAGNOSTIC,                          \
-          "Read training data, if available, for use in this execution")    \
-                                                                            \
-  product(bool, PrintTrainingInfo, false, DIAGNOSTIC,                       \
-          "Print additional information about training")                    \
-                                                                            \
-  product(bool, VerifyTrainingData, trueInDebug, DIAGNOSTIC,                \
-          "Verify archived training data")                                  \
-                                                                            \
 // end of COMPILER_FLAGS
 
 DECLARE_FLAGS(COMPILER_FLAGS)

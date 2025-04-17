@@ -84,7 +84,7 @@ void AOTLinkedClassBulkLoader::load_non_javabase_classes(JavaThread* current) {
 
   load_classes_in_loader(current, AOTLinkedClassCategory::APP, SystemDictionary::java_system_loader());
 
-  if (PrintTrainingInfo) {
+  if (AOTPrintTrainingInfo) {
     tty->print_cr("==================== archived_training_data ** after all classes preloaded ====================");
     TrainingData::print_archived_training_data_on(tty);
   }

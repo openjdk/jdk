@@ -187,7 +187,7 @@ void CompilationPolicyUtils::Queue<InstanceKlass>::print_on(outputStream* st) {
 }
 
 void CompilationPolicy::replay_training_at_init_loop(TRAPS) {
-  while (!CompileBroker::is_compilation_disabled_forever() || VerifyTrainingData) {
+  while (!CompileBroker::is_compilation_disabled_forever() || AOTVerifyTrainingData) {
     InstanceKlass* ik = _training_replay_queue.pop(TrainingReplayQueue_lock, THREAD);
     replay_training_at_init_impl(ik, THREAD);
   }

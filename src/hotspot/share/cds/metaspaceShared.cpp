@@ -802,7 +802,7 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
   ResourceMark rm(THREAD);
  HandleMark hm(THREAD);
 
- if (CDSConfig::is_dumping_final_static_archive() && PrintTrainingInfo) {
+ if (CDSConfig::is_dumping_final_static_archive() && AOTPrintTrainingInfo) {
    tty->print_cr("==================== archived_training_data ** before dumping ====================");
    TrainingData::print_archived_training_data_on(tty);
  }
@@ -971,9 +971,9 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
   link_shared_classes(CHECK);
   log_info(cds)("Rewriting and linking classes: done");
   if (CDSConfig::is_dumping_final_static_archive()) {
-    assert(!RecordTraining, "must be");
+    assert(!AOTRecordTraining, "must be");
     if (CDSConfig::is_dumping_aot_linked_classes()) {
-      RecordTraining = true;
+      AOTRecordTraining = true;
     }
   }
 
