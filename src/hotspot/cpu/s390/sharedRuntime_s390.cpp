@@ -2762,7 +2762,7 @@ void SharedRuntime::generate_deopt_blob() {
 
 #ifdef COMPILER2
 //------------------------------generate_uncommon_trap_blob--------------------
-void OptoRuntime::generate_uncommon_trap_blob() {
+UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
@@ -2882,7 +2882,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   __ z_br(Z_R14);
 
   masm->flush();
-  _uncommon_trap_blob = UncommonTrapBlob::create(&buffer, nullptr, framesize_in_bytes/wordSize);
+  return UncommonTrapBlob::create(&buffer, nullptr, framesize_in_bytes/wordSize);
 }
 #endif // COMPILER2
 
@@ -3043,7 +3043,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   RegisterSaver::restore_live_registers(masm, RegisterSaver::all_registers);
 
   // get the returned method
-  __ get_vm_result_2(Z_method);
+  __ get_vm_result_metadata(Z_method);
 
   // We are back to the original state on entry and ready to go.
   __ z_br(Z_R1_scratch);
@@ -3057,7 +3057,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   // exception pending => remove activation and forward to exception handler
 
   __ z_lgr(Z_R2, Z_R0); // pending_exception
-  __ clear_mem(Address(Z_thread, JavaThread::vm_result_offset()), sizeof(jlong));
+  __ clear_mem(Address(Z_thread, JavaThread::vm_result_oop_offset()), sizeof(jlong));
   __ load_const_optimized(Z_R1_scratch, StubRoutines::forward_exception_entry());
   __ z_br(Z_R1_scratch);
 

@@ -22,10 +22,10 @@
  *
  */
 
+#include "ci/ciKlass.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciReplay.hpp"
 #include "ci/ciSymbol.hpp"
-#include "ci/ciKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"

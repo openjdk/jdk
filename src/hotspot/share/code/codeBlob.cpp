@@ -121,7 +121,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
                    int mutable_data_size) :
   _oop_maps(nullptr), // will be set by set_oop_maps() call
   _name(name),
-  _mutable_data(nullptr),
+  _mutable_data(header_begin() + size), // default value is blob_end()
   _size(size),
   _relocation_size(align_up(cb->total_relocation_size(), oopSize)),
   _content_offset(CodeBlob::align_code_offset(header_size)),
@@ -151,6 +151,9 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
     if (_mutable_data == nullptr) {
       vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
     }
+  } else {
+    // We need unique and valid not null address
+    assert(_mutable_data = blob_end(), "sanity");
   }
 
   set_oop_maps(oop_maps);
@@ -160,7 +163,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
 CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size) :
   _oop_maps(nullptr),
   _name(name),
-  _mutable_data(nullptr),
+  _mutable_data(header_begin() + size), // default value is blob_end()
   _size(size),
   _relocation_size(0),
   _content_offset(CodeBlob::align_code_offset(header_size)),
@@ -175,12 +178,14 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
 {
   assert(is_aligned(size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,     oopSize), "unaligned size");
+  assert(_mutable_data = blob_end(), "sanity");
 }
 
 void CodeBlob::purge() {
-  if (_mutable_data != nullptr) {
+  assert(_mutable_data != nullptr, "should never be null");
+  if (_mutable_data != blob_end()) {
     os::free(_mutable_data);
-    _mutable_data = nullptr;
+    _mutable_data = blob_end(); // Valid not null address
   }
   if (_oop_maps != nullptr) {
     delete _oop_maps;
@@ -485,9 +490,9 @@ void* RuntimeStub::operator new(size_t s, unsigned size) throw() {
 }
 
 // operator new shared by all singletons:
-void* SingletonBlob::operator new(size_t s, unsigned size) throw() {
+void* SingletonBlob::operator new(size_t s, unsigned size, bool alloc_fail_is_fatal) throw() {
   void* p = CodeCache::allocate(size, CodeBlobType::NonNMethod);
-  if (!p) fatal("Initial size of CodeCache is too small");
+  if (alloc_fail_is_fatal && !p) fatal("Initial size of CodeCache is too small");
   return p;
 }
 
@@ -569,7 +574,7 @@ UncommonTrapBlob* UncommonTrapBlob::create(
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) UncommonTrapBlob(cb, size, oop_maps, frame_size);
+    blob = new (size, false) UncommonTrapBlob(cb, size, oop_maps, frame_size);
   }
 
   trace_new_stub(blob, "UncommonTrapBlob");
@@ -601,7 +606,7 @@ ExceptionBlob* ExceptionBlob::create(
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) ExceptionBlob(cb, size, oop_maps, frame_size);
+    blob = new (size, false) ExceptionBlob(cb, size, oop_maps, frame_size);
   }
 
   trace_new_stub(blob, "ExceptionBlob");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZLIST_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 template <typename T> class ZList;
@@ -46,7 +47,12 @@ private:
 
 public:
   ZListNode();
-  ~ZListNode();
+  ~ZListNode() {
+    // Implementation placed here to make it easier easier to embed ZListNode
+    // instances without having to include zListNode.inline.hpp.
+    assert(_next == this, "Should not be in a list");
+    assert(_prev == this, "Should not be in a list");
+  }
 };
 
 // Doubly linked list
@@ -59,6 +65,7 @@ private:
   NONCOPYABLE(ZList);
 
   void verify_head() const;
+  void verify_head_error_reporter_safe() const;
 
   void insert(ZListNode<T>* before, ZListNode<T>* node);
 
@@ -67,6 +74,9 @@ private:
 
 public:
   ZList();
+
+  size_t size_error_reporter_safe() const;
+  bool is_empty_error_reporter_safe() const;
 
   size_t size() const;
   bool is_empty() const;

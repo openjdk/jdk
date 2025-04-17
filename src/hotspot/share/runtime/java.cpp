@@ -426,10 +426,9 @@ void before_exit(JavaThread* thread, bool halt) {
 #if INCLUDE_CDS
   // Dynamic CDS dumping must happen whilst we can still reliably
   // run Java code.
-  DynamicArchive::dump_at_exit(thread, ArchiveClassesAtExit);
+  DynamicArchive::dump_at_exit(thread);
   assert(!thread->has_pending_exception(), "must be");
 #endif
-
 
   // Actual shutdown logic begins here.
 
@@ -476,7 +475,6 @@ void before_exit(JavaThread* thread, bool halt) {
   // Print GC/heap related information.
   Log(gc, heap, exit) log;
   if (log.is_info()) {
-    ResourceMark rm;
     LogStream ls_info(log.info());
     Universe::print_on(&ls_info);
     if (log.is_trace()) {
