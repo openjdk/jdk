@@ -1083,24 +1083,24 @@ void CodeBuffer::print() {
 // ----- CHeapString -----------------------------------------------------------
 
 class CHeapString : public CHeapObj<mtCode> {
-  public:
-   CHeapString(const char* str) : _string(os::strdup(str)) {}
-  ~CHeapString() {
-     os::free((void*)_string);
-     _string = nullptr;
-   }
-   const char* string() const { return _string; }
- 
-  private:
-   const char* _string;
- };
- 
- // ----- AsmRemarkCollection ---------------------------------------------------
- 
+ public:
+  CHeapString(const char* str) : _string(os::strdup(str)) {}
+ ~CHeapString() {
+    os::free((void*)_string);
+    _string = nullptr;
+  }
+  const char* string() const { return _string; }
+
+ private:
+  const char* _string;
+};
+
+// ----- AsmRemarkCollection ---------------------------------------------------
+
 class AsmRemarkCollection : public CHeapObj<mtCode> {
-public:
+ public:
   AsmRemarkCollection() : _ref_cnt(1), _remarks(nullptr), _next(nullptr) {}
-~AsmRemarkCollection() {
+ ~AsmRemarkCollection() {
     assert(is_empty(), "Must 'clear()' before deleting!");
     assert(_ref_cnt == 0, "No uses must remain when deleting!");
   }
@@ -1116,7 +1116,7 @@ public:
   bool is_empty() const { return _remarks == nullptr; }
   uint clear();
 
-private:
+ private:
   struct Cell : CHeapString {
     Cell(const char* remark, uint offset) :
         CHeapString(remark), offset(offset), prev(nullptr), next(nullptr) {}
@@ -1143,9 +1143,9 @@ private:
 // ----- DbgStringCollection ---------------------------------------------------
 
 class DbgStringCollection : public CHeapObj<mtCode> {
-public:
+ public:
   DbgStringCollection() : _ref_cnt(1), _strings(nullptr) {}
-~DbgStringCollection() {
+ ~DbgStringCollection() {
     assert(is_empty(), "Must 'clear()' before deleting!");
     assert(_ref_cnt == 0, "No uses must remain when deleting!");
   }
@@ -1160,7 +1160,7 @@ public:
   bool is_empty() const { return _strings == nullptr; }
   uint clear();
 
-private:
+ private:
   struct Cell : CHeapString {
     Cell(const char* dbgstr) :
         CHeapString(dbgstr), prev(nullptr), next(nullptr) {}
