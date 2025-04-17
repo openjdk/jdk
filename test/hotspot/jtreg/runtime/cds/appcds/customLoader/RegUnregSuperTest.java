@@ -68,13 +68,14 @@ public class RegUnregSuperTest {
             "CustomLoadee3Child id: 3 super: " + ("reg".equals(variant) ? "1" : "2") + " source: " + appJar
         };
         out = TestCommon.testDump(appJar, classlist, "-Xlog:cds+class=debug");
-        out.shouldContain("app   CustomLoadee3\n");
-        out.shouldContain("unreg CustomLoadee3\n");
+        out.shouldContain("app   CustomLoadee3"); // Not using \n as below because it'll be "app   CustomLoadee3 aot-linked" with AOTClassLinking
+        out.shouldNotContain("app   CustomLoadee3Child");
+        out.shouldContain("unreg CustomLoadee3\n"); // Accepts "unreg CustomLoadee3" but not "unreg CustomLoadee3Child"
         if ("reg".equals(variant)) {
-            out.shouldNotContain("unreg CustomLoadee3Child\n");
+            out.shouldNotContain("unreg CustomLoadee3Child");
             out.shouldContain("CustomLoadee3Child (id 3) has super-type CustomLoadee3 (id 1) overshadowed by another class with the same name");
         } else {
-            out.shouldContain("unreg CustomLoadee3Child\n");
+            out.shouldContain("unreg CustomLoadee3Child");
             out.shouldNotContain("[warning]");
         }
 
