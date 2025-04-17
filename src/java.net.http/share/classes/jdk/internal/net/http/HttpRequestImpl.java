@@ -39,6 +39,7 @@ import java.util.Optional;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
+import java.util.function.BiPredicate;
 
 import jdk.internal.net.http.common.Alpns;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
@@ -148,7 +149,11 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
                                                             String method,
                                                             HttpRequestImpl other,
                                                             boolean mayHaveBody) {
-        return new HttpRequestImpl(uri, method, other, mayHaveBody);
+        if (uri.getScheme().equalsIgnoreCase(other.uri.getScheme()) &&
+                uri.getRawAuthority().equals(other.uri.getRawAuthority())) {
+            return new HttpRequestImpl(uri, method, other, mayHaveBody, Optional.empty());
+        }
+        return new HttpRequestImpl(uri, method, other, mayHaveBody, Optional.of(Utils.ALLOWED_REDIRECT_HEADERS));
     }
 
     /** Returns a new instance suitable for authentication. */
@@ -168,9 +173,19 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
                             String method,
                             HttpRequestImpl other,
                             boolean mayHaveBody) {
+        this(uri, method, other, mayHaveBody, Optional.empty());
+    }
+
+    private HttpRequestImpl(URI uri,
+                            String method,
+                            HttpRequestImpl other,
+                            boolean mayHaveBody,
+                            Optional<BiPredicate<String, String>> redirectHeadersFilter) {
         assert method == null || Utils.isValidName(method);
-        this.method = method == null? "GET" : method;
-        this.userHeaders = other.userHeaders;
+        this.method = method == null ? "GET" : method;
+        HttpHeaders userHeaders = redirectHeadersFilter.isPresent() ?
+                HttpHeaders.of(other.userHeaders.map(), redirectHeadersFilter.get()) : other.userHeaders;
+        this.userHeaders = userHeaders;
         this.isWebSocket = other.isWebSocket;
         this.systemHeadersBuilder = new HttpHeadersBuilder();
         if (userHeaders.firstValue("User-Agent").isEmpty()) {
