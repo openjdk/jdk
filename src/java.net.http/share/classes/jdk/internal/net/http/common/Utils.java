@@ -188,6 +188,18 @@ public final class Utils {
     public static final BiPredicate<String, String>
             ALLOWED_HEADERS = (header, unused) -> !DISALLOWED_HEADERS_SET.contains(header);
 
+    private static final Set<String> DISALLOWED_REDIRECT_HEADERS_SET = getDisallowedRedirectHeaders();
+
+    private static Set<String> getDisallowedRedirectHeaders() {
+        Set<String> headers = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        headers.addAll(Set.of("Authorization", "Cookie", "Origin", "Referer", "Host"));
+
+        return Collections.unmodifiableSet(headers);
+    }
+
+    public static final BiPredicate<String, String>
+            ALLOWED_REDIRECT_HEADERS = (header, _) -> !DISALLOWED_REDIRECT_HEADERS_SET.contains(header);
+
     public static final BiPredicate<String, String> VALIDATE_USER_HEADER =
             (name, value) -> {
                 assert name != null : "null header name";
