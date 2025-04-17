@@ -414,15 +414,16 @@ public class BufferedReader extends Reader {
      * <p> This method works as if invoking it were equivalent to evaluating
      * the expression:
      * <blockquote>{@link #lines()}.toList()</blockquote>
+     * The method does not close this reader nor its underlying stream.
+     * If an I/O error occurs, the states of the reader and its underlying
+     * stream are unspecified.
      *
      * @apiNote
      * This method is intended for simple cases where it is convenient
      * to read all lines in a single operation. It is not intended for
      * reading a large number of lines.
      *
-     * @return     the lines of text as a {@code List}; whether the
-     *             {@code List} is modifiable is implementation dependent,
-     *             hence not specified
+     * @return     the lines of text as an unmodifiable {@code List}
      *
      * @throws     IOException  If an I/O error occurs
      *
@@ -431,15 +432,22 @@ public class BufferedReader extends Reader {
      * @since 25
      */
     public List<String> readAllLines() throws IOException {
-        return lines().toList();
+        try {
+            return lines().toList();
+        } catch (UncheckedIOException ue) {
+            // the cause cannot be null
+            throw ue.getCause();
+        }
     }
 
     /**
-     * Reads all remaining charactersinto a string.
+     * Reads all remaining characters into a string.
      *
      * <p> This method reads all content including the line separators in
      * the middle and/or at the end. The resulting string will contain line
-     * separators as they appear in the original content.
+     * separators as they appear in the original content. The method does not
+     * close this reader nor its underlying stream. If an I/O error occurs,
+     * the states of the reader and its underlying stream are unspecified.
      *
      * @apiNote
      * This method is intended for simple cases where it is appropriate and
