@@ -40,7 +40,7 @@ import javax.swing.table.TableModel;
  * @test
  * @bug 4115930
  * @summary Verify checkboxes in the table respond to first click.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual CheckBoxFirstClick
  */

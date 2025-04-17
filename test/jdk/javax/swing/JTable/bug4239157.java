@@ -34,7 +34,7 @@ import javax.swing.table.TableColumn;
  * @summary Tests that JTable performs cell validation properly
  *          (i.e. does not accept entries for which stopCellEditing()
  *           returns false)
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4239157
  */

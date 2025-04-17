@@ -30,7 +30,7 @@ import javax.swing.table.DefaultTableModel;
  * @test
  * @bug 4139910
  * @summary Column resize mouse pointer doesn't display in non-resizable JTable.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4139910
  */

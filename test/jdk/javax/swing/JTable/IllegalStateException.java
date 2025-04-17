@@ -40,7 +40,7 @@ import javax.swing.table.TableModel;
  * @test
  * @bug 4133143
  * @summary Illegal State exception in ComboBox editor in table
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual IllegalStateException
  */
