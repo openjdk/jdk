@@ -79,7 +79,7 @@ public class bug4460382 {
                 SwingUtilities.invokeAndWait(() -> frame.dispose());
             }
             if (row1 != row2) {
-                throw new Error("Failed 4460382: editingRow is " + row2);
+                throw new RuntimeException("Failed 4460382: editingRow is " + row2);
             }
         }
     }
