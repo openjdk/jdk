@@ -41,11 +41,19 @@ public class bug4613811 {
             Select different tabs and check that the scrollable
             buttons are correctly enabled and disabled.
 
-            When the very first tab (Tab 1) is fully visible,
+            When the very first tab (Tab 1) is fully visible
+            On macOS:
+            the left arrow button should NOT be visible.
+
+            On other platforms:
             the left arrow button should be disabled.
 
-            If the last tab (Tab 5) is visible, the right arrow
-            button should be disabled.
+            If the last tab (Tab 5) is fully visible
+            On macOS:
+            the right arrow button should NOT be visible.
+
+            On other platforms:
+            the right arrow button should be disabled.
 
             If the above is true press PASS else FAIL.
             """;

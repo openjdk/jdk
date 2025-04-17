@@ -46,7 +46,7 @@ public class bug4614623 {
             1) Press Alt key. The letter 'F' (menu mnemonic) of
             the "File" menu should now be underlined.
             2) Release the Alt key, the selection background (light grey)
-            should appear around the File menu. Compare "About" menu
+            should appear around the "File" menu. Compare "About" menu
             with "File" menu to see the light grey selection background.
 
             If the above is true, press PASS else FAIL.
@@ -56,7 +56,6 @@ public class bug4614623 {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
 
         PassFailJFrame.builder()
-                .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(62)
                 .rows(12)
