@@ -77,6 +77,7 @@
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run testng/othervm/timeout=360 -XX:+CrashOnOutOfMemoryError -Djdk.tracePinnedThreads=full
  *                     -Djdk.httpclient.quic.idleTimeout=120
+ *                     -Djdk.httpclient.keepalive.timeout.h3=120
  *                     -Djdk.test.server.quic.idleTimeout=90
  *                     -Djdk.httpclient.quic.minPtoBackoffTime=45
  *                     -Djdk.httpclient.quic.maxPtoBackoffTime=60
