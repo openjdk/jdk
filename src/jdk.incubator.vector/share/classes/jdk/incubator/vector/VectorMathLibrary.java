@@ -190,16 +190,15 @@ import static jdk.internal.vm.vector.Utils.debug;
             VectorSupport.loadNativeLibrary("sleef");
         }
 
-        private static String suffix(VectorShape vshape) {
+        private static String suffix(VectorShape vshape, boolean isShapeAgnostic) {
             if (isAARCH64()) {
-                if (vshape.vectorBitSize() <= 128) {
-                    return "advsimd";
-                } else {
-                    assert (vshape == VectorShape.S_Max_BIT) : "not supported: " + vshape;
+                if (isShapeAgnostic) {
                     return "sve";
+                } else {
+                    return "advsimd";
                 }
             } else if (isRISCV64()) {
-                assert (vshape == VectorShape.S_Max_BIT) : "not supported: " + vshape;
+                assert isShapeAgnostic : "not supported";
                 return "rvv";
             } else {
                 throw new InternalError("unsupported platform");
@@ -218,7 +217,7 @@ import static jdk.internal.vm.vector.Utils.debug;
                                  (vspecies.elementType() == float.class ? "f" : "d"),
                                  (isShapeAgnostic ? "x" : Integer.toString(vlen)),
                                  precisionLevel(op),
-                                 suffix(vspecies.vectorShape()));
+                                 suffix(vspecies.vectorShape(), isShapeAgnostic));
         }
 
         @Override
@@ -231,16 +230,8 @@ import static jdk.internal.vm.vector.Utils.debug;
             if (vspecies.length() > maxLaneCount) {
                 return false; // lacking vector support
             }
-            if (vspecies.vectorShape() != VectorShape.S_Max_BIT) {
-                if (isRISCV64()) {
-                    return false; // FIXME: only MAX shapes are supported on RISC-V
-                }
-                if (isAARCH64() && vspecies.vectorBitSize() > 128) {
-                    return false; // FIXME: SVE support only for MAX shapes
-                }
-                if (vspecies == DoubleVector.SPECIES_64) {
-                    return false; // 64-bit double vectors are not supported
-                }
+            if (vspecies == DoubleVector.SPECIES_64) {
+                return false; // 64-bit double vectors are not supported
             }
             if (op == TANH) {
                 return false; // skip due to performance considerations
