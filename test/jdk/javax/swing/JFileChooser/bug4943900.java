@@ -39,8 +39,7 @@ import jtreg.SkippedException;
 
 public class bug4943900 {
     private static final String INSTRUCTIONS = """
-        1. Click "Show FileChooser" button below, FileChooser dialog must
-           appear.
+        1. When the test runs a JFileChooser will be displayed.
 
         2. Ensure that there is a Filter combo box with these two items:
          - Text Files (*.txt)  [must be selected when the dialog opens]
@@ -69,7 +68,7 @@ public class bug4943900 {
                 .title("bug4943900 Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .rows(20)
-                .columns(65)
+                .columns(68)
                 .testUI(bug4943900::createAndShowUI)
                 .build()
                 .awaitAndCheck();
