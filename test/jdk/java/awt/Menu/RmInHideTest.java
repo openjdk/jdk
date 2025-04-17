@@ -76,74 +76,74 @@ public class RmInHideTest {
             });
         }
     }
-}
 
-class RmInHideTestFrame extends Frame implements ActionListener {
-    MenuBar menubar = null;
-    Button b;
+    static class RmInHideTestFrame extends Frame implements ActionListener {
+        MenuBar menubar = null;
+        Button b;
 
-    public RmInHideTestFrame() {
-        super("RmInHideTest");
-        b = new Button("Hide");
-        b.setActionCommand("hide");
-        b.addActionListener(this);
-        add("Center", b);
+        public RmInHideTestFrame() {
+            super("RmInHideTest");
+            b = new Button("Hide");
+            b.setActionCommand("hide");
+            b.addActionListener(this);
+            add("Center", b);
 
-        MenuBar bar = new MenuBar();
+            MenuBar bar = new MenuBar();
 
-        Menu menu = new Menu("Test1", true);
-        menu.add(new MenuItem("Test1A"));
-        menu.add(new MenuItem("Test1B"));
-        menu.add(new MenuItem("Test1C"));
-        bar.add(menu);
+            Menu menu = new Menu("Test1", true);
+            menu.add(new MenuItem("Test1A"));
+            menu.add(new MenuItem("Test1B"));
+            menu.add(new MenuItem("Test1C"));
+            bar.add(menu);
 
-        menu = new Menu("Test2", true);
-        menu.add(new MenuItem("Test2A"));
-        menu.add(new MenuItem("Test2B"));
-        menu.add(new MenuItem("Test2C"));
-        bar.add(menu);
-        setMenuBar(bar);
-    }
+            menu = new Menu("Test2", true);
+            menu.add(new MenuItem("Test2A"));
+            menu.add(new MenuItem("Test2B"));
+            menu.add(new MenuItem("Test2C"));
+            bar.add(menu);
+            setMenuBar(bar);
+        }
 
 
-    public Dimension minimumSize() {
-        return new Dimension(200, 200);
-    }
+        public Dimension minimumSize() {
+            return new Dimension(200, 200);
+        }
 
-    public void actionPerformed(ActionEvent e) {
-        String cmd = e.getActionCommand();
-        if (cmd.equals("hide")) {
-            hide();
-            try {
-                Thread.currentThread().sleep(2000);
-            } catch (InterruptedException ex) {
-                // do nothing
+        public void actionPerformed(ActionEvent e) {
+            String cmd = e.getActionCommand();
+            if (cmd.equals("hide")) {
+                hide();
+                try {
+                    Thread.currentThread().sleep(2000);
+                } catch (InterruptedException ex) {
+                    // do nothing
+                }
+                show();
             }
-            show();
         }
-    }
 
-    public void hide() {
-        menubar = getMenuBar();
-        if (menubar != null) {
-            remove(menubar);
+        public void hide() {
+            menubar = getMenuBar();
+            if (menubar != null) {
+                remove(menubar);
+            }
+            super.hide();
         }
-        super.hide();
-    }
 
 
-    public void show() {
-        if (menubar != null) {
-            setMenuBar(menubar);
+        public void show() {
+            if (menubar != null) {
+                setMenuBar(menubar);
+            }
+            super.show();
         }
-        super.show();
-    }
 
-    public Point getButtonLocation() {
-        return b.getLocationOnScreen();
-    }
+        public Point getButtonLocation() {
+            return b.getLocationOnScreen();
+        }
 
-    public Dimension getButtonDimension() {
-        return b.getSize();
+        public Dimension getButtonDimension() {
+            return b.getSize();
+        }
     }
 }

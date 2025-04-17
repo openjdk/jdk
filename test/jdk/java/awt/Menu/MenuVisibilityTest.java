@@ -40,11 +40,11 @@ public class MenuVisibilityTest {
         String INSTRUCTIONS = """
                 1. Press on a MenuBar with a long name.
                 2. Select "First item" in an opened menu.
-                   If you see that "First menu item was pressed" press PASS
+                   If you see that "First menu item was pressed" in
+                   the test log area, press PASS
                    Otherwise press FAIL"
                  """;
         PassFailJFrame.builder()
-                .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(MenuVisibilityTest::initialize)

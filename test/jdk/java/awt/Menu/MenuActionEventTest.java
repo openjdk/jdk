@@ -42,12 +42,12 @@ public class MenuActionEventTest {
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
                 1. Click on the Menu and then on Menuitem on the frame.
-                2. If you find the following message being printed:,
+                2. If you find the following message being printed in
+                   the test log area:,
                    _MenuItem: action event",
                    click PASS, else click FAIL"
                  """;
         PassFailJFrame.builder()
-                .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(MenuActionEventTest::initialize)
@@ -68,28 +68,29 @@ public class MenuActionEventTest {
         f.setBounds(204, 152, 396, 300);
         return f;
     }
-}
 
-class _Menu extends Menu {
-    public _Menu(String text) {
-        super(text);
-        enableEvents(AWTEvent.ACTION_EVENT_MASK);
+    static class _Menu extends Menu {
+        public _Menu(String text) {
+            super(text);
+            enableEvents(AWTEvent.ACTION_EVENT_MASK);
+        }
+
+        protected void processActionEvent(ActionEvent e) {
+            PassFailJFrame.log("_Menu: action event");
+            super.processActionEvent(e);
+        }
     }
 
-    protected void processActionEvent(ActionEvent e) {
-        PassFailJFrame.log("_Menu: action event");
-        super.processActionEvent(e);
-    }
-}
+    static class _MenuItem extends MenuItem {
+        public _MenuItem(String text) {
+            super(text);
+            enableEvents(AWTEvent.ACTION_EVENT_MASK);
+        }
 
-class _MenuItem extends MenuItem {
-    public _MenuItem(String text) {
-        super(text);
-        enableEvents(AWTEvent.ACTION_EVENT_MASK);
+        protected void processActionEvent(ActionEvent e) {
+            PassFailJFrame.log("_MenuItem: action event");
+            super.processActionEvent(e);
+        }
     }
 
-    protected void processActionEvent(ActionEvent e) {
-        PassFailJFrame.log("_MenuItem: action event");
-        super.processActionEvent(e);
-    }
 }

@@ -57,7 +57,6 @@ public class SetShortCutTest {
                        'C', press PASS. Otherwise press FAIL.
                 """;
         PassFailJFrame.builder()
-                .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(SetShortCutTest::initialize)
@@ -68,65 +67,63 @@ public class SetShortCutTest {
     static Frame initialize() {
         return new TestMenuShortCut();
     }
-}
 
-class TestMenuShortCut extends Frame implements ActionListener {
-    Menu menu1;
-    MenuItem item1;
-    MenuItem item2;
-    boolean beenHere;
+    static class TestMenuShortCut extends Frame implements ActionListener {
+        Menu menu1;
+        MenuItem item1;
+        MenuItem item2;
+        boolean beenHere;
 
-    public TestMenuShortCut() {
-        setTitle("Set ShortCut test");
-        beenHere = false;
-        MenuBar mTopMenu = buildMenu();
-        setSize(300, 300);
-        this.setMenuBar(mTopMenu);
-    }
-
-
-    public MenuBar buildMenu() {
-        MenuBar bar;
-        bar = new MenuBar();
-        menu1 = new Menu("File");
-        item1 = new MenuItem("First");
-        menu1.add(item1);
-        item1.setShortcut(new MenuShortcut(KeyEvent.VK_C, true));
-        bar.add(menu1);
-
-        //Stuff menu
-        item2 = new MenuItem("Second");
-        Menu menu2 = new Menu("Stuff");
-        menu2.add(item2);
-        item2.setShortcut(new MenuShortcut(KeyEvent.VK_C, false));
-        bar.add(menu2);
-
-        item1.addActionListener(this);
-        item2.addActionListener(this);
-        return bar;
-    }
-
-
-    public void actionPerformed(ActionEvent event) {
-        if (event.getSource() == item1) {
-            Frame temp = new Frame("Accelerator key is working for 'First'");
-            temp.setSize(300, 50);
-            temp.setVisible(true);
+        public TestMenuShortCut() {
+            setTitle("Set ShortCut test");
+            beenHere = false;
+            MenuBar mTopMenu = buildMenu();
+            setSize(300, 300);
+            this.setMenuBar(mTopMenu);
         }
 
-        //Click on the "Stuff" menu to remove the "first" menu item
-        else if (event.getSource() == item2) {
-            //If the item has not been removed from the menu,then remove "First" from the "File" menu
-            if (beenHere == false) {
-                item1.removeActionListener(this);
-                menu1.remove(item1);
-                beenHere = true;
-            } else {
-                item1 = new MenuItem("First");
-                menu1.add(item1);
-                item1.addActionListener(this);
-                item1.setShortcut(new MenuShortcut(KeyEvent.VK_C, true));
-                beenHere = false;
+        public MenuBar buildMenu() {
+            MenuBar bar;
+            bar = new MenuBar();
+            menu1 = new Menu("File");
+            item1 = new MenuItem("First");
+            menu1.add(item1);
+            item1.setShortcut(new MenuShortcut(KeyEvent.VK_C, true));
+            bar.add(menu1);
+
+            //Stuff menu
+            item2 = new MenuItem("Second");
+            Menu menu2 = new Menu("Stuff");
+            menu2.add(item2);
+            item2.setShortcut(new MenuShortcut(KeyEvent.VK_C, false));
+            bar.add(menu2);
+
+            item1.addActionListener(this);
+            item2.addActionListener(this);
+            return bar;
+        }
+
+        public void actionPerformed(ActionEvent event) {
+            if (event.getSource() == item1) {
+                Frame temp = new Frame("Accelerator key is working for 'First'");
+                temp.setSize(300, 50);
+                temp.setVisible(true);
+            }
+
+            //Click on the "Stuff" menu to remove the "first" menu item
+            else if (event.getSource() == item2) {
+                //If the item has not been removed from the menu,then remove "First" from the "File" menu
+                if (beenHere == false) {
+                    item1.removeActionListener(this);
+                    menu1.remove(item1);
+                    beenHere = true;
+                } else {
+                    item1 = new MenuItem("First");
+                    menu1.add(item1);
+                    item1.addActionListener(this);
+                    item1.setShortcut(new MenuShortcut(KeyEvent.VK_C, true));
+                    beenHere = false;
+                }
             }
         }
     }
