@@ -221,7 +221,8 @@ final class P11HKDF extends KDFSpi {
         } catch (PKCS11Exception e) {
             if (e.match(CKR_KEY_SIZE_RANGE)) {
                 throw new InvalidAlgorithmParameterException("Invalid key " +
-                        "size for algorithm '" + alg + "'.", e);
+                        "size (" + outLen + " bytes) for algorithm '" + alg +
+                        "'.", e);
             }
             throw new ProviderException("HKDF derivation for algorithm '" +
                     alg + "' failed.", e);

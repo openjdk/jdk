@@ -137,8 +137,8 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
         switch ((int)keyGenMech) {
             case (int)CKM_DES_KEY_GEN:
                 if ((keySize != 64) && (keySize != 56)) {
-                    throw new InvalidAlgorithmParameterException
-                            ("DES key length must be 56 bits");
+                    throw new InvalidAlgorithmParameterException("DES key " +
+                            "length was " + keySize + " but must be 56 bits");
                 }
                 sigKeySize = 56;
                 break;
@@ -149,23 +149,26 @@ final class P11KeyGenerator extends KeyGeneratorSpi {
                 } else if ((keySize == 168) || (keySize == 192)) {
                     sigKeySize = 168;
                 } else {
-                    throw new InvalidAlgorithmParameterException
-                            ("DESede key length must be 112, or 168 bits");
+                    throw new InvalidAlgorithmParameterException("DESede key " +
+                            "length was " + keySize + " but must be 112, or " +
+                            "168 bits");
                 }
                 break;
             default:
                 // Handle all variable-key-length algorithms here
                 if (range != null && (keySize < range.iMinKeySize
                     || keySize > range.iMaxKeySize)) {
-                    throw new InvalidAlgorithmParameterException
-                        ("Key length must be between " + range.iMinKeySize +
-                        " and " + range.iMaxKeySize + " bits");
+                    throw new InvalidAlgorithmParameterException("Key length " +
+                            "was " + keySize + " but must be between " +
+                            range.iMinKeySize + " and " + range.iMaxKeySize +
+                            " bits");
                 }
                 if (keyGenMech == CKM_AES_KEY_GEN) {
                     if ((keySize != 128) && (keySize != 192) &&
                         (keySize != 256)) {
-                        throw new InvalidAlgorithmParameterException
-                            ("AES key length must be 128, 192, or 256 bits");
+                        throw new InvalidAlgorithmParameterException("AES key" +
+                                " length was " + keySize + " but must be 128," +
+                                " 192, or 256 bits");
                     }
                 }
                 sigKeySize = keySize;
