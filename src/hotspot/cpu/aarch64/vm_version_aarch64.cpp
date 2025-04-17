@@ -714,7 +714,6 @@ void VM_Version::initialize_cpu_information(void) {
   get_compatible_board(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len);
   desc_len = (int)strlen(_cpu_desc);
   snprintf(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _features_string);
-  fprintf(stderr, "_features_string = \"%s\"", _features_string);
 
   _initialized = true;
 }
