@@ -1977,10 +1977,11 @@ class MutableBigInteger {
                 return r;
 
             // compute r - ceil((rToN - this) / (n * rToN1))
+            MutableBigInteger q1 = new MutableBigInteger();
             MutableBigInteger delta = new MutableBigInteger();
-            MutableBigInteger divisor = new MutableBigInteger(rToN1.multiply(n).mag);
             rToN.subtract(this);
-            if(!rToN.divide(divisor, delta).isZero())
+            // Don't use conditional-or to ensure to do both divisions
+            if(rToN.divide(n, q1) != 0 | !q1.divide(new MutableBigInteger(rToN1.mag), delta).isZero())
                 r.subtract(ONE);
 
             r.subtract(delta);
