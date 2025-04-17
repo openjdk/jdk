@@ -4596,47 +4596,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  /**
-   *  Arguments:
-   *
-   * Inputs:
-   *   c_rarg0   - int crc
-   *   c_rarg1   - byte* buf
-   *   c_rarg2   - int length
-   *
-   * Output:
-   *       rax   - int crc result
-   */
-  address generate_updateBytesCRC32() {
-    assert(UseCRC32Intrinsics, "what are we doing here?");
-
-    __ align(CodeEntryAlignment);
-    StubGenStubId stub_id = StubGenStubId::updateBytesCRC32_id;
-    StubCodeMark mark(this, stub_id);
-
-    address start = __ pc();
-
-    const Register crc   = c_rarg0;  // crc
-    const Register buf   = c_rarg1;  // source java byte array address
-    const Register len   = c_rarg2;  // length
-    const Register table0 = c_rarg3; // crc_table address
-    const Register table1 = c_rarg4;
-    const Register table2 = c_rarg5;
-    const Register table3 = c_rarg6;
-    const Register tmp3 = c_rarg7;
-
-    BLOCK_COMMENT("Entry:");
-    __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-    __ kernel_crc32(crc, buf, len,
-              table0, table1, table2, table3, rscratch1, rscratch2, tmp3);
-
-    __ leave(); // required for proper stackwalking of RuntimeStub frame
-    __ ret(lr);
-
-    return start;
-  }
-
   // Helpers to schedule parallel operation bundles across vector
   // register sequences of size 2, 4 or 8.
 
@@ -5597,6 +5556,47 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
 
+  }
+
+  /**
+   *  Arguments:
+   *
+   * Inputs:
+   *   c_rarg0   - int crc
+   *   c_rarg1   - byte* buf
+   *   c_rarg2   - int length
+   *
+   * Output:
+   *       rax   - int crc result
+   */
+  address generate_updateBytesCRC32() {
+    assert(UseCRC32Intrinsics, "what are we doing here?");
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::updateBytesCRC32_id;
+    StubCodeMark mark(this, stub_id);
+
+    address start = __ pc();
+
+    const Register crc   = c_rarg0;  // crc
+    const Register buf   = c_rarg1;  // source java byte array address
+    const Register len   = c_rarg2;  // length
+    const Register table0 = c_rarg3; // crc_table address
+    const Register table1 = c_rarg4;
+    const Register table2 = c_rarg5;
+    const Register table3 = c_rarg6;
+    const Register tmp3 = c_rarg7;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    __ kernel_crc32(crc, buf, len,
+              table0, table1, table2, table3, rscratch1, rscratch2, tmp3);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(lr);
+
+    return start;
   }
 
   /**
