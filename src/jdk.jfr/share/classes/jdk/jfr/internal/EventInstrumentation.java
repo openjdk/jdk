@@ -99,6 +99,11 @@ final class EventInstrumentation {
      *                                registration (bytesForEagerInstrumentation)
      */
     EventInstrumentation(ClassInspector inspector, long id, boolean guardEventConfiguration) {
+        inspector.buildFields();
+        if (!inspector.isJDK()) {
+            // Only user-defined events have custom settings.
+            inspector.buildSettings();
+        }
         this.inspector = inspector;
         this.eventTypeId = id;
         this.guardEventConfiguration = guardEventConfiguration;
@@ -204,7 +209,7 @@ final class EventInstrumentation {
         getfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
         invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT);
         codeBuilder.ifeq(fail);
-        List<SettingDesc> settingDescs = inspector.getSettingDescs();
+        List<SettingDesc> settingDescs = inspector.getSettings();
         for (int index = 0; index < settingDescs.size(); index++) {
             SettingDesc sd = settingDescs.get(index);
             // if (!settingsMethod(eventConfiguration.settingX)) goto fail;
@@ -372,7 +377,7 @@ final class EventInstrumentation {
         }
         // stack: [EW]
         // write custom fields
-        List<FieldDesc> fieldDescs = inspector.getFieldDescs();
+        List<FieldDesc> fieldDescs = inspector.getFields();
         while (fieldIndex < fieldDescs.size()) {
             blockCodeBuilder.dup();
             // stack: [EW], [EW]
@@ -483,7 +488,7 @@ final class EventInstrumentation {
             invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_STACK_TRACE.method());
         }
         // stack: [EW]
-        List<FieldDesc> fieldDescs = inspector.getFieldDescs();
+        List<FieldDesc> fieldDescs = inspector.getFields();
         while (fieldIndex < fieldDescs.size()) {
             FieldDesc field = fieldDescs.get(fieldIndex);
             blockCodeBuilder.dup();

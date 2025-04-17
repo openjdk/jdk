@@ -67,8 +67,8 @@ final class ClassInspector {
     private final Class<?> superClass;
     private final boolean isJDK;
     private final ImplicitFields implicitFields;
-    private final List<SettingDesc> settingsDescs;
-    private final List<FieldDesc> fieldDescs;
+    private final List<SettingDesc> settingsDescs = new ArrayList<>();
+    private final List<FieldDesc> fieldDescs = new ArrayList<>();
     private final String className;
 
     ClassInspector(Class<?> superClass, byte[] bytes, boolean isJDK) {
@@ -77,8 +77,6 @@ final class ClassInspector {
         this.isJDK = isJDK;
         this.className = classModel.thisClass().asInternalName().replace("/", ".");
         this.implicitFields = determineImplicitFields();
-        this.settingsDescs = buildSettingDescs();
-        this.fieldDescs = buildFieldDescs();
     }
 
     String getClassName() {
@@ -89,7 +87,6 @@ final class ClassInspector {
         if (!isJDK) {
             return null;
         }
-
         StringBuilder sb = new StringBuilder();
         sb.append("(");
         for (FieldDesc field : fieldDescs) {
@@ -164,11 +161,11 @@ final class ClassInspector {
         return Type.isValidJavaFieldType(className);
     }
 
-    List<SettingDesc> getSettingDescs() {
+    List<SettingDesc> getSettings() {
         return settingsDescs;
     }
 
-    List<FieldDesc> getFieldDescs() {
+    List<FieldDesc> getFields() {
         return fieldDescs;
     }
 
@@ -254,16 +251,13 @@ final class ClassInspector {
         return null;
     }
 
-    private List<SettingDesc> buildSettingDescs() {
+    void buildSettings() {
         Set<String> foundMethods = new HashSet<>();
-        List<SettingDesc> settingDescs = new ArrayList<>();
-        settingDescs.addAll(collectClassSettings(foundMethods));
-        settingDescs.addAll(collectSuperClassSettings(foundMethods));
-        return settingDescs;
+        buildClassSettings(foundMethods);
+        buildSuperClassSettings(foundMethods);
     }
 
-    private List<SettingDesc> collectClassSettings(Set<String> foundMethods) {
-        List<SettingDesc> list = new ArrayList<>();
+    private void buildClassSettings(Set<String> foundMethods) {
         for (MethodModel m : classModel.methods()) {
             for (Attribute<?> attribute : m.attributes()) {
                 if (attribute instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
@@ -294,7 +288,7 @@ final class ClassInspector {
                                     if (type.isClassOrInterface()) {
                                         String methodName = m.methodName().stringValue();
                                         foundMethods.add(methodName);
-                                        list.add(new SettingDesc(type, methodName));
+                                        settingsDescs.add(new SettingDesc(type, methodName));
                                     }
                                 }
                             }
@@ -303,36 +297,36 @@ final class ClassInspector {
                 }
             }
         }
-        return list;
     }
 
-    private List<SettingDesc> collectSuperClassSettings(Set<String> foundMethods) {
-        List<SettingDesc> list = new ArrayList<>();
+    private void buildSuperClassSettings(Set<String> foundMethods) {
         for (Class<?> c = superClass; jdk.internal.event.Event.class != c; c = c.getSuperclass()) {
             for (java.lang.reflect.Method method : c.getDeclaredMethods()) {
                 if (!foundMethods.contains(method.getName())) {
-                    // Skip private methods in base classes
-                    if (!Modifier.isPrivate(method.getModifiers())) {
-                        if (method.getReturnType().equals(Boolean.TYPE)) {
-                            if (method.getParameterCount() == 1) {
-                                Class<?> type = method.getParameters()[0].getType();
-                                if (SettingControl.class.isAssignableFrom(type)) {
-                                    ClassDesc paramType = Bytecode.classDesc(type);
-                                    foundMethods.add(method.getName());
-                                    list.add(new SettingDesc(paramType, method.getName()));
-                                }
-                            }
-                        }
+                    buildSettingsMethod(foundMethods, method);
+                }
+            }
+        }
+    }
+
+    private void buildSettingsMethod(Set<String> foundMethods, java.lang.reflect.Method method) {
+        // Skip private methods in base classes
+        if (!Modifier.isPrivate(method.getModifiers())) {
+            if (method.getReturnType().equals(Boolean.TYPE)) {
+                if (method.getParameterCount() == 1) {
+                    Class<?> type = method.getParameters()[0].getType();
+                    if (SettingControl.class.isAssignableFrom(type)) {
+                        ClassDesc paramType = Bytecode.classDesc(type);
+                        foundMethods.add(method.getName());
+                        settingsDescs.add(new SettingDesc(paramType, method.getName()));
                     }
                 }
             }
         }
-        return list;
     }
 
-    private List<FieldDesc> buildFieldDescs() {
-        Set<String> fieldSet = new HashSet<>();
-        List<FieldDesc> fieldDescs = new ArrayList<>(classModel.fields().size());
+    void buildFields() {
+        Set<String> foundFields = new HashSet<>();
         // These two fields are added by native as 'transient' so they will be
         // ignored by the loop below.
         // The benefit of adding them manually is that we can
@@ -344,9 +338,9 @@ final class ClassInspector {
             fieldDescs.add(ImplicitFields.FIELD_DURATION);
         }
         for (FieldModel field : classModel.fields()) {
-            if (!fieldSet.contains(field.fieldName().stringValue()) && isValidField(field.flags().flagsMask(), field.fieldTypeSymbol())) {
+            if (!foundFields.contains(field.fieldName().stringValue()) && isValidField(field.flags().flagsMask(), field.fieldTypeSymbol())) {
                 fieldDescs.add(FieldDesc.of(field.fieldTypeSymbol(), field.fieldName().stringValue()));
-                fieldSet.add(field.fieldName().stringValue());
+                foundFields.add(field.fieldName().stringValue());
             }
         }
         for (Class<?> c = superClass; jdk.internal.event.Event.class != c; c = c.getSuperclass()) {
@@ -355,14 +349,13 @@ final class ClassInspector {
                 if (!Modifier.isPrivate(field.getModifiers())) {
                     if (isValidField(field.getModifiers(), field.getType().getName())) {
                         String fieldName = field.getName();
-                        if (!fieldSet.contains(fieldName)) {
+                        if (!foundFields.contains(fieldName)) {
                             fieldDescs.add(FieldDesc.of(field.getType(), fieldName));
-                            fieldSet.add(fieldName);
+                            foundFields.add(fieldName);
                         }
                     }
                 }
             }
         }
-        return fieldDescs;
     }
 }
