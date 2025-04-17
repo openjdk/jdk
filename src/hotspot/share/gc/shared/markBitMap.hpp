@@ -84,7 +84,7 @@ public:
   inline HeapWord* get_next_marked_addr(const HeapWord* addr,
                                         HeapWord* limit) const;
 
-  void print_on_error(outputStream* st, const char* prefix) const;
+  void print_on(outputStream* st, const char* prefix) const;
 
   // Write marks.
   inline void mark(HeapWord* addr);

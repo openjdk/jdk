@@ -678,7 +678,7 @@ void ParallelScavengeHeap::print_gc_on(outputStream* st) const {
   }
   st->cr();
 
-  PSParallelCompact::print_on_error(st);
+  PSParallelCompact::print_on(st);
 }
 
 void ParallelScavengeHeap::gc_threads_do(ThreadClosure* tc) const {

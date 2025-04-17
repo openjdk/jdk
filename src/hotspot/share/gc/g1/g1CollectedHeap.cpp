@@ -2173,7 +2173,7 @@ void G1CollectedHeap::print_gc_on(outputStream* st) const {
 
   if (_cm != nullptr) {
     st->cr();
-    _cm->print_on_error(st);
+    _cm->print_on(st);
   }
 }
 

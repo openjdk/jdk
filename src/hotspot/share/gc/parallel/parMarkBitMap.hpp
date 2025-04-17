@@ -58,11 +58,11 @@ public:
   // Clear a range of bits corresponding to heap address range [beg, end).
   inline void clear_range(HeapWord* beg, HeapWord* end);
 
-  void print_on_error(outputStream* st) const {
+  void print_on(outputStream* st) const {
     st->print_cr("Marking Bits: (ParMarkBitMap*) " PTR_FORMAT, p2i(this));
 
     StreamAutoIndentor indentor(st, 1);
-    _beg_bits.print_on_error(st, "Begin Bits: ");
+    _beg_bits.print_range_on(st, "Begin Bits: ");
   }
 
 #ifdef  ASSERT

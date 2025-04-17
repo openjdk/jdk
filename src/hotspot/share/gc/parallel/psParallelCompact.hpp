@@ -846,7 +846,7 @@ public:
   // Return the SpaceId for the given address.
   static SpaceId space_id(HeapWord* addr);
 
-  static void print_on_error(outputStream* st);
+  static void print_on(outputStream* st);
 
 #ifdef  ASSERT
   // Sanity check the new location of a word in the heap.
