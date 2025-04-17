@@ -822,6 +822,12 @@ private:
   int  evex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                  InstructionAttr *attributes, bool no_flags = false);
 
+  void evex_opcode_prefix_and_encode_ndd_and_int16(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+                                 InstructionAttr *attributes, int byte1, int byte2, bool no_flags, bool use_prefixq = false);
+
+  void evex_opcode_prefix_and_encode_ndd_and_int24(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
+                                 InstructionAttr *attributes, int byte1, int byte2, int byte1_ndd, bool no_flags, bool use_prefixq = false);
+
   void simd_prefix(XMMRegister xreg, XMMRegister nds, Address adr, VexSimdPrefix pre,
                    VexOpcode opc, InstructionAttr *attributes);
 
