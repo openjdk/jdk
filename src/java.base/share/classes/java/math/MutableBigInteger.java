@@ -1952,7 +1952,7 @@ class MutableBigInteger {
             double base = r.toBigInteger().doubleValue();
             // Complete the shift to a multiple of n,
             // avoiding to lose more bits than necessary.
-            if (shiftExcess != 0) { 
+            if (shiftExcess != 0) {
                 int shiftLack = n - shiftExcess;
                 shift += shiftLack;
                 base /= Double.valueOf("0x1p" + shiftLack);
