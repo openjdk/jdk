@@ -3101,7 +3101,6 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
         result |= CPU_AVX512F;
         result |= CPU_AVX512CD;
         result |= CPU_AVX512DQ;
-        result |= CPU_AVX512_IFMA;
         result |= CPU_AVX512PF;
         result |= CPU_AVX512ER;
         result |= CPU_AVX512BW;

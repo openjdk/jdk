@@ -689,7 +689,7 @@ public:
 
   static void clean_cpuFeatures()   { _features = 0; }
   static void set_avx_cpuFeatures() { _features |= (CPU_SSE | CPU_SSE2 | CPU_AVX | CPU_VZEROUPPER ); }
-  static void set_evex_cpuFeatures() { _features |= (CPU_AVX10_1 | EXTRA_CPU_AVX10_2 | CPU_AVX512F | CPU_SSE | CPU_SSE2 | CPU_VZEROUPPER ); }
+  static void set_evex_cpuFeatures() { _features |= (CPU_AVX10_1 | CPU_AVX512F | CPU_SSE | CPU_SSE2 | CPU_VZEROUPPER ); }
   static void set_apx_cpuFeatures() { _features |= CPU_APX_F; }
   static void set_bmi_cpuFeatures() { _features |= (CPU_BMI1 | CPU_BMI2 | CPU_LZCNT | CPU_POPCNT); }
 
