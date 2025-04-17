@@ -173,7 +173,7 @@ class DependencyFinder {
         trace("parsing %s %s%n", archive.getName(), archive.getPathName());
         FutureTask<Set<Location>> task = new FutureTask<>(() -> {
             Set<Location> targets = new HashSet<>();
-            archive.reader().processClassFiles(cf -> {
+            archive.reader().forEachClassFile(cf -> {
                 if (cf.isModuleInfo())
                     return;
 

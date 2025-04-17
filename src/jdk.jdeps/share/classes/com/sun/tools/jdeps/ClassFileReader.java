@@ -101,8 +101,8 @@ public class ClassFileReader implements Closeable {
         return skippedEntries;
     }
 
-    protected void skipEntry(ClassFileError ex, String fileName) {
-        skippedEntries.add(String.format("%s: %s", ex.toString(), fileName));
+    protected void skipEntry(Throwable ex, String entryPath) {
+        skippedEntries.add(String.format("%s: %s", ex.toString(), entryPath));
     }
 
     /**
@@ -138,7 +138,7 @@ public class ClassFileReader implements Closeable {
         return null;
     }
 
-    public void processClassFiles(Consumer<ClassModel> handler) throws IOException {
+    public void forEachClassFile(Consumer<ClassModel> handler) throws IOException {
         if (baseFileName.endsWith(".class")) {
             // propagate ClassFileError for single file
             try {
@@ -225,20 +225,16 @@ public class ClassFileReader implements Closeable {
         }
 
         @Override
-        public void processClassFiles(Consumer<ClassModel> handler) throws IOException {
+        public void forEachClassFile(Consumer<ClassModel> handler) throws IOException {
             try (Stream<Path> stream = Files.walk(path, Integer.MAX_VALUE)) {
                 stream.filter(ClassFileReader::isClass)
                       .forEach(e -> {
                           try {
                               handler.accept(readClassFile(e));
-                          } catch (ClassFileError ex) {
+                          } catch (ClassFileError | IOException ex) {
                               skipEntry(ex, e.toString());
-                          } catch (IOException ex) {
-                              throw new UncheckedIOException(ex);
                           }
                       });
-            } catch (UncheckedIOException ex) {
-                throw ex.getCause();
             }
         }
     }
@@ -322,22 +318,16 @@ public class ClassFileReader implements Closeable {
         }
 
         @Override
-        public void processClassFiles(Consumer<ClassModel> handler) throws IOException {
-            try {
-                jarfile.versionedStream()
-                        .filter(JarFileReader::isJarEntryClass)
-                        .forEach(e -> {
-                            try {
-                                handler.accept(readClassFile(jarfile, e));
-                            } catch (ClassFileError ex) {
-                                skipEntry(ex, e.getName() + " (" + jarfile.getName() + ")");
-                            } catch (IOException ex) {
-                                throw new UncheckedIOException(ex);
-                            }
-                        });
-            } catch (UncheckedIOException ex) {
-                throw ex.getCause();
-            }
+        public void forEachClassFile(Consumer<ClassModel> handler) throws IOException {
+            jarfile.versionedStream()
+                   .filter(JarFileReader::isJarEntryClass)
+                   .forEach(e -> {
+                       try {
+                           handler.accept(readClassFile(jarfile, e));
+                       } catch (ClassFileError | IOException ex) {
+                           skipEntry(ex, e.getName() + " (" + jarfile.getName() + ")");
+                       }
+                   });
         }
     }
 }
