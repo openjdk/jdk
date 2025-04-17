@@ -234,20 +234,19 @@ class FieldInfoReader {
   UNSIGNED5::Reader<const u1*, int> _r;
   int _next_index;
 
-  public:
+public:
   FieldInfoReader(const Array<u1>* fi);
 
-  private:
+private:
   uint32_t next_uint() { return _r.next_uint(); }
   void skip(int n) { int s = _r.try_skip(n); assert(s == n,""); }
-
-public:
   void skip_bytes(int bytes) {
     assert(bytes >= 0, "skipping negative");
     // no bounds checking; r._limit() is not set
     _r.set_position(_r.position() + bytes);
   }
 
+public:
   int has_next() const { return _r.has_next(); }
   int position() const { return _r.position(); }
   int next_index() const { return _next_index; }
