@@ -837,6 +837,9 @@ void ZGenerationYoung::mark_start() {
   // Change good colors
   flip_mark_start();
 
+  // Update TLAB usage
+  ZHeap::heap()->update_tlab_usage(ZAllocator::eden()->tlab_used());
+
   // Retire allocating pages
   ZAllocator::eden()->retire_pages();
   for (ZPageAge i = ZPageAge::survivor1; i <= ZPageAge::survivor14; i = static_cast<ZPageAge>(static_cast<uint>(i) + 1)) {

@@ -62,6 +62,7 @@ ZHeap::ZHeap()
     _serviceability(InitialHeapSize, min_capacity(), max_capacity()),
     _old(&_page_table, &_page_allocator),
     _young(&_page_table, _old.forwarding_table(), &_page_allocator),
+    _tlab_usage(),
     _initialized(false) {
 
   // Install global heap instance
@@ -131,11 +132,11 @@ size_t ZHeap::unused() const {
 }
 
 size_t ZHeap::tlab_capacity() const {
-  return capacity();
+  return _tlab_usage.capacity();
 }
 
 size_t ZHeap::tlab_used() const {
-  return _allocator_eden.tlab_used();
+  return _tlab_usage.used();
 }
 
 size_t ZHeap::max_tlab_size() const {
@@ -155,6 +156,18 @@ size_t ZHeap::unsafe_max_tlab_alloc() const {
   }
 
   return MIN2(size, max_tlab_size());
+}
+
+void ZHeap::update_tlab_usage(size_t current_used) {
+  const size_t old_used = _tlab_usage.used();
+  const size_t old_capacity = _tlab_usage.capacity();
+
+  _tlab_usage.update(current_used);
+  log_debug(gc, tlab)("TLAB Usage update: used %zuM -> %zuM, capacity: %zuM -> %zuM",
+                      old_used / M,
+                      _tlab_usage.used() / M,
+                      old_capacity / M,
+                      _tlab_usage.capacity() / M);
 }
 
 bool ZHeap::is_in(uintptr_t addr) const {

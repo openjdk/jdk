@@ -33,6 +33,7 @@
 #include "gc/z/zPageTable.hpp"
 #include "gc/z/zPageType.hpp"
 #include "gc/z/zServiceability.hpp"
+#include "gc/z/zTLABUsage.hpp"
 
 class OopFieldClosure;
 
@@ -54,6 +55,7 @@ private:
 
   ZGenerationOld          _old;
   ZGenerationYoung        _young;
+  ZTLABUsage              _tlab_usage;
 
   bool                    _initialized;
 
@@ -81,6 +83,7 @@ public:
   size_t tlab_used() const;
   size_t max_tlab_size() const;
   size_t unsafe_max_tlab_alloc() const;
+  void update_tlab_usage(size_t current_used);
 
   bool is_in(uintptr_t addr) const;
   bool is_in_page_relaxed(const ZPage* page, zaddress addr) const;
