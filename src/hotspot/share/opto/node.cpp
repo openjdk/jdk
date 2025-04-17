@@ -1774,8 +1774,8 @@ Node* Node::find(const int idx, bool only_ctrl) {
 
 class PrintBFS {
 public:
-  PrintBFS(const Node* start, const int max_distance, const Node* target, const char* options, outputStream* st)
-  : _start(start), _max_distance(max_distance), _target(target), _options(options), _output(st),
+  PrintBFS(const Node* start, const int max_distance, const Node* target, const char* options, outputStream* st, frame* fr)
+    : _start(start), _max_distance(max_distance), _target(target), _options(options), _output(st), _frame(fr),
     _dcc(this), _info_uid(cmpkey, hashkey) {}
 
   void run();
@@ -1796,6 +1796,7 @@ private:
   const Node* _target;
   const char* _options;
   outputStream* _output;
+  frame* _frame;
 
   // options
   bool _traverse_inputs = false;
@@ -2057,7 +2058,7 @@ void PrintBFS::print() {
     if (_print_igv) {
       Compile* C = Compile::current();
       C->init_igv();
-      C->igv_print_graph_to_network("PrintBFS", _print_list, nullptr);
+      C->igv_print_graph_to_network(nullptr, _print_list, _frame);
     }
   } else {
     _output->print_cr("No nodes to print.");
@@ -2409,14 +2410,20 @@ void Node::dump_bfs(const int max_distance, Node* target, const char* options) c
 }
 
 // Used to dump to stream.
-void Node::dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st) const {
-  PrintBFS bfs(this, max_distance, target, options, st);
+void Node::dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st, frame* fr) const {
+  PrintBFS bfs(this, max_distance, target, options, st, fr);
   bfs.run();
 }
 
 // Call this from debugger, with default arguments
 void Node::dump_bfs(const int max_distance) const {
   dump_bfs(max_distance, nullptr, nullptr);
+}
+
+// Call this from debugger, with stack handling register arguments for IGV dumps.
+void Node::dump_bfs(const int max_distance, Node* target, const char* options, void* sp, void* fp, void* pc) const {
+  frame fr(sp, fp, pc);
+  dump_bfs(max_distance, target, options, tty, &fr);
 }
 
 // -----------------------------dump_idx---------------------------------------

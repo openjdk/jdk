@@ -906,7 +906,10 @@ void IdealGraphPrinter::walk_nodes(Node* start, bool edges) {
 
 static bool skip_frame(const char* name) {
   return strstr(name, "IdealGraphPrinter") != nullptr ||
-         strstr(name, "Compile::print_method") != nullptr;
+         strstr(name, "Compile::print_method") != nullptr ||
+         strstr(name, "Compile::igv_print_graph") != nullptr ||
+         strstr(name, "PrintBFS") != nullptr ||
+         strstr(name, "Node::dump_bfs") != nullptr;
 }
 
 static bool stop_frame_walk(const char* name) {

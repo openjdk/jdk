@@ -54,12 +54,12 @@ name.
 
 The JVM provides some entry functions to dump graphs from a debugger such as
 `gdb` or `rr`, see the different variants of `igv_print` and `igv_append` in
-`src/hotspot/share/opto/compile.cpp`. In combination with the IGV network
-interface, these functions enable a powerful interactive workflow where the user
-can simultaneously step through C2's code and visualize the evolving Ideal
-graph. Note that, to produce and print meaningful C2 call stacks, these
-functions take the stack pointer, frame pointer, and program counter registers
-as arguments. These are usually `$sp`, `$fp`, and `$pc`:
+`compile.cpp`. In combination with the IGV network interface, these functions
+enable a powerful interactive workflow where the user can simultaneously step
+through C2's code and visualize the evolving Ideal graph. Note that, to produce
+and print meaningful C2 call stacks, these functions take the stack pointer,
+frame pointer, and program counter registers as arguments. These are usually
+`$sp`, `$fp`, and `$pc`:
 
 ```
 (gdb) p igv_print(true, $sp, $fp, $pc)
@@ -68,11 +68,31 @@ Method printed over network stream to IGV
 
 but might be given different names on different platforms, see the output of
 `p help()` for more information. A tip to further simplify the workflow in
-`gdb`/`rr` is to create a user-defined command such as e.g.:
+`gdb` or `rr` is to create a user-defined command such as e.g.:
 
 ```
 define igv
   p igv_print(true, $sp, $fp, $pc)
+end
+```
+
+Another way to dump graphs interactively is through the `Node::dump_dfs`
+functionality with the option `!` (run `p find_node(0)->dump_bfs(0,0,"H")` to
+see the complete list of options). One of the versions of this function also
+takes the three stack management registers to produce a C2 call stack:
+
+```
+(gdb) p find_node(3)->dump_bfs(0, 0, "!", $sp, $fp, $pc)
+(...)
+Method printed over network stream to IGV
+```
+
+Again, user-defined debugger commands can be created for simplicity. For
+example, to dump the current graph with a given node highlighted:
+
+```
+define igv_node
+  p find_node($arg0)->dump_bfs(0, 0, "!", $sp, $fp, $pc)
 end
 ```
 
