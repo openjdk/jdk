@@ -29,6 +29,7 @@
 #include "nmt/nmtCommon.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/macros.hpp"
 
 #if defined(LINUX) || defined(__APPLE__)
@@ -38,12 +39,8 @@
 #endif
 
 class NMT_LogRecorder : public StackObj {
-#if defined(LINUX) || defined(__APPLE__)
-  pthread_mutex_t _mutex;
-#elif defined(_WIN64)
- // TODO
-#endif
 protected:
+  static Mutex* _lock;
   long int _limit  = 0;
   long int _count  = 0;
   int _log_fd;
@@ -65,9 +62,6 @@ public:
 
 public:
   void init();
-  bool lockIfNotDone();
-  void lock();
-  void unlock();
   void get_thread_name(char* buf);
   bool done() {
     return _done;
