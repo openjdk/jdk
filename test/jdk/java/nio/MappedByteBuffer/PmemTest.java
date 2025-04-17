@@ -77,17 +77,18 @@
  *  make test TEST=jdk/java/nio/MappedByteBuffer/PmemTest.java
 */
 
-/*
- * In order to enable the
- * test, you will need to mount the NVRAM device, which will typically appear as
- * /dev/pmem0, to the directory /mnt/pmem. Once that is done, you can follow the
- * instructions above to create a test directory and remove the ignore tag.
- *
- * @test
+/* @test id=default_architecture_test_case
  * @summary Testing NVRAM mapped byte buffer support
  * @run main/manual PmemTest
  * @requires (os.family == "linux")
- * @requires ((os.arch == "amd64")|(os.arch == "aarch64")|(os.arch == "ppc64le")|(os.arch == "x86_64"))
+ * @requires ((os.arch == "x86_64")|(os.arch == "amd64"))
+ */
+
+/* @test id=other_architectures_test_case
+ * @summary Testing NVRAM mapped byte buffer support
+ * @run main/manual PmemTest
+ * @requires (os.family == "linux")
+ * @requires ((os.arch == "aarch64")|(os.arch == "ppc64le"))
  */
 
 import java.io.File;
