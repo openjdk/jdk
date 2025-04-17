@@ -31,7 +31,7 @@ import javax.swing.table.TableModel;
  * @test
  * @bug 4128506
  * @summary Tests that JTable with AUTO_RESIZE_ALL_COLUMNS correctly compute width of columns
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4128506
  */

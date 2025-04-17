@@ -40,7 +40,7 @@ import javax.swing.table.TableModel;
  * @test
  * @bug 4201917
  * @summary Shift Click in table before making selection
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual ShiftClick
  */

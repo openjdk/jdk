@@ -31,7 +31,7 @@ import javax.swing.JTable;
  * @test
  * @bug 4224179
  * @summary Tests if Table default cell editor doesn't handle % (percent) character correctly
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main bug4224179
  */
