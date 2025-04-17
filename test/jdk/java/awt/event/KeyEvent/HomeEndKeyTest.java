@@ -97,7 +97,7 @@ public class HomeEndKeyTest extends Frame implements KeyListener {
 
     protected void printKey(KeyEvent evt) {
         String str;
-        switch(evt.getID()) {
+        switch (evt.getID()) {
         case KeyEvent.KEY_PRESSED:
             str = "KEY_PRESSED";
             break;
