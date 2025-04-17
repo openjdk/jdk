@@ -44,7 +44,7 @@ public class TooltipTest {
             still in order to test HTML in JToolTip. If the tooltip has some
             text which is red then test passes, otherwise it fails (bug 4207474).
 
-        2.  Move the mouse over the button labeled "Long tip". If the\s
+        2.  Move the mouse over the button labeled "Long tip". If the
             last letter of the tooltip that appears is not all visible,
             then the test fails. If you can see the entire last character,
             then the test passes (bug 4218495).
