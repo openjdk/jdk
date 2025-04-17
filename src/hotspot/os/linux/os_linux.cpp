@@ -141,9 +141,6 @@
 
 #define MAX_SECS 100000000
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
-
 #ifdef MUSL_LIBC
 // dlvsym is not a part of POSIX
 // and musl libc doesn't implement it.

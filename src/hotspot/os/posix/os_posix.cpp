@@ -1472,9 +1472,6 @@ jlong os::javaTimeNanos() {
   return result;
 }
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
-
 void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   // CLOCK_MONOTONIC - amount of time since some arbitrary point in the past
   info_ptr->max_value = ALL_64_BITS;

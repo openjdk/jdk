@@ -114,9 +114,6 @@
 
 #define MAX_PATH    (2 * K)
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
-
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
 julong os::Bsd::_physical_memory = 0;

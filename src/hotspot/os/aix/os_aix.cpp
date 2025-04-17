@@ -131,8 +131,6 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 
 #define MAX_PATH (2 * K)
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
 // for multipage initialization error analysis (in 'g_multipage_error')
 #define ERROR_MP_OS_TOO_OLD                          100
 #define ERROR_MP_EXTSHM_ACTIVE                       101
