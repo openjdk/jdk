@@ -75,10 +75,12 @@ public class bug4943900 {
     }
 
     public static JFrame createAndShowUI() {
-        JFrame frame = new JFrame("JFileChooser bug4464774");
         JFileChooser fc = new JFileChooser();
+        fc.setControlButtonsAreShown(false);
         TextFileFilter filter = new TextFileFilter();
         fc.setFileFilter(filter);
+
+        JFrame frame = new JFrame("JFileChooser bug4464774");
         frame.add(fc);
         frame.pack();
         return frame;

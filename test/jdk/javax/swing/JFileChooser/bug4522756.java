@@ -61,8 +61,10 @@ public class bug4522756 {
     }
 
     public static JFrame createAndShowUI() {
-        JFrame frame = new JFrame("JFileChooser bug4522756");
         JFileChooser jfc = new JFileChooser();
+        jfc.setControlButtonsAreShown(false);
+
+        JFrame frame = new JFrame("JFileChooser bug4522756");
         frame.add(jfc);
         frame.pack();
         return frame;
