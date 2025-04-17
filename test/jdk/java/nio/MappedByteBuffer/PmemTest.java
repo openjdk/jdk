@@ -89,8 +89,12 @@
  * @run main/manual PmemTest
  * @requires (os.family == "linux")
  * @requires ((os.arch == "aarch64")|(os.arch == "ppc64le"))
+ * @ignore The test described here is currently disabled on systems that are not
+ * x64-based and lack an external NVRAM memory device. In order to re-enable the
+ * test, you will need to mount the NVRAM device, which will typically appear as
+ * /dev/pmem0, to the directory /mnt/pmem. Once that is done, you can follow the
+ * instructions above to create a test directory and remove the ignore tag.
  */
-
 import java.io.File;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
