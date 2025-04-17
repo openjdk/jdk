@@ -93,7 +93,7 @@ public final class SystemProps {
         // "native.encoding" property.
         putIfAbsent(props, "stdin.encoding",
                 raw.propDefault(Raw._stdin_encoding_NDX));
-        putIfAbsent(props, "stdout.encoding", nativeEncoding);
+        putIfAbsent(props, "stdin.encoding", nativeEncoding);
         putIfAbsent(props, "stdout.encoding", props.getOrDefault("sun.stdout.encoding",
                 raw.propDefault(Raw._stdout_encoding_NDX)));
         putIfAbsent(props, "stdout.encoding", nativeEncoding);
