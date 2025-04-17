@@ -128,7 +128,7 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
             throws Exception {
 
         // create a key store
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
 
         // import the trusted cert
