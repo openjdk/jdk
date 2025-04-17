@@ -145,7 +145,7 @@ class LocaleISOData {
         + "mt" + "mlt"  // Maltese
         + "my" + "mya"  // Burmese
         + "na" + "nau"  // Nauru
-        + "nb" + "nob"  // Norwegian Bokm\u00e5l
+        + "nb" + "nob"  // Norwegian Bokmål
         + "nd" + "nde"  // North Ndebele
         + "ne" + "nep"  // Nepali
         + "ng" + "ndo"  // Ndonga
@@ -209,7 +209,7 @@ class LocaleISOData {
         + "uz" + "uzb"  // Uzbek
         + "ve" + "ven"  // Venda
         + "vi" + "vie"  // Vietnamese
-        + "vo" + "vol"  // Volap\u00fck
+        + "vo" + "vol"  // Volapük
         + "wa" + "wln"  // Walloon
         + "wo" + "wol"  // Wolof
         + "xh" + "xho"  // Xhosa
@@ -250,7 +250,7 @@ class LocaleISOData {
         + "BH" + "BHR"  // Bahrain, Kingdom of
         + "BI" + "BDI"  // Burundi, Republic of
         + "BJ" + "BEN"  // Benin, People's Republic of
-        + "BL" + "BLM"  // Saint Barth\u00e9lemy
+        + "BL" + "BLM"  // Saint Barthélemy
         + "BM" + "BMU"  // Bermuda
         + "BN" + "BRN"  // Brunei Darussalam
         + "BO" + "BOL"  // Bolivia, Plurinational State of
@@ -278,7 +278,7 @@ class LocaleISOData {
 //      + "CS" + "SCG"  // Serbia and Montenegro
         + "CU" + "CUB"  // Cuba, Republic of
         + "CV" + "CPV"  // Cape Verde, Republic of
-        + "CW" + "CUW"  // Cura\u00e7ao
+        + "CW" + "CUW"  // Curaçao
         + "CX" + "CXR"  // Christmas Island
         + "CY" + "CYP"  // Cyprus, Republic of
         + "CZ" + "CZE"  // Czech Republic

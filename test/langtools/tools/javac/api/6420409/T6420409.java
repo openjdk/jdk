@@ -25,7 +25,7 @@
  * @test
  * @bug     6420409
  * @summary JSR 199: StandardFileManager: cannot set CLASS_PATH location
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules java.compiler
  *          jdk.compiler
  */

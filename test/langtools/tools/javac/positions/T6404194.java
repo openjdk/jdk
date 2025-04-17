@@ -25,7 +25,7 @@
  * @test
  * @bug     6404194
  * @summary javac parser generates incorrect end position for annotations with parentheses.
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules jdk.compiler
  */
 

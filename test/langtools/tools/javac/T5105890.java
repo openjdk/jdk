@@ -25,7 +25,7 @@
  * @test
  * @bug 5105890
  * @summary (codegen) constant folding broken for conditional operator
- * @author Peter von der Ah\u00e9
+ * @author Peter von der Ahé
  */
 
 public class T5105890 {

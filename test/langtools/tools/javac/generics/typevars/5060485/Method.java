@@ -25,7 +25,7 @@
  * @test
  * @bug     5060485
  * @summary The scope of a class type parameter is too wide
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile Method.java
  */
 

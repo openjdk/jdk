@@ -25,7 +25,7 @@
  * @test
  * @bug     6456971
  * @summary Varargs and inference problem
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile T6456971.java
  */
 

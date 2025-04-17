@@ -25,7 +25,7 @@
  * @test
  * @bug     6423003
  * @summary JSR 199: confusing help message with compiler API
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library ../lib
  * @modules java.compiler
  *          jdk.compiler

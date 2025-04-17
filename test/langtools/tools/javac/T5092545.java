@@ -25,7 +25,7 @@
  * @test
  * @bug 5092545
  * @summary Assertion failed in javac (ClassWriter.java:513)
- * @author Peter von der Ah\u00e9
+ * @author Peter von der Ahé
  */
 
 interface A { void g(); }

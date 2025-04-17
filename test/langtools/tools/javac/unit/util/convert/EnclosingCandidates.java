@@ -25,7 +25,7 @@
  * @test
  * @bug     6397652
  * @summary javac compilation failure when imported class with $ sign in the name
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules jdk.compiler/com.sun.tools.javac.util
  */
 
