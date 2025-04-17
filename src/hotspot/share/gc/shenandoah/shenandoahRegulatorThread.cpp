@@ -80,6 +80,7 @@ void ShenandoahRegulatorThread::regulate_young_and_old_cycles() {
           }
         } else if (_old_heuristics->should_resume_old_cycle() || _old_heuristics->should_start_gc()) {
           if (request_concurrent_gc(_heap->old_generation())) {
+            _old_heuristics->cancel_trigger_request();
             log_debug(gc)("Heuristics request to resume old collection accepted");
           }
         }

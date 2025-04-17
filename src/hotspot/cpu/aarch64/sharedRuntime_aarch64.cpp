@@ -2783,7 +2783,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   __ cbnz(rscratch1, pending);
 
   // get the returned Method*
-  __ get_vm_result_2(rmethod, rthread);
+  __ get_vm_result_metadata(rmethod, rthread);
   __ str(rmethod, Address(sp, reg_save.reg_offset_in_bytes(rmethod)));
 
   // r0 is where we want to jump, overwrite rscratch1 which is saved and scratch
@@ -2802,7 +2802,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 
   // exception pending => remove activation and forward to exception handler
 
-  __ str(zr, Address(rthread, JavaThread::vm_result_offset()));
+  __ str(zr, Address(rthread, JavaThread::vm_result_oop_offset()));
 
   __ ldr(r0, Address(rthread, Thread::pending_exception_offset()));
   __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));

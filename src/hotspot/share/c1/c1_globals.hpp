@@ -280,12 +280,6 @@
           "Maximum size of a compiled method.")                             \
           range(0, 1*M)                                                     \
                                                                             \
-  develop(bool, TraceFPUStack, false,                                       \
-          "Trace emulation of the FPU stack (intel only)")                  \
-                                                                            \
-  develop(bool, TraceFPURegisterUsage, false,                               \
-          "Trace usage of FPU registers at start of blocks (intel only)")   \
-                                                                            \
   develop(intx, InstructionCountCutoff, 37000,                              \
           "If GraphBuilder adds this many instructions, bails out")         \
           range(0, max_jint)                                                \
