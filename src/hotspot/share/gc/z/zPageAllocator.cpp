@@ -1385,6 +1385,7 @@ void ZPageAllocator::update_collection_stats(ZGenerationId id) {
 
   assert(total_used == _used, "Must be consistent at safepoint %zu == %zu", total_used, _used);
 #endif
+
   _collection_stats[(int)id]._used_high = _used;
   _collection_stats[(int)id]._used_low = _used;
 }
