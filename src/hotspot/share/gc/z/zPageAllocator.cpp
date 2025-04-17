@@ -1375,6 +1375,7 @@ size_t ZPageAllocator::unused() const {
 
 void ZPageAllocator::update_collection_stats(ZGenerationId id) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
+
 #ifdef ASSERT
   size_t total_used = 0;
 
