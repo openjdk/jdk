@@ -74,9 +74,9 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
 //            test14(8, 0, 1, true);
 //            test14(8, 0, 1, false);
             inlined14(0, 0);
-//            test15(8, 0, 1, true);
-//            test15(8, 0, 1, false);
-//            inlined15(0, 0);
+            test15(8, 0, 1, true);
+            test15(8, 0, 1, false);
+            inlined15(0, 0);
             test16(0, 9, 1, true, false);
             test16(0, 9, 1, false, false);
             inlined16_2(9, 1, 0, arrayField, true, 0);

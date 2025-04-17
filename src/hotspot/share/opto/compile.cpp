@@ -2543,6 +2543,30 @@ void Compile::Optimize() {
     process_late_inline_calls_no_inline(igvn);
     if (failing())  return;
   }
+  if (UseNewCode) {
+    ResourceMark rm;
+    Unique_Node_List useful_nodes;
+    C->identify_useful_nodes(useful_nodes);
+
+    for (uint i = 0; i < useful_nodes.size(); i++) {
+      Node* n = useful_nodes.at(i);
+      if (n->Opcode() == Op_CastII) {
+        Node* transformed = ((CastIINode*)n)->optimize_integer_cast(&igvn, T_INT);
+        if (transformed != nullptr) {
+          transformed = igvn.transform(transformed);
+          if (UseNewCode2) {
+            n->dump();
+            tty->print("->");
+            transformed->dump();
+            tty->cr();
+          }
+          igvn.replace_node(n, transformed);
+        }
+      }
+    }
+    igvn.optimize();
+    if (failing())  return;
+  }
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
  check_no_dead_use();
@@ -3506,6 +3530,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     break;
   }
   case Op_CastII: {
+    assert(!UseNewCode || !n->in(1)->is_Con(), "");
     n->as_CastII()->remove_range_check_cast(this);
     break;
   }

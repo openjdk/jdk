@@ -104,7 +104,7 @@ public:
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const;
   virtual uint hash() const;    // Check the type
-  const TypeInteger* widen_type(const PhaseGVN* phase, const Type* res, BasicType bt) const;
+  const TypeInteger* widen_type(const PhaseGVN* phase, const TypeInteger* this_type, BasicType bt) const;
 
   virtual ConstraintCastNode* make_with(Node* parent, const TypeInteger* type, const DependencyType& dependency) const {
     ShouldNotReachHere();
