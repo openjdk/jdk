@@ -202,8 +202,8 @@ public:
   virtual void print_init_logger() const;
   void initialize_serviceability() override;
 
-  void print_on(outputStream* st)              const override;
-  void print_on_error(outputStream *st)        const override;
+  void print_heap_on(outputStream* st)         const override;
+  void print_gc_on(outputStream *st)           const override;
   void print_tracing_info()                    const override;
   void print_heap_regions_on(outputStream* st) const;
 
