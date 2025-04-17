@@ -1457,6 +1457,24 @@ sh ./configure --with-jvm-variants=server \
 
 and run `make` normally.
 
+#### Building for Windows AArch64
+The Visual Studio Build Tools can be used for building the JDK without a full
+Visual Studio installation. To set up the Visual Studio 2022 Build Tools on a
+Windows AArch64 machine for a native build, launch the installer as follows
+in a Windows command prompt:
+
+```
+vs_buildtools.exe --quiet --wait --norestart --nocache ^
+--installPath "%ProgramFiles(x86)%\Microsoft Visual Studio\2022\BuildTools" ^
+--add Microsoft.VisualStudio.Component.VC.CoreBuildTools ^
+--add Microsoft.VisualStudio.Component.VC.Tools.ARM64 ^
+--add Microsoft.VisualStudio.Component.Windows11SDK.22621
+```
+
+To generate Windows AArch64 builds using Cygwin on a Windows x64 machine,
+you must set the proper target platform by adding
+`--openjdk-target=aarch64-unknown-cygwin` to your configure command line.
+
 ## Build Performance
 
 Building the JDK requires a lot of horsepower. Some of the build tools can be
