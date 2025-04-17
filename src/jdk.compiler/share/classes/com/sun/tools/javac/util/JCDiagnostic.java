@@ -457,9 +457,6 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         /** Flags mandatory warnings that should pass through a mandatory warning aggregator.
          */
         AGGREGATE,
-        /** Flag that requests verbose logging through the mandatory warning aggregator.
-         */
-        AGGREGATE_VERBOSE,
         /** Flag for diagnostics that were reported through API methods.
          */
         API,
