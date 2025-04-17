@@ -62,7 +62,6 @@ MetadataOnStackMark::MetadataOnStackMark(bool walk_all_metadata, bool redefiniti
   if (walk_all_metadata) {
     MetadataOnStackClosure md_on_stack;
     Threads::metadata_do(&md_on_stack);
-
     if (redefinition_walk) {
       // We have to walk the whole code cache during redefinition.
       CodeCache::metadata_do(&md_on_stack);

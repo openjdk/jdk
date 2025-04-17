@@ -26,11 +26,9 @@
 #define SHARE_JFR_RECORDER_JFRRECORDER_HPP
 
 #include "jfr/utilities/jfrAllocation.hpp"
-#include "memory/iterator.hpp"
 
 class JavaThread;
 class Thread;
-class MetadataClosure;
 
 //
 // Represents the singleton instance of Flight Recorder.

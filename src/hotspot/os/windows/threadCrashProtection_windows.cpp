@@ -25,6 +25,14 @@
 #include "runtime/thread.hpp"
 #include "runtime/threadCrashProtection.hpp"
 
+Thread* ThreadCrashProtection::_protected_thread = nullptr;
+ThreadCrashProtection* ThreadCrashProtection::_crash_protection = nullptr;
+
+ThreadCrashProtection::ThreadCrashProtection() {
+  _protected_thread = Thread::current();
+  assert(_protected_thread->is_JfrSampler_thread(), "should be JFRSampler");
+}
+
 // See the caveats for this class in os_windows.hpp
 // Protects the callback call so that raised OS EXCEPTIONS causes a jump back
 // into this method and returns false. If no OS EXCEPTION was raised, returns
@@ -32,18 +40,15 @@
 // The callback is supposed to provide the method that should be protected.
 //
 bool ThreadCrashProtection::call(CrashProtectionCallback& cb) {
-  Thread* current_thread = Thread::current();
-  assert(current_thread->is_JfrSampler_thread(), "should be JFR sampling related");
-  assert(current_thread->crash_protection() == nullptr, "not reentrant");
-
   bool success = true;
   __try {
-    current_thread->set_crash_protection(this);
+    _crash_protection = this;
     cb.call();
   } __except(EXCEPTION_EXECUTE_HANDLER) {
     // only for protection, nothing to do
     success = false;
   }
-  current_thread->set_crash_protection(nullptr);
+  _crash_protection = nullptr;
+  _protected_thread = nullptr;
   return success;
 }

@@ -701,8 +701,6 @@ void JavaFrameAnchor::make_walkable() {
   if (last_Java_sp() == nullptr) return;
   // already walkable?
   if (walkable()) return;
-  // two threads can walk this stack concurrently
-  // so _last_java_pc might already be set
   _last_Java_pc = (address)_last_Java_sp[-1];
   vmassert(walkable(), "something went wrong");
 }

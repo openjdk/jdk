@@ -25,7 +25,6 @@
 
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/utilities/jfrSpinlockHelper.hpp"
-#include "jfrfiles/jfrEventIds.hpp"
 #include "logging/log.hpp"
 
 constexpr static const JfrSamplerParams _disabled_params = {

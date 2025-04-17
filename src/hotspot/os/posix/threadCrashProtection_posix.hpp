@@ -44,13 +44,16 @@ class Thread;
 class ThreadCrashProtection : public StackObj {
 public:
   static bool is_crash_protected(Thread* thr) {
-    return thr != nullptr && thr->crash_protection() != nullptr;
+    return _crash_protection != nullptr && _protected_thread == thr;
   }
 
+  ThreadCrashProtection();
   bool call(CrashProtectionCallback& cb);
 
   static void check_crash_protection(int signal, Thread* thread);
 private:
+  static Thread* _protected_thread;
+  static ThreadCrashProtection* _crash_protection;
   void restore();
   sigjmp_buf _jmpbuf;
 };

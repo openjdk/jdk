@@ -41,10 +41,14 @@ class Thread;
 class ThreadCrashProtection : public StackObj {
 public:
   static bool is_crash_protected(Thread* thr) {
-    return thr != nullptr && thr->crash_protection() != nullptr;
+    return _crash_protection != nullptr && _protected_thread == thr;
   }
 
+  ThreadCrashProtection();
   bool call(CrashProtectionCallback& cb);
+private:
+  static Thread* _protected_thread;
+  static ThreadCrashProtection* _crash_protection;
 };
 
 #endif // OS_WINDOWS_THREADCRASHPROTECTION_WINDOWS_HPP

@@ -37,7 +37,7 @@
       <xs:enumeration value="from" />
       <xs:enumeration value="to" />
     </xs:restriction>
-  </xs:simpleType>
+  </xs:simpleType> 
   <xs:element name="Metadata">
     <xs:complexType>
       <xs:sequence>

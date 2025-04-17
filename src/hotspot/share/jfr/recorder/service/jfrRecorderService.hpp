@@ -34,37 +34,6 @@ class JfrStackTraceRepository;
 class JfrStorage;
 class JfrStringPool;
 
-class JfrRotationLock : public StackObj {
- private:
-  int _retry_wait_millis;
-  static const Thread* _owner_thread;
-  static const int default_retry_wait_millis;
-  static volatile int _lock;
-  Thread* _thread;
-  bool _recursive;
-  bool _obtained_lock;
-
-  static bool acquire(Thread* thread);
-
- public:
-  JfrRotationLock() : JfrRotationLock(true, default_retry_wait_millis) {}
-  JfrRotationLock(bool lock_directly, int retry_wait_millis = default_retry_wait_millis);
-
-  // The system can proceed to a safepoint
-  // because even if the thread is a JavaThread,
-  // it is running as _thread_in_native here.
-  // Only call this method directly if you haven't locked before
-  bool lock(int retries);
-
-  ~JfrRotationLock();
-
-  static bool is_owner();
-
-  bool is_acquired_recursively() const {
-    return _recursive;
-  }
-};
-
 class JfrRecorderService : public StackObj {
   friend class JfrSafepointClearVMOperation;
   friend class JfrSafepointWriteVMOperation;
