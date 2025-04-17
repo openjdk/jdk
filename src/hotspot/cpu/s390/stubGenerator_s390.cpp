@@ -1574,7 +1574,6 @@ class StubGenerator: public StubCodeGenerator {
       __ z_nill(rScratch1, 7);
       __ z_braz(L_fill8Bytes); // branch if 0
 
-
       __ z_nill(rScratch1, 3);
       __ z_braz(L_fill4Bytes); // branch if 0
 
