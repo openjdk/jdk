@@ -26,9 +26,9 @@
 package java.security;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 /**
- *
  * {@code PEMRecord} is a {@link DEREncodable} that stores Privacy-Enhanced Mail
  * (PEM) data and can be used with all PEM data types.  It serves as the default
  * decoding class when the PEM data lacks a Java API cryptographic
@@ -55,6 +55,8 @@ import java.nio.charset.StandardCharsets;
  * before the PEM header. This can be useful when reading metadata that
  * accompanies PEM data.
  *
+ * @spec https://www.rfc-editor.org/info/rfc7468
+ *       RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures
  */
 public record PEMRecord(String type, String pem, byte[] leadingData)
     implements DEREncodable {
@@ -62,11 +64,11 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
     /**
      * Return a PEMRecord instance with the given parameters.
      *
-     * When {@code type} is given a properly formatted PEM header, only the
+     * <p> When {@code type} is given a properly formatted PEM header, only the
      * identifier will be set (ie: {@code PUBLIC KEY}.  Otherwise, {@code type}
      * will be set to what was passed in.
      *
-     * When {@code type} is given a correctly formatted PEM header, only the
+     * <p> When {@code type} is given a correctly formatted PEM header, only the
      * identifier is set (for example, {@code PUBLIC KEY}). Otherwise,
      * {@code type} is set to the value that was passed in.
      *
@@ -126,5 +128,16 @@ public record PEMRecord(String type, String pem, byte[] leadingData)
      */
     public PEMRecord(String type, byte[] pem) {
         this(type, new String(pem, StandardCharsets.ISO_8859_1), null);
+    }
+
+    /**
+     * Returns the binary encoding from the Base64 data contained in
+     * {@code pem}.
+     *
+     * @exception IllegalArgumentException if {@code pem} could not be decoded.
+     * @return binary encoding or null if {@code pem} is null.
+     */
+    public byte[] getEncoded() {
+        return (pem == null ? null : Base64.getMimeDecoder().decode(pem));
     }
 }

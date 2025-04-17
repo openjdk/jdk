@@ -205,6 +205,7 @@ public final class PEMDecoder {
      * @return an {@code DEREncodable} generated from the PEM data.
      * @throws IllegalArgumentException on error in decoding or if the PEM is
      * unsupported.
+     * @throws NullPointerException when {@code str} is null.
      */
     public DEREncodable decode(String str) {
         Objects.requireNonNull(str);
@@ -228,9 +229,10 @@ public final class PEMDecoder {
      *
      * @param is InputStream containing PEM data.
      * @return an {@code DEREncodable} generated from the data read.
-     * @throws IOException on IO error with the InputStream
+     * @throws IOException on IO error with the InputStream.
      * @throws IllegalArgumentException on error in decoding or if the PEM is
      * unsupported.
+     * @throws NullPointerException when {@code is} is null.
      */
     public DEREncodable decode(InputStream is) throws IOException {
         Objects.requireNonNull(is);
@@ -254,13 +256,14 @@ public final class PEMDecoder {
      * binary encoding in {@link X509EncodedKeySpec}.</li>
      * <li> Store the PEM a {@link PEMRecord}.</li>
      *</ul>
-     * @param <S> Class type parameter that extends {@code DEREncodable}
+     * @param <S> Class type parameter that extends {@code DEREncodable}.
      * @param string the String containing PEM data.
-     * @param tClass the returned object class that implementing
+     * @param tClass the returned object class that implements
      * {@code DEREncodable}.
      * @return A {@code DEREncodable} typecast to {@code tClass}.
      * @throws IllegalArgumentException on error in decoding.
      * @throws ClassCastException if the given class is invalid for the PEM.
+     * @throws NullPointerException when any input values are null.
      */
     public <S extends DEREncodable> S decode(String string, Class<S> tClass) {
         Objects.requireNonNull(string);
@@ -277,14 +280,15 @@ public final class PEMDecoder {
      * {@link InputStream}.  The class must extend {@link DEREncodable} and be
      * an appropriate class for the PEM type.
      *
-     * @param <S> Class type parameter that extends {@code DEREncodable}
+     * @param <S> Class type parameter that extends {@code DEREncodable}.
      * @param is an InputStream containing PEM data.
-     * @param tClass the returned object class that implementing
+     * @param tClass the returned object class that implements
      *   {@code DEREncodable}.
-     * @return A {@code DEREncodable} typecast to {@code tClass}
+     * @return A {@code DEREncodable} typecast to {@code tClass}.
      * @throws IOException on IO error with the InputStream.
      * @throws IllegalArgumentException on error in decoding.
      * @throws ClassCastException if the given class is invalid for the PEM.
+     * @throws NullPointerException when any input values are null.
      *
      * @see #decode(InputStream)
      * @see #decode(String, Class)
@@ -396,7 +400,7 @@ public final class PEMDecoder {
      * @param password the password to decrypt encrypted PEM data.  This array
      *                 is cloned and stored in the new instance.
      * @return a new PEM decoder instance.
-     * @throws NullPointerException if password is null.
+     * @throws NullPointerException if {@code password} is null.
      */
     public PEMDecoder withDecryption(char[] password) {
         return new PEMDecoder(factory, new PBEKeySpec(password));

@@ -558,8 +558,8 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      * @param provider this {@code Provider} is used for all key generations.
      *                 It is used when generating the PBE encryption key,
      *                 {@code SecretKeyFactory}, and the {@code PrivateKey},
-     *                 {@code KeyFactory}.  A {@code null} value will use the default
-     *                 provider configuration.
+     *                 {@code KeyFactory}.  A {@code null} value will use the
+     *                 default provider configuration.
      * @return a {@code PrivateKey}
      * @throws InvalidKeyException if an error occurs during parsing of the
      * encrypted data or creation of the key object.
@@ -588,9 +588,10 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      * encrypted data and return it.
      * @param decryptKey key used for decrypting the encrypted data.
      * @return the PKCS8EncodedKeySpec object.
-     * @exception NullPointerException if {@code decryptKey} is {@code null}.
-     * @exception NoSuchAlgorithmException if cannot find appropriate cipher to
-     * decrypt.
+     * @exception NullPointerException if {@code decryptKey}
+     * is {@code null}.
+     * @exception NoSuchAlgorithmException if cannot find appropriate
+     * cipher to decrypt the encrypted data.
      * @exception InvalidKeyException if {@code decryptKey}
      * cannot be used to decrypt the encrypted data or the decryption
      * result is not a valid PKCS8KeySpec.

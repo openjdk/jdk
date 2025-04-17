@@ -61,9 +61,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * on a PEMEncoder instance returned by {@link #withEncryption(char[])} or
  * by passing an {@link EncryptedPrivateKeyInfo} object into the encode methods.
  *
- * <p>PKCS8 v2.0 allows OneAsymmetricKey encoding, which is a private and public
- * key in the same PEM.  This is supported by using the {@link KeyPair} class
- * with the encode methods.
+ * <p> PKCS8 2.0 allows OneAsymmetricKey encoding, which may contain both private
+ * and public keys in the same PEM.This is supported by using the
+ * {@link KeyPair} class with the encode methods.
  *
  * <p> When encoding a {@link PEMRecord}, the API surrounds the
  * {@linkplain PEMRecord#pem()} with a generated the PEM header and footer
@@ -150,11 +150,11 @@ public final class PEMEncoder {
      * String
      *
      * @param de a cryptographic object to be PEM encoded that implements
-     *           DEREncodable.
+     *           {@code DEREncodable}.
      * @return PEM encoding in a String
      * @throws IllegalArgumentException when the passed object returns a null
      * binary encoding. An exception is thrown when PEMEncoder is
-     * configured for encryption while encoding a DEREncodable that does
+     * configured for encryption while encoding a {@code DEREncodable} that does
      * not support encryption.
      * @throws NullPointerException when object passed is null.
      * @see #withEncryption(char[])
@@ -222,11 +222,11 @@ public final class PEMEncoder {
     /**
      * Encodes a given {@code DEREncodable} into PEM.
      *
-     * @param de the object that implements DEREncodable.
-     * @return a PEM encoded byte[] of the given DEREncodable.
+     * @param de the object that implements {@code DEREncodable}.
+     * @return a PEM encoded byte[] of the given {@code DEREncodable}.
      * @throws IllegalArgumentException when the passed object returns a null
      * binary encoding. An exception is thrown when PEMEncoder is
-     * configured for encryption while encoding a DEREncodable that does
+     * configured for encryption while encoding a {@code DEREncodable} that does
      * not support encryption.
      * @throws NullPointerException when object passed is null.
      * @see #withEncryption(char[])
