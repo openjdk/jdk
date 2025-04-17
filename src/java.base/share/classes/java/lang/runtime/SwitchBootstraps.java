@@ -493,7 +493,6 @@ public final class SwitchBootstraps {
         int EXTRA_CLASS_LABELS  = 3;
 
         var locals = enumDescs == null && extraClassLabels == null ? TYPE_SWITCH_LOCALS : TYPE_SWITCH_EXTRA_LOCALS;
-        int maxLocals = locals.size();
 
         return cb -> {
             // Objects.checkIndex(RESTART_IDX, labelConstants + 1)
@@ -504,11 +503,11 @@ public final class SwitchBootstraps {
               .pop()
               .aload(SELECTOR_OBJ);
             Label nonNullLabel = cb.newLabel();
-            stackMapFrames.add(StackMapFrameInfo.of(nonNullLabel, locals, List.of()));
             cb.ifnonnull(nonNullLabel)
               .iconst_m1()
               .ireturn()
               .labelBinding(nonNullLabel);
+            stackMapFrames.add(StackMapFrameInfo.of(nonNullLabel, locals, List.of()));
             if (labelConstants.length == 0) {
                 cb.loadConstant(0)
                   .ireturn()
@@ -518,7 +517,6 @@ public final class SwitchBootstraps {
             }
             cb.iload(RESTART_IDX);
             Label dflt = cb.newLabel();
-            stackMapFrames.add(StackMapFrameInfo.of(dflt, locals, List.of()));
             Label[] caseTargets = new Label[labelConstants.length];
             Label[] caseNext = new Label[labelConstants.length];
             Object[] caseLabels = new Object[labelConstants.length];
@@ -560,8 +558,7 @@ public final class SwitchBootstraps {
                         } else if (!unconditionalExactnessCheck(Wrapper.asPrimitiveType(selectorType), classLabel)) {
                             // Integer i = ... or int i = ...
                             // o instanceof float
-                            Label notNumber = cb.newLabel();
-                            stackMapFrames.add(StackMapFrameInfo.of(notNumber, locals, List.of()));
+                            Label notNumber = cb.newLabel(); // this label may end up unbound
                             cb.aload(SELECTOR_OBJ)
                               .instanceOf(CD_Number);
                             if (selectorType == long.class || selectorType == float.class || selectorType == double.class ||
@@ -586,13 +583,13 @@ public final class SwitchBootstraps {
                                         MethodTypeDesc.of(CD_double));
                             } else {
                                 Label compare = cb.newLabel();
-                                stackMapFrames.add(StackMapFrameInfo.of(compare, locals, List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER)));
                                 cb.invokevirtual(CD_Number,
                                         "intValue",
                                         MethodTypeDesc.of(CD_int))
                                   .goto_(compare)
-                                  .labelBinding(notNumber)
-                                  .aload(SELECTOR_OBJ)
+                                  .labelBinding(notNumber);
+                                stackMapFrames.add(StackMapFrameInfo.of(notNumber, locals, List.of()));
+                                cb.aload(SELECTOR_OBJ)
                                   .instanceOf(CD_Character)
                                   .ifeq(next)
                                   .aload(SELECTOR_OBJ)
@@ -601,6 +598,7 @@ public final class SwitchBootstraps {
                                         "charValue",
                                         MethodTypeDesc.of(CD_char))
                                   .labelBinding(compare);
+                                stackMapFrames.add(StackMapFrameInfo.of(compare, locals, List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER)));
                             }
 
                             TypePairs typePair = TypePairs.of(Wrapper.asPrimitiveType(selectorType), classLabel);
@@ -660,8 +658,6 @@ public final class SwitchBootstraps {
                 } else if (caseLabel instanceof Integer integerLabel) {
                     Label compare = cb.newLabel();
                     Label notNumber = cb.newLabel();
-                    stackMapFrames.add(StackMapFrameInfo.of(notNumber, locals, List.of()));
-                    stackMapFrames.add(StackMapFrameInfo.of(compare, locals, List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER)));
                     cb.aload(SELECTOR_OBJ)
                       .instanceOf(CD_Number)
                       .ifeq(notNumber)
@@ -671,8 +667,9 @@ public final class SwitchBootstraps {
                             "intValue",
                             MethodTypeDesc.of(CD_int))
                       .goto_(compare)
-                      .labelBinding(notNumber)
-                      .aload(SELECTOR_OBJ)
+                      .labelBinding(notNumber);
+                    stackMapFrames.add(StackMapFrameInfo.of(notNumber, locals, List.of()));
+                    cb.aload(SELECTOR_OBJ)
                       .instanceOf(CD_Character)
                       .ifeq(next)
                       .aload(SELECTOR_OBJ)
@@ -680,9 +677,9 @@ public final class SwitchBootstraps {
                       .invokevirtual(CD_Character,
                             "charValue",
                             MethodTypeDesc.of(CD_char))
-                      .labelBinding(compare)
-
-                      .loadConstant(integerLabel)
+                      .labelBinding(compare);
+                    stackMapFrames.add(StackMapFrameInfo.of(compare, locals, List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER)));
+                    cb.loadConstant(integerLabel)
                       .if_icmpne(next);
                 } else if ((caseLabel instanceof Long ||
                         caseLabel instanceof Float ||
@@ -711,6 +708,7 @@ public final class SwitchBootstraps {
                 cb.loadConstant(idx)
                   .ireturn();
             }
+            stackMapFrames.add(StackMapFrameInfo.of(dflt, locals, List.of()));
             cb.labelBinding(dflt)
               .loadConstant(labelConstants.length)
               .ireturn()
