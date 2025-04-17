@@ -45,7 +45,6 @@ public class TextFieldMargin {
                    else test FAILS.
                 """;
         PassFailJFrame.builder()
-                .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(TextFieldMargin::initialize)

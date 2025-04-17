@@ -46,7 +46,6 @@ public class ModifiersTest {
                      both cases, the test PASS. Else Test FAILS.
                 """;
         PassFailJFrame.builder()
-                .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(ModifiersTest::initialize)
