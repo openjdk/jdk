@@ -47,7 +47,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 /*
@@ -148,7 +148,7 @@ public class H3InsertionsLimitTest implements HttpServerAdapters {
         final URI reqURI = new URI(requestURIBase + "/insertions");
         final HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(reqURI)
                 .version(Version.HTTP_3)
-                .setOption(H3_DISCOVERY, HTTP_3_ONLY);
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
         final HttpRequest request =
                 reqBuilder.POST(HttpRequest.BodyPublishers.ofString("Hello")).build();
         System.out.println("Issuing request to " + reqURI);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ import org.testng.annotations.Test;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_2;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -212,8 +212,8 @@ public class BasicHTTP2Test implements HttpServerAdapters {
                 .version(Version.HTTP_3)
                 .GET();
         if (udp == null) {
-            out.println("Using config " + HTTP_3_ALT_SVC);
-            builder.setOption(H3_DISCOVERY, HTTP_3_ALT_SVC);
+            out.println("Using config " + ALT_SVC);
+            builder.setOption(H3_DISCOVERY, ALT_SVC);
         }
         HttpRequest request = builder.build();
 

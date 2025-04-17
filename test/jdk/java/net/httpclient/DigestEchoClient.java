@@ -33,7 +33,7 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
@@ -390,11 +390,11 @@ public class DigestEchoClient {
                 .isPresent();
     }
 
-    static H3DiscoveryMode serverConfig(int step, DigestEchoServer server) {
+    static Http3DiscoveryMode serverConfig(int step, DigestEchoServer server) {
         var config = server.serverConfig();
         return switch (config) {
-            case HTTP_3_ONLY -> config;
-            default -> H3DiscoveryMode.HTTP_3_ALT_SVC;
+            case HTTP_3_URI_ONLY -> config;
+            default -> Http3DiscoveryMode.ALT_SVC;
         };
     }
 

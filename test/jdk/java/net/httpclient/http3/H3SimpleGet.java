@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 public class H3SimpleGet implements HttpServerAdapters {
@@ -167,7 +167,7 @@ public class H3SimpleGet implements HttpServerAdapters {
             sslContext = sslct.get();
             client = getClient();
 
-            httpsServer = HttpTestServer.create(HTTP_3_ONLY, sslContext, serverExec);
+            httpsServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext, serverExec);
             httpsServer.addHandler(new TestHandler(), "/");
             httpsURIString = "https://" + httpsServer.serverAuthority() + "/bar/";
 
@@ -189,13 +189,13 @@ public class H3SimpleGet implements HttpServerAdapters {
                 Thread.ofVirtual().name("client-2-vt-worker", 1).factory()))) {
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString))
                     .version(HTTP_3)
-                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                     .HEAD().build();
             client2.send(request, BodyHandlers.ofByteArrayConsumer(b-> {}));
         }
 
         // warmup client
-        var httpsServer2 = HttpTestServer.create(HTTP_3_ONLY, sslContext,
+        var httpsServer2 = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext,
                 Executors.newThreadPerTaskExecutor(
                         Thread.ofVirtual().name("server-2-vt-worker", 1).factory()));
         httpsServer2.addHandler(new TestHandler(), "/");
@@ -204,7 +204,7 @@ public class H3SimpleGet implements HttpServerAdapters {
         try {
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString2))
                     .version(HTTP_3)
-                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                     .HEAD().build();
             client.send(request, BodyHandlers.ofByteArrayConsumer(b-> {}));
         } finally {
@@ -231,7 +231,7 @@ public class H3SimpleGet implements HttpServerAdapters {
                     + TimeUnit.NANOSECONDS.toMillis(done-prestart)+" millis");
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString))
                     .version(HTTP_3)
-                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                     .GET().build();
             long start = System.nanoTime();
             var resp = client.send(request, BodyHandlers.ofByteArrayConsumer(b-> {}));

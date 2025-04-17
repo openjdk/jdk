@@ -51,7 +51,7 @@ import static java.net.StandardSocketOptions.SO_REUSEPORT;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 /**
@@ -202,7 +202,7 @@ public class TimeoutBasic {
                     // make sure request will be downgraded to HTTP/2 if we
                     // have not been able to create `dc`.
                     request = HttpRequest.newBuilder(request, (n,v) -> true)
-                            .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC)
+                            .setOption(H3_DISCOVERY, ALT_SVC)
                             .build();
                 }
                 count++;
@@ -241,7 +241,7 @@ public class TimeoutBasic {
                     // make sure request will be downgraded to HTTP/2 if we
                     // have not been able to create `dc`.
                     request = HttpRequest.newBuilder(request, (n,v) -> true)
-                            .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC)
+                            .setOption(H3_DISCOVERY, ALT_SVC)
                             .build();
                 }
                 count++;

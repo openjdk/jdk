@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
 import static java.lang.System.out;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
 
 
 /*
@@ -248,7 +248,7 @@ public class BasicHTTP3Test implements HttpServerAdapters {
                 // HTTP/3 endpoint listening at the URI port.
                 // sameClient should be fine because version.empty() should
                 // have come first and populated alt-services.
-                builder.setOption(H3_DISCOVERY, HTTP_3_ALT_SVC);
+                builder.setOption(H3_DISCOVERY, ALT_SVC);
             } else {
                 builder.setOption(H3_DISCOVERY, null);
             }
@@ -322,7 +322,7 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         builder = HttpRequest.newBuilder(URI.create(h3URI.replace("h3","h2")))
                 .GET();
         request = builder.version(Version.HTTP_3)
-                .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC)
+                .setOption(H3_DISCOVERY, ALT_SVC)
                 .build();
         try {
             response = client.send(request, BodyHandlers.ofString());

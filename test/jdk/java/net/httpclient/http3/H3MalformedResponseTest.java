@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
@@ -413,7 +413,7 @@ public class H3MalformedResponseTest implements HttpServerAdapters {
         final URI reqURI = new URI(requestURIBase + "/hello");
         final HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(reqURI)
                 .version(Version.HTTP_3)
-                .setOption(H3_DISCOVERY, HTTP_3_ONLY);
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
         return reqBuilder.build();
     }
 

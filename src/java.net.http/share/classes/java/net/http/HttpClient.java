@@ -28,6 +28,7 @@ package java.net.http;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpRequest.HttpRequestOption;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpResponse.BodySubscriber;
@@ -189,7 +190,7 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * thrown, either when {@linkplain Builder#build() building} the client with
  * a {@linkplain Builder#version(Version) preferred version} set to HTTP/3,
  * or when attempting to send a request with {@linkplain HttpRequest.Builder#version(Version)
- * HTTP/3 enabled} when {@link java.net.http.HttpRequest.H3DiscoveryMode#HTTP_3_ONLY HTTP_3_ONLY}
+ * HTTP/3 enabled} when {@link Http3DiscoveryMode#HTTP_3_URI_ONLY HTTP_3_URI_ONLY}
  * was {@linkplain HttpRequest.Builder#setOption(HttpRequestOption, Object) specified}.
  * This may typically happen if the {@link #sslContext() SSLContext}
  * or {@link #sslParameters() SSLParameters} configured on the client instance cannot

@@ -73,7 +73,7 @@ import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -100,7 +100,7 @@ public class H3PushCancel implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        server = HttpTestServer.create(HTTP_3_ANY, new SimpleSSLContext().get());
+        server = HttpTestServer.create(ANY, new SimpleSSLContext().get());
         pushHandler = new ServerPushHandler(MAIN_RESPONSE_BODY, PUSH_PROMISES);
         server.addHandler(pushHandler, "/push/");
         server.addHandler(new HttpHeadOrGetHandler(), "/head/");

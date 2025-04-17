@@ -77,7 +77,7 @@ import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
@@ -165,7 +165,7 @@ public class UserCookieTest implements HttpServerAdapters {
         if (version != null) {
             requestBuilder.version(version);
             if (version == HTTP_3) {
-                requestBuilder.setOption(H3_DISCOVERY, HTTP_3_ONLY);
+                requestBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
             }
         }
         HttpRequest request = requestBuilder.build();
@@ -190,7 +190,7 @@ public class UserCookieTest implements HttpServerAdapters {
             if (version != null) {
                 requestBuilder.version(version);
                 if (version == HTTP_3) {
-                    requestBuilder.setOption(H3_DISCOVERY, HTTP_3_ONLY);
+                    requestBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
                 }
             }
             request = requestBuilder.build();
@@ -220,7 +220,7 @@ public class UserCookieTest implements HttpServerAdapters {
         https2TestServer.addHandler(new CookieValidationHandler(), "/https2/cookie/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/cookie/retry";
 
-        http3TestServer = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         http3TestServer.addHandler(new CookieValidationHandler(), "/http3/cookie/");
         http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/cookie/retry";
 

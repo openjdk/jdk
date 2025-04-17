@@ -59,7 +59,7 @@ import static java.net.http.HttpClient.Redirect.ALWAYS;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static jdk.test.lib.Utils.adjustTimeout;
 
@@ -82,7 +82,7 @@ public class RedirectTimeoutTest implements HttpServerAdapters {
 
         h1TestServer = HttpTestServer.create(HTTP_1_1);
         h2TestServer = HttpTestServer.create(HTTP_2);
-        h3TestServer = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        h3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h1Uri = URI.create("http://" + h1TestServer.serverAuthority() + "/h1_test");
         h1RedirectUri = URI.create("http://" + h1TestServer.serverAuthority() + "/h1_redirect");
         h2Uri = URI.create("http://" + h2TestServer.serverAuthority() + "/h2_test");
@@ -127,7 +127,7 @@ public class RedirectTimeoutTest implements HttpServerAdapters {
         clientBuilder = clientBuilder.followRedirects(ALWAYS).sslContext(sslContext);
         HttpRequest.Builder reqBuilder = HttpRequest.newBuilder().uri(uri);
         if (version == HTTP_3) {
-            reqBuilder = reqBuilder.version(HTTP_3).setOption(H3_DISCOVERY, HTTP_3_ONLY);
+            reqBuilder = reqBuilder.version(HTTP_3).setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
         }
         HttpRequest request = reqBuilder
                 .GET()

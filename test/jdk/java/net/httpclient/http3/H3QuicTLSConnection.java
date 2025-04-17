@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
 import jdk.test.lib.net.SimpleSSLContext;
 
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 
@@ -98,7 +98,7 @@ public class H3QuicTLSConnection {
 
         Handler handler = new Handler();
 
-        try (HttpTestServer server = HttpTestServer.create(HTTP_3_ONLY, SSLContext.getDefault())) {
+        try (HttpTestServer server = HttpTestServer.create(HTTP_3_URI_ONLY, SSLContext.getDefault())) {
             server.addHandler(handler, "/");
             server.start();
 
@@ -265,7 +265,7 @@ public class H3QuicTLSConnection {
 
             HttpRequest request = HttpRequest.newBuilder(new URI(uriString))
                     .POST(BodyPublishers.ofString("body"))
-                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                     .version(Version.HTTP_3)
                     .build();
             String body = client.send(request, BodyHandlers.ofString()).body();

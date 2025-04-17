@@ -39,8 +39,8 @@ import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -147,7 +147,7 @@ public class HttpRequestNewBuilderTest {
                         .timeout(Duration.ofSeconds(1)).header("testName1", "testValue1").build() },
                 { HttpRequest.newBuilder(URI.create("https://all-fields-2/")).GET().expectContinue(true).version(HTTP_2)
                         .timeout(Duration.ofSeconds(1)).header("testName1", "testValue1")
-                        .setOption(H3_DISCOVERY, HTTP_3_ANY).build() },
+                        .setOption(H3_DISCOVERY, ANY).build() },
         };
     }
 
@@ -324,8 +324,8 @@ public class HttpRequestNewBuilderTest {
     public void testSetOption(HttpRequest request) {
         BiPredicate<String, String> filter = (n, v) -> true;
 
-        var r = HttpRequest.newBuilder(request, filter).setOption(H3_DISCOVERY, HTTP_3_ALT_SVC).build();
-        assertEquals(r.getOption(H3_DISCOVERY).get(), HTTP_3_ALT_SVC);
+        var r = HttpRequest.newBuilder(request, filter).setOption(H3_DISCOVERY, ALT_SVC).build();
+        assertEquals(r.getOption(H3_DISCOVERY).get(), ALT_SVC);
         assertAllOtherElementsEqual(r, request, "options");
     }
 
@@ -344,7 +344,7 @@ public class HttpRequestNewBuilderTest {
     @Test(dataProvider = "testRequests")
     public void testRemoveOption(HttpRequest request) {
         if(!request.getOption(H3_DISCOVERY).isEmpty()) {
-            assertEquals(request.getOption(H3_DISCOVERY).get(), HTTP_3_ANY);
+            assertEquals(request.getOption(H3_DISCOVERY).get(), ANY);
         }
 
         var r = HttpRequest.newBuilder(request, (a, b) -> true)

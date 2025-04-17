@@ -65,12 +65,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 
-import static java.lang.System.arraycopy;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
@@ -260,7 +259,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
         var builder = HttpRequest.newBuilder(URI.create(uri));
         var version = version(uri);
         return version == HTTP_3
-                ? builder.version(HTTP_3).setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                ? builder.version(HTTP_3).setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                 : builder;
     }
 
@@ -378,7 +377,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
         https2TestServer.addHandler(h2_chunkedHandler, "/https2/x/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/x/";
 
-        http3TestServer = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         http3TestServer.addHandler(h2_chunkedHandler, "/http3/x/");
         https3URI = "https://" + http3TestServer.serverAuthority() + "/http3/x/";
 

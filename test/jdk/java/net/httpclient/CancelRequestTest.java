@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -81,7 +81,7 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import static java.lang.System.out;
 import static java.lang.System.err;
 import static java.net.http.HttpClient.Version.*;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
@@ -327,7 +327,7 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             // Populate alt-svc registry with h3 service
             if (uri.contains("h2h3")) headRequest(client);
-            H3DiscoveryMode config = uri.contains("h3-only") ? h3TestServer.h3DiscoveryConfig() : null;
+            Http3DiscoveryMode config = uri.contains("h3-only") ? h3TestServer.h3DiscoveryConfig() : null;
             HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
                     .GET()
                     .setOption(H3_DISCOVERY, config)
@@ -456,7 +456,7 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             // Populate alt-svc registry with h3 service
             if (uri.contains("h2h3")) headRequest(client);
-            H3DiscoveryMode config = uri.contains("h3-only") ? h3TestServer.h3DiscoveryConfig() : null;
+            Http3DiscoveryMode config = uri.contains("h3-only") ? h3TestServer.h3DiscoveryConfig() : null;
             HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
                     .POST(HttpRequest.BodyPublishers.ofByteArrays(iterable))
                     .setOption(H3_DISCOVERY, config)
@@ -570,7 +570,7 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             // Populate alt-svc registry with h3 service
             if (uri.contains("h2h3")) headRequest(client);
-            H3DiscoveryMode config = uri.contains("h3-only") ? h3TestServer.h3DiscoveryConfig() : null;
+            Http3DiscoveryMode config = uri.contains("h3-only") ? h3TestServer.h3DiscoveryConfig() : null;
             HttpRequest req = HttpRequest.newBuilder(URI.create(uriStr))
                     .POST(HttpRequest.BodyPublishers.ofByteArrays(iterable))
                     .setOption(H3_DISCOVERY, config)
@@ -656,7 +656,7 @@ public class CancelRequestTest implements HttpServerAdapters {
         h2h3TestServer.addHandler(new HttpHeadOrGetHandler(), "/h2h3/head/");
         h2h3Head = "https://" + h2h3TestServer.serverAuthority() + "/h2h3/head/";
 
-        h3TestServer = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        h3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3TestServer.addHandler(h3_chunkedHandler, "/h3-only/exec/");
         h3URI = "https://" + h3TestServer.serverAuthority() + "/h3-only/exec/retry";
 

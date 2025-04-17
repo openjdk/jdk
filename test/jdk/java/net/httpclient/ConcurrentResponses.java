@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient.Version;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
@@ -170,7 +170,7 @@ public class ConcurrentResponses {
         ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                 .name("HttpClient-" + id + "-Worker", 0).factory());
         var http3 = uri.contains("/https3/");
-       H3DiscoveryMode config = http3 ? H3DiscoveryMode.HTTP_3_ONLY : null;
+       Http3DiscoveryMode config = http3 ? Http3DiscoveryMode.HTTP_3_URI_ONLY : null;
         var builder = http3 ? HttpServerAdapters.createClientBuilderForH3() : HttpClient.newBuilder();
         if (http3) builder.version(Version.HTTP_3);
         HttpClient client = builder
@@ -210,7 +210,7 @@ public class ConcurrentResponses {
         ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                 .name("HttpClient-" + id + "-Worker", 0).factory());
         var http3 = uri.contains("/https3/");
-        H3DiscoveryMode config = http3 ? H3DiscoveryMode.HTTP_3_ONLY : null;
+        Http3DiscoveryMode config = http3 ? Http3DiscoveryMode.HTTP_3_URI_ONLY : null;
         var builder = http3 ? HttpServerAdapters.createClientBuilderForH3() : HttpClient.newBuilder();
         if (http3) builder.version(Version.HTTP_3);
         HttpClient client = builder
@@ -333,7 +333,7 @@ public class ConcurrentResponses {
         https2TestServer.addHandler(new Http2VariableHandler(), "/https2/variable");
         https2VariableURI = "https://" + https2TestServer.serverAuthority() + "/https2/variable";
 
-        https3TestServer = HttpTestServer.create(H3DiscoveryMode.HTTP_3_ONLY, sslContext);
+        https3TestServer = HttpTestServer.create(Http3DiscoveryMode.HTTP_3_URI_ONLY, sslContext);
         https3TestServer.addHandler(new Http3FixedHandler(), "/https3/fixed");
         https3FixedURI = "https://" + https3TestServer.serverAuthority() + "/https3/fixed";
         https3TestServer.addHandler(new Http3VariableHandler(), "/https3/variable");

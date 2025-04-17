@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpClient.Version.HTTP_2;
@@ -209,7 +209,7 @@ public class IdleConnectionTimeoutTest {
 
     private void testTimeout(HttpClient hc, URI uri, Version version) {
         // Timeout should occur
-        var config = version == HTTP_3 ? HTTP_3_ONLY : null;
+        var config = version == HTTP_3 ? HTTP_3_URI_ONLY : null;
         HttpRequest hreq = HttpRequest.newBuilder(uri).version(version).GET()
                 .setOption(H3_DISCOVERY, config).build();
         HttpResponse<String> hresp = runRequest(hc, hreq, 2750);
@@ -218,7 +218,7 @@ public class IdleConnectionTimeoutTest {
 
     private void testNoTimeout(HttpClient hc, URI uri, Version version) {
         // Timeout should not occur
-        var config = version == HTTP_3 ? HTTP_3_ONLY : null;
+        var config = version == HTTP_3 ? HTTP_3_URI_ONLY : null;
         HttpRequest hreq = HttpRequest.newBuilder(uri).version(version).GET()
                 .setOption(H3_DISCOVERY,  config).build();
         HttpResponse<String> hresp = runRequest(hc, hreq, 0);

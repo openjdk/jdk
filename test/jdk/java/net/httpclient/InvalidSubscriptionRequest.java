@@ -71,7 +71,7 @@ import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
@@ -170,7 +170,7 @@ public class InvalidSubscriptionRequest implements HttpServerAdapters {
         var builder = HttpRequest.newBuilder(uri);
         if (uri.getRawPath().contains("/http3/")) {
             builder = builder.version(HTTP_3)
-                    .setOption(H3_DISCOVERY, HTTP_3_ONLY);
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
         }
         return builder;
     }
@@ -500,7 +500,7 @@ public class InvalidSubscriptionRequest implements HttpServerAdapters {
         HttpTestHandler h3_fixedLengthHandler = new HTTP_FixedLengthHandler();
         HttpTestHandler h3_chunkedHandler = new HTTP_VariableLengthHandler();
 
-        http3TestServer = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         http3TestServer.addHandler(h3_fixedLengthHandler, "/http3/fixed");
         http3TestServer.addHandler(h3_chunkedHandler, "/http3/chunk");
         http3URI_fixed = "https://" + http3TestServer.serverAuthority() + "/http3/fixed";

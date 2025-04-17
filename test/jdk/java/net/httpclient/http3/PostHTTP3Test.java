@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpRequest.Builder;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
@@ -67,8 +67,8 @@ import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
@@ -270,15 +270,15 @@ public class PostHTTP3Test implements HttpServerAdapters {
         final Builder headBuilder = HttpRequest.newBuilder(headURI)
                 .version(firstRequestVersion)
                 .HEAD();
-        H3DiscoveryMode config = null;
+        Http3DiscoveryMode config = null;
         if (firstRequestVersion == HTTP_3 && !directQuicConnectionSupported) {
             // if the server doesn't listen for HTTP/3 on the same port than TCP, then
             // do not attempt to connect to the URI host:port through UDP - as we might
             // be connecting to some other server. Once the first request has gone
             // through, there should be an AltService record for the server, so
             // we should be able to safely use any default config (except
-            // HTTP_3_ONLY)
-            config = HTTP_3_ALT_SVC;
+            // HTTP_3_URI_ONLY)
+            config = ALT_SVC;
         }
         if (config != null) {
             out.println("first request will use " + config);
@@ -306,10 +306,10 @@ public class PostHTTP3Test implements HttpServerAdapters {
             }
             expectH3 = version.isEmpty() && client.version() == HTTP_3;
             if (version.orElse(null) == HTTP_3 && !directQuicConnectionSupported) {
-                config = HTTP_3_ALT_SVC;
+                config = ALT_SVC;
                 expectH3 = true;
             }
-            // we can expect H3 only if the (default) config is not HTTP_3_ANY
+            // we can expect H3 only if the (default) config is not ANY
             if (expectH3) {
                 out.println("first response came over HTTP/2, so we should expect all responses over HTTP/3");
             }
@@ -319,7 +319,7 @@ public class PostHTTP3Test implements HttpServerAdapters {
                 out.println("first response came over HTTP/3, direct connection supported: expect HTTP/3");
             } else if (firstRequestVersion == HTTP_3 && version.isEmpty()
                     && config == null && directQuicConnectionSupported) {
-                config = HTTP_3_ANY;
+                config = ANY;
                 expectH3 = true;
             }
         }
@@ -392,8 +392,8 @@ public class PostHTTP3Test implements HttpServerAdapters {
             // be connecting to some other server. Once the first request has gone
             // through, there should be an AltService record for the server, so
             // we should be able to safely use any default config (except
-            // HTTP_3_ONLY)
-            builder.setOption(H3_DISCOVERY, HTTP_3_ALT_SVC);
+            // HTTP_3_URI_ONLY)
+            builder.setOption(H3_DISCOVERY, ALT_SVC);
         }
 
         HttpRequest request = builder

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.H3DiscoveryMode;
-import java.net.http.HttpRequest.HttpRequestOption;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpTimeoutException;
@@ -42,7 +40,6 @@ import java.time.Duration;
 
 import javax.net.ssl.SSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import org.testng.Assert;
@@ -54,7 +51,7 @@ import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpClient.Version.valueOf;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 /**
@@ -122,7 +119,7 @@ public class Response1xxTest implements HttpServerAdapters {
         https2Server.start();
         System.out.println("Started (https) HTTP2 server at " + https2Server.getAddress());
 
-        http3Server = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        http3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         http3Server.addHandler(new Http3Handler(), "/http3/102");
         http3Server.addHandler(new Http3Handler(), "/http3/103");
         http3Server.addHandler(new Http3Handler(), "/http3/100");
@@ -424,7 +421,7 @@ public class Response1xxTest implements HttpServerAdapters {
                 new URI(baseURI + "/100")};
         var requestBuilder = HttpRequest.newBuilder();
         if (version == HTTP_3) {
-            requestBuilder.setOption(H3_DISCOVERY, HTTP_3_ONLY);
+            requestBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
         }
         for (final URI requestURI : requestURIs) {
             final HttpRequest request = requestBuilder.copy().uri(requestURI).build();
@@ -485,7 +482,7 @@ public class Response1xxTest implements HttpServerAdapters {
         final Duration requestTimeout = Duration.ofSeconds(2);
         var requestBuilder = HttpRequest.newBuilder(requestURI);
         if (version == HTTP_3) {
-            requestBuilder.setOption(H3_DISCOVERY, HTTP_3_ONLY);
+            requestBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
         }
         final HttpRequest request = requestBuilder.timeout(requestTimeout)
                 .build();
@@ -563,7 +560,7 @@ public class Response1xxTest implements HttpServerAdapters {
         final URI requestURI = new URI(baseUri + "/101");
         var requestBuilder = HttpRequest.newBuilder(requestURI);
         if (version == HTTP_3) {
-            requestBuilder.setOption(H3_DISCOVERY, HTTP_3_ONLY);
+            requestBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
         }
         final HttpRequest request = requestBuilder.build();
         System.out.println("Issuing request to " + requestURI);

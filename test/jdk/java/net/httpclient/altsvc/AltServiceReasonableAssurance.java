@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@ import org.junit.jupiter.api.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static jdk.httpclient.test.lib.common.DynamicKeyStoreUtil.generateCert;
 import static jdk.httpclient.test.lib.common.DynamicKeyStoreUtil.generateKeyStore;
@@ -168,7 +168,7 @@ public class AltServiceReasonableAssurance implements HttpServerAdapters {
         Objects.requireNonNull(altServerSSLCtx);
         final String requestPath = "/foo";
         // Alt server only supports H3
-        final HttpTestServer altServer = HttpTestServer.create(HTTP_3_ONLY, altServerSSLCtx);
+        final HttpTestServer altServer = HttpTestServer.create(HTTP_3_URI_ONLY, altServerSSLCtx);
         altServer.addHandler(new Handler(ALT_SERVER_RESPONSE_MESSAGE), requestPath);
         altServer.start();
         System.out.println("Alt server (HTTPS) started at " + altServer.getAddress());
@@ -297,7 +297,7 @@ public class AltServiceReasonableAssurance implements HttpServerAdapters {
             final URI requestURI = testInput.requestURI;
             final HttpRequest request = HttpRequest.newBuilder()
                     .GET().uri(requestURI)
-                    .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC)
+                    .setOption(H3_DISCOVERY, ALT_SVC)
                     .build();
             System.out.println("Issuing request " + requestURI);
             final HttpResponse<String> response = client.send(request,
@@ -410,7 +410,7 @@ public class AltServiceReasonableAssurance implements HttpServerAdapters {
             final URI requestURI = testInput.requestURI;
             final HttpRequest request = HttpRequest.newBuilder()
                     .GET().uri(requestURI)
-                    .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC)
+                    .setOption(H3_DISCOVERY, ALT_SVC)
                     .build();
             System.out.println("Issuing request " + requestURI);
             final HttpResponse<String> response = client.send(request,
@@ -524,7 +524,7 @@ public class AltServiceReasonableAssurance implements HttpServerAdapters {
             final URI requestURI = testInput.requestURI;
             final HttpRequest request = HttpRequest.newBuilder()
                     .GET().uri(requestURI)
-                    .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC)
+                    .setOption(H3_DISCOVERY, ALT_SVC)
                     .build();
             System.out.println("Issuing request " + requestURI);
             final HttpResponse<String> response = client.send(request,
@@ -638,7 +638,7 @@ public class AltServiceReasonableAssurance implements HttpServerAdapters {
             for (int i = 1; i <= 3; i++) {
                 final HttpRequest h3Request = HttpRequest.newBuilder()
                         .version(HTTP_3).GET().uri(requestURI)
-                        .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC)
+                        .setOption(H3_DISCOVERY, ALT_SVC)
                         .build();
                 System.out.println("Again(" + i + ") issuing " + h3Request.version()
                         + " request to " + requestURI);

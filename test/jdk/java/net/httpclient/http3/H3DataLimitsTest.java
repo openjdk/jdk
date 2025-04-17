@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.assertEquals;
 
@@ -175,7 +175,7 @@ public class H3DataLimitsTest implements HttpServerAdapters {
         URI uri = URI.create(h3URI + "?16000000");
         Builder builder = HttpRequest.newBuilder(uri)
                 .version(HTTP_3)
-                .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                 .GET();
         HttpRequest request = builder.build();
         HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
@@ -197,7 +197,7 @@ public class H3DataLimitsTest implements HttpServerAdapters {
         URI uri = URI.create(h3URI + "?160000");
         Builder builder = HttpRequest.newBuilder(uri)
                 .version(HTTP_3)
-                .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                 .GET();
         HttpRequest request = builder.build();
         for (int i=0; i<102; i++) { // more than 100 to exercise MAX_STREAMS

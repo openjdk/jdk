@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.test.lib.net.SimpleSSLContext;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 /*
@@ -98,7 +98,7 @@ public class H3Timeout implements HttpServerAdapters {
     public static void testTimeout(SSLContext context, boolean async) throws Exception {
 
         CountDownLatch latch = new CountDownLatch(1);
-        HttpTestServer server = HttpTestServer.create(HTTP_3_ONLY, context);
+        HttpTestServer server = HttpTestServer.create(HTTP_3_URI_ONLY, context);
         server.addHandler((exch) -> {
             try {
                 System.err.println("server reading request");
@@ -137,7 +137,7 @@ public class H3Timeout implements HttpServerAdapters {
         try {
             HttpRequest request = HttpRequest.newBuilder(new URI(server))
                     .timeout(Duration.ofMillis(TIMEOUT))
-                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                     .POST(BodyPublishers.ofString("body"))
                     .build();
             HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
@@ -166,7 +166,7 @@ public class H3Timeout implements HttpServerAdapters {
             try {
                 HttpRequest request = HttpRequest.newBuilder(new URI(server))
                         .timeout(Duration.ofMillis(TIMEOUT))
-                        .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                        .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                         .POST(BodyPublishers.ofString("body"))
                         .build();
                 HttpResponse<String> response = client.sendAsync(request, BodyHandlers.ofString()).join();

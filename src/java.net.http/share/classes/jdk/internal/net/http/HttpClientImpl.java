@@ -98,7 +98,7 @@ import jdk.internal.net.http.common.Utils.SafeExecutor;
 import jdk.internal.net.http.common.Utils.SafeExecutorService;
 import jdk.internal.net.http.websocket.BuilderImpl;
 
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
@@ -1046,7 +1046,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
         final HttpClient.Version vers = userRequest.version().orElse(this.version());
         if (vers == Version.HTTP_3 && client3 == null
-                && userRequest.getOption(H3_DISCOVERY).orElse(null) == HTTP_3_ONLY) {
+                && userRequest.getOption(H3_DISCOVERY).orElse(null) == HTTP_3_URI_ONLY) {
             // HTTP3 isn't supported by this client
             return MinimalFuture.failedFuture(new UnsupportedProtocolVersionException(
                     "HTTP3 is not supported"));

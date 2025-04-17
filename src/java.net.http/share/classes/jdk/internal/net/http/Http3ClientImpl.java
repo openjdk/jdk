@@ -26,7 +26,7 @@ package jdk.internal.net.http;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.UnsupportedProtocolVersionException;
 import java.nio.channels.ClosedChannelException;
 import java.time.Duration;
@@ -263,23 +263,23 @@ public final class Http3ClientImpl implements AutoCloseable {
                     }
                 }
                 boolean suitable = switch (config) {
-                    case HTTP_3_ONLY -> {
+                    case HTTP_3_URI_ONLY -> {
                         if (altService == null) {
                             // the pooled connection was created as a result of a direct connection
-                            // against the origin, so is a valid one to use for HTTP_3_ONLY request
+                            // against the origin, so is a valid one to use for HTTP_3_URI_ONLY request
                             yield true;
                         }
                         // At this point, we have found a pooled connection which matches the request's
                         // authority and that pooled connection was created because some origin
                         // advertised the authority as an alternate service. We can use this pooled
-                        // connection with HTTP_3_ONLY, only if the authority of the
+                        // connection with HTTP_3_URI_ONLY, only if the authority of the
                         // alternate service is the same as the authority of the origin that
                         // advertised it
                         yield altService.originHasSameAuthority();
                     }
-                    // can't use the connection with HTTP_3_ALT_SVC unless the endpoint
+                    // can't use the connection with ALT_SVC unless the endpoint
                     // was advertised through altService
-                    case HTTP_3_ALT_SVC -> altService != null && altService.wasAdvertised();
+                    case ALT_SVC -> altService != null && altService.wasAdvertised();
                     default -> true;
                 };
                 if (suitable) {
@@ -747,7 +747,7 @@ public final class Http3ClientImpl implements AutoCloseable {
      * A direct HTTP/3 attempt may be attempted if we don't have an
      * AltService h3 endpoint recorded for it, and if the given request
      * URI's raw authority hasn't been marked as not supporting HTTP/3,
-     * and if the request discovery config is not HTTP_3_ALT_SVC.
+     * and if the request discovery config is not ALT_SVC.
      * Note that a URI may be marked has not supporting H3 if it doesn't
      * acknowledge the first initial quic packet in the time defined
      * by {@systemProperty jdk.httpclient.http3.maxDirectConnectionTimeout}.
@@ -755,7 +755,7 @@ public final class Http3ClientImpl implements AutoCloseable {
      * @return true if there's no h3 endpoint already registered for the given uri.
      */
     public boolean mayAttemptDirectConnection(HttpRequestImpl request) {
-        return request.http3Discovery() != H3DiscoveryMode.HTTP_3_ALT_SVC
+        return request.http3Discovery() != Http3DiscoveryMode.ALT_SVC
                 && client().registry().lookup(request.uri(), H3).findFirst().isEmpty()
                 && !hasNoH3(request.uri().getRawAuthority());
     }

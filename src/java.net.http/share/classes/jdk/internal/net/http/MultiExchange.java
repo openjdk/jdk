@@ -221,15 +221,15 @@ class MultiExchange<T> implements Cancelable {
         if (vers != Version.HTTP_1_1
                 && !request.secure() && request.proxy() != null
                 && !request.isHttp3Only(vers)) {
-            // downgrade to HTTP_1_1 unless HTTP_3_ONLY.
-            // if HTTP_3_ONLY and not secure it will fail down the road, so
+            // downgrade to HTTP_1_1 unless HTTP_3_URI_ONLY.
+            // if HTTP_3_URI_ONLY and not secure it will fail down the road, so
             // we don't downgrade here.
             vers = HttpClient.Version.HTTP_1_1;
         }
         if (vers == Version.HTTP_3 && request.secure() && !client.client3().isPresent()) {
             if (!request.isHttp3Only(vers)) {
                 // HTTP/3 not supported with the client config.
-                // Downgrade to HTTP/2, unless HTTP_3_ONLY is specified
+                // Downgrade to HTTP/2, unless HTTP_3_URI_ONLY is specified
                 vers = Version.HTTP_2;
                 if (debug.on()) debug.log("HTTP_3 downgraded to " + vers);
             }

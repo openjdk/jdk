@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.http.HttpConnectTimeoutException;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.ResponseInfo;
 import java.net.http.UnsupportedProtocolVersionException;
@@ -201,7 +201,7 @@ abstract class ExchangeImpl<T> {
                     // We don't know if the server supports HTTP/3.
                     // happy eyeball: prepare to try both HTTP/3 and HTTP/2 and
                     //      to use the first that succeeds
-                    if (config != H3DiscoveryMode.HTTP_3_ONLY) {
+                    if (config != Http3DiscoveryMode.HTTP_3_URI_ONLY) {
                         if (debug.on()) {
                             debug.log("get: trying with both HTTP/3 and HTTP/2");
                         }

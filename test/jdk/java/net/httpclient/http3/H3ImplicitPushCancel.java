@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 
@@ -85,7 +85,7 @@ public class H3ImplicitPushCancel implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        server = HttpTestServer.create(HTTP_3_ANY, new SimpleSSLContext().get());
+        server = HttpTestServer.create(ANY, new SimpleSSLContext().get());
         HttpTestHandler pushHandler = new ServerPushHandler(MAIN_RESPONSE_BODY,
                                                      PUSH_PROMISES);
         server.addHandler(pushHandler, "/push/");

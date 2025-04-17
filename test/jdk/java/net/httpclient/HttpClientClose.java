@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
@@ -80,8 +80,8 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
@@ -120,10 +120,10 @@ public class HttpClientClose implements HttpServerAdapters {
         return new Object[][] {
                 { h2h3URI,    HTTP_3,   h2h3TestServer.h3DiscoveryConfig()},
                 { h3URI,      HTTP_3,   h3TestServer.h3DiscoveryConfig()},
-                { httpURI,    HTTP_1_1, HTTP_3_ALT_SVC}, // do not attempt HTTP/3
-                { httpsURI,   HTTP_1_1, HTTP_3_ALT_SVC}, // do not attempt HTTP/3
-                { http2URI,   HTTP_2,   HTTP_3_ALT_SVC}, // do not attempt HTTP/3
-                { https2URI,  HTTP_2,   HTTP_3_ALT_SVC}, // do not attempt HTTP/3
+                { httpURI,    HTTP_1_1, ALT_SVC}, // do not attempt HTTP/3
+                { httpsURI,   HTTP_1_1, ALT_SVC}, // do not attempt HTTP/3
+                { http2URI,   HTTP_2, ALT_SVC}, // do not attempt HTTP/3
+                { https2URI,  HTTP_2, ALT_SVC}, // do not attempt HTTP/3
         };
     }
 
@@ -171,15 +171,15 @@ public class HttpClientClose implements HttpServerAdapters {
 
     record ExchangeResult<T>(int step,
                              Version version,
-                             H3DiscoveryMode config,
+                             Http3DiscoveryMode config,
                              HttpResponse<T> response,
                              boolean firstVersionMayNotMatch) {
 
-        static <U> ExchangeResult<U> afterHead(int step, Version version, H3DiscoveryMode config) {
+        static <U> ExchangeResult<U> afterHead(int step, Version version, Http3DiscoveryMode config) {
             return new ExchangeResult<U>(step, version, config, null, false);
         }
 
-        static <U> ExchangeResult<U> ofSequential(int step, Version version, H3DiscoveryMode config) {
+        static <U> ExchangeResult<U> ofSequential(int step, Version version, Http3DiscoveryMode config) {
             return new ExchangeResult<U>(step, version, config, null, true);
         }
 
@@ -231,7 +231,7 @@ public class HttpClientClose implements HttpServerAdapters {
     }
 
     @Test(dataProvider = "positive")
-    void testConcurrent(String uriString, Version version, H3DiscoveryMode config) throws Exception {
+    void testConcurrent(String uriString, Version version, Http3DiscoveryMode config) throws Exception {
         out.printf("%n---- starting concurrent (%s, %s, %s) ----%n%n", uriString, version, config);
         Throwable failed = null;
         HttpClient toCheck = null;
@@ -244,7 +244,7 @@ public class HttpClientClose implements HttpServerAdapters {
                 .build()) {
             TRACKER.track(client);
 
-            if (version == HTTP_3 && config != HTTP_3_ONLY) {
+            if (version == HTTP_3 && config != HTTP_3_URI_ONLY) {
                 headRequest(client);
             }
 
@@ -290,7 +290,7 @@ public class HttpClientClose implements HttpServerAdapters {
     }
 
     @Test(dataProvider = "positive")
-    void testSequential(String uriString, Version version, H3DiscoveryMode config) throws Exception {
+    void testSequential(String uriString, Version version, Http3DiscoveryMode config) throws Exception {
         out.printf("%n---- starting sequential (%s, %s, %s) ----%n%n", uriString, version, config);
         Throwable failed = null;
         HttpClient toCheck = null;
@@ -367,7 +367,7 @@ public class HttpClientClose implements HttpServerAdapters {
         h2h3URI = "https://" + h2h3TestServer.serverAuthority() + "/h2h3/exec/retry";
         h2h3TestServer.addHandler(new HttpHeadOrGetHandler(), "/h2h3/head/");
         h2h3Head = "https://" + h2h3TestServer.serverAuthority() + "/h2h3/head/";
-        h3TestServer = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        h3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3TestServer.addHandler(new ServerRequestHandler(), "/h3-only/exec/");
         h3URI = "https://" + h3TestServer.serverAuthority() + "/h3-only/exec/retry";
 

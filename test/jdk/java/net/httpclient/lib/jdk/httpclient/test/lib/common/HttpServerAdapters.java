@@ -54,7 +54,7 @@ import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1151,7 +1151,7 @@ public interface HttpServerAdapters {
             return false;
         }
 
-        public H3DiscoveryMode h3DiscoveryConfig() {
+        public Http3DiscoveryMode h3DiscoveryConfig() {
             return null;
         }
 
@@ -1262,7 +1262,7 @@ public interface HttpServerAdapters {
          * @return The newly created server
          * @throws IOException if any exception occurs during the server creation
          */
-        public static HttpTestServer create(H3DiscoveryMode h3DiscoveryCfg,
+        public static HttpTestServer create(Http3DiscoveryMode h3DiscoveryCfg,
                                             SSLContext sslContext)
                 throws IOException {
             Objects.requireNonNull(sslContext, "SSLContext");
@@ -1278,7 +1278,7 @@ public interface HttpServerAdapters {
          * @return The newly created server
          * @throws IOException if any exception occurs during the server creation
          */
-        public static HttpTestServer create(H3DiscoveryMode h3DiscoveryCfg,
+        public static HttpTestServer create(Http3DiscoveryMode h3DiscoveryCfg,
                                             SSLContext sslContext, ExecutorService executor)
                 throws IOException {
             Objects.requireNonNull(sslContext, "SSLContext");
@@ -1301,7 +1301,7 @@ public interface HttpServerAdapters {
          *          The HTTP_2 server advertises the HTTP_3 server as an alternate service. When
          *          creating the HTTP_3 server, an ephemeral port is used and thus the alternate
          *          service will be advertised on a different port than the HTTP_2 server's port</li>
-         *      <li>HTTP_3_ANY - A HTTP_2 server is created and a HTTP_3 server is created.
+         *      <li>ANY - A HTTP_2 server is created and a HTTP_3 server is created.
          *          The HTTP_2 server advertises the HTTP_3 server as an alternate service. When
          *          creating the HTTP_3 server, the same port as that of the HTTP_2 server is used
          *          to bind the HTTP_3 server. If that bind attempt fails, then an ephemeral port
@@ -1310,8 +1310,8 @@ public interface HttpServerAdapters {
          *
          * @param serverVersion The HTTP version of the server
          * @param sslContext    The SSLContext to use. Can be null
-         * @param h3DiscoveryCfg The H3DiscoveryMode for HTTP_3 server. Can be null,
-         *                       in which case it defaults to {@code HTTP_3_ALT_SVC} for HTTP_3
+         * @param h3DiscoveryCfg The Http3DiscoveryMode for HTTP_3 server. Can be null,
+         *                       in which case it defaults to {@code ALT_SVC} for HTTP_3
          *                       server
          * @param executor      The executor to be used by the server. Can be null
          * @return The newly created server
@@ -1321,12 +1321,12 @@ public interface HttpServerAdapters {
          * @throws IOException              if any exception occurs during the server creation
          */
         private static HttpTestServer create(final Version serverVersion, final SSLContext sslContext,
-                                            final H3DiscoveryMode h3DiscoveryCfg,
+                                            final Http3DiscoveryMode h3DiscoveryCfg,
                                             final ExecutorService executor) throws IOException {
             Objects.requireNonNull(serverVersion);
             if (h3DiscoveryCfg != null && serverVersion != HTTP_3) {
-                // H3DiscoveryMode is only supported when version of HTTP_3
-                throw new IllegalArgumentException("H3DiscoveryMode" +
+                // Http3DiscoveryMode is only supported when version of HTTP_3
+                throw new IllegalArgumentException("Http3DiscoveryMode" +
                         " isn't allowed for " + serverVersion + " version");
             }
             switch (serverVersion) {
@@ -1335,15 +1335,15 @@ public interface HttpServerAdapters {
                         throw new IllegalArgumentException("SSLContext cannot be null when" +
                                 " constructing a HTTP_3 server");
                     }
-                    final H3DiscoveryMode effectiveDiscoveryCfg = h3DiscoveryCfg == null
-                            ? H3DiscoveryMode.HTTP_3_ALT_SVC
+                    final Http3DiscoveryMode effectiveDiscoveryCfg = h3DiscoveryCfg == null
+                            ? Http3DiscoveryMode.ALT_SVC
                             : h3DiscoveryCfg;
                     switch (effectiveDiscoveryCfg) {
-                        case HTTP_3_ONLY -> {
+                        case HTTP_3_URI_ONLY -> {
                             // create only a HTTP3 server
                             return HttpTestServer.of(new Http3TestServer(sslContext, executor));
                         }
-                        case HTTP_3_ALT_SVC -> {
+                        case ALT_SVC -> {
                             // create a HTTP2 server which advertises an HTTP3 alternate service.
                             // that alternate service will be using an ephemeral port for the server
                             final Http2TestServer h2WithAltService;
@@ -1356,7 +1356,7 @@ public interface HttpServerAdapters {
                             }
                             return HttpTestServer.of(h2WithAltService);
                         }
-                        case HTTP_3_ANY -> {
+                        case ANY -> {
                             // create a HTTP2 server which advertises an HTTP3 alternate service.
                             // that alternate service will first attempt to use the same port as the
                             // HTTP2 server and if binding to that port fails, then will attempt
@@ -1372,7 +1372,7 @@ public interface HttpServerAdapters {
                             return HttpTestServer.of(h2WithAltService);
                         }
                         default -> throw new IllegalArgumentException("Unsupported" +
-                                " H3DiscoveryMode: " + effectiveDiscoveryCfg);
+                                " Http3DiscoveryMode: " + effectiveDiscoveryCfg);
                     }
                 }
                 case HTTP_2 -> {
@@ -1528,10 +1528,10 @@ public interface HttpServerAdapters {
                 return impl.supportsH3DirectConnection();
             }
 
-            public H3DiscoveryMode h3DiscoveryConfig() {
+            public Http3DiscoveryMode h3DiscoveryConfig() {
                 return supportsH3DirectConnection()
-                        ? H3DiscoveryMode.HTTP_3_ANY
-                        : H3DiscoveryMode.HTTP_3_ALT_SVC;
+                        ? Http3DiscoveryMode.ANY
+                        : Http3DiscoveryMode.ALT_SVC;
             }
 
             public Version getVersion() { return HTTP_2; }
@@ -1633,8 +1633,8 @@ public interface HttpServerAdapters {
             }
 
             @Override
-            public H3DiscoveryMode h3DiscoveryConfig() {
-                return H3DiscoveryMode.HTTP_3_ONLY;
+            public Http3DiscoveryMode h3DiscoveryConfig() {
+                return Http3DiscoveryMode.HTTP_3_URI_ONLY;
             }
 
             @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -65,7 +65,7 @@ import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
@@ -442,7 +442,7 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
     }
 
     private HttpRequest buildRequest(URI uri) {
-        H3DiscoveryMode config = uri.getPath().contains("/https3/") ? HTTP_3_ONLY : null;
+        Http3DiscoveryMode config = uri.getPath().contains("/https3/") ? HTTP_3_URI_ONLY : null;
         return HttpRequest.newBuilder(uri).setOption(H3_DISCOVERY, config).build();
     }
 
@@ -517,7 +517,7 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
         https2TestServer.addHandler(gzipHandler, "/https2/chunk/gz");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/chunk";
 
-        https3TestServer = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        https3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         https3TestServer.addHandler(plainHandler, "/https3/chunk/txt");
         https3TestServer.addHandler(gzipHandler, "/https3/chunk/gz");
         https3URI = "https://" + https3TestServer.serverAuthority() + "/https3/chunk";

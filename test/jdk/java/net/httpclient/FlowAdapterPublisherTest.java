@@ -27,7 +27,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.http.HttpClient.Builder;
 import java.net.http.HttpClient.Version;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.util.Arrays;
@@ -395,7 +395,7 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
         https2TestServer.addHandler(new HttpEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 
-        http3TestServer = HttpTestServer.create(H3DiscoveryMode.HTTP_3_ONLY, sslContext);
+        http3TestServer = HttpTestServer.create(Http3DiscoveryMode.HTTP_3_URI_ONLY, sslContext);
         http3TestServer.addHandler(new HttpEchoHandler(), "/http3/echo");
         http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/echo";
 

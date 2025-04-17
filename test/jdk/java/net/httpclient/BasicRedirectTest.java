@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,8 @@ import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
@@ -130,7 +130,7 @@ public class BasicRedirectTest implements HttpServerAdapters {
                 .build();
         if (version.stream().anyMatch(HTTP_3::equals)) {
             var builder = HttpRequest.newBuilder(URI.create(https3HeadURI))
-                    .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC);
+                    .setOption(H3_DISCOVERY, ALT_SVC);
             var head = builder.copy().HEAD().version(HTTP_2).build();
             var get = builder.copy().GET().build();
             out.printf("%n---- sending initial head request (%s) -----%n", head.uri());
@@ -288,7 +288,7 @@ public class BasicRedirectTest implements HttpServerAdapters {
         https2TestServer.addHandler(new BasicHttpRedirectHandler(), "/https2/same/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/same/redirect";
 
-        http3TestServer = HttpTestServer.create(HTTP_3_ANY, sslContext);
+        http3TestServer = HttpTestServer.create(ANY, sslContext);
         http3TestServer.addHandler(new BasicHttpRedirectHandler(), "/http3/same/");
         https3URI = "https://" + http3TestServer.serverAuthority() + "/http3/same/redirect";
         http3TestServer.addHandler(new HttpHeadOrGetHandler(), "/http3/head");

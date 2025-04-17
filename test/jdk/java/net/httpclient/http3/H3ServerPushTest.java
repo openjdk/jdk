@@ -60,7 +60,7 @@ import java.util.stream.Collectors;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -1103,7 +1103,7 @@ class H3ServerPushTest {
     }
 
     private static HttpRequest createRequest(URI uri) {
-        return HttpRequest.newBuilder(uri).HEAD().setOption(H3_DISCOVERY, HTTP_3_ONLY).build();
+        return HttpRequest.newBuilder(uri).HEAD().setOption(H3_DISCOVERY, HTTP_3_URI_ONLY).build();
     }
 
     private static final class PushReceiver implements HttpResponse.PushPromiseHandler<String> {
@@ -1198,7 +1198,7 @@ class H3ServerPushTest {
     }
 
     private static HttpTestServer createServer() throws IOException {
-        HttpTestServer server = HttpTestServer.create(HTTP_3_ONLY, SSL_CONTEXT);
+        HttpTestServer server = HttpTestServer.create(HTTP_3_URI_ONLY, SSL_CONTEXT);
         server.start();
         return server;
     }

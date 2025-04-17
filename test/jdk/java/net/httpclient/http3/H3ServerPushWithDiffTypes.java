@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.Test;
 
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 
@@ -96,7 +96,7 @@ public class H3ServerPushWithDiffTypes implements HttpServerAdapters {
     @Test
     public void test() throws Exception {
         var sslContext = new SimpleSSLContext().get();
-        try (HttpTestServer server = HttpTestServer.create(HTTP_3_ANY, sslContext)) {
+        try (HttpTestServer server = HttpTestServer.create(ANY, sslContext)) {
             HttpTestHandler pushHandler =
                     new ServerPushHandler("the main response body",
                             PUSH_PROMISES);

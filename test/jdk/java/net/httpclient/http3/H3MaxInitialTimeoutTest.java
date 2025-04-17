@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import org.testng.annotations.Test;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.assertEquals;
 
@@ -189,7 +189,7 @@ public class H3MaxInitialTimeoutTest implements HttpServerAdapters {
             URI uri = URI.create(h3URI);
             Builder builder = HttpRequest.newBuilder(uri)
                     .version(HTTP_3)
-                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                     .GET();
             HttpRequest request = builder.build();
             try {

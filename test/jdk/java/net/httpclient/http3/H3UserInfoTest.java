@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,9 @@ import java.util.stream.Stream;
 
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 
@@ -78,12 +78,12 @@ public class H3UserInfoTest implements HttpServerAdapters {
         sslContext = new SimpleSSLContext().get();
         HttpTestHandler handler = new HttpHandler();
 
-        server = HttpTestServer.create(HTTP_3_ANY, sslContext);
+        server = HttpTestServer.create(ANY, sslContext);
         server.addHandler(handler, "/");
         serverURI = "https://" + server.serverAuthority() +"/http3-any/";
         server.start();
 
-        server3 = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        server3 = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         server3.addHandler(handler, "/");
         server3URI = "https://" + server3.serverAuthority() +"/http3-only/";
         server3.start();
@@ -137,7 +137,7 @@ public class H3UserInfoTest implements HttpServerAdapters {
             var config = server.h3DiscoveryConfig();
 
             while (true) {
-                if (config == HTTP_3_ALT_SVC) {
+                if (config == ALT_SVC) {
                     // send head request
                     System.out.printf("Sending head request (%s) to %s%n", config, origURI);
                     System.err.printf("Sending head request (%s) to %s%n", config, origURI);
@@ -165,7 +165,7 @@ public class H3UserInfoTest implements HttpServerAdapters {
                 assertEquals(200, response.statusCode(),
                         "Test Failed : " + response.uri().getAuthority());
                 assertEquals("", response.body());
-                if (config != HTTP_3_ANY) {
+                if (config != ANY) {
                     assertEquals(HTTP_3, response.version());
                 } else if (response.version() != HTTP_3) {
                     // the request went through HTTP/2 - the next

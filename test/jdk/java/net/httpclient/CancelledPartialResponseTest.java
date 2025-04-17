@@ -64,7 +64,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
@@ -73,7 +73,6 @@ import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.*;
 
 public class CancelledPartialResponseTest {
 
@@ -169,7 +168,7 @@ public class CancelledPartialResponseTest {
             throw new AssertionError("Unexpected null sslContext");
 
         http2TestServer = new Http2TestServer(false, 0);
-        http3TestServer = HttpTestServer.create(H3DiscoveryMode.HTTP_3_ONLY, sslContext);
+        http3TestServer = HttpTestServer.create(Http3DiscoveryMode.HTTP_3_URI_ONLY, sslContext);
 
         http2TestServer.setExchangeSupplier(ExpectContinueResetTestExchangeImpl::new);
         http2TestServer.addHandler(new GetHandler().toHttp2Handler(), "/warmup");
@@ -204,9 +203,9 @@ public class CancelledPartialResponseTest {
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .version(version)
                 .sslContext(sslContext);
-        H3DiscoveryMode requestConfig = null;
+        Http3DiscoveryMode requestConfig = null;
         if (version == HTTP_3)
-            requestConfig = H3DiscoveryMode.HTTP_3_ONLY;
+            requestConfig = Http3DiscoveryMode.HTTP_3_URI_ONLY;
 
         try (HttpClient client = builder.build()) {
             err.printf("Performing warmup request to %s", warmup);

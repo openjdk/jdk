@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.List;
@@ -101,12 +101,12 @@ public class H3BadHeadersTest implements HttpServerAdapters  {
         System.out.printf("%ntest %s, %s, STARTING%n%n", uri, sameClient);
         System.err.printf("%ntest %s, %s, STARTING%n%n", uri, sameClient);
         var config = uri.startsWith(http3URI)
-                ? H3DiscoveryMode.HTTP_3_ONLY
+                ? Http3DiscoveryMode.HTTP_3_URI_ONLY
                 : https2TestServer.supportsH3DirectConnection()
-                ? H3DiscoveryMode.HTTP_3_ANY
-                : H3DiscoveryMode.HTTP_3_ALT_SVC;
+                ? Http3DiscoveryMode.ANY
+                : Http3DiscoveryMode.ALT_SVC;
 
-        boolean sendHeadRequest = config != H3DiscoveryMode.HTTP_3_ONLY;
+        boolean sendHeadRequest = config != Http3DiscoveryMode.HTTP_3_URI_ONLY;
 
         HttpClient client = null;
         for (int i=0; i< BAD_HEADERS.size(); i++) {
@@ -171,12 +171,12 @@ public class H3BadHeadersTest implements HttpServerAdapters  {
         System.out.printf("%ntestAsync %s, %s, STARTING%n%n", uri, sameClient);
         System.err.printf("%ntestAsync %s, %s, STARTING%n%n", uri, sameClient);
         var config = uri.startsWith(http3URI)
-                ? H3DiscoveryMode.HTTP_3_ONLY
+                ? Http3DiscoveryMode.HTTP_3_URI_ONLY
                 : https2TestServer.supportsH3DirectConnection()
-                ? H3DiscoveryMode.HTTP_3_ANY
-                : H3DiscoveryMode.HTTP_3_ALT_SVC;
+                ? Http3DiscoveryMode.ANY
+                : Http3DiscoveryMode.ALT_SVC;
 
-        boolean sendHeadRequest = config != H3DiscoveryMode.HTTP_3_ONLY;
+        boolean sendHeadRequest = config != Http3DiscoveryMode.HTTP_3_URI_ONLY;
 
         HttpClient client = null;
         for (int i=0; i< BAD_HEADERS.size(); i++) {
@@ -276,11 +276,11 @@ public class H3BadHeadersTest implements HttpServerAdapters  {
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
-        http3TestServer =  HttpTestServer.create(H3DiscoveryMode.HTTP_3_ONLY, sslContext);
+        http3TestServer =  HttpTestServer.create(Http3DiscoveryMode.HTTP_3_URI_ONLY, sslContext);
         http3TestServer.addHandler(new BadHeadersHandler(), "/http3/echo");
         http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/echo";
 
-        https2TestServer = HttpTestServer.create(H3DiscoveryMode.HTTP_3_ANY, sslContext);
+        https2TestServer = HttpTestServer.create(Http3DiscoveryMode.ANY, sslContext);
         https2TestServer.addHandler(new BadHeadersHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 

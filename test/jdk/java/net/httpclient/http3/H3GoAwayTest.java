@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpRequest.*;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -108,7 +108,7 @@ public class H3GoAwayTest {
                 for (int i = 1; i <= numReqs; i++) {
                     final URI reqURI = new URI(REQ_URI_BASE + "?" + reqMethod + "=" + i);
                     final HttpRequest req = newBuilder()
-                            .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                            .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                             .uri(reqURI)
                             .method(reqMethod, BodyPublishers.noBody())
                             .build();

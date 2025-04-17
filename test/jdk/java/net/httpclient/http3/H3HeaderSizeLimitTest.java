@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 /*
@@ -109,7 +109,7 @@ public class H3HeaderSizeLimitTest implements HttpServerAdapters {
         final URI reqURI = new URI(requestURIBase + "/hello");
         final HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(reqURI)
                 .version(Version.HTTP_3)
-                .setOption(H3_DISCOVERY, HTTP_3_ONLY);
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
         // issue a few requests so that enough time has passed to allow the SETTINGS frame from the
         // server to have reached the client.
         for (int i = 1; i <= 3; i++) {

@@ -68,7 +68,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -189,7 +189,7 @@ class HttpResponseConnectionLabelTest {
                         ? createExecutor(version, secure, serverId)
                         : null;
                 return Version.HTTP_3.equals(version)
-                        ? HttpTestServer.create(HTTP_3_ONLY, sslContext, executorRef[0])
+                        ? HttpTestServer.create(HTTP_3_URI_ONLY, sslContext, executorRef[0])
                         : HttpTestServer.create(version, sslContext, executorRef[0]);
             } catch (IOException exception) {
                 throw new UncheckedIOException(exception);
@@ -251,7 +251,7 @@ class HttpResponseConnectionLabelTest {
         private static HttpRequest createRequest(Version version, URI requestUri) {
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(requestUri).version(version);
             if (Version.HTTP_3.equals(version)) {
-                requestBuilder.setOption(H3_DISCOVERY, HTTP_3_ONLY);
+                requestBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
             }
             return requestBuilder.build();
         }

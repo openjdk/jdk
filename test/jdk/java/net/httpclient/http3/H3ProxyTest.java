@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient.Version;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.UnsupportedProtocolVersionException;
 import java.nio.charset.StandardCharsets;
@@ -47,9 +47,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 
@@ -76,7 +76,7 @@ public class H3ProxyTest implements HttpServerAdapters {
     static final String PATH = "/foo/";
 
     static HttpTestServer createHttps2Server() throws Exception {
-        HttpTestServer server = HttpTestServer.create(HTTP_3_ANY, SSLContext.getDefault());
+        HttpTestServer server = HttpTestServer.create(ANY, SSLContext.getDefault());
         server.addHandler(he -> {
             he.getResponseHeaders().addHeader("encoding", "UTF-8");
             he.sendResponseHeaders(200, RESPONSE.length());
@@ -90,7 +90,7 @@ public class H3ProxyTest implements HttpServerAdapters {
     }
 
     static HttpTestServer createHttp3Server() throws Exception {
-        HttpTestServer server = HttpTestServer.create(HTTP_3_ONLY, SSLContext.getDefault());
+        HttpTestServer server = HttpTestServer.create(HTTP_3_URI_ONLY, SSLContext.getDefault());
         server.addHandler(he -> {
             he.getResponseHeaders().addHeader("encoding", "UTF-8");
             he.sendResponseHeaders(200, RESPONSE.length());
@@ -112,17 +112,17 @@ public class H3ProxyTest implements HttpServerAdapters {
         server3.start();
         try {
             if (server.supportsH3DirectConnection()) {
-                test(server, HTTP_3_ANY);
+                test(server, ANY);
                 try {
-                    test(server, HTTP_3_ONLY);
+                    test(server, HTTP_3_URI_ONLY);
                     throw new AssertionError("expected UnsupportedProtocolVersionException not raised");
                 } catch (UnsupportedProtocolVersionException upve) {
                     System.out.printf("%nGot expected exception: %s%n%n", upve);
                 }
             }
-            test(server, HTTP_3_ALT_SVC);
+            test(server, ALT_SVC);
             try {
-                test(server3, HTTP_3_ONLY);
+                test(server3, HTTP_3_URI_ONLY);
                 throw new AssertionError("expected UnsupportedProtocolVersionException not raised");
             } catch (UnsupportedProtocolVersionException upve) {
                 System.out.printf("%nGot expected exception: %s%n%n", upve);
@@ -135,11 +135,11 @@ public class H3ProxyTest implements HttpServerAdapters {
     }
 
     public static void test(HttpTestServer server,
-                            H3DiscoveryMode config)
+                            Http3DiscoveryMode config)
             throws Exception
     {
         System.out.println("""
-                
+
                 # --------------------------------------------------
                 # Server is %s
                 # Config is %s
@@ -161,7 +161,7 @@ public class H3ProxyTest implements HttpServerAdapters {
                     .proxy(ps)
                     .build();
             try (client) {
-                if (config == HTTP_3_ALT_SVC) {
+                if (config == ALT_SVC) {
                     System.out.println("\nSending HEAD request to preload AltServiceRegistry");
                     HttpRequest head = HttpRequest.newBuilder()
                             .uri(uri)

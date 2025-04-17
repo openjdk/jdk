@@ -79,8 +79,8 @@ import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
@@ -116,7 +116,7 @@ public class H3ServerPushCancel implements HttpServerAdapters {
 
     @BeforeTest
     public void setup() throws Exception {
-        server = HttpTestServer.create(HTTP_3_ANY, new SimpleSSLContext().get());
+        server = HttpTestServer.create(ANY, new SimpleSSLContext().get());
         pushHandler = new ServerPushHandler(MAIN_RESPONSE_BODY, PUSH_PROMISES);
         server.addHandler(pushHandler, "/push/");
         server.addHandler(new HttpHeadOrGetHandler(), "/head/");
@@ -238,7 +238,7 @@ public class H3ServerPushCancel implements HttpServerAdapters {
 
                 // now make sure there's an HTTP/3 connection
                 client.send(HttpRequest.newBuilder(headURI).version(HTTP_3)
-                        .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC)
+                        .setOption(H3_DISCOVERY, ALT_SVC)
                         .HEAD().build(), BodyHandlers.discarding());
 
                 int waitForPushId;

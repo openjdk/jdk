@@ -140,7 +140,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static jdk.internal.net.http.Http3ClientProperties.MAX_STREAM_LIMIT_WAIT_TIMEOUT;
 
@@ -159,7 +159,7 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
             sslContext = sslct.get();
             client = getClient();
 
-            httpsServer = HttpTestServer.create(HTTP_3_ONLY, sslContext, serverExec);
+            httpsServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext, serverExec);
             httpsServer.addHandler(new TestHandler(), "/");
             httpsURIString = "https://" + httpsServer.serverAuthority() + "/bar/";
 
@@ -180,13 +180,13 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
         try (var client2 = createClient(sslContext, Executors.newVirtualThreadPerTaskExecutor())) {
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString))
                     .version(HTTP_3)
-                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                     .HEAD().build();
             client2.send(request, BodyHandlers.ofByteArrayConsumer(b-> {}));
         }
 
         // warmup client
-        var httpsServer2 = HttpTestServer.create(HTTP_3_ONLY, sslContext,
+        var httpsServer2 = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext,
                 Executors.newVirtualThreadPerTaskExecutor());
         httpsServer2.addHandler(new TestHandler(), "/");
         var httpsURIString2 = "https://" + httpsServer2.serverAuthority() + "/bar/";
@@ -194,7 +194,7 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
         try {
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString2))
                     .version(HTTP_3)
-                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                     .HEAD().build();
             client.send(request, BodyHandlers.ofByteArrayConsumer(b-> {}));
         } finally {
@@ -220,7 +220,7 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
             Set<String> connections = new ConcurrentSkipListSet<>();
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString))
                     .version(HTTP_3)
-                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                     .GET().build();
             long start = System.nanoTime();
             var resp = client.send(request, BodyHandlers.ofByteArrayConsumer(b-> {}));

@@ -42,7 +42,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.*;
@@ -224,11 +224,11 @@ public class H3BasicTest implements HttpServerAdapters {
     }
 
     static final AtomicInteger count = new AtomicInteger();
-    static H3DiscoveryMode config(boolean http3only) {
-        if (http3only) return H3DiscoveryMode.HTTP_3_ONLY;
+    static Http3DiscoveryMode config(boolean http3only) {
+        if (http3only) return Http3DiscoveryMode.HTTP_3_URI_ONLY;
         return switch (count.getAndIncrement() %3) {
-            case 1 -> H3DiscoveryMode.HTTP_3_ANY;
-            case 2 -> H3DiscoveryMode.HTTP_3_ALT_SVC;
+            case 1 -> Http3DiscoveryMode.ANY;
+            case 2 -> Http3DiscoveryMode.ALT_SVC;
             default -> null;
         };
     }

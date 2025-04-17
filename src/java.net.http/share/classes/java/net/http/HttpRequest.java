@@ -100,10 +100,10 @@ public abstract class HttpRequest {
      * Note that if neither the {@linkplain Builder#version(Version) request preferred
      * version} nor the {@linkplain HttpClient.Builder#version(Version) HttpClient preferred
      * version} is {@linkplain Version#HTTP_3 HTTP/3}, no HTTP/3 exchange will
-     * be established and the {@code H3DiscoveryMode} is ignored.
+     * be established and the {@code Http3DiscoveryMode} is ignored.
      * @since TBD
      */
-    public enum H3DiscoveryMode {
+    public enum Http3DiscoveryMode {
         /**
          * This instructs the {@link HttpClient} to only use the
          * <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
@@ -113,7 +113,7 @@ public abstract class HttpRequest {
          * whether an Alternate Service record for HTTP/3 could be found, and which HTTP version
          * was negotiated with the origin server, if no such record could be found.
          */
-        HTTP_3_ALT_SVC,
+        ALT_SVC,
         /**
          * This instructs the {@link HttpClient} to use its own implementation
          * specific algorithm to find or establish a connection for the exchange.
@@ -138,7 +138,7 @@ public abstract class HttpRequest {
          * such information is available, a direct HTTP/3 connection at the authority (host, port)
          * present in the {@linkplain #uri() request URI} will be attempted.
          */
-        HTTP_3_ANY,
+        ANY,
         /**
          * This instructs the {@link HttpClient} to only attempt an HTTP/3 connection
          * with the origin server. The connection will only succeed if the origin server
@@ -147,7 +147,7 @@ public abstract class HttpRequest {
          * <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
          * are not used.
          */
-        HTTP_3_ONLY
+        HTTP_3_URI_ONLY
     }
 
     /**
@@ -211,31 +211,31 @@ public abstract class HttpRequest {
          *     <li> If the {@linkplain Builder#version(Version) request preferred version} is
          *          explicitly set to {@linkplain HttpClient.Version#HTTP_3 HTTP/3},
          *          the exchange will be established as per {@link
-         *          H3DiscoveryMode#HTTP_3_ANY}.</li>
+         *          Http3DiscoveryMode#ANY}.</li>
          *     <li> Otherwise, if no request preferred version is explicitly provided
          *          and the {@linkplain HttpClient.Builder#version(Version) HttpClient
          *          preferred version} is {@linkplain HttpClient.Version#HTTP_3 HTTP/3},
          *          the exchange will be established as per {@link
-         *          H3DiscoveryMode#HTTP_3_ALT_SVC}.</li>
+         *          Http3DiscoveryMode#ALT_SVC}.</li>
          * </ul>
          * In case of {@linkplain HttpClient.Redirect redirect}, the
          * {@link HttpRequestOption#H3_DISCOVERY} option is always transferred to
          * the new request.
          * <p>
          * In this implementation, HTTP/3 through proxies is not supported.
-         * Unless {@link  H3DiscoveryMode#HTTP_3_ONLY} is specified, if
+         * Unless {@link  Http3DiscoveryMode#HTTP_3_URI_ONLY} is specified, if
          * a {@linkplain HttpClient.Builder#proxy(ProxySelector) proxy} is {@linkplain
          * java.net.ProxySelector#select(URI) selected} for the {@linkplain HttpRequest#uri()
          * request URI}, the protocol version is downgraded to HTTP/2 or
          * HTTP/1.1 and the {@link #H3_DISCOVERY} option is ignored. If, on the
-         * other hand, {@link H3DiscoveryMode#HTTP_3_ONLY} is specified,
+         * other hand, {@link Http3DiscoveryMode#HTTP_3_URI_ONLY} is specified,
          * the request will fail.
          *
-         * @see H3DiscoveryMode
+         * @see Http3DiscoveryMode
          * @see Builder#setOption(HttpRequestOption, Object)
          */
-        HttpRequestOption<H3DiscoveryMode> H3_DISCOVERY =
-                new HttpRequestOptionImpl<>(H3DiscoveryMode.class, "H3_DISCOVERY");
+        HttpRequestOption<Http3DiscoveryMode> H3_DISCOVERY =
+                new HttpRequestOptionImpl<>(Http3DiscoveryMode.class, "H3_DISCOVERY");
     }
 
     private record HttpRequestOptionImpl<T>(Class<T> type, String name)

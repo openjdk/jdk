@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.io.*;
 import java.net.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import javax.net.ssl.*;
 import java.util.concurrent.ExecutorService;
@@ -118,7 +119,7 @@ class UserAuthWithAuthenticator {
     private static void h3Test(final boolean useHeader, boolean rightPassword) throws Exception {
         SSLContext sslContext = new SimpleSSLContext().get();
         try (ExecutorService executor = Executors.newCachedThreadPool();
-             HttpTestServer server = HttpTestServer.create(HttpRequest.H3DiscoveryMode.HTTP_3_ONLY, sslContext, executor);
+             HttpTestServer server = HttpTestServer.create(Http3DiscoveryMode.HTTP_3_URI_ONLY, sslContext, executor);
              HttpClient client = HttpServerAdapters.createClientBuilderForH3()
                      .sslContext(sslContext)
                      .executor(executor)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.net.SimpleSSLContext;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 import org.testng.annotations.Test;
@@ -83,7 +83,7 @@ public class BadCipherSuiteErrorTest implements HttpServerAdapters {
             SSLContext serverContext = (new SimpleSSLContext()).get();
             SSLParameters p = serverContext.getSupportedSSLParameters();
             p.setApplicationProtocols(new String[]{"h3"});
-            httpsServer = HttpTestServer.create(HTTP_3_ONLY, serverContext);
+            httpsServer = HttpTestServer.create(HTTP_3_URI_ONLY, serverContext);
             httpsServer.addHandler(new HttpTestEchoHandler(), "/");
             String httpsURIString = "https://" + httpsServer.serverAuthority() + "/bar/";
             System.out.println("HTTP/3 Server started on: " + httpsServer.serverAuthority());
@@ -94,7 +94,7 @@ public class BadCipherSuiteErrorTest implements HttpServerAdapters {
             HttpRequest req = HttpRequest.newBuilder(uri)
                     .POST(BodyPublishers.ofString(SIMPLE_STRING))
                     .version(HTTP_3)
-                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                     .build();
 
             System.out.println("Sending request with good client to " + uri);

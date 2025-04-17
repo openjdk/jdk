@@ -63,7 +63,7 @@ import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 /**
@@ -1033,7 +1033,7 @@ public class LargeHandshakeTest implements HttpServerAdapters {
             https2URI = new URI("https://" + https2Server.serverAuthority() + "/LargeHandshakeTest/https2/");
 
             // HTTP/3
-            http3Server = HttpTestServer.create(HTTP_3_ONLY, SSLContext.getDefault());
+            http3Server = HttpTestServer.create(HTTP_3_URI_ONLY, SSLContext.getDefault());
             http3Server.addHandler(new HttpTestLargeHandler(), "/LargeHandshakeTest/http3/");
             http3Server.start();
             http3URI = new URI("https://" + http3Server.serverAuthority() + "/LargeHandshakeTest/http3/");
@@ -1106,7 +1106,7 @@ public class LargeHandshakeTest implements HttpServerAdapters {
         var builder = HttpRequest.newBuilder(uri);
         if (uri.getRawPath().contains("/http3/")) {
             builder = builder.version(HTTP_3)
-                    .setOption(H3_DISCOVERY, HTTP_3_ONLY);
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
         }
         return builder;
     }

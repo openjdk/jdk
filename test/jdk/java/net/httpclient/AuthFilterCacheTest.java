@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,9 @@ import javax.net.ssl.SSLContext;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
@@ -170,13 +170,13 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
             https2URI = new URI("https://" + https2Server.serverAuthority()
                     + "/AuthFilterCacheTest/https2/");
 
-            h3onlyServer = HttpTestServer.create(HTTP_3_ONLY, SSLContext.getDefault());
+            h3onlyServer = HttpTestServer.create(HTTP_3_URI_ONLY, SSLContext.getDefault());
             h3onlyServer.addHandler(new TestHandler(), "/AuthFilterCacheTest/h3-only/");
             h3onlyURI = new URI("https://" + h3onlyServer.serverAuthority()
                     + "/AuthFilterCacheTest/h3-only/");
             h3onlyServer.start();
 
-            h3altSvcServer = HttpTestServer.create(HTTP_3_ANY, SSLContext.getDefault());
+            h3altSvcServer = HttpTestServer.create(ANY, SSLContext.getDefault());
             h3altSvcServer.addHandler(new TestHandler(), "/AuthFilterCacheTest/h3-alt-svc/");
             h3altSvcServer.addHandler(new HttpHeadOrGetHandler(RESPONSE_BODY),
                     "/AuthFilterCacheTest/h3-alt-svc/direct/head/");
@@ -312,8 +312,8 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
                 String uriStr = uri.toString() + (++count);
                 var builder = HttpRequest.newBuilder()
                         .uri(URI.create(uriStr));
-                var config = uriStr.contains("h3-only") ? HTTP_3_ONLY
-                        : uriStr.contains("h3-alt-svc") ? HTTP_3_ALT_SVC
+                var config = uriStr.contains("h3-only") ? HTTP_3_URI_ONLY
+                        : uriStr.contains("h3-alt-svc") ? ALT_SVC
                         : null;
                 if (config != null) {
                     builder = builder.setOption(H3_DISCOVERY, config).version(HTTP_3);

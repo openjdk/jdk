@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Builder;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -481,7 +481,7 @@ public class DependentActionsTest implements HttpServerAdapters {
             }
             assertEquals(result, List.of(response.request().uri().getPath()));
             var uriStr = response.request().uri().toString();
-            if (HTTP_3 != version(uriStr) || http3TestServer.h3DiscoveryConfig() != H3DiscoveryMode.HTTP_3_ANY) {
+            if (HTTP_3 != version(uriStr) || http3TestServer.h3DiscoveryConfig() != Http3DiscoveryMode.ANY) {
                 assertEquals(response.version(), version(uriStr), uriStr);
             }
             return response;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.nio.ByteBuffer;
@@ -54,8 +54,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -88,7 +88,7 @@ public class CancelledResponse2 implements HttpServerAdapters {
         return new Object[][]{
                 { HTTP_2, null, h2TestServerURI },
                 { HTTP_3, null, h2h3TestServerURI },
-                { HTTP_3, HTTP_3_ONLY, h3TestServerURI },
+                { HTTP_3, HTTP_3_URI_ONLY, h3TestServerURI },
         };
     }
 
@@ -102,18 +102,18 @@ public class CancelledResponse2 implements HttpServerAdapters {
         }
     }
     @Test(dataProvider = "versions")
-    public void test(Version version, H3DiscoveryMode config, URI uri) throws Exception {
+    public void test(Version version, Http3DiscoveryMode config, URI uri) throws Exception {
         for (int i = 0; i < 5; i++) {
             HttpClient httpClient = newClientBuilderForH3().sslContext(sslContext).version(version).build();
-            H3DiscoveryMode reqConfig = null;
+            Http3DiscoveryMode reqConfig = null;
             if (version.equals(HTTP_3)) {
                 if (config != null) {
-                    reqConfig = (config.equals(HTTP_3_ONLY)) ? HTTP_3_ONLY : HTTP_3_ALT_SVC;
+                    reqConfig = (config.equals(HTTP_3_URI_ONLY)) ? HTTP_3_URI_ONLY : ALT_SVC;
                 }
                 // if config is null, we are talking to the H2H3 server, which may
                 // not support direct connection, in which case we should send a headRequest
                 if ((config == null && !h2h3TestServer.supportsH3DirectConnection())
-                        || (reqConfig != null && reqConfig.equals(HTTP_3_ALT_SVC))) {
+                        || (reqConfig != null && reqConfig.equals(ALT_SVC))) {
                     headRequest(httpClient);
                 }
             }
@@ -165,7 +165,7 @@ public class CancelledResponse2 implements HttpServerAdapters {
         h2h3HeadTestServerURI = URI.create("https://" + h2h3TestServer.serverAuthority() + "/h2h3/head");
 
 
-        h3TestServer = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        h3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3TestServer.addHandler(new CancelledResponseHandler(), "/h3");
         h3TestServerURI = URI.create("https://" + h3TestServer.serverAuthority() + "/h3");
 

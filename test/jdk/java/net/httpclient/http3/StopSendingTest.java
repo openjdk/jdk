@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 /*
@@ -74,7 +74,7 @@ public class StopSendingTest implements HttpServerAdapters {
         if (sslContext == null) {
             throw new AssertionError("Unexpected null sslContext");
         }
-        h3Server = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        h3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3Server.addHandler(new Handler(), "/hello");
         h3Server.start();
         System.out.println("Server started at " + h3Server.getAddress());
@@ -136,7 +136,7 @@ public class StopSendingTest implements HttpServerAdapters {
         final URI reqURI = new URI(requestURIBase + "/hello");
         final HttpRequest req = HttpRequest.newBuilder(reqURI)
                 .version(Version.HTTP_3)
-                .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                 .build();
         // used to wait and trigger a request cancellation
         final CountDownLatch cancellationTrigger = new CountDownLatch(1);

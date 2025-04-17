@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.net.URI;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
@@ -52,7 +52,7 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static jdk.httpclient.test.lib.common.HttpServerAdapters.createClientBuilderForH3;
 import static org.testng.Assert.assertEquals;
@@ -108,7 +108,7 @@ public class HeadTest implements HttpServerAdapters {
                         int expResp, Version version) throws Exception {
         out.printf("%n---- starting (%s) ----%n", uriString);
         URI uri = URI.create(uriString);
-        H3DiscoveryMode config = version.equals(HTTP_3) ? HTTP_3_ONLY : null;
+        Http3DiscoveryMode config = version.equals(HTTP_3) ? HTTP_3_URI_ONLY : null;
         HttpRequest.Builder requestBuilder = HttpRequest
                 .newBuilder(uri)
                 .version(version)
@@ -165,7 +165,7 @@ public class HeadTest implements HttpServerAdapters {
         https2TestServer.addHandler(new HeadHandler(), "/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/";
 
-        https3TestServer = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        https3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         https3TestServer.addHandler(new HeadHandler(), "/");
         https3URI = "https://" + https3TestServer.serverAuthority() + "/";
 

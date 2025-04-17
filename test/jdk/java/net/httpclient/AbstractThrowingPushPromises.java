@@ -62,7 +62,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -97,7 +97,7 @@ import static java.lang.System.err;
 import static java.lang.String.format;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
@@ -313,8 +313,8 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
         }
     }
 
-    H3DiscoveryMode config(String uri) {
-        return uri.contains("/http3/") ? HTTP_3_ONLY : null;
+    Http3DiscoveryMode config(String uri) {
+        return uri.contains("/http3/") ? HTTP_3_URI_ONLY : null;
     }
 
     Version version(String uri) {
@@ -780,7 +780,7 @@ public abstract class AbstractThrowingPushPromises implements HttpServerAdapters
         https2URI_fixed = "https://" + https2TestServer.serverAuthority() + "/https2/fixed/x";
         https2URI_chunk = "https://" + https2TestServer.serverAuthority() + "/https2/chunk/x";
 
-        http3TestServer = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         http3TestServer.addHandler(fixedLengthHandler, "/http3/fixed");
         http3TestServer.addHandler(chunkedHandler, "/http3/chunk");
         http3URI_fixed = "https://" + http3TestServer.serverAuthority() + "/http3/fixed/x";

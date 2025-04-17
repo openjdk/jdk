@@ -55,8 +55,8 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static jdk.test.lib.Asserts.assertFileContentsEqual;
 import static jdk.test.lib.Utils.createTempFileOfSize;
@@ -81,11 +81,11 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
             sslContext = sslct.get();
             client = getClient();
             exec = Executors.newCachedThreadPool();
-            http3Server = HttpTestServer.create(HTTP_3_ONLY, sslContext, exec);
+            http3Server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext, exec);
             http3Server.addHandler(new HttpTestFileEchoHandler(), "/H3FixedThreadPoolTest/http3-only/");
             http3Port = http3Server.getAddress().getPort();
 
-            https2Server = HttpTestServer.create(HTTP_3_ALT_SVC, sslContext, exec);
+            https2Server = HttpTestServer.create(ALT_SVC, sslContext, exec);
             https2Server.addHandler(new HttpTestFileEchoHandler(), "/H3FixedThreadPoolTest/http3-alt-svc/");
             https2Server.addHandler((t) -> {
                 t.getRequestBody().readAllBytes();
@@ -100,7 +100,7 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
 
             // warmup client to populate AltServiceRegistry
             var head = HttpRequest.newBuilder(URI.create(https2URIString + "head"))
-                    .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC).build();
+                    .setOption(H3_DISCOVERY, ALT_SVC).build();
             var resp = client.send(head, BodyHandlers.ofString());
             assert resp.statusCode() == 200;
 
@@ -187,7 +187,7 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
         URI uri = getURI(http3only);
         System.out.printf("%nstreamTest %b to %s%n" , http3only, uri);
         System.err.printf("%nstreamTest %b to %s%n" , http3only, uri);
-        var config = http3only ? HTTP_3_ONLY : HTTP_3_ALT_SVC;
+        var config = http3only ? HTTP_3_URI_ONLY : ALT_SVC;
 
         HttpClient client = getClient();
         Path src = createTempFileOfSize(CLASS_NAME, ".dat", FILESIZE * 4);
@@ -223,7 +223,7 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
     static void paramsTest() throws Exception {
         System.out.println("\nparamsTest");
         System.err.println("\nparamsTest");
-        HttpTestServer server = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        HttpTestServer server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         server.addHandler((t -> {
             SSLSession s = t.getSSLSession();
             String prot = s.getProtocol();
@@ -239,7 +239,7 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
         try {
             URI u = new URI("https://" + server.serverAuthority() + "/paramsTest");
             HttpClient client = getClient();
-            HttpRequest req = HttpRequest.newBuilder(u).setOption(H3_DISCOVERY, HTTP_3_ONLY).build();
+            HttpRequest req = HttpRequest.newBuilder(u).setOption(H3_DISCOVERY, HTTP_3_URI_ONLY).build();
             HttpResponse<String> resp = client.sendAsync(req, BodyHandlers.ofString()).get();
             int stat = resp.statusCode();
             if (stat != 200) {
@@ -254,7 +254,7 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
         System.out.println("\nsimpleTest http3-only=" + http3only);
         System.err.println("\nsimpleTest http3-only=" + http3only);
         URI uri = getURI(http3only);
-        var config = http3only ? HTTP_3_ONLY : HTTP_3_ALT_SVC;
+        var config = http3only ? HTTP_3_URI_ONLY : ALT_SVC;
         System.err.println("Request to " + uri);
 
         // Do a simple warmup request

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,13 +50,12 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.*;
 import java.util.Map;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 
@@ -217,7 +216,7 @@ public class FilePublisherPermsTest implements HttpServerAdapters {
             var builder = HttpRequest.newBuilder(URI.create(uriString))
                     .POST(bodyPublisher);
             if (version(uriString) == HTTP_3) {
-                // should be HTTP_3_ONLY
+                // should be HTTP_3_URI_ONLY
                 builder.setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
             }
             var req = builder.build();
@@ -288,7 +287,7 @@ public class FilePublisherPermsTest implements HttpServerAdapters {
                 new FilePublisherPermsTest.HttpEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 
-        http3TestServer = HttpTestServer.create(H3DiscoveryMode.HTTP_3_ONLY, sslContext);
+        http3TestServer = HttpTestServer.create(Http3DiscoveryMode.HTTP_3_URI_ONLY, sslContext);
         http3TestServer.addHandler(
                 new FilePublisherPermsTest.HttpEchoHandler(), "/http3/echo");
         http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/echo";

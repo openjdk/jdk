@@ -292,7 +292,7 @@ abstract class HttpQuicConnection extends HttpConnection {
         final boolean advertisedAltSvc = altSvc != null && altSvc.wasAdvertised();
         var config = request.http3Discovery();
         switch (config) {
-            case HTTP_3_ALT_SVC: {
+            case ALT_SVC: {
                 if (!advertisedAltSvc) {
                     // fallback to HTTP/2
                     if (altSvc != null) {
@@ -307,7 +307,7 @@ abstract class HttpQuicConnection extends HttpConnection {
                 break;
             }
             // attempt direct connection if HTTP/3 only
-            case HTTP_3_ONLY: {
+            case HTTP_3_URI_ONLY: {
                 if (advertisedAltSvc && !altSvc.originHasSameAuthority()) {
                     if (altSvc != null) {
                         if (Log.altsvc()) {

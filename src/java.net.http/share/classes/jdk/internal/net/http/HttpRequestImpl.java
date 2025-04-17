@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.websocket.WebSocketRequest;
 
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
-import static java.net.Authenticator.RequestorType.PROXY;
 import static java.net.Authenticator.RequestorType.SERVER;
 import static jdk.internal.net.http.common.Utils.ALLOWED_HEADERS;
 import static jdk.internal.net.http.common.Utils.ProxyHeaders;
@@ -208,7 +207,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         }
         // preserve config if version is HTTP/3
         if (version.orElse(null) == Version.HTTP_3) {
-            H3DiscoveryMode h3DiscoveryMode = (H3DiscoveryMode)options.get(H3_DISCOVERY);
+            Http3DiscoveryMode h3DiscoveryMode = (Http3DiscoveryMode)options.get(H3_DISCOVERY);
             if (h3DiscoveryMode != null) return Map.of(H3_DISCOVERY, h3DiscoveryMode);
         }
         return Map.of();
@@ -255,16 +254,16 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     }
 
     final boolean isHttp3Only(Version version) {
-        return version == Version.HTTP_3 && http3Discovery() == H3DiscoveryMode.HTTP_3_ONLY;
+        return version == Version.HTTP_3 && http3Discovery() == Http3DiscoveryMode.HTTP_3_URI_ONLY;
     }
 
-    H3DiscoveryMode http3Discovery() {
+    Http3DiscoveryMode http3Discovery() {
         var h3Discovery = getOption(H3_DISCOVERY);
         if (h3Discovery.isPresent()) return h3Discovery.get();
         var version = this.version.orElse(null);
         return version == null
-                ? H3DiscoveryMode.HTTP_3_ALT_SVC
-                : H3DiscoveryMode.HTTP_3_ANY;
+                ? Http3DiscoveryMode.ALT_SVC
+                : Http3DiscoveryMode.ANY;
     }
 
     /**

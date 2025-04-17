@@ -70,7 +70,7 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.copyOfRange;
@@ -164,7 +164,7 @@ class HttpResponseLimitingTest {
         private static HttpTestServer createServer(HttpClient.Version version, SSLContext sslContext) {
             try {
                 return HTTP_3.equals(version)
-                        ? HttpTestServer.create(HTTP_3_ONLY, sslContext)
+                        ? HttpTestServer.create(HTTP_3_URI_ONLY, sslContext)
                         : HttpTestServer.create(version, sslContext);
             } catch (IOException exception) {
                 throw new UncheckedIOException(exception);
@@ -183,7 +183,7 @@ class HttpResponseLimitingTest {
         private static HttpRequest createRequest(HttpClient.Version version, URI requestUri) {
             HttpRequest.Builder builder = HttpRequest.newBuilder(requestUri).version(version);
             if (HTTP_3.equals(version)) {
-                builder.setOption(H3_DISCOVERY, HTTP_3_ONLY);
+                builder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
             }
             return builder.build();
         }

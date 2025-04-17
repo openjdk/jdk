@@ -85,7 +85,7 @@ import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -876,7 +876,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         https2TestServer.addHandler(handler, "/https2/echo/");
         https2URI = buildURI("https", "/https2/echo/x", https2TestServer.getAddress().getPort());
 
-        http3TestServer = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         http3TestServer.addHandler(handler, "/http3/echo/");
         http3URI = buildURI("https", "/http3/echo/x", http3TestServer.getAddress().getPort());
 

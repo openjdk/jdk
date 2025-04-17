@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
@@ -131,7 +131,7 @@ public class H3StopSendingTest {
     public void setup() throws IOException {
 
         sslContext  = new SimpleSSLContext().get();
-        h3TestServer = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        h3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3TestServer.addHandler(new ServerRequestStopSendingHandler(), TEST_ROOT_PATH);
         h3TestServerUriError = URI.create("https://" + h3TestServer.serverAuthority() + ERROR_PATH);
         h3TestServerUriNoError = URI.create("https://" + h3TestServer.serverAuthority() + NO_ERROR_PATH);
@@ -143,25 +143,25 @@ public class H3StopSendingTest {
                 .POST(testPub)
                 .uri(h3TestServerUriNoError)
                 .version(HttpClient.Version.HTTP_3)
-                .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                 .build();
         postRequestError = HttpRequest.newBuilder()
                 .POST(testPub)
                 .uri(h3TestServerUriError)
                 .version(HttpClient.Version.HTTP_3)
-                .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                 .build();
         postRequestNoErrorWithData = HttpRequest.newBuilder()
                 .POST(testPub)
                 .uri(URI.create(h3TestServerUriNoError.toString() + WITH_RESPONSE_BODY_QUERY))
                 .version(HttpClient.Version.HTTP_3)
-                .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                 .build();
         postRequestErrorWithData = HttpRequest.newBuilder()
                 .POST(testPub)
                 .uri(URI.create(h3TestServerUriError.toString() + WITH_RESPONSE_BODY_QUERY))
                 .version(HttpClient.Version.HTTP_3)
-                .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                 .build();
     }
 

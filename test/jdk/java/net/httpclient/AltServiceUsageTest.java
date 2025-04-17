@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 
 /*
  * @test
@@ -66,7 +66,7 @@ public class AltServiceUsageTest implements HttpServerAdapters {
         if (sslContext == null) {
             throw new AssertionError("Unexpected null sslContext");
         }
-        altServer = HttpServerAdapters.HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        altServer = HttpServerAdapters.HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         altServer.addHandler(new All200OKHandler(), "/foo/");
         altServer.addHandler(new RequireAltUsedHeader(), "/bar/");
         altServer.addHandler(new All200OKHandler(), "/maxAgeAltSvc/");

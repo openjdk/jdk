@@ -44,7 +44,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.channels.ClosedChannelException;
@@ -75,7 +75,7 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
@@ -159,7 +159,7 @@ public class ExecutorShutdown implements HttpServerAdapters {
     }
 
     @Test(dataProvider = "positive")
-    void testConcurrent(String uriString, Version version, H3DiscoveryMode config) throws Exception {
+    void testConcurrent(String uriString, Version version, Http3DiscoveryMode config) throws Exception {
         out.printf("%n---- starting (%s) ----%n", uriString);
         ExecutorService executorService = Executors.newCachedThreadPool();
         HttpClient client = newClientBuilderForH3()
@@ -177,7 +177,7 @@ public class ExecutorShutdown implements HttpServerAdapters {
         List<CompletableFuture<HttpResponse<String>>> responses = new ArrayList<>();
         try {
             for (int i = 0; i < ITERATIONS; i++) {
-                if (i == head && version == HTTP_3 && config != HTTP_3_ONLY) {
+                if (i == head && version == HTTP_3 && config != HTTP_3_URI_ONLY) {
                     // let's the first request go through whatever version,
                     // but ensure that the second will find an AltService
                     // record
@@ -229,7 +229,7 @@ public class ExecutorShutdown implements HttpServerAdapters {
     }
 
     @Test(dataProvider = "positive")
-    void testSequential(String uriString, Version version, H3DiscoveryMode config) throws Exception {
+    void testSequential(String uriString, Version version, Http3DiscoveryMode config) throws Exception {
         out.printf("%n---- starting (%s, %s, %s) ----%n%n", uriString, version, config);
         ExecutorService executorService = Executors.newCachedThreadPool();
         HttpClient client = newClientBuilderForH3()
@@ -334,7 +334,7 @@ public class ExecutorShutdown implements HttpServerAdapters {
         h2h3URI = "https://" + h2h3TestServer.serverAuthority() + "/h2h3/exec/retry";
         h2h3TestServer.addHandler(new HttpHeadOrGetHandler(), "/h2h3/head/");
         h2h3Head = "https://" + h2h3TestServer.serverAuthority() + "/h2h3/head/";
-        h3TestServer = HttpTestServer.create(HTTP_3_ONLY, sslContext);
+        h3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         h3TestServer.addHandler(new ServerRequestHandler(), "/h3-only/exec/");
         h3URI = "https://" + h3TestServer.serverAuthority() + "/h3-only/exec/retry";
 

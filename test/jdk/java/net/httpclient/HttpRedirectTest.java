@@ -30,7 +30,7 @@ import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
@@ -201,7 +201,7 @@ public class HttpRedirectTest implements HttpServerAdapters {
             https2URI = new URI("https://" + https2Server.serverAuthority() + "/HttpRedirectTest/https2/");
 
             // HTTPS/3
-            http3Server = HttpTestServer.create(HTTP_3_ONLY, SSLContext.getDefault());
+            http3Server = HttpTestServer.create(HTTP_3_URI_ONLY, SSLContext.getDefault());
             http3Server.addHandler(new HttpTestRedirectHandler("https", http3Server),
                     "/HttpRedirectTest/http3/");
             http3Server.start();
@@ -270,7 +270,7 @@ public class HttpRedirectTest implements HttpServerAdapters {
     private HttpRequest.Builder newRequestBuilder(URI u) {
         var builder = HttpRequest.newBuilder(u);
         if (u.getRawPath().contains("/http3/")) {
-            builder.version(HTTP_3).setOption(H3_DISCOVERY, HTTP_3_ONLY);
+            builder.version(HTTP_3).setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
         }
         return builder;
     }

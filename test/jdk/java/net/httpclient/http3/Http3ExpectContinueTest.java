@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Builder;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.concurrent.CancellationException;
@@ -58,7 +59,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
 import static org.testng.Assert.*;
 
 public class Http3ExpectContinueTest implements HttpServerAdapters {
@@ -106,7 +106,7 @@ public class Http3ExpectContinueTest implements HttpServerAdapters {
             HttpRequest postRequest = HttpRequest.newBuilder(uri)
                     .version(HTTP_3)
                     .setOption(HttpRequest.HttpRequestOption.H3_DISCOVERY,
-                            HttpRequest.H3DiscoveryMode.HTTP_3_ONLY)
+                            Http3DiscoveryMode.HTTP_3_URI_ONLY)
                     .POST(HttpRequest.BodyPublishers.ofString(BODY))
                     .expectContinue(true)
                     .build();

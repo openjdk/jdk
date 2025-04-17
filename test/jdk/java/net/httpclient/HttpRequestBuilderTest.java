@@ -23,7 +23,7 @@
 
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpRequest.HttpRequestOption;
 import java.time.Duration;
 import java.util.Arrays;
@@ -39,7 +39,7 @@ import java.util.stream.Stream;
 import java.net.http.HttpRequest;
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
 import static java.net.http.HttpRequest.BodyPublishers.noBody;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 /*
@@ -213,11 +213,11 @@ public class HttpRequestBuilderTest {
                         NullPointerException.class);
 
         builder = test2("setOption", builder, builder::setOption,
-                (HttpRequestOption<H3DiscoveryMode>)null, (H3DiscoveryMode) null,
+                (HttpRequestOption<Http3DiscoveryMode>)null, (Http3DiscoveryMode) null,
                 NullPointerException.class);
 
         builder = test2("setOption", builder, builder::setOption,
-                (HttpRequestOption<H3DiscoveryMode>)null, HTTP_3_ONLY,
+                (HttpRequestOption<Http3DiscoveryMode>)null, HTTP_3_URI_ONLY,
                 NullPointerException.class);
 
 // see JDK-8170093
@@ -285,15 +285,15 @@ public class HttpRequestBuilderTest {
         HttpRequest defaultReqWithoutOption = new NotOverriddenHEADImpl().HEAD().uri(TEST_URI).build();
         assertEquals(Optional.empty(), defaultReqWithoutOption.getOption(H3_DISCOVERY), "default without options");
         HttpRequest defaultReqWithOption = new NotOverriddenHEADImpl().HEAD().uri(TEST_URI)
-                .setOption(H3_DISCOVERY, HTTP_3_ONLY).build();
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY).build();
         assertEquals(Optional.empty(), defaultReqWithOption.getOption(H3_DISCOVERY), "default with options");
         HttpRequest reqWithoutOption = HttpRequest.newBuilder().HEAD().uri(TEST_URI).build();
         assertEquals(Optional.empty(), reqWithoutOption.getOption(H3_DISCOVERY), "req without options");
         HttpRequest reqWithOption = HttpRequest.newBuilder().HEAD().uri(TEST_URI)
-                .setOption(H3_DISCOVERY, HTTP_3_ONLY).build();
-        assertEquals(Optional.of(HTTP_3_ONLY), reqWithOption.getOption(H3_DISCOVERY), "req with options");
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY).build();
+        assertEquals(Optional.of(HTTP_3_URI_ONLY), reqWithOption.getOption(H3_DISCOVERY), "req with options");
         HttpRequest resetReqWithOption = HttpRequest.newBuilder().HEAD().uri(TEST_URI)
-                .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                 .setOption(H3_DISCOVERY, null).build();
         assertEquals(Optional.empty(), resetReqWithOption.getOption(H3_DISCOVERY), "req with option reset");
 
@@ -411,7 +411,7 @@ public class HttpRequestBuilderTest {
                 .method("GET", noBody())
                 .expectContinue(true)
                 .timeout(Duration.ofSeconds(0xBEEF))
-                .setOption(H3_DISCOVERY, HTTP_3_ONLY)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
                 .version(HttpClient.Version.HTTP_2);
 
         // Create the original and the _copy_ requests
@@ -429,7 +429,7 @@ public class HttpRequestBuilderTest {
         assertEquals(request.timeout(), copiedRequest.timeout(), "Timeout");
         assertEquals(request.version(), copiedRequest.version(), "Version");
         assertEquals(request.getOption(H3_DISCOVERY), copiedRequest.getOption(H3_DISCOVERY), "H3_DISCOVERY option");
-        assertEquals(Optional.of(HTTP_3_ONLY), copiedRequest.getOption(H3_DISCOVERY), "copied H3_DISCOVERY option");
+        assertEquals(Optional.of(HTTP_3_URI_ONLY), copiedRequest.getOption(H3_DISCOVERY), "copied H3_DISCOVERY option");
 
         // Verify headers
         assertEquals(request.headers().map(), Map.of("X-Foo", List.of("1")), "Request headers");

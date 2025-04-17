@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.concurrent.*;
@@ -58,9 +58,9 @@ import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
-import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.ANY;
+import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 @Test
@@ -178,11 +178,11 @@ public class HTTP3NoBodyTest {
     }
 
     static final AtomicInteger count = new AtomicInteger();
-    static H3DiscoveryMode config(boolean http3only) {
-        if (http3only) return HTTP_3_ONLY;
+    static Http3DiscoveryMode config(boolean http3only) {
+        if (http3only) return HTTP_3_URI_ONLY;
         return switch (count.getAndIncrement() %3) {
-            case 1 -> HTTP_3_ANY;
-            case 2 -> HTTP_3_ALT_SVC;
+            case 1 -> ANY;
+            case 2 -> ALT_SVC;
             default -> null;
         };
     }
@@ -277,7 +277,7 @@ public class HTTP3NoBodyTest {
                 var base = base(uri);
                 int step = base == uri ? 0 : Integer.parseInt(base.relativize(uri).toString());
                 invocation++;
-                
+
                 if ((step++ % 2) == 1) {
                     System.err.println("Server sending 204");
                     t.sendResponseHeaders(204, -1);
