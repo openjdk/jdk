@@ -1485,7 +1485,7 @@ class StubGenerator: public StubCodeGenerator {
     // handle size >= 256
     __ bind(L_loop);
     __ z_stc(byteVal, Address(dest));
-    __ z_mvc(1, 255, dest, 0, dest);
+    __ z_mvc(1, 254, dest, 0, dest);
     __ z_aghi(size, -256);
     __ z_aghi(dest, 256);
     __ z_cghi(size, 256);
