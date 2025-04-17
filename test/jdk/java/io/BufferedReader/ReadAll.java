@@ -70,17 +70,25 @@ public class ReadAll {
         try (FileChannel fc = FileChannel.open(path, CREATE, WRITE);) {
             int len = 0;
             int plen = PHRASE.length();
+            ByteBuffer strBuf = ByteBuffer.allocate(plen*Character.BYTES);
             ByteBuffer lineSeparatorBuf =
                 ByteBuffer.wrap(System.lineSeparator().getBytes());
+            int n = 0;
             while (len < size) {
                 int fromIndex = rnd.nextInt(0, plen / 2);
                 int toIndex = rnd.nextInt(fromIndex, plen);
                 String str = PHRASE.substring(fromIndex, toIndex);
-                ByteBuffer strBuf = ByteBuffer.wrap(str.getBytes());
+                byte[] strBytes = str.getBytes();
+                strBuf.put(strBytes);
+                strBuf.flip();
                 fc.write(strBuf);
+                strBuf.clear();
                 fc.write(lineSeparatorBuf);
+                lineSeparatorBuf.clear();
                 len += toIndex - fromIndex;
+                n++;
             }
+            System.out.println(n + " lines written");
         }
     }
 
@@ -96,6 +104,7 @@ public class ReadAll {
              BufferedReader br = new BufferedReader(fr);) {
             lines = br.readAllLines();
         }
+        System.out.println(lines.size() + " lines read");
 
         List<String> linesExpected = Files.readAllLines(path);
 
