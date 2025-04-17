@@ -365,13 +365,16 @@ public final class Http3PushManager {
      *
      * @see Http3Connection#onPushPromiseFrame(Http3ExchangeImpl, long, HttpHeaders)
      */
-    // returns true if the push promise is handled by another exchange
     <U> boolean onPushPromiseFrame(Http3ExchangeImpl<U> exchange, long pushId, HttpHeaders promiseHeaders)
             throws IOException {
         if (!connection.acceptLargerPushPromise(null, pushId)) return false;
         PushPromise promise = addPushPromise(exchange, pushId, promiseHeaders);
         boolean accepted = false;
         if (promise instanceof PendingPushPromise<?> ppp) {
+            // A PendingPushPromise is returned only if there was no
+            // PushPromise present. If a PendingPushPromise is returned
+            // it should therefore have its exchange already set to the
+            // current exchange.
             assert ppp.exchange == exchange;
             HttpRequestImpl pushReq = HttpRequestImpl.createPushRequest(
                     exchange.getExchange().request(), promiseHeaders);
