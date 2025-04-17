@@ -58,7 +58,7 @@ import jdk.internal.misc.ExtendedMapMode;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.misc.VM.BufferPool;
-import jdk.internal.ref.Cleaner;
+import jdk.internal.nio.Cleaner;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.event.FileReadEvent;
 import jdk.internal.event.FileWriteEvent;

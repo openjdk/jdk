@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,16 @@
  * questions.
  */
 
-package sun.nio.ch;
+package jdk.internal.nio;
 
-import jdk.internal.nio.Cleaner;
-
-
-public interface DirectBuffer {
-
-    // Use of the returned address must be guarded if this DirectBuffer
-    // is backed by a memory session that is explicitly closeable.
-    //
-    // Failure to do this means the outcome is undefined including
-    // silent unrelated memory mutation and JVM crashes.
-    //
-    // See JavaNioAccess for methods to safely acquire/release resources.
-    public long address();
-
-    public Object attachment();
-
-    public Cleaner cleaner();
-
+/**
+ * {@code Cleaner} represents an object and a cleaning action.
+ */
+public interface Cleaner {
+    /**
+     * Unregisters the cleaner and invokes the cleaning action.
+     * The cleaner's cleaning action is invoked at most once,
+     * regardless of the number of calls to {@code clean}.
+     */
+    void clean();
 }
