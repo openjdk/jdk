@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ final class PostHandshakeContext extends HandshakeContext {
                 "Post-handshake not supported in " + negotiatedProtocol.name);
         }
 
-        this.localSupportedSignAlgs = new ArrayList<>(
+        this.localSupportedCertSignAlgs = new ArrayList<>(
             context.conSession.getLocalSupportedSignatureSchemes());
 
         // Add the potential post-handshake consumers.

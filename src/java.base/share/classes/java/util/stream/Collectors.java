@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -833,7 +833,7 @@ public final class Collectors {
      * The {@code reducing()} collectors are most useful when used in a
      * multi-level reduction, downstream of {@code groupingBy} or
      * {@code partitioningBy}.  To perform a simple reduction on a stream,
-     * use {@link Stream#reduce(Object, BinaryOperator)}} instead.
+     * use {@link Stream#reduce(Object, BinaryOperator)} instead.
      *
      * @param <T> element type for the input and output of the reduction
      * @param identity the identity value for the reduction (also, the value
