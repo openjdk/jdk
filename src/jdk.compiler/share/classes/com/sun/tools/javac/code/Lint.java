@@ -174,6 +174,7 @@ public class Lint {
                 values.add(LintCategory.PREVIEW);
             }
             values.add(LintCategory.SYNCHRONIZATION);
+            values.add(LintCategory.IDENTITY);
             values.add(LintCategory.INCUBATING);
         }
 
@@ -367,6 +368,11 @@ public class Lint {
          * Warn about synchronization attempts on instances of @ValueBased classes.
          */
         SYNCHRONIZATION("synchronization"),
+
+        /**
+         * Warn about uses of @ValueBased classes where an identity class is expected.
+         */
+        IDENTITY("identity"),
 
         /**
          * Warn about issues relating to use of text blocks

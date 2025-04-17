@@ -784,6 +784,24 @@ public class Attr extends JCTree.Visitor {
         return kind;
     }
 
+    private boolean requiresIdentity(Type t) {
+        return t != null && t.tsym != null && (t.tsym.flags() & REQUIRES_IDENTITY) != 0;
+    }
+
+    private boolean requiresIdentity(VarSymbol vsym) {
+        if (vsym != null) {
+            SymbolMetadata sm = vsym.getMetadata();
+            if (sm != null) {
+                for (Attribute.Compound ca: sm.getDeclarationAttributes()) {
+                    if (ca.type.tsym == syms.requiresIdentityType.tsym) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     /** Attribute a type argument list, returning a list of types.
      *  Caller is responsible for calling checkRefTypes.
      */
@@ -1327,6 +1345,9 @@ public class Attr extends JCTree.Visitor {
                 if (isNonArgsMethodInObject(v.name)) {
                     log.error(tree, Errors.IllegalRecordComponentName(v));
                 }
+            }
+            if (types.needsRequiresIdentityWarning(tree.vartype.type)) {
+                env.info.lint.logIfEnabled(tree.vartype.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
             }
         }
         finally {
@@ -1945,17 +1966,16 @@ public class Attr extends JCTree.Visitor {
 
     public void visitSynchronized(JCSynchronized tree) {
         chk.checkRefType(tree.pos(), attribExpr(tree.lock, env));
-        if (isValueBased(tree.lock.type)) {
-            env.info.lint.logIfEnabled(tree.pos(), LintWarnings.AttemptToSynchronizeOnInstanceOfValueBasedClass);
+        if (types.isValueBased(tree.lock.type)) {
+            if (env.info.lint.isEnabled(LintCategory.SYNCHRONIZATION)) {
+                env.info.lint.logIfEnabled(tree.pos(), LintWarnings.AttemptToSynchronizeOnInstanceOfValueBasedClass);
+            } else {
+                env.info.lint.logIfEnabled(tree.pos(), LintWarnings.AttemptToSynchronizeOnInstanceOfValueBasedClass2);
+            }
         }
         attribStat(tree.body, env);
         result = null;
     }
-        // where
-        private boolean isValueBased(Type t) {
-            return t != null && t.tsym != null && (t.tsym.flags() & VALUE_BASED) != 0;
-        }
-
 
     public void visitTry(JCTry tree) {
         // Create a new local environment with a local
@@ -2667,10 +2687,31 @@ public class Attr extends JCTree.Visitor {
             // current context.  Also, capture the return type
             Type capturedRes = resultInfo.checkContext.inferenceContext().cachedCapture(tree, restype, true);
             result = check(tree, capturedRes, KindSelector.VAL, resultInfo);
+            checkIfRequireIdentity(tree, msym);
         }
         chk.validate(tree.typeargs, localEnv);
     }
     //where
+        void checkIfRequireIdentity(JCMethodInvocation tree, Symbol sym) {
+            List<JCExpression> argExps = tree.args;
+            if (sym instanceof MethodSymbol ms && ms.params != null) {
+                VarSymbol lastParam = ms.params.head;
+                for (VarSymbol param: ms.params) {
+                    if (requiresIdentity(param) && types.isValueBased(argExps.head.type)) {
+                        env.info.lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                    }
+                    lastParam = param;
+                    argExps = argExps.tail;
+                }
+                while (argExps != null && !argExps.isEmpty()) {
+                    if (requiresIdentity(lastParam) && types.isValueBased(argExps.head.type)) {
+                        env.info.lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                    }
+                    argExps = argExps.tail;
+                }
+            }
+        }
+
         Type adjustMethodReturnType(Symbol msym, Type qualifierType, Name methodName, List<Type> argtypes, Type restype) {
             if (msym != null &&
                     (msym.owner == syms.objectType.tsym || msym.owner.isInterface()) &&

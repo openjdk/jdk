@@ -2202,6 +2202,7 @@ public class CreateSymbols {
                 chd.permittedSubclasses = a.permittedSubclasses().stream().map(ClassEntry::asInternalName).collect(Collectors.toList());
             }
             case ModuleMainClassAttribute a -> ((ModuleHeaderDescription) feature).moduleMainClass = a.mainClass().asInternalName();
+            case RuntimeVisibleTypeAnnotationsAttribute a -> {/* do nothing for now */}
             default -> throw new IllegalArgumentException("Unhandled attribute: " + attr.attributeName()); // Do nothing
         }
 
