@@ -1943,18 +1943,18 @@ class MutableBigInteger {
         } else {
             // Set up the initial estimate of the iteration.
             // Determine a right shift that is a multiple of n into finite double range.
-            int shift = Math.max(0, bitLength - Double.MAX_EXPONENT);
-            int shiftExcess = shift % n;
+            long shift = Math.max(0, bitLength - Double.MAX_EXPONENT); // use long to avoid overflow later
+            int shiftExcess = (int) (shift % n);
 
             // Shift the value into finite double range
             r = new MutableBigInteger(this);
-            r.rightShift(shift);
+            r.rightShift((int) shift);
             double base = r.toBigInteger().doubleValue();
             // Complete the shift to a multiple of n,
             // avoiding to lose more bits than necessary.
             if (shiftExcess != 0) { 
                 int shiftLack = n - shiftExcess;
-                shift += shiftLack;
+                shift += shiftLack; // shift is long, no overflow
                 base /= Double.valueOf("0x1p" + shiftLack);
             }
 
@@ -1965,7 +1965,7 @@ class MutableBigInteger {
             r = new MutableBigInteger(new BigDecimal(rDouble).toBigInteger().mag);
 
             // Shift the approximate root back into the original range.
-            r.leftShift(shift / n);
+            r.leftShift((int) (shift / n));
         }
 
         // Refine the estimate.
