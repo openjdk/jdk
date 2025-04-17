@@ -26,6 +26,7 @@ import java.awt.Dialog;
 import java.awt.FileDialog;
 import java.awt.FlowLayout;
 import java.awt.Frame;
+import java.util.List;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -58,13 +59,14 @@ public class NativeDialogToFrontBackTest {
                 .instructions(INSTRUCTIONS)
                 .columns(45)
                 .testUI(NativeDialogToFrontBackTest::init)
+                .positionTestUI(WindowLayouts::rightOneColumn)
                 .build()
                 .awaitAndCheck();
     }
 
-    public static Frame init() {
+    public static List<Frame> init() {
         Frame blocked = new Frame("Blocked");
-        blocked.setBounds(500, 100, 200, 200);
+        blocked.setSize(200, 200);
 
         Frame control = new Frame("Control");
         control.setModalExclusionType(Dialog.ModalExclusionType.APPLICATION_EXCLUDE);
@@ -111,7 +113,6 @@ public class NativeDialogToFrontBackTest {
         control.add(blockedToFront);
 
         control.setSize(200, 200);
-        blocked.setVisible(true);
-        return control;
+        return List.of(control, blocked);
     }
 }

@@ -132,9 +132,8 @@ public class NonfocusableFrameFullScreenTest extends JPanel {
         frame.setLayout(new BorderLayout());
         frame.add(button, BorderLayout.WEST);
         frame.add(button2, BorderLayout.EAST);
-        frame.setBounds(400, 200, 200, 100);
+        frame.setBounds(400, 200, 350, 100);
         frame.setFocusableWindowState(false);
-        frame.pack();
         frame.setVisible(true);
     }
 }
