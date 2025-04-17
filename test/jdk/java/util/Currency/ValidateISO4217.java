@@ -155,12 +155,14 @@ public class ValidateISO4217 {
     // "check" invocation only runs the main method (and not any tests) to determine if the
     // future time checking is correct
     public static void main(String[] args) {
-        // Override for PK in test/currency.properties is JPZ (in year 3000)
+        // Override for PK=PKR in test/currency.properties is PKZ - simple
+        // Override for PW=USD in test/currency.properties is MWP - special
         if (MOCKED_TIME.equals("check")) {
-            if (!Currency.getInstance(Locale.of("", "PK")).getCurrencyCode().equals("JPZ")) {
-                throw new RuntimeException(
-                        "Module patch and or mocked time is not functioning correctly");
-            } else {} // Properly working. Do nothing and move to third invocation
+            assertEquals("PKZ", Currency.getInstance(Locale.of("", "PK")).getCurrencyCode(),
+                    "Mocked time / module patch not working");
+            assertEquals("MWP", Currency.getInstance(Locale.of("", "PW")).getCurrencyCode(),
+                    "Mocked time / module patch not working");
+            // Properly working. Do nothing and move to third invocation
         } else {
             throw new RuntimeException(
                     "Incorrect usage of ValidateISO4217. Main method invoked without proper system property value");
