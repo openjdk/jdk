@@ -155,9 +155,12 @@ public class ValidateISO4217 {
     // "check" invocation only runs the main method (and not any tests) to determine if the
     // future time checking is correct
     public static void main(String[] args) {
-        // Override for PK=PKR in test/currency.properties is PKZ - simple
-        // Override for PW=USD in test/currency.properties is MWP - special
         if (MOCKED_TIME.equals("check")) {
+            // Check that the module patch class files exist
+            checkModulePatchExists();
+            // Check time is mocked
+            // Override for PK=PKR in test/currency.properties is PKZ - simple
+            // Override for PW=USD in test/currency.properties is MWP - special
             assertEquals("PKZ", Currency.getInstance(Locale.of("", "PK")).getCurrencyCode(),
                     "Mocked time / module patch not working");
             assertEquals("MWP", Currency.getInstance(Locale.of("", "PW")).getCurrencyCode(),
@@ -183,6 +186,17 @@ public class ValidateISO4217 {
             throw new RuntimeException(
                     "Incorrect usage of ValidateISO4217. Missing \"MOCKED.TIME\" system property");
         }
+        if (MOCKED_TIME.equals("true")) {
+            checkModulePatchExists();
+        }
+    }
+
+    static void checkModulePatchExists() {
+        // Check that the module patch class files exist
+        for (String className : CLASSES) {
+            var file = new File(MODULE_PATCH_LOCATION + className);
+            assertTrue(file.isFile(), "Module patch class files missing");
+        }
     }
 
     // Patch the relevant classes required for module patch
@@ -200,8 +214,10 @@ public class ValidateISO4217 {
     private static void patchClass(String name) throws IOException {
         CodeTransform codeTransform = (codeBuilder, e) -> {
             switch (e) {
-                case InvokeInstruction i when i.name().stringValue().equals("currentTimeMillis") ->
-                        codeBuilder.loadConstant(Long.MAX_VALUE); // mock
+                case InvokeInstruction i when
+                        i.owner().asInternalName().equals("java/lang/System")
+                                && i.name().equalsString("currentTimeMillis") ->
+                    codeBuilder.loadConstant(Long.MAX_VALUE); // mock
                 default -> codeBuilder.accept(e);
             }
         };
