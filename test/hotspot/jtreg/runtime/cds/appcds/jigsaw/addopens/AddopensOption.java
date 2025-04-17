@@ -34,7 +34,6 @@
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.whitebox.code.Compiler;
 
 public class AddopensOption {
 
@@ -49,7 +48,7 @@ public class AddopensOption {
         String archiveName = TestCommon.getNewArchiveName("addopens-option");
         TestCommon.setCurrentArchiveName(archiveName);
 
-        // dump a base archive with --add-opens jdk.jconsole -m jdk.httpserver
+        // dump a base archive with --add-opens jdk.java.base/java.time.format -m jdk.httpserver
         OutputAnalyzer oa = TestCommon.dumpBaseArchive(
             archiveName,
             loggingOption,
@@ -67,7 +66,6 @@ public class AddopensOption {
         oa.shouldHaveExitValue(0)
           // version of the jdk.httpserver module, e.g. java 22-ea
           .shouldMatch(versionPattern)
-          //.shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.jconsole")
           .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.httpserver");
 
         // different --add-opens specified during runtime
@@ -153,6 +151,6 @@ public class AddopensOption {
             "-m", moduleOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.compiler");
+          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.httpserver");
     }
 }
