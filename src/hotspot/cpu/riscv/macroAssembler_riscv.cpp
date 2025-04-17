@@ -498,19 +498,19 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   // get oop result if there is one and reset the value in the thread
   if (oop_result->is_valid()) {
-    get_vm_result(oop_result, java_thread);
+    get_vm_result_oop(oop_result, java_thread);
   }
 }
 
-void MacroAssembler::get_vm_result(Register oop_result, Register java_thread) {
-  ld(oop_result, Address(java_thread, JavaThread::vm_result_offset()));
-  sd(zr, Address(java_thread, JavaThread::vm_result_offset()));
+void MacroAssembler::get_vm_result_oop(Register oop_result, Register java_thread) {
+  ld(oop_result, Address(java_thread, JavaThread::vm_result_oop_offset()));
+  sd(zr, Address(java_thread, JavaThread::vm_result_oop_offset()));
   verify_oop_msg(oop_result, "broken oop in call_VM_base");
 }
 
-void MacroAssembler::get_vm_result_2(Register metadata_result, Register java_thread) {
-  ld(metadata_result, Address(java_thread, JavaThread::vm_result_2_offset()));
-  sd(zr, Address(java_thread, JavaThread::vm_result_2_offset()));
+void MacroAssembler::get_vm_result_metadata(Register metadata_result, Register java_thread) {
+  ld(metadata_result, Address(java_thread, JavaThread::vm_result_metadata_offset()));
+  sd(zr, Address(java_thread, JavaThread::vm_result_metadata_offset()));
 }
 
 void MacroAssembler::clinit_barrier(Register klass, Register tmp, Label* L_fast_path, Label* L_slow_path) {

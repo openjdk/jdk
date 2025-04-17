@@ -1226,7 +1226,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   // get oop result if there is one and reset the value in the thread
   if (oop_result->is_valid()) {
-    get_vm_result(oop_result);
+    get_vm_result_oop(oop_result);
   }
 }
 
@@ -1316,15 +1316,15 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Reg
   MacroAssembler::call_VM_leaf_base(entry_point, 4);
 }
 
-void MacroAssembler::get_vm_result(Register oop_result) {
-  movptr(oop_result, Address(r15_thread, JavaThread::vm_result_offset()));
-  movptr(Address(r15_thread, JavaThread::vm_result_offset()), NULL_WORD);
+void MacroAssembler::get_vm_result_oop(Register oop_result) {
+  movptr(oop_result, Address(r15_thread, JavaThread::vm_result_oop_offset()));
+  movptr(Address(r15_thread, JavaThread::vm_result_oop_offset()), NULL_WORD);
   verify_oop_msg(oop_result, "broken oop in call_VM_base");
 }
 
-void MacroAssembler::get_vm_result_2(Register metadata_result) {
-  movptr(metadata_result, Address(r15_thread, JavaThread::vm_result_2_offset()));
-  movptr(Address(r15_thread, JavaThread::vm_result_2_offset()), NULL_WORD);
+void MacroAssembler::get_vm_result_metadata(Register metadata_result) {
+  movptr(metadata_result, Address(r15_thread, JavaThread::vm_result_metadata_offset()));
+  movptr(Address(r15_thread, JavaThread::vm_result_metadata_offset()), NULL_WORD);
 }
 
 void MacroAssembler::check_and_handle_earlyret() {
