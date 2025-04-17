@@ -929,6 +929,11 @@ define SetupRunJtregTestBody
     JTREG_AUTO_PROBLEM_LISTS += ProblemList-shenandoah.txt
   endif
 
+  ifneq ($$(findstring --enable-preview, $$(JTREG_ALL_OPTIONS)), )
+    JTREG_AUTO_PROBLEM_LISTS += ProblemList-enable-preview.txt
+  endif
+
+
   ifneq ($$(JTREG_EXTRA_PROBLEM_LISTS), )
     # Accept both absolute paths as well as relative to the current test root.
     $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
