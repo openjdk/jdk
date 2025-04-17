@@ -29,7 +29,7 @@ import javax.swing.JTable;
  * @test
  * @bug 4138158
  * @summary Tests that setAutoscrolls(false) locks autoscroll
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4138158
  */

@@ -43,7 +43,7 @@ import javax.swing.table.TableModel;
  * @test
  * @bug 4179066
  * @summary Tests that JTable prints AltGr characters (~\@|{}[]²µ³)
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main InternationalCharacters
  */
