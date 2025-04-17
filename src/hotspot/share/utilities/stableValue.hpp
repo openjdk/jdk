@@ -53,19 +53,19 @@ public:
   ~StableValue() {
   }
 
-  T* as() {
+  T* ptr() {
     return LAUNDER(&this->_t);
   }
 
   T* operator->() {
     assert(_initialized, "must be initialized before access");
-    return as();
+    return ptr();
   }
 
   template<typename... Ts>
   void initialize(Ts&... args) {
     DEBUG_ONLY(_initialized = true);
-    new (as()) T(args...);
+    new (ptr()) T(args...);
   }
 };
 
