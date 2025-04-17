@@ -56,7 +56,7 @@ public class NonfocusableFrameFullScreenTest extends JPanel {
 
                 3. Press "To Windowed" button:
                         The frame should return to its original size.
-                        The frame shouldn't be alwayOnTop.
+                        The frame shouldn't be alwaysOnTop.
 
                 4. Press "Set Always On Top" button and make sure the frame
                    is alwaysOnTop, then press "To Full Screen" button
