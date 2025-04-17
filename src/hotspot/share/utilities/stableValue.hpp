@@ -49,16 +49,16 @@ class StableValue {
 
   DEBUG_ONLY(bool _initialized);
 
-  T* as() {
-    return LAUNDER(&this->_t);
-  }
-
 public:
   StableValue() {
     DEBUG_ONLY(_initialized = false);
   }
 
   ~StableValue() {
+  }
+
+  T* as() {
+    return LAUNDER(&this->_t);
   }
 
   T* operator->() {
