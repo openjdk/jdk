@@ -355,7 +355,7 @@ public class Debug {
     private static String marshal(String args) {
         if (args != null) {
 
-            // convert the rest to lower-case characters
+            // convert to lower-case characters
             return String.valueOf(args.toLowerCase(Locale.ENGLISH));
         }
 
