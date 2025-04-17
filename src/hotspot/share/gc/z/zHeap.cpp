@@ -314,18 +314,18 @@ ZServiceabilityCounters* ZHeap::serviceability_counters() {
   return _serviceability.counters();
 }
 
-void ZHeap::print_on(outputStream* st) const {
-  _page_allocator.print_on(st);
+void ZHeap::print_usage_on(outputStream* st) const {
+  _page_allocator.print_usage_on(st);
 }
 
-void ZHeap::print_on_error(outputStream* st) const {
+void ZHeap::print_gc_on(outputStream* st) const {
   print_globals_on(st);
   st->cr();
 
   print_page_table_on(st);
   st->cr();
 
-  _page_allocator.print_on_error(st);
+  _page_allocator.print_extended_cache_on(st);
 }
 
 void ZHeap::print_globals_on(outputStream* st) const {

@@ -356,11 +356,11 @@ void ZCollectedHeap::prepare_for_verify() {
 }
 
 void ZCollectedHeap::print_heap_on(outputStream* st) const {
-  _heap.print_on(st);
+  _heap.print_usage_on(st);
 }
 
 void ZCollectedHeap::print_gc_on(outputStream* st) const {
-  _heap.print_on_error(st);
+  _heap.print_gc_on(st);
 }
 
 void ZCollectedHeap::print_tracing_info() const {
