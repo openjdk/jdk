@@ -1005,8 +1005,6 @@ private:
   void rewire_old_target_loop_entry_dependency_to_new_entry(LoopNode* target_loop_head,
                                                             const Node* old_target_loop_entry,
                                                             uint node_index_before_new_assertion_predicate_nodes);
-  void insert_loop_limit_check_predicate(const ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
-                                         Node* bol);
   void log_loop_tree();
 
 public:
@@ -1273,7 +1271,7 @@ public:
   Node* loop_exit_control(const Node* head, const IdealLoopTree* loop) const;
 
   struct LoopExitTest {
-    Node* cmp = nullptr;
+    CmpNode* cmp = nullptr;
     Node* incr = nullptr;
     Node* limit = nullptr;
     const BoolTest::mask mask = BoolTest::illegal;
@@ -1305,55 +1303,6 @@ public:
   IdealLoopTree* insert_outer_loop(IdealLoopTree* loop, LoopNode* outer_l, Node* outer_ift);
   IdealLoopTree* create_outer_strip_mined_loop(Node* init_control, IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                Node*& entry_control, Node*& iffalse);
-
-  class CountedLoopConverter {
-    PhaseIdealLoop* _phase;
-    Node* _head;
-    IdealLoopTree* _loop;
-    const BasicType _iv_bt;
-
-    bool _insert_stride_overflow_limit_check = false;
-    bool _insert_init_trip_limit_check = false;
-
-#ifdef ASSERT
-    bool _checked_for_counted_loop = false;
-#endif
-
-    // To be assigned once a counted loop is confirmed.
-    Node* _limit;
-    jlong _stride_con;
-    Node* _phi;
-    Node* _phi_increment;
-    Node* _stride;
-    bool _includes_limit;
-    BoolTest::mask _mask;
-    Node* _increment;
-    Node* _cmp;
-    float _cl_prob;
-    Node* _sfpt;
-    jlong _final_correction;
-    const TypeInteger* _increment_truncation_type;
-
-   public:
-    CountedLoopConverter(PhaseIdealLoop* phase, Node* head, IdealLoopTree* loop, const BasicType iv_bt)
-      : _phase(phase),
-        _head(head),
-        _loop(loop),
-        _iv_bt(iv_bt) {
-      assert(phase != nullptr, "");
-      assert(head != nullptr, "");
-      assert(loop != nullptr, "");
-      assert(iv_bt == T_INT || iv_bt == T_LONG, "");
-    }
-
-    bool is_counted_loop();
-    IdealLoopTree* convert();
-
-#ifdef ASSERT
-    bool should_stress_long_counted_loop() const;
-    bool stress_long_counted_loop() const;
-#endif
-  };
 
   Node* exact_limit( IdealLoopTree *loop );
 
@@ -1474,8 +1423,6 @@ public:
   Node* clone_nodes_with_same_ctrl(Node* start_node, ProjNode* old_uncommon_proj, Node* new_uncommon_proj);
   void fix_cloned_data_node_controls(const ProjNode* orig, Node* new_uncommon_proj,
                                      const OrigToNewHashtable& orig_to_clone);
-  bool has_dominating_loop_limit_check(Node* init_trip, Node* limit, jlong stride_con, BasicType iv_bt,
-                                       Node* loop_entry);
 
  public:
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
@@ -1677,12 +1624,6 @@ public:
                        Node*& shift, Node*& offset);
 
 private:
-  // Return a type based on condition control flow
-  const TypeInt* filtered_type( Node *n, Node* n_ctrl);
-  const TypeInt* filtered_type( Node *n ) { return filtered_type(n, nullptr); }
- // Helpers for filtered type
-  const TypeInt* filtered_type_from_dominators( Node* val, Node *val_ctrl);
-
   // Helper functions
   Node *spinup( Node *iff, Node *new_false, Node *new_true, Node *region, Node *phi, small_cache *cache );
   Node *find_use_block( Node *use, Node *def, Node *old_false, Node *new_false, Node *old_true, Node *new_true );
@@ -1811,7 +1752,6 @@ public:
   static int _loop_work;        // Sum of PhaseIdealLoop x _unique
   static volatile int _long_loop_candidates;
   static volatile int _long_loop_nests;
-  static volatile int _long_loop_counted_loops;
 #endif
 
 #ifdef ASSERT
@@ -1893,6 +1833,70 @@ public:
   ConNode* integercon(jlong l, BasicType bt);
 
   ConNode* zerocon(BasicType bt);
+};
+
+class CountedLoopConverter {
+  friend class PhaseIdealLoop;
+
+  PhaseIdealLoop* const _phase;
+  Node* const _head; // FIXME: type to LoopNode?
+  IdealLoopTree* const _loop;
+  const BasicType _iv_bt;
+
+#ifdef ASSERT
+  bool _checked_for_counted_loop = false;
+#endif
+
+  // stats for PhaseIdealLoop::print_statistics()
+  static volatile int _long_loop_counted_loops;
+
+  // To be assigned once a counted loop is confirmed.
+  Node* _limit;
+  jlong _stride_con;
+  Node* _phi;
+  Node* _phi_increment;
+  Node* _stride;
+  bool _includes_limit;
+  BoolTest::mask _mask;
+  Node* _increment;
+  Node* _cmp;
+  float _cl_prob;
+  Node* _sfpt;
+  jlong _final_correction;
+  const TypeInteger* _increment_truncation_type;
+  bool _insert_stride_overflow_limit_check = false;
+  bool _insert_init_trip_limit_check = false;
+
+  // Return a type based on condition control flow
+  const TypeInt* filtered_type( Node *n, Node* n_ctrl);
+  const TypeInt* filtered_type( Node *n ) { return filtered_type(n, nullptr); }
+  // Helpers for filtered type
+  const TypeInt* filtered_type_from_dominators( Node* val, Node *val_ctrl);
+
+  void insert_loop_limit_check_predicate(const ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
+                                         Node* bol);
+  bool has_dominating_loop_limit_check(Node* init_trip, Node* limit, jlong stride_con, BasicType iv_bt,
+                                       Node* loop_entry);
+
+ public:
+  CountedLoopConverter(PhaseIdealLoop* phase, Node* head, IdealLoopTree* loop, const BasicType iv_bt)
+      : _phase(phase),
+        _head(head),
+        _loop(loop),
+        _iv_bt(iv_bt) {
+    assert(phase != nullptr, ""); // Fail early if mandatory parameters are null.
+    assert(head != nullptr, "");
+    assert(loop != nullptr, "");
+    assert(iv_bt == T_INT || iv_bt == T_LONG, ""); // Loops can be either int or long.
+  }
+
+  bool is_counted_loop();
+  IdealLoopTree* convert();
+
+#ifdef ASSERT
+  bool should_stress_long_counted_loop() const;
+  bool stress_long_counted_loop() const;
+#endif
 };
 
 class AutoNodeBudget : public StackObj

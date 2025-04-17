@@ -342,17 +342,19 @@ IdealLoopTree* PhaseIdealLoop::create_outer_strip_mined_loop(Node* init_control,
   return outer_ilt;
 }
 
-void PhaseIdealLoop::insert_loop_limit_check_predicate(const ParsePredicateSuccessProj* loop_limit_check_parse_proj,
+void CountedLoopConverter::insert_loop_limit_check_predicate(const ParsePredicateSuccessProj* loop_limit_check_parse_proj,
                                                        Node* cmp_limit, Node* bol) {
   assert(loop_limit_check_parse_proj->in(0)->is_ParsePredicate(), "must be parse predicate");
-  Node* new_predicate_proj = create_new_if_for_predicate(loop_limit_check_parse_proj, nullptr,
-                                                         Deoptimization::Reason_loop_limit_check,
-                                                         Op_If);
+  Node* new_predicate_proj = _phase->create_new_if_for_predicate(loop_limit_check_parse_proj, nullptr,
+                                                                 Deoptimization::Reason_loop_limit_check,
+                                                                 Op_If);
+
+  PhaseIterGVN& igvn = _phase->igvn();
   Node* iff = new_predicate_proj->in(0);
-  cmp_limit = _igvn.register_new_node_with_optimizer(cmp_limit);
-  bol = _igvn.register_new_node_with_optimizer(bol);
-  set_subtree_ctrl(bol, false);
-  _igvn.replace_input_of(iff, 1, bol);
+  cmp_limit = igvn.register_new_node_with_optimizer(cmp_limit);
+  bol = igvn.register_new_node_with_optimizer(bol);
+  _phase->set_subtree_ctrl(bol, false);
+  igvn.replace_input_of(iff, 1, bol);
 
 #ifndef PRODUCT
   // report that the loop predication has been actually performed
@@ -370,8 +372,8 @@ Node* PhaseIdealLoop::loop_exit_control(const Node* head, const IdealLoopTree* l
   if (head->in(LoopNode::Self) == nullptr || head->req() != 3 || loop->_irreducible) {
     return nullptr;
   }
-  Node *init_control = head->in(LoopNode::EntryControl);
-  Node *back_control = head->in(LoopNode::LoopBackControl);
+  Node* init_control = head->in(LoopNode::EntryControl);
+  Node* back_control = head->in(LoopNode::LoopBackControl);
   if (init_control == nullptr || back_control == nullptr) {   // Partially dead
     return nullptr;
   }
@@ -439,7 +441,7 @@ PhaseIdealLoop::LoopExitTest PhaseIdealLoop::loop_exit_test(const Node* back_con
   if (!is_member(loop, get_ctrl(incr))) { // Trip counter must be loop-variant
     return {};
   }
-  return {cmp, incr, limit, bt, cl_prob};
+  return {cmp->as_Cmp(), incr, limit, bt, cl_prob};
 }
 
 PhaseIdealLoop::LoopIVIncr PhaseIdealLoop::loop_iv_incr(Node* incr, const Node* head, const IdealLoopTree* loop) {
@@ -1488,7 +1490,7 @@ void PhaseIdealLoop::check_counted_loop_shape(IdealLoopTree* loop, Node* x, Basi
 
 //------------------------------CountedLoopConverter--------------------------------
 #ifdef ASSERT
-bool PhaseIdealLoop::CountedLoopConverter::should_stress_long_counted_loop() const {
+bool CountedLoopConverter::should_stress_long_counted_loop() const {
   assert(_checked_for_counted_loop, "must check for counted loop before stressing");
 
   return StressLongCountedLoop > 0 &&
@@ -1498,10 +1500,10 @@ bool PhaseIdealLoop::CountedLoopConverter::should_stress_long_counted_loop() con
 }
 
 // Convert an int counted loop to a long counted to stress handling of long counted loops. Returns true upon success.
-bool PhaseIdealLoop::CountedLoopConverter::stress_long_counted_loop() const {
+bool CountedLoopConverter::stress_long_counted_loop() const {
   assert(should_stress_long_counted_loop(), "stress condition not satisfied");
 
-  PhaseIterGVN* igvn = &_phase->_igvn;
+  PhaseIterGVN* igvn = &_phase->igvn();
   Unique_Node_List iv_nodes;
   Node_List old_new;
   iv_nodes.push(_cmp);
@@ -1624,15 +1626,15 @@ bool PhaseIdealLoop::try_convert_to_counted_loop(Node* head, IdealLoopTree*& loo
   return false;
 }
 
-bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
-  PhaseIterGVN* igvn = &_phase->_igvn;
+bool CountedLoopConverter::is_counted_loop() {
+  PhaseIterGVN* igvn = &_phase->igvn();
 
   Node* back_control = _phase->loop_exit_control(_head, _loop);
   if (back_control == nullptr) {
     return false;
   }
 
-  LoopExitTest exit_test = _phase->loop_exit_test(back_control, _loop);
+  PhaseIdealLoop::LoopExitTest exit_test = _phase->loop_exit_test(back_control, _loop);
   if (exit_test.cmp == nullptr || exit_test.cmp->Opcode() != Op_Cmp(_iv_bt)) {
     return false; // Avoid pointer & float & 64-bit compares
   }
@@ -1643,7 +1645,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
     incr = incr->in(1);
   }
 
-  const LoopIVIncr iv_incr = _phase->loop_iv_incr(incr, _head, _loop);
+  const PhaseIdealLoop::LoopIVIncr iv_incr = PhaseIdealLoop::loop_iv_incr(incr, _head, _loop);
   if (iv_incr.incr == nullptr) {
     return false;
   }
@@ -1655,7 +1657,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
 
   assert(increment.incr->Opcode() == Op_Add(_iv_bt), "wrong increment code");
 
-  const LoopIvStride stride = loop_iv_stride(increment.incr);
+  const PhaseIdealLoop::LoopIvStride stride = PhaseIdealLoop::loop_iv_stride(increment.incr);
   if (stride.stride == nullptr) {
     return false;
   }
@@ -1669,7 +1671,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
   jlong stride_con = stride.stride->get_integer_as_long(_iv_bt);
   assert(stride_con != 0, "missed some peephole opt");
 
-  PhiNode* phi = loop_iv_phi(xphi, iv_incr.phi_incr, _head);
+  PhiNode* phi = PhaseIdealLoop::loop_iv_phi(xphi, iv_incr.phi_incr, _head);
 
   if (phi == nullptr ||
       (increment.trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != increment.incr) ||
@@ -1715,7 +1717,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
     assert(increment.trunc1 != nullptr, "must have found some truncation");
 
     // Get a better type for the phi (filtered thru if's)
-    const TypeInteger* phi_ft = _phase->filtered_type(phi);
+    const TypeInteger* phi_ft = filtered_type(phi);
 
     // Can iv take on a value that will wrap?
     //
@@ -2010,6 +2012,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
   // If sov == 0, limit's type always satisfies the condition, for
   // example, when it is an array length.
 
+  bool insert_stride_overflow_limit_check = false;
   if (sov > 0) {
     // (1) Loop Limit Check Predicate is required because we could not statically prove that
     //     limit + final_correction = adjusted_limit - 1 + stride <= max_int
@@ -2031,7 +2034,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
       return false;
     }
 
-    _insert_stride_overflow_limit_check = true;
+    insert_stride_overflow_limit_check = true;
   }
 
   // (2.3)
@@ -2042,13 +2045,14 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
   const bool init_gte_limit = (stride_con > 0 && init_t->hi_as_long() >= limit_t->lo_as_long()) ||
       (stride_con < 0 && init_t->lo_as_long() <= limit_t->hi_as_long());
 
+  bool insert_init_trip_limit_check = false;
   if (init_gte_limit && // (2.1)
       ((exit_test.mask == BoolTest::ne || init_plus_stride_could_overflow) && // (2.3)
-          !_phase->has_dominating_loop_limit_check(init_trip,
-                                                   exit_test.limit,
-                                                   stride_con,
-                                                   _iv_bt,
-                                                   init_control))) { // (2.2)
+          !has_dominating_loop_limit_check(init_trip,
+                                           exit_test.limit,
+                                           stride_con,
+                                           _iv_bt,
+                                           init_control))) { // (2.2)
     // (2) Iteration Loop Limit Check Predicate is required because neither (2.1), (2.2), nor (2.3) holds.
     // We use the following condition:
     // - stride > 0: init < limit
@@ -2077,7 +2081,7 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
       return false;
     }
 
-    _insert_init_trip_limit_check = true;
+    insert_init_trip_limit_check = true;
   }
 
   BoolTest::mask mask = exit_test.mask;
@@ -2132,6 +2136,9 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
   _sfpt = sfpt;
   _increment_truncation_type = increment.trunc_type;
 
+  _insert_stride_overflow_limit_check = insert_stride_overflow_limit_check;
+  _insert_init_trip_limit_check = insert_init_trip_limit_check;
+
 #ifdef ASSERT
   _checked_for_counted_loop = true;
 #endif
@@ -2139,12 +2146,12 @@ bool PhaseIdealLoop::CountedLoopConverter::is_counted_loop() {
   return true;
 }
 
-IdealLoopTree* PhaseIdealLoop::CountedLoopConverter::convert() {
+IdealLoopTree* CountedLoopConverter::convert() {
 #ifdef ASSERT
   assert(_checked_for_counted_loop, "must check for counted loop before conversion");
 #endif
 
-  PhaseIterGVN* igvn = &_phase->_igvn;
+  PhaseIterGVN* igvn = &_phase->igvn();
   Node* init_control = _head->in(LoopNode::EntryControl);
 
   if (_insert_stride_overflow_limit_check) {
@@ -2153,14 +2160,14 @@ IdealLoopTree* PhaseIdealLoop::CountedLoopConverter::convert() {
                                                               : min_signed_integer(_iv_bt))
                                                                  - _final_correction, _iv_bt), _iv_bt);
     Node* bol = new BoolNode(cmp_limit, _stride_con > 0 ? BoolTest::le : BoolTest::ge);
-    _phase->insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
+    insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
   }
 
   Node* init_trip = _phi->in(LoopNode::EntryControl);
   if (_insert_init_trip_limit_check) {
     Node* cmp_limit = CmpNode::make(init_trip, _limit, _iv_bt);
     Node* bol = new BoolNode(cmp_limit, _stride_con > 0 ? BoolTest::lt : BoolTest::gt);
-    _phase->insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
+    insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
   }
 
   Node* back_control = _phase->loop_exit_control(_head, _loop);
@@ -2361,11 +2368,12 @@ IdealLoopTree* PhaseIdealLoop::CountedLoopConverter::convert() {
   // bounds
   l->phi()->as_Phi()->set_type(l->phi()->Value(igvn));
 
+  IdealLoopTree* loop = _loop;
   if (strip_mine_loop) {
     l->mark_strip_mined();
     l->verify_strip_mined(1);
     outer_ilt->_head->as_Loop()->verify_strip_mined(1);
-    _loop = outer_ilt;
+    loop = outer_ilt;
   }
 
 #ifndef PRODUCT
@@ -2378,13 +2386,15 @@ IdealLoopTree* PhaseIdealLoop::CountedLoopConverter::convert() {
     l->mark_loop_nest_outer_loop();
   }
 
-  return _loop;
+  return loop;
 }
 
 // Check if there is a dominating loop limit check of the form 'init < limit' starting at the loop entry.
 // If there is one, then we do not need to create an additional Loop Limit Check Predicate.
-bool PhaseIdealLoop::has_dominating_loop_limit_check(Node* init_trip, Node* limit, const jlong stride_con,
+bool CountedLoopConverter::has_dominating_loop_limit_check(Node* init_trip, Node* limit, const jlong stride_con,
                                                      const BasicType iv_bt, Node* loop_entry) {
+  PhaseIterGVN& _igvn = _phase->igvn();
+
   // Eagerly call transform() on the Cmp and Bool node to common them up if possible. This is required in order to
   // successfully find a dominated test with the If node below.
   Node* cmp_limit;
@@ -2407,8 +2417,8 @@ bool PhaseIdealLoop::has_dominating_loop_limit_check(Node* init_trip, Node* limi
   const bool found_dominating_test = dominated_iff != nullptr && dominated_iff->is_ConI();
 
   // Kill the If with its projections again in the next IGVN round by cutting it off from the graph.
-  _igvn.replace_input_of(iff, 0, C->top());
-  _igvn.replace_input_of(iff, 1, C->top());
+  _igvn.replace_input_of(iff, 0, _phase->C->top());
+  _igvn.replace_input_of(iff, 1, _phase->C->top());
   return found_dominating_test;
 }
 
@@ -3333,18 +3343,18 @@ Node *OuterStripMinedLoopEndNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //         i = ?
 //       } while ( i < 10)
 //
-const TypeInt* PhaseIdealLoop::filtered_type( Node *n, Node* n_ctrl) {
+const TypeInt* CountedLoopConverter::filtered_type(Node* n, Node* n_ctrl) {
   assert(n && n->bottom_type()->is_int(), "must be int");
   const TypeInt* filtered_t = nullptr;
   if (!n->is_Phi()) {
-    assert(n_ctrl != nullptr || n_ctrl == C->top(), "valid control");
+    assert(n_ctrl != nullptr || n_ctrl == _phase->C->top(), "valid control");
     filtered_t = filtered_type_from_dominators(n, n_ctrl);
 
   } else {
     Node* phi    = n->as_Phi();
     Node* region = phi->in(0);
     assert(n_ctrl == nullptr || n_ctrl == region, "ctrl parameter must be region");
-    if (region && region != C->top()) {
+    if (region && region != _phase->C->top()) {
       for (uint i = 1; i < phi->req(); i++) {
         Node* val   = phi->in(i);
         Node* use_c = region->in(i);
@@ -3359,7 +3369,7 @@ const TypeInt* PhaseIdealLoop::filtered_type( Node *n, Node* n_ctrl) {
       }
     }
   }
-  const TypeInt* n_t = _igvn.type(n)->is_int();
+  const TypeInt* n_t = _phase->igvn().type(n)->is_int();
   if (filtered_t != nullptr) {
     n_t = n_t->join(filtered_t)->is_int();
   }
@@ -3369,22 +3379,22 @@ const TypeInt* PhaseIdealLoop::filtered_type( Node *n, Node* n_ctrl) {
 
 //------------------------------filtered_type_from_dominators--------------------------------
 // Return a possibly more restrictive type for val based on condition control flow of dominators
-const TypeInt* PhaseIdealLoop::filtered_type_from_dominators( Node* val, Node *use_ctrl) {
+const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, Node* use_ctrl) {
   if (val->is_Con()) {
      return val->bottom_type()->is_int();
   }
   uint if_limit = 10; // Max number of dominating if's visited
   const TypeInt* rtn_t = nullptr;
 
-  if (use_ctrl && use_ctrl != C->top()) {
-    Node* val_ctrl = get_ctrl(val);
-    uint val_dom_depth = dom_depth(val_ctrl);
+  if (use_ctrl && use_ctrl != _phase->C->top()) {
+    Node* val_ctrl = _phase->get_ctrl(val);
+    uint val_dom_depth = _phase->dom_depth(val_ctrl);
     Node* pred = use_ctrl;
     uint if_cnt = 0;
     while (if_cnt < if_limit) {
       if ((pred->Opcode() == Op_IfTrue || pred->Opcode() == Op_IfFalse)) {
         if_cnt++;
-        const TypeInt* if_t = IfNode::filtered_int_type(&_igvn, val, pred);
+        const TypeInt* if_t = IfNode::filtered_int_type(&_phase->igvn(), val, pred);
         if (if_t != nullptr) {
           if (rtn_t == nullptr) {
             rtn_t = if_t;
@@ -3393,12 +3403,12 @@ const TypeInt* PhaseIdealLoop::filtered_type_from_dominators( Node* val, Node *u
           }
         }
       }
-      pred = idom(pred);
-      if (pred == nullptr || pred == C->top()) {
+      pred = _phase->idom(pred);
+      if (pred == nullptr || pred == _phase->C->top()) {
         break;
       }
       // Stop if going beyond definition block of val
-      if (dom_depth(pred) < val_dom_depth) {
+      if (_phase->dom_depth(pred) < val_dom_depth) {
         break;
       }
     }
@@ -5008,9 +5018,15 @@ int PhaseIdealLoop::_loop_invokes=0;// Count of PhaseIdealLoop invokes
 int PhaseIdealLoop::_loop_work=0; // Sum of PhaseIdealLoop x unique
 volatile int PhaseIdealLoop::_long_loop_candidates=0; // Number of long loops seen
 volatile int PhaseIdealLoop::_long_loop_nests=0; // Number of long loops successfully transformed to a nest
-volatile int PhaseIdealLoop::_long_loop_counted_loops=0; // Number of long loops successfully transformed to a counted loop
+volatile int CountedLoopConverter::_long_loop_counted_loops = 0; // Number of long loops successfully transformed to a
+                                                                 // counted loop
 void PhaseIdealLoop::print_statistics() {
-  tty->print_cr("PhaseIdealLoop=%d, sum _unique=%d, long loops=%d/%d/%d", _loop_invokes, _loop_work, _long_loop_counted_loops, _long_loop_nests, _long_loop_candidates);
+  tty->print_cr("PhaseIdealLoop=%d, sum _unique=%d, long loops=%d/%d/%d",
+                _loop_invokes,
+                _loop_work,
+                CountedLoopConverter::_long_loop_counted_loops,
+                _long_loop_nests,
+                _long_loop_candidates);
 }
 #endif
 
