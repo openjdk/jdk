@@ -354,59 +354,9 @@ public class Debug {
      */
     private static String marshal(String args) {
         if (args != null) {
-            StringBuilder target = new StringBuilder();
-            StringBuilder source = new StringBuilder(args);
-
-            // obtain the "permission=<classname>" options
-            // the syntax of classname: IDENTIFIER.IDENTIFIER
-            // the regular express to match a class name:
-            // "[a-zA-Z_$][a-zA-Z0-9_$]*([.][a-zA-Z_$][a-zA-Z0-9_$]*)*"
-            String keyReg = "[Pp][Ee][Rr][Mm][Ii][Ss][Ss][Ii][Oo][Nn]=";
-            String keyStr = "permission=";
-            String reg = keyReg +
-                "[a-zA-Z_$][a-zA-Z0-9_$]*([.][a-zA-Z_$][a-zA-Z0-9_$]*)*";
-            Pattern pattern = Pattern.compile(reg);
-            Matcher matcher = pattern.matcher(source);
-            StringBuilder left = new StringBuilder();
-            while (matcher.find()) {
-                String matched = matcher.group();
-                target.append(matched.replaceFirst(keyReg, keyStr));
-                target.append("  ");
-
-                // delete the matched sequence
-                matcher.appendReplacement(left, "");
-            }
-            matcher.appendTail(left);
-            source = left;
-
-            // obtain the "codebase=<URL>" options
-            // the syntax of URL is too flexible, and here assumes that the
-            // URL contains no space, comma(','), and semicolon(';'). That
-            // also means those characters also could be used as separator
-            // after codebase option.
-            // However, the assumption is incorrect in some special situation
-            // when the URL contains comma or semicolon
-            keyReg = "[Cc][Oo][Dd][Ee][Bb][Aa][Ss][Ee]=";
-            keyStr = "codebase=";
-            reg = keyReg + "[^, ;]*";
-            pattern = Pattern.compile(reg);
-            matcher = pattern.matcher(source);
-            left = new StringBuilder();
-            while (matcher.find()) {
-                String matched = matcher.group();
-                target.append(matched.replaceFirst(keyReg, keyStr));
-                target.append("  ");
-
-                // delete the matched sequence
-                matcher.appendReplacement(left, "");
-            }
-            matcher.appendTail(left);
-            source = left;
 
             // convert the rest to lower-case characters
-            target.append(source.toString().toLowerCase(Locale.ENGLISH));
-
-            return target.toString();
+            return String.valueOf(args.toLowerCase(Locale.ENGLISH));
         }
 
         return null;
