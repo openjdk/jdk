@@ -406,17 +406,17 @@ public class BufferedReader extends Reader {
     }
 
     /**
-     * Reads all lines of text. A line is considered to be terminated by any
-     * one of a line feed ('\n'), a carriage return ('\r'), a carriage return
-     * followed immediately by a line feed, or by reaching the end-of-file
-     * (EOF).
+     * Reads all remaining lines of text. A line is considered to be terminated
+     * by any one of a line feed ('\n'), a carriage return ('\r'), a carriage
+     * return followed immediately by a line feed, or by reaching the
+     * end-of-file (EOF).
      *
      * <p> This method works as if invoking it were equivalent to evaluating
      * the expression:
      * <blockquote>{@link #lines()}.toList()</blockquote>
      *
      * @apiNote
-     * <p> This method is intended for simple cases where it is convenient
+     * This method is intended for simple cases where it is convenient
      * to read all lines in a single operation. It is not intended for
      * reading a large number of lines.
      *
@@ -435,7 +435,7 @@ public class BufferedReader extends Reader {
     }
 
     /**
-     * Reads all characters into a string.
+     * Reads all remaining charactersinto a string.
      *
      * <p> This method reads all content including the line separators in
      * the middle and/or at the end. The resulting string will contain line
@@ -456,7 +456,7 @@ public class BufferedReader extends Reader {
      *
      * @since 25
      */
-    public  String readString() throws IOException {
+    public String readString() throws IOException {
         StringBuilder result = new StringBuilder();
         char[] str = new char[DEFAULT_BUFFER_SIZE];
         int n;
