@@ -34,7 +34,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/nativeCallStack.hpp"
-#include "utilities/staticArea.hpp"
+#include "utilities/stableValue.hpp"
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
                     NativeCallStack(0) : FAKE_CALLSTACK)
@@ -314,7 +314,7 @@ class MemTracker : AllStatic {
   // Tracking level
   static NMT_TrackingLevel   _tracking_level;
   // Stored baseline
-  static StaticArea<MemBaseline>      _baseline;
+  static StableValue<MemBaseline>      _baseline;
 };
 
 #endif // SHARE_NMT_MEMTRACKER_HPP

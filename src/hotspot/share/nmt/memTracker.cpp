@@ -41,6 +41,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/stableValue.hpp"
 #include "utilities/vmError.hpp"
 
 #ifdef _WINDOWS
@@ -49,7 +50,7 @@
 
 NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 
-StaticArea<MemBaseline> MemTracker::_baseline;
+StableValue<MemBaseline> MemTracker::_baseline;
 
 bool MemTracker::NmtVirtualMemoryLocker::_safe_to_use;
 

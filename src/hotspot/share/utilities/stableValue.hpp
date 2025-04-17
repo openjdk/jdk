@@ -22,45 +22,55 @@
 *
 */
 
-#ifndef SHARE_UTILITIES_STATICAREA_HPP
-#define SHARE_UTILITIES_STATICAREA_HPP
+#ifndef SHARE_UTILITIES_STABLEVALUE_HPP
+#define SHARE_UTILITIES_STABLEVALUE_HPP
+
+#include "globalDefinitions.hpp"
 
 #include <stddef.h>
 #include <stdint.h>
+#include <type_traits>
+
+// Pre-C++17 hack: Use  __builtin_launder when available.
+// Replace this with std::launder when we've upgraded.
+#if (defined(__GNUC__) || defined(__clang__))
+#define LAUNDER(X) __builtin_launder((X))
+#else
+#define LAUNDER(X) (X)
+#endif
 
 // A memory area with adequate size and alignment for storage of a T.
+// May be initialized exactly once.
 template<typename T>
-class alignas(alignof(T)) StaticArea {
-#ifdef ASSERT
-  static const uint32_t death_pattern = 0xBADDCAFE;
-#endif
-  char _mem[sizeof(T)];
+class StableValue {
+  union {
+    T _t;
+  };
 
-public:
-#ifdef ASSERT
-  StaticArea() {
-    uint32_t* d = reinterpret_cast<uint32_t*>(_mem);
-    for (size_t i = 0; i < sizeof(T) / sizeof(uint32_t); i++) {
-      d[i] = death_pattern;
-    }
-  }
-
-  bool is_death_pattern() {
-    uint32_t* d = reinterpret_cast<uint32_t*>(_mem);
-    for (size_t i = 0; i < sizeof(T) / sizeof(uint32_t); i++) {
-      if (d[i] != death_pattern) return false;
-    }
-    return true;
-  }
-#endif
+  DEBUG_ONLY(bool _initialized);
 
   T* as() {
-    return reinterpret_cast<T*>(this);
+    return LAUNDER(&this->_t);
   }
+
+public:
+  StableValue() {
+    DEBUG_ONLY(_initialized = false);
+  }
+
+  ~StableValue() {
+  }
+
   T* operator->() {
-    assert(!is_death_pattern(), "Potential access to uninitialized memory");
+    assert(_initialized, "must be initialized before access");
     return as();
+  }
+
+  template<typename... Ts>
+  void initialize(Ts&... args) {
+    DEBUG_ONLY(_initialized = true);
+    new (as()) T(args...);
   }
 };
 
-#endif // SHARE_UTILITIES_STATICAREA_HPP
+#endif // SHARE_UTILITIES_STABLEVALUE_HPP
