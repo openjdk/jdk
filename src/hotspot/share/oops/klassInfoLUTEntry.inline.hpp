@@ -70,32 +70,61 @@ inline unsigned KlassLUTEntry::ik_omb_offset_2() const {
 }
 
 // calculates word size given header size, element size, and array length
-template <bool is_objarray, class OopType, bool compact_headers>
-inline size_t KlassLUTEntry::ak_calculate_wordsize_given_oop_fast(oopDesc* obj) const {
+template <class OopType, bool compact_headers>
+inline size_t KlassLUTEntry::oak_calculate_wordsize_given_oop_fast(oopDesc* obj) const {
   // The purpose of this function is to hard-code as much as we can via template parameters.
-  assert(is_obj_array() == is_objarray, "Bad call");
-  assert(is_type_array() == !is_objarray, "Bad call");
-
+  assert(is_obj_array(), "Bad call");
+  assert(obj->is_objArray(), "Bad call");
   assert(sizeof(OopType) == 4 || sizeof(OopType) == 8, "Bad oop type");
-  constexpr int log2_oopsize = (sizeof(OopType) == 4 ? 2 : 3); // narrowOop or Oop
-  assert(UseCompressedOops == (log2_oopsize == 2),
-         "Bad call - UseCompressedOops mismatch (%d, %zu)", UseCompressedOops, sizeof(OopType));
 
+  // Only call for +UCCP and for standard ObjectAlignmentInBytes
   assert(UseCompressedClassPointers, "Bad call");
-  assert(UseCompactObjectHeaders == compact_headers, "Bad call - COH mismatch");
+  constexpr int obj_alignment = BytesPerWord;
+  assert(MinObjAlignmentInBytes == obj_alignment, "Bad call");
 
-  constexpr int alignment = BytesPerWord;
-  assert(MinObjAlignmentInBytes == alignment, "Bad call - alignment mismatch");
+  constexpr int log2_oopsize = (sizeof(OopType) == 4 ? 2 : 3); // narrowOop or Oop
+  assert(UseCompressedOops == (log2_oopsize == 2), "Bad call");
 
-  constexpr int length_field_offset = compact_headers ? 8 : 12;
-  const int first_element_offset = compact_headers ? ak_header_size() : 16;
-  const unsigned log2_elemsize = is_objarray ? log2_oopsize : ak_log2_elem_size();
+  assert(UseCompactObjectHeaders == compact_headers, "Bad call");
+  constexpr unsigned length_field_offset = compact_headers ? 8 : 12;
+  constexpr unsigned first_element_offset = align_up(length_field_offset + BytesPerInt, sizeof(OopType));
+  assert(first_element_offset == ak_header_size(), "sanity");
 
+  // Load length from object
   const unsigned* const array_len_addr = (unsigned*)(obj->field_addr<unsigned>(length_field_offset));
   const unsigned array_length = (size_t) (*array_len_addr);
 
-  const size_t size_in_bytes = (array_length << log2_elemsize) + first_element_offset;
-  return align_up(size_in_bytes, alignment) / HeapWordSize;
+  // Calculate size
+  const unsigned size_in_bytes = (array_length << log2_oopsize) + first_element_offset;
+  return align_up(size_in_bytes, obj_alignment) / HeapWordSize;
+}
+
+// calculates word size given header size, element size, and array length
+template <bool compact_headers>
+inline size_t KlassLUTEntry::tak_calculate_wordsize_given_oop_fast(oopDesc* obj) const {
+  // The purpose of this function is to hard-code as much as we can via template parameters.
+  assert(is_type_array(), "Bad call");
+  assert(obj->is_typeArray(), "Bad call");
+
+  // Only call for +UCCP and for standard ObjectAlignmentInBytes
+  assert(UseCompressedClassPointers, "Bad call");
+  constexpr int obj_alignment = BytesPerWord;
+  assert(MinObjAlignmentInBytes == obj_alignment, "Bad call");
+
+  const int log2_elemsize = ak_log2_elem_size();
+
+  assert(UseCompactObjectHeaders == compact_headers, "Bad call");
+  constexpr unsigned length_field_offset = compact_headers ? 8 : 12;
+  const unsigned first_element_offset = ak_header_size();
+
+  // Load length from object
+  const unsigned* const array_len_addr = (unsigned*)(obj->field_addr<unsigned>(length_field_offset));
+  const unsigned array_length = (size_t) (*array_len_addr);
+  assert(array_length == (unsigned)((typeArrayOop)obj)->length(), "sanity");
+
+  // Calculate size
+  const unsigned size_in_bytes = (array_length << log2_elemsize) + first_element_offset;
+  return align_up((size_t)size_in_bytes, obj_alignment) / HeapWordSize;
 }
 
 #endif // SHARE_OOPS_KLASSINFOLUTENTRY_INLINE_HPP

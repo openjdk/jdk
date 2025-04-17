@@ -230,9 +230,13 @@ public:
   // returns distance to first element
   inline unsigned ak_header_size() const { return _v.ake.hsz; }
 
-  // calculates word size given header size, element size, and array length
-  template <bool is_objarray, class OopType, bool compact_headers>
-  inline size_t ak_calculate_wordsize_given_oop_fast(oopDesc* obj) const;
+  // for an oak, calculates word size given header size, element size, and array length
+  template <class OopType, bool compact_headers>
+  inline size_t oak_calculate_wordsize_given_oop_fast(oopDesc* obj) const;
+
+  // for a tak, calculates word size given header size, element size, and array length
+  template <bool compact_headers>
+  inline size_t tak_calculate_wordsize_given_oop_fast(oopDesc* obj) const;
 
   // Helper function, prints current limits
   static void print_limits(outputStream* st);

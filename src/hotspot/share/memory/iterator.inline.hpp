@@ -112,17 +112,26 @@ protected:
   template <class KlassType, class OopType, bool compact_headers>
   static inline size_t calculate_size_for_object_fast(KlassLUTEntry klute, oop obj) {
     size_t s;
-    constexpr bool is_instance = KlassType::Kind < Klass::TypeArrayKlassKind;
-    if (is_instance) {
-      if (klute.ik_carries_infos()) {
-        s = klute.ik_wordsize();
-      } else {
-        // Rare path: size not statically computable (e.g. MirrorKlass); calculate using Klass
-        s = obj->size();
+    constexpr Klass::KlassKind kind = KlassType::Kind;
+    assert(kind == klute.kind(), "Bad call");
+    switch (kind) {
+      case Klass::ObjArrayKlassKind: {
+        s = klute.oak_calculate_wordsize_given_oop_fast<OopType, compact_headers>(obj);
+        break;
       }
-    } else {
-      constexpr bool is_objarray = KlassType::Kind == Klass::ObjArrayKlassKind;
-      s = klute.ak_calculate_wordsize_given_oop_fast<is_objarray, OopType, compact_headers>(obj);
+      case Klass::TypeArrayKlassKind: {
+        s = klute.tak_calculate_wordsize_given_oop_fast<compact_headers>(obj);
+        break;
+      }
+      default: {
+        // all InstanceKlass variants
+        if (klute.ik_carries_infos()) {
+          s = klute.ik_wordsize();
+        } else {
+          // Rare path: size not statically computable (e.g. for MirrorKlass instances); calculate using regular Klass
+          s = obj->size();
+        }
+      }
     }
     assert(s == obj->size(), "Unexpected size (klute %X, %zu vs %zu)",
            klute.value(), s, obj->size());
