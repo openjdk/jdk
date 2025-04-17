@@ -31,6 +31,10 @@
  */
 package build.tools.classlist;
 
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -46,8 +50,10 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.text.DateFormat;
 
+import static java.lang.foreign.ValueLayout.*;
 import static java.util.stream.Collectors.*;
 
 /**
@@ -59,6 +65,7 @@ public class HelloClasslist {
 
     private static final Logger LOGGER = Logger.getLogger("Hello");
 
+    @SuppressWarnings("restricted")
     public static void main(String ... args) throws Throwable {
 
         FileSystems.getDefault();
@@ -141,6 +148,7 @@ public class HelloClasslist {
         HelloClasslist.class.getMethod("staticMethod_V").invoke(null);
         var obj = HelloClasslist.class.getMethod("staticMethod_L_L", Object.class).invoke(null, instance);
         HelloClasslist.class.getField("field").get(instance);
+        MethodHandles.Lookup.ClassOption.class.getEnumConstants();
 
         // A selection of trivial and relatively common MH operations
         invoke(MethodHandles.identity(double.class), 1.0);
@@ -160,6 +168,9 @@ public class HelloClasslist {
             case B b -> b.b;
             default -> 17;
         };
+        // record run-time methods
+        o.equals(new B(5));
+        o.hashCode();
         LOGGER.log(Level.FINE, "Value: " + value);
 
         // The Striped64$Cell is loaded rarely only when there's a contention among
@@ -167,6 +178,16 @@ public class HelloClasslist {
         // an inconsistency in the classlist between builds (see JDK-8295951).
         // To avoid the problem, load the class explicitly.
         Class<?> striped64Class = Class.forName("java.util.concurrent.atomic.Striped64$Cell");
+
+        // Initialize FFM linkers
+        System.loadLibrary("java");
+        Linker linker = Linker.nativeLinker();
+        SymbolLookup lookup = SymbolLookup.loaderLookup();
+        var signature = FunctionDescriptor.of(ADDRESS,
+                ADDRESS, ADDRESS, ADDRESS,
+                JAVA_BOOLEAN, ADDRESS, ADDRESS);
+        Optional<MemorySegment> symbol = lookup.find("Java_java_lang_Class_forName0");
+        var _ = linker.downcallHandle(symbol.orElseThrow(), signature);
     }
 
     public HelloClasslist() {}

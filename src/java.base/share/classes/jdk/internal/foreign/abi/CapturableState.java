@@ -30,6 +30,7 @@ import jdk.internal.util.OperatingSystem;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,6 +43,11 @@ public enum CapturableState {
 
     public static final StructLayout LAYOUT = MemoryLayout.structLayout(
         supportedStates().map(CapturableState::layout).toArray(MemoryLayout[]::new));
+    public static final List<CapturableState> BY_ORDINAL = List.of(values());
+
+    static {
+        assert (BY_ORDINAL.size() < Integer.SIZE); // Update LinkerOptions.CaptureCallState
+    }
 
     private final String stateName;
     private final ValueLayout layout;
