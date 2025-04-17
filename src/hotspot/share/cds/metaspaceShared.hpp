@@ -67,8 +67,9 @@ class MetaspaceShared : AllStatic {
     ro = 1,  // read-only shared space
     bm = 2,  // relocation bitmaps (freed after file mapping is finished)
     hp = 3,  // heap region
+    ac = 4,  // aot code
     num_core_region = 2,       // rw and ro
-    n_regions = 4              // total number of regions
+    n_regions = 5              // total number of regions
   };
 
   static void preload_and_dump(TRAPS) NOT_CDS_RETURN;

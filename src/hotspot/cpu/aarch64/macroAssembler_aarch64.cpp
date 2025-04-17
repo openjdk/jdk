@@ -26,6 +26,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "ci/ciEnv.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
@@ -2157,7 +2158,7 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
 
   stp(rscratch1, rmethod, Address(pre(sp, -2 * wordSize)));
 
-  mov(rscratch1, entry_point);
+  mov(rscratch1, RuntimeAddress(entry_point));
   blr(rscratch1);
   if (retaddr)
     bind(*retaddr);
@@ -3234,9 +3235,12 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
 }
 
 void MacroAssembler::stop(const char* msg) {
-  BLOCK_COMMENT(msg);
+  const char* str = AOTCodeCache::add_C_string(msg);
+  BLOCK_COMMENT(str);
+  // load msg into r0 so we can access it from the signal handler
+  // ExternalAddress enables saving and restoring via the code cache
+  lea(c_rarg0, ExternalAddress((address) str));
   dcps1(0xdeae);
-  emit_int64((uintptr_t)msg);
 }
 
 void MacroAssembler::unimplemented(const char* what) {
