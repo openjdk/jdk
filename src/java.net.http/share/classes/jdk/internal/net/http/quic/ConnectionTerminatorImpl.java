@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,6 +133,9 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
     }
 
     void incomingStatelessReset() {
+        if (Log.errors()) {
+            Log.logError("{0}: stateless reset from peer", connection.logTag());
+        }
         final SilentTermination st = forSilentTermination("stateless reset from peer");
         terminate(st);
     }
