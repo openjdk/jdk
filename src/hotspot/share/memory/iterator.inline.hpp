@@ -357,7 +357,7 @@ class OopOopIterateDispatchReturnSize : public DispatchBase {
     }
 
     template <class KlassType, class OopType>
-    static size_t invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
+    static size_t invoke_slow(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
       KlassType::template oop_oop_iterate<OopType> (obj, cl, klute);
       return obj->size();
     }
@@ -382,9 +382,9 @@ class OopOopIterateDispatchReturnSize : public DispatchBase {
     void set_resolve_function() {
       if (should_use_slowpath_getsize()) {
         if (UseCompressedOops) {
-          _function[KlassType::Kind] = &invoke<KlassType, narrowOop>;
+          _function[KlassType::Kind] = &invoke_slow<KlassType, narrowOop>;
         } else {
-          _function[KlassType::Kind] = &invoke<KlassType, oop>;
+          _function[KlassType::Kind] = &invoke_slow<KlassType, oop>;
         }
       } else {
         if (UseCompressedOops) {
@@ -452,7 +452,7 @@ class OopOopIterateDispatchBoundedReturnSize : public DispatchBase {
     }
 
     template <class KlassType, class OopType>
-    static size_t invoke(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
+    static size_t invoke_slow(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
       KlassType::template oop_oop_iterate_bounded<OopType> (obj, cl, mr, klute);
       return obj->size();
     }
@@ -477,9 +477,9 @@ class OopOopIterateDispatchBoundedReturnSize : public DispatchBase {
     void set_resolve_function() {
       if (should_use_slowpath_getsize()) {
         if (UseCompressedOops) {
-          _function[KlassType::Kind] = &invoke<KlassType, narrowOop>;
+          _function[KlassType::Kind] = &invoke_slow<KlassType, narrowOop>;
         } else {
-          _function[KlassType::Kind] = &invoke<KlassType, oop>;
+          _function[KlassType::Kind] = &invoke_slow<KlassType, oop>;
         }
       } else {
         if (UseCompressedOops) {
