@@ -1942,21 +1942,30 @@ class MutableBigInteger {
             }
         } else {
             // Set up the initial estimate of the iteration.
-            // Determine an even valued right shift into unsigned long range.
-            int shift = bitLength - Long.SIZE;
-            shift += shift & 1;
+            // Determine a right shift that is a multiple of n into finite double range.
+            int shift = Math.max(0, bitLength - Double.MAX_EXPONENT);
+            int shiftExcess = shift % n;
 
-            // Shift the value into unsigned long range.
+            // Shift the value into finite double range
             r = new MutableBigInteger(this);
             r.rightShift(shift);
+            double base = r.toBigInteger().doubleValue();
+            // Complete the shift to a multiple of n,
+            // avoiding to lose more bits than necessary.
+            if (shiftExcess != 0) { 
+                int shiftLack = n - shiftExcess;
+                shift += shiftLack;
+                base /= Double.valueOf("0x1p" + shiftLack);
+            }
 
             // Use the root of the shifted value as an estimate.
-            final double base = Math.nextUp(r.toLong() + 0x1p64);
+            base = Math.nextUp(base);
             final double exp = Math.nextUp(1.0 / n);
-            r = new MutableBigInteger((long) Math.ceil(Math.nextUp(Math.pow(base, exp))));
+            final double rDouble = Math.ceil(Math.nextUp(Math.pow(base, exp)));
+            r = new MutableBigInteger(new BigDecimal(rDouble).toBigInteger().mag);
 
             // Shift the approximate root back into the original range.
-            r.leftShift(shift >> 1);
+            r.leftShift(shift / n);
         }
 
         // Refine the estimate.
@@ -1967,7 +1976,7 @@ class MutableBigInteger {
             if (rToN.compare(this) <= 0)
                 return r;
 
-            // compute ceil((rToN - this) / (n * rToN1))
+            // compute r - ceil((rToN - this) / (n * rToN1))
             MutableBigInteger delta = new MutableBigInteger();
             MutableBigInteger divisor = new MutableBigInteger(rToN1.multiply(n).mag);
             rToN.subtract(this);
