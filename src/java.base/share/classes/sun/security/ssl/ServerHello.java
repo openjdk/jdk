@@ -25,9 +25,6 @@
 
 package sun.security.ssl;
 
-import static sun.security.ssl.SignatureScheme.CERTIFICATE_SCOPE;
-import static sun.security.ssl.SignatureScheme.HANDSHAKE_SCOPE;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmConstraints;
@@ -273,22 +270,6 @@ final class ServerHello {
                         "Not resumption, and no new session is allowed");
                 }
 
-                if (shc.localSupportedSignAlgs == null) {
-                    shc.localSupportedSignAlgs =
-                        SignatureScheme.getSupportedAlgorithms(
-                                shc.sslConfig,
-                                shc.algorithmConstraints, shc.activeProtocols,
-                                HANDSHAKE_SCOPE);
-                }
-
-                if (shc.localSupportedCertSignAlgs == null) {
-                    shc.localSupportedCertSignAlgs =
-                            SignatureScheme.getSupportedAlgorithms(
-                                    shc.sslConfig,
-                                    shc.algorithmConstraints, shc.activeProtocols,
-                                    CERTIFICATE_SCOPE);
-                }
-
                 SSLSessionImpl session =
                         new SSLSessionImpl(shc, CipherSuite.C_NULL);
                 session.setMaximumPacketSize(shc.sslConfig.maximumPacketSize);
@@ -521,22 +502,6 @@ final class ServerHello {
                 if (!shc.sslConfig.enableSessionCreation) {
                     throw new SSLException(
                         "Not resumption, and no new session is allowed");
-                }
-
-                if (shc.localSupportedSignAlgs == null) {
-                    shc.localSupportedSignAlgs =
-                        SignatureScheme.getSupportedAlgorithms(
-                                shc.sslConfig,
-                                shc.algorithmConstraints, shc.activeProtocols,
-                                HANDSHAKE_SCOPE);
-                }
-
-                if (shc.localSupportedCertSignAlgs == null) {
-                    shc.localSupportedCertSignAlgs =
-                            SignatureScheme.getSupportedAlgorithms(
-                                    shc.sslConfig,
-                                    shc.algorithmConstraints, shc.activeProtocols,
-                                    CERTIFICATE_SCOPE);
                 }
 
                 SSLSessionImpl session =
@@ -966,6 +931,10 @@ final class ServerHello {
                     "Negotiated protocol version: " + serverVersion.name);
             }
 
+            // Protocol version is negotiated, update locally supported
+            // signature schemes according to the protocol being used.
+            SignatureScheme.updateHandshakeLocalSupportedAlgs(chc);
+
             // TLS 1.3 key share extension may have produced client
             // possessions for TLS 1.3 key exchanges.
             //
@@ -1016,6 +985,10 @@ final class ServerHello {
                 SSLLogger.fine(
                     "Negotiated protocol version: " + serverVersion.name);
             }
+
+            // Protocol version is negotiated, update locally supported
+            // signature schemes according to the protocol being used.
+            SignatureScheme.updateHandshakeLocalSupportedAlgs(chc);
 
             if (serverHello.serverRandom.isVersionDowngrade(chc)) {
                 throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
