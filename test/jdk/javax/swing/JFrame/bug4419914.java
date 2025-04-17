@@ -86,7 +86,6 @@ public class bug4419914 {
 
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
-                .title("Tab movement Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(45)
                 .testTimeOut(10)

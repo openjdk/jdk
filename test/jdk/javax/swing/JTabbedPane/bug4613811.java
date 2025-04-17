@@ -60,7 +60,6 @@ public class bug4613811 {
 
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
-                .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(30)
                 .testUI(bug4613811::createAndShowUI)
