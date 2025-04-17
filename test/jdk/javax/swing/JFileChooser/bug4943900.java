@@ -31,8 +31,8 @@
  */
 
 import java.io.File;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 import jtreg.SkippedException;
@@ -67,23 +67,18 @@ public class bug4943900 {
         PassFailJFrame.builder()
                 .title("bug4943900 Test Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows(20)
-                .columns(68)
                 .testUI(bug4943900::createAndShowUI)
+                .columns(68)
                 .build()
                 .awaitAndCheck();
     }
 
-    public static JFrame createAndShowUI() {
+    public static JComponent createAndShowUI() {
         JFileChooser fc = new JFileChooser();
         fc.setControlButtonsAreShown(false);
         TextFileFilter filter = new TextFileFilter();
         fc.setFileFilter(filter);
-
-        JFrame frame = new JFrame("JFileChooser bug4464774");
-        frame.add(fc);
-        frame.pack();
-        return frame;
+        return fc;
     }
 
     private static final class TextFileFilter extends FileFilter {

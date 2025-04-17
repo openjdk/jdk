@@ -33,7 +33,6 @@
  */
 
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.UIManager;
 
 public class bug4522756 {
@@ -51,22 +50,15 @@ public class bug4522756 {
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         PassFailJFrame.builder()
-                .title("Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows(12)
                 .columns(50)
-                .testUI(bug4522756::createAndShowUI)
+                .rows(12)
+                .testUI(() -> {
+                    JFileChooser jfc = new JFileChooser();
+                    jfc.setControlButtonsAreShown(false);
+                    return jfc;
+                })
                 .build()
                 .awaitAndCheck();
-    }
-
-    public static JFrame createAndShowUI() {
-        JFileChooser jfc = new JFileChooser();
-        jfc.setControlButtonsAreShown(false);
-
-        JFrame frame = new JFrame("JFileChooser bug4522756");
-        frame.add(jfc);
-        frame.pack();
-        return frame;
     }
 }

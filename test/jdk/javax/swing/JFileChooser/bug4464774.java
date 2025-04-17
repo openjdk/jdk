@@ -33,7 +33,6 @@
  */
 
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.UIManager;
 
 public class bug4464774 {
@@ -41,7 +40,7 @@ public class bug4464774 {
             Click any button from the buttons to the left
             ("Documents", "Desktop", "My Computer" etc.) in FileChooser dialog.
             When the button is toggled, it should be lowered and
-            should not have focus painted inside it (black dotted frame).
+            should NOT have focus painted inside it (black dotted frame).
 
             If the above is true, press PASS else FAIL.
             """;
@@ -49,22 +48,15 @@ public class bug4464774 {
     public static void main(String[] argv) throws Exception {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         PassFailJFrame.builder()
-                .title("JFileChooser Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows(10)
                 .columns(65)
-                .testUI(bug4464774::createAndShowUI)
+                .rows(10)
+                .testUI(() -> {
+                    JFileChooser jfc = new JFileChooser();
+                    jfc.setControlButtonsAreShown(false);
+                    return jfc;
+                })
                 .build()
                 .awaitAndCheck();
-    }
-
-    public static JFrame createAndShowUI() {
-        JFileChooser jfc = new JFileChooser();
-        jfc.setControlButtonsAreShown(false);
-
-        JFrame frame = new JFrame("JFileChooser bug4464774");
-        frame.add(jfc);
-        frame.pack();
-        return frame;
     }
 }
