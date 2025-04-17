@@ -1488,7 +1488,7 @@ void Assembler::addl(Register dst, Address src) {
 
 void Assembler::eaddl(Register dst, Register src1, Address src2, bool no_flags) {
   InstructionMark im(this);
-  evex_prefix_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, 0x03, no_flags);
+  evex_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, EVEX_32bit, 0x03, no_flags);
 }
 
 void Assembler::addl(Register dst, Register src) {
@@ -1725,7 +1725,7 @@ void Assembler::andl(Register dst, Address src) {
 
 void Assembler::eandl(Register dst, Register src1, Address src2, bool no_flags) {
   InstructionMark im(this);
-  evex_prefix_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, 0x23, no_flags);
+  evex_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, EVEX_32bit, 0x23, no_flags);
 }
 
 void Assembler::andl(Register dst, Register src) {
@@ -2699,7 +2699,7 @@ void Assembler::imull(Register dst, Address src) {
 
 void Assembler::eimull(Register dst, Register src1, Address src2, bool no_flags) {
   InstructionMark im(this);
-  evex_prefix_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, (unsigned char)0xAF, no_flags, true /* is_map1 */);
+  evex_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, EVEX_32bit, (unsigned char)0xAF, no_flags, true /* is_map1 */);
 }
 
 void Assembler::incl(Address dst) {
@@ -4613,7 +4613,7 @@ void Assembler::orl(Register dst, Address src) {
 
 void Assembler::eorl(Register dst, Register src1, Address src2, bool no_flags) {
   InstructionMark im(this);
-  evex_prefix_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, 0x0B, no_flags);
+  evex_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, EVEX_32bit, 0x0B, no_flags);
 }
 
 void Assembler::orl(Register dst, Register src) {
@@ -7278,7 +7278,7 @@ void Assembler::subl(Register dst, Address src) {
 
 void Assembler::esubl(Register dst, Register src1, Address src2, bool no_flags) {
   InstructionMark im(this);
-  evex_prefix_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, 0x2B, no_flags);
+  evex_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, EVEX_32bit, 0x2B, no_flags);
 }
 
 void Assembler::subl(Register dst, Register src) {
@@ -7603,7 +7603,7 @@ void Assembler::xorl(Register dst, Address src) {
 
 void Assembler::exorl(Register dst, Register src1, Address src2, bool no_flags) {
   InstructionMark im(this);
-  evex_prefix_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, 0x33, no_flags);
+  evex_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, EVEX_32bit, 0x33, no_flags);
 }
 
 void Assembler::xorl(Register dst, Register src) {
@@ -7644,7 +7644,7 @@ void Assembler::xorb(Register dst, Address src) {
 
 void Assembler::exorb(Register dst, Register src1, Address src2, bool no_flags) {
   InstructionMark im(this);
-  evex_prefix_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, 0x32, no_flags, false /* is_map1 */, EVEX_8bit);
+  evex_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, EVEX_8bit, 0x32, no_flags);
 }
 
 void Assembler::xorb(Address dst, Register src) {
@@ -7673,7 +7673,7 @@ void Assembler::xorw(Register dst, Address src) {
 
 void Assembler::exorw(Register dst, Register src1, Address src2, bool no_flags) {
   InstructionMark im(this);
-  evex_prefix_ndd_and_int8(dst, src1, src2, VEX_SIMD_66, VEX_OPCODE_0F_3C, 0x33, no_flags, false /* is_map1 */, EVEX_16bit);
+  evex_ndd_and_int8(dst, src1, src2, VEX_SIMD_66, VEX_OPCODE_0F_3C, EVEX_16bit, 0x33, no_flags);
 }
 
 // AVX 3-operands scalar float-point arithmetic instructions
@@ -13643,34 +13643,29 @@ void Assembler::evex_prefix_ndd(Address adr, int ndd_enc, int xreg_enc, VexSimdP
   vex_prefix(adr, ndd_enc, xreg_enc, pre, opc, attributes, /* nds_is_ndd */ true, no_flags);
 }
 
-void Assembler::evex_prefix_ndd_and_int8_common(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc, int b1, bool no_flags, int input_size_in_bits, bool vex_w) {
+void Assembler::evex_ndd_and_int8(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc, int input_size_in_bits, int b1, bool no_flags, bool is_map1) {
+  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
+    if (input_size_in_bits == EVEX_64bit) {
+      emit_prefix_and_int8(get_prefixq(src2, dst, is_map1), b1);
+    }
+    else {
+      // For 32-bit, 16-bit and 8-bit
+      if (input_size_in_bits == EVEX_16bit) {
+        emit_int8(0x66);
+      }
+      prefix(src2, dst, false, is_map1);
+      emit_int8(b1);
+    }
+    emit_operand(dst, src2, 0);
+    return;
+  }
+
+  bool vex_w = (input_size_in_bits == EVEX_64bit) ? true : false;
   InstructionAttr attributes(AVX_128bit, vex_w, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_address_attributes(/* tuple_type */ EVEX_NOSCALE, input_size_in_bits);
   evex_prefix_ndd(src2, dst->encoding(), src1->encoding(), pre, opc, &attributes, no_flags);
   emit_int8(b1);
   emit_operand(src1, src2, 0);
-}
-
-void Assembler::evex_prefix_ndd_and_int8(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc, int b1, bool no_flags, bool is_map1, int input_size_in_bits) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
-    if (input_size_in_bits == EVEX_16bit) {
-      emit_int8(0x66);
-    }
-    prefix(src2, dst, false, is_map1);
-    emit_int8(b1);
-    emit_operand(dst, src2, 0);
-    return;
-  }
-  evex_prefix_ndd_and_int8_common(dst, src1, src2, pre, opc, b1, no_flags, input_size_in_bits, /* vex_w */ false);
-}
-
-void Assembler::evex_prefixq_ndd_and_int8(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc, int b1, bool no_flags, bool is_map1) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
-    emit_prefix_and_int8(get_prefixq(src2, dst, is_map1), b1);
-    emit_operand(dst, src2, 0);
-    return;
-  }
-  evex_prefix_ndd_and_int8_common(dst, src1, src2, pre, opc, b1, no_flags, EVEX_64bit, /* vex_w */ true);
 }
 
 void Assembler::evex_prefix_nf(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags) {
@@ -15298,7 +15293,7 @@ void Assembler::addq(Register dst, Address src) {
 
 void Assembler::eaddq(Register dst, Register src1, Address src2, bool no_flags) {
   InstructionMark im(this);
-  evex_prefixq_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, 0x03, no_flags);
+  evex_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, EVEX_64bit, 0x03, no_flags);
 }
 
 void Assembler::addq(Register dst, Register src) {
@@ -15397,7 +15392,7 @@ void Assembler::andq(Register dst, Address src) {
 
 void Assembler::eandq(Register dst, Register src1, Address src2, bool no_flags) {
   InstructionMark im(this);
-  evex_prefixq_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, 0x23, no_flags);
+  evex_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, EVEX_64bit, 0x23, no_flags);
 }
 
 void Assembler::andq(Register dst, Register src) {
@@ -15882,7 +15877,7 @@ void Assembler::eimulq(Register dst, Address src, bool no_flags) {
 
 void Assembler::eimulq(Register dst, Register src1, Address src2, bool no_flags) {
   InstructionMark im(this);
-  evex_prefixq_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, (unsigned char)0xAF, no_flags, true /* is_map1 */);
+  evex_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, EVEX_64bit, (unsigned char)0xAF, no_flags, true /* is_map1 */);
 }
 
 void Assembler::incl(Register dst) {
@@ -16301,7 +16296,7 @@ void Assembler::orq(Register dst, Address src) {
 
 void Assembler::eorq(Register dst, Register src1, Address src2, bool no_flags) {
   InstructionMark im(this);
-  evex_prefixq_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, 0x0B, no_flags);
+  evex_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, EVEX_64bit, 0x0B, no_flags);
 }
 
 void Assembler::orq(Register dst, Register src) {
@@ -16986,7 +16981,7 @@ void Assembler::subq(Register dst, Address src) {
 
 void Assembler::esubq(Register dst, Register src1, Address src2, bool no_flags) {
   InstructionMark im(this);
-  evex_prefixq_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, 0x2B, no_flags);
+  evex_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, EVEX_64bit, 0x2B, no_flags);
 }
 
 void Assembler::subq(Register dst, Register src) {
@@ -17075,7 +17070,7 @@ void Assembler::xorq(Register dst, Address src) {
 
 void Assembler::exorq(Register dst, Register src1, Address src2, bool no_flags) {
   InstructionMark im(this);
-  evex_prefixq_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, 0x33, no_flags);
+  evex_ndd_and_int8(dst, src1, src2, VEX_SIMD_NONE, VEX_OPCODE_0F_3C, EVEX_64bit, 0x33, no_flags);
 }
 
 void Assembler::xorq(Register dst, int32_t imm32) {
