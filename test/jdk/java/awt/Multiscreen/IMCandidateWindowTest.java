@@ -72,7 +72,7 @@ public class IMCandidateWindowTest {
         }
 
         String INSTRUCTIONS = """
-                Platform: windows
+                This test is for windows
                 Test requirements: installed support for asian languages
                 Chinese (PRC) w/ Chinese QuanPing input method.
                 Multiscreen environment where one of the monitors has negative coords
@@ -84,7 +84,6 @@ public class IMCandidateWindowTest {
                 screen, press FAIL button""";
 
         PassFailJFrame.builder()
-                .title("IMCandidateWindowTest Instruction")
                 .instructions(INSTRUCTIONS)
                 .columns(40)
                 .testUI(IMCandidateWindowTest::createUI)

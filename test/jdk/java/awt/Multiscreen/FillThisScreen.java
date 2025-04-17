@@ -83,7 +83,6 @@ public class FillThisScreen {
                 screens), the test passes else it fails.""";
 
         PassFailJFrame.builder()
-                .title("FillThisScreen Test Instruction")
                 .instructions(INSTRUCTIONS)
                 .columns(40)
                 .testUI(FillThisScreen::init)

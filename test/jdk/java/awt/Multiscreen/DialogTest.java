@@ -59,9 +59,9 @@ import jtreg.SkippedException;
 public class DialogTest {
     static GraphicsDevice[] gds;
 
-    Frame f;
-    Frame dummyFrame = new Frame();
-    Dialog dummyDialog = new Dialog(dummyFrame);
+    private static Frame f;
+    private static Frame dummyFrame = new Frame();
+    private static Dialog dummyDialog = new Dialog(dummyFrame);
 
     public static void main(String[] args) throws Exception {
         gds = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
@@ -91,19 +91,16 @@ public class DialogTest {
                 If Dialogs appear on the wrong screen or don't behave in
                 proper modality, press Fail.""";
 
-        DialogTest obj = new DialogTest();
-
         PassFailJFrame.builder()
-                .title("DialogTest Instruction")
                 .instructions(INSTRUCTIONS)
                 .columns(40)
                 .logArea(5)
-                .testUI(obj::init)
+                .testUI(DialogTest::init)
                 .build()
                 .awaitAndCheck();
     }
 
-    public Frame init() {
+    public static Frame init() {
         PassFailJFrame.log(gds.length + " screens detected.");
         f = new Frame("DialogTest UI");
         f.setSize(400, 400);
@@ -146,21 +143,21 @@ public class DialogTest {
         return f;
     }
 
-    class MyScrollPane extends ScrollPane {
+    static class MyScrollPane extends ScrollPane {
         @Override
         public Dimension getPreferredSize() {
             return f.getSize();
         }
     }
 
-    class MyButton extends Button {
+    static class MyButton extends Button {
         public MyButton(DialogInfo info) {
             setLabel(info.toString());
             addActionListener(new PutupDialog(info));
         }
     }
 
-    class PutupDialog implements ActionListener {
+    static class PutupDialog implements ActionListener {
         DialogInfo info;
 
         public PutupDialog(DialogInfo info) {
@@ -175,7 +172,7 @@ public class DialogTest {
         }
     }
 
-    class DialogInfo {
+    static class DialogInfo {
         int num;
         boolean modal;
         boolean frameOwned;
