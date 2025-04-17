@@ -269,13 +269,14 @@ static void print_klass_name(outputStream *os, Symbol *klass) {
 }
 
 // Prints the name of the method that is described at constant pool
-// index cp_index in the constant pool of method 'method'.
-static void print_method_name(outputStream *os, Method* method, int cp_index, Bytecodes::Code bc) {
+// cache index 'which' for the constant pool of method 'method'.
+static void print_method_name(outputStream *os, Method* method, int which, Bytecodes::Code bc) {
   ResourceMark rm;
   ConstantPool* cp  = method->constants();
-  Symbol* klass     = cp->klass_ref_at_noresolve(cp_index, bc);
-  Symbol* name      = cp->name_ref_at(cp_index, bc);
-  Symbol* signature = cp->signature_ref_at(cp_index, bc);
+  FMReference ref(cp, which, bc);
+  Symbol* klass     = ref.klass_name(cp);
+  Symbol* name      = ref.name(cp);
+  Symbol* signature = ref.signature(cp);
 
   print_klass_name(os, klass);
   os->print(".%s(", name->as_C_string());
@@ -285,20 +286,23 @@ static void print_method_name(outputStream *os, Method* method, int cp_index, By
 }
 
 // Prints the name of the field that is described at constant pool
-// index cp_index in the constant pool of method 'method'.
-static void print_field_and_class(outputStream *os, Method* method, int cp_index, Bytecodes::Code bc) {
+// cache index 'which' for the constant pool of method 'method'.
+static void print_field_and_class(outputStream *os, Method* method, int which, Bytecodes::Code bc) {
   ResourceMark rm;
   ConstantPool* cp = method->constants();
-  Symbol* klass    = cp->klass_ref_at_noresolve(cp_index, bc);
-  Symbol *name     = cp->name_ref_at(cp_index, bc);
+  FMReference ref(cp, which, bc);
+  Symbol* klass    = ref.klass_name(cp);
+  Symbol* name     = ref.name(cp);
   print_klass_name(os, klass);
   os->print(".%s", name->as_C_string());
 }
 
 // Returns the name of the field that is described at constant pool
-// index cp_index in the constant pool of method 'method'.
-static char const* get_field_name(Method* method, int cp_index, Bytecodes::Code bc) {
-  Symbol* name = method->constants()->name_ref_at(cp_index, bc);
+// cache index 'which' for the constant pool of method 'method'.
+static char const* get_field_name(Method* method, int which, Bytecodes::Code bc) {
+  ConstantPool* cp = method->constants();
+  FMReference ref(cp, which, bc);
+  Symbol* name = ref.name(cp);
   return name->as_C_string();
 }
 
@@ -967,11 +971,10 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
     case Bytecodes::_getstatic:
     case Bytecodes::_getfield: {
       // Find out the type of the field accessed.
-      int cp_index = Bytes::get_native_u2(code_base + pos);
+      int which = Bytes::get_native_u2(code_base + pos);
       ConstantPool* cp = _method->constants();
-      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
-      int type_index = cp->signature_ref_index_at(name_and_type_index);
-      Symbol* signature = cp->symbol_at(type_index);
+      FMReference ref(cp, which, code);
+      Symbol* signature = ref.signature(cp);
       // Simulate the bytecode: pop the address, push the 'value' loaded
       // from the field.
       stack->pop(1 - Bytecodes::depth(code));
@@ -981,11 +984,10 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
 
     case Bytecodes::_putstatic:
     case Bytecodes::_putfield: {
-      int cp_index = Bytes::get_native_u2(code_base + pos);
+      int which = Bytes::get_native_u2(code_base + pos);
       ConstantPool* cp = _method->constants();
-      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
-      int type_index = cp->signature_ref_index_at(name_and_type_index);
-      Symbol* signature = cp->symbol_at(type_index);
+      FMReference ref(cp, which, code);
+      Symbol* signature = ref.signature(cp);
       BasicType bt = Signature::basic_type(signature);
       stack->pop(type2size[bt] - Bytecodes::depth(code) - 1);
       break;
@@ -997,17 +999,16 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
     case Bytecodes::_invokeinterface:
     case Bytecodes::_invokedynamic: {
       ConstantPool* cp = _method->constants();
-      int cp_index;
+      int which;
 
       if (code == Bytecodes::_invokedynamic) {
-        cp_index = ((int) Bytes::get_native_u4(code_base + pos));
+        which = ((int) Bytes::get_native_u4(code_base + pos));
       } else {
-        cp_index = Bytes::get_native_u2(code_base + pos);
+        which = Bytes::get_native_u2(code_base + pos);
       }
 
-      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
-      int type_index = cp->signature_ref_index_at(name_and_type_index);
-      Symbol* signature = cp->symbol_at(type_index);
+      RawReference ref(cp, which, code);  // method or indy
+      Symbol* signature = ref.signature(cp);
 
       if ((code != Bytecodes::_invokestatic) && (code != Bytecodes::_invokedynamic)) {
         // Pop receiver.
@@ -1131,29 +1132,26 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
     case Bytecodes::_dastore:
       return 3;
     case Bytecodes::_putfield: {
-        int cp_index = Bytes::get_native_u2(code_base + pos);
+        int which = Bytes::get_native_u2(code_base + pos);
         ConstantPool* cp = _method->constants();
-        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
-        int type_index = cp->signature_ref_index_at(name_and_type_index);
-        Symbol* signature = cp->symbol_at(type_index);
+        FMReference ref(cp, which, code);
+        Symbol* signature = ref.signature(cp);
         BasicType bt = Signature::basic_type(signature);
         return type2size[bt];
       }
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokeinterface: {
-        int cp_index = Bytes::get_native_u2(code_base+ pos);
+        int which = Bytes::get_native_u2(code_base + pos);
         ConstantPool* cp = _method->constants();
-        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
-        int name_index = cp->name_ref_index_at(name_and_type_index);
-        Symbol* name = cp->symbol_at(name_index);
+        FMReference ref(cp, which, code);
+        Symbol* signature = ref.signature(cp);
+        Symbol* name      = ref.name(cp);
 
         // Assume the call of a constructor can never cause a NullPointerException
         // (which is true in Java). This is mainly used to avoid generating wrong
         // messages for NullPointerExceptions created explicitly by new in Java code.
         if (name != vmSymbols::object_initializer_name()) {
-          int     type_index = cp->signature_ref_index_at(name_and_type_index);
-          Symbol* signature  = cp->symbol_at(type_index);
           // The 'this' parameter was null. Return the slot of it.
           return ArgumentSizeComputer(signature).size();
         } else {
@@ -1325,8 +1323,8 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
     }
 
     case Bytecodes::_getstatic: {
-      int cp_index = Bytes::get_native_u2(code_base + pos);
-      print_field_and_class(os, _method, cp_index, code);
+      int which = Bytes::get_native_u2(code_base + pos);
+      print_field_and_class(os, _method, which, code);
       return true;
     }
 
@@ -1336,8 +1334,8 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
       if (print_NPE_cause0(os, source_bci, 0, max_detail - 1, inner_expr)) {
         os->print(".");
       }
-      int cp_index = Bytes::get_native_u2(code_base + pos);
-      os->print("%s", get_field_name(_method, cp_index, code));
+      int which = Bytes::get_native_u2(code_base + pos);
+      os->print("%s", get_field_name(_method, which, code));
       return true;
     }
 
@@ -1345,11 +1343,11 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokestatic:
     case Bytecodes::_invokeinterface: {
-      int cp_index = Bytes::get_native_u2(code_base + pos);
+      int which = Bytes::get_native_u2(code_base + pos);
       if (max_detail == _max_cause_detail && !inner_expr) {
         os->print(" because the return value of \"");
       }
-      print_method_name(os, _method, cp_index, code);
+      print_method_name(os, _method, which, code);
       return true;
     }
 
@@ -1413,23 +1411,19 @@ void ExceptionMessageBuilder::print_NPE_failed_action(outputStream *os, int bci)
     case Bytecodes::_monitorexit:
       os->print("Cannot exit synchronized block"); break;
     case Bytecodes::_getfield: {
-        int cp_index = Bytes::get_native_u2(code_base + pos);
-        ConstantPool* cp = _method->constants();
-        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
-        int name_index = cp->name_ref_index_at(name_and_type_index);
-        Symbol* name = cp->symbol_at(name_index);
-        os->print("Cannot read field \"%s\"", name->as_C_string());
+        int which = Bytes::get_native_u2(code_base + pos);
+        os->print("Cannot read field \"%s\"", get_field_name(_method, which, code));
       } break;
     case Bytecodes::_putfield: {
-        int cp_index = Bytes::get_native_u2(code_base + pos);
-        os->print("Cannot assign field \"%s\"", get_field_name(_method, cp_index, code));
+        int which = Bytes::get_native_u2(code_base + pos);
+        os->print("Cannot assign field \"%s\"", get_field_name(_method, which, code));
       } break;
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokeinterface: {
-        int cp_index = Bytes::get_native_u2(code_base+ pos);
+        int which = Bytes::get_native_u2(code_base+ pos);
         os->print("Cannot invoke \"");
-        print_method_name(os, _method, cp_index, code);
+        print_method_name(os, _method, which, code);
         os->print("\"");
       } break;
 

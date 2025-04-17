@@ -195,7 +195,7 @@ class ClassFileParser {
   // precomputed flags
   bool _has_finalizer;
   bool _has_empty_finalizer;
-  int _max_bootstrap_specifier_index;  // detects BSS values
+  int _max_bsm_attribute_index;  // detects indexes into the BootstrapMethods attr
 
   void parse_stream(const ClassFileStream* const stream, TRAPS);
 

@@ -133,8 +133,10 @@ void ConstantPool::deallocate_contents(ClassLoaderData* loader_data) {
   MetadataFactory::free_array<Klass*>(loader_data, resolved_klasses());
   set_resolved_klasses(nullptr);
 
-  MetadataFactory::free_array<jushort>(loader_data, operands());
-  set_operands(nullptr);
+  MetadataFactory::free_array<u4>(loader_data, bsm_attribute_offsets());
+  MetadataFactory::free_array<u2>(loader_data, bsm_attribute_entries());
+  set_bsm_attribute_offsets(nullptr);
+  set_bsm_attribute_entries(nullptr);
 
   release_C_heap_structures();
 
@@ -154,7 +156,8 @@ void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_tags, MetaspaceClosure::_writable);
   it->push(&_cache);
   it->push(&_pool_holder);
-  it->push(&_operands);
+  it->push(&_bsm_attribute_offsets);
+  it->push(&_bsm_attribute_entries);
   it->push(&_resolved_klasses, MetaspaceClosure::_writable);
 
   for (int i = 0; i < length(); i++) {
@@ -241,7 +244,7 @@ void ConstantPool::allocate_resolved_klasses(ClassLoaderData* loader_data, int n
   // entry for the class's name. So at most we will have 0xfffe class entries.
   // This allows us to use 0xffff (ConstantPool::_temp_resolved_klass_index) to indicate
   // UnresolvedKlass entries that are temporarily created during class redefinition.
-  assert(num_klasses < CPKlassSlot::_temp_resolved_klass_index, "sanity");
+  assert(num_klasses < KlassReference::_temp_resolved_klass_index, "sanity");
   assert(resolved_klasses() == nullptr, "sanity");
   Array<Klass*>* rk = MetadataFactory::new_array<Klass*>(loader_data, num_klasses, CHECK);
   set_resolved_klasses(rk);
@@ -274,10 +277,8 @@ void ConstantPool::initialize_unresolved_klasses(ClassLoaderData* loader_data, T
 // Hidden class support:
 void ConstantPool::klass_at_put(int class_index, Klass* k) {
   assert(k != nullptr, "must be valid klass");
-  CPKlassSlot kslot = klass_slot_at(class_index);
-  int resolved_klass_index = kslot.resolved_klass_index();
-  Klass** adr = resolved_klasses()->adr_at(resolved_klass_index);
-  Atomic::release_store(adr, k);
+  KlassReference kref(this, class_index);
+  resolved_klass_release_at_put(kref.resolved_klass_index(), k);
 
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* non-null, so we need hardware store ordering here.
@@ -293,14 +294,14 @@ void ConstantPool::iterate_archivable_resolved_references(Function function) {
     if (indy_entries != nullptr) {
       for (int i = 0; i < indy_entries->length(); i++) {
         ResolvedIndyEntry *rie = indy_entries->adr_at(i);
+        BSMAttributeEntry *bsme = rie->bsme(this);
         if (rie->is_resolved() && AOTConstantPoolResolver::is_resolution_deterministic(this, rie->constant_pool_index())) {
           int rr_index = rie->resolved_references_index();
           assert(resolved_reference_at(rr_index) != nullptr, "must exist");
           function(rr_index);
 
           // Save the BSM as well (sometimes the JIT looks up the BSM it for replay)
-          int indy_cp_index = rie->constant_pool_index();
-          int bsm_mh_cp_index = bootstrap_method_ref_index_at(indy_cp_index);
+          int bsm_mh_cp_index = bsme->bootstrap_method_index();
           int bsm_rr_index = cp_to_object_index(bsm_mh_cp_index);
           assert(resolved_reference_at(bsm_rr_index) != nullptr, "must exist");
           function(bsm_rr_index);
@@ -588,7 +589,8 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
   }
 
   if (!can_archive) {
-    int resolved_klass_index = klass_slot_at(cp_index).resolved_klass_index();
+    KlassReference kref(this, cp_index);
+    int resolved_klass_index = kref.resolved_klass_index();
     resolved_klasses()->at_put(resolved_klass_index, nullptr);
     tag_at_put(cp_index, JVM_CONSTANT_UnresolvedClass);
   }
@@ -657,18 +659,18 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
                                    TRAPS) {
   JavaThread* javaThread = THREAD;
 
-  // A resolved constantPool entry will contain a Klass*, otherwise a Symbol*.
-  // It is not safe to rely on the tag bit's here, since we don't have a lock, and
-  // the entry and tag is not updated atomically.
-  CPKlassSlot kslot = this_cp->klass_slot_at(cp_index);
-  int resolved_klass_index = kslot.resolved_klass_index();
-  int name_index = kslot.name_index();
-  assert(this_cp->tag_at(name_index).is_symbol(), "sanity");
+  // It should be safe to rely on the tag here, since the tag is updated
+  // *after* the resolved_klasses entry is updated.  Both tag and RK entry
+  // are read and written with appropriate acquires and releases.
+  KlassReference kref(this_cp, cp_index);
 
   // The tag must be JVM_CONSTANT_Class in order to read the correct value from
   // the unresolved_klasses() array.
-  if (this_cp->tag_at(cp_index).is_klass()) {
-    Klass* klass = this_cp->resolved_klasses()->at(resolved_klass_index);
+  if (kref.is_resolved()) {
+    Klass* klass = kref.resolved_klass(this_cp);
+    // We always publish the Klass* before updating the tag.
+    //FIXME: (8349405) This assert should be true.
+    //assert(klass != nullptr, "pointer must be published before caller reads");
     if (klass != nullptr) {
       return klass;
     }
@@ -690,7 +692,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
 
   HandleMark hm(THREAD);
   Handle mirror_handle;
-  Symbol* name = this_cp->symbol_at(name_index);
+  Symbol* name = kref.name(this_cp);
   Handle loader (THREAD, this_cp->pool_holder()->class_loader());
 
   Klass* k;
@@ -714,7 +716,8 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
     // If CHECK_NULL above doesn't return the exception, that means that
     // some other thread has beaten us and has resolved the class.
     // To preserve old behavior, we return the resolved class.
-    Klass* klass = this_cp->resolved_klasses()->at(resolved_klass_index);
+    // FIXME: (8349405) should probably be:  return kref.resolved_klass(this_cp);
+    Klass* klass = this_cp->resolved_klass_at_acquire(kref.resolved_klass_index());
     assert(klass != nullptr, "must be resolved if exception was cleared");
     return klass;
   }
@@ -724,8 +727,11 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
     trace_class_resolution(this_cp, k);
   }
 
-  Klass** adr = this_cp->resolved_klasses()->adr_at(resolved_klass_index);
-  Atomic::release_store(adr, k);
+  // The releasing store publishes any pending writes into the Klass
+  // object before the Klass pointer itself is published.
+  // This is matched elsewhere by an acquiring load.
+  this_cp->resolved_klass_release_at_put(kref.resolved_klass_index(), k);
+
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* stored in _resolved_klasses is non-null, so we need
   // hardware store ordering here.
@@ -738,7 +744,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   // We need to recheck exceptions from racing thread and return the same.
   if (old_tag == JVM_CONSTANT_UnresolvedClassInError) {
     // Remove klass.
-    this_cp->resolved_klasses()->at_put(resolved_klass_index, nullptr);
+    this_cp->resolved_klasses()->at_put(kref.resolved_klass_index(), nullptr);
     throw_resolution_error(this_cp, cp_index, CHECK_NULL);
   }
 
@@ -751,21 +757,18 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
 // instanceof operations. Returns null if the class has not been loaded or
 // if the verification of constant pool failed
 Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int which) {
-  CPKlassSlot kslot = this_cp->klass_slot_at(which);
-  int resolved_klass_index = kslot.resolved_klass_index();
-  int name_index = kslot.name_index();
-  assert(this_cp->tag_at(name_index).is_symbol(), "sanity");
+  KlassReference kref(this_cp, which);
 
-  if (this_cp->tag_at(which).is_klass()) {
-    Klass* k = this_cp->resolved_klasses()->at(resolved_klass_index);
+  if (kref.tag().is_klass()) {
+    Klass* k = kref.resolved_klass(this_cp);
     assert(k != nullptr, "should be resolved");
     return k;
-  } else if (this_cp->tag_at(which).is_unresolved_klass_in_error()) {
+  } else if (kref.tag().is_unresolved_klass_in_error()) {
     return nullptr;
   } else {
     Thread* current = Thread::current();
     HandleMark hm(current);
-    Symbol* name = this_cp->symbol_at(name_index);
+    Symbol* name = kref.name(this_cp);
     oop loader = this_cp->pool_holder()->class_loader();
     Handle h_loader (current, loader);
     Klass* k = SystemDictionary::find_instance_klass(current, name, h_loader);
@@ -829,11 +832,16 @@ bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cp
 }
 
 // Translate index, which could be CPCache index or Indy index, to a constant pool index
-int ConstantPool::to_cp_index(int index, Bytecodes::Code code) {
+int ConstantPool::to_cp_index(int index, Bytecodes::Code code) const {
   assert(cache() != nullptr, "'index' is a rewritten index so this class must have been rewritten");
   switch(code) {
     case Bytecodes::_invokedynamic:
-      return invokedynamic_bootstrap_ref_index_at(index);
+      {
+        ResolvedIndyEntry* ie = cache()->resolved_indy_entry_at(index);
+        int cp_index = ie->constant_pool_index();
+        assert(tag_at(cp_index).has_bootstrap(), "index contains symbolic ref");
+        return cp_index;
+      }
     case Bytecodes::_getfield:
     case Bytecodes::_getstatic:
     case Bytecodes::_putfield:
@@ -876,42 +884,6 @@ bool ConstantPool::is_resolved(int index, Bytecodes::Code code) {
   }
 }
 
-u2 ConstantPool::uncached_name_and_type_ref_index_at(int cp_index)  {
-  if (tag_at(cp_index).has_bootstrap()) {
-    u2 pool_index = bootstrap_name_and_type_ref_index_at(cp_index);
-    assert(tag_at(pool_index).is_name_and_type(), "");
-    return pool_index;
-  }
-  assert(tag_at(cp_index).is_field_or_method(), "Corrupted constant pool");
-  assert(!tag_at(cp_index).has_bootstrap(), "Must be handled above");
-  jint ref_index = *int_at_addr(cp_index);
-  return extract_high_short_from_int(ref_index);
-}
-
-u2 ConstantPool::name_and_type_ref_index_at(int index, Bytecodes::Code code) {
-  return uncached_name_and_type_ref_index_at(to_cp_index(index, code));
-}
-
-constantTag ConstantPool::tag_ref_at(int which, Bytecodes::Code code) {
-  // which may be either a Constant Pool index or a rewritten index
-  int pool_index = which;
-  assert(cache() != nullptr, "'index' is a rewritten index so this class must have been rewritten");
-  pool_index = to_cp_index(which, code);
-  return tag_at(pool_index);
-}
-
-u2 ConstantPool::uncached_klass_ref_index_at(int cp_index) {
-  assert(tag_at(cp_index).is_field_or_method(), "Corrupted constant pool");
-  jint ref_index = *int_at_addr(cp_index);
-  return extract_low_short_from_int(ref_index);
-}
-
-u2 ConstantPool::klass_ref_index_at(int index, Bytecodes::Code code) {
-  assert(code != Bytecodes::_invokedynamic,
-            "an invokedynamic instruction does not have a klass");
-  return uncached_klass_ref_index_at(to_cp_index(index, code));
-}
-
 void ConstantPool::verify_constant_pool_resolve(const constantPoolHandle& this_cp, Klass* k, TRAPS) {
   if (!(k->is_instance_klass() || k->is_objArray_klass())) {
     return;  // short cut, typeArray klass is always accessible
@@ -921,44 +893,9 @@ void ConstantPool::verify_constant_pool_resolve(const constantPoolHandle& this_c
 }
 
 
-u2 ConstantPool::name_ref_index_at(int cp_index) {
-  jint ref_index = name_and_type_at(cp_index);
-  return extract_low_short_from_int(ref_index);
-}
-
-
-u2 ConstantPool::signature_ref_index_at(int cp_index) {
-  jint ref_index = name_and_type_at(cp_index);
-  return extract_high_short_from_int(ref_index);
-}
-
-
-Klass* ConstantPool::klass_ref_at(int which, Bytecodes::Code code, TRAPS) {
-  return klass_at(klass_ref_index_at(which, code), THREAD);
-}
-
-Symbol* ConstantPool::klass_name_at(int cp_index) const {
-  return symbol_at(klass_slot_at(cp_index).name_index());
-}
-
-Symbol* ConstantPool::klass_ref_at_noresolve(int which, Bytecodes::Code code) {
-  jint ref_index = klass_ref_index_at(which, code);
-  return klass_at_noresolve(ref_index);
-}
-
-Symbol* ConstantPool::uncached_klass_ref_at_noresolve(int cp_index) {
-  jint ref_index = uncached_klass_ref_index_at(cp_index);
-  return klass_at_noresolve(ref_index);
-}
-
 char* ConstantPool::string_at_noresolve(int cp_index) {
   return unresolved_string_at(cp_index)->as_C_string();
 }
-
-BasicType ConstantPool::basic_type_for_signature_at(int cp_index) const {
-  return Signature::basic_type(symbol_at(cp_index));
-}
-
 
 void ConstantPool::resolve_string_constants_impl(const constantPoolHandle& this_cp, TRAPS) {
   for (int index = 1; index < this_cp->length(); index++) { // Index 0 is unused
@@ -986,15 +923,15 @@ static const char* exception_message(const constantPoolHandle& this_cp, int whic
     break;
   case JVM_CONSTANT_MethodHandle:
     // return the method handle name in the error message
-    message = this_cp->method_handle_name_ref_at(which);
+    message = MethodHandleReference(this_cp, which).name(this_cp);
     break;
   case JVM_CONSTANT_MethodType:
     // return the method type signature in the error message
-    message = this_cp->method_type_signature_at(which);
+    message = MethodTypeReference(this_cp, which).signature(this_cp);
     break;
   case JVM_CONSTANT_Dynamic:
     // return the name of the condy in the error message
-    message = this_cp->uncached_name_ref_at(which);
+    message = BootstrapReference(this_cp, which).name(this_cp);
     break;
   default:
     ShouldNotReachHere();
@@ -1096,10 +1033,10 @@ constantTag ConstantPool::constant_tag_at(int cp_index) {
 
 BasicType ConstantPool::basic_type_for_constant_at(int cp_index) {
   constantTag tag = tag_at(cp_index);
-  if (tag.is_dynamic_constant() ||
-      tag.is_dynamic_constant_in_error()) {
+  if (tag.is_dynamic_constant_or_error()) {
     // have to look at the signature for this one
-    Symbol* constant_type = uncached_signature_ref_at(cp_index);
+    BootstrapReference condy(this, cp_index);
+    Symbol* constant_type = condy.signature(this);
     return Signature::basic_type(constant_type);
   }
   return tag.basic_type();
@@ -1148,9 +1085,9 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     switch (tag.value()) {
     case JVM_CONSTANT_Class:
     {
-      CPKlassSlot kslot = this_cp->klass_slot_at(cp_index);
-      int resolved_klass_index = kslot.resolved_klass_index();
-      if (this_cp->resolved_klasses()->at(resolved_klass_index) == nullptr) {
+      KlassReference kref(this_cp, cp_index);
+      if (this_cp->resolved_klasses()->at(kref.resolved_klass_index()) == nullptr) {
+        //FIXME: (8349405) this path should not be taken
         (*status_return) = false;
         return nullptr;
       }
@@ -1248,14 +1185,15 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     { PerfTraceTimedEvent timer(ClassLoader::perf_resolve_method_handle_time(),
                                 ClassLoader::perf_resolve_method_handle_count());
 
-      int ref_kind                 = this_cp->method_handle_ref_kind_at(cp_index);
-      int callee_index             = this_cp->method_handle_klass_index_at(cp_index);
-      Symbol*  name =      this_cp->method_handle_name_ref_at(cp_index);
-      Symbol*  signature = this_cp->method_handle_signature_ref_at(cp_index);
-      constantTag m_tag  = this_cp->tag_at(this_cp->method_handle_index_at(cp_index));
+      MethodHandleReference mhref(this_cp, cp_index);
+      int ref_kind       = mhref.ref_kind();
+      int callee_index   = mhref.klass_index();
+      Symbol*  name      = mhref.name(this_cp);
+      Symbol*  signature = mhref.signature(this_cp);
+      constantTag m_tag  = this_cp->tag_at(mhref.ref_index());
       { ResourceMark rm(THREAD);
         log_debug(class, resolve)("resolve JVM_CONSTANT_MethodHandle:%d [%d/%d/%d] %s.%s",
-                              ref_kind, cp_index, this_cp->method_handle_index_at(cp_index),
+                              ref_kind, cp_index, mhref.ref_index(),
                               callee_index, name->as_C_string(), signature->as_C_string());
       }
 
@@ -1299,10 +1237,11 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     { PerfTraceTimedEvent timer(ClassLoader::perf_resolve_method_type_time(),
                                 ClassLoader::perf_resolve_method_type_count());
 
-      Symbol*  signature = this_cp->method_type_signature_at(cp_index);
+      MethodTypeReference mtref(this_cp, cp_index);
+      Symbol*  signature = mtref.signature(this_cp);
       { ResourceMark rm(THREAD);
         log_debug(class, resolve)("resolve JVM_CONSTANT_MethodType [%d/%d] %s",
-                              cp_index, this_cp->method_type_index_at(cp_index),
+                              cp_index, mtref.signature_index(),
                               signature->as_C_string());
       }
       Klass* klass = this_cp->pool_holder();
@@ -1380,20 +1319,24 @@ oop ConstantPool::uncached_string_at(int cp_index, TRAPS) {
   return str;
 }
 
-void ConstantPool::copy_bootstrap_arguments_at_impl(const constantPoolHandle& this_cp, int cp_index,
+void ConstantPool::copy_bootstrap_arguments_at_impl(const constantPoolHandle& this_cp,
+                                                    int bsme_index,
                                                     int start_arg, int end_arg,
                                                     objArrayHandle info, int pos,
                                                     bool must_resolve, Handle if_not_available,
                                                     TRAPS) {
   int limit = pos + end_arg - start_arg;
-  // checks: cp_index in range [0..this_cp->length),
-  // tag at cp_index, start..end in range [0..this_cp->bootstrap_argument_count],
+  // check explicitly (do not assert) that bsms index is in range
+  BSMAttributeEntry* bsme = nullptr;
+  if (0 <= bsme_index &&
+      bsme_index < this_cp->bsm_attribute_count()) {
+    bsme = this_cp->bsm_attribute_entry(bsme_index);
+  }
+  // also check tag at cp_index, start..end in range,
   // info array non-null, pos..limit in [0..info.length]
-  if ((0 >= cp_index    || cp_index >= this_cp->length())  ||
-      !(this_cp->tag_at(cp_index).is_invoke_dynamic()    ||
-        this_cp->tag_at(cp_index).is_dynamic_constant()) ||
+  if (bsme == nullptr ||
       (0 > start_arg || start_arg > end_arg) ||
-      (end_arg > this_cp->bootstrap_argument_count_at(cp_index)) ||
+      (end_arg > bsme->argument_count()) ||
       (0 > pos       || pos > limit)         ||
       (info.is_null() || limit > info->length())) {
     // An index or something else went wrong; throw an error.
@@ -1404,7 +1347,7 @@ void ConstantPool::copy_bootstrap_arguments_at_impl(const constantPoolHandle& th
   // now we can loop safely
   int info_i = pos;
   for (int i = start_arg; i < end_arg; i++) {
-    int arg_index = this_cp->bootstrap_argument_index_at(cp_index, i);
+    int arg_index = bsme->argument_index(i);
     oop arg_oop;
     if (must_resolve) {
       arg_oop = this_cp->resolve_possibly_cached_constant_at(arg_index, CHECK);
@@ -1503,15 +1446,11 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   case JVM_CONSTANT_InterfaceMethodref:
   case JVM_CONSTANT_Methodref:
   {
-    int recur1 = uncached_klass_ref_index_at(index1);
-    int recur2 = cp2->uncached_klass_ref_index_at(index2);
-    bool match = compare_entry_to(recur1, cp2, recur2);
-    if (match) {
-      recur1 = uncached_name_and_type_ref_index_at(index1);
-      recur2 = cp2->uncached_name_and_type_ref_index_at(index2);
-      if (compare_entry_to(recur1, cp2, recur2)) {
-        return true;
-      }
+    FMReference ref1(this, index1);
+    FMReference ref2(cp2,  index2);
+    if (compare_entry_to(ref1.klass_index(), cp2, ref2.klass_index()) &&
+        compare_entry_to(ref1.nt_index(),    cp2, ref2.nt_index())) {
+      return true;
     }
   } break;
 
@@ -1544,14 +1483,11 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
 
   case JVM_CONSTANT_NameAndType:
   {
-    int recur1 = name_ref_index_at(index1);
-    int recur2 = cp2->name_ref_index_at(index2);
-    if (compare_entry_to(recur1, cp2, recur2)) {
-      recur1 = signature_ref_index_at(index1);
-      recur2 = cp2->signature_ref_index_at(index2);
-      if (compare_entry_to(recur1, cp2, recur2)) {
-        return true;
-      }
+    NTReference nt1(this, index1);
+    NTReference nt2(cp2,  index2);
+    if (compare_entry_to(nt1.name_index(),      cp2, nt2.name_index()) &&
+        compare_entry_to(nt1.signature_index(), cp2, nt2.signature_index())) {
+      return true;
     }
   } break;
 
@@ -1575,8 +1511,10 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
 
   case JVM_CONSTANT_MethodType:
   {
-    int k1 = method_type_index_at(index1);
-    int k2 = cp2->method_type_index_at(index2);
+    MethodTypeReference ref1(this, index1);
+    MethodTypeReference ref2(cp2,  index2);
+    int k1 = ref1.signature_index();
+    int k2 = ref2.signature_index();
     if (compare_entry_to(k1, cp2, k2)) {
       return true;
     }
@@ -1584,37 +1522,23 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
 
   case JVM_CONSTANT_MethodHandle:
   {
-    int k1 = method_handle_ref_kind_at(index1);
-    int k2 = cp2->method_handle_ref_kind_at(index2);
-    if (k1 == k2) {
-      int i1 = method_handle_index_at(index1);
-      int i2 = cp2->method_handle_index_at(index2);
-      if (compare_entry_to(i1, cp2, i2)) {
-        return true;
-      }
+    MethodHandleReference ref1(this, index1);
+    MethodHandleReference ref2(cp2,  index2);
+    if (ref1.ref_kind() == ref2.ref_kind() &&
+        compare_entry_to(ref1.ref_index(), cp2, ref2.ref_index())) {
+      return true;
     }
   } break;
 
+  case JVM_CONSTANT_InvokeDynamic:
   case JVM_CONSTANT_Dynamic:
   {
-    int k1 = bootstrap_name_and_type_ref_index_at(index1);
-    int k2 = cp2->bootstrap_name_and_type_ref_index_at(index2);
-    int i1 = bootstrap_methods_attribute_index(index1);
-    int i2 = cp2->bootstrap_methods_attribute_index(index2);
-    bool match_entry = compare_entry_to(k1, cp2, k2);
-    bool match_operand = compare_operand_to(i1, cp2, i2);
-    return (match_entry && match_operand);
-  } break;
-
-  case JVM_CONSTANT_InvokeDynamic:
-  {
-    int k1 = bootstrap_name_and_type_ref_index_at(index1);
-    int k2 = cp2->bootstrap_name_and_type_ref_index_at(index2);
-    int i1 = bootstrap_methods_attribute_index(index1);
-    int i2 = cp2->bootstrap_methods_attribute_index(index2);
-    bool match_entry = compare_entry_to(k1, cp2, k2);
-    bool match_operand = compare_operand_to(i1, cp2, i2);
-    return (match_entry && match_operand);
+    BootstrapReference ref1(this, index1);
+    BootstrapReference ref2(cp2,  index2);
+    if (compare_entry_to(ref1.nt_index(),  cp2, ref2.nt_index()) &&
+        compare_bsme_to(ref1.bsme_index(), cp2, ref2.bsme_index())) {
+      return true;
+    }
   } break;
 
   case JVM_CONSTANT_String:
@@ -1649,139 +1573,159 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
 } // end compare_entry_to()
 
 
-// Resize the operands array with delta_len and delta_size.
+// Resize the BSM attribute arrays with delta_len and delta_size.
 // Used in RedefineClasses for CP merge.
-void ConstantPool::resize_operands(int delta_len, int delta_size, TRAPS) {
-  int old_len  = operand_array_length(operands());
-  int new_len  = old_len + delta_len;
-  int min_len  = (delta_len > 0) ? old_len : new_len;
+void ConstantPool::resize_bsm_data(int delta_len, int delta_size, TRAPS) {
+  Array<u4>* old_offs = bsm_attribute_offsets();
+  Array<u2>* old_data = bsm_attribute_entries();
+  const bool have_old = (bsm_attribute_count() != 0);
 
-  int old_size = operands()->length();
-  int new_size = old_size + delta_size;
-  int min_size = (delta_size > 0) ? old_size : new_size;
+  int old_offs_len  = !have_old ? 0 : old_offs->length();
+  int new_offs_len  = old_offs_len + delta_len;
+  int min_offs_len  = (delta_len > 0) ? old_offs_len : new_offs_len;
+
+  int old_data_len = !have_old ? 0 : old_data->length();
+  int new_data_len = old_data_len + delta_size;
+  int min_data_len = (delta_size > 0) ? old_data_len : new_data_len;
 
   ClassLoaderData* loader_data = pool_holder()->class_loader_data();
-  Array<u2>* new_ops = MetadataFactory::new_array<u2>(loader_data, new_size, CHECK);
+  Array<u4>* new_offs = MetadataFactory::new_array<u4>(loader_data, new_offs_len, CHECK);
+  Array<u2>* new_data = MetadataFactory::new_array<u2>(loader_data, new_data_len, CHECK);
 
-  // Set index in the resized array for existing elements only
-  for (int idx = 0; idx < min_len; idx++) {
-    int offset = operand_offset_at(idx);                       // offset in original array
-    operand_offset_at_put(new_ops, idx, offset + 2*delta_len); // offset in resized array
+  // Copy the old array data.  We do not need to change any offsets.
+  if (have_old) {
+    guarantee(min_offs_len > 0 && min_data_len > 0,
+              "must have something to copy %d/%d", min_offs_len, min_data_len);
+    Copy::conjoint_memory_atomic(old_offs->adr_at(0),
+                                 new_offs->adr_at(0),
+                                 min_offs_len * sizeof(u4));
+    Copy::conjoint_memory_atomic(old_data->adr_at(0),
+                                 new_data->adr_at(0),
+                                 min_data_len * sizeof(u2));
   }
-  // Copy the bootstrap specifiers only
-  Copy::conjoint_memory_atomic(operands()->adr_at(2*old_len),
-                               new_ops->adr_at(2*new_len),
-                               (min_size - 2*min_len) * sizeof(u2));
-  // Explicitly deallocate old operands array.
-  // Note, it is not needed for 7u backport.
-  if ( operands() != nullptr) { // the safety check
-    MetadataFactory::free_array<u2>(loader_data, operands());
+  // Explicitly deallocate old bsm_data array.
+  if (bsm_attribute_offsets() != nullptr) { // the safety check
+    MetadataFactory::free_array<u4>(loader_data, bsm_attribute_offsets());
   }
-  set_operands(new_ops);
-} // end resize_operands()
+  if (bsm_attribute_entries() != nullptr) { // the safety check
+    MetadataFactory::free_array<u2>(loader_data, bsm_attribute_entries());
+  }
+  set_bsm_attribute_offsets(new_offs);
+  set_bsm_attribute_entries(new_data);
+} // end resize_bsm_data()
 
 
-// Extend the operands array with the length and size of the ext_cp operands.
+// Extend the BSM attribute arrays with the length and size of the ext_cp data.
 // Used in RedefineClasses for CP merge.
-void ConstantPool::extend_operands(const constantPoolHandle& ext_cp, TRAPS) {
-  int delta_len = operand_array_length(ext_cp->operands());
+void ConstantPool::extend_bsm_data(const constantPoolHandle& ext_cp, TRAPS) {
+  int delta_len = ext_cp->bsm_attribute_count();
   if (delta_len == 0) {
     return; // nothing to do
   }
-  int delta_size = ext_cp->operands()->length();
+  int delta_size = ext_cp->bsm_attribute_entries()->length();
 
-  assert(delta_len  > 0 && delta_size > 0, "extended operands array must be bigger");
+  assert(delta_len > 0 && delta_size > 0, "extended arrays must be bigger");
 
-  if (operand_array_length(operands()) == 0) {
-    ClassLoaderData* loader_data = pool_holder()->class_loader_data();
-    Array<u2>* new_ops = MetadataFactory::new_array<u2>(loader_data, delta_size, CHECK);
-    // The first element index defines the offset of second part
-    operand_offset_at_put(new_ops, 0, 2*delta_len); // offset in new array
-    set_operands(new_ops);
-  } else {
-    resize_operands(delta_len, delta_size, CHECK);
-  }
-
-} // end extend_operands()
+  // Note:  resize_bsm_data can handle bsm_attribute_entries()==nullptr
+  resize_bsm_data(delta_len, delta_size, CHECK);
+} // end extend_bsm_data()
 
 
-// Shrink the operands array to a smaller array with new_len length.
+// Shrink the BSM attribute arrays to a smaller number of entries.
 // Used in RedefineClasses for CP merge.
-void ConstantPool::shrink_operands(int new_len, TRAPS) {
-  int old_len = operand_array_length(operands());
+void ConstantPool::shrink_bsm_data(int new_len, TRAPS) {
+  int old_len = bsm_attribute_count();
   if (new_len == old_len) {
     return; // nothing to do
   }
-  assert(new_len < old_len, "shrunken operands array must be smaller");
+  assert(new_len < old_len, "shrunken bsm_data array must be smaller");
 
-  int free_base  = operand_next_offset_at(new_len - 1);
-  int delta_len  = new_len - old_len;
-  int delta_size = 2*delta_len + free_base - operands()->length();
+  int delta_len    = new_len      - old_len;
 
-  resize_operands(delta_len, delta_size, CHECK);
+  int old_data_len = bsm_attribute_entries()->length();     //length
+  int new_data_len = 0;
+  if (new_len > 0) {
+    // This is tricky: we cannot trust any offset or data at new_len or beyond.
+    // So, work forward from the last valid BSM entry.
+    int last_bsme_offset = bsm_attribute_offsets()->at(new_len - 1);
+    int last_bsme_header = sizeof(BSMAttributeEntry) / sizeof(u2);
+    assert(last_bsme_header == 2, "bsm+argc");
+    new_data_len = (last_bsme_offset + last_bsme_header +
+                    bsm_attribute_entry(new_len - 1)->argument_count());
+  }
 
-} // end shrink_operands()
+  int delta_size   = new_data_len - old_data_len;
+
+  resize_bsm_data(delta_len, delta_size, CHECK);
+} // end shrink_bsm_data()
 
 
-void ConstantPool::copy_operands(const constantPoolHandle& from_cp,
+// Append the BSM attribute entries from one CP to the end of another.
+void ConstantPool::copy_bsm_data(const constantPoolHandle& from_cp,
                                  const constantPoolHandle& to_cp,
                                  TRAPS) {
-
-  int from_oplen = operand_array_length(from_cp->operands());
-  int old_oplen  = operand_array_length(to_cp->operands());
-  if (from_oplen != 0) {
-    ClassLoaderData* loader_data = to_cp->pool_holder()->class_loader_data();
-    // append my operands to the target's operands array
-    if (old_oplen == 0) {
-      // Can't just reuse from_cp's operand list because of deallocation issues
-      int len = from_cp->operands()->length();
-      Array<u2>* new_ops = MetadataFactory::new_array<u2>(loader_data, len, CHECK);
-      Copy::conjoint_memory_atomic(
-          from_cp->operands()->adr_at(0), new_ops->adr_at(0), len * sizeof(u2));
-      to_cp->set_operands(new_ops);
-    } else {
-      int old_len  = to_cp->operands()->length();
-      int from_len = from_cp->operands()->length();
-      int old_off  = old_oplen * sizeof(u2);
-      int from_off = from_oplen * sizeof(u2);
-      // Use the metaspace for the destination constant pool
-      Array<u2>* new_operands = MetadataFactory::new_array<u2>(loader_data, old_len + from_len, CHECK);
-      int fillp = 0, len = 0;
-      // first part of dest
-      Copy::conjoint_memory_atomic(to_cp->operands()->adr_at(0),
-                                   new_operands->adr_at(fillp),
-                                   (len = old_off) * sizeof(u2));
-      fillp += len;
-      // first part of src
-      Copy::conjoint_memory_atomic(from_cp->operands()->adr_at(0),
-                                   new_operands->adr_at(fillp),
-                                   (len = from_off) * sizeof(u2));
-      fillp += len;
-      // second part of dest
-      Copy::conjoint_memory_atomic(to_cp->operands()->adr_at(old_off),
-                                   new_operands->adr_at(fillp),
-                                   (len = old_len - old_off) * sizeof(u2));
-      fillp += len;
-      // second part of src
-      Copy::conjoint_memory_atomic(from_cp->operands()->adr_at(from_off),
-                                   new_operands->adr_at(fillp),
-                                   (len = from_len - from_off) * sizeof(u2));
-      fillp += len;
-      assert(fillp == new_operands->length(), "");
-
-      // Adjust indexes in the first part of the copied operands array.
-      for (int j = 0; j < from_oplen; j++) {
-        int offset = operand_offset_at(new_operands, old_oplen + j);
-        assert(offset == operand_offset_at(from_cp->operands(), j), "correct copy");
-        offset += old_len;  // every new tuple is preceded by old_len extra u2's
-        operand_offset_at_put(new_operands, old_oplen + j, offset);
-      }
-
-      // replace target operands array with combined array
-      to_cp->set_operands(new_operands);
-    }
+  // Append my offsets and data to the target's offset and data arrays.
+  Array<u4>* from_offs = from_cp->bsm_attribute_offsets();
+  Array<u2>* from_data = from_cp->bsm_attribute_entries();
+  Array<u4>* to_offs   = to_cp->bsm_attribute_offsets();
+  Array<u2>* to_data   = to_cp->bsm_attribute_entries();
+  if (from_offs == nullptr || from_offs->length() == 0) {
+    return;  // nothing to copy
   }
-} // end copy_operands()
+
+  const bool have_old = (to_offs != nullptr && to_offs->length() != 0);
+  const int old_offs_len = !have_old ? 0 : to_offs->length();
+  const int add_offs_len = from_offs->length();
+  const int new_offs_len = old_offs_len + add_offs_len;
+  const int old_data_len = !have_old ? 0 : to_data->length();
+  const int add_data_len = from_data->length();
+  const int new_data_len = old_data_len + add_data_len;
+
+  // Note: even if old_len is zero, we can't just reuse from_cp's
+  // arrays, because of deallocation issues.  Always make fresh data.
+  ClassLoaderData* loader_data = to_cp->pool_holder()->class_loader_data();
+
+  // Use the metaspace for the destination constant pool
+  Array<u4>* new_offs = MetadataFactory::new_array<u4>(loader_data, new_offs_len, CHECK);
+  Array<u2>* new_data = MetadataFactory::new_array<u2>(loader_data, new_data_len, CHECK);
+
+  // first, recopy pre-existing parts of both dest arrays:
+  int offs_fillp = 0, data_fillp = 0, offs_copied, data_copied;
+  if (have_old) {
+    Copy::conjoint_memory_atomic(to_offs->adr_at(0),
+                                 new_offs->adr_at(offs_fillp),
+                                 (offs_copied = old_offs_len) * sizeof(u4));
+    Copy::conjoint_memory_atomic(to_data->adr_at(0),
+                                 new_data->adr_at(data_fillp),
+                                 (data_copied = old_data_len) * sizeof(u2));
+    offs_fillp += offs_copied;
+    data_fillp += data_copied;
+  }
+
+  // then, append new parts of both source arrays:
+  Copy::conjoint_memory_atomic(from_offs->adr_at(0),
+                               new_offs->adr_at(offs_fillp),
+                               (offs_copied = add_offs_len) * sizeof(u4));
+  Copy::conjoint_memory_atomic(from_data->adr_at(0),
+                               new_data->adr_at(old_data_len),
+                               (data_copied = add_data_len) * sizeof(u2));
+  offs_fillp += offs_copied;
+  data_fillp += data_copied;
+  assert(offs_fillp == new_offs->length(), "");
+  assert(data_fillp == new_data->length(), "");
+
+  // Adjust indexes in the first part of the copied bsm_data array.
+  for (int j = old_offs_len; j < new_offs_len; j++) {
+    u4 old_offset = new_offs->at(j);
+    u4 new_offset = old_offset + old_data_len;
+    // every new entry is preceded by old_data_len extra u2's
+    new_offs->at_put(j, new_offset);
+  }
+
+  // replace target bsm_data array with combined array
+  to_cp->set_bsm_attribute_offsets(new_offs);
+  to_cp->set_bsm_attribute_entries(new_data);
+} // end copy_bsm_data()
 
 
 // Copy this constant pool's entries at start_i to end_i (inclusive)
@@ -1811,7 +1755,7 @@ void ConstantPool::copy_cp_to_impl(const constantPoolHandle& from_cp, int start_
       break;
     }
   }
-  copy_operands(from_cp, to_cp, CHECK);
+  copy_bsm_data(from_cp, to_cp, CHECK);
 
 } // end copy_cp_to_impl()
 
@@ -1839,9 +1783,8 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
 
   case JVM_CONSTANT_Fieldref:
   {
-    int class_index = from_cp->uncached_klass_ref_index_at(from_i);
-    int name_and_type_index = from_cp->uncached_name_and_type_ref_index_at(from_i);
-    to_cp->field_at_put(to_i, class_index, name_and_type_index);
+    FMReference ref(from_cp, from_i);
+    to_cp->field_at_put(to_i, ref.klass_index(), ref.nt_index());
   } break;
 
   case JVM_CONSTANT_Float:
@@ -1858,9 +1801,8 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
 
   case JVM_CONSTANT_InterfaceMethodref:
   {
-    int class_index = from_cp->uncached_klass_ref_index_at(from_i);
-    int name_and_type_index = from_cp->uncached_name_and_type_ref_index_at(from_i);
-    to_cp->interface_method_at_put(to_i, class_index, name_and_type_index);
+    FMReference ref(from_cp, from_i);
+    to_cp->interface_method_at_put(to_i, ref.klass_index(), ref.nt_index());
   } break;
 
   case JVM_CONSTANT_Long:
@@ -1873,16 +1815,14 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
 
   case JVM_CONSTANT_Methodref:
   {
-    int class_index = from_cp->uncached_klass_ref_index_at(from_i);
-    int name_and_type_index = from_cp->uncached_name_and_type_ref_index_at(from_i);
-    to_cp->method_at_put(to_i, class_index, name_and_type_index);
+    FMReference ref(from_cp, from_i);
+    to_cp->method_at_put(to_i, ref.klass_index(), ref.nt_index());
   } break;
 
   case JVM_CONSTANT_NameAndType:
   {
-    int name_ref_index = from_cp->name_ref_index_at(from_i);
-    int signature_ref_index = from_cp->signature_ref_index_at(from_i);
-    to_cp->name_and_type_at_put(to_i, name_ref_index, signature_ref_index);
+    NTReference ref(from_cp, from_i);
+    to_cp->name_and_type_at_put(to_i, ref.name_index(), ref.signature_index());
   } break;
 
   case JVM_CONSTANT_StringIndex:
@@ -1896,9 +1836,8 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
   case JVM_CONSTANT_UnresolvedClassInError:
   {
     // Revert to JVM_CONSTANT_ClassIndex
-    int name_index = from_cp->klass_slot_at(from_i).name_index();
-    assert(from_cp->tag_at(name_index).is_symbol(), "sanity");
-    to_cp->klass_index_at_put(to_i, name_index);
+    KlassReference kref(from_cp, from_i);
+    to_cp->klass_index_at_put(to_i, kref.name_index());
   } break;
 
   case JVM_CONSTANT_String:
@@ -1918,33 +1857,29 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
   case JVM_CONSTANT_MethodType:
   case JVM_CONSTANT_MethodTypeInError:
   {
-    jint k = from_cp->method_type_index_at(from_i);
-    to_cp->method_type_index_at_put(to_i, k);
+    MethodTypeReference ref(from_cp, from_i);
+    to_cp->method_type_index_at_put(to_i, ref.signature_index());
   } break;
 
   case JVM_CONSTANT_MethodHandle:
   case JVM_CONSTANT_MethodHandleInError:
   {
-    int k1 = from_cp->method_handle_ref_kind_at(from_i);
-    int k2 = from_cp->method_handle_index_at(from_i);
-    to_cp->method_handle_index_at_put(to_i, k1, k2);
+    MethodHandleReference ref(from_cp, from_i);
+    to_cp->method_handle_index_at_put(to_i, ref.ref_kind(), ref.ref_index());
   } break;
 
   case JVM_CONSTANT_Dynamic:
   case JVM_CONSTANT_DynamicInError:
-  {
-    int k1 = from_cp->bootstrap_methods_attribute_index(from_i);
-    int k2 = from_cp->bootstrap_name_and_type_ref_index_at(from_i);
-    k1 += operand_array_length(to_cp->operands());  // to_cp might already have operands
-    to_cp->dynamic_constant_at_put(to_i, k1, k2);
-  } break;
-
   case JVM_CONSTANT_InvokeDynamic:
   {
-    int k1 = from_cp->bootstrap_methods_attribute_index(from_i);
-    int k2 = from_cp->bootstrap_name_and_type_ref_index_at(from_i);
-    k1 += operand_array_length(to_cp->operands());  // to_cp might already have operands
-    to_cp->invoke_dynamic_at_put(to_i, k1, k2);
+    BootstrapReference ref(from_cp, from_i);
+    int k1 = ref.bsme_index();
+    k1 += to_cp->bsm_attribute_count();  // to_cp might already have BSMs
+    if (ref.tag().is_invoke_dynamic()) {
+      to_cp->invoke_dynamic_at_put(to_i, k1, ref.nt_index());
+    } else {
+      to_cp->dynamic_constant_at_put(to_i, k1, ref.nt_index());
+    }
   } break;
 
   // Invalid is used as the tag for the second constant pool entry
@@ -1977,21 +1912,23 @@ int ConstantPool::find_matching_entry(int pattern_i,
 } // end find_matching_entry()
 
 
-// Compare this constant pool's bootstrap specifier at idx1 to the constant pool
-// cp2's bootstrap specifier at idx2.
-bool ConstantPool::compare_operand_to(int idx1, const constantPoolHandle& cp2, int idx2) {
-  int k1 = operand_bootstrap_method_ref_index_at(idx1);
-  int k2 = cp2->operand_bootstrap_method_ref_index_at(idx2);
+// Compare this constant pool's BSM attribute entry at idx1 to the constant pool
+// cp2's BSM attribute entry at idx2.
+bool ConstantPool::compare_bsme_to(int idx1, const constantPoolHandle& cp2, int idx2) {
+  BSMAttributeEntry* e1 = bsm_attribute_entry(idx1);
+  BSMAttributeEntry* e2 = cp2->bsm_attribute_entry(idx2);
+  int k1 = e1->bootstrap_method_index();
+  int k2 = e2->bootstrap_method_index();
   bool match = compare_entry_to(k1, cp2, k2);
 
   if (!match) {
     return false;
   }
-  int argc = operand_argument_count_at(idx1);
-  if (argc == cp2->operand_argument_count_at(idx2)) {
+  int argc = e1->argument_count();
+  if (argc == e2->argument_count()) {
     for (int j = 0; j < argc; j++) {
-      k1 = operand_argument_index_at(idx1, j);
-      k2 = cp2->operand_argument_index_at(idx2, j);
+      k1 = e1->argument_index(j);
+      k2 = e2->argument_index(j);
       match = compare_entry_to(k1, cp2, k2);
       if (!match) {
         return false;
@@ -2000,21 +1937,21 @@ bool ConstantPool::compare_operand_to(int idx1, const constantPoolHandle& cp2, i
     return true;           // got through loop; all elements equal
   }
   return false;
-} // end compare_operand_to()
+} // end compare_bsme_to()
 
-// Search constant pool search_cp for a bootstrap specifier that matches
-// this constant pool's bootstrap specifier data at pattern_i index.
-// Return the index of a matching bootstrap attribute record or (-1) if there is no match.
-int ConstantPool::find_matching_operand(int pattern_i,
+// Search constant pool search_cp for a BSM attribute entry that matches
+// this constant pool's BSM attribute entry at pattern_i index.
+// Return the index of a entry, or (-1) if there was no match.
+int ConstantPool::find_matching_bsme(int pattern_i,
                     const constantPoolHandle& search_cp, int search_len) {
   for (int i = 0; i < search_len; i++) {
-    bool found = compare_operand_to(pattern_i, search_cp, i);
+    bool found = compare_bsme_to(pattern_i, search_cp, i);
     if (found) {
       return i;
     }
   }
   return -1;  // bootstrap specifier data not found; return unused index (-1)
-} // end find_matching_operand()
+} // end find_matching_bsme()
 
 
 #ifndef PRODUCT
@@ -2200,15 +2137,17 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
       case JVM_CONSTANT_Fieldref:
       case JVM_CONSTANT_Methodref:
       case JVM_CONSTANT_InterfaceMethodref: {
-        idx1 = uncached_klass_ref_index_at(idx);
-        idx2 = uncached_name_and_type_ref_index_at(idx);
+        FMReference ref(this, idx);
+        idx1 = ref.klass_index();
+        idx2 = ref.nt_index();
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         Bytes::put_Java_u2((address) (bytes+3), idx2);
         break;
       }
       case JVM_CONSTANT_NameAndType: {
-        idx1 = name_ref_index_at(idx);
-        idx2 = signature_ref_index_at(idx);
+        NTReference ref(this, idx);
+        idx1 = ref.name_index();
+        idx2 = ref.signature_index();
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         Bytes::put_Java_u2((address) (bytes+3), idx2);
         break;
@@ -2228,8 +2167,9 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
       case JVM_CONSTANT_MethodHandle:
       case JVM_CONSTANT_MethodHandleInError: {
         *bytes = JVM_CONSTANT_MethodHandle;
-        int kind = method_handle_ref_kind_at(idx);
-        idx1 = checked_cast<u2>(method_handle_index_at(idx));
+        MethodHandleReference ref(this, idx);
+        int kind = ref.ref_kind();
+        idx1 = checked_cast<u2>(ref.ref_index());
         *(bytes+1) = (unsigned char) kind;
         Bytes::put_Java_u2((address) (bytes+2), idx1);
         break;
@@ -2237,25 +2177,26 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
       case JVM_CONSTANT_MethodType:
       case JVM_CONSTANT_MethodTypeInError: {
         *bytes = JVM_CONSTANT_MethodType;
-        idx1 = checked_cast<u2>(method_type_index_at(idx));
+        MethodTypeReference ref(this, idx);
+        idx1 = checked_cast<u2>(ref.signature_index());
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         break;
       }
       case JVM_CONSTANT_Dynamic:
       case JVM_CONSTANT_DynamicInError: {
-        *bytes = tag;
-        idx1 = extract_low_short_from_int(*int_at_addr(idx));
-        idx2 = extract_high_short_from_int(*int_at_addr(idx));
-        assert(idx2 == bootstrap_name_and_type_ref_index_at(idx), "correct half of u4");
+        *bytes = JVM_CONSTANT_Dynamic;
+        BootstrapReference ref(this, idx);
+        idx1 = ref.bsme_index();
+        idx2 = ref.nt_index();
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         Bytes::put_Java_u2((address) (bytes+3), idx2);
         break;
       }
       case JVM_CONSTANT_InvokeDynamic: {
         *bytes = tag;
-        idx1 = extract_low_short_from_int(*int_at_addr(idx));
-        idx2 = extract_high_short_from_int(*int_at_addr(idx));
-        assert(idx2 == bootstrap_name_and_type_ref_index_at(idx), "correct half of u4");
+        BootstrapReference ref(this, idx);
+        idx1 = ref.bsme_index();
+        idx2 = ref.nt_index();
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         Bytes::put_Java_u2((address) (bytes+3), idx2);
         break;
@@ -2360,8 +2301,11 @@ void ConstantPool::print_entry_on(const int cp_index, outputStream* st) {
     case JVM_CONSTANT_Fieldref :
     case JVM_CONSTANT_Methodref :
     case JVM_CONSTANT_InterfaceMethodref :
-      st->print("klass_index=%d", uncached_klass_ref_index_at(cp_index));
-      st->print(" name_and_type_index=%d", uncached_name_and_type_ref_index_at(cp_index));
+      {
+        FMReference ref(this, cp_index);
+        st->print("klass_index=%d name_and_type_index=%d",
+                  ref.klass_index(), ref.nt_index());
+      }
       break;
     case JVM_CONSTANT_String :
       unresolved_string_at(cp_index)->print_value_on(st);
@@ -2379,8 +2323,11 @@ void ConstantPool::print_entry_on(const int cp_index, outputStream* st) {
       st->print("%lf", double_at(cp_index));
       break;
     case JVM_CONSTANT_NameAndType :
-      st->print("name_index=%d", name_ref_index_at(cp_index));
-      st->print(" signature_index=%d", signature_ref_index_at(cp_index));
+      {
+        NTReference nt(this, cp_index);
+        st->print("name_index=%d signature_index=%d",
+                  nt.name_index(), nt.signature_index());
+      }
       break;
     case JVM_CONSTANT_Utf8 :
       symbol_at(cp_index)->print_value_on(st);
@@ -2393,45 +2340,37 @@ void ConstantPool::print_entry_on(const int cp_index, outputStream* st) {
       break;
     case JVM_CONSTANT_UnresolvedClass :               // fall-through
     case JVM_CONSTANT_UnresolvedClassInError: {
-        CPKlassSlot kslot = klass_slot_at(cp_index);
-        int resolved_klass_index = kslot.resolved_klass_index();
-        int name_index = kslot.name_index();
-        assert(tag_at(name_index).is_symbol(), "sanity");
-        symbol_at(name_index)->print_value_on(st);
+        KlassReference kref(this, cp_index);
+        symbol_at(kref.name_index())->print_value_on(st);
       }
       break;
     case JVM_CONSTANT_MethodHandle :
     case JVM_CONSTANT_MethodHandleInError :
-      st->print("ref_kind=%d", method_handle_ref_kind_at(cp_index));
-      st->print(" ref_index=%d", method_handle_index_at(cp_index));
+      {
+        MethodHandleReference ref(this, cp_index);
+        st->print("ref_kind=%d ref_index=%d",
+                  ref.ref_kind(), ref.ref_index());
+      }
       break;
     case JVM_CONSTANT_MethodType :
     case JVM_CONSTANT_MethodTypeInError :
-      st->print("signature_index=%d", method_type_index_at(cp_index));
+      {
+        MethodTypeReference ref(this, cp_index);
+        st->print("signature_index=%d", ref.signature_index());
+      }
       break;
     case JVM_CONSTANT_Dynamic :
     case JVM_CONSTANT_DynamicInError :
-      {
-        st->print("bootstrap_method_index=%d", bootstrap_method_ref_index_at(cp_index));
-        st->print(" type_index=%d", bootstrap_name_and_type_ref_index_at(cp_index));
-        int argc = bootstrap_argument_count_at(cp_index);
-        if (argc > 0) {
-          for (int arg_i = 0; arg_i < argc; arg_i++) {
-            int arg = bootstrap_argument_index_at(cp_index, arg_i);
-            st->print((arg_i == 0 ? " arguments={%d" : ", %d"), arg);
-          }
-          st->print("}");
-        }
-      }
-      break;
     case JVM_CONSTANT_InvokeDynamic :
       {
-        st->print("bootstrap_method_index=%d", bootstrap_method_ref_index_at(cp_index));
-        st->print(" name_and_type_index=%d", bootstrap_name_and_type_ref_index_at(cp_index));
-        int argc = bootstrap_argument_count_at(cp_index);
+        BootstrapReference ref(this, cp_index);
+        BSMAttributeEntry* bsme = ref.bsme(this);
+        st->print("bootstrap_method_index=%d name_and_type_index=%d",
+                  ref.bsme_index(), ref.nt_index());
+        int argc = bsme->argument_count();
         if (argc > 0) {
           for (int arg_i = 0; arg_i < argc; arg_i++) {
-            int arg = bootstrap_argument_index_at(cp_index, arg_i);
+            int arg = bsme->argument_index(arg_i);
             st->print((arg_i == 0 ? " arguments={%d" : ", %d"), arg);
           }
           st->print("}");
@@ -2439,7 +2378,8 @@ void ConstantPool::print_entry_on(const int cp_index, outputStream* st) {
       }
       break;
     default:
-      ShouldNotReachHere();
+      // print something, because this is for debugging
+      st->print("? (tag=%d)", tag_at(cp_index).value());
       break;
   }
   st->cr();
@@ -2449,7 +2389,7 @@ void ConstantPool::print_value_on(outputStream* st) const {
   assert(is_constantPool(), "must be constantPool");
   st->print("constant pool [%d]", length());
   if (has_preresolution()) st->print("/preresolution");
-  if (operands() != nullptr)  st->print("/operands[%d]", operands()->length());
+  st->print("/bsms[%d]", bsm_attribute_count());
   print_address_on(st);
   if (pool_holder() != nullptr) {
     st->print(" for ");
