@@ -31,15 +31,20 @@
  * @modules java.base/java.util:open
  *          jdk.localedata
  * @library /test/lib
- * @run junit/othervm -DMOCKED.TIME=false ValidateISO4217
- * @run junit/othervm --patch-module java.base=${test.class.path} -DMOCKED.TIME=true ValidateISO4217
+ * @run junit/othervm -DMOCKED.TIME=setup ValidateISO4217
+ * @run main/othervm --patch-module java.base=${test.class.path}
+ *      -DMOCKED.TIME=check -Djava.util.currency.data=${test.src}/currency.properties ValidateISO4217
+ * @run junit/othervm --patch-module java.base=${test.class.path}
+ *      -DMOCKED.TIME=true ValidateISO4217
  */
 
 /* The run invocation order is important. The first invocation will generate
  * class files for Currency that mock System.currentTimeMillis() as Long.MAX_VALUE,
- * which is required by the second invocation. The second invocation using the
- * modded class files via a module patch allow us to test any cut-over dates after
- * the transition.
+ * which is required by the subsequent invocations. The second invocation ensures that
+ * the module patch and mocked time are functioning correctly; it does not run any tests.
+ * The third invocation using the modded class files via a module patch allow us
+ * to test any cut-over dates after the transition.
+ * Valid MOCKED.TIME values are "setup", "check", and "true".
  */
 
 import java.io.BufferedReader;
@@ -68,7 +73,6 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 
-import jtreg.SkippedException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -137,7 +141,8 @@ public class ValidateISO4217 {
     };
     private static SimpleDateFormat format = null;
     private static final String MODULE_PATCH_LOCATION =
-            System.getProperty("test.classes", ".") + "/java/util/";
+            System.getProperty("test.classes") + "/java/util/";
+    private static final String MOCKED_TIME = System.getProperty("MOCKED.TIME");
 
     // Classes that should mock System.currentTimeMillis()
     private static final String[] CLASSES =
@@ -146,6 +151,21 @@ public class ValidateISO4217 {
                 Arrays.stream(Currency.class.getDeclaredClasses())
                         .map(c -> "Currency$" + c.getSimpleName() + ".class")
             ).toArray(String[]::new);
+
+    // "check" invocation only runs the main method (and not any tests) to determine if the
+    // future time checking is correct
+    public static void main(String[] args) {
+        // Override for PK in test/currency.properties is JPZ (in year 3000)
+        if (MOCKED_TIME.equals("check")) {
+            if (!Currency.getInstance(Locale.of("", "PK")).getCurrencyCode().equals("JPZ")) {
+                throw new RuntimeException(
+                        "Module patch and or mocked time is not functioning correctly");
+            } else {} // Properly working. Do nothing and move to third invocation
+        } else {
+            throw new RuntimeException(
+                    "Incorrect usage of ValidateISO4217. Main method invoked without proper system property value");
+        }
+    }
 
     @BeforeAll
     static void setUp() throws Exception {
@@ -156,15 +176,16 @@ public class ValidateISO4217 {
 
     // Enforce correct usage of ValidateISO4217
     static void checkUsage() {
-        if (System.getProperty("MOCKED.TIME") == null) {
-            throw new SkippedException(
+        if (MOCKED_TIME == null
+                || (!MOCKED_TIME.equals("setup") && !MOCKED_TIME.equals("true"))) {
+            throw new RuntimeException(
                     "Incorrect usage of ValidateISO4217. Missing \"MOCKED.TIME\" system property");
         }
     }
 
     // Patch the relevant classes required for module patch
     static void setUpPatchedClasses() throws IOException {
-        if (System.getProperty("MOCKED.TIME").equals("false")) {
+        if (MOCKED_TIME.equals("setup")) {
             new File(MODULE_PATCH_LOCATION).mkdirs();
             for (String s : CLASSES) {
                 patchClass(s);
@@ -403,7 +424,7 @@ public class ValidateISO4217 {
 
     // Either the current system time, or a mocked value equal to Long.MAX_VALUE
     static long currentTimeMillis() {
-        var mocked = System.getProperty("MOCKED.TIME").equals("true");
+        var mocked = MOCKED_TIME.equals("true");
         return mocked ? Long.MAX_VALUE : System.currentTimeMillis();
     }
 }
