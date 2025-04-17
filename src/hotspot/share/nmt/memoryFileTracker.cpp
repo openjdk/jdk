@@ -126,7 +126,7 @@ const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTrack
 
 bool MemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
   if (tracking_level == NMT_TrackingLevel::NMT_off) return true;
-  new (_tracker.as()) MemoryFileTracker(tracking_level == NMT_TrackingLevel::NMT_detail);
+  _tracker.initialize(tracking_level == NMT_TrackingLevel::NMT_detail);
   return true;
 }
 
