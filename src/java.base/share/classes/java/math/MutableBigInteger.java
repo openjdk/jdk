@@ -1981,7 +1981,8 @@ class MutableBigInteger {
             MutableBigInteger delta = new MutableBigInteger();
             rToN.subtract(this);
             // Don't use conditional-or to ensure to do both divisions
-            if(rToN.divideOneWord(n, q1) != 0 | !q1.divide(new MutableBigInteger(rToN1.mag), delta).isZero())
+            if (rToN.divideOneWord(n, q1) != 0
+                    | !q1.divide(new MutableBigInteger(rToN1.mag), delta).isZero())
                 r.subtract(ONE);
 
             r.subtract(delta);
