@@ -298,7 +298,7 @@ void EpsilonHeap::object_iterate(ObjectClosure *cl) {
   _space->object_iterate(cl);
 }
 
-void EpsilonHeap::print_on(outputStream *st) const {
+void EpsilonHeap::print_heap_on(outputStream *st) const {
   st->print_cr("Epsilon Heap");
 
   StreamAutoIndentor indentor(st, 1);
@@ -311,9 +311,6 @@ void EpsilonHeap::print_on(outputStream *st) const {
     StreamAutoIndentor indentor(st, 1);
     _space->print_on(st);
   }
-}
-
-void EpsilonHeap::print_on_error(outputStream *st) const {
 }
 
 bool EpsilonHeap::print_location(outputStream* st, void* addr) const {

@@ -800,7 +800,7 @@ void SerialHeap::verify(VerifyOption option /* ignored */) {
   rem_set()->verify();
 }
 
-void SerialHeap::print_on(outputStream* st) const {
+void SerialHeap::print_heap_on(outputStream* st) const {
   assert(_young_gen != nullptr, "precondition");
   assert(_old_gen   != nullptr, "precondition");
 
@@ -808,7 +808,7 @@ void SerialHeap::print_on(outputStream* st) const {
   _old_gen->print_on(st);
 }
 
-void SerialHeap::print_on_error(outputStream* st) const {
+void SerialHeap::print_gc_on(outputStream* st) const {
   BarrierSet* bs = BarrierSet::barrier_set();
   if (bs != nullptr) {
     bs->print_on(st);

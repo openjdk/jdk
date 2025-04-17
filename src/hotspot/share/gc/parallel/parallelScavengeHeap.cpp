@@ -662,7 +662,7 @@ bool ParallelScavengeHeap::print_location(outputStream* st, void* addr) const {
   return BlockLocationPrinter<ParallelScavengeHeap>::print_location(st, addr);
 }
 
-void ParallelScavengeHeap::print_on(outputStream* st) const {
+void ParallelScavengeHeap::print_heap_on(outputStream* st) const {
   if (young_gen() != nullptr) {
     young_gen()->print_on(st);
   }
@@ -671,7 +671,7 @@ void ParallelScavengeHeap::print_on(outputStream* st) const {
   }
 }
 
-void ParallelScavengeHeap::print_on_error(outputStream* st) const {
+void ParallelScavengeHeap::print_gc_on(outputStream* st) const {
   BarrierSet* bs = BarrierSet::barrier_set();
   if (bs != nullptr) {
     bs->print_on(st);

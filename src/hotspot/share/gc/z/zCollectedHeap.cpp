@@ -355,11 +355,11 @@ void ZCollectedHeap::prepare_for_verify() {
   // Does nothing
 }
 
-void ZCollectedHeap::print_on(outputStream* st) const {
+void ZCollectedHeap::print_heap_on(outputStream* st) const {
   _heap.print_on(st);
 }
 
-void ZCollectedHeap::print_on_error(outputStream* st) const {
+void ZCollectedHeap::print_gc_on(outputStream* st) const {
   _heap.print_on_error(st);
 }
 

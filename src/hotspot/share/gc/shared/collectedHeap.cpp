@@ -113,7 +113,7 @@ void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
 
   {
     StreamAutoIndentor indentor(&st, 1);
-    heap->print_on(&st);
+    heap->print_heap_on(&st);
     MetaspaceUtils::print_on(&st);
   }
 
@@ -170,7 +170,7 @@ void CollectedHeap::print_heap_before_gc() {
     ls.print_cr("Heap before GC invocations=%u (full %u):", total_collections(), total_full_collections());
 
     StreamAutoIndentor indentor(&ls, 1);
-    print_on(&ls);
+    print_heap_on(&ls);
     MetaspaceUtils::print_on(&ls);
   }
 
@@ -186,7 +186,7 @@ void CollectedHeap::print_heap_after_gc() {
     ls.print_cr("Heap after GC invocations=%u (full %u):", total_collections(), total_full_collections());
 
     StreamAutoIndentor indentor(&ls, 1);
-    print_on(&ls);
+    print_heap_on(&ls);
     MetaspaceUtils::print_on(&ls);
   }
 
@@ -195,7 +195,10 @@ void CollectedHeap::print_heap_after_gc() {
   }
 }
 
-void CollectedHeap::print() const { print_on(tty); }
+void CollectedHeap::print() const {
+  print_heap_on(tty);
+  print_gc_on(tty);
+}
 
 void CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
   const GCHeapSummary& heap_summary = create_heap_summary();

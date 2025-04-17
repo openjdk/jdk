@@ -1202,11 +1202,11 @@ void VMError::report(outputStream* st, bool _verbose) {
       {
         st->print_cr("Heap:");
         StreamAutoIndentor indentor(st, 1);
-        Universe::heap()->print_on(st);
+        Universe::heap()->print_heap_on(st);
         MetaspaceUtils::print_on(st);
         st->cr();
       }
-      Universe::heap()->print_on_error(st);
+      Universe::heap()->print_gc_on(st);
       st->cr();
     }
 
@@ -1396,11 +1396,11 @@ void VMError::print_vm_info(outputStream* st) {
     {
       st->print_cr("Heap:");
       StreamAutoIndentor indentor(st, 1);
-      Universe::heap()->print_on(st);
+      Universe::heap()->print_heap_on(st);
       MetaspaceUtils::print_on(st);
       st->cr();
     }
-    Universe::heap()->print_on_error(st);
+    Universe::heap()->print_gc_on(st);
     st->cr();
     st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
     st->cr();

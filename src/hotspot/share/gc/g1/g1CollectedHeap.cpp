@@ -2112,7 +2112,7 @@ void G1CollectedHeap::print_heap_regions() const {
   }
 }
 
-void G1CollectedHeap::print_on(outputStream* st) const {
+void G1CollectedHeap::print_heap_on(outputStream* st) const {
   size_t heap_used = Heap_lock->owned_by_self() ? used() : used_unlocked();
   st->print("%-20s", "garbage-first heap");
   st->print(" total reserved %zuK, committed %zuK, used %zuK",
@@ -2154,14 +2154,14 @@ void G1CollectedHeap::print_regions_on(outputStream* st) const {
 }
 
 void G1CollectedHeap::print_extended_on(outputStream* st) const {
-  print_on(st);
+  print_heap_on(st);
 
   // Print the per-region information.
   st->cr();
   print_regions_on(st);
 }
 
-void G1CollectedHeap::print_on_error(outputStream* st) const {
+void G1CollectedHeap::print_gc_on(outputStream* st) const {
   // Print the per-region information.
   print_regions_on(st);
   st->cr();

@@ -412,7 +412,7 @@ void RunFinalizationDCmd::execute(DCmdSource source, TRAPS) {
 
 void HeapInfoDCmd::execute(DCmdSource source, TRAPS) {
   MutexLocker hl(THREAD, Heap_lock);
-  Universe::heap()->print_on(output());
+  Universe::heap()->print_heap_on(output());
   MetaspaceUtils::print_on(output());
 }
 

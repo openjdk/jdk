@@ -1161,7 +1161,7 @@ void Universe::print_on(outputStream* st) {
   st->print_cr("Heap");
 
   StreamAutoIndentor indentor(st, 1);
-  heap()->print_on(st);
+  heap()->print_heap_on(st);
   MetaspaceUtils::print_on(st);
 }
 
