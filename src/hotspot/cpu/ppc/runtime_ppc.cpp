@@ -67,11 +67,12 @@
 //
 // Note: the exception pc MUST be at a call (precise debug information)
 //
-void OptoRuntime::generate_exception_blob() {
+ExceptionBlob* OptoRuntime::generate_exception_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
-  CodeBuffer buffer("exception_blob", 2048, 1024);
+  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
 
   address start = __ pc();
@@ -142,7 +143,7 @@ void OptoRuntime::generate_exception_blob() {
   masm->flush();
 
   // Set exception blob.
-  _exception_blob = ExceptionBlob::create(&buffer, oop_maps,
+  return ExceptionBlob::create(&buffer, oop_maps,
                                           frame_size_in_bytes/wordSize);
 }
 

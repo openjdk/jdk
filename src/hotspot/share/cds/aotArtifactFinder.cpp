@@ -27,6 +27,7 @@
 #include "cds/aotClassInitializer.hpp"
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/heapShared.hpp"
+#include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -108,19 +109,22 @@ void AOTArtifactFinder::find_artifacts() {
 
   // Add all the InstanceKlasses (and their array classes) that are always included.
   SystemDictionaryShared::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* ik, DumpTimeClassInfo& info) {
-    if (!info.is_excluded()) {
+    // Skip "AOT tooling classes" in this block. They will be included in the AOT cache only if
+    // - One of their subtypes is included
+    // - One of their instances is found by HeapShared.
+    if (!info.is_excluded() && !info.is_aot_tooling_class()) {
       bool add = false;
       if (!ik->is_hidden()) {
         // All non-hidden classes are always included into the AOT cache
         add = true;
       } else {
-        if (!CDSConfig::is_dumping_invokedynamic()) {
+        if (CDSConfig::is_dumping_lambdas_in_legacy_mode()) {
           // Legacy support of lambda proxies -- these are always included into the AOT cache
-          if (SystemDictionaryShared::is_registered_lambda_proxy_class(ik)) {
+          if (LambdaProxyClassDictionary::is_registered_lambda_proxy_class(ik)) {
             add = true;
           }
         } else {
-          assert(!SystemDictionaryShared::is_registered_lambda_proxy_class(ik),
+          assert(!LambdaProxyClassDictionary::is_registered_lambda_proxy_class(ik),
                  "registered lambda proxies are only for legacy lambda proxy support");
         }
       }
@@ -148,10 +152,11 @@ void AOTArtifactFinder::find_artifacts() {
   SystemDictionaryShared::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded() && _seen_classes->get(k) == nullptr) {
       info.set_excluded();
-      assert(k->is_hidden(), "must be");
-      if (log_is_enabled(Info, cds)) {
+      info.set_has_checked_exclusion();
+      if (log_is_enabled(Debug, cds)) {
         ResourceMark rm;
-        log_info(cds)("Skipping %s: Hidden class", k->name()->as_C_string());
+        log_debug(cds)("Skipping %s: %s class", k->name()->as_C_string(),
+                      k->is_hidden() ? "Unreferenced hidden" : "AOT tooling");
       }
     }
   });
@@ -207,6 +212,10 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
   _seen_classes->put_if_absent(ik, &created);
   if (created) {
     _all_cached_classes->append(ik);
+    if (CDSConfig::is_dumping_final_static_archive() && ik->is_shared_unregistered_class()) {
+      // The following are not appliable to unregistered classes
+      return;
+    }
     scan_oops_in_instance_class(ik);
     if (ik->is_hidden() && CDSConfig::is_initing_classes_at_dump_time()) {
       bool succeed = AOTClassLinker::try_add_candidate(ik);

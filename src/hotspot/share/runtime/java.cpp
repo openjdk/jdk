@@ -231,7 +231,7 @@ static void print_method_invocation_histogram() {
 
 static void print_bytecode_count() {
   if (CountBytecodes || TraceBytecodes || StopInterpreterAt) {
-    tty->print_cr("[BytecodeCounter::counter_value = %d]", BytecodeCounter::counter_value());
+    tty->print_cr("[BytecodeCounter::counter_value = %zu]", BytecodeCounter::counter_value());
   }
 }
 
@@ -353,8 +353,8 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
-  if (CompilerOracle::should_print_final_memstat_report()) {
-    CompilationMemoryStatistic::print_all_by_size(tty, false, 0);
+  if (PrintCompilerMemoryStatisticsAtExit) {
+    CompilationMemoryStatistic::print_final_report(tty);
   }
 
   ThreadsSMRSupport::log_statistics();
@@ -426,10 +426,9 @@ void before_exit(JavaThread* thread, bool halt) {
 #if INCLUDE_CDS
   // Dynamic CDS dumping must happen whilst we can still reliably
   // run Java code.
-  DynamicArchive::dump_at_exit(thread, ArchiveClassesAtExit);
+  DynamicArchive::dump_at_exit(thread);
   assert(!thread->has_pending_exception(), "must be");
 #endif
-
 
   // Actual shutdown logic begins here.
 
@@ -476,7 +475,6 @@ void before_exit(JavaThread* thread, bool halt) {
   // Print GC/heap related information.
   Log(gc, heap, exit) log;
   if (log.is_info()) {
-    ResourceMark rm;
     LogStream ls_info(log.info());
     Universe::print_on(&ls_info);
     if (log.is_trace()) {

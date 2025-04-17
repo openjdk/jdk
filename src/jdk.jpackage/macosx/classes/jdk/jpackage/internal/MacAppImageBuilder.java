@@ -267,6 +267,11 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     }
 
     @Override
+    protected boolean withAppImageFile(Map<String, ? super Object> params) {
+        return !withPackageFile;
+    }
+
+    @Override
     public void prepareApplicationFiles(Map<String, ? super Object> params)
             throws IOException {
         // If predefined app image is provided, then just sign it and return.
