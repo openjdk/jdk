@@ -32,6 +32,7 @@
  */
 
 import java.io.File;
+import java.io.IOException;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.UIManager;
@@ -57,36 +58,16 @@ public class bug4357012 {
             """;
 
     public static void main(String[] argv) throws Exception {
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-
-        PassFailJFrame.builder()
-                .instructions(INSTRUCTIONS)
-                .rows(10)
-                .columns(40)
-                .testUI(bug4357012::createTestUI)
-                .build()
-                .awaitAndCheck();
-    }
-
-    private static JComponent createTestUI() {
-        JFileChooser fc;
         try {
-            String tempDir = ".";
-            String fs = System.getProperty("file.separator");
-
-            workDir = new File(tempDir + fs + "bug4357012");
-            System.out.println("Creating '" + workDir + "': " + workDir.mkdir());
-
-            dir = new File(tempDir + fs + "bug4357012" + fs + "Directory");
-            System.out.println("Creating '" + dir + "': " + dir.mkdir());
-
-            file = new File(tempDir + fs + "bug4357012" + fs + "File.txt");
-            System.out.println("Creating '" + file + "': " + file.createNewFile());
-
-            fc = new JFileChooser(workDir);
-            fc.setDialogType(JFileChooser.SAVE_DIALOG);
-        } catch (Exception e) {
-            throw new RuntimeException("Test Failed! ", e);
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            createTestDir();
+            PassFailJFrame.builder()
+                    .instructions(INSTRUCTIONS)
+                    .rows(10)
+                    .columns(40)
+                    .testUI(bug4357012::createTestUI)
+                    .build()
+                    .awaitAndCheck();
         } finally {
             if (workDir != null) {
                 System.out.println("Deleting '" + file + "': " + file.delete());
@@ -94,6 +75,25 @@ public class bug4357012 {
                 System.out.println("Deleting '" + workDir + "': " + workDir.delete());
             }
         }
+    }
+
+    private static void createTestDir() throws IOException {
+        String tempDir = ".";
+        String fs = System.getProperty("file.separator");
+
+        workDir = new File(tempDir + fs + "bug4357012");
+        System.out.println("Creating '" + workDir + "': " + workDir.mkdir());
+
+        dir = new File(workDir + fs + "Directory");
+        System.out.println("Creating '" + dir + "': " + dir.mkdir());
+
+        file = new File(workDir + fs + "File.txt");
+        System.out.println("Creating '" + file + "': " + file.createNewFile());
+    }
+
+    private static JComponent createTestUI() {
+        JFileChooser fc = new JFileChooser(workDir);
+        fc.setDialogType(JFileChooser.SAVE_DIALOG);
         return fc;
     }
 }
