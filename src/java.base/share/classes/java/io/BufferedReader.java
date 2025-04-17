@@ -76,8 +76,6 @@ import java.util.stream.StreamSupport;
  */
 
 public class BufferedReader extends Reader {
-    private static final int DEFAULT_BUFFER_SIZE = 8192;
-
     private Reader in;
 
     private char[] cb;
@@ -438,40 +436,6 @@ public class BufferedReader extends Reader {
             // the cause cannot be null
             throw ue.getCause();
         }
-    }
-
-    /**
-     * Reads all remaining characters into a string.
-     *
-     * <p> This method reads all content including the line separators in
-     * the middle and/or at the end. The resulting string will contain line
-     * separators as they appear in the original content. The method does not
-     * close this reader nor its underlying stream. If an I/O error occurs,
-     * the states of the reader and its underlying stream are unspecified.
-     *
-     * @apiNote
-     * This method is intended for simple cases where it is appropriate and
-     * convenient to read all lines into a String. It is not intended for
-     * reading a large number of lines.
-     *
-     * @return     a String containing all lines
-     *
-     * @throws     IOException       If an I/O error occurs
-     * @throws     OutOfMemoryError  If the content is extremely large,
-     *                               for example larger than {@code 2GB}
-     *
-     * @see java.nio.file.Files#readString
-     *
-     * @since 25
-     */
-    public String readString() throws IOException {
-        StringBuilder result = new StringBuilder();
-        char[] str = new char[DEFAULT_BUFFER_SIZE];
-        int n;
-        while ((n = read(str)) != -1) {
-            result.append(str, 0, n);
-        }
-        return result.toString();
     }
 
     /**
