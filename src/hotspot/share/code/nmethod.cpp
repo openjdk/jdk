@@ -1441,7 +1441,7 @@ nmethod::nmethod(nmethod* nm) : CodeBlob(nm->_name, nm->_kind, nm->_size, nm->_h
   _gc_epoch                     = CodeCache::gc_epoch();
   _method                       = nm->_method;
   _osr_link                     = nullptr;
-  
+
   // Increment number of references to immutable data to share it between nmethods
   _immutable_data_size          = nm->_immutable_data_size;
   if (_immutable_data_size > 0) {
@@ -1456,17 +1456,17 @@ nmethod::nmethod(nmethod* nm) : CodeBlob(nm->_name, nm->_kind, nm->_size, nm->_h
   _oops_do_mark_nmethods        = nullptr;
   _oops_do_mark_link            = nullptr;
   _compiled_ic_data             = nullptr;
-  
+
   if (nm->_osr_entry_point != nullptr) {
     _osr_entry_point            = (nm->_osr_entry_point - (address) nm) + (address) this;
   } else {
     _osr_entry_point            = nullptr;
   }
-  
+
   _entry_offset                 = nm->_entry_offset;
   _verified_entry_offset        = nm->_verified_entry_offset;
   _entry_bci                    = nm->_entry_bci;
-  
+
   _skipped_instructions_size    = nm->_skipped_instructions_size;
   _stub_offset                  = nm->_stub_offset;
   _exception_offset             = nm->_exception_offset;
@@ -1492,7 +1492,7 @@ nmethod::nmethod(nmethod* nm) : CodeBlob(nm->_name, nm->_kind, nm->_size, nm->_h
   _compiler_type                = nm->_compiler_type;
   _is_unloading_state           = nm->_is_unloading_state;
   _state                        = not_installed;
-  
+
   _has_unsafe_access            = nm->_has_unsafe_access;
   _has_method_handle_invokes    = nm->_has_method_handle_invokes;
   _has_wide_vectors             = nm->_has_wide_vectors;
@@ -1501,7 +1501,7 @@ nmethod::nmethod(nmethod* nm) : CodeBlob(nm->_name, nm->_kind, nm->_size, nm->_h
   _has_flushed_dependencies     = nm->_has_flushed_dependencies;
   _is_unlinked                  = nm->_is_unlinked;
   _load_reported                = nm->_load_reported;
-  
+
   _deoptimization_status        = nm->_deoptimization_status;
 
   if (nm->_pc_desc_container != nullptr) {
