@@ -142,7 +142,6 @@ public class suspend001 {
         argsHandler     = new ArgumentHandler(argv);
         logHandler      = new Log(out, argsHandler);
         Binder binder   = new Binder(argsHandler, logHandler);
-        binder.includeVirtualThreads();
 
         if (argsHandler.verbose()) {
             debuggee = binder.bindToDebugee(debuggeeName + " -vbs");

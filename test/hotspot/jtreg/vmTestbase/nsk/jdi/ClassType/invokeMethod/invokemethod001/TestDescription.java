@@ -66,6 +66,7 @@
  *        nsk.jdi.ClassType.invokeMethod.invokemethod001a
  * @run driver
  *      nsk.jdi.ClassType.invokeMethod.invokemethod001
+ *      -includevirtualthreads
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5

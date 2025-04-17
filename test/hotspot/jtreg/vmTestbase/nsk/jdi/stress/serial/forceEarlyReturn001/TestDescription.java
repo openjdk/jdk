@@ -63,6 +63,7 @@
  * @build nsk.share.jdi.SerialExecutionDebugger
  * @run main/othervm/native
  *      nsk.share.jdi.SerialExecutionDebugger
+ *      -includevirtualthreads
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -71,7 +72,6 @@
  *      -debugee.vmkeys="-Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                       -XX:+WhiteBoxAPI ${test.vm.opts} ${test.java.opts}"
  *      -testClassPath ${test.class.path}
- *      -includevirtualthreads
  *      -configFile ${test.src}/forceEarlyReturn001.tests
  */
 

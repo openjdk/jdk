@@ -74,6 +74,7 @@
  *        nsk.jdi.ThreadReference.stop.stop001a
  * @run driver
  *      nsk.jdi.ThreadReference.stop.stop001
+ *      -includevirtualthreads
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5

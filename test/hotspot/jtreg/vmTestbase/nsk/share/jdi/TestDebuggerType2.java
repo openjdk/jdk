@@ -128,12 +128,6 @@ public class TestDebuggerType2 {
 
     protected String testWorkDir;
 
-    private boolean includeVThreads = false; // true if debuggee should be launched with includevirtualthreads=y
-    public void includeVirtualThreads() {
-        includeVThreads = true;
-    }
-
-
     // initialize test and remove unsupported by nsk.share.jdi.ArgumentHandler arguments
     // (ArgumentHandler constructor throws BadOption exception if command line contains unrecognized by ArgumentHandler options)
     // support -testClassPath parameter: path to find classes for custom classloader in debuggee VM
@@ -177,9 +171,6 @@ public class TestDebuggerType2 {
         argHandler = new ArgumentHandler(doInit(args, out));
         log = new Log(out, argHandler);
         Binder binder = new Binder(argHandler, log);
-        if (includeVThreads) {
-            binder.includeVirtualThreads();
-        }
         debuggee = binder.bindToDebugee(debuggeeClassName());
         pipe = debuggee.createIOPipe();
         debuggee.redirectStderr(log, "Debugger.err> ");

@@ -76,6 +76,7 @@
  *        nsk.jdi.VirtualMachine.dispose.dispose002a
  * @run driver
  *      nsk.jdi.VirtualMachine.dispose.dispose002
+ *      -includevirtualthreads
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5

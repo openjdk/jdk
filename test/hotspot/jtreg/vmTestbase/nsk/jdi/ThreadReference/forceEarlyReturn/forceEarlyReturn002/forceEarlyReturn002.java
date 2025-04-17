@@ -47,6 +47,7 @@
  *        nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn002.forceEarlyReturn002a
  * @run driver
  *      nsk.jdi.ThreadReference.forceEarlyReturn.forceEarlyReturn002.forceEarlyReturn002
+ *      -includevirtualthreads
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -74,10 +75,6 @@ public class forceEarlyReturn002 extends ForceEarlyReturnDebugger {
 
     public String debuggeeClassName() {
         return forceEarlyReturn002a.class.getName();
-    }
-
-    public forceEarlyReturn002() {
-        includeVirtualThreads();
     }
 
     public static int run(String argv[], PrintStream out) {
