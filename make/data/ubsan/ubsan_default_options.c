@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,10 @@
 #define ATTRIBUTE_USED
 #endif
 
+// On AIX, the llvm_symbolizer is not found out of the box, so we have to provide the
+// full qualified llvm_symbolizer path in the __ubsan_default_options() function.
+// To get it here we compile our sources with an additional define LLVM_SYMBOLIZER
+// containing the path, which we set in make/autoconf/jdk-options.m4.
 #ifdef LLVM_SYMBOLIZER
 #define _LLVM_SYMBOLIZER(X) ",external_symbolizer_path=" X_LLVM_SYMBOLIZER(X)
 #define X_LLVM_SYMBOLIZER(X) #X
