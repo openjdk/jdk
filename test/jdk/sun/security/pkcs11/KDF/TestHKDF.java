@@ -68,7 +68,6 @@ public final class TestHKDF extends PKCS11Test {
         //    of 16 zero bytes.
         //  - If derivedKeyAlg is Generic, expectedOpOut is the result of
         //    calculating the HmacSHA256 of knownBytes with derivedKey.
-        //  - If derivedKeyAlg is TlsAnyKey, expectedOpOut is "null"
     }
 
     private static class HkdfTestAssertionException extends Exception {
@@ -178,9 +177,6 @@ public final class TestHKDF extends PKCS11Test {
                 Mac hmac = Mac.getInstance("HmacSHA256", p);
                 hmac.init(derivedKey);
                 opOut = hmac.doFinal(knownBytes);
-            }
-            case "TlsAnyKey" -> {
-                opOut = null;
             }
             default -> throw new RuntimeException(
                     "Unexpected derived key algorithm.");
@@ -428,17 +424,6 @@ public final class TestHKDF extends PKCS11Test {
     }
 
     private static void test_RFC_5869_case_1() {
-        executeTest("RFC 5869 - Test Case 1 - TlsAnyKey",
-                "HKDF-SHA256",
-                "TlsAnyKey",
-                "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
-                "000102030405060708090a0b0c",
-                "f0f1f2f3f4f5f6f7f8f9",
-                "077709362c2e32df0ddc3f0dc47bba6390b6c73bb50f9c3122ec844ad7c2" +
-                "b3e5",
-                "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4" +
-                "c5bf34007208d5b887185865",
-                null);
         executeTest("RFC 5869 - Test Case 1",
                 "HKDF-SHA256",
                 "Generic",
