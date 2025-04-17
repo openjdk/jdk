@@ -470,7 +470,7 @@ void TemplateTable::condy_helper(Label& Done) {
   const Register rarg = c_rarg1;
   __ movl(rarg, (int)bytecode());
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rarg);
-  __ get_vm_result_2(flags);
+  __ get_vm_result_metadata(flags);
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
   __ movl(off, flags);
@@ -3680,8 +3680,7 @@ void TemplateTable::checkcast() {
   __ push(atos); // save receiver for result, and for GC
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
 
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(rax);
+  __ get_vm_result_metadata(rax);
 
   __ pop_ptr(rdx); // restore receiver
   __ jmpb(resolved);
@@ -3737,8 +3736,7 @@ void TemplateTable::instanceof() {
   __ push(atos); // save receiver for result, and for GC
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
 
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(rax);
+  __ get_vm_result_metadata(rax);
 
   __ pop_ptr(rdx); // restore receiver
   __ verify_oop(rdx);

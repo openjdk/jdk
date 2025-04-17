@@ -139,8 +139,6 @@
 
 #define MAX_PATH    (2 * K)
 
-#define MAX_SECS 100000000
-
 #ifdef MUSL_LIBC
 // dlvsym is not a part of POSIX
 // and musl libc doesn't implement it.
