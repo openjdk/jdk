@@ -61,8 +61,6 @@ public class WindowsLAFMenuAcceleratorDelimiter {
             L&Fs are as follows: JLF/Metal = "-", Mac = "-", Motif = "+",
             Windows = "+".
 
-            This test is for Windows platform only.
-
             Click on "Menu" of "WindowsLAFMenuAcceleratorDelimiter" window,
             make sure it shows MenuItem with label "Hi There! Ctrl+H".
 
