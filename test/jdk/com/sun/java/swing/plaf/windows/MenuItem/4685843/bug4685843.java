@@ -64,21 +64,17 @@ public class bug4685843 {
 
     private static JFrame initialize() {
         JMenuBar jMenuBar = new JMenuBar();
-        JMenu jMenu = new JMenu();
-        JMenuItem jMenuItem = new JMenuItem();
+        JMenu jMenu = new JMenu("File");
+        JMenuItem jMenuItem = new JMenuItem("JMenuItem");
         JCheckBoxMenuItem jCheckBoxMenuItem =
-            new JCheckBoxMenuItem();
+            new JCheckBoxMenuItem("JCheckBoxMenuItem");
         JRadioButtonMenuItem jRadioButtonMenuItem =
-            new JRadioButtonMenuItem();
+            new JRadioButtonMenuItem("JRadioButtonMenuItem");
 
-        jMenu.setText("File");
-        jMenuItem.setText("JMenuItem");
         jMenuItem.setEnabled(false);
         jMenu.add(jMenuItem);
-        jCheckBoxMenuItem.setText("JCheckBoxMenuItem");
         jCheckBoxMenuItem.setEnabled(false);
         jMenu.add(jCheckBoxMenuItem);
-        jRadioButtonMenuItem.setText("JRadioButtonMenuItem");
         jRadioButtonMenuItem.setEnabled(false);
         jMenu.add(jRadioButtonMenuItem);
         jMenuBar.add(jMenu);
