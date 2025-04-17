@@ -26,6 +26,7 @@
  * @bug 4199472
  * @summary Tests that node changed for the root of the tree update the
  *          structure.
+ * @key headful
  * @run main NodeChangedTest
  */
 
