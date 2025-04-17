@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1872,9 +1872,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             Iterator<java.util.List<Runnable>> iter = values.iterator();
             while (iter.hasNext()) {
                 java.util.List<Runnable> list = iter.next();
-                boolean removed = false;
-                if (list.contains(task)) {
-                    list.remove(task);
+                if (list.remove(task)) {
                     if (list.isEmpty()) {
                         iter.remove();
                     }
