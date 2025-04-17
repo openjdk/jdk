@@ -63,7 +63,7 @@ public class TransparentTitleTest {
     private static JFrame createTestUI() {
         JFrame frame = new JFrame("TransparentTitleTest");
 
-        frame.setLayout(new GridLayout(3,6,5,5));
+        frame.setLayout(new GridLayout(3, 6, 5, 5));
 
         frame.add(new ImagePanel(TitledBorder.TOP, TitledBorder.LEFT));
         frame.add(new ImagePanel(TitledBorder.TOP, TitledBorder.CENTER));

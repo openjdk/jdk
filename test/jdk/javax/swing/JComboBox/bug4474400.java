@@ -56,11 +56,10 @@ public class bug4474400 {
     }
 
     private static JComponent createTestUI() {
-        JTextArea textArea;
         Font smallFont = new Font("SansSerif", Font.PLAIN, 12);
         Font largeFont = new Font("SansSerif", Font.PLAIN, 36);
 
-        textArea = new JTextArea("This is the first line\n\nThis is the third line");
+        JTextArea textArea = new JTextArea("This is the first line\n\nThis is the third line");
         textArea.setFont(smallFont);
         textArea.setEditable(false);
         textArea.setLineWrap(true);

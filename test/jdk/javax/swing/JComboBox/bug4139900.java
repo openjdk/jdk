@@ -104,7 +104,7 @@ public class bug4139900 {
             }
         };
 
-        button.addActionListener( actionListener );
+        button.addActionListener(actionListener);
 
         JPanel panel = new JPanel();
         panel.setPreferredSize(new Dimension(300, 100));

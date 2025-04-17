@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4174876
+ * @summary JComboBox tooltips do not work properly
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4174876
