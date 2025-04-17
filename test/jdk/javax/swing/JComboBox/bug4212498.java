@@ -32,7 +32,7 @@ import javax.swing.JPanel;
  * @test
  * @bug 4212498
  * @key headful
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4212498
  */
