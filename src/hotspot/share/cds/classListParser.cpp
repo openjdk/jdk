@@ -547,6 +547,8 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
   ResourceMark rm;
   InstanceKlass* specified_super = lookup_class_by_id(_super);
   GrowableArray<InstanceKlass*> specified_interfaces = get_specified_interfaces();
+  // Overshadowing must be checked before the class loading attempt because it
+  // may cause class loading errors (JVMS 5.3.5.3-5.3.5.4)
   check_supertype_overshadowing(_super, specified_super, CHECK_NULL);
   for (int i = 0; i < _interfaces->length(); i++) {
     check_supertype_overshadowing(_interfaces->at(i), specified_interfaces.at(i), CHECK_NULL);

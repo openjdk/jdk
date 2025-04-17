@@ -447,6 +447,9 @@ public class CDS {
          * All super classes and interfaces of the named class must have already been loaded:
          * either defined by this class loader (unregistered ones) or loaded, possibly indirectly,
          * by the system class loader (registered ones).
+         * <p>
+         * If the named class has a registered super class or interface named N there should be no
+         * unregistered class or interface named N loaded yet.
          *
          * @param name the name of the class to be loaded.
          * @param source path to a directory or a JAR file from which the named class should be
@@ -455,15 +458,18 @@ public class CDS {
         private Class<?> load(String name, String source) throws IOException {
             final Source resolvedSource = resolveSource(source);
             final byte[] bytes = resolvedSource.readClassFile(name);
-            // 'defineClass()' may cause loading of supertypes of this unregistered class.
+            // 'defineClass()' may cause loading of supertypes of this unregistered class by VM
+            // calling 'this.loadClass()'.
             //
-            // For any supertype S named SN the following is ensured by the order of classes in the
-            // classlist:
+            // For any supertype S named SN specified in the classlist the following is ensured by
+            // the CDS implementation:
             // - if S is an unregistered class it must have already been defined by this class
             //   loader and thus will be found by 'this.findLoadedClass(SN)',
-            // - if S is not an unregistered class S must have already been loaded by the system
-            //   class loader (as an initiating loader) and thus can be found by delegating to it by
-            //   calling 'this.getParent().loadClass(SN, false)'.
+            // - if S is not an unregistered class there should be no unregistered class named SN
+            //   loaded yet so either S has previously been (indirectly) loaded by this class loader
+            //   and thus it will be found when calling 'this.findLoadedClass(SN)' or it will be
+            //   found when delegating to the system class loader, which must have already loaded S,
+            //   by calling 'this.getParent().loadClass(SN, false)'.
             // See the implementation of 'ClassLoader.loadClass()' for details.
             //
             // Therefore, we should resolve all supertypes to the expected ones as specified by the
