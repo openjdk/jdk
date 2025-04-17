@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,9 @@ public:
   static void    ucontext_set_pc(ucontext_t* ctx, address pc);
 
   static void to_RTC_abstime(timespec* abstime, int64_t millis);
+
+  // clock ticks per second of the system
+  static int clock_tics_per_second();
 
   static bool handle_stack_overflow(JavaThread* thread, address addr, address pc,
                                     const void* ucVoid,
