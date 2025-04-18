@@ -190,8 +190,10 @@ static bool core_handle_prstatus(struct ps_prochandle* ph, const char* buf, size
    prstatus_t* prstat = (prstatus_t*) buf;
    thread_info* newthr;
    print_debug("got integer regset for lwp %d\n", prstat->pr_pid);
-   if((newthr = add_thread_info(ph, prstat->pr_pid)) == NULL)
+   if((newthr = add_thread_info(ph, prstat->pr_pid)) == NULL) {
+      print_error("failed to add thread info\n");
       return false;
+   }
 
    // copy regs
    memcpy(&newthr->regs, prstat->pr_reg, sizeof(struct user_regs_struct));
@@ -257,20 +259,20 @@ static bool core_handle_note(struct ps_prochandle* ph, ELF_PHDR* note_phdr) {
    // we are interested in just prstatus entries. we will ignore the rest.
    // Advance the seek pointer to the start of the PT_NOTE data
    if (lseek(ph->core->core_fd, note_phdr->p_offset, SEEK_SET) == (off_t)-1) {
-      print_debug("failed to lseek to PT_NOTE data\n");
+      print_error("failed to lseek to PT_NOTE data\n");
       return false;
    }
 
    // Now process the PT_NOTE structures.  Each one is preceded by
    // an Elf{32/64}_Nhdr structure describing its type and size.
    if ( (buf = (char*) malloc(size)) == NULL) {
-      print_debug("can't allocate memory for reading core notes\n");
+      print_error("can't allocate memory for reading core notes\n");
       goto err;
    }
 
    // read notes into buffer
    if (read(ph->core->core_fd, buf, size) != size) {
-      print_debug("failed to read notes, core file must have been truncated\n");
+      print_error("failed to read notes, core file must have been truncated\n");
       goto err;
    }
 
@@ -283,6 +285,7 @@ static bool core_handle_note(struct ps_prochandle* ph, ELF_PHDR* note_phdr) {
 
       if (notep->n_type == NT_PRSTATUS) {
         if (core_handle_prstatus(ph, descdata, notep->n_descsz) != true) {
+          print_error("failed to handle NT_PRSTATUS note\n");
           return false;
         }
       } else if (notep->n_type == NT_AUXV) {
@@ -315,8 +318,10 @@ static bool read_core_segments(struct ps_prochandle* ph, ELF_EHDR* core_ehdr) {
    ELF_PHDR* phbuf = NULL;
    ELF_PHDR* core_php = NULL;
 
-   if ((phbuf =  read_program_header_table(ph->core->core_fd, core_ehdr)) == NULL)
+   if ((phbuf =  read_program_header_table(ph->core->core_fd, core_ehdr)) == NULL) {
+      print_error("failed to read program header table\n");
       return false;
+   }
 
    /*
     * Now iterate through the program headers in the core file.
@@ -345,6 +350,7 @@ static bool read_core_segments(struct ps_prochandle* ph, ELF_EHDR* core_ehdr) {
       switch (core_php->p_type) {
          case PT_NOTE:
             if (core_handle_note(ph, core_php) != true) {
+              print_error("failed to read note segment\n");
               goto err;
             }
             break;
@@ -352,7 +358,10 @@ static bool read_core_segments(struct ps_prochandle* ph, ELF_EHDR* core_ehdr) {
          case PT_LOAD: {
             if (core_php->p_filesz != 0) {
                if (add_map_info(ph, ph->core->core_fd, core_php->p_offset,
-                  core_php->p_vaddr, core_php->p_filesz, core_php->p_flags) == NULL) goto err;
+                     core_php->p_vaddr, core_php->p_filesz, core_php->p_flags) == NULL) {
+                  print_error("failed to add map info\n");
+                  goto err;
+               }
             }
             break;
          }

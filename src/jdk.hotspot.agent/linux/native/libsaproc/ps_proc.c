@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -461,7 +461,11 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
 
   // initialize ps_prochandle
   ph->pid = pid;
-  add_thread_info(ph, ph->pid);
+  if (add_thread_info(ph, ph->pid) == NULL) {
+    print_error("failed to add thread info\n");
+    free(ph);
+    return false;
+  }
 
   // initialize vtable
   ph->ops = &process_ops;
@@ -491,7 +495,10 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
       continue;
     }
     if (!process_doesnt_exist(lwp_id)) {
-      add_thread_info(ph, lwp_id);
+      if (add_thread_info(ph, lwp_id) == NULL) {
+        print_error("failed to add thread info\n");
+        goto err;
+      }
     }
   }
   closedir(dirp);
@@ -510,11 +517,13 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
           delete_thread_info(ph, current_thr);
         }
         else {
-          Prelease(ph);
-          return NULL;
+          goto err;
         } // ATTACH_THREAD_DEAD
       } // !ATTACH_SUCCESS
     }
   }
   return ph;
+err:
+  Prelease(ph);
+  return NULL;
 }
