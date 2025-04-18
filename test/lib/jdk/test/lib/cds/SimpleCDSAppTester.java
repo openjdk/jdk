@@ -51,8 +51,8 @@ import jdk.test.lib.StringArrayUtils;
  */
 public class SimpleCDSAppTester {
     private String name;
-    private BiConsumer<OutputAnalyzer,RunMode> assemblyChecker;
-    private BiConsumer<OutputAnalyzer,RunMode> productionChecker;
+    private BiConsumer<OutputAnalyzer, RunMode> assemblyChecker;
+    private BiConsumer<OutputAnalyzer, RunMode> productionChecker;
     private String classpath;
     private String modulepath;
     private String[] appCommandLine;
@@ -100,12 +100,12 @@ public class SimpleCDSAppTester {
         return this;
     }
 
-    public SimpleCDSAppTester setAssemblyChecker(BiConsumer<OutputAnalyzer,RunMode> checker) {
+    public SimpleCDSAppTester setAssemblyChecker(BiConsumer<OutputAnalyzer, RunMode> checker) {
         this.assemblyChecker = checker;
         return this;
     }
 
-    public SimpleCDSAppTester setProductionChecker(BiConsumer<OutputAnalyzer,RunMode> checker) {
+    public SimpleCDSAppTester setProductionChecker(BiConsumer<OutputAnalyzer, RunMode> checker) {
         this.productionChecker = checker;
         return this;
     }
