@@ -31,7 +31,6 @@
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestDivDependentOnMainLoopGuard::*
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM TestDivDependentOnMainLoopGuard
  * @run main/othervm -Xcomp -XX:CompileOnly=TestDivDependentOnMainLoopGuard::* TestDivDependentOnMainLoopGuard
- *                    
  */
 
 import jdk.test.lib.Utils;
