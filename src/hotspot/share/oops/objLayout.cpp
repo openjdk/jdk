@@ -23,27 +23,24 @@
  */
 
 #include "oops/markWord.hpp"
-#include "oops/objLayout.hpp"
+#include "oops/objLayout.inline.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 
-ObjLayout::Mode ObjLayout::_klass_mode = ObjLayout::Undefined;
+HeaderMode::Mode ObjLayout::_mode;
 int ObjLayout::_oop_base_offset_in_bytes = 0;
 bool ObjLayout::_oop_has_klass_gap = false;
 
 void ObjLayout::initialize() {
-  assert(_klass_mode == Undefined, "ObjLayout initialized twice");
+  assert(!is_initialized(), "ObjLayout initialized twice");
   if (UseCompactObjectHeaders) {
-    _klass_mode = Compact;
-    _oop_base_offset_in_bytes = sizeof(markWord);
-    _oop_has_klass_gap = false;
+    _mode = HeaderMode::Compact;
   } else if (UseCompressedClassPointers) {
-    _klass_mode = Compressed;
-    _oop_base_offset_in_bytes = sizeof(markWord) + sizeof(narrowKlass);
-    _oop_has_klass_gap = true;
+    _mode = HeaderMode::Compressed;
   } else {
-    _klass_mode = Uncompressed;
-    _oop_base_offset_in_bytes = sizeof(markWord) + sizeof(Klass*);
-    _oop_has_klass_gap = false;
+    _mode = HeaderMode::Uncompressed;
   }
+  HeaderMode hm(_mode);
+  _oop_base_offset_in_bytes = hm.base_offset_in_bytes();
+  _oop_has_klass_gap = hm.has_klass_gap();
 }

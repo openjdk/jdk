@@ -27,22 +27,26 @@
 
 #include "oops/objLayout.hpp"
 
-inline ObjLayout::Mode ObjLayout::klass_mode() {
-#ifdef ASSERT
-  assert(_klass_mode != Undefined, "KlassMode not yet initialized");
-  if (UseCompactObjectHeaders) {
-    assert(_klass_mode == Compact, "Klass mode does not match flags");
-  } else if (UseCompressedClassPointers) {
-    assert(_klass_mode == Compressed, "Klass mode does not match flags");
-  } else {
-    assert(_klass_mode == Uncompressed, "Klass mode does not match flags");
+inline bool HeaderMode::has_klass_gap() const {
+  return _mode == Compressed;
+}
+
+
+// Size of markword, or markword+klassword; offset of length for arrays
+inline int HeaderMode::base_offset_in_bytes() const {
+  switch (_mode) {
+  case Uncompressed: return sizeof(markWord) + sizeof(Klass*);
+  case Compressed: return sizeof(markWord) + sizeof(narrowKlass);
+  case Compact: return sizeof(markWord);
   }
-#endif
-#ifdef _LP64
-  return _klass_mode;
-#else
-  return Uncompressed;
-#endif
+  ShouldNotReachHere();
+  return 0;
+}
+
+// Size of markword, or markword+klassword; offset of length for arrays
+template<typename T>
+inline int HeaderMode::array_first_element_offset_in_bytes() const {
+  return align_up(base_offset_in_bytes() + BytesPerInt, sizeof(T));
 }
 
 #endif // SHARE_OOPS_OBJLAYOUT_INLINE_HPP

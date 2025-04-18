@@ -25,6 +25,31 @@
 #ifndef SHARE_OOPS_OBJLAYOUT_HPP
 #define SHARE_OOPS_OBJLAYOUT_HPP
 
+class HeaderMode {
+public:
+  enum Mode {
+    // +UseCompactObjectHeaders (implies +UseCompressedClassPointers)
+    Compact = 0,
+    // +UseCompressedClassPointers (-UseCompactObjectHeaders)
+    Compressed,
+    // -UseCompressedClassPointers (-UseCompactObjectHeaders)
+    Uncompressed
+  };
+private:
+  const Mode _mode;
+public:
+  HeaderMode(Mode mode) : _mode(mode) {}
+
+  inline bool has_klass_gap() const;
+
+  // Size of markword, or markword+klassword; offset of length for arrays
+  inline int base_offset_in_bytes() const;
+
+  // Size of markword, or markword+klassword; offset of length for arrays
+  template<typename T>
+  inline int array_first_element_offset_in_bytes() const;
+};
+
 /*
  * This class helps to avoid loading more than one flag in some
  * operations that require checking UseCompressedClassPointers,
@@ -34,27 +59,21 @@
  * the Klass* is accessed frequently, especially by GC oop iterators
  * and stack-trace builders.
  */
-class ObjLayout {
-public:
-  enum Mode {
-    // +UseCompactObjectHeaders (implies +UseCompressedClassPointers)
-    Compact,
-    // +UseCompressedClassPointers (-UseCompactObjectHeaders)
-    Compressed,
-    // -UseCompressedClassPointers (-UseCompactObjectHeaders)
-    Uncompressed,
-    // Not yet initialized
-    Undefined
-  };
+class ObjLayout : public AllStatic {
 
-private:
-  static Mode _klass_mode;
+  static HeaderMode::Mode _mode;
   static int  _oop_base_offset_in_bytes;
   static bool _oop_has_klass_gap;
 
+  static bool is_initialized() {
+    return _oop_base_offset_in_bytes > 0;
+  }
+
 public:
   static void initialize();
-  static inline Mode klass_mode();
+  static inline HeaderMode::Mode klass_mode() {
+    return _mode;
+  }
   static inline int oop_base_offset_in_bytes() {
     return _oop_base_offset_in_bytes;
   }
