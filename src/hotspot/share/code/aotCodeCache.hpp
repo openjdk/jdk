@@ -135,13 +135,6 @@ public:
   address address_for_id(int id);
 };
 
-struct AOTCodeSection {
-public:
-  address _origin_address;
-  uint    _size;
-  uint    _offset;
-};
-
 class AOTCodeCache : public CHeapObj<mtCode> {
 
 // Classes used to describe AOT code cache.
