@@ -21,76 +21,127 @@
  * questions.
  */
 
+import java.awt.Button;
+import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.Frame;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Panel;
 import java.awt.TextArea;
+import java.util.concurrent.CountDownLatch;
 
 /*
  * @test
  * @bug 6497109
  * @summary Mouse cursor icons for TextArea should be correct in case of
  *  hovering or dragging mouse over different subcomponents.
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
  * @run main/manual HoveringAndDraggingTest
  */
 
 public class HoveringAndDraggingTest {
-    public static void main(String[] args) throws Exception {
-        String INSTRUCTIONS = """
-                    1. Notice components in test window: main-panel, box-for-text,
-                       2 scroll-sliders, and 4 scroll-buttons(Not applicable for macosx).
-                    2. Hover mouse over box-for-text.
-                       Make sure, that mouse cursor is TextCursor (a.k.a. "beam").
-                    3. Hover mouse over each of components (see item 1), except for box-for-text.
-                       Make sure, that cursor is DefaultCursor (arrow).
-                    4. Drag mouse (using any mouse button) from box-for-text to every
-                       component in item 1, and also outside application window.
-                       Make sure, that cursor remains TextCursor while mouse button is pressed.
-                    5. Repeat item 4 for each other component in item 1, except for box-for-text
-                       _but_ now make sure that cursor is DefaultCursor.
-                    6. If cursor behaves as described in items 2-3-4-5, then test passed;
-                       otherwise it failed.
-                """;
-
-        PassFailJFrame.builder()
-                .title("Test Instructions")
-                .instructions(INSTRUCTIONS)
-                .columns(40)
-                .testUI(HoveringAndDraggingTest::initialize)
-                .build()
-                .awaitAndCheck();
+    static Frame frame;
+    static Frame instructionsFrame;
+    static CountDownLatch countDownLatch;
+    public static CountDownLatch createCountDownLatch() {
+        return new CountDownLatch(1);
     }
 
-    public static Frame initialize() {
+    public static void main(String[] args) throws Exception {
+        countDownLatch = createCountDownLatch();
+        EventQueue.invokeAndWait(() -> {
+            initialize();
+            showInstructionFrame();
+        });
+        countDownLatch.await();
+        System.out.println("Test Pass");
+    }
+
+    public static void initialize() {
         Panel panel = new Panel();
         panel.setLayout(new GridLayout(3, 3));
 
         for (int y = 0; y < 3; ++y) {
             for (int x = 0; x < 3; ++x) {
                 if (x == 1 && y == 1) {
-                    panel.add(new TextArea(getLongString()));
+                    panel.add(new TextArea(bigString()));
                 } else {
                     panel.add(new Panel());
                 }
             }
         }
 
-        Frame frame = new Frame("TextArea cursor icon test");
+        frame = new Frame("TextArea cursor icon test");
         frame.setSize(300, 300);
+        frame.setLocation(450, 350);
         frame.add(panel);
-        return frame;
+        frame.setVisible(true);
     }
 
-    static String getLongString() {
-        StringBuilder s = new StringBuilder();
-        for (int lines = 0; lines < 50; ++lines) {
-            for (int symbols = 0; symbols < 100; ++symbols) {
-                s.append("0".repeat(100));
-            }
-            s.append("\n");
+    static void showInstructionFrame() {
+        String INSTRUCTIONS = """
+                1. Notice components in test window: main-panel,box-for-text,
+                   2 scroll-sliders, and 4 scroll-buttons.
+                2. Hover mouse over box-for-text.
+                   Make sure, that mouse cursor is TextCursor(a.k.a. \"beam\").
+                3. Hover mouse over each of components (see item 1),
+                   except for box-for-text.
+                   Make sure, that cursor is DefaultCursor (arrow).
+                4. Drag mouse (using any mouse button) from box-for-text to every"
+                   component in item 1, and also outside application window."
+                   Make sure, that cursor remains TextCursor
+                   while mouse button is pressed.
+                5. Repeat item 4 for each other component in item 1,
+                   except for box-for-text
+                   _but_ now make sure that cursor is DefaultCursor.
+                6. If cursor behaves as described in items 2-3-4-5,
+                   then test is PASS otherwise it FAILED.
+                 """;
+        TextArea textArea = new TextArea(INSTRUCTIONS);
+        Button passBtn = new Button("PASS");
+        Button failBtn = new Button("FAIL");
+        Panel btnPanel = new Panel(new GridBagLayout());
+        Panel panel = new Panel(new GridBagLayout());
+        instructionsFrame = new Frame("Test Instructions");
+        passBtn.setMaximumSize(new Dimension(100, 30));
+        failBtn.setMaximumSize(new Dimension(100, 30));
+        btnPanel.add(passBtn);
+        btnPanel.add(failBtn);
+        passBtn.addActionListener(e -> disposeFrames());
+        failBtn.addActionListener(e -> {
+            disposeFrames();
+            throw new RuntimeException("Test Failed");
+        });
+        panel.add(textArea);
+        panel.add(btnPanel);
+        instructionsFrame.add(panel);
+        instructionsFrame.pack();
+        instructionsFrame.setLocation(300, 100);
+        instructionsFrame.setVisible(true);
+    }
+
+    static void disposeFrames() {
+        countDownLatch.countDown();
+        if (frame != null) {
+            frame.dispose();
         }
-        return s.toString();
+        if (instructionsFrame != null) {
+            instructionsFrame.dispose();
+        }
+    }
+
+    static String bigString() {
+        String s = "";
+        for (int lines = 0; ; ++lines) {
+            for (int symbols = 0; symbols < 100; ++symbols) {
+                s += "0";
+            }
+            if (lines < 50) {
+                s += "\n";
+            } else {
+                break;
+            }
+        }
+        return s;
     }
 }
