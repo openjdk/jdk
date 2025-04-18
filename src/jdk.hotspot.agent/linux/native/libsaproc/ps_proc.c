@@ -447,13 +447,15 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
 
   if ( (ph = (struct ps_prochandle*) calloc(1, sizeof(struct ps_prochandle))) == NULL) {
     snprintf(err_buf, err_buf_len, "can't allocate memory for ps_prochandle");
-    print_debug("%s\n", err_buf);
+    print_error("%s\n", err_buf);
     return NULL;
   }
 
   if ((attach_status = ptrace_attach(pid, err_buf, err_buf_len)) != ATTACH_SUCCESS) {
     if (attach_status == ATTACH_THREAD_DEAD) {
        print_error("The process with pid %d does not exist.\n", pid);
+    } else {
+       print_error("Failed to attach to the process with pid %d.\n", pid);
     }
     free(ph);
     return NULL;
@@ -464,7 +466,7 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
   if (add_thread_info(ph, ph->pid) == NULL) {
     print_error("failed to add thread info\n");
     free(ph);
-    return false;
+    return NULL;
   }
 
   // initialize vtable
@@ -517,6 +519,7 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
           delete_thread_info(ph, current_thr);
         }
         else {
+          print_error("Failed to attach to the thread with lwp_id %d.\n", current_thr->lwp_id);
           goto err;
         } // ATTACH_THREAD_DEAD
       } // !ATTACH_SUCCESS
