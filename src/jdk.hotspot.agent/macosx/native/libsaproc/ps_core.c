@@ -74,7 +74,7 @@ static bool sort_map_array(struct ps_prochandle* ph) {
   // allocate map_array
   map_info** array;
   if ( (array = (map_info**) malloc(sizeof(map_info*) * num_maps)) == NULL) {
-    print_debug("can't allocate memory for map array\n");
+    print_error("can't allocate memory for map array\n");
     return false;
   }
 
