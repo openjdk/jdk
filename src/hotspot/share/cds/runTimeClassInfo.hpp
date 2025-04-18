@@ -264,7 +264,11 @@ public:
   // Used by RunTimeSharedDictionary to implement OffsetCompactHashtable::EQUALS
   static inline bool EQUALS(
        const RunTimeClassInfo* value, Symbol* key, int len_unused) {
+#if INCLUDE_CDS
     return (value->klass()->name() == key);
+#else
+    return false;
+#endif
   }
 };
 
