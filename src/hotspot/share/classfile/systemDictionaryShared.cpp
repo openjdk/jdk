@@ -465,6 +465,21 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
   return (klass == *v);
 }
 
+void SystemDictionaryShared::copy_unregistered_class_size_and_crc32(InstanceKlass* klass) {
+  precond(CDSConfig::is_dumping_final_static_archive());
+  precond(klass->is_shared());
+
+  // A shared class must have a RunTimeClassInfo record
+  const RunTimeClassInfo* record = find_record(&_static_archive._unregistered_dictionary,
+                                               nullptr, klass->name());
+  precond(record != nullptr);
+  precond(record->klass() == klass);
+
+  DumpTimeClassInfo* info = get_info(klass);
+  info->_clsfile_size = record->crc()->_clsfile_size;
+  info->_clsfile_crc32 = record->crc()->_clsfile_crc32;
+}
+
 void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(!is_builtin(k), "must be unregistered class");
@@ -667,7 +682,7 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
 }
 
 void SystemDictionaryShared::finish_exclusion_checks() {
-  if (CDSConfig::is_dumping_dynamic_archive()) {
+  if (CDSConfig::is_dumping_dynamic_archive() || CDSConfig::is_dumping_preimage_static_archive()) {
     // Do this first -- if a base class is excluded due to duplication,
     // all of its subclasses will also be excluded.
     ResourceMark rm;

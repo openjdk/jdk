@@ -127,4 +127,4 @@ public class FirstItemRemoveTest extends Frame
 
     }
 
-}// class AutomaticAppletTest
+}
