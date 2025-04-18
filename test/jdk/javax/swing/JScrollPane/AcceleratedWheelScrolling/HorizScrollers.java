@@ -53,10 +53,6 @@ import javax.swing.SwingUtilities;
 
 public class HorizScrollers {
     private static final String INSTRUCTIONS = """
-            This is a test of Swing mousewheel behavior on Windows. Please
-            ensure your display is configured at a resolution of 1024x768
-            or higher.
-
             This is a semi-automatic test with three phases.
             For each phase, you will need to change the mouse setting, as
             directed by a dialog. Once the correct setting is confirmed,
