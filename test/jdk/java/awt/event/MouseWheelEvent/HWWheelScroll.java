@@ -73,7 +73,7 @@ public class HWWheelScroll {
         retValue.add(makeListFrame(TEXT_TALL));
         retValue.add(makeListFrame(TEXT_WIDE));
         retValue.add(makeListFrame(TEXT_SMALL));
-        Frame f = new Frame();
+        Frame f = new Frame("File Dialog Owner");
         f.setSize(150, 150);
         f.setLocationRelativeTo(null);
         FileDialog fd = new FileDialog(f, "FileDialog");
