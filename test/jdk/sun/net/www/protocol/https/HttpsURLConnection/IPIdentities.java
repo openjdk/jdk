@@ -34,17 +34,38 @@
  * @author Xuelei Fan
  */
 
-import java.net.*;
-import java.security.*;
+
+import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.SecureRandom;
+import java.security.Security;
 import java.security.cert.X509Certificate;
-import java.io.*;
-import javax.net.ssl.*;
+
 import java.security.cert.Certificate;
 import java.math.BigInteger;
 import jdk.test.lib.net.URIBuilder;
 import jdk.test.lib.security.CertificateBuilder;
 import jdk.test.lib.security.CertificateBuilder.KeyUsage;
-import sun.security.x509.*;
+import sun.security.x509.AuthorityKeyIdentifierExtension;
+import sun.security.x509.GeneralName;
+import sun.security.x509.GeneralNames;
+import sun.security.x509.KeyIdentifier;
+import sun.security.x509.SerialNumber;
+import sun.security.x509.X500Name;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManagerFactory;
 
 
 public class IPIdentities {
