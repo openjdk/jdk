@@ -82,7 +82,7 @@ public abstract class QuicConnection {
      * Creates a new locally initiated bidirectional stream.
      * <p>
      * Creation of streams is limited to the maximum limit advertised by the peer. If a new stream
-     * cannot be created due to this flow control limitation, then this method will use the
+     * cannot be created due to this limitation, then this method will use the
      * {@code limitIncreaseDuration} to decide how long to wait for a potential increase in the
      * limit.
      * <p>
@@ -108,7 +108,7 @@ public abstract class QuicConnection {
      * are write-only streams.
      * <p>
      * Creation of streams is limited to the maximum limit advertised by the peer. If a new stream
-     * cannot be created due to this flow control limitation, then this method will use the
+     * cannot be created due to this limitation, then this method will use the
      * {@code limitIncreaseDuration} to decide how long to wait for a potential increase in the
      * limit.
      * <p>

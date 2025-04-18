@@ -55,7 +55,7 @@ import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 /*
  * @test
- * @summary verifies that when the Quic flow control limit, for stream creation, is reached
+ * @summary verifies that when the Quic stream limit is reached
  *          then HTTP3 requests are retried on newer connection
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext

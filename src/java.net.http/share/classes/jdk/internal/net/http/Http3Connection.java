@@ -505,7 +505,7 @@ public final class Http3Connection implements AutoCloseable {
                                     quicConnectionTag(), exchange.multi.streamLimitState());
                         }
                         if (debug.on()) {
-                            debug.log("bidi stream creation failed due to flow control limit: "
+                            debug.log("bidi stream creation failed due to stream limit: "
                                     + cause + ", connection will be marked as unusable for subsequent" +
                                     " requests");
                         }

@@ -1129,7 +1129,7 @@ public final class QuicConnectionStreams {
 
     /**
      * Checks whether any stream needs to have a STOP_SENDING, RESET_STREAM or any connection
-     * flow control frames like STREAMS_BLOCKED, MAX_STREAMS sent and adds the frame to the list
+     * control frames like STREAMS_BLOCKED, MAX_STREAMS sent and adds the frame to the list
      * if there's room.
      * @param frames    list of frames
      * @param remaining maximum number of bytes that can be added by this method
@@ -1321,7 +1321,7 @@ public final class QuicConnectionStreams {
 
     /**
      * Package available data in {@link StreamFrame} instances and add them
-     * to the provided frames list. Additional frames, like connection flow control frames
+     * to the provided frames list. Additional frames, like connection control frames
      * {@code STREAMS_BLOCKED}, {@code MAX_STREAMS} or stream flow control frames like
      * {@code STREAM_DATA_BLOCKED} may also be added if space allows. The {@link StreamDataBlockedFrame}
      * is added only once for a given stream, until the stream becomes ready again.
