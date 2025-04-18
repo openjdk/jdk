@@ -363,16 +363,39 @@ public enum AccessFlag {
      * @param mask bit mask of access flags
      * @param location context to interpret mask value
      * @throws IllegalArgumentException if the mask contains bit
-     * positions not support for the location in question
+     * positions not defined for the location
      * @throws NullPointerException if {@code location} is {@code null}
      */
     public static Set<AccessFlag> maskToAccessFlags(int mask, Location location) {
         var definition = findDefinition(location);
-        int unmatchedMask = mask & (~location.parsingMask()); // flagMask rejects strictfp
+        int unmatchedMask = mask & (~location.flagsMask());
         if (unmatchedMask != 0) {
             throw new IllegalArgumentException("Unmatched bit position 0x" +
                     Integer.toHexString(unmatchedMask) +
                     " for location " + location);
+        }
+        return new AccessFlagSet(definition, mask);
+    }
+
+    /**
+     * {@return an unmodifiable set of access flags for the given mask value
+     * appropriate for the location for the class file format}
+     *
+     * @param mask bit mask of access flags
+     * @param location context to interpret mask value
+     * @param cffv the class file format to interpret mask value
+     * @throws IllegalArgumentException if the mask contains bit
+     * positions not defined for the location for the class file format
+     * @throws NullPointerException if {@code location} or {@code cffv} is {@code null}
+     */
+    public static Set<AccessFlag> maskToAccessFlags(int mask, Location location, ClassFileFormatVersion cffv) {
+        var definition = findDefinition(location);
+        int unmatchedMask = mask & (~location.flagsMask(cffv)); // implicit null check
+        if (unmatchedMask != 0) {
+            throw new IllegalArgumentException("Unmatched bit position 0x" +
+                    Integer.toHexString(unmatchedMask) +
+                    " for location " + location +
+                    " for class file format " + cffv);
         }
         return new AccessFlagSet(definition, mask);
     }
