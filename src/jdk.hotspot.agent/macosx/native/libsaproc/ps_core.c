@@ -633,6 +633,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
       lseek(fd, -sizeof(uint32_t), SEEK_CUR);
       // This is the beginning of the mach-o file in the segment.
       if (read(fd, (void *)&header, sizeof(mach_header_64)) != sizeof(mach_header_64)) {
+        print_error("Failed to file header\n");
         goto err;
       }
       fpos = ltell(fd);
@@ -643,6 +644,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
         // LC_ID_DYLIB is the file itself for a .dylib
         lseek(fd, fpos, SEEK_SET);
         if (read(fd, (void *)&lcmd, sizeof(load_command)) != sizeof(load_command)) {
+          print_error("Failed to read command\n");
           return false;   // error
         }
         fpos += lcmd.cmdsize;  // next command position
@@ -654,6 +656,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
         if (lcmd.cmd == LC_ID_DYLIB) {
           lseek(fd, -sizeof(load_command), SEEK_CUR);
           if (read(fd, (void *)&dylibcmd, sizeof(dylib_command)) != sizeof(dylib_command)) {
+            print_error("Failed to read command\n");
             return false;
           }
           /**** name stored at dylib_command.dylib.name.offset, is a C string  */
