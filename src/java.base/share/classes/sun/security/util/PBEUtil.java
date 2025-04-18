@@ -283,11 +283,7 @@ public final class PBEUtil {
                             "PBEParameterSpec required for salt " +
                             "and iteration count");
                 }
-            } else if (!(params instanceof PBEParameterSpec)) {
-                throw new InvalidAlgorithmParameterException(
-                        "PBEParameterSpec type required");
-            } else {
-                PBEParameterSpec pbeParams = (PBEParameterSpec) params;
+            } else if (params instanceof PBEParameterSpec pbeParams) {
                 // make sure the parameter values are consistent
                 if (salt != null) {
                     if (!Arrays.equals(salt, pbeParams.getSalt())) {
@@ -307,7 +303,11 @@ public final class PBEUtil {
                 } else {
                     iCount = pbeParams.getIterationCount();
                 }
+            } else {
+                throw new InvalidAlgorithmParameterException(
+                        "PBEParameterSpec type required");
             }
+
             // For security purpose, we need to enforce a minimum length
             // for salt; just require the minimum salt length to be 8-byte
             // which is what PKCS#5 recommends and openssl does.

@@ -38,7 +38,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.PBEParameterSpec;
 
 import sun.security.jca.JCAUtil;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
