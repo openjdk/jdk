@@ -1962,7 +1962,7 @@ class MutableBigInteger {
             base = Math.nextUp(base);
             final double exp = Math.nextUp(1.0 / n);
             final double rDouble = Math.ceil(Math.nextUp(Math.pow(base, exp)));
-            r = new MutableBigInteger(new BigDecimal(rDouble).toBigInteger().mag);
+            r.copyValue(new BigDecimal(rDouble).toBigInteger().mag);
 
             // Shift the approximate root back into the original range.
             r.safeLeftShift((int) (shift / n));
