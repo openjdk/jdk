@@ -25,29 +25,13 @@
 #ifndef SHARE_OOPS_OBJLAYOUT_HPP
 #define SHARE_OOPS_OBJLAYOUT_HPP
 
-class HeaderMode {
-public:
-  enum Mode {
-    // +UseCompactObjectHeaders (implies +UseCompressedClassPointers)
-    Compact = 0,
-    // +UseCompressedClassPointers (-UseCompactObjectHeaders)
-    Compressed,
-    // -UseCompressedClassPointers (-UseCompactObjectHeaders)
-    Uncompressed
-  };
-private:
-  const Mode _mode;
-public:
-  HeaderMode(Mode mode) : _mode(mode) {}
-
-  inline bool has_klass_gap() const;
-
-  // Size of markword, or markword+klassword; offset of length for arrays
-  inline int base_offset_in_bytes() const;
-
-  // Size of markword, or markword+klassword; offset of length for arrays
-  template<typename T>
-  inline int array_first_element_offset_in_bytes() const;
+enum class HeaderMode {
+  // +UseCompactObjectHeaders (implies +UseCompressedClassPointers)
+  Compact = 0,
+  // +UseCompressedClassPointers (-UseCompactObjectHeaders)
+  Compressed,
+  // -UseCompressedClassPointers (-UseCompactObjectHeaders)
+  Uncompressed
 };
 
 /*
@@ -61,7 +45,7 @@ public:
  */
 class ObjLayout : public AllStatic {
 
-  static HeaderMode::Mode _mode;
+  static HeaderMode _mode;
   static int  _oop_base_offset_in_bytes;
   static bool _oop_has_klass_gap;
 
@@ -70,16 +54,29 @@ class ObjLayout : public AllStatic {
   }
 
 public:
+
   static void initialize();
-  static inline HeaderMode::Mode klass_mode() {
-    return _mode;
-  }
+  static inline HeaderMode klass_mode() { return _mode; }
   static inline int oop_base_offset_in_bytes() {
     return _oop_base_offset_in_bytes;
   }
   static inline bool oop_has_klass_gap() {
     return _oop_has_klass_gap;
   }
+};
+
+// Has to be a separate class from ObjLayout
+struct ObjLayoutHelpers {
+
+  template<HeaderMode mode>
+  static constexpr inline bool oop_has_klass_gap();
+
+  template<HeaderMode mode>
+  static constexpr inline int oop_base_offset_in_bytes();
+
+  template<HeaderMode mode, typename elemtype>
+  static constexpr inline int array_first_element_offset_in_bytes();
+
 };
 
 #endif // SHARE_OOPS_OBJLAYOUT_HPP

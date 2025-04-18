@@ -28,6 +28,7 @@
 
 // Included by oop.hpp and klass.hpp, keep includes short
 #include "memory/allStatic.hpp"
+#include "oops/objLayout.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ArrayKlass;
@@ -231,11 +232,11 @@ public:
   inline unsigned ak_header_size() const { return _v.ake.hsz; }
 
   // for an oak, calculates word size given header size, element size, and array length
-  template <class OopType, bool compact_headers>
+  template <HeaderMode mode, class OopType>
   inline size_t oak_calculate_wordsize_given_oop_fast(oopDesc* obj) const;
 
   // for a tak, calculates word size given header size, element size, and array length
-  template <bool compact_headers>
+  template <HeaderMode mode>
   inline size_t tak_calculate_wordsize_given_oop_fast(oopDesc* obj) const;
 
   // Helper function, prints current limits

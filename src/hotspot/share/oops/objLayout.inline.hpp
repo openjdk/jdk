@@ -27,26 +27,24 @@
 
 #include "oops/objLayout.hpp"
 
-inline bool HeaderMode::has_klass_gap() const {
-  return _mode == Compressed;
+template<HeaderMode mode>
+constexpr inline bool ObjLayoutHelpers::oop_has_klass_gap() {
+  return mode == HeaderMode::Compressed;
 }
 
-
-// Size of markword, or markword+klassword; offset of length for arrays
-inline int HeaderMode::base_offset_in_bytes() const {
-  switch (_mode) {
-  case Uncompressed: return sizeof(markWord) + sizeof(Klass*);
-  case Compressed: return sizeof(markWord) + sizeof(narrowKlass);
-  case Compact: return sizeof(markWord);
+template<HeaderMode mode>
+constexpr inline int ObjLayoutHelpers::oop_base_offset_in_bytes() {
+  switch (mode) {
+  case HeaderMode::Uncompressed:  return sizeof(markWord) + sizeof(Klass*);
+  case HeaderMode::Compressed:    return sizeof(markWord) + sizeof(narrowKlass);
+  case HeaderMode::Compact:       return sizeof(markWord);
   }
-  ShouldNotReachHere();
   return 0;
 }
 
-// Size of markword, or markword+klassword; offset of length for arrays
-template<typename T>
-inline int HeaderMode::array_first_element_offset_in_bytes() const {
-  return align_up(base_offset_in_bytes() + BytesPerInt, sizeof(T));
+template<HeaderMode headermode, typename elemtype>
+constexpr inline int ObjLayoutHelpers::array_first_element_offset_in_bytes() {
+  return align_up(oop_base_offset_in_bytes<headermode>() + BytesPerInt, sizeof(elemtype));
 }
 
 #endif // SHARE_OOPS_OBJLAYOUT_INLINE_HPP

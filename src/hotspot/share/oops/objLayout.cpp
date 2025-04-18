@@ -27,7 +27,7 @@
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 
-HeaderMode::Mode ObjLayout::_mode;
+HeaderMode ObjLayout::_mode;
 int ObjLayout::_oop_base_offset_in_bytes = 0;
 bool ObjLayout::_oop_has_klass_gap = false;
 
@@ -35,12 +35,15 @@ void ObjLayout::initialize() {
   assert(!is_initialized(), "ObjLayout initialized twice");
   if (UseCompactObjectHeaders) {
     _mode = HeaderMode::Compact;
+    _oop_base_offset_in_bytes = ObjLayoutHelpers::oop_base_offset_in_bytes<HeaderMode::Compact>();
+    _oop_has_klass_gap = ObjLayoutHelpers::oop_has_klass_gap<HeaderMode::Compact>();
   } else if (UseCompressedClassPointers) {
     _mode = HeaderMode::Compressed;
+    _oop_base_offset_in_bytes = ObjLayoutHelpers::oop_base_offset_in_bytes<HeaderMode::Compressed>();
+    _oop_has_klass_gap = ObjLayoutHelpers::oop_has_klass_gap<HeaderMode::Compressed>();
   } else {
     _mode = HeaderMode::Uncompressed;
+    _oop_base_offset_in_bytes = ObjLayoutHelpers::oop_base_offset_in_bytes<HeaderMode::Uncompressed>();
+    _oop_has_klass_gap = ObjLayoutHelpers::oop_has_klass_gap<HeaderMode::Uncompressed>();
   }
-  HeaderMode hm(_mode);
-  _oop_base_offset_in_bytes = hm.base_offset_in_bytes();
-  _oop_has_klass_gap = hm.has_klass_gap();
 }

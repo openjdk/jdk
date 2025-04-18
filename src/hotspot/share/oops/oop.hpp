@@ -84,11 +84,11 @@ class oopDesc {
   // objects during a GC) -- requires a valid klass pointer
   inline void init_mark();
 
-  template <HeaderMode::Mode mode>
+  template <HeaderMode mode>
   inline KlassLUTEntry get_klute() const;
   inline KlassLUTEntry get_klute() const;
 
-  template <HeaderMode::Mode mode>
+  template <HeaderMode mode>
   inline Klass* klass() const;
   inline Klass* klass() const;
 
@@ -121,7 +121,7 @@ class oopDesc {
 
   // Sometimes (for complicated concurrency-related reasons), it is useful
   // to be able to figure out the size of an object knowing its klass.
-  inline size_t size_given_klass(Klass* klass);
+  inline size_t size_given_klass(const Klass* klass);
 
   // type test operations (inlined in oop.inline.hpp)
   inline bool is_instance()    const;

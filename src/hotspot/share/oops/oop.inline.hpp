@@ -97,7 +97,7 @@ void oopDesc::init_mark() {
   set_mark(prototype_mark());
 }
 
-template <HeaderMode::Mode mode>
+template <HeaderMode mode>
 KlassLUTEntry oopDesc::get_klute() const {
   switch (mode) {
     case HeaderMode::Compact:
@@ -118,7 +118,7 @@ KlassLUTEntry oopDesc::get_klute() const {
   }
 }
 
-template <HeaderMode::Mode mode>
+template <HeaderMode mode>
 Klass* oopDesc::klass() const {
   switch (mode) {
     case HeaderMode::Compact:
@@ -209,7 +209,7 @@ size_t oopDesc::size()  {
   return size_given_klass(klass());
 }
 
-size_t oopDesc::size_given_klass(Klass* klass)  {
+size_t oopDesc::size_given_klass(const Klass* klass)  {
   int lh = klass->layout_helper();
   size_t s;
 

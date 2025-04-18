@@ -40,6 +40,7 @@
 #include "oops/instanceStackChunkKlass.inline.hpp"
 #include "oops/klassInfoLUTEntry.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
+#include "oops/objLayout.inline.hpp"
 #include "oops/typeArrayKlass.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -109,18 +110,18 @@ class DispatchBase {
 protected:
 
   // Return the size of an object; uses as much hard-coded information as possible
-  template <class KlassType, class OopType, bool compact_headers>
+  template <class KlassType, HeaderMode mode, class OopType>
   static inline size_t calculate_size_for_object_fast(KlassLUTEntry klute, oop obj) {
     size_t s;
     constexpr Klass::KlassKind kind = KlassType::Kind;
     assert(kind == klute.kind(), "Bad call");
     switch (kind) {
       case Klass::ObjArrayKlassKind: {
-        s = klute.oak_calculate_wordsize_given_oop_fast<OopType, compact_headers>(obj);
+        s = klute.oak_calculate_wordsize_given_oop_fast<mode, OopType>(obj);
         break;
       }
       case Klass::TypeArrayKlassKind: {
-        s = klute.tak_calculate_wordsize_given_oop_fast<compact_headers>(obj);
+        s = klute.tak_calculate_wordsize_given_oop_fast<mode>(obj);
         break;
       }
       default: {
@@ -129,7 +130,8 @@ protected:
           s = klute.ik_wordsize();
         } else {
           // Rare path: size not statically computable (e.g. for MirrorKlass instances); calculate using regular Klass
-          s = obj->size();
+          const Klass* k = obj->klass<mode>();
+          s = obj->size_given_klass(k);
         }
       }
     }
@@ -335,10 +337,10 @@ class OopOopIterateDispatchReturnSize : public DispatchBase {
 
     FunctionType _function [Klass::KLASS_KIND_COUNT];
 
-    template <typename KlassType, typename OopType, bool compact_headers>
+    template <typename KlassType, HeaderMode mode, typename OopType>
     static size_t invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
       KlassType::template oop_oop_iterate<OopType> (obj, cl, klute);
-      return calculate_size_for_object_fast<KlassType, OopType, compact_headers>(klute, obj);
+      return calculate_size_for_object_fast<KlassType, mode, OopType>(klute, obj);
     }
 
     template <class KlassType, class OopType>
@@ -374,15 +376,15 @@ class OopOopIterateDispatchReturnSize : public DispatchBase {
       } else {
         if (UseCompressedOops) {
           if (UseCompactObjectHeaders) {
-            _function[KlassType::Kind] = &invoke<KlassType, narrowOop, true>;
+            _function[KlassType::Kind] = &invoke<KlassType, HeaderMode::Compact, narrowOop>;
           } else {
-            _function[KlassType::Kind] = &invoke<KlassType, narrowOop, false>;
+            _function[KlassType::Kind] = &invoke<KlassType, HeaderMode::Compressed, narrowOop>;
           }
         } else {
           if (UseCompactObjectHeaders) {
-            _function[KlassType::Kind] = &invoke<KlassType, oop, true>;
+            _function[KlassType::Kind] = &invoke<KlassType, HeaderMode::Compact, oop>;
           } else {
-            _function[KlassType::Kind] = &invoke<KlassType, oop, false>;
+            _function[KlassType::Kind] = &invoke<KlassType, HeaderMode::Compressed, oop>;
           }
         }
       }
@@ -420,15 +422,15 @@ class OopOopIterateDispatchBoundedReturnSize : public DispatchBase {
 
     FunctionType _function [Klass::KLASS_KIND_COUNT];
 
-    template <typename KlassType, typename OopType, bool compact_headers>
+    template <typename KlassType, HeaderMode mode, typename OopType>
     static size_t invoke(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
       KlassType::template oop_oop_iterate_bounded<OopType> (obj, cl, mr, klute);
-      return calculate_size_for_object_fast<KlassType, OopType, compact_headers>(klute, obj);
+      return calculate_size_for_object_fast<KlassType, mode, OopType>(klute, obj);
     }
 
     template <class KlassType, class OopType>
     static size_t invoke_slow(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
-      KlassType::template oop_oop_iterate_bounded<OopType> (obj, cl, mr, klute);
+      KlassType::template oop_oop_iterate_bounded<OopType>(obj, cl, mr, klute);
       return obj->size();
     }
 
@@ -459,15 +461,15 @@ class OopOopIterateDispatchBoundedReturnSize : public DispatchBase {
       } else {
         if (UseCompressedOops) {
           if (UseCompactObjectHeaders) {
-            _function[KlassType::Kind] = &invoke<KlassType, narrowOop, true>;
+            _function[KlassType::Kind] = &invoke<KlassType, HeaderMode::Compact, narrowOop>;
           } else {
-            _function[KlassType::Kind] = &invoke<KlassType, narrowOop, false>;
+            _function[KlassType::Kind] = &invoke<KlassType, HeaderMode::Compressed, narrowOop>;
           }
         } else {
           if (UseCompactObjectHeaders) {
-            _function[KlassType::Kind] = &invoke<KlassType, oop, true>;
+            _function[KlassType::Kind] = &invoke<KlassType, HeaderMode::Compact, oop>;
           } else {
-            _function[KlassType::Kind] = &invoke<KlassType, oop, false>;
+            _function[KlassType::Kind] = &invoke<KlassType, HeaderMode::Compressed, oop>;
           }
         }
       }
