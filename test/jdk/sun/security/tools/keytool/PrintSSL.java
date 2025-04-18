@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,8 @@ public class PrintSSL {
         // make sure that "-printcert" works with weak algorithms
         OutputAnalyzer out = SecurityTools.keytool("-genkeypair "
                 + "-keystore keystore -storepass passphrase "
-                + "-keypass passphrase -keyalg rsa -keysize 1024 "
-                + "-sigalg MD5withRSA -alias rsa_alias -dname CN=Server");
+                + "-keypass passphrase -keyalg rsa -keysize 2048 "
+                + "-sigalg SHA256withRSA -alias rsa_alias -dname CN=Server");
         System.out.println(out.getOutput());
         out.shouldHaveExitValue(0);
 
