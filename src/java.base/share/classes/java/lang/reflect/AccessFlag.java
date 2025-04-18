@@ -642,11 +642,6 @@ public enum AccessFlag {
             return flagsMask;
         }
 
-        // Temporary shortcut to allow strict to be parsed
-        private int parsingMask() {
-            return this == METHOD ? flagsMask | ACC_STRICT : flagsMask;
-        }
-
         /**
          * {@return the union of integer masks of all access flags defined for
          * this location in the given class file format version}  If {@code
