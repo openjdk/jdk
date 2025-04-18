@@ -352,6 +352,12 @@ protected:
     // Stack/Resource allocated
     {
       ResourceMark rm;
+      GrowableArray<int> a;
+      modify_and_test(&a, modify, test);
+    }
+
+    {
+      ResourceMark rm;
       GrowableArray<int> a(max);
       modify_and_test(&a, modify, test);
     }
@@ -434,6 +440,10 @@ protected:
     with_no_cheap_array(Max0, Append1, test);
   }
 };
+
+// static empty vector
+const GrowableArray<int> empty_array(mtTest);
+const GrowableArrayCHeap<int, mtTest> empty_cheap_array;
 
 TEST_VM_F(GrowableArrayTest, append) {
   with_all_types_all_0(Append);
@@ -561,7 +571,7 @@ TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, assignment_with_embedded_cheap,
 TEST(GrowableArrayCHeap, sanity) {
   // Stack/CHeap
   {
-    GrowableArrayCHeap<int, mtTest> a(0);
+    GrowableArrayCHeap<int, mtTest> a;
 #ifdef ASSERT
     ASSERT_TRUE(a.allocated_on_stack_or_embedded());
 #endif
@@ -574,7 +584,7 @@ TEST(GrowableArrayCHeap, sanity) {
 
   // CHeap/CHeap
   {
-    GrowableArrayCHeap<int, mtTest>* a = new GrowableArrayCHeap<int, mtTest>(0);
+    GrowableArrayCHeap<int, mtTest>* a = new GrowableArrayCHeap<int, mtTest>();
 #ifdef ASSERT
     ASSERT_TRUE(a->allocated_on_C_heap());
 #endif
