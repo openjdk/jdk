@@ -307,10 +307,9 @@ public enum AccessFlag {
     private final int mask;
     private final boolean sourceModifier;
 
-    // Intentionally using Set rather than EnumSet since EnumSet is
-    // mutable.
+    // immutable; may differ when preview is on
     private final Set<Location> locations;
-    // historical locations up to a given version
+    // historical locations up to a given version; immutable, same when preview on
     private final List<Map.Entry<ClassFileFormatVersion, Set<Location>>> historicalLocations;
 
     private AccessFlag(int mask,
@@ -340,7 +339,18 @@ public enum AccessFlag {
 
     /**
      * {@return kinds of constructs the flag can be applied to in the
-     * latest class file format version}
+     * current class file format version}
+     *
+     * {@previewNote 0 When preview features are enabled:}
+     * Returns kinds constructs the flag can be applied to in class
+     * files that depend on the preview features of the current Java SE
+     * release.
+     * {@previewNote}
+     *
+     * @apiNote
+     * {@link #locations(ClassFileFormatVersion)
+     * locations(ClassFileFormatVersion.latest())} is not affected by
+     * whether preview features are enabled.
      */
     public Set<Location> locations() {
         return locations;
@@ -358,12 +368,18 @@ public enum AccessFlag {
 
     /**
      * {@return an unmodifiable set of access flags for the given mask value
-     * appropriate for the location in question}
+     * appropriate for the location in the current class file format version}
+     *
+     * {@previewNote 0 When preview features are enabled:}
+     * Returns an unmodifiable set of access flags for the given mask value
+     * appropriate for the location in class files that depend on the preview
+     * features of the current Java SE release.
+     * {@previewNote}
      *
      * @param mask bit mask of access flags
      * @param location context to interpret mask value
      * @throws IllegalArgumentException if the mask contains bit
-     * positions not support for the location in question
+     * positions not defined for the location in question
      * @throws NullPointerException if {@code location} is {@code null}
      */
     public static Set<AccessFlag> maskToAccessFlags(int mask, Location location) {
@@ -582,10 +598,10 @@ public enum AccessFlag {
         // These 2 utilities reside in Location because Location must be initialized before AccessFlag
         private static <T> List<Map.Entry<ClassFileFormatVersion, T>> ensureHistoryOrdered(
                 List<Map.Entry<ClassFileFormatVersion, T>> history) {
-            var lastVersion = ClassFileFormatVersion.latest();
+            ClassFileFormatVersion lastVersion = null; // represents preview
             for (var e : history) {
                 var historyVersion = e.getKey();
-                if (lastVersion.compareTo(historyVersion) <= 0) {
+                if (lastVersion != null && lastVersion.compareTo(historyVersion) <= 0) {
                     throw new IllegalArgumentException("Versions out of order");
                 }
                 lastVersion = historyVersion;
@@ -612,6 +628,16 @@ public enum AccessFlag {
          * mask & ~location.flagsMask() != 0}, then a bit mask {@code mask} has
          * one or more undefined bits set for {@code location}.  This union of
          * access flags mask may not itself be a valid flag value.
+         *
+         * {@previewNote 0 When preview features are enabled:}
+         * Returns the union of integer masks of all access flags defined for
+         * this location in class files that depend on the preview features of
+         * the current Java SE release.
+         * {@previewNote}
+         *
+         * @apiNote
+         * {@link #flagsMask(ClassFileFormatVersion) flagsMask(ClassFileFormatVersion.latest())}
+         * is not affected by whether preview features are enabled.
          *
          * @since 25
          */
@@ -646,6 +672,15 @@ public enum AccessFlag {
         /**
          * {@return all access flags defined for this location, as a set of
          * flag enums}  This set may include mutually exclusive flags.
+         *
+         * {@previewNote 0 When preview features are enabled:}
+         * Returns all access flags defined for the location in class files
+         * that depend on the preview features of the current Java SE release.
+         * {@previewNote}
+         *
+         * @apiNote
+         * {@link #flags(ClassFileFormatVersion) flags(ClassFileFormatVersion.latest())}
+         * is not affected by whether preview features are enabled.
          *
          * @since 25
          */
