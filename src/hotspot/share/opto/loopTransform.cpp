@@ -813,9 +813,13 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 
   // Step 5: Assertion Predicates initialization
   if (counted_loop) {
-    initialize_assertion_predicates_for_peeled_loop(new_head->as_CountedLoop(), head->as_CountedLoop(),
+    CountedLoopNode* cl = head->as_CountedLoop();
+    Node* init = cl->init_trip();
+    Node* init_ctrl = cl->skip_strip_mined()->in(LoopNode::EntryControl);
+    initialize_assertion_predicates_for_peeled_loop(new_head->as_CountedLoop(), cl,
                                                     first_node_index_in_post_loop_body, old_new);
- }
+    cast_incr_before_loop(init, init_ctrl, cl);
+  }
 
   // Now force out all loop-invariant dominating tests.  The optimizer
   // finds some, but we _know_ they are all useless.
