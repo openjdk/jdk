@@ -211,7 +211,6 @@ CompileTrainingData* CompileTrainingData::make(CompileTask* task) {
     return nullptr; // allocation failure
   }
   mtd->notice_compilation(level);
-  mtd->notice_toplevel_compilation(level);
 
   TrainingDataLocker l;
   CompileTrainingData* ctd = CompileTrainingData::allocate(mtd, level, compile_id);
