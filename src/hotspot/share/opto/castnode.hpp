@@ -46,9 +46,10 @@ protected:
   // details.
   class DependencyType {
   public:
-    DependencyType(bool depends_on_test, bool narrows_type, const char* desc)
+    DependencyType(bool depends_on_test, bool narrows_type, bool constant_folds, const char* desc)
       : _depends_only_on_test(depends_on_test),
         _narrows_type(narrows_type),
+        _constant_folds(constant_folds),
         _desc(desc) {
     }
     NONCOPYABLE(DependencyType);
@@ -60,26 +61,33 @@ protected:
     bool narrows_type() const {
       return _narrows_type;
     }
+
+    bool constant_folds() const {
+      return _constant_folds;
+    }
+
     void dump_on(outputStream *st) const {
       st->print("%s", _desc);
     }
 
     uint hash() const {
-      return (_depends_only_on_test ? 1 : 0) + (_narrows_type ? 2 : 0);
+      return (_depends_only_on_test ? 1 : 0) + (_narrows_type ? 2 : 0) + (_constant_folds ? 4 : 0);
     }
 
     bool cmp(const DependencyType& other) const {
-      return _depends_only_on_test == other._depends_only_on_test && _narrows_type == other._narrows_type;
+      return _depends_only_on_test == other._depends_only_on_test && _narrows_type == other._narrows_type &&
+        _constant_folds == other._constant_folds;
     }
 
     const DependencyType& widen_type_dependency() const {
       if (_depends_only_on_test) {
         return WidenTypeDependency;
       }
-      return UnconditionalDependency;
+      return PinnedWidenTypeDependency;
     }
 
     const DependencyType& pinned_dependency() const {
+      assert(_constant_folds, "");
       if (_narrows_type) {
         return StrongDependency;
       }
@@ -89,6 +97,7 @@ protected:
   private:
     const bool _depends_only_on_test; // Does this Cast depends on its control input or is it pinned?
     const bool _narrows_type; // Does this Cast narrows the type i.e. if input type is narrower can it be removed?
+    const bool _constant_folds;
     const char* _desc;
   };
 
@@ -96,6 +105,7 @@ public:
 
   static const DependencyType RegularDependency;
   static const DependencyType WidenTypeDependency;
+  static const DependencyType PinnedWidenTypeDependency;
   static const DependencyType StrongDependency;
   static const DependencyType UnconditionalDependency;
 

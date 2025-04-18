@@ -319,6 +319,7 @@ class Compile : public Phase {
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
   bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
+  bool                  _widen_type_phase;
   bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
   int                   _major_progress;        // Count of something big happening
@@ -377,6 +378,7 @@ class Compile : public Phase {
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
   GrowableArray<Node*>  _for_merge_stores_igvn; // List of nodes for IGVN merge stores
+  GrowableArray<Node*>  _for_widen_types_igvn;
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
@@ -777,6 +779,12 @@ public:
   void record_for_merge_stores_igvn(Node* n);
   void remove_from_merge_stores_igvn(Node* n);
   void process_for_merge_stores_igvn(PhaseIterGVN& igvn);
+
+  bool       widen_types_phase() { return _widen_type_phase;  }
+  void   set_widen_types_phase() { _widen_type_phase = true;  }
+  void record_for_widen_types_igvn(Node* n);
+  void remove_from_widen_types_igvn(Node* n);
+  void process_for_widen_types_igvn(PhaseIterGVN& igvn);
 
   void shuffle_macro_nodes();
   void sort_macro_nodes();

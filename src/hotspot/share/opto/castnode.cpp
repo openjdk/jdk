@@ -33,10 +33,11 @@
 #include "castnode.hpp"
 #include "utilities/checkedCast.hpp"
 
-const ConstraintCastNode::DependencyType ConstraintCastNode::RegularDependency(true, true, "regular dependency"); // not pinned, narrows type
-const ConstraintCastNode::DependencyType ConstraintCastNode::WidenTypeDependency(true, false, "widen type dependency"); // not pinned, doesn't narrow type
-const ConstraintCastNode::DependencyType ConstraintCastNode::StrongDependency(false, true, "strong dependency"); // pinned, narrows type
-const ConstraintCastNode::DependencyType ConstraintCastNode::UnconditionalDependency(false, false, "unconditional dependency"); // pinned, doesn't narrow type
+const ConstraintCastNode::DependencyType ConstraintCastNode::RegularDependency(true, true, true, "regular dependency"); // not pinned, narrows type
+const ConstraintCastNode::DependencyType ConstraintCastNode::WidenTypeDependency(true, false, false, "widen type dependency"); // not pinned, doesn't narrow type
+const ConstraintCastNode::DependencyType ConstraintCastNode::StrongDependency(false, true, true, "strong dependency"); // pinned, narrows type
+const ConstraintCastNode::DependencyType ConstraintCastNode::UnconditionalDependency(false, false, true, "unconditional dependency"); // pinned, doesn't narrow type
+const ConstraintCastNode::DependencyType ConstraintCastNode::PinnedWidenTypeDependency(false, false, false, "widen type dependency"); // not pinned, doesn't narrow type
 
 //=============================================================================
 // If input is already higher or equal to cast type, then this is an identity.
@@ -56,7 +57,7 @@ Node* ConstraintCastNode::Identity(PhaseGVN* phase) {
 const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
   if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
 
-  if (!_dependency.narrows_type()) {
+  if (!_dependency.constant_folds()) {
     return _type;
   }
 
@@ -240,11 +241,11 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (progress != nullptr) {
     return progress;
   }
-  // if (!phase->C->post_loop_opts_phase()) {
-  //   // makes sure we run widen_type() to potentially common type assertions after loop opts
-  //   phase->C->record_for_post_loop_opts_igvn(this);
-  // }
-  if (!_range_check_dependency/* || phase->C->post_loop_opts_phase()*/) {
+  if (!phase->C->widen_types_phase()) {
+    // makes sure we run widen_type() to potentially common type assertions after loop opts
+    phase->C->record_for_widen_types_igvn(this);
+  }
+  if (!_range_check_dependency || phase->C->widen_types_phase()) {
     return optimize_integer_cast(phase, T_INT);
   }
   return nullptr;
@@ -317,9 +318,9 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (progress != nullptr) {
     return progress;
   }
-  if (!phase->C->post_loop_opts_phase()) {
+  if (!phase->C->widen_types_phase()) {
     // makes sure we run widen_type() to potentially common type assertions after loop opts
-    phase->C->record_for_post_loop_opts_igvn(this);
+    phase->C->record_for_widen_types_igvn(this);
   }
   // transform (CastLL (ConvI2L ..)) into (ConvI2L (CastII ..)) if the type of the CastLL is narrower than the type of
   // the ConvI2L.
@@ -506,6 +507,11 @@ Node* ConstraintCastNode::optimize_integer_cast_of_add(PhaseGVN* phase, BasicTyp
     const TypeInteger* tx = phase->type(x)->is_integer(bt);
     const TypeInteger* ty = phase->type(y)->is_integer(bt);
 
+    if (!tx->is_con() && !ty->is_con() && !igvn->C->widen_types_phase()) {
+      phase->C->record_for_widen_types_igvn(this);
+      return nullptr;
+    }
+
     // If both inputs are not constant then, with the Cast pushed through the Add/Sub, the cast gets less precised types,
     // and the resulting Add/Sub's type is wider than that of the Cast before pushing.
     const DependencyType& dependency = (!tx->is_con() && !ty->is_con()) ? _dependency.widen_type_dependency() : _dependency;
@@ -542,7 +548,7 @@ Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {
 }
 
 const TypeInteger* ConstraintCastNode::widen_type(const PhaseGVN* phase, const TypeInteger* this_type, BasicType bt) const {
-  if (!phase->C->post_loop_opts_phase()) {
+  if (!phase->C->widen_types_phase()) {
     return this_type;
   }
 
