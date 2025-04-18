@@ -349,7 +349,7 @@ static bool read_lib_info(struct ps_prochandle* ph) {
   snprintf(fname, sizeof(fname), "/proc/%d/maps", ph->pid);
   fp = fopen(fname, "r");
   if (fp == NULL) {
-    print_debug("can't open /proc/%d/maps file\n", ph->pid);
+    print_error("can't open /proc/%d/maps file\n", ph->pid);
     return false;
   }
 
@@ -475,7 +475,10 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
   // read library info and symbol tables, must do this before attaching threads,
   // as the symbols in the pthread library will be used to figure out
   // the list of threads within the same process.
-  read_lib_info(ph);
+  if (read_lib_info(ph) == false) {
+    print_error("failed to read lib info\n");
+    goto err;
+  }
 
   /*
    * Read thread info.
