@@ -26,24 +26,23 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zList.inline.hpp"
-#include "gc/z/zMemory.inline.hpp"
 #include "gc/z/zNUMA.inline.hpp"
 #include "gc/z/zValue.inline.hpp"
-#include "gc/z/zVirtualMemory.hpp"
+#include "gc/z/zVirtualMemoryManager.inline.hpp"
 #include "runtime/os.hpp"
 #include "zunittest.hpp"
 
 using namespace testing;
 
-#define ASSERT_ALLOC_OK(offset) ASSERT_NE(offset, zoffset(UINTPTR_MAX))
+#define ASSERT_REMOVAL_OK(range, sz) ASSERT_FALSE(range.is_null()); ASSERT_EQ(range.size(), (sz))
 
 class ZCallbacksResetter {
 private:
-  ZMemoryManager::Callbacks* _callbacks;
-  ZMemoryManager::Callbacks  _saved;
+  ZVirtualMemoryRegistry::Callbacks* _callbacks;
+  ZVirtualMemoryRegistry::Callbacks  _saved;
 
 public:
-  ZCallbacksResetter(ZMemoryManager::Callbacks* callbacks)
+  ZCallbacksResetter(ZVirtualMemoryRegistry::Callbacks* callbacks)
     : _callbacks(callbacks),
       _saved(*callbacks) {
     *_callbacks = {};
@@ -57,8 +56,8 @@ class ZVirtualMemoryManagerTest : public ZTest {
 private:
   static constexpr size_t ReservationSize = 32 * M;
 
-  ZMemoryManager*        _va;
-  ZVirtualMemoryManager* _vmm;
+  ZVirtualMemoryReserver* _reserver;
+  ZVirtualMemoryRegistry* _registry;
 
 public:
   virtual void SetUp() {
@@ -67,9 +66,9 @@ public:
       GTEST_SKIP() << "OS not supported";
     }
 
-    void* vmr_mem = os::malloc(sizeof(ZVirtualMemoryManager), mtTest);
-    _vmm = ::new (vmr_mem) ZVirtualMemoryManager(ReservationSize);
-    _va = &_vmm->_manager;
+    _reserver = (ZVirtualMemoryReserver*)os::malloc(sizeof(ZVirtualMemoryManager), mtTest);
+    _reserver = ::new (_reserver) ZVirtualMemoryReserver(ReservationSize);
+    _registry = &_reserver->_registry;
   }
 
   virtual void TearDown() {
@@ -79,9 +78,9 @@ public:
     }
 
     // Best-effort cleanup
-    _vmm->unreserve_all();
-    _vmm->~ZVirtualMemoryManager();
-    os::free(_vmm);
+    _reserver->unreserve_all();
+    _reserver->~ZVirtualMemoryReserver();
+    os::free(_reserver);
   }
 
   void test_reserve_discontiguous_and_coalesce() {
@@ -94,7 +93,7 @@ public:
     // ---------------       unreserved   - to allow reservation of 3 granules
     //
     // If we then asks for 4 granules starting at the first granule above,
-    // then we won't be able to allocate 4 consecutive granules and the code
+    // then we won't be able to reserve 4 consecutive granules and the code
     // reverts into the discontiguous mode. This mode uses interval halving
     // to find the limits of memory areas that have already been reserved.
     // This will lead to the first 2 granules being reserved, then the third
@@ -113,16 +112,16 @@ public:
     // to separate the fetched memory from the memory left in the manager. This
     // used to fail because the memory was already split into two placeholders.
 
-    if (_vmm->reserved() < 4 * ZGranuleSize || !_va->free_is_contiguous()) {
+    if (_reserver->reserved() < 4 * ZGranuleSize || !_registry->is_contiguous()) {
       GTEST_SKIP() << "Fixture failed to reserve adequate memory, reserved "
-          << (_vmm->reserved() >> ZGranuleSizeShift) << " * ZGranuleSize";
+          << (_reserver->reserved() >> ZGranuleSizeShift) << " * ZGranuleSize";
     }
 
     // Start at the offset we reserved.
-    const zoffset base_offset = _vmm->lowest_available_address();
+    const zoffset base_offset = _registry->peek_low_address();
 
     // Empty the reserved memory in preparation for the rest of the test.
-    _vmm->unreserve_all();
+    _reserver->unreserve_all();
 
     const zaddress_unsafe base = ZOffset::address_unsafe(base_offset);
     const zaddress_unsafe blocked = base + 3 * ZGranuleSize;
@@ -140,7 +139,7 @@ public:
       // first. In previous implementations this resulted in two separate
       // placeholders (4MB and 2MB). This was a bug, because the manager is
       // designed to have one placeholder per memory area. This in turn would
-      // lead to a subsequent failure when _vmm->alloc tried to split off the
+      // lead to a subsequent failure when _vmr->remove* tried to split off the
       // 4MB that is already covered by its own placeholder. You can't place
       // a placeholder over an already existing placeholder.
 
@@ -153,7 +152,7 @@ public:
       // After the fix, we always have the callbacks turned on, so we don't
       // need this to mimic the initializing memory reservation.
 
-      const size_t reserved = _vmm->reserve_discontiguous(base_offset, 4 * ZGranuleSize, ZGranuleSize);
+      const size_t reserved = _reserver->reserve_discontiguous(base_offset, 4 * ZGranuleSize, ZGranuleSize);
       ASSERT_LE(reserved, 3 * ZGranuleSize);
       if (reserved < 3 * ZGranuleSize) {
         GTEST_SKIP() << "Failed reserve_discontiguous"
@@ -165,90 +164,104 @@ public:
     {
       // The test used to crash here because the 3 granule memory area was
       // inadvertently covered by two place holders (2 granules + 1 granule).
-      const ZVirtualMemory vmem = _vmm->alloc(2 * ZGranuleSize, true);
-      ASSERT_EQ(vmem.start(), base_offset);
-      ASSERT_EQ(vmem.size(), 2 * ZGranuleSize);
+      const ZVirtualMemory vmem = _registry->remove_from_low(2 * ZGranuleSize);
+      ASSERT_EQ(vmem, ZVirtualMemory(base_offset, 2 * ZGranuleSize));
 
       // Cleanup - Must happen in granule-sizes because of how Windows hands
       // out memory in granule-sized placeholder reservations.
-      _vmm->unreserve(base_offset, ZGranuleSize);
-      _vmm->unreserve(base_offset + ZGranuleSize, ZGranuleSize);
+      _reserver->unreserve(vmem.first_part(ZGranuleSize));
+      _reserver->unreserve(vmem.last_part(ZGranuleSize));
     }
 
     // Final cleanup
-    const ZVirtualMemory vmem = _vmm->alloc(ZGranuleSize, true);
-    ASSERT_EQ(vmem.start(), base_offset + 2 * ZGranuleSize);
-    ASSERT_EQ(vmem.size(), ZGranuleSize);
-    _vmm->unreserve(vmem.start(), vmem.size());
+    const ZVirtualMemory vmem = _registry->remove_from_low(ZGranuleSize);
+    ASSERT_EQ(vmem, ZVirtualMemory(base_offset + 2 * ZGranuleSize, ZGranuleSize));
+    _reserver->unreserve(vmem);
 
     const bool released = os::release_memory((char*)untype(blocked), ZGranuleSize);
     ASSERT_TRUE(released);
   }
 
-  void test_alloc_low_address() {
-    // Verify that we get a placeholder for the first granule
-    zoffset bottom = _va->alloc_low_address(ZGranuleSize);
-    ASSERT_ALLOC_OK(bottom);
+  void test_remove_from_low() {
+    {
+      // Verify that we get a placeholder for the first granule
+      const ZVirtualMemory removed = _registry->remove_from_low(ZGranuleSize);
+      ASSERT_REMOVAL_OK(removed, ZGranuleSize);
 
-    _va->free(bottom, ZGranuleSize);
+      _registry->insert(removed);
+    }
 
-    // Alloc something larger than a granule and free it
-    bottom = _va->alloc_low_address(ZGranuleSize * 3);
-    ASSERT_ALLOC_OK(bottom);
+    {
+      // Remove something larger than a granule and then insert it
+      const ZVirtualMemory removed = _registry->remove_from_low(3 * ZGranuleSize);
+      ASSERT_REMOVAL_OK(removed, 3 * ZGranuleSize);
 
-    _va->free(bottom, ZGranuleSize * 3);
+      _registry->insert(removed);
+    }
 
-    // Free with more memory allocated
-    bottom = _va->alloc_low_address(ZGranuleSize);
-    ASSERT_ALLOC_OK(bottom);
+    {
+      // Insert with more memory removed
+      const ZVirtualMemory removed = _registry->remove_from_low(ZGranuleSize);
+      ASSERT_REMOVAL_OK(removed, ZGranuleSize);
 
-    zoffset next = _va->alloc_low_address(ZGranuleSize);
-    ASSERT_ALLOC_OK(next);
+      ZVirtualMemory next = _registry->remove_from_low(ZGranuleSize);
+      ASSERT_REMOVAL_OK(next, ZGranuleSize);
 
-    _va->free(bottom, ZGranuleSize);
-    _va->free(next, ZGranuleSize);
+      _registry->insert(removed);
+      _registry->insert(next);
+    }
   }
 
-  void test_alloc_high_address() {
-    // Verify that we get a placeholder for the last granule
-    zoffset high = _va->alloc_high_address(ZGranuleSize);
-    ASSERT_ALLOC_OK(high);
+  void test_remove_from_high() {
+    {
+      // Verify that we get a placeholder for the last granule
+      const ZVirtualMemory high = _registry->remove_from_high(ZGranuleSize);
+      ASSERT_REMOVAL_OK(high, ZGranuleSize);
 
-    zoffset prev = _va->alloc_high_address(ZGranuleSize);
-    ASSERT_ALLOC_OK(prev);
+      const ZVirtualMemory prev = _registry->remove_from_high(ZGranuleSize);
+      ASSERT_REMOVAL_OK(prev, ZGranuleSize);
 
-    _va->free(high, ZGranuleSize);
-    _va->free(prev, ZGranuleSize);
+      _registry->insert(high);
+      _registry->insert(prev);
+    }
 
-    // Alloc something larger than a granule and return it
-    high = _va->alloc_high_address(ZGranuleSize * 2);
-    ASSERT_ALLOC_OK(high);
+    {
+      // Remove something larger than a granule and return it
+      const ZVirtualMemory high = _registry->remove_from_high(2 * ZGranuleSize);
+      ASSERT_REMOVAL_OK(high, 2 * ZGranuleSize);
 
-    _va->free(high, ZGranuleSize * 2);
+      _registry->insert(high);
+    }
   }
 
-  void test_alloc_whole_area() {
-    // Alloc the whole reservation
-    zoffset bottom = _va->alloc_low_address(ReservationSize);
-    ASSERT_ALLOC_OK(bottom);
+  void test_remove_whole() {
+    // Need a local variable to appease gtest
+    const size_t reservation_size = ReservationSize;
 
-    // Free two chunks and then allocate them again
-    _va->free(bottom, ZGranuleSize * 4);
-    _va->free(bottom + ZGranuleSize * 6, ZGranuleSize * 6);
+    // Remove the whole reservation
+    const ZVirtualMemory reserved = _registry->remove_from_low(reservation_size);
+    ASSERT_REMOVAL_OK(reserved, reservation_size);
 
-    zoffset offset = _va->alloc_low_address(ZGranuleSize * 4);
-    ASSERT_ALLOC_OK(offset);
+    const ZVirtualMemory first(reserved.start(), 4 * ZGranuleSize);
+    const ZVirtualMemory second(reserved.start() + 6 * ZGranuleSize, 6 * ZGranuleSize);
 
-    offset = _va->alloc_low_address(ZGranuleSize * 6);
-    ASSERT_ALLOC_OK(offset);
+    // Insert two chunks and then remove them again
+    _registry->insert(first);
+    _registry->insert(second);
 
-    // Now free it all, and verify it can be re-allocated
-    _va->free(bottom, ReservationSize);
+    const ZVirtualMemory removed_first = _registry->remove_from_low(first.size());
+    ASSERT_EQ(removed_first, first);
 
-    bottom = _va->alloc_low_address(ReservationSize);
-    ASSERT_ALLOC_OK(bottom);
+    const ZVirtualMemory removed_second = _registry->remove_from_low(second.size());
+    ASSERT_EQ(removed_second, second);
 
-    _va->free(bottom, ReservationSize);
+    // Now insert it all, and verify it can be re-removed
+    _registry->insert(reserved);
+
+    const ZVirtualMemory removed_reserved = _registry->remove_from_low(reservation_size);
+    ASSERT_EQ(removed_reserved, reserved);
+
+    _registry->insert(reserved);
   }
 };
 
@@ -256,14 +269,14 @@ TEST_VM_F(ZVirtualMemoryManagerTest, test_reserve_discontiguous_and_coalesce) {
   test_reserve_discontiguous_and_coalesce();
 }
 
-TEST_VM_F(ZVirtualMemoryManagerTest, test_alloc_low_address) {
-  test_alloc_low_address();
+TEST_VM_F(ZVirtualMemoryManagerTest, test_remove_from_low) {
+  test_remove_from_low();
 }
 
-TEST_VM_F(ZVirtualMemoryManagerTest, test_alloc_high_address) {
-  test_alloc_high_address();
+TEST_VM_F(ZVirtualMemoryManagerTest, test_remove_from_high) {
+  test_remove_from_high();
 }
 
-TEST_VM_F(ZVirtualMemoryManagerTest, test_alloc_whole_area) {
-  test_alloc_whole_area();
+TEST_VM_F(ZVirtualMemoryManagerTest, test_remove_whole) {
+  test_remove_whole();
 }

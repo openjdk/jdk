@@ -151,7 +151,17 @@ public class JarInputStream extends ZipInputStream {
                 jv = new JarVerifier(e.getName(), bytes);
                 mev = new ManifestEntryVerifier(man, jv.manifestName);
             }
-            return (JarEntry)super.getNextEntry();
+            JarEntry nextEntry = (JarEntry)super.getNextEntry();
+            if (nextEntry != null &&
+                    JarFile.MANIFEST_NAME.equalsIgnoreCase(nextEntry.getName())) {
+                if (JarVerifier.debug != null) {
+                    JarVerifier.debug.println(JarVerifier.MULTIPLE_MANIFEST_WARNING);
+                }
+
+                jv = null;
+                mev = null;
+            }
+            return nextEntry;
         }
         return e;
     }
