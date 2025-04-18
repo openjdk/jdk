@@ -409,6 +409,7 @@ hotspot_cds_only = \
 hotspot_appcds_dynamic = \
   runtime/cds/appcds/ \
  -runtime/cds/appcds/aotClassLinking \
+ -runtime/cds/appcds/aotCode \
  -runtime/cds/appcds/applications \
  -runtime/cds/appcds/cacheObject \
  -runtime/cds/appcds/complexURI \
@@ -508,6 +509,7 @@ hotspot_cds_epsilongc = \
 hotspot_aot_classlinking = \
   runtime/cds \
  -runtime/cds/appcds/aotClassLinking \
+ -runtime/cds/appcds/aotCode \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
  -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \
@@ -585,6 +587,7 @@ hotspot_metaspace = \
 
 # A subset of AppCDS tests to be run in tier1
 tier1_runtime_appcds = \
+  runtime/cds/appcds/aotCode \
   runtime/cds/appcds/HelloTest.java \
   runtime/cds/appcds/sharedStrings/SharedStringsBasic.java \
   runtime/cds/appcds/ClassLoaderTest.java
