@@ -386,6 +386,7 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
   int page_size = sysconf(_SC_PAGE_SIZE);
 
   if ((phbuf = read_program_header_table(lib_fd, lib_ehdr)) == NULL) {
+    print_error("failed to read program header table\n");
     return false;
   }
 
@@ -401,6 +402,7 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
       if (existing_map == NULL){
         if (add_map_info(ph, lib_fd, lib_php->p_offset,
                          target_vaddr, lib_php->p_memsz, lib_php->p_flags) == NULL) {
+          print_error("failed to add map info\n");
           goto err;
         }
       } else if (lib_php->p_flags != existing_map->flags) {
@@ -422,7 +424,7 @@ static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* li
             (existing_map->fd != lib_fd) &&
             (ROUNDUP(existing_map->memsz, page_size) != ROUNDUP(lib_php->p_memsz, page_size))) {
 
-          print_debug("address conflict @ 0x%lx (existing map size = %ld, size = %ld, flags = %d)\n",
+          print_error("address conflict @ 0x%lx (existing map size = %ld, size = %ld, flags = %d)\n",
                         target_vaddr, existing_map->memsz, lib_php->p_memsz, lib_php->p_flags);
           goto err;
         }
