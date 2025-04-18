@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,6 +207,13 @@ public abstract sealed class Reference<T>
             while (true) {
                 processPendingReferences();
             }
+        }
+
+        // Called by the JVM during AOT cache creation (which does not
+        // launch the ReferenceHandler thread).
+        static void processPendingReferences0() {
+            Unsafe.getUnsafe().ensureClassInitialized(Cleaner.class);
+            processPendingReferences();
         }
     }
 
