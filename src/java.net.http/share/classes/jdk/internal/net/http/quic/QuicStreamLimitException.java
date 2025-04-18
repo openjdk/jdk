@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
 package jdk.internal.net.http.quic;
 
 /**
- * Used internally to indicate Quic flow control limit has been reached
+ * Used internally to indicate Quic stream limit has been reached
  */
-public final class QuicFlowControlException extends Exception {
+public final class QuicStreamLimitException extends Exception {
 
     @java.io.Serial
     private static final long serialVersionUID = 4181770819022847041L;
 
-    public QuicFlowControlException(String message) {
+    public QuicStreamLimitException(String message) {
         super(message);
     }
 }

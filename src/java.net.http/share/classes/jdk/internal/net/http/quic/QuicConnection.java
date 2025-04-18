@@ -88,11 +88,11 @@ public abstract class QuicConnection {
      * <p>
      * If the limit has been reached and the {@code limitIncreaseDuration} is not
      * {@link Duration#isPositive() positive} then this method returns a {@code CompletableFuture}
-     * which has been completed exceptionally with {@link QuicFlowControlException}. Else, this
+     * which has been completed exceptionally with {@link QuicStreamLimitException}. Else, this
      * method returns a {@code CompletableFuture} which waits for that duration for a potential
      * increase in the limit. If, during this period, the stream creation limit does increase and
      * stream creation succeeds then the returned {@code CompletableFuture} will be completed
-     * successfully, else it will complete exceptionally with {@link QuicFlowControlException}.
+     * successfully, else it will complete exceptionally with {@link QuicStreamLimitException}.
      *
      * @param limitIncreaseDuration Amount of time to wait for the bidirectional stream creation
      *                              limit to be increased by the peer, if this connection has
@@ -114,11 +114,11 @@ public abstract class QuicConnection {
      * <p>
      * If the limit has been reached and the {@code limitIncreaseDuration} is not
      * {@link Duration#isPositive() positive} then this method returns a {@code CompletableFuture}
-     * which has been completed exceptionally with {@link QuicFlowControlException}. Else, this
+     * which has been completed exceptionally with {@link QuicStreamLimitException}. Else, this
      * method returns a {@code CompletableFuture} which waits for that duration for a potential
      * increase in the limit. If, during this period, the stream creation limit does increase and
      * stream creation succeeds then the returned {@code CompletableFuture} will be completed
-     * successfully, else it will complete exceptionally with {@link QuicFlowControlException}.
+     * successfully, else it will complete exceptionally with {@link QuicStreamLimitException}.
      *
      * @param limitIncreaseDuration Amount of time to wait for the unidirectional stream creation
      *                              limit to be increased by the peer, if this connection has

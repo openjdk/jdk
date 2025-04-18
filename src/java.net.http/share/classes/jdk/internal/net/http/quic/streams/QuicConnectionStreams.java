@@ -47,9 +47,8 @@ import java.util.stream.Stream;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
-import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.quic.QuicConnectionImpl;
-import jdk.internal.net.http.quic.QuicFlowControlException;
+import jdk.internal.net.http.quic.QuicStreamLimitException;
 import jdk.internal.net.http.quic.TerminationCause;
 import jdk.internal.net.http.quic.frames.StreamsBlockedFrame;
 import jdk.internal.net.quic.QuicTLSEngine;
@@ -213,7 +212,7 @@ public final class QuicConnectionStreams {
      * will return a {@code CompletableFuture} which will complete either when the {@code timeout}
      * has reached or the stream limit has been increased and the stream creation was successful.
      * If the stream creation doesn't complete within the specified timeout then the returned
-     * {@code CompletableFuture} will complete exceptionally with a {@link QuicFlowControlException}
+     * {@code CompletableFuture} will complete exceptionally with a {@link QuicStreamLimitException}
      *
      * @param timeout the maximum duration to wait to acquire a permit for stream creation
      * @return a CompletableFuture whose result on successful completion will return the newly
@@ -233,7 +232,7 @@ public final class QuicConnectionStreams {
      * will return a {@code CompletableFuture} which will complete either when the {@code timeout}
      * has reached or the stream limit has been increased and the stream creation was successful.
      * If the stream creation doesn't complete within the specified timeout then the returned
-     * {@code CompletableFuture} will complete exceptionally with a {@link QuicFlowControlException}
+     * {@code CompletableFuture} will complete exceptionally with a {@link QuicStreamLimitException}
      *
      * @param timeout the maximum duration to wait to acquire a permit for stream creation
      * @return a CompletableFuture whose result on successful completion will return the newly
@@ -332,7 +331,7 @@ public final class QuicConnectionStreams {
                         final String msg = "Stream limit = " + permit.currentLimit()
                                 + " reached for locally initiated "
                                 + (bidi ? "bidi" : "uni") + " streams";
-                        return MinimalFuture.failedFuture(new QuicFlowControlException(msg));
+                        return MinimalFuture.failedFuture(new QuicStreamLimitException(msg));
                     }
                     // stream limit hasn't been reached, we are allowed to create new one
                     final long streamId = nextStreamID.get(localType).getAndAdd(4);

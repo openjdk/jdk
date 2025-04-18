@@ -74,7 +74,7 @@ import jdk.internal.net.http.qpack.Encoder;
 import jdk.internal.net.http.qpack.QPACK;
 import jdk.internal.net.http.qpack.TableEntry;
 import jdk.internal.net.http.quic.QuicConnection;
-import jdk.internal.net.http.quic.QuicFlowControlException;
+import jdk.internal.net.http.quic.QuicStreamLimitException;
 import jdk.internal.net.http.quic.TerminationCause;
 import jdk.internal.net.http.quic.VariableLengthEncoder;
 import jdk.internal.net.http.quic.streams.QuicBidiStream;
@@ -474,7 +474,7 @@ public final class Http3Connection implements AutoCloseable {
         final CompletableFuture<QuicBidiStream> bidiStream =
                 quicConnection.openNewLocalBidiStream(streamLimitIncreaseDuration);
         // once the bidi stream creation completes:
-        //  - if completed exceptionally, we transform any QuicFlowControlException into a
+        //  - if completed exceptionally, we transform any QuicStreamLimitException into a
         //    StreamLimitException
         //  - if completed successfully, we create a Http3 exchange and return that as the result
         final CompletableFuture<CompletableFuture<ExchangeImpl<U>>> h3ExchangeCf =
@@ -499,7 +499,7 @@ public final class Http3Connection implements AutoCloseable {
                     // failed to open a bidi stream
                     reservedStreamCount.decrementAndGet();
                     final Throwable cause = Utils.getCompletionCause(t);
-                    if (cause instanceof QuicFlowControlException) {
+                    if (cause instanceof QuicStreamLimitException) {
                         if (Log.http3()) {
                             Log.logHttp3("Maximum stream limit reached on {0} for exchange {1}",
                                     quicConnectionTag(), exchange.multi.streamLimitState());
