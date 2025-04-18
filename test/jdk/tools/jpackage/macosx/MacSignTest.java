@@ -179,7 +179,7 @@ public class MacSignTest {
 
     public static Collection<Object[]> testSelectSigningIdentity() {
         return Stream.of(
-                SigningBase.StandardCertificateRequest.CODESIGN, 
+                SigningBase.StandardCertificateRequest.CODESIGN,
                 SigningBase.StandardCertificateRequest.CODESIGN_UNICODE
         ).map(SigningBase.StandardCertificateRequest::spec).<Object[]>mapMulti((certRequest, acc) -> {
             acc.accept(new Object[] {certRequest.shortName(), certRequest});
