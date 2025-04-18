@@ -109,11 +109,10 @@ public class JdkXmlUtils {
      */
     public static boolean setProperty(XMLSecurityManager xsm, XMLSecurityPropertyManager xspm,
             String property, Object value) {
-        String pName;
-        if (xsm != null && (pName = xsm.find(property)) != null) {
+        if (xsm != null && xsm.find(property) != null) {
             return xsm.setLimit(property, JdkProperty.State.APIPROPERTY, value);
 
-        } else if (xspm != null && (pName = xspm.find(property)) != null) {
+        } else if (xspm != null && xspm.find(property) != null) {
             return xspm.setValue(property, FeaturePropertyBase.State.APIPROPERTY, value);
         }
         return false;
