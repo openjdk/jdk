@@ -34,11 +34,11 @@ import javax.swing.table.AbstractTableModel;
 /*
  * @test
  * @bug 4242631
- * @summary Tests that JTable repaint itself correctly after a record
- *          have been removed and added to the table model.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @summary Tests that JTable repaints itself correctly after a record
+ *          has been removed and added to the table model.
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main bug4242631
+ * @run main/manual bug4242631
  */
 
 public class bug4242631 {

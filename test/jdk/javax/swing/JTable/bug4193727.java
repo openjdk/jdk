@@ -37,10 +37,11 @@ import javax.swing.table.TableColumn;
 /*
  * @test
  * @bug 4193727
- * @summary Resize JTable via TableColumn's setWidth(int) !!!
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @summary Tests that resizing JTable via TableColumn's
+ *          setWidth(int) repaints correctly
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main bug4193727
+ * @run main/manual bug4193727
  */
 
 public class bug4193727 {
@@ -48,7 +49,12 @@ public class bug4193727 {
     static JButton bTest = new JButton("Resize");
 
     private static final String INSTRUCTIONS = """
-            Push button "Resize". If nothing happens then test passes.
+            Push button "Resize".
+            If either of the following happen, test fails:
+            1) The size of the columns are wrong
+            2) The JTable is not repainting correctly
+
+            Otherwise test passes.
             """;
 
     public static void main(String[] args) throws Exception {

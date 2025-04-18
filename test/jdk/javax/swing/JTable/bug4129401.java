@@ -31,19 +31,21 @@ import javax.swing.table.TableColumn;
 /*
  * @test
  * @bug 4129401
- * @summary Keystroking for combobox cell editor in JTable.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @summary Tests that keystroking for combobox cell editor in JTable works
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4129401
  */
 
 public class bug4129401 {
     private static final String INSTRUCTIONS = """
-            1. Move the mouse cursor to the cell "CELL 2 1", which contains JComboBox
-               and click left mouse button to drop down combobox list.
-            2. Change selected item in the combobox list using up and down arrows.
+            1. Move the mouse cursor to the cell "CELL 2 1",
+               which contains JComboBox and click left mouse button
+               to drop down combobox list.
+            2. Change selected item in the combobox list
+               using up and down arrows.
             3. Press Esc. JComboBox drop down list should hide.
-            If all was successfull then test passes, else test fails.
+            If all was successful then test passes, else test fails.
             """;
 
     public static void main(String[] args) throws Exception {

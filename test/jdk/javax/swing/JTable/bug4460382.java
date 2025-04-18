@@ -37,7 +37,7 @@ import javax.swing.table.TableModel;
 /*
  * @test
  * @bug 4460382
- * @summary Tests table editors' work
+ * @summary Tests that table editor works
  * @key headful
  * @run main bug4460382
  */
@@ -45,8 +45,8 @@ import javax.swing.table.TableModel;
 public class bug4460382 {
     static JFrame frame;
     static Table table;
-    static Point tableLoc;
-    static Point p;
+    static volatile Point tableLoc;
+    static volatile Point p;
     static int row1 = -1;
     static int row2 = -1;
 
@@ -74,13 +74,16 @@ public class bug4460382 {
             robot.keyPress(MenuKeyEvent.VK_ENTER);
             robot.keyRelease(MenuKeyEvent.VK_ENTER);
             robot.waitForIdle();
-        } finally {
-            if (frame != null) {
-                SwingUtilities.invokeAndWait(() -> frame.dispose());
-            }
+
             if (row1 != row2) {
                 throw new RuntimeException("Failed 4460382: editingRow is " + row2);
             }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
