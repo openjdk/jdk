@@ -33,6 +33,7 @@ import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.MethodModel;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFile;
 import jdk.internal.classfile.components.ClassPrinter;
@@ -73,6 +74,10 @@ public final class Bytecode {
             ClassDesc returnDesc = classDesc(returnType);
             MethodTypeDesc mtd = MethodTypeDesc.of(returnDesc, parameterDesc);
             return new MethodDesc(methodName, mtd);
+        }
+
+        public boolean matches(MethodModel m) {
+            return this.descriptor().equals(m.methodTypeSymbol()) && m.methodName().equalsString(this.name());
         }
     }
     public record SettingDesc(ClassDesc paramType, String methodName) {

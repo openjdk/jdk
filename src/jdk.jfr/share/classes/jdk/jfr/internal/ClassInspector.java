@@ -39,6 +39,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.constant.ConstantDescs;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -95,8 +96,7 @@ final class ClassInspector {
         sb.append(")V");
         MethodDesc m = MethodDesc.of("commit", sb.toString());
         for (MethodModel method : classModel.methods()) {
-            String d = method.methodTypeSymbol().descriptorString();
-            if (method.methodName().equalsString("commit") && m.descriptor().descriptorString().equals(d)) {
+            if (m.matches(method)) {
                 return m;
             }
         }
@@ -138,8 +138,8 @@ final class ClassInspector {
 
     boolean hasStaticMethod(MethodDesc method) {
         for (MethodModel m : classModel.methods()) {
-            if (m.methodName().equalsString(method.name()) && m.methodTypeSymbol().equals(method.descriptor())) {
-                return Modifier.isStatic(m.flags().flagsMask());
+            if (Modifier.isStatic(m.flags().flagsMask())) {
+                return method.matches(m);
             }
         }
         return false;
@@ -282,7 +282,7 @@ final class ClassInspector {
                             }
                             // Add setting if method returns boolean and has one parameter
                             MethodTypeDesc mtd = m.methodTypeSymbol();
-                            if ("Z".equals(mtd.returnType().descriptorString())) {
+                            if (ConstantDescs.CD_boolean.equals(mtd.returnType())) {
                                 if (mtd.parameterList().size() == 1) {
                                     ClassDesc type = mtd.parameterList().getFirst();
                                     if (type.isClassOrInterface()) {

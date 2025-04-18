@@ -512,7 +512,7 @@ final class EventInstrumentation {
     }
 
     private static boolean isMethod(MethodModel m, MethodDesc desc) {
-        return m.methodName().equalsString(desc.name()) && m.methodTypeSymbol().equals(desc.descriptor());
+        return desc.matches(m);
     }
 
     private static void getEventWriter(CodeBuilder codeBuilder) {
