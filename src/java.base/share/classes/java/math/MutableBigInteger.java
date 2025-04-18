@@ -1965,7 +1965,7 @@ class MutableBigInteger {
             r = new MutableBigInteger(new BigDecimal(rDouble).toBigInteger().mag);
 
             // Shift the approximate root back into the original range.
-            r.leftShift((int) (shift / n));
+            r.safeLeftShift((int) (shift / n));
         }
 
         // Refine the estimate.
