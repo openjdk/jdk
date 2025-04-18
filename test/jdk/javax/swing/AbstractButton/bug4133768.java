@@ -50,7 +50,8 @@ import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 
 public class bug4133768 {
-    private static Icon RED, GREEN;
+    private static Icon RED;
+    private static Icon GREEN;
     private static JFrame f;
     private static AbstractButton[] buttons;
     private static volatile Point buttonLocation;
@@ -58,7 +59,8 @@ public class bug4133768 {
     private static volatile int buttonHeight;
     private static Robot robot;
     private static int ROLLOVER_Y_OFFSET = 4;
-    private static CountDownLatch frameGainedFocusLatch = new CountDownLatch(1);
+    private static CountDownLatch frameGainedFocusLatch =
+        new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
         try {
