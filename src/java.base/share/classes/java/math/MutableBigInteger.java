@@ -159,6 +159,29 @@ class MutableBigInteger {
     }
 
     /**
+     * Returns a MutableBigInteger with a magnitude specified by
+     * the double val. Any fractional part is discarded.
+     *
+     * Assume {@code 1.0 <= val < Double.POSITIVE_INFINITY}
+     */
+    static MutableBigInteger valueOf(double val) {
+        // Translate the double into exponent and significand, according
+        // to the formulae in JLS, Section 20.10.22.
+        long valBits = Double.doubleToLongBits(val);
+        int exponent = (int) ((valBits >> 52) & 0x7ffL) - 1075;
+        long significand = (valBits & ((1L << 52) - 1)) | (1L << 52);
+        // At this point, val == significand * 2^exponent.
+        MutableBigInteger result;
+        if (exponent > 0) {
+            result = new MutableBigInteger(significand);
+            result.leftShift(exponent);
+        } else {
+            result = new MutableBigInteger(significand >> -exponent);
+        }
+        return result;
+    }
+
+    /**
      * Makes this number an {@code n}-int number all of whose bits are ones.
      * Used by Burnikel-Ziegler division.
      * @param n number of ints in the {@code value} array
@@ -1947,9 +1970,7 @@ class MutableBigInteger {
             int shiftExcess = (int) (shift % n);
 
             // Shift the value into finite double range
-            r = new MutableBigInteger(this);
-            r.rightShift((int) shift);
-            double base = r.toBigInteger().doubleValue();
+            double base = this.toBigInteger().shiftRight((int) shift).doubleValue();
             // Complete the shift to a multiple of n,
             // avoiding to lose more bits than necessary.
             if (shiftExcess != 0) {
@@ -1961,8 +1982,7 @@ class MutableBigInteger {
             // Use the root of the shifted value as an estimate.
             base = Math.nextUp(base);
             final double exp = Math.nextUp(1.0 / n);
-            final double rDouble = Math.ceil(Math.nextUp(Math.pow(base, exp)));
-            r.copyValue(new BigDecimal(rDouble).toBigInteger().mag);
+            r = valueOf(Math.ceil(Math.nextUp(Math.pow(base, exp))));
 
             // Shift the approximate root back into the original range.
             r.safeLeftShift((int) (shift / n));
