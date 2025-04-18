@@ -49,44 +49,50 @@ public class bug4530952 {
     static volatile Point loc;
 
     private static boolean flag = false;
+
     private static boolean passed() {
         return flag;
     }
+
     private static void pass() {
         flag = true;
     }
 
     public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
-        SwingUtilities.invokeAndWait(() -> createTestUI());
-        robot.waitForIdle();
-        robot.delay(250);
+        try {
+            Robot robot = new Robot();
+            SwingUtilities.invokeAndWait(() -> createTestUI());
+            robot.waitForIdle();
+            robot.delay(250);
 
-        // enter some text in combo box
-        robot.keyPress(KeyEvent.VK_A);
-        robot.keyRelease(KeyEvent.VK_A);
-        robot.keyPress(KeyEvent.VK_A);
-        robot.keyRelease(KeyEvent.VK_A);
-        robot.waitForIdle();
-        robot.delay(250);
+            // enter some text in combo box
+            robot.keyPress(KeyEvent.VK_A);
+            robot.keyRelease(KeyEvent.VK_A);
+            robot.keyPress(KeyEvent.VK_A);
+            robot.keyRelease(KeyEvent.VK_A);
+            robot.waitForIdle();
+            robot.delay(250);
 
-        // find and click action button
-        SwingUtilities.invokeAndWait(() -> loc = btnAction.getLocationOnScreen());
-        robot.waitForIdle();
-        robot.delay(250);
+            // find and click action button
+            SwingUtilities.invokeAndWait(() -> loc = btnAction.getLocationOnScreen());
+            robot.waitForIdle();
+            robot.delay(250);
 
-        robot.mouseMove(loc.x, loc.y);
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.waitForIdle();
-        robot.delay(250);
+            robot.mouseMove(loc.x, loc.y);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.waitForIdle();
+            robot.delay(250);
 
-        if (frame != null) {
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
-        }
-
-        if (!passed()) {
-            throw new Error("Failed: button action was not fired");
+            if (!passed()) {
+                throw new RuntimeException("Failed: button action was not fired");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
