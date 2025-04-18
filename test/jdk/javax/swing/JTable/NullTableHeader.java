@@ -34,11 +34,9 @@ import javax.swing.SwingUtilities;
  */
 
 public class NullTableHeader {
-    static JTable tableView;
-
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            tableView = new JTable();
+            JTable tableView = new JTable();
             tableView.setTableHeader(null);
             tableView.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         });
