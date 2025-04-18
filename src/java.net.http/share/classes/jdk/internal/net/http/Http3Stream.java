@@ -610,7 +610,7 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
              }
              return;
          }
-         
+
          int responseCode;
          boolean finalResponse = false;
          try {
