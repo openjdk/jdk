@@ -43,21 +43,20 @@ public class bug4459267 {
     public static void main(String[] args) throws Exception {
         try {
             Robot robot = new Robot();
-            robot.waitForIdle();
-            robot.delay(250);
+            robot.setAutoDelay(250);
 
             SwingUtilities.invokeAndWait(() -> createTestUI());
             robot.waitForIdle();
-            robot.delay(250);
 
             robot.keyPress(KeyEvent.VK_PAGE_UP);
             robot.keyRelease(KeyEvent.VK_PAGE_UP);
             robot.waitForIdle();
-            robot.delay(250);
         } finally {
-            if (frame != null) {
-                frame.dispose();
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
@@ -67,9 +66,9 @@ public class bug4459267 {
         jcmb.addItem("JComobo1");
         jcmb.addItem("Item2");
         jcmb.addItem("Item3");
-        frame.getContentPane().add( jcmb, BorderLayout.NORTH );
-        frame.setLocationRelativeTo(null);
+        frame.getContentPane().add(jcmb, BorderLayout.NORTH);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }

@@ -80,8 +80,8 @@ public class bug4212498 {
         panel.add(new JButton("B"));
 
         frame.getContentPane().add(panel);
-        frame.setLocationRelativeTo(null);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         return frame;
     }
 }

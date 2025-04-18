@@ -47,28 +47,26 @@ public class bug4519269 {
     public static void main(String[] args) throws Exception {
         try {
             Robot robot = new Robot();
-            robot.waitForIdle();
-            robot.delay(250);
+            robot.setAutoDelay(250);
 
             SwingUtilities.invokeAndWait(() -> createTestUI());
             robot.waitForIdle();
-            robot.delay(250);
 
             SwingUtilities.invokeAndWait (() -> p = combo.getLocationOnScreen());
             robot.mouseMove(p.x+5, p.y+5);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
-            robot.delay(250);
 
             robot.keyPress(KeyEvent.VK_SHIFT);
             robot.keyRelease(KeyEvent.VK_SHIFT);
             robot.waitForIdle();
-            robot.delay(250);
         } finally {
-            if (frame != null) {
-                frame.dispose();
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
@@ -76,8 +74,8 @@ public class bug4519269 {
         frame = new JFrame("bug4519269");
         combo = new JComboBox(data);
         frame.getContentPane().add(combo);
-        frame.setLocationRelativeTo(null);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
