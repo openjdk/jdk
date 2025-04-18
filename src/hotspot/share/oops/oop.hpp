@@ -84,9 +84,14 @@ class oopDesc {
   // objects during a GC) -- requires a valid klass pointer
   inline void init_mark();
 
+  template <HeaderMode::Mode mode>
+  inline KlassLUTEntry get_klute() const;
   inline KlassLUTEntry get_klute() const;
 
+  template <HeaderMode::Mode mode>
   inline Klass* klass() const;
+  inline Klass* klass() const;
+
   inline Klass* klass_or_null() const;
   inline Klass* klass_or_null_acquire() const;
   // Get the klass without running any asserts.

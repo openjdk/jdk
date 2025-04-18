@@ -97,8 +97,9 @@ void oopDesc::init_mark() {
   set_mark(prototype_mark());
 }
 
+template <HeaderMode::Mode mode>
 KlassLUTEntry oopDesc::get_klute() const {
-  switch (ObjLayout::klass_mode()) {
+  switch (mode) {
     case HeaderMode::Compact:
       return KlassInfoLUT::lookup(mark().narrow_klass());
     case HeaderMode::Compressed:
@@ -108,14 +109,33 @@ KlassLUTEntry oopDesc::get_klute() const {
   }
 }
 
-Klass* oopDesc::klass() const {
+KlassLUTEntry oopDesc::get_klute() const {
   switch (ObjLayout::klass_mode()) {
+    case HeaderMode::Compact:     return get_klute<HeaderMode::Compact>();
+    case HeaderMode::Compressed:  return get_klute<HeaderMode::Compressed>();
+    default:
+      return get_klute<HeaderMode::Uncompressed>();
+  }
+}
+
+template <HeaderMode::Mode mode>
+Klass* oopDesc::klass() const {
+  switch (mode) {
     case HeaderMode::Compact:
       return mark().klass();
     case HeaderMode::Compressed:
       return CompressedKlassPointers::decode_not_null(_metadata._compressed_klass);
     default:
       return _metadata._klass;
+  }
+}
+
+Klass* oopDesc::klass() const {
+  switch (ObjLayout::klass_mode()) {
+    case HeaderMode::Compact: return klass<HeaderMode::Compact>();
+    case HeaderMode::Compressed: return klass<HeaderMode::Compressed>();
+    default:
+      return klass<HeaderMode::Uncompressed>();
   }
 }
 
@@ -397,32 +417,27 @@ void oopDesc::incr_age() {
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate(OopClosureType* cl) {
-  const KlassLUTEntry klute = get_klute();
-  OopIteratorClosureDispatch::oop_oop_iterate(this, cl, klute);
+  OopIteratorClosureDispatch::oop_oop_iterate(this, cl);
 }
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate(OopClosureType* cl, MemRegion mr) {
-  const KlassLUTEntry klute = get_klute();
-  OopIteratorClosureDispatch::oop_oop_iterate_bounded(this, cl, mr, klute);
+  OopIteratorClosureDispatch::oop_oop_iterate_bounded(this, cl, mr);
 }
 
 template <typename OopClosureType>
 size_t oopDesc::oop_iterate_size(OopClosureType* cl) {
-  const KlassLUTEntry klute = get_klute();
-  return OopIteratorClosureDispatch::oop_oop_iterate_size(this, cl, klute);
+  return OopIteratorClosureDispatch::oop_oop_iterate_size(this, cl);
 }
 
 template <typename OopClosureType>
 size_t oopDesc::oop_iterate_size(OopClosureType* cl, MemRegion mr) {
-  const KlassLUTEntry klute = get_klute();
-  return OopIteratorClosureDispatch::oop_oop_iterate_bounded_size(this, cl, mr, klute);
+  return OopIteratorClosureDispatch::oop_oop_iterate_bounded_size(this, cl, mr);
 }
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate_backwards(OopClosureType* cl) {
-  const KlassLUTEntry klute = get_klute();
-  OopIteratorClosureDispatch::oop_oop_iterate_reverse(this, cl, klute);
+  OopIteratorClosureDispatch::oop_oop_iterate_reverse(this, cl);
 }
 
 bool oopDesc::is_instanceof_or_null(oop obj, Klass* klass) {

@@ -143,8 +143,9 @@ protected:
   }
 };
 
-// Dispatch for normal iteration, unbounded, does not return size
-// void XXXKlass::oop_oop_iterate(oop, closure, klute)
+////////////////////////////////////////////////
+// Normal
+
 template <typename OopClosureType>
 class OopOopIterateDispatch : public DispatchBase {
   typedef void (*FunctionType) (oop obj, OopClosureType* cl, KlassLUTEntry klute);
@@ -196,24 +197,15 @@ class OopOopIterateDispatch : public DispatchBase {
   static Table _table;
 
 public:
-
   static void invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
     const int slot = klute.kind();
     _table._function[slot](obj, cl, klute);
   }
-
 };
 
-template <typename OopClosureType>
-typename OopOopIterateDispatch<OopClosureType>::Table OopOopIterateDispatch<OopClosureType>::_table;
+////////////////////////////////////////////////
+// Reverse
 
-template <typename OopClosureType>
-void OopIteratorClosureDispatch::oop_oop_iterate  (oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-  OopOopIterateDispatch<OopClosureType>::invoke(obj, cl, klute);
-}
-
-// Dispatch for reverse iteration, unbounded, does not return size
-// void XXXKlass::oop_oop_iterate_reverse(oop, closure, klute)
 template <typename OopClosureType>
 class OopOopIterateDispatchReverse {
   typedef void (*FunctionType) (oop obj, OopClosureType* cl, KlassLUTEntry klute);
@@ -265,21 +257,14 @@ class OopOopIterateDispatchReverse {
   static Table _table;
 
 public:
-
   static void invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
     const int slot = klute.kind();
     _table._function[slot] (obj, cl, klute);
   }
-
 };
 
-template <typename OopClosureType>
-typename OopOopIterateDispatchReverse<OopClosureType>::Table OopOopIterateDispatchReverse<OopClosureType>::_table;
-
-template <typename OopClosureType>
-void OopIteratorClosureDispatch::oop_oop_iterate_reverse(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-  OopOopIterateDispatchReverse<OopClosureType>::invoke (obj, cl, klute);
-}
+////////////////////////////////////////////////
+// Bounded
 
 template <typename OopClosureType>
 class OopOopIterateDispatchBounded {
@@ -332,24 +317,15 @@ class OopOopIterateDispatchBounded {
   static Table _table;
 
 public:
-
   static void invoke(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
     const int slot = klute.kind();
     _table._function[slot] (obj, cl, mr, klute);
   }
-
 };
 
-template <typename OopClosureType>
-typename OopOopIterateDispatchBounded<OopClosureType>::Table OopOopIterateDispatchBounded<OopClosureType>::_table;
+////////////////////////////////////////////////
+// Normal, returns size
 
-template <typename OopClosureType>
-void OopIteratorClosureDispatch::oop_oop_iterate_bounded(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
-  OopOopIterateDispatchBounded<OopClosureType>::invoke(obj, cl, mr, klute);
-}
-
-// Dispatch for normal iteration, unbounded, returns size
-// size_t XXXKlass::oop_oop_iterate(oop, closure, klute)
 template <typename OopClosureType>
 class OopOopIterateDispatchReturnSize : public DispatchBase {
 
@@ -427,25 +403,15 @@ class OopOopIterateDispatchReturnSize : public DispatchBase {
   static Table _table;
 
 public:
-
   static size_t invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
     const int slot = klute.kind();
     return _table._function[slot](obj, cl, klute);
   }
-
 };
 
-template <typename OopClosureType>
-typename OopOopIterateDispatchReturnSize<OopClosureType>::Table OopOopIterateDispatchReturnSize<OopClosureType>::_table;
+////////////////////////////////////////////////
+// Bounded, returns size
 
-template <typename OopClosureType>
-size_t OopIteratorClosureDispatch::oop_oop_iterate_size(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-  return OopOopIterateDispatchReturnSize<OopClosureType>::invoke(obj, cl, klute);
-}
-
-
-// Dispatch for bounded iteration, returns size
-// size_t XXXKlass::oop_oop_iterate_bounded(oop, closure, memregion, klute)
 template <typename OopClosureType>
 class OopOopIterateDispatchBoundedReturnSize : public DispatchBase {
   typedef size_t (*FunctionType) (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute);
@@ -530,12 +496,55 @@ public:
 
 };
 
-template <typename OopClosureType>
-typename OopOopIterateDispatchBoundedReturnSize<OopClosureType>::Table
-OopOopIterateDispatchBoundedReturnSize<OopClosureType>::_table;
+
+////////////////////////////////////////////////
+// Dispatcher tables
 
 template <typename OopClosureType>
-size_t OopIteratorClosureDispatch::oop_oop_iterate_bounded_size  (oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
+typename OopOopIterateDispatch<OopClosureType>::Table OopOopIterateDispatch<OopClosureType>::_table;
+
+template <typename OopClosureType>
+typename OopOopIterateDispatchReverse<OopClosureType>::Table OopOopIterateDispatchReverse<OopClosureType>::_table;
+
+template <typename OopClosureType>
+typename OopOopIterateDispatchBounded<OopClosureType>::Table OopOopIterateDispatchBounded<OopClosureType>::_table;
+
+template <typename OopClosureType>
+typename OopOopIterateDispatchReturnSize<OopClosureType>::Table OopOopIterateDispatchReturnSize<OopClosureType>::_table;
+
+template <typename OopClosureType>
+typename OopOopIterateDispatchBoundedReturnSize<OopClosureType>::Table OopOopIterateDispatchBoundedReturnSize<OopClosureType>::_table;
+
+////////////////////////////////////////////////
+// Dispatcher entriy points
+
+template <typename OopClosureType>
+void OopIteratorClosureDispatch::oop_oop_iterate  (oop obj, OopClosureType* cl) {
+  const KlassLUTEntry klute = obj->get_klute();
+  OopOopIterateDispatch<OopClosureType>::invoke(obj, cl, klute);
+}
+
+template <typename OopClosureType>
+void OopIteratorClosureDispatch::oop_oop_iterate_reverse(oop obj, OopClosureType* cl) {
+  const KlassLUTEntry klute = obj->get_klute();
+  OopOopIterateDispatchReverse<OopClosureType>::invoke (obj, cl, klute);
+}
+
+template <typename OopClosureType>
+void OopIteratorClosureDispatch::oop_oop_iterate_bounded(oop obj, OopClosureType* cl, MemRegion mr) {
+  const KlassLUTEntry klute = obj->get_klute();
+  OopOopIterateDispatchBounded<OopClosureType>::invoke(obj, cl, mr, klute);
+}
+
+template <typename OopClosureType>
+size_t OopIteratorClosureDispatch::oop_oop_iterate_size(oop obj, OopClosureType* cl) {
+  const KlassLUTEntry klute = obj->get_klute();
+  return OopOopIterateDispatchReturnSize<OopClosureType>::invoke(obj, cl, klute);
+}
+
+template <typename OopClosureType>
+size_t OopIteratorClosureDispatch::oop_oop_iterate_bounded_size(oop obj, OopClosureType* cl, MemRegion mr) {
+  const KlassLUTEntry klute = obj->get_klute();
   return OopOopIterateDispatchBoundedReturnSize<OopClosureType>::invoke(obj, cl, mr, klute);
 }
 
