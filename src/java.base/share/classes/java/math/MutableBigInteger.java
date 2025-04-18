@@ -1973,13 +1973,12 @@ class MutableBigInteger {
             BigInteger rBig = r.toBigInteger();
             BigInteger rToN1 = rBig.pow(n - 1);
             MutableBigInteger rToN = new MutableBigInteger(rToN1.multiply(rBig).mag);
-            if (rToN.compare(this) <= 0)
+            if (rToN.subtract(this) <= 0)
                 return r;
 
-            // compute r - ceil((rToN - this) / (n * rToN1))
+            // compute r - ceil((r^n - this) / (n * r^(n - 1)))
             MutableBigInteger q1 = new MutableBigInteger();
             MutableBigInteger delta = new MutableBigInteger();
-            rToN.subtract(this);
             // Don't use conditional-or to ensure to do both divisions
             if (rToN.divideOneWord(n, q1) != 0
                     | !q1.divide(new MutableBigInteger(rToN1.mag), delta).isZero())
