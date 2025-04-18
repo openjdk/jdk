@@ -43,8 +43,8 @@ public class bug4190222 {
     static JFrame frame;
     static DefaultTableModel dtm;
     static JTable tbl;
-    static Dimension preResize;
-    static Dimension postResize;
+    static volatile Dimension preResize;
+    static volatile Dimension postResize;
 
     static Vector data;
     static Vector colNames;
@@ -62,14 +62,17 @@ public class bug4190222 {
                 dtm.setDataVector(data, colNames);
                 postResize = tbl.getSize();
             });
+            robot.waitForIdle();
 
             if (!preResize.equals(postResize)) {
                 throw new RuntimeException("Size of table changed after resizing.");
             }
         } finally {
-            if (frame != null) {
-                SwingUtilities.invokeAndWait(() -> frame.dispose());
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 

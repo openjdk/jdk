@@ -33,21 +33,20 @@ import javax.swing.JTable;
  * @summary Tests if Table default cell editor doesn't handle % (percent) character correctly
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main bug4224179
+ * @run main/manual bug4224179
  */
 
 public class bug4224179 {
     private static final String INSTRUCTIONS = """
-            1. run the program
-            2. Click ONCE on the center cell ("Huml")
-            3. type the following symbols one after another: a%b
+            1. Click ONCE on the center cell ("Huml")
+            2. Type the following symbols one after another: a%b
 
             If the center cell doesn't read "Humla%b" the test fails.
 
-            4. After the above, press the ESCAPE key and note that the cell
-                reverts back to "Huml"
-            5. Do the stuff in part 1 again
-            6. Press the ESCAPE key
+            3. After the above, press the ESCAPE key and note that the cell
+               reverts back to "Huml"
+            4. Do the stuff in part 1 again
+            5. Press the ESCAPE key
 
             If the center cell now reads "Huml" as it initially was,
             the test passed and fails otherwise.
