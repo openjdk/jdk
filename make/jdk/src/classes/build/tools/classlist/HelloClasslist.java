@@ -33,8 +33,6 @@ package build.tools.classlist;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -180,14 +178,10 @@ public class HelloClasslist {
         Class<?> striped64Class = Class.forName("java.util.concurrent.atomic.Striped64$Cell");
 
         // Initialize FFM linkers
-        System.loadLibrary("java");
-        Linker linker = Linker.nativeLinker();
-        SymbolLookup lookup = SymbolLookup.loaderLookup();
         var signature = FunctionDescriptor.of(ADDRESS,
                 ADDRESS, ADDRESS, ADDRESS,
                 JAVA_BOOLEAN, ADDRESS, ADDRESS);
-        Optional<MemorySegment> symbol = lookup.find("Java_java_lang_Class_forName0");
-        var _ = linker.downcallHandle(symbol.orElseThrow(), signature);
+        Linker.nativeLinker().downcallHandle(signature);
     }
 
     public HelloClasslist() {}
