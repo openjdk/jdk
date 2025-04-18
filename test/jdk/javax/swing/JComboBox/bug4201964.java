@@ -47,7 +47,7 @@ public class bug4201964 {
         try {
             UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
         } catch (Exception e) {
-            throw new PassFailJFrame.forceFail("Couldn't load the Windows look and feel.");
+            PassFailJFrame.forceFail("Couldn't load the Windows look and feel.");
         }
 
         PassFailJFrame.builder()
