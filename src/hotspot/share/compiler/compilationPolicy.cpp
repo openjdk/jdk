@@ -838,7 +838,7 @@ nmethod* CompilationPolicy::event(const methodHandle& method, const methodHandle
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI && UseJVMCICompiler &&
-      comp_level == CompLevel_full_optimization && !AOTLinkedClassBulkLoader::class_preloading_finished()) {
+      comp_level == CompLevel_full_optimization CDS_ONLY(&& !AOTLinkedClassBulkLoader::class_preloading_finished())) {
     return nullptr;
   }
 #endif
@@ -1435,7 +1435,7 @@ CompLevel CompilationPolicy::call_event(const methodHandle& method, CompLevel cu
   }
 #if INCLUDE_JVMCI
   if (EnableJVMCI && UseJVMCICompiler &&
-      next_level == CompLevel_full_optimization && !AOTLinkedClassBulkLoader::class_preloading_finished()) {
+      next_level == CompLevel_full_optimization CDS_ONLY(&& !AOTLinkedClassBulkLoader::class_preloading_finished())) {
     next_level = cur_level;
   }
 #endif

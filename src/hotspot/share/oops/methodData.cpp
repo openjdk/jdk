@@ -1868,8 +1868,10 @@ void MethodData::clean_extra_data(CleanExtraDataClosure* cl) {
       assert(m != nullptr, "should have a method");
       bool exclude = false;
       if (SafepointSynchronize::is_at_safepoint() && CDSConfig::is_dumping_archive()) {
+#if INCLUDE_CDS
         InstanceKlass* holder = m->method_holder();
         exclude = (holder == nullptr || !holder->is_loaded() || SystemDictionaryShared::check_for_exclusion(holder, nullptr));
+#endif
       }
       if (exclude || !cl->is_live(m)) {
         // "shift" accumulates the number of cells for dead

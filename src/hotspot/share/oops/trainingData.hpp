@@ -101,38 +101,55 @@ public:
     static int _lock_mode;
     const bool _recursive;
     static void lock() {
+#if INCLUDE_CDS
       assert(_lock_mode != 0, "Forgot to call TrainingDataLocker::initialize()");
       if (_lock_mode > 0) {
         TrainingData_lock->lock();
       }
+#endif
     }
     static void unlock() {
+#if INCLUDE_CDS
       if (_lock_mode > 0) {
         TrainingData_lock->unlock();
       }
+#endif
     }
     static bool safely_locked() {
+#if INCLUDE_CDS
       assert(_lock_mode != 0, "Forgot to call TrainingDataLocker::initialize()");
       if (_lock_mode > 0) {
         return is_self_locked();
       } else {
         return true;
       }
+#else
+      return true;
+#endif
     }
     static bool is_self_locked() {
-      return TrainingData_lock->owned_by_self();
+      return CDS_ONLY(TrainingData_lock->owned_by_self()) NOT_CDS(false);
     }
+
   public:
     static void snapshot() {
+#if INCLUDE_CDS
       assert_locked();
       _snapshot = true;
+#endif
     }
     static bool can_add() {
+#if INCLUDE_CDS
       assert_locked();
       return !_snapshot;
+#else
+      return false;
+#endif
     }
     static void initialize() {
+#if INCLUDE_CDS
       _lock_mode = need_data() ? +1 : -1;   // if -1, we go lock-free
+#endif
     }
     static void assert_locked() {
       assert(safely_locked(), "use under TrainingDataLocker");
@@ -289,7 +306,7 @@ private:
   virtual void prepare(Visitor& visitor) = 0;
   virtual void cleanup(Visitor& visitor) = 0;
 
-  static void initialize();
+  static void initialize() NOT_CDS_RETURN;
 
   static void verify();
 
@@ -433,7 +450,7 @@ class KlassTrainingData : public TrainingData {
   InstanceKlass* holder() const { return _holder; }
 
   static KlassTrainingData* make(InstanceKlass* holder,
-                                 bool null_if_not_found = false);
+                                 bool null_if_not_found = false) NOT_CDS_RETURN_(nullptr);
   static KlassTrainingData* find(InstanceKlass* holder) {
     return make(holder, true);
   }
@@ -443,7 +460,7 @@ class KlassTrainingData : public TrainingData {
     assert(has_holder(), "");
     return holder()->class_loader_data();
   }
-  void notice_fully_initialized();
+  void notice_fully_initialized() NOT_CDS_RETURN;
 
   void print_on(outputStream* st, bool name_only) const;
   virtual void print_on(outputStream* st) const { print_on(st, false); }
@@ -614,7 +631,7 @@ private:
         _method(mtd), _level(level), _compile_id(compile_id), _init_deps_left(0) { }
 public:
   ciRecords& ci_records() { return _ci_records; }
-  static CompileTrainingData* make(CompileTask* task);
+  static CompileTrainingData* make(CompileTask* task) NOT_CDS_RETURN_(nullptr);
 
   virtual CompileTrainingData* as_CompileTrainingData() const { return const_cast<CompileTrainingData*>(this); };
 
@@ -650,11 +667,11 @@ public:
   }
   uint compute_init_deps_left(bool count_initialized = false);
 
-  void notice_inlined_method(CompileTask* task, const methodHandle& method);
+  void notice_inlined_method(CompileTask* task, const methodHandle& method) NOT_CDS_RETURN;
 
   // The JIT looks at classes and objects too and can depend on their state.
   // These simple calls just report the *possibility* of an observation.
-  void notice_jit_observation(ciEnv* env, ciBaseObject* what);
+  void notice_jit_observation(ciEnv* env, ciBaseObject* what) NOT_CDS_RETURN;
 
   virtual void prepare(Visitor& visitor);
   virtual void cleanup(Visitor& visitor) NOT_CDS_RETURN;
@@ -769,7 +786,7 @@ class MethodTrainingData : public TrainingData {
 
   static MethodTrainingData* make(const methodHandle& method,
                                   bool null_if_not_found = false,
-                                  bool use_cache = true);
+                                  bool use_cache = true) NOT_CDS_RETURN_(nullptr);
   static MethodTrainingData* find_fast(const methodHandle& method) { return make(method, true, true); }
   static MethodTrainingData* find(const methodHandle& method) { return make(method, true, false); }
 
