@@ -46,7 +46,7 @@ JfrStackTraceRepository& JfrStackTraceRepository::instance() {
   return *_instance;
 }
 
-static JfrStackTraceRepository& leak_profiler_instance() {
+JfrStackTraceRepository& JfrStackTraceRepository::leak_profiler_instance() {
   assert(_leak_profiler_instance != nullptr, "invariant");
   return *_leak_profiler_instance;
 }
