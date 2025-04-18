@@ -2628,12 +2628,8 @@ void Assembler::imull(Register dst, Register src) {
 }
 
 void Assembler::eimull(Register dst, Register src1, Register src2, bool no_flags) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
-    return imull(dst, src2);
-  }
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
-  emit_int16((unsigned char)0xAF, (0xC0 | encode));
+  evex_imul_ndd_and_int16(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xAF, 0xC0, no_flags);
 }
 
 void Assembler::imull(Register dst, Address src, int32_t value) {
@@ -2677,17 +2673,8 @@ void Assembler::imull(Register dst, Register src, int value) {
 }
 
 void Assembler::eimull(Register dst, Register src, int value, bool no_flags) {
-  if (is_demotable(no_flags, dst->encoding(), src->encoding())) {
-    return imull(dst, src, value);
-  }
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  int encode = evex_prefix_and_encode_nf(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
-  if (is8bit(value)) {
-    emit_int24(0x6B, (0xC0 | encode), value & 0xFF);
-  } else {
-    emit_int16(0x69, (0xC0 | encode));
-    emit_int32(value);
-  }
+  evex_imul_nf_and_int16(dst->encoding(), src->encoding(), value, VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
 }
 
 void Assembler::imull(Register dst, Address src) {
@@ -7043,9 +7030,7 @@ void Assembler::shldl(Register dst, Register src) {
 
 void Assembler::eshldl(Register dst, Register src1, Register src2, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  // NDD shares its encoding bits with NDS bits for regular EVEX instruction.
-  // Therefore, DST is passed as the second argument to minimize changes in the leaf level routine.
-  evex_opcode_prefix_and_encode_ndd_and_int16(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xA5, 0xC0, no_flags);
+  evex_shift_ndd_and_int16(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xA5, 0xC0, no_flags);
 }
 
 void Assembler::shldl(Register dst, Register src, int8_t imm8) {
@@ -7055,7 +7040,7 @@ void Assembler::shldl(Register dst, Register src, int8_t imm8) {
 
 void Assembler::eshldl(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  evex_opcode_prefix_and_encode_ndd_and_int24(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xA4, 0xC0, 0x24, no_flags);
+  evex_shift_ndd_and_int24(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xA4, 0xC0, 0x24, no_flags);
 }
 
 void Assembler::shrdl(Register dst, Register src) {
@@ -7065,7 +7050,7 @@ void Assembler::shrdl(Register dst, Register src) {
 
 void Assembler::eshrdl(Register dst, Register src1, Register src2, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  evex_opcode_prefix_and_encode_ndd_and_int16(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xAD, 0xC0, no_flags);
+  evex_shift_ndd_and_int16(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xAD, 0xC0, no_flags);
 }
 
 void Assembler::shrdl(Register dst, Register src, int8_t imm8) {
@@ -7075,7 +7060,7 @@ void Assembler::shrdl(Register dst, Register src, int8_t imm8) {
 
 void Assembler::eshrdl(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  evex_opcode_prefix_and_encode_ndd_and_int24(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xAC, 0xC0, 0x2C, no_flags);
+  evex_shift_ndd_and_int24(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xAC, 0xC0, 0x2C, no_flags);
 }
 
 #ifdef _LP64
@@ -7086,7 +7071,7 @@ void Assembler::shldq(Register dst, Register src, int8_t imm8) {
 
 void Assembler::eshldq(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  evex_opcode_prefix_and_encode_ndd_and_int24(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xA4, 0xC0, 0x24, no_flags, true);
+  evex_shift_ndd_and_int24(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xA4, 0xC0, 0x24, no_flags, true);
 }
 
 void Assembler::shrdq(Register dst, Register src, int8_t imm8) {
@@ -7096,7 +7081,7 @@ void Assembler::shrdq(Register dst, Register src, int8_t imm8) {
 
 void Assembler::eshrdq(Register dst, Register src1, Register src2, int8_t imm8, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  evex_opcode_prefix_and_encode_ndd_and_int24(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xAC, 0xC0, 0x2C, no_flags, true);
+  evex_shift_ndd_and_int24(dst->encoding(), src1->encoding(), src2->encoding(), imm8, VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xAC, 0xC0, 0x2C, no_flags, true);
 }
 #endif
 
@@ -13697,7 +13682,36 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
   return (((dst_enc & 7) << 3) | (src_enc & 7));
 }
 
-void Assembler::evex_opcode_prefix_and_encode_ndd_and_int16(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+void Assembler::evex_imul_ndd_and_int16(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+  InstructionAttr *attributes, int byte1, int byte2, bool no_flags, bool use_prefixq) {
+  if (is_demotable(no_flags, dst_enc, nds_enc)) {
+    int encode = use_prefixq ? prefixq_and_encode(dst_enc, src_enc, true /* is_map1 */) : prefix_and_encode(dst_enc, src_enc, true /* is_map1 */);
+    return emit_opcode_prefix_and_encoding((unsigned char)byte1, byte2, encode);
+  }
+  attributes->set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(nds_enc, dst_enc, src_enc, pre, opc, attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true, no_flags);
+  emit_int16(byte1, (byte2 | encode));
+}
+
+void Assembler::evex_imul_nf_and_int16(int dst_enc, int src_enc, int value, VexSimdPrefix pre, VexOpcode opc,
+  InstructionAttr *attributes, bool no_flags, bool use_prefixq) {
+  int encode;
+  if (is_demotable(no_flags, dst_enc, src_enc)) {
+    encode = use_prefixq ? prefixq_and_encode(dst_enc, src_enc) : prefix_and_encode(dst_enc, src_enc);
+  }
+  else {
+    attributes->set_is_evex_instruction();
+    encode = vex_prefix_and_encode(dst_enc, 0, src_enc, pre, opc, attributes, /* src_is_gpr */ true, /* nds_is_ndd */ false, no_flags);
+  }
+  if (is8bit(value)) {
+    emit_int24(0x6B, (0xC0 | encode), value & 0xFF);
+  } else {
+    emit_int16(0x69, (0xC0 | encode));
+    emit_int32(value);
+  }
+}
+
+void Assembler::evex_shift_ndd_and_int16(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
   InstructionAttr *attributes, int byte1, int byte2, bool no_flags, bool use_prefixq) {
   if (is_demotable(no_flags, dst_enc, nds_enc)) {
     int encode = use_prefixq ? prefixq_and_encode(src_enc, dst_enc, true /* is_map1 */) : prefix_and_encode(src_enc, dst_enc, true /* is_map1 */);
@@ -13708,7 +13722,7 @@ void Assembler::evex_opcode_prefix_and_encode_ndd_and_int16(int dst_enc, int nds
   emit_int16(byte1, (byte2 | encode));
 }
 
-void Assembler::evex_opcode_prefix_and_encode_ndd_and_int24(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
+void Assembler::evex_shift_ndd_and_int24(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
   InstructionAttr *attributes, int byte1, int byte2, int byte1_ndd, bool no_flags, bool use_prefixq) {
   if (is_demotable(no_flags, dst_enc, nds_enc)) {
     int encode = use_prefixq ? prefixq_and_encode(src_enc, dst_enc, true /* is_map1 */) : prefix_and_encode(src_enc, dst_enc, true /* is_map1 */);
@@ -15773,12 +15787,8 @@ void Assembler::eimulq(Register dst, Register src, bool no_flags) {
 }
 
 void Assembler::eimulq(Register dst, Register src1, Register src2, bool no_flags) {
-  if (is_demotable(no_flags, dst->encoding(), src1->encoding())) {
-    return imulq(dst, src2);
-  }
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags, true);
-  emit_int16((unsigned char)0xAF, (0xC0 | encode));
+  evex_imul_ndd_and_int16(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xAF, 0xC0, no_flags, true);
 }
 
 void Assembler::imulq(Register src) {
@@ -15833,17 +15843,8 @@ void Assembler::imulq(Register dst, Register src, int value) {
 }
 
 void Assembler::eimulq(Register dst, Register src, int value, bool no_flags) {
-  if (is_demotable(no_flags, dst->encoding(), src->encoding())) {
-    return imulq(dst, src, value);
-  }
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  int encode = evex_prefix_and_encode_nf(dst->encoding(), 0, src->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags);
-  if (is8bit(value)) {
-    emit_int24(0x6B, (0xC0 | encode), (value & 0xFF));
-  } else {
-    emit_int16(0x69, (0xC0 | encode));
-    emit_int32(value);
-  }
+  evex_imul_nf_and_int16(dst->encoding(), src->encoding(), value, VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, no_flags, true);
 }
 
 void Assembler::imulq(Register dst, Address src) {
