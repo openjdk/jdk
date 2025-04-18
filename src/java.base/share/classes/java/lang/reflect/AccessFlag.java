@@ -35,15 +35,14 @@ import java.lang.classfile.attribute.ModuleExportInfo;
 import java.lang.classfile.attribute.ModuleOpenInfo;
 import java.lang.classfile.attribute.ModuleRequireInfo;
 import java.lang.module.ModuleDescriptor;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+
+import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.reflect.ClassFileFormatVersion.*;
-import static java.util.Map.entry;
 
 /**
  * Represents a JVM access or module-related flag on a runtime member,
@@ -368,20 +367,14 @@ public enum AccessFlag {
      * @throws NullPointerException if {@code location} is {@code null}
      */
     public static Set<AccessFlag> maskToAccessFlags(int mask, Location location) {
-        Set<AccessFlag> result = java.util.EnumSet.noneOf(AccessFlag.class);
-        for (var accessFlag : LocationToFlags.LOCATION_TO_FLAGS.get(location)) {
-            int accessMask = accessFlag.mask();
-            if ((mask &  accessMask) != 0) {
-                result.add(accessFlag);
-                mask = mask & ~accessMask;
-            }
-        }
-        if (mask != 0) {
+        var definition = findDefinition(location);
+        int unmatchedMask = mask & (~location.parsingMask()); // flagMask rejects strictfp
+        if (unmatchedMask != 0) {
             throw new IllegalArgumentException("Unmatched bit position 0x" +
-                                               Integer.toHexString(mask) +
-                                               " for location " + location);
+                    Integer.toHexString(unmatchedMask) +
+                    " for location " + location);
         }
-        return Collections.unmodifiableSet(result);
+        return new AccessFlagSet(definition, mask);
     }
 
     /**
@@ -626,6 +619,11 @@ public enum AccessFlag {
             return flagsMask;
         }
 
+        // Temporary shortcut to allow strict to be parsed
+        private int parsingMask() {
+            return this == METHOD ? flagsMask | ACC_STRICT : flagsMask;
+        }
+
         /**
          * {@return the union of integer masks of all access flags defined for
          * this location in the given class file format version}  If {@code
@@ -652,10 +650,7 @@ public enum AccessFlag {
          * @since 25
          */
         public Set<AccessFlag> flags() {
-            if (this == METHOD) {
-                return LocationToFlags.CURRENT_METHOD_FLAGS;
-            }
-            return LocationToFlags.LOCATION_TO_FLAGS.get(this);
+            return new AccessFlagSet(findDefinition(this), flagsMask());
         }
 
         /**
@@ -670,47 +665,133 @@ public enum AccessFlag {
          * @since 25
          */
         public Set<AccessFlag> flags(ClassFileFormatVersion cffv) {
-            int flagsMask = flagsMask(cffv); // implicit null check
-            return maskToAccessFlags(flagsMask, this);
+            // implicit null check cffv
+            return new AccessFlagSet(findDefinition(this), flagsMask(cffv));
         }
     }
 
-    private static final class LocationToFlags {
-        // A map from location to flags that ever existed on the location
-        private static final Map<Location, Set<AccessFlag>> LOCATION_TO_FLAGS =
-            Map.ofEntries(entry(Location.CLASS,
-                                Set.of(PUBLIC, FINAL, SUPER,
-                                       INTERFACE, ABSTRACT,
-                                       SYNTHETIC, ANNOTATION,
-                                       ENUM, AccessFlag.MODULE)),
-                          entry(Location.FIELD,
-                                Set.of(PUBLIC, PRIVATE, PROTECTED,
-                                       STATIC, FINAL, VOLATILE,
-                                       TRANSIENT, SYNTHETIC, ENUM)),
-                          entry(Location.METHOD,
-                                Set.of(PUBLIC, PRIVATE, PROTECTED,
-                                       STATIC, FINAL, SYNCHRONIZED,
-                                       BRIDGE, VARARGS, NATIVE,
-                                       ABSTRACT, STRICT, SYNTHETIC)),
-                          entry(Location.INNER_CLASS,
-                                Set.of(PUBLIC, PRIVATE, PROTECTED,
-                                       STATIC, FINAL, INTERFACE, ABSTRACT,
-                                       SYNTHETIC, ANNOTATION, ENUM)),
-                          entry(Location.METHOD_PARAMETER,
-                                Set.of(FINAL, SYNTHETIC, MANDATED)),
-                          entry(Location.MODULE,
-                                Set.of(OPEN, SYNTHETIC, MANDATED)),
-                          entry(Location.MODULE_REQUIRES,
-                                Set.of(TRANSITIVE, STATIC_PHASE, SYNTHETIC, MANDATED)),
-                          entry(Location.MODULE_EXPORTS,
-                                Set.of(SYNTHETIC, MANDATED)),
-                          entry(Location.MODULE_OPENS,
-                                Set.of(SYNTHETIC, MANDATED)));
-        // Current recognized flags on method, which does not include strict
-        private static final Set<AccessFlag> CURRENT_METHOD_FLAGS = Set.of(
-                PUBLIC, PRIVATE, PROTECTED,
-                STATIC, FINAL, SYNCHRONIZED,
-                BRIDGE, VARARGS, NATIVE,
-                ABSTRACT, SYNTHETIC);
+    private static AccessFlag[] createDefinition(AccessFlag... known) {
+        var ret = new AccessFlag[Character.SIZE];
+        for (var flag : known) {
+            var mask = flag.mask;
+            int pos = Integer.numberOfTrailingZeros(mask);
+            assert ret[pos] == null : ret[pos] + " " + flag;
+            ret[pos] = flag;
+        }
+        return ret;
+    }
+
+    // Will take extra args in the future for valhalla switch
+    private static AccessFlag[] findDefinition(Location location) {
+        return switch (location) {
+            case CLASS -> CLASS_FLAGS;
+            case FIELD -> FIELD_FLAGS;
+            case METHOD -> METHOD_FLAGS;
+            case INNER_CLASS -> INNER_CLASS_FLAGS;
+            case METHOD_PARAMETER -> METHOD_PARAMETER_FLAGS;
+            case MODULE -> MODULE_FLAGS;
+            case MODULE_REQUIRES -> MODULE_REQUIRES_FLAGS;
+            case MODULE_EXPORTS -> MODULE_EXPORTS_FLAGS;
+            case MODULE_OPENS -> MODULE_OPENS_FLAGS;
+        };
+    }
+
+    private static final @Stable AccessFlag[] // Can use stable array and lazy init in the future
+            CLASS_FLAGS = createDefinition(PUBLIC, FINAL, SUPER, INTERFACE, ABSTRACT, SYNTHETIC, ANNOTATION, ENUM, AccessFlag.MODULE),
+            FIELD_FLAGS = createDefinition(PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, VOLATILE, TRANSIENT, SYNTHETIC, ENUM),
+            METHOD_FLAGS = createDefinition(PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, SYNCHRONIZED, BRIDGE, VARARGS, NATIVE, ABSTRACT, STRICT, SYNTHETIC),
+            INNER_CLASS_FLAGS = createDefinition(PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, INTERFACE, ABSTRACT, SYNTHETIC, ANNOTATION, ENUM),
+            METHOD_PARAMETER_FLAGS = createDefinition(FINAL, SYNTHETIC, MANDATED),
+            MODULE_FLAGS = createDefinition(OPEN, SYNTHETIC, MANDATED),
+            MODULE_REQUIRES_FLAGS = createDefinition(TRANSITIVE, STATIC_PHASE, SYNTHETIC, MANDATED),
+            MODULE_EXPORTS_FLAGS = createDefinition(SYNTHETIC, MANDATED),
+            MODULE_OPENS_FLAGS = createDefinition(SYNTHETIC, MANDATED);
+
+    private static int undefinedMask(AccessFlag[] definition, int mask) {
+        assert definition.length == Character.SIZE;
+        int definedMask = 0;
+        for (int i = 0; i < Character.SIZE; i++) {
+            if (definition[i] != null) {
+                definedMask |= 1 << i;
+            }
+        }
+        return mask & ~definedMask;
+    }
+
+    private static final class AccessFlagSet extends AbstractSet<AccessFlag> {
+        private final @Stable AccessFlag[] definition;
+        private final int mask;
+
+        // all mutating methods throw UnsupportedOperationException
+        @Override public boolean add(AccessFlag e) { throw uoe(); }
+        @Override public boolean addAll(Collection<? extends AccessFlag> c) { throw uoe(); }
+        @Override public void    clear() { throw uoe(); }
+        @Override public boolean remove(Object o) { throw uoe(); }
+        @Override public boolean removeAll(Collection<?> c) { throw uoe(); }
+        @Override public boolean removeIf(Predicate<? super AccessFlag> filter) { throw uoe(); }
+        @Override public boolean retainAll(Collection<?> c) { throw uoe(); }
+        private static UnsupportedOperationException uoe() { return new UnsupportedOperationException(); }
+
+        private AccessFlagSet(AccessFlag[] definition, int mask) {
+            assert undefinedMask(definition, mask) == 0 : mask;
+            this.definition = definition;
+            this.mask = mask;
+        }
+
+        @Override
+        public Iterator<AccessFlag> iterator() {
+            return new AccessFlagIterator(definition, mask);
+        }
+
+        @Override
+        public void forEach(Consumer<? super AccessFlag> action) {
+            Objects.requireNonNull(action); // in case of empty
+            for (int i = 0; i < Character.SIZE; i++) {
+                if ((mask & (1 << i)) != 0) {
+                    action.accept(definition[i]);
+                }
+            }
+        }
+
+        private static final class AccessFlagIterator implements Iterator<AccessFlag> {
+            private final @Stable AccessFlag[] definition;
+            private int remainingMask;
+
+            private AccessFlagIterator(AccessFlag[] definition, int remainingMask) {
+                this.definition = definition;
+                this.remainingMask = remainingMask;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return remainingMask != 0;
+            }
+
+            @Override
+            public AccessFlag next() {
+                int flagBit = Integer.lowestOneBit(remainingMask);
+                remainingMask &= ~flagBit;
+                return definition[Integer.numberOfTrailingZeros(flagBit)];
+            }
+        }
+
+        @Override
+        public int size() {
+            return Integer.bitCount(mask);
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            if (Objects.requireNonNull(o) instanceof AccessFlag flag) {
+                int bit = flag.mask;
+                return (bit & mask) != 0 && definition[Integer.numberOfTrailingZeros(bit)] == flag;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return mask == 0;
+        }
     }
 }
