@@ -77,14 +77,14 @@ public class bug4118860 {
         bt1.addActionListener(e -> {
             tr.setToggleClickCount(1);
             if (tr.getToggleClickCount() != 1) {
-                throw new Error("ToggleClickCount doesn't set...");
+                throw new RuntimeException("ToggleClickCount doesn't set...");
             }
         });
         JButton bt2 = new JButton("Double Click");
         bt2.addActionListener(e -> {
             tr.setToggleClickCount(2);
             if (tr.getToggleClickCount() != 2) {
-                throw new Error("ToggleClickCount doesn't set...");
+                throw new RuntimeException("ToggleClickCount doesn't set...");
             }
         });
         bp.setLayout(new GridLayout(1, 2));

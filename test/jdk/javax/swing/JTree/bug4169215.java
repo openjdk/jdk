@@ -25,7 +25,6 @@
  * @test
  * @bug 4169215
  * @summary Accessibility hierarchy JTree node test.
- * @key headful
  * @run main bug4169215
  */
 
