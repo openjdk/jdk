@@ -354,7 +354,6 @@ static void reset_type_set_blobs() {
 void JfrDeprecationManager::prepare_type_set(JavaThread* jt) {
   reset_type_set_blobs();
   if (_pending_list.is_nonempty()) {
-    JfrKlassUnloading::sort(true);
     JfrCheckpointWriter writer(true /* prev epoch */, jt,  false /* header */);
     PendingListProcessor plp(writer, jt);
     _pending_list.iterate(plp);

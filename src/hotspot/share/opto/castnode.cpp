@@ -96,8 +96,14 @@ const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
-Node *ConstraintCastNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return (in(0) && remove_dead_region(phase, can_reshape)) ? this : nullptr;
+Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
+    return this;
+  }
+  if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
+    return TypeNode::Ideal(phase, can_reshape);
+  }
+  return nullptr;
 }
 
 uint ConstraintCastNode::hash() const {
@@ -475,6 +481,8 @@ Node* ConstraintCastNode::make_cast_for_type(Node* c, Node* in, const Type* type
     return new CastIINode(c, in, type, dependency, false, types);
   } else if (type->isa_long()) {
     return new CastLLNode(c, in, type, dependency, types);
+  } else if (type->isa_half_float()) {
+    return new CastHHNode(c, in, type, dependency, types);
   } else if (type->isa_float()) {
     return new CastFFNode(c, in, type, dependency, types);
   } else if (type->isa_double()) {

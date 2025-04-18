@@ -572,7 +572,7 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
       }
     }
     if (CDSConfig::is_dumping_heap()) {
-      HeapShared::init_scratch_objects(CHECK);
+      HeapShared::init_scratch_objects_for_basic_type_mirrors(CHECK);
     }
 }
 
@@ -897,14 +897,13 @@ jint universe_init() {
   ClassLoaderData::init_null_class_loader_data();
 
 #if INCLUDE_CDS
-  DynamicArchive::check_for_dynamic_dump();
   if (CDSConfig::is_using_archive()) {
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.)
     MetaspaceShared::initialize_shared_spaces();
   }
   if (CDSConfig::is_dumping_archive()) {
-    MetaspaceShared::prepare_for_dumping();
+    CDSConfig::prepare_for_dumping();
   }
 #endif
 

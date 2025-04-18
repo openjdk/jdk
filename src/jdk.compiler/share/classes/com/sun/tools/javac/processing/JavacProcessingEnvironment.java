@@ -39,6 +39,7 @@ import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.util.*;
+import javax.tools.Diagnostic;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
@@ -649,7 +650,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                         add(importStringToPattern(allowModules, annotationPattern,
                                                   processor, log, lint));
                     if (!patternAdded) {
-                        lint.logIfEnabled(log, LintWarnings.ProcDuplicateSupportedAnnotation(annotationPattern,
+                        lint.logIfEnabled(LintWarnings.ProcDuplicateSupportedAnnotation(annotationPattern,
                                                                               p.getClass().getName()));
                     }
                 }
@@ -662,7 +663,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 // and "foo.bar.*".
                 if (supportedAnnotationPatterns.contains(MatchingUtils.validImportStringToPattern("*")) &&
                     supportedAnnotationPatterns.size() > 1) {
-                    lint.logIfEnabled(log, LintWarnings.ProcRedundantTypesWithWildcard(p.getClass().getName()));
+                    lint.logIfEnabled(LintWarnings.ProcRedundantTypesWithWildcard(p.getClass().getName()));
                 }
 
                 supportedOptionNames = new LinkedHashSet<>();
@@ -670,7 +671,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                     if (checkOptionName(optionName, log)) {
                         boolean optionAdded = supportedOptionNames.add(optionName);
                         if (!optionAdded) {
-                            lint.logIfEnabled(log, LintWarnings.ProcDuplicateOptionName(optionName,
+                            lint.logIfEnabled(LintWarnings.ProcDuplicateOptionName(optionName,
                                                                          p.getClass().getName()));
                         }
                     }
@@ -1004,7 +1005,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 Assert.checkNonNull(deferredDiagnosticHandler);
                 this.deferredDiagnosticHandler = deferredDiagnosticHandler;
             } else {
-                this.deferredDiagnosticHandler = new Log.DeferredDiagnosticHandler(log);
+                this.deferredDiagnosticHandler = log.new DeferredDiagnosticHandler();
                 compiler.setDeferredDiagnosticHandler(this.deferredDiagnosticHandler);
             }
 
@@ -1107,21 +1108,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             if (messager.errorRaised())
                 return true;
 
-            for (JCDiagnostic d: deferredDiagnosticHandler.getDiagnostics()) {
-                switch (d.getKind()) {
-                    case WARNING:
-                        if (werror)
-                            return true;
-                        break;
-
-                    case ERROR:
-                        if (fatalErrors || !d.isFlagSet(RECOVERABLE))
-                            return true;
-                        break;
-                }
-            }
-
-            return false;
+            return deferredDiagnosticHandler.getDiagnostics().stream()
+              .anyMatch(d -> (d.getKind() == Diagnostic.Kind.WARNING && werror) ||
+                             (d.getKind() == Diagnostic.Kind.ERROR && (fatalErrors || !d.isFlagSet(RECOVERABLE))));
         }
 
         /** Find the set of annotations present in the set of top level
@@ -1687,7 +1676,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     private static Pattern warnAndNoMatches(String s, Processor p, Log log, Lint lint) {
-        lint.logIfEnabled(log, LintWarnings.ProcMalformedSupportedString(s, p.getClass().getName()));
+        lint.logIfEnabled(LintWarnings.ProcMalformedSupportedString(s, p.getClass().getName()));
         return noMatches; // won't match any valid identifier
     }
 
