@@ -103,6 +103,13 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         keyInfo.put(ki.algo.toUpperCase(Locale.ENGLISH), ki);
     }
 
+    /*
+     * The KeyInfo class represents information about a symmetric PKCS #11 key
+     * type or about the output of a key-based computation (e.g. HMAC). A
+     * KeyInfo instance may describe the key/output itself, or the type of
+     * key/output that a service accepts/produces. Used by P11SecretKeyFactory,
+     * P11PBECipher, P11Mac, and P11HKDF.
+     */
     static sealed class KeyInfo permits PBEKeyInfo, HMACKeyInfo, HKDFKeyInfo,
             TLSKeyInfo {
         // Java Standard Algorithm Name.
@@ -151,14 +158,26 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         }
     }
 
+    /*
+     * KeyInfo specialization for keys that are either input or result of a TLS
+     * key derivation. Keys of this type are typically handled by JSSE and their
+     * algorithm name start with "Tls". Used by P11HKDF.
+     */
     static final class TLSKeyInfo extends KeyInfo {
         TLSKeyInfo(String algo) {
             super(algo, CKK_GENERIC_SECRET);
         }
     }
 
+    /*
+     * KeyInfo specialization for outputs of a HMAC computation. Used by
+     * P11SecretKeyFactory and P11Mac.
+     */
     static final class HMACKeyInfo extends KeyInfo {
+        // HMAC mechanism (CKM_*) to generate the output.
         public final long mech;
+
+        // HMAC output length (in bits).
         public final int keyLen;
 
         HMACKeyInfo(String algo, long mech, int keyLen) {
@@ -168,6 +187,10 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         }
     }
 
+    /*
+     * KeyInfo specialization for HKDF key derivation. Used by
+     * P11SecretKeyFactory and P11HKDF.
+     */
     static final class HKDFKeyInfo extends KeyInfo {
         public static final long UNKNOWN_KEY_TYPE = -1;
         public final long hmacMech;
@@ -180,6 +203,10 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         }
     }
 
+    /*
+     * KeyInfo specialization for PBE key derivation. Used by
+     * P11SecretKeyFactory, P11PBECipher and P11Mac.
+     */
     abstract static sealed class PBEKeyInfo extends KeyInfo
             permits AESPBEKeyInfo, PBKDF2KeyInfo, P12MacPBEKeyInfo {
         public static final long INVALID_PRF = -1;
