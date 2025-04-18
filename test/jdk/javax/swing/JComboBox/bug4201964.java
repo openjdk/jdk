@@ -26,14 +26,12 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
 
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 4201964
  * @summary Tests that JComboBox's arrow button isn't drawn too wide in Windows Look&Feel
  * @requires (os.family == "windows")
- * @library /java/awt/regtesthelpers /test/lib
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4201964
  */
@@ -49,13 +47,13 @@ public class bug4201964 {
         try {
             UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
         } catch (Exception e) {
-            throw new jtreg.SkippedException("Couldn't load the Windows look and feel.");
+            throw new PassFailJFrame.forceFail("Couldn't load the Windows look and feel.");
         }
 
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .rows(50)
-                .columns(50)
+                .columns(30)
                 .testUI(bug4201964::createTestUI)
                 .build()
                 .awaitAndCheck();
