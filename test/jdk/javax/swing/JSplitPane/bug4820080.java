@@ -35,7 +35,7 @@ import javax.swing.UIManager;
  * @test
  * @bug 4820080 7175397
  * @summary RFE: Cannot Change the JSplitPane Divider Color while dragging
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4820080
  */
