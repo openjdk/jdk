@@ -27,7 +27,7 @@
  * @summary Test wheel scrolling of heavyweight components
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual HWWheelScroll.html
+ * @run main/manual HWWheelScroll
  */
 
 import java.awt.Choice;
