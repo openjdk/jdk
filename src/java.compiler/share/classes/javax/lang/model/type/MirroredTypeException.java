@@ -42,7 +42,7 @@ import javax.lang.model.element.Element;
 public class MirroredTypeException extends MirroredTypesException {
 
     @Serial
-    private static final long serialVersionUID = 269;
+    private static final long serialVersionUID = 269L;
 
     private transient TypeMirror type;          // cannot be serialized
 
