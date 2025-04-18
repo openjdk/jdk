@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @summary Test AOT cache support for array classes in custom class loaders.
  * @bug 8353298
  * @requires vm.cds.supports.aot.class.linking
  * @comment work around JDK-8345635
@@ -67,6 +68,8 @@ class AppWithCustomLoaders {
         // Test 1: array class of MyLoadeeA (JDK-8353298)
         Class klass = loader.loadClass("AppWithCustomLoaders$MyLoadeeA");
         klass.newInstance();
+
+        // TODO: more test cases JDK-8354557
     }
 
     public static class MyLoader extends URLClassLoader {
