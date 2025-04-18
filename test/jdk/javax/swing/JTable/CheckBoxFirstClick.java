@@ -47,8 +47,8 @@ import javax.swing.table.TableModel;
 
 public class CheckBoxFirstClick {
     private static final String INSTRUCTIONS = """
-            Push button "Refresh". If the table's size still unchanged then test passes.
-            If the table shrinks then test fails.
+            Click over the checkbox in the table. It should change state
+            on the first click. If not - press 'fail'.
             """;
 
     public static void main(String[] args) throws Exception {

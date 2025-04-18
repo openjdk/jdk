@@ -48,7 +48,7 @@ import javax.swing.table.TableModel;
 public class IllegalStateException {
     private static final String INSTRUCTIONS = """
             Click on a cell in the first column, delete the contents but leave the editor with focus.
-            Click on the down arrow button in the third column popping up a combo box.
+            Click on the third column popping up a combo box.
             Verify that the text editor loses focus.
             If it does, press "pass", otherwise press "fail".
             """;

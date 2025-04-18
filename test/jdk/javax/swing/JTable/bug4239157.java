@@ -41,12 +41,13 @@ import javax.swing.table.TableColumn;
 
 public class bug4239157 {
     private static final String INSTRUCTIONS = """
-            You see a JTable having one row and two columns. Click in the very first
-            cell (where "click here" is displayed). Edit its content (e.g. type some
-            letters) and press right arrow key. The edited cell should stay active,
-            its content shouldn't change. The right cell (that with text
-            "inactive forever") shouldn't become active. The same should be true
-            when you press Tab key. If it is so, test passes, otherwise it fails.
+            You see a JTable having one row and two columns.
+            Click in the very first cell (where "click here" is displayed).
+            Edit its content (e.g. type some letters) and press right arrow key.
+            The edited cell should stay active, its content shouldn't change.
+            The right cell (that with text "inactive forever") shouldn't become active.
+            The same should be true when you press Tab key.
+            If it is so, test passes, otherwise it fails.
             """;
 
     public static void main(String[] args) throws Exception {

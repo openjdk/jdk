@@ -33,6 +33,7 @@ import javax.swing.table.AbstractTableModel;
 /*
  * @test
  * @bug 4226181
+ * @summary Tests that JTable setModel() correctly re-sizes and counts columns
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4226181
@@ -41,8 +42,8 @@ import javax.swing.table.AbstractTableModel;
 public class bug4226181 {
     private static final String INSTRUCTIONS = """
             Take a look at the table and remember the number of columns you see.
-            Now press the button. If the number of columns has changed, then test
-            fails, otherwise it passes.
+            Now press the "setModel" button. If the number of columns has changed,
+            then test fails, otherwise it passes.
             """;
 
     public static void main(String[] args) throws Exception {
@@ -72,7 +73,7 @@ public class bug4226181 {
         JFrame frame = new JFrame("bug4226181");
         TestModel testModel = new TestModel();
         final JTable t = new JTable(testModel);
-        JButton b = new JButton("setModel(...)");
+        JButton b = new JButton("setModel");
         b.addActionListener(ae -> t.setModel(new TestModel()));
         t.setCellSelectionEnabled(true);
         JPanel p1 = new JPanel(new GridLayout(1, 2));
