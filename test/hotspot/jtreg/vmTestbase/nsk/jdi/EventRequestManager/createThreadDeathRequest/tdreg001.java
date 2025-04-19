@@ -241,7 +241,7 @@ public class tdreg001 extends JDIBase {
 
         setupBreakpointForCommunication(debuggeeClass);
 
-        //------------------------------------------------------  testing section
+    //------------------------------------------------------  testing section
 
         ThreadDeathRequest tdRequest1 = null;
 
