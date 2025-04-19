@@ -233,6 +233,11 @@ public class shorttype001 extends JDIBase {
         ClassPrepareEvent event = (ClassPrepareEvent) eventIterator.next();
         debuggeeClass = event.referenceType();
 
+        if (!debuggeeClass.name().equals(debuggeeName))
+           throw new JDITestRuntimeException("** Unexpected ClassName for ClassPrepareEvent **");
+
+        log2("      received: ClassPrepareEvent for debuggeeClass");
+
         setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
