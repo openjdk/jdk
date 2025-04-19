@@ -165,8 +165,9 @@ class MutableBigInteger {
      * Assume val is in the finite double range.
      */
     static MutableBigInteger valueOf(double val) {
-        if (Math.abs(val) < 1.0)
-            return new MutableBigInteger();
+        val = Math.abs(val);
+        if (val < 0x1p63)
+            return new MutableBigInteger((long) val);
         // Translate the double into exponent and significand, according
         // to the formulae in JLS, Section 20.10.22.
         long valBits = Double.doubleToRawLongBits(val);
