@@ -132,8 +132,9 @@ enum SignatureScheme {
                                     "DSA",
                                     ProtocolVersion.PROTOCOLS_TO_12),
     ECDSA_SHA1              (0x0203, "ecdsa_sha1", "SHA1withECDSA",
-                                    "EC",
-                                    ProtocolVersion.PROTOCOLS_TO_13),
+                                    "EC", null, null, -1,
+                                    ProtocolVersion.PROTOCOLS_TO_13,
+                                    ProtocolVersion.PROTOCOLS_TO_12),
     RSA_PKCS1_SHA1          (0x0201, "rsa_pkcs1_sha1", "SHA1withRSA",
                                     "RSA", null, null, 511,
                                     ProtocolVersion.PROTOCOLS_TO_13,
@@ -373,9 +374,40 @@ enum SignatureScheme {
                 && (namedGroup == null || namedGroup.isPermitted(constraints));
     }
 
+    // Helper method to update all locally supported signature schemes for
+    // a given HandshakeContext.
+    static void updateHandshakeLocalSupportedAlgs(HandshakeContext hc) {
+        // To improve performance we only update when necessary.
+        // No need to do anything if we already computed the local supported
+        // algorithms and either there is no negotiated protocol yet or the
+        // only active protocol ends up to be the negotiated protocol.
+        if (hc.localSupportedSignAlgs != null
+                && hc.localSupportedCertSignAlgs != null
+                && (hc.negotiatedProtocol == null
+                || hc.activeProtocols.size() == 1)) {
+            return;
+        }
+
+        List<ProtocolVersion> protocols = hc.negotiatedProtocol != null ?
+                List.of(hc.negotiatedProtocol) :
+                hc.activeProtocols;
+
+        hc.localSupportedSignAlgs = getSupportedAlgorithms(
+                hc.sslConfig,
+                hc.algorithmConstraints,
+                protocols,
+                HANDSHAKE_SCOPE);
+
+        hc.localSupportedCertSignAlgs = getSupportedAlgorithms(
+                hc.sslConfig,
+                hc.algorithmConstraints,
+                protocols,
+                CERTIFICATE_SCOPE);
+    }
+
     // Get local supported algorithm collection complying to algorithm
     // constraints and SSL scopes.
-    static List<SignatureScheme> getSupportedAlgorithms(
+    private static List<SignatureScheme> getSupportedAlgorithms(
             SSLConfiguration config,
             SSLAlgorithmConstraints constraints,
             List<ProtocolVersion> activeProtocols,

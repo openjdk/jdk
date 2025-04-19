@@ -122,9 +122,9 @@ typedef ShenandoahLock    ShenandoahHeapLock;
 typedef ShenandoahLocker  ShenandoahHeapLocker;
 typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;
 
-// Shenandoah GC is low-pause concurrent GC that uses Brooks forwarding pointers
-// to encode forwarding data. See BrooksPointer for details on forwarding data encoding.
-// See ShenandoahControlThread for GC cycle structure.
+// Shenandoah GC is low-pause concurrent GC that uses a load reference barrier
+// for concurent evacuation and a snapshot-at-the-beginning write barrier for
+// concurrent marking. See ShenandoahControlThread for GC cycle structure.
 //
 class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahAsserts;
@@ -742,7 +742,7 @@ private:
   ShenandoahLiveData** _liveness_cache;
 
 public:
-  inline ShenandoahMarkingContext* complete_marking_context() const;
+  // Return the marking context regardless of the completeness status.
   inline ShenandoahMarkingContext* marking_context() const;
 
   template<class T>
