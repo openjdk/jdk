@@ -408,9 +408,6 @@ void G1GCPhaseTimes::trace_count(const char* name, size_t value) const {
 }
 
 double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
-  const double pre_concurrent_start_ms = average_time_ms(ResetMarkingState) +
-                                         average_time_ms(NoteStartOfMark);
-
   const double sum_ms = _cur_prepare_concurrent_task_time_ms +
                         _cur_pre_evacuate_prepare_time_ms +
                         _recorded_young_cset_choice_time_ms +
@@ -422,9 +419,10 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
 
   // Concurrent tasks of ResetMarkingState and NoteStartOfMark are triggered during
   // young collection. However, their execution time are not included in _gc_pause_time_ms.
-  if (pre_concurrent_start_ms > 0.0) {
-    debug_phase(_gc_par_phases[ResetMarkingState]);
-    debug_phase(_gc_par_phases[NoteStartOfMark]);
+  if (_cur_prepare_concurrent_task_time_ms > 0.0) {
+    debug_time("Prepare Concurrent Start", _cur_prepare_concurrent_task_time_ms);
+    debug_phase(_gc_par_phases[ResetMarkingState], 1);
+    debug_phase(_gc_par_phases[NoteStartOfMark], 1);
   }
 
   debug_time("Pre Evacuate Prepare", _cur_pre_evacuate_prepare_time_ms);
