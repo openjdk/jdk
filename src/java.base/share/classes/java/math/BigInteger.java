@@ -2663,10 +2663,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             BigInteger answer = ONE;
 
             final int expZeros = Integer.numberOfLeadingZeros(exponent);
-            int expLen = Integer.SIZE - expZeros;
             int workingExp = exponent << expZeros;
             // Perform exponentiation using repeated squaring trick
-            for (; expLen > 0; expLen--) {
+            for (int expLen = Integer.SIZE - expZeros; expLen > 0; expLen--) {
                 answer = answer.multiply(answer);
                 if (workingExp < 0) // leading bit is set
                     answer = answer.multiply(base);
