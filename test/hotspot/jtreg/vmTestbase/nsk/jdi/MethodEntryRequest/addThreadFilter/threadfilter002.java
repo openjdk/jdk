@@ -256,7 +256,6 @@ public class threadfilter002 extends JDIBase {
 
     //------------------------------------------------------  testing section
 
-        
         log1("     TESTING BEGINS");
 
         EventRequest eventRequest1 = null;
