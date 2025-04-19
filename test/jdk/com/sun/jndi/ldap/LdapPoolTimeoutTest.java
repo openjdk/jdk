@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,8 @@ public class LdapPoolTimeoutTest {
                 f.get();
             } catch (ExecutionException e) {
                 failedCount++;
-                e.getCause().printStackTrace(System.out);
+                System.err.println("test failure:");
+                e.getCause().printStackTrace();
             }
         }
         if (failedCount > 0)
@@ -119,20 +120,31 @@ public class LdapPoolTimeoutTest {
                    2 * CONNECT_MILLIS + TOLERANCE,
                    () -> new InitialDirContext(env));
         } catch (RuntimeException e) {
-            String msg = e.getCause() == null ? e.getMessage() : e.getCause().getMessage();
-            System.err.println("MSG RTE: " + msg);
+            final String msg = e.getCause() == null ? e.getMessage() : e.getCause().getMessage();
             // assertCompletion may wrap a CommunicationException in an RTE
-            assertNotNull(msg);
-            assertTrue(msg.contains("Network is unreachable")
-                        || msg.contains("No route to host") || msg.contains("Connection timed out"));
+            if (msg != null &&
+                    (msg.contains("Network is unreachable")
+                            || msg.contains("No route to host")
+                            || msg.contains("Connection timed out"))) {
+                // got the expected exception
+                System.out.println("Received expected RuntimeException message: " + msg);
+            } else {
+                // propagate the unexpected exception
+                throw e;
+            }
         } catch (NamingException ex) {
-            String msg = ex.getCause() == null ? ex.getMessage() : ex.getCause().getMessage();
-            System.err.println("MSG: " + msg);
-            assertTrue(msg != null &&
+            final String msg = ex.getCause() == null ? ex.getMessage() : ex.getCause().getMessage();
+            if (msg != null &&
                     (msg.contains("Network is unreachable")
                         || msg.contains("Timed out waiting for lock")
                         || msg.contains("Connect timed out")
-                        || msg.contains("Timeout exceeded while waiting for a connection")));
+                        || msg.contains("Timeout exceeded while waiting for a connection"))) {
+                // got the expected exception
+                System.out.println("Received expected NamingException message: " + msg);
+            } else {
+                // propagate the unexpected exception
+                throw ex;
+            }
         } catch (Throwable t) {
             throw new RuntimeException(t);
         }
