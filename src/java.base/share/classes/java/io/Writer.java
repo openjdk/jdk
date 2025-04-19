@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,6 +275,10 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *          If an I/O error occurs
      */
     public void write(String str, int off, int len) throws IOException {
+        implWrite(str, off, len);
+    }
+
+    void implWrite(CharSequence csq, int off, int len) throws IOException {
         synchronized (lock) {
             char cbuf[];
             if (len <= WRITE_BUFFER_SIZE) {
@@ -285,7 +289,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
             } else {    // Don't permanently allocate very large buffers.
                 cbuf = new char[len];
             }
-            str.getChars(off, (off + len), cbuf, 0);
+            csq.getChars(off, (off + len), cbuf, 0);
             write(cbuf, 0, len);
         }
     }
@@ -293,19 +297,12 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
     /**
      * Appends the specified character sequence to this writer.
      *
-     * <p> An invocation of this method of the form {@code out.append(csq)}
-     * when {@code csq} is not {@code null}, behaves in exactly the same way
-     * as the invocation
+     * @implSpec The default implemenation behaves in exactly the same way as
+     *           the invocation
      *
-     * {@snippet lang=java :
-     *     out.write(csq.toString())
-     * }
-     *
-     * <p> Depending on the specification of {@code toString} for the
-     * character sequence {@code csq}, the entire sequence may not be
-     * appended. For instance, invoking the {@code toString} method of a
-     * character buffer will return a subsequence whose content depends upon
-     * the buffer's position and limit.
+     *           {@snippet lang=java :
+     *               return append(csq, 0, csq.length());
+     *           }
      *
      * @param  csq
      *         The character sequence to append.  If {@code csq} is
@@ -320,21 +317,11 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * @since  1.5
      */
     public Writer append(CharSequence csq) throws IOException {
-        write(String.valueOf(csq));
-        return this;
+        return append(csq, 0, csq.length());
     }
 
     /**
      * Appends a subsequence of the specified character sequence to this writer.
-     *
-     * <p> An invocation of this method of the form
-     * {@code out.append(csq, start, end)} when {@code csq}
-     * is not {@code null} behaves in exactly the
-     * same way as the invocation
-     *
-     * {@snippet lang=java :
-     *     out.write(csq.subSequence(start, end).toString())
-     * }
      *
      * @param  csq
      *         The character sequence from which a subsequence will be
@@ -363,7 +350,8 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      */
     public Writer append(CharSequence csq, int start, int end) throws IOException {
         if (csq == null) csq = "null";
-        return append(csq.subSequence(start, end));
+        implWrite(csq, start, end - start);
+        return this;
     }
 
     /**
