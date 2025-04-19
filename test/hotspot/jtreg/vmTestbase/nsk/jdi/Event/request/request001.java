@@ -308,10 +308,6 @@ public class request001 extends JDIBase {
 
         log2("......setting up ClassPrepareEvent");
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-        BreakpointRequest bpRequest;
-
         setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
