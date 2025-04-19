@@ -1002,39 +1002,21 @@ public:
   //
   // The InstanceKlass iterators also visits the Object's klass.
 
-  // Forward iteration
-  // Iterate over all oop fields in the oop maps.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_oop_maps(oop obj, OopClosureType* closure);
-
-  // Iterate over all oop fields in a single oop map.
-  template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate_oop_map(OopMapBlock* map, oop obj, OopClosureType* closure);
-
-  // Iterate over all oop fields in the oop maps.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_oop_maps_reverse(oop obj, OopClosureType* closure);
-
-  // Iterate over all oop fields in one oop map.
-  template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate_oop_map_reverse(OopMapBlock* map, oop obj, OopClosureType* closure);
-
-  // Bounded range iteration
-  // Iterate over all oop fields in the oop maps.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_oop_maps_bounded(oop obj, OopClosureType* closure, MemRegion mr);
-
-  // Iterate over all oop fields in one oop map.
-  template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate_oop_map_bounded(OopMapBlock* map, oop obj, OopClosureType* closure, MemRegion mr);
-
-  // Single oop map iteration given by count and offset
+  // Iterate over single oop map given by count and offset
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_single_oop_map(oop obj, OopClosureType* closure, unsigned offset, unsigned count);
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_single_oop_map_reverse(oop obj, OopClosureType* closure, unsigned offset, unsigned count);
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_single_oop_map_bounded(oop obj, OopClosureType* closure, MemRegion mr, unsigned offset, unsigned count);
+
+  // Iterate over multiple oop maps (non-Klute fallback version for classes >2 oop map entries)
+  template <typename T, class OopClosureType>
+  inline void oop_oop_iterate_oop_maps(oop obj, OopClosureType* closure);
+  template <typename T, class OopClosureType>
+  inline void oop_oop_iterate_oop_maps_reverse(oop obj, OopClosureType* closure);
+  template <typename T, class OopClosureType>
+  inline void oop_oop_iterate_oop_maps_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
   static inline ClassLoaderData* cld_from_klut_or_klass(oop obj, KlassLUTEntry klute);
 

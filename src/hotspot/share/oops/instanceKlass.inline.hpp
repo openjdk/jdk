@@ -80,28 +80,6 @@ inline void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
   Atomic::release_store(&_methods_jmethod_ids, jmeths);
 }
 
-// The iteration over the oops in objects is a hot path in the GC code.
-// By force inlining the following functions, we get similar GC performance
-// as the previous macro based implementation.
-
-template <typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map(OopMapBlock* map, oop obj, OopClosureType* closure) {
-  assert(map->offset() > 0, "must be");
-  oop_oop_iterate_single_oop_map<T>(obj, closure, (unsigned)map->offset(), map->count());
-}
-
-template <typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map_reverse(OopMapBlock* map, oop obj, OopClosureType* closure) {
-  assert(map->offset() > 0, "must be");
-  oop_oop_iterate_single_oop_map_reverse<T>(obj, closure, (unsigned)map->offset(), map->count());
-}
-
-template <typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map_bounded(OopMapBlock* map, oop obj, OopClosureType* closure, MemRegion mr) {
-  assert(map->offset() > 0, "must be");
-  oop_oop_iterate_single_oop_map_bounded<T>(obj, closure, mr, (unsigned)map->offset(), map->count());
-}
-
 template <typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate_single_oop_map(oop obj, OopClosureType* closure, unsigned offset, unsigned count) {
   T* p         = obj->field_addr<T>(offset);
@@ -152,7 +130,7 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps(oop obj, OopClosureTyp
   OopMapBlock* const end_map = map + nonstatic_oop_map_count();
 
   for (; map < end_map; ++map) {
-    oop_oop_iterate_oop_map<T>(map, obj, closure);
+    oop_oop_iterate_single_oop_map<T>(obj, closure, (unsigned)map->offset(), map->count());
   }
 }
 
@@ -163,7 +141,7 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_reverse(oop obj, OopCl
 
   while (start_map < map) {
     --map;
-    oop_oop_iterate_oop_map_reverse<T>(map, obj, closure);
+    oop_oop_iterate_single_oop_map_reverse<T>(obj, closure, (unsigned)map->offset(), map->count());
   }
 }
 
@@ -173,7 +151,7 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_bounded(oop obj, OopCl
   OopMapBlock* const end_map = map + nonstatic_oop_map_count();
 
   for (;map < end_map; ++map) {
-    oop_oop_iterate_oop_map_bounded<T>(map, obj, closure, mr);
+    oop_oop_iterate_single_oop_map_bounded<T>(obj, closure, mr, (unsigned)map->offset(), map->count());
   }
 }
 
