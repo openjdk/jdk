@@ -2698,13 +2698,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         final int maxExp = Math.max(3, Double.PRECISION / bitLengthForLong(x));
         final int maxExpLen = bitLengthForInt(maxExp);
 
-        final int leadingZeros = Integer.numberOfLeadingZeros(n);
-        int nLen = Integer.SIZE - leadingZeros;
-        n <<= leadingZeros;
+        final int nZeros = Integer.numberOfLeadingZeros(n);
+        n <<= nZeros;
 
         long pow = 1L;
         int blockLen;
-        for (; nLen > 0; nLen -= blockLen) {
+        for (int nLen = Integer.SIZE - nZeros; nLen > 0; nLen -= blockLen) {
             blockLen = maxExpLen < nLen ? maxExpLen : nLen;
             // compute pow^(2^blockLen)
             if (pow != 1L) {
