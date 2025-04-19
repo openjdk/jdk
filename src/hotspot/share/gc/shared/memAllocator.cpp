@@ -127,7 +127,7 @@ bool MemAllocator::Allocation::check_out_of_memory() {
     report_java_out_of_memory(message);
     if (JvmtiExport::should_post_resource_exhausted()) {
 #ifdef CHECK_UNHANDLED_OOPS
-      // obj is null, not need to handle, but CheckUnhandledOops not aware about null
+      // obj is null, no need to handle, but CheckUnhandledOops is not aware about null
       THREAD->allow_unhandled_oop(_obj_ptr);
 #endif // CHECK_UNHANDLED_OOPS
       JvmtiExport::post_resource_exhausted(
