@@ -256,7 +256,7 @@ public class addthreadfilter003 extends JDIBase {
 
         setupBreakpointForCommunication(debuggeeClass);
 
-        //------------------------------------------------------  testing section
+    //------------------------------------------------------  testing section
 
         log1("     TESTING BEGINS");
 
