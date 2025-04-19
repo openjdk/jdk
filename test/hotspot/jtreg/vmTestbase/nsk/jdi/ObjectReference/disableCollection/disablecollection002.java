@@ -259,6 +259,8 @@ public class disablecollection002 extends JDIBase {
         if (!debuggeeClass.name().equals(debuggeeName))
            throw new JDITestRuntimeException("** Unexpected ClassName for ClassPrepareEvent **");
 
+        log2("      received: ClassPrepareEvent for debuggeeClass");
+
         setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
