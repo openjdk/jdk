@@ -65,9 +65,9 @@ void JfrEventThrottler::destroy() {
   _safepoint_latency_throttler = nullptr;
 }
 
-// There is currently only two throttler instance, one for the jdk.ObjectAllocationSample event
+// There is currently only two throttler instances, one for the jdk.ObjectAllocationSample event
 // and another for the SamplingLatency event.
-// When introducing many more throttlers, consider addomg a lookup map keyed by event id.
+// When introducing many more throttlers, consider adding a lookup map keyed by event id.
 JfrEventThrottler* JfrEventThrottler::for_event(JfrEventId event_id) {
   assert(_object_allocation_throttler != nullptr, "ObjectAllocation throttler has not been properly initialized");
   assert(_safepoint_latency_throttler != nullptr, "SafepointLatency throttler has not been properly initialized");

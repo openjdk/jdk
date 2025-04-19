@@ -70,7 +70,7 @@ static inline bool is_interpreter(const JfrSampleRequest& request) {
   return request._sample_bcp != nullptr;
 }
 
-// A sampled interpreter frame is handled differenly compared to a sampled compiler frame.
+// A sampled interpreter frame is handled differently compared to a sampled compiler frame.
 // The JfrSampleRequest description already holds the top java frame saved by the sampler thread.
 // The 'top_frame' that is filled by this routine is instead the sender frame of the interpreter
 // top frame already described in the sample request.
