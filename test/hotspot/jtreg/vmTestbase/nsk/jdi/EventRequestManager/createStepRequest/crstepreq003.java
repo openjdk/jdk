@@ -157,14 +157,6 @@ public class crstepreq003 {
     //--------------------------------------------------------- mutable common methods
 
     private void execTest() {
-        ThreadReference mainThread = debuggee.threadByNameOrThrow("main");
-/*
-        BreakpointRequest bpRequest = setBreakpoint( mainThread,
-                                                     debuggeeClass,
-                                                     "methodForCommunication",
-                                                     2,
-                                                     "breakpointForCommunication");
-*/
         BreakpointRequest bpRequest = setBreakpoint( null,
                                                      debuggeeClass,
                                                      "breakInThread",

@@ -236,18 +236,7 @@ public class canwatchaccess001 extends JDIBase {
 
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-        BreakpointRequest bpRequest;
-
-        try {
-            bpRequest = settingBreakpoint(debuggee.threadByNameOrThrow("main"),
-                                          debuggeeClass,
-                                          bPointMethod, lineForComm, "zero");
-        } catch ( Exception e ) {
-            throw e;
-        }
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 

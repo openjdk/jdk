@@ -257,14 +257,8 @@ public class suspendpolicy001 extends JDIBase {
 
         log2("......setting up ClassPrepareEvent for breakpointForCommunication");
 
-        String            bPointMethod = "methodForCommunication";
-        String            lineForComm  = "lineForComm";
-        BreakpointRequest bpRequest;
-        ThreadReference   mainThread = debuggee.threadByNameOrThrow("main");
-        bpRequest = settingBreakpoint(mainThread,
-                                      debuggeeClass,
-                                      bPointMethod, lineForComm, "zero");
-        bpRequest.enable();
+        ThreadReference mainThread = debuggee.threadByNameOrThrow("main");
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 

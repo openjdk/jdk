@@ -248,15 +248,7 @@ public class filter002 extends JDIBase {
 
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-
-        ThreadReference   mainThread = debuggee.threadByNameOrThrow("main");
-
-        BreakpointRequest bpRequest = settingBreakpoint(mainThread,
-                                             debuggeeClass,
-                                            bPointMethod, lineForComm, "zero");
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 
@@ -271,6 +263,7 @@ public class filter002 extends JDIBase {
 
             vm.resume();
             breakpointForCommunication();
+            ThreadReference mainThread = bpEvent.thread(); // bpEvent saved by breakpointForCommunication()
 
             int instruction = ((IntegerValue)
                                (debuggeeClass.getValue(debuggeeClass.fieldByName("instruction")))).value();
@@ -287,8 +280,7 @@ public class filter002 extends JDIBase {
             switch (i) {
 
               case 0:
-                     ThreadReference thread1 = debuggee.threadByNameOrThrow("main");
-                     eventRequest1 = setting23StepRequest(thread1, testedClassName1,
+                     eventRequest1 = setting23StepRequest(mainThread, testedClassName1,
                                               EventRequest.SUSPEND_NONE, property1);
 
                      eventRequest1.enable();

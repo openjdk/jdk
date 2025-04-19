@@ -241,14 +241,7 @@ public class definedclasses001 extends JDIBase {
 
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-        BreakpointRequest bpRequest;
-
-        bpRequest = settingBreakpoint(debuggee.threadByNameOrThrow("main"),
-                                      debuggeeClass,
-                                      bPointMethod, lineForComm, "zero");
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 

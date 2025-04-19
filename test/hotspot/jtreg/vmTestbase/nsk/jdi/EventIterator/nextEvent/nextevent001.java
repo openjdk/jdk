@@ -310,12 +310,7 @@ public class nextevent001 extends JDIBase {
         String lineForComm  = "lineForComm";
         BreakpointRequest bpRequest;
 
-        ThreadReference mainThread = debuggee.threadByNameOrThrow("main");
-
-        bpRequest = settingBreakpoint(mainThread,
-                                      debuggeeClass,
-                                      bPointMethod, lineForComm, "zero");
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 

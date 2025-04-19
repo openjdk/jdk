@@ -244,17 +244,9 @@ public class delevtreqs002 extends JDIBase {
 
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
+        setupBreakpointForCommunication(debuggeeClass);
 
-        ThreadReference   mainThread = debuggee.threadByNameOrThrow("main");
-
-        BreakpointRequest bpRequest = settingBreakpoint(mainThread,
-                                             debuggeeClass,
-                                            bPointMethod, lineForComm, "zero");
-        bpRequest.enable();
-
-    //------------------------------------------------------  testing section
+        //------------------------------------------------------  testing section
 
         final int length1 = 10;
         final int length2 = 12;

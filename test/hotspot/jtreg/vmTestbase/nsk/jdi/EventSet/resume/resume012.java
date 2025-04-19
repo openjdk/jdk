@@ -255,14 +255,7 @@ public class resume012 extends JDIBase {
 
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-        BreakpointRequest bpRequest;
-        ThreadReference   mainThread = debuggee.threadByNameOrThrow("main");
-        bpRequest = settingBreakpoint(mainThread,
-                                      debuggeeClass,
-                                      bPointMethod, lineForComm, "zero");
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
         vm.resume();
 
@@ -281,6 +274,7 @@ public class resume012 extends JDIBase {
 
 
         breakpointForCommunication();
+        ThreadReference mainThread = bpEvent.thread(); // bpEvent saved by breakpointForCommunication()
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ variable part
 

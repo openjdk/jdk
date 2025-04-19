@@ -243,15 +243,7 @@ public class crexreq010 extends JDIBase {
 
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-
-        ThreadReference   mainThread = debuggee.threadByNameOrThrow("main");
-
-        BreakpointRequest bpRequest = settingBreakpoint(mainThread,
-                                             debuggeeClass,
-                                            bPointMethod, lineForComm, "zero");
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 

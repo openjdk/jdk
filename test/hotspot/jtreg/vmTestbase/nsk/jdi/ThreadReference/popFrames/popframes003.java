@@ -110,7 +110,6 @@ public class popframes003 extends JDIBase {
 
     //====================================================== test program
 
-    BreakpointRequest  bpRequest;
     MethodEntryRequest meRequest;
 
     BreakpointRequest  bpRequest2;
@@ -260,18 +259,7 @@ public class popframes003 extends JDIBase {
             return;
         }
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-
-        ThreadReference threadMainRef = debuggee.threadByNameOrThrow("main");
-        try {
-            bpRequest = settingBreakpoint(threadMainRef,
-                                          debuggeeClass,
-                                          bPointMethod, lineForComm, "zero");
-        } catch ( Exception e ) {
-            throw e;
-        }
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 
@@ -284,9 +272,10 @@ public class popframes003 extends JDIBase {
 
         vm.resume();
         breakpointForCommunication();
+        ThreadReference mainThread = bpEvent.thread(); // bpEvent saved by breakpointForCommunication()
 
         log2("......setting MethodEntryRequest (meRequest) in ForCommunication.methodForCommunication");
-        meRequest = settingMethodEntryRequest(threadMainRef,
+        meRequest = settingMethodEntryRequest(mainThread,
                                               debuggeeName + "$ForCommunication",
                                               "zero");
         log2("meRequest.enable();");

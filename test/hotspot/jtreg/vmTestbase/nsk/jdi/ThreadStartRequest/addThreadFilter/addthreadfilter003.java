@@ -254,16 +254,9 @@ public class addthreadfilter003 extends JDIBase {
 
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-        BreakpointRequest bpRequest;
+        setupBreakpointForCommunication(debuggeeClass);
 
-        bpRequest = settingBreakpoint(debuggee.threadByNameOrThrow("main"),
-                                      debuggeeClass,
-                                      bPointMethod, lineForComm, "zero");
-        bpRequest.enable();
-
-    //------------------------------------------------------  testing section
+        //------------------------------------------------------  testing section
 
         log1("     TESTING BEGINS");
 

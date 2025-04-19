@@ -111,7 +111,6 @@ public class popframes002 extends JDIBase {
 
     //====================================================== test program
 
-    BreakpointRequest bpRequest;
     BreakpointRequest breakpointRequest2;
     BreakpointRequest breakpointRequest3;
 
@@ -259,18 +258,9 @@ public class popframes002 extends JDIBase {
             return;
         }
 
+        setupBreakpointForCommunication(debuggeeClass);
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-
-        log2("......setting BreakpointRequest (bpRequest) in main thread");
-        bpRequest = settingBreakpoint(debuggee.threadByNameOrThrow("main"),
-                                          debuggeeClass,
-                                          bPointMethod, lineForComm, "zero");
-        log2("bpRequest.enable();");
-        bpRequest.enable();
-
-    //------------------------------------------------------  testing section
+        //------------------------------------------------------  testing section
 
         log1("     TESTING BEGINS");
 

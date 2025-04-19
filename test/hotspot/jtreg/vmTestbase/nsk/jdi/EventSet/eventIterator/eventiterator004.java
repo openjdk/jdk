@@ -276,16 +276,7 @@ public class eventiterator004 extends JDIBase {
 
         log2("......setting up ClassPrepareEvent");
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-        BreakpointRequest bpRequest;
-
-        ThreadReference mainThread = debuggee.threadByNameOrThrow("main");
-
-        bpRequest = settingBreakpoint(mainThread,
-                                      debuggeeClass,
-                                      bPointMethod, lineForComm, "zero");
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 

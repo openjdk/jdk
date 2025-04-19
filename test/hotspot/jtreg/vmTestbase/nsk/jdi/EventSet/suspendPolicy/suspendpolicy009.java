@@ -230,6 +230,7 @@ public class suspendpolicy009 extends JDIBase {
             return 2;
         } catch ( Exception e ) {
             log3("ERROR: Exception : " + e);
+            e.printStackTrace(logHandler.getOutStream());
             return 1;
         }
 
@@ -258,14 +259,7 @@ public class suspendpolicy009 extends JDIBase {
 
         log2("......setting up ClassPrepareEvent for breakpointForCommunication");
 
-        String            bPointMethod = "methodForCommunication";
-        String            lineForComm  = "lineForComm";
-        BreakpointRequest bpRequest;
-        ThreadReference   mainThread = debuggee.threadByNameOrThrow("main");
-        bpRequest = settingBreakpoint(mainThread,
-                                      debuggeeClass,
-                                      bPointMethod, lineForComm, "zero");
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
         vm.resume();
 
@@ -295,6 +289,7 @@ public class suspendpolicy009 extends JDIBase {
         for (int i = 0; ; i++) {
 
             breakpointForCommunication(debuggeeName);
+            ThreadReference mainThread = bpEvent.thread(); // bpEvent saved by breakpointForCommunication()
 
             int instruction = ((IntegerValue)
                                (debuggeeClass.getValue(debuggeeClass.fieldByName("instruction")))).value();

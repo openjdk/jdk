@@ -264,15 +264,7 @@ public class redefineclasses001 extends JDIBase {
             return;
         }
 
-
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-        BreakpointRequest bpRequest;
-
-        bpRequest = settingBreakpoint(debuggee.threadByNameOrThrow("main"),
-                                      debuggeeClass,
-                                      bPointMethod, lineForComm, "zero");
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 
@@ -293,6 +285,7 @@ public class redefineclasses001 extends JDIBase {
 
             vm.resume();
             breakpointForCommunication();
+            ThreadReference mainThread = bpEvent.thread(); // bpEvent saved by breakpointForCommunication()
 
             int instruction = ((IntegerValue)
                                (debuggeeClass.getValue(debuggeeClass.fieldByName("instruction")))).value();
@@ -310,9 +303,9 @@ public class redefineclasses001 extends JDIBase {
               case 0:
                   List          classes = vm.classesByName(bpClassName);
                   bpClass = (ReferenceType) classes.get(0);
-                  bpRequest2 = settingBreakpoint(debuggee.threadByNameOrThrow("main"),
-                                          bpClass,
-                                          bpMethodName, bpLineName, "one");
+                  bpRequest2 = settingBreakpoint(mainThread,
+                                                 bpClass,
+                                                 bpMethodName, bpLineName, "one");
                   bpRequest2.enable();
 
                   vm.resume();
@@ -335,9 +328,9 @@ public class redefineclasses001 extends JDIBase {
 
               case 1:
 
-                  bpRequest3 = settingBreakpoint(debuggee.threadByNameOrThrow("main"),
-                                          bpClass,
-                                          bpMethodName, bpLineName, "one");
+                  bpRequest3 = settingBreakpoint(mainThread,
+                                                 bpClass,
+                                                 bpMethodName, bpLineName, "one");
 
                   bpRequest3.enable();
 
