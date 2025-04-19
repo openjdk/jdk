@@ -230,7 +230,6 @@ public class suspendpolicy009 extends JDIBase {
             return 2;
         } catch ( Exception e ) {
             log3("ERROR: Exception : " + e);
-            e.printStackTrace(logHandler.getOutStream());
             return 1;
         }
 
