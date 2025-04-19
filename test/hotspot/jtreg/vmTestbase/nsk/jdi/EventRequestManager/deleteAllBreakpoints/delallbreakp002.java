@@ -242,7 +242,7 @@ public class delallbreakp002 extends JDIBase {
 
         setupBreakpointForCommunication(debuggeeClass);
 
-        //------------------------------------------------------  testing section
+    //------------------------------------------------------  testing section
 
         List         requests = null;
         ListIterator li       = null;
