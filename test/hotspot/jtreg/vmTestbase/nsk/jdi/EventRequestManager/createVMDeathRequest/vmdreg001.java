@@ -243,7 +243,7 @@ public class vmdreg001 extends JDIBase {
 
         setupBreakpointForCommunication(debuggeeClass);
 
-        //------------------------------------------------------  testing section
+    //------------------------------------------------------  testing section
 
         VMDeathRequest vmdRequest1 = null;
 
