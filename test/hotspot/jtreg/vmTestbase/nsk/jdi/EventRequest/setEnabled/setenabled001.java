@@ -245,7 +245,7 @@ public class setenabled001 extends JDIBase {
 
         setupBreakpointForCommunication(debuggeeClass);
 
-        //------------------------------------------------------  testing section
+    //------------------------------------------------------  testing section
 
 
         EventRequest  eventRequest1 = null;
