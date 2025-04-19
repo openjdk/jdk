@@ -344,7 +344,7 @@ void MethodTrainingData::prepare(Visitor& visitor) {
     _final_profile  = holder()->method_data();
     assert(_final_profile == nullptr || _final_profile->method() == holder(), "");
   }
-  for (int i = 0; i < CompLevel_count; i++) {
+  for (int i = 0; i < CompLevel_count - 1; i++) {
     CompileTrainingData* ctd = _last_toplevel_compiles[i];
     if (ctd != nullptr) {
       ctd->prepare(visitor);
@@ -569,7 +569,7 @@ void MethodTrainingData::cleanup(Visitor& visitor) {
       key()->make_empty();
     }
   }
-  for (int i = 0; i < CompLevel_count; i++) {
+  for (int i = 0; i < CompLevel_count - 1; i++) {
     CompileTrainingData* ctd = _last_toplevel_compiles[i];
     if (ctd != nullptr) {
       ctd->cleanup(visitor);
@@ -752,7 +752,7 @@ void MethodTrainingData::metaspace_pointers_do(MetaspaceClosure* iter) {
   TrainingData::metaspace_pointers_do(iter);
   iter->push(&_klass);
   iter->push((Method**)&_holder);
-  for (int i = 0; i < CompLevel_count; i++) {
+  for (int i = 0; i < CompLevel_count - 1; i++) {
     iter->push(&_last_toplevel_compiles[i]);
   }
   iter->push(&_final_profile);

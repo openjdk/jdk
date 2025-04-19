@@ -714,7 +714,7 @@ class MethodTrainingData : public TrainingData {
 
   KlassTrainingData* _klass;
   Method* _holder;
-  CompileTrainingData* _last_toplevel_compiles[CompLevel_count];
+  CompileTrainingData* _last_toplevel_compiles[CompLevel_count - 1];
   int _highest_top_level;
   int _level_mask;  // bit-set of all possible levels
   bool _was_inlined;
@@ -727,7 +727,7 @@ class MethodTrainingData : public TrainingData {
   MethodTrainingData(Method* method, KlassTrainingData* ktd) : TrainingData(method) {
     _klass = ktd;
     _holder = method;
-    for (int i = 0; i < CompLevel_count; i++) {
+    for (int i = 0; i < CompLevel_count - 1; i++) {
       _last_toplevel_compiles[i] = nullptr;
     }
     _highest_top_level = CompLevel_none;
@@ -803,7 +803,7 @@ class MethodTrainingData : public TrainingData {
 
   template<typename Function>
   void iterate_compiles(Function fn) const { // lambda enabled API
-    for (int i = 0; i < CompLevel_count; i++) {
+    for (int i = 0; i < CompLevel_count - 1; i++) {
       CompileTrainingData* ctd = _last_toplevel_compiles[i];
       if (ctd != nullptr) {
         fn(ctd);
