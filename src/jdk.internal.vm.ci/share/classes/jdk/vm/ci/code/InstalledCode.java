@@ -59,7 +59,7 @@ public class InstalledCode {
      * @throws IllegalArgumentException if {@code name.length >} {@link #MAX_NAME_LENGTH}
      */
     public InstalledCode(String name) {
-        if (name.length() > MAX_NAME_LENGTH) {
+        if (name != null && name.length() > MAX_NAME_LENGTH) {
             String msg = String.format("name length (%d) is greater than %d (name[0:%s] = %s)",
                                         name.length(), MAX_NAME_LENGTH, MAX_NAME_LENGTH, name.substring(0, MAX_NAME_LENGTH));
             throw new IllegalArgumentException(msg);

@@ -37,6 +37,11 @@ import org.junit.Test;
 public class InstalledCodeTest {
 
     @Test
+    public void testNullName() {
+        new InstalledCode(null);
+    }
+
+    @Test
     public void testTooLongName() {
         String longName = new String(new char[InstalledCode.MAX_NAME_LENGTH]).replace('\0', 'A');
         new InstalledCode(longName);
