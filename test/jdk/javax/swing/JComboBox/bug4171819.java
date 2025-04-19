@@ -32,7 +32,7 @@ import javax.swing.UIManager;
  * @bug 4171819
  * @summary Tests that JComboBox uses a lower bevel border in windows
  * @requires (os.family == "windows")
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4171819
  */

@@ -29,7 +29,7 @@ import javax.swing.JPanel;
  * @test
  * @bug 4135833
  * @summary Tests that JComboBox draws correctly if the first item in list is an empty string
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4135833
  */
