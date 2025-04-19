@@ -246,7 +246,7 @@ public class delevtreqs002 extends JDIBase {
 
         setupBreakpointForCommunication(debuggeeClass);
 
-        //------------------------------------------------------  testing section
+    //------------------------------------------------------  testing section
 
         final int length1 = 10;
         final int length2 = 12;
