@@ -250,9 +250,6 @@ public class filter_rt002 extends JDIBase {
 
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-
         setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
