@@ -156,9 +156,9 @@ class OopOopIterateDispatch : public DispatchBase {
 
     FunctionType _function [Klass::KLASS_KIND_COUNT];
 
-    template <typename KlassType, typename T>
+    template <typename KlassType, typename OopType>
     static void invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-      KlassType::template oop_oop_iterate<T>(obj, cl, klute);
+      KlassType::template oop_oop_iterate<OopType>(obj, cl, klute);
     }
 
     template <typename KlassType>
@@ -216,9 +216,9 @@ class OopOopIterateDispatchReverse {
 
     FunctionType _function [Klass::KLASS_KIND_COUNT];
 
-    template <typename KlassType, typename T>
+    template <typename KlassType, typename OopType>
     static void invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-      KlassType::template oop_oop_iterate_reverse<T> (obj, cl, klute);
+      KlassType::template oop_oop_iterate_reverse<OopType> (obj, cl, klute);
     }
 
     template <typename KlassType>
@@ -276,9 +276,9 @@ class OopOopIterateDispatchBounded {
 
     FunctionType _function [Klass::KLASS_KIND_COUNT];
 
-    template <typename KlassType, typename T>
+    template <typename KlassType, typename OopType>
     static void invoke(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
-      KlassType::template oop_oop_iterate_bounded<T> (obj, cl, mr, klute);
+      KlassType::template oop_oop_iterate_bounded<OopType> (obj, cl, mr, klute);
     }
 
     template <typename KlassType>
