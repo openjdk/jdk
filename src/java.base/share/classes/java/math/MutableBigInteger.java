@@ -173,14 +173,9 @@ class MutableBigInteger {
         long valBits = Double.doubleToRawLongBits(val);
         int exponent = (int) ((valBits >> 52) & 0x7ffL) - 1075;
         long significand = (valBits & ((1L << 52) - 1)) | (1L << 52);
-        // At this point, val == significand * 2^exponent.
-        MutableBigInteger result;
-        if (exponent > 0) {
-            result = new MutableBigInteger(significand);
-            result.leftShift(exponent);
-        } else {
-            result = new MutableBigInteger(significand >> -exponent);
-        }
+        // At this point, val == significand * 2^exponent, with exponent > 0
+        MutableBigInteger result = new MutableBigInteger(significand);
+        result.leftShift(exponent);
         return result;
     }
 
