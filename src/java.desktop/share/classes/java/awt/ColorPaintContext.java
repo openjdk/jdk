@@ -33,6 +33,7 @@ import java.util.Arrays;
 import sun.awt.image.IntegerComponentRaster;
 
 final class ColorPaintContext implements PaintContext {
+
     private final int color;
     private volatile WritableRaster savedTile;
 
