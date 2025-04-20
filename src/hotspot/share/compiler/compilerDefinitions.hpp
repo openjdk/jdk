@@ -60,7 +60,7 @@ enum CompLevel : s1 {
   CompLevel_limited_profile   = 2,         // C1, invocation & backedge counters
   CompLevel_full_profile      = 3,         // C1, invocation & backedge counters + mdo
   CompLevel_full_optimization = 4,         // C2 or JVMCI
-  CompLevel_count             = 4
+  CompLevel_count             = 5
 };
 
 class CompilationModeFlag : AllStatic {
