@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -577,8 +577,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                 }
             } else {
                 // Less common case is possible if the file manager was not initialized in JavacTask,
-                // or if non "*.jar" files are on the classpath. At the time of writing, both `javac -cp a.zip`
-                // and `javac -cp x.JAR` file would hit this branch which may warrant investigation.
+                // or if non "*.jar" files are on the classpath.
                 this.fileSystem = FileSystems.newFileSystem(archivePath, env, (ClassLoader)null);
             }
             packages = new HashMap<>();
