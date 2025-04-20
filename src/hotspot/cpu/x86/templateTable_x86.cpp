@@ -151,7 +151,7 @@ static void do_oop_load(InterpreterMacroAssembler* _masm,
                         Address src,
                         Register dst,
                         DecoratorSet decorators = 0) {
-  __ load_heap_oop(dst, src, rdx, rbx, decorators);
+  __ load_heap_oop(dst, src, rdx, decorators);
 }
 
 Address TemplateTable::at_bcp(int offset) {
@@ -276,44 +276,36 @@ void TemplateTable::lconst(int value) {
 
 void TemplateTable::fconst(int value) {
   transition(vtos, ftos);
-  if (UseSSE >= 1) {
-    static float one = 1.0f, two = 2.0f;
-    switch (value) {
-    case 0:
-      __ xorps(xmm0, xmm0);
-      break;
-    case 1:
-      __ movflt(xmm0, ExternalAddress((address) &one), rscratch1);
-      break;
-    case 2:
-      __ movflt(xmm0, ExternalAddress((address) &two), rscratch1);
-      break;
-    default:
-      ShouldNotReachHere();
-      break;
-    }
-  } else {
+  static float one = 1.0f, two = 2.0f;
+  switch (value) {
+  case 0:
+    __ xorps(xmm0, xmm0);
+    break;
+  case 1:
+    __ movflt(xmm0, ExternalAddress((address) &one), rscratch1);
+    break;
+  case 2:
+    __ movflt(xmm0, ExternalAddress((address) &two), rscratch1);
+    break;
+  default:
     ShouldNotReachHere();
+    break;
   }
 }
 
 void TemplateTable::dconst(int value) {
   transition(vtos, dtos);
-  if (UseSSE >= 2) {
-    static double one = 1.0;
-    switch (value) {
-    case 0:
-      __ xorpd(xmm0, xmm0);
-      break;
-    case 1:
-      __ movdbl(xmm0, ExternalAddress((address) &one), rscratch1);
-      break;
-    default:
-      ShouldNotReachHere();
-      break;
-    }
-  } else {
+  static double one = 1.0;
+  switch (value) {
+  case 0:
+    __ xorpd(xmm0, xmm0);
+    break;
+  case 1:
+    __ movdbl(xmm0, ExternalAddress((address) &one), rscratch1);
+    break;
+  default:
     ShouldNotReachHere();
+    break;
   }
 }
 
@@ -373,7 +365,7 @@ void TemplateTable::ldc(LdcType type) {
   __ jccb(Assembler::notEqual, notFloat);
 
   // ftos
-  __ load_float(Address(rcx, rbx, Address::times_ptr, base_offset));
+  __ movflt(xmm0, Address(rcx, rbx, Address::times_ptr, base_offset));
   __ push(ftos);
   __ jmp(Done);
 
@@ -452,7 +444,7 @@ void TemplateTable::ldc2_w() {
   __ jccb(Assembler::notEqual, notDouble);
 
   // dtos
-  __ load_double(Address(rcx, rbx, Address::times_ptr, base_offset));
+  __ movdbl(xmm0, Address(rcx, rbx, Address::times_ptr, base_offset));
   __ push(dtos);
 
   __ jmp(Done);
@@ -478,7 +470,7 @@ void TemplateTable::condy_helper(Label& Done) {
   const Register rarg = c_rarg1;
   __ movl(rarg, (int)bytecode());
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rarg);
-  __ get_vm_result_2(flags, r15_thread);
+  __ get_vm_result_metadata(flags);
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
   __ movl(off, flags);
@@ -506,7 +498,7 @@ void TemplateTable::condy_helper(Label& Done) {
       __ cmpl(flags, ftos);
       __ jccb(Assembler::notEqual, notFloat);
       // ftos
-      __ load_float(field);
+      __ movflt(xmm0, field);
       __ push(ftos);
       __ jmp(Done);
 
@@ -561,7 +553,7 @@ void TemplateTable::condy_helper(Label& Done) {
       __ cmpl(flags, dtos);
       __ jccb(Assembler::notEqual, notDouble);
       // dtos
-      __ load_double(field);
+      __ movdbl(xmm0, field);
       __ push(dtos);
       __ jmp(Done);
 
@@ -655,13 +647,13 @@ void TemplateTable::lload() {
 void TemplateTable::fload() {
   transition(vtos, ftos);
   locals_index(rbx);
-  __ load_float(faddress(rbx));
+  __ movflt(xmm0, faddress(rbx));
 }
 
 void TemplateTable::dload() {
   transition(vtos, dtos);
   locals_index(rbx);
-  __ load_double(daddress(rbx));
+  __ movdbl(xmm0, daddress(rbx));
 }
 
 void TemplateTable::aload() {
@@ -692,13 +684,13 @@ void TemplateTable::wide_lload() {
 void TemplateTable::wide_fload() {
   transition(vtos, ftos);
   locals_index_wide(rbx);
-  __ load_float(faddress(rbx));
+  __ movflt(xmm0, faddress(rbx));
 }
 
 void TemplateTable::wide_dload() {
   transition(vtos, dtos);
   locals_index_wide(rbx);
-  __ load_double(daddress(rbx));
+  __ movdbl(xmm0, daddress(rbx));
 }
 
 void TemplateTable::wide_aload() {
@@ -740,7 +732,7 @@ void TemplateTable::iaload() {
   __ access_load_at(T_INT, IN_HEAP | IS_ARRAY, rax,
                     Address(rdx, rax, Address::times_4,
                             arrayOopDesc::base_offset_in_bytes(T_INT)),
-                    noreg, noreg);
+                    noreg);
 }
 
 void TemplateTable::laload() {
@@ -752,7 +744,7 @@ void TemplateTable::laload() {
   __ access_load_at(T_LONG, IN_HEAP | IS_ARRAY, noreg /* ltos */,
                     Address(rdx, rbx, Address::times_8,
                             arrayOopDesc::base_offset_in_bytes(T_LONG)),
-                    noreg, noreg);
+                    noreg);
 }
 
 
@@ -766,7 +758,7 @@ void TemplateTable::faload() {
                     Address(rdx, rax,
                             Address::times_4,
                             arrayOopDesc::base_offset_in_bytes(T_FLOAT)),
-                    noreg, noreg);
+                    noreg);
 }
 
 void TemplateTable::daload() {
@@ -778,7 +770,7 @@ void TemplateTable::daload() {
                     Address(rdx, rax,
                             Address::times_8,
                             arrayOopDesc::base_offset_in_bytes(T_DOUBLE)),
-                    noreg, noreg);
+                    noreg);
 }
 
 void TemplateTable::aaload() {
@@ -801,7 +793,7 @@ void TemplateTable::baload() {
   index_check(rdx, rax); // kills rbx
   __ access_load_at(T_BYTE, IN_HEAP | IS_ARRAY, rax,
                     Address(rdx, rax, Address::times_1, arrayOopDesc::base_offset_in_bytes(T_BYTE)),
-                    noreg, noreg);
+                    noreg);
 }
 
 void TemplateTable::caload() {
@@ -811,7 +803,7 @@ void TemplateTable::caload() {
   index_check(rdx, rax); // kills rbx
   __ access_load_at(T_CHAR, IN_HEAP | IS_ARRAY, rax,
                     Address(rdx, rax, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)),
-                    noreg, noreg);
+                    noreg);
 }
 
 // iload followed by caload frequent pair
@@ -826,7 +818,7 @@ void TemplateTable::fast_icaload() {
   index_check(rdx, rax); // kills rbx
   __ access_load_at(T_CHAR, IN_HEAP | IS_ARRAY, rax,
                     Address(rdx, rax, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)),
-                    noreg, noreg);
+                    noreg);
 }
 
 
@@ -837,7 +829,7 @@ void TemplateTable::saload() {
   index_check(rdx, rax); // kills rbx
   __ access_load_at(T_SHORT, IN_HEAP | IS_ARRAY, rax,
                     Address(rdx, rax, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_SHORT)),
-                    noreg, noreg);
+                    noreg);
 }
 
 void TemplateTable::iload(int n) {
@@ -852,12 +844,12 @@ void TemplateTable::lload(int n) {
 
 void TemplateTable::fload(int n) {
   transition(vtos, ftos);
-  __ load_float(faddress(n));
+  __ movflt(xmm0, faddress(n));
 }
 
 void TemplateTable::dload(int n) {
   transition(vtos, dtos);
-  __ load_double(daddress(n));
+  __ movdbl(xmm0, daddress(n));
 }
 
 void TemplateTable::aload(int n) {
@@ -959,13 +951,13 @@ void TemplateTable::lstore() {
 void TemplateTable::fstore() {
   transition(ftos, vtos);
   locals_index(rbx);
-  __ store_float(faddress(rbx));
+  __ movflt(faddress(rbx), xmm0);
 }
 
 void TemplateTable::dstore() {
   transition(dtos, vtos);
   locals_index(rbx);
-  __ store_double(daddress(rbx));
+  __ movdbl(daddress(rbx), xmm0);
 }
 
 void TemplateTable::astore() {
@@ -1041,7 +1033,7 @@ void TemplateTable::lastore() {
 void TemplateTable::fastore() {
   transition(ftos, vtos);
   __ pop_i(rbx);
-  // value is in UseSSE >= 1 ? xmm0 : ST(0)
+  // value is in xmm0
   // rbx:  index
   // rdx:  array
   index_check(rdx, rbx); // prefer index in rbx
@@ -1054,7 +1046,7 @@ void TemplateTable::fastore() {
 void TemplateTable::dastore() {
   transition(dtos, vtos);
   __ pop_i(rbx);
-  // value is in UseSSE >= 2 ? xmm0 : ST(0)
+  // value is in xmm0
   // rbx:  index
   // rdx:  array
   index_check(rdx, rbx); // prefer index in rbx
@@ -1170,12 +1162,12 @@ void TemplateTable::lstore(int n) {
 
 void TemplateTable::fstore(int n) {
   transition(ftos, vtos);
-  __ store_float(faddress(n));
+  __ movflt(faddress(n), xmm0);
 }
 
 void TemplateTable::dstore(int n) {
   transition(dtos, vtos);
-  __ store_double(daddress(n));
+  __ movdbl(daddress(n), xmm0);
 }
 
 
@@ -1397,81 +1389,73 @@ void TemplateTable::lushr() {
 void TemplateTable::fop2(Operation op) {
   transition(ftos, ftos);
 
-  if (UseSSE >= 1) {
-    switch (op) {
-    case add:
-      __ addss(xmm0, at_rsp());
-      __ addptr(rsp, Interpreter::stackElementSize);
-      break;
-    case sub:
-      __ movflt(xmm1, xmm0);
-      __ pop_f(xmm0);
-      __ subss(xmm0, xmm1);
-      break;
-    case mul:
-      __ mulss(xmm0, at_rsp());
-      __ addptr(rsp, Interpreter::stackElementSize);
-      break;
-    case div:
-      __ movflt(xmm1, xmm0);
-      __ pop_f(xmm0);
-      __ divss(xmm0, xmm1);
-      break;
-    case rem:
-      // On x86_64 platforms the SharedRuntime::frem method is called to perform the
-      // modulo operation. The frem method calls the function
-      // double fmod(double x, double y) in math.h. The documentation of fmod states:
-      // "If x or y is a NaN, a NaN is returned." without specifying what type of NaN
-      // (signalling or quiet) is returned.
-      __ movflt(xmm1, xmm0);
-      __ pop_f(xmm0);
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::frem), 2);
-      break;
-    default:
-      ShouldNotReachHere();
-      break;
-    }
-  } else {
+  switch (op) {
+  case add:
+    __ addss(xmm0, at_rsp());
+    __ addptr(rsp, Interpreter::stackElementSize);
+    break;
+  case sub:
+    __ movflt(xmm1, xmm0);
+    __ pop_f(xmm0);
+    __ subss(xmm0, xmm1);
+    break;
+  case mul:
+    __ mulss(xmm0, at_rsp());
+    __ addptr(rsp, Interpreter::stackElementSize);
+    break;
+  case div:
+    __ movflt(xmm1, xmm0);
+    __ pop_f(xmm0);
+    __ divss(xmm0, xmm1);
+    break;
+  case rem:
+    // On x86_64 platforms the SharedRuntime::frem method is called to perform the
+    // modulo operation. The frem method calls the function
+    // double fmod(double x, double y) in math.h. The documentation of fmod states:
+    // "If x or y is a NaN, a NaN is returned." without specifying what type of NaN
+    // (signalling or quiet) is returned.
+    __ movflt(xmm1, xmm0);
+    __ pop_f(xmm0);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::frem), 2);
+    break;
+  default:
     ShouldNotReachHere();
+    break;
   }
 }
 
 void TemplateTable::dop2(Operation op) {
   transition(dtos, dtos);
-  if (UseSSE >= 2) {
-    switch (op) {
-    case add:
-      __ addsd(xmm0, at_rsp());
-      __ addptr(rsp, 2 * Interpreter::stackElementSize);
-      break;
-    case sub:
-      __ movdbl(xmm1, xmm0);
-      __ pop_d(xmm0);
-      __ subsd(xmm0, xmm1);
-      break;
-    case mul:
-      __ mulsd(xmm0, at_rsp());
-      __ addptr(rsp, 2 * Interpreter::stackElementSize);
-      break;
-    case div:
-      __ movdbl(xmm1, xmm0);
-      __ pop_d(xmm0);
-      __ divsd(xmm0, xmm1);
-      break;
-    case rem:
-      // Similar to fop2(), the modulo operation is performed using the
-      // SharedRuntime::drem method on x86_64 platforms for the same reasons
-      // as mentioned in fop2().
-      __ movdbl(xmm1, xmm0);
-      __ pop_d(xmm0);
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::drem), 2);
-      break;
-    default:
-      ShouldNotReachHere();
-      break;
-    }
-  } else {
+  switch (op) {
+  case add:
+    __ addsd(xmm0, at_rsp());
+    __ addptr(rsp, 2 * Interpreter::stackElementSize);
+    break;
+  case sub:
+    __ movdbl(xmm1, xmm0);
+    __ pop_d(xmm0);
+    __ subsd(xmm0, xmm1);
+    break;
+  case mul:
+    __ mulsd(xmm0, at_rsp());
+    __ addptr(rsp, 2 * Interpreter::stackElementSize);
+    break;
+  case div:
+    __ movdbl(xmm1, xmm0);
+    __ pop_d(xmm0);
+    __ divsd(xmm0, xmm1);
+    break;
+  case rem:
+    // Similar to fop2(), the modulo operation is performed using the
+    // SharedRuntime::drem method on x86_64 platforms for the same reasons
+    // as mentioned in fop2().
+    __ movdbl(xmm1, xmm0);
+    __ pop_d(xmm0);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::drem), 2);
+    break;
+  default:
     ShouldNotReachHere();
+    break;
   }
 }
 
@@ -1502,23 +1486,15 @@ static jlong double_signflip_pool[2*2];
 
 void TemplateTable::fneg() {
   transition(ftos, ftos);
-  if (UseSSE >= 1) {
-    static jlong *float_signflip  = double_quadword(&float_signflip_pool[1],  CONST64(0x8000000080000000),  CONST64(0x8000000080000000));
-    __ xorps(xmm0, ExternalAddress((address) float_signflip), rscratch1);
-  } else {
-    ShouldNotReachHere();
-  }
+  static jlong *float_signflip  = double_quadword(&float_signflip_pool[1],  CONST64(0x8000000080000000),  CONST64(0x8000000080000000));
+  __ xorps(xmm0, ExternalAddress((address) float_signflip), rscratch1);
 }
 
 void TemplateTable::dneg() {
   transition(dtos, dtos);
-  if (UseSSE >= 2) {
-    static jlong *double_signflip =
-      double_quadword(&double_signflip_pool[1], CONST64(0x8000000000000000), CONST64(0x8000000000000000));
-    __ xorpd(xmm0, ExternalAddress((address) double_signflip), rscratch1);
-  } else {
-    ShouldNotReachHere();
-  }
+  static jlong *double_signflip =
+    double_quadword(&double_signflip_pool[1], CONST64(0x8000000000000000), CONST64(0x8000000000000000));
+  __ xorpd(xmm0, ExternalAddress((address) double_signflip), rscratch1);
 }
 
 void TemplateTable::iinc() {
@@ -1682,36 +1658,31 @@ void TemplateTable::lcmp() {
 }
 
 void TemplateTable::float_cmp(bool is_float, int unordered_result) {
-  if ((is_float && UseSSE >= 1) ||
-      (!is_float && UseSSE >= 2)) {
-    Label done;
-    if (is_float) {
-      // XXX get rid of pop here, use ... reg, mem32
-      __ pop_f(xmm1);
-      __ ucomiss(xmm1, xmm0);
-    } else {
-      // XXX get rid of pop here, use ... reg, mem64
-      __ pop_d(xmm1);
-      __ ucomisd(xmm1, xmm0);
-    }
-    if (unordered_result < 0) {
-      __ movl(rax, -1);
-      __ jccb(Assembler::parity, done);
-      __ jccb(Assembler::below, done);
-      __ setb(Assembler::notEqual, rdx);
-      __ movzbl(rax, rdx);
-    } else {
-      __ movl(rax, 1);
-      __ jccb(Assembler::parity, done);
-      __ jccb(Assembler::above, done);
-      __ movl(rax, 0);
-      __ jccb(Assembler::equal, done);
-      __ decrementl(rax);
-    }
-    __ bind(done);
+  Label done;
+  if (is_float) {
+    // XXX get rid of pop here, use ... reg, mem32
+    __ pop_f(xmm1);
+    __ ucomiss(xmm1, xmm0);
   } else {
-    ShouldNotReachHere();
+    // XXX get rid of pop here, use ... reg, mem64
+    __ pop_d(xmm1);
+    __ ucomisd(xmm1, xmm0);
   }
+  if (unordered_result < 0) {
+    __ movl(rax, -1);
+    __ jccb(Assembler::parity, done);
+    __ jccb(Assembler::below, done);
+    __ setb(Assembler::notEqual, rdx);
+    __ movzbl(rax, rdx);
+  } else {
+    __ movl(rax, 1);
+    __ jccb(Assembler::parity, done);
+    __ jccb(Assembler::above, done);
+    __ movl(rax, 0);
+    __ jccb(Assembler::equal, done);
+    __ decrementl(rax);
+  }
+  __ bind(done);
 }
 
 void TemplateTable::branch(bool is_jsr, bool is_wide) {
@@ -2263,12 +2234,10 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
     const Register method = temp;
     const Register klass  = temp;
-    const Register thread = r15_thread;
-    assert(thread != noreg, "x86_32 not supported");
 
     __ movptr(method, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
     __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, thread, nullptr /*L_fast_path*/, &L_clinit_barrier_slow);
+    __ clinit_barrier(klass, nullptr /*L_fast_path*/, &L_clinit_barrier_slow);
   }
 }
 
@@ -2568,7 +2537,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ jcc(Assembler::notZero, notByte);
 
   // btos
-  __ access_load_at(T_BYTE, IN_HEAP, rax, field, noreg, noreg);
+  __ access_load_at(T_BYTE, IN_HEAP, rax, field, noreg);
   __ push(btos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -2581,7 +2550,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ jcc(Assembler::notEqual, notBool);
 
   // ztos (same code as btos)
-  __ access_load_at(T_BOOLEAN, IN_HEAP, rax, field, noreg, noreg);
+  __ access_load_at(T_BOOLEAN, IN_HEAP, rax, field, noreg);
   __ push(ztos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -2605,7 +2574,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ cmpl(tos_state, itos);
   __ jcc(Assembler::notEqual, notInt);
   // itos
-  __ access_load_at(T_INT, IN_HEAP, rax, field, noreg, noreg);
+  __ access_load_at(T_INT, IN_HEAP, rax, field, noreg);
   __ push(itos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -2617,7 +2586,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ cmpl(tos_state, ctos);
   __ jcc(Assembler::notEqual, notChar);
   // ctos
-  __ access_load_at(T_CHAR, IN_HEAP, rax, field, noreg, noreg);
+  __ access_load_at(T_CHAR, IN_HEAP, rax, field, noreg);
   __ push(ctos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -2629,7 +2598,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ cmpl(tos_state, stos);
   __ jcc(Assembler::notEqual, notShort);
   // stos
-  __ access_load_at(T_SHORT, IN_HEAP, rax, field, noreg, noreg);
+  __ access_load_at(T_SHORT, IN_HEAP, rax, field, noreg);
   __ push(stos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -2643,7 +2612,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   // ltos
     // Generate code as if volatile (x86_32).  There just aren't enough registers to
     // save that information and this code is faster than the test.
-  __ access_load_at(T_LONG, IN_HEAP | MO_RELAXED, noreg /* ltos */, field, noreg, noreg);
+  __ access_load_at(T_LONG, IN_HEAP | MO_RELAXED, noreg /* ltos */, field, noreg);
   __ push(ltos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) patch_bytecode(Bytecodes::_fast_lgetfield, bc, rbx);
@@ -2654,7 +2623,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ jcc(Assembler::notEqual, notFloat);
   // ftos
 
-  __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg, noreg);
+  __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg);
   __ push(ftos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -2670,7 +2639,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 #endif
   // dtos
   // MO_RELAXED: for the case of volatile field, in fact it adds no extra work for the underlying implementation
-  __ access_load_at(T_DOUBLE, IN_HEAP | MO_RELAXED, noreg /* dtos */, field, noreg, noreg);
+  __ access_load_at(T_DOUBLE, IN_HEAP | MO_RELAXED, noreg /* dtos */, field, noreg);
   __ push(dtos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -3133,25 +3102,25 @@ void TemplateTable::fast_accessfield(TosState state) {
     __ verify_oop(rax);
     break;
   case Bytecodes::_fast_lgetfield:
-    __ access_load_at(T_LONG, IN_HEAP, noreg /* ltos */, field, noreg, noreg);
+    __ access_load_at(T_LONG, IN_HEAP, noreg /* ltos */, field, noreg);
     break;
   case Bytecodes::_fast_igetfield:
-    __ access_load_at(T_INT, IN_HEAP, rax, field, noreg, noreg);
+    __ access_load_at(T_INT, IN_HEAP, rax, field, noreg);
     break;
   case Bytecodes::_fast_bgetfield:
-    __ access_load_at(T_BYTE, IN_HEAP, rax, field, noreg, noreg);
+    __ access_load_at(T_BYTE, IN_HEAP, rax, field, noreg);
     break;
   case Bytecodes::_fast_sgetfield:
-    __ access_load_at(T_SHORT, IN_HEAP, rax, field, noreg, noreg);
+    __ access_load_at(T_SHORT, IN_HEAP, rax, field, noreg);
     break;
   case Bytecodes::_fast_cgetfield:
-    __ access_load_at(T_CHAR, IN_HEAP, rax, field, noreg, noreg);
+    __ access_load_at(T_CHAR, IN_HEAP, rax, field, noreg);
     break;
   case Bytecodes::_fast_fgetfield:
-    __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg, noreg);
+    __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg);
     break;
   case Bytecodes::_fast_dgetfield:
-    __ access_load_at(T_DOUBLE, IN_HEAP, noreg /* dtos */, field, noreg, noreg);
+    __ access_load_at(T_DOUBLE, IN_HEAP, noreg /* dtos */, field, noreg);
     break;
   default:
     ShouldNotReachHere();
@@ -3180,14 +3149,14 @@ void TemplateTable::fast_xaccess(TosState state) {
   const Address field = Address(rax, rbx, Address::times_1, 0*wordSize);
   switch (state) {
   case itos:
-    __ access_load_at(T_INT, IN_HEAP, rax, field, noreg, noreg);
+    __ access_load_at(T_INT, IN_HEAP, rax, field, noreg);
     break;
   case atos:
     do_oop_load(_masm, field, rax);
     __ verify_oop(rax);
     break;
   case ftos:
-    __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg, noreg);
+    __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg);
     break;
   default:
     ShouldNotReachHere();
@@ -3572,7 +3541,7 @@ void TemplateTable::_new() {
   // make sure klass is initialized
   // init_state needs acquire, but x86 is TSO, and so we are already good.
   assert(VM_Version::supports_fast_class_init_checks(), "must support fast class initialization checks");
-  __ clinit_barrier(rcx, r15_thread, nullptr /*L_fast_path*/, &slow_case);
+  __ clinit_barrier(rcx, nullptr /*L_fast_path*/, &slow_case);
 
   // get instance_size in InstanceKlass (scaled to a count of bytes)
   __ movl(rdx, Address(rcx, Klass::layout_helper_offset()));
@@ -3590,7 +3559,7 @@ void TemplateTable::_new() {
   //  Go to slow path.
 
   if (UseTLAB) {
-    __ tlab_allocate(r15_thread, rax, rdx, 0, rcx, rbx, slow_case);
+    __ tlab_allocate(rax, rdx, 0, rcx, rbx, slow_case);
     if (ZeroTLAB) {
       // the fields have been already cleared
       __ jmp(initialize_header);
@@ -3711,8 +3680,7 @@ void TemplateTable::checkcast() {
   __ push(atos); // save receiver for result, and for GC
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
 
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(rax, r15_thread);
+  __ get_vm_result_metadata(rax);
 
   __ pop_ptr(rdx); // restore receiver
   __ jmpb(resolved);
@@ -3767,9 +3735,8 @@ void TemplateTable::instanceof() {
 
   __ push(atos); // save receiver for result, and for GC
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
 
-  __ get_vm_result_2(rax, r15_thread);
+  __ get_vm_result_metadata(rax);
 
   __ pop_ptr(rdx); // restore receiver
   __ verify_oop(rdx);

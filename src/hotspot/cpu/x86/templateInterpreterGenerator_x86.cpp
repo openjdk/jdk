@@ -204,10 +204,10 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   }
 
    if (JvmtiExport::can_pop_frame()) {
-     __ check_and_handle_popframe(r15_thread);
+     __ check_and_handle_popframe();
    }
    if (JvmtiExport::can_force_early_return()) {
-     __ check_and_handle_earlyret(r15_thread);
+     __ check_and_handle_earlyret();
    }
 
   __ dispatch_next(state, step);
@@ -654,7 +654,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 
   // Load the value of the referent field.
   const Address field_address(rax, referent_offset);
-  __ load_heap_oop(rax, field_address, /*tmp1*/ rbx, /*tmp_thread*/ rdx, ON_WEAK_OOP_REF);
+  __ load_heap_oop(rax, field_address, /*tmp1*/ rbx, ON_WEAK_OOP_REF);
 
   // _areturn
   __ pop(rdi);                // get return address
@@ -991,7 +991,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     Label Continue;
     Label slow_path;
 
-    __ safepoint_poll(slow_path, thread, true /* at_return */, false /* in_nmethod */);
+    __ safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
 
     __ cmpl(Address(thread, JavaThread::suspend_flags_offset()), 0);
     __ jcc(Assembler::equal, Continue);
@@ -1034,7 +1034,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   }
 
   // reset_last_Java_frame
-  __ reset_last_Java_frame(thread, true);
+  __ reset_last_Java_frame(true);
 
   if (CheckJNICalls) {
     // clear_pending_jni_exception_check
@@ -1057,7 +1057,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ pop(ltos);
     // Unbox oop result, e.g. JNIHandles::resolve value.
     __ resolve_jobject(rax /* value */,
-                       thread /* thread */,
                        t /* tmp */);
     __ movptr(Address(rbp, frame::interpreter_frame_oop_temp_offset*wordSize), rax);
     // keep stack depth as expected by pushing oop which will eventually be discarded
@@ -1495,7 +1494,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // PC must point into interpreter here
   __ set_last_Java_frame(noreg, rbp, __ pc(), rscratch1);
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::popframe_move_outgoing_args), r15_thread, c_rarg1, c_rarg2);
-  __ reset_last_Java_frame(thread, true);
+  __ reset_last_Java_frame(true);
 
   // Restore the last_sp and null it out
   __ movptr(rcx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
@@ -1544,11 +1543,11 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // preserve exception over this code sequence
   __ pop_ptr(rax);
-  __ movptr(Address(thread, JavaThread::vm_result_offset()), rax);
+  __ movptr(Address(thread, JavaThread::vm_result_oop_offset()), rax);
   // remove the activation (without doing throws on illegalMonitorExceptions)
   __ remove_activation(vtos, rdx, false, true, false);
   // restore exception
-  __ get_vm_result(rax, thread);
+  __ get_vm_result_oop(rax);
 
   // In between activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects the

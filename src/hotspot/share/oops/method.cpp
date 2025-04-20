@@ -433,7 +433,7 @@ void Method::set_itable_index(int index) {
     // itable index should be the same as the runtime index.
     assert(_vtable_index == itable_index_max - index,
            "archived itable index is different from runtime index");
-    return; // don’t write into the shared class
+    return; // don't write into the shared class
   } else {
     _vtable_index = itable_index_max - index;
   }
