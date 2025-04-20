@@ -236,13 +236,16 @@ public class ConstrainedBorderLayoutChildrenTest {
     }
 
     private void assertTrue(boolean actualValue, String msg) {
-        if (!actualValue)
+        if (!actualValue) {
             throw new AssertionError(msg);
+        }
     }
 
     private void assertEquals(Object expectedValue, Object actualValue) {
-        if (!expectedValue.toString().equals(actualValue.toString()))
-            throw new AssertionError("expected = " + expectedValue + ", actual = " + actualValue);
+        if (!expectedValue.toString().equals(actualValue.toString())) {
+            throw new AssertionError("expected = " + expectedValue +
+                    ", actual = " + actualValue);
+        }
     }
 
     private JPanel createStub(int prefWidth, int prefHeight) {
