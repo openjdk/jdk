@@ -33,7 +33,7 @@ import javax.swing.SwingUtilities;
  * @test
  * @key headful
  * @bug 8012026 8027154
- * @summary Component.getMousePosition() does not work in an applet on MacOS
+ * @summary Component.getMousePosition() does not work in some cases on MacOS
  *
  * @requires (os.family == "windows")
  * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=1 GetMousePositionWithPopup
@@ -48,7 +48,7 @@ import javax.swing.SwingUtilities;
  * @test
  * @key headful
  * @bug 8012026 8027154
- * @summary Component.getMousePosition() does not work in an applet on MacOS
+ * @summary Component.getMousePosition() does not work in some cases on MacOS
  *
  * @requires (os.family == "mac" | os.family == "linux")
  * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=1 GetMousePositionWithPopup

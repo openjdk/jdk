@@ -103,10 +103,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
     movptr(rax, Address(thread, Thread::pending_exception_offset()));
     // make sure that the vm_results are cleared
     if (oop_result1->is_valid()) {
-      movptr(Address(thread, JavaThread::vm_result_offset()), NULL_WORD);
+      movptr(Address(thread, JavaThread::vm_result_oop_offset()), NULL_WORD);
     }
     if (metadata_result->is_valid()) {
-      movptr(Address(thread, JavaThread::vm_result_2_offset()), NULL_WORD);
+      movptr(Address(thread, JavaThread::vm_result_metadata_offset()), NULL_WORD);
     }
     if (frame_size() == no_frame_size) {
       leave();
@@ -120,10 +120,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   }
   // get oop results if there are any and reset the values in the thread
   if (oop_result1->is_valid()) {
-    get_vm_result(oop_result1);
+    get_vm_result_oop(oop_result1);
   }
   if (metadata_result->is_valid()) {
-    get_vm_result_2(metadata_result);
+    get_vm_result_metadata(metadata_result);
   }
 
   assert(call_offset >= 0, "Should be set");
@@ -334,21 +334,19 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
   int xmm_bypass_limit = FrameMap::get_num_caller_save_xmms();
 
   if (save_fpu_registers) {
-    if (UseSSE >= 2) {
-      int xmm_off = xmm_regs_as_doubles_off;
-      for (int n = 0; n < FrameMap::nof_xmm_regs; n++) {
-        if (n < xmm_bypass_limit) {
-          VMReg xmm_name_0 = as_XMMRegister(n)->as_VMReg();
-          map->set_callee_saved(VMRegImpl::stack2reg(xmm_off + num_rt_args), xmm_name_0);
-          // %%% This is really a waste but we'll keep things as they were for now
-          if (true) {
-            map->set_callee_saved(VMRegImpl::stack2reg(xmm_off + 1 + num_rt_args), xmm_name_0->next());
-          }
+    int xmm_off = xmm_regs_as_doubles_off;
+    for (int n = 0; n < FrameMap::nof_xmm_regs; n++) {
+      if (n < xmm_bypass_limit) {
+        VMReg xmm_name_0 = as_XMMRegister(n)->as_VMReg();
+        map->set_callee_saved(VMRegImpl::stack2reg(xmm_off + num_rt_args), xmm_name_0);
+        // %%% This is really a waste but we'll keep things as they were for now
+        if (true) {
+          map->set_callee_saved(VMRegImpl::stack2reg(xmm_off + 1 + num_rt_args), xmm_name_0->next());
         }
-        xmm_off += 2;
       }
-      assert(xmm_off == float_regs_as_doubles_off, "incorrect number of xmm registers");
+      xmm_off += 2;
     }
+    assert(xmm_off == float_regs_as_doubles_off, "incorrect number of xmm registers");
   }
 
   return map;
@@ -369,19 +367,17 @@ void C1_MacroAssembler::save_live_registers_no_oop_map(bool save_fpu_registers) 
 #endif
 
   if (save_fpu_registers) {
-    if (UseSSE >= 2) {
-      // save XMM registers
-      // XMM registers can contain float or double values, but this is not known here,
-      // so always save them as doubles.
-      // note that float values are _not_ converted automatically, so for float values
-      // the second word contains only garbage data.
-      int xmm_bypass_limit = FrameMap::get_num_caller_save_xmms();
-      int offset = 0;
-      for (int n = 0; n < xmm_bypass_limit; n++) {
-        XMMRegister xmm_name = as_XMMRegister(n);
-        __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + offset), xmm_name);
-        offset += 8;
-      }
+    // save XMM registers
+    // XMM registers can contain float or double values, but this is not known here,
+    // so always save them as doubles.
+    // note that float values are _not_ converted automatically, so for float values
+    // the second word contains only garbage data.
+    int xmm_bypass_limit = FrameMap::get_num_caller_save_xmms();
+    int offset = 0;
+    for (int n = 0; n < xmm_bypass_limit; n++) {
+      XMMRegister xmm_name = as_XMMRegister(n);
+      __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + offset), xmm_name);
+      offset += 8;
     }
   }
 }
@@ -536,8 +532,8 @@ OopMapSet* Runtime1::generate_handle_exception(C1StubId id, StubAssembler *sasm)
     __ movptr(exception_pc, Address(rbp, 1*BytesPerWord));
 
     // make sure that the vm_results are cleared (may be unnecessary)
-    __ movptr(Address(thread, JavaThread::vm_result_offset()),   NULL_WORD);
-    __ movptr(Address(thread, JavaThread::vm_result_2_offset()), NULL_WORD);
+    __ movptr(Address(thread, JavaThread::vm_result_oop_offset()),   NULL_WORD);
+    __ movptr(Address(thread, JavaThread::vm_result_metadata_offset()), NULL_WORD);
     break;
   case C1StubId::handle_exception_nofpu_id:
   case C1StubId::handle_exception_id:
