@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -807,10 +807,10 @@ public class BorderLayout implements LayoutManager2,
     public void layoutContainer(Container target) {
       synchronized (target.getTreeLock()) {
         Insets insets = target.getInsets();
-        int top = insets.top;
-        int bottom = target.height - insets.bottom;
-        int left = insets.left;
-        int right = target.width - insets.right;
+        int top = Math.min(target.height, insets.top);
+        int bottom = Math.max(top, target.height - insets.bottom);
+        int left = Math.min(target.width, insets.left);
+        int right = Math.max(left, target.width - insets.right);
 
         boolean ltr = target.getComponentOrientation().isLeftToRight();
         Component c = null;
@@ -818,26 +818,34 @@ public class BorderLayout implements LayoutManager2,
         if ((c=getChild(NORTH,ltr)) != null) {
             c.setSize(right - left, c.height);
             Dimension d = c.getPreferredSize();
-            c.setBounds(left, top, right - left, d.height);
-            top += d.height + vgap;
+            int cTop = top;
+            int cBottom = Math.min(bottom, top + d.height);
+            c.setBounds(left, cTop, right - left, cBottom - cTop);
+            top = Math.min(bottom, cBottom + vgap);
         }
         if ((c=getChild(SOUTH,ltr)) != null) {
             c.setSize(right - left, c.height);
             Dimension d = c.getPreferredSize();
-            c.setBounds(left, bottom - d.height, right - left, d.height);
-            bottom -= d.height + vgap;
+            int cTop = Math.max(top, bottom - d.height);
+            int cBottom = bottom;
+            c.setBounds(left, cTop, right - left, cBottom - cTop);
+            bottom = Math.max(top, cTop - vgap);
         }
         if ((c=getChild(EAST,ltr)) != null) {
             c.setSize(c.width, bottom - top);
             Dimension d = c.getPreferredSize();
-            c.setBounds(right - d.width, top, d.width, bottom - top);
-            right -= d.width + hgap;
+            int cLeft = Math.max(left, right - d.width);
+            int cRight = right;
+            c.setBounds(cLeft, top, cRight - cLeft, bottom - top);
+            right = Math.max(left, cLeft - hgap);
         }
         if ((c=getChild(WEST,ltr)) != null) {
             c.setSize(c.width, bottom - top);
             Dimension d = c.getPreferredSize();
-            c.setBounds(left, top, d.width, bottom - top);
-            left += d.width + hgap;
+            int cLeft = left;
+            int cRight = Math.min(right, left + d.width);
+            c.setBounds(cLeft, top, cRight - cLeft, bottom - top);
+            left = Math.min(right, cRight + hgap);
         }
         if ((c=getChild(CENTER,ltr)) != null) {
             c.setBounds(left, top, right - left, bottom - top);

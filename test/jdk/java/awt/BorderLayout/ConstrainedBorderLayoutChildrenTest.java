@@ -36,8 +36,8 @@ import javax.swing.border.EmptyBorder;
 /**
  * When a BorderLayout is too small to fully accommodate its children's preferred size,
  * we need to make sure the children's bounds are allocated responsibly. This means
- * they should never have a negative (x,y) position or width/height. (They may
- * be 0x0, though.)
+ * they should never have a negative (x,y) position or a negative width/height. (They
+ * may have a width=0 or height=0, though.
  */
 public class ConstrainedBorderLayoutChildrenTest {
 
@@ -58,24 +58,27 @@ public class ConstrainedBorderLayoutChildrenTest {
     }
 
     /**
-     * This makes sure the SOUTH component isn't assign a negative y-value.
+     * This makes sure the SOUTH component isn't assigned a negative y-value.
      *
      * @return true if the test passes, false if it fails.
      */
     private boolean test1_southChildHasPositiveY() {
         try {
             JPanel container = new JPanel(new BorderLayout());
-            JPanel southPanel = createStub(120, 100, 200, 240);
+            JPanel southPanel = createStub(200, 240);
             container.add(southPanel, BorderLayout.SOUTH);
             container.setSize(25, 50);
             container.getLayout().layoutContainer(container);
 
             // specifically one failure we were seeing is: southPanel's y values was -190.
-            assertTrue(southPanel.getY() >= 0, "southPanel.getY() = " + southPanel.getY());
+            assertTrue(southPanel.getY() >= 0,
+                    "southPanel.getY() = " + southPanel.getY());
 
-            // TODO: let's also codify the expected bounds. For example one of these statements:
-//            assertEquals(new Rectangle(0, 0, 25, 240), southPanel.getBounds());
-//            assertEquals(new Rectangle(0, 0, 25, 50), southPanel.getBounds());
+            // Let's also codify the expected bounds. This is not necessarily
+            // required/defined in the specs, so it may be OK to change this
+            // assertion someday. Here we're expecting southPanel to get the
+            // full height of the container but NOT to overflow:
+            assertEquals(new Rectangle(0, 0, 25, 50), southPanel.getBounds());
 
             return true;
         } catch(Throwable t) {
@@ -86,29 +89,32 @@ public class ConstrainedBorderLayoutChildrenTest {
 
     /**
      * This makes sure the CENTER component isn't assigned a negative height.
+     * The SOUTH component is going to get the container's full height, and
+     * nothing will be leftover for the CENTER component.
      *
      * @return true if the test passes, false if it fails.
      */
     private boolean test2_centerChildHasPositiveHeight() {
         try {
             JPanel container = new JPanel(new BorderLayout());
-            JPanel southPanel = createStub(60, 70, 200, 240);
+            JPanel southPanel = createStub(200, 240);
             container.add(southPanel, BorderLayout.SOUTH);
-            JPanel centerPanel = createStub(80, 90, 200, 250);
+            JPanel centerPanel = createStub(200, 250);
             container.add(centerPanel, BorderLayout.CENTER);
             container.setSize(100, 200);
             container.getLayout().layoutContainer(container);
 
             // this is the core criteria for this test:
-            assertTrue(centerPanel.getHeight() > 0, "centerPanel.getHeight() = " + centerPanel.getHeight());
+            assertTrue(centerPanel.getHeight() >= 0,
+                    "centerPanel.getHeight() = " + centerPanel.getHeight());
 
-            // TODO: let's also codify the expected bounds. For example this may be a conservative response:
-//            assertEquals(new Rectangle(0, 0, 100, 200), southPanel.getBounds());
-//            assertEquals(new Rectangle(0, 0, 0, 0), centerPanel.getBounds());
-
-            // or this may be a more invasive response (relying on the minimum height):
-//            assertEquals(new Rectangle(0, 200 - southPanel.getMinimumSize().height, 100, southPanel.getMinimumSize().height), southPanel.getBounds());
-//            assertEquals(new Rectangle(0, 0, 100, 200 - southPanel.getHeight()), centerPanel.getBounds());
+            // Let's also codify the expected bounds. This is not necessarily
+            // required/defined in the specs, so it may be OK to change this
+            // assertion someday. Here we're expecting southPanel to get the
+            // full height of the container, and for centerPanel to get a
+            // height of zero.
+            assertEquals(new Rectangle(0, 0, 100, 200), southPanel.getBounds());
+            assertEquals(new Rectangle(0, 0, 100, 0), centerPanel.getBounds());
 
             return true;
         } catch(Throwable t) {
@@ -126,27 +132,24 @@ public class ConstrainedBorderLayoutChildrenTest {
     private boolean test3_competingNorthAndSouthHeights() {
         try {
             JPanel container = new JPanel(new BorderLayout());
-            JPanel northPanel = createStub(50, 50, 200, 200);
+            JPanel northPanel = createStub(200, 200);
             container.add(northPanel, BorderLayout.NORTH);
-            JPanel southPanel = createStub(50, 50, 200, 200);
+            JPanel southPanel = createStub(200, 200);
             container.add(southPanel, BorderLayout.SOUTH);
             container.setSize(300, 300);
             container.getLayout().layoutContainer(container);
 
             // this is the core criteria for this test:
-            assertTrue(northPanel.getBounds().intersects(southPanel.getBounds()), "northPanel.getBounds() = " + northPanel.getBounds() + ", southPanel.getBounds() = " + southPanel.getBounds());
+            assertTrue(!northPanel.getBounds().intersects(southPanel.getBounds()),
+                    "northPanel.getBounds() = " + northPanel.getBounds() +
+                    ", southPanel.getBounds() = " + southPanel.getBounds());
 
-            // TODO: let's also codify the expected bounds. For example:
+            // Let's also codify the expected bounds. This is not necessarily
+            // required/defined in the specs, so it may be OK to change this
+            // assertion someday. Here we're expecting northPanel to get its
+            // full preferred height, and southPanel gets what is leftover:
             assertEquals(new Rectangle(0,0,300,200), northPanel.getBounds());
             assertEquals(new Rectangle(0,200,300,100), southPanel.getBounds());
-
-            // This assumes we're sticking with preferred sizes (not minimum sizes), and that we can
-            // accept the rule: "the topmost component gets what it wants, then the bottommost component
-            // gets what is left over." I bet that sounds OK to most readers. It gets a little more
-            // interesting if you look at it horizontally: then it may matter if you're approaching
-            // this from a left-to-right vs a right-to-left UI. Here I'd suggest the dominant/first
-            // component "wins", and the trailing component gets the leftovers. We may need a separate
-            // unit test for that.
 
             return true;
         } catch(Throwable t) {
@@ -165,13 +168,14 @@ public class ConstrainedBorderLayoutChildrenTest {
         try {
             JPanel container = new JPanel(new BorderLayout());
             container.setBorder(new EmptyBorder(100, 0, 100, 0));
-            JPanel northPanel = createStub(50, 50, 50, 50);
+            JPanel northPanel = createStub(50, 50);
             container.add(northPanel, BorderLayout.NORTH);
             container.setSize(150, 150);
             container.getLayout().layoutContainer(container);
 
             // if we respect the border: there's 0 height leftover for us:
-            assertTrue(northPanel.getHeight() == 0, "northPanel.getHeight() = " + northPanel.getHeight());
+            assertTrue(northPanel.getHeight() == 0,
+                    "northPanel.getHeight() = " + northPanel.getHeight());
 
             return true;
         } catch(Throwable t) {
@@ -190,7 +194,7 @@ public class ConstrainedBorderLayoutChildrenTest {
         try {
             JPanel container = new JPanel(new BorderLayout());
             container.setBorder(new EmptyBorder(100, 0, 100, 0));
-            JPanel northPanel = createStub(50, 50, 50, 50);
+            JPanel northPanel = createStub(50, 50);
             container.add(northPanel, BorderLayout.NORTH);
             container.setSize(150, 225);
             container.getLayout().layoutContainer(container);
@@ -206,8 +210,8 @@ public class ConstrainedBorderLayoutChildrenTest {
     }
 
     /**
-     * This explores what happens if our container is so small that
-     * 2 * border + prefHeight > container.getHeight()
+     * This explores what happens if our container has large left/right
+     * border insets that prevent our NORTH component from showing at all
      *
      * @return true if the test passes, false if it fails.
      */
@@ -215,13 +219,14 @@ public class ConstrainedBorderLayoutChildrenTest {
         try {
             JPanel container = new JPanel(new BorderLayout());
             container.setBorder(new EmptyBorder(0, 100, 0, 100));
-            JPanel northPanel = createStub(50, 50, 50, 50);
+            JPanel northPanel = createStub(50, 50);
             container.add(northPanel, BorderLayout.NORTH);
             container.setSize(150, 500);
             container.getLayout().layoutContainer(container);
 
             // if we respect our left/right border: there's no width leftover for us
-            assertTrue(northPanel.getWidth() == 0, "northPanel.getWidth() = " + northPanel.getWidth());
+            assertTrue(northPanel.getWidth() == 0,
+                    "northPanel.getWidth() = " + northPanel.getWidth());
 
             return true;
         } catch(Throwable t) {
@@ -240,15 +245,8 @@ public class ConstrainedBorderLayoutChildrenTest {
             throw new AssertionError("expected = " + expectedValue + ", actual = " + actualValue);
     }
 
-    private void assertEquals(int expectedValue, int actualValue) {
-        if (expectedValue != actualValue)
-            throw new AssertionError("expected = " + expectedValue + ", actual = " + actualValue);
-    }
-
-    private JPanel createStub(int minWidth, int minHeight,
-                              int prefWidth, int prefHeight) {
+    private JPanel createStub(int prefWidth, int prefHeight) {
         JPanel comp = new JPanel();
-        comp.setMinimumSize(new Dimension(minWidth, minHeight));
         comp.setPreferredSize(new Dimension(prefWidth, prefHeight));
         return comp;
     }
