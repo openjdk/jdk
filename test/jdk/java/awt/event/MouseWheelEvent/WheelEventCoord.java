@@ -82,7 +82,7 @@ class BigButton extends Button {
     }
 
     public Dimension getPreferredSize() {
-        return new Dimension(300,100);
+        return new Dimension(300, 100);
     }
 
     public Dimension getMinimumSize() {
