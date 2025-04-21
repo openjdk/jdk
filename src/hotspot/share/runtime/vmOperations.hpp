@@ -89,7 +89,12 @@ class VM_RelocateNMethod: public VM_Operation {
    CodeBlobType _code_blob_type;
   public:
    VM_RelocateNMethod(methodHandle* mh, CodeBlobType code_blob_type)
-    : _mh(mh), _nm_copy(nullptr), _code_blob_type(code_blob_type) {
+     : _mh(mh), _nm_copy(nullptr), _code_blob_type(code_blob_type)
+   {
+    Compile_lock->lock();
+   }
+   ~VM_RelocateNMethod() {
+    Compile_lock->unlock();
    }
    void doit();
    VMOp_Type type() const { return VMOp_RelocateNMethod; }
