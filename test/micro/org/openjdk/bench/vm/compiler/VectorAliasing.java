@@ -41,20 +41,14 @@ public abstract class VectorAliasing {
     public static int INVAR_ZERO = 0;
 
     // For all types we have an "a" and "b" series. Each series is an alias to the same array.
-    private byte[] a0B;
-    private byte[] a1B;
-    private byte[] b0B;
-    private byte[] b1B;
+    private byte[] aB;
+    private byte[] bB;
 
-    private int[] a0I;
-    private int[] a1I;
-    private int[] b0I;
-    private int[] b1I;
+    private int[] aI;
+    private int[] bI;
 
-    private long[] a0L;
-    private long[] a1L;
-    private long[] b0L;
-    private long[] b1L;
+    private long[] aL;
+    private long[] bL;
 
     @Param("0")
     private int seed;
@@ -62,30 +56,24 @@ public abstract class VectorAliasing {
 
     @Setup
     public void init() {
-        a0B = new byte[SIZE];
-        b0B = new byte[SIZE];
-        a1B = a0B;
-        b1B = b0B;
+        aB = new byte[SIZE];
+        bB = new byte[SIZE];
 
-        a0I = new int[SIZE];
-        b0I = new int[SIZE];
-        a1I = a0I;
-        b1I = b0I;
+        aI = new int[SIZE];
+        bI = new int[SIZE];
 
-        a0L = new long[SIZE];
-        b0L = new long[SIZE];
-        a1L = a0L;
-        b1L = b0L;
+        aL = new long[SIZE];
+        bL = new long[SIZE];
 
         for (int i = 0; i < SIZE; i++) {
-            a0B[i] = (byte) r.nextInt();
-            b0B[i] = (byte) r.nextInt();
+            aB[i] = (byte) r.nextInt();
+            bB[i] = (byte) r.nextInt();
 
-            a0I[i] = r.nextInt();
-            b0I[i] = r.nextInt();
+            aI[i] = r.nextInt();
+            bI[i] = r.nextInt();
 
-            a0L[i] = r.nextLong();
-            b0L[i] = r.nextLong();
+            aL[i] = r.nextLong();
+            bL[i] = r.nextLong();
         }
     }
 
@@ -105,22 +93,22 @@ public abstract class VectorAliasing {
 
     @Benchmark
     public void bench_copy_array_B_sameIndex_noalias() {
-        copy_B(b0B, a0B);
+        copy_B(bB, aB);
     }
 
     @Benchmark
     public void bench_copy_array_B_sameIndex_alias() {
-        copy_B(a0B, a1B);
+        copy_B(aB, aB);
     }
 
     @Benchmark
     public void bench_copy_array_B_differentIndex_noalias() {
-        copy_B(b0B, a0B, 0, 0, a0B.length);
+        copy_B(bB, aB, 0, 0, aB.length);
     }
 
     @Benchmark
     public void bench_copy_array_B_differentIndex_alias() {
-        copy_B(a0B, a1B, 0, 0, a0B.length);
+        copy_B(aB, aB, 0, 0, aB.length);
     }
 
     @Fork(value = 1, jvmArgs = {
