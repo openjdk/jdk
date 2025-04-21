@@ -3000,7 +3000,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
   Label slow_path;
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     li(tmp1, 0);
     std(tmp1, in_bytes(BasicObjectLock::lock_offset()) + BasicLock::object_monitor_cache_offset_in_bytes(), box);
   }
@@ -4999,18 +4999,26 @@ void MacroAssembler::atomically_flip_locked_state(bool is_unlock, Register obj, 
 //  - t1, t2: temporary register
 void MacroAssembler::lightweight_lock(Register box, Register obj, Register t1, Register t2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(box, obj, t1, t2);
+  assert_different_registers(box, obj, t1, t2, R0);
 
   Label push;
-  const Register top = t1;
-  const Register mark = t2;
   const Register t = R0;
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     li(t, 0);
     std(t, in_bytes(BasicObjectLock::lock_offset()) + BasicLock::object_monitor_cache_offset_in_bytes(), box);
   }
+
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    load_klass(t1, obj);
+    lbz(t1, in_bytes(Klass::misc_flags_offset()), t1);
+    testbitdi(CR0, R0, t1, exact_log2(KlassFlags::_misc_is_value_based_class));
+    bne(CR0, slow);
+  }
+
+  const Register top = t1;
+  const Register mark = t2;
 
   // Check if the lock-stack is full.
   lwz(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
