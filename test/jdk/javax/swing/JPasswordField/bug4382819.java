@@ -48,6 +48,7 @@ public class bug4382819 {
             robot.setAutoDelay(250);
             SwingUtilities.invokeAndWait(() -> createTestUI());
             robot.waitForIdle();
+            robot.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> p = passwordField.getLocationOnScreen());
 
@@ -56,7 +57,6 @@ public class bug4382819 {
 
             SwingUtilities.invokeAndWait(() -> passwordField.setEnabled(false));
             robot.waitForIdle();
-            robot.delay(1000);
 
             Color c2 = robot.getPixelColor(p.x + 10, p.y + 5);
             robot.waitForIdle();

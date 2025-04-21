@@ -22,6 +22,7 @@
  */
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Panel;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -64,8 +65,11 @@ public class bug4820080 {
 
         JPanel jleft = new JPanel();
         jleft.setBackground(Color.DARK_GRAY);
+        jleft.setPreferredSize(new Dimension(100, 100));
         JPanel jright = new JPanel();
         jright.setBackground(Color.DARK_GRAY);
+        jright.setPreferredSize(new Dimension(100, 100));
+
         JSplitPane jsp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, jleft, jright);
         jsp.setContinuousLayout(false);
         box.add(jsp);
