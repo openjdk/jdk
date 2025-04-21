@@ -165,12 +165,6 @@ public class InternationalCharacters {
         scrollpane.setBorder(new BevelBorder(BevelBorder.LOWERED));
         scrollpane.setPreferredSize(new Dimension(430, 200));
 
-        WindowListener l = new WindowAdapter() {
-            public void windowClosing(WindowEvent e) {
-                System.exit(0);
-            }
-        };
-        frame.addWindowListener(l);
         frame.add(scrollpane);
         frame.setSize(500, 200);
         return frame;

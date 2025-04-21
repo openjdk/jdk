@@ -47,7 +47,7 @@ public class bug4118307 {
     static MyTable tbl;
     static Point tableLoc;
     static Point p;
-    private static boolean flag = false;
+    private static volatile boolean flag;
     static final String[] columnNames = {"Integer", "Double"};
     static final Object[][] data = {
             {5, 3.14},
@@ -62,6 +62,7 @@ public class bug4118307 {
             robot.setAutoDelay(250);
             SwingUtilities.invokeAndWait(() -> createTestUI());
             robot.waitForIdle();
+            robot.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> {
                 tableLoc = tbl.getLocationOnScreen();
@@ -105,7 +106,7 @@ public class bug4118307 {
             robot.waitForIdle();
             robot.delay(5000);
 
-            if (isFail()) {
+            if (!flag) {
                 throw new RuntimeException("Test Failed.");
             }
         } finally {
@@ -122,18 +123,12 @@ public class bug4118307 {
         MyTableModel myModel = new MyTableModel();
         tbl = new MyTable(myModel);
         JScrollPane sp = new JScrollPane(tbl);
+        flag = true;
+
         frame.add(sp, BorderLayout.CENTER);
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-    }
-
-    static synchronized void setFail() {
-        flag = true;
-    }
-
-    static synchronized boolean isFail() {
-        return flag;
     }
 
     static class MyTable extends JTable {
@@ -146,7 +141,7 @@ public class bug4118307 {
                 return super.prepareRenderer(rend, row, col);
             } catch (Exception e) {
                 e.printStackTrace();
-                setFail();
+                flag = false;
                 return null;
             }
         }
@@ -161,6 +156,7 @@ public class bug4118307 {
             return data.length;
         }
 
+        @Override
         public String getColumnName(int col) {
             return columnNames[col];
         }
@@ -173,10 +169,12 @@ public class bug4118307 {
             return getValueAt(0, c).getClass();
         }
 
+        @Override
         public boolean isCellEditable(int row, int col) {
             return true;
         }
 
+        @Override
         public void setValueAt(Object value, int row, int col) {
             data[row][col] = value;
         }

@@ -31,14 +31,14 @@ import javax.swing.JTable;
  * @summary Tests that setAutoscrolls(false) locks autoscroll
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual bug4138158
+ * @run main bug4138158
  */
 
 public class bug4138158 {
     private static final String INSTRUCTIONS = """
-            Move mouse to beginning of table, press left mouse button and move mouse down
-            so that mouse cursor is below the bottom border of table. If the table isn't
-            scrolled down then test passes. If the table is scrolled then test fails.
+            Move mouse to beginning of table, press left mouse button and drag mouse down
+            below the frame. If the table isn't scrolled down then test passes.
+            If the table is scrolled then test fails.
             """;
 
     public static void main(String[] args) throws Exception {
@@ -56,7 +56,7 @@ public class bug4138158 {
         table.setAutoscrolls(false);
         JScrollPane sp = new JScrollPane(table);
         frame.add(sp);
-        frame.pack();
+        frame.setSize(200, 200);
         return frame;
     }
 }
