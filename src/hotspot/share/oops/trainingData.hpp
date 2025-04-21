@@ -542,12 +542,12 @@ public:
       bool operator==(const Arguments<T, Ts...>& that) const {
         return _first == that._first && _remaining == that._remaining;
       }
-      template<typename U = T, std::enable_if_t<std::is_pointer<U>::value && std::is_base_of<MetaspaceObj, typename std::remove_pointer<U>::type>::value, int> = 0>
+      template<typename U = T, ENABLE_IF(std::is_pointer<U>::value && std::is_base_of<MetaspaceObj, typename std::remove_pointer<U>::type>::value)>
       void metaspace_pointers_do(MetaspaceClosure *iter) {
         iter->push(&_first);
         _remaining.metaspace_pointers_do(iter);
       }
-      template<typename U = T, std::enable_if_t<!(std::is_pointer<U>::value && std::is_base_of<MetaspaceObj, typename std::remove_pointer<U>::type>::value), int> = 0>
+      template<typename U = T, ENABLE_IF(!(std::is_pointer<U>::value && std::is_base_of<MetaspaceObj, typename std::remove_pointer<U>::type>::value))>
       void metaspace_pointers_do(MetaspaceClosure *iter) {
         _remaining.metaspace_pointers_do(iter);
       }
