@@ -97,6 +97,11 @@ public class TestAliasing {
 
     public TestAliasing() {
         // Add all tests to list
+        tests.put("copy_B_sameIndex_noalias",      () -> { copy_B_sameIndex_noalias(AB, BB); });
+        tests.put("copy_B_sameIndex_alias",        () -> { copy_B_sameIndex_alias(AB, AB); });
+        tests.put("copy_B_differentIndex_noalias", () -> { copy_B_differentIndex_noalias(AB, BB); });
+        tests.put("copy_B_differentIndex_alias",   () -> { copy_B_differentIndex_alias(AB, AB); });
+
         tests.put("copy_I_sameIndex_noalias",      () -> { copy_I_sameIndex_noalias(AI, BI); });
         tests.put("copy_I_sameIndex_alias",        () -> { copy_I_sameIndex_alias(AI, AI); });
         tests.put("copy_I_differentIndex_noalias", () -> { copy_I_differentIndex_noalias(AI, BI); });
@@ -137,7 +142,11 @@ public class TestAliasing {
     }
 
     @Warmup(100)
-    @Run(test = {"copy_I_sameIndex_noalias",
+    @Run(test = {"copy_B_sameIndex_noalias",
+                 "copy_B_sameIndex_alias",
+                 "copy_B_differentIndex_noalias",
+                 "copy_B_differentIndex_alias",
+                 "copy_I_sameIndex_noalias",
                  "copy_I_sameIndex_alias",
                  "copy_I_differentIndex_noalias",
                  "copy_I_differentIndex_alias"})
@@ -170,6 +179,82 @@ public class TestAliasing {
     static int[] fillRandom(int[] a) {
         G.fill(INT_GEN, a);
         return a;
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Should always vectorize, no speculative runtime check required.
+    static void copy_B_sameIndex_noalias(byte[] a, byte[] b) {
+        for (int i = 0; i < a.length; i++) {
+          b[i] = a[i];
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Should always vectorize, no speculative runtime check required.
+    static void copy_B_sameIndex_alias(byte[] a, byte[] b) {
+        for (int i = 0; i < a.length; i++) {
+          b[i] = a[i];
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.STORE_VECTOR, "= 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Without speculative runtime check we cannot know that there is no aliasing.
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // We use speculative runtime checks, they never fail, so no multiversioning required.
+    // With AlignVector we cannot prove that both accesses are alignable.
+    static void copy_B_differentIndex_noalias(byte[] a, byte[] b) {
+        for (int i = 0; i < a.length; i++) {
+          b[i] = a[i + INVAR_ZERO];
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.STORE_VECTOR, "= 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIf = {"UseAutoVectorizationSpeculativeAliasingChecks", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Without speculative runtime check we cannot know that there is no aliasing.
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.STORE_VECTOR, "> 0",
+                  ".*multiversion.*", "> 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfAnd = {"UseAutoVectorizationSpeculativeAliasingChecks", "true", "AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // We use speculative runtime checks, it fails and so we do need multiversioning.
+    // With AlignVector we cannot prove that both accesses are alignable.
+    static void copy_B_differentIndex_alias(byte[] a, byte[] b) {
+        for (int i = 0; i < a.length; i++) {
+          b[i] = a[i + INVAR_ZERO];
+        }
     }
 
     @Test
