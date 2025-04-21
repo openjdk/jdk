@@ -2600,7 +2600,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // The remaining part can then be exponentiated faster.  The
         // powers of two will be multiplied back at the end.
         int powersOfTwo = base.getLowestSetBit();
-        long bitsToShiftLong = (long) powersOfTwo * exponent;
+        long bitsToShiftLong = (long)powersOfTwo * exponent;
         if (bitsToShiftLong > Integer.MAX_VALUE) {
             reportOverflow();
         }
@@ -2613,7 +2613,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             base = base.shiftRight(powersOfTwo);
             remainingBits = base.bitLength();
             if (remainingBits == 1) {  // Nothing left but +/- 1?
-                if (signum < 0 && (exponent & 1) == 1) {
+                if (signum < 0 && (exponent&1) == 1) {
                     return NEGATIVE_ONE.shiftLeft(bitsToShift);
                 } else {
                     return ONE.shiftLeft(bitsToShift);
@@ -2622,7 +2622,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         } else {
             remainingBits = base.bitLength();
             if (remainingBits == 1) { // Nothing left but +/- 1?
-                if (signum < 0 && (exponent & 1) == 1) {
+                if (signum < 0  && (exponent&1) == 1) {
                     return NEGATIVE_ONE;
                 } else {
                     return ONE;
@@ -2633,13 +2633,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // This is a quick way to approximate the size of the result,
         // similar to doing log2[n] * exponent.  This will give an upper bound
         // of how big the result can be, and which algorithm to use.
-        long scaleFactor = (long) remainingBits * exponent;
+        long scaleFactor = (long)remainingBits * exponent;
 
         // Use slightly different algorithms for small and large operands.
         // See if the result will safely fit into a long. (Largest 2^63-1)
         if (base.mag.length == 1 && scaleFactor <= 62) {
             // Small number algorithm.  Everything fits into a long.
-            int newSign = (signum < 0  && (exponent & 1) == 1 ? -1 : 1);
+            int newSign = (signum <0  && (exponent&1) == 1 ? -1 : 1);
             long result = unsignedLongPow(base.mag[0] & LONG_MASK, exponent);
 
             // Multiply back the powers of two (quickly, by shifting left)
@@ -2647,13 +2647,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 if (bitsToShift + scaleFactor <= 62) { // Fits in long?
                     return valueOf((result << bitsToShift) * newSign);
                 } else {
-                    return valueOf(result * newSign).shiftLeft(bitsToShift);
+                    return valueOf(result*newSign).shiftLeft(bitsToShift);
                 }
             } else {
-                return valueOf(result * newSign);
+                return valueOf(result*newSign);
             }
         } else {
-            if ((long) bitLength() * exponent / Integer.SIZE > MAX_MAG_LENGTH) {
+            if ((long)bitLength() * exponent / Integer.SIZE > MAX_MAG_LENGTH) {
                 reportOverflow();
             }
 
@@ -2679,7 +2679,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 answer = answer.shiftLeft(bitsToShift);
             }
 
-            if (signum < 0 && (exponent & 1) == 1) {
+            if (signum < 0 && (exponent&1) == 1) {
                 return answer.negate();
             } else {
                 return answer;
