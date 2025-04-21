@@ -620,13 +620,13 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
                             token);
                     if (keyType == CKK_DES || keyType == CKK_DES3) {
                         fixDESParity(encoded, 0);
-                    }
-                    if (keyType == CKK_DES3) {
-                        fixDESParity(encoded, 8);
-                        if (keyLength == 112) {
-                            keyType = CKK_DES2;
-                        } else {
-                            fixDESParity(encoded, 16);
+                        if (keyType == CKK_DES3) {
+                            fixDESParity(encoded, 8);
+                            if (keyLength == 112) {
+                                keyType = CKK_DES2;
+                            } else {
+                                fixDESParity(encoded, 16);
+                            }
                         }
                     }
                 }
