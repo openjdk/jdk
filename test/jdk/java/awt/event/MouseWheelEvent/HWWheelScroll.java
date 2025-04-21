@@ -131,7 +131,7 @@ public class HWWheelScroll {
     public static List makeList(int textShape) {
         java.awt.List l = new java.awt.List();
         if (textShape == TEXT_TALL) {
-            for(int i = 0; i < 50 ; i++) {
+            for (int i = 0; i < 50 ; i++) {
                 l.add(" " + i + " ");
             }
         }  else if (textShape == TEXT_WIDE) {
