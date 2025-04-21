@@ -89,33 +89,38 @@ public abstract class VectorAliasing {
         }
     }
 
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void copy_B(byte[] a, byte b[]) {
+        for (int i = 0; i < a.length; i++) {
+            b[i] = a[i];
+        }
+    }
+
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void copy_B(byte[] a, byte b[], int aOffset, int bOffset, int size) {
+        for (int i = 0; i < size; i++) {
+            b[i + bOffset] = a[i + aOffset];
+        }
+    }
+
     @Benchmark
     public void bench_copy_array_B_sameIndex_noalias() {
-        for (int i = 16; i < a0B.length; i++) {
-            b0B[i] = a0B[i];
-        }
+        copy_B(b0B, a0B);
     }
 
     @Benchmark
     public void bench_copy_array_B_sameIndex_alias() {
-        for (int i = 16; i < a0B.length; i++) {
-            a0B[i] = a1B[i];
-        }
+        copy_B(a0B, a1B);
     }
 
     @Benchmark
-    // TODO: remove the 16 offset, currently somehow prevents vectoirzation
     public void bench_copy_array_B_differentIndex_noalias() {
-        for (int i = 16; i < a0B.length; i++) {
-            b0B[i] = a0B[i + INVAR_ZERO];
-        }
+        copy_B(b0B, a0B, 0, 0, a0B.length);
     }
 
     @Benchmark
     public void bench_copy_array_B_differentIndex_alias() {
-        for (int i = 16; i < a0B.length; i++) {
-            a0B[i] = a1B[i + INVAR_ZERO];
-        }
+        copy_B(a0B, a1B, 0, 0, a0B.length);
     }
 
     @Fork(value = 1, jvmArgs = {
