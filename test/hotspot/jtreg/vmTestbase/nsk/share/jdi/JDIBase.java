@@ -89,7 +89,28 @@ public class JDIBase {
     protected Location breakpLocation = null;
     protected BreakpointEvent bpEvent;
 
+    protected final BreakpointRequest settingBreakpoint(
+                                                     ReferenceType testedClass,
+                                                     String methodName,
+                                                     String bpLine,
+                                                     String property)
+            throws JDITestRuntimeException {
+        return settingBreakpoint_private(null, testedClass, methodName, bpLine, property);
+    }
+
     protected final BreakpointRequest settingBreakpoint(ThreadReference thread,
+                                                     ReferenceType testedClass,
+                                                     String methodName,
+                                                     String bpLine,
+                                                     String property)
+            throws JDITestRuntimeException {
+        if (thread == null) {
+            log3("ERROR:  TEST_ERROR_IN_settingBreakpoint(): thread is null");
+        }
+        return settingBreakpoint_private(thread, testedClass, methodName, bpLine, property);
+    }
+
+    private final BreakpointRequest settingBreakpoint_private(ThreadReference thread,
                                                      ReferenceType testedClass,
                                                      String methodName,
                                                      String bpLine,
@@ -199,7 +220,7 @@ public class JDIBase {
         String lineForComm  = "lineForComm";
 
         BreakpointRequest bpRequest =
-            settingBreakpoint(null, debuggeeClass, bPointMethod, lineForComm, "zero");
+            settingBreakpoint(debuggeeClass, bPointMethod, lineForComm, "zero");
         bpRequest.enable();
         return bpRequest;
     }
