@@ -25,8 +25,8 @@
  * @test
  * @bug 4943900
  * @summary Tests that FileFilter combo box is shown in FileChooser
- * @library /java/awt/regtesthelpers /test/lib
- * @build PassFailJFrame jtreg.SkippedException
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual bug4943900
  */
 
@@ -35,7 +35,6 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
-import jtreg.SkippedException;
 
 public class bug4943900 {
     private static final String INSTRUCTIONS = """
@@ -49,7 +48,8 @@ public class bug4943900 {
         filter works: only *.txt files can appear in the files list
         You can navigate directories in the FileChooser and find one
         that contains some *.txt files to ensure they are shown in
-        the file list.
+        the file list. On macOS when the text filter is applied verify
+        that the non-text files are shown disabled (greyed out).
 
         4. Try switching the filters and ensure that the file list
         is updated properly.
@@ -58,11 +58,7 @@ public class bug4943900 {
         """;
 
     public static void main(String[] args) throws Exception {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            throw new SkippedException("LaF not supported", e);
-        }
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
         PassFailJFrame.builder()
                 .title("bug4943900 Test Instructions")
