@@ -1314,7 +1314,7 @@ final class StringUTF16 {
         return StreamSupport.stream(LinesSpliterator.spliterator(value), false);
     }
 
-    private static void putChars(byte[] val, int index, char[] str, int off, int end) {
+    private static void putCharsUnchecked(byte[] val, int index, char[] str, int off, int end) {
         Unsafe.getUnsafe().copyMemory(
                 str,
                 Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) off << 1),
@@ -1496,7 +1496,7 @@ final class StringUTF16 {
     public static void putCharsSB(byte[] val, int index, char[] ca, int off, int end) {
         checkBoundsBeginEnd(index, index + end - off, val);
         checkBoundsBeginEnd(off, end, ca);
-        putChars(val, index, ca, off, end);
+        putCharsUnchecked(val, index, ca, off, end);
     }
 
     public static void putCharsSB(byte[] val, int index, CharSequence s, int off, int end) {
