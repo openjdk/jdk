@@ -38,7 +38,7 @@ import javax.swing.SwingUtilities;
 
 public class bug4248128 {
     static JFrame frame;
-    static JComboBox combo;
+    static volatile JComboBox combo;
 
     public static void main(String[] args) throws Exception {
         try {

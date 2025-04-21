@@ -41,8 +41,9 @@ import javax.swing.SwingUtilities;
 public class bug4436376 {
     static JFrame frame;
     static volatile Point p;
+    static volatile JComboBox combo;
+
     final static int SELECTED_INDEX = 2;
-    static JComboBox combo;
 
     public static void main(String[] args) throws Exception {
         try {
