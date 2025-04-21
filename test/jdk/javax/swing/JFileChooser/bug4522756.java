@@ -25,8 +25,8 @@
  * @test
  * @bug 4522756
  * @requires (os.family == "windows")
- * @summary To verify that if for the first time JFileChooser is opened,
-            the icon for Desktop is not missing.
+ * @summary Verifies that the Desktop icon is not missing when
+            JFileChooser is opened for the first time.
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4522756

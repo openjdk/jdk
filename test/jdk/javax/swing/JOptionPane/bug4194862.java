@@ -40,9 +40,9 @@ import javax.swing.JOptionPane;
 public class bug4194862 {
     private static final String INSTRUCTIONS = """
             In the internal frame titled "Main",
-            click the "Show JOption dialog" button.
-            A dialog will appear. It should be centered w.r.t
-            to the JInternalFrame - "Main".
+            click the "Show JOptionPane Dialog" button.
+            A dialog will appear. It should be centered with
+            respect to the JInternalFrame - "Main".
 
             If the above is true then click on JOptionPane's "YES" button
             to PASS else click JOptionPane's "NO" button to FAIL the test.
@@ -54,6 +54,7 @@ public class bug4194862 {
                 .instructions(INSTRUCTIONS)
                 .columns(40)
                 .testUI(bug4194862::createAndShowUI)
+                .screenCapture()
                 .build()
                 .awaitAndCheck();
     }
@@ -67,7 +68,7 @@ public class bug4194862 {
         jInternalFrame.setBounds(5, 30, 390, 240);
         jInternalFrame.setVisible(true);
 
-        JButton b = new JButton("Show JOption dialog");
+        JButton b = new JButton("Show JOptionPane Dialog");
         b.addActionListener(e -> {
             int retVal = JOptionPane.showInternalConfirmDialog(
                                       jInternalFrame, "Am I centered?",

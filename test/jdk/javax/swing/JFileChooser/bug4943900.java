@@ -82,6 +82,7 @@ public class bug4943900 {
     }
 
     private static final class TextFileFilter extends FileFilter {
+        @Override
         public boolean accept(File f) {
             if (f != null) {
                 if (f.isDirectory()) {
@@ -93,11 +94,12 @@ public class bug4943900 {
             return false;
         }
 
+        @Override
         public String getDescription() {
             return "Text Files (*.txt)";
         }
 
-        public String getExtension(File f) {
+        private static String getExtension(File f) {
             if (f != null) {
                 String filename = f.getName();
                 int i = filename.lastIndexOf('.');

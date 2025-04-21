@@ -55,6 +55,7 @@ public class bug4759934 {
             Robot robot = new Robot();
             robot.setAutoWaitForIdle(true);
             robot.setAutoDelay(50);
+
             SwingUtilities.invokeAndWait(bug4759934::createTestUI);
             robot.waitForIdle();
             robot.delay(1000);
@@ -97,9 +98,9 @@ public class bug4759934 {
         fr = new JFrame("bug4759934 - JFrame");
 
         frameBtn = new JButton("Show Dialog");
+        frameBtn.addActionListener(e -> createDialog());
         fr.add(frameBtn);
 
-        frameBtn.addActionListener(e -> createDialog());
         fr.setSize(300, 200);
         fr.setLocationRelativeTo(null);
         fr.setVisible(true);
