@@ -135,7 +135,7 @@ public class HWWheelScroll {
                 l.add(" " + i + " ");
             }
         }  else if (textShape == TEXT_WIDE) {
-            for(int i = 0; i < 2 ; i++) {
+            for (int i = 0; i < 2 ; i++) {
                 l.add(i + "very, very, very, very, very, very, very, long line of text number");
             }
         }  else if (textShape == TEXT_SMALL) {
