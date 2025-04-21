@@ -5358,7 +5358,7 @@ public class Types {
 
         @Override
         public Void visitTypeVar(TypeVar t, Void aVoid) {
-            return null;
+            return visit(t.getUpperBound());
         }
 
         @Override
