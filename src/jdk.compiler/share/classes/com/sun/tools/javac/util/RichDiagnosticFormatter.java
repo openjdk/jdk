@@ -87,7 +87,7 @@ public class RichDiagnosticFormatter extends
         private final Map<WhereClauseKind, Map<Type, JCDiagnostic>> whereClauses;
 
         WhereClauses() {
-            Map<WhereClauseKind, Map<Type, JCDiagnostic>> whereClauses = new LinkedHashMap<>();
+            Map<WhereClauseKind, Map<Type, JCDiagnostic>> whereClauses = new EnumMap<>(WhereClauseKind.class);
             for (WhereClauseKind kind : WhereClauseKind.values()) {
                 whereClauses.put(kind, new LinkedHashMap<>());
             }
