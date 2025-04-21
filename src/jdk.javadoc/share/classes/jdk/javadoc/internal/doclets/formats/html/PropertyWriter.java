@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,8 @@ public class PropertyWriter extends AbstractMemberWriter {
         if (!properties.isEmpty()) {
             Content propertyDetailsHeader = getPropertyDetailsHeader(detailsList);
             Content memberList = getMemberList();
-            writer.tableOfContents.addLink(HtmlIds.PROPERTY_DETAIL, contents.propertyDetailsLabel);
-            writer.tableOfContents.pushNestedList();
+            writer.tableOfContents.addLink(HtmlIds.PROPERTY_DETAIL, contents.propertyDetailsLabel,
+                    TableOfContents.Level.FIRST);
 
             for (Element property : properties) {
                 currentProperty = (ExecutableElement)property;
@@ -90,11 +90,10 @@ public class PropertyWriter extends AbstractMemberWriter {
                 propertyContent.add(div);
                 memberList.add(getMemberListItem(propertyContent));
                 writer.tableOfContents.addLink(htmlIds.forProperty(currentProperty),
-                        Text.of(utils.getPropertyLabel(name(property))));
+                        Text.of(utils.getPropertyLabel(name(property))), TableOfContents.Level.SECOND);
             }
             Content propertyDetails = getPropertyDetails(propertyDetailsHeader, memberList);
             detailsList.add(propertyDetails);
-            writer.tableOfContents.popNestedList();
         }
     }
 
@@ -200,11 +199,10 @@ public class PropertyWriter extends AbstractMemberWriter {
     protected void addComments(ExecutableElement property, Content propertyContent) {
         TypeElement holder = (TypeElement)property.getEnclosingElement();
         if (!utils.getFullBody(property).isEmpty()) {
-            if (holder.equals(typeElement) ||
-                    (!utils.isPublic(holder) || utils.isLinkable(holder))) {
+            if (holder.equals(typeElement) || !utils.isVisible(holder)) {
                 writer.addInlineComment(property, propertyContent);
             } else {
-                if (!utils.hasHiddenTag(holder) && !utils.hasHiddenTag(property)) {
+                if (!utils.isHidden(holder) && !utils.isHidden(property)) {
                     Content link =
                             writer.getDocLink(HtmlLinkInfo.Kind.PLAIN,
                                     holder, property,

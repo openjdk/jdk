@@ -243,6 +243,10 @@ public:
   size_t predict_bytes_to_copy(G1HeapRegion* hr) const;
   size_t pending_cards_at_gc_start() const { return _pending_cards_at_gc_start; }
 
+  // GC efficiency for collecting the region based on the time estimate for
+  // merging and scanning incoming references.
+  double predict_gc_efficiency(G1HeapRegion* hr);
+
   // The minimum number of retained regions we will add to the CSet during a young GC.
   uint min_retained_old_cset_length() const;
   // Calculate the minimum number of old regions we'll add to the CSet
