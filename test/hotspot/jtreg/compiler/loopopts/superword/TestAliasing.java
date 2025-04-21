@@ -97,15 +97,16 @@ public class TestAliasing {
 
     public TestAliasing() {
         // Add all tests to list
-        tests.put("copy_B_sameIndex_noalias",      () -> { copy_B_sameIndex_noalias(AB, BB); });
-        tests.put("copy_B_sameIndex_alias",        () -> { copy_B_sameIndex_alias(AB, AB); });
-        tests.put("copy_B_differentIndex_noalias", () -> { copy_B_differentIndex_noalias(AB, BB); });
-        tests.put("copy_B_differentIndex_alias",   () -> { copy_B_differentIndex_alias(AB, AB); });
+        tests.put("copy_B_sameIndex_noalias",         () -> { copy_B_sameIndex_noalias(AB, BB); });
+        tests.put("copy_B_sameIndex_alias",           () -> { copy_B_sameIndex_alias(AB, AB); });
+        tests.put("copy_B_differentIndex_noalias",    () -> { copy_B_differentIndex_noalias(AB, BB); });
+        tests.put("copy_B_differentIndex_noalias_v2", () -> { copy_B_differentIndex_noalias_v2(); });
+        tests.put("copy_B_differentIndex_alias",      () -> { copy_B_differentIndex_alias(AB, AB); });
 
-        tests.put("copy_I_sameIndex_noalias",      () -> { copy_I_sameIndex_noalias(AI, BI); });
-        tests.put("copy_I_sameIndex_alias",        () -> { copy_I_sameIndex_alias(AI, AI); });
-        tests.put("copy_I_differentIndex_noalias", () -> { copy_I_differentIndex_noalias(AI, BI); });
-        tests.put("copy_I_differentIndex_alias",   () -> { copy_I_differentIndex_alias(AI, AI); });
+        tests.put("copy_I_sameIndex_noalias",         () -> { copy_I_sameIndex_noalias(AI, BI); });
+        tests.put("copy_I_sameIndex_alias",           () -> { copy_I_sameIndex_alias(AI, AI); });
+        tests.put("copy_I_differentIndex_noalias",    () -> { copy_I_differentIndex_noalias(AI, BI); });
+        tests.put("copy_I_differentIndex_alias",      () -> { copy_I_differentIndex_alias(AI, AI); });
         // TODO: remove old tests, add new ones.
         //       Especially also the not-working one from the benchmark.
 
@@ -145,6 +146,7 @@ public class TestAliasing {
     @Run(test = {"copy_B_sameIndex_noalias",
                  "copy_B_sameIndex_alias",
                  "copy_B_differentIndex_noalias",
+                 "copy_B_differentIndex_noalias_v2",
                  "copy_B_differentIndex_alias",
                  "copy_I_sameIndex_noalias",
                  "copy_I_sameIndex_alias",
@@ -230,6 +232,22 @@ public class TestAliasing {
     static void copy_B_differentIndex_noalias(byte[] a, byte[] b) {
         for (int i = 0; i < a.length; i++) {
           b[i] = a[i + INVAR_ZERO];
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.STORE_VECTOR, "= 0",
+                  ".*multiversion.*", "= 0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Same as "copy_B_differentIndex_noalias, but somehow loading from fields rather
+    // than arguments does not lead to vectorization.
+    // Probably related to JDK-8348096, issue with RangeCheck elimination.
+    static void copy_B_differentIndex_noalias_v2() {
+        for (int i = 0; i < AB.length; i++) {
+            BB[i] = AB[i + INVAR_ZERO];
         }
     }
 
