@@ -130,7 +130,7 @@ public class JdkXmlUtils {
     public static String getProperty(XMLSecurityManager xsm, XMLSecurityPropertyManager xspm,
             String property) {
         String value = null;
-        if  (xsm != null && (value = xsm.getLimitAsString(property)) != null) {
+        if (xsm != null && (value = xsm.getLimitAsString(property)) != null) {
             return value;
         }
         if (xspm != null) {

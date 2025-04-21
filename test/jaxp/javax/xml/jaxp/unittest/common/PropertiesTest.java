@@ -125,7 +125,7 @@ public class PropertiesTest {
         switch (processor) {
             case DOM:
                 DocumentBuilderFactory dbf = DocumentBuilderFactory.newDefaultInstance();
-                if (apiValue != null)  dbf.setAttribute(apiProperty, apiValue);
+                if (apiValue != null) dbf.setAttribute(apiProperty, apiValue);
                 ret1 = dbf.getAttribute(apiProperty);
                 break;
             case SAX:
