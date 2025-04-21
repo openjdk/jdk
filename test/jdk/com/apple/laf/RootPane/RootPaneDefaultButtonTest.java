@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,9 @@ import java.awt.event.*;
  * This presents two dialogs, each with two possible default buttons. The background color of the
  * default button should change based on which radio button is selected.
  * <p>
- * Note this test has never failed. This test was introduced because the resolution to JDK-8344697
- * involved removing code, and we wanted to double-check that the removed code didn't negatively
- * affect how default buttons are repainted.
+ * Note we've never expected this test to fail. This test was introduced because the resolution
+ * to JDK-8344697 involved removing code, and we wanted to double-check that the removed code
+ * didn't negatively affect how default buttons are repainted.
  */
 public class RootPaneDefaultButtonTest extends JDialog {
 
@@ -49,7 +49,7 @@ public class RootPaneDefaultButtonTest extends JDialog {
 
     public static void main(String[] args) throws Exception {
         if (!System.getProperty("os.name").contains("OS X")) {
-            System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
+            System.out.println("This test is for MacOS only. Automatically passed on: " + System.getProperty("os.name"));
             return;
         }
 
@@ -59,10 +59,12 @@ public class RootPaneDefaultButtonTest extends JDialog {
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
-                Rectangle r1 = new Rectangle(0, 20, window1.getWidth(), window1.getHeight());
+                Rectangle r1 = new Rectangle(0, 20,
+                        window1.getWidth(), window1.getHeight());
                 window1.setBounds(r1);
 
-                Rectangle r2 = new Rectangle((int) (r1.getMaxX() + 10), 20, window2.getWidth(), window2.getHeight());
+                Rectangle r2 = new Rectangle((int) (r1.getMaxX() + 10), 20,
+                        window2.getWidth(), window2.getHeight());
                 window2.setBounds(r2);
 
                 window1.setVisible(true);
@@ -134,15 +136,16 @@ public class RootPaneDefaultButtonTest extends JDialog {
             int x = expectation.button.getLocationOnScreen().x + 20;
             int y = expectation.button.getLocationOnScreen().y + 10;
 
-            // this step is optional, but it helps debug this test to see where we're sampling
-            // the pixel color from
+            // this mouseMove is optional, but it helps debug this test to see where
+            // we're sampling the pixel color from:
             robot.mouseMove(x, y);
+
             Color c = robot.getPixelColor(x, y);
             if (expectation.appearAsDefault) {
                 if (defaultColor == null) {
                     defaultColor = c;
                 } else {
-                    throw new IllegalStateException("there should only be at most 1 default color");
+                    throw new IllegalStateException("there should only be at most 1 default button sampled");
                 }
             } else {
                 if (nonDefaultColor == null) {
@@ -159,12 +162,15 @@ public class RootPaneDefaultButtonTest extends JDialog {
     }
 
     private static boolean isSimilar(Color c1, Color c2) {
-        if (Math.abs(c1.getRed() - c2.getRed()) > 15)
+        if (Math.abs(c1.getRed() - c2.getRed()) > 15) {
             return false;
-        if (Math.abs(c1.getGreen() - c2.getGreen()) > 15)
+        }
+        if (Math.abs(c1.getGreen() - c2.getGreen()) > 15) {
             return false;
-        if (Math.abs(c1.getBlue() - c2.getBlue()) > 15)
+        }
+        if (Math.abs(c1.getBlue() - c2.getBlue()) > 15) {
             return false;
+        }
         return true;
     }
 
