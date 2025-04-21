@@ -1921,6 +1921,9 @@ class MutableBigInteger {
      *
      * @implNote The implementation is based on the material in Henry S. Warren,
      * Jr., <i>Hacker's Delight (2nd ed.)</i> (Addison Wesley, 2013), 279-282.
+     * <a href="https://github.com/user-attachments/files/19785045/nth_root_newton_proof_integers.pdf">
+     * Here</a> is a proof for the convergence of the recurrence used by the
+     * algorithm.
      *
      * @return the integer {@code n}th of {@code this}
      */
