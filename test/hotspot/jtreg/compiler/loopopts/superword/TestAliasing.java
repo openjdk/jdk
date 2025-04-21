@@ -58,10 +58,14 @@ public class TestAliasing {
     public static int INVAR_ZERO = 0;
 
     // Original data.
+    public static byte[] ORIG_AB = fillRandom(new byte[SIZE]);
+    public static byte[] ORIG_BB = fillRandom(new byte[SIZE]);
     public static int[] ORIG_AI = fillRandom(new int[SIZE]);
     public static int[] ORIG_BI = fillRandom(new int[SIZE]);
 
     // The data we use in the tests. It is initialized from ORIG_* every time.
+    public static byte[] AB = new byte[SIZE];
+    public static byte[] BB = new byte[SIZE];
     public static int[] AI = new int[SIZE];
     public static int[] BI = new int[SIZE];
 
@@ -112,16 +116,24 @@ public class TestAliasing {
     }
 
     public static void init() {
+        System.arraycopy(ORIG_AB, 0, AB, 0, SIZE);
+        System.arraycopy(ORIG_BB, 0, BB, 0, SIZE);
         System.arraycopy(ORIG_AI, 0, AI, 0, SIZE);
         System.arraycopy(ORIG_BI, 0, BI, 0, SIZE);
     }
 
     public static Object snapshotCopy() {
-        return new Object[] { AI.clone(), BI.clone() };
+        return new Object[] {
+            AB.clone(), BB.clone(),
+            AI.clone(), BI.clone()
+        };
     }
 
     public static Object snapshot() {
-        return new Object[] { AI, BI };
+        return new Object[] {
+            AB, BB,
+            AI, BI
+        };
     }
 
     @Warmup(100)
@@ -146,6 +158,13 @@ public class TestAliasing {
                 throw new RuntimeException("Verify failed for " + name, e);
             }
         }
+    }
+
+    static byte[] fillRandom(byte[] a) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = (byte)(int)INT_GEN.next();
+        }
+        return a;
     }
 
     static int[] fillRandom(int[] a) {
