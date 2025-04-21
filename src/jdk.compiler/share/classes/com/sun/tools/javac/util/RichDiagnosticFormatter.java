@@ -556,7 +556,7 @@ public class RichDiagnosticFormatter extends
 
         @Override
         public Void visitTypeVar(TypeVar t, Void ignored) {
-            t = (TypeVar)t.stripMetadataIfNeeded();
+            t = (TypeVar)t.stripMetadata();
             if (indexOf(t, WhereClauseKind.TYPEVAR) == -1) {
                 //access the bound type and skip error types
                 Type bound = t.getUpperBound();

@@ -445,8 +445,8 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
         @Override
         public R visitDeclared(DeclaredType t, P p) {
             scan(t.getTypeArguments(), p);
-            // don't scan enclosing
-            scan(types.directSupertypes(t), p);
+            // don't scan enclosing 
+            // don't scan super types
             return super.visitDeclared(t, p);
         }
 
@@ -645,7 +645,7 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     @Test(posn=5, annoType=TA.class, expect="16")
     public class Inner5<T extends Object & @TA(16) Cloneable & Serializable> {}
 
-    @Test(posn=7, annoType=TA.class, expect="17")
+    @Test(posn=6, annoType=TA.class, expect="17")
     public class Inner6<T extends Object & Cloneable & @TA(17) Serializable> {}
 
     // Test annotated bounds
@@ -734,6 +734,6 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     }
 
     @Test(posn=1, annoType=TA.class, expect="130")
-    @Test(posn=23, annoType=TA.class, expect="131")
+    @Test(posn=2, annoType=TA.class, expect="131")
     public Map<@TA(130) String, @TA(131) String> f130;
 }
