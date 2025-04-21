@@ -95,7 +95,7 @@ public class WheelScrollEnabled extends Frame {
         pl2.add(cb2);
 
         add(pl2, BorderLayout.SOUTH);
-        setSize (400,200);
+        setSize(400, 200);
     }
 
     class ControlListener implements ItemListener {
