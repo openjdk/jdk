@@ -162,7 +162,7 @@ public class TestAliasing {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Should always vectorize, no speculative runtime check required.
     static void copy_I_sameIndex_noalias(int[] a, int[] b) {
-        for (int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < a.length; i++) {
           b[i] = a[i];
         }
     }
@@ -176,7 +176,7 @@ public class TestAliasing {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Should always vectorize, no speculative runtime check required.
     static void copy_I_sameIndex_alias(int[] a, int[] b) {
-        for (int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < a.length; i++) {
           b[i] = a[i];
         }
     }
@@ -200,7 +200,7 @@ public class TestAliasing {
     // We use speculative runtime checks, they never fail, so no multiversioning required.
     // With AlignVector we cannot prove that both accesses are alignable.
     static void copy_I_differentIndex_noalias(int[] a, int[] b) {
-        for (int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < a.length; i++) {
           b[i] = a[i + INVAR_ZERO];
         }
     }
@@ -224,7 +224,7 @@ public class TestAliasing {
     // We use speculative runtime checks, it fails and so we do need multiversioning.
     // With AlignVector we cannot prove that both accesses are alignable.
     static void copy_I_differentIndex_alias(int[] a, int[] b) {
-        for (int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < a.length; i++) {
           b[i] = a[i + INVAR_ZERO];
         }
     }
