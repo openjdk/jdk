@@ -47,6 +47,7 @@ public class bug4459267 {
 
             SwingUtilities.invokeAndWait(() -> createTestUI());
             robot.waitForIdle();
+            robot.delay(1000);
 
             robot.keyPress(KeyEvent.VK_PAGE_UP);
             robot.keyRelease(KeyEvent.VK_PAGE_UP);

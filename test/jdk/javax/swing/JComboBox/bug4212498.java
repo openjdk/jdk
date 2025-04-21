@@ -31,7 +31,6 @@ import javax.swing.JPanel;
 /*
  * @test
  * @bug 4212498
- * @key headful
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4212498

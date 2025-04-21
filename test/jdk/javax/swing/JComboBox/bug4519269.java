@@ -51,9 +51,10 @@ public class bug4519269 {
 
             SwingUtilities.invokeAndWait(() -> createTestUI());
             robot.waitForIdle();
+            robot.delay(1000);
 
-            SwingUtilities.invokeAndWait (() -> p = combo.getLocationOnScreen());
-            robot.mouseMove(p.x+5, p.y+5);
+            SwingUtilities.invokeAndWait(() -> p = combo.getLocationOnScreen());
+            robot.mouseMove(p.x + 5, p.y + 5);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
@@ -81,9 +82,11 @@ public class bug4519269 {
 
     static class CustomString {
         String string;
+
         public CustomString(String s) {
             string = s;
         }
+
         public String toString() {
             return null;
         }
