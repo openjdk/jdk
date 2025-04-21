@@ -797,7 +797,7 @@ void Metaspace::global_initialize() {
     }
 
     // Mark class space as such
-    MemTracker::record_virtual_memory_tag((address)rs.base(), mtClass);
+    MemTracker::record_virtual_memory_tag(rs, mtClass);
 
     // Initialize space
     Metaspace::initialize_class_space(rs);
