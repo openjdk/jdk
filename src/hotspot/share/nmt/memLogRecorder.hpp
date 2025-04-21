@@ -147,7 +147,7 @@ public:
   static void record_virtual_memory_reserve_and_commit(void* addr, size_t size, const NativeCallStack& stack, MemTag mem_tag = mtNone);
   static void record_virtual_memory_commit(void* addr, size_t size, const NativeCallStack& stack);
   static void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split, MemTag flag, MemTag mem_tag_split);
-  static void record_virtual_memory_tag(void* addr, MemTag mem_tag);
+  static void record_virtual_memory_tag(void* addr, size_t size, MemTag mem_tag);
 
 private:
   static void _record(NMT_VirtualMemoryLogRecorder::Type type, MemTag mem_tag, MemTag mem_tag_split, size_t size, size_t size_split, address ptr, const NativeCallStack *stack);
@@ -187,7 +187,7 @@ public:
   }
   static void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split, MemTag flag, MemTag mem_tag_split) { // TODO
   }
-  static void record_virtual_memory_tag(void* addr, MemTag mem_tag) { // TODO
+  static void record_virtual_memory_tag(void* addr, size_t size, MemTag mem_tag) { // TODO
   }
 };
 

@@ -34,7 +34,7 @@
 //
 // #1 hs_nmt_pid22770_allocs_record.log (is the chronological record of the the desired operations)
 // OR
-// #1 hs_nmt_pid22918_virtual_allocs_record.log (is the chronological record of the desired operations)
+// #1 hs_nmt_pid22770_virtual_allocs_record.log (is the chronological record of the desired operations)
 // #2 hs_nmt_pid22770_info_record.log (is the record of default NMT memory overhead and the NMT state)
 // #3 hs_nmt_pid22770_threads_record.log (is the record of thread names that can be retrieved later when processing)
 //
@@ -751,7 +751,7 @@ void NMT_VirtualMemoryLogRecorder::replay(const int pid) {
           break;
         case NMT_VirtualMemoryLogRecorder::Type::TAG:
           //fprintf(stderr, "[record_virtual_memory_type(%p, %ld, %p)\n", e->ptr, e->size, &stack);fflush(stderr);
-          MemTracker::record_virtual_memory_tag(e->ptr, mem_tag);
+          MemTracker::record_virtual_memory_tag(e->ptr, e->size, mem_tag);
           //fprintf(stderr, "]\n");fflush(stderr);
           break;
         default:
@@ -847,8 +847,8 @@ void NMT_VirtualMemoryLogRecorder::record_virtual_memory_split_reserved(void* ad
   NMT_VirtualMemoryLogRecorder::_record(Type::SPLIT_RESERVED, mem_tag, split_mem_tag, size, split, (address)addr, nullptr);
 }
 
-void NMT_VirtualMemoryLogRecorder::record_virtual_memory_tag(void* addr, MemTag mem_tag) {
-  NMT_VirtualMemoryLogRecorder::_record(Type::TAG, mem_tag, mtNone, 0, 0, (address)addr, nullptr);
+void NMT_VirtualMemoryLogRecorder::record_virtual_memory_tag(void* addr, size_t size, MemTag mem_tag) {
+  NMT_VirtualMemoryLogRecorder::_record(Type::TAG, mem_tag, mtNone, size, 0, (address)addr, nullptr);
 }
 
 #else
