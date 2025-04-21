@@ -73,7 +73,7 @@ public class HoveringAndDraggingTest {
 
         frame = new Frame("TextArea cursor icon test");
         frame.setSize(300, 300);
-        frame.setLocation(450, 350);
+        frame.setLocation(450, 400);
         frame.add(panel);
         frame.setVisible(true);
     }
@@ -97,7 +97,7 @@ public class HoveringAndDraggingTest {
                 6. If cursor behaves as described in items 2-3-4-5,
                    then test is PASS otherwise it FAILED.
                  """;
-        TextArea textArea = new TextArea(INSTRUCTIONS);
+        TextArea textArea = new TextArea(INSTRUCTIONS, 16, 65, TextArea.SCROLLBARS_NONE);
         Button passBtn = new Button("PASS");
         Button failBtn = new Button("FAIL");
         Panel btnPanel = new Panel(new GridBagLayout());
