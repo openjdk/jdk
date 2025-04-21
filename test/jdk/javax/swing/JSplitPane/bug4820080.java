@@ -57,15 +57,15 @@ public class bug4820080 {
 
     public static JFrame createTestUI() {
         JFrame frame = new JFrame("bug4820080");
-        UIManager.put("SplitPaneDivider.draggingColor", Color.green);
+        UIManager.put("SplitPaneDivider.draggingColor", Color.GREEN);
 
         Box box = new Box(BoxLayout.Y_AXIS);
         frame.add(box);
 
         JPanel jleft = new JPanel();
-        jleft.setBackground(Color.darkGray);
+        jleft.setBackground(Color.DARK_GRAY);
         JPanel jright = new JPanel();
-        jright.setBackground(Color.darkGray);
+        jright.setBackground(Color.DARK_GRAY);
         JSplitPane jsp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, jleft, jright);
         jsp.setContinuousLayout(false);
         box.add(jsp);
@@ -75,9 +75,9 @@ public class bug4820080 {
         box.add(Box.createVerticalStrut(5));
 
         Panel left = new Panel();
-        left.setBackground(Color.darkGray);
+        left.setBackground(Color.DARK_GRAY);
         Panel right = new Panel();
-        right.setBackground(Color.darkGray);
+        right.setBackground(Color.DARK_GRAY);
         JSplitPane sp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, left, right);
         sp.setContinuousLayout(false);
         box.add(sp);
