@@ -3596,7 +3596,7 @@ instruct vrotate_right_vi(vReg dst, vReg src, immI shift) %{
 
 instruct vrotate_right_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
   match(Set dst_src (RotateRightV (Binary dst_src shift) v0));
-  format %{ "vrotate_right_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  format %{ "vrotate_right_masked $dst_src, $dst_src, $shift, $v0\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -3609,7 +3609,7 @@ instruct vrotate_right_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
 // Only the low log2(SEW) bits of shift value are used, all other bits are ignored.
 instruct vrotate_right_vx_masked(vReg dst_src, iRegIorL2I shift, vRegMask_V0 v0) %{
   match(Set dst_src (RotateRightV (Binary dst_src (Replicate shift)) v0));
-  format %{ "vrotate_right_vx_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  format %{ "vrotate_right_vx_masked $dst_src, $dst_src, $shift, $v0\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -3621,7 +3621,7 @@ instruct vrotate_right_vx_masked(vReg dst_src, iRegIorL2I shift, vRegMask_V0 v0)
 
 instruct vrotate_right_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   match(Set dst_src (RotateRightV (Binary dst_src shift) v0));
-  format %{ "vrotate_right_vi_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  format %{ "vrotate_right_vi_masked $dst_src, $dst_src, $shift, $v0\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint32_t bits = type2aelembytes(bt) * 8;
@@ -3684,7 +3684,7 @@ instruct vrotate_left_vi(vReg dst, vReg src, immI shift) %{
 
 instruct vrotate_left_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
   match(Set dst_src (RotateLeftV (Binary dst_src shift) v0));
-  format %{ "vrotate_left_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  format %{ "vrotate_left_masked $dst_src, $dst_src, $shift, $v0\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -3697,7 +3697,7 @@ instruct vrotate_left_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
 // Only the low log2(SEW) bits of shift value are used, all other bits are ignored.
 instruct vrotate_left_vx_masked(vReg dst_src, iRegIorL2I shift, vRegMask_V0 v0) %{
   match(Set dst_src (RotateLeftV (Binary dst_src (Replicate shift)) v0));
-  format %{ "vrotate_left_vx_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  format %{ "vrotate_left_vx_masked $dst_src, $dst_src, $shift, $v0\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -3709,7 +3709,7 @@ instruct vrotate_left_vx_masked(vReg dst_src, iRegIorL2I shift, vRegMask_V0 v0) 
 
 instruct vrotate_left_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   match(Set dst_src (RotateLeftV (Binary dst_src shift) v0));
-  format %{ "vrotate_left_vi_masked $dst_src, $dst_src, $shift, v0.t\t" %}
+  format %{ "vrotate_left_vi_masked $dst_src, $dst_src, $shift, $v0\t" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint32_t bits = type2aelembytes(bt) * 8;
