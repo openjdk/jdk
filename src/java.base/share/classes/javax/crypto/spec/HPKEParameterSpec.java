@@ -51,8 +51,10 @@ import java.util.Objects;
  * An {@code HPKEParameterSpec} object can be created in two ways:
  * <ul>
  * <li> {@link #of()} creates an instance with unspecified KEM, KDF, and AEAD
- * algorithms, which will be determined by the implementation based on the key
- * provided to {@code init()}. This instance can only be used by the sender.
+ * algorithm identifiers, which will be determined by the implementation based
+ * on the key provided to {@code init()}. This instance can only be used by the
+ * sender. If an implementation does not support initializing with default
+ * algorithm identifiers, an {@code InvalidAlgorithmParameterException} will be thrown.
  * <li> {@link #of(int, int, int)} creates an instance with explicitly
  * specified KEM, KDF, and AEAD algorithm identifiers. This instance can be
  * used by both the sender and the receiver.
@@ -75,15 +77,17 @@ import java.util.Objects;
  * Application-supplied information can be provided using the
  * {@link #info(byte[])} method by both sides.
  * <li>
- * If HPKE modes {@code mode_auth} or {@code mode_auth_psk} are used,
- * the asymmetric keys for authentication must be provided using the
- * {@link #authKey(AsymmetricKey)} method. Precisely, the sender must call
- * this method with its own private key and the recipient must call it with
- * the sender's public key.
+ * To use the HPKE mode {@code mode_auth}, the asymmetric keys for authentication
+ * must be provided using the {@link #authKey(AsymmetricKey)} method. Precisely,
+ * the sender must call this method with its own private key and the recipient
+ * must call it with the sender's public key.
  * <li>
- * If HPKE modes {@code mode_psk} or {@code mode_auth_psk} are used,
- * the pre-shared key for authentication and its identifier must be provided
- * using the {@link #psk(SecretKey, byte[])} method by both sides.
+ * To use the HPKE mode {@code mode_psk}, the pre-shared key for authentication
+ * and its identifier must be provided using the {@link #psk(SecretKey, byte[])}
+ * method by both sides.
+ * <li>
+ * To use the HPKE mode {@code mode_auth_psk}, both {@link #authKey(AsymmetricKey)}
+ * and {@link #psk(SecretKey, byte[])} methods must be called as described above.
  * <li>
  * In HPKE, a shared secret is negotiated during the KEM step and a key
  * encapsulation message must be transmitted from the sender to the recipient

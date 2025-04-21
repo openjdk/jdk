@@ -32,19 +32,19 @@ import java.util.Arrays;
 class PackageSnippets {
     public static void main(String[] args) throws Exception {
         // @start region="hpke-spec-example"
-        // Key pair generation
+        // Recipient key pair generation
         KeyPairGenerator g = KeyPairGenerator.getInstance("X25519");
         KeyPair kp = g.generateKeyPair();
 
         // The HPKE sender side is initialized with the recipient's public key
         // and default HPKEParameterSpec with an application-supplied info.
-        Cipher sender = Cipher.getInstance("HPKE");
+        Cipher senderCipher = Cipher.getInstance("HPKE");
         HPKEParameterSpec ps = HPKEParameterSpec.of()
                 .info("app_info".getBytes(StandardCharsets.UTF_8));
-        sender.init(Cipher.ENCRYPT_MODE, kp.getPublic(), ps);
+        senderCipher.init(Cipher.ENCRYPT_MODE, kp.getPublic(), ps);
 
         // Retrieve the actual parameters used from the sender.
-        HPKEParameterSpec actual = sender.getParameters()
+        HPKEParameterSpec actual = senderCipher.getParameters()
                 .getParameterSpec(HPKEParameterSpec.class);
 
         // Retrieve the key encapsulation message (the KEM output) from the sender.
@@ -53,18 +53,18 @@ class PackageSnippets {
 
         // The HPKE recipient side is initialized with its own private key,
         // the same algorithm identifiers as used by the sender,
-        // and the key encapsulation message from the sender
-        Cipher recipient = Cipher.getInstance("HPKE");
+        // and the key encapsulation message from the sender.
+        Cipher recipientCipher = Cipher.getInstance("HPKE");
         HPKEParameterSpec pr = HPKEParameterSpec
                 .of(actual.kem_id(), actual.kdf_id(), actual.aead_id())
                 .info("app_info".getBytes(StandardCharsets.UTF_8))
                 .encapsulation(kemEncap);
-        recipient.init(Cipher.DECRYPT_MODE, kp.getPrivate(), pr);
+        recipientCipher.init(Cipher.DECRYPT_MODE, kp.getPrivate(), pr);
 
-        // Secure communication between the 2 sides
+        // Encryption and decryption
         byte[] msg = "Hello World".getBytes(StandardCharsets.UTF_8);
-        byte[] ct = sender.doFinal(msg);
-        byte[] pt = recipient.doFinal(ct);
+        byte[] ct = senderCipher.doFinal(msg);
+        byte[] pt = recipientCipher.doFinal(ct);
 
         assert Arrays.equals(msg, pt);
         // @end

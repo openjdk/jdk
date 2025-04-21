@@ -99,8 +99,10 @@ public class HPKE extends CipherSpi {
     protected int engineGetBlockSize() {
         if (state == ENCRYPT_AND_EXPORT || state == AFTER_FINAL) {
             return impl.aead.cipher.getBlockSize();
+        } else if (state == EXPORT_ONLY) {
+            return 0;
         } else {
-            throw new IllegalStateException("No AEAD cipher");
+            throw new IllegalStateException("AEAD cipher not initialized yet");
         }
     }
 
@@ -108,8 +110,10 @@ public class HPKE extends CipherSpi {
     protected int engineGetOutputSize(int inputLen) {
         if (state == ENCRYPT_AND_EXPORT || state == AFTER_FINAL) {
             return impl.aead.cipher.getOutputSize(inputLen);
+        } else if (state == EXPORT_ONLY) {
+            return 0;
         } else {
-            throw new IllegalStateException("No AEAD cipher");
+            throw new IllegalStateException("AEAD cipher not initialized yet");
         }
     }
 
@@ -153,7 +157,7 @@ public class HPKE extends CipherSpi {
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         impl = new Impl(opmode);
         if (!(key instanceof AsymmetricKey ak)) {
-            throw new InvalidKeyException("Not asymmetric key");
+            throw new InvalidKeyException("Not an asymmetric key");
         }
         if (params == null) {
             impl.init(ak, HPKEParameterSpec.of(), random);
@@ -174,9 +178,12 @@ public class HPKE extends CipherSpi {
     @Override
     protected void engineInit(int opmode, Key key,
             AlgorithmParameters params, SecureRandom random)
-            throws InvalidAlgorithmParameterException {
-        throw new InvalidAlgorithmParameterException(
-                "Does not support init from AlgorithmParameters");
+            throws InvalidKeyException, InvalidAlgorithmParameterException {
+        try {
+            engineInit(opmode, key, params.getParameterSpec(HPKEParameterSpec.class), random);
+        } catch (InvalidParameterSpecException e) {
+            throw new InvalidAlgorithmParameterException("Cannot extract HPKEParameterSpec", e);
+        }
     }
 
     // state is ENCRYPT_AND_EXPORT after this call succeeds

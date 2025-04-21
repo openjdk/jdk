@@ -62,9 +62,14 @@ public class Functions {
 
             c.init(Cipher.ENCRYPT_MODE, kp.getPublic());
             var ct = c.doFinal(msg);
-            var params = c.getParameters().getParameterSpec(HPKEParameterSpec.class);
 
-            c.init(Cipher.DECRYPT_MODE, kp.getPrivate(), params);
+            var ap = c.getParameters();
+            var spec = ap.getParameterSpec(HPKEParameterSpec.class);
+
+            c.init(Cipher.DECRYPT_MODE, kp.getPrivate(), ap);
+            Asserts.assertEqualsByteArray(msg, c.doFinal(ct));
+
+            c.init(Cipher.DECRYPT_MODE, kp.getPrivate(), spec);
             Asserts.assertEqualsByteArray(msg, c.doFinal(ct));
 
             c.init(Cipher.ENCRYPT_MODE, kp.getPublic(), HPKEParameterSpec.of()
@@ -72,7 +77,7 @@ public class Functions {
                     .info(info)
                     .psk(psk, psk_id));
             ct = c.doFinal(msg);
-            params = c.getParameters().getParameterSpec(HPKEParameterSpec.class);
+            var params = c.getParameters().getParameterSpec(HPKEParameterSpec.class);
 
             c.init(Cipher.DECRYPT_MODE, kp.getPrivate(), params
                     .authKey(kp2.getPublic()));

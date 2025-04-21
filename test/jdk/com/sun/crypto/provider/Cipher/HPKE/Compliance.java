@@ -216,15 +216,15 @@ public class Compliance {
 
         // HPKE with encryption
         c1.init(Cipher.ENCRYPT_MODE, kp.getPublic());
-        c1.getBlockSize();
-        c1.getOutputSize(100);
+        Asserts.assertEquals(16, c1.getBlockSize());
+        Asserts.assertEquals(116, c1.getOutputSize(100));
         c1.updateAAD(aad);
         var ct = c1.doFinal(new byte[2]);
 
         c2.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
                 defaultParams.encapsulation(c1.getIV()));
-        c2.getBlockSize();
-        c2.getOutputSize(100);
+        Asserts.assertEquals(16, c2.getBlockSize());
+        Asserts.assertEquals(84, c2.getOutputSize(100));
         c2.updateAAD(aad);
         Asserts.assertEqualsByteArray(c2.doFinal(ct), new byte[2]);
 
