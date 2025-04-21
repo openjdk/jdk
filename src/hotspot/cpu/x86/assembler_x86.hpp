@@ -822,6 +822,9 @@ private:
   int  evex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                  InstructionAttr *attributes, bool no_flags = false);
 
+  void evex_prefix_and_encode_arith_ndd(int dst_enc, int nds_enc, VexSimdPrefix pre, VexOpcode opc,
+                                        InstructionAttr *attributes, bool no_flags, int op1, int op2, Register dst, int32_t imm32, bool use_prefixq = false);
+
   void evex_shift_ndd_and_int16(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                 InstructionAttr *attributes, int byte1, int byte2, bool no_flags, bool use_prefixq = false);
 
@@ -844,8 +847,7 @@ private:
   bool is_demotable(bool no_flags, int dst_enc, int nds_enc);
   void emit_arith_b(int op1, int op2, Register dst, int imm8);
 
-  void emit_arith(int op1, int op2, Register dst, int32_t imm32);
-  void emit_arith_ndd(int op1, int op2, Register dst, int32_t imm32);
+  void emit_arith(int op1, int op2, Register dst, int32_t imm32, bool demote = true);
   // Force generation of a 4 byte immediate value even if it fits into 8bit
   void emit_arith_imm32(int op1, int op2, Register dst, int32_t imm32);
   void emit_arith(int op1, int op2, Register dst, Register src);
