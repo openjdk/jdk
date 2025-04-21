@@ -162,7 +162,7 @@ public final class ModuleBootstrap {
             bootLayer = archivedBootLayer.bootLayer();
             BootLoader.getUnnamedModule(); // trigger <clinit> of BootLoader.
             CDS.defineArchivedModules(ClassLoaders.platformClassLoader(), ClassLoaders.appClassLoader());
-            boolean extraExportsOrOpens = addExtraExportsAndOpens(bootLayer);
+            addExtraExportsAndOpens(bootLayer);
 
             // assume boot layer has at least one module providing a service
             // that is mapped to the application class loader.
@@ -452,7 +452,7 @@ public final class ModuleBootstrap {
 
         // --add-reads, --add-exports/--add-opens
         addExtraReads(bootLayer);
-        boolean extraExportsOrOpens = addExtraExportsAndOpens(bootLayer);
+        addExtraExportsAndOpens(bootLayer);
 
         // add enable native access
         addEnableNativeAccess(bootLayer);
@@ -722,15 +722,13 @@ public final class ModuleBootstrap {
      * Process the --add-exports and --add-opens options to export/open
      * additional packages specified on the command-line.
      */
-    private static boolean addExtraExportsAndOpens(ModuleLayer bootLayer) {
-        boolean extraExportsOrOpens = false;
+    private static void addExtraExportsAndOpens(ModuleLayer bootLayer) {
 
         // --add-exports
         String prefix = "jdk.module.addexports.";
         Map<String, List<String>> extraExports = decode(prefix);
         if (!extraExports.isEmpty()) {
             addExtraExportsOrOpens(bootLayer, extraExports, false);
-            extraExportsOrOpens = true;
         }
 
 
@@ -739,10 +737,8 @@ public final class ModuleBootstrap {
         Map<String, List<String>> extraOpens = decode(prefix);
         if (!extraOpens.isEmpty()) {
             addExtraExportsOrOpens(bootLayer, extraOpens, true);
-            extraExportsOrOpens = true;
         }
 
-        return extraExportsOrOpens;
     }
 
     private static void addExtraExportsOrOpens(ModuleLayer bootLayer,
