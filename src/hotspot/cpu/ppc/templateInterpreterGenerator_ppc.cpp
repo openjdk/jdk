@@ -2009,12 +2009,6 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   return entry_point;
 }
 
-// Not supported
-address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
-
 // =============================================================================
 // Exceptions
 
@@ -2166,12 +2160,12 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   {
     __ pop_ptr(Rexception);
     __ verify_oop(Rexception);
-    __ std(Rexception, in_bytes(JavaThread::vm_result_offset()), R16_thread);
+    __ std(Rexception, in_bytes(JavaThread::vm_result_oop_offset()), R16_thread);
 
     __ unlock_if_synchronized_method(vtos, /* throw_monitor_exception */ false, true);
     __ notify_method_exit(false, vtos, InterpreterMacroAssembler::SkipNotifyJVMTI, false);
 
-    __ get_vm_result(Rexception);
+    __ get_vm_result_oop(Rexception);
 
     // We are done with this activation frame; find out where to go next.
     // The continuation point will be an exception handler, which expects
