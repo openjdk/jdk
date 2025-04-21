@@ -42,7 +42,7 @@ public class CharUndefinedTest extends Frame implements KeyListener {
     static String INSTRUCTIONS = """
             Click on the text field inside the window named "Check KeyChar values".
             Of any of the keys mentioned in this list that exist on your keyboard
-            press once every of them and also press them in two-key combinations such as
+            press each of the listed keys once and also press them in two-key combinations such as
             Control-Shift or Alt-Control.
             The list of keys is: "Control, Shift, Meta, Alt, Command, Option".
             After that press all function keys from F1 to F12 once,
