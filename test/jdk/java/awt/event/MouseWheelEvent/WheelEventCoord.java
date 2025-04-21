@@ -54,7 +54,7 @@ public class WheelEventCoord extends Frame {
 
     public WheelEventCoord() {
         super("Wheel Event Coordinates");
-        setLayout(new GridLayout(3,1));
+        setLayout(new GridLayout(3, 1));
 
         add(new BigButton("Button 1"));
         add(new BigButton("Button 2"));
