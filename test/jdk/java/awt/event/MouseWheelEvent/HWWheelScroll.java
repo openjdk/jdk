@@ -111,7 +111,7 @@ public class HWWheelScroll {
     public static TextArea makeTextArea(int policy, int textShape) {
         TextArea ta = new TextArea("", 0, 0, policy);
         if (textShape == TEXT_TALL) {
-            for(int i = 0; i < 50 ; i++) {
+            for (int i = 0; i < 50 ; i++) {
                 ta.append(i + "\n");
             }
         } else if (textShape == TEXT_WIDE) {
