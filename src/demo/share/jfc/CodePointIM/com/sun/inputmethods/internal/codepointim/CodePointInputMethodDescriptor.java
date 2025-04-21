@@ -63,7 +63,7 @@ public class CodePointInputMethodDescriptor implements InputMethodDescriptor {
      * Creates a new instance of the Code Point input method.
      *
      * @return a new instance of the Code Point input method
-     * @exception Exception any exception that may occur while creating the
+     * @throws Exception any exception that may occur while creating the
      * input method instance
      */
     public InputMethod createInputMethod() throws Exception {

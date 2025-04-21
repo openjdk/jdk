@@ -148,9 +148,6 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 #define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
 
 class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
-  friend class LightweightSynchronizer;
-  friend class ObjectSynchronizer;
-  friend class ObjectWaiter;
   friend class VMStructs;
   JVMCI_ONLY(friend class JVMCIVMStructs;)
 
@@ -334,6 +331,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      add_to_contentions(int value);
   intx      recursions() const                                         { return _recursions; }
   void      set_recursions(size_t recursions);
+  void      increment_recursions(JavaThread* current);
 
   // JVM/TI GetObjectMonitorUsage() needs this:
   int waiters() const;
@@ -385,6 +383,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      wait(jlong millis, bool interruptible, TRAPS);
   void      notify(TRAPS);
   void      notifyAll(TRAPS);
+  void      quick_notify(JavaThread* current);
+  void      quick_notifyAll(JavaThread* current);
 
   void      print() const;
 #ifdef ASSERT
@@ -422,13 +422,12 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   bool      short_fixed_spin(JavaThread* current, int spin_count, bool adapt);
   void      exit_epilog(JavaThread* current, ObjectWaiter* Wakee);
 
+ public:
   // Deflation support
   bool      deflate_monitor(Thread* current);
- private:
   void      install_displaced_markword_in_object(const oop obj);
 
   // JFR support
-public:
   static bool is_jfr_excluded(const Klass* monitor_klass);
 };
 
