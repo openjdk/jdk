@@ -34,7 +34,7 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  product(uintx, ShenandoahRateAccelerationSampleSize, 4, EXPERIMENTAL,     \
+  product(uintx, ShenandoahRateAccelerationSampleSize, 6, EXPERIMENTAL,     \
           "In selected ShenandoahControlIntervals (if 2 ms has passed "     \
           "since previous control interval executed), "                     \
           "we compute the allocation rate since the previous rate was "     \
@@ -49,7 +49,7 @@
           "triggering excess collections.")                                 \
                                                                             \
   product(uintx, ShenandoahMomentaryAllocationRateSpikeSampleSize,          \
-          1, EXPERIMENTAL,                                                  \
+          3, EXPERIMENTAL,                                                  \
           "In selected ShenandoahControlIntervals (if 2 ms has passed "     \
           "since previous control interval executed), we compute "          \
           "the allocation rate since the previous rate was sampled. "       \
