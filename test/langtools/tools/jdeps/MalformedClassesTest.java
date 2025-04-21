@@ -103,7 +103,7 @@ class MalformedClassesTest {
         }
 
         return Stream.of(
-                Arguments.of("directory", flatDir, "one/One.class"),
+                Arguments.of("directory", flatDir, "One.class"),
                 Arguments.of("jar", jarPath, "one/One.class (malformed-signature.jar)")
         );
     }
