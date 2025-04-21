@@ -2293,10 +2293,6 @@ public final class System {
                 return VirtualThread.defaultScheduler();
             }
 
-            public Stream<ScheduledExecutorService> virtualThreadDelayedTaskSchedulers() {
-                return VirtualThread.delayedTaskSchedulers();
-            }
-
             public StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,
                                                       ContinuationScope contScope,
                                                       Continuation continuation) {

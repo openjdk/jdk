@@ -967,6 +967,41 @@ AC_DEFUN([JDKOPT_SETUP_MACOSX_SIGNING],
 
 ################################################################################
 #
+# Setup a hook to invoke a script that runs for file produced by the native
+# compilation steps, after linking.
+# Parameter is the path to the script to be called.
+#
+AC_DEFUN([JDKOPT_SETUP_SIGNING_HOOK],
+[
+  UTIL_ARG_WITH(NAME: signing-hook, TYPE: executable,
+      OPTIONAL: true, DEFAULT: "",
+      DESC: [specify path to script used to code sign native binaries]
+  )
+
+  AC_MSG_CHECKING([for signing hook])
+  if test "x$SIGNING_HOOK" != x; then
+    UTIL_FIXUP_EXECUTABLE(SIGNING_HOOK)
+    AC_MSG_RESULT([$SIGNING_HOOK])
+  else
+    AC_MSG_RESULT([none])
+  fi
+  AC_SUBST(SIGNING_HOOK)
+])
+
+################################################################################
+#
+# Setup how javac should handle warnings.
+#
+AC_DEFUN([JDKOPT_SETUP_JAVA_WARNINGS],
+[
+  UTIL_ARG_ENABLE(NAME: java-warnings-as-errors, DEFAULT: true,
+      RESULT: JAVA_WARNINGS_AS_ERRORS,
+      DESC: [consider java warnings to be an error])
+  AC_SUBST(JAVA_WARNINGS_AS_ERRORS)
+])
+
+################################################################################
+#
 # fallback linker
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_FALLBACK_LINKER],
