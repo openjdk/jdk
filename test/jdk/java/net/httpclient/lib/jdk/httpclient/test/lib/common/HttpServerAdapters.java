@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,7 +239,7 @@ public interface HttpServerAdapters {
         public abstract OutputStream  getResponseBody();
         public abstract HttpTestRequestHeaders getRequestHeaders();
         public abstract HttpTestResponseHeaders getResponseHeaders();
-        public abstract void sendResponseHeaders(int code, int contentLength) throws IOException;
+        public abstract void sendResponseHeaders(int code, long contentLength) throws IOException;
         public abstract URI getRequestURI();
         public abstract String getRequestMethod();
         public abstract void close();
@@ -292,7 +292,7 @@ public interface HttpServerAdapters {
                 return HttpTestResponseHeaders.of(exchange.getResponseHeaders());
             }
             @Override
-            public void sendResponseHeaders(int code, int contentLength) throws IOException {
+            public void sendResponseHeaders(int code, long contentLength) throws IOException {
                 if (contentLength == 0) contentLength = -1;
                 else if (contentLength < 0) contentLength = 0;
                 exchange.sendResponseHeaders(code, contentLength);
@@ -355,7 +355,7 @@ public interface HttpServerAdapters {
                 return HttpTestResponseHeaders.of(exchange.getResponseHeaders());
             }
             @Override
-            public void sendResponseHeaders(int code, int contentLength) throws IOException {
+            public void sendResponseHeaders(int code, long contentLength) throws IOException {
                 if (contentLength == 0) contentLength = -1;
                 else if (contentLength < 0) contentLength = 0;
                 exchange.sendResponseHeaders(code, contentLength);

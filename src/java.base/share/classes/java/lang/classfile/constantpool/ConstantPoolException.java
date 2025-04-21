@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@ package java.lang.classfile.constantpool;
 
 /**
  * Thrown to indicate that requested entry cannot be obtained from the constant
- * pool.
+ * pool or the bootstrap method table.  This is also thrown when the lazy
+ * evaluation of constant pool or bootstrap method table entries encounter
+ * format errors.
  *
  * @since 24
  */
@@ -47,7 +49,8 @@ public class ConstantPoolException extends IllegalArgumentException {
      * Constructs a {@code ConstantPoolException} with the specified detail
      * message.
      *
-     * @param message the detail message.
+     * @param message the detail message, may be {@code null} for no detail
+     *                message
      */
     public ConstantPoolException(String message) {
         super(message);
@@ -55,11 +58,10 @@ public class ConstantPoolException extends IllegalArgumentException {
 
     /**
      * Constructs a {@code ConstantPoolException} with the specified cause and
-     * a detail message of {@code (cause==null ? null : cause.toString())}.
-     * @param cause the cause (which is saved for later retrieval by the
-     *        {@link Throwable#getCause()} method).  (A {@code null} value is
-     *        permitted, and indicates that the cause is nonexistent or
-     *        unknown.)
+     * a detail message of {@code cause == null ? null : cause.toString()}.
+     *
+     * @param cause the cause, may be {@code null} for nonexistent or unknown
+     *              cause
      */
     public ConstantPoolException(Throwable cause) {
         super(cause);
@@ -69,12 +71,10 @@ public class ConstantPoolException extends IllegalArgumentException {
      * Constructs a {@code ConstantPoolException} with the specified detail
      * message and cause.
      *
-     * @param message the detail message (which is saved for later retrieval
-     *        by the {@link Throwable#getMessage()} method).
-     * @param cause the cause (which is saved for later retrieval by the
-     *        {@link Throwable#getCause()} method).  (A {@code null} value
-     *        is permitted, and indicates that the cause is nonexistent or
-     *        unknown.)
+     * @param message the detail message, may be {@code null} for no detail
+     *                message
+     * @param cause the cause, may be {@code null} for nonexistent or unknown
+     *              cause
      */
     public ConstantPoolException(String message, Throwable cause) {
         super(message, cause);

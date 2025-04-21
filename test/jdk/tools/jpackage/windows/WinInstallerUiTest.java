@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,13 +122,13 @@ public class WinInstallerUiTest {
         StringBuilder sb = new StringBuilder(cmd.name());
         sb.append("With");
         if (withDirChooser) {
-            sb.append("DirChooser");
+            sb.append("Dc"); // DirChooser
         }
         if (withShortcutPrompt) {
-            sb.append("ShortcutPrompt");
+            sb.append("Sp"); // ShortcutPrompt
         }
         if (withLicense) {
-            sb.append("License");
+            sb.append("L"); // License
         }
         cmd.setArgumentValue("--name", sb.toString());
     }

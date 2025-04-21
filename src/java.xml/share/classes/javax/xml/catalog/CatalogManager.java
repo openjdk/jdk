@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public final class CatalogManager {
      * those referenced by the {@code nextCatalog} elements in the main catalog.
      * <p>
      * As specified in
-     * <a href="https://www.oasis-open.org/committees/download.php/14809/xml-catalogs.html#s.res.fail">
+     * <a href="https://groups.oasis-open.org/higherlogic/ws/public/download/14810/xml-catalogs.pdf">
      * XML Catalogs, OASIS Standard V1.1</a>, if a catalog entry is invalid, it
      * is ignored. In case all entries are invalid, the resulting Catalog object
      * will contain no Catalog elements. Any matching operation using the Catalog
@@ -126,7 +126,7 @@ public final class CatalogManager {
      * those referenced by the {@code nextCatalog} elements in the main catalog.
      * <p>
      * As specified in
-     * <a href="https://www.oasis-open.org/committees/download.php/14809/xml-catalogs.html#s.res.fail">
+     * <a href="https://groups.oasis-open.org/higherlogic/ws/public/download/14810/xml-catalogs.pdf">
      * XML Catalogs, OASIS Standard V1.1</a>, if a catalog entry is invalid, it
      * is ignored. In case all entries are invalid, the resulting CatalogResolver
      * object will contain no valid catalog. Any resolution operation using the

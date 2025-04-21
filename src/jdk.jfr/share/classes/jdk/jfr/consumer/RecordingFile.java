@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,10 @@ import jdk.jfr.internal.consumer.ChunkParser.ParserConfiguration;
 import jdk.jfr.internal.consumer.ParserFilter;
 import jdk.jfr.internal.consumer.ChunkHeader;
 import jdk.jfr.internal.consumer.ChunkParser;
-import jdk.jfr.internal.consumer.FileAccess;
 import jdk.jfr.internal.consumer.ParserState;
 import jdk.jfr.internal.consumer.RecordingInput;
 import jdk.jfr.internal.consumer.filter.ChunkWriter;
+import jdk.jfr.internal.consumer.filter.ChunkWriter.RemovedEvents;
 
 /**
  * A recording file.
@@ -81,7 +81,7 @@ public final class RecordingFile implements Closeable {
     public RecordingFile(Path file) throws IOException {
         Objects.requireNonNull(file, "file");
         this.file = file.toFile();
-        this.input = new RecordingInput(this.file, FileAccess.UNPRIVILEGED);
+        this.input = new RecordingInput(this.file);
         this.chunkWriter = null;
         findNext();
     }
@@ -146,7 +146,7 @@ public final class RecordingFile implements Closeable {
         MetadataDescriptor previous = null;
         List<EventType> types = new ArrayList<>();
         HashSet<Long> foundIds = new HashSet<>();
-        try (RecordingInput ri = new RecordingInput(file, FileAccess.UNPRIVILEGED)) {
+        try (RecordingInput ri = new RecordingInput(file)) {
             ChunkHeader ch = new ChunkHeader(ri);
             aggregateEventTypeForChunk(ch, null, types, foundIds);
             while (!ch.isLastChunk()) {
@@ -162,7 +162,7 @@ public final class RecordingFile implements Closeable {
         MetadataDescriptor previous = null;
         List<Type> types = new ArrayList<>(200);
         HashSet<Long> foundIds = HashSet.newHashSet(types.size());
-        try (RecordingInput ri = new RecordingInput(file, FileAccess.UNPRIVILEGED)) {
+        try (RecordingInput ri = new RecordingInput(file)) {
             ChunkHeader ch = new ChunkHeader(ri);
             ch.awaitFinished();
             aggregateTypeForChunk(ch, null, types, foundIds);
@@ -230,12 +230,18 @@ public final class RecordingFile implements Closeable {
     public void write(Path destination, Predicate<RecordedEvent> filter) throws IOException {
         Objects.requireNonNull(destination, "destination");
         Objects.requireNonNull(filter, "filter");
-        try (ChunkWriter cw = new ChunkWriter(file.toPath(), destination, filter)) {
+        write(destination, filter, false);
+    }
+
+    // package private
+    List<RemovedEvents> write(Path destination, Predicate<RecordedEvent> filter, boolean collectResults) throws IOException {
+        try (ChunkWriter cw = new ChunkWriter(file.toPath(), destination, filter, collectResults)) {
             try (RecordingFile rf = new RecordingFile(cw)) {
                 while (rf.hasMoreEvents()) {
                     rf.readEvent();
                 }
             }
+            return cw.getRemovedEventTypes();
         }
     }
 

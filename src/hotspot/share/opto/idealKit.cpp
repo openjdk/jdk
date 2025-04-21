@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
@@ -164,14 +163,12 @@ void IdealKit::end_if() {
 // onto the stack.
 void IdealKit::loop(GraphKit* gkit, int nargs, IdealVariable& iv, Node* init, BoolTest::mask relop, Node* limit, float prob, float cnt) {
   assert((state() & (BlockS|LoopS|IfThenS|ElseS)), "bad state for new loop");
-  if (UseLoopPredicate) {
-    // Sync IdealKit and graphKit.
-    gkit->sync_kit(*this);
-    // Add Parse Predicates.
-    gkit->add_parse_predicates(nargs);
-    // Update IdealKit memory.
-    sync_kit(gkit);
-  }
+  // Sync IdealKit and graphKit.
+  gkit->sync_kit(*this);
+  // Add Parse Predicates.
+  gkit->add_parse_predicates(nargs);
+  // Update IdealKit memory.
+  sync_kit(gkit);
   set(iv, init);
   Node* head = make_label(1);
   bind(head);

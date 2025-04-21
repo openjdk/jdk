@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,10 @@ import java.util.Arrays;
 public class TestFloat16VectorConvChain {
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"f16c", "true", "avx512vl", "true", "zvfh", "true"}, counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE_ANY, ">= 1", IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE_ANY, " >= 1"})
+    @IR(applyIfCPUFeatureAnd = {"avx512_fp16", "false", "avx512vl", "true"},
+        counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE_ANY, ">= 1", IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE_ANY, " >= 1"})
+    @IR(applyIfCPUFeatureAnd = {"avx512_fp16", "false", "f16c", "true"},
+        counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE_ANY, ">= 1", IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE_ANY, " >= 1"})
     public static void test(short [] res, short [] src1, short [] src2) {
         for (int i = 0; i < res.length; i++) {
             res[i] = (short)Float.float16ToFloat(Float.floatToFloat16(Float.float16ToFloat(src1[i]) + Float.float16ToFloat(src2[i])));

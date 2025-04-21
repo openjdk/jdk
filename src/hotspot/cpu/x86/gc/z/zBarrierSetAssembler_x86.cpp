@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.inline.hpp"
@@ -221,11 +220,10 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
                                    BasicType type,
                                    Register dst,
                                    Address src,
-                                   Register tmp1,
-                                   Register tmp_thread) {
+                                   Register tmp1) {
   if (!ZBarrierSet::barrier_needed(decorators, type)) {
     // Barrier not needed
-    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1);
     return;
   }
 

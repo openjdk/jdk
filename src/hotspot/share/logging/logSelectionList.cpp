@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/logSelectionList.hpp"
 #include "logging/logTagSet.hpp"
 #include "runtime/os.hpp"
@@ -69,10 +68,10 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
   }
   char* copy = os::strdup_check_oom(str, mtLogging);
   // Split string on commas
-  for (char *comma_pos = copy, *cur = copy; success && comma_pos != nullptr; cur = comma_pos + 1) {
+  for (char *comma_pos = copy, *cur = copy; success; cur = comma_pos + 1) {
     if (_nselections == MaxSelections) {
       if (errstream != nullptr) {
-        errstream->print_cr("Can not have more than " SIZE_FORMAT " log selections in a single configuration.",
+        errstream->print_cr("Can not have more than %zu log selections in a single configuration.",
                             MaxSelections);
       }
       success = false;
@@ -90,6 +89,10 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
       break;
     }
     _selections[_nselections++] = selection;
+
+    if (comma_pos == nullptr) {
+      break;
+    }
   }
 
   os::free(copy);

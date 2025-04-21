@@ -32,7 +32,8 @@ import jdk.test.lib.Utils;
  * @test
  * @bug 8283091
  * @summary Auto-vectorization enhancement for type conversion between different data sizes.
- * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") | os.arch=="aarch64"
+ * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") | os.arch=="aarch64" |
+             (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestVectorizeTypeConversion
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import jdk.jfr.EventType;
 import jdk.jfr.internal.MetadataDescriptor;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.consumer.ChunkHeader;
-import jdk.jfr.internal.consumer.FileAccess;
 import jdk.jfr.internal.consumer.RecordingInput;
 import jdk.jfr.internal.util.UserDataException;
 import jdk.jfr.internal.util.UserSyntaxException;
@@ -93,7 +92,7 @@ final class Summary extends Command {
         long totalDuration = 0;
         long chunks = 0;
 
-        try (RecordingInput input = new RecordingInput(p.toFile(), FileAccess.UNPRIVILEGED)) {
+        try (RecordingInput input = new RecordingInput(p.toFile())) {
             ChunkHeader first = new ChunkHeader(input);
             ChunkHeader ch = first;
             String eventPrefix = Type.EVENT_NAME_PREFIX;
@@ -153,7 +152,7 @@ final class Summary extends Command {
             println(typeHeader + " ".repeat(minWidth - typeHeader.length()) + header);
             println("=".repeat(minWidth + header.length()));
             for (Statistics s : statsList) {
-                System.out.printf(" %-" + minWidth + "s%10d  %12d\n", s.name, s.count, s.size);
+                printf(" %-" + minWidth + "s%10d  %12d\n", s.name, s.count, s.size);
             }
         }
     }

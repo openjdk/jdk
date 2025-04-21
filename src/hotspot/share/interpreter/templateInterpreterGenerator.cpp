@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -233,18 +232,12 @@ void TemplateInterpreterGenerator::generate_all() {
   native_method_entry(java_util_zip_CRC32_updateBytes)
   native_method_entry(java_util_zip_CRC32_updateByteBuffer)
 
-  native_method_entry(java_lang_Float_intBitsToFloat)
-  native_method_entry(java_lang_Float_floatToRawIntBits)
-  native_method_entry(java_lang_Double_longBitsToDouble)
-  native_method_entry(java_lang_Double_doubleToRawLongBits)
-
 #undef native_method_entry
 
   // Bytecodes
   set_entry_points_for_all_bytes();
 
   // installation of code in other places in the runtime
-  // (ExcutableCodeManager calls not needed to copy the entries)
   set_safepoints_for_all_bytes();
 
   { CodeletMark cm(_masm, "deoptimization entry points");
@@ -378,7 +371,6 @@ void TemplateInterpreterGenerator::generate_and_dispatch(Template* t, TosState t
   if (PrintBytecodePairHistogram)                                histogram_bytecode_pair(t);
   if (TraceBytecodes)                                            trace_bytecode(t);
   if (StopInterpreterAt > 0)                                     stop_interpreter_at();
-  __ verify_FPU(1, t->tos_in());
 #endif // !PRODUCT
   int step = 0;
   if (!t->does_dispatch()) {
@@ -489,17 +481,6 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : entry_point = generate_Float_float16ToFloat_entry(); break;
   case Interpreter::java_lang_Float_floatToFloat16
                                            : entry_point = generate_Float_floatToFloat16_entry(); break;
-
-  // On x86_32 platforms, a special entry is generated for the following four methods.
-  // On other platforms the native entry is used to enter these methods.
-  case Interpreter::java_lang_Float_intBitsToFloat
-                                           : entry_point = generate_Float_intBitsToFloat_entry(); break;
-  case Interpreter::java_lang_Float_floatToRawIntBits
-                                           : entry_point = generate_Float_floatToRawIntBits_entry(); break;
-  case Interpreter::java_lang_Double_longBitsToDouble
-                                           : entry_point = generate_Double_longBitsToDouble_entry(); break;
-  case Interpreter::java_lang_Double_doubleToRawLongBits
-                                           : entry_point = generate_Double_doubleToRawLongBits_entry(); break;
   default:
     fatal("unexpected intrinsic method kind: %d", kind);
     break;

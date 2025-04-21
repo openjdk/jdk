@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "opto/superwordVTransformBuilder.hpp"
 #include "opto/vectornode.hpp"
 
@@ -139,9 +138,13 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   VTransformVectorNode* vtn = nullptr;
 
   if (p0->is_Load()) {
-    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, pack_size);
+    const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Load());
+    const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * pack_size));
+    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, pack_size, vector_p);
   } else if (p0->is_Store()) {
-    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, pack_size);
+    const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Store());
+    const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * pack_size));
+    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, pack_size, vector_p);
   } else if (p0->is_Bool()) {
     VTransformBoolTest kind = _packset.get_bool_test(pack);
     vtn = new (_vtransform.arena()) VTransformBoolVectorNode(_vtransform, pack_size, kind);
@@ -158,9 +161,11 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
            p0->is_CMove() ||
            VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc) ||
            VectorNode::is_convert_opcode(opc) ||
+           VectorNode::is_reinterpret_opcode(opc) ||
            VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(opc) ||
-           opc == Op_FmaD ||
-           opc == Op_FmaF ||
+           opc == Op_FmaD  ||
+           opc == Op_FmaF  ||
+           opc == Op_FmaHF ||
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "pack type must be in this list");
@@ -311,4 +316,3 @@ void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtnode(Node*n, VTra
     vtn->add_dependency(dependency); // Add every dependency only once per vtn.
   }
 }
-

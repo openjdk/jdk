@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/checkpoint/types/jfrTypeSetUtils.hpp"
 #include "jfr/utilities/jfrPredicate.hpp"
 #include "jfr/utilities/jfrRelation.hpp"
@@ -38,7 +37,7 @@ JfrArtifactSet::JfrArtifactSet(bool class_unload) : _symbol_table(nullptr),
   assert(_klass_list != nullptr, "invariant");
 }
 
-static const size_t initial_klass_list_size = 256;
+static const size_t initial_klass_list_size = 4096;
 const int initial_klass_loader_set_size = 64;
 
 void JfrArtifactSet::initialize(bool class_unload) {
@@ -50,10 +49,10 @@ void JfrArtifactSet::initialize(bool class_unload) {
   assert(_symbol_table != nullptr, "invariant");
   _symbol_table->set_class_unload(class_unload);
   _total_count = 0;
-  // resource allocation
-  _klass_list = new GrowableArray<const Klass*>(initial_klass_list_size);
-  _klass_loader_set = new GrowableArray<const Klass*>(initial_klass_loader_set_size);
+  // Resource allocations. Keep in this allocation order.
   _klass_loader_leakp_set = new GrowableArray<const Klass*>(initial_klass_loader_set_size);
+  _klass_loader_set = new GrowableArray<const Klass*>(initial_klass_loader_set_size);
+  _klass_list = new GrowableArray<const Klass*>(initial_klass_list_size);
 }
 
 void JfrArtifactSet::clear() {
@@ -64,7 +63,8 @@ void JfrArtifactSet::clear() {
 
 JfrArtifactSet::~JfrArtifactSet() {
   delete _symbol_table;
-  // _klass_list and _klass_loader_list will be cleared by a ResourceMark
+  // _klass_loader_set, _klass_loader_leakp_set and
+  // _klass_list will be cleared by a ResourceMark
 }
 
 traceid JfrArtifactSet::bootstrap_name(bool leakp) {

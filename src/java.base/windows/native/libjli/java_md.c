@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,6 +155,12 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char *jdkroot, jint so_jdkroot,
                            char *jvmpath, jint so_jvmpath,
                            char *jvmcfg,  jint so_jvmcfg) {
+    if (JLI_IsStaticallyLinked()) {
+        // With static builds, all JDK and VM natives are statically linked
+        // with the launcher executable. The 'jrepath', 'jvmpath' and
+        // 'jvmcfg' are not used by the caller for static builds. Simply return.
+        return;
+    }
 
     char *jvmtype;
     int i = 0;
@@ -222,6 +228,12 @@ LoadMSVCRT()
     char crtpath[MAXPATHLEN];
 
     if (!loaded) {
+        if (JLI_IsStaticallyLinked()) {
+          // For statically linked builds, we rely on the system msvcrt dlls
+          loaded = 1;
+          return JNI_TRUE;
+        }
+
         /*
          * The Microsoft C Runtime Library needs to be loaded first. A copy is
          * assumed to be present in the "bin" directory of the JDK installation root.
@@ -365,10 +377,14 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
      */
     LoadMSVCRT();
 
-    /* Load the Java VM DLL */
-    if ((handle = LoadLibrary(jvmpath)) == 0) {
-        JLI_ReportErrorMessage(DLL_ERROR4, (char *)jvmpath);
-        return JNI_FALSE;
+    if (JLI_IsStaticallyLinked()) {
+      handle = GetModuleHandle(NULL);
+    } else {
+        /* Load the Java VM DLL */
+        if ((handle = LoadLibrary(jvmpath)) == 0) {
+            JLI_ReportErrorMessage(DLL_ERROR4, (char *)jvmpath);
+            return JNI_FALSE;
+        }
     }
 
     /* Now get the function addresses */
@@ -554,75 +570,6 @@ JLI_ReportErrorMessage(const char* fmt, ...) {
     va_end(vl);
 }
 
-/*
- * Just like JLI_ReportErrorMessage, except that it concatenates the system
- * error message if any, it's up to the calling routine to correctly
- * format the separation of the messages.
- */
-JNIEXPORT void JNICALL
-JLI_ReportErrorMessageSys(const char *fmt, ...)
-{
-    va_list vl;
-
-    int save_errno = errno;
-    DWORD       errval;
-    jboolean freeit = JNI_FALSE;
-    char  *errtext = NULL;
-
-    va_start(vl, fmt);
-
-    if ((errval = GetLastError()) != 0) {               /* Platform SDK / DOS Error */
-        int n = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|
-            FORMAT_MESSAGE_IGNORE_INSERTS|FORMAT_MESSAGE_ALLOCATE_BUFFER,
-            NULL, errval, 0, (LPTSTR)&errtext, 0, NULL);
-        if (errtext == NULL || n == 0) {                /* Paranoia check */
-            errtext = "";
-            n = 0;
-        } else {
-            freeit = JNI_TRUE;
-            if (n > 2) {                                /* Drop final CR, LF */
-                if (errtext[n - 1] == '\n') n--;
-                if (errtext[n - 1] == '\r') n--;
-                errtext[n] = '\0';
-            }
-        }
-    } else {   /* C runtime error that has no corresponding DOS error code */
-        errtext = strerror(save_errno);
-    }
-
-    if (IsJavaw()) {
-        char *message;
-        int mlen;
-        /* get the length of the string we need */
-        int len = mlen =  _vscprintf(fmt, vl) + 1;
-        if (freeit) {
-           mlen += (int)JLI_StrLen(errtext);
-        }
-
-        message = (char *)JLI_MemAlloc(mlen);
-        _vsnprintf(message, len, fmt, vl);
-        message[len]='\0';
-
-        if (freeit) {
-           JLI_StrCat(message, errtext);
-        }
-
-        MessageBox(NULL, message, "Java Virtual Machine Launcher",
-            (MB_OK|MB_ICONSTOP|MB_APPLMODAL));
-
-        JLI_MemFree(message);
-    } else {
-        vfprintf(stderr, fmt, vl);
-        if (freeit) {
-           fprintf(stderr, "%s", errtext);
-        }
-    }
-    if (freeit) {
-        (void)LocalFree((HLOCAL)errtext);
-    }
-    va_end(vl);
-}
-
 JNIEXPORT void JNICALL
 JLI_ReportExceptionDescription(JNIEnv * env) {
     if (IsJavaw()) {
@@ -781,7 +728,11 @@ jclass FindBootStrapClass(JNIEnv *env, const char *classname)
    HMODULE hJvm;
 
    if (findBootClass == NULL) {
-       hJvm = GetModuleHandle(JVM_DLL);
+       if (JLI_IsStaticallyLinked()) {
+           hJvm = GetModuleHandle(NULL);
+       } else {
+           hJvm = GetModuleHandle(JVM_DLL);
+       }
        if (hJvm == NULL) return NULL;
        /* need to use the demangled entry point */
        findBootClass = (FindClassFromBootLoader_t *)GetProcAddress(hJvm,

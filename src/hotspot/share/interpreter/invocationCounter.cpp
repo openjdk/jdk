@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "interpreter/invocationCounter.hpp"
 
@@ -61,7 +60,7 @@ void InvocationCounter::reset() {
 
 void InvocationCounter::print() {
   uint counter = raw_counter();
-  tty->print_cr("invocation count: up = %d, limit = " INTX_FORMAT ", carry = %s",
+  tty->print_cr("invocation count: up = %d, limit = %zd, carry = %s",
                                    extract_count(counter), limit(),
                                    extract_carry(counter) ? "true" : "false");
 }

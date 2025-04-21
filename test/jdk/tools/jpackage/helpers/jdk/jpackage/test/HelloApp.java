@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
@@ -350,17 +351,8 @@ public final class HelloApp {
             this.launcherPath = helloAppLauncher;
             this.outputFilePath = TKit.workDir().resolve(OUTPUT_FILENAME);
             this.params = new HashMap<>();
+            this.env = new HashMap<>();
             this.defaultLauncherArgs = new ArrayList<>();
-
-            if (TKit.isWindows()) {
-                // When running app launchers on Windows, clear users environment (JDK-8254920)
-                removePathEnvVar(true);
-            }
-        }
-
-        public AppOutputVerifier removePathEnvVar(boolean v) {
-            removePathEnvVar = v;
-            return this;
         }
 
         public AppOutputVerifier saveOutput(boolean v) {
@@ -370,6 +362,16 @@ public final class HelloApp {
 
         public AppOutputVerifier expectedExitCode(int v) {
             expectedExitCode = v;
+            return this;
+        }
+
+        public AppOutputVerifier addEnvironment(Map<String, String> v) {
+            env.putAll(v);
+            return this;
+        }
+
+        public AppOutputVerifier addEnvironmentVar(String name, String value) {
+            env.put(Objects.requireNonNull(name), Objects.requireNonNull(name));
             return this;
         }
 
@@ -403,7 +405,7 @@ public final class HelloApp {
             return addParams(v.entrySet());
         }
 
-        public AppOutputVerifier addParams(Map.Entry<String, String>... v) {
+        public AppOutputVerifier addParams(Map.Entry<String, String> v) {
             return addParams(List.of(v));
         }
 
@@ -442,10 +444,7 @@ public final class HelloApp {
             if (launcherNoExit) {
                 return getExecutor(args).executeWithoutExitCodeCheck();
             } else {
-                final int attempts = 3;
-                final int waitBetweenAttemptsSeconds = 5;
-                return getExecutor(args).executeAndRepeatUntilExitCode(expectedExitCode, attempts,
-                        waitBetweenAttemptsSeconds);
+                return HelloApp.execute(expectedExitCode, getExecutor(args));
             }
         }
 
@@ -472,28 +471,55 @@ public final class HelloApp {
                 }
             }
 
-            final List<String> launcherArgs = List.of(args);
-            return new Executor()
+            final var executor = new Executor()
                     .setDirectory(outputFile.getParent())
                     .saveOutput(saveOutput)
                     .dumpOutput()
-                    .setRemovePathEnvVar(removePathEnvVar)
                     .setExecutable(executablePath)
-                    .addArguments(launcherArgs);
+                    .addArguments(List.of(args));
+
+            env.forEach((envVarName, envVarValue) -> {
+                executor.setEnvVar(envVarName, envVarValue);
+            });
+
+            return configureEnvironment(executor);
         }
 
         private boolean launcherNoExit;
-        private boolean removePathEnvVar;
         private boolean saveOutput;
         private final Path launcherPath;
         private Path outputFilePath;
         private int expectedExitCode;
         private final List<String> defaultLauncherArgs;
         private final Map<String, String> params;
+        private final Map<String, String> env;
     }
 
     public static AppOutputVerifier assertApp(Path helloAppLauncher) {
         return new AppOutputVerifier(helloAppLauncher);
+    }
+
+    public static Executor.Result configureAndExecute(int expectedExitCode, Executor executor) {
+        return execute(expectedExitCode, configureEnvironment(executor));
+    }
+
+    private static Executor.Result execute(int expectedExitCode, Executor executor) {
+        if (TKit.isLinux()) {
+            final int attempts = 3;
+            final int waitBetweenAttemptsSeconds = 5;
+            return executor.executeAndRepeatUntilExitCode(expectedExitCode, attempts,
+                    waitBetweenAttemptsSeconds);
+        } else {
+            return executor.execute(expectedExitCode);
+        }
+    }
+
+    private static Executor configureEnvironment(Executor executor) {
+        if (CLEAR_JAVA_ENV_VARS) {
+            executor.removeEnvVar("JAVA_TOOL_OPTIONS");
+            executor.removeEnvVar("_JAVA_OPTIONS");
+        }
+        return executor;
     }
 
     static final String OUTPUT_FILENAME = "appOutput.txt";
@@ -505,4 +531,7 @@ public final class HelloApp {
 
     private static final String CLASS_NAME = HELLO_JAVA.getFileName().toString().split(
             "\\.", 2)[0];
+
+    private static final boolean CLEAR_JAVA_ENV_VARS = Optional.ofNullable(
+            TKit.getConfigProperty("clear-app-launcher-java-env-vars")).map(Boolean::parseBoolean).orElse(false);
 }

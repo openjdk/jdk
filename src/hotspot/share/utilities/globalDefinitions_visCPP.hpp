@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,25 +54,6 @@
 #error unsupported platform
 #endif
 
-// 4810578: varargs unsafe on 32-bit integer/64-bit pointer architectures
-// When __cplusplus is defined, NULL is defined as 0 (32-bit constant) in
-// system header files.  On 32-bit architectures, there is no problem.
-// On 64-bit architectures, defining NULL as a 32-bit constant can cause
-// problems with varargs functions: C++ integral promotion rules say for
-// varargs, we pass the argument 0 as an int.  So, if NULL was passed to a
-// varargs function it will remain 32-bits.  Depending on the calling
-// convention of the machine, if the argument is passed on the stack then
-// only 32-bits of the "NULL" pointer may be initialized to zero.  The
-// other 32-bits will be garbage.  If the varargs function is expecting a
-// pointer when it extracts the argument, then we may have a problem.
-//
-// Solution: For 64-bit architectures, redefine NULL as 64-bit constant 0.
-#undef NULL
-// 64-bit Windows uses a P64 data model (not LP64, although we define _LP64)
-// Since longs are 32-bit we cannot use 0L here.  Use the Visual C++ specific
-// 64-bit integer-suffix (LL) instead.
-#define NULL 0LL
-
 typedef int64_t ssize_t;
 
 // Non-standard stdlib-like stuff:
@@ -102,9 +83,6 @@ inline int g_isnan(jdouble f)                    { return _isnan(f); }
 
 inline int g_isfinite(jfloat  f)                 { return _finite(f); }
 inline int g_isfinite(jdouble f)                 { return _finite(f); }
-
-// Formatting.
-#define FORMAT64_MODIFIER "ll"
 
 #define offset_of(klass,field) offsetof(klass,field)
 

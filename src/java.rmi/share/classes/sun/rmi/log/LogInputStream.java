@@ -124,12 +124,4 @@ class LogInputStream extends InputStream {
     public void close() {
         length = 0;
     }
-
-    /**
-     * Closes the stream when garbage is collected.
-     */
-    @SuppressWarnings("removal")
-    protected void finalize() throws IOException {
-        close();
-    }
 }
