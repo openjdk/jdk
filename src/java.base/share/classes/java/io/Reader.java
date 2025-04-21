@@ -207,6 +207,10 @@ public abstract class Reader implements Readable, Closeable {
                 return n;
             }
 
+            public String readAllChars() throws IOException {
+                return cs.toString();
+            }
+
             @Override
             public long skip(long n) throws IOException {
                 ensureOpen();
@@ -391,7 +395,6 @@ public abstract class Reader implements Readable, Closeable {
      */
     public abstract int read(char[] cbuf, int off, int len) throws IOException;
 
-
     /**
      * Reads all remaining characters into a string.
      *
@@ -416,7 +419,7 @@ public abstract class Reader implements Readable, Closeable {
      *
      * @since 25
      */
-    public String readString() throws IOException {
+    public String readAllChars() throws IOException {
         StringBuilder result = new StringBuilder();
         char[] str = new char[TRANSFER_BUFFER_SIZE];
         int n;

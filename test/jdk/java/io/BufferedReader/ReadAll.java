@@ -34,6 +34,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -67,7 +68,7 @@ public class ReadAll {
         Random rnd = RandomFactory.getRandom();
         int size = rnd.nextInt(2, 16386);
 
-        try (FileChannel fc = FileChannel.open(path, CREATE, WRITE);) {
+        try (FileChannel fc = FileChannel.open(path, CREATE, WRITE)) {
             int len = 0;
             int plen = PHRASE.length();
             ByteBuffer strBuf = ByteBuffer.allocate(plen*Character.BYTES);
@@ -101,7 +102,7 @@ public class ReadAll {
     public void readAllLines() throws IOException {
         List<String> lines;
         try (FileReader fr = new FileReader(file);
-             BufferedReader br = new BufferedReader(fr);) {
+             BufferedReader br = new BufferedReader(fr)) {
             lines = br.readAllLines();
         }
         System.out.println(lines.size() + " lines read");
@@ -112,15 +113,19 @@ public class ReadAll {
     }
 
     @Test
-    public void readString() throws IOException {
+    public void readAllChars() throws IOException {
+        // Reader implementation
         String string;
-        try (FileReader fr = new FileReader(file);
-             BufferedReader br = new BufferedReader(fr);) {
-            string = br.readString();
+        try (FileReader fr = new FileReader(file)) {
+            string = fr.readAllChars();
         }
-
         String stringExpected = Files.readString(path);
+        assertEquals(stringExpected, string);
 
+        // Reader.of implementation
+        try (Reader r = Reader.of(stringExpected)) {
+            string = r.readAllChars();
+        }
         assertEquals(stringExpected, string);
     }
 }
