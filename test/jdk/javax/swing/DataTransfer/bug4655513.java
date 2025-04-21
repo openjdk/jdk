@@ -51,8 +51,8 @@ import javax.swing.SwingUtilities;
 
 public class bug4655513 {
     private static final String LINK_URL = "http://www.example.com";
-    private static JEditorPane editor;
-    private static JLabel dragSource;
+    private static volatile JEditorPane editor;
+    private static volatile JLabel dragSource;
     private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
