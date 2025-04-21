@@ -114,8 +114,8 @@ public final class BasicTest {
 
         List<String> output = HelloApp.executeLauncher(cmd).getOutput();
 
-        TKit.assertTextStream("jpackage.app-version=" + appVersion).apply(output.stream());
-        TKit.assertTextStream("jpackage.app-path=").apply(output.stream());
+        TKit.assertTextStream("jpackage.app-version=" + appVersion).apply(output);
+        TKit.assertTextStream("jpackage.app-path=").apply(output);
     }
 
     @Test
@@ -221,12 +221,12 @@ public final class BasicTest {
         expectedVerboseOutputStrings.forEach(str -> {
             TKit.assertTextStream(str).label("regular output")
                     .predicate(String::contains).negate()
-                    .apply(nonVerboseOutput.stream());
+                    .apply(nonVerboseOutput);
         });
 
         expectedVerboseOutputStrings.forEach(str -> {
             TKit.assertTextStream(str).label("verbose output")
-                    .apply(verboseOutput[0].stream());
+                    .apply(verboseOutput[0]);
         });
     }
 

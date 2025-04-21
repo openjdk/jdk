@@ -316,7 +316,7 @@ public final class LauncherAsServiceVerifier {
         TKit.assertTextStream("ExecStart=" + execStartValue)
                 .label("unit file")
                 .predicate(String::equals)
-                .apply(Files.readAllLines(serviceUnitFile).stream());
+                .apply(Files.readAllLines(serviceUnitFile));
     }
 
     private static void verifyMacDaemonPlistFile(JPackageCommand cmd,
