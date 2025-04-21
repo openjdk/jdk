@@ -711,7 +711,7 @@
   </Event>
 
   <Event name="SafepointLatency" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Latency"
-    description="The time delay for a thread in reaching a safepoint poll after receiving an asynchronous interrupt" thread="true" stackTrace="true" throttle="true" >
+    description="The delay for a thread to reach its next safepoint poll instruction after receiving an asynchronous sampling interrupt" thread="true" stackTrace="true" throttle="true">
     <Field type="VMThreadState" name="threadState" label="VM Thread State" />
   </Event>
 
