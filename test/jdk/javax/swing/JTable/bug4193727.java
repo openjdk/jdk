@@ -51,8 +51,8 @@ public class bug4193727 {
     private static final String INSTRUCTIONS = """
             Push button "Resize".
             If either of the following happen, test fails:
-            1) The size of the columns are wrong
-            2) The JTable is not repainting correctly
+            1) The size of the columns change
+            2) The JTable is not repainted correctly
 
             Otherwise test passes.
             """;
@@ -95,7 +95,7 @@ public class bug4193727 {
         panel.add(bTest);
         frame.add(panel, BorderLayout.EAST);
         bTest.addActionListener(e -> tblResults.autoSizeColumns());
-        frame.pack();
+        frame.setSize(300, 200);
         return frame;
     }
 }
