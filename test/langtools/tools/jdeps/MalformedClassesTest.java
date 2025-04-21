@@ -34,21 +34,26 @@ import java.io.IOException;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.attribute.SignatureAttribute;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import com.sun.tools.jdeps.JdepsAccess;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.util.JarUtils;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MalformedClassesTest {
-    @Test
-    public void testMalformedSignature() throws IOException {
+
+    static Stream<Arguments> invalidArchives() throws Exception {
         var jarPath = Path.of("malformed-signature.jar");
         var compiledClasses = InMemoryJavaCompiler.compile(Map.ofEntries(
                 Map.entry("one.One", """
@@ -90,8 +95,24 @@ class MalformedClassesTest {
         var classes = new HashMap<>(compiledClasses);
         classes.put("one.One", updated);
         JarUtils.createJarFromClasses(jarPath, classes);
+
+        Path flatDir = Path.of("flatDir");
+        Files.createDirectories(flatDir);
+        for (var entry : classes.entrySet()) {
+            ClassFileInstaller.writeClassToDisk(entry.getKey(), entry.getValue(), flatDir.toString());
+        }
+
+        return Stream.of(
+                Arguments.of("directory", flatDir, "one/One.class"),
+                Arguments.of("jar", jarPath, "one/One.class (malformed-signature.jar)")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidArchives")
+    public void testMalformedSignature(String kind, Path path, String entryName) throws IOException {
         try (var jdeps = JdepsUtil.newCommand("jdeps")) {
-            jdeps.addRoot(jarPath);
+            jdeps.addRoot(path);
             var analyzer = jdeps.getDepsAnalyzer();
             analyzer.run();
             var archives = JdepsAccess.depsAnalyzerArchives(analyzer);
@@ -102,8 +123,7 @@ class MalformedClassesTest {
             var message = skippedEntries.getFirst();
             assertTrue(message.contains("ClassFileError"), message);
             assertTrue(message.contains("Invalid string"), message);
-            assertTrue(message.contains("one/One.class"), message);
-            assertTrue(message.contains("malformed-signature.jar"), message);
+            assertTrue(message.contains(entryName), "\"" + message + "\" does not contain \"" + entryName + "\"");
         }
     }
 }
