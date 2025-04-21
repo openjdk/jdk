@@ -1135,9 +1135,11 @@ void ciEnv::register_method(ciMethod* target,
   // safepoints are allowed again
 
   if (StressNMethodRelocation) {
-    methodHandle mh(Thread::current(), nm->method());
-    VM_RelocateNMethod relocate(&mh, CodeBlobType::MethodNonProfiled);
-    VMThread::execute(&relocate);
+    if (nm != nullptr) {
+      methodHandle mh(Thread::current(), nm->method());
+      VM_RelocateNMethod relocate(&mh, CodeBlobType::MethodNonProfiled);
+      VMThread::execute(&relocate);
+    }
   }
 }
 
