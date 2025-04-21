@@ -227,7 +227,7 @@
   nonstatic_field(JavaThread,                  _scopedValueCache,                             OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _monitor_owner_id,                             int64_t)                               \
-  nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
+  nonstatic_field(JavaThread,                  _vm_result_oop,                                oop)                                   \
   nonstatic_field(JavaThread,                  _stack_overflow_state._stack_overflow_limit,   address)                               \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
@@ -328,8 +328,7 @@
                                                                                                                                      \
   volatile_nonstatic_field(ObjectMonitor,      _owner,                                        int64_t)                               \
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intptr_t)                              \
-  volatile_nonstatic_field(ObjectMonitor,      _cxq,                                          ObjectWaiter*)                         \
-  volatile_nonstatic_field(ObjectMonitor,      _EntryList,                                    ObjectWaiter*)                         \
+  volatile_nonstatic_field(ObjectMonitor,      _entry_list,                                   ObjectWaiter*)                         \
   volatile_nonstatic_field(ObjectMonitor,      _succ,                                         int64_t)                               \
   volatile_nonstatic_field(ObjectMonitor,      _stack_locker,                                 BasicLock*)                            \
                                                                                                                                      \
@@ -396,6 +395,13 @@
   static_field(StubRoutines,                _sha3_implCompress,                               address)                               \
   static_field(StubRoutines,                _double_keccak,                                   address)                               \
   static_field(StubRoutines,                _sha3_implCompressMB,                             address)                               \
+  static_field(StubRoutines,                _kyberNtt,                                        address)                               \
+  static_field(StubRoutines,                _kyberInverseNtt,                                 address)                               \
+  static_field(StubRoutines,                _kyberNttMult,                                    address)                               \
+  static_field(StubRoutines,                _kyberAddPoly_2,                                  address)                               \
+  static_field(StubRoutines,                _kyberAddPoly_3,                                  address)                               \
+  static_field(StubRoutines,                _kyber12To16,                                     address)                               \
+  static_field(StubRoutines,                _kyberBarrettReduce,                              address)                               \
   static_field(StubRoutines,                _dilithiumAlmostNtt,                              address)                               \
   static_field(StubRoutines,                _dilithiumAlmostInverseNtt,                       address)                               \
   static_field(StubRoutines,                _dilithiumNttMult,                                address)                               \

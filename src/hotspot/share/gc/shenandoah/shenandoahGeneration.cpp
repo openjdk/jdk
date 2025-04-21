@@ -97,20 +97,6 @@ public:
   }
 };
 
-class ShenandoahCopyWriteCardTableToRead: public ShenandoahHeapRegionClosure {
-private:
-  ShenandoahScanRemembered* _scanner;
-public:
-  ShenandoahCopyWriteCardTableToRead(ShenandoahScanRemembered* scanner) : _scanner(scanner) {}
-
-  void heap_region_do(ShenandoahHeapRegion* region) override {
-    assert(region->is_old(), "Don't waste time doing this for non-old regions");
-    _scanner->reset_remset(region->bottom(), ShenandoahHeapRegion::region_size_words());
-  }
-
-  bool is_thread_safe() override { return true; }
-};
-
 // Add [TAMS, top) volume over young regions. Used to correct age 0 cohort census
 // for adaptive tenuring when census is taken during marking.
 // In non-product builds, for the purposes of verification, we also collect the total
@@ -231,19 +217,18 @@ template void ShenandoahGeneration::reset_mark_bitmap<true, false>();
 template void ShenandoahGeneration::reset_mark_bitmap<true, true>();
 template void ShenandoahGeneration::reset_mark_bitmap<false, false>();
 
-// The ideal is to swap the remembered set so the safepoint effort is no more than a few pointer manipulations.
-// However, limitations in the implementation of the mutator write-barrier make it difficult to simply change the
-// location of the card table.  So the interim implementation of swap_remembered_set will copy the write-table
-// onto the read-table and will then clear the write-table.
-void ShenandoahGeneration::swap_remembered_set() {
+// Swap the read and write card table pointers prior to the next remset scan.
+// This avoids the need to synchronize reads of the table by the GC workers
+// doing remset scanning, on the one hand, with the dirtying of the table by
+// mutators on the other.
+void ShenandoahGeneration::swap_card_tables() {
   // Must be sure that marking is complete before we swap remembered set.
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   heap->assert_gc_workers(heap->workers()->active_workers());
   shenandoah_assert_safepoint();
 
   ShenandoahOldGeneration* old_generation = heap->old_generation();
-  ShenandoahCopyWriteCardTableToRead task(old_generation->card_scan());
-  old_generation->parallel_heap_region_iterate(&task);
+  old_generation->card_scan()->swap_card_tables();
 }
 
 // Copy the write-version of the card-table into the read-version, clearing the
@@ -788,10 +773,6 @@ bool ShenandoahGeneration::is_bitmap_clear() {
     }
   }
   return true;
-}
-
-bool ShenandoahGeneration::is_mark_complete() {
-  return _is_marking_complete.is_set();
 }
 
 void ShenandoahGeneration::set_mark_complete() {
