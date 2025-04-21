@@ -49,15 +49,19 @@ public class bug4248128 {
 
             robot.keyPress(KeyEvent.VK_ALT);
             robot.keyPress(KeyEvent.VK_DOWN);
+            robot.keyRelease(KeyEvent.VK_DOWN);
+            robot.keyRelease(KeyEvent.VK_ALT);
             robot.waitForIdle();
 
             if (!combo.isPopupVisible()) {
                 throw new RuntimeException("Popup did not appear.");
             }
         } finally {
-            if (frame != null) {
-                SwingUtilities.invokeAndWait(() -> frame.dispose());
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
