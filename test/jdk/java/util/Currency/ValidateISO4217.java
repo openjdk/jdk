@@ -180,7 +180,6 @@ public class ValidateISO4217 {
         checkUsage();
         setUpPatchedClasses();
         setUpTestingData();
-        setUpNotYetDefined();
     }
 
     // Enforce correct usage of ValidateISO4217
@@ -239,13 +238,14 @@ public class ValidateISO4217 {
     }
 
     // Sets up the following test data:
-    // ISO4217Codes, additionalCodes, testCurrencies, codes
+    // ISO4217Codes, additionalCodes, testCurrencies, codes, currenciesNotYetDefined
     static void setUpTestingData() throws Exception {
         // These functions laterally setup 'testCurrencies' and 'codes'
         // at the same time
         setUpISO4217Codes();
         setUpAdditionalCodes();
         setUpOtherCurrencies();
+        setUpNotYetDefined();
     }
 
     // Parse the ISO4217 file and populate ISO4217Codes and testCurrencies.
