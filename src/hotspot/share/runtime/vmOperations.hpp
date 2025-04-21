@@ -84,13 +84,13 @@ class VM_ClearICs: public VM_Operation {
 
 class VM_RelocateNMethod: public VM_Operation {
   private:
-   nmethod* _nm;
+   methodHandle* _mh;
    nmethod* _nm_copy;
    CodeBlobType _code_blob_type;
   public:
-   VM_RelocateNMethod(nmethod* nm, CodeBlobType code_blob_type)
-    : _nm(nm), _nm_copy(nullptr), _code_blob_type(code_blob_type)
-   {}
+   VM_RelocateNMethod(methodHandle* mh, CodeBlobType code_blob_type)
+    : _mh(mh), _nm_copy(nullptr), _code_blob_type(code_blob_type) {
+   }
    void doit();
    VMOp_Type type() const { return VMOp_RelocateNMethod; }
    nmethod* getRelocatedNMethod() { return _nm_copy; }

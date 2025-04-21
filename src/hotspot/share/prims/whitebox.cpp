@@ -1629,12 +1629,7 @@ WB_ENTRY(void, WB_RelocateNMethodTo(JNIEnv* env, jobject o, jobject method, jint
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION(env);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  nmethod* code = mh->code();
-  if (code == nullptr) {
-    return;
-  }
-
-  VM_RelocateNMethod relocate(code, static_cast<CodeBlobType>(blob_type));
+  VM_RelocateNMethod relocate(&mh, static_cast<CodeBlobType>(blob_type));
   VMThread::execute(&relocate);
 WB_END
 
