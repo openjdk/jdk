@@ -45,7 +45,7 @@ public class CharUndefinedTest extends Frame implements KeyListener {
             press once every of them and also press them in two-key combinations such as
             Control-Shift or Alt-Control.
             The list of keys is: "Control, Shift, Meta, Alt, Command, Option".
-            After that press once all function keys from F1 to F12,
+            After that press all function keys from F1 to F12 once,
             Insert, Home, End, PageUp, PageDown and four arrow keys.
             Check the log area below. If there are no messages starting with word "ERROR"
             press "Pass" otherwise press "Fail".
