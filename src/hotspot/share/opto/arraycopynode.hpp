@@ -121,7 +121,7 @@ private:
                             BasicType copy_type, const Type* value_type, int count);
   bool finish_transform(PhaseGVN *phase, bool can_reshape,
                         Node* ctl, Node *mem);
-  static bool may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, CallNode*& call);
+  static bool may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, ArrayCopyNode*& ac);
 public:
   static Node* load(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMemNode* mem, Node* addr, const TypePtr* adr_type, const Type *type, BasicType bt);
 private:

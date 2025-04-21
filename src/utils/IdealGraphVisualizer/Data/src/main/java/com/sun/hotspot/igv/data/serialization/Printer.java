@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,10 +170,28 @@ public class Printer {
                 writer.endTag(); // Parser.NODES_ELEMENT
             }
 
+            if (!b.getLiveOut().isEmpty()) {
+                writer.startTag(Parser.LIVEOUT_ELEMENT);
+                for (Integer lrg : b.getLiveOut()) {
+                    writer.simpleTag(Parser.LIVE_RANGE_ELEMENT, new Properties(Parser.LIVE_RANGE_ID_PROPERTY, String.valueOf(lrg)));
+                }
+                writer.endTag(); // Parser.LIVEOUT_ELEMENT
+            }
+
             writer.endTag(); // Parser.BLOCK_ELEMENT
         }
 
         writer.endTag(); // Parser.CONTROL_FLOW_ELEMENT
+
+        if (!graph.getLiveRanges().isEmpty()) {
+            writer.startTag(Parser.LIVE_RANGES_ELEMENT);
+            for (InputLiveRange liveRange : graph.getLiveRanges()) {
+                writer.startTag(Parser.LIVE_RANGE_ELEMENT, new Properties(Parser.LIVE_RANGE_ID_PROPERTY, String.valueOf(liveRange.getId())));
+                writer.writeProperties(liveRange.getProperties());
+                writer.endTag(); // Parser.LIVE_RANGE_ELEMENT
+            }
+            writer.endTag(); // Parser.LIVE_RANGES_ELEMENT
+        }
 
         exportStates(writer, graph, contexts);
 

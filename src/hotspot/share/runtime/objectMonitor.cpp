@@ -2058,6 +2058,12 @@ void ObjectMonitor::notify(TRAPS) {
     return;
   }
 
+  quick_notify(current);
+}
+
+void ObjectMonitor::quick_notify(JavaThread* current) {
+  assert(has_owner(current), "Precondition");
+
   EventJavaMonitorNotify event;
   DTRACE_MONITOR_PROBE(notify, this, object(), current);
   int tally = notify_internal(current) ? 1 : 0;
@@ -2079,6 +2085,12 @@ void ObjectMonitor::notifyAll(TRAPS) {
   if (_wait_set == nullptr) {
     return;
   }
+
+  quick_notifyAll(current);
+}
+
+void ObjectMonitor::quick_notifyAll(JavaThread* current) {
+  assert(has_owner(current), "Precondition");
 
   EventJavaMonitorNotify event;
   DTRACE_MONITOR_PROBE(notifyAll, this, object(), current);
@@ -2559,7 +2571,7 @@ void ObjectMonitor::print_on(outputStream* st) const {
   st->print("{contentions=0x%08x,waiters=0x%08x"
             ",recursions=%zd,owner=" INT64_FORMAT "}",
             contentions(), waiters(), recursions(),
-            owner());
+            owner_raw());
 }
 void ObjectMonitor::print() const { print_on(tty); }
 

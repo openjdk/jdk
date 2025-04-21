@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package sun.security.ssl;
+
+import static sun.security.ssl.SignatureScheme.HANDSHAKE_SCOPE;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -185,12 +187,7 @@ final class SignatureAlgorithmsExtension {
             }
 
             // Produce the extension.
-            if (chc.localSupportedSignAlgs == null) {
-                chc.localSupportedSignAlgs =
-                    SignatureScheme.getSupportedAlgorithms(
-                            chc.sslConfig,
-                            chc.algorithmConstraints, chc.activeProtocols);
-            }
+            SignatureScheme.updateHandshakeLocalSupportedAlgs(chc);
 
             int vectorLen = SignatureScheme.sizeInRecord() *
                     chc.localSupportedSignAlgs.size();
@@ -278,7 +275,9 @@ final class SignatureAlgorithmsExtension {
                     SignatureScheme.getSupportedAlgorithms(
                             shc.sslConfig,
                             shc.algorithmConstraints, shc.negotiatedProtocol,
-                            spec.signatureSchemes);
+                            spec.signatureSchemes,
+                            HANDSHAKE_SCOPE);
+
             if (sss == null || sss.isEmpty()) {
                 throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "No supported signature algorithm");
@@ -412,17 +411,14 @@ final class SignatureAlgorithmsExtension {
             }
 
             // Produce the extension.
-            List<SignatureScheme> sigAlgs =
-                    SignatureScheme.getSupportedAlgorithms(
-                            shc.sslConfig,
-                            shc.algorithmConstraints,
-                            List.of(shc.negotiatedProtocol));
-
-            int vectorLen = SignatureScheme.sizeInRecord() * sigAlgs.size();
+            // localSupportedSignAlgs has been already updated when we
+            // set the negotiated protocol.
+            int vectorLen = SignatureScheme.sizeInRecord()
+                    * shc.localSupportedSignAlgs.size();
             byte[] extData = new byte[vectorLen + 2];
             ByteBuffer m = ByteBuffer.wrap(extData);
             Record.putInt16(m, vectorLen);
-            for (SignatureScheme ss : sigAlgs) {
+            for (SignatureScheme ss : shc.localSupportedSignAlgs) {
                 Record.putInt16(m, ss.id);
             }
 
@@ -506,7 +502,9 @@ final class SignatureAlgorithmsExtension {
                     SignatureScheme.getSupportedAlgorithms(
                             chc.sslConfig,
                             chc.algorithmConstraints, chc.negotiatedProtocol,
-                            spec.signatureSchemes);
+                            spec.signatureSchemes,
+                            HANDSHAKE_SCOPE);
+
             if (sss == null || sss.isEmpty()) {
                 throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "No supported signature algorithm");
