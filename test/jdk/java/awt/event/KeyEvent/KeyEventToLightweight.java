@@ -91,13 +91,14 @@ public class KeyEventToLightweight extends Frame {
         p.setLocation(loc.x + (size.width / 2), loc.y + (size.height / 2));
     }
 
-    public void performTest() throws AWTException {
+    public void performTest() throws AWTException, InterruptedException,
+            InvocationTargetException {
         Robot robot = new Robot();
         robot.setAutoDelay(50);
         robot.delay(500);
         robot.waitForIdle();
         Point target = new Point();
-        middleOf(lwbutton, target);
+        EventQueue.invokeAndWait(() -> middleOf(lwbutton, target));
         robot.mouseMove(target.x, target.y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
@@ -111,7 +112,7 @@ public class KeyEventToLightweight extends Frame {
         robot.keyRelease(KeyEvent.VK_B);
         robot.waitForIdle();
         robot.delay(500);
-        middleOf(hwbutton, target);
+        EventQueue.invokeAndWait(() -> middleOf(hwbutton, target));
         robot.mouseMove(target.x, target.y);
         robot.keyPress(KeyEvent.VK_C);
         robot.keyRelease(KeyEvent.VK_C);
