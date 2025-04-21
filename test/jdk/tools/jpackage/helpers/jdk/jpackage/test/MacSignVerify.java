@@ -133,12 +133,9 @@ public final class MacSignVerify {
     }
 
     public static void assertSigned(Path path) {
-        final var verifier = TKit.TextStreamVerifier.group()
-                .add(TKit.assertTextStream(": valid on disk").predicate(String::endsWith))
-                .add(TKit.assertTextStream(": satisfies its Designated Requirement").predicate(String::endsWith))
-                .create();
-        verifier.accept(Executor.of("/usr/bin/codesign", "--verify", "--deep",
-                "--strict", "--verbose=2", path.toString()).executeAndGetOutput().iterator());
+        final var verifier = TKit.assertTextStream(": valid on disk").predicate(String::endsWith).andThen(TKit.assertTextStream(": satisfies its Designated Requirement").predicate(String::endsWith));
+        verifier.apply(Executor.of("/usr/bin/codesign", "--verify", "--deep",
+                "--strict", "--verbose=2", path.toString()).executeAndGetOutput().stream());
     }
 
     public static List<SignIdentity> getPkgCertificateChain(Path path) {
