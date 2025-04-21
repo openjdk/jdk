@@ -107,8 +107,6 @@ public class TestAliasing {
         tests.put("copy_I_sameIndex_alias",           () -> { copy_I_sameIndex_alias(AI, AI); });
         tests.put("copy_I_differentIndex_noalias",    () -> { copy_I_differentIndex_noalias(AI, BI); });
         tests.put("copy_I_differentIndex_alias",      () -> { copy_I_differentIndex_alias(AI, AI); });
-        // TODO: remove old tests, add new ones.
-        //       Especially also the not-working one from the benchmark.
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {

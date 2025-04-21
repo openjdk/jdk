@@ -35,7 +35,7 @@ import java.util.Random;
 @Measurement(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 1)
 public abstract class VectorAliasing {
-    @Param({/*"512",  "1024", */  "2048"})
+    @Param({/*"512",  "1024", */  "10000"})
     public int SIZE;
 
     public static int INVAR_ZERO = 0;
@@ -91,6 +91,34 @@ public abstract class VectorAliasing {
         }
     }
 
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void copy_I(int[] a, int[] b) {
+        for (int i = 0; i < a.length; i++) {
+            b[i] = a[i];
+        }
+    }
+
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void copy_I(int[] a, int[] b, int aOffset, int bOffset, int size) {
+        for (int i = 0; i < size; i++) {
+            b[i + bOffset] = a[i + aOffset];
+        }
+    }
+
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void copy_L(long[] a, long[] b) {
+        for (int i = 0; i < a.length; i++) {
+            b[i] = a[i];
+        }
+    }
+
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void copy_L(long[] a, long[] b, int aOffset, int bOffset, int size) {
+        for (int i = 0; i < size; i++) {
+            b[i + bOffset] = a[i + aOffset];
+        }
+    }
+
     @Benchmark
     public void bench_copy_array_B_sameIndex_noalias() {
         copy_B(bB, aB);
@@ -109,6 +137,82 @@ public abstract class VectorAliasing {
     @Benchmark
     public void bench_copy_array_B_differentIndex_alias() {
         copy_B(aB, aB, 0, 0, aB.length);
+    }
+
+    // No overlap -> expect vectoirzation.
+    @Benchmark
+    public void bench_copy_array_B_half() {
+        copy_B(aB, aB, 0, aB.length / 2, aB.length / 2);
+    }
+
+    // Overlap, but never alias -> expect vectorization.
+    @Benchmark
+    public void bench_copy_array_B_partial_overlap() {
+        copy_B(aB, aB, 0, aB.length / 4, aB.length / 4 * 3);
+    }
+
+    @Benchmark
+    public void bench_copy_array_I_sameIndex_noalias() {
+        copy_I(bI, aI);
+    }
+
+    @Benchmark
+    public void bench_copy_array_I_sameIndex_alias() {
+        copy_I(aI, aI);
+    }
+
+    @Benchmark
+    public void bench_copy_array_I_differentIndex_noalias() {
+        copy_I(bI, aI, 0, 0, aI.length);
+    }
+
+    @Benchmark
+    public void bench_copy_array_I_differentIndex_alias() {
+        copy_I(aI, aI, 0, 0, aI.length);
+    }
+
+    // No overlap -> expect vectoirzation.
+    @Benchmark
+    public void bench_copy_array_I_half() {
+        copy_I(aI, aI, 0, aI.length / 2, aI.length / 2);
+    }
+
+    // Overlap, but never alias -> expect vectorization.
+    @Benchmark
+    public void bench_copy_array_I_partial_overlap() {
+        copy_I(aI, aI, 0, aI.length / 4, aI.length / 4 * 3);
+    }
+
+    @Benchmark
+    public void bench_copy_array_L_sameIndex_noalias() {
+        copy_L(bL, aL);
+    }
+
+    @Benchmark
+    public void bench_copy_array_L_sameIndex_alias() {
+        copy_L(aL, aL);
+    }
+
+    @Benchmark
+    public void bench_copy_array_L_differentIndex_noalias() {
+        copy_L(bL, aL, 0, 0, aL.length);
+    }
+
+    @Benchmark
+    public void bench_copy_array_L_differentIndex_alias() {
+        copy_L(aL, aL, 0, 0, aL.length);
+    }
+
+    // No overlap -> expect vectoirzation.
+    @Benchmark
+    public void bench_copy_array_L_half() {
+        copy_L(aL, aL, 0, aL.length / 2, aL.length / 2);
+    }
+
+    // Overlap, but never alias -> expect vectorization.
+    @Benchmark
+    public void bench_copy_array_L_partial_overlap() {
+        copy_L(aL, aL, 0, aL.length / 4, aL.length / 4 * 3);
     }
 
     @Fork(value = 1, jvmArgs = {
