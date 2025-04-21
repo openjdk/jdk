@@ -5357,11 +5357,6 @@ public class Types {
         }
 
         @Override
-        public Void visitTypeVar(TypeVar t, Void aVoid) {
-            return visit(t.getUpperBound());
-        }
-
-        @Override
         public Void visitArrayType(ArrayType t, Void _unused) {
             return visit(t.elemtype);
         }
@@ -5376,8 +5371,9 @@ public class Types {
                             TypeAnnotationPosition tap = ta.position;
                             if (tap.type == TargetType.CLASS_TYPE_PARAMETER) {
                                 int index = tap.parameter_index;
-                                Type tparam = t.typarams_field.get(index);
-                                if (isValueBased(tparam)) {
+                                // ClassType::getTypeArguments() can be empty for raw types
+                                Type tparam = t.getTypeArguments().isEmpty() ? null : t.getTypeArguments().get(index);
+                                if (tparam != null && isValueBased(tparam)) {
                                     requiresWarning = true;
                                     return null;
                                 }

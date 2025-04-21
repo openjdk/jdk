@@ -1346,7 +1346,9 @@ public class Attr extends JCTree.Visitor {
                     log.error(tree, Errors.IllegalRecordComponentName(v));
                 }
             }
-            if (tree.vartype.type != null && types.needsRequiresIdentityWarning(tree.vartype.type)) {
+            if (tree.vartype != null &&
+                    tree.vartype.type != null &&
+                    types.needsRequiresIdentityWarning(tree.vartype.type)) {
                 env.info.lint.logIfEnabled(tree.vartype.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
             }
         }
