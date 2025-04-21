@@ -399,6 +399,7 @@ VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& d
     _node(node),
     _dependency_node(dependency_graph.dependency_node(node)),
     _current(nullptr),
+    _is_current_memory_edge(false),
     _next_pred(0),
     _end_pred(node->req()),
     _next_memory_pred(0),
@@ -418,11 +419,14 @@ VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& d
 void VLoopDependencyGraph::PredsIterator::next() {
   if (_next_pred < _end_pred) {
     _current = _node->in(_next_pred++);
+    _is_current_memory_edge = false;
   } else if (_next_memory_pred < _end_memory_pred) {
     int pred_bb_idx = _dependency_node->memory_pred_edge(_next_memory_pred++);
     _current = _dependency_graph._body.body().at(pred_bb_idx);
+    _is_current_memory_edge = true;
   } else {
     _current = nullptr; // done
+    _is_current_memory_edge = false;
   }
 }
 
