@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1767,6 +1768,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int count = this.count;
         if (isLatin1()) {
             byte[] val = this.value;
+            int compressed = StringUTF16.compress(s, off, val, count, end - off);
+            count += compressed;
+            off += compressed;
             for (int i = off, j = count; i < end; i++) {
                 char c = s[i];
                 if (StringLatin1.canEncode(c)) {
