@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ public final class JRSUIConstants {
         @Native private static final byte _pressed = 4;
         public static final State PRESSED = new State(_pressed);
         @Native private static final byte _pulsed = 5;
-        public static final State PULSED = new State(_pulsed);
+        public static final State DEFAULTBUTTON = new State(_pulsed);
         @Native private static final byte _rollover = 6;
         public static final State ROLLOVER = new State(_rollover);
         @Native private static final byte _drag = 7;
