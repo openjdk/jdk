@@ -25,7 +25,7 @@
  * @test
  * @bug 8341608
  * @summary Tests for jdeps tool with jar files with malformed classes
- * @library lib /test/lib jdk.jdeps
+ * @library lib /test/lib
  * @build jdk.jdeps/com.sun.tools.jdeps.*
  * @run junit MalformedClassesTest
  */
