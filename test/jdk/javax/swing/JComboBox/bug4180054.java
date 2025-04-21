@@ -34,7 +34,7 @@ import javax.swing.event.ListDataListener;
 /*
  * @test
  * @bug 4180054
- * @summary Tests that DefaultComboBoxModel doesn't fire a "contents changed" unneccesarily
+ * @summary Tests that DefaultComboBoxModel doesn't fire a "contents changed" unnecessarily
  * @key headful
  * @run main bug4180054
  */

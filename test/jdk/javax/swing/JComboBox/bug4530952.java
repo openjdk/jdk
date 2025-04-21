@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Point;
 import java.awt.Robot;
@@ -46,24 +47,18 @@ import javax.swing.event.DocumentListener;
 public class bug4530952 {
     static JFrame frame;
     static JButton btnAction;
+    static JComboBox cmbAction;
     static volatile Point loc;
+    static volatile Dimension btnSize;
 
-    private static boolean flag = false;
-
-    private static boolean passed() {
-        return flag;
-    }
-
-    private static void pass() {
-        flag = true;
-    }
+    private static volatile boolean flag;
 
     public static void main(String[] args) throws Exception {
         try {
             Robot robot = new Robot();
             SwingUtilities.invokeAndWait(() -> createTestUI());
             robot.waitForIdle();
-            robot.delay(250);
+            robot.delay(1000);
 
             // enter some text in combo box
             robot.keyPress(KeyEvent.VK_A);
@@ -74,17 +69,23 @@ public class bug4530952 {
             robot.delay(250);
 
             // find and click action button
-            SwingUtilities.invokeAndWait(() -> loc = btnAction.getLocationOnScreen());
+            SwingUtilities.invokeAndWait(() -> {
+                loc = btnAction.getLocationOnScreen();
+                btnSize = btnAction.getSize();
+            });
             robot.waitForIdle();
             robot.delay(250);
 
-            robot.mouseMove(loc.x, loc.y);
+            robot.mouseMove(loc.x + btnSize.width / 2,
+                    loc.y + btnSize.height / 2);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
-            robot.delay(250);
+            robot.delay(1000);
 
-            if (!passed()) {
+            if (!flag) {
                 throw new RuntimeException("Failed: button action was not fired");
             }
         } finally {
@@ -101,9 +102,11 @@ public class bug4530952 {
         frame.setLayout(new FlowLayout());
 
         btnAction = new JButton("Action");
-        JComboBox cmbAction = new JComboBox();
+        cmbAction = new JComboBox();
 
-        ActionListener al = e -> pass();
+        flag = false;
+
+        ActionListener al = e -> flag = true;
         DocumentListener dl = new DocumentListener() {
             @Override
             public void changedUpdate(DocumentEvent evt) {
