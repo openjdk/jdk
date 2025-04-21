@@ -247,7 +247,7 @@ public class RTLScrollers extends JDialog
             else if (row % 3 == 0) {
                 comp.setBackground(Color.RED);
             }
-            else if ((row  + 1) % 3 == 0) {
+            else if ((row + 1) % 3 == 0) {
                 comp.setBackground(Color.WHITE);
             }
             else {
