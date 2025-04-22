@@ -560,8 +560,7 @@ public class Flags {
             public String toString() {
                 return "non-sealed";
             }
-        }
-        ;
+        };
 
         Flag(long flag) {
             this.value = flag;
