@@ -551,12 +551,10 @@ class G1ParEvacuateFollowersClosure : public VoidClosure {
   TaskTerminator*         terminator()     { return _terminator; }
 
   inline bool offer_termination() {
-    EventGCPhaseParallel event;
     G1ParScanThreadState* const pss = par_scan_state();
     start_term_time();
     const bool res = (terminator() == nullptr) ? true : terminator()->offer_termination();
     end_term_time();
-    event.commit(GCId::current(), pss->worker_id(), G1GCPhaseTimes::phase_name(G1GCPhaseTimes::Termination));
     return res;
   }
 
