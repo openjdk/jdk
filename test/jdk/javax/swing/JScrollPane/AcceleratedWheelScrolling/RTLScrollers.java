@@ -274,9 +274,11 @@ public class RTLScrollers extends JDialog
         SwingUtilities.invokeAndWait(() -> {
             try {
                 retVal = rtl.runTests(scrollAmount);
-                rtl.setVisible(false);
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                rtl.setVisible(false);
+                rtl.dispose();
             }
         });
 
