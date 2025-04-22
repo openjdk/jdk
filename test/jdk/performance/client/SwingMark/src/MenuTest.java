@@ -69,14 +69,6 @@ public class MenuTest extends AbstractSwingTest {
 
    int repeat = 50;
 
-   /**
-     * This test cannot run as an applet because it
-     * posts events to the event queue
-     */
-   public boolean canRunInApplet() {
-      return false;
-   }
-
    public JComponent getTestComponent() {
       listener = new MyListener();
 

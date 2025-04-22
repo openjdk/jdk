@@ -25,15 +25,22 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
+import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.UnknownInlineTagTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 /**
  * Build list of all the preview packages, classes, constructors, fields and methods.
@@ -41,8 +48,9 @@ import java.util.stream.Collectors;
 public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
 
     private final Map<Element, JEP> elementJeps = new HashMap<>();
+    private final SortedSet<Element> elementNotes = createSummarySet();
     private final Map<String, JEP> jeps = new HashMap<>();
-    private static final JEP NULL_SENTINEL = new JEP(0, "", "");
+    private final String previewNoteTag;
 
     /**
      * The JEP for a preview feature in this release.
@@ -61,39 +69,78 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
      */
     public PreviewAPIListBuilder(BaseConfiguration configuration) {
         super(configuration);
-        buildSummaryAPIInfo();
+        this.previewNoteTag = configuration.getOptions().previewNoteTag();
+        // retrieve preview JEPs
+        buildPreviewFeatureInfo();
+        if (!jeps.isEmpty()) {
+            // map elements to preview JEPs and preview tags
+            buildSummaryAPIInfo();
+            // remove unused preview JEPs
+            jeps.entrySet().removeIf(e -> !elementJeps.containsValue(e.getValue()));
+        }
+    }
+
+    private void buildPreviewFeatureInfo() {
+        TypeElement featureType = utils.elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.Feature");
+        if (featureType == null) {
+            return;
+        }
+        TypeElement jepType = utils.elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.JEP");
+        featureType.getEnclosedElements().forEach(elem -> {
+            for (AnnotationMirror anno : elem.getAnnotationMirrors()) {
+                if (anno.getAnnotationType().asElement().equals(jepType)) {
+                    Map<? extends ExecutableElement, ? extends AnnotationValue> values = anno.getElementValues();
+                    jeps.put(elem.getSimpleName().toString(), new JEP(
+                            getAnnotationElementValue(values, "number", 0),
+                            getAnnotationElementValue(values, "title", ""),
+                            getAnnotationElementValue(values, "status", "Preview"))
+                    );
+                }
+            }
+        });
+    }
+
+    // Extract a single annotation element value with the given name and default value
+    @SuppressWarnings("unchecked")
+    private <R> R getAnnotationElementValue(Map<? extends ExecutableElement, ? extends AnnotationValue> values,
+                                            String name, R defaultValue) {
+        Optional<R> value = values.entrySet().stream()
+                .filter(e -> Objects.equals(e.getKey().getSimpleName().toString(), name))
+                .map(e -> (R) e.getValue().getValue())
+                .findFirst();
+        return value.orElse(defaultValue);
     }
 
     @Override
     protected boolean belongsToSummary(Element element) {
-        if (!utils.isPreviewAPI(element)) {
-            return false;
-        }
-        String feature = Objects.requireNonNull(utils.getPreviewFeature(element),
-                "Preview feature not specified").toString();
-        JEP jep = jeps.computeIfAbsent(feature, featureName -> {
-            Map<String, Object> jepInfo = configuration.workArounds.getJepInfo(featureName);
-            if (!jepInfo.isEmpty()) {
-                int number = 0;
-                String title = "";
-                String status = "Preview"; // Default value is not returned by the method we used above.
-                for (var entry : jepInfo.entrySet()) {
-                    switch (entry.getKey()) {
-                        case "number" -> number = (int) entry.getValue();
-                        case "title" -> title = (String) entry.getValue();
-                        case "status" -> status = (String) entry.getValue();
-                        default -> throw new IllegalArgumentException(entry.getKey());
-                    }
-                }
-                return new JEP(number, title, status);
+        if (utils.isPreviewAPI(element)) {
+            String feature = Objects.requireNonNull(utils.getPreviewFeature(element),
+                    "Preview feature not specified").toString();
+            // Preview features without JEP are not included in the list.
+            JEP jep = jeps.get(feature);
+            if (jep != null) {
+                elementJeps.put(element, jep);
+                return true;
             }
-            return NULL_SENTINEL;
-        });
-        if (jep != NULL_SENTINEL) {
-            elementJeps.put(element, jep);
-            return true;
         }
-        // Preview features without JEP are not included.
+        // If preview tag is defined map elements to preview tags
+        if (previewNoteTag != null) {
+            CommentHelper ch = utils.getCommentHelper(element);
+            if (ch.dcTree != null) {
+                var jep = ch.dcTree.getFullBody().stream()
+                        .filter(dt -> dt.getKind() == DocTree.Kind.UNKNOWN_INLINE_TAG)
+                        .map(dt -> (UnknownInlineTagTree) dt)
+                        .filter(t -> previewNoteTag.equals(t.getTagName()) && !t.getContent().isEmpty())
+                        .map(this::findJEP)
+                        .filter(Objects::nonNull)
+                        .findFirst();
+                if (jep.isPresent()) {
+                    elementNotes.add(element);
+                    elementJeps.put(element, jep.get());
+                    // Don't return true as this is not actual preview API.
+                }
+            }
+        }
         return false;
     }
 
@@ -101,10 +148,7 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
      * {@return a sorted set of preview feature JEPs in this release}
      */
     public Set<JEP> getJEPs() {
-        return jeps.values()
-                .stream()
-                .filter(jep -> jep != NULL_SENTINEL)
-                .collect(Collectors.toCollection(TreeSet::new));
+        return new TreeSet<>(jeps.values());
     }
 
     /**
@@ -112,5 +156,27 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
      */
     public JEP getJEP(Element e) {
         return elementJeps.get(e);
+    }
+
+    /**
+     * {@return a sorted set containing elements tagged with preview notes}
+     */
+    public SortedSet<Element> getElementNotes() {
+        return elementNotes;
+    }
+
+    private JEP findJEP(UnknownInlineTagTree tag) {
+        var content = tag.getContent().toString().trim().split("\\s+", 2);
+        try {
+            var jnum = Integer.parseInt(content[0]);
+            for (var jep : jeps.values()) {
+                if (jep.number == jnum) {
+                    return jep;
+                }
+            }
+        } catch (NumberFormatException nfe) {
+            // print warning?
+        }
+        return null;
     }
 }

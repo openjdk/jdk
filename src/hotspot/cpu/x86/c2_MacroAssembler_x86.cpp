@@ -476,7 +476,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   Label slow_path;
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     movptr(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), 0);
   }
 
@@ -1132,7 +1132,6 @@ void C2_MacroAssembler::signum_fp(int opcode, XMMRegister dst, XMMRegister zero,
   Label DONE_LABEL;
 
   if (opcode == Op_SignumF) {
-    assert(UseSSE > 0, "required");
     ucomiss(dst, zero);
     jcc(Assembler::equal, DONE_LABEL);    // handle special case +0.0/-0.0, if argument is +0.0/-0.0, return argument
     jcc(Assembler::parity, DONE_LABEL);   // handle special case NaN, if argument NaN, return NaN
@@ -1140,7 +1139,6 @@ void C2_MacroAssembler::signum_fp(int opcode, XMMRegister dst, XMMRegister zero,
     jcc(Assembler::above, DONE_LABEL);
     xorps(dst, ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), noreg);
   } else if (opcode == Op_SignumD) {
-    assert(UseSSE > 1, "required");
     ucomisd(dst, zero);
     jcc(Assembler::equal, DONE_LABEL);    // handle special case +0.0/-0.0, if argument is +0.0/-0.0, return argument
     jcc(Assembler::parity, DONE_LABEL);   // handle special case NaN, if argument NaN, return NaN
@@ -4108,7 +4106,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
     // Fallthru to tail compare
   } else {
 
-    if (UseAVX >= 2 && UseSSE >= 2) {
+    if (UseAVX >= 2) {
       // With AVX2, use 32-byte vector compare
       Label COMPARE_WIDE_VECTORS, BREAK_LOOP;
 
@@ -4255,7 +4253,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
 
   // That's it
   bind(DONE);
-  if (UseAVX >= 2 && UseSSE >= 2) {
+  if (UseAVX >= 2) {
     // clean upper bits of YMM registers
     vpxor(vec1, vec1);
     vpxor(vec2, vec2);

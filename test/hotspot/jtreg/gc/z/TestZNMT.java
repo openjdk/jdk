@@ -63,9 +63,7 @@ public class TestZNMT {
     private static void testValue(int zForceDiscontiguousHeapReservations) throws Exception  {
         /**
          *  Xmx is picked so that it is divisible by 'ZForceDiscontiguousHeapReservations * ZGranuleSize'
-         *  Xms is picked so that it is less than '16 * Xmx / ZForceDiscontiguousHeapReservations' as ZGC
-         *   cannot currently handle a discontiguous heap with an initial size larger than the individual
-         *   reservations.
+         *  Xms is picked so that it is less than '16 * Xmx / ZForceDiscontiguousHeapReservations'
          */
         final int XmsInM = Math.min(16 * XmxInM / (zForceDiscontiguousHeapReservations + 1), XmxInM);
         OutputAnalyzer oa = ProcessTools.executeTestJava(

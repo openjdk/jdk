@@ -52,10 +52,6 @@ public class TypingTest extends AbstractSwingTest {
         return panel;
     }
 
-    public boolean canRunInApplet() {
-        return false;
-    }
-
     public String getTestName() {
         return "Typing";
     }

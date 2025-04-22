@@ -276,44 +276,36 @@ void TemplateTable::lconst(int value) {
 
 void TemplateTable::fconst(int value) {
   transition(vtos, ftos);
-  if (UseSSE >= 1) {
-    static float one = 1.0f, two = 2.0f;
-    switch (value) {
-    case 0:
-      __ xorps(xmm0, xmm0);
-      break;
-    case 1:
-      __ movflt(xmm0, ExternalAddress((address) &one), rscratch1);
-      break;
-    case 2:
-      __ movflt(xmm0, ExternalAddress((address) &two), rscratch1);
-      break;
-    default:
-      ShouldNotReachHere();
-      break;
-    }
-  } else {
+  static float one = 1.0f, two = 2.0f;
+  switch (value) {
+  case 0:
+    __ xorps(xmm0, xmm0);
+    break;
+  case 1:
+    __ movflt(xmm0, ExternalAddress((address) &one), rscratch1);
+    break;
+  case 2:
+    __ movflt(xmm0, ExternalAddress((address) &two), rscratch1);
+    break;
+  default:
     ShouldNotReachHere();
+    break;
   }
 }
 
 void TemplateTable::dconst(int value) {
   transition(vtos, dtos);
-  if (UseSSE >= 2) {
-    static double one = 1.0;
-    switch (value) {
-    case 0:
-      __ xorpd(xmm0, xmm0);
-      break;
-    case 1:
-      __ movdbl(xmm0, ExternalAddress((address) &one), rscratch1);
-      break;
-    default:
-      ShouldNotReachHere();
-      break;
-    }
-  } else {
+  static double one = 1.0;
+  switch (value) {
+  case 0:
+    __ xorpd(xmm0, xmm0);
+    break;
+  case 1:
+    __ movdbl(xmm0, ExternalAddress((address) &one), rscratch1);
+    break;
+  default:
     ShouldNotReachHere();
+    break;
   }
 }
 
@@ -373,7 +365,7 @@ void TemplateTable::ldc(LdcType type) {
   __ jccb(Assembler::notEqual, notFloat);
 
   // ftos
-  __ load_float(Address(rcx, rbx, Address::times_ptr, base_offset));
+  __ movflt(xmm0, Address(rcx, rbx, Address::times_ptr, base_offset));
   __ push(ftos);
   __ jmp(Done);
 
@@ -452,7 +444,7 @@ void TemplateTable::ldc2_w() {
   __ jccb(Assembler::notEqual, notDouble);
 
   // dtos
-  __ load_double(Address(rcx, rbx, Address::times_ptr, base_offset));
+  __ movdbl(xmm0, Address(rcx, rbx, Address::times_ptr, base_offset));
   __ push(dtos);
 
   __ jmp(Done);
@@ -478,7 +470,7 @@ void TemplateTable::condy_helper(Label& Done) {
   const Register rarg = c_rarg1;
   __ movl(rarg, (int)bytecode());
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rarg);
-  __ get_vm_result_2(flags);
+  __ get_vm_result_metadata(flags);
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
   __ movl(off, flags);
@@ -506,7 +498,7 @@ void TemplateTable::condy_helper(Label& Done) {
       __ cmpl(flags, ftos);
       __ jccb(Assembler::notEqual, notFloat);
       // ftos
-      __ load_float(field);
+      __ movflt(xmm0, field);
       __ push(ftos);
       __ jmp(Done);
 
@@ -561,7 +553,7 @@ void TemplateTable::condy_helper(Label& Done) {
       __ cmpl(flags, dtos);
       __ jccb(Assembler::notEqual, notDouble);
       // dtos
-      __ load_double(field);
+      __ movdbl(xmm0, field);
       __ push(dtos);
       __ jmp(Done);
 
@@ -655,13 +647,13 @@ void TemplateTable::lload() {
 void TemplateTable::fload() {
   transition(vtos, ftos);
   locals_index(rbx);
-  __ load_float(faddress(rbx));
+  __ movflt(xmm0, faddress(rbx));
 }
 
 void TemplateTable::dload() {
   transition(vtos, dtos);
   locals_index(rbx);
-  __ load_double(daddress(rbx));
+  __ movdbl(xmm0, daddress(rbx));
 }
 
 void TemplateTable::aload() {
@@ -692,13 +684,13 @@ void TemplateTable::wide_lload() {
 void TemplateTable::wide_fload() {
   transition(vtos, ftos);
   locals_index_wide(rbx);
-  __ load_float(faddress(rbx));
+  __ movflt(xmm0, faddress(rbx));
 }
 
 void TemplateTable::wide_dload() {
   transition(vtos, dtos);
   locals_index_wide(rbx);
-  __ load_double(daddress(rbx));
+  __ movdbl(xmm0, daddress(rbx));
 }
 
 void TemplateTable::wide_aload() {
@@ -852,12 +844,12 @@ void TemplateTable::lload(int n) {
 
 void TemplateTable::fload(int n) {
   transition(vtos, ftos);
-  __ load_float(faddress(n));
+  __ movflt(xmm0, faddress(n));
 }
 
 void TemplateTable::dload(int n) {
   transition(vtos, dtos);
-  __ load_double(daddress(n));
+  __ movdbl(xmm0, daddress(n));
 }
 
 void TemplateTable::aload(int n) {
@@ -959,13 +951,13 @@ void TemplateTable::lstore() {
 void TemplateTable::fstore() {
   transition(ftos, vtos);
   locals_index(rbx);
-  __ store_float(faddress(rbx));
+  __ movflt(faddress(rbx), xmm0);
 }
 
 void TemplateTable::dstore() {
   transition(dtos, vtos);
   locals_index(rbx);
-  __ store_double(daddress(rbx));
+  __ movdbl(daddress(rbx), xmm0);
 }
 
 void TemplateTable::astore() {
@@ -1041,7 +1033,7 @@ void TemplateTable::lastore() {
 void TemplateTable::fastore() {
   transition(ftos, vtos);
   __ pop_i(rbx);
-  // value is in UseSSE >= 1 ? xmm0 : ST(0)
+  // value is in xmm0
   // rbx:  index
   // rdx:  array
   index_check(rdx, rbx); // prefer index in rbx
@@ -1054,7 +1046,7 @@ void TemplateTable::fastore() {
 void TemplateTable::dastore() {
   transition(dtos, vtos);
   __ pop_i(rbx);
-  // value is in UseSSE >= 2 ? xmm0 : ST(0)
+  // value is in xmm0
   // rbx:  index
   // rdx:  array
   index_check(rdx, rbx); // prefer index in rbx
@@ -1170,12 +1162,12 @@ void TemplateTable::lstore(int n) {
 
 void TemplateTable::fstore(int n) {
   transition(ftos, vtos);
-  __ store_float(faddress(n));
+  __ movflt(faddress(n), xmm0);
 }
 
 void TemplateTable::dstore(int n) {
   transition(dtos, vtos);
-  __ store_double(daddress(n));
+  __ movdbl(daddress(n), xmm0);
 }
 
 
@@ -1397,81 +1389,73 @@ void TemplateTable::lushr() {
 void TemplateTable::fop2(Operation op) {
   transition(ftos, ftos);
 
-  if (UseSSE >= 1) {
-    switch (op) {
-    case add:
-      __ addss(xmm0, at_rsp());
-      __ addptr(rsp, Interpreter::stackElementSize);
-      break;
-    case sub:
-      __ movflt(xmm1, xmm0);
-      __ pop_f(xmm0);
-      __ subss(xmm0, xmm1);
-      break;
-    case mul:
-      __ mulss(xmm0, at_rsp());
-      __ addptr(rsp, Interpreter::stackElementSize);
-      break;
-    case div:
-      __ movflt(xmm1, xmm0);
-      __ pop_f(xmm0);
-      __ divss(xmm0, xmm1);
-      break;
-    case rem:
-      // On x86_64 platforms the SharedRuntime::frem method is called to perform the
-      // modulo operation. The frem method calls the function
-      // double fmod(double x, double y) in math.h. The documentation of fmod states:
-      // "If x or y is a NaN, a NaN is returned." without specifying what type of NaN
-      // (signalling or quiet) is returned.
-      __ movflt(xmm1, xmm0);
-      __ pop_f(xmm0);
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::frem), 2);
-      break;
-    default:
-      ShouldNotReachHere();
-      break;
-    }
-  } else {
+  switch (op) {
+  case add:
+    __ addss(xmm0, at_rsp());
+    __ addptr(rsp, Interpreter::stackElementSize);
+    break;
+  case sub:
+    __ movflt(xmm1, xmm0);
+    __ pop_f(xmm0);
+    __ subss(xmm0, xmm1);
+    break;
+  case mul:
+    __ mulss(xmm0, at_rsp());
+    __ addptr(rsp, Interpreter::stackElementSize);
+    break;
+  case div:
+    __ movflt(xmm1, xmm0);
+    __ pop_f(xmm0);
+    __ divss(xmm0, xmm1);
+    break;
+  case rem:
+    // On x86_64 platforms the SharedRuntime::frem method is called to perform the
+    // modulo operation. The frem method calls the function
+    // double fmod(double x, double y) in math.h. The documentation of fmod states:
+    // "If x or y is a NaN, a NaN is returned." without specifying what type of NaN
+    // (signalling or quiet) is returned.
+    __ movflt(xmm1, xmm0);
+    __ pop_f(xmm0);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::frem), 2);
+    break;
+  default:
     ShouldNotReachHere();
+    break;
   }
 }
 
 void TemplateTable::dop2(Operation op) {
   transition(dtos, dtos);
-  if (UseSSE >= 2) {
-    switch (op) {
-    case add:
-      __ addsd(xmm0, at_rsp());
-      __ addptr(rsp, 2 * Interpreter::stackElementSize);
-      break;
-    case sub:
-      __ movdbl(xmm1, xmm0);
-      __ pop_d(xmm0);
-      __ subsd(xmm0, xmm1);
-      break;
-    case mul:
-      __ mulsd(xmm0, at_rsp());
-      __ addptr(rsp, 2 * Interpreter::stackElementSize);
-      break;
-    case div:
-      __ movdbl(xmm1, xmm0);
-      __ pop_d(xmm0);
-      __ divsd(xmm0, xmm1);
-      break;
-    case rem:
-      // Similar to fop2(), the modulo operation is performed using the
-      // SharedRuntime::drem method on x86_64 platforms for the same reasons
-      // as mentioned in fop2().
-      __ movdbl(xmm1, xmm0);
-      __ pop_d(xmm0);
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::drem), 2);
-      break;
-    default:
-      ShouldNotReachHere();
-      break;
-    }
-  } else {
+  switch (op) {
+  case add:
+    __ addsd(xmm0, at_rsp());
+    __ addptr(rsp, 2 * Interpreter::stackElementSize);
+    break;
+  case sub:
+    __ movdbl(xmm1, xmm0);
+    __ pop_d(xmm0);
+    __ subsd(xmm0, xmm1);
+    break;
+  case mul:
+    __ mulsd(xmm0, at_rsp());
+    __ addptr(rsp, 2 * Interpreter::stackElementSize);
+    break;
+  case div:
+    __ movdbl(xmm1, xmm0);
+    __ pop_d(xmm0);
+    __ divsd(xmm0, xmm1);
+    break;
+  case rem:
+    // Similar to fop2(), the modulo operation is performed using the
+    // SharedRuntime::drem method on x86_64 platforms for the same reasons
+    // as mentioned in fop2().
+    __ movdbl(xmm1, xmm0);
+    __ pop_d(xmm0);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::drem), 2);
+    break;
+  default:
     ShouldNotReachHere();
+    break;
   }
 }
 
@@ -1502,23 +1486,15 @@ static jlong double_signflip_pool[2*2];
 
 void TemplateTable::fneg() {
   transition(ftos, ftos);
-  if (UseSSE >= 1) {
-    static jlong *float_signflip  = double_quadword(&float_signflip_pool[1],  CONST64(0x8000000080000000),  CONST64(0x8000000080000000));
-    __ xorps(xmm0, ExternalAddress((address) float_signflip), rscratch1);
-  } else {
-    ShouldNotReachHere();
-  }
+  static jlong *float_signflip  = double_quadword(&float_signflip_pool[1],  CONST64(0x8000000080000000),  CONST64(0x8000000080000000));
+  __ xorps(xmm0, ExternalAddress((address) float_signflip), rscratch1);
 }
 
 void TemplateTable::dneg() {
   transition(dtos, dtos);
-  if (UseSSE >= 2) {
-    static jlong *double_signflip =
-      double_quadword(&double_signflip_pool[1], CONST64(0x8000000000000000), CONST64(0x8000000000000000));
-    __ xorpd(xmm0, ExternalAddress((address) double_signflip), rscratch1);
-  } else {
-    ShouldNotReachHere();
-  }
+  static jlong *double_signflip =
+    double_quadword(&double_signflip_pool[1], CONST64(0x8000000000000000), CONST64(0x8000000000000000));
+  __ xorpd(xmm0, ExternalAddress((address) double_signflip), rscratch1);
 }
 
 void TemplateTable::iinc() {
@@ -1682,36 +1658,31 @@ void TemplateTable::lcmp() {
 }
 
 void TemplateTable::float_cmp(bool is_float, int unordered_result) {
-  if ((is_float && UseSSE >= 1) ||
-      (!is_float && UseSSE >= 2)) {
-    Label done;
-    if (is_float) {
-      // XXX get rid of pop here, use ... reg, mem32
-      __ pop_f(xmm1);
-      __ ucomiss(xmm1, xmm0);
-    } else {
-      // XXX get rid of pop here, use ... reg, mem64
-      __ pop_d(xmm1);
-      __ ucomisd(xmm1, xmm0);
-    }
-    if (unordered_result < 0) {
-      __ movl(rax, -1);
-      __ jccb(Assembler::parity, done);
-      __ jccb(Assembler::below, done);
-      __ setb(Assembler::notEqual, rdx);
-      __ movzbl(rax, rdx);
-    } else {
-      __ movl(rax, 1);
-      __ jccb(Assembler::parity, done);
-      __ jccb(Assembler::above, done);
-      __ movl(rax, 0);
-      __ jccb(Assembler::equal, done);
-      __ decrementl(rax);
-    }
-    __ bind(done);
+  Label done;
+  if (is_float) {
+    // XXX get rid of pop here, use ... reg, mem32
+    __ pop_f(xmm1);
+    __ ucomiss(xmm1, xmm0);
   } else {
-    ShouldNotReachHere();
+    // XXX get rid of pop here, use ... reg, mem64
+    __ pop_d(xmm1);
+    __ ucomisd(xmm1, xmm0);
   }
+  if (unordered_result < 0) {
+    __ movl(rax, -1);
+    __ jccb(Assembler::parity, done);
+    __ jccb(Assembler::below, done);
+    __ setb(Assembler::notEqual, rdx);
+    __ movzbl(rax, rdx);
+  } else {
+    __ movl(rax, 1);
+    __ jccb(Assembler::parity, done);
+    __ jccb(Assembler::above, done);
+    __ movl(rax, 0);
+    __ jccb(Assembler::equal, done);
+    __ decrementl(rax);
+  }
+  __ bind(done);
 }
 
 void TemplateTable::branch(bool is_jsr, bool is_wide) {
@@ -3709,8 +3680,7 @@ void TemplateTable::checkcast() {
   __ push(atos); // save receiver for result, and for GC
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
 
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(rax);
+  __ get_vm_result_metadata(rax);
 
   __ pop_ptr(rdx); // restore receiver
   __ jmpb(resolved);
@@ -3766,8 +3736,7 @@ void TemplateTable::instanceof() {
   __ push(atos); // save receiver for result, and for GC
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
 
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(rax);
+  __ get_vm_result_metadata(rax);
 
   __ pop_ptr(rdx); // restore receiver
   __ verify_oop(rdx);

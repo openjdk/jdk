@@ -112,7 +112,7 @@
 // Cast from int value to narrow type
 #define CHECKED_CAST(result, T, thing)      \
   result = static_cast<T>(thing); \
-  assert(static_cast<int>(result) == thing, "failed: %d != %d", static_cast<int>(result), thing);
+  guarantee(static_cast<int>(result) == thing, "failed: %d != %d", static_cast<int>(result), thing);
 
 //---------------------------------------------------------------------------------
 // NMethod statistics

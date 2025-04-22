@@ -42,7 +42,7 @@ public class DnDFileGroupDescriptor {
             When the test starts, a RED panel appears.
             1. Start MS Outlook program. Find and open the mail form with attachments.
 
-            2. Select attachments from the mail and drag into a red field of applet.
+            2. Select attachments from the mail and drag into a red field of the window.
                 When the mouse enters the field during the process of drag, the application
                 should change the cursor form to OLE-copy and field color to yellow.
 
