@@ -86,15 +86,6 @@ public abstract class AbstractSwingTest {
           */
         public abstract void runTest();
 
-        /**
-          * This method is used to determine if a test can be run from within
-          * an applet.  If your test will cause security exceptions when run as
-          * an applet then you should return false from this method.
-          */
-        public boolean canRunInApplet() {
-                return true;
-        }
-
    public int getPaintCount() {
       return paintCount;
    }
