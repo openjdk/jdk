@@ -40,7 +40,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 
-import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.internal.net.http.frame.ErrorFrame;
 
 /**
@@ -68,7 +67,7 @@ public class Http2TestServer implements AutoCloseable {
     private volatile Predicate<String> newRequestApprover;
 
     private static ExecutorService createExecutor(String name) {
-        String threadNamePrefix = "http2-test-server-worker" + (name != null ? "[%s]".formatted(name) : "");
+        String threadNamePrefix = "%s-pool".formatted(name == null ? "TestServer" : name);
         ThreadFactory threadFactory = createThreadFactory(threadNamePrefix);
         return Executors.newCachedThreadPool(threadFactory);
     }
