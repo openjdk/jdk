@@ -42,7 +42,6 @@ import sun.security.ssl.SessionTicketExtension.SessionTicketSpec;
 import sun.security.util.HexDumpEncoder;
 
 import static sun.security.ssl.SSLExtension.*;
-import static sun.security.ssl.SignatureScheme.CERTIFICATE_SCOPE;
 
 /**
  * Pack of the "pre_shared_key" extension.
@@ -445,13 +444,7 @@ final class PreSharedKeyExtension {
         // localSupportedCertSignAlgs field is populated.  This is particularly
         // important when client authentication was used in an initial session,
         // and it is now being resumed.
-        if (shc.localSupportedCertSignAlgs == null) {
-            shc.localSupportedCertSignAlgs =
-                    SignatureScheme.getSupportedAlgorithms(
-                            shc.sslConfig,
-                            shc.algorithmConstraints, shc.activeProtocols,
-                            CERTIFICATE_SCOPE);
-        }
+        SignatureScheme.updateHandshakeLocalSupportedAlgs(shc);
 
         // Validate the required client authentication.
         if (result &&
