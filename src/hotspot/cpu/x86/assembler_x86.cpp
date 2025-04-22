@@ -305,15 +305,14 @@ void Assembler::emit_arith_b(int op1, int op2, Register dst, int imm8) {
   emit_int24(op1, (op2 | encode(dst)), imm8);
 }
 
-
-void Assembler::emit_arith(int op1, int op2, Register dst, int32_t imm32, bool demote) {
+void Assembler::emit_arith(int op1, int op2, Register dst, int32_t imm32, bool optimize_rax_dst) {
   assert(isByte(op1) && isByte(op2), "wrong opcode");
   assert(op1 == 0x81, "Unexpected opcode");
   if (is8bit(imm32)) {
     emit_int24(op1 | 0x02,        // set sign bit
                op2 | encode(dst),
                imm32 & 0xFF);
-  } else if (demote && dst == rax) {
+  } else if (optimize_rax_dst && dst == rax) {
     switch (op2) {
       case 0xD0: emit_int8(0x15); break; // adc
       case 0xC0: emit_int8(0x05); break; // add

@@ -847,7 +847,7 @@ private:
   bool is_demotable(bool no_flags, int dst_enc, int nds_enc);
   void emit_arith_b(int op1, int op2, Register dst, int imm8);
 
-  void emit_arith(int op1, int op2, Register dst, int32_t imm32, bool demote = true);
+  void emit_arith(int op1, int op2, Register dst, int32_t imm32, bool optimize_rax_dst = true);
   // Force generation of a 4 byte immediate value even if it fits into 8bit
   void emit_arith_imm32(int op1, int op2, Register dst, int32_t imm32);
   void emit_arith(int op1, int op2, Register dst, Register src);
