@@ -623,7 +623,7 @@ public:
   bool mutually_independent(const Node_List* nodes) const;
 
 private:
-  void add_node(MemNode* n, GrowableArray<int>& strong_edges, GrowableArray<int>& weak_edges);
+  void add_node(MemNode* n, GrowableArray<int>& strong_memory_edges, GrowableArray<int>& weak_memory_edges);
   int depth(const Node* n) const { return _depths.at(_body.bb_idx(n)); }
   void set_depth(const Node* n, int d) { _depths.at_put(_body.bb_idx(n), d); }
   int find_max_pred_depth(const Node* n) const;
@@ -637,23 +637,23 @@ private:
   class DependencyNode : public ArenaObj {
   private:
     MemNode* _node; // Corresponding ideal node
-    const uint _num_strong_edges;
-    const uint _num_weak_edges;
-    int* _memory_pred_edges; // memory pred-edges, mapping to bb_idx
+    const uint _num_strong_memory_edges;
+    const uint _num_weak_memory_edges;
+    int* _memory_edges; // memory pred-edges, mapping to bb_idx
   public:
-    DependencyNode(MemNode* n, GrowableArray<int>& strong_edges, GrowableArray<int>& weak_edges, Arena* arena);
+    DependencyNode(MemNode* n, GrowableArray<int>& strong_memory_edges, GrowableArray<int>& weak_memory_edges, Arena* arena);
     NONCOPYABLE(DependencyNode);
-    uint num_strong_edges() const { return _num_strong_edges; }
-    uint num_weak_edges() const { return _num_weak_edges; }
+    uint num_strong_memory_edges() const { return _num_strong_memory_edges; }
+    uint num_weak_memory_edges() const { return _num_weak_memory_edges; }
 
-    int strong_edge(uint i) const {
-      assert(i < _num_strong_edges, "bounds check");
-      return _memory_pred_edges[i];
+    int strong_memory_edge(uint i) const {
+      assert(i < _num_strong_memory_edges, "bounds check");
+      return _memory_edges[i];
     }
 
-    int weak_edge(uint i) const {
-      assert(i < _num_weak_edges, "bounds check");
-      return _memory_pred_edges[_num_strong_edges + i];
+    int weak_memory_edge(uint i) const {
+      assert(i < _num_weak_memory_edges, "bounds check");
+      return _memory_edges[_num_strong_memory_edges + i];
     }
   };
 
@@ -675,13 +675,13 @@ public:
     int _next_pred;
     int _end_pred;
 
-    // Iterate in dependency_node->strong_edges()
-    int _next_strong_edge;
-    int _end_strong_edge;
+    // Iterate in dependency_node->strong_memory_edges()
+    int _next_strong_memory_edge;
+    int _end_strong_memory_edge;
 
-    // Iterate in dependency_node->weak_edge()
-    int _next_weak_edge;
-    int _end_weak_edge;
+    // Iterate in dependency_node->weak_memory_edge()
+    int _next_weak_memory_edge;
+    int _end_weak_memory_edge;
 
   public:
     PredsIterator(const VLoopDependencyGraph& dependency_graph, const Node* node);

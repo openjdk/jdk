@@ -270,8 +270,8 @@ void VLoopDependencyGraph::construct() {
 
   ResourceMark rm;
   GrowableArray<MemNode*> slice_nodes;
-  GrowableArray<int> strong_edges;
-  GrowableArray<int> weak_edges;
+  GrowableArray<int> strong_memory_edges;
+  GrowableArray<int> weak_memory_edges;
 
   // For each memory slice, create the memory subgraph
   for (int i = 0; i < mem_slice_heads.length(); i++) {
@@ -283,8 +283,8 @@ void VLoopDependencyGraph::construct() {
     // In forward order (reverse of reverse), visit all memory nodes in the slice.
     for (int j = slice_nodes.length() - 1; j >= 0 ; j--) {
       MemNode* n1 = slice_nodes.at(j);
-      strong_edges.clear();
-      weak_edges.clear();
+      strong_memory_edges.clear();
+      weak_memory_edges.clear();
 
       const VPointer& p1 = _vpointers.vpointer(n1);
       // For all memory nodes before it, check if we need to add a memory edge.
@@ -299,16 +299,16 @@ void VLoopDependencyGraph::construct() {
         // If we can prove that they will never overlap -> drop edge.
         if (!p1.never_overlaps_with(p2)) {
           if (p1.can_make_speculative_aliasing_check_with(p2)) {
-            weak_edges.append(_body.bb_idx(n2));
+            weak_memory_edges.append(_body.bb_idx(n2));
           } else {
-            strong_edges.append(_body.bb_idx(n2));
+            strong_memory_edges.append(_body.bb_idx(n2));
           }
         }
       }
-      if (strong_edges.is_nonempty() || weak_edges.is_nonempty()) {
+      if (strong_memory_edges.is_nonempty() || weak_memory_edges.is_nonempty()) {
         // Data edges are taken implicitly from the C2 graph, thus we only add
         // a dependency node if we have memory edges.
-        add_node(n1, strong_edges, weak_edges);
+        add_node(n1, strong_memory_edges, weak_memory_edges);
       }
     }
     slice_nodes.clear();
@@ -319,9 +319,9 @@ void VLoopDependencyGraph::construct() {
   NOT_PRODUCT( if (_vloop.is_trace_dependency_graph()) { print(); } )
 }
 
-void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& strong_edges, GrowableArray<int>& weak_edges) {
+void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& strong_memory_edges, GrowableArray<int>& weak_memory_edges) {
   assert(_dependency_nodes.at_grow(_body.bb_idx(n), nullptr) == nullptr, "not yet created");
-  DependencyNode* dn = new (_arena) DependencyNode(n, strong_edges, weak_edges, _arena);
+  DependencyNode* dn = new (_arena) DependencyNode(n, strong_memory_edges, weak_memory_edges, _arena);
   _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
 }
 
@@ -374,13 +374,13 @@ void VLoopDependencyGraph::print() const {
     const DependencyNode* dn = dependency_node(n);
     if (dn != nullptr) {
       tty->print("  DependencyNode[%d %s:", n->_idx, n->Name());
-      for (uint j = 0; j < dn->num_strong_edges(); j++) {
-        Node* pred = _body.body().at(dn->strong_edge(j));
+      for (uint j = 0; j < dn->num_strong_memory_edges(); j++) {
+        Node* pred = _body.body().at(dn->strong_memory_edge(j));
         tty->print("  %d %s", pred->_idx, pred->Name());
       }
       tty->print(" | weak:");
-      for (uint j = 0; j < dn->num_weak_edges(); j++) {
-        Node* pred = _body.body().at(dn->weak_edge(j));
+      for (uint j = 0; j < dn->num_weak_memory_edges(); j++) {
+        Node* pred = _body.body().at(dn->weak_memory_edge(j));
         tty->print("  %d %s", pred->_idx, pred->Name());
       }
       tty->print_cr("]");
@@ -389,8 +389,8 @@ void VLoopDependencyGraph::print() const {
   tty->cr();
 
   // If we cannot speculate (aliasing analysis runtime checks), we need to respect all edges.
-  bool with_weak_edges = !_vloop.use_speculative_aliasing_checks();
-  if (with_weak_edges) {
+  bool with_weak_memory_edges = !_vloop.use_speculative_aliasing_checks();
+  if (with_weak_memory_edges) {
     tty->print_cr(" Complete dependency graph (with weak edges, because we cannot speculate):");
   } else {
     tty->print_cr(" Dependency graph without weak edges (because we can speculate):");
@@ -399,7 +399,7 @@ void VLoopDependencyGraph::print() const {
     Node* n = _body.body().at(i);
     tty->print("  d%02d Dependencies[%d %s:", depth(n), n->_idx, n->Name());
     for (PredsIterator it(*this, n); !it.done(); it.next()) {
-      if (!with_weak_edges && it.is_current_weak_memory_edge()) { continue; }
+      if (!with_weak_memory_edges && it.is_current_weak_memory_edge()) { continue; }
       Node* pred = it.current();
       tty->print("  %d %s", pred->_idx, pred->Name());
     }
@@ -409,24 +409,24 @@ void VLoopDependencyGraph::print() const {
 #endif
 
 VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
-                                                     GrowableArray<int>& strong_edges,
-                                                     GrowableArray<int>& weak_edges,
+                                                     GrowableArray<int>& strong_memory_edges,
+                                                     GrowableArray<int>& weak_memory_edges,
                                                      Arena* arena) :
     _node(n),
-    _num_strong_edges(strong_edges.length()),
-    _num_weak_edges(weak_edges.length()),
-    _memory_pred_edges(nullptr)
+    _num_strong_memory_edges(strong_memory_edges.length()),
+    _num_weak_memory_edges(weak_memory_edges.length()),
+    _memory_edges(nullptr)
 {
-  assert(strong_edges.is_nonempty() || weak_edges.is_nonempty(), "only generate DependencyNode if there are pred edges");
-  uint bytes_strong = strong_edges.length() * sizeof(int);
-  uint bytes_weak = weak_edges.length() * sizeof(int);
+  assert(strong_memory_edges.is_nonempty() || weak_memory_edges.is_nonempty(), "only generate DependencyNode if there are pred edges");
+  uint bytes_strong = strong_memory_edges.length() * sizeof(int);
+  uint bytes_weak = weak_memory_edges.length() * sizeof(int);
   uint bytes_total = bytes_strong + bytes_weak;
-  _memory_pred_edges = (int*)arena->Amalloc(bytes_total);
-  if (strong_edges.length() > 0) {
-    memcpy(_memory_pred_edges, strong_edges.adr_at(0), bytes_strong);
+  _memory_edges = (int*)arena->Amalloc(bytes_total);
+  if (strong_memory_edges.length() > 0) {
+    memcpy(_memory_edges, strong_memory_edges.adr_at(0), bytes_strong);
   }
-  if (weak_edges.length() > 0) {
-    memcpy(_memory_pred_edges + strong_edges.length(), weak_edges.adr_at(0), bytes_weak);
+  if (weak_memory_edges.length() > 0) {
+    memcpy(_memory_edges + strong_memory_edges.length(), weak_memory_edges.adr_at(0), bytes_weak);
   }
 }
 
@@ -440,14 +440,16 @@ VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& d
     _is_current_weak_memory_edge(false),
     _next_pred(0),
     _end_pred(node->req()),
-    _next_strong_edge(0),
-    _end_strong_edge((_dependency_node != nullptr) ? _dependency_node->num_strong_edges() : 0),
-    _next_weak_edge(0),
-    _end_weak_edge((_dependency_node != nullptr) ? _dependency_node->num_weak_edges() : 0)
+    _next_strong_memory_edge(0),
+    _end_strong_memory_edge((_dependency_node != nullptr) ? _dependency_node->num_strong_memory_edges() : 0),
+    _next_weak_memory_edge(0),
+    _end_weak_memory_edge((_dependency_node != nullptr) ? _dependency_node->num_weak_memory_edges() : 0)
 {
   if (_node->is_Store() || _node->is_Load()) {
-    // Load: address
-    // Store: address, value
+    // Ignore ctrl and memory, only address and value are data dependencies.
+    // Memory edges are already covered by the strong and weak memory edges.
+    // Load:  [ctrl, memory] address
+    // Store: [ctrl, memory] address, value
     _next_pred = MemNode::Address;
   } else {
     assert(!_node->is_Mem(), "only loads and stores are expected mem nodes");
@@ -461,13 +463,13 @@ void VLoopDependencyGraph::PredsIterator::next() {
     _current = _node->in(_next_pred++);
     _is_current_memory_edge = false;
     _is_current_weak_memory_edge = false;
-  } else if (_next_strong_edge < _end_strong_edge) {
-    int pred_bb_idx = _dependency_node->strong_edge(_next_strong_edge++);
+  } else if (_next_strong_memory_edge < _end_strong_memory_edge) {
+    int pred_bb_idx = _dependency_node->strong_memory_edge(_next_strong_memory_edge++);
     _current = _dependency_graph._body.body().at(pred_bb_idx);
     _is_current_memory_edge = true;
     _is_current_weak_memory_edge = false;
-  } else if (_next_weak_edge < _end_weak_edge) {
-    int pred_bb_idx = _dependency_node->weak_edge(_next_weak_edge++);
+  } else if (_next_weak_memory_edge < _end_weak_memory_edge) {
+    int pred_bb_idx = _dependency_node->weak_memory_edge(_next_weak_memory_edge++);
     _current = _dependency_graph._body.body().at(pred_bb_idx);
     _is_current_memory_edge = true;
     _is_current_weak_memory_edge = true;
