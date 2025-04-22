@@ -181,10 +181,15 @@ public class TestMergeLoads {
         testGroups.get("test12").put("test12R", (_,_) -> { return test12R(aB.clone()); });
         testGroups.get("test12").put("test12a", (_,_) -> { return test12a(aB.clone()); });
 
-        // Mix different loads
+        // Load value is not masked
         testGroups.put("test13", new HashMap<String,TestFunction>());
-        testGroups.get("test13").put("test13R", (_,_) -> { return test13R(aB.clone(), aC.clone(), aS.clone(), aI.clone()); });
-        testGroups.get("test13").put("test13a", (_,_) -> { return test13a(aB.clone(), aC.clone(), aS.clone(), aI.clone()); });
+        testGroups.get("test13").put("test13R", (_,_) -> { return test12R(aB.clone()); });
+        testGroups.get("test13").put("test13a", (_,_) -> { return test12a(aB.clone()); });
+
+        // Mix different loads
+        testGroups.put("test100", new HashMap<String,TestFunction>());
+        testGroups.get("test100").put("test100R", (_,_) -> { return test100R(aB.clone(), aC.clone(), aS.clone(), aI.clone()); });
+        testGroups.get("test100").put("test100a", (_,_) -> { return test100a(aB.clone(), aC.clone(), aS.clone(), aI.clone()); });
     }
 
     static void set_random(byte[] a, long addr) {
@@ -268,6 +273,8 @@ public class TestMergeLoads {
                  "test12a",
 
                  "test13a",
+
+                 "test100a",
                 })
     public void runTests(RunInfo info) {
         // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
@@ -1708,7 +1715,7 @@ public class TestMergeLoads {
                (((long)(aB[4] & 0xff)) << 32) |
                (((long)(aB[5] & 0xff)) << 40) |
                (((long)(aB[6] & 0xff)) << 48) |
-               (((long)(aB[7] )) << 56);
+               (((long)(aB[7] & 0xff)) << 56);
       return new long[] {i1, aB[7]};
     }
 
@@ -1723,8 +1730,47 @@ public class TestMergeLoads {
         },
         applyIf = {"UseUnalignedAccesses", "true"})
     static long[] test12a(byte[] aB) {
+      byte tmp = aB[7];
       long i1 = ((long)(aB[0] & 0xff))        |
                (((long)(aB[1] & 0xff)) << 8 ) |
+               (((long)(aB[2] & 0xff)) << 16) |
+               (((long)(aB[3] & 0xff)) << 24) |
+               (((long)(aB[4] & 0xff)) << 32) |
+               (((long)(aB[5] & 0xff)) << 40) |
+               (((long)(aB[6] & 0xff)) << 48) |
+               (((long)(tmp & 0xff)) << 56);
+      return new long[] {i1, tmp};
+    }
+
+    /**
+     * Group 13: load value is not masked
+     */
+    @DontCompile
+    static long[] test13R(byte[] aB) {
+      long i1 = ((long)(aB[0] & 0xff))        |
+                ((long)(aB[1] )        << 8 ) |
+               (((long)(aB[2] & 0xff)) << 16) |
+               (((long)(aB[3] & 0xff)) << 24) |
+               (((long)(aB[4] & 0xff)) << 32) |
+               (((long)(aB[5] & 0xff)) << 40) |
+               (((long)(aB[6] & 0xff)) << 48) |
+               (((long)(aB[7] )) << 56);
+      return new long[] {i1, aB[7]};
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",
+          IRNode.LOAD_UB_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "6",
+          IRNode.LOAD_S_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_I_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static long[] test13a(byte[] aB) {
+      long i1 = ((long)(aB[0] & 0xff))        |
+                ((long)(aB[1]        ) << 8 ) |
                (((long)(aB[2] & 0xff)) << 16) |
                (((long)(aB[3] & 0xff)) << 24) |
                (((long)(aB[4] & 0xff)) << 32) |
@@ -1735,10 +1781,10 @@ public class TestMergeLoads {
     }
 
     /**
-     * Group 13: Mix different patterns
+     * Group 100: Mix different patterns
      */
     @DontCompile
-    static long[] test13R(byte[] aB, char[] aC, short[] aS, int[] aI) {
+    static long[] test100R(byte[] aB, char[] aC, short[] aS, int[] aI) {
       long i1 = ((long)(aB[0] & 0xff))        |
                (((long)(aB[1] & 0xff)) << 8 ) |
                (((long)(aB[2] & 0xff)) << 16) |
@@ -1801,7 +1847,7 @@ public class TestMergeLoads {
           IRNode.LOAD_L_OF_CLASS,  "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
         },
         applyIf = {"UseUnalignedAccesses", "true"})
-    static long[] test13a(byte[] aB, char[] aC, short[] aS, int[] aI) {
+    static long[] test100a(byte[] aB, char[] aC, short[] aS, int[] aI) {
       long i1 = ((long)(aB[0] & 0xff))        |
                (((long)(aB[1] & 0xff)) << 8 ) |
                (((long)(aB[2] & 0xff)) << 16) |
