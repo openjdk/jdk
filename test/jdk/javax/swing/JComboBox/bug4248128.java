@@ -53,9 +53,11 @@ public class bug4248128 {
             robot.keyRelease(KeyEvent.VK_ALT);
             robot.waitForIdle();
 
-            if (!combo.isPopupVisible()) {
-                throw new RuntimeException("Popup did not appear.");
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                if (!combo.isPopupVisible()) {
+                    throw new RuntimeException("Popup did not appear.");
+                }
+            });
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {

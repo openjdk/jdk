@@ -66,9 +66,11 @@ public class bug4436376 {
             robot.keyRelease(KeyEvent.VK_CONTROL);
             robot.waitForIdle();
 
-            if (combo.getSelectedIndex() != SELECTED_INDEX) {
-                throw new RuntimeException("Failed: selected index has been changed");
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                if (combo.getSelectedIndex() != SELECTED_INDEX) {
+                    throw new RuntimeException("Failed: selected index has been changed");
+                }
+            });
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
