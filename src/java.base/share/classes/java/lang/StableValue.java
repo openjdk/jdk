@@ -589,7 +589,7 @@ public sealed interface StableValue<T>
      * input, records the values of the provided {@code underlying}
      * function upon being first accessed via the returned function's
      * {@linkplain IntFunction#apply(int) apply()} method. If the returned function is
-     * invoked with an input that is not allowed, an {@link IllegalArgumentException}
+     * invoked with an input that is not in the range {@code [0, size)}, an {@link IllegalArgumentException}
      * will be thrown.
      * <p>
      * The provided {@code underlying} function is guaranteed to be successfully invoked
