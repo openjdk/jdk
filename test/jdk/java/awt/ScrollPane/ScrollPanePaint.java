@@ -24,8 +24,6 @@
 /*
  * Licensed Materials - Property of IBM
  *
- * ScrollPanePaint.html
- *
  * (C) Copyright IBM Corporation 1998  All Rights Reserved.
  *
  * US Government Users Restricted Rights - Use, duplication or disclosure
@@ -59,8 +57,9 @@ public class ScrollPanePaint {
         String INSTRUCTIONS = """
                 1. Press the button marked "Toggle" a few times.
                 2. The contents of the frame should alternate between
-                    a red panel and a scroll pane containing a green panel
+                    a red panel and a scroll pane containing a green panel.
                     If this does not happen (specifically, if the scroll
+                    pane does not consistently contain a green panel),
                     then the test has FAILED.
                 """;
         ScrollPaintTest scrollPaintTest = new ScrollPaintTest();

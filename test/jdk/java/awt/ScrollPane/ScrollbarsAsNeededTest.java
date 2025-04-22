@@ -55,7 +55,7 @@ public class ScrollbarsAsNeededTest {
 
     static Frame initialize() {
         Frame frame = new Frame("Scrollbar as needed test");
-        ScrollPane scrollPane = new java.awt.ScrollPane() {
+        ScrollPane scrollPane = new ScrollPane() {
             @Override
             public void paint(Graphics g) {
                 super.paint(g);

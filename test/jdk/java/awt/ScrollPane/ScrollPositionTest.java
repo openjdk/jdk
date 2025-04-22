@@ -42,7 +42,6 @@ import java.awt.event.AdjustmentListener;
 
 public class ScrollPositionTest {
     static Frame frame;
-    public static Object lock = new Object();
     static int i = 0;
     static Point p;
     static ScrollPane sp;
@@ -96,9 +95,6 @@ public class ScrollPositionTest {
     private static class TestAdjustmentListener implements AdjustmentListener {
         public void adjustmentValueChanged(AdjustmentEvent e) {
             System.out.println("AdjEvent caught:" + e);
-            synchronized (ScrollPositionTest.lock) {
-                ScrollPositionTest.lock.notify();
-            }
         }
     }
 }

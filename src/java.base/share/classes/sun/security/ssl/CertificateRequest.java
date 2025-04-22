@@ -636,25 +636,11 @@ final class CertificateRequest {
             // The producing happens in server side only.
             ServerHandshakeContext shc = (ServerHandshakeContext) context;
 
-            if (shc.localSupportedSignAlgs == null) {
-                shc.localSupportedSignAlgs =
-                        SignatureScheme.getSupportedAlgorithms(
-                                shc.sslConfig,
-                                shc.algorithmConstraints, shc.activeProtocols,
-                                HANDSHAKE_SCOPE);
-            }
-
-            if (shc.localSupportedCertSignAlgs == null) {
-                shc.localSupportedCertSignAlgs =
-                        SignatureScheme.getSupportedAlgorithms(
-                                shc.sslConfig,
-                                shc.algorithmConstraints, shc.activeProtocols,
-                                CERTIFICATE_SCOPE);
-            }
-
             // According to TLSv1.2 RFC, CertificateRequest message must
             // contain signature schemes supported for both:
             // handshake signatures and certificate signatures.
+            // localSupportedSignAlgs and localSupportedCertSignAlgs have been
+            // already updated when we set the negotiated protocol.
             List<SignatureScheme> certReqSignAlgs =
                     new ArrayList<>(shc.localSupportedSignAlgs);
             certReqSignAlgs.retainAll(shc.localSupportedCertSignAlgs);
