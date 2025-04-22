@@ -58,7 +58,10 @@ public:
   template<typename... Ts>
   void initialize(Ts&... args) {
     DEBUG_ONLY(_initialized = true);
-    new (ptr()) T(args...);
+    // If T has const and volatile, get rid of them and tack on a pointer *.
+    using NCVP = std::add_pointer_t<std::remove_cv_t<T>>;
+    // Make _t into NCVP temporarily so that we can placement-new it.
+    new (const_cast<NCVP>(_t)) T(args...);
   }
 };
 
