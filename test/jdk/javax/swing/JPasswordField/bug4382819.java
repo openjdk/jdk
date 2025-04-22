@@ -33,7 +33,7 @@ import javax.swing.JPasswordField;
  * @summary Tests the correctness of color used for the disabled passwordField.
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main bug4382819
+ * @run main/manual bug4382819
  */
 
 public class bug4382819 {
