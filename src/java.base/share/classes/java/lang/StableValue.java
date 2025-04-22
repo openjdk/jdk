@@ -716,7 +716,7 @@ public sealed interface StableValue<T>
      * threads accessing a value already under computation will block until an element
      * is computed or an exception is thrown by the computing thread.
      * <p>
-     * If the provided {@code mapper} throws an exception, it is relayed to the initial
+     * If invoking the provided {@code mapper} function throws an exception, it is rethrown to the initial
      * caller and no value associated with the provided key is recorded.
      * <p>
      * Any direct {@link Map#values()} or {@link Map#entrySet()} views
