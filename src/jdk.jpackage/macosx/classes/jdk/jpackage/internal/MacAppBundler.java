@@ -79,15 +79,6 @@ public class MacAppBundler extends AppImageBundler {
                             "Developer ID Application: ", user, keychain);
                     }
 
-                    if (result != null) {
-                        MacCertificate certificate = new MacCertificate(result, keychain);
-
-                        if (!certificate.isValid()) {
-                            Log.error(MessageFormat.format(I18N.getString(
-                                    "error.certificate.expired"), result));
-                        }
-                    }
-
                     return result;
                 },
             (s, p) -> s);
