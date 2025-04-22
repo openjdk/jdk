@@ -266,7 +266,7 @@ private:
 // See description at top of this file.
 //
 // There are 3 tyes of edges:
-// - data edges:                 corresponding to C2 IR Node data edges, except control
+// - data edges (req):           corresponding to C2 IR Node data edges, except control
 //                               and memory.
 // - strong memory edges:        memory edges that must be respected when scheduling.
 // - weak memory edges:          memory edges that can be violated, but if violated then
@@ -319,7 +319,7 @@ public:
     assert(i < _req, "must be a req");
     assert(_in.at(i) == nullptr && n != nullptr, "only set once");
     _in.at_put(i, n);
-    n->add_out_strong(this);
+    n->add_out_strong_edge(this);
   }
 
   void swap_req(uint i, uint j) {
@@ -330,7 +330,7 @@ public:
     _in.at_put(j, tmp);
   }
 
-  void add_strong_memory_dependency(VTransformNode* n) {
+  void add_strong_memory_edge(VTransformNode* n) {
     assert(n != nullptr, "no need to add nullptr");
     if (_in_end_strong_memory_edges < (uint)_in.length()) {
       // Put n in place of first weak memory edge, and move
@@ -342,16 +342,17 @@ public:
       _in.push(n);
     }
     _in_end_strong_memory_edges++;
-    n->add_out_strong(this);
+    n->add_out_strong_edge(this);
   }
 
-  void add_weak_memory_dependency(VTransformNode* n) {
+  void add_weak_memory_edge(VTransformNode* n) {
     assert(n != nullptr, "no need to add nullptr");
     _in.push(n);
-    n->add_out_weak(this);
+    n->add_out_weak_memory_edge(this);
   }
 
-  void add_out_strong(VTransformNode* n) {
+private:
+  void add_out_strong_edge(VTransformNode* n) {
     if (_out_end_strong_edges < (uint)_out.length()) {
       // Put n in place of first weak memory edge, and move
       // the weak memory edge to the end.
@@ -364,10 +365,11 @@ public:
     _out_end_strong_edges++;
   }
 
-  void add_out_weak(VTransformNode* n) {
+  void add_out_weak_memory_edge(VTransformNode* n) {
     _out.push(n);
   }
 
+public:
   uint req() const { return _req; }
   uint out_strongs() const { return _out_end_strong_edges; }
   uint out_weaks() const { return _out.length() - _out_end_strong_edges; }

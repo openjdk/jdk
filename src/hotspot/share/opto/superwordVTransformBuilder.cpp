@@ -314,9 +314,9 @@ void SuperWordVTransformBuilder::add_memory_dependencies_of_node_to_vtnode(Node*
     if (vtn_memory_dependencies.test_set(dependency->_idx)) { continue; }
 
     if (are_speculative_checks_possible && preds.is_current_weak_memory_edge()) {
-      vtn->add_weak_memory_dependency(dependency);
+      vtn->add_weak_memory_edge(dependency);
     } else {
-      vtn->add_strong_memory_dependency(dependency);
+      vtn->add_strong_memory_edge(dependency);
     }
   }
 }
