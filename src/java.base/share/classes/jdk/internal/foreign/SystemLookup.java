@@ -132,7 +132,7 @@ public final class SystemLookup implements SymbolLookup {
 
     @SuppressWarnings("restricted")
     private static SymbolLookup sysLookup() {
-        NativeLibraries libs = jdk.internal.loader.NativeLibraries.newInstance(null);
+        NativeLibraries libs = NativeLibraries.newInstance(null);
         NativeLibrary lib = libs.loadLibrary(SymbolLookup.class, "syslookup");
         return lookup(lib);
     }
