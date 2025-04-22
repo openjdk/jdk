@@ -95,12 +95,12 @@ public class DestroyMenuTest {
             hScrollbar.setValues(hScrollbar.getValue(), 0, 0, 50);
             vScrollbar.setValues(vScrollbar.getValue(), 0, 0, 50);
             topPanel.setLayout(new BorderLayout());
-            topPanel.add(vScrollbar, "East");
-            topPanel.add(hScrollbar, "South");
+            topPanel.add(vScrollbar, BorderLayout.EAST);
+            topPanel.add(hScrollbar, BorderLayout.SOUTH);
 
-            X.add(topPanel, "North");
-            X.add(bottomPanel, "South");
-            frame.add(X, "South");
+            X.add(topPanel, BorderLayout.NORTH);
+            X.add(bottomPanel, BorderLayout.SOUTH);
+            frame.add(X, BorderLayout.SOUTH);
             frame.setBounds(350, 350, 300, 250);
             frame.setVisible(true);
         });
@@ -110,7 +110,7 @@ public class DestroyMenuTest {
             frame.setBounds(400, 400, 300, 300);
 
             mySimpleCanvas clock = new mySimpleCanvas();
-            frame.add(clock, "Center");
+            frame.add(clock, BorderLayout.CENTER);
 
             Panel p = new Panel();
             Button closeButton = new Button("Close");
@@ -119,9 +119,9 @@ public class DestroyMenuTest {
             p.add(new Label("Label"));
             TextField textField = new TextField(8);
             p.add(textField);
-            f.add(p, "East");
+            f.add(p, BorderLayout.EAST);
 
-            frame.add(p, "South");
+            frame.add(p, BorderLayout.SOUTH);
             frame.setVisible(true);
         });
         f.pack();
