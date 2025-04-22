@@ -71,6 +71,7 @@ public class RTLScrollers extends JDialog
     private static final int WINWIDTH = 1000;
 
     static RTLScrollers rtl;
+    static volatile RTLScrollers f;
     static volatile boolean retVal;
     static volatile JScrollPane jsp;
     static volatile JScrollBar hsb;
@@ -669,9 +670,10 @@ public class RTLScrollers extends JDialog
     }
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            RTLScrollers f = new RTLScrollers();
-            f.setVisible(true);
-        });
+        try {
+            SwingUtilities.invokeAndWait(() -> f = new RTLScrollers());
+        } finally {
+            SwingUtilities.invokeAndWait(() -> f.setVisible(true));
+        }
     }
 }
