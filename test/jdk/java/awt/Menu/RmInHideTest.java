@@ -104,11 +104,12 @@ public class RmInHideTest {
             setMenuBar(bar);
         }
 
-
+        @Override
         public Dimension minimumSize() {
             return new Dimension(200, 200);
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             String cmd = e.getActionCommand();
             if (cmd.equals("hide")) {
@@ -122,6 +123,7 @@ public class RmInHideTest {
             }
         }
 
+        @Override
         public void hide() {
             menubar = getMenuBar();
             if (menubar != null) {
@@ -131,6 +133,7 @@ public class RmInHideTest {
         }
 
 
+        @Override
         public void show() {
             if (menubar != null) {
                 setMenuBar(menubar);
