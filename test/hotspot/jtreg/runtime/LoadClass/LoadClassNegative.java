@@ -41,8 +41,8 @@ public class LoadClassNegative {
 
   public static void main(String args[]) throws Exception {
 
-    // Create a dummy file in the scratch directory
-    final String filename = "dummy.jar";
+    // Create an empty file in the scratch directory
+    final String filename = "empty.jar";
     File dummyFile = new File(filename);
     dummyFile.createNewFile();
 
