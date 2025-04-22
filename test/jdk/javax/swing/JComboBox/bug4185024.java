@@ -36,7 +36,7 @@ import javax.swing.JPanel;
  * @summary Tests that Heavyweight combo boxes on JDesktop work correctly
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main bug4185024
+ * @run main/manual bug4185024
  */
 
 public class bug4185024 {
