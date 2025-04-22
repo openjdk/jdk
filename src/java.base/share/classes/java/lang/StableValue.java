@@ -450,8 +450,8 @@ public sealed interface StableValue<T>
      * @return {@code true} if the content of this StableValue was set to the
      *         provided {@code content}, {@code false} otherwise
      * @param content to set
-     * @throws IllegalStateException if this method is invoked directly by a supplier
-     *         provided to the {@link #orElseSet(Supplier)} method.
+     * @throws IllegalStateException if a supplier invoked by {@link #orElseSet(Supplier)} recursively
+     *         attempts to set this stable value by calling this method.
      */
     boolean trySet(T content);
 
