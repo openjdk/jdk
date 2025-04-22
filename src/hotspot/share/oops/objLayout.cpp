@@ -35,15 +35,15 @@ void ObjLayout::initialize() {
   assert(!is_initialized(), "ObjLayout initialized twice");
   if (UseCompactObjectHeaders) {
     _mode = HeaderMode::Compact;
-    _oop_base_offset_in_bytes = ObjLayoutHelpers::oop_base_offset_in_bytes<HeaderMode::Compact>();
+    _oop_base_offset_in_bytes = ObjLayoutHelpers::markword_plus_klass_in_bytes<HeaderMode::Compact>();
     _oop_has_klass_gap = ObjLayoutHelpers::oop_has_klass_gap<HeaderMode::Compact>();
   } else if (UseCompressedClassPointers) {
     _mode = HeaderMode::Compressed;
-    _oop_base_offset_in_bytes = ObjLayoutHelpers::oop_base_offset_in_bytes<HeaderMode::Compressed>();
+    _oop_base_offset_in_bytes = ObjLayoutHelpers::markword_plus_klass_in_bytes<HeaderMode::Compressed>();
     _oop_has_klass_gap = ObjLayoutHelpers::oop_has_klass_gap<HeaderMode::Compressed>();
   } else {
     _mode = HeaderMode::Uncompressed;
-    _oop_base_offset_in_bytes = ObjLayoutHelpers::oop_base_offset_in_bytes<HeaderMode::Uncompressed>();
+    _oop_base_offset_in_bytes = ObjLayoutHelpers::markword_plus_klass_in_bytes<HeaderMode::Uncompressed>();
     _oop_has_klass_gap = ObjLayoutHelpers::oop_has_klass_gap<HeaderMode::Uncompressed>();
   }
 }

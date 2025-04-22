@@ -25,10 +25,10 @@
 #ifndef SHARE_OOPS_OBJARRAYOOP_INLINE_HPP
 #define SHARE_OOPS_OBJARRAYOOP_INLINE_HPP
 
-#include "oops/objArrayOop.hpp"
-
 #include "oops/access.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/objLayout.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/globals.hpp"
 
@@ -49,6 +49,18 @@ inline void objArrayOopDesc::obj_at_put(int index, oop value) {
   assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
   ptrdiff_t offset = UseCompressedOops ? obj_at_offset<narrowOop>(index) : obj_at_offset<oop>(index);
   HeapAccess<IS_ARRAY>::oop_store_at(as_oop(), offset, value);
+}
+
+// Variants of base_offset_in_bytes/base avoid dynamic switching for UseCompressedOops/UseCompressedClassPointers/UseCompactObjectHeaders
+template <HeaderMode mode, typename OopType>
+inline constexpr int objArrayOopDesc::base_offset_in_bytes_nobranches() {
+  return ObjLayoutHelpers::array_first_element_offset_in_bytes<mode, OopType>();
+}
+
+template <HeaderMode mode, typename OopType>
+inline HeapWord* objArrayOopDesc::base_nobranches() const {
+  constexpr int offset = base_offset_in_bytes_nobranches<mode, OopType>();
+  return field_addr<HeapWord>(offset);
 }
 
 #endif // SHARE_OOPS_OBJARRAYOOP_INLINE_HPP

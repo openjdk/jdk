@@ -21,7 +21,7 @@
  * questions.
  */
 
-#include "oops/arrayOop.hpp"
+#include "oops/arrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "unittest.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -137,4 +137,16 @@ TEST_VM(arrayOopDesc, base_offset) {
   EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_OBJECT),  12);
   EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_ARRAY),   12);
 #endif
+}
+
+TEST_VM(arrayOopDesc, nobranches_functions) {
+  int tmp[] alignas(uint64_t) = {
+      INT_MAX, INT_MAX - 1, INT_MAX - 2, INT_MAX - 3, INT_MAX - 4
+  };
+  const arrayOopDesc* const oop = (arrayOopDesc*)tmp;
+  // Note: length_nobranches uses length_addr_nobranches uses length_offset_in_bytes_nobranches
+  // so this tests all three
+  EXPECT_EQ(oop->length_nobranches<HeaderMode::Uncompressed>(), INT_MAX - 4);
+  EXPECT_EQ(oop->length_nobranches<HeaderMode::Compressed>(), INT_MAX - 3);
+  EXPECT_EQ(oop->length_nobranches<HeaderMode::Compact>(), INT_MAX - 2);
 }

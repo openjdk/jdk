@@ -91,7 +91,7 @@ inline size_t KlassLUTEntry::oak_calculate_wordsize_given_oop_fast(oopDesc* obj)
   // Only call for +UCCP and for standard ObjectAlignmentInBytes
   constexpr int obj_alignment = BytesPerWord;
   constexpr int log2_oopsize = (sizeof(OopType) == 4 ? 2 : 3); // narrowOop or Oop
-  constexpr unsigned length_field_offset = (unsigned)ObjLayoutHelpers::oop_base_offset_in_bytes<mode>();
+  constexpr unsigned length_field_offset = (unsigned)ObjLayoutHelpers::markword_plus_klass_in_bytes<mode>();
   constexpr unsigned first_element_offset = (unsigned)ObjLayoutHelpers::array_first_element_offset_in_bytes<mode, OopType>();
   assert(first_element_offset == ak_header_size(), "sanity");
 
@@ -116,7 +116,7 @@ inline size_t KlassLUTEntry::tak_calculate_wordsize_given_oop_fast(oopDesc* obj)
   // Only call for +UCCP and for standard ObjectAlignmentInBytes
   constexpr int obj_alignment = BytesPerWord;
   const int log2_elemsize = ak_log2_elem_size();
-  constexpr unsigned length_field_offset = (unsigned)ObjLayoutHelpers::oop_base_offset_in_bytes<mode>();
+  constexpr unsigned length_field_offset = (unsigned)ObjLayoutHelpers::markword_plus_klass_in_bytes<mode>();
   const unsigned first_element_offset = ak_header_size(); // from klute, cannot calculate at build time
   assert(first_element_offset == ak_header_size(), "sanity");
 

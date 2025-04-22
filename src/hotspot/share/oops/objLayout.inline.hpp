@@ -25,6 +25,8 @@
 #ifndef SHARE_OOPS_OBJLAYOUT_INLINE_HPP
 #define SHARE_OOPS_OBJLAYOUT_INLINE_HPP
 
+// Be frugal with includes here to prevent circularities.
+
 #include "oops/objLayout.hpp"
 
 template<HeaderMode mode>
@@ -33,7 +35,7 @@ constexpr inline bool ObjLayoutHelpers::oop_has_klass_gap() {
 }
 
 template<HeaderMode mode>
-constexpr inline int ObjLayoutHelpers::oop_base_offset_in_bytes() {
+constexpr inline int ObjLayoutHelpers::markword_plus_klass_in_bytes() {
   switch (mode) {
   case HeaderMode::Uncompressed:  return sizeof(markWord) + sizeof(Klass*);
   case HeaderMode::Compressed:    return sizeof(markWord) + sizeof(narrowKlass);
@@ -44,7 +46,7 @@ constexpr inline int ObjLayoutHelpers::oop_base_offset_in_bytes() {
 
 template<HeaderMode headermode, typename elemtype>
 constexpr inline int ObjLayoutHelpers::array_first_element_offset_in_bytes() {
-  return align_up(oop_base_offset_in_bytes<headermode>() + BytesPerInt, sizeof(elemtype));
+  return align_up(markword_plus_klass_in_bytes<headermode>() + BytesPerInt, sizeof(elemtype));
 }
 
 #endif // SHARE_OOPS_OBJLAYOUT_INLINE_HPP

@@ -21,7 +21,7 @@
  * questions.
  */
 
-#include "oops/objArrayOop.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "unittest.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -60,4 +60,26 @@ TEST_VM(objArrayOop, osize) {
       EXPECT_EQ(objArrayOopDesc::object_size(1), (size_t)x[i].result);
     }
   }
+}
+
+TEST_VM(objArrayOop, nobranches_functions) {
+  int tmp[] alignas(uint64_t) = {
+      INT_MAX, INT_MAX - 1, INT_MAX - 2, INT_MAX - 3, INT_MAX - 4, INT_MAX - 5, INT_MAX - 6
+  };
+  objArrayOopDesc* const o = (objArrayOopDesc*)tmp;
+
+  // Note: length_nobranches uses length_addr_nobranches uses length_offset_in_bytes_nobranches
+  // so this tests all three
+  const int* base = (int*)o->base_nobranches<HeaderMode::Uncompressed, oop>();
+  EXPECT_EQ(*base, INT_MAX - 6);
+  base = (int*)o->base_nobranches<HeaderMode::Uncompressed, narrowOop>();
+  EXPECT_EQ(*base, INT_MAX - 5);
+  base = (int*)o->base_nobranches<HeaderMode::Compressed, oop>();
+  EXPECT_EQ(*base, INT_MAX - 4);
+  base = (int*)o->base_nobranches<HeaderMode::Compressed, narrowOop>();
+  EXPECT_EQ(*base, INT_MAX - 4);
+  base = (int*)o->base_nobranches<HeaderMode::Compact, oop>();
+  EXPECT_EQ(*base, INT_MAX - 4);
+  base = (int*)o->base_nobranches<HeaderMode::Compact, narrowOop>();
+  EXPECT_EQ(*base, INT_MAX - 3);
 }
