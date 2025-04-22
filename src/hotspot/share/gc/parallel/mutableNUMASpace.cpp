@@ -608,12 +608,12 @@ void MutableNUMASpace::print_short_on(outputStream* st) const {
   st->print(")");
 }
 
-void MutableNUMASpace::print_on(outputStream* st) const {
-  MutableSpace::print_on(st);
+void MutableNUMASpace::print_on(outputStream* st, const char* prefix) const {
+  MutableSpace::print_on(st, prefix);
   for (int i = 0; i < lgrp_spaces()->length(); i++) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
     st->print("    lgrp %u", ls->lgrp_id());
-    ls->space()->print_on(st);
+    ls->space()->print_on(st, prefix);
     if (NUMAStats) {
       for (int i = 0; i < lgrp_spaces()->length(); i++) {
         lgrp_spaces()->at(i)->accumulate_statistics(page_size());

@@ -186,7 +186,7 @@ public:
   virtual HeapWord* cas_allocate(size_t word_size);
 
   // Debugging
-  virtual void print_on(outputStream* st) const;
+  virtual void print_on(outputStream* st, const char* prefix) const;
   virtual void print_short_on(outputStream* st) const;
   virtual void verify();
 

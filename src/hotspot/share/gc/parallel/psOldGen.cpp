@@ -363,8 +363,7 @@ void PSOldGen::print_on(outputStream* st) const {
   virtual_space()->print_space_boundaries_on(st);
 
   StreamAutoIndentor indentor(st, 1);
-  st->print("object ");
-  object_space()->print_on(st);
+  object_space()->print_on(st, "object ");
 }
 
 void PSOldGen::update_counters() {

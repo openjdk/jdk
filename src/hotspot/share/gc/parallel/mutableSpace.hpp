@@ -138,7 +138,7 @@ class MutableSpace: public CHeapObj<mtGC> {
 
   // Debugging
   virtual void print() const;
-  virtual void print_on(outputStream* st) const;
+  virtual void print_on(outputStream* st, const char* prefix) const;
   virtual void print_short() const;
   virtual void print_short_on(outputStream* st) const;
   virtual void verify();

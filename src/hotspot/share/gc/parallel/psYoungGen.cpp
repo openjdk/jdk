@@ -705,12 +705,9 @@ void PSYoungGen::print_on(outputStream* st) const {
   virtual_space()->print_space_boundaries_on(st);
 
   StreamAutoIndentor indentor(st, 1);
-  st->print("eden ");
-  eden_space()->print_on(st);
-  st->print("from ");
-  from_space()->print_on(st);
-  st->print("to   ");
-  to_space()->print_on(st);
+  eden_space()->print_on(st, "eden ");
+  from_space()->print_on(st, "from ");
+  to_space()->print_on(st, "to   ");
 }
 
 size_t PSYoungGen::available_to_min_gen() {
