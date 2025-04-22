@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339 8335896
+ * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339 8335896 8344706
  * @summary Test source launcher
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api

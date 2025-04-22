@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8338301
+ * @bug 8338301 8344706
  * @summary Verify error recovery and reporting related to implicitly declared classes
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api

@@ -25,7 +25,7 @@
  * SealedCompilationTests
  *
  * @test
- * @bug 8246353 8273257 8294550 8347562
+ * @bug 8246353 8273257 8294550 8347562 8344706
  * @summary Negative compilation tests, and positive compilation (smoke) tests for sealed classes
  * @library /lib/combo /tools/lib
  * @modules

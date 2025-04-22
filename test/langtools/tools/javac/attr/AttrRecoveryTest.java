@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8273039
+ * @bug 8273039 8344706
  * @summary Verify error recovery in Attr
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api

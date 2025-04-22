@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8331535 8341631
+ * @bug 8331535 8341631 8344706
  * @summary Test the JShell tool Console handling
  * @modules jdk.internal.le/jdk.internal.org.jline.reader
  *          jdk.jshell/jdk.internal.jshell.tool:+open

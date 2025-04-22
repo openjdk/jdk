@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8298425
+ * @bug 8298425 8344706
  * @summary Verify behavior of System.console()
  * @build KullaTesting TestingInputStream
  * @run testng ConsoleTest

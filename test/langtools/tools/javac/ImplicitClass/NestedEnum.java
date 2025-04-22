@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8344706
  * @summary enums: ensure unnamed class is visible to java.lang.Enum<unnamed_class>
  * @compile NestedEnum.java
  */

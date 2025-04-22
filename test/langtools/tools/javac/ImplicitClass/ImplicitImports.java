@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8325324
+ * @bug 8325324 8344706
  * @summary Verify behavior w.r.t. implicit imports
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api

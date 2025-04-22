@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8333086
+ * @bug 8333086 8344706
  * @summary Verify the JLine backend is not initialized for simple printing.
  * @enablePreview
  * @modules jdk.internal.le/jdk.internal.org.jline.reader

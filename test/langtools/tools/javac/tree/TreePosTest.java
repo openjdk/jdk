@@ -106,7 +106,7 @@ import java.util.stream.Stream;
 
 /*
  * @test
- * @bug 6919889
+ * @bug 6919889 8344706
  * @summary assorted position errors in compiler syntax trees
  * OLD: -q -r -ef ./tools/javac/typeAnnotations -ef ./tools/javap/typeAnnotations -et ANNOTATED_TYPE .
  * @modules java.desktop

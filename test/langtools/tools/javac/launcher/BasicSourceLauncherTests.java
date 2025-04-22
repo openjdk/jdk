@@ -32,7 +32,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 /*
  * @test
- * @bug 8304400
+ * @bug 8304400 8344706
  * @summary Test basic features of javac's source-code launcher
  * @modules jdk.compiler/com.sun.tools.javac.launcher
  * @run junit BasicSourceLauncherTests

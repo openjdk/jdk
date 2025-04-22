@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
- * @bug 8305457 8342936 8351435
+ * @bug 8305457 8342936 8351435 8344706
  * @summary java.lang.IO tests
  * @library /test/lib
  * @modules jdk.internal.le

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8315458
+ * @bug 8315458 8344706
  * @summary Make sure nesting classes don't create symbol conflicts with implicit name.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api

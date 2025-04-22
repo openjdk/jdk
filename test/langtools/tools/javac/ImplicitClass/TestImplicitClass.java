@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8315458
+ * @bug 8315458 8344706
  * @build Implicit TestImplicitClass
  * @run main TestImplicitClass
  * @summary Basic checks of java.lang.Class support for implicit classes
