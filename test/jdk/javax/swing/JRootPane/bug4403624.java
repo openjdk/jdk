@@ -47,6 +47,8 @@ public class bug4403624 {
     private static Container c;
     private static JButton b;
     private static volatile Point p;
+    private static volatile int bWidth;
+    private static volatile int bHeight;
     private static final int OFFSET = 2;
 
     public static void main(String[] args) throws Exception {
@@ -74,9 +76,13 @@ public class bug4403624 {
             r.waitForIdle();
             r.delay(1000);
 
-            SwingUtilities.invokeAndWait(() -> p = b.getLocationOnScreen());
+            SwingUtilities.invokeAndWait(() -> {
+                p = b.getLocationOnScreen();
+                bWidth = b.getWidth();
+                bHeight = b.getHeight();
+            });
 
-            r.mouseMove(p.x + (b.getWidth() / 2), p.y + (b.getHeight() / 2));
+            r.mouseMove(p.x + (bWidth / 2), p.y + (bHeight / 2));
             r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
