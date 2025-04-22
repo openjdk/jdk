@@ -34,8 +34,8 @@ import static org.junit.Assert.assertThrows;
  * @bug 8353440
  * @summary Verify that non-local file URLs are rejected by default
  * @run junit/othervm NonLocalFtpFallbackDisabled
- * @run junit/othervm -Dsun.net.www.protocol.file.ftp-enabled=false NonLocalFtpFallbackDisabled
- * @run junit/othervm -Dsun.net.www.protocol.file.ftp-enabled NonLocalFtpFallbackDisabled
+ * @run junit/othervm -Djdk.net.file.ftpfallback=false NonLocalFtpFallbackDisabled
+ * @run junit/othervm -Djdk.net.file.ftpfallback NonLocalFtpFallbackDisabled
  */
 public class NonLocalFtpFallbackDisabled {
 

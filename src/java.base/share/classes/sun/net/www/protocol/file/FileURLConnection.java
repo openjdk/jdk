@@ -50,7 +50,7 @@ public class FileURLConnection extends URLConnection {
     // The feature of falling back to FTP for non-local file URLs is disabled
     // by default and can be re-enabled by setting a system property
     private static boolean FTP_FALLBACK_ENABLED = "true".equalsIgnoreCase(
-            System.getProperty("sun.net.www.protocol.file.ftp-enabled", "false")
+            System.getProperty("jdk.net.file.ftpfallback", "false")
     );
 
     private final File file;

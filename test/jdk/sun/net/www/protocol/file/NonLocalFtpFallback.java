@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @bug 8353662
  * @summary Verify long-standing, disabled by default behavior of resolving non-local
  *          file URLs using FTP.
- * @run junit/othervm -Dsun.net.www.protocol.file.ftp-enabled=true NonLocalFtpFallback
+ * @run junit/othervm -Djdk.net.file.ftpfallback=true NonLocalFtpFallback
  */
 
 public class NonLocalFtpFallback {
