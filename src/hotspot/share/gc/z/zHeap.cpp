@@ -325,7 +325,7 @@ void ZHeap::print_gc_on(outputStream* st) const {
   print_page_table_on(st);
   st->cr();
 
-  _page_allocator.print_extended_cache_on(st);
+  _page_allocator.print_cache_extended_on(st);
 }
 
 void ZHeap::print_globals_on(outputStream* st) const {

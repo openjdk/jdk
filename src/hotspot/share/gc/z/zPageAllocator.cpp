@@ -1168,7 +1168,7 @@ void ZPartition::print_cache_on(outputStream* st) const {
   _cache.print_on(st);
 }
 
-void ZPartition::print_extended_cache_on(outputStream* st) const {
+void ZPartition::print_cache_extended_on(outputStream* st) const {
   st->print_cr("Partition %u", _numa_id);
 
   StreamAutoIndentor indentor(st, 1);
@@ -2442,7 +2442,7 @@ void ZPageAllocator::print_partition_usage_on(outputStream* st) const {
   }
 }
 
-void ZPageAllocator::print_extended_cache_on(outputStream* st) const {
+void ZPageAllocator::print_cache_extended_on(outputStream* st) const {
   st->print_cr("ZMappedCache:");
 
   StreamAutoIndentor indentor(st, 1);
@@ -2459,7 +2459,7 @@ void ZPageAllocator::print_extended_cache_on(outputStream* st) const {
   // Print each partition's cache content
   ZPartitionConstIterator iter = partition_iterator();
   for (const ZPartition* partition; iter.next(&partition);) {
-    partition->print_extended_cache_on(st);
+    partition->print_cache_extended_on(st);
   }
 
   _lock.unlock();
