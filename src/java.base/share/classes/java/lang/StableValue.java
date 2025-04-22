@@ -483,7 +483,7 @@ public sealed interface StableValue<T>
      * with different suppliers, only one of them will be invoked provided it completes
      * without throwing an exception.
      * <p>
-     * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
+     * If the supplier throws an (unchecked) exception, the exception is rethrown and no
      * content is set. The most common usage is to construct a new object serving
      * as a lazily computed value or memoized result, as in:
      *
