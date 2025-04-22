@@ -39,8 +39,6 @@ import javax.swing.UIManager;
 public class bug4201964 {
     private static final String INSTRUCTIONS = """
             Does the arrow look too large?  If not, it passes.
-            Since we can't use real html in here, I can't give you
-            any pictures to compare against.
             """;
 
     public static void main(String[] args) throws Exception {
@@ -52,7 +50,7 @@ public class bug4201964 {
 
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
-                .rows(30)
+                .rows(8)
                 .columns(30)
                 .testUI(bug4201964::createTestUI)
                 .build()
@@ -74,7 +72,6 @@ public class bug4201964 {
 
         frame.add(panel);
         frame.pack();
-        frame.setLocationRelativeTo(null);
         return frame;
     }
 }

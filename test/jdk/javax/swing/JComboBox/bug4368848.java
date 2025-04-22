@@ -34,7 +34,7 @@ import javax.swing.table.AbstractTableModel;
  * @summary Tests that mouse wheel events cancel popups
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main bug4368848
+ * @run main/manual bug4368848
  */
 
 public class bug4368848 {
@@ -90,18 +90,19 @@ public class bug4368848 {
         JTable tableView = new JTable(dataModel);
         tableView.setDefaultEditor(Boolean.class, new DefaultCellEditor(_editor));
 
-        frame.getContentPane().add(new JScrollPane(tableView));
+        frame.add(new JScrollPane(tableView));
         frame.setSize(200, 200);
-        frame.setLocationRelativeTo(null);
         return frame;
     }
 
     static class ExampleTableModel extends AbstractTableModel {
         // These methods always need to be implemented.
+        @Override
         public int getColumnCount() {
             return names.length;
         }
 
+        @Override
         public int getRowCount() {
             return data.length;
         }
@@ -110,14 +111,17 @@ public class bug4368848 {
             return data[row][col];
         }
 
+        @Override
         public boolean isCellEditable(int row, int col) {
             return true;
         }
 
+        @Override
         public String getColumnName(int column) {
             return names[column];
         }
 
+        @Override
         public Class getColumnClass(int col) {
             return getValueAt(0, col).getClass();
         }

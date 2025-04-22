@@ -26,16 +26,14 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.UIManager;
 
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 4249732
  * @requires (os.family == "windows")
  * @summary Tests that Windows editable combo box selects text picked from its list
- * @library /java/awt/regtesthelpers /test/lib
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main bug4249732
+ * @run main/manual bug4249732
  */
 
 public class bug4249732 {
@@ -49,11 +47,12 @@ public class bug4249732 {
         try {
             UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
         } catch (Exception e) {
-            throw new jtreg.SkippedException("Couldn't load the Windows look and feel.");
+            PassFailJFrame.forceFail("Couldn't load the Windows look and feel.");
         }
+
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
-                .rows(30)
+                .rows(8)
                 .columns(40)
                 .testUI(bug4249732::createTestUI)
                 .build()
@@ -68,7 +67,6 @@ public class bug4249732 {
 
         frame.add(cb, BorderLayout.NORTH);
         frame.pack();
-        frame.setLocationRelativeTo(null);
         return frame;
     }
 }

@@ -36,14 +36,14 @@ import javax.swing.JPanel;
  * @summary Tests that Heavyweight combo boxes on JDesktop work correctly
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual bug4185024
+ * @run main bug4185024
  */
 
 public class bug4185024 {
     private static final String INSTRUCTIONS = """
             Click on the JComboBox button inside the JInternalFrame to bring up the menu.
             Select one of the menu items and verify that the choice is highlighted correctly.
-            Click on the menu's scroll bar and verify that it causes the menu to scroll down.
+            Click and drag the menu's scroll bar down and verify that it causes the menu to scroll down.
 
             Inside JInternalFrame:
             This test is for the JComboBox in the JInternalFrame.
@@ -92,7 +92,6 @@ public class bug4185024 {
         addFrame("Months", desktop, months);
 
         frame.setSize(300, 300);
-        frame.setLocationRelativeTo(null);
         return frame;
     }
 
@@ -100,7 +99,7 @@ public class bug4185024 {
         JInternalFrame jf = new JInternalFrame(title);
         Point newPos = new Point(20, 20);
         jf.setResizable(true);
-        jf.getContentPane().add(component);
+        jf.add(component);
         jf.setLocation(newPos);
         desktop.add(jf);
 
