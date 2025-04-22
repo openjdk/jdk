@@ -111,9 +111,6 @@
 #include <winsock2.h>
 #include <versionhelpers.h>
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(-1)
-
 // For DLL loading/load error detection
 // Values of PE COFF
 #define IMAGE_FILE_PTR_TO_SIGNATURE 0x3c
