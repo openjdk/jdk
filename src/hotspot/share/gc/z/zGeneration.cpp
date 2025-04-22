@@ -279,7 +279,6 @@ void ZGeneration::reset_statistics() {
   _freed = 0;
   _promoted = 0;
   _compacted = 0;
-  _page_allocator->reset_statistics(_id);
 }
 
 size_t ZGeneration::freed() const {
@@ -860,7 +859,7 @@ void ZGenerationYoung::mark_start() {
   _remembered.flip();
 
   // Update statistics
-  stat_heap()->at_mark_start(_page_allocator->stats(this));
+  stat_heap()->at_mark_start(_page_allocator->update_and_stats(this));
 }
 
 void ZGenerationYoung::mark_roots() {
@@ -1209,7 +1208,7 @@ void ZGenerationOld::mark_start() {
   _mark.start();
 
   // Update statistics
-  stat_heap()->at_mark_start(_page_allocator->stats(this));
+  stat_heap()->at_mark_start(_page_allocator->update_and_stats(this));
 
   // Note that we start a marking cycle.
   // Unlike other GCs, the color switch implicitly changes the nmethods
