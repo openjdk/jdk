@@ -402,7 +402,7 @@ public final class MacSign {
                 while (in.available() > 0) {
                     final X509Certificate cert;
                     try {
-                        cert = (X509Certificate)CERT_FACTORY.generateCertificate(in);
+                        cert = (X509Certificate) CERT_FACTORY.generateCertificate(in);
                     } catch (Exception ex) {
                         TKit.trace("Failed to parse certificate data: " + ex);
                         continue;
@@ -688,7 +688,7 @@ public final class MacSign {
             this.value = Objects.requireNonNull(value);
         }
 
-        public String value( ) {
+        public String value() {
             return value;
         }
 
@@ -702,7 +702,9 @@ public final class MacSign {
         }
     }
 
-    public record CertificateRequest(String name, CertificateType type, int days, boolean expired, boolean trusted) implements Comparable<CertificateRequest>{
+    public record CertificateRequest(String name, CertificateType type, int days, boolean expired, boolean trusted)
+            implements Comparable<CertificateRequest> {
+
         public CertificateRequest {
             Objects.requireNonNull(name);
             Objects.requireNonNull(type);
@@ -730,7 +732,7 @@ public final class MacSign {
                 return VerifyStatus.VERIFY_UNTRUSTED;
             } else if (expired) {
                 return VerifyStatus.VERIFY_EXPIRED;
-            }else {
+            } else {
                 return VerifyStatus.VERIFY_OK;
             }
         }
@@ -871,7 +873,7 @@ public final class MacSign {
         private static int getDurationInDays(X509Certificate cert) {
             final var notBefore = cert.getNotBefore();
             final var notAfter = cert.getNotAfter();
-            return (int)TimeUnit.DAYS.convert(notAfter.getTime() - notBefore.getTime(), TimeUnit.MILLISECONDS);
+            return (int) TimeUnit.DAYS.convert(notAfter.getTime() - notBefore.getTime(), TimeUnit.MILLISECONDS);
         }
 
         private static boolean getExpired(X509Certificate cert) {
@@ -899,8 +901,8 @@ public final class MacSign {
      * Created certificates will be imported into the keychains, and every
      * certificate will be marked as trusted.
      * <p>
-     * The user will be prompted to enter the user login password as
-     * many times as the number of unique certificates this function will create.
+     * The user will be prompted to enter the user login password as many times as
+     * the number of unique certificates this function will create.
      * <p>
      * Created keychains will NOT be added to the keychain search list.
      *
@@ -1046,7 +1048,7 @@ public final class MacSign {
 
         public Map<CertificateRequest, X509Certificate> mapCertificateRequests() {
             if (certMap == null) {
-                synchronized(this) {
+                synchronized (this) {
                     if (certMap == null) {
                         certMap = MacSign.mapCertificateRequests(spec);
                     }
