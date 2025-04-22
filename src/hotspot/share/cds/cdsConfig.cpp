@@ -863,16 +863,16 @@ bool CDSConfig::is_dumping_method_handles() {
 // This affects only JITed code because it may have embedded oops and metadata pointers
 // which AOT code encodes as offsets in final CDS archive regions.
 
-static bool _is_dumping_aot_code_enabled = false;
+static bool _is_dumping_aot_code = false;
 
-bool CDSConfig::is_dumping_aot_code_enabled() {
-  return _is_dumping_aot_code_enabled;
+bool CDSConfig::is_dumping_aot_code() {
+  return _is_dumping_aot_code;
 }
 
 void CDSConfig::disable_dumping_aot_code() {
-  _is_dumping_aot_code_enabled = false;
+  _is_dumping_aot_code = false;
 }
 
 void CDSConfig::enable_dumping_aot_code() {
-  _is_dumping_aot_code_enabled = true;
+  _is_dumping_aot_code = true;
 }
