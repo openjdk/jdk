@@ -958,17 +958,18 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
     // markWord displaced_header = obj->mark().set_unlocked();
 
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      load_klass(tmp, object);
-      lbz(tmp, in_bytes(Klass::misc_flags_offset()), tmp);
-      testbitdi(CR0, R0, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
-      bne(CR0, slow_case);
-    }
-
     if (LockingMode == LM_LIGHTWEIGHT) {
       lightweight_lock(monitor, object, header, tmp, slow_case);
       b(done);
     } else if (LockingMode == LM_LEGACY) {
+
+      if (DiagnoseSyncOnValueBasedClasses != 0) {
+        load_klass(tmp, object);
+        lbz(tmp, in_bytes(Klass::misc_flags_offset()), tmp);
+        testbitdi(CR0, R0, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
+        bne(CR0, slow_case);
+      }
+
       // Load markWord from object into header.
       ld(header, oopDesc::mark_offset_in_bytes(), object);
 

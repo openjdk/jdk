@@ -161,6 +161,9 @@ void VM_Version::initialize() {
         (_model == CPU_MODEL_AMPERE_1A || _model == CPU_MODEL_AMPERE_1B)) {
       FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
     }
+    if (FLAG_IS_DEFAULT(AlwaysMergeDMB)) {
+      FLAG_SET_DEFAULT(AlwaysMergeDMB, false);
+    }
   }
 
   // ThunderX
