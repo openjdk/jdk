@@ -314,8 +314,8 @@ import java.util.function.Supplier;
  * created. Upon such a creation, the dependent {@code Foo} will first be created if
  * the {@code Foo} does not already exist.
  * <p>
- * Another example, which has a more complex dependency graph, is to lazily computing the
- * Fibonacci sequence:
+ * Another example, which has a more complex dependency graph, is to compute the
+ * Fibonacci sequence lazily:
  * {@snippet lang = java:
  * public final class Fibonacci {
  *
