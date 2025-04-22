@@ -406,10 +406,10 @@ public abstract class Reader implements Readable, Closeable {
      *
      * @apiNote
      * This method is intended for simple cases where it is appropriate and
-     * convenient to read all characters into a String. It is not intended for
-     * reading a large number of characters.
+     * convenient to read all remaining characters into a String. It is not
+     * intended for reading a large number of characters.
      *
-     * @return     a String containing all characters
+     * @return     a String containing all remaining characters
      *
      * @throws     IOException       If an I/O error occurs
      * @throws     OutOfMemoryError  If the remaining content is extremely
