@@ -571,7 +571,7 @@ public sealed interface StableValue<T>
      * thrown by the computing thread. The computing threads will then observe the newly
      * computed value (if any) and will then never execute.
      * <p>
-     * If the provided {@code underlying} supplier throws an exception, it is relayed
+     * If the provided {@code underlying} supplier throws an exception, it is rethrown
      * to the initial caller and no content is recorded.
      * <p>
      * If the provided {@code underlying} supplier recursively calls the returned
@@ -603,7 +603,7 @@ public sealed interface StableValue<T>
      * the computing thread.
      * <p>
      * If invoking the provided {@code underlying} function throws an exception, it is
-     * relayed to the initial caller and no content is recorded.
+     * rethrown to the initial caller and no content is recorded.
      * <p>
      * If the provided {@code underlying} function recursively calls the returned
      * function for the same input, an {@linkplain IllegalStateException} will
@@ -639,7 +639,7 @@ public sealed interface StableValue<T>
      * computed or an exception is thrown by the computing thread.
      * <p>
      * If invoking the provided {@code underlying} function throws an exception, it is
-     * relayed to the initial caller and no content is recorded.
+     * rethrown to the initial caller and no content is recorded.
      * <p>
      * If the provided {@code underlying} function recursively calls the returned
      * function for the same input, an {@linkplain IllegalStateException} will
