@@ -248,29 +248,35 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // i we are looking for.
     //
     // E.g:      1 2 3 4 5 6 7 8
-    //      lo = 1 0 0 1 0 0 1 0
+    //      lo = 1 1 0 0 0 1 1 0
     //   zeros = 0 0 1 0 0 1 0 0
-    //    ones = 0 1 0 0 1 0 1 0
-    //   1-vio = 0 1 0 0 1 0 0 0
-    //   0-vio = 0 0 0 0 0 0 0 0
-    // Since the result must have the 2nd bit set, it must be at least:
-    //           1 1 0 0 0 0 0 0
-    // This value must satisfy zeros, because all bits before the 2nd bit have
-    // already satisfied zeros, and all bits after the 2nd bit are all 0 now.
+    //    ones = 0 1 0 1 0 0 1 0
+    //   1-vio = 0 0 0 1 0 0 0 0
+    //   0-vio = 0 0 0 0 0 1 0 0
+    // Since the result must have the 4th bit set, it must be at least:
+    //           1 1 0 1 0 0 0 0
+    // This value must satisfy zeros, because all bits before the 4th bit have
+    // already satisfied zeros, and all bits after the 4th bit are all 0 now.
     // Just OR this value with ones to obtain the final result.
 
     // first_violation is the position of the violation counting from the
-    // highest bit down (0-based), since i == 2, first_difference == 1
-    juint first_violation = count_leading_zeros(one_violation); // 1
+    // highest bit down (0-based), since i == 4, first_violation == 3
+    juint first_violation = count_leading_zeros(one_violation);
     //           1 0 0 0 0 0 0 0
     constexpr U highest_bit = (std::numeric_limits<U>::max() >> 1) + U(1);
-    //           0 1 0 0 0 0 0 0
+    // This is the bit at which we want to change the bit 0 in lo to a 1, and
+    // all bits after to zero. This is similar to an operation that aligns lo
+    // up to this modulo
+    //           0 0 0 1 0 0 0 0
     U alignment = highest_bit >> first_violation;
     // This is the first value which have the violated bit being 1, which means
-    // that the result should not be smaller than this
-    //           1 1 0 0 0 0 0 0
+    // that the result should not be smaller than this. This is a standard
+    // operation to align a value up to a certain power of 2
+    //           1 1 0 1 0 0 0 0
     U new_lo = (lo & -alignment) + alignment;
-    //           1 1 0 0 1 0 1 0
+    // Our current new_lo satisfies zeros, just OR it with ones to obtain the
+    // correct result
+    //           1 1 0 1 0 0 1 0
     new_lo |= bits._ones;
     assert(lo < new_lo, "this case cannot overflow");
     return new_lo;
@@ -310,7 +316,8 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     //           0 0 1 0 0 0 0 0
     U alignment = tmp & (-tmp);
     // Set the bit at i and unset all the bit after, this is the smallest value
-    // that satisfies bits._zeros
+    // that satisfies bits._zeros. Similar to the above case, this is similar
+    // to aligning lo upto alignment
     //           1 0 1 0 0 0 0 0
     U new_lo = (lo & -alignment) + alignment;
     // Satisfy bits._ones
