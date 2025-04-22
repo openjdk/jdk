@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,28 +30,46 @@ import java.lang.constant.MethodTypeDesc;
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
- * Models a {@code CONSTANT_MethodType_info} constant in the constant pool of a
- * classfile.
- * @jvms 4.4.9 The CONSTANT_MethodType_info Structure
+ * Models a {@code CONSTANT_MethodType_info} structure, or a symbolic reference
+ * to a method type, in the constant pool of a {@code class} file.
+ * <p>
+ * The use of a {@code MethodTypeEntry} is modeled by a {@link MethodTypeDesc}.
+ * Conversions are through {@link ConstantPoolBuilder#methodTypeEntry(MethodTypeDesc)}
+ * and {@link #asSymbol()}.
+ * <p>
+ * A method type entry is composite:
+ * {@snippet lang=text :
+ * // @link substring="MethodTypeEntry" target="ConstantPoolBuilder#methodTypeEntry(Utf8Entry)" :
+ * MethodTypeEntry(Utf8Entry descriptor) // @link substring="descriptor" target="#descriptor()"
+ * }
+ * where {@code descriptor} is a {@linkplain #asSymbol() method descriptor}
+ * string.
  *
+ * @jvms 4.4.9 The {@code CONSTANT_MethodType_info} Structure
  * @since 24
  */
 public sealed interface MethodTypeEntry
         extends LoadableConstantEntry
         permits AbstractPoolEntry.MethodTypeEntryImpl {
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This is equivalent to {@link #asSymbol() asSymbol()}.
+     */
     @Override
     default ConstantDesc constantValue() {
         return asSymbol();
     }
 
     /**
-     * {@return the constant pool entry describing the method type}
+     * {@return the {@linkplain #asSymbol() method descriptor} string}
      */
     Utf8Entry descriptor();
 
     /**
-     * {@return a symbolic descriptor for the method type}
+     * {@return a symbolic descriptor for the {@linkplain #descriptor() method
+     * type}}
      */
     MethodTypeDesc asSymbol();
 }

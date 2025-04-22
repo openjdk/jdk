@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "classfile/classLoaderData.hpp"
 #include "code/nmethod.hpp"

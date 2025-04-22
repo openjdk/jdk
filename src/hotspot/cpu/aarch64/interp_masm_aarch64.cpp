@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -503,7 +502,7 @@ void InterpreterMacroAssembler::remove_activation(
 
  // get method access flags
   ldr(r1, Address(rfp, frame::interpreter_frame_method_offset * wordSize));
-  ldr(r2, Address(r1, Method::access_flags_offset()));
+  ldrh(r2, Address(r1, Method::access_flags_offset()));
   tbz(r2, exact_log2(JVM_ACC_SYNCHRONIZED), unlocked);
 
   // Don't unlock anything if the _do_not_unlock_if_synchronized flag
@@ -694,17 +693,18 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     // Load object pointer into obj_reg %c_rarg3
     ldr(obj_reg, Address(lock_reg, obj_offset));
 
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      load_klass(tmp, obj_reg);
-      ldrb(tmp, Address(tmp, Klass::misc_flags_offset()));
-      tst(tmp, KlassFlags::_misc_is_value_based_class);
-      br(Assembler::NE, slow_case);
-    }
-
     if (LockingMode == LM_LIGHTWEIGHT) {
       lightweight_lock(lock_reg, obj_reg, tmp, tmp2, tmp3, slow_case);
       b(done);
     } else if (LockingMode == LM_LEGACY) {
+
+      if (DiagnoseSyncOnValueBasedClasses != 0) {
+        load_klass(tmp, obj_reg);
+        ldrb(tmp, Address(tmp, Klass::misc_flags_offset()));
+        tst(tmp, KlassFlags::_misc_is_value_based_class);
+        br(Assembler::NE, slow_case);
+      }
+
       // Load (object->mark() | 1) into swap_reg
       ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       orr(swap_reg, rscratch1, 1);
@@ -1401,9 +1401,6 @@ void InterpreterMacroAssembler::_interp_verify_oop(Register reg, TosState state,
     MacroAssembler::_verify_oop_checked(reg, "broken oop", file, line);
   }
 }
-
-void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) { ; }
-
 
 void InterpreterMacroAssembler::notify_method_entry() {
   // Whenever JVMTI is interp_only_mode, method entry/exit events are sent to

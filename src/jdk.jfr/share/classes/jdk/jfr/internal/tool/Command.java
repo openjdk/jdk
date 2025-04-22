@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.util.List;
 
 import jdk.jfr.internal.util.UserDataException;
 import jdk.jfr.internal.util.UserSyntaxException;
+import jdk.jfr.internal.JVM;
 
 abstract class Command {
     public static final String title = "Tool for working with Flight Recorder files";
@@ -51,8 +52,9 @@ abstract class Command {
     private static List<Command> createCommands() {
         List<Command> commands = new ArrayList<>();
         commands.add(new Print());
-        // Uncomment when developing new queries for the view command
-        // commands.add(new Query());
+        if (!JVM.isProduct()) {
+            commands.add(new Query());
+        }
         commands.add(new View());
         commands.add(new Configure());
         commands.add(new Metadata());
@@ -314,6 +316,10 @@ abstract class Command {
 
     protected final void println(String text) {
         System.out.println(text);
+    }
+
+    protected final void printf(String text, Object ... args) {
+        System.out.printf(text, args);
     }
 
     public static void checkCommonError(Deque<String> options, String typo, String correct) throws UserSyntaxException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
@@ -487,6 +486,7 @@ void JfrRecorderService::safepoint_clear() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   _checkpoint_manager.begin_epoch_shift();
   _storage.clear();
+  _checkpoint_manager.notify_threads();
   _chunkwriter.set_time_stamp();
   JfrDeprecationManager::on_safepoint_clear();
   JfrStackTraceRepository::clear();
@@ -651,9 +651,7 @@ size_t JfrRecorderService::flush() {
   if (_string_pool.is_modified()) {
     total_elements += flush_stringpool(_string_pool, _chunkwriter);
   }
-  if (_stack_trace_repository.is_modified()) {
-    total_elements += flush_stacktrace(_stack_trace_repository, _chunkwriter);
-  }
+  total_elements += flush_stacktrace(_stack_trace_repository, _chunkwriter);
   return flush_typeset(_checkpoint_manager, _chunkwriter) + total_elements;
 }
 

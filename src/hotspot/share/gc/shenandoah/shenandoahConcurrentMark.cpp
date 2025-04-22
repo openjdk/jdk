@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shared/satbMarkQueue.hpp"
 #include "gc/shared/strongRootsScope.hpp"
@@ -212,19 +211,6 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
       ShouldNotReachHere();
   }
 }
-
-class ShenandoahFlushSATBHandshakeClosure : public HandshakeClosure {
-private:
-  SATBMarkQueueSet& _qset;
-public:
-  ShenandoahFlushSATBHandshakeClosure(SATBMarkQueueSet& qset) :
-    HandshakeClosure("Shenandoah Flush SATB"),
-    _qset(qset) {}
-
-  void do_thread(Thread* thread) {
-    _qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
-  }
-};
 
 void ShenandoahConcurrentMark::concurrent_mark() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();

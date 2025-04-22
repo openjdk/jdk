@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -555,6 +555,9 @@ public class Start {
         if (options.modules().isEmpty()) {
             if (options.subpackages().isEmpty()) {
                 if (javaNames.isEmpty() && isEmpty(fileObjects)) {
+                    showLinesUsingKey("main.usage.short");
+                    showLinesUsingKey("main.for-more-details-see-usage");
+                    log.flush();
                     String text = log.getText("main.No_modules_packages_or_classes_specified");
                     throw new ToolException(CMDERR, text);
                 }

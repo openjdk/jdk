@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,6 @@
 
 // Major contributions by AHa, AS, JL, ML.
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -94,8 +93,6 @@ void InterpreterMacroAssembler::dispatch_next(TosState state, int bcp_incr, bool
 // Dispatch value in Lbyte_code and increment Lbcp.
 
 void InterpreterMacroAssembler::dispatch_base(TosState state, address* table, bool generate_poll) {
-  verify_FPU(1, state);
-
 #ifdef ASSERT
   address reentry = nullptr;
   { Label OK;
@@ -780,7 +777,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
     get_method(R_method);
     verify_oop(Z_tos, state);
     push(state); // Save tos/result.
-    testbit(method2_(R_method, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
+    testbit_ushort(method2_(R_method, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
     z_bfalse(unlocked);
 
     // Don't unlock anything if the _do_not_unlock_if_synchronized flag
@@ -1005,15 +1002,15 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   // markWord header = obj->mark().set_unlocked();
 
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(tmp, object);
-    z_tm(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
-    z_btrue(slow_case);
-  }
-
   if (LockingMode == LM_LIGHTWEIGHT) {
     lightweight_lock(monitor, object, header, tmp, slow_case);
   } else if (LockingMode == LM_LEGACY) {
+
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
+      load_klass(tmp, object);
+      z_tm(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
+      z_btrue(slow_case);
+    }
 
     // Load markWord from object into header.
     z_lg(header, hdr_offset, object);
@@ -2189,10 +2186,4 @@ void InterpreterMacroAssembler::pop_interpreter_frame(Register return_pc, Regist
   load_const_optimized(Z_ARG3, 0xb00b1);
   z_stg(Z_ARG3, _z_parent_ijava_frame_abi(return_pc), Z_SP);
 #endif
-}
-
-void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
-  if (VerifyFPU) {
-    unimplemented("verifyFPU");
-  }
 }

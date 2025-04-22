@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,8 +22,6 @@
  * questions.
  *
  */
-
-#include "precompiled.hpp"
 
 #if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
 
@@ -173,7 +171,7 @@ static bool vma_touches_thread_stack(const void* from, const void* to, const Thr
   // kernel. That can happen, e.g., for non-java threads that don't have guard pages.
   // Therefore we go for the simplest way here and check for intersection between VMA and thread stack.
   // Note it is possible to encounter a brand new thread that has not yet initialized its stack fields.
-  return range_intersects(from, to, (const void*)t->stack_end(), (const void*)t->stack_base_or_null());
+  return t->stack_base_or_null() != nullptr && range_intersects(from, to, (const void*)t->stack_end(), (const void*)t->stack_base());
 }
 
 struct GCThreadClosure : public ThreadClosure {
@@ -195,7 +193,7 @@ static void print_thread_details(uintx thread_id, const char* name, outputStream
   // avoid commas and spaces in output to ease post-processing via awk
   char tmp[64];
   stringStream ss(tmp, sizeof(tmp));
-  ss.print(":" UINTX_FORMAT "-%s", (uintx)thread_id, name);
+  ss.print(":%zu-%s", (uintx)thread_id, name);
   for (int i = 0; tmp[i] != '\0'; i++) {
     if (!isalnum(tmp[i])) {
       tmp[i] = '-';

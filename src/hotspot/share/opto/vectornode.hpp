@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,12 +88,16 @@ class VectorNode : public TypeNode {
   static bool is_convert_opcode(int opc);
   static bool is_minmax_opcode(int opc);
 
+  bool should_swap_inputs_to_help_global_value_numbering();
+
   static bool is_vshift_cnt_opcode(int opc);
 
   static bool is_rotate_opcode(int opc);
 
   static int opcode(int sopc, BasicType bt);         // scalar_opc -> vector_opc
   static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc
+
+  static int shift_count_opcode(int opc);
 
   // Limits on vector size (number of elements) for auto-vectorization.
   static bool vector_size_supported_auto_vectorization(const BasicType bt, int size);
@@ -132,6 +136,8 @@ class VectorNode : public TypeNode {
 
   static bool is_scalar_unary_op_with_equal_input_and_output_types(int opc);
   static bool is_scalar_op_that_returns_int_but_vector_op_returns_long(int opc);
+  static bool is_reinterpret_opcode(int opc);
+
 
   static void trace_new_vector(Node* n, const char* context) {
 #ifdef ASSERT
@@ -200,6 +206,14 @@ class AddVINode : public VectorNode {
 class AddVLNode : public VectorNode {
 public:
   AddVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------AddVHFNode--------------------------------------
+// Vector add float
+class AddVHFNode : public VectorNode {
+public:
+  AddVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
@@ -397,6 +411,15 @@ class SaturatingSubVNode : public SaturatingVectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------SubVHFNode--------------------------------------
+// Vector subtract half float
+class SubVHFNode : public VectorNode {
+public:
+  SubVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+
 //------------------------------SubVFNode--------------------------------------
 // Vector subtract float
 class SubVFNode : public VectorNode {
@@ -450,6 +473,14 @@ public:
 };
 
 //------------------------------MulVFNode--------------------------------------
+// Vector multiply half float
+class MulVHFNode : public VectorNode {
+public:
+  MulVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------MulVFNode--------------------------------------
 // Vector multiply float
 class MulVFNode : public VectorNode {
 public:
@@ -496,6 +527,14 @@ public:
 class FmaVFNode : public FmaVNode {
 public:
   FmaVFNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : FmaVNode(in1, in2, in3, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------FmaVHFNode-------------------------------------
+// Vector fused-multiply-add half-precision float
+class FmaVHFNode : public FmaVNode {
+public:
+  FmaVHFNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : FmaVNode(in1, in2, in3, vt) {}
   virtual int Opcode() const;
 };
 
@@ -567,6 +606,14 @@ public:
   virtual uint size_of() const { return sizeof(*this); }
 };
 
+//------------------------------DivVHFNode-------------------------------------
+// Vector divide half float
+class DivVHFNode : public VectorNode {
+public:
+  DivVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------DivVFNode--------------------------------------
 // Vector divide float
 class DivVFNode : public VectorNode {
@@ -604,6 +651,22 @@ public:
 class MinVNode : public VectorNode {
 public:
   MinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------MinVHFNode------------------------------------
+// Vector Min for half floats
+class MinVHFNode : public VectorNode {
+public:
+  MinVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------MaxVHFNode------------------------------------
+// Vector Max for half floats
+class MaxVHFNode : public VectorNode {
+public:
+  MaxVHFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
@@ -724,6 +787,14 @@ class PopCountVLNode : public VectorNode {
   PopCountVLNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {
     assert(vt->element_basic_type() == T_LONG, "must be long");
   }
+  virtual int Opcode() const;
+};
+
+//------------------------------SqrtVHFNode-------------------------------------
+// Vector Sqrt half-precision float
+class SqrtVHFNode : public VectorNode {
+public:
+  SqrtVHFNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
   virtual int Opcode() const;
 };
 
@@ -1764,7 +1835,7 @@ class VectorCastNode : public VectorNode {
   VectorCastNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
   virtual int Opcode() const;
 
-  static VectorCastNode* make(int vopc, Node* n1, BasicType bt, uint vlen);
+  static VectorNode* make(int vopc, Node* n1, BasicType bt, uint vlen);
   static int  opcode(int opc, BasicType bt, bool is_signed = true);
   static bool implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,11 @@
  * questions.
  */
 
-#include "precompiled.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
-#include "classfile/moduleEntry.hpp"
-#include "classfile/vmSymbols.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "oops/objArrayOop.inline.hpp"

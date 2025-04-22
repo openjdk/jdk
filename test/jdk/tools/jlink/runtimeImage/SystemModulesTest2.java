@@ -42,7 +42,7 @@ import tests.JImageValidator;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1400m SystemModulesTest2
+ * @run main/othervm -Xmx1g SystemModulesTest2
  */
 public class SystemModulesTest2 extends AbstractLinkableRuntimeTest {
 

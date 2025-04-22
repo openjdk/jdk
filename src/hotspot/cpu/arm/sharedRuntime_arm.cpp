@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "code/debugInfoRec.hpp"
@@ -1718,7 +1717,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   // Overwrite saved register values
 
   // Place metadata result of VM call into Rmethod
-  __ get_vm_result_2(R1, Rtemp);
+  __ get_vm_result_metadata(R1, Rtemp);
   __ str(R1, Address(SP, RegisterSaver::Rmethod_offset * wordSize));
 
   // Place target address (VM call result) into Rtemp
@@ -1731,7 +1730,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 
   RegisterSaver::restore_live_registers(masm);
   const Register Rzero = __ zero_register(Rtemp);
-  __ str(Rzero, Address(Rthread, JavaThread::vm_result_2_offset()));
+  __ str(Rzero, Address(Rthread, JavaThread::vm_result_metadata_offset()));
   __ mov(Rexception_pc, LR);
   __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, Rtemp);
 

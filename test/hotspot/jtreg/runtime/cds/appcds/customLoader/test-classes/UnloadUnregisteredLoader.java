@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
+import java.util.List;
+import java.util.Set;
 
 public class UnloadUnregisteredLoader {
     public static void main(String args[]) throws Exception {
@@ -39,8 +41,8 @@ public class UnloadUnregisteredLoader {
         for (int i=0; i<5; i++) {
             doit(urls, className, (i == 0));
 
-            ClassUnloadCommon.triggerUnloading();
-            ClassUnloadCommon.failIf(wb.isClassAlive(className), "should have been unloaded");
+            Set<String> aliveClasses = ClassUnloadCommon.triggerUnloading(List.of(className));
+            ClassUnloadCommon.failIf(!aliveClasses.isEmpty(), "should have been unloaded: " + aliveClasses);
         }
     }
 

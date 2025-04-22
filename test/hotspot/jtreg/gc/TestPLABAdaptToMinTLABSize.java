@@ -24,17 +24,29 @@
 package gc;
 
 /*
- * @test TestPLABAdaptToMinTLABSize
+ * @test TestPLABAdaptToMinTLABSizeG1
  * @bug 8289137
  * @summary Make sure that Young/OldPLABSize adapt to MinTLABSize setting.
- * @requires vm.gc.Parallel | vm.gc.G1
+ * @requires vm.gc.G1
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver gc.TestPLABAdaptToMinTLABSize
+ * @run driver gc.TestPLABAdaptToMinTLABSize -XX:+UseG1GC
+ */
+
+/*
+ * @test TestPLABAdaptToMinTLABSizeParallel
+ * @bug 8289137
+ * @summary Make sure that Young/OldPLABSize adapt to MinTLABSize setting.
+ * @requires vm.gc.Parallel
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run driver gc.TestPLABAdaptToMinTLABSize -XX:+UseParallelGC
  */
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -68,9 +80,10 @@ public class TestPLABAdaptToMinTLABSize {
     }
 
     public static void main(String[] args) throws Exception {
-        runTest(true, "-XX:MinTLABSize=100k");
+        String gc = args[0];
+        runTest(true, gc, "-XX:MinTLABSize=100k");
         // Should not succeed when explicitly specifying invalid combination.
-        runTest(false, "-XX:MinTLABSize=100k", "-XX:OldPLABSize=5k");
-        runTest(false, "-XX:MinTLABSize=100k", "-XX:YoungPLABSize=5k");
+        runTest(false, gc, "-XX:MinTLABSize=100k", "-XX:OldPLABSize=5k");
+        runTest(false, gc, "-XX:MinTLABSize=100k", "-XX:YoungPLABSize=5k");
     }
 }

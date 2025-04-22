@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,22 +63,28 @@ public class BodyOutputStream extends OutputStream {
     }
 
     void waitForWindow(int demand) throws InterruptedException {
-        // first wait for the connection window
-        conn.obtainConnectionWindow(demand);
-        // now wait for the stream window
+        //  first wait for the stream window
         waitForStreamWindow(demand);
+        // now wait for the connection window
+        conn.obtainConnectionWindow(demand);
     }
 
-    public void waitForStreamWindow(int demand) throws InterruptedException {
-        synchronized (this) {
-            while (demand > 0) {
-                int n = Math.min(demand, window);
-                demand -= n;
-                window -= n;
-                if (demand > 0) {
-                    wait();
+    public void waitForStreamWindow(int amount) throws InterruptedException {
+        int demand = amount;
+        try {
+            synchronized (this) {
+                while (amount > 0) {
+                    int n = Math.min(amount, window);
+                    amount -= n;
+                    window -= n;
+                    if (amount > 0) {
+                        wait();
+                    }
                 }
             }
+        } catch (Throwable t) {
+            window += (demand - amount);
+            throw t;
         }
     }
 
