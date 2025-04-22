@@ -1626,7 +1626,7 @@ class ImmutableCollections {
                     @SuppressWarnings({"unchecked"})
                     @Override
                     public StableValueImpl<V>[] apply(int len) {
-                        return (StableValueImpl<V>[]) new StableValueImpl[len];
+                        return (StableValueImpl<V>[]) new StableValueImpl<?>[len];
                     }
                 });
                 return StableUtil.renderElements(StableMap.this, "StableMap", values);
