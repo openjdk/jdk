@@ -2823,7 +2823,7 @@ public class IRNode {
 
     /**
      * Apply {@code regex} on all ideal graph phases starting from {@link CompilePhase#BEFORE_LOOP_OPTS}
-     * up to and including {@link CompilePhase#AFTER_LOOP_OPTS}
+     * up to and including {@link CompilePhase#AFTER_LOOP_OPTS}.
      */
     private static void duringLoopOpts(String irNodePlaceholder, String regex) {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.AFTER_LOOP_OPTS, regex,
