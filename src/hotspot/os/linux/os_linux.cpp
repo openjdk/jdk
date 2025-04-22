@@ -23,7 +23,6 @@
  *
  */
 
-// no precompiled headers
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
@@ -139,8 +138,6 @@
 #endif
 
 #define MAX_PATH    (2 * K)
-
-#define MAX_SECS 100000000
 
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
@@ -379,9 +376,10 @@ static void next_line(FILE *f) {
   } while (c != '\n' && c != EOF);
 }
 
-void os::Linux::kernel_version(long* major, long* minor) {
-  *major = -1;
-  *minor = -1;
+void os::Linux::kernel_version(long* major, long* minor, long* patch) {
+  *major = 0;
+  *minor = 0;
+  *patch = 0;
 
   struct utsname buffer;
   int ret = uname(&buffer);
@@ -389,10 +387,27 @@ void os::Linux::kernel_version(long* major, long* minor) {
     log_warning(os)("uname(2) failed to get kernel version: %s", os::errno_name(ret));
     return;
   }
-  int nr_matched = sscanf(buffer.release, "%ld.%ld", major, minor);
-  if (nr_matched != 2) {
-    log_warning(os)("Parsing kernel version failed, expected 2 version numbers, only matched %d", nr_matched);
+  int nr_matched = sscanf(buffer.release, "%ld.%ld.%ld", major, minor, patch);
+  if (nr_matched != 3) {
+    log_warning(os)("Parsing kernel version failed, expected 3 version numbers, only matched %d", nr_matched);
   }
+}
+
+int os::Linux::kernel_version_compare(long major1, long minor1, long patch1,
+                                      long major2, long minor2, long patch2) {
+  // Compare major versions
+  if (major1 > major2) return 1;
+  if (major1 < major2) return -1;
+
+  // Compare minor versions
+  if (minor1 > minor2) return 1;
+  if (minor1 < minor2) return -1;
+
+  // Compare patchlevel versions
+  if (patch1 > patch2) return 1;
+  if (patch1 < patch2) return -1;
+
+  return 0;
 }
 
 bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu) {
@@ -925,7 +940,7 @@ static size_t get_static_tls_area_size(const pthread_attr_t *attr) {
     }
   }
 
-  log_info(os, thread)("Stack size adjustment for TLS is " SIZE_FORMAT,
+  log_info(os, thread)("Stack size adjustment for TLS is %zu",
                        tls_size);
   return tls_size;
 }
@@ -1032,7 +1047,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     // pthread_attr_setstacksize() function can fail
     // if the stack size exceeds a system-imposed limit.
     assert_status(status == EINVAL, status, "pthread_attr_setstacksize");
-    log_warning(os, thread)("The %sthread stack size specified is invalid: " SIZE_FORMAT "k",
+    log_warning(os, thread)("The %sthread stack size specified is invalid: %zuk",
                             (thr_type == compiler_thread) ? "compiler " : ((thr_type == java_thread) ? "" : "VM "),
                             stack_size / K);
     thread->set_osthread(nullptr);
@@ -1171,7 +1186,7 @@ bool os::create_attached_thread(JavaThread* thread) {
   PosixSignals::hotspot_sigmask(thread);
 
   log_info(os, thread)("Thread attached (tid: %zu, pthread id: %zu"
-                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (%zuK) ).",
                        os::current_thread_id(), (uintx) pthread_self(),
                        p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
 
@@ -1457,8 +1472,8 @@ void os::Linux::capture_initial_stack(size_t max_size) {
     bool primordial = uintptr_t(&rlim) > uintptr_t(_initial_thread_stack_bottom) &&
                       uintptr_t(&rlim) < stack_top;
 
-    log_info(os, thread)("Capturing initial stack in %s thread: req. size: " SIZE_FORMAT "K, actual size: "
-                         SIZE_FORMAT "K, top=" INTPTR_FORMAT ", bottom=" INTPTR_FORMAT,
+    log_info(os, thread)("Capturing initial stack in %s thread: req. size: %zuK, actual size: "
+                         "%zuK, top=" INTPTR_FORMAT ", bottom=" INTPTR_FORMAT,
                          primordial ? "primordial" : "user", max_size / K,  _initial_thread_stack_size / K,
                          stack_top, intptr_t(_initial_thread_stack_bottom));
   }
@@ -2390,7 +2405,7 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   // If legacy mallinfo(), we can still print the values if we are sure they cannot have wrapped.
   might_have_wrapped = might_have_wrapped && (info.vmsize * K) > UINT_MAX;
 #endif
-  st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K, retained: " SIZE_FORMAT "K%s",
+  st->print_cr("C-Heap outstanding allocations: %zuK, retained: %zuK%s",
                total_allocated / K, free_retained / K,
                might_have_wrapped ? " (may have wrapped)" : "");
   // Tunables
@@ -2518,7 +2533,7 @@ void os::Linux::print_steal_info(outputStream* st) {
 void os::print_memory_info(outputStream* st) {
 
   st->print("Memory:");
-  st->print(" " SIZE_FORMAT "k page", os::vm_page_size()>>10);
+  st->print(" %zuk page", os::vm_page_size()>>10);
 
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
@@ -2755,59 +2770,38 @@ void os::jvm_path(char *buf, jint buflen) {
     return;
   }
 
-  if (Arguments::sun_java_launcher_is_altjvm()) {
-    // Support for the java launcher's '-XXaltjvm=<path>' option. Typical
-    // value for buf is "<JAVA_HOME>/jre/lib/<vmtype>/libjvm.so".
-    // If "/jre/lib/" appears at the right place in the string, then
-    // assume we are installed in a JDK and we're done. Otherwise, check
-    // for a JAVA_HOME environment variable and fix up the path so it
-    // looks like libjvm.so is installed there (append a fake suffix
-    // hotspot/libjvm.so).
-    const char *p = buf + strlen(buf) - 1;
-    for (int count = 0; p > buf && count < 5; ++count) {
-      for (--p; p > buf && *p != '/'; --p)
-        /* empty */ ;
-    }
+  // If executing unit tests we require JAVA_HOME to point to the real JDK.
+  if (Arguments::executing_unit_tests()) {
+    // Look for JAVA_HOME in the environment.
+    char* java_home_var = ::getenv("JAVA_HOME");
+    if (java_home_var != nullptr && java_home_var[0] != 0) {
 
-    if (strncmp(p, "/jre/lib/", 9) != 0) {
-      // Look for JAVA_HOME in the environment.
-      char* java_home_var = ::getenv("JAVA_HOME");
-      if (java_home_var != nullptr && java_home_var[0] != 0) {
-        char* jrelib_p;
-        int len;
+      // Check the current module name "libjvm.so".
+      const char* p = strrchr(buf, '/');
+      if (p == nullptr) {
+        return;
+      }
+      assert(strstr(p, "/libjvm") == p, "invalid library name");
 
-        // Check the current module name "libjvm.so".
-        p = strrchr(buf, '/');
-        if (p == nullptr) {
-          return;
-        }
-        assert(strstr(p, "/libjvm") == p, "invalid library name");
+      stringStream ss(buf, buflen);
+      rp = os::realpath(java_home_var, buf, buflen);
+      if (rp == nullptr) {
+        return;
+      }
 
-        rp = os::realpath(java_home_var, buf, buflen);
+      assert((int)strlen(buf) < buflen, "Ran out of buffer room");
+      ss.print("%s/lib", buf);
+
+      if (0 == access(buf, F_OK)) {
+        // Use current module name "libjvm.so"
+        ss.print("/%s/libjvm%s", Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+               "buf has been truncated");
+      } else {
+        // Go back to path of .so
+        rp = os::realpath(dli_fname, buf, buflen);
         if (rp == nullptr) {
           return;
-        }
-
-        // determine if this is a legacy image or modules image
-        // modules image doesn't have "jre" subdirectory
-        len = checked_cast<int>(strlen(buf));
-        assert(len < buflen, "Ran out of buffer room");
-        jrelib_p = buf + len;
-        snprintf(jrelib_p, buflen-len, "/jre/lib");
-        if (0 != access(buf, F_OK)) {
-          snprintf(jrelib_p, buflen-len, "/lib");
-        }
-
-        if (0 == access(buf, F_OK)) {
-          // Use current module name "libjvm.so"
-          len = (int)strlen(buf);
-          snprintf(buf + len, buflen-len, "/hotspot/libjvm.so");
-        } else {
-          // Go back to path of .so
-          rp = os::realpath(dli_fname, buf, buflen);
-          if (rp == nullptr) {
-            return;
-          }
         }
       }
     }
@@ -2883,17 +2877,15 @@ static bool recoverable_mmap_error(int err) {
 
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
-  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
-          ", %d) failed; error='%s' (errno=%d)", p2i(addr), size, exec,
-          os::strerror(err), err);
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", %zu, %d) failed; error='%s' (errno=%d)",
+          p2i(addr), size, exec, os::strerror(err), err);
 }
 
 static void warn_fail_commit_memory(char* addr, size_t size,
                                     size_t alignment_hint, bool exec,
                                     int err) {
-  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
-          ", " SIZE_FORMAT ", %d) failed; error='%s' (errno=%d)", p2i(addr), size,
-          alignment_hint, exec, os::strerror(err), err);
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", %zu, %zu, %d) failed; error='%s' (errno=%d)",
+          p2i(addr), size, alignment_hint, exec, os::strerror(err), err);
 }
 
 // NOTE: Linux kernel does not really reserve the pages for us.
@@ -3043,7 +3035,7 @@ size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
       // OS will initially always use small pages.
       return os::vm_page_size();
     } else if (err != 0) {
-      log_info(gc, os)("::madvise(" PTR_FORMAT ", " SIZE_FORMAT ", %d) failed; "
+      log_info(gc, os)("::madvise(" PTR_FORMAT ", %zu, %d) failed; "
                        "error='%s' (errno=%d)", p2i(first), len,
                        MADV_POPULATE_WRITE, os::strerror(err), err);
     }
@@ -3760,10 +3752,9 @@ static bool hugetlbfs_sanity_check(size_t page_size) {
     munmap(p, page_size);
     return true;
   } else {
-      log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) failed sanity check, "
+      log_info(pagesize)("Large page size (" EXACTFMT ") failed sanity check, "
                          "checking if smaller large page sizes are usable",
-                         byte_size_in_exact_unit(page_size),
-                         exact_unit_for_byte_size(page_size));
+                         EXACTFMTARGS(page_size));
       for (size_t page_size_ = page_sizes.next_smaller(page_size);
           page_size_ > os::vm_page_size();
           page_size_ = page_sizes.next_smaller(page_size_)) {
@@ -3772,9 +3763,8 @@ static bool hugetlbfs_sanity_check(size_t page_size) {
         if (p != MAP_FAILED) {
           // Mapping succeeded, sanity check passed.
           munmap(p, page_size_);
-          log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) passed sanity check",
-                             byte_size_in_exact_unit(page_size_),
-                             exact_unit_for_byte_size(page_size_));
+          log_info(pagesize)("Large page size (" EXACTFMT ") passed sanity check",
+                             EXACTFMTARGS(page_size_));
           return true;
         }
       }
@@ -3971,26 +3961,21 @@ void os::Linux::large_page_init() {
        LargePageSizeInBytes == 0 ||
        LargePageSizeInBytes == default_large_page_size) {
      large_page_size = default_large_page_size;
-     log_info(pagesize)("Using the default large page size: " SIZE_FORMAT "%s",
-                        byte_size_in_exact_unit(large_page_size),
-                        exact_unit_for_byte_size(large_page_size));
+     log_info(pagesize)("Using the default large page size: " EXACTFMT,
+                        EXACTFMTARGS(large_page_size));
     } else {
       if (all_large_pages.contains(LargePageSizeInBytes)) {
         large_page_size = LargePageSizeInBytes;
-        log_info(pagesize)("Overriding default large page size (" SIZE_FORMAT "%s) "
-                           "using LargePageSizeInBytes: " SIZE_FORMAT "%s",
-                           byte_size_in_exact_unit(default_large_page_size),
-                           exact_unit_for_byte_size(default_large_page_size),
-                           byte_size_in_exact_unit(large_page_size),
-                           exact_unit_for_byte_size(large_page_size));
+        log_info(pagesize)("Overriding default large page size (" EXACTFMT ") "
+                           "using LargePageSizeInBytes: " EXACTFMT,
+                           EXACTFMTARGS(default_large_page_size),
+                           EXACTFMTARGS(large_page_size));
       } else {
         large_page_size = default_large_page_size;
-        log_info(pagesize)("LargePageSizeInBytes is not a valid large page size (" SIZE_FORMAT "%s) "
-                           "using the default large page size: " SIZE_FORMAT "%s",
-                           byte_size_in_exact_unit(LargePageSizeInBytes),
-                           exact_unit_for_byte_size(LargePageSizeInBytes),
-                           byte_size_in_exact_unit(large_page_size),
-                           exact_unit_for_byte_size(large_page_size));
+        log_info(pagesize)("LargePageSizeInBytes is not a valid large page size (" EXACTFMT ") "
+                           "using the default large page size: " EXACTFMT,
+                           EXACTFMTARGS(LargePageSizeInBytes),
+                           EXACTFMTARGS(large_page_size));
       }
     }
 
@@ -4031,9 +4016,8 @@ static void log_on_commit_special_failure(char* req_addr, size_t bytes,
   assert(error == ENOMEM, "Only expect to fail if no memory is available");
 
   log_info(pagesize)("Failed to reserve and commit memory with given page size. req_addr: " PTR_FORMAT
-                     " size: " SIZE_FORMAT "%s, page size: " SIZE_FORMAT "%s, (errno = %d)",
-                     p2i(req_addr), byte_size_in_exact_unit(bytes), exact_unit_for_byte_size(bytes),
-                     byte_size_in_exact_unit(page_size), exact_unit_for_byte_size(page_size), error);
+                     " size: " EXACTFMT ", page size: " EXACTFMT ", (errno = %d)",
+                     p2i(req_addr), EXACTFMTARGS(bytes), EXACTFMTARGS(page_size), error);
 }
 
 static bool commit_memory_special(size_t bytes,
@@ -4060,12 +4044,8 @@ static bool commit_memory_special(size_t bytes,
     return false;
   }
 
-  log_debug(pagesize)("Commit special mapping: " PTR_FORMAT ", size=" SIZE_FORMAT "%s, page size="
-                      SIZE_FORMAT "%s",
-                      p2i(addr), byte_size_in_exact_unit(bytes),
-                      exact_unit_for_byte_size(bytes),
-                      byte_size_in_exact_unit(page_size),
-                      exact_unit_for_byte_size(page_size));
+  log_debug(pagesize)("Commit special mapping: " PTR_FORMAT ", size=" EXACTFMT ", page size=" EXACTFMT,
+                      p2i(addr), EXACTFMTARGS(bytes), EXACTFMTARGS(page_size));
   assert(is_aligned(addr, page_size), "Must be");
   return true;
 }
@@ -4477,15 +4457,15 @@ void os::Linux::numa_init() {
   // bitmask when externally configured to run on all or fewer nodes.
 
   if (!Linux::libnuma_init()) {
-    disable_numa("Failed to initialize libnuma");
+    disable_numa("Failed to initialize libnuma", true);
   } else {
     Linux::set_configured_numa_policy(Linux::identify_numa_policy());
     if (Linux::numa_max_node() < 1) {
-      disable_numa("Only a single NUMA node is available");
+      disable_numa("Only a single NUMA node is available", false);
     } else if (Linux::is_bound_to_single_mem_node()) {
-      disable_numa("The process is bound to a single NUMA node");
+      disable_numa("The process is bound to a single NUMA node", true);
     } else if (Linux::mem_and_cpu_node_mismatch()) {
-      disable_numa("The process memory and cpu node configuration does not match");
+      disable_numa("The process memory and cpu node configuration does not match", true);
     } else {
       LogTarget(Info,os) log;
       LogStream ls(log);
@@ -4527,11 +4507,15 @@ void os::Linux::numa_init() {
   }
 }
 
-void os::Linux::disable_numa(const char* reason) {
+void os::Linux::disable_numa(const char* reason, bool warning) {
   if ((UseNUMA && FLAG_IS_CMDLINE(UseNUMA)) ||
       (UseNUMAInterleaving && FLAG_IS_CMDLINE(UseNUMAInterleaving))) {
-    // Only issue a warning if the user explicitly asked for NUMA support
-    log_warning(os)("NUMA support disabled: %s", reason);
+    // Only issue a message if the user explicitly asked for NUMA support
+    if (warning) {
+      log_warning(os)("NUMA support disabled: %s", reason);
+    } else {
+      log_info(os)("NUMA support disabled: %s", reason);
+    }
   }
   FLAG_SET_ERGO(UseNUMA, false);
   FLAG_SET_ERGO(UseNUMAInterleaving, false);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -730,12 +730,12 @@ public class Analyzer {
          * Simple deferred diagnostic handler which filters out all messages and keep track of errors.
          */
         Log.DeferredDiagnosticHandler diagHandler() {
-            return new Log.DeferredDiagnosticHandler(log, d -> {
+            return log.new DeferredDiagnosticHandler(d -> {
                 if (d.getType() == DiagnosticType.ERROR) {
                     erroneous = true;
                 }
                 return true;
-            });
+            }, false);
         }
     }
 

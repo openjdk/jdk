@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
@@ -219,7 +218,7 @@ void Thread::call_run() {
   JFR_ONLY(Jfr::on_thread_start(this);)
 
   log_debug(os, thread)("Thread %zu stack dimensions: "
-    PTR_FORMAT "-" PTR_FORMAT " (" SIZE_FORMAT "k).",
+    PTR_FORMAT "-" PTR_FORMAT " (%zuk).",
     os::current_thread_id(), p2i(stack_end()),
     p2i(stack_base()), stack_size()/1024);
 
@@ -475,7 +474,7 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
               );
     if (is_Java_thread() && (PrintExtendedThreadInfo || print_extended_info)) {
       size_t allocated_bytes = (size_t) const_cast<Thread*>(this)->cooked_allocated_bytes();
-      st->print("allocated=" SIZE_FORMAT "%s ",
+      st->print("allocated=%zu%s ",
                 byte_size_in_proper_unit(allocated_bytes),
                 proper_unit_for_byte_size(allocated_bytes)
                 );
@@ -557,20 +556,11 @@ bool Thread::set_as_starting_thread(JavaThread* jt) {
   return os::create_main_thread(jt);
 }
 
-// Ad-hoc mutual exclusion primitives: SpinLock
+// Ad-hoc mutual exclusion primitive: spin lock
 //
-// We employ SpinLocks _only for low-contention, fixed-length
+// We employ a spin lock _only for low-contention, fixed-length
 // short-duration critical sections where we're concerned
 // about native mutex_t or HotSpot Mutex:: latency.
-//
-// TODO-FIXME: ListLock should be of type SpinLock.
-// We should make this a 1st-class type, integrated into the lock
-// hierarchy as leaf-locks.  Critically, the SpinLock structure
-// should have sufficient padding to avoid false-sharing and excessive
-// cache-coherency traffic.
-
-
-typedef volatile int SpinLockT;
 
 void Thread::SpinAcquire(volatile int * adr, const char * LockName) {
   if (Atomic::cmpxchg(adr, 0, 1) == 0) {

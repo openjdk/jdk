@@ -123,8 +123,8 @@ public class CallSiteDepContextTest {
 
     public static void testHiddenDepField() {
         try {
-            Field f = MethodHandleHelper.MHN_CALL_SITE_CONTEXT_CLASS.getDeclaredField("vmdependencies");
-            throw new AssertionError("Context.dependencies field should be hidden");
+            Field f = MethodHandleHelper.JLI_CALL_SITE_CLASS.getDeclaredField("vmdependencies");
+            throw new AssertionError("CallSite.dependencies field should be hidden");
         } catch(NoSuchFieldException e) { /* expected */ }
     }
 

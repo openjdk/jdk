@@ -79,6 +79,7 @@ public abstract class Certificate implements java.io.Serializable {
      * "{@docRoot}/../specs/security/standard-names.html#certificatefactory-types">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard certificate types.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     protected Certificate(String type) {
         this.type = type;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -44,6 +43,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -1707,6 +1707,12 @@ public:
   }
 
   ThreadDumper(ThreadType thread_type, JavaThread* java_thread, oop thread_oop);
+  ~ThreadDumper() {
+    for (int index = 0; index < _frames->length(); index++) {
+      delete _frames->at(index);
+    }
+    delete _frames;
+  }
 
   // affects frame_count
   void add_oom_frame(Method* oome_constructor) {
@@ -2349,11 +2355,10 @@ void VM_HeapDumper::dump_threads(AbstractDumpWriter* writer) {
 }
 
 bool VM_HeapDumper::doit_prologue() {
-  if (_gc_before_heap_dump && UseZGC) {
-    // ZGC cannot perform a synchronous GC cycle from within the VM thread.
-    // So ZCollectedHeap::collect_as_vm_thread() is a noop. To respect the
-    // _gc_before_heap_dump flag a synchronous GC cycle is performed from
-    // the caller thread in the prologue.
+  if (_gc_before_heap_dump && (UseZGC || UseShenandoahGC)) {
+    // ZGC and Shenandoah cannot perform a synchronous GC cycle from within the VM thread.
+    // So collect_as_vm_thread() is a noop. To respect the _gc_before_heap_dump flag a
+    // synchronous GC cycle is performed from the caller thread in the prologue.
     Universe::heap()->collect(GCCause::_heap_dump);
   }
   return VM_GC_Operation::doit_prologue();
@@ -2743,71 +2748,45 @@ void HeapDumper::dump_heap() {
 void HeapDumper::dump_heap(bool oome) {
   static char base_path[JVM_MAXPATHLEN] = {'\0'};
   static uint dump_file_seq = 0;
-  char* my_path;
+  char my_path[JVM_MAXPATHLEN];
   const int max_digit_chars = 20;
-
-  const char* dump_file_name = "java_pid";
-  const char* dump_file_ext  = HeapDumpGzipLevel > 0 ? ".hprof.gz" : ".hprof";
+  const char* dump_file_name = HeapDumpGzipLevel > 0 ? "java_pid%p.hprof.gz" : "java_pid%p.hprof";
 
   // The dump file defaults to java_pid<pid>.hprof in the current working
   // directory. HeapDumpPath=<file> can be used to specify an alternative
   // dump file name or a directory where dump file is created.
   if (dump_file_seq == 0) { // first time in, we initialize base_path
-    // Calculate potentially longest base path and check if we have enough
-    // allocated statically.
-    const size_t total_length =
-                      (HeapDumpPath == nullptr ? 0 : strlen(HeapDumpPath)) +
-                      strlen(os::file_separator()) + max_digit_chars +
-                      strlen(dump_file_name) + strlen(dump_file_ext) + 1;
-    if (total_length > sizeof(base_path)) {
+    // Set base path (name or directory, default or custom, without seq no), doing %p substitution.
+    const char *path_src = (HeapDumpPath != nullptr && HeapDumpPath[0] != '\0') ? HeapDumpPath : dump_file_name;
+    if (!Arguments::copy_expand_pid(path_src, strlen(path_src), base_path, JVM_MAXPATHLEN - max_digit_chars)) {
       warning("Cannot create heap dump file.  HeapDumpPath is too long.");
       return;
     }
-
-    bool use_default_filename = true;
-    if (HeapDumpPath == nullptr || HeapDumpPath[0] == '\0') {
-      // HeapDumpPath=<file> not specified
-    } else {
-      strcpy(base_path, HeapDumpPath);
-      // check if the path is a directory (must exist)
-      DIR* dir = os::opendir(base_path);
-      if (dir == nullptr) {
-        use_default_filename = false;
-      } else {
-        // HeapDumpPath specified a directory. We append a file separator
-        // (if needed).
-        os::closedir(dir);
-        size_t fs_len = strlen(os::file_separator());
-        if (strlen(base_path) >= fs_len) {
-          char* end = base_path;
-          end += (strlen(base_path) - fs_len);
-          if (strcmp(end, os::file_separator()) != 0) {
-            strcat(base_path, os::file_separator());
-          }
+    // Check if the path is an existing directory
+    DIR* dir = os::opendir(base_path);
+    if (dir != nullptr) {
+      os::closedir(dir);
+      // Path is a directory.  Append a file separator (if needed).
+      size_t fs_len = strlen(os::file_separator());
+      if (strlen(base_path) >= fs_len) {
+        char* end = base_path;
+        end += (strlen(base_path) - fs_len);
+        if (strcmp(end, os::file_separator()) != 0) {
+          strcat(base_path, os::file_separator());
         }
       }
+      // Then add the default name, with %p substitution.  Use my_path temporarily.
+      if (!Arguments::copy_expand_pid(dump_file_name, strlen(dump_file_name), my_path, JVM_MAXPATHLEN - max_digit_chars)) {
+        warning("Cannot create heap dump file.  HeapDumpPath is too long.");
+        return;
+      }
+      const size_t dlen = strlen(base_path);
+      jio_snprintf(&base_path[dlen], sizeof(base_path) - dlen, "%s", my_path);
     }
-    // If HeapDumpPath wasn't a file name then we append the default name
-    if (use_default_filename) {
-      const size_t dlen = strlen(base_path);  // if heap dump dir specified
-      jio_snprintf(&base_path[dlen], sizeof(base_path)-dlen, "%s%d%s",
-                   dump_file_name, os::current_process_id(), dump_file_ext);
-    }
-    const size_t len = strlen(base_path) + 1;
-    my_path = (char*)os::malloc(len, mtInternal);
-    if (my_path == nullptr) {
-      warning("Cannot create heap dump file.  Out of system memory.");
-      return;
-    }
-    strncpy(my_path, base_path, len);
+    strncpy(my_path, base_path, JVM_MAXPATHLEN);
   } else {
     // Append a sequence number id for dumps following the first
     const size_t len = strlen(base_path) + max_digit_chars + 2; // for '.' and \0
-    my_path = (char*)os::malloc(len, mtInternal);
-    if (my_path == nullptr) {
-      warning("Cannot create heap dump file.  Out of system memory.");
-      return;
-    }
     jio_snprintf(my_path, len, "%s.%d", base_path, dump_file_seq);
   }
   dump_file_seq++;   // increment seq number for next time we dump
@@ -2815,5 +2794,4 @@ void HeapDumper::dump_heap(bool oome) {
   HeapDumper dumper(false /* no GC before heap dump */,
                     oome  /* pass along out-of-memory-error flag */);
   dumper.dump(my_path, tty, HeapDumpGzipLevel);
-  os::free(my_path);
 }

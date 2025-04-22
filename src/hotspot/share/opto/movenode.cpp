@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
@@ -91,6 +90,10 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->type(in(IfTrue))    == Type::TOP) {
     return nullptr;
   }
+  Node* progress = TypeNode::Ideal(phase, can_reshape);
+  if (progress != nullptr) {
+    return progress;
+  }
 
   // Check for Min/Max patterns. This is called before constants are pushed to the right input, as that transform can
   // make BoolTests non-canonical.
@@ -102,7 +105,7 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Canonicalize the node by moving constants to the right input.
   if (in(Condition)->is_Bool() && phase->type(in(IfFalse))->singleton() && !phase->type(in(IfTrue))->singleton()) {
     BoolNode* b = in(Condition)->as_Bool()->negate(phase);
-    return make(in(Control), phase->transform(b), in(IfTrue), in(IfFalse), _type);
+    return make(phase->transform(b), in(IfTrue), in(IfFalse), _type);
   }
 
   return nullptr;
@@ -186,18 +189,33 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
 //------------------------------make-------------------------------------------
 // Make a correctly-flavored CMove.  Since _type is directly determined
 // from the inputs we do not need to specify it here.
-CMoveNode *CMoveNode::make(Node *c, Node *bol, Node *left, Node *right, const Type *t) {
-  switch( t->basic_type() ) {
-    case T_INT:     return new CMoveINode( bol, left, right, t->is_int() );
-    case T_FLOAT:   return new CMoveFNode( bol, left, right, t );
-    case T_DOUBLE:  return new CMoveDNode( bol, left, right, t );
-    case T_LONG:    return new CMoveLNode( bol, left, right, t->is_long() );
-    case T_OBJECT:  return new CMovePNode( c, bol, left, right, t->is_oopptr() );
-    case T_ADDRESS: return new CMovePNode( c, bol, left, right, t->is_ptr() );
-    case T_NARROWOOP: return new CMoveNNode( c, bol, left, right, t );
+CMoveNode* CMoveNode::make(Node* bol, Node* left, Node* right, const Type* t) {
+  switch (t->basic_type()) {
+    case T_INT:     return new CMoveINode(bol, left, right, t->is_int());
+    case T_FLOAT:   return new CMoveFNode(bol, left, right, t);
+    case T_DOUBLE:  return new CMoveDNode(bol, left, right, t);
+    case T_LONG:    return new CMoveLNode(bol, left, right, t->is_long());
+    case T_OBJECT:  return new CMovePNode(bol, left, right, t->is_oopptr());
+    case T_ADDRESS: return new CMovePNode(bol, left, right, t->is_ptr());
+    case T_NARROWOOP: return new CMoveNNode(bol, left, right, t);
     default:
-    ShouldNotReachHere();
-    return nullptr;
+      ShouldNotReachHere();
+      return nullptr;
+  }
+}
+
+bool CMoveNode::supported(const Type* t) {
+  switch (t->basic_type()) {
+    case T_INT:     return Matcher::match_rule_supported(Op_CMoveI);
+    case T_FLOAT:   return Matcher::match_rule_supported(Op_CMoveF);
+    case T_DOUBLE:  return Matcher::match_rule_supported(Op_CMoveD);
+    case T_LONG:    return Matcher::match_rule_supported(Op_CMoveL);
+    case T_OBJECT:  return Matcher::match_rule_supported(Op_CMoveP);
+    case T_ADDRESS: return Matcher::match_rule_supported(Op_CMoveP);
+    case T_NARROWOOP: return Matcher::match_rule_supported(Op_CMoveN);
+    default:
+      ShouldNotReachHere();
+      return false;
   }
 }
 
@@ -278,7 +296,7 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( in(Condition)->is_Bool() ) {
       BoolNode* b  = in(Condition)->as_Bool();
       BoolNode* b2 = b->negate(phase);
-      return make(in(Control), phase->transform(b2), in(IfTrue), in(IfFalse), _type);
+      return make(phase->transform(b2), in(IfTrue), in(IfFalse), _type);
     }
   }
 

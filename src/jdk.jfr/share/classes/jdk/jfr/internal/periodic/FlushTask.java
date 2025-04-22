@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ package jdk.jfr.internal.periodic;
 
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.MetadataRepository;
+import jdk.jfr.internal.PlatformRecorder;
+import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.util.Utils;
 
 /**
@@ -44,7 +46,8 @@ final class FlushTask extends PeriodicTask {
 
     @Override
     public void execute(long timestamp, PeriodicType periodicType) {
-        MetadataRepository.getInstance().flush();
+        PlatformRecorder recorder = PrivateAccess.getInstance().getPlatformRecorder();
+        recorder.flush();
         Utils.notifyFlush();
     }
 

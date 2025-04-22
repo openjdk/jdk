@@ -90,8 +90,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   // It is unsafe to use this function when virtual threads are executed.
   static bool disable_virtual_threads_notify_jvmti();
 
-  static jvmtiError suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend,
-                                   int* need_safepoint_p);
+  static jvmtiError suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend);
   static jvmtiError resume_thread(oop thread_oop, JavaThread* java_thread, bool single_resume);
   static jvmtiError check_thread_list(jint count, const jthread* list);
   static bool is_in_thread_list(jint count, const jthread* list, oop jt_oop);
@@ -454,6 +453,27 @@ class JvmtiEnvIterator : public StackObj {
   JvmtiEnv* first()                 { return JvmtiEnvBase::head_environment(); }
   JvmtiEnv* next(JvmtiEnvBase* env) { return env->next_environment(); }
 };
+
+#if INCLUDE_JVMTI
+
+// This helper class marks current thread as making a Java upcall.
+// It is needed to hide JVMTI events during JVMTI operation.
+class JvmtiJavaUpcallMark : public StackObj {
+ private:
+  JavaThread* _current;
+ public:
+  JvmtiJavaUpcallMark(JavaThread* current) {
+    _current = current;
+    assert(!_current->is_in_java_upcall(), "sanity check");
+    _current->toggle_is_in_java_upcall();
+  }
+
+  ~JvmtiJavaUpcallMark() {
+    assert(_current->is_in_java_upcall(), "sanity check");
+    _current->toggle_is_in_java_upcall();
+  }
+};
+#endif // INCLUDE_JVMTI
 
 // Used in combination with the JvmtiHandshake class.
 // It is intended to support both platform and virtual threads.

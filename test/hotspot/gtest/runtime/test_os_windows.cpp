@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 
 #ifdef _WINDOWS
 
@@ -83,7 +82,7 @@ void TestReserveMemorySpecial_test() {
   // Instead try reserving after the first reservation.
   expected_location = result + large_allocation_size;
   actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
-  EXPECT_TRUE(actual_location != nullptr) << "Unexpected reservation failure, can’t verify correct location";
+  EXPECT_TRUE(actual_location != nullptr) << "Unexpected reservation failure, can't verify correct location";
   EXPECT_TRUE(actual_location == expected_location) << "Reservation must be at requested location";
   MemoryReleaser m2(actual_location, os::large_page_size());
 
@@ -91,7 +90,7 @@ void TestReserveMemorySpecial_test() {
   const size_t alignment = os::large_page_size() * 2;
   const size_t new_large_size = alignment * 4;
   char* aligned_request = os::reserve_memory_special(new_large_size, alignment, os::large_page_size(), nullptr, false);
-  EXPECT_TRUE(aligned_request != nullptr) << "Unexpected reservation failure, can’t verify correct alignment";
+  EXPECT_TRUE(aligned_request != nullptr) << "Unexpected reservation failure, can't verify correct alignment";
   EXPECT_TRUE(is_aligned(aligned_request, alignment)) << "Returned address must be aligned";
   MemoryReleaser m3(aligned_request, new_large_size);
 }

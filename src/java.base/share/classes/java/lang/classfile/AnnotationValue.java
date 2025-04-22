@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @see Annotation
  * @see AnnotationElement
+ * @see java.lang.reflect.AnnotatedElement Annotations in core reflection
  *
  * @sealedGraph
  * @since 24
@@ -53,7 +54,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models an annotation value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value TAG_ANNOTATION}.
+     * The {@linkplain #tag tag} of this value is {@value %c TAG_ANNOTATION}.
      *
      * @since 24
      */
@@ -65,7 +66,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models an array value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value TAG_ARRAY}.
+     * The {@linkplain #tag tag} of this value is {@value %c TAG_ARRAY}.
      *
      * @since 24
      */
@@ -121,7 +122,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a string value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value TAG_STRING}.
+     * The {@linkplain #tag tag} of this value is {@value %c TAG_STRING}.
      *
      * @since 24
      */
@@ -148,7 +149,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a double value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value TAG_DOUBLE}.
+     * The {@linkplain #tag tag} of this value is {@value %c TAG_DOUBLE}.
      *
      * @since 24
      */
@@ -175,7 +176,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a float value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value TAG_FLOAT}.
+     * The {@linkplain #tag tag} of this value is {@value %c TAG_FLOAT}.
      *
      * @since 24
      */
@@ -202,7 +203,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a long value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value TAG_LONG}.
+     * The {@linkplain #tag tag} of this value is {@value %c TAG_LONG}.
      *
      * @since 24
      */
@@ -229,7 +230,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models an int value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value TAG_INT}.
+     * The {@linkplain #tag tag} of this value is {@value %c TAG_INT}.
      *
      * @since 24
      */
@@ -256,7 +257,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a short value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value TAG_SHORT}.
+     * The {@linkplain #tag tag} of this value is {@value %c TAG_SHORT}.
      *
      * @since 24
      */
@@ -286,7 +287,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a char value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value TAG_CHAR}.
+     * The {@linkplain #tag tag} of this value is {@value %c TAG_CHAR}.
      *
      * @since 24
      */
@@ -316,7 +317,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a byte value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value TAG_BYTE}.
+     * The {@linkplain #tag tag} of this value is {@value %c TAG_BYTE}.
      *
      * @since 24
      */
@@ -346,7 +347,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a boolean value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value TAG_BOOLEAN}.
+     * The {@linkplain #tag tag} of this value is {@value %c TAG_BOOLEAN}.
      *
      * @since 24
      */
@@ -376,7 +377,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a class value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value TAG_CLASS}.
+     * The {@linkplain #tag tag} of this value is {@value %c TAG_CLASS}.
      *
      * @since 24
      */
@@ -393,7 +394,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models an enum value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value TAG_ENUM}.
+     * The {@linkplain #tag tag} of this value is {@value %c TAG_ENUM}.
      *
      * @since 24
      */

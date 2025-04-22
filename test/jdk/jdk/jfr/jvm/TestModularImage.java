@@ -38,7 +38,7 @@ import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @summary Checks that a JDK image with and without the jdk.jfr module behaves
  *          as expected
  * @requires vm.hasJFR

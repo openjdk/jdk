@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
@@ -131,6 +130,17 @@ void JfrTypeManager::write_checkpoint(Thread* t, traceid tid /* 0 */, oop vthrea
   }
   JfrThreadConstant type_thread(t, tid, vthread);
   type_thread.serialize(writer);
+}
+
+void JfrTypeManager::write_simplified_vthread_checkpoint(traceid vtid) {
+  Thread* const current = Thread::current();
+  assert(current != nullptr, "invariant");
+  ResourceMark rm(current);
+  JfrCheckpointWriter writer(current, true, THREADS, JFR_VIRTUAL_THREADLOCAL);
+  // TYPE_THREAD and count is written later as part of vthread bulk serialization.
+  writer.set_count(1); // Only a logical marker for the checkpoint header.
+  JfrSimplifiedVirtualThreadConstant type_simple_vthread(vtid);
+  type_simple_vthread.serialize(writer);
 }
 
 class SerializerRegistrationGuard : public StackObj {

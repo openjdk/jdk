@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,14 @@
  * @requires vm.cds.supports.aot.class.linking
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
- * @library /test/jdk/lib/testlibrary /test/lib
- * @build InitiatingLoaderTester
- * @build BulkLoaderTest
+ * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @build InitiatingLoaderTester BadOldClassA BadOldClassB
+ * @build jdk.test.whitebox.WhiteBox BulkLoaderTest SimpleCusty
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar BulkLoaderTestApp.jar BulkLoaderTestApp MyUtil InitiatingLoaderTester
+ *                 BadOldClassA BadOldClassB
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar
+ *                 SimpleCusty
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run driver BulkLoaderTest STATIC
  */
 
@@ -43,16 +47,37 @@
  * @requires vm.cds.supports.aot.class.linking
  * @comment work around JDK-8345635
  * @requires !vm.jvmci.enabled
- * @library /test/jdk/lib/testlibrary /test/lib
- * @build InitiatingLoaderTester
- * @build jdk.test.whitebox.WhiteBox BulkLoaderTest
+ * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @build InitiatingLoaderTester BadOldClassA BadOldClassB
+ * @build jdk.test.whitebox.WhiteBox BulkLoaderTest SimpleCusty
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar BulkLoaderTestApp.jar BulkLoaderTestApp MyUtil InitiatingLoaderTester
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. BulkLoaderTest DYNAMIC
+ *                 BadOldClassA BadOldClassB
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar
+ *                 SimpleCusty
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:WhiteBox.jar BulkLoaderTest DYNAMIC
+ */
+
+/*
+ * @test id=aot
+ * @requires vm.cds.supports.aot.class.linking
+ * @comment work around JDK-8345635
+ * @requires !vm.jvmci.enabled
+ * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @build jdk.test.whitebox.WhiteBox InitiatingLoaderTester BadOldClassA BadOldClassB
+ * @build BulkLoaderTest SimpleCusty
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar BulkLoaderTestApp.jar BulkLoaderTestApp MyUtil InitiatingLoaderTester
+ *                 BadOldClassA BadOldClassB
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar
+ *                 SimpleCusty
+ * @run driver BulkLoaderTest AOT
  */
 
 import java.io.File;
 import java.lang.StackWalker.StackFrame;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -61,6 +86,7 @@ import java.util.Set;
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.whitebox.WhiteBox;
 
 public class BulkLoaderTest {
     static final String appJar = ClassFileInstaller.getJarPath("BulkLoaderTestApp.jar");
@@ -99,6 +125,7 @@ public class BulkLoaderTest {
     static class Tester extends CDSAppTester {
         public Tester() {
             super(mainClass);
+            useWhiteBox(ClassFileInstaller.getJarPath("WhiteBox.jar"));
         }
 
         @Override
@@ -109,7 +136,7 @@ public class BulkLoaderTest {
         @Override
         public String[] vmArgs(RunMode runMode) {
             return new String[] {
-                "-Xlog:cds,cds+aot+load",
+                "-Xlog:cds,cds+aot+load,cds+class=debug",
                 "-XX:+AOTClassLinking",
             };
         }
@@ -120,6 +147,19 @@ public class BulkLoaderTest {
                 mainClass,
             };
         }
+
+        @Override
+        public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
+            if (isAOTWorkflow() && runMode == RunMode.TRAINING) {
+                out.shouldContain("Skipping BadOldClassA: Unlinked class not supported by AOTConfiguration");
+                out.shouldContain("Skipping SimpleCusty: Duplicated unregistered class");
+            }
+
+            if (isDumping(runMode)) {
+                // Check that we are archiving classes for custom class loaders.
+                out.shouldMatch("cds,class.* SimpleCusty");
+            }
+        }
     }
 }
 
@@ -129,6 +169,8 @@ class BulkLoaderTestApp {
     public static void main(String args[]) throws Exception {
         checkClasses();
         checkInitiatingLoader();
+        checkOldClasses();
+        checkCustomLoader();
     }
 
     // Check the ClassLoader/Module/Package/ProtectionDomain/CodeSource of classes that are aot-linked
@@ -228,6 +270,61 @@ class BulkLoaderTestApp {
         }
 
         throw new RuntimeException("Should not have succeeded");
+    }
+
+    static void checkOldClasses() throws Exception {
+        // Resolve BadOldClassA from the constant pool without linking it.
+        // implNote: BadOldClassA will be excluded, so any resolved refereces
+        // to BadOldClassA should be removed from the archived constant pool.
+        Class c = BadOldClassA.class;
+        Object n = new Object();
+        if (c.isInstance(n)) { // Note that type-testing BadOldClassA here neither links nor initializes it.
+            throw new RuntimeException("Must not succeed");
+        }
+
+        try {
+            // In dynamic dump, the VM loads BadOldClassB and then attempts to
+            // link it. This will leave BadOldClassB in a "failed verification" state.
+            // All refernces to BadOldClassB from the CP should be purged from the CDS
+            // archive.
+            c = BadOldClassB.class;
+            c.newInstance();
+            throw new RuntimeException("Must not succeed");
+        } catch (VerifyError e) {
+            System.out.println("Caught VerifyError for BadOldClassB: " + e);
+        }
+    }
+
+
+    static void checkCustomLoader() throws Exception {
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        for (int i = 0; i < 2; i++) {
+            Object o = initFromCustomLoader();
+            System.out.println(o);
+            Class c = o.getClass();
+            if (wb.isSharedClass(BulkLoaderTestApp.class)) {
+                // We are running with BulkLoaderTestApp from the AOT cache (or CDS achive)
+                if (i == 0) {
+                    if (!wb.isSharedClass(c)) {
+                        throw new RuntimeException("The first loader should load SimpleCusty from AOT cache (or CDS achive)");
+                    }
+                } else {
+                    if (wb.isSharedClass(c)) {
+                        throw new RuntimeException("The second loader should not load SimpleCusty from AOT cache (or CDS achive)");
+                    }
+                }
+            }
+        }
+    }
+
+    static Object initFromCustomLoader() throws Exception {
+        String path = "cust.jar";
+        URL url = new File(path).toURI().toURL();
+        URL[] urls = new URL[] {url};
+        URLClassLoader urlClassLoader =
+            new URLClassLoader("MyLoader", urls, null);
+        Class c = Class.forName("SimpleCusty", true, urlClassLoader);
+        return c.newInstance();
     }
 }
 

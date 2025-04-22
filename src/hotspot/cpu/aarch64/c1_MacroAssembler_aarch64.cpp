@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -73,16 +72,17 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 
   null_check_offset = offset();
 
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(hdr, obj);
-    ldrb(hdr, Address(hdr, Klass::misc_flags_offset()));
-    tst(hdr, KlassFlags::_misc_is_value_based_class);
-    br(Assembler::NE, slow_case);
-  }
-
   if (LockingMode == LM_LIGHTWEIGHT) {
     lightweight_lock(disp_hdr, obj, hdr, temp, rscratch2, slow_case);
   } else if (LockingMode == LM_LEGACY) {
+
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
+      load_klass(hdr, obj);
+      ldrb(hdr, Address(hdr, Klass::misc_flags_offset()));
+      tst(hdr, KlassFlags::_misc_is_value_based_class);
+      br(Assembler::NE, slow_case);
+    }
+
     Label done;
     // Load object header
     ldr(hdr, Address(obj, hdr_offset));

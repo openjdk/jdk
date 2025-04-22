@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,7 @@ public class ExemptionMechanism {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard exemption mechanism names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code ExemptionMechanism} object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports an
@@ -170,6 +171,7 @@ public class ExemptionMechanism {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code ExemptionMechanism} object
      *
      * @throws IllegalArgumentException if the {@code provider}
@@ -214,6 +216,7 @@ public class ExemptionMechanism {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code ExemptionMechanism} object
      *
      * @throws IllegalArgumentException if the {@code provider}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,24 +26,41 @@
 package java.lang.classfile.attribute;
 
 import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.AttributeMapper.AttributeStability;
+import java.lang.classfile.Attributes;
 import java.lang.classfile.BootstrapMethodEntry;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
 import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.util.List;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code BootstrapMethods} attribute (JVMS {@jvms 4.7.23}), which serves as
- * an extension to the constant pool of a classfile.  Elements of the bootstrap
- * method table are accessed through {@link ConstantPool}.
+ * Models the {@link Attributes#bootstrapMethods() BootstrapMethods} attribute
+ * (JVMS {@jvms 4.7.23}), which stores symbolic information for the execution of
+ * bootstrap methods, used by dynamically-computed call sites and constants.
+ * It is logically a part of the constant pool of a {@code class} file and thus
+ * not delivered in {@link ClassModel} traversal; its elements are accessible
+ * through {@link ConstantPool}.
  * <p>
- * The attribute does not permit multiple instances in a given location.
- * Subsequent occurrence of the attribute takes precedence during the attributed
- * element build or transformation.
+ * This attribute only appears on classes, and does not permit {@linkplain
+ * AttributeMapper#allowMultiple multiple instances} in a class.  It has a
+ * data dependency on the {@linkplain AttributeStability#CP_REFS constant pool}.
  * <p>
- * The attribute was introduced in the Java SE Platform version 7.
+ * This attribute cannot be constructed directly; its entries can be constructed
+ * through {@link ConstantPoolBuilder#bsmEntry}, resulting in at most one
+ * attribute instance in the built {@code class} file.
+ * <p>
+ * The attribute was introduced in the Java SE Platform version 7, major version
+ * {@value ClassFile#JAVA_7_VERSION}.
  *
+ * @see Attributes#bootstrapMethods()
+ * @see java.lang.invoke##bsm Execution of bootstrap methods
+ * @jvms 4.7.23 The {@code BootstrapMethods} Attribute
  * @since 24
  */
 public sealed interface BootstrapMethodsAttribute
@@ -57,8 +74,7 @@ public sealed interface BootstrapMethodsAttribute
     List<BootstrapMethodEntry> bootstrapMethods();
 
     /**
-     * {@return the size of the bootstrap methods table}.  Calling this method
-     * does not necessarily inflate the entire table.
+     * {@return the size of the bootstrap methods table}
      */
     int bootstrapMethodsSize();
 
