@@ -1419,8 +1419,13 @@ ZPageAllocatorStats ZPageAllocator::stats(ZGeneration* generation) const {
 ZPageAllocatorStats ZPageAllocator::update_and_stats(ZGeneration* generation) {
   ZLocker<ZLock> locker(&_lock);
 
+  // Update per-collection statistics
   update_collection_stats(generation->id());
+
+  // Clear eden statistics
   reset_used_eden();
+
+  // Return the collected statistics
   return stats_inner(generation);
 }
 
@@ -1576,7 +1581,6 @@ bool ZPageAllocator::claim_capacity_or_stall(ZPageAllocation* allocation) {
     if (claim_capacity(allocation)) {
       // Keep track of usage
       increase_used(allocation->size());
-      increase_used_eden(allocation);
 
       return true;
     }
@@ -2084,18 +2088,22 @@ void ZPageAllocator::free_memory_alloc_failed(ZMemoryAllocation* allocation) {
 }
 
 ZPage* ZPageAllocator::create_page(ZPageAllocation* allocation, const ZVirtualMemory& vmem) {
+  const size_t size = allocation->size();
+  const ZPageType type = allocation->type();
+  const ZPageAge age = allocation->age();
+  const ZGenerationId id = age == ZPageAge::old ? ZGenerationId::old : ZGenerationId::young;
+
   // We don't track generation usage when claiming capacity, because this page
   // could have been allocated by a thread that satisfies a stalling allocation.
   // The stalled thread can wake up and potentially realize that the page alloc
   // should be undone. If the alloc and the undo gets separated by a safepoint,
-  // the generation statistics could se a decreasing used value between mark
+  // the generation statistics could see a decreasing used value between mark
   // start and mark end. At this point an allocation will be successful, so we
   // update the generation usage.
-  const ZGenerationId id = allocation->age() == ZPageAge::old ? ZGenerationId::old : ZGenerationId::young;
-  increase_used_generation(id, allocation->size());
-
-  const ZPageType type = allocation->type();
-  const ZPageAge age = allocation->age();
+  increase_used_generation(id, size);
+  if (age == ZPageAge::eden) {
+    increase_used_eden(size);
+  }
 
   if (allocation->is_multi_partition()) {
     const ZMultiPartitionAllocation* const multi_partition_allocation = allocation->multi_partition_allocation();
@@ -2209,7 +2217,6 @@ void ZPageAllocator::satisfy_stalled() {
 
     // Keep track of usage
     increase_used(allocation->size());
-    increase_used_eden(allocation);
 
     // Allocation succeeded, dequeue and satisfy allocation request.
     // Note that we must dequeue the allocation request first, since
@@ -2270,13 +2277,13 @@ void ZPageAllocator::decrease_used(size_t size) {
   }
 }
 
-void ZPageAllocator::increase_used_eden(ZPageAllocation* allocation) {
-  if (allocation->age() == ZPageAge::eden) {
-    Atomic::add(&_used_eden, allocation->size());
-  }
+void ZPageAllocator::increase_used_eden(size_t size) {
+  // Update atomically since we have concurrent readers and writers
+  Atomic::add(&_used_eden, size);
 }
 
 void ZPageAllocator::reset_used_eden() {
+  // Reset atomically since we have concurrent readers and writers
   Atomic::store(&_used_eden, (size_t) 0);
 }
 

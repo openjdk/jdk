@@ -232,7 +232,8 @@ private:
 
   void increase_used(size_t size);
   void decrease_used(size_t size);
-  void increase_used_eden(ZPageAllocation* allocation);
+
+  void increase_used_eden(size_t size);
   void reset_used_eden();
 
   void notify_out_of_memory();
