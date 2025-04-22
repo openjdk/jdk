@@ -31,7 +31,7 @@
  * @requires vm.flagless
  * @library /test/lib
  * @compile GetAvailableProcessors.java
- * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestAvailableProcessors
+ * @run testng/othervm/native TestAvailableProcessors
  */
 
 import java.io.IOException;
