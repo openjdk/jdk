@@ -40,6 +40,13 @@
  *          MissingOptWithShiftConvAnd
  */
 
+/*
+ * @test
+ * @bug 8320909
+ *
+ * @run main/othervm MissingOptWithShiftConvAnd
+ */
+
 public class MissingOptWithShiftConvAnd {
     static long lFld;
 

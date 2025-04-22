@@ -34,6 +34,14 @@
  *          MissingOptWithShiftConvCastAnd
  */
 
+/*
+ * @test
+ * @bug 8320909
+ * @library /test/lib
+ *
+ * @run main/othervm MissingOptWithShiftConvCastAnd
+ */
+
 import jdk.test.lib.Utils;
 
 public class MissingOptWithShiftConvCastAnd {
