@@ -24,14 +24,14 @@
 /*
  * @test
  * @bug 8320909
- * @summary Similar to MissingOptWithShiftConvAnd, but with Cast_II on the way.
+ * @summary Similar to MissedOptWithShiftConvAnd, but with CastII on the way.
  * @library /test/lib
  *
  * @run main/othervm
- *          -XX:CompileOnly=MissingOptWithShiftConvCastAnd::test
+ *          -XX:CompileOnly=MissedOptWithShiftConvCastAnd::test
  *          -XX:-TieredCompilation -Xbatch
  *          -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=10
- *          MissingOptWithShiftConvCastAnd
+ *          MissedOptWithShiftConvCastAnd
  */
 
 /*
@@ -39,12 +39,12 @@
  * @bug 8320909
  * @library /test/lib
  *
- * @run main/othervm MissingOptWithShiftConvCastAnd
+ * @run main/othervm MissedOptWithShiftConvCastAnd
  */
 
 import jdk.test.lib.Utils;
 
-public class MissingOptWithShiftConvCastAnd {
+public class MissedOptWithShiftConvCastAnd {
     static long instanceCount;
 
     public static void main(String[] args) throws Exception {
@@ -74,4 +74,3 @@ public class MissingOptWithShiftConvCastAnd {
         }
     }
 }
-

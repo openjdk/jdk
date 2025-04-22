@@ -34,20 +34,20 @@
  *          input was a Phi with a dead branch and becomes a LShiftI with the same type.
  *
  * @run main/othervm
- *          -XX:CompileOnly=MissingOptWithShiftConvAnd::test
+ *          -XX:CompileOnly=MissedOptWithShiftConvAnd::test
  *          -XX:-TieredCompilation -Xbatch
  *          -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=10
- *          MissingOptWithShiftConvAnd
+ *          MissedOptWithShiftConvAnd
  */
 
 /*
  * @test
  * @bug 8320909
  *
- * @run main/othervm MissingOptWithShiftConvAnd
+ * @run main/othervm MissedOptWithShiftConvAnd
  */
 
-public class MissingOptWithShiftConvAnd {
+public class MissedOptWithShiftConvAnd {
     static long lFld;
 
     public static void main(String[] strArr) {
