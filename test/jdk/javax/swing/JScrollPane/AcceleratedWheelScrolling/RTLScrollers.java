@@ -22,13 +22,9 @@
  */
 
 // A few Swing components which use the mouse wheel to scroll
-//
-// NOTE: The robot portion of this test probably has a number of EDT problems,
-// though hopefully it won't effect the testing.
 
 import java.awt.AWTException;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.ComponentOrientation;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -62,7 +58,6 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.ListModel;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
@@ -233,30 +228,6 @@ public class RTLScrollers extends JDialog
         setLocationRelativeTo(null);
     }
 
-    class MyRenderer extends DefaultTableCellRenderer {
-        public Component getTableCellRendererComponent(JTable table,
-                                                       Object value,
-                                                       boolean isSelected,
-                                                       boolean hasFocus,
-                                                       int row,
-                                                       int column) {
-            Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            if (hasFocus) {
-                comp.setBackground(Color.BLACK);
-            }
-            else if (row % 3 == 0) {
-                comp.setBackground(Color.RED);
-            }
-            else if ((row + 1) % 3 == 0) {
-                comp.setBackground(Color.WHITE);
-            }
-            else {
-                comp.setBackground(Color.BLUE);
-            }
-            return comp;
-        }
-    }
-
     public void actionPerformed(ActionEvent e) {
         if (rightToLeft.getState()) {
             applyComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
@@ -282,15 +253,14 @@ public class RTLScrollers extends JDialog
                 return false;
             }
         }
+
         RTLScrollers rtl = new RTLScrollers(scrollAmount);
         rtl.setVisible(true);
-        robot.waitForIdle();
-        robot.delay(500);
+        robot.delay(100);
 
         boolean retVal = rtl.runTests(scrollAmount);
         rtl.setVisible(false);
-        robot.waitForIdle();
-        robot.delay(500);
+        robot.delay(100);
 
         System.out.println("RTLS.runTest(): " + retVal);
         return retVal;
@@ -312,26 +282,22 @@ public class RTLScrollers extends JDialog
         //
         // run robot tests
         //
-        robot.waitForIdle();
+        robot.delay(500);
 
         System.out.println("Testing Table");
         testComp(table, scrollAmount);
-        robot.waitForIdle();
 
         System.out.println("Testing List");
         testComp(list, scrollAmount);
-        robot.waitForIdle();
 
         applyComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-        robot.waitForIdle();
+        robot.delay(100);
 
         System.out.println("Testing RTL Table");
         testComp(table, scrollAmount);
-        robot.waitForIdle();
 
         System.out.println("Testing RTL List");
         testComp(list, scrollAmount);
-        robot.waitForIdle();
 
         return true;
     }
@@ -341,7 +307,6 @@ public class RTLScrollers extends JDialog
         JScrollPane jsp = (JScrollPane)((JComponent)comp).getParent().getParent();
         JScrollBar hsb = jsp.getHorizontalScrollBar();
         hsb.setValue(hsb.getMinimum());
-        robot.waitForIdle();
 
         Point loc = jsp.getLocationOnScreen();
         Dimension size = jsp.getSize();
@@ -350,13 +315,11 @@ public class RTLScrollers extends JDialog
         int maxIdx = 0;
         robot.mouseMove(midx, midy);
 
-
         // Don't bother for max scroll w/ RTL JList, because the block increment is broken
         if (scrollAmount != 30 || !(comp instanceof TestList)
                 || getComponentOrientation().isLeftToRight()) {
 
             scrollToMiddle(jsp, robot);
-            robot.waitForIdle();
 
             // check that we're lined up
             comp.checkTopCellIsLinedUp();
@@ -371,7 +334,6 @@ public class RTLScrollers extends JDialog
             System.out.println("becoming unaligned: startVal is "
                     + startVal + ", midVal is " + midVal);
             hsb.setValue(midVal);
-            robot.waitForIdle();
 
             //
             // Check partial inc up
@@ -390,7 +352,7 @@ public class RTLScrollers extends JDialog
             // Check partial inc down
             //
             hsb.setValue(midVal);
-            robot.waitForIdle();
+            robot.delay(100);
             robot.mouseWheel(1);
 
             if (scrollAmount == 30) {  // hack for max scroll amount
@@ -405,7 +367,6 @@ public class RTLScrollers extends JDialog
             // Check full inc down (3 times)
             //
             hsb.setValue(startVal);
-            robot.waitForIdle();
             leadingCell = comp.getLeadingCell().y;
 
             // Once...
@@ -481,7 +442,7 @@ public class RTLScrollers extends JDialog
         // (this part should still work for RTL JList)
         if (scrollAmount == 30) {
             hsb.setValue(hsb.getMinimum());
-            robot.waitForIdle();
+            robot.delay(100);
             robot.mouseWheel(2);
             robot.mouseWheel(2);
             robot.mouseWheel(2);
@@ -491,7 +452,7 @@ public class RTLScrollers extends JDialog
                         " < hsb max (" + hsb.getMaximum() +
                         ") - hsb vis (" + hsb.getVisibleAmount() + ")");
             }
-            robot.waitForIdle();
+            robot.delay(100);
             robot.mouseWheel(-2);
             robot.mouseWheel(-2);
             robot.mouseWheel(-2);
@@ -504,11 +465,6 @@ public class RTLScrollers extends JDialog
 
         return true;
     }
-
-    public boolean testRTLTable(int scrollAmount) {
-        return false;
-    }
-
 
     class TestTable extends JTable implements TestTools {
         final int[] MAXVALS = {23, 67, 67, 89, 111, 89, 66, 45};  //Lookup table

@@ -88,7 +88,6 @@ public class bug4403624 {
 
             SwingUtilities.invokeAndWait(() -> p = c.getLocationOnScreen());
 
-            r.mouseMove(p.x + OFFSET, p.y + OFFSET);
             Color c = r.getPixelColor(p.x + OFFSET, p.y + OFFSET);
 
             if (c.getGreen() < 240 && c.getBlue() > 10 && c.getRed() > 10) {
