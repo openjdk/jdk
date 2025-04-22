@@ -177,7 +177,7 @@ private:
   PhaseIterGVN& igvn()        const { return _vloop.phase()->igvn(); }
   bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
-  void collect_nodes_without_strong_dependency(GrowableArray<VTransformNode*>& stack) const;
+  void collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const;
 
   template<typename Callback>
   void for_each_memop_in_schedule(Callback callback) const;
@@ -273,12 +273,12 @@ private:
 //                               corresponding aliasing analysis runtime checks must be
 //                               inserted.
 //
-// Strong edges: union of data edges and strong memory dependencies.
+// Strong edges: union of data edges and strong memory edges.
 //               These must be respected by scheduling in all cases.
 //
 // The C2 IR Node memory edges essencially define a linear order of all memory operations
 // (only Loads with the same memory input can be executed in an arbitrary order). This is
-// efficient, because it means ever Load and Store has exactly one input memory dependency,
+// efficient, because it means ever Load and Store has exactly one input memory edge,
 // which keeps the memory edge count linear. This is approach is too restrictive for
 // vectorization, for example, we could never vectorize stores, since they are all in a
 // dependency chain. Instead, we model the memory edges between all memory nodes, which
@@ -371,25 +371,25 @@ private:
 
 public:
   uint req() const { return _req; }
-  uint out_strongs() const { return _out_end_strong_edges; }
-  uint out_weaks() const { return _out.length() - _out_end_strong_edges; }
+  uint out_strong_edges() const { return _out_end_strong_edges; }
+  uint out_weak_edges() const { return _out.length() - _out_end_strong_edges; }
 
   VTransformNode* in_req(uint i) const {
     assert(i < _req, "must be a req");
     return _in.at(i);
   }
 
-  VTransformNode* out_strong(uint i) const {
-    assert(i < out_strongs(), "must be a strong memory edge or data edge");
+  VTransformNode* out_strong_edge(uint i) const {
+    assert(i < out_strong_edges(), "must be a strong memory edge or data edge");
     return _out.at(i);
   }
 
-  VTransformNode* out_weak(uint i) const {
-    assert(i < out_weaks(), "must be a strong memory edge");
+  VTransformNode* out_weak_edge(uint i) const {
+    assert(i < out_weak_edges(), "must be a strong memory edge");
     return _out.at(_out_end_strong_edges + i);
   }
 
-  bool has_strong_dependency() const {
+  bool has_strong_in_edge() const {
     for (uint i = 0; i < _in_end_strong_memory_edges; i++) {
       if (_in.at(i) != nullptr) { return true; }
     }

@@ -58,7 +58,7 @@ bool VTransformGraph::schedule() {
   VectorSet pre_visited;
   VectorSet post_visited;
 
-  collect_nodes_without_strong_dependency(stack);
+  collect_nodes_without_strong_in_edges(stack);
 
   // We create a reverse-post-visit order. This gives us a linearization, if there are
   // no cycles. Then, we simply reverse the order, and we have a schedule.
@@ -73,8 +73,11 @@ bool VTransformGraph::schedule() {
       //   No  -> we are mid-visit.
       bool all_uses_already_visited = true;
 
-      for (uint i = 0; i < vtn->out_strongs(); i++) {
-        VTransformNode* use = vtn->out_strong(i);
+      // We only need to respect the strong edges (data edges and strong memory edges).
+      // Violated weak memory edges are allowed, but require a speculative aliasing
+      // runtime check, see VTransform::apply_speculative_aliasing_runtime_checks.
+      for (uint i = 0; i < vtn->out_strong_edges(); i++) {
+        VTransformNode* use = vtn->out_strong_edge(i);
         if (post_visited.test(use->_idx)) { continue; }
         if (pre_visited.test(use->_idx)) {
           // Cycle detected!
@@ -110,11 +113,11 @@ bool VTransformGraph::schedule() {
   return true;
 }
 
-// Push all "root" nodes, i.e. those that have no strong input dependencies (req or strong memory dependency):
-void VTransformGraph::collect_nodes_without_strong_dependency(GrowableArray<VTransformNode*>& stack) const {
+// Push all "root" nodes, i.e. those that have no strong input edges (data edges and strong memory edges):
+void VTransformGraph::collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const {
   for (int i = 0; i < _vtnodes.length(); i++) {
     VTransformNode* vtn = _vtnodes.at(i);
-    if (!vtn->has_strong_dependency()) {
+    if (!vtn->has_strong_in_edge()) {
       stack.push(vtn);
     }
   }
@@ -274,8 +277,8 @@ void VTransform::apply_speculative_aliasing_runtime_checks() {
     const GrowableArray<VTransformNode*>& schedule = _graph.get_schedule();
     for (int i = 0; i < schedule.length(); i++) {
       VTransformNode* vtn = schedule.at(i);
-      for (uint i = 0; i < vtn->out_weaks(); i++) {
-        VTransformNode* use = vtn->out_weak(i);
+      for (uint i = 0; i < vtn->out_weak_edges(); i++) {
+        VTransformNode* use = vtn->out_weak_edge(i);
         if (visited.test(use->_idx)) {
           // The use node was already visited, i.e. is higher up in the schedule.
           // The "out" edge thus points backward, i.e. it is violated.
