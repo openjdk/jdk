@@ -603,7 +603,7 @@ public sealed interface StableValue<T>
      * to the initial caller and no content is recorded.
      * <p>
      * If the provided {@code underlying} function recursively calls the returned
-     * function for the same index, an {@linkplain IllegalStateException} will
+     * function for the same input, an {@linkplain IllegalStateException} will
      * be thrown.
      *
      * @param size       the size of the allowed inputs in {@code [0, size)}
