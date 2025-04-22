@@ -182,7 +182,7 @@ public class Log extends AbstractLog {
         /**
          * Step 3: Handle a diagnostic to which the applicable Lint instance (if any) has been applied.
          */
-        public abstract void reportReady(JCDiagnostic diag);
+        protected abstract void reportReady(JCDiagnostic diag);
 
         protected void addLintWaiter(JavaFileObject sourceFile, JCDiagnostic diagnostic) {
             lintWaitersMap.computeIfAbsent(sourceFile, s -> new LinkedList<>()).add(diagnostic);
@@ -230,7 +230,7 @@ public class Log extends AbstractLog {
         protected void addLintWaiter(JavaFileObject sourceFile, JCDiagnostic diagnostic) { }
 
         @Override
-        public void reportReady(JCDiagnostic diag) { }
+        protected void reportReady(JCDiagnostic diag) { }
     }
 
     /**
@@ -263,7 +263,7 @@ public class Log extends AbstractLog {
         }
 
         @Override
-        public void reportReady(JCDiagnostic diag) {
+        protected void reportReady(JCDiagnostic diag) {
             if (deferrable(diag)) {
                 deferred.add(diag);
             } else {
@@ -844,7 +844,7 @@ public class Log extends AbstractLog {
     // Get the Lint config for the given warning (if known)
     private Lint lintFor(JCDiagnostic diag) {
         Assert.check(diag.getLintCategory() != null);
-        return lintMapper.lintAt(currentSourceFile(), diag.getDiagnosticPosition()).orElse(null);
+        return lintMapper.lintAt(diag.getSource(), diag.getDiagnosticPosition()).orElse(null);
     }
 
     // Obtain root Lint singleton lazily to avoid init loops
@@ -913,8 +913,9 @@ public class Log extends AbstractLog {
      * reported so far, the diagnostic may be handed off to writeDiagnostic.
      */
     private class DefaultDiagnosticHandler extends DiagnosticHandler {
+
         @Override
-        public void reportReady(JCDiagnostic diagnostic) {
+        protected void reportReady(JCDiagnostic diagnostic) {
             if (expectDiagKeys != null)
                 expectDiagKeys.remove(diagnostic.getCode());
 

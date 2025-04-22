@@ -1926,6 +1926,7 @@ public class JavaCompiler {
         attr = null;
         chk = null;
         gen = null;
+        lintMapper = null;
         flow = null;
         transTypes = null;
         lower = null;

@@ -32,7 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.tools.DiagnosticListener;
@@ -72,10 +74,7 @@ public class LintMapper {
     // Compiler context
     private final Context context;
 
-    // This calculates the Lint instances that apply to various source code ranges
-    private final LintSpanCalculator lintSpanCalculator = new LintSpanCalculator();
-
-    // The root Lint instance, calculated on-demand to avoid init loops
+    // These are initialized lazily; see initializeIfNeeded()
     private Lint rootLint;
 
     /**
@@ -97,11 +96,13 @@ public class LintMapper {
         this.context = context;
     }
 
-    private Lint rootLint() {
+    // Lazy initialization to avoid dependency loops
+    private void initializeIfNeeded() {
         if (rootLint == null)
             rootLint = Lint.instance(context);
-        return rootLint;
     }
+
+// Lint Operations
 
     /**
      * Determine if the given file is known to this instance.
@@ -121,30 +122,10 @@ public class LintMapper {
      * @return the applicable {@link Lint}, if known
      */
     public Optional<Lint> lintAt(JavaFileObject sourceFile, DiagnosticPosition pos) {
-
-        // If the file is completely unknown, we don't know
-        FileInfo fileInfo = fileInfoMap.get(sourceFile);
-        if (fileInfo == null)
-            return Optional.empty();
-
-        // If the file hasn't been fully parsed yet, we don't know what Lint applies yet
-        if (!fileInfo.parsed)
-            return Optional.empty();
-
-        // Find the top-level declaration that contains pos; if there is none, then the root lint applies
-        Span declSpan = fileInfo.findDeclSpan(pos);
-        if (declSpan == null)
-            return Optional.of(rootLint());
-
-        // Have we attributed this top-level declaration? If not, we don't know what Lint applies yet
-        List<LintSpan> lintSpans = fileInfo.lintSpanMap.get(declSpan);
-        if (lintSpans == null)
-            return Optional.empty();
-
-        // Find the narrowest containing LintSpan; if there is none, then the root lint applies
-        return FileInfo.bestMatch(lintSpans, pos)
-          .map(lintSpan -> lintSpan.lint)
-          .or(() -> Optional.of(rootLint()));
+        initializeIfNeeded();
+        return Optional.of(sourceFile)
+          .map(fileInfoMap::get)
+          .flatMap(fileInfo -> fileInfo.lintAt(pos));
     }
 
     /**
@@ -154,32 +135,24 @@ public class LintMapper {
      * @param tree top-level declaration (class, package, or module)
      */
     public void calculateLints(JavaFileObject sourceFile, JCTree tree, EndPosTable endPositions) {
-
-        // Get the info for this file
-        FileInfo fileInfo = fileInfoMap.get(sourceFile);
-
-        // Sanity checks
-        Assert.check(isTopLevelDecl(tree));
-        Assert.check(fileInfo != null && fileInfo.parsed);
-        Span declSpan = new Span(tree, endPositions);
-        Assert.check(fileInfo.lintSpanMap.containsKey(declSpan), "unknown declaration");
-        Assert.check(fileInfo.lintSpanMap.get(declSpan) == null, "duplicate calculateLints()");
-
-        // Build the list of lints for declarations within the top-level declaration
-        fileInfo.lintSpanMap.put(declSpan, lintSpanCalculator.calculate(endPositions, tree));
+        initializeIfNeeded();
+        fileInfoMap.get(sourceFile).afterAttr(tree, endPositions);
     }
 
     /**
-     * Reset this instance (except for listeners).
+     * Reset this instance.
      */
     public void clear() {
         fileInfoMap.clear();
     }
 
+// Parsing Notifications
+
     /**
      * Invoked when file parsing starts to create an entry for the new file.
      */
     public void startParsingFile(JavaFileObject sourceFile) {
+        initializeIfNeeded();
         fileInfoMap.put(sourceFile, new FileInfo());
     }
 
@@ -187,68 +160,84 @@ public class LintMapper {
      * Invoked when file parsing completes to identify the top-level declarations.
      */
     public void finishParsingFile(JCCompilationUnit tree) {
-
-        // Get info for this file
-        FileInfo fileInfo = fileInfoMap.get(tree.sourcefile);
-        Assert.check(fileInfo != null, () -> "unknown source " + tree.sourcefile);
-        Assert.check(!fileInfo.parsed, () -> "source already parsed: " + tree.sourcefile);
-        Assert.check(fileInfo.lintSpanMap.isEmpty(), () -> "duplicate invocation for " + tree.sourcefile);
-
-        // Mark file as parsed
-        fileInfo.parsed = true;
-
-        // Create an entry in lintSpanMap for each top-level declaration, with a null value for now
-        tree.defs.stream()
-          .filter(this::isTopLevelDecl)
-          .map(decl -> new Span(decl, tree.endPositions))
-          .forEach(span -> fileInfo.lintSpanMap.put(span, null));
-    }
-
-    private boolean isTopLevelDecl(JCTree tree) {
-        return tree.getTag() == Tag.MODULEDEF
-            || tree.getTag() == Tag.PACKAGEDEF
-            || tree.getTag() == Tag.CLASSDEF;
+        fileInfoMap.get(tree.sourcefile).afterParse(tree);
     }
 
 // FileInfo
 
     /**
-     * Holds the calculated {@link Lint}s for top-level declarations in some source file.
+     * Holds {@link Lint} related information for one source file.
      *
      * <p>
      * Instances evolve through these states:
      * <ul>
-     *  <li>Before the file has been completely parsed, {@code #parsed} is false and {@link #lintSpanMap} is empty.
-     *  <li>Immediately after the file has been parsed, {@code #parsed} is true and {@link #lintSpanMap} contains
-     *      zero or more entries corresponding to the top-level declarations in the file, but whose values are null.
-     *  <li>As each top-level declaration is attributed, the entries in {@link #lintSpanMap} are updated to non-null.
+     *  <li>Before the file has been completely parsed, {@link #topSpans} is null.
+     *  <li>Immediately after the file has been parsed, {@link #topSpans} contains zero or
+     *      more {@link Span}s corresponding to the top-level declarations in the file.
+     *  <li>When a top-level declaration is attributed, a corresponding {@link DeclNode} child
+     *      matching one of the {@link Span}s in {@link #topSpans} is added to {@link #rootNode}.
      * </ul>
      */
-    private static class FileInfo {
+    private class FileInfo {
 
-        final Map<Span, List<LintSpan>> lintSpanMap = new HashMap<>();
-        boolean parsed;
+        Set<Span> topSpans;                                                 // the spans of all top level declarations
+        final DeclNode rootNode = new DeclNode(rootLint);                   // tree of file's "interesting" declaration nodes
 
-        // Find the top-level declaration containing the given position
-        Span findDeclSpan(DiagnosticPosition pos) {
-            return lintSpanMap.keySet().stream()
+        // Add an entry to topSpans corresponding to each top-level declaration
+        void afterParse(JCCompilationUnit tree) {
+            Assert.check(topSpans == null, "source already parsed");
+            topSpans = tree.defs.stream()
+              .filter(this::isTopLevelDecl)
+              .map(decl -> new Span(decl, tree.endPositions))
+              .collect(Collectors.toSet());
+        }
+
+        // Mark the given top-level declaration as attributed and build its DeclNode subtree
+        void afterAttr(JCTree tree, EndPosTable endPositions) {
+            Assert.check(topSpans != null, "source not parsed");
+            Assert.check(topSpans.contains(new Span(tree, endPositions)), "unknown declaration");
+            Assert.check(findTopNode(tree.pos()) == null, "duplicate call");
+            new DeclNodeTreeBuilder(this, rootNode, endPositions).scan(tree);
+        }
+
+        // Find the Lint that applies to the given position, if known
+        Optional<Lint> lintAt(DiagnosticPosition pos) {
+            if (topSpans == null)                           // has the file been parsed yet?
+                return Optional.empty();                    // -> no, we don't know yet
+            if (!findTopSpan(pos).isPresent())              // is the position within some top-level declaration?
+                return Optional.of(rootLint);               // -> no, use the root lint
+            DeclNode topNode = findTopNode(pos);
+            if (topNode == null)                            // has that declaration been attributed yet?
+                return Optional.empty();                    // -> no, we don't know yet
+            DeclNode node = topNode.find(pos);              // find the best matching node
+            Assert.check(node != null);                     // (it must exist)
+            return Optional.of(node.lint);                  // use its Lint
+        }
+
+        Optional<Span> findTopSpan(DiagnosticPosition pos) {
+            return topSpans.stream()
               .filter(span -> span.contains(pos))
+              .findFirst();
+        }
+
+        DeclNode findTopNode(DiagnosticPosition pos) {
+            return rootNode.children.stream()
+              .filter(node -> node.contains(pos))
               .findFirst()
               .orElse(null);
         }
 
-        // Find the narrowest span in the given list that contains the given position
-        static Optional<LintSpan> bestMatch(List<LintSpan> lintSpans, DiagnosticPosition pos) {
-            int position = pos.getLintPosition();
-            if (position == Position.NOPOS)
-                return Optional.empty();
-            LintSpan bestSpan = null;
-            for (LintSpan lintSpan : lintSpans) {
-                if (lintSpan.contains(position) && (bestSpan == null || bestSpan.contains(lintSpan))) {
-                    bestSpan = lintSpan;
-                }
-            }
-            return Optional.ofNullable(bestSpan);
+        void removeTopNode(DeclNode topNode) {
+            boolean removed = rootNode.children.remove(topNode);
+            Assert.check(removed);
+            removed = topSpans.remove(topNode.toSpan());
+            Assert.check(removed);
+        }
+
+        boolean isTopLevelDecl(JCTree tree) {
+            return tree.getTag() == Tag.MODULEDEF
+                || tree.getTag() == Tag.PACKAGEDEF
+                || tree.getTag() == Tag.CLASSDEF;
         }
     }
 
@@ -304,51 +293,84 @@ public class LintMapper {
         }
     }
 
-// LintSpan
+// DeclNode
 
     /**
-     * Represents a lexical range and the {@link Lint} configuration that applies therein.
+     * Represents a declaration and the {@link Lint} configuration that applies within its lexical range.
+     *
+     * <p>
+     * For each file, a root node represents the entire source file. At the next level down are nodes that
+     * represent the top-level declarations in the file, and so on.
      */
-    private static class LintSpan extends Span {
+    private static class DeclNode extends Span {
 
-        final Lint lint;
+        final DeclNode parent;                                  // immediate containing declaration (null for root)
+        final List<DeclNode> children = new ArrayList<>();      // next level down declarations contained by this node
+        final Symbol symbol;                                    // the symbol declared by this declaration (null for root)
+        final Lint lint;                                        // the Lint configuration that applies within this declaration
 
-        LintSpan(int startPos, int endPos, Lint lint) {
-            super(startPos, endPos);
-            this.lint = lint;
+        // Create a root node representing the entire file
+        DeclNode(Lint rootLint) {
+            super(Integer.MIN_VALUE, Integer.MAX_VALUE);
+            this.parent = null;
+            this.symbol = null;
+            this.lint = rootLint;
         }
 
-        LintSpan(JCTree tree, EndPosTable endPositions, Lint lint) {
+        // Create a normal declaration node
+        DeclNode(DeclNode parent, Symbol symbol, JCTree tree, EndPosTable endPositions, Lint lint) {
             super(tree, endPositions);
+            this.parent = parent;
+            this.symbol = symbol;
             this.lint = lint;
+            parent.children.add(this);
+        }
+
+        // Find the narrowest node in this tree that contains the given position, if any
+        DeclNode find(DiagnosticPosition pos) {
+            return children.stream()
+              .map(child -> child.find(pos))
+              .filter(Objects::nonNull)
+              .reduce((a, b) -> a.contains(b) ? b : a)
+              .orElseGet(() -> contains(pos) ? this : null);
+        }
+
+        // Stream this node and all descendents via pre-order recursive descent
+        Stream<DeclNode> stream() {
+            return Stream.concat(Stream.of(this), children.stream().flatMap(DeclNode::stream));
+        }
+
+        Span toSpan() {
+            return new Span(startPos, endPos);
         }
 
         // Note: no need for equals() or hashCode() here
 
         @Override
         public String toString() {
-            return String.format("LintSpan[%d-%d, lint=%s]", startPos, endPos, lint);
+            String label = symbol != null ? "sym=" + symbol : "ROOT";
+            return String.format("DeclNode[%s,lint=%s]", label, lint);
         }
     }
 
-// LintSpanCalculator
+// DeclNodeTreeBuilder
 
-    private class LintSpanCalculator extends TreeScanner {
+    /**
+     * Builds a tree of {@link DeclNode}s, starting from a top-level declaration.
+     */
+    private class DeclNodeTreeBuilder extends TreeScanner {
 
-        private EndPosTable endPositions;
-        private Lint currentLint;
-        private List<LintSpan> lintSpans;
+        private final FileInfo fileInfo;
+        private final EndPosTable endPositions;
 
-        List<LintSpan> calculate(EndPosTable endPositions, JCTree tree) {
+        private DeclNode parent;
+        private Lint lint;
+
+        DeclNodeTreeBuilder(FileInfo fileInfo, DeclNode rootNode, EndPosTable endPositions) {
+            this.fileInfo = fileInfo;
             this.endPositions = endPositions;
-            currentLint = rootLint();
-            lintSpans = new ArrayList<>();
-            try {
-                scan(tree);
-                return lintSpans;
-            } finally {
-                lintSpans = null;
-            }
+            this.parent = rootNode;
+            this.lint = rootNode.lint;              // i.e, rootLint
         }
 
         @Override
@@ -377,14 +399,31 @@ public class LintMapper {
         }
 
         private <T extends JCTree> void scanDecl(T tree, Symbol symbol, Consumer<? super T> recursion) {
-            Lint previousLint = currentLint;
-            currentLint = Optional.ofNullable(symbol)   // symbol can be null if there were earlier errors
-              .map(currentLint::augment)
-              .orElse(currentLint);
-            recursion.accept(tree);
-            if (currentLint != previousLint) {          // Lint.augment() returns the same object if no change
-                lintSpans.add(new LintSpan(tree, endPositions, currentLint));
-                currentLint = previousLint;
+
+            // Symbol can be null if there were earlier errors; skip this declaration if so
+            if (symbol == null) {
+                recursion.accept(tree);
+                return;
+            }
+
+            // Update the current Lint in effect. Note lint.augment() returns the same instance if there's no change.
+            Lint previousLint = lint;
+            lint = lint.augment(symbol);
+
+            // If this declaration is not interesting, we don't need to create a DeclNode for it
+            if (lint == previousLint && parent.parent != null) {
+                recursion.accept(tree);
+                return;
+            }
+
+            // Add a DeclNode here
+            DeclNode node = new DeclNode(parent, symbol, tree, endPositions, lint);
+            parent = node;
+            try {
+                recursion.accept(tree);
+            } finally {
+                parent = node.parent;
+                lint = previousLint;
             }
         }
     }
