@@ -412,7 +412,7 @@ import java.util.function.Supplier;
  * @implNote A {@code StableValue} is mainly intended to be a non-public field in
  *           a class and is usually neither exposed directly via accessors nor passed as
  *           a method parameter.
- *           Stable functions and collections make all reasonable efforts to provide
+ *           Stable functions and collections make reasonable efforts to provide
  *           {@link Object#toString()} operations that do not trigger evaluation
  *           of the internal stable values when called.
  *           Stable collections have {@link Object#equals(Object)} operations that tries
