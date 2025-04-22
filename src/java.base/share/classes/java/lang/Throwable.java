@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -767,7 +767,7 @@ public class Throwable implements Serializable {
      * Wrapper class for PrintStream and PrintWriter to enable a single
      * implementation of printStackTrace.
      */
-    private abstract static class PrintStreamOrWriter {
+    private interface PrintStreamOrWriter {
         /** Returns the object to be locked when using this StreamOrWriter */
         abstract Object lock();
 
@@ -775,34 +775,22 @@ public class Throwable implements Serializable {
         abstract void println(Object o);
     }
 
-    private static class WrappedPrintStream extends PrintStreamOrWriter {
-        private final PrintStream printStream;
-
-        WrappedPrintStream(PrintStream printStream) {
-            this.printStream = printStream;
-        }
-
-        Object lock() {
+    private record WrappedPrintStream(PrintStream printStream) implements PrintStreamOrWriter {
+        public Object lock() {
             return printStream;
         }
 
-        void println(Object o) {
+        public void println(Object o) {
             printStream.println(o);
         }
     }
 
-    private static class WrappedPrintWriter extends PrintStreamOrWriter {
-        private final PrintWriter printWriter;
-
-        WrappedPrintWriter(PrintWriter printWriter) {
-            this.printWriter = printWriter;
-        }
-
-        Object lock() {
+    private record WrappedPrintWriter(PrintWriter printWriter) implements PrintStreamOrWriter {
+        public Object lock() {
             return printWriter;
         }
 
-        void println(Object o) {
+        public void println(Object o) {
             printWriter.println(o);
         }
     }
