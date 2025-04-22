@@ -2646,7 +2646,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   __ bnez(t1, pending);
 
   // get the returned Method*
-  __ get_vm_result_2(xmethod, xthread);
+  __ get_vm_result_metadata(xmethod, xthread);
   __ sd(xmethod, Address(sp, reg_saver.reg_offset_in_bytes(xmethod)));
 
   // x10 is where we want to jump, overwrite t1 which is saved and temporary
@@ -2664,7 +2664,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 
   // exception pending => remove activation and forward to exception handler
 
-  __ sd(zr, Address(xthread, JavaThread::vm_result_offset()));
+  __ sd(zr, Address(xthread, JavaThread::vm_result_oop_offset()));
 
   __ ld(x10, Address(xthread, Thread::pending_exception_offset()));
   __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));

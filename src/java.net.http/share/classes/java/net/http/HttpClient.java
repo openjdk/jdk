@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -389,6 +389,8 @@ public abstract class HttpClient implements AutoCloseable {
          * the {@link Authenticator} is not invoked for the corresponding
          * authentication. In this case, any authentication errors are returned
          * to the user and requests are not automatically retried.
+         * Additionally, the JDK built-in implementation currently only supports HTTP
+         * {@code Basic} authentication.
          *
          * @param authenticator the Authenticator
          * @return this builder

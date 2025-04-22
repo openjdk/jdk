@@ -27,10 +27,7 @@
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
-#include "jfr/utilities/jfrPredicate.hpp"
-#include "jfr/utilities/jfrRelation.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/growableArray.hpp"
 
 /*
  * There are two separate repository instances.
@@ -48,7 +45,7 @@ JfrStackTraceRepository& JfrStackTraceRepository::instance() {
   return *_instance;
 }
 
-static JfrStackTraceRepository& leak_profiler_instance() {
+JfrStackTraceRepository& JfrStackTraceRepository::leak_profiler_instance() {
   assert(_leak_profiler_instance != nullptr, "invariant");
   return *_leak_profiler_instance;
 }
@@ -244,37 +241,4 @@ size_t JfrStackTraceRepository::clear() {
 traceid JfrStackTraceRepository::next_id() {
   MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
   return ++_next_id;
-}
-
-static inline bool should_write(const JfrStackTrace* stacktrace, GrowableArray<traceid>* leakp_set) {
-  assert(stacktrace != nullptr, "invariant");
-  return stacktrace->should_write() && JfrPredicate<traceid, compare_traceid>::test(leakp_set, stacktrace->id());
-}
-
-void JfrStackTraceRepository::write_leak_profiler(GrowableArray<traceid>* leakp_set, Thread* t) {
-  assert(leakp_set != nullptr, "invariant");
-  assert(leakp_set->is_nonempty(), "invariant");
-  assert(t != nullptr, "invariant");
-
-  JfrCheckpointWriter writer(t);
-  writer.write_type(TYPE_STACKTRACE);
-  const int64_t count_offset = writer.reserve(sizeof(u4)); // Don't know how many yet
-
-  int count = 0;
-  const JfrStackTraceRepository& repo = leak_profiler_instance();
-
-  for (u4 i = 0; i < TABLE_SIZE; ++i) {
-    const JfrStackTrace* stacktrace = repo._table[i];
-    while (stacktrace != nullptr) {
-      if (should_write(stacktrace, leakp_set)) {
-        stacktrace->write(writer);
-        ++count;
-      }
-      stacktrace = stacktrace->next();
-    }
-  }
-
-  assert(count > 0, "invariant");
-  assert(count <= leakp_set->length(), "invariant");
-  writer.write_count(count, count_offset);
 }

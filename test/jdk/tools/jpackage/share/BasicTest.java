@@ -237,20 +237,21 @@ public final class BasicTest {
         final var cmd = JPackageCommand.helloAppImage()
                 .ignoreDefaultVerbose(true)
                 .useToolProvider(false)
+                .discardStdout(true)
                 .removeArgumentWithValue("--main-class");
 
         if (verbose) {
             cmd.addArgument("--verbose");
         }
 
-        final var textVerifier = Stream.of(
+        cmd.validateOutput(Stream.of(
                 List.of("error.no-main-class-with-main-jar", "hello.jar"),
                 List.of("error.no-main-class-with-main-jar.advice", "hello.jar")
         ).map(args -> {
             return JPackageStringBundle.MAIN.cannedFormattedString(args.getFirst(), args.subList(1, args.size()).toArray());
-        }).map(CannedFormattedString::getValue).map(TKit::assertTextStream).reduce(TKit.TextStreamVerifier::andThen).orElseThrow();
+        }).toArray(CannedFormattedString[]::new));
 
-        textVerifier.apply(cmd.saveConsoleOutput(true).execute(1).getOutput().stream().filter(Predicate.not(JPackageCommand::withTimestamp)));
+        cmd.execute(1);
     }
 
     @Test

@@ -61,7 +61,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                     }
 
                     if (result != null) {
-                        MacCertificate certificate = new MacCertificate(result);
+                        MacCertificate certificate = new MacCertificate(result, keychain);
 
                         if (!certificate.isValid()) {
                             Log.error(MessageFormat.format(
