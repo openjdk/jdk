@@ -67,19 +67,23 @@ public class ComponentShortage {
             });
             robot.waitForIdle();
             robot.delay(1000);
+
             EventQueue.invokeAndWait(() -> {
                 size = jtf.getSize();
             });
             System.out.println("TextField size before Frame's width reduction : " + size);
+
             EventQueue.invokeAndWait(() -> {
                 frame.setSize(frame.getSize().width - WIDTH_REDUCTION, frame.getSize().height);
             });
             frame.repaint();
+
             EventQueue.invokeAndWait(() -> {
                 size = jtf.getSize();
                 fSize = frame.getSize();
             });
             System.out.println("TextField size after Frame's width reduction : " + size);
+
             if (size.width < fSize.width - WIDTH_REDUCTION) {
                 throw new RuntimeException("Width of JTextField is too small to be visible.");
             }
