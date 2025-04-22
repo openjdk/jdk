@@ -281,8 +281,10 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     assert(lo < new_lo, "this case cannot overflow");
     return new_lo;
   } else {
+    assert(zero_violation > one_violation, "remaining case");
     // This means that the first bit that does not satisfy the bit requirement
-    // is a 1 that should be a 0. Trace backward to find i which is the last
+    // is a 1 that should be a 0. Trace backward to find the first bit we can
+    // flip from 0 to 1 (i in the formality section above), which is the last
     // bit that is 0 in both lo and zeros.
     //
     // E.g:      1 2 3 4 5 6 7 8
@@ -291,33 +293,38 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     //    ones = 1 0 0 0 0 0 1 1
     //   1-vio = 0 0 0 0 0 0 0 1
     //   0-vio = 0 0 0 0 0 1 0 0
-    // The first violation is the 6th bit, which should be 0. The 5th cannot be
-    // the first different bit we are looking for, because it is already 1, the
-    // 4th bit also cannot be, because it must be 0. As a result, the first
-    // different bit between the result and lo must be the 3rd bit. As a result,
-    // the result must not be smaller than:
+    // The first violation is the 6th bit, which should be 0. We want to flip
+    // it to 0. However, since we must obtain a value larger than lo, we must
+    // find an earlier bit that can be flipped from 0 to 1. The 5th cannot be
+    // the bit we are looking for, because it is already 1, the 4th bit also
+    // cannot be, because it must be 0. As a result, the last bit we can flip,
+    // which is the first different bit between the result and lo must be the
+    // 3rd bit. As a result, the result must not be smaller than:
     //           1 0 1 0 0 0 0 0
-    // This one satisfies zeros so we can use the logic in the previous case to
-    // obtain our final result, which is:
+    // This one satisfies zeros so we can use the logic in the previous case,
+    // just OR with ones to obtain the final result, which is:
     //           1 0 1 0 0 0 1 1
 
     juint first_violation = count_leading_zeros(zero_violation);
-    // This mask out all bits from the first violation
+    // This mask out all bits after the first violation
     //           1 1 1 1 1 0 0 0
     U find_mask = ~(std::numeric_limits<U>::max() >> first_violation);
+    // A bit that is 0 in both lo and zeros must be 0 in either
     //           1 0 0 1 1 1 1 0
     U either = lo | bits._zeros;
-    // i is the last bit being 0 in either that stands before the first
-    // violation, which is the last set bit of tmp
+    // This is all the bits that are not lower than first_violation and are 0
+    // in both lo and zeros
     //           0 1 1 0 0 0 0 0
     U tmp = ~either & find_mask;
-    // i == 2 here, shortcut the calculation instead of explicitly spelling out
-    // i
+    // i is the last bit being 0 in both lo and zeros that stands before the
+    // first violation, which is the last set bit of tmp. i == 2 here, we want
+    // to obtain the value with only the bit i set, this is equivalent to
+    // extracting the last set bit of tmp, do it directly without going through i
     //           0 0 1 0 0 0 0 0
     U alignment = tmp & (-tmp);
-    // Set the bit at i and unset all the bit after, this is the smallest value
-    // that satisfies bits._zeros. Similar to the above case, this is similar
-    // to aligning lo upto alignment
+    // Set the bit of lo at i and unset all the bits after, this is the smallest
+    // value that satisfies bits._zeros. Similar to the above case, this is
+    // similar to aligning lo upto alignment
     //           1 0 1 0 0 0 0 0
     U new_lo = (lo & -alignment) + alignment;
     // Satisfy bits._ones
