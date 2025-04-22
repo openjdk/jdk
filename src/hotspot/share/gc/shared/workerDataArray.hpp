@@ -31,14 +31,6 @@
 class outputStream;
 
 template <class T>
-struct WorkerDataStats {
-  T min;
-  T max;
-  T sum;
-  uint count;
-};
-
-template <class T>
 class WorkerDataArray  : public CHeapObj<mtGC> {
   friend class WDAPrinter;
 public:
@@ -83,7 +75,6 @@ private:
   // The sum() and average() methods below consider uninitialized slots to be 0.
   double average() const;
   T sum() const;
-  WorkerDataStats<T> get_worker_stats() const;
 
   const char* title() const {
     return _title;
