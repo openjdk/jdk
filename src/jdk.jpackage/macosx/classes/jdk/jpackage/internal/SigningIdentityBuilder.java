@@ -26,6 +26,8 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.MacCertificateUtils.findCertificates;
 
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
@@ -107,30 +109,38 @@ final class SigningIdentityBuilder {
             }).map(Map.Entry::getValue).toList();
         }
 
-        final CertificateHash signingIdentityHash = selectSigningIdentity(matchingCertificates,
+        final var cert = selectSigningIdentity(matchingCertificates,
                 certificateSelector, validatedKeychain);
+
+        try {
+            cert.checkValidity();
+        } catch (CertificateExpiredException|CertificateNotYetValidException ex) {
+            throw I18N.buildConfigException("error.certificate.expired", findSubjectCNs(cert).getFirst()).create();
+        }
+
+        final var signingIdentityHash = CertificateHash.of(cert);
 
         return new SigningIdentityImpl(signingIdentityHash.toString());
     }
 
-    private static CertificateHash selectSigningIdentity(List<X509Certificate> certs,
+    private static X509Certificate selectSigningIdentity(List<X509Certificate> certs,
             CertificateSelector certificateSelector, Optional<Keychain> keychain) throws ConfigException {
         Objects.requireNonNull(certificateSelector);
         Objects.requireNonNull(keychain);
         switch (certs.size()) {
             case 0 -> {
-                Log.error(I18N.format("error.cert.not.found", certificateSelector.name(),
+                Log.error(I18N.format("error.cert.not.found", certificateSelector.signingIdentities().getFirst(),
                         keychain.map(Keychain::name).orElse("")));
                 throw I18N.buildConfigException("error.explicit-sign-no-cert")
                         .advice("error.explicit-sign-no-cert.advice").create();
             }
             case 1 -> {
-                return CertificateHash.of(certs.getFirst());
+                return certs.getFirst();
             }
             default -> {
-                Log.error(I18N.format("error.multiple.certs.found", certificateSelector.name(),
+                Log.error(I18N.format("error.multiple.certs.found", certificateSelector.signingIdentities().getFirst(),
                         keychain.map(Keychain::name).orElse("")));
-                return CertificateHash.of(certs.getFirst());
+                return certs.getFirst();
             }
         }
     }
@@ -160,7 +170,7 @@ final class SigningIdentityBuilder {
                 return List.of(name);
             } else {
                 return prefixes.stream().map(StandardCertificatePrefix::value).map(prefix -> {
-                    return prefix +  name;
+                    return prefix + name;
                 }).toList();
             }
         }

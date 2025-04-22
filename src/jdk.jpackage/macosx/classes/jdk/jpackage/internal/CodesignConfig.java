@@ -80,7 +80,7 @@ record CodesignConfig(Optional<SigningIdentity> identity, Optional<String> ident
         }
 
         Builder keychain(String v) {
-            return keychain(new Keychain(v));
+            return keychain(Optional.ofNullable(v).map(Keychain::new).orElse(null));
         }
 
         Builder keychain(Keychain v) {
