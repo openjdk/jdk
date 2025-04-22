@@ -784,22 +784,6 @@ public class Attr extends JCTree.Visitor {
         return kind;
     }
 
-    /* vsym is expected to be a method argument
-     */
-    private boolean requiresIdentity(VarSymbol vsym) {
-        if (vsym != null) {
-            SymbolMetadata sm = vsym.getMetadata();
-            if (sm != null) {
-                for (Attribute.Compound ca: sm.getDeclarationAttributes()) {
-                    if (ca.type.tsym == syms.requiresIdentityType.tsym) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
     /** Attribute a type argument list, returning a list of types.
      *  Caller is responsible for calling checkRefTypes.
      */
@@ -1346,6 +1330,7 @@ public class Attr extends JCTree.Visitor {
             }
             if (tree.vartype != null &&
                     tree.vartype.type != null &&
+                    env.info.lint.isEnabled(LintCategory.IDENTITY) &&
                     types.needsRequiresIdentityWarning(tree.vartype.type)) {
                 env.info.lint.logIfEnabled(tree.vartype.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
             }
@@ -2689,7 +2674,9 @@ public class Attr extends JCTree.Visitor {
             Type capturedRes = resultInfo.checkContext.inferenceContext().cachedCapture(tree, restype, true);
             result = check(tree, capturedRes, KindSelector.VAL, resultInfo);
         }
-        checkIfRequireIdentity(tree, msym);
+        if (env.info.lint.isEnabled(LintCategory.IDENTITY)) {
+            checkIfRequireIdentity(tree, msym);
+        }
         chk.validate(tree.typeargs, localEnv);
     }
     //where
@@ -2711,6 +2698,22 @@ public class Attr extends JCTree.Visitor {
                     argExps = argExps.tail;
                 }
             }
+        }
+
+        /* vsym is expected to be a method argument
+         */
+        private boolean requiresIdentity(VarSymbol vsym) {
+            if (vsym != null) {
+                SymbolMetadata sm = vsym.getMetadata();
+                if (sm != null) {
+                    for (Attribute.Compound ca: sm.getDeclarationAttributes()) {
+                        if (ca.type.tsym == syms.requiresIdentityType.tsym) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
         Type adjustMethodReturnType(Symbol msym, Type qualifierType, Name methodName, List<Type> argtypes, Type restype) {
