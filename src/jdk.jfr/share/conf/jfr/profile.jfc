@@ -536,10 +536,6 @@
       <setting name="enabled" control="gc-enabled-high">false</setting>
     </event>
 
-    <event name="jdk.GCTaskTerminationStatistics">
-      <setting name="enabled" control="gc-enabled-normal">true</setting>
-    </event>
-
     <event name="jdk.OldObjectSample">
       <setting name="enabled" control="old-objects-enabled">true</setting>
       <setting name="stackTrace" control="old-objects-stack-trace">true</setting>
