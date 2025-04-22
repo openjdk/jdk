@@ -61,7 +61,7 @@ public class AddOpens {
     private static String addOpensAllUnnamed = "java.base/java.lang=ALL-UNNAMED";
     private static String extraOpts[][] =
         {{"-Xlog:cds", "-Xlog:cds"},
-         {"--add-opens", addOpensArg}}; 
+         {"--add-opens", addOpensArg}};
     private static String expectedOutput[] =
         { "[class,load] com.simple.Main source: shared objects file",
           "method.setAccessible succeeded!"};
