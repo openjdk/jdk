@@ -68,9 +68,7 @@ public class TestAvailableProcessors {
         File systemRoot =
             System.getenv("SystemRoot") != null ? new File(System.getenv("SystemRoot")) :
             System.getenv("WINDIR")     != null ? new File(System.getenv ("WINDIR")) :
-            null;
-        if (systemRoot == null || ! systemRoot.isDirectory())
-            return; // Not Windows as we know it
+            "";
         String systemDirW = new File(systemRoot, "System32").getPath();
 
         // Force language to English before running systeminfo to get the OS version
