@@ -453,9 +453,8 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
 
   if ((attach_status = ptrace_attach(pid, err_buf, err_buf_len)) != ATTACH_SUCCESS) {
     if (attach_status == ATTACH_THREAD_DEAD) {
-       print_error("The process with pid %d does not exist.\n", pid);
-    } else {
-       print_error("Failed to attach to the process with pid %d.\n", pid);
+       snprintf(err_buf, err_buf_len, "The process with pid %d does not exist.", pid);
+       print_error("%s\n", err_buf);
     }
     free(ph);
     return NULL;
@@ -464,7 +463,8 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
   // initialize ps_prochandle
   ph->pid = pid;
   if (add_thread_info(ph, ph->pid) == NULL) {
-    print_error("failed to add thread info\n");
+    snprintf(err_buf, err_buf_len, "failed to add thread info");
+    print_error("%s\n", err_buf);
     free(ph);
     return NULL;
   }
@@ -476,7 +476,7 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
   // as the symbols in the pthread library will be used to figure out
   // the list of threads within the same process.
   if (read_lib_info(ph) == false) {
-    print_error("failed to read lib info\n");
+    snprintf(err_buf, err_buf_len, "failed to read lib info");
     goto err;
   }
 
@@ -501,7 +501,7 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
     }
     if (!process_doesnt_exist(lwp_id)) {
       if (add_thread_info(ph, lwp_id) == NULL) {
-        print_error("failed to add thread info\n");
+        snprintf(err_buf, err_buf_len, "failed to add thread info");
         goto err;
       }
     }
@@ -522,7 +522,7 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
           delete_thread_info(ph, current_thr);
         }
         else {
-          print_error("Failed to attach to the thread with lwp_id %d.\n", current_thr->lwp_id);
+          snprintf(err_buf, err_buf_len, "Failed to attach to the thread with lwp_id %d.", current_thr->lwp_id);
           goto err;
         } // ATTACH_THREAD_DEAD
       } // !ATTACH_SUCCESS
@@ -530,6 +530,7 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
   }
   return ph;
 err:
+  print_error("%s\n", err_buf);
   Prelease(ph);
   return NULL;
 }
