@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.internal.net.http;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.http.HttpResponse;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
@@ -39,6 +40,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.net.http.HttpClient;
@@ -76,17 +78,46 @@ abstract class HttpConnection implements Closeable {
     public static final Comparator<HttpConnection> COMPARE_BY_ID
             = Comparator.comparing(HttpConnection::id);
 
+    private static final AtomicLong LABEL_COUNTER = new AtomicLong();
+
     /** The address this connection is connected to. Could be a server or a proxy. */
     final InetSocketAddress address;
     private final HttpClientImpl client;
     private final TrailingOperations trailingOperations;
+
+    /**
+     * A unique identifier that provides a total order among instances.
+     */
     private final long id;
 
-    HttpConnection(InetSocketAddress address, HttpClientImpl client) {
+    /**
+     * A label to identify the connection.
+     * <p>
+     * This label helps with associating multiple components participating in a
+     * connection. For instance, an {@link AsyncSSLConnection} and the
+     * {@link PlainHttpConnection} it wraps will share the same label.
+     * </p>
+     */
+    private final String label;
+
+    HttpConnection(InetSocketAddress address, HttpClientImpl client, String label) {
         this.address = address;
         this.client = client;
         trailingOperations = new TrailingOperations();
         this.id = newConnectionId(client);
+        this.label = label;
+    }
+
+    private static String nextLabel() {
+        return "" + LABEL_COUNTER.incrementAndGet();
+    }
+
+    /**
+     * {@return a label identifying the connection to facilitate
+     * {@link HttpResponse#connectionLabel() HttpResponse::connectionLabel}}
+     */
+    public final String label() {
+        return label;
     }
 
     // This is overridden in tests
@@ -303,11 +334,13 @@ abstract class HttpConnection implements Closeable {
                                                    String[] alpn,
                                                    HttpRequestImpl request,
                                                    HttpClientImpl client) {
+        String label = nextLabel();
         if (proxy != null)
             return new AsyncSSLTunnelConnection(addr, client, alpn, proxy,
-                                                proxyTunnelHeaders(request));
+                                                proxyTunnelHeaders(request),
+                                                label);
         else
-            return new AsyncSSLConnection(addr, client, alpn);
+            return new AsyncSSLConnection(addr, client, alpn, label);
     }
 
     /**
@@ -381,14 +414,16 @@ abstract class HttpConnection implements Closeable {
                                                      InetSocketAddress proxy,
                                                      HttpRequestImpl request,
                                                      HttpClientImpl client) {
+        String label = nextLabel();
         if (request.isWebSocket() && proxy != null)
             return new PlainTunnelingConnection(addr, proxy, client,
-                                                proxyTunnelHeaders(request));
+                                                proxyTunnelHeaders(request),
+                                                label);
 
         if (proxy == null)
-            return new PlainHttpConnection(addr, client);
+            return new PlainHttpConnection(addr, client, label);
         else
-            return new PlainProxyConnection(proxy, client);
+            return new PlainProxyConnection(proxy, client, label);
     }
 
     void closeOrReturnToCache(HttpHeaders hdrs) {

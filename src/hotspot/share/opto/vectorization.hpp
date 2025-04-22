@@ -648,6 +648,7 @@ public:
     const DependencyNode* _dependency_node;
 
     Node* _current;
+    bool _is_current_memory_edge;
 
     // Iterate in node->in(i)
     int _next_pred;
@@ -664,6 +665,10 @@ public:
     Node* current() const {
       assert(!done(), "not done yet");
       return _current;
+    }
+    bool is_current_memory_edge() const {
+      assert(!done(), "not done yet");
+      return _is_current_memory_edge;
     }
   };
 };

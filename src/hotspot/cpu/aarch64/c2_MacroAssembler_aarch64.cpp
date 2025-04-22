@@ -360,7 +360,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   Label slow_path;
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     str(zr, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
   }
 
