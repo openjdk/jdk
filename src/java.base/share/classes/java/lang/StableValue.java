@@ -278,7 +278,7 @@ import java.util.function.Supplier;
  *
  * <h2 id="composition">Composing stable values</h2>
  * A stable value can depend on other stable values, forming a dependency graph
- * that can be lazily computed but where access to individual elements still can be
+ * that can be lazily computed but where access to individual elements can still be
  * performant. In the following example, a single {@code Foo} and a {@code Bar}
  * instance (that is dependent on the {@code Foo} instance) are lazily created, both of
  * which are held by stable values:
