@@ -229,7 +229,7 @@ public class ConstrainedBorderLayoutChildrenTest {
                     "northPanel.getWidth() = " + northPanel.getWidth());
 
             return true;
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             t.printStackTrace();
             return false;
         }
