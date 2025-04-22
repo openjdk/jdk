@@ -117,7 +117,7 @@ public class ConstrainedBorderLayoutChildrenTest {
             assertEquals(new Rectangle(0, 0, 100, 0), centerPanel.getBounds());
 
             return true;
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             t.printStackTrace();
             return false;
         }
