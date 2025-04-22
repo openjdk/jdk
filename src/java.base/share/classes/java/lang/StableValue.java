@@ -415,7 +415,7 @@ import java.util.function.Supplier;
  *           Stable functions and collections make reasonable efforts to provide
  *           {@link Object#toString()} operations that do not trigger evaluation
  *           of the internal stable values when called.
- *           Stable collections have {@link Object#equals(Object)} operations that tries
+ *           Stable collections have {@link Object#equals(Object)} operations that try
  *           to minimize evaluation of the internal stable values when called.
  *           As objects can be set via stable values but never removed, this can be a source
  *           of unintended memory leaks. A stable value's content is
