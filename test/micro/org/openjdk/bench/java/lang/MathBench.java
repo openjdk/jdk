@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
@@ -63,17 +64,22 @@ public class MathBench {
     public float float1 = 1.0f, float2 = 2.0f, floatNegative99 = -99.0f, float7 = 7.0f, eFloat = 2.718f;
     public double double1 = 1.0d, double2 = 2.0d, double81 = 81.0d, doubleNegative12 = -12.0d, double4Dot1 = 4.1d, double0Dot5 = 0.5d;
 
+    @Param({"-2.0", "-1.0", "-0.5", "-0.1", "0.0", "0.1", "0.5", "1.0", "2.0"})
+    public double tanhConstInput;
+
     @Param("2048")
-    public int tanhValueCount;
+    public int tanhInputCount;
 
-    @Param("0")
-    public double tanhBound1;
+    @Param({"0", "1", "2", "3"})
+    public int tanhRangeIndex;
 
-    @Param("2.7755575615628914E-17")
-    public double tanhBound2;
-
-    public double [] tanhPosVector;
-    public double [] tanhNegVector;
+    public double [] tanhPosRandInputs;
+    public double [] tanhNegRandInputs;
+    public int tanhInputIndex = 0;
+    public double tanhRangeInputs[][] = { {0.0, 0x1.0P-55},
+                                          {0x1.0P-55, 1.0},
+                                          {1.0, 22.0},
+                                          {22.0, 1.7976931348623157E308} };
 
     @Setup
     public void setupValues() {
@@ -84,12 +90,20 @@ public class MathBench {
         longDivisor  = Math.abs(random.nextLong() + longDividend);
 
         // Fill the positive and negative tanh vectors with random values
-        tanhPosVector = new double[tanhValueCount];
-        tanhNegVector = new double[tanhValueCount];
-        for (int i = 0; i < tanhValueCount; i++) {
-            tanhPosVector[i] = random.nextDouble(tanhBound1, tanhBound2);
-            tanhNegVector[i] = random.nextDouble(-tanhBound2, -tanhBound1);
+        tanhPosRandInputs = new double[tanhInputCount];
+        tanhNegRandInputs = new double[tanhInputCount];
+        for (int i = 0; i < tanhInputCount; i++) {
+            double tanhLowerBound = tanhRangeInputs[tanhRangeIndex][0];
+            double tanhUpperBound = tanhRangeInputs[tanhRangeIndex][1];
+            tanhPosRandInputs[i] = random.nextDouble(tanhLowerBound, tanhUpperBound);
+            tanhNegRandInputs[i] = random.nextDouble(-tanhUpperBound, -tanhLowerBound);
         }
+    }
+
+    @Setup(Level.Invocation)
+    public void updateEveryIndex() {
+        // Update the tanh index for the next invocation
+        tanhInputIndex = (tanhInputIndex + 1) % tanhInputCount;
     }
 
     @Benchmark
@@ -538,16 +552,14 @@ public class MathBench {
 
     @Benchmark
     public double  tanhDouble() {
-        return  Math.tanh(double1);
+        return  Math.tanh(tanhConstInput);
     }
 
     @Benchmark
     public double  tanhRangeDouble() {
-        double sum = 0.0;
-        for (int i = 0; i < tanhValueCount; i++) {
-            sum += Math.tanh(tanhPosVector[i]) + Math.tanh(tanhNegVector[i]);
-        }
-        return sum;
+        double posResult = Math.tanh(tanhPosRandInputs[tanhInputIndex]);
+        double negResult = Math.tanh(tanhNegRandInputs[tanhInputIndex]);
+        return  (posResult + negResult);
     }
 
     @Benchmark
