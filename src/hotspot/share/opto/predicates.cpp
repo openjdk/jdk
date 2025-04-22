@@ -1098,9 +1098,10 @@ CloneUnswitchedLoopPredicatesVisitor::CloneUnswitchedLoopPredicatesVisitor(
       _is_counted_loop(true_path_loop_head->is_CountedLoop()) {}
 
 // The PredicateIterator will always start at the loop entry and first visits the Loop Limit Check Predicate Block.
-// Does not clone Loop Limit Check parse predicates iff a counted loop is unswitched, because a loop limit check before
-// the unswitched loop selector covers both unswitched counted loops. Otherwise, we would need to hoist the loop limit
-// checks from both loops back up to the loop selector.
+// Does not clone a Loop Limit Check Parse Predicate if a counted loop is unswitched, because it most likely will not be
+// used anymore (it could only be used when both unswitched loop versions die and the Loop Limit Check Parse Predicate
+// ends up at a LoopNode without Loop Limit Check Parse Predicate directly following the unswitched loop that can then
+// be speculatively converted to a counted loop - this is rather rare).
 void CloneUnswitchedLoopPredicatesVisitor::visit(const ParsePredicate& parse_predicate) {
   Deoptimization::DeoptReason deopt_reason = parse_predicate.head()->deopt_reason();
   if (_is_counted_loop && deopt_reason == Deoptimization::Reason_loop_limit_check) {

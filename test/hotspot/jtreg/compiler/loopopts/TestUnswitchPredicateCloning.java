@@ -65,7 +65,6 @@ public class TestUnswitchPredicateCloning {
         for (int i = 0; i < SIZE; i++) {
             arr[i] = i;
         }
-
         return arr;
     }
 
@@ -78,16 +77,15 @@ public class TestUnswitchPredicateCloning {
                    IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "3",
                    IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "3" },
         phase = CompilePhase.BEFORE_LOOP_UNSWITCHING)
-    // Since we know that predication happens after unswitching, we can test the
-    // predicate cloning before predication, such that the useless, killed predicates
+    // Since we know that Loop Predication happens after Loop Unswitching, we can test the
     // have already been removed in the beautify loop phase.
     @IR(counts = { IRNode.LOOP_PARSE_PREDICATE, "4",
                    IRNode.PROFILED_LOOP_PARSE_PREDICATE, "4",
                    IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "3",
                    IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "4" },
-        phase = CompilePhase.BEFORE_LOOP_PREDICATION_IC)
-    // Check that opaque template assertion predicated are added in loop predication
-    // even if loop predication only happens after loop unswitching.
+        phase = CompilePhase.BEFORE_LOOP_PREDICATION_RC)
+    // Check that Opaque Template Assertion Predicates are added in Loop Predication
+    // even if Loop Predication only happens after Loop Unswitching.
     @IR(failOn = { IRNode.OPAQUE_TEMPLATE_ASSERTION_PREDICATE },
         phase = CompilePhase.AFTER_LOOP_UNSWITCHING)
     @IR(counts = { IRNode.OPAQUE_TEMPLATE_ASSERTION_PREDICATE, "2" },
@@ -119,8 +117,8 @@ public class TestUnswitchPredicateCloning {
     }
 
     @Test
-    // Check that Loop Unswitching doubled the number of parse and tempalte
-    // assertion predicates. Again, the Loop Limit Check Parse Predicate
+    // Check that Loop Unswitching doubled the number of Parse and Template
+    // Assertion Predicates. Again, the Loop Limit Check Parse Predicate
     // remains at the Loop Selector since this is a counted loop.
     @IR(failOn = { IRNode.OPAQUE_TEMPLATE_ASSERTION_PREDICATE },
         phase = CompilePhase.BEFORE_LOOP_PREDICATION_RC)
@@ -130,7 +128,7 @@ public class TestUnswitchPredicateCloning {
                    IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "1",
                    IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "1" },
         phase = CompilePhase.BEFORE_LOOP_UNSWITCHING)
-    // After loop unswitching and after removing the killed predicates.
+    // After Loop Unswitching and after removing the killed predicates.
     @IR(counts = { IRNode.OPAQUE_TEMPLATE_ASSERTION_PREDICATE, "4",
                    IRNode.LOOP_PARSE_PREDICATE, "2",
                    IRNode.PROFILED_LOOP_PARSE_PREDICATE, "2",
@@ -150,16 +148,16 @@ public class TestUnswitchPredicateCloning {
     }
 
     @Test
-    // Check that Loop Unswitching doubled the number of all parse predicates.
-    // Since this is not counted loop, the Loop Limit Check parse predicate
+    // Check that Loop Unswitching doubled the number of all Parse Predicates.
+    // Since this is not counted loop, the Loop Limit Check Parse Predicate
     // has to be cloned to both unswitched loops.
     @IR(counts = { IRNode.LOOP_PARSE_PREDICATE, "1",
                    IRNode.PROFILED_LOOP_PARSE_PREDICATE, "1",
                    IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "1",
                    IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "1" },
         phase = CompilePhase.BEFORE_LOOP_UNSWITCHING)
-    // After loop unswitching and after removing the killed predicates all
-    // parse predicates are doubled..
+    // After Loop Unswitching and after removing the killed predicates all
+    // Parse Predicates are doubled.
     @IR(counts = { IRNode.LOOP_PARSE_PREDICATE, "2",
                    IRNode.PROFILED_LOOP_PARSE_PREDICATE, "2",
                    IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "2",
