@@ -27,14 +27,6 @@
 
 #include "globalDefinitions.hpp"
 
-// Pre-C++17 hack: Use  __builtin_launder when available.
-// Replace this with std::launder when we've upgraded.
-#if (defined(__GNUC__) || defined(__clang__))
-#define LAUNDER(X) __builtin_launder((X))
-#else
-#define LAUNDER(X) (X)
-#endif
-
 // A memory area with adequate size and alignment for storage of a T.
 // May be initialized exactly once.
 template<typename T>
@@ -54,7 +46,8 @@ public:
   }
 
   T* ptr() {
-    return LAUNDER(&this->_t);
+    assert(_initialized, "must be initialized before access");
+    return &this->_t;
   }
 
   T* operator->() {
