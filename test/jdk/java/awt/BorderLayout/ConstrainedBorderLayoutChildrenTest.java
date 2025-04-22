@@ -152,7 +152,7 @@ public class ConstrainedBorderLayoutChildrenTest {
             assertEquals(new Rectangle(0,200,300,100), southPanel.getBounds());
 
             return true;
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             t.printStackTrace();
             return false;
         }
