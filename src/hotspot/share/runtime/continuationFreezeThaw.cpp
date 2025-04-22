@@ -567,17 +567,18 @@ void FreezeBase::copy_to_chunk(intptr_t* from, intptr_t* to, int size) {
 
 static void assert_frames_in_continuation_are_safe(JavaThread* thread) {
 #ifdef ASSERT
+  StackWatermark* watermark = StackWatermarkSet::get(thread, StackWatermarkKind::gc);
+  if (watermark == nullptr) {
+    return;
+  }
   ContinuationEntry* ce = thread->last_continuation();
   RegisterMap map(thread,
                   RegisterMap::UpdateMap::include,
                   RegisterMap::ProcessFrames::skip,
                   RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
-  StackWatermark* watermark = StackWatermarkSet::get(thread, StackWatermarkKind::gc);
   for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
-    if (watermark != nullptr) {
-      watermark->assert_is_frame_safe(f);
-    }
+    watermark->assert_is_frame_safe(f);
   }
 #endif // ASSERT
 }
