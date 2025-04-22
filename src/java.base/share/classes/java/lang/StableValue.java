@@ -382,7 +382,7 @@ import java.util.function.Supplier;
  * <p>
  * The method {@link #orElseSet(Supplier)} guarantees that the provided
  * {@linkplain Supplier} is invoked successfully at most once even under race.
- * Invocations of {@link #setOrThrow(Object)} forms a total order of zero or more
+ * Invocations of {@link #setOrThrow(Object)} form a total order of zero or more
  * exceptional invocations followed by zero (if the content was already set) or one
  * successful invocation. Since stable functions and stable collections are built on top
  * of {@linkplain StableValue#orElseSet(Supplier) orElseSet()} they too are
