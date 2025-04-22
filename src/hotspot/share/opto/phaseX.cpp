@@ -1024,11 +1024,18 @@ void PhaseIterGVN::optimize() {
     shuffle_worklist();
   }
 
+  // The node count check in the loop below (check_node_count) assumes that we
+  // increase the live node count with at most
+  // max_live_nodes_increase_per_iteration in between checks. If this
+  // assumption does not hold, there is a risk that we exceed the max node
+  // limit in between checks and trigger an assert during node creation.
+  const int max_live_nodes_increase_per_iteration = NodeLimitFudgeFactor * 2;
+
   uint loop_count = 0;
   // Pull from worklist and transform the node. If the node has changed,
   // update edge info and put uses on worklist.
-  while(_worklist.size()) {
-    if (C->check_node_count(NodeLimitFudgeFactor * 2, "Out of nodes")) {
+  while (_worklist.size() > 0) {
+    if (C->check_node_count(max_live_nodes_increase_per_iteration, "Out of nodes")) {
       C->print_method(PHASE_AFTER_ITER_GVN, 3);
       return;
     }
@@ -1043,7 +1050,16 @@ void PhaseIterGVN::optimize() {
     if (n->outcnt() != 0) {
       NOT_PRODUCT(const Type* oldtype = type_or_null(n));
       // Do the transformation
+      DEBUG_ONLY(int live_nodes_before = C->live_nodes();)
       Node* nn = transform_old(n);
+      DEBUG_ONLY(int live_nodes_after = C->live_nodes();)
+      // Ensure we did not increase the live node count with more than
+      // max_live_nodes_increase_per_iteration during the call to transform_old
+      DEBUG_ONLY(int increase = live_nodes_after - live_nodes_before;)
+      assert(increase < max_live_nodes_increase_per_iteration,
+             "excessive live node increase in single iteration of IGVN: %d "
+             "(should be at most %d)",
+             increase, max_live_nodes_increase_per_iteration);
       NOT_PRODUCT(trace_PhaseIterGVN(n, nn, oldtype);)
     } else if (!n->is_top()) {
       remove_dead_node(n);
@@ -1342,6 +1358,8 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
                 }
                 assert(!(i < imax), "sanity");
               }
+            } else if (dead->is_data_proj_of_pure_function(in)) {
+              _worklist.push(in);
             } else {
               BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(this, in);
             }
@@ -1609,10 +1627,10 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     use->visit_uses(push_the_uses_to_worklist, is_boundary);
   }
   // If changed LShift inputs, check RShift users for useless sign-ext
-  if( use_op == Op_LShiftI ) {
+  if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_RShiftI)
+      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL)
         worklist.push(u);
     }
   }
@@ -1833,6 +1851,11 @@ void PhaseCCP::analyze() {
       set_type(n, new_type);
       push_child_nodes_to_worklist(worklist, n);
     }
+    if (KillPathsReachableByDeadTypeNode && n->is_Type() && new_type == Type::TOP) {
+      // Keep track of Type nodes to kill CFG paths that use Type
+      // nodes that become dead.
+      _maybe_top_type_nodes.push(n);
+    }
   }
   DEBUG_ONLY(verify_analyze(worklist_verify);)
 }
@@ -1991,14 +2014,19 @@ void PhaseCCP::push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2*
   }
 }
 
-// AndI/L::Value() optimizes patterns similar to (v << 2) & 3 to zero if they are bitwise disjoint.
-// Add the AndI/L nodes back to the worklist to re-apply Value() in case the shift value changed.
-// Pattern: parent -> LShift (use) -> (ConstraintCast | ConvI2L)* -> And
+// AndI/L::Value() optimizes patterns similar to (v << 2) & 3, or CON & 3 to zero if they are bitwise disjoint.
+// Add the AndI/L nodes back to the worklist to re-apply Value() in case the value is now a constant or shift
+// value changed.
 void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const {
+  const TypeInteger* parent_type = type(parent)->isa_integer(type(parent)->basic_type());
   uint use_op = use->Opcode();
-  if ((use_op == Op_LShiftI || use_op == Op_LShiftL)
-      && use->in(2) == parent) { // is shift value (right-hand side of LShift)
-    auto push_and_uses_to_worklist = [&](Node* n){
+  if (
+    // Pattern: parent (now constant) -> (ConstraintCast | ConvI2L)* -> And
+    (parent_type != nullptr && parent_type->is_con()) ||
+    // Pattern: parent -> LShift (use) -> (ConstraintCast | ConvI2L)* -> And
+    ((use_op == Op_LShiftI || use_op == Op_LShiftL) && use->in(2) == parent)) {
+
+    auto push_and_uses_to_worklist = [&](Node* n) {
       uint opc = n->Opcode();
       if (opc == Op_AndI || opc == Op_AndL) {
         push_if_not_bottom_type(worklist, n);
@@ -2058,6 +2086,18 @@ Node *PhaseCCP::transform( Node *n ) {
   // track all visited nodes, so that we can remove the complement
   Unique_Node_List useful;
 
+  if (KillPathsReachableByDeadTypeNode) {
+    for (uint i = 0; i < _maybe_top_type_nodes.size(); ++i) {
+      Node* type_node = _maybe_top_type_nodes.at(i);
+      if (type(type_node) == Type::TOP) {
+        ResourceMark rm;
+        type_node->as_Type()->make_paths_from_here_dead(this, nullptr, "ccp");
+      }
+    }
+  } else {
+    assert(_maybe_top_type_nodes.size() == 0, "we don't need type nodes");
+  }
+
   // Initialize the traversal.
   // This CCP pass may prove that no exit test for a loop ever succeeds (i.e. the loop is infinite). In that case,
   // the logic below doesn't follow any path from Root to the loop body: there's at least one such path but it's proven
@@ -2108,7 +2148,7 @@ Node *PhaseCCP::transform( Node *n ) {
   C->update_dead_node_list(useful);
   remove_useless_nodes(useful.member_set());
   _worklist.remove_useless_nodes(useful.member_set());
-  C->disconnect_useless_nodes(useful, _worklist);
+  C->disconnect_useless_nodes(useful, _worklist, &_root_and_safepoints);
 
   Node* new_root = node_map[n->_idx];
   assert(new_root->is_Root(), "transformed root node must be a root node");

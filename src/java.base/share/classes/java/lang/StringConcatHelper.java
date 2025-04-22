@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,6 +52,9 @@ final class StringConcatHelper {
             byte coder  = String.LATIN1;
             for (String c : constants) {
                 length += c.length();
+                if (length < 0) {
+                    throw new OutOfMemoryError("Total length of constants is out of range");
+                }
                 coder  |= c.coder();
             }
             this.constants = constants;
@@ -236,10 +239,17 @@ final class StringConcatHelper {
         if (indexCoder < UTF16) {
             if (value) {
                 index -= 4;
-                StringLatin1.putCharsAt(buf, index, 't', 'r', 'u', 'e');
+                buf[index] = 't';
+                buf[index + 1] = 'r';
+                buf[index + 2] = 'u';
+                buf[index + 3] = 'e';
             } else {
                 index -= 5;
-                StringLatin1.putCharsAt(buf, index, 'f', 'a', 'l', 's', 'e');
+                buf[index] = 'f';
+                buf[index + 1] = 'a';
+                buf[index + 2] = 'l';
+                buf[index + 3] = 's';
+                buf[index + 4] = 'e';
             }
             index -= prefix.length();
             prefix.getBytes(buf, index, String.LATIN1);
@@ -247,10 +257,17 @@ final class StringConcatHelper {
         } else {
             if (value) {
                 index -= 4;
-                StringUTF16.putCharsAt(buf, index, 't', 'r', 'u', 'e');
+                StringUTF16.putChar(buf, index, 't');
+                StringUTF16.putChar(buf, index + 1, 'r');
+                StringUTF16.putChar(buf, index + 2, 'u');
+                StringUTF16.putChar(buf, index + 3, 'e');
             } else {
                 index -= 5;
-                StringUTF16.putCharsAt(buf, index, 'f', 'a', 'l', 's', 'e');
+                StringUTF16.putChar(buf, index, 'f');
+                StringUTF16.putChar(buf, index + 1, 'a');
+                StringUTF16.putChar(buf, index + 2, 'l');
+                StringUTF16.putChar(buf, index + 3, 's');
+                StringUTF16.putChar(buf, index + 4, 'e');
             }
             index -= prefix.length();
             prefix.getBytes(buf, index, String.UTF16);
@@ -624,20 +641,34 @@ final class StringConcatHelper {
         if (coder == String.LATIN1) {
             if (value) {
                 index -= 4;
-                StringLatin1.putCharsAt(buf, index, 't', 'r', 'u', 'e');
+                buf[index] = 't';
+                buf[index + 1] = 'r';
+                buf[index + 2] = 'u';
+                buf[index + 3] = 'e';
             } else {
                 index -= 5;
-                StringLatin1.putCharsAt(buf, index, 'f', 'a', 'l', 's', 'e');
+                buf[index] = 'f';
+                buf[index + 1] = 'a';
+                buf[index + 2] = 'l';
+                buf[index + 3] = 's';
+                buf[index + 4] = 'e';
             }
             index -= prefix.length();
             prefix.getBytes(buf, index, String.LATIN1);
         } else {
             if (value) {
                 index -= 4;
-                StringUTF16.putCharsAt(buf, index, 't', 'r', 'u', 'e');
+                StringUTF16.putChar(buf, index, 't');
+                StringUTF16.putChar(buf, index + 1, 'r');
+                StringUTF16.putChar(buf, index + 2, 'u');
+                StringUTF16.putChar(buf, index + 3, 'e');
             } else {
                 index -= 5;
-                StringUTF16.putCharsAt(buf, index, 'f', 'a', 'l', 's', 'e');
+                StringUTF16.putChar(buf, index, 'f');
+                StringUTF16.putChar(buf, index + 1, 'a');
+                StringUTF16.putChar(buf, index + 2, 'l');
+                StringUTF16.putChar(buf, index + 3, 's');
+                StringUTF16.putChar(buf, index + 4, 'e');
             }
             index -= prefix.length();
             prefix.getBytes(buf, index, String.UTF16);

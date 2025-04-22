@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,10 +78,6 @@ import jdk.test.whitebox.code.Compiler;
 import jdk.test.whitebox.gc.GC;
 
 public class IncompatibleOptions {
-    static final String COOPS_DUMP_WARNING =
-        "Cannot dump shared archive when UseCompressedOops or UseCompressedClassPointers is off";
-    static final String GC_WARNING =
-        "Archived java heap is not supported";
     static final String OBJ_ALIGNMENT_MISMATCH =
         "The shared archive file's ObjectAlignmentInBytes of .* does not equal the current ObjectAlignmentInBytes of";
     static final String COMPACT_STRING_MISMATCH =

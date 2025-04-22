@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,10 @@
 # questions.
 #
 
-ifndef _FIND_TESTS_GMK
-_FIND_TESTS_GMK := 1
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
 
-# This makefile can be called directly to just trigger generation of the cache
-# makefile. If so, SPEC and MakeBase.gmk need to be included.
-ifeq ($(FINDTESTS_STAND_ALONE), true)
-  include $(SPEC)
-  include MakeBase.gmk
-endif
-
-# Make sure this variable is not lazy evaled.
-ALL_NAMED_TESTS :=
-
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, common/FindTests.gmk))
+################################################################################
 
 # TEST_BASEDIRS might have been set by a custom extension
 TEST_BASEDIRS += $(TOPDIR)/test $(TOPDIR)
@@ -69,13 +58,15 @@ ifeq ($(GENERATE_FIND_TESTS_FILE), true)
       $(TOPDIR)/test/make/TestMake.gmk
 	$(call MakeTargetDir)
 	( $(foreach root, $(JTREG_TESTROOTS), \
-	    $(PRINTF) "\n$(root)_JTREG_TEST_GROUPS := " ; \
+	    $(ECHO) ""; \
+	    $(ECHO) -n "$(root)_JTREG_TEST_GROUPS := "; \
 	    $(SED) -n -e 's/^\#.*//g' -e 's/\([^ ]*\)\w*=.*/\1/gp' \
 	      $($(root)_JTREG_GROUP_FILES) \
 	      | $(SORT) -u | $(TR) '\n' ' ' ; \
 	  ) \
 	) > $@
-	$(PRINTF) "\nMAKE_TEST_TARGETS := " >> $@
+	$(ECHO) "" >> $@
+	$(ECHO) -n "MAKE_TEST_TARGETS := " >> $@
 	$(MAKE) -s --no-print-directory $(MAKE_ARGS) \
 	    SPEC=$(SPEC) -f $(TOPDIR)/test/make/TestMake.gmk print-targets \
 	    TARGETS_FILE=$@
@@ -105,4 +96,5 @@ ALL_NAMED_TESTS += failure-handler make
 
 ################################################################################
 
-endif # _FIND_TESTS_GMK
+endif # include guard
+include MakeIncludeEnd.gmk
