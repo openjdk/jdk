@@ -271,16 +271,14 @@ public class RTLScrollers extends JDialog
         });
         robot.delay(100);
 
-        SwingUtilities.invokeAndWait(() -> {
-            try {
-                retVal = rtl.runTests(scrollAmount);
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
+        try {
+            retVal = rtl.runTests(scrollAmount);
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
                 rtl.setVisible(false);
                 rtl.dispose();
-            }
-        });
+            });
+        }
 
         robot.delay(100);
         System.out.println("RTLS.runTest(): " + retVal);
@@ -312,9 +310,8 @@ public class RTLScrollers extends JDialog
         System.out.println("Testing List");
         testComp(list, scrollAmount);
 
-        SwingUtilities.invokeAndWait(() -> {
-            applyComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-        });
+        SwingUtilities.invokeAndWait(() ->
+                applyComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT));
         robot.delay(100);
 
         System.out.println("Testing RTL Table");
@@ -467,9 +464,7 @@ public class RTLScrollers extends JDialog
         // Test acceleration for max scrolling
         // (this part should still work for RTL JList)
         if (scrollAmount == 30) {
-            SwingUtilities.invokeAndWait(() -> {
-                hsb.setValue(hsb.getMinimum());
-            });
+            SwingUtilities.invokeAndWait(() -> hsb.setValue(hsb.getMinimum()));
             robot.delay(100);
             robot.mouseWheel(2);
             robot.mouseWheel(2);
