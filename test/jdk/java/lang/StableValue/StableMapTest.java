@@ -314,7 +314,7 @@ final class StableMapTest {
     record Operation(String name,
                      Consumer<Map<Integer, Integer>> consumer) implements Consumer<Map<Integer, Integer>> {
         @java.lang.Override
-        public void   accept(Map<Integer, Integer> map) { consumer.accept(map); }
+        public void accept(Map<Integer, Integer> map) { consumer.accept(map); }
         @java.lang.Override
         public String toString() { return name; }
     }
