@@ -90,7 +90,6 @@
 #endif
 
 int VM_Version::get_current_sve_vector_length() {
-  assert(VM_Version::supports_sve(), "should not call this");
   return prctl(PR_SVE_GET_VL);
 }
 
