@@ -126,8 +126,8 @@ public final class System {
      * The typical approach to read character data is to wrap {@code System.in}
      * within an {@link java.io.InputStreamReader InputStreamReader} or other object
      * that handles character encoding. If this is done, subsequent reading should
-     * only use the wrapper object; additional operations directly on {@code System.in}
-     * may result in unspecified behavior.
+     * use only the wrapper object; additional operations directly on {@code System.in}
+     * result in unspecified behavior.
      * <p>
      * For handling interactive input, consider using {@link Console}.
      *
