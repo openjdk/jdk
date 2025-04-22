@@ -1945,9 +1945,9 @@ class MutableBigInteger {
             // Initial estimate is the root of the unsigned long value.
             final long x = this.toLong();
             // Use fp arithmetic to get an upper bound of the root
-            final double base = Math.nextUp(x >= 0 ? x : x + 0x1p64);
-            final double exp = Math.nextUp(1.0 / n);
-            long rLong = (long) Math.ceil(Math.nextUp(Math.pow(base, exp)));
+            final double rad = Math.nextUp(x >= 0 ? x : x + 0x1p64);
+            final double approx = n == 3 ? Math.cbrt(rad) : Math.pow(rad, Math.nextUp(1.0 / n));
+            long rLong = (long) Math.ceil(Math.nextUp(approx));
 
             if (BigInteger.bitLengthForLong(rLong) * n <= Long.SIZE) {
                 // Refine the estimate.
@@ -1976,19 +1976,19 @@ class MutableBigInteger {
             int shiftExcess = (int) (shift % n);
 
             // Shift the value into finite double range
-            double base = this.toBigInteger().shiftRight((int) shift).doubleValue();
+            double rad = this.toBigInteger().shiftRight((int) shift).doubleValue();
             // Complete the shift to a multiple of n,
             // avoiding to lose more bits than necessary.
             if (shiftExcess != 0) {
                 int shiftLack = n - shiftExcess;
                 shift += shiftLack; // shift is long, no overflow
-                base /= Double.valueOf("0x1p" + shiftLack);
+                rad /= Double.valueOf("0x1p" + shiftLack);
             }
 
             // Use the root of the shifted value as an estimate.
-            base = Math.nextUp(base);
-            final double exp = Math.nextUp(1.0 / n);
-            r = valueOf(Math.ceil(Math.nextUp(Math.pow(base, exp))));
+            rad = Math.nextUp(rad);
+            final double approx = n == 3 ? Math.cbrt(rad) : Math.pow(rad, Math.nextUp(1.0 / n));
+            r = valueOf(Math.ceil(Math.nextUp(approx)));
 
             // Shift the approximate root back into the original range.
             r.safeLeftShift((int) (shift / n));
