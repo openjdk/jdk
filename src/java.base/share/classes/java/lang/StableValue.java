@@ -644,7 +644,7 @@ public sealed interface StableValue<T>
      * be thrown.
      *
      * @param inputs     the set of (non-null) allowed input values
-     * @param underlying Function used to compute cached values
+     * @param underlying {@code Function} used to compute cached values
      * @param <T>        the type of the input to the returned Function
      * @param <R>        the type of results delivered by the returned Function
      * @throws NullPointerException if the provided set of {@code inputs} contains a
