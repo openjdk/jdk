@@ -32,7 +32,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "jfr/jfrEvents.hpp"
 
-char* TaskTerminator::termination_event_name_prefix = os::strdup("OfferTermination: ");
+char* TaskTerminator::termination_event_name_prefix = os::strdup("Termination: ");
 
 TaskTerminator::DelayContext::DelayContext() {
   _yield_count = 0;

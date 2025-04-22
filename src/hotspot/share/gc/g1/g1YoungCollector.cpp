@@ -623,6 +623,7 @@ protected:
                              G1GCPhaseTimes::GCParPhases objcopy_phase,
                              G1GCPhaseTimes::GCParPhases termination_phase) {
     G1GCPhaseTimes* p = _g1h->phase_times();
+    _terminator.set_task_name(G1GCPhaseTimes::phase_name(objcopy_phase));
 
     Ticks start = Ticks::now();
     G1ParEvacuateFollowersClosure cl(_g1h, pss, _task_queues, &_terminator, objcopy_phase);
@@ -667,7 +668,6 @@ public:
     _task_queues(task_queues),
     _terminator(num_workers, _task_queues),
     _pinned_regions_recorded(false) {
-    _terminator.set_task_name(name);
   }
 
   void work(uint worker_id) {
@@ -950,7 +950,7 @@ public:
     : RefProcProxyTask("G1STWRefProcProxyTask", max_workers),
       _g1h(g1h),
       _pss(pss),
-      _terminator(max_workers, &task_queues, this->name()),
+      _terminator(max_workers, &task_queues),
       _task_queues(task_queues) {}
 
   void work(uint worker_id) override {
@@ -963,6 +963,7 @@ public:
     G1STWIsAliveClosure is_alive(&_g1h);
     G1CopyingKeepAliveClosure keep_alive(&_g1h, pss);
     G1EnqueueDiscoveredFieldClosure enqueue(&_g1h, pss);
+    _terminator.set_task_name(G1GCPhaseTimes::phase_name(G1GCPhaseTimes::ObjCopy));
     G1ParEvacuateFollowersClosure complete_gc(&_g1h, pss, &_task_queues, _tm == RefProcThreadModel::Single ? nullptr : &_terminator, G1GCPhaseTimes::ObjCopy);
     _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, &complete_gc);
 

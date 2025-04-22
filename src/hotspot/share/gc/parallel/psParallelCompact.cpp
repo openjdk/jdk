@@ -1793,8 +1793,7 @@ public:
   FillDensePrefixAndCompactionTask(uint active_workers) :
       WorkerTask("FillDensePrefixAndCompactionTask"),
       _num_workers(active_workers),
-      _terminator(active_workers, ParCompactionManager::region_task_queues()) {
-    _terminator.set_task_name(this->name());
+      _terminator(active_workers, ParCompactionManager::region_task_queues(), this->name()) {
   }
 
   virtual void work(uint worker_id) {

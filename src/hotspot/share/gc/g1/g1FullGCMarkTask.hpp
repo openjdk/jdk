@@ -39,7 +39,7 @@ class G1FullGCMarkTask : public G1FullGCTask {
 
 public:
   G1FullGCMarkTask(G1FullCollector* collector);
-  void work(uint worker_id) override;
+  void work(uint worker_id);
 };
 
 #endif // SHARE_GC_G1_G1FULLGCMARKTASK_HPP
