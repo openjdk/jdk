@@ -266,13 +266,15 @@ private:
 // See description at top of this file.
 //
 // There are 3 tyes of edges:
-// - req:                        data edges, corresponding to C2 IR Node data edges.
-// - strong memory dependencies: memory edges that must be respected when scheduling.
-// - weak memory dependencies:   memory edges that can be violated, but if violated then
+// - data edges:                 corresponding to C2 IR Node data edges, except control
+//                               and memory.
+// - strong memory edges:        memory edges that must be respected when scheduling.
+// - weak memory edges:          memory edges that can be violated, but if violated then
 //                               corresponding aliasing analysis runtime checks must be
 //                               inserted.
 //
-// Strong dependencies: union of req and strong memory dependencies.
+// Strong edges: union of data edges and strong memory dependencies.
+//               These must be respected by scheduling in all cases.
 //
 // The C2 IR Node memory edges essencially define a linear order of all memory operations
 // (only Loads with the same memory input can be executed in an arbitrary order). This is
@@ -287,28 +289,27 @@ public:
   const VTransformNodeIDX _idx;
 
 private:
-  // TODO: consider renaming to make data and memory more explicit!
   // We split _in into 3 sections:
-  // - req (data dependencies):     _in[0              .. _req-1]
-  // - strong memory dependencies:  _in[_req           .. _in_strong_dep-1]
-  // - weak memory dependencies:    _in[_in_strong_dep .. _len-1]
+  // - data edges (req):     _in[0                           .. _req-1]
+  // - strong memory edges:  _in[_req                        .. _in_end_strong_memory_edges-1]
+  // - weak memory edges:    _in[_in_end_strong_memory_edges .. ]
   const uint _req;
-  uint _in_strong_dep;
+  uint _in_end_strong_memory_edges;
   GrowableArray<VTransformNode*> _in;
 
   // We split _out into 2 sections:
-  // - strong dependencies:  _out[0               .. _out_strong_dep-1]
-  // - weak dependencies:    _out[_out_strong_dep .. _len-1]
-  uint _out_strong_dep;
+  // - strong edges:         _out[0                     .. _out_end_strong_edges-1]
+  // - weak memory edges:    _out[_out_end_strong_edges .. _len-1]
+  uint _out_end_strong_edges;
   GrowableArray<VTransformNode*> _out;
 
 public:
   VTransformNode(VTransform& vtransform, const uint req) :
     _idx(vtransform.graph().new_idx()),
     _req(req),
-    _in_strong_dep(req),
+    _in_end_strong_memory_edges(req),
     _in(vtransform.arena(),  req, req, nullptr),
-    _out_strong_dep(0),
+    _out_end_strong_edges(0),
     _out(vtransform.arena(), 4, 0, nullptr)
   {
     vtransform.graph().add_vtnode(this);
@@ -331,16 +332,16 @@ public:
 
   void add_strong_memory_dependency(VTransformNode* n) {
     assert(n != nullptr, "no need to add nullptr");
-    if (_in_strong_dep < (uint)_in.length()) {
-      // Put n in place of first weak dependency, and move weak
-      // the weak dependency to the end.
-      VTransformNode* first_weak = _in.at(_in_strong_dep);
-      _in.at_put(_in_strong_dep, n);
+    if (_in_end_strong_memory_edges < (uint)_in.length()) {
+      // Put n in place of first weak memory edge, and move
+      // the weak memory edge to the end.
+      VTransformNode* first_weak = _in.at(_in_end_strong_memory_edges);
+      _in.at_put(_in_end_strong_memory_edges, n);
       _in.push(first_weak);
     } else {
       _in.push(n);
     }
-    _in_strong_dep++;
+    _in_end_strong_memory_edges++;
     n->add_out_strong(this);
   }
 
@@ -351,16 +352,16 @@ public:
   }
 
   void add_out_strong(VTransformNode* n) {
-    if (_out_strong_dep < (uint)_out.length()) {
-      // Put n in place of first weak dependency, and move weak
-      // the weak dependency to the end.
-      VTransformNode* first_weak = _out.at(_out_strong_dep);
-      _out.at_put(_out_strong_dep, n);
+    if (_out_end_strong_edges < (uint)_out.length()) {
+      // Put n in place of first weak memory edge, and move
+      // the weak memory edge to the end.
+      VTransformNode* first_weak = _out.at(_out_end_strong_edges);
+      _out.at_put(_out_end_strong_edges, n);
       _out.push(first_weak);
     } else {
       _out.push(n);
     }
-    _out_strong_dep++;
+    _out_end_strong_edges++;
   }
 
   void add_out_weak(VTransformNode* n) {
@@ -368,8 +369,8 @@ public:
   }
 
   uint req() const { return _req; }
-  uint out_strongs() const { return _out_strong_dep; }
-  uint out_weaks() const { return _out.length() - _out_strong_dep; }
+  uint out_strongs() const { return _out_end_strong_edges; }
+  uint out_weaks() const { return _out.length() - _out_end_strong_edges; }
 
   VTransformNode* in_req(uint i) const {
     assert(i < _req, "must be a req");
@@ -377,17 +378,17 @@ public:
   }
 
   VTransformNode* out_strong(uint i) const {
-    assert(i < out_strongs(), "must be a strong dependency");
+    assert(i < out_strongs(), "must be a strong memory edge or data edge");
     return _out.at(i);
   }
 
   VTransformNode* out_weak(uint i) const {
-    assert(i < out_weaks(), "must be a strong dependency");
-    return _out.at(_out_strong_dep + i);
+    assert(i < out_weaks(), "must be a strong memory edge");
+    return _out.at(_out_end_strong_edges + i);
   }
 
   bool has_strong_dependency() const {
-    for (uint i = 0; i < _in_strong_dep; i++) {
+    for (uint i = 0; i < _in_end_strong_memory_edges; i++) {
       if (_in.at(i) != nullptr) { return true; }
     }
     return false;
