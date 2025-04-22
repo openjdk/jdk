@@ -158,11 +158,11 @@ size_t ZHeap::unsafe_max_tlab_alloc() const {
   return MIN2(size, max_tlab_size());
 }
 
-void ZHeap::update_tlab_usage(size_t current_used) {
+void ZHeap::update_tlab_usage(size_t used) {
   const size_t old_used = _tlab_usage.used();
   const size_t old_capacity = _tlab_usage.capacity();
 
-  _tlab_usage.update(current_used);
+  _tlab_usage.update(used);
 
   log_debug(gc, tlab)("TLAB usage update: used %zuM -> %zuM, capacity: %zuM -> %zuM",
                       old_used / M,
