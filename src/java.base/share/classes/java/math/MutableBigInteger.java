@@ -1997,12 +1997,13 @@ class MutableBigInteger {
             if (rToN.subtract(this) <= 0)
                 return r;
 
-            // compute r - ceil((r^n - this) / (n * r^(n - 1)))
+            // compute r - ceil((r^n - this) / (n * r^(n-1)))
             MutableBigInteger q1 = new MutableBigInteger();
             MutableBigInteger delta = new MutableBigInteger();
-            // Don't use conditional-or to ensure to do both divisions
-            if (rToN.divideOneWord(n, q1) != 0
-                    | !q1.divide(new MutableBigInteger(rToN1.mag), delta).isZero())
+            // Don't use conditional-or, in order to do both divisions
+            // and make delta == (r^n - this) / (n * r^(n-1))
+            if ((rToN.divideOneWord(n, q1) != 0)
+                    | (!q1.divide(new MutableBigInteger(rToN1.mag), delta).isZero()))
                 r.subtract(ONE);
 
             r.subtract(delta);
