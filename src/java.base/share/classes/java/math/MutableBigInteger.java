@@ -1914,8 +1914,8 @@ class MutableBigInteger {
     }
 
     /**
-     * Calculate the integer {@code n}th root {@code floor(nthRoot(this, n))} where
-     * {@code nthRoot(., n)} denotes the mathematical {@code n}th root. The contents of
+     * Calculate the integer {@code n}th root {@code floor(nthRoot(this, n))} and the remainder,
+     * where {@code nthRoot(., n)} denotes the mathematical {@code n}th root. The contents of
      * {@code this} are <b>not</b> changed. The value of {@code this} is assumed
      * to be non-negative and the root degree {@code n >= 3}.
      *
@@ -1925,17 +1925,20 @@ class MutableBigInteger {
      * Here</a> is a proof for the convergence of the recurrence used by the
      * algorithm.
      *
-     * @return the integer {@code n}th of {@code this}
+     * @return the integer {@code n}th of {@code this} and the remainder
      */
-    MutableBigInteger nthRoot(int n) {
+    MutableBigInteger[] nthRootRem(int n) {
         // Special cases.
         if (this.isZero() || this.isOne())
-            return this;
+            return new MutableBigInteger[] { this, new MutableBigInteger() };
 
         final int bitLength = (int) this.bitLength();
         // if this < 2^n, result is unity
-        if (bitLength <= n)
-            return new MutableBigInteger(1);
+        if (bitLength <= n) {
+            MutableBigInteger rem = new MutableBigInteger(this);
+            rem.subtract(ONE);
+            return new MutableBigInteger[] { new MutableBigInteger(1), rem };
+        }
 
         MutableBigInteger r;
         if (bitLength <= Long.SIZE) {
@@ -1952,7 +1955,9 @@ class MutableBigInteger {
                     long rToN1 = BigInteger.unsignedLongPow(rLong, n - 1);
                     long rToN = rToN1 * rLong;
                     if (Long.compareUnsigned(rToN, x) <= 0)
-                        return new MutableBigInteger(rLong);
+                        return new MutableBigInteger[] {
+                        	new MutableBigInteger(rLong), new MutableBigInteger(x - rToN)
+                        };
 
                     // compute rLong - ceil((rToN - x) / (n * rToN1))
                     long dividend = rToN - x, divisor = n * rToN1;
@@ -1993,16 +1998,16 @@ class MutableBigInteger {
         do {
             BigInteger rBig = r.toBigInteger();
             BigInteger rToN1 = rBig.pow(n - 1);
-            MutableBigInteger rToN = new MutableBigInteger(rToN1.multiply(rBig).mag);
-            if (rToN.subtract(this) <= 0)
-                return r;
+            MutableBigInteger rem = new MutableBigInteger(rToN1.multiply(rBig).mag);
+            if (rem.subtract(this) <= 0)
+                return new MutableBigInteger[] { r, rem };
 
             // compute r - ceil((r^n - this) / (n * r^(n-1)))
             MutableBigInteger q1 = new MutableBigInteger();
             MutableBigInteger delta = new MutableBigInteger();
             // Don't use conditional-or, in order to do both divisions
             // and make delta == (r^n - this) / (n * r^(n-1))
-            if ((rToN.divideOneWord(n, q1) != 0)
+            if ((rem.divideOneWord(n, q1) != 0)
                     | (!q1.divide(new MutableBigInteger(rToN1.mag), delta).isZero()))
                 r.subtract(ONE);
 
