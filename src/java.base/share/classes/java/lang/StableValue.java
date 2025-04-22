@@ -116,9 +116,9 @@ import java.util.function.Supplier;
  * <p>
  * The {@code getLogger()} method calls {@code logger.orElseSet()} on the stable value to
  * retrieve its content. If the stable value is <em>unset</em>, then {@code orElseSet()}
- * evaluates the given supplier, and sets the content to the result; the content is then returned to the client. In other
- * words, {@code orElseSet()} guarantees that a stable value's content is <em>set</em>
- * before it returns.
+ * evaluates the given supplier, and sets the content to the result; the content is then
+ * returned to the client. In other words, {@code orElseSet()} guarantees that a
+ * stable value's content is <em>set</em> before it returns.
  * <p>
  * Furthermore, {@code orElseSet()} guarantees that out of one or more suppliers provided,
  * only at most one is ever evaluated and that one is only ever evaluated once,
@@ -424,11 +424,12 @@ import java.util.function.Supplier;
  *           Be advised that reachable stable values will hold their set content until
  *           the stable value itself is collected.
  *           A {@code StableValue} that has a type parameter {@code T} that is an array
- *           type (of arbitrary rank) will only allow the JVM to treat the <em>array reference</em>
- *           as a stable value but <em>not its components</em>. Clients can instead use
- *           {@linkplain #list(int, IntFunction) a stable list} of arbitrary depth, which
- *           provides stable components. More generally, a stable value can hold other
- *           stable values of arbitrary depth and still provide transitive constantness.
+ *           type (of arbitrary rank) will only allow the JVM to treat the
+ *           <em>array reference</em> as a stable value but <em>not its components</em>.
+ *           Instead, a {@linkplain #list(int, IntFunction) a stable list} of arbitrary
+ *           depth can be used, which provides stable components. More generally, a
+ *           stable value can hold other stable values of arbitrary depth and still
+ *           provide transitive constantness.
  *
  * @implNote Stable values, functions and collections are not {@link Serializable}.
  *
@@ -452,8 +453,8 @@ public sealed interface StableValue<T>
      * @return {@code true} if the content of this StableValue was set to the
      *         provided {@code content}, {@code false} otherwise
      * @param content to set
-     * @throws IllegalStateException if a supplier invoked by {@link #orElseSet(Supplier)} recursively
-     *         attempts to set this stable value by calling this method.
+     * @throws IllegalStateException if a supplier invoked by {@link #orElseSet(Supplier)}
+     *         recursively attempts to set this stable value by calling this method.
      */
     boolean trySet(T content);
 
@@ -592,8 +593,8 @@ public sealed interface StableValue<T>
      * input, records the values of the provided {@code underlying}
      * function upon being first accessed via the returned function's
      * {@linkplain IntFunction#apply(int) apply()} method. If the returned function is
-     * invoked with an input that is not in the range {@code [0, size)}, an {@link IllegalArgumentException}
-     * will be thrown.
+     * invoked with an input that is not in the range {@code [0, size)}, an
+     * {@link IllegalArgumentException} will be thrown.
      * <p>
      * The provided {@code underlying} function is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
