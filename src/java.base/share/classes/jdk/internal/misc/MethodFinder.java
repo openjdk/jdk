@@ -82,12 +82,13 @@ public class MethodFinder {
      * @jls 12.1.4 Invoke a main method
      */
     public static Method findMainMethod(Class<?> cls) {
-        Method mainMethod = JLA.findMethod(cls, true, "main", String[].class);
+        Method mainMethod;
+//        Method mainMethod = JLA.findMethod(cls, true, "main", String[].class);
 
-        if (mainMethod == null) {
+//        if (mainMethod == null) {
             //if not public method, try to lookup a non-public one
             mainMethod = JLA.findMethod(cls, false, "main", String[].class);
-        }
+//        }
 
         if (mainMethod == null) {
             mainMethod = JLA.findMethod(cls, false, "main");
