@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #define CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP
 
 #include "asm/assembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
@@ -1315,6 +1316,10 @@ public:
 
   // Check if branches to the non nmethod section require a far jump
   static bool codestub_branch_needs_far_jump() {
+    if (AOTCodeCache::is_on_for_dump()) {
+      // To calculate far_codestub_branch_size correctly.
+      return true;
+    }
     return CodeCache::max_distance_to_non_nmethod() > branch_range;
   }
 
