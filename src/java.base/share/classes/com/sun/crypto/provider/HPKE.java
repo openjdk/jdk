@@ -251,11 +251,11 @@ public class HPKE extends CipherSpi {
     }
 
     //@Override
-    protected SecretKey engineExportKey(byte[] context, String algorithm, int length) {
+    protected SecretKey engineExportKey(String algorithm, byte[] context, int length) {
         if (state == BEGIN) {
             throw new IllegalStateException("State: " + state);
         } else {
-            return impl.context.ExportKey(context, algorithm, length);
+            return impl.context.ExportKey(algorithm, context, length);
         }
     }
 
@@ -340,7 +340,10 @@ public class HPKE extends CipherSpi {
                 this.exporter_secret = exporter_secret;
             }
 
-            SecretKey ExportKey(byte[] exporter_context, String algorithm, int L) {
+            SecretKey ExportKey(String algorithm, byte[] exporter_context, int L) {
+                if (exporter_context == null) {
+                    throw new IllegalArgumentException("Null exporter_context");
+                }
                 try {
                     var kdf = KDF.getInstance(kdfAlg);
                     return kdf.deriveKey(algorithm, DHKEM.labeledExpand(
@@ -352,6 +355,9 @@ public class HPKE extends CipherSpi {
             }
 
             byte[] ExportData(byte[] exporter_context, int L) {
+                if (exporter_context == null) {
+                    throw new IllegalArgumentException("Null exporter_context");
+                }
                 try {
                     var kdf = KDF.getInstance(kdfAlg);
                     return kdf.deriveData(DHKEM.labeledExpand(
