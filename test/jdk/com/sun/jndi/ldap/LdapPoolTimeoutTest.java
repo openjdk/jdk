@@ -30,10 +30,8 @@
  * @run testng/othervm LdapPoolTimeoutTest
  */
 
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.directory.InitialDirContext;
@@ -44,13 +42,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.TimeUnit;
 
 import static jdk.test.lib.Utils.adjustTimeout;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.expectThrows;
 
 public class LdapPoolTimeoutTest {
     /*
