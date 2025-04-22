@@ -21,68 +21,66 @@
  * questions.
  */
 
-import java.awt.Color;
 import java.awt.FlowLayout;
-import java.awt.Point;
-import java.awt.Robot;
+import java.awt.event.ItemListener;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JPasswordField;
-import javax.swing.SwingUtilities;
 
 /*
  * @test
  * @bug 4382819
- * @key headful
  * @summary Tests the correctness of color used for the disabled passwordField.
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main bug4382819
  */
 
 public class bug4382819 {
-    static JFrame mainFrame;
-    static volatile Point p;
+    static JCheckBox enabledCheckBox;
     static JPasswordField passwordField;
 
+    private static final String INSTRUCTIONS = """
+            Clear the "enabled" checkbox.
+            If the JPasswordField's foreground color changes to
+            light gray press Pass. If it stays black press Fail.
+            """;
+
     public static void main(String[] args) throws Exception {
-        try {
-            Robot robot = new Robot();
-            robot.setAutoDelay(250);
-            SwingUtilities.invokeAndWait(() -> createTestUI());
-            robot.waitForIdle();
-            robot.delay(1000);
-
-            SwingUtilities.invokeAndWait(() -> p = passwordField.getLocationOnScreen());
-
-            Color c = robot.getPixelColor(p.x + 10, p.y + 5);
-            robot.waitForIdle();
-
-            SwingUtilities.invokeAndWait(() -> passwordField.setEnabled(false));
-            robot.waitForIdle();
-
-            Color c2 = robot.getPixelColor(p.x + 10, p.y + 5);
-            robot.waitForIdle();
-
-            if (c.equals(c2)) {
-                throw new RuntimeException("Color of disabled password field did not change.\n" +
-                        "Enabled: " + c + "Disabled: " + c2);
-            }
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (mainFrame != null) {
-                    mainFrame.dispose();
-                }
-            });
-        }
+        PassFailJFrame.builder()
+                .instructions(INSTRUCTIONS)
+                .columns(50)
+                .testUI(bug4382819::createTestUI)
+                .build()
+                .awaitAndCheck();
     }
 
-    public static void createTestUI() {
-        mainFrame = new JFrame("bug4382819");
-        passwordField = new JPasswordField();
-        mainFrame.setSize(300, 100);
-        mainFrame.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+    public static JFrame createTestUI() {
+        JFrame mainFrame = new JFrame("bug4382819");
+        enabledCheckBox = new javax.swing.JCheckBox();
+        enabledCheckBox.setSelected(true);
+        enabledCheckBox.setText("enabled");
+        enabledCheckBox.setActionCommand("enabled");
+        mainFrame.add(enabledCheckBox);
+
+        passwordField = new javax.swing.JPasswordField();
         passwordField.setText("blahblahblah");
         mainFrame.add(passwordField);
+        SymItem lSymItem = new SymItem();
+        enabledCheckBox.addItemListener(lSymItem);
 
-        mainFrame.setLocationRelativeTo(null);
-        mainFrame.setVisible(true);
+        mainFrame.setSize(300, 100);
+        mainFrame.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        return mainFrame;
+    }
+
+    static class SymItem implements ItemListener {
+        public void itemStateChanged(java.awt.event.ItemEvent event) {
+            Object object = event.getSource();
+            if (object == enabledCheckBox) {
+                passwordField.setEnabled(enabledCheckBox.isSelected());
+            }
+        }
     }
 }
+
