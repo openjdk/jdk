@@ -44,15 +44,15 @@ public class TooltipTest {
             still in order to test HTML in JToolTip. If the tooltip has some
             text which is red then test passes, otherwise it fails (bug 4207474).
 
-        2.  Move the mouse over the button labeled "Long tip". If the
-            last letter of the tooltip that appears is not all visible,
+        2.  Move the mouse over the button labeled "Long tip".
+            If the last letter of the tooltip appears clipped,
             then the test fails. If you can see the entire last character,
             then the test passes (bug 4218495).
 
         3.  Verify that "M" is underlined on the button labeled "Mnemonic"
             Move the mouse pointer over the button labeled "Mnemonic" and look
             at tooltip when it appears. It should read "hint".
-            Test passes if it is so and fails otherwise (bug 4375928).
+            If the above is true test passes else test fails (bug 4375928).
         """;
 
     public static void main(String[] args) throws Exception {
