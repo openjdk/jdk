@@ -30,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -68,16 +67,8 @@ public class Http2TestServer implements AutoCloseable {
 
     private static ExecutorService createExecutor(String name) {
         String threadNamePrefix = "%s-pool".formatted(name == null ? "TestServer" : name);
-        ThreadFactory threadFactory = createThreadFactory(threadNamePrefix);
+        ThreadFactory threadFactory = Thread.ofPlatform().name(threadNamePrefix, 0).factory();
         return Executors.newCachedThreadPool(threadFactory);
-    }
-
-    private static ThreadFactory createThreadFactory(String threadNamePrefix) {
-        AtomicInteger threadCounter = new AtomicInteger();
-        return (Runnable task) -> {
-            String name = "%s-%d".formatted(threadNamePrefix, threadCounter.incrementAndGet());
-            return new Thread(task, name);
-        };
     }
 
     public Http2TestServer(String serverName, boolean secure, int port) throws Exception {
