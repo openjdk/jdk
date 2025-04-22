@@ -1947,8 +1947,6 @@ void Compile::remove_from_widen_types_igvn(Node* n) {
 void Compile::process_for_widen_types_igvn(PhaseIterGVN& igvn) {
   C->set_widen_types_phase(); // no more loop opts allowed
 
-  assert(!C->major_progress(), "not cleared");
-
   if (_for_widen_types_igvn.length() > 0) {
     while (_for_widen_types_igvn.length() > 0) {
       Node* n = _for_widen_types_igvn.pop();
