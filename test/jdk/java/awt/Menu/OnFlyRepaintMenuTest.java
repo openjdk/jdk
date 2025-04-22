@@ -62,7 +62,6 @@ public class OnFlyRepaintMenuTest {
     static Frame initialize() {
         Frame f = new Frame("OnFly Menu Repaint Test");
 
-        f.setLayout(new BorderLayout());
         f.setSize(200, 100);
 
         MenuBar mb = new MenuBar();
