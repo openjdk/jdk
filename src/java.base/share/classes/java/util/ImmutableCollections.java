@@ -1625,9 +1625,7 @@ class ImmutableCollections {
                 final StableValueImpl<V>[] values = delegate.values().toArray(new IntFunction<StableValueImpl<V>[]>() {
                     @Override
                     public StableValueImpl<V>[] apply(int len) {
-                        @SuppressWarnings("unchecked")
-                        var array = (StableValueImpl<V>[]) Array.newInstance(StableValueImpl.class, len);
-                        return array;
+                        return new StableValueImpl[len];
                     }
                 });
                 return StableUtil.renderElements(StableMap.this, "StableMap", values);

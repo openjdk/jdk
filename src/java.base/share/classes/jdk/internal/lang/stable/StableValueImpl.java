@@ -93,7 +93,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @Override
     public void setOrThrow(T content) {
         if (!trySet(content)) {
-            // Neither the set content nor the provided content is reveled in the
+            // Neither the set content nor the provided content is revealed in the
             // exception message as it might be sensitive.
             throw new IllegalStateException("The content is already set");
         }

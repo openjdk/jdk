@@ -137,7 +137,7 @@ final class StableMapTest {
         assertEquals("{" + KEY + "=" + KEY + "}", map.toString());
         String actual = newMap().toString();
         assertTrue(actual.startsWith("{"));
-        for (int key:KEYS) {
+        for (int key : KEYS) {
             assertTrue(actual.contains(key + "=.unset"));
         }
         assertTrue(actual.endsWith("}"));
@@ -314,31 +314,31 @@ final class StableMapTest {
     record Operation(String name,
                      Consumer<Map<Integer, Integer>> consumer) implements Consumer<Map<Integer, Integer>> {
         @java.lang.Override
-        public void   accept(Map<Integer, Integer> map) { consumer.accept(map); }
+        public void accept(Map<Integer, Integer> map) { consumer.accept(map); }
         @java.lang.Override
         public String toString() { return name; }
     }
 
     static Stream<Operation> nullAverseOperations() {
         return Stream.of(
-                new Operation("forEach",     m -> m.forEach(null))
+            new Operation("forEach",     m -> m.forEach(null))
         );
     }
 
     static Stream<Operation> unsupportedOperations() {
         return Stream.of(
-                new Operation("clear",             Map::clear),
-                new Operation("compute",           m -> m.compute(KEY, (_, _) -> 1)),
-                new Operation("computeIfAbsent",   m -> m.computeIfAbsent(KEY, _ -> 1)),
-                new Operation("computeIfPresent",  m -> m.computeIfPresent(KEY, (_, _) -> 1)),
-                new Operation("merge",             m -> m.merge(KEY, KEY, (a, _) -> a)),
-                new Operation("put",               m -> m.put(0, 0)),
-                new Operation("putAll",            m -> m.putAll(Map.of())),
-                new Operation("remove1",           m -> m.remove(KEY)),
-                new Operation("remove2",           m -> m.remove(KEY, KEY)),
-                new Operation("replace2",          m -> m.replace(KEY, 1)),
-                new Operation("replace3",          m -> m.replace(KEY, KEY, 1)),
-                new Operation("replaceAll",        m -> m.replaceAll((a, _) -> a))
+            new Operation("clear",             Map::clear),
+            new Operation("compute",           m -> m.compute(KEY, (_, _) -> 1)),
+            new Operation("computeIfAbsent",   m -> m.computeIfAbsent(KEY, _ -> 1)),
+            new Operation("computeIfPresent",  m -> m.computeIfPresent(KEY, (_, _) -> 1)),
+            new Operation("merge",             m -> m.merge(KEY, KEY, (a, _) -> a)),
+            new Operation("put",               m -> m.put(0, 0)),
+            new Operation("putAll",            m -> m.putAll(Map.of())),
+            new Operation("remove1",           m -> m.remove(KEY)),
+            new Operation("remove2",           m -> m.remove(KEY, KEY)),
+            new Operation("replace2",          m -> m.replace(KEY, 1)),
+            new Operation("replace3",          m -> m.replace(KEY, KEY, 1)),
+            new Operation("replaceAll",        m -> m.replaceAll((a, _) -> a))
         );
     }
 

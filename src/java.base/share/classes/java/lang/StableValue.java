@@ -115,7 +115,7 @@ import java.util.function.Supplier;
  * <p>
  * The {@code getLogger()} method calls {@code logger.orElseSet()} on the stable value to
  * retrieve its content. If the stable value is <em>unset</em>, then {@code orElseSet()}
- * evaluates and sets the content; the content is then returned to the client. In other
+ * evaluates the given supplier, and sets the content to the result; the content is then returned to the client. In other
  * words, {@code orElseSet()} guarantees that a stable value's content is <em>set</em>
  * before it returns.
  * <p>
@@ -278,7 +278,7 @@ import java.util.function.Supplier;
  *
  * <h2 id="composition">Composing stable values</h2>
  * A stable value can depend on other stable values, forming a dependency graph
- * that can be lazily computed but where access to individual elements still can be
+ * that can be lazily computed but where access to individual elements can still be
  * performant. In the following example, a single {@code Foo} and a {@code Bar}
  * instance (that is dependent on the {@code Foo} instance) are lazily created, both of
  * which are held by stable values:
@@ -382,7 +382,7 @@ import java.util.function.Supplier;
  * <p>
  * The method {@link #orElseSet(Supplier)} guarantees that the provided
  * {@linkplain Supplier} is invoked successfully at most once even under race.
- * Invocations of {@link #setOrThrow(Object)} forms a total order of zero or more
+ * Invocations of {@link #setOrThrow(Object)} form a total order of zero or more
  * exceptional invocations followed by zero (if the content was already set) or one
  * successful invocation. Since stable functions and stable collections are built on top
  * of {@linkplain StableValue#orElseSet(Supplier) orElseSet()} they too are
@@ -392,8 +392,8 @@ import java.util.function.Supplier;
  * The _content_ of a set stable value is treated as a constant by the JVM, provided that
  * the reference to the stable value is also constant (e.g. in cases where the
  * stable value itself is stored in a {@code static final} field). Stable functions and
- * collections are built on top of StableValue. As such, they are also treated as
- * constants by the JVM.
+ * collections are built on top of StableValue. As such, their contents is also treated as
+ * constant by the JVM.
  * <p>
  * This means that, at least in some cases, access to the content of a stable value
  * enjoys the same constant-folding optimizations that are available when accessing
@@ -450,8 +450,8 @@ public sealed interface StableValue<T>
      * @return {@code true} if the content of this StableValue was set to the
      *         provided {@code content}, {@code false} otherwise
      * @param content to set
-     * @throws IllegalStateException if this method is invoked directly by a supplier
-     *         provided to the {@link #orElseSet(Supplier)} method.
+     * @throws IllegalStateException if a supplier invoked by {@link #orElseSet(Supplier)} recursively
+     *         attempts to set this stable value by calling this method.
      */
     boolean trySet(T content);
 
@@ -589,7 +589,7 @@ public sealed interface StableValue<T>
      * input, records the values of the provided {@code underlying}
      * function upon being first accessed via the returned function's
      * {@linkplain IntFunction#apply(int) apply()} method. If the returned function is
-     * invoked with an input that is not allowed, an {@link IllegalArgumentException}
+     * invoked with an input that is not in the range {@code [0, size)}, an {@link IllegalArgumentException}
      * will be thrown.
      * <p>
      * The provided {@code underlying} function is guaranteed to be successfully invoked
@@ -603,7 +603,7 @@ public sealed interface StableValue<T>
      * to the initial caller and no content is recorded.
      * <p>
      * If the provided {@code underlying} function recursively calls the returned
-     * function for the same index, an {@linkplain IllegalStateException} will
+     * function for the same input, an {@linkplain IllegalStateException} will
      * be thrown.
      *
      * @param size       the size of the allowed inputs in {@code [0, size)}
@@ -627,7 +627,7 @@ public sealed interface StableValue<T>
      * input in the given set of {@code inputs}, records the values of the provided
      * {@code underlying} function upon being first accessed via the returned function's
      * {@linkplain Function#apply(Object) apply()} method. If the returned function is
-     * invoked with an input that is not allowed, an {@link IllegalArgumentException}
+     * invoked with an input that is not in {@code inputs}, an {@link IllegalArgumentException}
      * will be thrown.
      * <p>
      * The provided {@code underlying} function is guaranteed to be successfully invoked
@@ -644,7 +644,7 @@ public sealed interface StableValue<T>
      * be thrown.
      *
      * @param inputs     the set of (non-null) allowed input values
-     * @param underlying Function used to compute cached values
+     * @param underlying {@code Function} used to compute cached values
      * @param <T>        the type of the input to the returned Function
      * @param <R>        the type of results delivered by the returned Function
      * @throws NullPointerException if the provided set of {@code inputs} contains a
