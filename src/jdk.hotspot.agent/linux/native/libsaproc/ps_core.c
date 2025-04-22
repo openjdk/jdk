@@ -318,7 +318,7 @@ static bool read_core_segments(struct ps_prochandle* ph, ELF_EHDR* core_ehdr) {
    ELF_PHDR* phbuf = NULL;
    ELF_PHDR* core_php = NULL;
 
-   if ((phbuf =  read_program_header_table(ph->core->core_fd, core_ehdr)) == NULL) {
+   if ((phbuf = read_program_header_table(ph->core->core_fd, core_ehdr)) == NULL) {
       print_error("failed to read program header table\n");
       return false;
    }
