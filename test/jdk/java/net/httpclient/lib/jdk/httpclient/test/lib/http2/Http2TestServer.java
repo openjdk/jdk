@@ -67,6 +67,20 @@ public class Http2TestServer implements AutoCloseable {
     // request approver which takes the server connection key as the input
     private volatile Predicate<String> newRequestApprover;
 
+    private static ExecutorService createExecutor(String name) {
+        String threadNamePrefix = "http2-test-server-worker" + (name != null ? "[%s]".formatted(name) : "");
+        ThreadFactory threadFactory = createThreadFactory(threadNamePrefix);
+        return Executors.newCachedThreadPool(threadFactory);
+    }
+
+    private static ThreadFactory createThreadFactory(String threadNamePrefix) {
+        AtomicInteger threadCounter = new AtomicInteger();
+        return (Runnable task) -> {
+            String name = "%s-%d".formatted(threadNamePrefix, threadCounter.incrementAndGet());
+            return new Thread(task, name);
+        };
+    }
+
     public Http2TestServer(String serverName, boolean secure, int port) throws Exception {
         this(serverName, secure, port, null, 50, null, null);
     }
@@ -192,20 +206,6 @@ public class Http2TestServer implements AutoCloseable {
         this.handlers = Collections.synchronizedMap(new HashMap<>());
         this.properties = properties == null ? new Properties() : properties;
         this.connections = ConcurrentHashMap.newKeySet();
-    }
-
-    private static ExecutorService createExecutor(String name) {
-        String threadNamePrefix = "http2-test-server-worker" + (name != null ? "[%s]".formatted(name) : "");
-        ThreadFactory threadFactory = createThreadFactory(threadNamePrefix);
-        return Executors.newCachedThreadPool(threadFactory);
-    }
-
-    private static ThreadFactory createThreadFactory(String threadNamePrefix) {
-        AtomicInteger threadCounter = new AtomicInteger();
-        return (Runnable task) -> {
-            String name = "%s-%d".formatted(threadNamePrefix, threadCounter.incrementAndGet());
-            return new Thread(task, name);
-        };
     }
 
     /**
