@@ -392,7 +392,6 @@ java/awt/Modal/MultipleDialogs/MultipleDialogs2Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs3Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs4Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs5Test.java 8198665 macosx-all
-java/awt/Modal/NativeDialogToFrontBackTest.java 7188049 windows-all,linux-all
 java/awt/Mouse/EnterExitEvents/DragWindowOutOfFrameTest.java 8177326 macosx-all
 java/awt/Mouse/EnterExitEvents/ResizingFrameTest.java 8005021 macosx-all
 java/awt/Mouse/EnterExitEvents/FullscreenEnterEventTest.java 8051455 macosx-all
@@ -820,3 +819,4 @@ java/awt/Checkbox/CheckboxBoxSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxIndicatorSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxNullLabelTest.java 8340870 windows-all
 java/awt/dnd/WinMoveFileToShellTest.java 8341665 windows-all
+java/awt/Modal/NativeDialogToFrontBackTest.java 7188049 windows-all,linux-all
