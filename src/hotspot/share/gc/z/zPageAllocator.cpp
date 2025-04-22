@@ -1384,7 +1384,7 @@ void ZPageAllocator::update_collection_stats(ZGenerationId id) {
     total_used += partition->_used;
   }
 
-  assert(total_used == _used, "Must be consistent at safepoint %zu == %zu", total_used, _used);
+  assert(total_used == _used, "Must be consistent %zu == %zu", total_used, _used);
 #endif
 
   _collection_stats[(int)id]._used_high = _used;
