@@ -75,6 +75,7 @@ public class MenuActionEventTest {
             enableEvents(AWTEvent.ACTION_EVENT_MASK);
         }
 
+        @Override
         protected void processActionEvent(ActionEvent e) {
             PassFailJFrame.log("_Menu: action event");
             super.processActionEvent(e);
@@ -87,6 +88,7 @@ public class MenuActionEventTest {
             enableEvents(AWTEvent.ACTION_EVENT_MASK);
         }
 
+        @Override
         protected void processActionEvent(ActionEvent e) {
             PassFailJFrame.log("_MenuItem: action event");
             super.processActionEvent(e);
