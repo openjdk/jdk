@@ -32,6 +32,11 @@
  *                   -XX:CompileCommand=dontinline,compiler.escapeAnalysis.TestScalarizeBailout::initializeArray
  *                   -XX:CompileCommand=compileonly,compiler.escapeAnalysis.TestScalarizeBailout::*
  *                   compiler.escapeAnalysis.TestScalarizeBailout
+ * @run main/othervm -Xcomp
+ *                   -XX:-TieredCompilation
+ *                   -XX:CompileCommand=dontinline,compiler.escapeAnalysis.TestScalarizeBailout::initializeArray
+ *                   -XX:CompileCommand=compileonly,compiler.escapeAnalysis.TestScalarizeBailout::*
+ *                   compiler.escapeAnalysis.TestScalarizeBailout
  */
 
 package compiler.escapeAnalysis;
