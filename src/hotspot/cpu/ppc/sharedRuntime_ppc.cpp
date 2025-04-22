@@ -253,7 +253,9 @@ static const RegisterSaver::LiveRegType RegisterSaver_LiveVSRegs[] = {
   RegisterSaver_LiveVSReg( VSR58 ),
   RegisterSaver_LiveVSReg( VSR59 ),
   RegisterSaver_LiveVSReg( VSR60 ),
-  RegisterSaver_LiveVSReg( VSR61 )
+  RegisterSaver_LiveVSReg( VSR61 ),
+  RegisterSaver_LiveVSReg( VSR62 ),
+  RegisterSaver_LiveVSReg( VSR63 )
 };
 
 
