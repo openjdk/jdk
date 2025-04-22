@@ -35,6 +35,10 @@
 #define MPOL_F_ADDR        (1<<1)
 #endif
 
+#ifndef MAP_FIXED_NOREPLACE
+#define MAP_FIXED_NOREPLACE 0x100000
+#endif
+
 class ZSyscall : public AllStatic {
 public:
   static int memfd_create(const char* name, unsigned int flags);

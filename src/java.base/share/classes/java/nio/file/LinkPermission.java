@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,13 @@ import java.security.BasicPermission;
 /**
  * The {@code Permission} class for link creation operations.
  *
- * @apiNote
+ * @deprecated
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  * @since 1.7
  */
+@Deprecated(since="25", forRemoval=true)
 public final class LinkPermission extends BasicPermission {
     @java.io.Serial
     static final long serialVersionUID = -1441492453772213220L;

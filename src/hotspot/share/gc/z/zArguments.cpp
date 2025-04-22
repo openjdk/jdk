@@ -121,9 +121,19 @@ void ZArguments::select_max_gc_threads() {
 void ZArguments::initialize() {
   GCArguments::initialize();
 
-  // Enable NUMA by default
-  if (FLAG_IS_DEFAULT(UseNUMA)) {
-    FLAG_SET_DEFAULT(UseNUMA, true);
+  // NUMA settings
+  if (FLAG_IS_DEFAULT(ZFakeNUMA)) {
+    // Enable NUMA by default
+    if (FLAG_IS_DEFAULT(UseNUMA)) {
+      FLAG_SET_DEFAULT(UseNUMA, true);
+    }
+  } else {
+    if (UseNUMA) {
+      if (!FLAG_IS_DEFAULT(UseNUMA)) {
+        warning("ZFakeNUMA is enabled; turning off UseNUMA");
+      }
+      FLAG_SET_ERGO(UseNUMA, false);
+    }
   }
 
   select_max_gc_threads();

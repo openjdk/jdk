@@ -150,6 +150,11 @@ inline void ObjectMonitor::set_recursions(size_t recursions) {
   _recursions = checked_cast<intx>(recursions);
 }
 
+inline void ObjectMonitor::increment_recursions(JavaThread* current) {
+  assert(has_owner(current), "must be the owner");
+  _recursions++;
+}
+
 // Clear _owner field; current value must match old_value.
 inline void ObjectMonitor::release_clear_owner(JavaThread* old_owner) {
   int64_t old_value = owner_id_from(old_owner);
