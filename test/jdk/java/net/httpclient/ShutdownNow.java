@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,7 @@ public class ShutdownNow implements HttpServerAdapters {
                     Thread.sleep(sleep);
                 }
                 if (i == step) {
-                    out.printf("%d: shutting down client now%n", i, sleep);
+                    out.printf("%d: shutting down client now%n", i);
                     client.shutdownNow();
                 }
                 final int si = i;
@@ -242,7 +242,7 @@ public class ShutdownNow implements HttpServerAdapters {
                     Thread.sleep(sleep);
                 }
                 if (i == step) {
-                    out.printf("%d: shutting down client now%n", i, sleep);
+                    out.printf("%d: shutting down client now%n", i);
                     client.shutdownNow();
                 }
                 final int si = i;

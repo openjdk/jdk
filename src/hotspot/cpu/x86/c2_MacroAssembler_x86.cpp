@@ -476,7 +476,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   Label slow_path;
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     movptr(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), 0);
   }
 
@@ -1132,7 +1132,6 @@ void C2_MacroAssembler::signum_fp(int opcode, XMMRegister dst, XMMRegister zero,
   Label DONE_LABEL;
 
   if (opcode == Op_SignumF) {
-    assert(UseSSE > 0, "required");
     ucomiss(dst, zero);
     jcc(Assembler::equal, DONE_LABEL);    // handle special case +0.0/-0.0, if argument is +0.0/-0.0, return argument
     jcc(Assembler::parity, DONE_LABEL);   // handle special case NaN, if argument NaN, return NaN
@@ -1140,7 +1139,6 @@ void C2_MacroAssembler::signum_fp(int opcode, XMMRegister dst, XMMRegister zero,
     jcc(Assembler::above, DONE_LABEL);
     xorps(dst, ExternalAddress(StubRoutines::x86::vector_float_sign_flip()), noreg);
   } else if (opcode == Op_SignumD) {
-    assert(UseSSE > 1, "required");
     ucomisd(dst, zero);
     jcc(Assembler::equal, DONE_LABEL);    // handle special case +0.0/-0.0, if argument is +0.0/-0.0, return argument
     jcc(Assembler::parity, DONE_LABEL);   // handle special case NaN, if argument NaN, return NaN
@@ -4108,7 +4106,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
     // Fallthru to tail compare
   } else {
 
-    if (UseAVX >= 2 && UseSSE >= 2) {
+    if (UseAVX >= 2) {
       // With AVX2, use 32-byte vector compare
       Label COMPARE_WIDE_VECTORS, BREAK_LOOP;
 
@@ -4255,7 +4253,7 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
 
   // That's it
   bind(DONE);
-  if (UseAVX >= 2 && UseSSE >= 2) {
+  if (UseAVX >= 2) {
     // clean upper bits of YMM registers
     vpxor(vec1, vec1);
     vpxor(vec2, vec2);
@@ -6987,9 +6985,34 @@ void C2_MacroAssembler::vector_saturating_op(int ideal_opc, BasicType elem_bt, X
   }
 }
 
+void C2_MacroAssembler::evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc) {
+  switch(opcode) {
+    case Op_AddVHF: evaddph(dst, src1, src2, vlen_enc); break;
+    case Op_SubVHF: evsubph(dst, src1, src2, vlen_enc); break;
+    case Op_MulVHF: evmulph(dst, src1, src2, vlen_enc); break;
+    case Op_DivVHF: evdivph(dst, src1, src2, vlen_enc); break;
+    default: assert(false, "%s", NodeClassNames[opcode]); break;
+  }
+}
+
+void C2_MacroAssembler::evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, Address src2, int vlen_enc) {
+  switch(opcode) {
+    case Op_AddVHF: evaddph(dst, src1, src2, vlen_enc); break;
+    case Op_SubVHF: evsubph(dst, src1, src2, vlen_enc); break;
+    case Op_MulVHF: evmulph(dst, src1, src2, vlen_enc); break;
+    case Op_DivVHF: evdivph(dst, src1, src2, vlen_enc); break;
+    default: assert(false, "%s", NodeClassNames[opcode]); break;
+  }
+}
+
 void C2_MacroAssembler::scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
-                                          KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc) {
-  if (opcode == Op_MaxHF) {
+                                            KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2) {
+  vector_max_min_fp16(opcode, dst, src1, src2, ktmp, xtmp1, xtmp2, Assembler::AVX_128bit);
+}
+
+void C2_MacroAssembler::vector_max_min_fp16(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                            KRegister ktmp, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc) {
+  if (opcode == Op_MaxVHF || opcode == Op_MaxHF) {
     // Move sign bits of src2 to mask register.
     evpmovw2m(ktmp, src2, vlen_enc);
     // xtmp1 = src2 < 0 ? src2 : src1
@@ -7001,15 +7024,15 @@ void C2_MacroAssembler::scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegi
     // the second source operand is returned. If only one value is a NaN (SNaN or QNaN) for this instruction,
     // the second source operand, either a NaN or a valid floating-point value, is returned
     // dst = max(xtmp1, xtmp2)
-    vmaxsh(dst, xtmp1, xtmp2);
+    evmaxph(dst, xtmp1, xtmp2, vlen_enc);
     // isNaN = is_unordered_quiet(xtmp1)
-    evcmpsh(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q);
+    evcmpph(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q, vlen_enc);
     // Final result is same as first source if its a NaN value,
     // in case second operand holds a NaN value then as per above semantics
     // result is same as second operand.
     Assembler::evmovdquw(dst, ktmp, xtmp1, true, vlen_enc);
   } else {
-    assert(opcode == Op_MinHF, "");
+    assert(opcode == Op_MinVHF || opcode == Op_MinHF, "");
     // Move sign bits of src1 to mask register.
     evpmovw2m(ktmp, src1, vlen_enc);
     // xtmp1 = src1 < 0 ? src2 : src1
@@ -7022,9 +7045,9 @@ void C2_MacroAssembler::scalar_max_min_fp16(int opcode, XMMRegister dst, XMMRegi
     // If only one value is a NaN (SNaN or QNaN) for this instruction, the second source operand, either a NaN
     // or a valid floating-point value, is written to the result.
     // dst = min(xtmp1, xtmp2)
-    vminsh(dst, xtmp1, xtmp2);
+    evminph(dst, xtmp1, xtmp2, vlen_enc);
     // isNaN = is_unordered_quiet(xtmp1)
-    evcmpsh(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q);
+    evcmpph(ktmp, k0, xtmp1, xtmp1, Assembler::UNORD_Q, vlen_enc);
     // Final result is same as first source if its a NaN value,
     // in case second operand holds a NaN value then as per above semantics
     // result is same as second operand.
