@@ -25,17 +25,14 @@
 
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
 import static jdk.jpackage.internal.StandardBundlerParam.OUTPUT_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 
-import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Optional;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 
 public class MacAppBundler extends AppImageBundler {
      public MacAppBundler() {
@@ -60,31 +57,18 @@ public class MacAppBundler extends AppImageBundler {
          setParamsValidator(MacAppBundler::doValidate);
     }
 
-    public static final BundlerParamInfo<String> DEVELOPER_ID_APP_SIGNING_KEY =
-            new BundlerParamInfo<>(
-            "mac.signing-key-developer-id-app",
-            String.class,
-            params -> {
-                    String user = SIGNING_KEY_USER.fetchFrom(params);
-                    String keychain = SIGNING_KEYCHAIN.fetchFrom(params);
-                    String result = null;
-                    if (APP_STORE.fetchFrom(params)) {
-                        result = MacCertificate.findCertificateKey(
-                            "3rd Party Mac Developer Application: ",
-                            user, keychain);
-                    }
-                    // if either not signing for app store or couldn't find
-                    if (result == null) {
-                        result = MacCertificate.findCertificateKey(
-                            "Developer ID Application: ", user, keychain);
-                    }
-
-                    return result;
-                },
-            (s, p) -> s);
-
     private static void doValidate(Map<String, ? super Object> params)
             throws ConfigException {
+
+        try {
+            MacFromParams.APPLICATION.fetchFrom(params);
+        } catch (ExceptionBox ex) {
+            if (ex.getCause() instanceof ConfigException cfgEx) {
+                throw cfgEx;
+            } else {
+                throw ex;
+            }
+        }
 
         if (StandardBundlerParam.getPredefinedAppImage(params) != null) {
             if (!Optional.ofNullable(
@@ -102,25 +86,6 @@ public class MacAppBundler extends AppImageBundler {
                 throw new ConfigException(ex.getMessage(), I18N.getString(
                         "error.invalid-cfbundle-version.advice"), ex);
             }
-        }
-
-        // reject explicitly set sign to true and no valid signature key
-        if (Optional.ofNullable(
-                    SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
-            // Validate DEVELOPER_ID_APP_SIGNING_KEY only if user provided
-            // SIGNING_KEY_USER.
-            if (!SIGNING_KEY_USER.getIsDefaultValue(params)) { // --mac-signing-key-user-name
-                String signingIdentity =
-                        DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);
-                if (signingIdentity == null) {
-                    throw new ConfigException(
-                            I18N.getString("error.explicit-sign-no-cert"),
-                            I18N.getString("error.explicit-sign-no-cert.advice"));
-                }
-            }
-
-            // No need to validate --mac-app-image-sign-identity, since it is
-            // pass through option.
         }
     }
 }
