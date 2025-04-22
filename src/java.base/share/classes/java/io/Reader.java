@@ -27,6 +27,7 @@ package java.io;
 
 import java.nio.CharBuffer;
 import java.nio.ReadOnlyBufferException;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -394,6 +395,36 @@ public abstract class Reader implements Readable, Closeable {
      * @throws     IOException  If an I/O error occurs
      */
     public abstract int read(char[] cbuf, int off, int len) throws IOException;
+
+    /**
+     * Reads all remaining lines of text. A line is considered to be terminated
+     * by any one of a line feed ('\n'), a carriage return ('\r'), a carriage
+     * return followed immediately by a line feed, or by reaching the
+     * end-of-file (EOF).
+     *
+     * <p> This method works as if invoking it were equivalent to evaluating
+     * the expression:
+     * <blockquote>{@linkplain #readAllChars()}.lines().toList()</blockquote>
+     * The method does not close this reader nor its underlying stream.
+     * If an I/O error occurs, the states of the reader and its underlying
+     * stream are unspecified.
+     *
+     * @apiNote
+     * This method is intended for simple cases where it is convenient
+     * to read all remaining lines in a single operation. It is not intended for
+     * reading a large number of lines.
+     *
+     * @return     the remaining lines of text as an unmodifiable {@code List}
+     *
+     * @throws     IOException  If an I/O error occurs
+     *
+     * @see java.nio.file.Files#readAllLines
+     *
+     * @since 25
+     */
+    public List<String> readAllLines() throws IOException {
+        return readAllChars().lines();
+    }
 
     /**
      * Reads all remaining characters into a string.

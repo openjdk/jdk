@@ -410,17 +410,17 @@ public class BufferedReader extends Reader {
      *
      * <p> This method works as if invoking it were equivalent to evaluating
      * the expression:
-     * <blockquote>{@link #lines()}.toList()</blockquote>
+     * <blockquote>{@linkplain #lines()}.toList()</blockquote>
      * The method does not close this reader nor its underlying stream.
      * If an I/O error occurs, the states of the reader and its underlying
      * stream are unspecified.
      *
      * @apiNote
      * This method is intended for simple cases where it is convenient
-     * to read all lines in a single operation. It is not intended for
+     * to read all remaining lines in a single operation. It is not intended for
      * reading a large number of lines.
      *
-     * @return     the lines of text as an unmodifiable {@code List}
+     * @return     the remaining lines of text as an unmodifiable {@code List}
      *
      * @throws     IOException  If an I/O error occurs
      *
