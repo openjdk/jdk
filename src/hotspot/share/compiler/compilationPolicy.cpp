@@ -1039,7 +1039,7 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
         // If we were at full profile level, would we switch to full opt?
         if (common<Predicate>(method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
           next_level = CompLevel_full_optimization;
-        } else if (!CompilationModeFlag::disable_intermediate() && Predicate::apply(method, cur_level, i, b)) {
+        } else if (Predicate::apply(method, cur_level, i, b)) {
           // C1-generated fully profiled code is about 30% slower than the limited profile
           // code that has only invocation and backedge counters. The observation is that
           // if C2 queue is large enough we can spend too much time in the fully profiled code
@@ -1047,7 +1047,11 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
           // we introduce a feedback on the C2 queue size. If the C2 queue is sufficiently long
           // we choose to compile a limited profiled version and then recompile with full profiling
           // when the load on C2 goes down.
-          if (!disable_feedback && CompileBroker::queue_size(CompLevel_full_optimization) >
+          if (CompilationModeFlag::disable_intermediate()) {
+            // There are no intermediate levels available, and counters say we need to compile.
+            // Go to C2 from here, otherwise we will never escape the old compilation level.
+            next_level = CompLevel_full_optimization;
+          } else if (!disable_feedback && CompileBroker::queue_size(CompLevel_full_optimization) >
               Tier3DelayOn * compiler_count(CompLevel_full_optimization)) {
             next_level = CompLevel_limited_profile;
           } else {
