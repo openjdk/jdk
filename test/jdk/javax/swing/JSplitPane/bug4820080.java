@@ -80,10 +80,10 @@ public class bug4820080 {
 
         Panel left = new Panel();
         left.setBackground(Color.DARK_GRAY);
-        jleft.setPreferredSize(new Dimension(100, 100));
+        left.setPreferredSize(new Dimension(100, 100));
         Panel right = new Panel();
         right.setBackground(Color.DARK_GRAY);
-        jleft.setPreferredSize(new Dimension(100, 100));
+        right.setPreferredSize(new Dimension(100, 100));
 
         JSplitPane sp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, left, right);
         sp.setContinuousLayout(false);
