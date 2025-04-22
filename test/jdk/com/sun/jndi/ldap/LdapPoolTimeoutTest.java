@@ -94,12 +94,12 @@ public class LdapPoolTimeoutTest {
             executorService.shutdown();
         }
         int failedCount = 0;
-        for (var f : futures) {
+        for (int i = 0; i < futures.size(); i++) {
             try {
-                f.get();
+                futures.get(i).get();
             } catch (ExecutionException e) {
                 failedCount++;
-                System.err.println("test failure:");
+                System.err.println("task " + (i + 1) + " failed:");
                 e.getCause().printStackTrace();
             }
         }
