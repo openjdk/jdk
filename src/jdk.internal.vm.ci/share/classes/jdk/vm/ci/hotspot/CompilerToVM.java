@@ -832,7 +832,7 @@ final class CompilerToVM {
      * {@code nmethod} associated with {@code nmethodMirror} is also made non-entrant and if
      * {@code deoptimize == true} any current activations of the {@code nmethod} are deoptimized.
      */
-    native void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror, boolean deoptimize);
+    native void invalidateHotSpotNmethod(HotSpotNmethod nmethodMirror, boolean deoptimize, int statusReason);
 
     /**
      * Collects the current values of all JVMCI benchmark counters, summed up over all threads.

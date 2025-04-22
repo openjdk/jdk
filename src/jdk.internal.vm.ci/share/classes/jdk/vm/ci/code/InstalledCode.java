@@ -46,6 +46,11 @@ public class InstalledCode {
 
     protected final String name;
 
+    /**
+     * Identify the reason that caused this a change to this installed code.
+     */
+    protected int statusReason;
+
     public InstalledCode(String name) {
         this.name = name;
     }
@@ -102,6 +107,10 @@ public class InstalledCode {
         return address != 0;
     }
 
+    public int getStatusReason() {
+        return statusReason;
+    }
+
     /**
      * Returns a copy of this installed code if it is {@linkplain #isValid() valid}, null otherwise.
      */
@@ -110,10 +119,10 @@ public class InstalledCode {
     }
 
     /**
-     * Equivalent to calling {@link #invalidate(boolean)} with a {@code true} argument.
+     * Equivalent to calling {@link #invalidate(boolean, int)} with {@code true} and {@code 0x8099} argument.
      */
     public void invalidate() {
-        invalidate(true);
+        invalidate(true, 0x8099 /* TODO: Fix this constant */);
     }
 
     /**
@@ -130,7 +139,7 @@ public class InstalledCode {
      *            there is a subsequent call to this method with {@code deoptimize == true} before
      *            the invocation completes.
      */
-    public void invalidate(boolean deoptimize) {
+    public void invalidate(boolean deoptimize, int statusReason) {
         throw new UnsupportedOperationException();
     }
 

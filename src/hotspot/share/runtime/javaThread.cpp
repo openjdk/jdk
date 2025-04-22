@@ -1339,7 +1339,7 @@ void JavaThread::make_zombies() {
       // it is a Java nmethod
       nmethod* nm = CodeCache::find_nmethod(fst.current()->pc());
       assert(nm != nullptr, "did not find nmethod");
-      nm->make_not_entrant("zombie");
+      nm->make_not_entrant(nmethod::zombie);
     }
   }
 }

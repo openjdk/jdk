@@ -970,7 +970,7 @@ void Method::set_native_function(address function, bool post_event_flag) {
   // If so, we have to make it not_entrant.
   nmethod* nm = code(); // Put it into local variable to guard against concurrent updates
   if (nm != nullptr) {
-    nm->make_not_entrant("set native function");
+    nm->make_not_entrant(nmethod::set_native_function);
   }
 }
 
