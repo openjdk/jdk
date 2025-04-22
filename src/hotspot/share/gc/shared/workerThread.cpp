@@ -178,9 +178,6 @@ void WorkerThreads::clear_indirect_states() {
 void WorkerThreads::run_task(WorkerTask* task) {
   set_indirect_states();
   _dispatcher.coordinator_distribute_task(task, _active_workers);
-  if (task->terminator() != nullptr) {
-    task->terminator()->emit_termination_statistics(task->name());
-  }
   clear_indirect_states();
 }
 

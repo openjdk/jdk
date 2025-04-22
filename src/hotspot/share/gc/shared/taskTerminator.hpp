@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHARED_TASKTERMINATOR_HPP
 #define SHARE_GC_SHARED_TASKTERMINATOR_HPP
 
-#include "workerDataArray.hpp"
 #include "workerThread.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
@@ -54,8 +53,11 @@ class Thread;
  * The intention of above enhancement is to reduce spin-master's latency on
  * detecting new tasks for stealing and termination condition.
  */
+class TaskTerminationTracker;
+
 class TaskTerminator : public CHeapObj<mtGC> {
   friend class TaskTerminationTracker;
+  static char* termination_event_name_prefix;
   class DelayContext {
     uint _yield_count;
     // Number of hard spin loops done since last yield
@@ -75,6 +77,7 @@ class TaskTerminator : public CHeapObj<mtGC> {
 
   uint _n_threads;
   TaskQueueSetSuper* _queue_set;
+  const char* _task_name;
 
   DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
   volatile uint _offered_termination;
@@ -82,8 +85,6 @@ class TaskTerminator : public CHeapObj<mtGC> {
 
   Monitor _blocker;
   Thread* _spin_master;
-  // terminations has been offered with timings and attempts data.
-  WorkerDataArray<double>* _terminations;
 
   void assert_queue_set_empty() const NOT_DEBUG_RETURN;
 
@@ -100,7 +101,7 @@ class TaskTerminator : public CHeapObj<mtGC> {
   NONCOPYABLE(TaskTerminator);
 
 public:
-  TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set);
+  TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set, const char* task_name = nullptr);
   ~TaskTerminator();
 
   // The current thread has no work, and is ready to terminate if everyone
@@ -120,31 +121,15 @@ public:
   // The caller is responsible for ensuring that this is done
   // in an MT-safe manner, once the previous round of use of
   // the terminator is finished.
-  void reset_for_reuse(bool reset_termination_data_array = true);
+  void reset_for_reuse();
   // Same as above but the number of parallel threads is set to the
   // given number.
   void reset_for_reuse(uint n_threads);
+  // Same as above but task name is set to new task name.
+  void reset_for_reuse(uint n_threads, const char* task_name);
 
-  void emit_termination_statistics(const char* task_name = nullptr);
-};
+  void set_task_name(const char* task_name);
 
-class TaskTerminationTracker :public StackObj {
-  friend class TaskTerminator;
-  TaskTerminator* _terminator;
-  uint (*_worker_id)();
-  double start;
-  TaskTerminationTracker(TaskTerminator* task_terminator, uint (*worker_id)()):
-  _terminator(task_terminator), _worker_id(worker_id) {
-    start = os::elapsedTime();
-  }
-
-  ~TaskTerminationTracker() {
-    const double elapsed = os::elapsedTime() - start;
-    // May not be executed by a WorkerThread when _n_threads is 1
-    const uint idx = _terminator->_n_threads > 1 ? _worker_id() : 0;
-    _terminator->_terminations->set_or_add(idx, elapsed);
-    _terminator->_terminations->set_or_add_thread_work_item(idx, 1);
-  }
 };
 
 #endif // SHARE_GC_SHARED_TASKTERMINATOR_HPP

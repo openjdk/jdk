@@ -54,6 +54,7 @@ private:
 public:
   ShenandoahConcurrentMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator) :
     WorkerTask("Shenandoah Concurrent Mark"), _cm(cm), _terminator(terminator) {
+    _terminator->set_task_name(this->name());
   }
 
   void work(uint worker_id) {
@@ -71,10 +72,6 @@ public:
     _cm->mark_loop(worker_id, _terminator, rp, GENERATION, true /*cancellable*/,
                    ShenandoahStringDedup::is_enabled() ? ENQUEUE_DEDUP : NO_DEDUP,
                    &requests);
-  }
-
-  TaskTerminator* terminator() {
-    return _terminator;
   }
 };
 
@@ -102,6 +99,7 @@ private:
 public:
   ShenandoahFinalMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator, bool dedup_string) :
     WorkerTask("Shenandoah Final Mark"), _cm(cm), _terminator(terminator), _dedup_string(dedup_string) {
+    _terminator->set_task_name(this->name());
   }
 
   void work(uint worker_id) {
@@ -129,10 +127,6 @@ public:
                    _dedup_string ? ENQUEUE_DEDUP : NO_DEDUP,
                    &requests);
     assert(_cm->task_queues()->is_empty(), "Should be empty");
-  }
-
-  TaskTerminator* terminator() {
-    return _terminator;
   }
 };
 

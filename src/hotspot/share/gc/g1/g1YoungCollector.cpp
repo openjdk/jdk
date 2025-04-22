@@ -666,8 +666,9 @@ public:
     _per_thread_states(per_thread_states),
     _task_queues(task_queues),
     _terminator(num_workers, _task_queues),
-    _pinned_regions_recorded(false)
-  { }
+    _pinned_regions_recorded(false) {
+    _terminator.set_task_name(name);
+  }
 
   void work(uint worker_id) {
     start_work(worker_id);
@@ -686,10 +687,6 @@ public:
     }
 
     end_work(worker_id);
-  }
-
-  TaskTerminator * terminator() {
-    return &_terminator;
   }
 };
 
@@ -953,7 +950,7 @@ public:
     : RefProcProxyTask("G1STWRefProcProxyTask", max_workers),
       _g1h(g1h),
       _pss(pss),
-      _terminator(max_workers, &task_queues),
+      _terminator(max_workers, &task_queues, this->name()),
       _task_queues(task_queues) {}
 
   void work(uint worker_id) override {
@@ -971,10 +968,6 @@ public:
 
     // We have completed copying any necessary live referent objects.
     assert(pss->queue_is_empty(), "both queue and overflow should be empty");
-  }
-
-  TaskTerminator * terminator() override {
-    return &_terminator;
   }
 
   void prepare_run_task_hook() override {

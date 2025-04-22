@@ -204,7 +204,7 @@ class ParallelScavengeRefProcProxyTask : public RefProcProxyTask {
 public:
   ParallelScavengeRefProcProxyTask(uint max_workers)
     : RefProcProxyTask("ParallelScavengeRefProcProxyTask", max_workers),
-      _terminator(max_workers, ParCompactionManager::marking_stacks()) {}
+      _terminator(max_workers, ParCompactionManager::marking_stacks(), this->name()) {}
 
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
@@ -214,10 +214,6 @@ public:
     BarrierEnqueueDiscoveredFieldClosure enqueue;
     PSEvacuateFollowersClosure complete_gc(promotion_manager, (_marks_oops_alive && _tm == RefProcThreadModel::Multi) ? &_terminator : nullptr, worker_id);;
     _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, &complete_gc);
-  }
-
-  TaskTerminator * terminator() override {
-    return &_terminator;
   }
 
   void prepare_run_task_hook() override {
@@ -268,6 +264,7 @@ public:
       PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
       card_table->pre_scavenge(active_workers);
     }
+    _terminator.set_task_name(this->name());
   }
 
   virtual void work(uint worker_id) {
@@ -318,10 +315,6 @@ public:
     if (_active_workers > 1) {
       steal_work(_terminator, worker_id);
     }
-  }
-
-  TaskTerminator * terminator() {
-    return &_terminator;
   }
 };
 

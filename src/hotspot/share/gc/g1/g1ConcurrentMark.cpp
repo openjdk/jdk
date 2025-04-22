@@ -1006,12 +1006,10 @@ public:
     _cm->update_accum_task_vtime(worker_id, end_vtime - start_vtime);
   }
 
-  TaskTerminator* terminator() {
-   return _cm->terminator();
-  }
-
   G1CMConcurrentMarkingTask(G1ConcurrentMark* cm) :
-      WorkerTask("Concurrent Mark"), _cm(cm) { }
+      WorkerTask("Concurrent Mark"), _cm(cm) {
+    cm->_terminator.set_task_name(this->name());
+  }
 
   ~G1CMConcurrentMarkingTask() { }
 };
@@ -1857,13 +1855,9 @@ public:
     task->record_end_time();
   }
 
-  TaskTerminator * terminator() {
-    return &_cm->_terminator;
-  }
-
   G1CMRemarkTask(G1ConcurrentMark* cm, uint active_workers) :
     WorkerTask("Par Remark"), _cm(cm) {
-    _cm->terminator()->reset_for_reuse(active_workers);
+    _cm->terminator()->reset_for_reuse(active_workers, this->name());
   }
 };
 

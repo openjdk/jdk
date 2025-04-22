@@ -33,6 +33,8 @@
 #include "runtime/mutexLocker.hpp"
 #include "jfr/jfrEvents.hpp"
 
+char* TaskTerminator::termination_event_name_prefix = os::strdup("OfferTermination#");
+
 TaskTerminator::DelayContext::DelayContext() {
   _yield_count = 0;
   reset_hard_spin_information();
@@ -69,18 +71,15 @@ void TaskTerminator::DelayContext::do_step() {
   }
 }
 
-TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
+TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set, const char* task_name) :
   _n_threads(n_threads),
   _queue_set(queue_set),
+  _task_name(task_name),
   _offered_termination(0),
   _blocker(Mutex::nosafepoint, "TaskTerminator_lock"),
-  _spin_master(nullptr),
-  _terminations(new WorkerDataArray<double>("TaskTerminator", "Terminations", n_threads)) {
-  _terminations->create_thread_work_items("Termination attempts");
-}
+  _spin_master(nullptr) { }
 
 TaskTerminator::~TaskTerminator() {
-  delete _terminations;
   if (_offered_termination != 0) {
     assert(_offered_termination == _n_threads, "Must be terminated or aborted");
   }
@@ -94,26 +93,27 @@ void TaskTerminator::assert_queue_set_empty() const {
 }
 #endif
 
-void TaskTerminator::reset_for_reuse(const bool reset_termination_data_array) {
+void TaskTerminator::reset_for_reuse() {
   if (_offered_termination != 0) {
     assert(_offered_termination == _n_threads,
            "Only %u of %u threads offered termination", _offered_termination, _n_threads);
     assert(_spin_master == nullptr, "Leftover spin master " PTR_FORMAT, p2i(_spin_master));
     _offered_termination = 0;
-    if (reset_termination_data_array) {
-      _terminations->reset();
-    }
   }
 }
 
 void TaskTerminator::reset_for_reuse(uint n_threads) {
-  reset_for_reuse(false);
-  if (n_threads != _n_threads) {
-    delete _terminations;
-    _terminations = new WorkerDataArray<double>("TaskTerminator", "Terminations", n_threads);
-    _terminations->create_thread_work_items("Termination attempts");
-  }
+  reset_for_reuse();
   _n_threads = n_threads;
+}
+
+void TaskTerminator::reset_for_reuse(uint n_threads, const char* task_name) {
+  reset_for_reuse(n_threads);
+  _task_name = task_name;
+}
+
+void TaskTerminator::set_task_name(const char* task_name) {
+  _task_name = task_name;
 }
 
 bool TaskTerminator::exit_termination(size_t tasks, TerminatorTerminator* terminator) {
@@ -141,6 +141,23 @@ void TaskTerminator::prepare_for_return(Thread* this_thread, size_t tasks) {
     }
   }
 }
+
+class TaskTerminationTracker :public StackObj {
+  TaskTerminator* _terminator;
+  uint (*_worker_id)();
+  EventGCPhaseParallel _event;
+public:
+  TaskTerminationTracker(TaskTerminator* task_terminator, uint (*worker_id)()):
+  _terminator(task_terminator),
+  _worker_id(worker_id),
+  _event() { }
+
+  ~TaskTerminationTracker() {
+    if (_terminator->_task_name != nullptr && _event.should_commit()) {
+      _event.commit(GCId::current(), _terminator->_n_threads > 1 ? _worker_id() : 0, strcat(TaskTerminator::termination_event_name_prefix, _terminator->_task_name));
+    }
+  }
+};
 
 bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   assert(_n_threads > 0, "Initialization is incorrect");
@@ -218,26 +235,3 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   }
 }
 
-void TaskTerminator::emit_termination_statistics(const char* task_name) {
-  EventGCTaskTerminationStatistics event;
-  if (event.should_commit()) {
-    WorkerDataStats<double> timings = _terminations->get_worker_stats();
-    WorkerDataStats<size_t> attempts = _terminations->thread_work_items()->get_worker_stats();
-    assert(timings.count == attempts.count, "Sanity check");
-    if (timings.count > 0) {
-      event.set_gcId(GCId::current());
-      event.set_taskName(task_name);
-      event.set_nThreads(timings.count);
-      //Timings
-      event.set_minTime(timings.min * 1000);
-      event.set_avgTime(timings.sum * 1000 / (double) timings.count);
-      event.set_maxTime(timings.max * 1000);
-      //Attempts
-      event.set_minAttempts(attempts.min);
-      event.set_avgAttempts((double) attempts.sum / (double) attempts.count);
-      event.set_maxAttempts(attempts.max);
-
-      event.commit();
-    }
-  }
-}

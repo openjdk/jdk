@@ -1228,7 +1228,7 @@ public:
   MarkFromRootsTask(uint active_workers) :
       WorkerTask("MarkFromRootsTask"),
       _strong_roots_scope(active_workers),
-      _terminator(active_workers, ParCompactionManager::marking_stacks()),
+      _terminator(active_workers, ParCompactionManager::marking_stacks(), this->name()),
       _active_workers(active_workers) {}
 
   virtual void work(uint worker_id) {
@@ -1259,9 +1259,6 @@ public:
     }
   }
 
-  TaskTerminator * terminator() {
-    return &_terminator;
-  }
 };
 
 class ParallelCompactRefProcProxyTask : public RefProcProxyTask {
@@ -1270,7 +1267,7 @@ class ParallelCompactRefProcProxyTask : public RefProcProxyTask {
 public:
   ParallelCompactRefProcProxyTask(uint max_workers)
     : RefProcProxyTask("ParallelCompactRefProcProxyTask", max_workers),
-      _terminator(_max_workers, ParCompactionManager::marking_stacks()) {}
+      _terminator(_max_workers, ParCompactionManager::marking_stacks(), this->name()) {}
 
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
@@ -1278,10 +1275,6 @@ public:
     BarrierEnqueueDiscoveredFieldClosure enqueue;
     ParCompactionManager::FollowStackClosure complete_gc(cm, (_tm == RefProcThreadModel::Single) ? nullptr : &_terminator, worker_id);
     _rp_task->rp_work(worker_id, PSParallelCompact::is_alive_closure(), &cm->_mark_and_push_closure, &enqueue, &complete_gc);
-  }
-
-  TaskTerminator * terminator() override {
-    return &_terminator;
   }
 
   void prepare_run_task_hook() override {
@@ -1801,6 +1794,7 @@ public:
       WorkerTask("FillDensePrefixAndCompactionTask"),
       _num_workers(active_workers),
       _terminator(active_workers, ParCompactionManager::region_task_queues()) {
+    _terminator.set_task_name(this->name());
   }
 
   virtual void work(uint worker_id) {
@@ -1811,10 +1805,6 @@ public:
     }
     compaction_with_stealing_work(&_terminator, worker_id);
   }
-
-  TaskTerminator * terminator() {
-    return &_terminator;
-  };
 };
 
 void PSParallelCompact::fill_range_in_dense_prefix(HeapWord* start, HeapWord* end) {

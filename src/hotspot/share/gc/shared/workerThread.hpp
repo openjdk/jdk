@@ -53,10 +53,6 @@ private:
   uint gc_id() const { return _gc_id; }
 
   virtual void work(uint worker_id) = 0;
-
-  virtual TaskTerminator* terminator() {
-    return nullptr;
-  }
 };
 
 // WorkerThreads dispatcher implemented with semaphores

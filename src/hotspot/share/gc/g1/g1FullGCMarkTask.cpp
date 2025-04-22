@@ -34,7 +34,7 @@
 G1FullGCMarkTask::G1FullGCMarkTask(G1FullCollector* collector) :
     G1FullGCTask("G1 Parallel Marking Task", collector),
     _root_processor(G1CollectedHeap::heap(), collector->workers()),
-    _terminator(collector->workers(), collector->array_queue_set()) {
+    _terminator(collector->workers(), collector->array_queue_set(), this->name()) {
 }
 
 void G1FullGCMarkTask::work(uint worker_id) {
@@ -60,8 +60,4 @@ void G1FullGCMarkTask::work(uint worker_id) {
   assert(marker->oop_stack()->is_empty(), "Marking should have completed");
   assert(marker->objarray_stack()->is_empty(), "Array marking should have completed");
   log_task("Marking task", worker_id, start);
-}
-
-TaskTerminator * G1FullGCMarkTask::terminator() {
-  return &_terminator;
 }
