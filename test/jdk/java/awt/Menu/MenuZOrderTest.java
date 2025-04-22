@@ -30,7 +30,6 @@
  * @run main/manual MenuZOrderTest
  */
 
-import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.Menu;
 import java.awt.MenuBar;
@@ -70,7 +69,6 @@ public class MenuZOrderTest {
         Menu m1 = new Menu("Menu 1");
         MenuItem mi1 = new MenuItem("Menu Item 1");
 
-        mf.setLayout(new BorderLayout());
         mf.setSize(200, 200);
         mi1.addActionListener(l);
         m1.add(mi1);
