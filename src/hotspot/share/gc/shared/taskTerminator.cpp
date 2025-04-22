@@ -26,14 +26,13 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
-#include "gc/shared/workerDataArray.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "jfr/jfrEvents.hpp"
 
-char* TaskTerminator::termination_event_name_prefix = os::strdup("OfferTermination#");
+char* TaskTerminator::termination_event_name_prefix = os::strdup("OfferTermination: ");
 
 TaskTerminator::DelayContext::DelayContext() {
   _yield_count = 0;
@@ -143,18 +142,20 @@ void TaskTerminator::prepare_for_return(Thread* this_thread, size_t tasks) {
 }
 
 class TaskTerminationTracker :public StackObj {
-  TaskTerminator* _terminator;
-  uint (*_worker_id)();
+  TaskTerminator* const _terminator;
+  uint const _worker_id;
   EventGCPhaseParallel _event;
 public:
-  TaskTerminationTracker(TaskTerminator* task_terminator, uint (*worker_id)()):
+  TaskTerminationTracker(TaskTerminator* task_terminator, uint worker_id):
   _terminator(task_terminator),
-  _worker_id(worker_id),
-  _event() { }
+  _worker_id(worker_id) { }
 
   ~TaskTerminationTracker() {
     if (_terminator->_task_name != nullptr && _event.should_commit()) {
-      _event.commit(GCId::current(), _terminator->_n_threads > 1 ? _worker_id() : 0, strcat(TaskTerminator::termination_event_name_prefix, _terminator->_task_name));
+      char* event_name = NEW_C_HEAP_ARRAY(char, strlen(TaskTerminator::termination_event_name_prefix) + strlen(_terminator->_task_name) + 1, mtGC);
+      strcpy(event_name, TaskTerminator::termination_event_name_prefix);
+      strcat(event_name, _terminator->_task_name);
+      _event.commit(GCId::current(), _terminator->_n_threads > 1 ? _worker_id : 0, event_name);
     }
   }
 };
@@ -163,7 +164,7 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   assert(_n_threads > 0, "Initialization is incorrect");
   assert(_offered_termination < _n_threads, "Invariant");
 
-  TaskTerminationTracker termination_tracker(this, WorkerThread::worker_id);
+  TaskTerminationTracker termination_tracker(this, WorkerThread::worker_id());
   // Single worker, done
   if (_n_threads == 1) {
     _offered_termination = 1;
