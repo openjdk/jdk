@@ -49,6 +49,12 @@ import org.openjdk.jmh.infra.Blackhole;
 @Measurement(iterations = 6, time = 3)
 public class DMBCheck {
 
+  // The allocations of DoubleDMB$A and DoubleDMB$C
+  // will cause aarch64 dmb barrier instructions.
+  // The different latency of the dmb ish/ishst/ishld modes
+  // may make a noticeable difference in the benchmark results.
+  // These modes may be set by cpu defaults or XX options.
+
   class A {
 
     final String b = new String("Hi there");
