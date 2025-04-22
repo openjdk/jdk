@@ -24,7 +24,7 @@
 #include "gc/z/zTLABUsage.hpp"
 
 ZTLABUsage::ZTLABUsage()
-  : _used_history() { }
+  : _used_history() {}
 
 void ZTLABUsage::update(size_t used) {
   _used_history.add(used);

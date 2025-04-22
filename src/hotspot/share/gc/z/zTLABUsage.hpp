@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_Z_ZTLABUSAGE_HPP
 #define SHARE_GC_Z_ZTLABUSAGE_HPP
 
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
 
 // ZGC is retiring TLABs concurrently with the application running when
@@ -32,7 +33,7 @@
 // We snapshot the TLAB usage in the mark start pause for the young generation
 // and use this information until the next garbage collection cycle.
 //
-// ZGC does not have set generation sizes like most other GCs and because of
+// ZGC does not have set generation sizes unlike most other GCs and because of
 // this there is no fixed TLAB capacity. For the common TLAB sizing heuristic
 // to work properly ZGC estimates the current capacity by using a weighted
 // average of the last 10 used values.
@@ -43,7 +44,9 @@ private:
 
 public:
   ZTLABUsage();
+
   void update(size_t used);
+
   size_t used() const;
   size_t capacity() const;
 };
