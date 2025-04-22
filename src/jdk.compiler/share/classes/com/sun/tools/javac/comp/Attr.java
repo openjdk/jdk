@@ -784,6 +784,8 @@ public class Attr extends JCTree.Visitor {
         return kind;
     }
 
+    /* vsym is expected to be a method argument
+     */
     private boolean requiresIdentity(VarSymbol vsym) {
         if (vsym != null) {
             SymbolMetadata sm = vsym.getMetadata();
