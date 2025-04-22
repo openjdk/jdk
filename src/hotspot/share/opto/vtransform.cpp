@@ -238,7 +238,7 @@ public:
   VPointerWeakAliasingPair() : _vp1(nullptr), _vp2(nullptr) {}
 
   static VPointerWeakAliasingPair make(const VPointer& vp1, const VPointer& vp2) {
-    if (VPointer::cmp_summands(vp1, vp2) <= 0) {
+    if (VPointer::cmp_summands_and_con(vp1, vp2) <= 0) {
       return VPointerWeakAliasingPair(vp1, vp2);
     } else {
       return VPointerWeakAliasingPair(vp2, vp1);

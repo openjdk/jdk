@@ -307,14 +307,12 @@ void SuperWordVTransformBuilder::add_memory_dependencies_of_node_to_vtnode(Node*
     Node* pred = preds.current();
     if (!_vloop.in_bb(pred)) { continue; }
     if (!preds.is_current_memory_edge()) { continue; }
+    assert(n->is_Mem() && pred->is_Mem(), "only memory edges");
 
     // Only track every memory edge once.
     VTransformNode* dependency = get_vtnode(pred);
     if (vtn_memory_dependencies.test_set(dependency->_idx)) { continue; }
 
-    assert(n->is_Mem() && pred->is_Mem(), "only memory edges");
-
-    // TODO: assert / cleanup! - in a separate prior RFE? rm vtn_dependencies VectorSet? - or at least less.
     if (are_speculative_checks_possible && preds.is_current_weak_memory_edge()) {
       vtn->add_weak_memory_dependency(dependency);
     } else {
