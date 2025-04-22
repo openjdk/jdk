@@ -41,6 +41,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
@@ -58,6 +59,7 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.ListModel;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
@@ -68,6 +70,13 @@ public class RTLScrollers extends JDialog
     private static final int COLUMNS = 150;
     private static final int WINWIDTH = 1000;
 
+    static RTLScrollers rtl;
+    static volatile boolean retVal;
+    static volatile JScrollPane jsp;
+    static volatile JScrollBar hsb;
+    static volatile JScrollBar sb;
+    static volatile Point loc;
+    static volatile Dimension size;
     TestList list;
     JScrollPane listScroller;
     JTextArea text;
@@ -240,7 +249,8 @@ public class RTLScrollers extends JDialog
         System.out.println("Rotation: " + e.getWheelRotation());
     }
 
-    public static boolean runTest(int scrollAmount) {
+    public static boolean runTest(int scrollAmount)
+            throws InterruptedException, InvocationTargetException {
         System.out.println("RTLS.runTest()");
         if (robot == null) {
             try {
@@ -254,19 +264,28 @@ public class RTLScrollers extends JDialog
             }
         }
 
-        RTLScrollers rtl = new RTLScrollers(scrollAmount);
-        rtl.setVisible(true);
+        SwingUtilities.invokeAndWait(() -> {
+            rtl = new RTLScrollers(scrollAmount);
+            rtl.setVisible(true);
+        });
         robot.delay(100);
 
-        boolean retVal = rtl.runTests(scrollAmount);
-        rtl.setVisible(false);
-        robot.delay(100);
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                retVal = rtl.runTests(scrollAmount);
+                rtl.setVisible(false);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
 
+        robot.delay(100);
         System.out.println("RTLS.runTest(): " + retVal);
         return retVal;
     }
 
-    private boolean runTests(int scrollAmount) {
+    private boolean runTests(int scrollAmount)
+            throws InterruptedException, InvocationTargetException {
         if (robot == null) {
             try {
                 robot = new Robot();
@@ -290,7 +309,9 @@ public class RTLScrollers extends JDialog
         System.out.println("Testing List");
         testComp(list, scrollAmount);
 
-        applyComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+        SwingUtilities.invokeAndWait(() -> {
+            applyComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+        });
         robot.delay(100);
 
         System.out.println("Testing RTL Table");
@@ -302,14 +323,17 @@ public class RTLScrollers extends JDialog
         return true;
     }
 
-    public boolean testComp(TestTools comp, int scrollAmount) {
+    public boolean testComp(TestTools comp, int scrollAmount)
+            throws InterruptedException, InvocationTargetException {
         // Make sure we start from the beginning
-        JScrollPane jsp = (JScrollPane)((JComponent)comp).getParent().getParent();
-        JScrollBar hsb = jsp.getHorizontalScrollBar();
-        hsb.setValue(hsb.getMinimum());
+        SwingUtilities.invokeAndWait(() -> {
+            jsp = (JScrollPane)((JComponent)comp).getParent().getParent();
+            hsb = jsp.getHorizontalScrollBar();
+            hsb.setValue(hsb.getMinimum());
 
-        Point loc = jsp.getLocationOnScreen();
-        Dimension size = jsp.getSize();
+            loc = jsp.getLocationOnScreen();
+            size = jsp.getSize();
+        });
         int midx = loc.x + size.width / 2;
         int midy = loc.y + size.height / 2;
         int maxIdx = 0;
@@ -318,7 +342,6 @@ public class RTLScrollers extends JDialog
         // Don't bother for max scroll w/ RTL JList, because the block increment is broken
         if (scrollAmount != 30 || !(comp instanceof TestList)
                 || getComponentOrientation().isLeftToRight()) {
-
             scrollToMiddle(jsp, robot);
 
             // check that we're lined up
@@ -333,7 +356,7 @@ public class RTLScrollers extends JDialog
             int midVal = startVal + width / 2;
             System.out.println("becoming unaligned: startVal is "
                     + startVal + ", midVal is " + midVal);
-            hsb.setValue(midVal);
+            SwingUtilities.invokeAndWait(() -> hsb.setValue(midVal));
 
             //
             // Check partial inc up
@@ -351,7 +374,7 @@ public class RTLScrollers extends JDialog
             //
             // Check partial inc down
             //
-            hsb.setValue(midVal);
+            SwingUtilities.invokeAndWait(() -> hsb.setValue(midVal));
             robot.delay(100);
             robot.mouseWheel(1);
 
@@ -366,7 +389,7 @@ public class RTLScrollers extends JDialog
             //
             // Check full inc down (3 times)
             //
-            hsb.setValue(startVal);
+            SwingUtilities.invokeAndWait(() -> hsb.setValue(startVal));
             leadingCell = comp.getLeadingCell().y;
 
             // Once...
@@ -385,7 +408,7 @@ public class RTLScrollers extends JDialog
                 comp.checkTopCellIsMax(maxIdx++);
             }
             else {
-                comp.checkTopCellIs(leadingCell, (2*scrollAmount));
+                comp.checkTopCellIs(leadingCell, (2 * scrollAmount));
             }
 
             comp.checkTopCellIsLinedUp();
@@ -396,7 +419,7 @@ public class RTLScrollers extends JDialog
                 comp.checkTopCellIsMax(maxIdx++);
             }
             else {
-                comp.checkTopCellIs(leadingCell, (3*scrollAmount));
+                comp.checkTopCellIs(leadingCell, (3 * scrollAmount));
 
             }
             comp.checkTopCellIsLinedUp();
@@ -422,7 +445,7 @@ public class RTLScrollers extends JDialog
                 comp.checkTopCellIsMax(maxIdx++);
             }
             else {
-                comp.checkTopCellIs(leadingCell, -(2*scrollAmount));
+                comp.checkTopCellIs(leadingCell, -(2 * scrollAmount));
             }
             comp.checkTopCellIsLinedUp();
 
@@ -432,7 +455,7 @@ public class RTLScrollers extends JDialog
                 comp.checkTopCellIsMax(maxIdx++);
             }
             else {
-                comp.checkTopCellIs(leadingCell, -(3*scrollAmount));
+                comp.checkTopCellIs(leadingCell, -(3 * scrollAmount));
             }
             comp.checkTopCellIsLinedUp();
         }
@@ -441,7 +464,9 @@ public class RTLScrollers extends JDialog
         // Test acceleration for max scrolling
         // (this part should still work for RTL JList)
         if (scrollAmount == 30) {
-            hsb.setValue(hsb.getMinimum());
+            SwingUtilities.invokeAndWait(() -> {
+                hsb.setValue(hsb.getMinimum());
+            });
             robot.delay(100);
             robot.mouseWheel(2);
             robot.mouseWheel(2);
@@ -619,12 +644,13 @@ public class RTLScrollers extends JDialog
         void checkTopCellIsMax(int idx);
     }
 
-    public void scrollToMiddle(JScrollPane jsp, Robot robot) {
-        JScrollBar sb = jsp.getHorizontalScrollBar();
-        Point loc = sb.getLocationOnScreen();
-        Dimension size = sb.getSize();
-        int autoDelay = robot.getAutoDelay();
-
+    public void scrollToMiddle(JScrollPane jsp, Robot robot)
+            throws InterruptedException, InvocationTargetException {
+        SwingUtilities.invokeAndWait(() -> {
+            sb = jsp.getHorizontalScrollBar();
+            loc = sb.getLocationOnScreen();
+            size = sb.getSize();
+        });
         robot.setAutoDelay(250);
 
         robot.mouseMove(loc.x + size.width / 2,
@@ -634,17 +660,18 @@ public class RTLScrollers extends JDialog
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-        // Work-around bug in JList RTL block increment
-        if (jsp == listScroller) {
-            int idx = list.getFirstVisibleIndex();
-            list.ensureIndexIsVisible(idx);
-        }
-
-        robot.setAutoDelay(autoDelay);
+        SwingUtilities.invokeAndWait(() -> {
+            if (jsp == listScroller) {
+                int idx = list.getFirstVisibleIndex();
+                list.ensureIndexIsVisible(idx);
+            }
+        });
     }
 
-    public static void main(String[] args) {
-        RTLScrollers f = new RTLScrollers();
-        f.setVisible(true);
+    public static void main(String[] args) throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            RTLScrollers f = new RTLScrollers();
+            f.setVisible(true);
+        });
     }
 }
