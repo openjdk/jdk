@@ -391,17 +391,6 @@ import java.util.function.Supplier;
  * too are thread safe and guarantee at-most-once-per-input invocation.
  *
  * <h2 id="performance">Performance</h2>
-<<<<<<< Updated upstream
- * The _content_ of a set stable value is treated as a constant by the JVM, provided that
- * the reference to the stable value is also constant (e.g. in cases where the
- * stable value itself is stored in a {@code static final} field). Stable functions and
- * collections are built on top of StableValue. As such, their contents is also treated as
- * constant by the JVM.
- * <p>
- * This means that, at least in some cases, access to the content of a stable value
- * enjoys the same constant-folding optimizations that are available when accessing
- * {@code static final} fields.
-=======
  * As the contents of a stable value can never change after it has been set, a JVM
  * implementation may, for a set stable value, elide all future reads of that
  * stable value, and instead directly use any content that it has previously observed.
@@ -409,7 +398,6 @@ import java.util.function.Supplier;
  * the stable value itself is stored in a {@code static final} field). Stable functions
  * and collections are built on top of StableValue. As such, they might also be eligible
  * for the same JVM optimizations as for StableValue.
->>>>>>> Stashed changes
  *
  * @implSpec Implementing classes of {@code StableValue} are free to synchronize on
  *           {@code this} and consequently, it should be avoided to
