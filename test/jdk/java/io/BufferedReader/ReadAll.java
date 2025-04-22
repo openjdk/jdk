@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -100,6 +101,7 @@ public class ReadAll {
 
     @Test
     public void readAllLines() throws IOException {
+        // BufferedReader implementation
         List<String> lines;
         try (FileReader fr = new FileReader(file);
              BufferedReader br = new BufferedReader(fr)) {
@@ -108,7 +110,12 @@ public class ReadAll {
         System.out.println(lines.size() + " lines read");
 
         List<String> linesExpected = Files.readAllLines(path);
+        assertEquals(linesExpected, lines);
 
+        // Reader implementation
+        try (Reader r = new StringReader(Files.readString(path))) {
+            lines = r.readAllLines();
+        }
         assertEquals(linesExpected, lines);
     }
 

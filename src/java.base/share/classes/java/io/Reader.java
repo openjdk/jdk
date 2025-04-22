@@ -397,9 +397,9 @@ public abstract class Reader implements Readable, Closeable {
     public abstract int read(char[] cbuf, int off, int len) throws IOException;
 
     /**
-     * Reads all remaining lines of text. A line is considered to be terminated
-     * by any one of a line feed ('\n'), a carriage return ('\r'), a carriage
-     * return followed immediately by a line feed, or by reaching the
+     * Reads all remaining characters as lines of text. A line is considered to
+     * be terminated by any one of a line feed ('\n'), a carriage return ('\r'),
+     * a carriage return followed immediately by a line feed, or by reaching the
      * end-of-file (EOF).
      *
      * <p> This method works as if invoking it were equivalent to evaluating
@@ -411,10 +411,11 @@ public abstract class Reader implements Readable, Closeable {
      *
      * @apiNote
      * This method is intended for simple cases where it is convenient
-     * to read all remaining lines in a single operation. It is not intended for
-     * reading a large number of lines.
+     * to read all remaining characters in a single operation. It is not
+     * intended for reading a large number of characters.
      *
-     * @return     the remaining lines of text as an unmodifiable {@code List}
+     * @return     the remaining characters as lines of text stored in an
+     *             unmodifiable {@code List} in the order that they are read
      *
      * @throws     IOException  If an I/O error occurs
      *
@@ -423,7 +424,7 @@ public abstract class Reader implements Readable, Closeable {
      * @since 25
      */
     public List<String> readAllLines() throws IOException {
-        return readAllChars().lines();
+        return readAllChars().lines().toList();
     }
 
     /**
