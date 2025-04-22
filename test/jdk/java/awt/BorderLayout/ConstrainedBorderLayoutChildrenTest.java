@@ -178,7 +178,7 @@ public class ConstrainedBorderLayoutChildrenTest {
                     "northPanel.getHeight() = " + northPanel.getHeight());
 
             return true;
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             t.printStackTrace();
             return false;
         }
