@@ -5273,6 +5273,10 @@ public final class Main {
                     "Use.keytool.help.for.all.available.commands"));
             System.err.println(rb.getString(
                     "Use.keytool.command.name.help.for.usage.of.command.name"));
+            System.err.println();
+            System.err.println(rb.getString("for.more.information.see.the.online.documentation.at."));
+            System.err.println("https://docs.oracle.com/en/java/javase/"
+                    + Runtime.version().feature() + "/docs/specs/man/keytool.html");
         }
     }
 
