@@ -48,7 +48,7 @@ final class BitSieve {
     /**
      * Stores the bits in this bitSieve.
      */
-    private final long bits[];
+    private final long[] bits;
 
     /**
      * Length is how many bits this sieve holds.
