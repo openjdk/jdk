@@ -112,7 +112,8 @@ public class SetShortCutTest {
 
             //Click on the "Stuff" menu to remove the "first" menu item
             else if (event.getSource() == item2) {
-                //If the item has not been removed from the menu,then remove "First" from the "File" menu
+                //If the item has not been removed from the menu,
+                //then remove "First" from the "File" menu
                 if (beenHere == false) {
                     item1.removeActionListener(this);
                     menu1.remove(item1);
