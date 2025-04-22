@@ -314,8 +314,8 @@ import java.util.function.Supplier;
  * created. Upon such a creation, the dependent {@code Foo} will first be created if
  * the {@code Foo} does not already exist.
  * <p>
- * Another example, which has a more complex dependency graph, is to lazily computing the
- * Fibonacci sequence:
+ * Another example, which has a more complex dependency graph, is to compute the
+ * Fibonacci sequence lazily:
  * {@snippet lang = java:
  * public final class Fibonacci {
  *
@@ -412,10 +412,10 @@ import java.util.function.Supplier;
  * @implNote A {@code StableValue} is mainly intended to be a non-public field in
  *           a class and is usually neither exposed directly via accessors nor passed as
  *           a method parameter.
- *           Stable functions and collections make all reasonable efforts to provide
+ *           Stable functions and collections make reasonable efforts to provide
  *           {@link Object#toString()} operations that do not trigger evaluation
  *           of the internal stable values when called.
- *           Stable collections have {@link Object#equals(Object)} operations that tries
+ *           Stable collections have {@link Object#equals(Object)} operations that try
  *           to minimize evaluation of the internal stable values when called.
  *           As objects can be set via stable values but never removed, this can be a source
  *           of unintended memory leaks. A stable value's content is
@@ -483,7 +483,7 @@ public sealed interface StableValue<T>
      * with different suppliers, only one of them will be invoked provided it completes
      * without throwing an exception.
      * <p>
-     * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
+     * If the supplier throws an (unchecked) exception, the exception is rethrown and no
      * content is set. The most common usage is to construct a new object serving
      * as a lazily computed value or memoized result, as in:
      *
@@ -667,7 +667,7 @@ public sealed interface StableValue<T>
      * provided {@code mapper} when they are first accessed
      * (e.g. via {@linkplain List#get(int) List::get}).
      * <p>
-     * The provided {@code mapper} int function is guaranteed to be successfully invoked
+     * The provided {@code mapper} function is guaranteed to be successfully invoked
      * at most once per list index, even in a multi-threaded environment. Competing
      * threads accessing an element already under computation will block until an element
      * is computed or an exception is thrown by the computing thread.
@@ -716,7 +716,7 @@ public sealed interface StableValue<T>
      * threads accessing a value already under computation will block until an element
      * is computed or an exception is thrown by the computing thread.
      * <p>
-     * If the provided {@code mapper} throws an exception, it is relayed to the initial
+     * If invoking the provided {@code mapper} function throws an exception, it is rethrown to the initial
      * caller and no value associated with the provided key is recorded.
      * <p>
      * Any direct {@link Map#values()} or {@link Map#entrySet()} views
