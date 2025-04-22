@@ -34,8 +34,11 @@ import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.Robot;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.swing.AbstractButton;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -47,20 +50,28 @@ import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 
 public class bug4133768 {
-    private static Icon RED, GREEN;
+    private static Icon RED;
+    private static Icon GREEN;
     private static JFrame f;
     private static AbstractButton[] buttons;
     private static volatile Point buttonLocation;
     private static volatile int buttonWidth;
     private static volatile int buttonHeight;
     private static Robot robot;
+    private static int ROLLOVER_Y_OFFSET = 4;
+    private static CountDownLatch frameGainedFocusLatch =
+        new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
         try {
             createTestImages();
             createUI();
+            f.requestFocus();
+            if (!frameGainedFocusLatch.await(5, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Waited too long, but can't gain" +
+                    " focus for frame");
+            }
             robot = new Robot();
-            robot.delay(1000);
             for (AbstractButton b : buttons) {
                 testEnabledButton(b);
             }
@@ -78,9 +89,9 @@ public class bug4133768 {
         }
     }
 
-    private static void createTestImages() throws IOException {
-        int imageWidth = 32;
-        int imageHeight = 32;
+    private static void createTestImages() {
+        int imageWidth = 100;
+        int imageHeight = 100;
         BufferedImage redImg = new BufferedImage(imageWidth, imageHeight,
             BufferedImage.TYPE_INT_RGB);
         Graphics2D g = redImg.createGraphics();
@@ -114,6 +125,12 @@ public class bug4133768 {
                 b.setRolloverSelectedIcon(GREEN);
                 buttonPanel.add(b);
             }
+            f.addFocusListener(new FocusAdapter() {
+                @Override
+                public void focusGained(FocusEvent e) {
+                    frameGainedFocusLatch.countDown();
+                }
+            });
             f.setLayout(new GridLayout(2, 1));
             f.add(buttonPanel);
             f.pack();
@@ -123,7 +140,8 @@ public class bug4133768 {
         });
     }
 
-    private static void testEnabledButton(AbstractButton button) throws Exception {
+    private static void testEnabledButton(AbstractButton button)
+        throws Exception {
         robot.waitForIdle();
         SwingUtilities.invokeAndWait(() -> {
             buttonLocation = button.getLocationOnScreen();
@@ -131,7 +149,7 @@ public class bug4133768 {
             buttonHeight = button.getHeight();
         });
         robot.mouseMove(buttonLocation.x + buttonWidth / 2,
-            buttonLocation.y + buttonHeight / 2 );
+            buttonLocation.y + ROLLOVER_Y_OFFSET);
         robot.delay(1000);
         Color buttonColor = robot.getPixelColor(buttonLocation.x +
             buttonWidth / 2, buttonLocation.y + buttonHeight / 2);
@@ -141,16 +159,15 @@ public class bug4133768 {
         }
     }
 
-    private static void testDisabledButton(AbstractButton button) throws Exception {
+    private static void testDisabledButton(AbstractButton button)
+        throws Exception {
         robot.waitForIdle();
         SwingUtilities.invokeAndWait(() -> {
             buttonLocation = button.getLocationOnScreen();
             buttonWidth = button.getWidth();
             buttonHeight = button.getHeight();
         });
-        robot.mouseMove(buttonLocation.x + buttonWidth / 2,
-            buttonLocation.y + buttonHeight / 2 );
-        robot.delay(1000);
+        robot.delay(200);
         Color buttonColor = robot.getPixelColor(buttonLocation.x +
             buttonWidth / 2, buttonLocation.y + buttonHeight / 2);
         if (buttonColor.equals(Color.GREEN) ||

@@ -187,13 +187,7 @@ final class SignatureAlgorithmsExtension {
             }
 
             // Produce the extension.
-            if (chc.localSupportedSignAlgs == null) {
-                chc.localSupportedSignAlgs =
-                    SignatureScheme.getSupportedAlgorithms(
-                            chc.sslConfig,
-                            chc.algorithmConstraints, chc.activeProtocols,
-                            HANDSHAKE_SCOPE);
-            }
+            SignatureScheme.updateHandshakeLocalSupportedAlgs(chc);
 
             int vectorLen = SignatureScheme.sizeInRecord() *
                     chc.localSupportedSignAlgs.size();
@@ -417,18 +411,14 @@ final class SignatureAlgorithmsExtension {
             }
 
             // Produce the extension.
-            List<SignatureScheme> sigAlgs =
-                    SignatureScheme.getSupportedAlgorithms(
-                            shc.sslConfig,
-                            shc.algorithmConstraints,
-                            List.of(shc.negotiatedProtocol),
-                            HANDSHAKE_SCOPE);
-
-            int vectorLen = SignatureScheme.sizeInRecord() * sigAlgs.size();
+            // localSupportedSignAlgs has been already updated when we
+            // set the negotiated protocol.
+            int vectorLen = SignatureScheme.sizeInRecord()
+                    * shc.localSupportedSignAlgs.size();
             byte[] extData = new byte[vectorLen + 2];
             ByteBuffer m = ByteBuffer.wrap(extData);
             Record.putInt16(m, vectorLen);
-            for (SignatureScheme ss : sigAlgs) {
+            for (SignatureScheme ss : shc.localSupportedSignAlgs) {
                 Record.putInt16(m, ss.id);
             }
 

@@ -55,16 +55,17 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 
   null_check_offset = offset();
 
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(hdr, obj, rscratch1);
-    testb(Address(hdr, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
-    jcc(Assembler::notZero, slow_case);
-  }
-
   if (LockingMode == LM_LIGHTWEIGHT) {
     lightweight_lock(disp_hdr, obj, hdr, tmp, slow_case);
   } else  if (LockingMode == LM_LEGACY) {
     Label done;
+
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
+      load_klass(hdr, obj, rscratch1);
+      testb(Address(hdr, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
+      jcc(Assembler::notZero, slow_case);
+    }
+
     // Load object header
     movptr(hdr, Address(obj, hdr_offset));
     // and mark it as unlocked

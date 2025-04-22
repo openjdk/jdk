@@ -103,10 +103,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
     movptr(rax, Address(thread, Thread::pending_exception_offset()));
     // make sure that the vm_results are cleared
     if (oop_result1->is_valid()) {
-      movptr(Address(thread, JavaThread::vm_result_offset()), NULL_WORD);
+      movptr(Address(thread, JavaThread::vm_result_oop_offset()), NULL_WORD);
     }
     if (metadata_result->is_valid()) {
-      movptr(Address(thread, JavaThread::vm_result_2_offset()), NULL_WORD);
+      movptr(Address(thread, JavaThread::vm_result_metadata_offset()), NULL_WORD);
     }
     if (frame_size() == no_frame_size) {
       leave();
@@ -120,10 +120,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   }
   // get oop results if there are any and reset the values in the thread
   if (oop_result1->is_valid()) {
-    get_vm_result(oop_result1);
+    get_vm_result_oop(oop_result1);
   }
   if (metadata_result->is_valid()) {
-    get_vm_result_2(metadata_result);
+    get_vm_result_metadata(metadata_result);
   }
 
   assert(call_offset >= 0, "Should be set");
@@ -532,8 +532,8 @@ OopMapSet* Runtime1::generate_handle_exception(C1StubId id, StubAssembler *sasm)
     __ movptr(exception_pc, Address(rbp, 1*BytesPerWord));
 
     // make sure that the vm_results are cleared (may be unnecessary)
-    __ movptr(Address(thread, JavaThread::vm_result_offset()),   NULL_WORD);
-    __ movptr(Address(thread, JavaThread::vm_result_2_offset()), NULL_WORD);
+    __ movptr(Address(thread, JavaThread::vm_result_oop_offset()),   NULL_WORD);
+    __ movptr(Address(thread, JavaThread::vm_result_metadata_offset()), NULL_WORD);
     break;
   case C1StubId::handle_exception_nofpu_id:
   case C1StubId::handle_exception_id:
