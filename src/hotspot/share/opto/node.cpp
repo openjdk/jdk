@@ -2057,7 +2057,7 @@ void PrintBFS::print() {
     if (_print_igv) {
       Compile* C = Compile::current();
       C->init_igv();
-      C->igv_print_graph_to_network("PrintBFS", (Node*) C->root(), _print_list);
+      C->igv_print_graph_to_network("PrintBFS", _print_list);
     }
   } else {
     _output->print_cr("No nodes to print.");

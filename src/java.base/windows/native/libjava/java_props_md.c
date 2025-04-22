@@ -26,7 +26,6 @@
 #include "jni.h"
 #include "jni_util.h"
 
-#include <assert.h>
 #include <windows.h>
 #include <shlobj.h>
 #include <objidl.h>
@@ -47,7 +46,7 @@
 
 typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO);
 static BOOL SetupI18nProps(LCID lcid, char** language, char** script, char** country,
-               char** variant, char** encoding);
+               char** variant);
 
 #define PROPSIZE 9      // eight-letter + null terminator
 #define SNAMESIZE 86    // max number of chars for LOCALE_SNAME is 85
@@ -167,7 +166,7 @@ getEncodingFromLangID(LANGID langID)
 DllExport const char *
 getJavaIDFromLangID(LANGID langID)
 {
-    char * elems[5]; // lang, script, ctry, variant, encoding
+    char * elems[4]; // lang, script, ctry, variant
     char * ret;
     int index;
 
@@ -176,12 +175,12 @@ getJavaIDFromLangID(LANGID langID)
         return NULL;
     }
 
-    for (index = 0; index < 5; index++) {
+    for (index = 0; index < 4; index++) {
         elems[index] = NULL;
     }
 
     if (SetupI18nProps(MAKELCID(langID, SORT_DEFAULT),
-                   &(elems[0]), &(elems[1]), &(elems[2]), &(elems[3]), &(elems[4]))) {
+                   &(elems[0]), &(elems[1]), &(elems[2]), &(elems[3]))) {
 
         // there always is the "language" tag
         strcpy(ret, elems[0]);
@@ -198,7 +197,7 @@ getJavaIDFromLangID(LANGID langID)
         ret = NULL;
     }
 
-    for (index = 0; index < 5; index++) {
+    for (index = 0; index < 4; index++) {
         if (elems[index] != NULL) {
             free(elems[index]);
         }
@@ -263,7 +262,7 @@ cpu_isalist(void)
 
 static BOOL
 SetupI18nProps(LCID lcid, char** language, char** script, char** country,
-               char** variant, char** encoding) {
+               char** variant) {
     /* script */
     char tmp[SNAMESIZE];
     *script = malloc(PROPSIZE);
@@ -320,11 +319,6 @@ SetupI18nProps(LCID lcid, char** language, char** script, char** country,
         strcpy(*variant, "NY");
     }
 
-    /* encoding */
-    *encoding = getEncodingInternal(lcid);
-    if (*encoding == NULL) {
-        return FALSE;
-    }
     return TRUE;
 }
 
@@ -640,7 +634,6 @@ GetJavaProperties(JNIEnv* env)
         LCID userDefaultUILCID = MAKELCID(userDefaultUILang, SORTIDFROMLCID(userDefaultLCID));
 
         {
-            char * display_encoding;
             HANDLE hStdOutErr;
 
             // Windows UI Language selection list only cares "language"
@@ -659,23 +652,18 @@ GetJavaProperties(JNIEnv* env)
                            &sprops.format_language,
                            &sprops.format_script,
                            &sprops.format_country,
-                           &sprops.format_variant,
-                           &sprops.encoding);
+                           &sprops.format_variant);
             SetupI18nProps(userDefaultUILCID,
                            &sprops.display_language,
                            &sprops.display_script,
                            &sprops.display_country,
-                           &sprops.display_variant,
-                           &display_encoding);
-
-            if (sprops.encoding == NULL) {
-                sprops.encoding = "UTF-8";
-            }
+                           &sprops.display_variant);
 
             sprops.sun_jnu_encoding = getEncodingInternal(0);
             if (sprops.sun_jnu_encoding == NULL) {
                 sprops.sun_jnu_encoding = "UTF-8";
             }
+            sprops.encoding = sprops.sun_jnu_encoding;
 
             if (LANGIDFROMLCID(userDefaultLCID) == 0x0c04 && majorVersion == 6) {
                 // MS claims "Vista has built-in support for HKSCS-2004.
@@ -688,9 +676,6 @@ GetJavaProperties(JNIEnv* env)
                 sprops.encoding = "MS950_HKSCS";
                 sprops.sun_jnu_encoding = "MS950_HKSCS";
             }
-
-            assert(sprops.encoding != NULL);
-            assert(sprops.sun_jnu_encoding != NULL);
 
             hStdOutErr = GetStdHandle(STD_OUTPUT_HANDLE);
             if (hStdOutErr != INVALID_HANDLE_VALUE &&

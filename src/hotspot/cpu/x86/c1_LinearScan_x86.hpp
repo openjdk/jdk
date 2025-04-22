@@ -67,7 +67,7 @@ inline bool LinearScanWalker::pd_init_regs_for_alloc(Interval* cur) {
     _first_reg = pd_first_byte_reg;
     _last_reg = FrameMap::last_byte_reg();
     return true;
-  } else if ((UseSSE >= 1 && cur->type() == T_FLOAT) || (UseSSE >= 2 && cur->type() == T_DOUBLE)) {
+  } else if (cur->type() == T_FLOAT || cur->type() == T_DOUBLE) {
     _first_reg = pd_first_xmm_reg;
     _last_reg = last_xmm_reg;
     return true;

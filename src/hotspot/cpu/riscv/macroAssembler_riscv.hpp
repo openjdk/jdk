@@ -122,8 +122,8 @@ class MacroAssembler: public Assembler {
                Register arg_1, Register arg_2, Register arg_3,
                bool check_exceptions = true);
 
-  void get_vm_result(Register oop_result, Register java_thread);
-  void get_vm_result_2(Register metadata_result, Register java_thread);
+  void get_vm_result_oop(Register oop_result, Register java_thread);
+  void get_vm_result_metadata(Register metadata_result, Register java_thread);
 
   // These always tightly bind to MacroAssembler::call_VM_leaf_base
   // bypassing the virtual implementation
@@ -656,6 +656,11 @@ class MacroAssembler: public Assembler {
   void cmov_ltu(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_gt(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_gtu(Register cmp1, Register cmp2, Register dst, Register src);
+
+  void cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
+  void cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single);
 
  public:
   // We try to follow risc-v asm menomics.
