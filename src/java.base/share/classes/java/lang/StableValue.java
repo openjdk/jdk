@@ -667,7 +667,7 @@ public sealed interface StableValue<T>
      * provided {@code mapper} when they are first accessed
      * (e.g. via {@linkplain List#get(int) List::get}).
      * <p>
-     * The provided {@code mapper} int function is guaranteed to be successfully invoked
+     * The provided {@code mapper} function is guaranteed to be successfully invoked
      * at most once per list index, even in a multi-threaded environment. Competing
      * threads accessing an element already under computation will block until an element
      * is computed or an exception is thrown by the computing thread.
