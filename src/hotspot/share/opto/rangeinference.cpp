@@ -363,10 +363,34 @@ adjust_bounds_from_bits(const RangeInt<U>& bounds, const KnownBits<U>& bits) {
   // direction
   // However, we can observe that if v satisfies {bits._zeros, bits._ones},
   // then ~v would satisfy {bits._ones, bits._zeros}. Combine with the fact
-  // that ~ is a strictly decreasing function, if new_hi is the largest value
-  // not larger than hi that satisfies {bits._zeros, bits._ones}, then ~new_hi
-  // is the smallest value not smaller than ~hi that satisfies
-  // {bits._ones, bits._zeros}
+  // that bitwise-not is a strictly decreasing function, if new_hi is the
+  // largest value not larger than hi that satisfies {bits._zeros, bits._ones},
+  // then ~new_hi is the smallest value not smaller than ~hi that satisfies
+  // {bits._ones, bits._zeros}.
+  //
+  // Proof:
+  // Calling h the smallest value not smaller than ~hi that satisfies
+  // {bits._ones, bits._zeros}.
+  //
+  // 1. Since h satisfies {bits._ones, bits._zeros}, ~h satisfies
+  //   {bits._zeros, bits._ones}. Assume the contradiction ~h does not satisfy
+  //   {bits._zeros, bits._ones}, There can be 2 cases:
+  //   1.1. There is a bit in ~h that is 0 where the corresponding bit in ones
+  //     is 1. This implies the corresponding bit in h is 1. But this is
+  //     contradictory since h satisfies {bits._ones, bits._zeros}.
+  //   1.2. There is a bit in ~h that is 1 where the corresponding bit in zeros
+  //     is 1. Similarly, this leads to contradiction because h needs to
+  //     satisfy {bits._ones, bits._zeros}.
+  //
+  // 2. Assume there is a value k that is larger than ~h such that k is not
+  // larger than hi and k satisfies {bits._zeros, bits._ones}. As a result, ~k
+  // would satisfy {bits._ones, bits._zeros}. And since bitwise-not is a
+  // strictly decreasing function, given ~h < k <= hi, we have h > ~k >= ~hi.
+  // This contradicts the assumption that h is the smallest value not smaller
+  // than ~hi and satisfies {bits._ones, bits._zeros}.
+  //
+  // As a result, ~h is the largest value not larger than hi that satisfies
+  // bits (QED).
   U new_hi = ~adjust_lo(~bounds._hi, {bits._ones, bits._zeros});
   if (new_hi > bounds._hi) {
     return AdjustResult<RangeInt<U>>::make_empty();
