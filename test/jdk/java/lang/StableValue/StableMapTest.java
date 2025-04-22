@@ -137,7 +137,7 @@ final class StableMapTest {
         assertEquals("{" + KEY + "=" + KEY + "}", map.toString());
         String actual = newMap().toString();
         assertTrue(actual.startsWith("{"));
-        for (int key:KEYS) {
+        for (int key : KEYS) {
             assertTrue(actual.contains(key + "=.unset"));
         }
         assertTrue(actual.endsWith("}"));
