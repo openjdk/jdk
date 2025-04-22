@@ -52,7 +52,6 @@ public class OnFlyRepaintMenuTest {
                    the effect for menu items and submenu)
                          """;
         PassFailJFrame.builder()
-                .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(OnFlyRepaintMenuTest::initialize)
@@ -62,23 +61,18 @@ public class OnFlyRepaintMenuTest {
 
     static Frame initialize() {
         Frame f = new Frame("OnFly Menu Repaint Test");
-        Menu menu;
-        Menu submenu;
-        MenuItem menuItem;
-        MenuItem submenuItem;
-        CheckboxMenuItem checkMenuItem;
 
         f.setLayout(new BorderLayout());
         f.setSize(200, 100);
 
         MenuBar mb = new MenuBar();
-        menu = new Menu("Menu");
-        menuItem = new MenuItem("MenuItem");
+        Menu menu = new Menu("Menu");
+        MenuItem menuItem = new MenuItem("MenuItem");
         menu.add(menuItem);
-        submenu = new Menu("SubMenu");
-        submenuItem = new MenuItem("SubmenuItem");
+        Menu submenu = new Menu("SubMenu");
+        MenuItem submenuItem = new MenuItem("SubmenuItem");
         submenu.add(submenuItem);
-        checkMenuItem = new CheckboxMenuItem("CheckboxmenuItem");
+        CheckboxMenuItem checkMenuItem = new CheckboxMenuItem("CheckboxmenuItem");
         checkMenuItem.setState(true);
         menu.add(checkMenuItem);
         menu.add(submenu);

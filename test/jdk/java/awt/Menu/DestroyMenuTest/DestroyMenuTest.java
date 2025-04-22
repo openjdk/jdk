@@ -44,8 +44,8 @@ import java.awt.TextField;
 public class DestroyMenuTest {
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
-                1. Create many windows by randomly clicking 'Show Menu Test 1,
-                  'Show Menu Test 2', Show Menu Test 3' buttons.
+                1. Create many windows by randomly clicking 'Show Menu Test 1',
+                  'Show Menu Test 2', 'Show Menu Test 3' buttons.
                 2. Ignore the contents of the windows.
                    Go to the windows created and select menu items inside the menus.
                 3. Close the windows by selecting menu item File--> Quit.
@@ -54,7 +54,6 @@ public class DestroyMenuTest {
                    then the test FAILS. Otherwise the test is PASS.
                       """;
         PassFailJFrame.builder()
-                .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(38)
                 .testUI(DestroyMenuTest::initialize)
@@ -130,6 +129,7 @@ public class DestroyMenuTest {
     }
 
     static class mySimpleCanvas extends Canvas {
+        @Override
         public void paint(Graphics g) {
             g.drawOval(0, 0, 100, 100);
             g.drawOval(2, 2, 100, 100);

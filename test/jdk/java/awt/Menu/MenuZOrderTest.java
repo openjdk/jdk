@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6267182
- * @summary Menu is not visible after showing and disposing a file dialog, XToolkit
+ * @summary Menu is not visible after showing and disposing a file dialog.
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual MenuZOrderTest
@@ -40,6 +40,7 @@ import java.awt.event.ActionListener;
 
 public class MenuZOrderTest {
     static class Listener implements ActionListener {
+        @Override
         public void actionPerformed(ActionEvent e) {
             Frame f = new Frame("Menu Z order test frame");
             f.setBounds(200, 200, 200, 200);
@@ -51,11 +52,10 @@ public class MenuZOrderTest {
         String INSTRUCTIONS = """
                 1. Choose Menu 1 --> Menu Item 1 several times.
                 2. If menu window is shown correctly and each click
-                   creates new frame - press PASS.",
-                3. If menu window is obscured by frame - press FAIL."
+                   creates new frame - press PASS.
+                3. If menu window is obscured by frame - press FAIL.
                     """;
         PassFailJFrame.builder()
-                .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(MenuZOrderTest::initialize)

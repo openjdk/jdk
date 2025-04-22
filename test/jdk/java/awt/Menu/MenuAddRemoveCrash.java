@@ -44,7 +44,6 @@ public class MenuAddRemoveCrash {
                    Otherwise it is PASSED.
                     """;
         PassFailJFrame.builder()
-                .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(MenuAddRemoveCrash::initialize)

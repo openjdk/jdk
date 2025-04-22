@@ -150,6 +150,7 @@ public class MenuTest extends Frame {
 }
 
 class MyRectCanvas extends Canvas {
+    @Override
     public void paint(Graphics g) {
         g.drawRect(0, 0, 100, 100);
     }
@@ -162,6 +163,7 @@ class MyPanelOne extends Panel {
 }
 
 class MycircleCanvas extends Canvas {
+    @Override
     public void paint(Graphics g) {
         g.drawOval(0, 0, 100, 100);
         g.drawOval(2, 2, 100, 100);
