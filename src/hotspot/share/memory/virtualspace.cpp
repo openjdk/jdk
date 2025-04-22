@@ -422,9 +422,7 @@ void VirtualSpace::check_for_contiguity() {
 }
 
 void VirtualSpace::print_on(outputStream* out) const {
-  out->print("Virtual space:");
-  if (special()) out->print(" (pinned in memory)");
-  out->cr();
+  out->print_cr("Virtual space:%s", special() ? " (pinned in memory)" : "");
 
   StreamAutoIndentor indentor(out, 1);
   out->print_cr("- committed: %zu", committed_size());
