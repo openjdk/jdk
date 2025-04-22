@@ -91,7 +91,7 @@ public class SetShortCutTest {
             item1.setShortcut(new MenuShortcut(KeyEvent.VK_C, true));
             bar.add(menu1);
 
-            //Stuff menu
+            // Stuff menu
             item2 = new MenuItem("Second");
             Menu menu2 = new Menu("Stuff");
             menu2.add(item2);
@@ -103,6 +103,7 @@ public class SetShortCutTest {
             return bar;
         }
 
+        @Override
         public void actionPerformed(ActionEvent event) {
             if (event.getSource() == item1) {
                 Frame temp = new Frame("Accelerator key is working for 'First'");
@@ -110,10 +111,10 @@ public class SetShortCutTest {
                 temp.setVisible(true);
             }
 
-            //Click on the "Stuff" menu to remove the "first" menu item
+            // Click on the "Stuff" menu to remove the "first" menu item
             else if (event.getSource() == item2) {
-                //If the item has not been removed from the menu,
-                //then remove "First" from the "File" menu
+                // If the item has not been removed from the menu,
+                // then remove "First" from the "File" menu
                 if (beenHere == false) {
                     item1.removeActionListener(this);
                     menu1.remove(item1);
