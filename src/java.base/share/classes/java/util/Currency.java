@@ -32,8 +32,10 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
@@ -312,8 +314,8 @@ public final class Currency implements Serializable {
             // or in the list of other currencies.
             boolean found = false;
             if (currencyCode.length() != 3) {
-                throw new IllegalArgumentException("The input currency code must " +
-                        "have a length of 3 characters");
+                throw new IllegalArgumentException(
+                        "The input currency code: \"%s\" must have a length of 3 characters".formatted(currencyCode));
             }
             char char1 = currencyCode.charAt(0);
             char char2 = currencyCode.charAt(1);
@@ -336,8 +338,8 @@ public final class Currency implements Serializable {
             if (!found) {
                 OtherCurrencyEntry ocEntry = OtherCurrencyEntry.findEntry(currencyCode);
                 if (ocEntry == null) {
-                    throw new IllegalArgumentException("The input currency code" +
-                            " is not a valid ISO 4217 code");
+                    throw new IllegalArgumentException(
+                            "The input currency code: \"%s\" is not a valid ISO 4217 code".formatted(currencyCode));
                 }
                 defaultFractionDigits = ocEntry.fraction;
                 numericCode = ocEntry.numericCode;
@@ -392,8 +394,8 @@ public final class Currency implements Serializable {
         String country = CalendarDataUtility.findRegionOverride(locale).getCountry();
 
         if (country == null || !country.matches("^[a-zA-Z]{2}$")) {
-            throw new IllegalArgumentException("The country of the input locale" +
-                    " is not a valid ISO 3166 country code");
+            throw new IllegalArgumentException(
+                    "The country of the input locale: \"%s\" is not a valid ISO 3166 country code".formatted(locale));
         }
 
         char char1 = country.charAt(0);
@@ -410,8 +412,8 @@ public final class Currency implements Serializable {
         } else {
             // special cases
             if (tableEntry == INVALID_COUNTRY_ENTRY) {
-                throw new IllegalArgumentException("The country of the input locale" +
-                        " is not a valid ISO 3166 country code");
+                throw new IllegalArgumentException(
+                        "The country of the input locale: \"%s\" is not a valid ISO 3166 country code".formatted(locale));
             }
             if (tableEntry == COUNTRY_WITHOUT_CURRENCY_ENTRY) {
                 return null;
@@ -696,8 +698,8 @@ public final class Currency implements Serializable {
      */
     private static int getMainTableEntry(char char1, char char2) {
         if (char1 < 'A' || char1 > 'Z' || char2 < 'A' || char2 > 'Z') {
-            throw new IllegalArgumentException("The country code is not a " +
-                    "valid ISO 3166 code");
+            throw new IllegalArgumentException(
+                    "The country code: \"%c%c\" is not a valid ISO 3166 code".formatted(char1, char2));
         }
         return mainTable[(char1 - 'A') * A_TO_Z + (char2 - 'A')];
     }
@@ -708,8 +710,8 @@ public final class Currency implements Serializable {
      */
     private static void setMainTableEntry(char char1, char char2, int entry) {
         if (char1 < 'A' || char1 > 'Z' || char2 < 'A' || char2 > 'Z') {
-            throw new IllegalArgumentException("The country code is not a " +
-                    "valid ISO 3166 code");
+            throw new IllegalArgumentException(
+                    "The country code: \"%c%c\" is not a valid ISO 3166 code".formatted(char1, char2));
         }
         mainTable[(char1 - 'A') * A_TO_Z + (char2 - 'A')] = entry;
     }
@@ -1156,7 +1158,7 @@ public final class Currency implements Serializable {
                                 && !isPastCutoverDate(prop.date)) {
                             prop = null;
                         }
-                    } catch (ParseException ex) {
+                    } catch (DateTimeParseException ex) {
                         prop = null;
                     }
                 }
@@ -1196,15 +1198,12 @@ public final class Currency implements Serializable {
                     || prop.fraction != fractionDigit);
         }
 
-        private static boolean isPastCutoverDate(String s)
-                throws ParseException {
-            SimpleDateFormat format = new SimpleDateFormat(
-                    "yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT);
-            format.setTimeZone(TimeZone.getTimeZone("UTC"));
-            format.setLenient(false);
-            long time = format.parse(s.trim()).getTime();
-            return System.currentTimeMillis() > time;
-
+        // cutOver adheres to ISO8601 Local Date Time format (excluding nano secs)
+        private static boolean isPastCutoverDate(String cutOver) {
+            return System.currentTimeMillis() >
+                    LocalDateTime.parse(cutOver, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                            .toInstant(ZoneOffset.UTC)
+                            .toEpochMilli();
         }
 
         private static void info(String message, Throwable t) {

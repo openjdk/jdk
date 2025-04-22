@@ -100,6 +100,7 @@
   do_blob(throw_class_cast_exception)                                  \
   do_blob(throw_incompatible_class_change_error)                       \
   do_blob(slow_subtype_check)                                          \
+  do_blob(is_instance_of)                                              \
   do_blob(monitorenter)                                                \
   do_blob(monitorenter_nofpu)             /* optimized version that does not preserve fpu registers */ \
   do_blob(monitorexit)                                                 \
@@ -496,7 +497,7 @@
 // Currently there is no support for a do_arch_array_entry template.
 
 // Include arch-specific stub and entry declarations and make sure the
-// relevant template macros ahve been defined
+// relevant template macros have been defined
 
 #include CPU_HEADER(stubDeclarations)
 
@@ -551,6 +552,8 @@
            catch_exception_entry)                                       \
   do_stub(initial, fence)                                               \
   do_entry(initial, fence, fence_entry, fence_entry)                    \
+  do_stub(initial, atomic_add)                                          \
+  do_entry(initial, atomic_add, atomic_add_entry, atomic_add_entry)     \
   do_stub(initial, atomic_xchg)                                         \
   do_entry(initial, atomic_xchg, atomic_xchg_entry, atomic_xchg_entry)  \
   do_stub(initial, atomic_cmpxchg)                                      \
@@ -637,8 +640,6 @@
                                   do_arch_blob,                         \
                                   do_arch_entry, do_arch_entry_init)    \
   do_blob(compiler)                                                     \
-  do_stub(compiler, atomic_add)                                         \
-  do_entry(compiler, atomic_add, atomic_add_entry, atomic_add_entry)    \
   do_stub(compiler, array_sort)                                         \
   do_entry(compiler, array_sort, array_sort, select_arraysort_function) \
   do_stub(compiler, array_partition)                                    \
@@ -677,6 +678,36 @@
            ghash_processBlocks)                                         \
   do_stub(compiler, chacha20Block)                                      \
   do_entry(compiler, chacha20Block, chacha20Block, chacha20Block)       \
+  do_stub(compiler, kyberNtt)                                           \
+  do_entry(compiler, kyberNtt, kyberNtt, kyberNtt)                      \
+  do_stub(compiler, kyberInverseNtt)                                    \
+  do_entry(compiler, kyberInverseNtt, kyberInverseNtt, kyberInverseNtt) \
+  do_stub(compiler, kyberNttMult)                                       \
+  do_entry(compiler, kyberNttMult, kyberNttMult, kyberNttMult)          \
+  do_stub(compiler, kyberAddPoly_2)                                     \
+  do_entry(compiler, kyberAddPoly_2, kyberAddPoly_2, kyberAddPoly_2)    \
+  do_stub(compiler, kyberAddPoly_3)                                     \
+  do_entry(compiler, kyberAddPoly_3, kyberAddPoly_3, kyberAddPoly_3)    \
+  do_stub(compiler, kyber12To16)                                        \
+  do_entry(compiler, kyber12To16, kyber12To16, kyber12To16)             \
+  do_stub(compiler, kyberBarrettReduce)                                 \
+  do_entry(compiler, kyberBarrettReduce, kyberBarrettReduce,            \
+           kyberBarrettReduce)                                          \
+  do_stub(compiler, dilithiumAlmostNtt)                                 \
+  do_entry(compiler, dilithiumAlmostNtt,                                \
+           dilithiumAlmostNtt, dilithiumAlmostNtt)                      \
+  do_stub(compiler, dilithiumAlmostInverseNtt)                          \
+  do_entry(compiler, dilithiumAlmostInverseNtt,                         \
+           dilithiumAlmostInverseNtt, dilithiumAlmostInverseNtt)        \
+  do_stub(compiler, dilithiumNttMult)                                   \
+  do_entry(compiler, dilithiumNttMult,                                  \
+           dilithiumNttMult, dilithiumNttMult)                          \
+  do_stub(compiler, dilithiumMontMulByConstant)                         \
+  do_entry(compiler, dilithiumMontMulByConstant,                        \
+           dilithiumMontMulByConstant, dilithiumMontMulByConstant)      \
+  do_stub(compiler, dilithiumDecomposePoly)                             \
+  do_entry(compiler, dilithiumDecomposePoly,                            \
+           dilithiumDecomposePoly, dilithiumDecomposePoly)              \
   do_stub(compiler, data_cache_writeback)                               \
   do_entry(compiler, data_cache_writeback, data_cache_writeback,        \
            data_cache_writeback)                                        \
@@ -724,6 +755,8 @@
   do_stub(compiler, sha3_implCompress)                                  \
   do_entry(compiler, sha3_implCompress, sha3_implCompress,              \
            sha3_implCompress)                                           \
+  do_stub(compiler, double_keccak)                                      \
+  do_entry(compiler, double_keccak, double_keccak, double_keccak)       \
   do_stub(compiler, sha3_implCompressMB)                                \
   do_entry(compiler, sha3_implCompressMB, sha3_implCompressMB,          \
            sha3_implCompressMB)                                         \
@@ -1042,7 +1075,6 @@
                  DO_ARCH_BLOB_EMPTY2,                                   \
                  DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
 
-
 // client macro to operate only on StubGenerator arch blobs
 
 #define STUBGEN_ARCH_BLOBS_DO(do_arch_blob)                             \
@@ -1064,4 +1096,3 @@
                  do_arch_entry, do_arch_entry_init)                     \
 
 #endif // SHARE_RUNTIME_STUBDECLARATIONS_HPP
-

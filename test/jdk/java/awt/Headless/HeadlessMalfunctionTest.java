@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,11 @@ import java.nio.file.Path;
  * @bug 8336382
  * @summary Test that in absence of isHeadless method, the JDK throws a meaningful error message.
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @requires os.family == "linux"
  * @build HeadlessMalfunctionAgent
  * @run driver  jdk.test.lib.helpers.ClassFileInstaller
  *              HeadlessMalfunctionAgent
  *              HeadlessMalfunctionAgent$1
- *              HeadlessMalfunctionAgent$1$1
  * @run driver HeadlessMalfunctionTest
  */
 public class HeadlessMalfunctionTest {
@@ -49,19 +48,20 @@ public class HeadlessMalfunctionTest {
         final ProcessBuilder pbJar = new ProcessBuilder()
                 .command(JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", "agent.jar",
                         "HeadlessMalfunctionAgent.class",
-                        "HeadlessMalfunctionAgent$1.class",
-                        "HeadlessMalfunctionAgent$1$1.class");
+                        "HeadlessMalfunctionAgent$1.class");
         ProcessTools.executeProcess(pbJar).shouldHaveExitValue(0);
 
         // Run test
         final ProcessBuilder pbJava = ProcessTools.createTestJavaProcessBuilder(
-                "--add-opens",
-                "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
                 "-javaagent:agent.jar",
                 "HeadlessMalfunctionTest$Runner"
         );
         final OutputAnalyzer output = ProcessTools.executeProcess(pbJava);
         // Unpatched JDK logs: "FATAL ERROR in native method: Could not allocate library name"
+        // Patched should mention that isHeadless is missing, log message differs between OSes;
+        // e.g. LWCToolkit toolkit path on MacOS and Win32GraphicsEnvironment code path on Windows
+        // logs "java.lang.NoSuchMethodError: 'boolean java.awt.GraphicsEnvironment.isHeadless()'",
+        // whereas Linux logs "FATAL ERROR in native method: GetStaticMethodID isHeadless failed"
         output.shouldContain("FATAL ERROR in native method: GetStaticMethodID isHeadless failed");
         output.shouldNotHaveExitValue(0);
     }

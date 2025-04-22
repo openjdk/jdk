@@ -355,7 +355,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
   LIR_Opr reg = rlock(x);
   arithmetic_op_fpu(x->op(), reg, left.result(), right.result());
 
-  set_result(x, round_item(reg));
+  set_result(x, reg);
 }
 
 // for  _ladd, _lmul, _lsub, _ldiv, _lrem
@@ -1100,6 +1100,11 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   __ instanceof(reg, obj.result(), x->klass(),
                 new_register(objectType), new_register(objectType), tmp3,
                 x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
+}
+
+// Intrinsic for Class::isInstance
+address LIRGenerator::isInstance_entry() {
+  return Runtime1::entry_for(C1StubId::is_instance_of_id);
 }
 
 void LIRGenerator::do_If(If* x) {

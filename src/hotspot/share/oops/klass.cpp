@@ -328,6 +328,12 @@ jint Klass::array_layout_helper(BasicType etype) {
   return lh;
 }
 
+int Klass::modifier_flags() const {
+  int mods = java_lang_Class::modifiers(java_mirror());
+  assert(mods == compute_modifier_flags(), "should be same");
+  return mods;
+}
+
 bool Klass::can_be_primary_super_slow() const {
   if (super() == nullptr)
     return true;
@@ -822,9 +828,15 @@ void Klass::remove_java_mirror() {
   if (CDSConfig::is_dumping_heap()) {
     Klass* src_k = ArchiveBuilder::current()->get_source_addr(this);
     oop orig_mirror = src_k->java_mirror();
-    oop scratch_mirror = HeapShared::scratch_java_mirror(orig_mirror);
-    if (scratch_mirror != nullptr) {
-      _archived_mirror_index = HeapShared::append_root(scratch_mirror);
+    if (orig_mirror == nullptr) {
+      assert(CDSConfig::is_dumping_final_static_archive(), "sanity");
+      assert(is_instance_klass(), "sanity");
+      assert(InstanceKlass::cast(this)->is_shared_unregistered_class(), "sanity");
+    } else {
+      oop scratch_mirror = HeapShared::scratch_java_mirror(orig_mirror);
+      if (scratch_mirror != nullptr) {
+        _archived_mirror_index = HeapShared::append_root(scratch_mirror);
+      }
     }
   }
 #endif
