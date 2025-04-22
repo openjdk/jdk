@@ -2836,8 +2836,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @since 25
      */
     public BigInteger[] nthRootAndRemainder(int n) {
-	return n == 1 ? new BigInteger[] { this, ZERO }
-		      : (n == 2 ? sqrtAndRemainder() : nthRootAndRemainder(n, true));
+        return n == 1 ? new BigInteger[] { this, ZERO }
+                      : (n == 2 ? sqrtAndRemainder() : nthRootAndRemainder(n, true));
     }
 
     /**
@@ -2852,8 +2852,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         MutableBigInteger[] rootRem = new MutableBigInteger(this.mag).nthRootRem(n);
         return new BigInteger[] {
-        	rootRem[0].toBigInteger(signum),
-        	needRemainder ? rootRem[1].toBigInteger(signum) : null
+                rootRem[0].toBigInteger(signum),
+                needRemainder ? rootRem[1].toBigInteger(signum) : null
         };
     }
 

@@ -1956,7 +1956,7 @@ class MutableBigInteger {
                     long rToN = rToN1 * rLong;
                     if (Long.compareUnsigned(rToN, x) <= 0)
                         return new MutableBigInteger[] {
-                        	new MutableBigInteger(rLong), new MutableBigInteger(x - rToN)
+                                new MutableBigInteger(rLong), new MutableBigInteger(x - rToN)
                         };
 
                     // compute rLong - ceil((rToN - x) / (n * rToN1))
