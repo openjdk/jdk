@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -64,11 +65,8 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
         }
         final int index = value.ordinal() - firstOrdinal;
         final StableValueImpl<R> delegate;
-        try {
-            delegate = delegates[index];
-        } catch (ArrayIndexOutOfBoundsException ioob) {
-            throw new IllegalArgumentException("Input not allowed: " + value, ioob);
-        }
+        // Since we did the member.test above, we know the index is in bounds
+        delegate = delegates[index];
         return delegate.orElseSet(new Supplier<R>() {
                     @Override public R get() { return original.apply(value); }});
 
@@ -100,8 +98,9 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
     @SuppressWarnings("unchecked")
     public static <T, E extends Enum<E>, R> Function<T, R> of(Set<? extends T> inputs,
                                                               Function<? super T, ? extends R> original) {
-        final BitSet bitSet = new BitSet(inputs.size());
         // The input set is not empty
+        final Class<E> enumType = (Class<E>)inputs.iterator().next().getClass();
+        final BitSet bitSet = new BitSet(enumType.getEnumConstants().length);
         int min = Integer.MAX_VALUE;
         int max = Integer.MIN_VALUE;
         for (T t : inputs) {
@@ -110,9 +109,7 @@ public record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
             max = Math.max(max, ordinal);
             bitSet.set(ordinal);
         }
-
         final int size = max - min + 1;
-        final Class<E> enumType = (Class<E>)inputs.iterator().next().getClass();
         final IntPredicate member = ImmutableBitSetPredicate.of(bitSet);
         return (Function<T, R>) new StableEnumFunction<E, R>(enumType, min, member, StableUtil.array(size), (Function<E, R>) original);
     }

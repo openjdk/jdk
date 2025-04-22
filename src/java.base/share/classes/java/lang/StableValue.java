@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import jdk.internal.lang.stable.StableEnumFunction;
 import jdk.internal.lang.stable.StableFunction;
 import jdk.internal.lang.stable.StableIntFunction;
 import jdk.internal.lang.stable.StableSupplier;
+import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.lang.stable.StableValueImpl;
 
 import java.io.Serializable;
@@ -119,11 +120,11 @@ import java.util.function.Supplier;
  * words, {@code orElseSet()} guarantees that a stable value's content is <em>set</em>
  * before it returns.
  * <p>
- * Furthermore, {@code orElseSet()} guarantees that the supplier provided is
- * evaluated at most once, even when {@code logger.orElseSet()} is invoked concurrently.
- * This property is crucial as evaluation of the supplier may have side effects,
- * e.g., the call above to {@code Logger.create()} may result in storage resources
- * being prepared.
+ * Furthermore, {@code orElseSet()} guarantees that out of one or more suppliers provided,
+ * only at most one is ever evaluated and that one is only ever evaluated once,
+ * even when {@code logger.orElseSet()} is invoked concurrently. This property is crucial
+ * as evaluation of the supplier may have side effects, for example, the call above to
+ * {@code Logger.create()} may result in storage resources being prepared.
  *
  * <h2 id="stable-functions">Stable Functions</h2>
  * Stable values provide the foundation for higher-level functional abstractions. A
@@ -340,8 +341,8 @@ import java.util.function.Supplier;
  * traditional non-caching recursive fibonacci method. Once computed, the VM is free to
  * constant-fold expressions like {@code Fibonacci.fib(5)}.
  * <p>
- * The fibonacci example above is a dependency graph with no circular dependencies (i.e.,
- * it is a dependency tree):
+ * The fibonacci example above is a directed acyclic graph (i.e.,
+ * it has no circular dependencies and is therefore a dependency tree):
  *{@snippet lang=text :
  *
  *              ___________fib(5)____________
@@ -360,7 +361,8 @@ import java.util.function.Supplier;
  * <h2 id="thread-safety">Thread Safety</h2>
  * The content of a stable value is guaranteed to be set at most once. If competing
  * threads are racing to set a stable value, only one update succeeds, while other updates
- * are blocked until the stable value becomes set.
+ * are blocked until the stable value becomes set whereafter the other updates
+ * observes the stable value is set and leave the stable value unchanged.
  * <p>
  * The at-most-once write operation on a stable value that succeeds
  * (e.g. {@linkplain #trySet(Object) trySet()})
@@ -385,10 +387,11 @@ import java.util.function.Supplier;
  * Invocations of {@link #setOrThrow(Object)} form a total order of zero or more
  * exceptional invocations followed by zero (if the content was already set) or one
  * successful invocation. Since stable functions and stable collections are built on top
- * of {@linkplain StableValue#orElseSet(Supplier) orElseSet()} they too are
- * thread safe and guarantee at-most-once-per-input invocation.
+ * of the same principles as {@linkplain StableValue#orElseSet(Supplier) orElseSet()} they
+ * too are thread safe and guarantee at-most-once-per-input invocation.
  *
  * <h2 id="performance">Performance</h2>
+<<<<<<< Updated upstream
  * The _content_ of a set stable value is treated as a constant by the JVM, provided that
  * the reference to the stable value is also constant (e.g. in cases where the
  * stable value itself is stored in a {@code static final} field). Stable functions and
@@ -398,12 +401,22 @@ import java.util.function.Supplier;
  * This means that, at least in some cases, access to the content of a stable value
  * enjoys the same constant-folding optimizations that are available when accessing
  * {@code static final} fields.
+=======
+ * As the contents of a stable value can never change after it has been set, a JVM
+ * implementation may, for a set stable value, elide all future reads of that
+ * stable value, and instead directly use any content that it has previously observed.
+ * This is true if the reference to the stable value is a constant (e.g. in cases where
+ * the stable value itself is stored in a {@code static final} field). Stable functions
+ * and collections are built on top of StableValue. As such, they might also be eligible
+ * for the same JVM optimizations as for StableValue.
+>>>>>>> Stashed changes
  *
  * @implSpec Implementing classes of {@code StableValue} are free to synchronize on
- *           {@code this} and consequently, care should be taken whenever
- *           (directly or indirectly) synchronizing on a {@code StableValue}. Failure to
- *           do this may lead to deadlock. Stable functions and collections on the
- *           other hand are guaranteed <em>not to synchronize</em> on {@code this}.
+ *           {@code this} and consequently, it should be avoided to
+ *           (directly or indirectly) synchronize on a {@code StableValue}. Hence,
+ *           synchronizing on {@code this} may lead to deadlock. Stable functions
+ *           and collections on the other hand are guaranteed <em>not to synchronize</em>
+ *           on {@code this}.
  *           Except for a {@code StableValue}'s content itself, an {@linkplain #orElse(Object) orElse(other)}
  *           parameter, and an {@linkplain #equals(Object) equals(obj)} parameter; all
  *           method parameters must be <em>non-null</em> or a {@link NullPointerException}
@@ -419,16 +432,17 @@ import java.util.function.Supplier;
  *           to minimize evaluation of the internal stable values when called.
  *           As objects can be set via stable values but never removed, this can be a source
  *           of unintended memory leaks. A stable value's content is
- *           {@linkplain java.lang.ref##reachability strongly reachable}. Clients are
- *           advised that {@linkplain java.lang.ref##reachability reachable} stable values
- *           will hold their set content until the stable value itself is collected.
+ *           {@linkplain java.lang.ref##reachability strongly reachable}.
+ *           Be advised that reachable stable values will hold their set content until
+ *           the stable value itself is collected.
  *           A {@code StableValue} that has a type parameter {@code T} that is an array
  *           type (of arbitrary rank) will only allow the JVM to treat the <em>array reference</em>
  *           as a stable value but <em>not its components</em>. Clients can instead use
  *           {@linkplain #list(int, IntFunction) a stable list} of arbitrary depth, which
  *           provides stable components. More generally, a stable value can hold other
  *           stable values of arbitrary depth and still provide transitive constantness.
- *           Stable values, functions and collections are not {@link Serializable}.
+ *
+ * @implNote Stable values, functions and collections are not {@link Serializable}.
  *
  * @param <T> type of the content
  *
@@ -566,7 +580,8 @@ public sealed interface StableValue<T>
      * at most once even in a multi-threaded environment. Competing threads invoking the
      * returned supplier's {@linkplain Supplier#get() get()} method when a value is
      * already under computation will block until a value is computed or an exception is
-     * thrown by the computing thread.
+     * thrown by the computing thread. The computing threads will then observe the newly
+     * computed value (if any) and will then never execute.
      * <p>
      * If the provided {@code underlying} supplier throws an exception, it is relayed
      * to the initial caller and no content is recorded.
@@ -599,23 +614,22 @@ public sealed interface StableValue<T>
      * computation will block until a value is computed or an exception is thrown by
      * the computing thread.
      * <p>
-     * If the provided {@code underlying} function throws an exception, it is relayed
-     * to the initial caller and no content is recorded.
+     * If invoking the provided {@code underlying} function throws an exception, it is
+     * relayed to the initial caller and no content is recorded.
      * <p>
      * If the provided {@code underlying} function recursively calls the returned
      * function for the same input, an {@linkplain IllegalStateException} will
      * be thrown.
      *
-     * @param size       the size of the allowed inputs in {@code [0, size)}
+     * @param size       the size of the allowed inputs in the continuous
+     *                   interval {@code [0, size)}
      * @param underlying IntFunction used to compute cached values
      * @param <R>        the type of results delivered by the returned IntFunction
      * @throws IllegalArgumentException if the provided {@code size} is negative.
      */
     static <R> IntFunction<R> intFunction(int size,
                                           IntFunction<? extends R> underlying) {
-        if (size < 0) {
-            throw new IllegalArgumentException();
-        }
+        StableUtil.assertSizeNonNegative(size);
         Objects.requireNonNull(underlying);
         return StableIntFunction.of(size, underlying);
     }
@@ -636,8 +650,8 @@ public sealed interface StableValue<T>
      * method when a value is already under computation will block until a value is
      * computed or an exception is thrown by the computing thread.
      * <p>
-     * If the provided {@code underlying} function throws an exception, it is relayed to
-     * the initial caller and no content is recorded.
+     * If invoking the provided {@code underlying} function throws an exception, it is
+     * relayed to the initial caller and no content is recorded.
      * <p>
      * If the provided {@code underlying} function recursively calls the returned
      * function for the same input, an {@linkplain IllegalStateException} will
@@ -653,6 +667,8 @@ public sealed interface StableValue<T>
     static <T, R> Function<T, R> function(Set<? extends T> inputs,
                                           Function<? super T, ? extends R> underlying) {
         Objects.requireNonNull(inputs);
+        // Checking that the Set of inputs does not contain a `null` value is made in the
+        // implementing classes.
         Objects.requireNonNull(underlying);
         return inputs instanceof EnumSet<?> && !inputs.isEmpty()
                 ? StableEnumFunction.of(inputs, underlying)
@@ -672,8 +688,8 @@ public sealed interface StableValue<T>
      * threads accessing an element already under computation will block until an element
      * is computed or an exception is thrown by the computing thread.
      * <p>
-     * If the provided {@code mapper} throws an exception, it is relayed to the initial
-     * caller and no value for the element is recorded.
+     * If invoking the provided {@code mapper} function throws an exception, it
+     * is rethrown to the initial caller and no value for the element is recorded.
      * <p>
      * Any direct {@link List#subList(int, int) subList} or {@link List#reversed()} views
      * of the returned list are also stable.
@@ -696,9 +712,7 @@ public sealed interface StableValue<T>
      */
     static <E> List<E> list(int size,
                             IntFunction<? extends E> mapper) {
-        if (size < 0) {
-            throw new IllegalArgumentException();
-        }
+        StableUtil.assertSizeNonNegative(size);
         Objects.requireNonNull(mapper);
         return SharedSecrets.getJavaUtilCollectionAccess().stableList(size, mapper);
     }
@@ -716,8 +730,9 @@ public sealed interface StableValue<T>
      * threads accessing a value already under computation will block until an element
      * is computed or an exception is thrown by the computing thread.
      * <p>
-     * If invoking the provided {@code mapper} function throws an exception, it is rethrown to the initial
-     * caller and no value associated with the provided key is recorded.
+     * If invoking the provided {@code mapper} function throws an exception, it
+     * is rethrown to the initial caller and no value associated with the provided key
+     * is recorded.
      * <p>
      * Any direct {@link Map#values()} or {@link Map#entrySet()} views
      * of the returned map are also stable.
@@ -740,6 +755,8 @@ public sealed interface StableValue<T>
     static <K, V> Map<K, V> map(Set<K> keys,
                                 Function<? super K, ? extends V> mapper) {
         Objects.requireNonNull(keys);
+        // Checking that the Set of keys does not contain a `null` value is made in the
+        // implementing class.
         Objects.requireNonNull(mapper);
         return SharedSecrets.getJavaUtilCollectionAccess().stableMap(keys, mapper);
     }
