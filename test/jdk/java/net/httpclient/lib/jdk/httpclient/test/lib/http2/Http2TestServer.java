@@ -65,11 +65,11 @@ public class Http2TestServer implements AutoCloseable {
     private volatile Predicate<String> newRequestApprover;
 
     public Http2TestServer(String serverName, boolean secure, int port) throws Exception {
-        this(serverName, secure, port, createExecutor(serverName), 50, null, null);
+        this(serverName, secure, port, null, 50, null, null);
     }
 
     public Http2TestServer(boolean secure, int port) throws Exception {
-        this(null, secure, port, createExecutor(null), 50, null, null);
+        this(null, secure, port, null, 50, null, null);
     }
 
     public InetSocketAddress getAddress() {
@@ -191,8 +191,8 @@ public class Http2TestServer implements AutoCloseable {
         this.connections = ConcurrentHashMap.newKeySet();
     }
 
-    private static ExecutorService createExecutor(String serverName) {
-        String threadNamePrefix = "http2-test-server-worker" + (serverName != null ? "[%s]".formatted(serverName) : "");
+    private static ExecutorService createExecutor(String name) {
+        String threadNamePrefix = "http2-test-server-worker" + (name != null ? "[%s]".formatted(name) : "");
         return HttpServerAdapters.createExecutor(threadNamePrefix);
     }
 
