@@ -547,27 +547,4 @@ public final class MontgomeryIntegerPolynomialP256 extends IntegerPolynomial
         limbs[i - 5] += (v << 4) & LIMB_MASK;
         limbs[i - 4] += v >> 48;
     }
-
-    // Used when limbs a could overflow by one modulus.
-    @ForceInline
-    protected void reducePositive(long[] a) {
-        long aa0 = a[0];
-        long aa1 = a[1] + (aa0>>BITS_PER_LIMB);
-        long aa2 = a[2] + (aa1>>BITS_PER_LIMB);
-        long aa3 = a[3] + (aa2>>BITS_PER_LIMB);
-        long aa4 = a[4] + (aa3>>BITS_PER_LIMB);
-
-        long c0 = a[0] - modulus[0];
-        long c1 = a[1] - modulus[1] + (c0 >> BITS_PER_LIMB);
-        long c2 = a[2] - modulus[2] + (c1 >> BITS_PER_LIMB);
-        long c3 = a[3] - modulus[3] + (c2 >> BITS_PER_LIMB);
-        long c4 = a[4] - modulus[4] + (c3 >> BITS_PER_LIMB);
-        long mask = c4 >> BITS_PER_LIMB; // Signed shift!
-
-        a[0] = ((aa0 & mask) | (c0 & ~mask)) & LIMB_MASK;
-        a[1] = ((aa1 & mask) | (c1 & ~mask)) & LIMB_MASK;
-        a[2] = ((aa2 & mask) | (c2 & ~mask)) & LIMB_MASK;
-        a[3] = ((aa3 & mask) | (c3 & ~mask)) & LIMB_MASK;
-        a[4] = ((aa4 & mask) | (c4 & ~mask));
-    }
 }

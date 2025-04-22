@@ -43,7 +43,7 @@ import javax.xml.XMLConstants;
 import javax.xml.validation.Schema;
 import jdk.xml.internal.FeaturePropertyBase;
 import jdk.xml.internal.JdkConstants;
-import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.xml.sax.EntityResolver;
@@ -569,20 +569,13 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
                 super.setProperty(name, value);
             }
 
-            //check if the property is managed by security manager
-            if (fSecurityManager == null ||
-                    !fSecurityManager.setLimit(name, JdkProperty.State.APIPROPERTY, value)) {
-                //check if the property is managed by security property manager
-                if (fSecurityPropertyMgr == null ||
-                        !fSecurityPropertyMgr.setValue(name, FeaturePropertyBase.State.APIPROPERTY, value)) {
-                    //fall back to the existing property manager
-                    if (!fInitProperties.containsKey(name)) {
-                        fInitProperties.put(name, super.getProperty(name));
-                    }
-                    super.setProperty(name, value);
+            if (!JdkXmlUtils.setProperty(fSecurityManager, fSecurityPropertyMgr, name, value)) {
+                //fall back to the existing property manager
+                if (!fInitProperties.containsKey(name)) {
+                    fInitProperties.put(name, super.getProperty(name));
                 }
+                super.setProperty(name, value);
             }
-
         }
 
         public synchronized Object getProperty(String name)
@@ -596,19 +589,10 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
                 return fSAXParser.schemaLanguage;
             }
 
-            /** Check to see if the property is managed by the security manager **/
-            String propertyValue = (fSecurityManager != null) ?
-                    fSecurityManager.getLimitAsString(name) : null;
-            if (propertyValue != null) {
-                return propertyValue;
-            } else {
-                propertyValue = (fSecurityPropertyMgr != null) ?
-                    fSecurityPropertyMgr.getValue(name) : null;
-                if (propertyValue != null) {
-                    return propertyValue;
-                }
+            String value;
+            if ((value = JdkXmlUtils.getProperty(fSecurityManager, fSecurityPropertyMgr, name)) != null) {
+                return value;
             }
-
             return super.getProperty(name);
         }
 

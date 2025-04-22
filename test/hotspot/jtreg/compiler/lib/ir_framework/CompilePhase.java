@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public enum CompilePhase {
     ELIMINATE_VBOX_ALLOC("Eliminate VectorBoxAllocate"),
     ITER_GVN_BEFORE_EA("Iter GVN before EA"),
     ITER_GVN_AFTER_VECTOR("Iter GVN after vector box elimination"),
+    BEFORE_LOOP_OPTS("Before Loop Optimizations"),
     BEFORE_BEAUTIFY_LOOPS("Before beautify loops"),
     AFTER_BEAUTIFY_LOOPS("After beautify loops"),
     BEFORE_LOOP_UNROLLING("Before Loop Unrolling"),
@@ -95,6 +96,7 @@ public enum CompilePhase {
     CCP1("PhaseCCP 1"),
     ITER_GVN2("Iter GVN 2"),
     PHASEIDEALLOOP_ITERATIONS("PhaseIdealLoop iterations"),
+    AFTER_LOOP_OPTS("After Loop Optimizations"),
     AFTER_MERGE_STORES("After Merge Stores"),
     BEFORE_MACRO_EXPANSION("Before Macro Expansion"),
     AFTER_MACRO_EXPANSION_STEP("After Macro Expansion Step"),
