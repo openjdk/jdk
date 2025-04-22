@@ -2726,10 +2726,8 @@ public class Main {
     }
 
     char[] getPass(String prompt) {
-        System.err.print(prompt);
-        System.err.flush();
         try {
-            char[] pass = Password.readPassword(System.in);
+            char[] pass = Password.toolReadPassword(prompt);
 
             if (pass == null) {
                 error(rb.getString("you.must.enter.key.password"));
