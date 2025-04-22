@@ -26,12 +26,6 @@
 #define CPU_X86_C1_LINEARSCAN_X86_HPP
 
 inline bool LinearScan::is_processed_reg_num(int reg_num) {
-#ifndef _LP64
-  // rsp and rbp (numbers 6 ancd 7) are ignored
-  assert(FrameMap::rsp_opr->cpu_regnr() == 6, "wrong assumption below");
-  assert(FrameMap::rbp_opr->cpu_regnr() == 7, "wrong assumption below");
-  assert(reg_num >= 0, "invalid reg_num");
-#else
   // rsp and rbp, r10, r15 (numbers [12,15]) are ignored
   // r12 (number 11) is conditional on compressed oops.
   assert(FrameMap::r12_opr->cpu_regnr() == 11, "wrong assumption below");
@@ -40,16 +34,10 @@ inline bool LinearScan::is_processed_reg_num(int reg_num) {
   assert(FrameMap::rsp_opr->cpu_regnrLo() == 14, "wrong assumption below");
   assert(FrameMap::rbp_opr->cpu_regnrLo() == 15, "wrong assumption below");
   assert(reg_num >= 0, "invalid reg_num");
-#endif // _LP64
   return reg_num <= FrameMap::last_cpu_reg() || reg_num >= pd_nof_cpu_regs_frame_map;
 }
 
 inline int LinearScan::num_physical_regs(BasicType type) {
-  // Intel requires two cpu registers for long,
-  // but requires only one fpu register for double
-  if (LP64_ONLY(false &&) type == T_LONG) {
-    return 2;
-  }
   return 1;
 }
 
@@ -79,7 +67,7 @@ inline bool LinearScanWalker::pd_init_regs_for_alloc(Interval* cur) {
     _first_reg = pd_first_byte_reg;
     _last_reg = FrameMap::last_byte_reg();
     return true;
-  } else if ((UseSSE >= 1 && cur->type() == T_FLOAT) || (UseSSE >= 2 && cur->type() == T_DOUBLE)) {
+  } else if (cur->type() == T_FLOAT || cur->type() == T_DOUBLE) {
     _first_reg = pd_first_xmm_reg;
     _last_reg = last_xmm_reg;
     return true;

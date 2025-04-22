@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,12 @@ extern size_t    ZAddressOffsetBits;
 const  size_t    ZAddressOffsetShift = 0;
 extern uintptr_t ZAddressOffsetMask;
 extern size_t    ZAddressOffsetMax;
+
+// Describes the maximal offset inside the backing storage.
+extern size_t    ZBackingOffsetMax;
+
+// Describes the maximal granule index inside the backing storage.
+extern uint32_t  ZBackingIndexMax;
 
 // Layout of metadata bits in colored pointer / zpointer.
 //
@@ -223,16 +229,25 @@ const int         ZPointerStoreGoodMaskLowOrderBitsOffset = LITTLE_ENDIAN_ONLY(0
 
 // Offsets
 // - Virtual address range offsets
-// - Physical memory offsets
-enum class zoffset         : uintptr_t {};
+enum class zoffset             : uintptr_t { invalid = UINTPTR_MAX };
 // Offsets including end of offset range
-enum class zoffset_end     : uintptr_t {};
+enum class zoffset_end         : uintptr_t { invalid = UINTPTR_MAX };
+
+// - Physical memory segment offsets
+enum class zbacking_offset     : uintptr_t {};
+// Offsets including end of offset range
+enum class zbacking_offset_end : uintptr_t {};
+
+// - Physical memory segment indicies
+enum class zbacking_index      : uint32_t { zero = 0, invalid = UINT32_MAX };
+// Offsets including end of indicies range
+enum class zbacking_index_end  : uint32_t { zero = 0, invalid = UINT32_MAX };
 
 // Colored oop
-enum class zpointer        : uintptr_t { null = 0 };
+enum class zpointer            : uintptr_t { null = 0 };
 
 // Uncolored oop - safe to dereference
-enum class zaddress        : uintptr_t { null = 0 };
+enum class zaddress            : uintptr_t { null = 0 };
 
 // Uncolored oop - not safe to dereference, could point uncommitted memory
 enum class zaddress_unsafe : uintptr_t { null = 0 };
@@ -307,6 +322,8 @@ public:
   static void flip_young_relocate_start();
   static void flip_old_mark_start();
   static void flip_old_relocate_start();
+
+  static size_t min_address_offset_request();
 };
 
 #endif // SHARE_GC_Z_ZADDRESS_HPP
