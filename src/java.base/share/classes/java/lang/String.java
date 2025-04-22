@@ -178,9 +178,10 @@ public final class String
 
     /**
      * Cache if the hash has been calculated as actually being zero, enabling
-     * us to avoid recalculating this.
+     * us to avoid recalculating this. This field is _not_ annotated @Stable as
+     * the `hashCode()` method reads the field `hash` first anyhow and if `hash`
+     * is the default zero value, is not trusted.
      */
-    @Stable
     private boolean hashIsZero; // Default to false;
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
