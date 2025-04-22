@@ -30,6 +30,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import java.lang.classfile.ClassFile;
@@ -96,13 +97,13 @@ public class LocalExecutionControl extends DirectExecutionControl {
         return cc.transformClass(cc.parse(classFile),
                         ClassTransform.transformingMethodBodies(
                             CodeTransform.ofStateful(() -> {
-                                HashSet<Label> priorLabels = new HashSet<>();
+                                Set<Label> priorLabels = new HashSet<>();
                                 return (builder, element) -> {
                                     switch (element) {
-                                    case LabelTarget target -> priorLabels.add(target.label());
-                                    case BranchInstruction branch when priorLabels.contains(branch.target())
-                                        -> builder.invokestatic(CD_Cancel, "stopCheck", ConstantDescs.MTD_void);
-                                    default -> { }
+                                        case LabelTarget target -> priorLabels.add(target.label());
+                                        case BranchInstruction branch when priorLabels.contains(branch.target())
+                                            -> builder.invokestatic(CD_Cancel, "stopCheck", ConstantDescs.MTD_void);
+                                        default -> { }
                                     }
                                     builder.with(element);
                                 };
