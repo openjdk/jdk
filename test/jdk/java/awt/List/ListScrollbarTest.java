@@ -66,7 +66,6 @@ public class ListScrollbarTest extends Frame {
                    click PASS else click FAIL.
                 """;
         PassFailJFrame.builder()
-                .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(ListScrollbarTest::new)
@@ -139,15 +138,15 @@ public class ListScrollbarTest extends Frame {
             for (int i = 0; i < l1.countItems(); i++) {
                 l2.addItem(l1.getItem(i));
             }
-            l1.delItems(0, l1.countItems() - 1);    // or l1.clear();
-        } else { //else move the selected items
+            l1.delItems(0, l1.countItems() - 1);
+        } else { // else move the selected items
             String[] items = l1.getSelectedItems();
             int[] itemIndexes = l1.getSelectedIndexes();
 
             deselectAll(l2);
             for (int i = 0; i < items.length; i++) {
-                l2.addItem(items[i]);        // add it
-                l2.select(l2.countItems() - 1);// and select it
+                l2.addItem(items[i]);
+                l2.select(l2.countItems() - 1);
                 if (i == 0) {
                     l2.makeVisible(l2.countItems() - 1);
                 }

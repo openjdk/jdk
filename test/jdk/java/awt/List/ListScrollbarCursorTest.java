@@ -46,7 +46,6 @@ public class ListScrollbarCursorTest {
                 4. Press PASS if you see the default arrow cursor else press FAIL.
                 """;
         PassFailJFrame.builder()
-                .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(ListScrollbarCursorTest::initialize)

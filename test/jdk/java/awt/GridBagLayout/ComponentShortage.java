@@ -41,8 +41,8 @@ public class ComponentShortage {
     static final int WIDTH_REDUCTION = 50;
     static JFrame frame;
     static JTextField jtf;
-    static Dimension size;
-    static Dimension fSize;
+    static volatile Dimension size;
+    static volatile Dimension fSize;
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
