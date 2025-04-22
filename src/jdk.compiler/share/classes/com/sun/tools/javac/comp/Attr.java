@@ -2573,6 +2573,7 @@ public class Attr extends JCTree.Visitor {
             methName == names._this || methName == names._super;
 
         ListBuffer<Type> argtypesBuf = new ListBuffer<>();
+        Symbol msym = null;
         if (isConstructorCall) {
 
             // Attribute arguments, yielding list of argument types.
@@ -2639,17 +2640,17 @@ public class Attr extends JCTree.Visitor {
                 boolean selectSuperPrev = localEnv.info.selectSuper;
                 localEnv.info.selectSuper = true;
                 localEnv.info.pendingResolutionPhase = null;
-                Symbol sym = rs.resolveConstructor(
+                msym = rs.resolveConstructor(
                     tree.meth.pos(), localEnv, site, argtypes, typeargtypes);
                 localEnv.info.selectSuper = selectSuperPrev;
 
                 // Set method symbol to resolved constructor...
-                TreeInfo.setSymbol(tree.meth, sym);
+                TreeInfo.setSymbol(tree.meth, msym);
 
                 // ...and check that it is legal in the current context.
                 // (this will also set the tree's type)
                 Type mpt = newMethodTemplate(resultInfo.pt, argtypes, typeargtypes);
-                checkId(tree.meth, site, sym, localEnv,
+                checkId(tree.meth, site, msym, localEnv,
                         new ResultInfo(kind, mpt));
             } else if (site.hasTag(ERROR) && tree.meth.hasTag(SELECT)) {
                 attribExpr(((JCFieldAccess) tree.meth).selected, localEnv, site);
@@ -2678,7 +2679,7 @@ public class Attr extends JCTree.Visitor {
             Type qualifier = (tree.meth.hasTag(SELECT))
                     ? ((JCFieldAccess) tree.meth).selected.type
                     : env.enclClass.sym.type;
-            Symbol msym = TreeInfo.symbol(tree.meth);
+            msym = TreeInfo.symbol(tree.meth);
             restype = adjustMethodReturnType(msym, qualifier, methName, argtypes, restype);
 
             chk.checkRefTypes(tree.typeargs, typeargtypes);
@@ -2687,14 +2688,14 @@ public class Attr extends JCTree.Visitor {
             // current context.  Also, capture the return type
             Type capturedRes = resultInfo.checkContext.inferenceContext().cachedCapture(tree, restype, true);
             result = check(tree, capturedRes, KindSelector.VAL, resultInfo);
-            checkIfRequireIdentity(tree, msym);
         }
+        checkIfRequireIdentity(tree, msym);
         chk.validate(tree.typeargs, localEnv);
     }
     //where
         void checkIfRequireIdentity(JCMethodInvocation tree, Symbol sym) {
             List<JCExpression> argExps = tree.args;
-            if (sym instanceof MethodSymbol ms && ms.params != null) {
+            if (!argExps.isEmpty() && sym instanceof MethodSymbol ms && ms.params != null) {
                 VarSymbol lastParam = ms.params.head;
                 for (VarSymbol param: ms.params) {
                     if (requiresIdentity(param) && types.isValueBased(argExps.head.type)) {
@@ -2703,7 +2704,7 @@ public class Attr extends JCTree.Visitor {
                     lastParam = param;
                     argExps = argExps.tail;
                 }
-                while (argExps != null && !argExps.isEmpty()) {
+                while (argExps != null && !argExps.isEmpty() && lastParam != null) {
                     if (requiresIdentity(lastParam) && types.isValueBased(argExps.head.type)) {
                         env.info.lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
                     }

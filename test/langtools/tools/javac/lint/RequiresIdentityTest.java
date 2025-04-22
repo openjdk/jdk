@@ -7,7 +7,7 @@
 
 package java.lang;
 
-public class RequiresIdentityTest {
+public class RequiresIdentityTest extends RequiresIdentityHelper {
     class Box<T> {}
 
     RequiresIdentityHelper<Integer> field;                      // should warn
@@ -16,6 +16,9 @@ public class RequiresIdentityTest {
     Box<? super RequiresIdentityHelper<Integer>> field4;        // should warn
 
     public RequiresIdentityTest() {}
+    public RequiresIdentityTest(Integer i) {
+        super(i); // should warn
+    }
 
     void test(RequiresIdentity2<Object> ri, Integer i) {
         RequiresIdentityHelper<Integer> localVar;     // should warn
