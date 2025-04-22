@@ -1630,9 +1630,6 @@ public class ClassReader {
             for (int i = 0; i < numAttributes; i++) {
                 TypeAnnotationProxy proxy = readTypeAnnotation();
                 proxies.append(proxy);
-                if (proxy.compound.type.tsym == syms.requiresIdentityType.tsym) {
-                    sym.flags_field |= REQUIRES_IDENTITY;
-                }
             }
             annotate.normal(new TypeAnnotationCompleter(sym, proxies.toList()));
         }

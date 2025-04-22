@@ -784,10 +784,6 @@ public class Attr extends JCTree.Visitor {
         return kind;
     }
 
-    private boolean requiresIdentity(Type t) {
-        return t != null && t.tsym != null && (t.tsym.flags() & REQUIRES_IDENTITY) != 0;
-    }
-
     private boolean requiresIdentity(VarSymbol vsym) {
         if (vsym != null) {
             SymbolMetadata sm = vsym.getMetadata();
