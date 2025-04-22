@@ -161,9 +161,9 @@ public class HorizScrollers {
             if (scrollAmount != 3) {
                 JOptionPane.showMessageDialog(
                         ConfigPanel.this.getTopLevelAncestor(),
-                        ("Test %s. Please make sure you have set " +
-                                "the correct speed value and keep the " +
-                                "mouse stationary.")
+                        ("Test %s. Please make sure you have restored " +
+                                "the original scrolling speed in the " +
+                                "Mouse settings.")
                                 .formatted(isFailure
                                         ? "failed"
                                         : "passed"),

@@ -265,6 +265,7 @@ public class RTLScrollers extends JDialog
             }
         }
 
+        robot.delay(1000);
         SwingUtilities.invokeAndWait(() -> {
             rtl = new RTLScrollers(scrollAmount);
             rtl.setVisible(true);
