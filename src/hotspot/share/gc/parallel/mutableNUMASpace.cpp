@@ -614,9 +614,7 @@ void MutableNUMASpace::print_on(outputStream* st, const char* prefix) const {
   StreamAutoIndentor indentor(st, 1);
   for (int i = 0; i < lgrp_spaces()->length(); i++) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
-    char lgrp_message[128];
-    snprintf(lgrp_message, ARRAY_SIZE(lgrp_message), "lgrp %u ", ls->lgrp_id());
-
+    FormatBuffer<128> lgrp_message("lgrp %u ", ls->lgrp_id());
     ls->space()->print_on(st, lgrp_message);
     if (NUMAStats) {
       StreamAutoIndentor indentor_numa(st, 1);
