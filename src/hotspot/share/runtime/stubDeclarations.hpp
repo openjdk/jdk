@@ -678,6 +678,21 @@
            ghash_processBlocks)                                         \
   do_stub(compiler, chacha20Block)                                      \
   do_entry(compiler, chacha20Block, chacha20Block, chacha20Block)       \
+  do_stub(compiler, kyberNtt)                                           \
+  do_entry(compiler, kyberNtt, kyberNtt, kyberNtt)                      \
+  do_stub(compiler, kyberInverseNtt)                                    \
+  do_entry(compiler, kyberInverseNtt, kyberInverseNtt, kyberInverseNtt) \
+  do_stub(compiler, kyberNttMult)                                       \
+  do_entry(compiler, kyberNttMult, kyberNttMult, kyberNttMult)          \
+  do_stub(compiler, kyberAddPoly_2)                                     \
+  do_entry(compiler, kyberAddPoly_2, kyberAddPoly_2, kyberAddPoly_2)    \
+  do_stub(compiler, kyberAddPoly_3)                                     \
+  do_entry(compiler, kyberAddPoly_3, kyberAddPoly_3, kyberAddPoly_3)    \
+  do_stub(compiler, kyber12To16)                                        \
+  do_entry(compiler, kyber12To16, kyber12To16, kyber12To16)             \
+  do_stub(compiler, kyberBarrettReduce)                                 \
+  do_entry(compiler, kyberBarrettReduce, kyberBarrettReduce,            \
+           kyberBarrettReduce)                                          \
   do_stub(compiler, dilithiumAlmostNtt)                                 \
   do_entry(compiler, dilithiumAlmostNtt,                                \
            dilithiumAlmostNtt, dilithiumAlmostNtt)                      \
@@ -740,11 +755,11 @@
   do_stub(compiler, sha3_implCompress)                                  \
   do_entry(compiler, sha3_implCompress, sha3_implCompress,              \
            sha3_implCompress)                                           \
+  do_stub(compiler, double_keccak)                                      \
+  do_entry(compiler, double_keccak, double_keccak, double_keccak)       \
   do_stub(compiler, sha3_implCompressMB)                                \
   do_entry(compiler, sha3_implCompressMB, sha3_implCompressMB,          \
            sha3_implCompressMB)                                         \
-  do_stub(compiler, double_keccak)                                      \
-  do_entry(compiler, double_keccak, double_keccak, double_keccak)       \
   do_stub(compiler, updateBytesAdler32)                                 \
   do_entry(compiler, updateBytesAdler32, updateBytesAdler32,            \
            updateBytesAdler32)                                          \

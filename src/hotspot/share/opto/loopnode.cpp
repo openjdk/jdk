@@ -1088,9 +1088,9 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
     if (UseLoopPredicate) {
       add_parse_predicate(Deoptimization::Reason_predicate, inner_head, outer_ilt, cloned_sfpt);
-    }
-    if (UseProfiledLoopPredicate) {
-      add_parse_predicate(Deoptimization::Reason_profile_predicate, inner_head, outer_ilt, cloned_sfpt);
+      if (UseProfiledLoopPredicate) {
+        add_parse_predicate(Deoptimization::Reason_profile_predicate, inner_head, outer_ilt, cloned_sfpt);
+      }
     }
 
     if (UseAutoVectorizationPredicate) {
@@ -4301,11 +4301,13 @@ void IdealLoopTree::dump_head() {
   if (predicates.loop_limit_check_predicate_block()->is_non_empty()) {
     tty->print(" limit_check");
   }
-  if (UseProfiledLoopPredicate && predicates.profiled_loop_predicate_block()->is_non_empty()) {
-    tty->print(" profile_predicated");
-  }
-  if (UseLoopPredicate && predicates.loop_predicate_block()->is_non_empty()) {
-    tty->print(" predicated");
+  if (UseLoopPredicate) {
+    if (UseProfiledLoopPredicate && predicates.profiled_loop_predicate_block()->is_non_empty()) {
+      tty->print(" profile_predicated");
+    }
+    if (predicates.loop_predicate_block()->is_non_empty()) {
+      tty->print(" predicated");
+    }
   }
   if (UseAutoVectorizationPredicate && predicates.auto_vectorization_check_block()->is_non_empty()) {
     tty->print(" auto_vectorization_check_predicate");

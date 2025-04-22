@@ -667,8 +667,10 @@ public:
     const DependencyNode* _dependency_node;
 
     Node* _current;
-    bool _is_current_weak_edge;
+    bool _is_current_memory_edge;
+    bool _is_current_weak_memory_edge;
 
+    // TODO: explicitly name data and memory edges!
     // Iterate in node->in(i)
     int _next_pred;
     int _end_pred;
@@ -680,8 +682,9 @@ public:
     // Iterate in dependency_node->weak_edge()
     int _next_weak_edge;
     int _end_weak_edge;
+
   public:
-    PredsIterator(const VLoopDependencyGraph& dependency_graph, const Node* node, bool with_weak_edges);
+    PredsIterator(const VLoopDependencyGraph& dependency_graph, const Node* node);
     NONCOPYABLE(PredsIterator);
     void next();
     bool done() const { return _current == nullptr; }
@@ -691,9 +694,14 @@ public:
       return _current;
     }
 
-    bool is_current_weak_edge() const {
+    bool is_current_memory_edge() const {
       assert(!done(), "not done yet");
-      return _is_current_weak_edge;
+      return _is_current_memory_edge;
+    }
+
+    bool is_current_weak_memory_edge() const {
+      assert(!done(), "not done yet");
+      return _is_current_weak_memory_edge;
     }
   };
 };

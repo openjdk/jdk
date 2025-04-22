@@ -287,8 +287,9 @@ public:
   const VTransformNodeIDX _idx;
 
 private:
+  // TODO: consider renaming to make data and memory more explicit!
   // We split _in into 3 sections:
-  // - req:                         _in[0              .. _req-1]
+  // - req (data dependencies):     _in[0              .. _req-1]
   // - strong memory dependencies:  _in[_req           .. _in_strong_dep-1]
   // - weak memory dependencies:    _in[_in_strong_dep .. _len-1]
   const uint _req;

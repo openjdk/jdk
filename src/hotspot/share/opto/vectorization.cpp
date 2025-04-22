@@ -331,7 +331,7 @@ int VLoopDependencyGraph::find_max_pred_depth(const Node* n) const {
     // We must compute the dependence graph depth with all edges (including the weak edges), so that
     // the independence queries work correctly, no matter if we check independence with or without
     // weak edges.
-    for (PredsIterator it(*this, n, true); !it.done(); it.next()) {
+    for (PredsIterator it(*this, n); !it.done(); it.next()) {
       Node* pred = it.current();
       if (_vloop.in_bb(pred)) {
         max_pred_depth = MAX2(max_pred_depth, depth(pred));
@@ -398,7 +398,8 @@ void VLoopDependencyGraph::print() const {
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
     tty->print("  d%02d Dependencies[%d %s:", depth(n), n->_idx, n->Name());
-    for (PredsIterator it(*this, n, with_weak_edges); !it.done(); it.next()) {
+    for (PredsIterator it(*this, n); !it.done(); it.next()) {
+      if (!with_weak_edges && it.is_current_weak_memory_edge()) { continue; }
       Node* pred = it.current();
       tty->print("  %d %s", pred->_idx, pred->Name());
     }
@@ -430,18 +431,19 @@ VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
 }
 
 VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& dependency_graph,
-                                                   const Node* node,
-                                                   bool with_weak_edges) :
+                                                   const Node* node) :
     _dependency_graph(dependency_graph),
     _node(node),
     _dependency_node(dependency_graph.dependency_node(node)),
     _current(nullptr),
+    _is_current_memory_edge(false),
+    _is_current_weak_memory_edge(false),
     _next_pred(0),
     _end_pred(node->req()),
     _next_strong_edge(0),
     _end_strong_edge((_dependency_node != nullptr) ? _dependency_node->num_strong_edges() : 0),
     _next_weak_edge(0),
-    _end_weak_edge((_dependency_node != nullptr && with_weak_edges) ? _dependency_node->num_weak_edges() : 0)
+    _end_weak_edge((_dependency_node != nullptr) ? _dependency_node->num_weak_edges() : 0)
 {
   if (_node->is_Store() || _node->is_Load()) {
     // Load: address
@@ -457,18 +459,22 @@ VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& d
 void VLoopDependencyGraph::PredsIterator::next() {
   if (_next_pred < _end_pred) {
     _current = _node->in(_next_pred++);
-    _is_current_weak_edge = false;
+    _is_current_memory_edge = false;
+    _is_current_weak_memory_edge = false;
   } else if (_next_strong_edge < _end_strong_edge) {
     int pred_bb_idx = _dependency_node->strong_edge(_next_strong_edge++);
     _current = _dependency_graph._body.body().at(pred_bb_idx);
-    _is_current_weak_edge = false;
+    _is_current_memory_edge = true;
+    _is_current_weak_memory_edge = false;
   } else if (_next_weak_edge < _end_weak_edge) {
     int pred_bb_idx = _dependency_node->weak_edge(_next_weak_edge++);
     _current = _dependency_graph._body.body().at(pred_bb_idx);
-    _is_current_weak_edge = true;
+    _is_current_memory_edge = true;
+    _is_current_weak_memory_edge = true;
   } else {
     _current = nullptr; // done
-    _is_current_weak_edge = false;
+    _is_current_memory_edge = false;
+    _is_current_weak_memory_edge = false;
   }
 }
 

@@ -840,7 +840,8 @@ bool VLoopDependencyGraph::independent(Node* s1, Node* s2) const {
   worklist.push(deep);
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
-    for (PredsIterator preds(*this, n, with_weak_edges); !preds.done(); preds.next()) {
+    for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
+      if (!with_weak_edges && preds.is_current_weak_memory_edge()) { continue; }
       Node* pred = preds.current();
       if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
         if (pred == shallow) {
@@ -878,7 +879,8 @@ bool VLoopDependencyGraph::mutually_independent(const Node_List* nodes) const {
 
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
-    for (PredsIterator preds(*this, n, with_weak_edges); !preds.done(); preds.next()) {
+    for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
+      if (!with_weak_edges && preds.is_current_weak_memory_edge()) { continue; }
       Node* pred = preds.current();
       if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
         if (nodes_set.test(_body.bb_idx(pred))) {
@@ -2600,6 +2602,7 @@ void VLoopTypes::compute_vector_element_type() {
 
 // Smallest type containing range of values
 const Type* VLoopTypes::container_type(Node* n) const {
+  int opc = n->Opcode();
   if (n->is_Mem()) {
     BasicType bt = n->as_Mem()->memory_type();
     if (n->is_Store() && (bt == T_CHAR)) {
@@ -2607,7 +2610,7 @@ const Type* VLoopTypes::container_type(Node* n) const {
       // preceding arithmetic operation extends values to signed Int.
       bt = T_SHORT;
     }
-    if (n->Opcode() == Op_LoadUB) {
+    if (opc == Op_LoadUB) {
       // Adjust type for unsigned byte loads, it is important for right shifts.
       // T_BOOLEAN is used because there is no basic type representing type
       // TypeInt::UBYTE. Use of T_BOOLEAN for vectors is fine because only
@@ -2621,7 +2624,7 @@ const Type* VLoopTypes::container_type(Node* n) const {
     // Float to half float conversion may be succeeded by a conversion from
     // half float to float, in such a case back propagation of narrow type (SHORT)
     // may not be possible.
-    if (n->Opcode() == Op_ConvF2HF || n->Opcode() == Op_ReinterpretHF2S) {
+    if (opc == Op_ConvF2HF || opc == Op_ReinterpretHF2S) {
       return TypeInt::SHORT;
     }
     // A narrow type of arithmetic operations will be determined by
