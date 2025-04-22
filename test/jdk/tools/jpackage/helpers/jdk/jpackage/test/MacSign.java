@@ -822,7 +822,7 @@ public final class MacSign {
                 .thenComparing(Comparator.comparing(CertificateRequest::trusted, Boolean::compare));
     }
 
-    private record InstalledCertificate(String name, CertificateType type, int days, boolean expired) implements Comparable<InstalledCertificate>{
+    private record InstalledCertificate(String name, CertificateType type, int days, boolean expired) implements Comparable<InstalledCertificate> {
         InstalledCertificate {
             Objects.requireNonNull(name);
             Objects.requireNonNull(type);
