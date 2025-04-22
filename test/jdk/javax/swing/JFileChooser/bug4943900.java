@@ -31,32 +31,33 @@
  */
 
 import java.io.File;
-import javax.swing.JComponent;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 
 public class bug4943900 {
     private static final String INSTRUCTIONS = """
         <html>
-        <p> 1. When the test runs a JFileChooser will be displayed.</p>
-
-        <p> 2. Ensure that there is a Filter combo box with these two items:
-         - Text Files (*.txt)  [must be selected when the dialog opens]
-         - All Files </p>
-
-        <p> 3. Leave the "Text files" item selected and check that the
-        filter works: only *.txt files can appear in the file list.
-        You can navigate directories in the FileChooser and find one
-        that contains some *.txt files to ensure they are shown in
+        <ol>
+        <li>When the test runs, a <code>JFileChooser</code> will be displayed.
+        <li>Ensure that there is a filter combo box with these two items:
+          <ul>
+          <li><b>Text Files (*.txt)</b>
+              &mdash; <em>[must be selected when the dialog opens]</em>
+          <li><b>All Files</b>
+          </ul>
+        <li>Leave the <b>Text files</b> item selected and check that the
+        filter works: only <code>*.txt</code> files can appear in the file list.
+        You can navigate directories in the file chooser and find one
+        that contains some <code>*.txt</code> files to ensure they are shown in
         the file list. On macOS when the text filter is applied verify
-        that the non-text files are greyed out.</p>
-
-        <p>4. Try switching the filters and ensure that the file list
-        is updated properly.</p>
-
-        <p>If the FileFilter works correctly, press <b>Pass</b> else
-        press <b>Fail</b></p>.
+        that the non-text files are greyed out.
+        <li>Try switching the filters and ensure that the file list
+        is updated properly.
+        <li>If the <code>FileFilter</code> works correctly,
+            press <b>Pass</b> else press <b>Fail</b>.
+        </ol>
         </html>
         """;
 
@@ -67,18 +68,22 @@ public class bug4943900 {
                 .title("bug4943900 Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .rows(14)
-                .columns(60)
+                .columns(50)
                 .testUI(bug4943900::createAndShowUI)
                 .build()
                 .awaitAndCheck();
     }
 
-    public static JComponent createAndShowUI() {
+    public static JFrame createAndShowUI() {
         JFileChooser fc = new JFileChooser();
         fc.setControlButtonsAreShown(false);
         TextFileFilter filter = new TextFileFilter();
         fc.setFileFilter(filter);
-        return fc;
+
+        JFrame frame = new JFrame("bug4943900 - JFileChooser");
+        frame.add(fc);
+        frame.pack();
+        return frame;
     }
 
     private static final class TextFileFilter extends FileFilter {
