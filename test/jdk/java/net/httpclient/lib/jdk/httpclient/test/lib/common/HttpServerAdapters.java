@@ -59,6 +59,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -765,7 +768,7 @@ public interface HttpServerAdapters {
     /**
      * A version agnostic adapter class for HTTP Servers.
      */
-    public static abstract class HttpTestServer {
+    public static abstract class HttpTestServer implements AutoCloseable {
         private static final class ServerLogging {
             private static final Logger logger = Logger.getLogger("com.sun.net.httpserver");
             static void enableLogging() {
@@ -781,6 +784,11 @@ public interface HttpServerAdapters {
         public abstract InetSocketAddress getAddress();
         public abstract Version getVersion();
         public abstract void setRequestApprover(final Predicate<String> approver);
+
+        @Override
+        public void close() throws Exception {
+            stop();
+        }
 
         public String serverAuthority() {
             InetSocketAddress address = getAddress();
@@ -1030,6 +1038,19 @@ public interface HttpServerAdapters {
         System.setProperty("java.util.logging.SimpleFormatter.format",
                 "%4$s [%1$tb %1$td, %1$tl:%1$tM:%1$tS.%1$tN] %2$s: %5$s%6$s%n");
         HttpTestServer.ServerLogging.enableLogging();
+    }
+
+    static ExecutorService createExecutor(String threadNamePrefix) {
+        ThreadFactory threadFactory = createThreadFactory(threadNamePrefix);
+        return Executors.newCachedThreadPool(threadFactory);
+    }
+
+    private static ThreadFactory createThreadFactory(String threadNamePrefix) {
+        AtomicInteger threadCounter = new AtomicInteger();
+        return (Runnable task) -> {
+            String name = "%s-%d".formatted(threadNamePrefix, threadCounter.incrementAndGet());
+            return new Thread(task, name);
+        };
     }
 
 }

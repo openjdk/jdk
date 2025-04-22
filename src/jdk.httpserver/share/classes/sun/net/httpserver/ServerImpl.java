@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,7 +183,7 @@ class ServerImpl {
             throw new IllegalStateException ("server in wrong state");
         }
         if (executor == null) {
-            executor = new DefaultExecutor();
+            executor = new ImmediateExecutor();
         }
         dispatcherThread = new Thread(null, dispatcher, "HTTP-Dispatcher", 0, false);
         started = true;
@@ -197,10 +197,16 @@ class ServerImpl {
         this.executor = executor;
     }
 
-    private static class DefaultExecutor implements Executor {
+    /**
+     * An {@link Executor} that executes submitted tasks immediately on the caller thread.
+     */
+    private static final class ImmediateExecutor implements Executor {
+
+        @Override
         public void execute (Runnable task) {
             task.run();
         }
+
     }
 
     public Executor getExecutor () {

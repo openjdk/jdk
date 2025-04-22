@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ import java.net.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -38,6 +36,8 @@ import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
+
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.internal.net.http.frame.ErrorFrame;
 
 /**
@@ -64,24 +64,12 @@ public class Http2TestServer implements AutoCloseable {
     // request approver which takes the server connection key as the input
     private volatile Predicate<String> newRequestApprover;
 
-    private static ThreadFactory defaultThreadFac =
-        (Runnable r) -> {
-            Thread t = new Thread(r);
-            t.setName("Test-server-pool");
-            return t;
-        };
-
-
-    private static ExecutorService getDefaultExecutor() {
-        return Executors.newCachedThreadPool(defaultThreadFac);
-    }
-
     public Http2TestServer(String serverName, boolean secure, int port) throws Exception {
-        this(serverName, secure, port, getDefaultExecutor(), 50, null, null);
+        this(serverName, secure, port, createExecutor(serverName), 50, null, null);
     }
 
     public Http2TestServer(boolean secure, int port) throws Exception {
-        this(null, secure, port, getDefaultExecutor(), 50, null, null);
+        this(null, secure, port, createExecutor(null), 50, null, null);
     }
 
     public InetSocketAddress getAddress() {
@@ -197,10 +185,15 @@ public class Http2TestServer implements AutoCloseable {
             server = initPlaintext(port, backlog);
         }
         this.secure = secure;
-        this.exec = exec == null ? getDefaultExecutor() : exec;
+        this.exec = exec == null ? createExecutor(name) : exec;
         this.handlers = Collections.synchronizedMap(new HashMap<>());
         this.properties = properties == null ? new Properties() : properties;
         this.connections = ConcurrentHashMap.newKeySet();
+    }
+
+    private static ExecutorService createExecutor(String serverName) {
+        String threadNamePrefix = "http2-test-server-worker" + (serverName != null ? "[%s]".formatted(serverName) : "");
+        return HttpServerAdapters.createExecutor(threadNamePrefix);
     }
 
     /**
