@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
+
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
@@ -83,11 +86,15 @@ public class LinuxDebBundler extends LinuxPackageBundler {
             },
             (s, p) -> {
                 if (!DEB_PACKAGE_NAME_PATTERN.matcher(s).matches()) {
-                    throw new IllegalArgumentException(new ConfigException(
+                    try {
+                        throw new ConfigException(
                             MessageFormat.format(I18N.getString(
-                            "error.invalid-value-for-package-name"), s),
+                            "error.deb-invalid-value-for-package-name"), s),
                             I18N.getString(
-                            "error.invalid-value-for-package-name.advice")));
+                            "error.deb-invalid-value-for-package-name.advice"));
+                    } catch (ConfigException ex) {
+                        throw new IllegalArgumentException(ex);
+                    }
                 }
 
                 return s;

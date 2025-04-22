@@ -94,18 +94,6 @@ define CheckControlVariables
   endif
 endef
 
-# Check for deprecated ALT_ variables
-define CheckDeprecatedEnvironment
-  defined_alt_variables := $$(filter ALT_%, $$(.VARIABLES))
-  ifneq ($$(defined_alt_variables), )
-    $$(info Warning: You have the following ALT_ variables set:)
-    $$(foreach var, $$(defined_alt_variables), $$(info * $$(var)=$$($$(var))))
-    $$(info ALT_ variables are deprecated, and may result in a failed build.)
-    $$(info Please clean your environment.)
-    $$(info )
-  endif
-endef
-
 # Check for invalid make flags like -j
 define CheckInvalidMakeFlags
   # This is a trick to get this rule to execute before any other rules
@@ -278,6 +266,9 @@ define DefineMainTargets
   endif
 
   $$(main_targets_file):
+	@( cd $$(TOPDIR) && \
+	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(TOPDIR)/make/GenerateFindTests.gmk \
+	    -I $$(TOPDIR)/make/common SPEC=$(strip $2) )
 	@( cd $$(TOPDIR) && \
 	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(TOPDIR)/make/Main.gmk \
 	    -I $$(TOPDIR)/make/common SPEC=$(strip $2) NO_RECIPES=true \

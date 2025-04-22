@@ -34,7 +34,6 @@ import java.awt.*;
 import java.awt.print.*;
 import java.awt.event.*;
 import javax.swing.*;
-import java.applet.*;
 
 public class PageSetupDlgBlockingTest extends Panel {
     public static Frame frame = new TestFrame("Test Frame");

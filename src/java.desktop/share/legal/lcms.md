@@ -1,11 +1,11 @@
-## Little Color Management System (LCMS) v2.16
+## Little Color Management System (LCMS) v2.17
 
 ### LCMS License
 <pre>
 
 MIT License
 
-Copyright (C) 1998-2023 Marti Maria Saguer
+Copyright (C) 1998-2025 Marti Maria Saguer
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the "Software"),
@@ -26,10 +26,10 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ---------------------------------
-The below license applies to the following files:
+The below applies to the following file(s):
 liblcms/cmssm.c
 
-Copyright 2001, softSurfer (www.softsurfer.com)
+Copyright (C) 2001, softSurfer (www.softsurfer.com)
 
 This code may be freely used and modified for any purpose
 providing that this copyright notice is included with it.
@@ -61,7 +61,7 @@ Robin Watts (Artifex)
 Shawn Pedersen
 Andrew Brygin
 Samuli Suominen
-Florian Hˆch
+Florian Höch
 Aurelien Jarno
 Claudiu Cebuc
 Michael Vhrel (Artifex)
@@ -69,7 +69,7 @@ Michal Cihar
 Daniel Kaneider
 Mateusz Jurczyk (Google)
 Paul Miller
-SÈbastien LÈon
+Sébastien Léon
 Christian Schmitz
 XhmikosR
 Stanislav Brabec (SuSe)
@@ -99,5 +99,5 @@ Christian Albrecht
 Dimitrios Anastassakis
 Lemke Software
 Tim Zaman
-
+Amir Montazery and Open Source Technology Improvement Fund (ostif.org), Google, for fuzzer fundings.
 ```

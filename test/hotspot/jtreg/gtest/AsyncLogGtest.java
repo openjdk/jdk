@@ -35,6 +35,6 @@
  * @modules java.base/jdk.internal.misc
  *          java.xml
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=AsyncLogTest* -Xlog:async
- * @run main/native GTestWrapper --gtest_filter=Log*Test* -Xlog:async
+ * @run main/native GTestWrapper --gtest_filter=AsyncLogTest* -Xlog:async -XX:AsyncLogBufferSize=100K
+ * @run main/native GTestWrapper --gtest_filter=Log*Test* -Xlog:async -XX:AsyncLogBufferSize=100K
  */
