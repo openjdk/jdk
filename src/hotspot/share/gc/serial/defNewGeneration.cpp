@@ -831,12 +831,9 @@ void DefNewGeneration::print_on(outputStream* st) const {
   _virtual_space.print_space_boundaries_on(st);
 
   StreamAutoIndentor indentor(st, 1);
-  st->print("eden ");
-  eden()->print_on(st);
-  st->print("from ");
-  from()->print_on(st);
-  st->print("to   ");
-  to()->print_on(st);
+  eden()->print_on(st, "eden ");
+  from()->print_on(st, "from ");
+  to()->print_on(st, "to   ");
 }
 
 HeapWord* DefNewGeneration::allocate(size_t word_size) {

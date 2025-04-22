@@ -309,7 +309,7 @@ void EpsilonHeap::print_heap_on(outputStream *st) const {
     st->print_cr("Allocation space:");
 
     StreamAutoIndentor indentor(st, 1);
-    _space->print_on(st);
+    _space->print_on(st, "");
   }
 }
 
