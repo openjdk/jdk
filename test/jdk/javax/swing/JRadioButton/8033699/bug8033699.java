@@ -33,6 +33,7 @@ import java.awt.KeyboardFocusManager;
 import java.awt.Robot;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -296,9 +297,9 @@ public class bug8033699 {
         });
     }
 
-    private static boolean actRB1 = false;
-    private static boolean actRB2 = false;
-    private static boolean actRB3 = false;
+    private static volatile boolean actRB1 = false;
+    private static volatile boolean actRB2 = false;
+    private static volatile boolean actRB3 = false;
 
     // JDK-8226892: Verify that ActionListener is called when a RadioButton
     // is selected using arrow key
@@ -312,9 +313,12 @@ public class bug8033699 {
         ActionListener actLrRB2 = e -> actRB2 = true;
         ActionListener actLrRB3 = e -> actRB3 = true;
 
-        radioBtn1.addActionListener(actLrRB1);
-        radioBtn2.addActionListener(actLrRB2);
-        radioBtn3.addActionListener(actLrRB3);
+        // Adding Action Listeners
+        SwingUtilities.invokeLater(() -> {
+            radioBtn1.addActionListener(actLrRB1);
+            radioBtn2.addActionListener(actLrRB2);
+            radioBtn3.addActionListener(actLrRB3);
+        });
 
         hitKey(KeyEvent.VK_DOWN);
         hitKey(KeyEvent.VK_DOWN);
@@ -332,9 +336,12 @@ public class bug8033699 {
             throw new RuntimeException("RadioButton 1: " + failMessage);
         }
 
-        radioBtn1.removeActionListener(actLrRB1);
-        radioBtn2.removeActionListener(actLrRB2);
-        radioBtn3.removeActionListener(actLrRB3);
+        // Removing Action Listeners
+        SwingUtilities.invokeLater(() -> {
+            radioBtn1.removeActionListener(actLrRB1);
+            radioBtn2.removeActionListener(actLrRB2);
+            radioBtn3.removeActionListener(actLrRB3);
+        });
     }
 
     private static void hitKey(int keycode) {
