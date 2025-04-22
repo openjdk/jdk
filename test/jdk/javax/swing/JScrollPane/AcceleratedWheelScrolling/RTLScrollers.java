@@ -673,8 +673,10 @@ public class RTLScrollers extends JDialog
         try {
             SwingUtilities.invokeAndWait(() -> f = new RTLScrollers());
         } finally {
-            SwingUtilities.invokeAndWait(() -> f.setVisible(true));
-            f.dispose();
+            SwingUtilities.invokeAndWait(() -> {
+                f.setVisible(true);
+                f.dispose();
+            });
         }
     }
 }
