@@ -30,13 +30,13 @@ import java.lang.annotation.*;
 /**
  * The {@code @IntrinsicCandidate} indicates that an annotated method is
  * recognized by {@code vmIntrinsics.hpp} and may be subject to intrinsification
- * by the HotSpot VM (see {@code LibraryCallKit::try_to_inline} in {@code
- * library_call.cpp}) if an intrinsic is available.  Intrinsification replaces a
- * candidate method's body, bytecode or native, with handwritten platform
- * assembly and/or compiler IR.  Many Java library methods have properties that
- * cannot be deduced by the compiler for optimization, or can utilize specific
- * hardware instructions not modeled by the compiler IR, making intrinsics
- * necessary.
+ * by the HotSpot VM.  (See {@code LibraryCallKit::try_to_inline} in {@code
+ * library_call.cpp} for logic that checks if an intrinsic is available and
+ * applicable at a given call site.)  Intrinsification replaces a candidate
+ * method's body, bytecode or native, with handwritten platform assembly and/or
+ * compiler IR.  Many Java library methods have properties that cannot be
+ * deduced by the compiler for optimization, or can utilize specific hardware
+ * instructions not modeled by the compiler IR, making intrinsics necessary.
  * <p>
  * Intrinsification may never happen, or happen at any moment during execution.
  * For example, the bytecodes of a candidate method may be executed by lower
