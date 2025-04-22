@@ -62,6 +62,9 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
+
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.XmlUtils;
 
@@ -127,7 +130,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                     }
 
                     if (result != null) {
-                        MacCertificate certificate = new MacCertificate(result);
+                        MacCertificate certificate = new MacCertificate(result, keychain);
 
                         if (!certificate.isValid()) {
                             Log.error(MessageFormat.format(
@@ -685,6 +688,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     }
 
     private static boolean isValidBundleIdentifier(String id) {
+        Objects.requireNonNull(id);
         for (int i = 0; i < id.length(); i++) {
             char a = id.charAt(i);
             // We check for ASCII codes first which we accept. If check fails,
@@ -709,12 +713,6 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             validateAppImageAndBundeler(params);
 
             String identifier = MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params);
-            if (identifier == null) {
-                throw new ConfigException(
-                        I18N.getString("message.app-image-requires-identifier"),
-                        I18N.getString(
-                            "message.app-image-requires-identifier.advice"));
-            }
             if (!isValidBundleIdentifier(identifier)) {
                 throw new ConfigException(
                         MessageFormat.format(I18N.getString(

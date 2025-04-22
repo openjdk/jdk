@@ -1279,7 +1279,6 @@ void GenerateOopMap::do_exception_edge(BytecodeStream* itr) {
 }
 
 void GenerateOopMap::report_monitor_mismatch(const char *msg) {
-  ResourceMark rm;
   LogStream ls(Log(monitormismatch)::info());
   ls.print("Monitor mismatch in method ");
   method()->print_short_name(&ls);

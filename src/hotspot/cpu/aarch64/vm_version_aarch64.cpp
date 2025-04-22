@@ -161,8 +161,8 @@ void VM_Version::initialize() {
         (_model == CPU_MODEL_AMPERE_1A || _model == CPU_MODEL_AMPERE_1B)) {
       FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
     }
-    if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
-      FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
+    if (FLAG_IS_DEFAULT(AlwaysMergeDMB)) {
+      FLAG_SET_DEFAULT(AlwaysMergeDMB, false);
     }
   }
 
@@ -243,7 +243,7 @@ void VM_Version::initialize() {
     }
   }
 
-  if (_cpu == CPU_ARM) {
+  if (_features & (CPU_FP | CPU_ASIMD)) {
     if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
       FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
     }
@@ -418,12 +418,23 @@ void VM_Version::initialize() {
   }
 
   if (_features & CPU_ASIMD) {
+      if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+          UseKyberIntrinsics = true;
+      }
+  } else if (UseKyberIntrinsics) {
+      if (!FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+          warning("Kyber intrinsics require ASIMD instructions");
+      }
+      FLAG_SET_DEFAULT(UseKyberIntrinsics, false);
+  }
+
+  if (_features & CPU_ASIMD) {
       if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
           UseDilithiumIntrinsics = true;
       }
   } else if (UseDilithiumIntrinsics) {
       if (!FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
-          warning("Dilithium intrinsic requires ASIMD instructions");
+          warning("Dilithium intrinsics require ASIMD instructions");
       }
       FLAG_SET_DEFAULT(UseDilithiumIntrinsics, false);
   }
