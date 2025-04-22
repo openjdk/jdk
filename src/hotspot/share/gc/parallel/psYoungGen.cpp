@@ -701,14 +701,16 @@ void PSYoungGen::object_iterate(ObjectClosure* blk) {
 void PSYoungGen::print() const { print_on(tty); }
 void PSYoungGen::print_on(outputStream* st) const {
   st->print("%-15s", name());
-  st->print(" total %zuK, used %zuK ",
-             capacity_in_bytes()/K, used_in_bytes()/K);
+  st->print(" total %zuK, used %zuK ", capacity_in_bytes() / K, used_in_bytes() / K);
   virtual_space()->print_space_boundaries_on(st);
 
   StreamAutoIndentor indentor(st, 1);
-  st->print("eden "); eden_space()->print_on(st);
-  st->print("from "); from_space()->print_on(st);
-  st->print("to   "); to_space()->print_on(st);
+  st->print("eden ");
+  eden_space()->print_on(st);
+  st->print("from ");
+  from_space()->print_on(st);
+  st->print("to   ");
+  to_space()->print_on(st);
 }
 
 size_t PSYoungGen::available_to_min_gen() {
