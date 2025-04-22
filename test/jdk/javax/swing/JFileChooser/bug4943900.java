@@ -45,16 +45,16 @@ public class bug4943900 {
          - All Files
 
         3. Leave the "Text files" item selected and check that the
-        filter works: only *.txt files can appear in the files list
+        filter works: only *.txt files can appear in the file list
         You can navigate directories in the FileChooser and find one
         that contains some *.txt files to ensure they are shown in
         the file list. On macOS when the text filter is applied verify
-        that the non-text files are shown disabled (greyed out).
+        that the non-text files are greyed out.
 
         4. Try switching the filters and ensure that the file list
         is updated properly.
 
-        If the FileFilter works correctly, press PASS else press FAIL.
+        If the FileFilter works correctly, press Pass else press Fail.
         """;
 
     public static void main(String[] args) throws Exception {
