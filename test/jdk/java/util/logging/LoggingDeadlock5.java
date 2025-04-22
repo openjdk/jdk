@@ -59,8 +59,12 @@ public class LoggingDeadlock5 {
         @Override
         public String format(LogRecord record) {
             // All we care about is that our formatter will invoke toString() on user arguments.
-            for (Object p : record.getParameters()) {
-                var unused = p.toString();
+            // This can be called without arguments in one of the threads.
+            Object[] parameters = record.getParameters();
+            if (parameters != null) {
+                for (Object p : parameters) {
+                    var unused = p.toString();
+                }
             }
             return "<formatted string>";
         }

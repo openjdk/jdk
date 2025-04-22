@@ -1554,7 +1554,7 @@ public class ML_DSA {
     // precondition: -2^31 * MONT_Q <= a, b < 2^31, -2^31 < a * b < 2^31 * MONT_Q
     // computes a * b * 2^-32 mod MONT_Q
     // the result is greater than -MONT_Q and less than MONT_Q
-    // see e.g. Algorithm 3 in https://eprint.iacr.org/2018/039.pdf
+    // See e.g. Algorithm 3 in https://eprint.iacr.org/2018/039.pdf
     private static int montMul(int b, int c) {
         long a = (long) b * (long) c;
         int aHigh = (int) (a >> MONT_R_BITS);
