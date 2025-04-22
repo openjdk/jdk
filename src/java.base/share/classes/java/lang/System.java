@@ -116,15 +116,23 @@ public final class System {
 
     /**
      * The "standard" input stream. This stream is already
-     * open and ready to supply input data. Typically this stream
+     * open and ready to supply input data. This stream
      * corresponds to keyboard input or another input source specified by
-     * the host environment or user. In case this stream is wrapped
-     * in a {@link java.io.InputStreamReader}, {@link Console#charset()}
-     * should be used for the charset, or consider using
-     * {@link Console#reader()}.
+     * the host environment or user. The encoding specified by the
+     * {@link ##stdin.encoding stdin.encoding} property should be used
+     * to convert input bytes to character data.
      *
-     * @see Console#charset()
-     * @see Console#reader()
+     * @apiNote
+     * The typical approach to read character data is to wrap {@code System.in}
+     * within an {@link java.io.InputStreamReader InputStreamReader} or other class
+     * that handles character encoding. If this is done, subsequent reading should
+     * only use the wrapper object; additional operations directly on {@code System.in}
+     * may result in unspecified behavior.
+     * <p>
+     * For handling interactive input, consider using {@link Console}.
+     *
+     * @see Console
+     * @see ##stdin.encoding stdin.encoding
      */
     public static final InputStream in = null;
 
