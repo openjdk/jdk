@@ -480,6 +480,8 @@ final class PackagingPipeline {
         } catch (Exception ex) {
             if (ex instanceof PackagerException pex) {
                 throw pex;
+            } else if (ex instanceof ExceptionBox bex) {
+                throw new PackagerException(bex.getCause());
             } else {
                 throw new PackagerException(ex);
             }
