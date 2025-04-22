@@ -438,8 +438,8 @@ VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& d
     _current(nullptr),
     _is_current_memory_edge(false),
     _is_current_weak_memory_edge(false),
-    _next_pred(0),
-    _end_pred(node->req()),
+    _next_data_edge(0),
+    _end_data_edge(node->req()),
     _next_strong_memory_edge(0),
     _end_strong_memory_edge((_dependency_node != nullptr) ? _dependency_node->num_strong_memory_edges() : 0),
     _next_weak_memory_edge(0),
@@ -450,17 +450,17 @@ VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& d
     // Memory edges are already covered by the strong and weak memory edges.
     // Load:  [ctrl, memory] address
     // Store: [ctrl, memory] address, value
-    _next_pred = MemNode::Address;
+    _next_data_edge = MemNode::Address;
   } else {
     assert(!_node->is_Mem(), "only loads and stores are expected mem nodes");
-    _next_pred = 1; // skip control
+    _next_data_edge = 1; // skip control
   }
   next();
 }
 
 void VLoopDependencyGraph::PredsIterator::next() {
-  if (_next_pred < _end_pred) {
-    _current = _node->in(_next_pred++);
+  if (_next_data_edge < _end_data_edge) {
+    _current = _node->in(_next_data_edge++);
     _is_current_memory_edge = false;
     _is_current_weak_memory_edge = false;
   } else if (_next_strong_memory_edge < _end_strong_memory_edge) {

@@ -580,7 +580,7 @@ private:
 //                         we refine the memory-dependencies (see construct method).
 //    - Strong edge: must be respected.
 //    - Weak edge:   if we add a speculative aliasing check, we can violate
-//                   the edge, i.e. spaw the order.
+//                   the edge, i.e. swap the order.
 class VLoopDependencyGraph : public StackObj {
 private:
   class DependencyNode;
@@ -670,10 +670,9 @@ public:
     bool _is_current_memory_edge;
     bool _is_current_weak_memory_edge;
 
-    // TODO: explicitly name data and memory edges!
-    // Iterate in node->in(i)
-    int _next_pred;
-    int _end_pred;
+    // Iterate in data edges, i.e. iterate node->in(i), excluding control and memory edges.
+    int _next_data_edge;
+    int _end_data_edge;
 
     // Iterate in dependency_node->strong_memory_edges()
     int _next_strong_memory_edge;
