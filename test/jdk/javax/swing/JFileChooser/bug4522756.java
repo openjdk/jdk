@@ -44,7 +44,7 @@ public class bug4522756 {
             2. Press Desktop button. Check that you actually
                go up to the desktop.
 
-            If the above is true press PASS else FAIL.
+            If the above is true, press PASS else FAIL.
             """;
 
     public static void main(String[] args) throws Exception {

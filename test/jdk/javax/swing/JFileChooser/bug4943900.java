@@ -38,23 +38,26 @@ import javax.swing.filechooser.FileFilter;
 
 public class bug4943900 {
     private static final String INSTRUCTIONS = """
-        1. When the test runs a JFileChooser will be displayed.
+        <html>
+        <p> 1. When the test runs a JFileChooser will be displayed.</p>
 
-        2. Ensure that there is a Filter combo box with these two items:
+        <p> 2. Ensure that there is a Filter combo box with these two items:
          - Text Files (*.txt)  [must be selected when the dialog opens]
-         - All Files
+         - All Files </p>
 
-        3. Leave the "Text files" item selected and check that the
-        filter works: only *.txt files can appear in the file list
+        <p> 3. Leave the "Text files" item selected and check that the
+        filter works: only *.txt files can appear in the file list.
         You can navigate directories in the FileChooser and find one
         that contains some *.txt files to ensure they are shown in
         the file list. On macOS when the text filter is applied verify
-        that the non-text files are greyed out.
+        that the non-text files are greyed out.</p>
 
-        4. Try switching the filters and ensure that the file list
-        is updated properly.
+        <p>4. Try switching the filters and ensure that the file list
+        is updated properly.</p>
 
-        If the FileFilter works correctly, press Pass else press Fail.
+        <p>If the FileFilter works correctly, press <b>Pass</b> else
+        press <b>Fail</b></p>.
+        </html>
         """;
 
     public static void main(String[] args) throws Exception {
@@ -63,8 +66,9 @@ public class bug4943900 {
         PassFailJFrame.builder()
                 .title("bug4943900 Test Instructions")
                 .instructions(INSTRUCTIONS)
+                .rows(14)
+                .columns(60)
                 .testUI(bug4943900::createAndShowUI)
-                .columns(68)
                 .build()
                 .awaitAndCheck();
     }
