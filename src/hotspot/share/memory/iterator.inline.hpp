@@ -158,7 +158,7 @@ class OopOopIterateDispatch : public DispatchBase {
 
     template <typename KlassType, typename OopType>
     static void invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-      KlassType::template oop_oop_iterate<OopType>(obj, cl, klute);
+      KlassType::template oop_oop_iterate<OopType, OopClosureType>(obj, cl, klute);
     }
 
     template <typename KlassType>
@@ -218,7 +218,7 @@ class OopOopIterateDispatchReverse {
 
     template <typename KlassType, typename OopType>
     static void invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-      KlassType::template oop_oop_iterate_reverse<OopType> (obj, cl, klute);
+      KlassType::template oop_oop_iterate_reverse<OopType, OopClosureType> (obj, cl, klute);
     }
 
     template <typename KlassType>
@@ -278,7 +278,7 @@ class OopOopIterateDispatchBounded {
 
     template <typename KlassType, typename OopType>
     static void invoke(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
-      KlassType::template oop_oop_iterate_bounded<OopType> (obj, cl, mr, klute);
+      KlassType::template oop_oop_iterate_bounded<OopType, OopClosureType> (obj, cl, mr, klute);
     }
 
     template <typename KlassType>
@@ -339,13 +339,13 @@ class OopOopIterateDispatchReturnSize : public DispatchBase {
 
     template <typename KlassType, HeaderMode mode, typename OopType>
     static size_t invoke(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-      KlassType::template oop_oop_iterate<OopType> (obj, cl, klute);
+      KlassType::template oop_oop_iterate<OopType, OopClosureType> (obj, cl, klute);
       return calculate_size_for_object_fast<KlassType, mode, OopType>(klute, obj);
     }
 
     template <class KlassType, class OopType>
     static size_t invoke_slow(oop obj, OopClosureType* cl, KlassLUTEntry klute) {
-      KlassType::template oop_oop_iterate<OopType> (obj, cl, klute);
+      KlassType::template oop_oop_iterate<OopType, OopClosureType> (obj, cl, klute);
       return obj->size();
     }
 
@@ -424,13 +424,13 @@ class OopOopIterateDispatchBoundedReturnSize : public DispatchBase {
 
     template <typename KlassType, HeaderMode mode, typename OopType>
     static size_t invoke(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
-      KlassType::template oop_oop_iterate_bounded<OopType> (obj, cl, mr, klute);
+      KlassType::template oop_oop_iterate_bounded<OopType, OopClosureType> (obj, cl, mr, klute);
       return calculate_size_for_object_fast<KlassType, mode, OopType>(klute, obj);
     }
 
     template <class KlassType, class OopType>
     static size_t invoke_slow(oop obj, OopClosureType* cl, MemRegion mr, KlassLUTEntry klute) {
-      KlassType::template oop_oop_iterate_bounded<OopType>(obj, cl, mr, klute);
+      KlassType::template oop_oop_iterate_bounded<OopType, OopClosureType>(obj, cl, mr, klute);
       return obj->size();
     }
 
