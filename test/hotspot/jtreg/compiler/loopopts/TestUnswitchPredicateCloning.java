@@ -134,7 +134,7 @@ public class TestUnswitchPredicateCloning {
                    IRNode.PROFILED_LOOP_PARSE_PREDICATE, "2",
                    IRNode.LOOP_LIMIT_CHECK_PARSE_PREDICATE, "1",
                    IRNode.AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "2" },
-        phase = CompilePhase.BEFORE_LOOP_PREDICATION_IC)
+        phase = CompilePhase.PHASEIDEALLOOP2)
     static int testPredicationBeforeUnswitching(int j, boolean cond) {
         int[] arr = getArr();
         int res = 0;
