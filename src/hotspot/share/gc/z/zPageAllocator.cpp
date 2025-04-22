@@ -1373,9 +1373,25 @@ size_t ZPageAllocator::unused() const {
   return unused > 0 ? (size_t)unused : 0;
 }
 
-ZPageAllocatorStats ZPageAllocator::stats(ZGeneration* generation) const {
-  ZLocker<ZLock> locker(&_lock);
+void ZPageAllocator::update_collection_stats(ZGenerationId id) {
+  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
+#ifdef ASSERT
+  size_t total_used = 0;
+
+  ZPartitionIterator iter(&_partitions);
+  for (ZPartition* partition; iter.next(&partition);) {
+    total_used += partition->_used;
+  }
+
+  assert(total_used == _used, "Must be consistent %zu == %zu", total_used, _used);
+#endif
+
+  _collection_stats[(int)id]._used_high = _used;
+  _collection_stats[(int)id]._used_low = _used;
+}
+
+ZPageAllocatorStats ZPageAllocator::stats_inner(ZGeneration* generation) const {
   return ZPageAllocatorStats(_min_capacity,
                              _max_capacity,
                              soft_max_capacity(),
@@ -1390,29 +1406,16 @@ ZPageAllocatorStats ZPageAllocator::stats(ZGeneration* generation) const {
                              _stalled.size());
 }
 
-void ZPageAllocator::reset_statistics(ZGenerationId id) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-#ifdef ASSERT
-  {
-    // We may free without safepoint synchronization, take the lock to get
-    // consistent values.
-    ZLocker<ZLock> locker(&_lock);
-    size_t total_used = 0;
+ZPageAllocatorStats ZPageAllocator::stats(ZGeneration* generation) const {
+  ZLocker<ZLock> locker(&_lock);
+  return stats_inner(generation);
+}
 
-    ZPartitionIterator iter(&_partitions);
-    for (ZPartition* partition; iter.next(&partition);) {
-      total_used += partition->_used;
-    }
+ZPageAllocatorStats ZPageAllocator::update_and_stats(ZGeneration* generation) {
+  ZLocker<ZLock> locker(&_lock);
 
-    assert(total_used == _used, "Must be consistent at safepoint %zu == %zu", total_used, _used);
-  }
-#endif
-
-  // Read once, we may have concurrent writers.
-  const size_t used = Atomic::load(&_used);
-
-  _collection_stats[(int)id]._used_high = used;
-  _collection_stats[(int)id]._used_low = used;
+  update_collection_stats(generation->id());
+  return stats_inner(generation);
 }
 
 void ZPageAllocator::increase_used_generation(ZGenerationId id, size_t size) {

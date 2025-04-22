@@ -235,6 +235,9 @@ private:
   void notify_out_of_memory();
   void restart_gc() const;
 
+  void update_collection_stats(ZGenerationId id);
+  ZPageAllocatorStats stats_inner(ZGeneration* generation) const;
+
   void print_on_inner(outputStream* st) const;
 
 public:
@@ -262,8 +265,7 @@ public:
   void promote_used(const ZPage* from, const ZPage* to);
 
   ZPageAllocatorStats stats(ZGeneration* generation) const;
-
-  void reset_statistics(ZGenerationId id);
+  ZPageAllocatorStats update_and_stats(ZGeneration* generation);
 
   ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);
   void safe_destroy_page(ZPage* page);
