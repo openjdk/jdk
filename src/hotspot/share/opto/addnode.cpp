@@ -796,7 +796,7 @@ uint AddPNode::match_edge(uint idx) const {
  *
  * It is transformed as a merged LoadI, which replace the Or3 node.
  *
- * Because array value is logical and with constant 0xff/0xffff, LoadS/LoadB is converted to an unsigned load
+ * Because array value is masked with constant 0xff/0xffff, LoadS/LoadB is converted to an unsigned load
  * and 'And' node is eliminated in previous IGVN phase. Please check AndINode::Ideal for reference
  *
  */
@@ -813,14 +813,14 @@ class MergeLoadInfo : ResourceObj {
 private:
   LoadNode* const    _load;
   Node*     const _combine;
-  int       const   _shift;
+  jint      const   _shift;
 public:
-  MergeLoadInfo(LoadNode* load, Node* combine, int shift) : _load(load), _combine(combine), _shift(shift) {}
+  MergeLoadInfo(LoadNode* load, Node* combine, jint shift) : _load(load), _combine(combine), _shift(shift) {}
 
 #ifdef ASSERT
   void dump() {
-    tty->print_cr("MergeLoadInfo: load: %d, combine: %d, shift: %d",
-                  _load->_idx, _combine->_idx, _shift);
+    tty->print_cr("MergeLoadInfo: load: %s(%d), combine: %d, shift: %d",
+                  _load->Name(), _load->_idx, _combine->_idx, _shift);
   }
 #endif
 };
@@ -840,7 +840,7 @@ private:
   PhaseGVN* const      _phase;
   Node*     const    _combine;
   MemoryAdjacentStatus _order;
-  bool _require_reverse_bytes;    // Do we need add a ReverseBytes for merged load
+  bool _require_reverse_bytes;    // Do we need to add a ReverseBytes for merged load
 
   NOT_PRODUCT( const CHeapBitMap &_trace_tags; )
 
@@ -854,8 +854,8 @@ public:
   Node* run();
 
 private:
-  // Detect the embedding combine node is a candidate for merging loads
-  bool is_merged_load_candidate( ) const;
+  // Detect if the embedding combine node is last one of combine operators
+  bool has_no_merge_load_combine_below( ) const;
   // Check other_load and load are compatible
   bool is_compatible_load(const LoadNode* other_load, const LoadNode* load) const;
   // From the seed load to collect load items for merging
@@ -872,7 +872,7 @@ private:
   static bool is_reachable_combine_nodes(const Node* from, const Node* to);
   MemoryAdjacentStatus get_adjacent_load_status(const LoadNode* first, const LoadNode* second) const;
   // Go through ConvI2L which is unique output of input node
-  static const Node* by_pass_i2l(const Node* n);
+  static const Node* bypass_i2l(const Node* n);
 
 #ifndef PRODUCT
   // Access to TraceMergeLoads tags
@@ -904,20 +904,30 @@ private:
 
 bool MergePrimitiveLoads::is_supported_load_opcode(int opc) {
   // Check for B/S/C/I
-  if (opc != Op_LoadB && opc != Op_LoadUB &&
-      opc != Op_LoadS && opc != Op_LoadUS &&
-      opc != Op_LoadI) {
-    return false;
+  switch(opc) {
+    case Op_LoadB:
+    case Op_LoadUB:
+    case Op_LoadS:
+    case Op_LoadUS:
+    case Op_LoadI:
+      return true;
+    default:
+      return false;
   }
-  return true;
 }
 
 bool MergePrimitiveLoads::is_supported_combine_opcode(int opc) {
-  return opc == Op_OrI || opc == Op_OrL;
+  switch(opc) {
+    case Op_OrI:
+    case Op_OrL:
+      return true;
+    default:
+      return false;
+  }
 }
 
 // Go through ConvI2L which is unique output of input node
-const Node* MergePrimitiveLoads::by_pass_i2l(const Node* n) {
+const Node* MergePrimitiveLoads::bypass_i2l(const Node* n) {
   if (n != nullptr && n->outcnt() == 1 && n->unique_out()->Opcode() == Op_ConvI2L) {
     return n->unique_out();
   } else {
@@ -926,26 +936,12 @@ const Node* MergePrimitiveLoads::by_pass_i2l(const Node* n) {
 };
 
 /*
- * Check the _combine operator can be a candidate to trigger merge loads.
- * The candidate load has the pattern:
- *
- * Load -> OrI/OrL
- *  It has no LShift usage and the And node is optimized out in previous optimization
- *
- *  The reference java code snippets are:
- *              ...
- *            | (((long) array[offset + 5] & 0xff) << 16)
- *            | (((long) array[offset + 6] & 0xff) << 8 )
- *            | (((long) array[offset + 7] & 0xff)      );                     <----- candidate
- *
- *              ((UNSAFE.getByte(array, address    ) & 0xff)      )            <----- candidate
- *            | ((UNSAFE.getByte(array, address + 1) & 0xff) <<  8)
- *            | ((UNSAFE.getByte(array, address + 2) & 0xff) << 16)
- *            | ((UNSAFE.getByte(array, address + 3) & 0xff) << 24);
+ * Check the _combine operator is the last one of combine operators
+ * And it can be a candidate for merge load optimization
  */
-bool MergePrimitiveLoads::is_merged_load_candidate() const {
+bool MergePrimitiveLoads::has_no_merge_load_combine_below() const {
   assert(is_supported_combine_opcode(_combine->Opcode()), "sanity");
-  const Node* check = by_pass_i2l(_combine);
+  const Node* check = bypass_i2l(_combine);
   if (check->outcnt() == 1 && check->unique_out()->Opcode() == _combine->Opcode()) {
     // It's in the middle of combine operators
     return false;
@@ -955,9 +951,9 @@ bool MergePrimitiveLoads::is_merged_load_candidate() const {
 
 // Construct merge information item from input load
 MergeLoadInfo* MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
-  const Node* check = by_pass_i2l(load);
+  const Node* check = bypass_i2l(load);
   Node* combine_oper = nullptr;
-  int shift = -1;
+  jint shift = -1;
 
   // Check the Load node has the pattern "(Or (LShift (Load .. ) ConI) ..)" or "(Or (Load ..) ..)"
   for (DUIterator_Fast imax, iter = check->fast_outs(imax); iter < imax; iter++) {
@@ -1010,7 +1006,7 @@ MergeLoadInfo* MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
 }
 
 Node* MergePrimitiveLoads::run() {
-  if (!is_merged_load_candidate()) {
+  if (!has_no_merge_load_combine_below()) {
     return nullptr;
   }
 
