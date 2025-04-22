@@ -157,6 +157,7 @@ public class ListScrollbarTest extends Frame {
         }
     }
 
+    @Override
     public boolean action(Event evt, Object arg) {
         if (">".equals(arg)) {
             move(ltList, rtList, false);
@@ -180,6 +181,7 @@ public class ListScrollbarTest extends Frame {
         return true;
     }
 
+    @Override
     public boolean handleEvent(Event evt) {
         if (evt.id == Event.LIST_SELECT
                 || evt.id == Event.LIST_DESELECT) {
