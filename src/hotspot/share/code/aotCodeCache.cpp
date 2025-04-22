@@ -1175,7 +1175,7 @@ address AOTCodeAddressTable::address_for_id(int idx) {
     return (address)os::init + idx;
   }
   if (idx < 0) {
-    fatal("Incorrect id %d for SCA table", id);
+    fatal("Incorrect id %d for AOT Code Cache addresses table", id);
   }
   // no need to compare unsigned id against 0
   if (/* id >= _extrs_base && */ id < _extrs_length) {
