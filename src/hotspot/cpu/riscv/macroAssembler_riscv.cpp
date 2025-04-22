@@ -1267,6 +1267,130 @@ void MacroAssembler::cmov_gtu(Register cmp1, Register cmp2, Register dst, Regist
   bind(no_set);
 }
 
+// ----------- cmove, compare float -----------
+
+// Move src to dst only if cmp1 == cmp2,
+// otherwise leave dst unchanged, including the case where one of them is NaN.
+// Clarification:
+//   java code      :  cmp1 != cmp2 ? dst : src
+//   transformed to :  CMove dst, (cmp1 eq cmp2), dst, src
+void MacroAssembler::cmov_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
+  if (UseZicond) {
+    if (is_single) {
+      feq_s(t0, cmp1, cmp2);
+    } else {
+      feq_d(t0, cmp1, cmp2);
+    }
+    czero_nez(dst, dst, t0);
+    czero_eqz(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  if (is_single) {
+    // jump if cmp1 != cmp2, including the case of NaN
+    // not jump (i.e. move src to dst) if cmp1 == cmp2
+    float_bne(cmp1, cmp2, no_set);
+  } else {
+    double_bne(cmp1, cmp2, no_set);
+  }
+  mv(dst, src);
+  bind(no_set);
+}
+
+// Keep dst unchanged only if cmp1 == cmp2,
+// otherwise move src to dst, including the case where one of them is NaN.
+// Clarification:
+//   java code      :  cmp1 == cmp2 ? dst : src
+//   transformed to :  CMove dst, (cmp1 ne cmp2), dst, src
+void MacroAssembler::cmov_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
+  if (UseZicond) {
+    if (is_single) {
+      feq_s(t0, cmp1, cmp2);
+    } else {
+      feq_d(t0, cmp1, cmp2);
+    }
+    czero_eqz(dst, dst, t0);
+    czero_nez(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  if (is_single) {
+    // jump if cmp1 == cmp2
+    // not jump (i.e. move src to dst) if cmp1 != cmp2, including the case of NaN
+    float_beq(cmp1, cmp2, no_set);
+  } else {
+    double_beq(cmp1, cmp2, no_set);
+  }
+  mv(dst, src);
+  bind(no_set);
+}
+
+// When cmp1 <= cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
+// Clarification
+//   scenario 1:
+//     java code      :  cmp2 < cmp1 ? dst : src
+//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
+//   scenario 2:
+//     java code      :  cmp1 > cmp2 ? dst : src
+//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
+void MacroAssembler::cmov_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
+  if (UseZicond) {
+    if (is_single) {
+      flt_s(t0, cmp2, cmp1);
+    } else {
+      flt_d(t0, cmp2, cmp1);
+    }
+    czero_eqz(dst, dst, t0);
+    czero_nez(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  if (is_single) {
+    // jump if cmp1 > cmp2
+    // not jump (i.e. move src to dst) if cmp1 <= cmp2 or either is NaN
+    float_bgt(cmp1, cmp2, no_set);
+  } else {
+    double_bgt(cmp1, cmp2, no_set);
+  }
+  mv(dst, src);
+  bind(no_set);
+}
+
+// When cmp1 < cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
+// Clarification
+//   scenario 1:
+//     java code      :  cmp2 <= cmp1 ? dst : src
+//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
+//   scenario 2:
+//     java code      :  cmp1 >= cmp2 ? dst : src
+//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
+void MacroAssembler::cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Register dst, Register src, bool is_single) {
+  if (UseZicond) {
+    if (is_single) {
+      fle_s(t0, cmp2, cmp1);
+    } else {
+      fle_d(t0, cmp2, cmp1);
+    }
+    czero_eqz(dst, dst, t0);
+    czero_nez(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  if (is_single) {
+    // jump if cmp1 >= cmp2
+    // not jump (i.e. move src to dst) if cmp1 < cmp2 or either is NaN
+    float_bge(cmp1, cmp2, no_set);
+  } else {
+    double_bge(cmp1, cmp2, no_set);
+  }
+  mv(dst, src);
+  bind(no_set);
+}
+
 // Float compare branch instructions
 
 #define INSN(NAME, FLOATCMP, BRANCH)                                                                                    \
@@ -6362,8 +6486,15 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
   ld(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     sd(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
+  }
+
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    load_klass(tmp1, obj);
+    lbu(tmp1, Address(tmp1, Klass::misc_flags_offset()));
+    test_bit(tmp1, tmp1, exact_log2(KlassFlags::_misc_is_value_based_class));
+    bnez(tmp1, slow, /* is_far */ true);
   }
 
   // Check if the lock-stack is full.
