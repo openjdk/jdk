@@ -321,7 +321,7 @@ final class StableMapTest {
 
     static Stream<Operation> nullAverseOperations() {
         return Stream.of(
-                new Operation("forEach",     m -> m.forEach(null))
+            new Operation("forEach",     m -> m.forEach(null))
         );
     }
 
