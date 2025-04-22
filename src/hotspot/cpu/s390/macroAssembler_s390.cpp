@@ -2304,7 +2304,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   // Get oop result if there is one and reset the value in the thread.
   if (oop_result->is_valid()) {
-    get_vm_result(oop_result);
+    get_vm_result_oop(oop_result);
   }
 
   _last_calls_return_pc = return_pc;  // Wipe out other (error handling) calls.
@@ -4067,22 +4067,22 @@ void MacroAssembler::set_thread_state(JavaThreadState new_state) {
   store_const(Address(Z_thread, JavaThread::thread_state_offset()), new_state, Z_R0, false);
 }
 
-void MacroAssembler::get_vm_result(Register oop_result) {
-  z_lg(oop_result, Address(Z_thread, JavaThread::vm_result_offset()));
-  clear_mem(Address(Z_thread, JavaThread::vm_result_offset()), sizeof(void*));
+void MacroAssembler::get_vm_result_oop(Register oop_result) {
+  z_lg(oop_result, Address(Z_thread, JavaThread::vm_result_oop_offset()));
+  clear_mem(Address(Z_thread, JavaThread::vm_result_oop_offset()), sizeof(void*));
 
   verify_oop(oop_result, FILE_AND_LINE);
 }
 
-void MacroAssembler::get_vm_result_2(Register result) {
-  z_lg(result, Address(Z_thread, JavaThread::vm_result_2_offset()));
-  clear_mem(Address(Z_thread, JavaThread::vm_result_2_offset()), sizeof(void*));
+void MacroAssembler::get_vm_result_metadata(Register result) {
+  z_lg(result, Address(Z_thread, JavaThread::vm_result_metadata_offset()));
+  clear_mem(Address(Z_thread, JavaThread::vm_result_metadata_offset()), sizeof(void*));
 }
 
 // We require that C code which does not return a value in vm_result will
 // leave it undisturbed.
 void MacroAssembler::set_vm_result(Register oop_result) {
-  z_stg(oop_result, Address(Z_thread, JavaThread::vm_result_offset()));
+  z_stg(oop_result, Address(Z_thread, JavaThread::vm_result_oop_offset()));
 }
 
 // Explicit null checks (used for method handle code).

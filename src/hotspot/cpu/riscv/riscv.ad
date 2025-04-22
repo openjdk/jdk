@@ -4397,6 +4397,12 @@ pipe_class pipe_slow()
   LDST   : MEM;
 %}
 
+// The real do-nothing guy
+pipe_class real_empty()
+%{
+    instruction_count(0);
+%}
+
 // Empty pipeline class
 pipe_class pipe_class_empty()
 %{
@@ -6439,7 +6445,6 @@ instruct addI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immIAdd src2) %{
   format %{ "addiw  $dst, $src1, $src2\t#@addI_reg_imm" %}
 
   ins_encode %{
-    int32_t con = (int32_t)$src2$$constant;
     __ addiw(as_Register($dst$$reg),
              as_Register($src1$$reg),
              $src2$$constant);
@@ -6501,7 +6506,6 @@ instruct addP_reg_imm(iRegPNoSp dst, iRegP src1, immLAdd src2) %{
   format %{ "addi  $dst, $src1, $src2\t# ptr, #@addP_reg_imm" %}
 
   ins_encode %{
-    // src2 is imm, so actually call the addi
     __ addi(as_Register($dst$$reg),
             as_Register($src1$$reg),
             $src2$$constant);
@@ -6823,7 +6827,7 @@ instruct UmodL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 // Integer Shifts
 
 // Shift Left Register
-// In RV64I, only the low 5 bits of src2 are considered for the shift amount
+// Only the low 5 bits of src2 are considered for the shift amount, all other bits are ignored.
 instruct lShiftI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (LShiftI src1 src2));
   ins_cost(ALU_COST);
@@ -6856,7 +6860,7 @@ instruct lShiftI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immI src2) %{
 %}
 
 // Shift Right Logical Register
-// In RV64I, only the low 5 bits of src2 are considered for the shift amount
+// Only the low 5 bits of src2 are considered for the shift amount, all other bits are ignored.
 instruct urShiftI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (URShiftI src1 src2));
   ins_cost(ALU_COST);
@@ -6889,7 +6893,7 @@ instruct urShiftI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immI src2) %{
 %}
 
 // Shift Right Arithmetic Register
-// In RV64I, only the low 5 bits of src2 are considered for the shift amount
+// Only the low 5 bits of src2 are considered for the shift amount, all other bits are ignored.
 instruct rShiftI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (RShiftI src1 src2));
   ins_cost(ALU_COST);
@@ -6924,7 +6928,7 @@ instruct rShiftI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immI src2) %{
 // Long Shifts
 
 // Shift Left Register
-// In RV64I, only the low 6 bits of src2 are considered for the shift amount
+// Only the low 6 bits of src2 are considered for the shift amount, all other bits are ignored.
 instruct lShiftL_reg_reg(iRegLNoSp dst, iRegL src1, iRegIorL2I src2) %{
   match(Set dst (LShiftL src1 src2));
 
@@ -6959,7 +6963,7 @@ instruct lShiftL_reg_imm(iRegLNoSp dst, iRegL src1, immI src2) %{
 %}
 
 // Shift Right Logical Register
-// In RV64I, only the low 6 bits of src2 are considered for the shift amount
+// Only the low 6 bits of src2 are considered for the shift amount, all other bits are ignored.
 instruct urShiftL_reg_reg(iRegLNoSp dst, iRegL src1, iRegIorL2I src2) %{
   match(Set dst (URShiftL src1 src2));
 
@@ -7012,7 +7016,7 @@ instruct urShiftP_reg_imm(iRegLNoSp dst, iRegP src1, immI src2) %{
 %}
 
 // Shift Right Arithmetic Register
-// In RV64I, only the low 6 bits of src2 are considered for the shift amount
+// Only the low 6 bits of src2 are considered for the shift amount, all other bits are ignored.
 instruct rShiftL_reg_reg(iRegLNoSp dst, iRegL src1, iRegIorL2I src2) %{
   match(Set dst (RShiftL src1 src2));
 
@@ -7902,78 +7906,102 @@ instruct xorL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
 // ============================================================================
 // MemBar Instruction
 
-instruct load_fence() %{
+// RVTSO
+
+instruct unnecessary_membar_rvtso() %{
+  predicate(UseZtso);
   match(LoadFence);
-  ins_cost(ALU_COST);
-
-  format %{ "#@load_fence" %}
-
-  ins_encode %{
-    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  %}
-  ins_pipe(pipe_serial);
-%}
-
-instruct membar_acquire() %{
+  match(StoreFence);
+  match(StoreStoreFence);
   match(MemBarAcquire);
-  ins_cost(ALU_COST);
-
-  format %{ "#@membar_acquire\n\t"
-            "fence ir iorw" %}
-
-  ins_encode %{
-    __ block_comment("membar_acquire");
-    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct membar_acquire_lock() %{
+  match(MemBarRelease);
+  match(MemBarStoreStore);
   match(MemBarAcquireLock);
+  match(MemBarReleaseLock);
+
   ins_cost(0);
 
-  format %{ "#@membar_acquire_lock (elided)" %}
+  size(0);
+
+  format %{ "#@unnecessary_membar_rvtso elided/tso (empty encoding)" %}
+  ins_encode %{
+    __ block_comment("unnecessary_membar_rvtso");
+  %}
+  ins_pipe(real_empty);
+%}
+
+instruct membar_volatile_rvtso() %{
+  predicate(UseZtso);
+  match(MemBarVolatile);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "#@membar_volatile_rvtso\n\t"
+            "fence w, r"%}
 
   ins_encode %{
-    __ block_comment("membar_acquire_lock (elided)");
+    __ block_comment("membar_volatile_rvtso");
+    __ membar(MacroAssembler::StoreLoad);
   %}
 
+  ins_pipe(pipe_slow);
+%}
+
+instruct unnecessary_membar_volatile_rvtso() %{
+  predicate(UseZtso && Matcher::post_store_load_barrier(n));
+  match(MemBarVolatile);
+  ins_cost(0);
+
+  size(0);
+  
+  format %{ "#@unnecessary_membar_volatile_rvtso (unnecessary so empty encoding)" %}
+  ins_encode %{
+    __ block_comment("unnecessary_membar_volatile_rvtso");
+  %}
+  ins_pipe(real_empty);
+%}
+
+// RVWMO
+
+instruct membar_aqcuire_rvwmo() %{
+  predicate(!UseZtso);
+  match(LoadFence);
+  match(MemBarAcquire);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "#@membar_aqcuire_rvwmo\n\t"
+            "fence r, rw" %}
+
+  ins_encode %{
+    __ block_comment("membar_aqcuire_rvwmo");
+    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  %}
   ins_pipe(pipe_serial);
 %}
 
-instruct store_fence() %{
+instruct membar_release_rvwmo() %{
+  predicate(!UseZtso);
   match(StoreFence);
-  ins_cost(ALU_COST);
-
-  format %{ "#@store_fence" %}
-
-  ins_encode %{
-    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  %}
-  ins_pipe(pipe_serial);
-%}
-
-instruct membar_release() %{
   match(MemBarRelease);
-  ins_cost(ALU_COST);
+  ins_cost(VOLATILE_REF_COST);
 
-  format %{ "#@membar_release\n\t"
-            "fence iorw ow" %}
+  format %{ "#@membar_release_rvwmo\n\t"
+            "fence rw, w" %}
 
   ins_encode %{
-    __ block_comment("membar_release");
+    __ block_comment("membar_release_rvwmo");
     __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
   %}
   ins_pipe(pipe_serial);
 %}
 
-instruct membar_storestore() %{
+instruct membar_storestore_rvwmo() %{
+  predicate(!UseZtso);
   match(MemBarStoreStore);
   match(StoreStoreFence);
-  ins_cost(ALU_COST);
+  ins_cost(VOLATILE_REF_COST);
 
-  format %{ "MEMBAR-store-store\t#@membar_storestore" %}
+  format %{ "#@membar_storestore_rvwmo\n\t"
+            "fence w, w" %}
 
   ins_encode %{
     __ membar(MacroAssembler::StoreStore);
@@ -7981,32 +8009,48 @@ instruct membar_storestore() %{
   ins_pipe(pipe_serial);
 %}
 
-instruct membar_release_lock() %{
-  match(MemBarReleaseLock);
-  ins_cost(0);
+instruct membar_volatile_rvwmo() %{
+  predicate(!UseZtso);
+  match(MemBarVolatile);
+  ins_cost(VOLATILE_REF_COST);
 
-  format %{ "#@membar_release_lock (elided)" %}
+  format %{ "#@membar_volatile_rvwmo\n\t"
+            "fence w, r"%}
 
   ins_encode %{
-    __ block_comment("membar_release_lock (elided)");
+    __ block_comment("membar_volatile_rvwmo");
+    __ membar(MacroAssembler::StoreLoad);
   %}
 
   ins_pipe(pipe_serial);
 %}
 
-instruct membar_volatile() %{
-  match(MemBarVolatile);
-  ins_cost(ALU_COST);
+instruct membar_lock_rvwmo() %{
+  predicate(!UseZtso);
+  match(MemBarAcquireLock);
+  match(MemBarReleaseLock);
+  ins_cost(0);
 
-  format %{ "#@membar_volatile\n\t"
-             "fence iorw iorw"%}
+  format %{ "#@membar_lock_rvwmo (elided)" %}
 
   ins_encode %{
-    __ block_comment("membar_volatile");
-    __ membar(MacroAssembler::StoreLoad);
+    __ block_comment("membar_lock_rvwmo (elided)");
   %}
 
   ins_pipe(pipe_serial);
+%}
+
+instruct unnecessary_membar_volatile_rvwmo() %{
+  predicate(!UseZtso && Matcher::post_store_load_barrier(n));
+  match(MemBarVolatile);
+  ins_cost(0);
+
+  size(0);
+  format %{ "#@unnecessary_membar_volatile_rvwmo (unnecessary so empty encoding)" %}
+  ins_encode %{
+    __ block_comment("unnecessary_membar_volatile_rvwmo");
+  %}
+  ins_pipe(real_empty);
 %}
 
 instruct spin_wait() %{
@@ -10847,7 +10891,8 @@ instruct ShouldNotReachHere() %{
 
   ins_encode %{
     if (is_reachable()) {
-      __ stop(_halt_reason);
+      const char* str = __ code_string(_halt_reason);
+      __ stop(str);
     }
   %}
 

@@ -64,6 +64,8 @@ final class MethodTypeForm {
     // Cached lambda form information, for basic types only:
     private final Object[] lambdaForms;
 
+    private SoftReference<MemberName> interpretEntry;
+
     // Indexes into lambdaForms:
     static final int
             LF_INVVIRTUAL              =  0,  // DMH invokeVirtual
@@ -72,7 +74,6 @@ final class MethodTypeForm {
             LF_NEWINVSPECIAL           =  3,
             LF_INVINTERFACE            =  4,
             LF_INVSTATIC_INIT          =  5,  // DMH invokeStatic with <clinit> barrier
-            LF_INTERPRET               =  6,  // LF interpreter
             LF_REBIND                  =  7,  // BoundMethodHandle
             LF_DELEGATE                =  8,  // DelegatingMethodHandle
             LF_DELEGATE_BLOCK_INLINING =  9,  // Counting DelegatingMethodHandle w/ @DontInline
@@ -160,6 +161,19 @@ final class MethodTypeForm {
             lambdaForms[which] = form;
         }
         return form;
+    }
+
+    public MemberName cachedInterpretEntry() {
+        return (interpretEntry == null) ? null : interpretEntry.get();
+    }
+
+    public synchronized MemberName setCachedInterpretEntry(MemberName mn) {
+        MemberName prev = cachedInterpretEntry();
+        if (prev != null) {
+            return prev;
+        }
+        this.interpretEntry = new SoftReference<>(mn);
+        return mn;
     }
 
     /**

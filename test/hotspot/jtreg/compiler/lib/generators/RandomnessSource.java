@@ -42,4 +42,6 @@ public interface RandomnessSource {
     double nextDouble(double lo, double hi);
     /** Samples the next float value in the half-open interval [lo, hi) uniformly at random. */
     float nextFloat(float lo, float hi);
+    /** Samples the next float16 value in the half-open interval [lo, hi) uniformly at random. */
+    short nextFloat16(short lo, short hi);
 }

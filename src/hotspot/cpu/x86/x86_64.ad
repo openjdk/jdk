@@ -857,7 +857,7 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     Register klass = rscratch1;
 
     __ mov_metadata(klass, C->method()->holder()->constant_encoding());
-    __ clinit_barrier(klass, r15_thread, &L_skip_barrier /*L_fast_path*/);
+    __ clinit_barrier(klass, &L_skip_barrier /*L_fast_path*/);
 
     __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
 
@@ -955,7 +955,7 @@ void MachEpilogNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
       code_stub = &stub->entry();
     }
     __ relocate(relocInfo::poll_return_type);
-    __ safepoint_poll(*code_stub, r15_thread, true /* at_return */, true /* in_nmethod */);
+    __ safepoint_poll(*code_stub, true /* at_return */, true /* in_nmethod */);
   }
 }
 
@@ -7408,7 +7408,7 @@ instruct addL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
   ins_pipe(ialu_mem_imm);
 %}
 
-instruct incL_rReg(rRegI dst, immL1 src, rFlagsReg cr)
+instruct incL_rReg(rRegL dst, immL1 src, rFlagsReg cr)
 %{
   predicate(!UseAPX && UseIncDec);
   match(Set dst (AddL dst src));
@@ -7421,7 +7421,7 @@ instruct incL_rReg(rRegI dst, immL1 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct incL_rReg_ndd(rRegI dst, rRegI src, immL1 val, rFlagsReg cr)
+instruct incL_rReg_ndd(rRegL dst, rRegI src, immL1 val, rFlagsReg cr)
 %{
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddL src val));
@@ -7434,7 +7434,7 @@ instruct incL_rReg_ndd(rRegI dst, rRegI src, immL1 val, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct incL_rReg_mem_ndd(rRegI dst, memory src, immL1 val, rFlagsReg cr)
+instruct incL_rReg_mem_ndd(rRegL dst, memory src, immL1 val, rFlagsReg cr)
 %{
   predicate(UseAPX && UseIncDec);
   match(Set dst (AddL (LoadL src) val));
@@ -11398,7 +11398,7 @@ instruct xorL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2, rFlagsReg cr
   ins_cost(150);
   format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{
-    __ exorq($dst$$Register, $src1$$Address, $src1$$Register, false);
+    __ exorq($dst$$Register, $src1$$Address, $src2$$Register, false);
   %}
   ins_pipe(ialu_reg_mem);
 %}
