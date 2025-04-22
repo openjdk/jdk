@@ -92,7 +92,7 @@ class Klass : public Metadata {
   static inline       TYPE* cast_exact(      Klass* k);
 
 #define DEFINE_EXACT_CAST_FUNCTIONS(TYPE)                                \
-	inline const TYPE* TYPE::cast_exact(const Klass* k) {                  \
+  inline const TYPE* TYPE::cast_exact(const Klass* k) {                  \
     assert(k != nullptr, "klass null");                                  \
     assert(k->kind() == Klass::TYPE ## Kind,                             \
            "Klass @" PTR_FORMAT ": wrong kind %d", p2i(k), k->kind()) ;  \
@@ -108,7 +108,7 @@ class Klass : public Metadata {
   static inline       TYPE* narrow_klass_to_klass(narrowKlass nk);
 
 #define DEFINE_NARROW_KLASS_UTILITY_FUNCTIONS(TYPE)                      \
-	inline const TYPE* TYPE::narrow_klass_to_const_klass(narrowKlass nk) { \
+  inline const TYPE* TYPE::narrow_klass_to_const_klass(narrowKlass nk) { \
     const Klass* const k = CompressedKlassPointers::decode_not_null(nk); \
     return cast_exact(k);                                                \
   }                                                                      \

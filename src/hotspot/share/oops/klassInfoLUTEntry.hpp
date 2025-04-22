@@ -74,8 +74,8 @@ class outputStream;
 class KlassLUTEntry {
 
 #define ALL_KLASS_KINDS_DO(what) \
-		what(InstanceKlass, IK) \
-		what(InstanceRefKlass, IRK) \
+    what(InstanceKlass, IK) \
+    what(InstanceRefKlass, IRK) \
     what(InstanceMirrorKlass, IMK) \
     what(InstanceClassLoaderKlass, ICLK) \
     what(InstanceStackChunkKlass, ISCK) \
