@@ -246,6 +246,8 @@ public class disable001 extends JDIBase {
 
         BreakpointRequest bpRequest =
             setupBreakpointForCommunication(debuggeeClass);
+        // setupBreakpointForCommunication() defaults to SUSPEND_EVENT_THREAD. We need
+        // to change this to SUSPEND_ALL.
         bpRequest.disable();
         bpRequest.setSuspendPolicy(EventRequest.SUSPEND_ALL);
         bpRequest.enable();
