@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     private static final Path ROOT_TMP = Path.of("root/tmp");
 
     String socket_path;
-    private int ver = VERSION_1;        // updated in ctor depending on detectVersion result
+    private OperationProperties props = new OperationProperties(VERSION_1); // updated in ctor
 
     /**
      * Attaches to the target VM
@@ -124,7 +124,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         checkPermissions(socket_path);
 
         if (isAPIv2Enabled()) {
-            ver = detectVersion();
+            props = getDefaultProps();
         } else {
             // Check that we can connect to the process
             // - this ensures we throw the permission denied error now rather than
@@ -178,7 +178,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // connected - write request
         try {
             SocketOutputStream writer = new SocketOutputStream(s);
-            writeCommand(writer, ver, cmd, args);
+            writeCommand(writer, props, cmd, args);
         } catch (IOException x) {
             ioe = x;
         }

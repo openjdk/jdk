@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2024, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -204,12 +204,6 @@ source %{
           return false;
         }
         break;
-      case Op_VectorLoadShuffle:
-      case Op_VectorRearrange:
-        if (vlen < 4) {
-          return false;
-        }
-        break;
       case Op_ExpandV:
         if (UseSVE < 2 || is_subword_type(bt)) {
           return false;
@@ -254,6 +248,13 @@ source %{
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
         return false;
+      case Op_SaturatingAddV:
+      case Op_SaturatingSubV:
+        // Only SVE2 supports the predicated saturating instructions.
+        if (UseSVE < 2) {
+          return false;
+        }
+        break;
       // We use Op_LoadVectorMasked to implement the predicated Op_LoadVector.
       // Hence we turn to check whether Op_LoadVectorMasked is supported. The
       // same as vector store/gather/scatter.
@@ -1539,6 +1540,142 @@ instruct vand_notL_masked(vReg dst_src1, vReg src2, immL_M1 m1, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}
 
+// ------------------------- Vector saturating add -----------------------------
+
+// Signed saturating add
+
+instruct vsqadd(vReg dst, vReg src1, vReg src2) %{
+  predicate(!n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingAddV src1 src2));
+  format %{ "vsqadd $dst, $src1, $src2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ sqaddv($dst$$FloatRegister, get_arrangement(this),
+                $src1$$FloatRegister, $src2$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      BasicType bt = Matcher::vector_element_basic_type(this);
+      __ sve_sqadd($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+                   $src1$$FloatRegister, $src2$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vsqadd_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE == 2 && !n->as_SaturatingVector()->is_unsigned());
+  match(Set dst_src1 (SaturatingAddV (Binary dst_src1 src2) pg));
+  format %{ "vsqadd_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_sqadd($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                 $pg$$PRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Unsigned saturating add
+
+instruct vuqadd(vReg dst, vReg src1, vReg src2) %{
+  predicate(n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingAddV src1 src2));
+  format %{ "vuqadd $dst, $src1, $src2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ uqaddv($dst$$FloatRegister, get_arrangement(this),
+                $src1$$FloatRegister, $src2$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      BasicType bt = Matcher::vector_element_basic_type(this);
+      __ sve_uqadd($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+                   $src1$$FloatRegister, $src2$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vuqadd_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE == 2 && n->as_SaturatingVector()->is_unsigned());
+  match(Set dst_src1 (SaturatingAddV (Binary dst_src1 src2) pg));
+  format %{ "vuqadd_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_uqadd($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                 $pg$$PRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ------------------------- Vector saturating sub -----------------------------
+
+// Signed saturating sub
+
+instruct vsqsub(vReg dst, vReg src1, vReg src2) %{
+  predicate(!n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingSubV src1 src2));
+  format %{ "vsqsub $dst, $src1, $src2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ sqsubv($dst$$FloatRegister, get_arrangement(this),
+                $src1$$FloatRegister, $src2$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      BasicType bt = Matcher::vector_element_basic_type(this);
+      __ sve_sqsub($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+                   $src1$$FloatRegister, $src2$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vsqsub_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE == 2 && !n->as_SaturatingVector()->is_unsigned());
+  match(Set dst_src1 (SaturatingSubV (Binary dst_src1 src2) pg));
+  format %{ "vsqsub_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_sqsub($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                 $pg$$PRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Unsigned saturating sub
+
+instruct vuqsub(vReg dst, vReg src1, vReg src2) %{
+  predicate(n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingSubV src1 src2));
+  format %{ "vuqsub $dst, $src1, $src2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ uqsubv($dst$$FloatRegister, get_arrangement(this),
+                $src1$$FloatRegister, $src2$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      BasicType bt = Matcher::vector_element_basic_type(this);
+      __ sve_uqsub($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+                   $src1$$FloatRegister, $src2$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vuqsub_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE == 2 && n->as_SaturatingVector()->is_unsigned());
+  match(Set dst_src1 (SaturatingSubV (Binary dst_src1 src2) pg));
+  format %{ "vuqsub_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_uqsub($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                 $pg$$PRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // ------------------------------ Vector abs -----------------------------------
 
 // vector abs
@@ -1993,6 +2130,76 @@ instruct vmin_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}
 
+// vector unsigned min - LONG
+
+instruct vuminL_neon(vReg dst, vReg src1, vReg src2) %{
+  predicate(UseSVE == 0 && Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (UMinV src1 src2));
+  effect(TEMP_DEF dst);
+  format %{ "vuminL_neon $dst, $src1, $src2\t# 2L" %}
+  ins_encode %{
+    __ cm(Assembler::HI, $dst$$FloatRegister, __ T2D, $src1$$FloatRegister, $src2$$FloatRegister);
+    __ bsl($dst$$FloatRegister, __ T16B, $src2$$FloatRegister, $src1$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vuminL_sve(vReg dst_src1, vReg src2) %{
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst_src1 (UMinV dst_src1 src2));
+  format %{ "vuminL_sve $dst_src1, $dst_src1, $src2" %}
+  ins_encode %{
+    __ sve_umin($dst_src1$$FloatRegister, __ D, ptrue, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector unsigned min - B/S/I
+
+instruct vumin_neon(vReg dst, vReg src1, vReg src2) %{
+  predicate(Matcher::vector_element_basic_type(n) != T_LONG &&
+            VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst (UMinV src1 src2));
+  format %{ "vumin_neon $dst, $src1, $src2\t# B/S/I" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt) && bt != T_LONG, "unsupported type");
+    __ uminv($dst$$FloatRegister, get_arrangement(this),
+             $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vumin_sve(vReg dst_src1, vReg src2) %{
+  predicate(Matcher::vector_element_basic_type(n) != T_LONG &&
+            !VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst_src1 (UMinV dst_src1 src2));
+  format %{ "vumin_sve $dst_src1, $dst_src1, $src2\t# B/S/I" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt) && bt != T_LONG, "unsupported type");
+    __ sve_umin($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                ptrue, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector unsigned min - predicated
+
+instruct vumin_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (UMinV (Binary dst_src1 src2) pg));
+  format %{ "vumin_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt), "unsupported type");
+    __ sve_umin($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                $pg$$PRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // ------------------------------ Vector max -----------------------------------
 
 // vector max - LONG
@@ -2076,6 +2283,76 @@ instruct vmax_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
       __ sve_smax($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
                   $pg$$PRegister, $src2$$FloatRegister);
     }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector unsigned max - LONG
+
+instruct vumaxL_neon(vReg dst, vReg src1, vReg src2) %{
+  predicate(UseSVE == 0 && Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (UMaxV src1 src2));
+  effect(TEMP_DEF dst);
+  format %{ "vumaxL_neon $dst, $src1, $src2\t# 2L" %}
+  ins_encode %{
+    __ cm(Assembler::HI, $dst$$FloatRegister, __ T2D, $src1$$FloatRegister, $src2$$FloatRegister);
+    __ bsl($dst$$FloatRegister, __ T16B, $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vumaxL_sve(vReg dst_src1, vReg src2) %{
+  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst_src1 (UMaxV dst_src1 src2));
+  format %{ "vumaxL_sve $dst_src1, $dst_src1, $src2" %}
+  ins_encode %{
+    __ sve_umax($dst_src1$$FloatRegister, __ D, ptrue, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector unsigned max - B/S/I
+
+instruct vumax_neon(vReg dst, vReg src1, vReg src2) %{
+  predicate(Matcher::vector_element_basic_type(n) != T_LONG &&
+            VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst (UMaxV src1 src2));
+  format %{ "vumax_neon $dst, $src1, $src2\t# B/S/I" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt) && bt != T_LONG, "unsupported type");
+    __ umaxv($dst$$FloatRegister, get_arrangement(this),
+             $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vumax_sve(vReg dst_src1, vReg src2) %{
+  predicate(Matcher::vector_element_basic_type(n) != T_LONG &&
+            !VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst_src1 (UMaxV dst_src1 src2));
+  format %{ "vumax_sve $dst_src1, $dst_src1, $src2\t# B/S/I" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt) && bt != T_LONG, "unsupported type");
+    __ sve_umax($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                ptrue, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector unsigned max - predicated
+
+instruct vumax_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (UMaxV (Binary dst_src1 src2) pg));
+  format %{ "vumax_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(bt), "unsupported type");
+    __ sve_umax($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                $pg$$PRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -6156,61 +6433,24 @@ instruct vtest_alltrue_sve(rFlagsReg cr, pReg src1, pReg src2, pReg ptmp) %{
 
 // ------------------------------ Vector rearrange -----------------------------
 
-// Here is an example that rearranges a NEON vector with 4 ints:
-// Rearrange V1 int[a0, a1, a2, a3] to V2 int[a2, a3, a0, a1]
-//   1. Get the indices of V1 and store them as Vi byte[0, 1, 2, 3].
-//   2. Convert Vi byte[0, 1, 2, 3] to the indices of V2 and also store them as Vi byte[2, 3, 0, 1].
-//   3. Unsigned extend Long Vi from byte[2, 3, 0, 1] to int[2, 3, 0, 1].
-//   4. Multiply Vi int[2, 3, 0, 1] with constant int[0x04040404, 0x04040404, 0x04040404, 0x04040404]
-//      and get tbl base Vm int[0x08080808, 0x0c0c0c0c, 0x00000000, 0x04040404].
-//   5. Add Vm with constant int[0x03020100, 0x03020100, 0x03020100, 0x03020100]
-//      and get tbl index Vm int[0x0b0a0908, 0x0f0e0d0c, 0x03020100, 0x07060504]
-//   6. Use Vm as index register, and use V1 as table register.
-//      Then get V2 as the result by tbl NEON instructions.
-// Notes:
-//   Step 1 matches VectorLoadConst.
-//   Step 3 matches VectorLoadShuffle.
-//   Step 4, 5, 6 match VectorRearrange.
-//   For VectorRearrange short/int, the reason why such complex calculation is
-//   required is because NEON tbl supports bytes table only, so for short/int, we
-//   need to lookup 2/4 bytes as a group. For VectorRearrange long, we use bsl
-//   to implement rearrange.
-
-// Maybe move the shuffle preparation to VectorLoadShuffle
-instruct rearrange_HS_neon(vReg dst, vReg src, vReg shuffle, vReg tmp1, vReg tmp2) %{
-  predicate(UseSVE == 0 &&
-            (Matcher::vector_element_basic_type(n) == T_SHORT ||
-             (type2aelembytes(Matcher::vector_element_basic_type(n)) == 4 &&
-              Matcher::vector_length_in_bytes(n) == 16)));
+instruct rearrange_HSD_neon(vReg dst, vReg src, vReg shuffle, vReg tmp) %{
+  predicate(UseSVE == 0 && Matcher::vector_element_basic_type(n) != T_BYTE);
   match(Set dst (VectorRearrange src shuffle));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
-  format %{ "rearrange_HS_neon $dst, $src, $shuffle\t# vector (4S/8S/4I/4F). KILL $tmp1, $tmp2" %}
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "rearrange_HSD_neon $dst, $src, $shuffle\t# vector (4H/8H/2S/4S/2D). KILL $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    if (bt == T_SHORT) {
-      uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-      assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
-      Assembler::SIMD_Arrangement size1 = length_in_bytes == 16 ? __ T16B : __ T8B;
-      Assembler::SIMD_Arrangement size2 = length_in_bytes == 16 ? __ T8H : __ T4H;
-      __ mov($tmp1$$FloatRegister, size1, 0x02);
-      __ mov($tmp2$$FloatRegister, size2, 0x0100);
-      __ mulv($dst$$FloatRegister, size2, $shuffle$$FloatRegister, $tmp1$$FloatRegister);
-      __ addv($dst$$FloatRegister, size1, $dst$$FloatRegister, $tmp2$$FloatRegister);
-      __ tbl($dst$$FloatRegister, size1, $src$$FloatRegister, 1, $dst$$FloatRegister);
-    } else {
-      assert(bt == T_INT || bt == T_FLOAT, "unsupported type");
-      __ mov($tmp1$$FloatRegister, __ T16B, 0x04);
-      __ mov($tmp2$$FloatRegister, __ T4S, 0x03020100);
-      __ mulv($dst$$FloatRegister, __ T4S, $shuffle$$FloatRegister, $tmp1$$FloatRegister);
-      __ addv($dst$$FloatRegister, __ T16B, $dst$$FloatRegister, $tmp2$$FloatRegister);
-      __ tbl($dst$$FloatRegister, __ T16B, $src$$FloatRegister, 1, $dst$$FloatRegister);
-    }
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
+    __ neon_rearrange_hsd($dst$$FloatRegister, $src$$FloatRegister,
+                          $shuffle$$FloatRegister, $tmp$$FloatRegister,
+                          bt, length_in_bytes == 16);
   %}
   ins_pipe(pipe_slow);
 %}
 
 instruct rearrange(vReg dst, vReg src, vReg shuffle) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_BYTE || UseSVE > 0);
+  predicate(UseSVE > 0 || Matcher::vector_element_basic_type(n) == T_BYTE);
   match(Set dst (VectorRearrange src shuffle));
   format %{ "rearrange $dst, $src, $shuffle" %}
   ins_encode %{

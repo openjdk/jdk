@@ -125,9 +125,7 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
     ShenandoahThreadLocalData::initialize_gclab(thread);
 
     BarrierSetNMethod* bs_nm = barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
-    }
+    thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
 
     if (ShenandoahStackWatermarkBarrier) {
       JavaThread* const jt = JavaThread::cast(thread);

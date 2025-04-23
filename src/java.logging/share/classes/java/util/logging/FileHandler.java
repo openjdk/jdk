@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -739,11 +739,14 @@ public class FileHandler extends StreamHandler {
      *                 silently ignored and is not published
      */
     @Override
-    public synchronized void publish(LogRecord record) {
-        if (!isLoggable(record)) {
-            return;
-        }
+    public void publish(LogRecord record) {
         super.publish(record);
+    }
+
+    @Override
+    void synchronousPostWriteHook() {
+        // no need to synchronize here, this method is called from within a
+        // synchronized block.
         flush();
         if (limit > 0 && (meter.written >= limit || meter.written < 0)) {
             rotate();

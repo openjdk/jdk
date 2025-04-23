@@ -579,7 +579,7 @@ protected:
   virtual bool depends_only_on_test() const { return false; }
 
   Node *Ideal_masked_input       (PhaseGVN *phase, uint mask);
-  Node *Ideal_sign_extended_input(PhaseGVN *phase, int  num_bits);
+  Node* Ideal_sign_extended_input(PhaseGVN* phase, int num_rejected_bits);
 
 public:
   // We must ensure that stores of object references will be visible
@@ -1132,7 +1132,7 @@ class MemBarNode: public MultiNode {
     LeadingStore,
     TrailingLoadStore,
     LeadingLoadStore,
-    TrailingPartialArrayCopy
+    TrailingExpandedArrayCopy
   } _kind;
 
 #ifdef ASSERT
@@ -1169,8 +1169,8 @@ public:
   bool trailing() const { return _kind == TrailingLoad || _kind == TrailingStore || _kind == TrailingLoadStore; }
   bool leading() const { return _kind == LeadingStore || _kind == LeadingLoadStore; }
   bool standalone() const { return _kind == Standalone; }
-  void set_trailing_partial_array_copy() { _kind = TrailingPartialArrayCopy; }
-  bool trailing_partial_array_copy() const { return _kind == TrailingPartialArrayCopy; }
+  void set_trailing_expanded_array_copy() { _kind = TrailingExpandedArrayCopy; }
+  bool trailing_expanded_array_copy() const { return _kind == TrailingExpandedArrayCopy; }
 
   static void set_store_pair(MemBarNode* leading, MemBarNode* trailing);
   static void set_load_store_pair(MemBarNode* leading, MemBarNode* trailing);

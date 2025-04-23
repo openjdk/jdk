@@ -154,7 +154,7 @@ public final class JLinkOptionsTest {
     }
 
     private final JPackageCommand createJPackageCommand(String javaAppDesc) {
-        return JPackageCommand.helloAppImage(javaAppDesc).ignoreDefaultRuntime(true);
+        return JPackageCommand.helloAppImage(javaAppDesc);
     }
 
     private final Set<String> getModulesInRuntime(String ... jlinkOptions) {

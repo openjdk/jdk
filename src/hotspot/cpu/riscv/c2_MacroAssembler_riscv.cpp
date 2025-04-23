@@ -289,7 +289,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
   Label slow_path;
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     sd(zr, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
   }
 
@@ -1385,8 +1385,7 @@ void C2_MacroAssembler::string_compare_long_same_encoding(Register result, Regis
                                                   const int STUB_THRESHOLD, Label *STUB, Label *SHORT_STRING, Label *DONE) {
   Label TAIL_CHECK, TAIL, NEXT_WORD, DIFFERENCE;
 
-  const int base_offset = isLL ? arrayOopDesc::base_offset_in_bytes(T_BYTE)
-                               : arrayOopDesc::base_offset_in_bytes(T_CHAR);
+  const int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
   assert((base_offset % (UseCompactObjectHeaders ? 4 :
                         (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
@@ -1480,7 +1479,7 @@ void C2_MacroAssembler::string_compare_long_different_encoding(Register result, 
                                                const int STUB_THRESHOLD, Label *STUB, Label *DONE) {
   Label TAIL, NEXT_WORD, DIFFERENCE;
 
-  const int base_offset = arrayOopDesc::base_offset_in_bytes(T_CHAR);
+  const int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
   assert((base_offset % (UseCompactObjectHeaders ? 4 :
                           (UseCompressedClassPointers ? 8 : 4))) == 0, "Must be");
 
@@ -2157,29 +2156,100 @@ void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Regis
   }
 }
 
+void C2_MacroAssembler::enc_cmove_cmp_fp(int cmpFlag, FloatRegister op1, FloatRegister op2, Register dst, Register src, bool is_single) {
+  int op_select = cmpFlag & (~unsigned_branch_mask);
+
+  switch (op_select) {
+    case BoolTest::eq:
+      cmov_cmp_fp_eq(op1, op2, dst, src, is_single);
+      break;
+    case BoolTest::ne:
+      cmov_cmp_fp_ne(op1, op2, dst, src, is_single);
+      break;
+    case BoolTest::le:
+      cmov_cmp_fp_le(op1, op2, dst, src, is_single);
+      break;
+    case BoolTest::ge:
+      assert(false, "Should go to BoolTest::le case");
+      ShouldNotReachHere();
+      break;
+    case BoolTest::lt:
+      cmov_cmp_fp_lt(op1, op2, dst, src, is_single);
+      break;
+    case BoolTest::gt:
+      assert(false, "Should go to BoolTest::lt case");
+      ShouldNotReachHere();
+      break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
+}
+
 // Set dst to NaN if any NaN input.
 void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRegister src2,
-                                  bool is_double, bool is_min) {
+                                  FLOAT_TYPE ft, bool is_min) {
+  assert_cond((ft != FLOAT_TYPE::half_precision) || UseZfh);
+
   Label Done, Compare;
 
-  is_double ? fclass_d(t0, src1)
-            : fclass_s(t0, src1);
-  is_double ? fclass_d(t1, src2)
-            : fclass_s(t1, src2);
-  orr(t0, t0, t1);
-  andi(t0, t0, FClassBits::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
-  beqz(t0, Compare);
-  is_double ? fadd_d(dst, src1, src2)
-            : fadd_s(dst, src1, src2);
-  j(Done);
+  switch (ft) {
+    case FLOAT_TYPE::half_precision:
+      fclass_h(t0, src1);
+      fclass_h(t1, src2);
 
-  bind(Compare);
-  if (is_double) {
-    is_min ? fmin_d(dst, src1, src2)
-           : fmax_d(dst, src1, src2);
-  } else {
-    is_min ? fmin_s(dst, src1, src2)
-           : fmax_s(dst, src1, src2);
+      orr(t0, t0, t1);
+      andi(t0, t0, FClassBits::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
+      beqz(t0, Compare);
+
+      fadd_h(dst, src1, src2);
+      j(Done);
+
+      bind(Compare);
+      if (is_min) {
+        fmin_h(dst, src1, src2);
+      } else {
+        fmax_h(dst, src1, src2);
+      }
+      break;
+    case FLOAT_TYPE::single_precision:
+      fclass_s(t0, src1);
+      fclass_s(t1, src2);
+
+      orr(t0, t0, t1);
+      andi(t0, t0, FClassBits::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
+      beqz(t0, Compare);
+
+      fadd_s(dst, src1, src2);
+      j(Done);
+
+      bind(Compare);
+      if (is_min) {
+        fmin_s(dst, src1, src2);
+      } else {
+        fmax_s(dst, src1, src2);
+      }
+      break;
+    case FLOAT_TYPE::double_precision:
+      fclass_d(t0, src1);
+      fclass_d(t1, src2);
+
+      orr(t0, t0, t1);
+      andi(t0, t0, FClassBits::nan); // if src1 or src2 is quiet or signaling NaN then return NaN
+      beqz(t0, Compare);
+
+      fadd_d(dst, src1, src2);
+      j(Done);
+
+      bind(Compare);
+      if (is_min) {
+        fmin_d(dst, src1, src2);
+      } else {
+        fmax_d(dst, src1, src2);
+      }
+      break;
+    default:
+      ShouldNotReachHere();
   }
 
   bind(Done);
@@ -2614,6 +2684,9 @@ void C2_MacroAssembler::clear_array_v(Register base, Register cnt) {
 
 void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register result,
                                         Register cnt1, int elem_size) {
+  assert(elem_size == 1 || elem_size == 2, "must be char or byte");
+  assert_different_registers(a1, a2, result, cnt1, t0, t1);
+
   Label DONE;
   Register tmp1 = t0;
   Register tmp2 = t1;

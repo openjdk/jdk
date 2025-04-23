@@ -511,6 +511,7 @@ final class Long64Vector extends LongVector {
         }
     }
 
+    @ForceInline
     public long laneHelper(int i) {
         return (long) VectorSupport.extract(
                                 VCLASS, ETYPE, VLENGTH,
@@ -530,6 +531,7 @@ final class Long64Vector extends LongVector {
         }
     }
 
+    @ForceInline
     public Long64Vector withLaneHelper(int i, long e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,

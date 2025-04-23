@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ public:
   virtual LIR_Opr atomic_xchg_at(LIRAccess& access, LIRItem& value);
   virtual LIR_Opr atomic_add_at(LIRAccess& access, LIRItem& value);
 
-  virtual void generate_c1_runtime_stubs(BufferBlob* buffer_blob) {}
+  virtual bool generate_c1_runtime_stubs(BufferBlob* buffer_blob) { return true; }
 };
 
 #endif // SHARE_GC_SHARED_C1_BARRIERSETC1_HPP

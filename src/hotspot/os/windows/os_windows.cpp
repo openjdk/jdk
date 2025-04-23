@@ -2206,26 +2206,16 @@ void os::jvm_path(char *buf, jint buflen) {
   }
 
   buf[0] = '\0';
-  if (Arguments::sun_java_launcher_is_altjvm()) {
-    // Support for the java launcher's '-XXaltjvm=<path>' option. Check
-    // for a JAVA_HOME environment variable and fix up the path so it
-    // looks like jvm.dll is installed there (append a fake suffix
-    // hotspot/jvm.dll).
+  // If executing unit tests we require JAVA_HOME to point to the real JDK.
+  if (Arguments::executing_unit_tests()) {
     char* java_home_var = ::getenv("JAVA_HOME");
     if (java_home_var != nullptr && java_home_var[0] != 0 &&
         strlen(java_home_var) < (size_t)buflen) {
-      strncpy(buf, java_home_var, buflen);
-
-      // determine if this is a legacy image or modules image
-      // modules image doesn't have "jre" subdirectory
-      size_t len = strlen(buf);
-      char* jrebin_p = buf + len;
-      jio_snprintf(jrebin_p, buflen-len, "\\jre\\bin\\");
-      if (0 != _access(buf, 0)) {
-        jio_snprintf(jrebin_p, buflen-len, "\\bin\\");
-      }
-      len = strlen(buf);
-      jio_snprintf(buf + len, buflen-len, "hotspot\\jvm.dll");
+      stringStream ss(buf, buflen);
+      ss.print("%s\\bin\\%s\\jvm%s",
+               java_home_var, Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+      assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+             "buf has been truncated");
     }
   }
 
@@ -2600,6 +2590,7 @@ static inline void report_error(Thread* t, DWORD exception_code,
 //-----------------------------------------------------------------------------
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
+  PreserveLastError ple;
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
   PEXCEPTION_RECORD exception_record = exceptionInfo->ExceptionRecord;
   DWORD exception_code = exception_record->ExceptionCode;
@@ -3409,8 +3400,8 @@ static char* find_aligned_address(size_t size, size_t alignment) {
 }
 
 static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exec) {
-  log_debug(pagesize)("Reserving large pages at an aligned address, alignment=%zu%s",
-                      byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
+  log_debug(pagesize)("Reserving large pages at an aligned address, alignment=" EXACTFMT,
+                      EXACTFMTARGS(alignment));
 
   // Will try to find a suitable address at most 20 times. The reason we need to try
   // multiple times is that between finding the aligned address and trying to commit

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,110 +28,68 @@ package gc.g1;
  * @bug 8051973
  * @summary Test to make sure that eager reclaim of humongous objects correctly clears
  * mark bitmaps at reclaim.
- * @key randomness
  * @requires vm.gc.G1
  * @requires vm.debug
- * @library /test/lib
+ * @library /test/lib /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.g1.TestEagerReclaimHumongousRegionsClearMarkBits
  */
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.Utils;
-
-// An object that has a few references to other instances to slow down marking.
-class ObjectWithSomeRefs {
-    public ObjectWithSomeRefs other1;
-    public ObjectWithSomeRefs other2;
-    public ObjectWithSomeRefs other3;
-    public ObjectWithSomeRefs other4;
-}
-
-class TestEagerReclaimHumongousRegionsClearMarkBitsReclaimRegionFast {
-    public static final long MAX_NANOS_FOR_RUN = 50L * 1_000_000_000L; // The maximum runtime for the actual test.
-
-    public static final int M = 1024*1024;
-
-    public static LinkedList<Object> garbageList = new LinkedList<Object>();
-
-    public static void genGarbage(Object large) {
-        for (int i = 0; i < 64*1024; i++) {
-            Object[] garbage = new Object[50];
-            garbage[0] = large;
-            garbageList.add(garbage);
-        }
-        garbageList.clear();
-    }
-
-    public static ArrayList<ObjectWithSomeRefs> longList = new ArrayList<ObjectWithSomeRefs>();
-
-    public static void main(String[] args) {
-
-        for (int i = 0; i < 16*1024; i++) {
-             longList.add(new ObjectWithSomeRefs());
-        }
-
-        Random rnd = Utils.getRandomInstance();
-        for (int i = 0; i < longList.size(); i++) {
-             int len = longList.size();
-             longList.get(i).other1 = longList.get(rnd.nextInt(len));
-             longList.get(i).other2 = longList.get(rnd.nextInt(len));
-             longList.get(i).other3 = longList.get(rnd.nextInt(len));
-             longList.get(i).other4 = longList.get(rnd.nextInt(len));
-        }
-
-        int[] large1 = new int[M];
-        int[] large2 = null;
-        int[] large3 = null;
-        int[] large4 = null;
-
-        Object ref_from_stack = large1;
-
-        long start_nanos = System.nanoTime();
-
-        for (int i = 0; i < 20; i++) {
-            long current_nanos = System.nanoTime();
-            if ((current_nanos - start_nanos) > MAX_NANOS_FOR_RUN) {
-              System.out.println("Finishing test because maximum runtime exceeded");
-              break;
-            }
-            // A set of large objects that will be reclaimed eagerly - and hopefully marked.
-            large1 = new int[M - 20];
-            large2 = new int[M - 20];
-            large3 = new int[M - 20];
-            large4 = new int[M - 20];
-            genGarbage(large1);
-            // Make sure that the compiler cannot completely remove
-            // the allocation of the large object until here.
-            System.out.println(large1 + " " + large2 + " " + large3 + " " + large4);
-        }
-
-        // Keep the reference to the first object alive.
-        System.out.println(ref_from_stack);
-    }
-}
+import jdk.test.whitebox.WhiteBox;
 
 public class TestEagerReclaimHumongousRegionsClearMarkBits {
     public static void main(String[] args) throws Exception {
-        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
-            "-XX:+UseG1GC",
-            "-Xms128M",
-            "-Xmx128M",
-            "-Xmn2M",
-            "-XX:G1HeapRegionSize=1M",
-            "-XX:InitiatingHeapOccupancyPercent=0", // Want to have as much as possible mark cycles.
-            "-Xlog:gc",
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+VerifyAfterGC",
-            "-XX:ConcGCThreads=1", // Want to make marking as slow as possible.
-            "-XX:+G1VerifyBitmaps",
-            TestEagerReclaimHumongousRegionsClearMarkBitsReclaimRegionFast.class.getName());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-Xmx20M",
+                                                                    "-Xms20m",
+                                                                    "-XX:+UnlockDiagnosticVMOptions",
+                                                                    "-XX:+VerifyAfterGC",
+                                                                    "-Xbootclasspath/a:.",
+                                                                    "-Xlog:gc=debug,gc+humongous=debug",
+                                                                    "-XX:+UnlockDiagnosticVMOptions",
+                                                                    "-XX:+WhiteBoxAPI",
+                                                                    TestEagerReclaimHumongousRegionsClearMarkBitsRunner.class.getName());
+
+        String log = output.getStdout();
+        System.out.println(log);
         output.shouldHaveExitValue(0);
+
+        // Find the log output indicating that the humongous object has been reclaimed, and marked.
+        Pattern pattern = Pattern.compile("Humongous region .* marked 1 .* reclaim candidate 1 type array 1");
+        Asserts.assertTrue(pattern.matcher(log).find(), "Could not find log output matching marked humongous region.");
+
+        pattern = Pattern.compile("Reclaimed humongous region .*");
+        Asserts.assertTrue(pattern.matcher(log).find(), "Could not find log output reclaiming humongous region");
     }
 }
+
+class TestEagerReclaimHumongousRegionsClearMarkBitsRunner {
+    private static final WhiteBox WB = WhiteBox.getWhiteBox();
+    private static final int M = 1024 * 1024;
+
+    public static void main(String[] args) {
+        WB.fullGC();
+
+        Object largeObj = new int[M]; // Humongous object.
+
+        WB.concurrentGCAcquireControl();
+        WB.concurrentGCRunTo(WB.BEFORE_MARKING_COMPLETED);
+
+        System.out.println("Large object at " + largeObj);
+
+        largeObj = null;
+        WB.youngGC(); // Should reclaim marked humongous object.
+
+        WB.concurrentGCRunToIdle();
+    }
+}
+

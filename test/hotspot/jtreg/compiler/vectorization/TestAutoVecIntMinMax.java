@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2025, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,9 @@ import jdk.test.lib.Utils;
  * @summary Auto-vectorization enhancement for integer Math.max/Math.min operations
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @requires (os.simpleArch == "x64" & (vm.opt.UseSSE == "null" | vm.opt.UseSSE > 3))
- *           | os.arch == "aarch64" | (os.arch == "riscv64" & vm.opt.UseRVV == true)
+ * @requires (os.simpleArch == "x64" & (vm.opt.UseSSE == "null" | vm.opt.UseSSE > 3)) |
+ *           os.arch == "aarch64" |
+ *           (os.simpleArch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @run driver compiler.c2.irTests.TestAutoVecIntMinMax
  */
 

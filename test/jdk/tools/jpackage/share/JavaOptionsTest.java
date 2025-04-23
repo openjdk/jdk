@@ -76,7 +76,7 @@ public class JavaOptionsTest {
 
     public JavaOptionsTest(String javaAppDesc, String[] jpackageArgs,
             String[] expectedParams) {
-        cmd = JPackageCommand.helloAppImage(javaAppDesc);
+        cmd = JPackageCommand.helloAppImage(javaAppDesc).ignoreFakeRuntime();
         if (jpackageArgs != null) {
             cmd.addArguments(jpackageArgs);
         }
@@ -90,7 +90,6 @@ public class JavaOptionsTest {
 
         // 2.) run the launcher it generated
         List<String> output = HelloApp.executeLauncher(cmd).getOutput();
-        TKit.assertNotNull(output, "output is null");
         for (String expect : expected) {
             TKit.assertTextStream(expect).apply(output.stream());
         }

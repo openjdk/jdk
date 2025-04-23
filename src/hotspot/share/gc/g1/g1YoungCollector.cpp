@@ -587,14 +587,36 @@ public:
 };
 
 class G1EvacuateRegionsBaseTask : public WorkerTask {
+
+  // All pinned regions in the collection set must be registered as failed
+  // regions as there is no guarantee that there is a reference reachable by
+  // Java code (i.e. only by native code) that adds it to the evacuation failed
+  // regions.
+  void record_pinned_regions(G1ParScanThreadState* pss, uint worker_id) {
+    class RecordPinnedRegionClosure : public G1HeapRegionClosure {
+      G1ParScanThreadState* _pss;
+      uint _worker_id;
+
+    public:
+      RecordPinnedRegionClosure(G1ParScanThreadState* pss, uint worker_id) : _pss(pss), _worker_id(worker_id) { }
+
+      bool do_heap_region(G1HeapRegion* r) {
+        if (r->has_pinned_objects()) {
+          _pss->record_evacuation_failed_region(r, _worker_id, true /* cause_pinned */);
+        }
+        return false;
+      }
+    } cl(pss, worker_id);
+
+    _g1h->collection_set_iterate_increment_from(&cl, worker_id);
+  }
+
 protected:
   G1CollectedHeap* _g1h;
   G1ParScanThreadStateSet* _per_thread_states;
 
   G1ScannerTasksQueueSet* _task_queues;
   TaskTerminator _terminator;
-
-  uint _num_workers;
 
   void evacuate_live_objects(G1ParScanThreadState* pss,
                              uint worker_id,
@@ -631,6 +653,9 @@ protected:
 
   virtual void evacuate_live_objects(G1ParScanThreadState* pss, uint worker_id) = 0;
 
+private:
+  volatile bool _pinned_regions_recorded;
+
 public:
   G1EvacuateRegionsBaseTask(const char* name,
                             G1ParScanThreadStateSet* per_thread_states,
@@ -641,7 +666,7 @@ public:
     _per_thread_states(per_thread_states),
     _task_queues(task_queues),
     _terminator(num_workers, _task_queues),
-    _num_workers(num_workers)
+    _pinned_regions_recorded(false)
   { }
 
   void work(uint worker_id) {
@@ -653,6 +678,9 @@ public:
       G1ParScanThreadState* pss = _per_thread_states->state_for_worker(worker_id);
       pss->set_ref_discoverer(_g1h->ref_processor_stw());
 
+      if (!Atomic::cmpxchg(&_pinned_regions_recorded, false, true)) {
+        record_pinned_regions(pss, worker_id);
+      }
       scan_roots(pss, worker_id);
       evacuate_live_objects(pss, worker_id);
     }
