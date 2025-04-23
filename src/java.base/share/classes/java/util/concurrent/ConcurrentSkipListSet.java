@@ -35,7 +35,8 @@
 
 package java.util.concurrent;
 
-import java.lang.reflect.Field;
+import jdk.internal.misc.Unsafe;
+
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -527,12 +528,11 @@ public class ConcurrentSkipListSet<E>
 
     /** Initializes map field; for use in clone. */
     private void setMap(ConcurrentNavigableMap<E,Object> map) {
-        try {
-            Field mapField = ConcurrentSkipListSet.class.getDeclaredField("m");
-            mapField.setAccessible(true);
-            mapField.set(this, map);
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new Error(e);
-        }
+        final Unsafe U = Unsafe.getUnsafe();
+        U.putReference(
+            this,
+            U.objectFieldOffset(ConcurrentSkipListSet.class, "m"),
+            map
+        );
     }
 }
