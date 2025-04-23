@@ -625,16 +625,6 @@ public class SuppressionWarningTest extends TestRunner {
     @Test
     public void testSuppressWarnings(SuppressTest test) throws Exception {
 
-        // Get info
-        LintCategory category = test.category();
-        EnumSet<LintCategory> lintDefaults = LintCategory.newEmptySet();
-        Lint.populateDefaults(lintDefaults, Source.DEFAULT, test.compileFlags.contains("--enable-preview"));
-        boolean lintDefault = lintDefaults.contains(category);
-        boolean mandatory = switch (category) {
-        case DEPRECATION, PREVIEW, UNCHECKED -> true;
-        default -> false;
-        };
-
         // Setup directories
         Path base = Paths.get("testSuppressWarnings");
         resetCompileDirectories(base);
@@ -651,6 +641,7 @@ public class SuppressionWarningTest extends TestRunner {
         // Special JAR file support for REQUIRES_AUTOMATIC and REQUIRES_TRANSITIVE_AUTOMATIC
         Path modulePath = base.resolve("modules");
         resetDirectory(modulePath);
+        LintCategory category = test.category();
         switch (category) {
         case REQUIRES_AUTOMATIC:
         case REQUIRES_TRANSITIVE_AUTOMATIC:
@@ -716,14 +707,13 @@ public class SuppressionWarningTest extends TestRunner {
           }
 
           // Try all combinations of lint flags
-          for (Boolean xlint : new Boolean[] { null, false, true }) {       // none/category/-category
-            boolean enabledAtRoot = xlint != null ? xlint : lintDefault;
-            for (boolean enableSuppression : booleans) {                    // suppression/-suppression
-              for (boolean enableSuppressionOption : booleans) {            // suppression-option/-suppression-option
+          for (boolean enableCategory : booleans) {                         // [-]category
+            for (boolean enableSuppression : booleans) {                    // [-]suppression
+              for (boolean enableSuppressionOption : booleans) {            // [-]suppression-option
 
                 // Should we expect the warning to be emitted?
                 boolean expectCategoryWarning = category.annotationSuppression ?
-                  enabledAtRoot && !outerAnnotation && !innerAnnotation : enabledAtRoot;
+                  enableCategory && !outerAnnotation && !innerAnnotation : enableCategory;
 
                 // Should we expect the SUPPRESSION warning to be emitted?
                 boolean expectSuppressionWarning = category.annotationSuppression ?
@@ -732,9 +722,8 @@ public class SuppressionWarningTest extends TestRunner {
 
                 // Should we expect the SUPPRESSION_OPTION warning to be emitted?
                 boolean expectSuppressionOptionWarning = category.annotationSuppression ?
-                  enableSuppressionOption && Boolean.FALSE.equals(xlint)
-                    && (!lintDefault || outerAnnotation || innerAnnotation) :
-                  enableSuppressionOption && Boolean.FALSE.equals(xlint) && !lintDefault;
+                  enableSuppressionOption && !enableCategory && (outerAnnotation || innerAnnotation) :
+                  false;
 
                 // Prepare command line flags
                 ArrayList<String> flags = new ArrayList<>();
@@ -747,8 +736,7 @@ public class SuppressionWarningTest extends TestRunner {
                 flags.addAll(test.compileFlags());
 
                 ArrayList<String> lints = new ArrayList<>();
-                if (xlint != null)
-                    lints.add((xlint ? "" : "-") + category.option);
+                lints.add(String.format("%s%s", enableCategory ? "" : "-", category.option));
                 if (enableSuppression)
                     lints.add(SUPPRESSION.option);
                 if (enableSuppressionOption) {
@@ -759,8 +747,8 @@ public class SuppressionWarningTest extends TestRunner {
                     flags.add("-Xlint:" + lints.stream().collect(Collectors.joining(",")));
 
                 // Test case description
-                String description = String.format("[%s] outer=%s inner=%s dflt=%s xlint=%s flags=\"%s\"",
-                  category, outerAnnotation, innerAnnotation, lintDefault, xlint,
+                String description = String.format("[%s] outer=%s inner=%s enable=%s flags=\"%s\"",
+                  category, outerAnnotation, innerAnnotation, enableCategory,
                   flags.stream().collect(Collectors.joining(" ")));
 
                 // Only print log if test case fails

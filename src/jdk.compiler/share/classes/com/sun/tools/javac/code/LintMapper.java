@@ -86,7 +86,7 @@ public class LintMapper {
     private final Map<JavaFileObject, FileInfo> fileInfoMap = new HashMap<>();
 
     // Validations of "-Xlint:-foo" suppressions
-    private final EnumSet<LintCategory> optionValidations = LintCategory.newEmptySet();
+    private final EnumSet<LintCategory> optionFlagValidations = LintCategory.newEmptySet();
 
     // Compiler context
     private final Context context;
@@ -170,7 +170,7 @@ public class LintMapper {
      */
     public void clear() {
         fileInfoMap.clear();
-        optionValidations.clear();
+        optionFlagValidations.clear();
     }
 
 // Parsing Notifications
@@ -202,11 +202,9 @@ public class LintMapper {
      * @param category lint category to validate
      */
     public void validateSuppression(Symbol symbol, LintCategory category) {
-        validationsFor(symbol).add(category);
-    }
-
-    private EnumSet<LintCategory> validationsFor(Symbol symbol) {
-        return symbol != null ? fileInfoMap.get(log.currentSourceFile()).validationsFor(symbol) : optionValidations;
+        EnumSet<LintCategory> validations = symbol != null ?
+          fileInfoMap.get(log.currentSourceFile()).validationsFor(symbol) : optionFlagValidations;
+        validations.add(category);
     }
 
     /**
@@ -259,9 +257,8 @@ public class LintMapper {
                 .forEach(topNode -> propagateValidations(fileInfo, topNode)));
 
             // Calculate the "Xlint:-foo" suppressions that did not get validated
-            optionValidations.retainAll(rootLint.getActualFlagSuppressions());          // only validate *actual* suppressions
-            EnumSet<LintCategory> unvalidated = rootLint.getNominalFlagSuppressions();
-            unvalidated.removeAll(optionValidations);
+            EnumSet<LintCategory> unvalidated = rootLint.getOptionFlagSuppressions();
+            unvalidated.removeAll(optionFlagValidations);
 
             // Report them
             report(unvalidated, name -> "-" + name, names -> log.warning(LintWarnings.UnnecessaryLintWarningSuppression(names)));
@@ -283,7 +280,7 @@ public class LintMapper {
 
     // Propagate validations in the given top-level declaration; any that escape validate the corresponding "Xlint" suppression
     private void propagateValidations(FileInfo fileInfo, DeclNode topNode) {
-        optionValidations.addAll(fileInfo.propagateValidations(topNode));
+        optionFlagValidations.addAll(fileInfo.propagateValidations(topNode));
     }
 
 // FileInfo

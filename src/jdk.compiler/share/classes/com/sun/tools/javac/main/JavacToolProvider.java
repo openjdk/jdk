@@ -51,11 +51,6 @@ public class JavacToolProvider implements ToolProvider {
 
     public int run(PrintWriter out, PrintWriter err, String... args) {
         Main compiler = new Main("javac", out, err);
-try {
         return compiler.compile(args).exitCode;
-} catch (Error | RuntimeException e) {
-    e.printStackTrace(System.out);
-    throw e;
-}
     }
 }

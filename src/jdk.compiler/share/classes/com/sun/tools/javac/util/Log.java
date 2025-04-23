@@ -167,28 +167,17 @@ public class Log extends AbstractLog {
             // Apply the lint configuration (if any) and discard the warning if it gets filtered out
             if (lint != null) {
 
-                // Gather warning category status
+                // Gather information
                 LintCategory category = diag.getLintCategory();
-                boolean enabled = lint.isEnabled(category, false);
-                boolean suppressWarnings = category.annotationSuppression && lint.isSuppressed(category, false);
-                boolean nominallySuppressed = suppressWarnings || lint.getNominalFlagSuppressions().contains(category);
-                boolean acutallySuppressed = suppressWarnings || lint.getActualFlagSuppressions().contains(category);
-                Assert.check(!nominallySuppressed || !enabled);
+                boolean emit = !diag.isFlagSet(DEFAULT_ENABLED) ?   // is the warning not enabled by default?
+                  lint.isEnabled(category, false) :                     // then emit if the category is enabled
+                  category.annotationSuppression ?                      // else emit if the category is not suppressed, where
+                    !lint.isSuppressed(category, false) :                   // ...suppression happens via @SuppressWarnings
+                    !options.isSet(XLINT_CUSTOM, "-" + category.option);    // ...suppression happens via -Xlint:-category
 
-                // If we should not emit the warning, stop here
-                boolean emit = diag.isFlagSet(DEFAULT_ENABLED) ? !nominallySuppressed : enabled;
-
-//System.err.println("reportWithLint():"
-//+"\n  warning="+diag.getCode()+" ("+category+")"
-//+"\n  enabled="+enabled
-//+"\n  nominallySuppressed="+nominallySuppressed
-//+"\n  acutallySuppressed="+acutallySuppressed
-//+"\n  emit="+emit
-//);
-
+                // If not emitting the warning, stop here but validate any suppression
                 if (!emit) {
-                    //if (acutallySuppressed)
-                        validateSuppression(new SuppressionValidation(lint, diag));     // validate the suppression
+                    validateSuppression(new SuppressionValidation(lint, diag));
                     return;
                 }
             }
@@ -990,9 +979,14 @@ public class Log extends AbstractLog {
                 // Apply the appropriate mandatory warning aggregator, if needed
                 if (diagnostic.isFlagSet(AGGREGATE)) {
                     LintCategory category = diagnostic.getLintCategory();
-                    boolean verbose = lintFor(diagnostic).isEnabled(category, false);
-                    if (!aggregatorFor(category).aggregate(diagnostic, verbose))
+                    Lint lint = lintFor(diagnostic);
+                    boolean verbose = lint.isEnabled(category, false);
+                    if (!aggregatorFor(category).aggregate(diagnostic, verbose)) {
+
+                        // Aggregation effectively suppresses the warning, so validate that suppression
+                        validateSuppression(new SuppressionValidation(lint, diagnostic));
                         return;
+                    }
                 }
 
                 // Emit warning unless not mandatory and warnings are disabled

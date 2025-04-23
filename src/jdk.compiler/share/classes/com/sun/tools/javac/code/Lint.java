@@ -170,8 +170,7 @@ public class Lint {
         private Names names;                                // initialized lazily by initializeSymbolsIfNeeded()
 
         // "Xlint" suppression info
-        private EnumSet<LintCategory> nominalFlagSuppressions;  // categories for which a "-Xlint:-key" flag exists
-        private EnumSet<LintCategory> actualFlagSuppressions;   // nominalFlagSuppressions that actually disabled the category
+        private EnumSet<LintCategory> optionFlagSuppressions;   // categories for which a "-Xlint:-key" flag exists
 
         Common(Context context) {
             this.context = context;
@@ -231,50 +230,37 @@ public class Lint {
         } else {
             // otherwise, enable on-by-default categories
             enabled = LintCategory.newEmptySet();
-            populateDefaults(enabled, common.source, !options.isSet(Option.PREVIEW));
+
+            if (common.source.compareTo(Source.JDK9) >= 0) {
+                enabled.add(LintCategory.DEP_ANN);
+            }
+            if (Source.Feature.REDUNDANT_STRICTFP.allowedInSource(common.source)) {
+                enabled.add(LintCategory.STRICTFP);
+            }
+            enabled.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);
+            enabled.add(LintCategory.OPENS);
+            enabled.add(LintCategory.MODULE);
+            enabled.add(LintCategory.REMOVAL);
+            if (!options.isSet(Option.PREVIEW)) {
+                enabled.add(LintCategory.PREVIEW);
+            }
+            enabled.add(LintCategory.SYNCHRONIZATION);
+            enabled.add(LintCategory.INCUBATING);
         }
 
         // Look for specific overrides via "-Xlint" flags
-        common.nominalFlagSuppressions = LintCategory.newEmptySet();
-        common.actualFlagSuppressions = LintCategory.newEmptySet();
+        common.optionFlagSuppressions = LintCategory.newEmptySet();
         for (LintCategory lc : LintCategory.values()) {
             if (options.isSet(Option.XLINT_CUSTOM, lc.option)) {
                 enabled.add(lc);
             } else if (options.isSet(Option.XLINT_CUSTOM, "-" + lc.option)) {
-                common.nominalFlagSuppressions.add(lc);
-                if (enabled.remove(lc)) {
-                    common.actualFlagSuppressions.add(lc);
-                }
+                common.optionFlagSuppressions.add(lc);
+                enabled.remove(lc);
             }
         }
 
         // Categories suppressed by @SuppressWarnings is initially empty
         suppressed = LintCategory.newEmptySet();
-    }
-
-    /**
-     * Populate the given set with the {@link LintCategory}s that are enabled by default.
-     *
-     * @param value set to add defaults to
-     * @param source source level
-     * @param previewEnabled whether preview features are enabled
-     */
-    public static void populateDefaults(EnumSet<LintCategory> values, Source source, boolean previewEnabled) {
-        if (source.compareTo(Source.JDK9) >= 0) {
-            values.add(LintCategory.DEP_ANN);
-        }
-        if (Source.Feature.REDUNDANT_STRICTFP.allowedInSource(source)) {
-            values.add(LintCategory.STRICTFP);
-        }
-        values.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);
-        values.add(LintCategory.OPENS);
-        values.add(LintCategory.MODULE);
-        values.add(LintCategory.REMOVAL);
-        if (!previewEnabled) {
-            values.add(LintCategory.PREVIEW);
-        }
-        values.add(LintCategory.SYNCHRONIZATION);
-        values.add(LintCategory.INCUBATING);
     }
 
     @Override
@@ -617,19 +603,9 @@ public class Lint {
      *
      * @return categories for which a {@code -Xlint:-key} flag was specified
      */
-    public EnumSet<LintCategory> getNominalFlagSuppressions() {
+    public EnumSet<LintCategory> getOptionFlagSuppressions() {
         initializeRootIfNeeded();
-        return EnumSet.copyOf(common.nominalFlagSuppressions);
-    }
-
-    /**
-     * Get all categories for which a {@code -Xlint:-key} flag actually resulted in the category being disabled.
-     *
-     * @return categories for which a {@code -Xlint:-key} flag caused the category to be disabled
-     */
-    public EnumSet<LintCategory> getActualFlagSuppressions() {
-        initializeRootIfNeeded();
-        return EnumSet.copyOf(common.actualFlagSuppressions);
+        return EnumSet.copyOf(common.optionFlagSuppressions);
     }
 
     /**

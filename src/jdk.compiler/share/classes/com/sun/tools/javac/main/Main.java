@@ -343,14 +343,12 @@ public class Main {
             // TODO: what about errors from plugins?   should not simply rethrow the error here
             throw ex.getCause();
         } catch (IllegalAccessError iae) {
-iae.printStackTrace(System.out);
             if (twoClassLoadersInUse(iae)) {
                 bugMessage(iae);
             }
             printArgsToFile = true;
             return Result.ABNORMAL;
         } catch (Throwable ex) {
-ex.printStackTrace(System.out);
             // Nasty.  If we've already reported an error, compensate
             // for buggy compiler error recovery by swallowing thrown
             // exceptions.

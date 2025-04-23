@@ -343,25 +343,17 @@ public class ThisEscapeAnalyzer extends TreeScanner {
             }
         }.scan(env.tree);
 
-//System.err.println("METHODS:\n  " + methodMap.values().stream().map(Object::toString).collect((Collectors.joining("\n  "))));
-
         // Analyze the analyzable constructors we found
         methodMap.values().stream()
           .filter(MethodInfo::analyzable)
           .forEach(this::analyzeConstructor);
 
-//System.err.println("WARNINGS (INITIAL):\n  " + warningList.stream().map(Object::toString).collect((Collectors.joining("\n  "))));
-
         // Manually apply (and validate) any Lint suppressions
         filterWarnings(warning -> !warning.isSuppressed());
-
-//System.err.println("WARNINGS (AFTER SUPPRESSION):\n  " + warningList.stream().map(Object::toString).collect((Collectors.joining("\n  "))));
 
         // Field intitializers and initialization blocks will generate a separate warning for each primary constructor.
         // Trim off stack frames up through the super() call so these will have identical stacks and get de-duplicated below.
         warningList.forEach(Warning::trimInitializerFrames);
-
-//System.err.println("WARNINGS (AFTER FIELD TRIM):\n  " + warningList.stream().map(Object::toString).collect((Collectors.joining("\n  "))));
 
         // Sort warnings so redundant warnings immediately follow whatever they are redundant for, then remove them
         warningList.sort(Warning::sortByStackFrames);
@@ -374,13 +366,9 @@ public class ThisEscapeAnalyzer extends TreeScanner {
             return true;
         });
 
-//System.err.println("WARNINGS (AFTER REDUNDANTS):\n  " + warningList.stream().map(Object::toString).collect((Collectors.joining("\n  "))));
-
         // Limit output to one warning per constructor, field initializer, or initializer block
         Set<JCTree> thingsWarnedAbout = new HashSet<>();
         filterWarnings(warning -> thingsWarnedAbout.add(warning.origin));
-
-//System.err.println("WARNINGS (AFTER CONSTRUCTORS):\n  " + warningList.stream().map(Object::toString).collect((Collectors.joining("\n  "))));
 
         // Emit warnings
         for (Warning warning : warningList) {
