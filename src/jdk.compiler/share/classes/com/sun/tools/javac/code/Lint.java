@@ -162,8 +162,6 @@ public class Lint {
         // Compiler context
         private final Context context;
         private final Log log;
-        private final Source source;
-        private final Options options;
         private final LintMapper lintMapper;
 
         private Symtab syms;                                // initialized lazily by initializeSymbolsIfNeeded()
@@ -175,8 +173,6 @@ public class Lint {
         Common(Context context) {
             this.context = context;
             log = Log.instance(context);
-            source = Source.instance(context);
-            options = Options.instance(context);
             lintMapper = LintMapper.instance(context);
         }
     }
@@ -220,7 +216,7 @@ public class Lint {
             return;
 
         // Initialize enabled categories based on "-Xlint" flags
-        Options options = common.options;
+        Options options = Options.instance(common.context);
         if (options.isSet(Option.XLINT) || options.isSet(Option.XLINT_CUSTOM, "all")) {
             // If -Xlint or -Xlint:all is given, enable all categories by default
             enabled = EnumSet.allOf(LintCategory.class);
@@ -231,10 +227,11 @@ public class Lint {
             // otherwise, enable on-by-default categories
             enabled = LintCategory.newEmptySet();
 
-            if (common.source.compareTo(Source.JDK9) >= 0) {
+            Source source = Source.instance(common.context);
+            if (source.compareTo(Source.JDK9) >= 0) {
                 enabled.add(LintCategory.DEP_ANN);
             }
-            if (Source.Feature.REDUNDANT_STRICTFP.allowedInSource(common.source)) {
+            if (Source.Feature.REDUNDANT_STRICTFP.allowedInSource(source)) {
                 enabled.add(LintCategory.STRICTFP);
             }
             enabled.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);
