@@ -24,8 +24,6 @@
 
 #include "code/codeBlob.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/flags/flagSetting.hpp"
-#include "runtime/globals_extension.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/java.hpp"
 #include "utilities/align.hpp"
@@ -121,17 +119,9 @@ void AbstractICache::invalidate_range(address start, int nbytes) {
 
 // For init.cpp
 void icache_init() {
-  // Initial stub that runs with most basic mechanism, until optimized
-  // final stub is generated. CPU feature detection code have not
-  // executed yet, so we need to do a most basic thing.
-#if defined(X86) && !defined(ZERO)
-  IntFlagSetting fs(X86ICacheSync, 1);
-#endif
   ICache::initialize(1);
 }
 
 void icache_init2() {
-  // Final stub that uses the optimized flush mechanism. Happens after
-  // CPU feature detection determines which mechanism is usable.
   ICache::initialize(2);
 }

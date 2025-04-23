@@ -23,6 +23,8 @@
  */
 
 #include "asm/macroAssembler.hpp"
+#include "runtime/flags/flagSetting.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/icache.hpp"
 
 #define __ _masm->
@@ -75,7 +77,7 @@ void x86_generate_icache_flush_insn(MacroAssembler* _masm, Register addr) {
 }
 
 void ICacheStubGenerator::generate_icache_flush(const char* name, ICache::flush_icache_stub_t* flush_icache_stub) {
-  StubCodeMark mark(this, "ICache", name);
+  StubCodeMark mark(this, "ICache", this->b);
 
   address start = __ pc();
 
@@ -107,6 +109,24 @@ void ICacheStubGenerator::generate_icache_flush(const char* name, ICache::flush_
 
   // Must be set here so StubCodeMark destructor can call the flush stub.
   *flush_icache_stub = (ICache::flush_icache_stub_t)start;
+}
+
+void ICache::initialize(int phase) {
+  switch (phase) {
+    case 1: {
+      // Initial phase, we assume only CLFLUSH is available.
+      IntFlagSetting fs(X86ICacheSync, 1);
+      AbstractICache::initialize(phase);
+      break;
+    }
+    case 2: {
+      // Final phase, generate the stub again.
+      AbstractICache::initialize(phase);
+      break;
+    }
+    default:
+      ShouldNotReachHere();
+  }
 }
 
 #undef __

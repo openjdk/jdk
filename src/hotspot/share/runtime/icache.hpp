@@ -61,8 +61,11 @@ class AbstractICache : AllStatic {
   };
 
   // Initialization phases:
-  //   1 = initial phase, nothing is known about the machine features
-  //   2 = final phase, machine features are known
+  //  1 = Initial phase, nothing is known about the machine features.
+  //      The stub generated at this phase must use the most basic mechanism,
+  //      until optimized final stub is generated.
+  //  2 = Final stub that uses the optimized flush mechanism. Happens after
+  //      CPU feature detection determines which mechanism is usable.
   static void initialize(int phase);
   static void invalidate_word(address addr);
   static void invalidate_range(address start, int nbytes);
