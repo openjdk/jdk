@@ -26,9 +26,9 @@
  * @bug 8350896
  * @library /test/lib /
  * @summary C2: wrong result: Integer/Long.compress gets wrong type from CompressBitsNode::Value.
- * @run main/othervm compiler.c2.TestBitCompressValueTransform
+ * @run driver compiler.c2.gvn.TestBitCompressValueTransform
  */
-package compiler.c2;
+package compiler.c2.gvn;
 
 import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;

@@ -263,40 +263,41 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
   if (!mask_type->is_con()) {
     if ( opc == Op_CompressBits) {
       // Pattern: Integer/Long.compress(src_type, mask_type)
-      int max_mask_bit_width;
+      int result_bit_width;
       int mask_bit_width = bt == T_INT ? 32 : 64;
       if ((mask_type->lo_as_long() < 0L && mask_type->hi_as_long() >= -1L)) {
         // Case 1) Mask value range includes -1, this negates the possibility of
         // strictly non-negative result value range.
-        max_mask_bit_width = mask_bit_width;
+        result_bit_width = mask_bit_width;
       } else if (mask_type->hi_as_long() < -1L) {
         // Case 2) Mask value range is less than -1, this indicates presence of at least
         // one zero bit in the mask value, thereby constraining the result of compression
         // to a +ve value range.
-        max_mask_bit_width = mask_bit_width - 1;
+        result_bit_width = mask_bit_width - 1;
       } else {
         // Case 3) Mask value range only includes +ve values, thus we can
         // identify leading known zero bits of mask value and use this to
         // constrain upper bound of result value range.
         assert(mask_type->lo_as_long() >= 0, "");
+        jlong clz = count_leading_zeros(mask_type->hi_as_long());
         // Here, result of clz is w.r.t to long argument, hence for integer argument
         // we explicitly subtract 32 from the result.
-        jlong clz = count_leading_zeros(mask_type->hi_as_long());
         clz = bt == T_INT ? clz - 32 : clz;
-        max_mask_bit_width = mask_bit_width - clz;
+        result_bit_width = mask_bit_width - clz;
       }
-
       // If number of bits required to accommodated mask value range is less than the
       // full bit width of integral type, then MSB bit is guaranteed to be zero, thus
       // compression result will never be a -ve value and we can safely set the
       // lower bound of the result value range to zero.
-      lo = max_mask_bit_width == mask_bit_width ? lo : 0L;
+      lo = result_bit_width == mask_bit_width ? lo : 0L;
 
+      assert(hi == (bt == T_INT) ? max_jint : max_jlong, "");
+      assert((lo == (bt == T_INT) ? min_jint : min_jlong) || lo == 0, "");
       // For upper bound estimation of result value range with a constant input we
       // pessimistically pick max_int value to prevent incorrect constant folding
       // in case input equals above estimated lower bound.
       hi = src_type->hi_as_long() == lo ? hi : src_type->hi_as_long();
-      hi = max_mask_bit_width < mask_bit_width ? (1L << max_mask_bit_width) - 1 : hi;
+      hi = result_bit_width < mask_bit_width ? (1L << result_bit_width) - 1 : hi;
     } else {
       assert(opc == Op_ExpandBits, "");
       jlong max_mask = mask_type->hi_as_long();
