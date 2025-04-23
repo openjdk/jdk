@@ -1399,7 +1399,7 @@ const int ObjectAlignmentInBytes = 8;
           "Force the class space to be allocated at this address or "       \
           "fails VM initialization (requires -Xshare=off.")                 \
                                                                             \
-  product(bool, PrintKLUTStatistics, false,                                 \
+  product(bool, PrintKLUTStatistics, false, DIAGNOSTIC,                     \
           "Print KLUT statistics at exit")                                  \
                                                                             \
   develop(bool, RandomizeClassSpaceLocation, true,                          \
