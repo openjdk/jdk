@@ -89,8 +89,8 @@ public final class SystemProps {
         }
 
         // Encoding properties for stdin, stdout, and stderr. For stdout and stderr,
-        // check "sun.*.encoding" properties before falling back to the
-        // "native.encoding" property.
+        // check "sun.stdout.encoding" and "sun.stderr.encoding" properties for backward
+        // compatibility reasons before falling back to the "native.encoding" property.
         putIfAbsent(props, "stdin.encoding",
                 raw.propDefault(Raw._stdin_encoding_NDX));
         putIfAbsent(props, "stdin.encoding", nativeEncoding);
