@@ -118,8 +118,8 @@ public final class System {
      * The "standard" input stream. This stream is already
      * open and ready to supply input data. This stream
      * corresponds to keyboard input or another input source specified by
-     * the host environment or user. The encoding specified by the
-     * {@link ##stdin.encoding stdin.encoding} property should be used
+     * the host environment or user. Applications should use the encoding
+     * specified by the {@link ##stdin.encoding stdin.encoding} property
      * to convert input bytes to character data.
      *
      * @apiNote
