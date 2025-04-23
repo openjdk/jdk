@@ -27,7 +27,6 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.StandardBundlerParam.OUTPUT_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 
 import java.util.Map;
 import java.util.Optional;
@@ -76,15 +75,6 @@ public class MacAppBundler extends AppImageBundler {
                 throw new ConfigException(
                         I18N.getString("error.app-image.mac-sign.required"),
                         null);
-            }
-        } else {
-            // validate short version
-            try {
-                String version = VERSION.fetchFrom(params);
-                CFBundleVersion.of(version);
-            } catch (IllegalArgumentException ex) {
-                throw new ConfigException(ex.getMessage(), I18N.getString(
-                        "error.invalid-cfbundle-version.advice"), ex);
             }
         }
     }
