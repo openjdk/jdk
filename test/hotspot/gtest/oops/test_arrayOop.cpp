@@ -146,6 +146,9 @@ TEST_VM(arrayOopDesc, nobranches_functions) {
   const arrayOopDesc* const oop = (arrayOopDesc*)tmp;
   // Note: length_nobranches uses length_addr_nobranches uses length_offset_in_bytes_nobranches
   // so this tests all three
+  EXPECT_EQ(oop->length_offset_in_bytes_nobranches<HeaderMode::Uncompressed>(), 16);
+  EXPECT_EQ(oop->length_offset_in_bytes_nobranches<HeaderMode::Compressed>(), 12);
+  EXPECT_EQ(oop->length_offset_in_bytes_nobranches<HeaderMode::Compact>(), 8);
   EXPECT_EQ(oop->length_nobranches<HeaderMode::Uncompressed>(), INT_MAX - 4);
   EXPECT_EQ(oop->length_nobranches<HeaderMode::Compressed>(), INT_MAX - 3);
   EXPECT_EQ(oop->length_nobranches<HeaderMode::Compact>(), INT_MAX - 2);

@@ -225,11 +225,11 @@ public:
 
   // Following methods only if AK:
 
-  // returns log2 element size
+  // returns log2 element size in bytes
   inline unsigned ak_log2_elem_size() const { return _v.ake.l2esz; }
 
-  // returns distance to first element
-  inline unsigned ak_header_size() const { return _v.ake.hsz; }
+  // returns offset of first array element, in bytes
+  inline unsigned ak_first_element_offset_in_bytes() const { return _v.ake.hsz; }
 
   // for an oak, calculates word size given header size, element size, and array length
   template <HeaderMode mode, class OopType>

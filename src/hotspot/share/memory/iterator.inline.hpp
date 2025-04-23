@@ -526,17 +526,17 @@ class OopOopIterateDispatchRange : public DispatchBase {
 
     void set_resolve_function() {
       if (UseCompressedOops) {
-        if (UseCompactObjectHeaders) {
-          _function = &invoke<HeaderMode::Compact, narrowOop>;
-        } else {
-          _function = &invoke<HeaderMode::Compressed, narrowOop>;
-        }
+        switch (ObjLayout::klass_mode()) {
+        case HeaderMode::Compact:       _function = &invoke<HeaderMode::Compact, narrowOop>; break;
+        case HeaderMode::Compressed:    _function = &invoke<HeaderMode::Compressed, narrowOop>; break;
+        case HeaderMode::Uncompressed:  _function = &invoke<HeaderMode::Uncompressed, narrowOop>; break;
+        };
       } else {
-        if (UseCompactObjectHeaders) {
-          _function = &invoke<HeaderMode::Compact, oop>;
-        } else {
-          _function = &invoke<HeaderMode::Compressed, oop>;
-        }
+        switch (ObjLayout::klass_mode()) {
+        case HeaderMode::Compact:       _function = &invoke<HeaderMode::Compact, oop>; break;
+        case HeaderMode::Compressed:    _function = &invoke<HeaderMode::Compressed, oop>; break;
+        case HeaderMode::Uncompressed:  _function = &invoke<HeaderMode::Uncompressed, oop>; break;
+        };
       }
     }
     Table() {

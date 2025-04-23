@@ -61,7 +61,6 @@ template <HeaderMode mode, typename OopType>
 inline HeapWord* objArrayOopDesc::base_nobranches() const {
   constexpr int offset = base_offset_in_bytes_nobranches<mode, OopType>();
   HeapWord* const rc = field_addr<HeapWord>(offset);
-  assert(rc == base(), "Sanity");
   return rc;
 }
 

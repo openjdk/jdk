@@ -227,7 +227,7 @@ void KlassLUTEntry::verify_against_klass(const Klass* k) const {
     // compare our (truncated) lh with the real one
     const LayoutHelperHelper lhu = { (unsigned) real_lh };
     assert(lhu.bytes.lh_esz == ak_log2_elem_size() &&
-           lhu.bytes.lh_hsz == ak_header_size() &&
+           lhu.bytes.lh_hsz == ak_first_element_offset_in_bytes() &&
            ( (lhu.bytes.lh_tag == 0xC0 && real_kind == Klass::TypeArrayKlassKind) ||
              (lhu.bytes.lh_tag == 0x80 && real_kind == Klass::ObjArrayKlassKind) ),
              "layouthelper mismatch (layouthelper: 0x%x, klute: 0x%x)", real_lh, _v.raw);

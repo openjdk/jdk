@@ -41,7 +41,6 @@ inline int* arrayOopDesc::length_addr_nobranches() const {
 template <HeaderMode mode>
 inline int arrayOopDesc::length_nobranches() const {
   const int len = *length_addr_nobranches<mode>();
-  assert(len == length(), "Sanity");
   return len;
 }
 
