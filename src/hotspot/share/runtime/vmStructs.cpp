@@ -769,7 +769,6 @@
   /* Miscellaneous fields */                                                                                                         \
   /************************/                                                                                                         \
                                                                                                                                      \
-  nonstatic_field(CompileTask,                 _method,                                       Method*)                               \
   nonstatic_field(CompileTask,                 _osr_bci,                                      int)                                   \
   nonstatic_field(CompileTask,                 _comp_level,                                   int)                                   \
   nonstatic_field(CompileTask,                 _compile_id,                                   int)                                   \

@@ -34,6 +34,7 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compileTask.inline.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
@@ -1694,7 +1695,6 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
 
   JavaThread* thread = JavaThread::current();
 
-  methodHandle method(thread, task->method());
   bool free_task;
 #if INCLUDE_JVMCI
   AbstractCompiler* comp = compiler(task->comp_level());

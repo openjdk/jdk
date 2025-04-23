@@ -26,7 +26,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerDirectives.hpp"
-#include "compiler/compileTask.hpp"
+#include "compiler/compileTask.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -92,8 +92,7 @@ void CompileTask::initialize(int compile_id,
   assert(!_lock->is_locked(), "bad locking");
 
   _compile_id = compile_id;
-  _method = method();
-  _method_unload_blocker = MethodUnloadBlocker(_method);
+  _method_unload_blocker = MethodUnloadBlocker(method());
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
   JVMCI_ONLY(_has_waiter = CompileBroker::compiler(comp_level)->is_jvmci();)
@@ -106,7 +105,6 @@ void CompileTask::initialize(int compile_id,
   _is_complete = false;
   _is_success = false;
 
-  _hot_method = nullptr;
   _hot_count = hot_count;
   _time_queued = os::elapsed_counter();
   _time_started = 0;
@@ -121,14 +119,9 @@ void CompileTask::initialize(int compile_id,
   _arena_bytes = 0;
 
   if (LogCompilation) {
-    if (hot_method.not_null()) {
-      if (hot_method == method) {
-        _hot_method = _method;
-      } else {
-        _hot_method = hot_method();
-        // Only do capture unload blocker if _hot_method is different from _method.
-        _hot_method_unload_blocker = MethodUnloadBlocker(_hot_method);
-      }
+    if (hot_method.not_null() && hot_method() != method()) {
+      // Only do capture unload blocker if _hot_method is different from _method.
+      _hot_method_unload_blocker = MethodUnloadBlocker(hot_method());
     }
   }
 
@@ -160,9 +153,9 @@ void CompileTask::mark_on_stack() {
     return;
   }
   // Mark these methods as something redefine classes cannot remove.
-  _method->set_on_stack(true);
-  if (_hot_method != nullptr) {
-    _hot_method->set_on_stack(true);
+  _method_unload_blocker.method()->set_on_stack(true);
+  if (_hot_method_unload_blocker.method() != nullptr) {
+    _hot_method_unload_blocker.method()->set_on_stack(true);
   }
 }
 
@@ -317,8 +310,8 @@ void CompileTask::log_task_queued() {
   assert(_compile_reason > CompileTask::Reason_None && _compile_reason < CompileTask::Reason_Count, "Valid values");
   xtty->print(" comment='%s'", reason_name(_compile_reason));
 
-  if (_hot_method != nullptr && _hot_method != _method) {
-    xtty->method(_hot_method);
+  if (_hot_method_unload_blocker.method() != nullptr) {
+    xtty->method(_hot_method_unload_blocker.method());
   }
   if (_hot_count != 0) {
     xtty->print(" hot_count='%d'", _hot_count);

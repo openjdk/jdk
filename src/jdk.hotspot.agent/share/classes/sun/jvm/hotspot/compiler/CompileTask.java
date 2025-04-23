@@ -45,7 +45,7 @@ public class CompileTask extends VMObject {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type      = db.lookupType("CompileTask");
-    methodField = type.getAddressField("_method");
+    methodField = type.getAddressField("_method"); // FIXME.
     osrBciField = new CIntField(type.getCIntegerField("_osr_bci"), 0);
     compLevelField = new CIntField(type.getCIntegerField("_comp_level"), 0);
   }

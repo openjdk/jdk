@@ -34,9 +34,11 @@
 
 inline MethodUnloadBlocker::MethodUnloadBlocker(Method* method) {
   _method = method;
-  oop obj = get_unload_blocker(method);
-  if (obj != nullptr) {
-    _weak_handle = WeakHandle(Universe::vm_weak(), obj);
+  if (method != nullptr) {
+    oop obj = get_unload_blocker(method);
+    if (obj != nullptr) {
+      _weak_handle = WeakHandle(Universe::vm_weak(), obj);
+    }
   }
 }
 
@@ -56,18 +58,25 @@ oop MethodUnloadBlocker::get_unload_blocker(Method* method) {
 }
 
 void MethodUnloadBlocker::release() {
-  _method = nullptr;
-  _weak_handle.release(Universe::vm_weak());
-  _strong_handle.release(Universe::vm_global());
+  if (_method != nullptr) {
+    _method = nullptr;
+    _weak_handle.release(Universe::vm_weak());
+    _strong_handle.release(Universe::vm_global());
+  }
 }
 
 bool MethodUnloadBlocker::is_unloaded() const {
   // Unloaded if weak handle was set, but now had been cleared by GC.
-  return !_weak_handle.is_empty() && _weak_handle.peek() == nullptr;
+  return _method != nullptr && !_weak_handle.is_empty() && _weak_handle.peek() == nullptr;
 }
 
 inline void MethodUnloadBlocker::block_unloading() {
   assert(!is_unloaded(), "Pre-condition: should not be unloaded");
+
+  if (_method == nullptr) {
+    // Nothing to do, empty handle.
+    return;
+  }
 
   if (!_weak_handle.is_empty()) {
     assert(_weak_handle.peek() != nullptr, "Should not be cleared");
@@ -87,7 +96,6 @@ inline void MethodUnloadBlocker::block_unloading() {
 
 inline Method* MethodUnloadBlocker::method() const {
   assert(!is_unloaded(), "Should not be unloaded");
-  assert(_method != nullptr, "Should be");
   return _method;
 }
 
