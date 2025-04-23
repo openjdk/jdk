@@ -1392,31 +1392,31 @@ void VMError::print_vm_info(outputStream* st) {
 
   // Take heap lock over both heap and GC printing so that information is
   // consistent.
-  Heap_lock->lock();
+  {
+    MutexLocker ml(Heap_lock);
 
-  // STEP("printing heap information")
+    // STEP("printing heap information")
 
-  if (Universe::is_fully_initialized()) {
-    GCLogPrecious::print_on_error(st);
+    if (Universe::is_fully_initialized()) {
+      GCLogPrecious::print_on_error(st);
 
-    st->print_cr("Heap:");
-    StreamAutoIndentor indentor(st, 1);
-    Universe::heap()->print_heap_on(st);
-    MetaspaceUtils::print_on(st);
-    st->cr();
+      st->print_cr("Heap:");
+      StreamAutoIndentor indentor(st, 1);
+      Universe::heap()->print_heap_on(st);
+      MetaspaceUtils::print_on(st);
+      st->cr();
+    }
+
+    // STEP("printing GC information")
+
+    if (Universe::is_fully_initialized()) {
+      Universe::heap()->print_gc_on(st);
+      st->cr();
+
+      st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
+      st->cr();
+    }
   }
-
-  // STEP("printing GC information")
-
-  if (Universe::is_fully_initialized()) {
-    Universe::heap()->print_gc_on(st);
-    st->cr();
-
-    st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
-    st->cr();
-  }
-
-  Heap_lock->unlock();
 
   // STEP("printing metaspace information")
 
