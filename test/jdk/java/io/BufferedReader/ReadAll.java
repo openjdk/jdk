@@ -36,15 +36,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.WRITE;
 
 import jdk.test.lib.RandomFactory;
 
@@ -69,29 +65,15 @@ public class ReadAll {
         Random rnd = RandomFactory.getRandom();
         int size = rnd.nextInt(2, 16386);
 
-        try (FileChannel fc = FileChannel.open(path, CREATE, WRITE)) {
-            int len = 0;
-            int plen = PHRASE.length();
-            ByteBuffer strBuf = ByteBuffer.allocate(plen*Character.BYTES);
-            ByteBuffer lineSeparatorBuf =
-                ByteBuffer.wrap(System.lineSeparator().getBytes());
-            int n = 0;
-            while (len < size) {
-                int fromIndex = rnd.nextInt(0, plen / 2);
-                int toIndex = rnd.nextInt(fromIndex, plen);
-                String str = PHRASE.substring(fromIndex, toIndex);
-                byte[] strBytes = str.getBytes();
-                strBuf.put(strBytes);
-                strBuf.flip();
-                fc.write(strBuf);
-                strBuf.clear();
-                fc.write(lineSeparatorBuf);
-                lineSeparatorBuf.clear();
-                len += toIndex - fromIndex;
-                n++;
-            }
-            System.out.println(n + " lines written");
+        int plen = PHRASE.length();
+        List<String> strings = new ArrayList<String>(size);
+        while (strings.size() < size) {
+            int fromIndex = rnd.nextInt(0, plen / 2);
+            int toIndex = rnd.nextInt(fromIndex, plen);
+            strings.add(PHRASE.substring(fromIndex, toIndex));
         }
+        Files.write(path, strings);
+        System.out.println(strings.size() + " lines written");
     }
 
     @AfterAll
@@ -103,8 +85,7 @@ public class ReadAll {
     public void readAllLines() throws IOException {
         // BufferedReader implementation
         List<String> lines;
-        try (FileReader fr = new FileReader(file);
-             BufferedReader br = new BufferedReader(fr)) {
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             lines = br.readAllLines();
         }
         System.out.println(lines.size() + " lines read");
