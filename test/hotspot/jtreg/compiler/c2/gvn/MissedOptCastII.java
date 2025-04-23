@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8319372
+ * @bug 8319372 8320909
  * @summary Missed optimization in IGVN because `CastIINode::Value` used to
  *          look for deep structures. Reported in 8320909. Fixed in 8319372.
  *
@@ -38,7 +38,7 @@
 
 /*
  * @test
- * @bug 8319372
+ * @bug 8319372 8320909
  *
  * @run main/othervm MissedOptCastII
  */
