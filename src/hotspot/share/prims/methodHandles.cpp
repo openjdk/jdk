@@ -1258,12 +1258,10 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
       THROW_MSG(vmSymbols::java_lang_InternalError(), "bad index info (1)");
   }
   objArrayHandle buf(THREAD, (objArrayOop) JNIHandles::resolve(buf_jh));
-  if (start < 0) {
-    for (int pseudo_index = -4; pseudo_index < 0; pseudo_index++) {
-      if (start == pseudo_index) {
-        if (start >= end || 0 > pos || pos >= buf->length())  break;
-        oop pseudo_arg = nullptr;
-        switch (pseudo_index) {
+  while (-4 <= start && start < 0) {
+    if (start >= end || 0 > pos || pos >= buf->length()) break;
+    oop pseudo_arg = nullptr;
+    switch (start) {
         case -4:  // bootstrap method
           {
             int bsm_index = caller->constants()->bootstrap_method_ref_index_at(bss_index_in_pool);
@@ -1296,15 +1294,12 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
             pseudo_arg = java_lang_boxing_object::create(T_INT, &argc_value, CHECK);
             break;
           }
-        }
-
-        // Store the pseudo-argument, and advance the pointers.
-        buf->obj_at_put(pos++, pseudo_arg);
-        ++start;
-      }
-    }
-    // When we are done with this there may be regular arguments to process too.
+    };
+    // Store the pseudo-argument, and advance the pointers.
+    buf->obj_at_put(pos++, pseudo_arg);
+    start++;
   }
+  // Now that we are done with this there may be regular arguments to process too.
   Handle ifna(THREAD, JNIHandles::resolve(ifna_jh));
   caller->constants()->
     copy_bootstrap_arguments_at(bss_index_in_pool,
