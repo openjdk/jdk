@@ -826,11 +826,6 @@ bool ShenandoahBarrierSetC2::optimize_loops(PhaseIdealLoop* phase, LoopOptsMode 
     assert(UseShenandoahGC, "only for shenandoah");
     ShenandoahBarrierC2Support::pin_and_expand(phase);
     return true;
-  } else if (mode == LoopOptsShenandoahPostExpand) {
-    assert(UseShenandoahGC, "only for shenandoah");
-    visited.clear();
-    ShenandoahBarrierC2Support::optimize_after_expansion(visited, nstack, worklist, phase);
-    return true;
   }
   return false;
 }

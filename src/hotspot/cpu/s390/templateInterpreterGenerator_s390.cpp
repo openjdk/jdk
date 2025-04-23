@@ -2228,7 +2228,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ remove_activation(vtos, noreg/*ret.pc already loaded*/, false/*throw exc*/, true/*install exc*/, false/*notify jvmti*/);
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
 
-  __ get_vm_result(Z_ARG1);     // Restore exception.
+  __ get_vm_result_oop(Z_ARG1);     // Restore exception.
   __ verify_oop(Z_ARG1);
   __ z_lgr(Z_ARG2, return_pc);  // Restore return address.
 

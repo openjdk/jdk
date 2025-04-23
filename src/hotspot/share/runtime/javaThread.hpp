@@ -145,8 +145,8 @@ class JavaThread: public Thread {
   Method*       _callee_target;
 
   // Used to pass back results to the interpreter or generated code running Java code.
-  oop           _vm_result;    // oop result is GC-preserved
-  Metadata*     _vm_result_2;  // non-oop result
+  oop           _vm_result_oop;       // oop result is GC-preserved
+  Metadata*     _vm_result_metadata;  // non-oop result
 
   // See ReduceInitialCardMarks: this holds the precise space interval of
   // the most recent slow path allocation for which compiled code has
@@ -784,10 +784,10 @@ private:
   void set_callee_target  (Method* x)            { _callee_target   = x; }
 
   // Oop results of vm runtime calls
-  oop  vm_result() const                         { return _vm_result; }
-  void set_vm_result  (oop x)                    { _vm_result   = x; }
+  oop  vm_result_oop() const                     { return _vm_result_oop; }
+  void set_vm_result_oop(oop x)                  { _vm_result_oop   = x; }
 
-  void set_vm_result_2  (Metadata* x)            { _vm_result_2   = x; }
+  void set_vm_result_metadata(Metadata* x)       { _vm_result_metadata = x; }
 
   MemRegion deferred_card_mark() const           { return _deferred_card_mark; }
   void set_deferred_card_mark(MemRegion mr)      { _deferred_card_mark = mr;   }
@@ -853,8 +853,8 @@ private:
     return byte_offset_of(JavaThread, _anchor);
   }
   static ByteSize callee_target_offset()         { return byte_offset_of(JavaThread, _callee_target); }
-  static ByteSize vm_result_offset()             { return byte_offset_of(JavaThread, _vm_result); }
-  static ByteSize vm_result_2_offset()           { return byte_offset_of(JavaThread, _vm_result_2); }
+  static ByteSize vm_result_oop_offset()         { return byte_offset_of(JavaThread, _vm_result_oop); }
+  static ByteSize vm_result_metadata_offset()    { return byte_offset_of(JavaThread, _vm_result_metadata); }
   static ByteSize thread_state_offset()          { return byte_offset_of(JavaThread, _thread_state); }
   static ByteSize saved_exception_pc_offset()    { return byte_offset_of(JavaThread, _saved_exception_pc); }
   static ByteSize osthread_offset()              { return byte_offset_of(JavaThread, _osthread); }

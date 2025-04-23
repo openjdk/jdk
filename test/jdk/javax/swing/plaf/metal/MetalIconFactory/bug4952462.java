@@ -29,7 +29,7 @@
  * @modules java.desktop/sun.awt
  * @library /test/lib
  * @key headful
- * @run main bug4952462
+ * @run main/othervm -Dsun.java2d.uiScale=1 bug4952462
  */
 
 import java.awt.Color;
@@ -41,10 +41,8 @@ import javax.swing.JFrame;
 import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.plaf.metal.MetalTheme;
-
-import jtreg.SkippedException;
-import sun.awt.AppContext;
+import javax.swing.plaf.metal.MetalLookAndFeel;
+import javax.swing.plaf.metal.OceanTheme;
 
 public class bug4952462 {
     private static JFrame frame;
@@ -52,41 +50,35 @@ public class bug4952462 {
 
     public static void main(String[] args) throws Exception {
         try {
+            MetalLookAndFeel.setCurrentTheme(new OceanTheme());
             UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+            Robot r = new Robot();
+            SwingUtilities.invokeAndWait(() -> {
+                frame = new JFrame("Metal JRadioButton Foreground Color Test");
+                frame.getContentPane().setLayout(new FlowLayout());
+                rb = new JRadioButton("RadioButton", true);
+                rb.setEnabled(false);
+                rb.setForeground(Color.RED);
+                frame.getContentPane().add(rb);
+                frame.setSize(250, 100);
+                frame.setLocationRelativeTo(null);
+                frame.setVisible(true);
+            });
 
-            MetalTheme theme = (MetalTheme) AppContext.getAppContext().get("currentMetalTheme");
-            if (theme == null || !"Ocean".equals(theme.getName())) {
-                throw new SkippedException("Current theme is not Ocean. Test is " +
-                        "only for Metal's Ocean theme. Skipping test.");
-            } else {
-                Robot r = new Robot();
-                SwingUtilities.invokeAndWait(() -> {
-                    frame = new JFrame("Metal JRadioButton Foreground Color Test");
-                    frame.getContentPane().setLayout(new FlowLayout());
-                    rb = new JRadioButton("RadioButton", true);
-                    rb.setEnabled(false);
-                    rb.setForeground(Color.RED);
-                    frame.getContentPane().add(rb);
-                    frame.setSize(250, 100);
-                    frame.setLocationRelativeTo(null);
-                    frame.setVisible(true);
-                });
+            r.waitForIdle();
+            r.delay(500);
 
-                r.waitForIdle();
-                r.delay(500);
-
-                SwingUtilities.invokeAndWait(() -> {
-                    Point p = rb.getLocationOnScreen();
-                    for (int i = 0; i < 50; i++) {
-                        Color c = r.getPixelColor(p.x + 10 + i, p.y + (rb.getHeight() / 2));
-                        System.out.println(c);
-                        if (c.getRed() > 200 && c.getBlue() < 200 && c.getGreen() < 200) {
-                            throw new RuntimeException("Test failed. Radiobutton is red " +
-                                    "and not grey.");
-                        }
+            SwingUtilities.invokeAndWait(() -> {
+                Point p = rb.getLocationOnScreen();
+                for (int i = 0; i < 50; i++) {
+                    Color c = r.getPixelColor(p.x + 10 + i, p.y + (rb.getHeight() / 2));
+                    System.out.println(c);
+                    if (c.getRed() > 200 && c.getBlue() < 80 && c.getGreen() < 80) {
+                        throw new RuntimeException("Test failed. Radiobutton is red " +
+                                "and not grey.");
                     }
-                });
-            }
+                }
+            });
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
