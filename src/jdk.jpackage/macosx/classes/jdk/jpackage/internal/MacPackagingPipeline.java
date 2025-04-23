@@ -60,16 +60,17 @@ import jdk.jpackage.internal.PackagingPipeline.TaskAction;
 import jdk.jpackage.internal.PackagingPipeline.TaskContext;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.AppImageLayout;
+import jdk.jpackage.internal.model.AppImageSigningConfig;
 import jdk.jpackage.internal.model.Application;
-import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacFileAssociation;
+import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.PackagerException;
-import jdk.jpackage.internal.model.AppImageSigningConfig;
+import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 final class MacPackagingPipeline {
@@ -252,6 +253,10 @@ final class MacPackagingPipeline {
 
         final var app = env.app();
 
+        final var infoPlistFile = env.resolvedLayout().contentDirectory().resolve("Info.plist");
+
+        Log.verbose(I18N.format("message.preparing-info-plist", PathUtils.normalizedAbsolutePathString(infoPlistFile)));
+
         final String faXml = toSupplier(() -> {
             var buf = new StringWriter();
             var xml = XMLOutputFactory.newInstance().createXMLStreamWriter(buf);
@@ -277,7 +282,7 @@ final class MacPackagingPipeline {
                 .setCategory(I18N.getString("resource.app-info-plist"))
                 .setSubstitutionData(data)
                 .setPublicName("Info.plist")
-                .saveToFile(env.resolvedLayout().contentDirectory().resolve("Info.plist"));
+                .saveToFile(infoPlistFile);
     }
 
     private static void sign(AppImageBuildEnv<MacApplication, MacApplicationLayout> env) throws IOException {
