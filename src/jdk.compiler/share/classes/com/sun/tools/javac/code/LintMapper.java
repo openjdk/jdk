@@ -44,6 +44,7 @@ import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.tree.EndPosTable;
@@ -227,7 +228,7 @@ public class LintMapper {
         // Report them if needed
         if (rootLint.isEnabled(SUPPRESSION, false)) {
             topNode.stream()
-              .filter(DeclNode::shouldReport)
+              .filter(node -> node.lint.isEnabled(SUPPRESSION, false))
               .forEach(node -> report(node.unvalidated, name -> "\"" + name + "\"",
                 names -> log.warning(node.annotation.pos(), LintWarnings.UnnecessaryWarningSuppression(names))));
         }
@@ -341,8 +342,8 @@ public class LintMapper {
             return validationsMap.computeIfAbsent(symbol, s -> LintCategory.newEmptySet());
         }
 
-        // Combine the validation sets for two symbols that are declared together
-        void mergeValidations(Symbol symbol1, Symbol symbol2) {
+        // Combine the validation sets for two variable symbols that are declared together
+        void mergeValidations(VarSymbol symbol1, VarSymbol symbol2) {
             EnumSet<LintCategory> validations1 = validationsFor(symbol1);
             EnumSet<LintCategory> validations2 = validationsFor(symbol2);
             Assert.check(validations1.equals(validations2));
@@ -491,11 +492,6 @@ public class LintMapper {
             return Stream.concat(Stream.of(this), children.stream().flatMap(DeclNode::stream));
         }
 
-        // Is the "suppression" category suppressed at this node or any parent node?
-        public boolean shouldReport() {
-            return !suppressions.contains(SUPPRESSION) && (parent == null || parent.shouldReport());
-        }
-
         Span toSpan() {
             return new Span(startPos, endPos);
         }
@@ -548,7 +544,7 @@ public class LintMapper {
         // Variables declared together (separated by commas) share their @SuppressWarnings annotation, so they must also share
         // the set of validated suppressions: the suppression of a category is valid if *any* of the variables validates it.
         // We detect that situation using this map and, when found, invoke FileInfo.mergeValidations().
-        private final Map<JCAnnotation, Symbol> annotationMap = new HashMap<>();
+        private final Map<JCAnnotation, VarSymbol> annotationRepresentativeSymbolMap = new HashMap<>();
 
         private final FileInfo fileInfo;
         private final EndPosTable endPositions;
@@ -605,11 +601,12 @@ public class LintMapper {
               .map(anno -> rootLint.suppressionsFrom(anno, true))
               .orElseGet(LintCategory::newEmptySet);
 
-            // Merge validation sets for variables that share the same declaration and therefore the same @SuppressedWarnings
-            if (annotation != null && tree.getTag() == Tag.VARDEF) {
-                Symbol firstSymbol = annotationMap.computeIfAbsent(annotation, a -> symbol);
-                if (firstSymbol != symbol)
-                    fileInfo.mergeValidations(firstSymbol, symbol);
+            // Merge validation sets for variables that share the same declaration (and therefore the same @SuppressedWarnings)
+            if (annotation != null && symbol instanceof VarSymbol varSym) {
+                annotationRepresentativeSymbolMap.merge(annotation, varSym, (oldSymbol, newSymbol) -> {
+                    fileInfo.mergeValidations(oldSymbol, newSymbol);
+                    return oldSymbol;
+                });
             }
 
             // If this declaration is not interesting, we don't need to create a DeclNode for it

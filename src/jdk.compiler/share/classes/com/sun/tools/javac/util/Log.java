@@ -174,10 +174,8 @@ public class Log extends AbstractLog {
                   category.annotationSuppression ?                      // else emit if the category is not suppressed, where
                     !lint.isSuppressed(category, false) :                   // ...suppression happens via @SuppressWarnings
                     !options.isSet(XLINT_CUSTOM, "-" + category.option);    // ...suppression happens via -Xlint:-category
-
-                // If not emitting the warning, stop here but validate any suppression
                 if (!emit) {
-                    validateSuppression(new SuppressionValidation(lint, diag));
+                    validateSuppression(new SuppressionValidation(lint, diag));     // validate any suppression
                     return;
                 }
             }
