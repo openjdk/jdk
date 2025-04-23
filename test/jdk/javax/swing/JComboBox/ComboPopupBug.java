@@ -61,9 +61,9 @@ public class ComboPopupBug {
 
             closeButton = new JButton("Close");
             closeButton.addActionListener((e) -> {
-                        clickComboBox();
-                        frame.setVisible(false);
-                    });
+                clickComboBox();
+                frame.setVisible(false);
+            });
 
             frame.getContentPane().add(comboBox, "North");
             frame.getContentPane().add(closeButton, "South");
