@@ -67,16 +67,11 @@ void UnloadableMethodHandle::release() {
 
 bool UnloadableMethodHandle::is_unloaded() const {
   // Unloaded if weak handle was set, but now had been cleared by GC.
-  return _method != nullptr && !_weak_handle.is_empty() && _weak_handle.peek() == nullptr;
+  return !_weak_handle.is_empty() && _weak_handle.peek() == nullptr;
 }
 
 inline void UnloadableMethodHandle::block_unloading() {
   assert(!is_unloaded(), "Pre-condition: should not be unloaded");
-
-  if (_method == nullptr) {
-    // Nothing to do, empty handle.
-    return;
-  }
 
   if (!_weak_handle.is_empty()) {
     assert(_weak_handle.peek() != nullptr, "Should not be cleared");
