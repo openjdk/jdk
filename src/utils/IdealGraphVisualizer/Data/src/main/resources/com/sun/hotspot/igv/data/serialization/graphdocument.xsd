@@ -143,8 +143,18 @@
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>    
+            <xsd:element name="liveOut" minOccurs="0" maxOccurs="1">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="lrg" minOccurs="0" maxOccurs="unbounded">
+                            <xsd:complexType>
+                                <xsd:attribute name="id" type="xsd:string" use="required" />
+                            </xsd:complexType>
+                        </xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
         </xsd:all>
-        
         <xsd:attribute name="name" type="xsd:string" use="required" />
     </xsd:complexType>
 </xsd:schema>

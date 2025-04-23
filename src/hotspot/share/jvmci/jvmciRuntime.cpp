@@ -96,7 +96,7 @@ static void deopt_caller() {
 // call is of the variety where allocation failure returns null without an
 // exception, the following action is taken:
 //   1. The pending OutOfMemoryError is cleared
-//   2. null is written to JavaThread::_vm_result
+//   2. null is written to JavaThread::_vm_result_oop
 class RetryableAllocationMark {
  private:
    InternalOOMEMark _iom;
@@ -107,7 +107,7 @@ class RetryableAllocationMark {
     if (THREAD != nullptr) {
       if (HAS_PENDING_EXCEPTION) {
         oop ex = PENDING_EXCEPTION;
-        THREAD->set_vm_result(nullptr);
+        THREAD->set_vm_result_oop(nullptr);
         if (ex->is_a(vmClasses::OutOfMemoryError_klass())) {
           CLEAR_PENDING_EXCEPTION;
         }
@@ -127,12 +127,12 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_instance_or_null(JavaThread* current, Kl
     if (!h->is_initialized()) {
       // Cannot re-execute class initialization without side effects
       // so return without attempting the initialization
-      current->set_vm_result(nullptr);
+      current->set_vm_result_oop(nullptr);
       return;
     }
     // allocate instance and return via TLS
     oop obj = h->allocate_instance(CHECK);
-    current->set_vm_result(obj);
+    current->set_vm_result_oop(obj);
   }
   JRT_BLOCK_END;
   SharedRuntime::on_slowpath_allocation_exit(current);
@@ -166,7 +166,7 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_or_null(JavaThread* current, Klass
       deopt_caller();
     }
   }
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
   JRT_BLOCK_END;
   SharedRuntime::on_slowpath_allocation_exit(current);
 JRT_END
@@ -177,13 +177,13 @@ JRT_ENTRY(void, JVMCIRuntime::new_multi_array_or_null(JavaThread* current, Klass
   Handle holder(current, klass->klass_holder()); // keep the klass alive
   RetryableAllocationMark ram(current);
   oop obj = ArrayKlass::cast(klass)->multi_allocate(rank, dims, CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 JRT_ENTRY(void, JVMCIRuntime::dynamic_new_array_or_null(JavaThread* current, oopDesc* element_mirror, jint length))
   RetryableAllocationMark ram(current);
   oop obj = Reflection::reflect_new_array(element_mirror, length, CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 JRT_ENTRY(void, JVMCIRuntime::dynamic_new_instance_or_null(JavaThread* current, oopDesc* type_mirror))
@@ -201,12 +201,12 @@ JRT_ENTRY(void, JVMCIRuntime::dynamic_new_instance_or_null(JavaThread* current, 
   if (!klass->is_initialized()) {
     // Cannot re-execute class initialization without side effects
     // so return without attempting the initialization
-    current->set_vm_result(nullptr);
+    current->set_vm_result_oop(nullptr);
     return;
   }
 
   oop obj = klass->allocate_instance(CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 extern void vm_exit(int code);
@@ -533,7 +533,7 @@ JRT_ENTRY(jlong, JVMCIRuntime::invoke_static_method_one_arg(JavaThread* current,
   if (return_type == T_VOID) {
     return 0;
   } else if (return_type == T_OBJECT || return_type == T_ARRAY) {
-    current->set_vm_result(result.get_oop());
+    current->set_vm_result_oop(result.get_oop());
     return 0;
   } else {
     jvalue *value = (jvalue *) result.get_value_addr();

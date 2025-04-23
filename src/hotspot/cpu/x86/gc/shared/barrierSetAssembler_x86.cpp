@@ -74,11 +74,11 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
   case T_ADDRESS: __ movptr(dst, src);              break;
   case T_FLOAT:
     assert(dst == noreg, "only to ftos");
-    __ load_float(src);
+    __ movflt(xmm0, src);
     break;
   case T_DOUBLE:
     assert(dst == noreg, "only to dtos");
-    __ load_double(src);
+    __ movdbl(xmm0, src);
     break;
   case T_LONG:
     assert(dst == noreg, "only to ltos");
@@ -148,11 +148,11 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
     break;
   case T_FLOAT:
     assert(val == noreg, "only tos");
-    __ store_float(dst);
+    __ movflt(dst, xmm0);
     break;
   case T_DOUBLE:
     assert(val == noreg, "only tos");
-    __ store_double(dst);
+    __ movdbl(dst, xmm0);
     break;
   case T_ADDRESS:
     __ movptr(dst, val);

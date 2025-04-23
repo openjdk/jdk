@@ -43,6 +43,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
+
 #include <math.h>
 
 G1ConcurrentRefineThread* G1ConcurrentRefineThreadControl::create_refinement_thread() {

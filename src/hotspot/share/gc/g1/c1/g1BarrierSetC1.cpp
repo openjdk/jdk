@@ -22,10 +22,9 @@
  *
  */
 
-#include "c1/c1_LIR.hpp"
+#include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_LIRGenerator.hpp"
-#include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "gc/g1/c1/g1BarrierSetC1.hpp"
 #include "gc/g1/g1BarrierSet.hpp"

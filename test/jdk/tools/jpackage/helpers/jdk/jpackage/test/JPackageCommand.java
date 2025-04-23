@@ -67,6 +67,8 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         args.addAll(cmd.args);
         withToolProvider = cmd.withToolProvider;
         saveConsoleOutput = cmd.saveConsoleOutput;
+        discardStdout = cmd.discardStdout;
+        discardStderr = cmd.discardStderr;
         suppressOutput = cmd.suppressOutput;
         ignoreDefaultRuntime = cmd.ignoreDefaultRuntime;
         ignoreDefaultVerbose = cmd.ignoreDefaultVerbose;
@@ -679,6 +681,18 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public JPackageCommand discardStdout(boolean v) {
+        verifyMutable();
+        discardStdout = v;
+        return this;
+    }
+
+    public JPackageCommand discardStderr(boolean v) {
+        verifyMutable();
+        discardStderr = v;
+        return this;
+    }
+
     public JPackageCommand dumpOutput(boolean v) {
         verifyMutable();
         suppressOutput = !v;
@@ -770,6 +784,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private Executor createExecutor() {
         Executor exec = new Executor()
                 .saveOutput(saveConsoleOutput).dumpOutput(!suppressOutput)
+                .discardStdout(discardStdout).discardStderr(discardStderr)
                 .setDirectory(executeInDirectory)
                 .addArguments(args);
 
@@ -1272,6 +1287,8 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     private Boolean withToolProvider;
     private boolean saveConsoleOutput;
+    private boolean discardStdout;
+    private boolean discardStderr;
     private boolean suppressOutput;
     private boolean ignoreDefaultRuntime;
     private boolean ignoreDefaultVerbose;

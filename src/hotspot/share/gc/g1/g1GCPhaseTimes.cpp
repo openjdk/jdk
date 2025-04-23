@@ -31,11 +31,11 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
-#include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "runtime/timer.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
+#include "runtime/timer.hpp"
 #include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
 
