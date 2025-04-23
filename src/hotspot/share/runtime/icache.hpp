@@ -60,6 +60,9 @@ class AbstractICache : AllStatic {
     log2_line_size = 0  // log2(line_size)
   };
 
+  // Initialization phases:
+  //   1 = initial phase, nothing is known about the machine features
+  //   2 = final phase, machine features are known
   static void initialize(int phase);
   static void invalidate_word(address addr);
   static void invalidate_range(address start, int nbytes);

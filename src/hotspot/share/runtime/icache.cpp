@@ -122,7 +122,8 @@ void AbstractICache::invalidate_range(address start, int nbytes) {
 // For init.cpp
 void icache_init() {
   // Initial stub that runs with most basic mechanism, until optimized
-  // final stub is generated.
+  // final stub is generated. CPU feature detection code have not
+  // executed yet, so we need to do a most basic thing.
 #if defined(X86) && !defined(ZERO)
   IntFlagSetting fs(X86ICacheSync, 1);
 #endif
