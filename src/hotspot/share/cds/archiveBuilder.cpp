@@ -454,7 +454,7 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
 
   if (ref->msotype() == MetaspaceObj::MethodDataType) {
     MethodData* md = (MethodData*)ref->obj();
-    md->clean_method_data(true);
+    md->clean_method_data(false /* always_clean */);
   }
 
   assert(p->read_only() == src_info.read_only(), "must be");

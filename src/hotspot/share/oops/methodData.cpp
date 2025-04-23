@@ -321,6 +321,28 @@ void VirtualCallTypeData::post_initialize(BytecodeStream* stream, MethodData* md
   }
 }
 
+static bool is_excluded(Klass* k) {
+#if INCLUDE_CDS
+  if (SafepointSynchronize::is_at_safepoint() &&
+      CDSConfig::is_dumping_archive() &&
+      CDSConfig::current_thread_is_vm_or_dumper()) {
+    if (k->is_instance_klass() && !InstanceKlass::cast(k)->is_loaded()) {
+      log_debug(cds)("Purged %s from MDO: unloaded class", k->name()->as_C_string());
+      return true;
+    } else if (CDSConfig::is_dumping_dynamic_archive() && k->is_shared()) {
+      return false;
+    } else {
+      bool excluded = SystemDictionaryShared::should_be_excluded(k);
+      if (excluded) {
+        log_debug(cds)("Purged %s from MDO: excluded class", k->name()->as_C_string());
+      }
+      return excluded;
+    }
+  }
+#endif
+  return false;
+}
+
 void TypeStackSlotEntries::clean_weak_klass_links(bool always_clean) {
   for (int i = 0; i < _number_of_entries; i++) {
     intptr_t p = type(i);
@@ -329,7 +351,7 @@ void TypeStackSlotEntries::clean_weak_klass_links(bool always_clean) {
       if (!always_clean && k->is_instance_klass() && InstanceKlass::cast(k)->is_not_initialized()) {
         continue; // skip not-yet-initialized classes // TODO: maybe clear the slot instead?
       }
-      if (always_clean || !k->is_loader_alive()) {
+      if (always_clean || !k->is_loader_alive() || is_excluded(k)) {
         set_type(i, with_status((Klass*)nullptr, p));
       }
     }
@@ -350,7 +372,7 @@ void ReturnTypeEntry::clean_weak_klass_links(bool always_clean) {
     if (!always_clean && k->is_instance_klass() && InstanceKlass::cast(k)->is_not_initialized()) {
       return; // skip not-yet-initialized classes // TODO: maybe clear the slot instead?
     }
-    if (always_clean || !k->is_loader_alive()) {
+    if (always_clean || !k->is_loader_alive() || is_excluded(k)) {
       set_type(with_status((Klass*)nullptr, p));
     }
   }
@@ -440,7 +462,7 @@ void ReceiverTypeData::clean_weak_klass_links(bool always_clean) {
       if (!always_clean && p->is_instance_klass() && InstanceKlass::cast(p)->is_not_initialized()) {
         continue; // skip not-yet-initialized classes // TODO: maybe clear the slot instead?
       }
-      if (always_clean || !p->is_loader_alive()) {
+      if (always_clean || !p->is_loader_alive() || is_excluded(p)) {
         clear_row(row);
       }
     }
@@ -1866,14 +1888,7 @@ void MethodData::clean_extra_data(CleanExtraDataClosure* cl) {
       SpeculativeTrapData* data = new SpeculativeTrapData(dp);
       Method* m = data->method();
       assert(m != nullptr, "should have a method");
-      bool exclude = false;
-      if (SafepointSynchronize::is_at_safepoint() && CDSConfig::is_dumping_archive()) {
-#if INCLUDE_CDS
-        InstanceKlass* holder = m->method_holder();
-        exclude = (holder == nullptr || !holder->is_loaded() || SystemDictionaryShared::check_for_exclusion(holder, nullptr));
-#endif
-      }
-      if (exclude || !cl->is_live(m)) {
+      if (is_excluded(m->method_holder()) || !cl->is_live(m)) {
         // "shift" accumulates the number of cells for dead
         // SpeculativeTrapData entries that have been seen so
         // far. Following entries must be shifted left by that many
