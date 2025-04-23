@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -687,27 +687,45 @@ public class Throwable implements Serializable {
     }
 
     private void printStackTrace(PrintStreamOrWriter s) {
-        // Guard against malicious overrides of Throwable.equals by
-        // using a Set with identity equality semantics.
-        Set<Throwable> dejaVu = Collections.newSetFromMap(new IdentityHashMap<>());
-        dejaVu.add(this);
+        /*
+         * Guard against malicious overrides of Throwable.equals by
+         * using a Set with identity equality semantics.
+         */
+        Set<Throwable> dejaVu = null;
 
         synchronized(s.lock()) {
             // Print our stack trace
             s.println(this);
             StackTraceElement[] trace = getOurStackTrace();
-            for (StackTraceElement traceElement : trace)
-                s.println("\tat " + traceElement);
+            printStackTrace0(s, trace);
 
             // Print suppressed exceptions, if any
-            for (Throwable se : getSuppressed())
-                se.printEnclosedStackTrace(s, trace, SUPPRESSED_CAPTION, "\t", dejaVu);
+            java.lang.Throwable[] suppressed = getSuppressed();
+            if (suppressed.length > 0) {
+                dejaVu = dejaVu();
+            }
+            for (Throwable se : suppressed)
+                se.printEnclosedStackTrace(s, trace, "\t".concat(SUPPRESSED_CAPTION), "\t", dejaVu);
 
             // Print cause, if any
             Throwable ourCause = getCause();
-            if (ourCause != null)
+            if (ourCause != null) {
+                if (dejaVu == null) {
+                    dejaVu = dejaVu();
+                }
                 ourCause.printEnclosedStackTrace(s, trace, CAUSE_CAPTION, "", dejaVu);
+            }
         }
+    }
+
+    /**
+     * Guard against malicious overrides of Throwable.equals by
+     * using a Set with identity equality semantics.
+     */
+    private Set<Throwable> dejaVu() {
+        Set<Throwable> dejaVu = Collections.newSetFromMap(new IdentityHashMap<>());
+        dejaVu.add(this);
+        return dejaVu;
     }
 
     /**
@@ -716,12 +734,12 @@ public class Throwable implements Serializable {
      */
     private void printEnclosedStackTrace(PrintStreamOrWriter s,
                                          StackTraceElement[] enclosingTrace,
-                                         String caption,
+                                         String prefixCaption,
                                          String prefix,
                                          Set<Throwable> dejaVu) {
         assert Thread.holdsLock(s.lock());
         if (dejaVu.contains(this)) {
-            s.println(prefix + caption + "[CIRCULAR REFERENCE: " + this + "]");
+            s.println(prefixCaption + "[CIRCULAR REFERENCE: " + this + "]");
         } else {
             dejaVu.add(this);
             // Compute number of frames in common between this and enclosing trace
@@ -734,16 +752,13 @@ public class Throwable implements Serializable {
             int framesInCommon = trace.length - 1 - m;
 
             // Print our stack trace
-            s.println(prefix + caption + this);
-            for (int i = 0; i <= m; i++)
-                s.println(prefix + "\tat " + trace[i]);
-            if (framesInCommon != 0)
-                s.println(prefix + "\t... " + framesInCommon + " more");
+            s.println(prefixCaption.concat(this.toString()));
+            printStackTrace0(s, prefix, trace, m, framesInCommon);
 
             // Print suppressed exceptions, if any
             for (Throwable se : getSuppressed())
                 se.printEnclosedStackTrace(s, trace, SUPPRESSED_CAPTION,
-                                           prefix +"\t", dejaVu);
+                                           prefix.concat("\t"), dejaVu);
 
             // Print cause, if any
             Throwable ourCause = getCause();
@@ -761,6 +776,51 @@ public class Throwable implements Serializable {
      */
     public void printStackTrace(PrintWriter s) {
         printStackTrace(new WrappedPrintWriter(s));
+    }
+
+    /**
+     * Use a StringBuilder to print multiple StackTraceElements
+     */
+    private static void printStackTrace0(PrintStreamOrWriter printer, StackTraceElement[] trace) {
+        printStackTrace0(printer, null, trace, trace.length - 1, 0);
+    }
+
+    /**
+     * Use a StringBuilder to print multiple StackTraceElements
+     */
+    private static void printStackTrace0(
+            PrintStreamOrWriter printer,
+            String prefix,
+            StackTraceElement[] trace,
+            int traceEnd,
+            int framesInCommon) {
+        String at = "\tat ";
+        int prefixAndAtLength = at.length();
+        if (prefix != null) {
+            prefixAndAtLength += prefix.length();
+        }
+
+        var sb = new StringBuilder(128);
+        if (prefix != null) {
+            sb.append(prefix);
+        }
+        sb.append(at);
+        for (int i = 0; i <= traceEnd; i++) {
+            if (i != 0) {
+                sb.delete(prefixAndAtLength, sb.length());
+            }
+            printer.println(trace[i]
+                            .appendTo(sb)
+                            .toString());
+        }
+
+        if (framesInCommon != 0) {
+            sb.delete(prefix.length(), sb.length())
+              .append("\t... ")
+              .append(framesInCommon)
+              .append(" more");
+            printer.println(sb.toString());
+        }
     }
 
     /**
