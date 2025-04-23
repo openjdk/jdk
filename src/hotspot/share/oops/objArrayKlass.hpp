@@ -163,10 +163,6 @@ class ObjArrayKlass : public ArrayKlass {
   void verify_on(outputStream* st);
 
   void oop_verify_on(oop obj, outputStream* st);
-
-  DECLARE_EXACT_CAST_FUNCTIONS(ObjArrayKlass)
-  DECLARE_NARROW_KLASS_UTILITY_FUNCTIONS(ObjArrayKlass)
-
 };
 
 #endif // SHARE_OOPS_OBJARRAYKLASS_HPP

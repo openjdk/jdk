@@ -217,13 +217,14 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   // Calculate Base and Shift:
 
   if (UseCompactObjectHeaders) {
-
-    // TODO: can this now merged with !COH?
+    // We use a large shift in order to shrink the narrowKlass down to 22bit while still retaining
+    // the ability to address a large (4GB) memory range. This also yields narrowKlass values that
+    // are ID-like (dense, with almost every value in the 22-bit range addressing another Klass),
+    // which is perfect for use as lookup index into the Klass info lookup table (KLUT).
     _base = addr;
     _shift = max_shift();
 
   } else {
-
     // Traditional (non-compact) header mode
     const uintptr_t unscaled_max = nth_bit(narrow_klass_pointer_bits());
     const uintptr_t zerobased_max = nth_bit(narrow_klass_pointer_bits() + max_shift());

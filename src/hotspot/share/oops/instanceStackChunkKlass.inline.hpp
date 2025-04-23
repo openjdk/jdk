@@ -90,22 +90,25 @@ void InstanceStackChunkKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* c
   oop_oop_iterate_lockstack<T>(chunk, closure, mr);
 }
 
+static InstanceStackChunkKlass* get_isck(oop obj) {
+  Klass* const k = obj->klass();
+  assert(k->is_stack_chunk_instance_klass(), "must be");
+  return (InstanceStackChunkKlass*)k;
+}
+
 template <typename T, class OopClosureType>
 void InstanceStackChunkKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
-  InstanceStackChunkKlass* const k = InstanceStackChunkKlass::cast_exact(obj->klass());
-  k->oop_oop_iterate<T>(obj, closure);
+  get_isck(obj)->oop_oop_iterate<T>(obj, closure);
 }
 
 template <typename T, class OopClosureType>
 void InstanceStackChunkKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
-  InstanceStackChunkKlass* const k = InstanceStackChunkKlass::cast_exact(obj->klass());
-  k->oop_oop_iterate_reverse<T>(obj, closure);
+  get_isck(obj)->oop_oop_iterate_reverse<T>(obj, closure);
 }
 
 template <typename T, class OopClosureType>
 void InstanceStackChunkKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute) {
-  InstanceStackChunkKlass* const k = InstanceStackChunkKlass::cast_exact(obj->klass());
-  k->oop_oop_iterate_bounded<T>(obj, closure, mr);
+  get_isck(obj)->oop_oop_iterate_bounded<T>(obj, closure, mr);
 }
 
 template <typename T, class OopClosureType>
@@ -181,8 +184,4 @@ void InstanceStackChunkKlass::oop_oop_iterate_stack_with_bitmap(stackChunkOop ch
     chunk->bitmap().iterate(&bitmap_closure, chunk->bit_index_for((T*)start), chunk->bit_index_for((T*)end));
   }
 }
-
-DEFINE_EXACT_CAST_FUNCTIONS(InstanceStackChunkKlass)
-DEFINE_NARROW_KLASS_UTILITY_FUNCTIONS(InstanceStackChunkKlass)
-
 #endif // SHARE_OOPS_INSTANCESTACKCHUNKKLASS_INLINE_HPP

@@ -779,7 +779,9 @@ void ArchiveBuilder::make_klasses_shareable() {
     if (k->is_instance_klass()) {
       InstanceKlass::cast(k)->constants()->remove_unshareable_info();
     }
-    // every archived Klass shall carry a valid KLUTE.
+    // Every archived Klass must carry a valid klute. That is because every archived Klass
+    // would have been created via the usual dynamic class loading or - generation, which should
+    // have registered the Klass with klut.
     DEBUG_ONLY(k->klute().verify_against_klass(k);)
   }
 

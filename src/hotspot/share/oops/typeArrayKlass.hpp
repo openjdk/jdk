@@ -125,10 +125,6 @@ class TypeArrayKlass : public ArrayKlass {
 
   ModuleEntry* module() const;
   PackageEntry* package() const;
-
-  DECLARE_EXACT_CAST_FUNCTIONS(TypeArrayKlass)
-  DECLARE_NARROW_KLASS_UTILITY_FUNCTIONS(TypeArrayKlass)
-
 };
 
 #endif // SHARE_OOPS_TYPEARRAYKLASS_HPP

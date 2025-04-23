@@ -82,40 +82,7 @@ class Klass : public Metadata {
 #undef WHAT
     UnknownKlassKind
   };
-
   static const uint KLASS_KIND_COUNT = ObjArrayKlassKind + 1;
-
-  // TODO simplify cleanup
-
-#define DECLARE_EXACT_CAST_FUNCTIONS(TYPE)                               \
-  static inline const TYPE* cast_exact(const Klass* k);                  \
-  static inline       TYPE* cast_exact(      Klass* k);
-
-#define DEFINE_EXACT_CAST_FUNCTIONS(TYPE)                                \
-  inline const TYPE* TYPE::cast_exact(const Klass* k) {                  \
-    assert(k != nullptr, "klass null");                                  \
-    assert(k->kind() == Klass::TYPE ## Kind,                             \
-           "Klass @" PTR_FORMAT ": wrong kind %d", p2i(k), k->kind()) ;  \
-    return static_cast<const TYPE*>(k);                                  \
-  }                                                                      \
-  inline TYPE* TYPE::cast_exact(Klass* k) {                              \
-    const TYPE* const ck = TYPE::cast_exact((const Klass*)k);            \
-    return const_cast<TYPE*>(ck);                                        \
-  }
-
-#define DECLARE_NARROW_KLASS_UTILITY_FUNCTIONS(TYPE)                     \
-  static inline const TYPE* narrow_klass_to_const_klass(narrowKlass nk); \
-  static inline       TYPE* narrow_klass_to_klass(narrowKlass nk);
-
-#define DEFINE_NARROW_KLASS_UTILITY_FUNCTIONS(TYPE)                      \
-  inline const TYPE* TYPE::narrow_klass_to_const_klass(narrowKlass nk) { \
-    const Klass* const k = CompressedKlassPointers::decode_not_null(nk); \
-    return cast_exact(k);                                                \
-  }                                                                      \
-  inline TYPE* TYPE::narrow_klass_to_klass(narrowKlass nk) {             \
-    Klass* const k = CompressedKlassPointers::decode_not_null(nk);       \
-    return cast_exact(k);                                                \
-  }                                                                      \
 
  protected:
 

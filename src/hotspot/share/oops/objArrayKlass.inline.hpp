@@ -118,8 +118,4 @@ void ObjArrayKlass::oop_oop_iterate_range(objArrayOop a, OopClosureType* closure
     Devirtualizer::do_oop(closure, b + i);
   }
 }
-
-DEFINE_EXACT_CAST_FUNCTIONS(ObjArrayKlass)
-DEFINE_NARROW_KLASS_UTILITY_FUNCTIONS(ObjArrayKlass)
-
 #endif // SHARE_OOPS_OBJARRAYKLASS_INLINE_HPP

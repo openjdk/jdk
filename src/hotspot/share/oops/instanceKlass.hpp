@@ -909,9 +909,6 @@ public:
     return static_cast<const InstanceKlass*>(k);
   }
 
-  DECLARE_EXACT_CAST_FUNCTIONS(InstanceKlass)
-  DECLARE_NARROW_KLASS_UTILITY_FUNCTIONS(InstanceKlass)
-
   virtual InstanceKlass* java_super() const {
     return (super() == nullptr) ? nullptr : cast(super());
   }

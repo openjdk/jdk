@@ -140,7 +140,7 @@ TEST_VM(arrayOopDesc, base_offset) {
 }
 
 TEST_VM(arrayOopDesc, nobranches_functions) {
-  int tmp[] alignas(uint64_t) = {
+  int tmp[] = {
       INT_MAX, INT_MAX - 1, INT_MAX - 2, INT_MAX - 3, INT_MAX - 4
   };
   const arrayOopDesc* const oop = (arrayOopDesc*)tmp;

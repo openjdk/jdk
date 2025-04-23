@@ -28,7 +28,6 @@
 #include "utilities/devirtualizer.hpp"
 
 #include "classfile/classLoaderData.hpp"
-#include "oops/compressedKlass.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "utilities/debug.hpp"
 

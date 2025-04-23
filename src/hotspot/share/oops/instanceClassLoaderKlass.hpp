@@ -72,10 +72,6 @@ public:
   // Iterate over the oop fields and metadata.
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute);
-
-  DECLARE_EXACT_CAST_FUNCTIONS(InstanceClassLoaderKlass)
-  DECLARE_NARROW_KLASS_UTILITY_FUNCTIONS(InstanceClassLoaderKlass)
-
 };
 
 #endif // SHARE_OOPS_INSTANCECLASSLOADERKLASS_HPP

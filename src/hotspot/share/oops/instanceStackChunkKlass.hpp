@@ -164,6 +164,7 @@ public:
 
 private:
 
+  // non-static (external iteration function just redirect to these)
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate(oop obj, OopClosureType* closure);
   template <typename T, class OopClosureType>
@@ -192,12 +193,6 @@ private:
   void do_methods(stackChunkOop chunk, OopIterateClosure* cl);
 
   void oop_oop_iterate_stack_slow(stackChunkOop chunk, OopIterateClosure* closure, MemRegion mr);
-
- public:
-
-  DECLARE_EXACT_CAST_FUNCTIONS(InstanceStackChunkKlass)
-  DECLARE_NARROW_KLASS_UTILITY_FUNCTIONS(InstanceStackChunkKlass)
-
 };
 
 #endif // SHARE_OOPS_INSTANCESTACKCHUNKKLASS_HPP

@@ -187,9 +187,5 @@ void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
     stream.print_contents_cr(discovered_addr);
   }
 }
-#endif
-
-DEFINE_EXACT_CAST_FUNCTIONS(InstanceRefKlass)
-DEFINE_NARROW_KLASS_UTILITY_FUNCTIONS(InstanceRefKlass)
-
+#endif // ASSERT
 #endif // SHARE_OOPS_INSTANCEREFKLASS_INLINE_HPP

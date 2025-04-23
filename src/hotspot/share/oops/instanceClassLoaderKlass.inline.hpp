@@ -77,8 +77,4 @@ inline void InstanceClassLoaderKlass::oop_oop_iterate_bounded(oop obj, OopClosur
   InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr, klute);
   oop_oop_iterate_metadata_bounded<T>(obj, closure, mr);
 }
-
-DEFINE_EXACT_CAST_FUNCTIONS(InstanceClassLoaderKlass)
-DEFINE_NARROW_KLASS_UTILITY_FUNCTIONS(InstanceClassLoaderKlass)
-
 #endif // SHARE_OOPS_INSTANCECLASSLOADERKLASS_INLINE_HPP

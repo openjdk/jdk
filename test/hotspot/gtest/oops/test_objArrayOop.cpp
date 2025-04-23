@@ -63,7 +63,7 @@ TEST_VM(objArrayOop, osize) {
 }
 
 TEST_VM(objArrayOop, nobranches_functions) {
-  int tmp[] alignas(uint64_t) = {
+  int tmp[] = {
       INT_MAX, INT_MAX - 1, INT_MAX - 2, INT_MAX - 3, INT_MAX - 4, INT_MAX - 5, INT_MAX - 6
   };
   objArrayOopDesc* const o = (objArrayOopDesc*)tmp;
