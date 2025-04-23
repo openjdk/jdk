@@ -29,15 +29,15 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/gcLocker.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
-#include "gc/shared/stringdedup/stringDedup.hpp"
+#include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/gcWhen.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/memAllocator.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -187,17 +187,6 @@ void CollectedHeap::print_heap_after_gc() {
 }
 
 void CollectedHeap::print() const { print_on(tty); }
-
-void CollectedHeap::print_on_error(outputStream* st) const {
-  st->print_cr("Heap:");
-  print_extended_on(st);
-  st->cr();
-
-  BarrierSet* bs = BarrierSet::barrier_set();
-  if (bs != nullptr) {
-    bs->print_on(st);
-  }
-}
 
 void CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
   const GCHeapSummary& heap_summary = create_heap_summary();

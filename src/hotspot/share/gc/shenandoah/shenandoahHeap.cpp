@@ -27,7 +27,6 @@
 
 #include "cds/archiveHeapWriter.hpp"
 #include "classfile/systemDictionary.hpp"
-
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcArguments.hpp"
@@ -37,24 +36,26 @@
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/tlab_globals.hpp"
-
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
+#include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
+#include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
-#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahInitLogger.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
@@ -73,18 +74,9 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
-#include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
-#include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
-#include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
-
-#if INCLUDE_JFR
-#include "gc/shenandoah/shenandoahJfrSupport.hpp"
-#endif
-
-#include "memory/allocation.hpp"
 #include "memory/allocation.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/memoryReserver.hpp"
@@ -103,9 +95,12 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/vmThread.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/events.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
+#if INCLUDE_JFR
+#include "gc/shenandoah/shenandoahJfrSupport.hpp"
+#endif
 
 class ShenandoahPretouchHeapTask : public WorkerTask {
 private:
@@ -424,8 +419,6 @@ jint ShenandoahHeap::initialize() {
       _affiliations[i] = ShenandoahAffiliation::FREE;
     }
 
-    // Initialize to complete
-    _marking_context->mark_complete();
     size_t young_cset_regions, old_cset_regions;
 
     // We are initializing free set.  We ignore cset region tallies.
@@ -647,6 +640,12 @@ void ShenandoahHeap::print_on(outputStream* st) const {
     st->cr();
     print_heap_regions_on(st);
   }
+}
+
+void ShenandoahHeap::print_on_error(outputStream* st) const {
+  print_on(st);
+  st->cr();
+  print_heap_regions_on(st);
 }
 
 class ShenandoahInitWorkerGCLABClosure : public ThreadClosure {
@@ -2580,12 +2579,6 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
     old_gen->heuristics()->evaluate_triggers(first_old_region, last_old_region, old_region_count, num_regions());
   }
-}
-
-void ShenandoahHeap::print_extended_on(outputStream *st) const {
-  print_on(st);
-  st->cr();
-  print_heap_regions_on(st);
 }
 
 bool ShenandoahHeap::is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self) {

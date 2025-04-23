@@ -35,16 +35,16 @@
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
-#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1GCCounters.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
-#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
+#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
@@ -91,8 +91,8 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/tlab_globals.hpp"
-#include "gc/shared/workerPolicy.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
+#include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/heapInspection.hpp"
@@ -2161,7 +2161,13 @@ void G1CollectedHeap::print_extended_on(outputStream* st) const {
 }
 
 void G1CollectedHeap::print_on_error(outputStream* st) const {
-  this->CollectedHeap::print_on_error(st);
+  print_extended_on(st);
+  st->cr();
+
+  BarrierSet* bs = BarrierSet::barrier_set();
+  if (bs != nullptr) {
+    bs->print_on(st);
+  }
 
   if (_cm != nullptr) {
     st->cr();

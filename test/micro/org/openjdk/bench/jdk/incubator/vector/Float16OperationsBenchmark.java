@@ -41,6 +41,8 @@ public class Float16OperationsBenchmark {
     short [] vector1;
     short [] vector2;
     short [] vector3;
+    short [] vector4;
+    short [] vector5;
     boolean [] vectorPredicate;
 
     static final short f16_one = Float.floatToFloat16(1.0f);
@@ -53,12 +55,19 @@ public class Float16OperationsBenchmark {
         vector1   = new short[vectorDim];
         vector2   = new short[vectorDim];
         vector3   = new short[vectorDim];
+        vector4   = new short[vectorDim];
+        vector5   = new short[vectorDim];
         vectorPredicate = new boolean[vectorDim];
 
         IntStream.range(0, vectorDim).forEach(i -> {vector1[i] = Float.floatToFloat16((float)i);});
         IntStream.range(0, vectorDim).forEach(i -> {vector2[i] = Float.floatToFloat16((float)i);});
         IntStream.range(0, vectorDim).forEach(i -> {vector3[i] = Float.floatToFloat16((float)i);});
-
+        IntStream.range(0, vectorDim).forEach(i -> {vector4[i] = ((i & 0x1) == 0) ?
+                                                                  float16ToRawShortBits(Float16.POSITIVE_INFINITY) :
+                                                                  Float.floatToFloat16((float)i);});
+        IntStream.range(0, vectorDim).forEach(i -> {vector5[i] = ((i & 0x1) == 0) ?
+                                                                  float16ToRawShortBits(Float16.NaN) :
+                                                                  Float.floatToFloat16((float)i);});
         // Special Values
         Float16 [] specialValues = {Float16.NaN, Float16.NEGATIVE_INFINITY, Float16.valueOf(0.0), Float16.valueOf(-0.0), Float16.POSITIVE_INFINITY};
         IntStream.range(0, vectorDim).forEach(
@@ -140,7 +149,7 @@ public class Float16OperationsBenchmark {
     @Benchmark
     public void isNaNStoreBenchmark() {
         for (int i = 0; i < vectorDim; i++) {
-            vectorPredicate[i] = Float16.isNaN(shortBitsToFloat16(vector1[i]));
+            vectorPredicate[i] = isNaN(shortBitsToFloat16(vector1[i]));
         }
     }
 
@@ -148,7 +157,7 @@ public class Float16OperationsBenchmark {
     @Benchmark
     public void isNaNCMovBenchmark() {
         for (int i = 0; i < vectorDim; i++) {
-            vectorRes[i] = Float16.isNaN(shortBitsToFloat16(vector1[i])) ? f16_one : f16_two;
+            vectorRes[i] = isNaN(shortBitsToFloat16(vector5[i])) ? vector1[i] : vector2[i];
         }
     }
 
@@ -156,7 +165,7 @@ public class Float16OperationsBenchmark {
     @Benchmark
     public void isInfiniteStoreBenchmark() {
         for (int i = 0; i < vectorDim; i++) {
-            vectorPredicate[i] = Float16.isInfinite(shortBitsToFloat16(vector1[i]));
+            vectorPredicate[i] = isInfinite(shortBitsToFloat16(vector1[i]));
         }
     }
 
@@ -164,7 +173,7 @@ public class Float16OperationsBenchmark {
     @Benchmark
     public void isInfiniteCMovBenchmark() {
         for (int i = 0; i < vectorDim; i++) {
-            vectorRes[i] = Float16.isInfinite(shortBitsToFloat16(vector1[i])) ? f16_one : f16_two;
+            vectorRes[i] = isInfinite(shortBitsToFloat16(vector4[i])) ? vector1[i] : vector2[i];
         }
     }
 
@@ -172,7 +181,7 @@ public class Float16OperationsBenchmark {
     @Benchmark
     public void isFiniteStoreBenchmark() {
         for (int i = 0; i < vectorDim; i++) {
-            vectorPredicate[i] = Float16.isFinite(shortBitsToFloat16(vector1[i]));
+            vectorPredicate[i] = isFinite(shortBitsToFloat16(vector1[i]));
         }
     }
 
@@ -180,7 +189,7 @@ public class Float16OperationsBenchmark {
     @Benchmark
     public void isFiniteCMovBenchmark() {
         for (int i = 0; i < vectorDim; i++) {
-            vectorRes[i] = Float16.isFinite(shortBitsToFloat16(vector1[i])) ? f16_one : f16_two;
+            vectorRes[i] = isFinite(shortBitsToFloat16(vector4[i])) ? vector1[i] : vector2[i];
         }
     }
 
@@ -292,5 +301,17 @@ public class Float16OperationsBenchmark {
             distRes = distRes + squareRes * squareRes;
         }
         return float16ToRawShortBits(sqrt(shortBitsToFloat16(floatToFloat16(distRes))));
+    }
+
+    @Benchmark
+    public short dotProductFP16() {
+        short distRes = floatToFloat16(0.0f);
+        for (int i = 0; i < vectorDim; i++) {
+            vectorRes[i] = float16ToRawShortBits(multiply(shortBitsToFloat16(vector1[i]), shortBitsToFloat16(vector2[i])));
+        }
+        for (int i = 0; i < vectorDim; i++) {
+            distRes = float16ToRawShortBits(add(shortBitsToFloat16(vectorRes[i]), shortBitsToFloat16(distRes)));
+        }
+        return distRes;
     }
 }

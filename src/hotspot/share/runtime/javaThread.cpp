@@ -423,8 +423,8 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _vframe_array_last(nullptr),
   _jvmti_deferred_updates(nullptr),
   _callee_target(nullptr),
-  _vm_result(nullptr),
-  _vm_result_2(nullptr),
+  _vm_result_oop(nullptr),
+  _vm_result_metadata(nullptr),
 
   _current_pending_monitor(nullptr),
   _current_pending_monitor_is_from_java(true),
@@ -450,6 +450,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _carrier_thread_suspended(false),
   _is_in_VTMS_transition(false),
   _is_disable_suspend(false),
+  _is_in_java_upcall(false),
   _VTMS_transition_mark(false),
   _on_monitor_waited_event(false),
   _contended_entered_monitor(nullptr),
@@ -1411,7 +1412,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
 
   // Traverse instance variables at the end since the GC may be moving things
   // around using this function
-  f->do_oop((oop*) &_vm_result);
+  f->do_oop((oop*) &_vm_result_oop);
   f->do_oop((oop*) &_exception_oop);
 #if INCLUDE_JVMCI
   f->do_oop((oop*) &_jvmci_reserved_oop0);
