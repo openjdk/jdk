@@ -683,10 +683,10 @@ public class Throwable implements Serializable {
      * @param s {@code PrintStream} to use for output
      */
     public void printStackTrace(PrintStream s) {
-        printStackTrace((Object) s);
+        printStackTrace0(s);
     }
 
-    private void printStackTrace(Object printer) {
+    private void printStackTrace0(Object printer) {
         // Guard against malicious overrides of Throwable.equals by
         // using a Set with identity equality semantics.
         Set<Throwable> dejaVu = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -773,7 +773,7 @@ public class Throwable implements Serializable {
      * @since   1.1
      */
     public void printStackTrace(PrintWriter s) {
-        printStackTrace((Object) s);
+        printStackTrace0(s);
     }
 
     /**
