@@ -1293,14 +1293,20 @@ public final class PassFailJFrame {
 
 
     /**
-     * Forcibly pass the test.
+     * Forcibly pass the test. This should be used in semi-automatic tests when
+     * the test determines that all the conditions for passing the test are met.
+     * This should not be used in cases where a resource is unavailable or a
+     * feature isn't supported, instead the test should
+     * throw jtreg.SkippedException.
+     *
      * <p>The sample usage:
      * <pre><code>
-     *      PrinterJob pj = PrinterJob.getPrinterJob();
-     *      if (pj == null || pj.getPrintService() == null) {
-     *          System.out.println(""Printer not configured or available.");
-     *          PassFailJFrame.forcePass();
-     *      }
+     *     String output = fd.getFile();
+     *     if ("input".equals(output)) {
+     *     PassFailJFrame.forcePass();
+     *     } else {
+     *     PassFailJFrame.forceFail("TEST FAILED (output file - " + output + ")");
+     *     }
      * </code></pre>
      */
     public static void forcePass() {
