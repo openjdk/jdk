@@ -683,7 +683,7 @@ public class Throwable implements Serializable {
      * @param s {@code PrintStream} to use for output
      */
     public void printStackTrace(PrintStream s) {
-        printStackTrace(s);
+        printStackTrace((Object) s);
     }
 
     private void printStackTrace(Object printer) {
@@ -773,7 +773,7 @@ public class Throwable implements Serializable {
      * @since   1.1
      */
     public void printStackTrace(PrintWriter s) {
-        printStackTrace(s);
+        printStackTrace((Object) s);
     }
 
     /**
