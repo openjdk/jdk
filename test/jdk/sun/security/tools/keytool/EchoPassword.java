@@ -30,10 +30,11 @@
  * @run main/manual/othervm EchoPassword
  */
 
-import javax.swing.*;
+import javax.swing.JEditorPane;
+import javax.swing.JLabel;
 import javax.swing.event.HyperlinkEvent;
 
-import java.awt.*;
+import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.io.File;
 
