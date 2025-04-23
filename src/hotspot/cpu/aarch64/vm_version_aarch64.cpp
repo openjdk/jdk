@@ -415,12 +415,23 @@ void VM_Version::initialize() {
   }
 
   if (_features & CPU_ASIMD) {
+      if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+          UseKyberIntrinsics = true;
+      }
+  } else if (UseKyberIntrinsics) {
+      if (!FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+          warning("Kyber intrinsics require ASIMD instructions");
+      }
+      FLAG_SET_DEFAULT(UseKyberIntrinsics, false);
+  }
+
+  if (_features & CPU_ASIMD) {
       if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
           UseDilithiumIntrinsics = true;
       }
   } else if (UseDilithiumIntrinsics) {
       if (!FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
-          warning("Dilithium intrinsic requires ASIMD instructions");
+          warning("Dilithium intrinsics require ASIMD instructions");
       }
       FLAG_SET_DEFAULT(UseDilithiumIntrinsics, false);
   }
@@ -703,6 +714,7 @@ void VM_Version::initialize_cpu_information(void) {
   get_compatible_board(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len);
   desc_len = (int)strlen(_cpu_desc);
   snprintf(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _features_string);
+  fprintf(stderr, "_features_string = \"%s\"", _features_string);
 
   _initialized = true;
 }

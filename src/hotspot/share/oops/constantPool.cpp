@@ -455,7 +455,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
     }
   }
 
-  if (CDSConfig::is_dumping_final_static_archive() && resolved_references() != nullptr) {
+  if (CDSConfig::is_dumping_final_static_archive() && CDSConfig::is_dumping_heap() && resolved_references() != nullptr) {
     objArrayOop scratch_references = oopFactory::new_objArray(vmClasses::Object_klass(), resolved_references()->length(), CHECK);
     HeapShared::add_scratch_resolved_references(this, scratch_references);
   }
@@ -476,9 +476,23 @@ void ConstantPool::remove_unshareable_info() {
     return;
   }
 
+  bool update_resolved_reference = true;
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
+    InstanceKlass* src_holder = src_cp->pool_holder();
+    if (src_holder->is_shared_unregistered_class()) {
+      // Unregistered classes are not loaded in the AOT assembly phase. The resolved reference length
+      // is already saved during the training run.
+      precond(!src_holder->is_loaded());
+      precond(resolved_reference_length() >= 0);
+      precond(resolved_references() == nullptr);
+      update_resolved_reference = false;
+    }
+  }
+
   // resolved_references(): remember its length. If it cannot be restored
   // from the archived heap objects at run time, we need to dynamically allocate it.
-  if (cache() != nullptr) {
+  if (update_resolved_reference && cache() != nullptr) {
     set_resolved_reference_length(
         resolved_references() != nullptr ? resolved_references()->length() : 0);
     set_resolved_references(OopHandle());

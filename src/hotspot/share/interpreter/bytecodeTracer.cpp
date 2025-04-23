@@ -178,6 +178,7 @@ class BytecodePrinter {
   }
 };
 
+#ifndef PRODUCT
 // We need a global instance to keep track of the states when the bytecodes
 // are executed. Access by multiple threads are controlled by ttyLocker.
 static BytecodePrinter _interpreter_printer;
@@ -193,6 +194,7 @@ void BytecodeTracer::trace_interpreter(const methodHandle& method, address bcp, 
     _interpreter_printer.trace(method, bcp, tos, tos2, st);
   }
 }
+#endif
 
 void BytecodeTracer::print_method_codes(const methodHandle& method, int from, int to, outputStream* st, int flags) {
   BytecodePrinter method_printer(flags);

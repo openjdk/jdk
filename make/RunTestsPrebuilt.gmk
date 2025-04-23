@@ -298,7 +298,7 @@ test-prebuilt:
 	@$(RM) -f $(MAKESUPPORT_OUTPUTDIR)/exit-with-error
         # We need to fill the FindTest cache before entering RunTests.gmk.
 	@cd $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) SPEC=$(SPEC) \
-	    -f RunTestsPrebuiltFindTests.gmk
+	    -f GenerateFindTests.gmk
 	@cd $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test \
 	    TEST="$(TEST)"
 

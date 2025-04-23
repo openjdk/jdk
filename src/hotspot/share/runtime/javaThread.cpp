@@ -236,8 +236,6 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
   // constructor calls Thread.current(), which must be set here.
   java_lang_Thread::set_thread(thread_oop(), this);
   set_threadOopHandles(thread_oop());
-  // Set the _monitor_owner_id to the next thread_id temporarily while initialization runs.
-  set_monitor_owner_id(ThreadIdentifier::next());
 
   JavaValue result(T_VOID);
   if (thread_name != nullptr) {
@@ -263,8 +261,6 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             Handle(),
                             CHECK);
   }
-  // Update the _monitor_owner_id with the tid value.
-  set_monitor_owner_id(java_lang_Thread::thread_id(thread_oop()));
 
   os::set_priority(this, NormPriority);
 
@@ -454,6 +450,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _carrier_thread_suspended(false),
   _is_in_VTMS_transition(false),
   _is_disable_suspend(false),
+  _is_in_java_upcall(false),
   _VTMS_transition_mark(false),
   _on_monitor_waited_event(false),
   _contended_entered_monitor(nullptr),

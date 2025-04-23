@@ -135,6 +135,8 @@ void ShenandoahControlThread::run_service() {
       // GC is starting, bump the internal ID
       update_gc_id();
 
+      GCIdMark gc_id_mark;
+
       heuristics->cancel_trigger_request();
 
       heap->reset_bytes_allocated_since_gc_start();
@@ -299,7 +301,6 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) return;
 
-  GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause, heap->global_generation());
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
@@ -343,7 +344,6 @@ void ShenandoahControlThread::stop_service() {
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause, heap->global_generation());
 
   ShenandoahFullGC gc;
@@ -353,7 +353,6 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause, heap->global_generation());
 
   ShenandoahDegenGC gc(point, heap->global_generation());

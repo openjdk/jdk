@@ -2383,6 +2383,105 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 
+  // Helper for generate_unsafe_setmemory
+  //
+  // Atomically fill an array of memory using 1-, 2-, 4-, or 8-byte chunks and return.
+  static void do_setmemory_atomic_loop(int elem_size, Register dest, Register size, Register byteVal,
+                                       MacroAssembler *_masm) {
+
+    Label L_Loop, L_Tail; // 2x unrolled loop
+
+    // Propagate byte to required width
+    if (elem_size > 1) __ rldimi(byteVal, byteVal,  8, 64 - 2 *  8);
+    if (elem_size > 2) __ rldimi(byteVal, byteVal, 16, 64 - 2 * 16);
+    if (elem_size > 4) __ rldimi(byteVal, byteVal, 32, 64 - 2 * 32);
+
+    __ srwi_(R0, size, exact_log2(2 * elem_size)); // size is a 32 bit value
+    __ beq(CR0, L_Tail);
+    __ mtctr(R0);
+
+    __ align(32); // loop alignment
+    __ bind(L_Loop);
+    __ store_sized_value(byteVal, 0, dest, elem_size);
+    __ store_sized_value(byteVal, elem_size, dest, elem_size);
+    __ addi(dest, dest, 2 * elem_size);
+    __ bdnz(L_Loop);
+
+    __ bind(L_Tail);
+    __ andi_(R0, size, elem_size);
+    __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CR0, Assembler::equal), Assembler::bhintbhBCLRisReturn);
+    __ store_sized_value(byteVal, 0, dest, elem_size);
+    __ blr();
+  }
+
+  //
+  //  Generate 'unsafe' set memory stub
+  //  Though just as safe as the other stubs, it takes an unscaled
+  //  size_t (# bytes) argument instead of an element count.
+  //
+  //  Input:
+  //    R3_ARG1   - destination array address
+  //    R4_ARG2   - byte count (size_t)
+  //    R5_ARG3   - byte value
+  //
+  address generate_unsafe_setmemory(address unsafe_byte_fill) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, StubGenStubId::unsafe_setmemory_id);
+    address start = __ function_entry();
+
+    // bump this on entry, not on exit:
+    // inc_counter_np(SharedRuntime::_unsafe_set_memory_ctr);
+
+    {
+      Label L_fill8Bytes, L_fill4Bytes, L_fillBytes;
+
+      const Register dest = R3_ARG1;
+      const Register size = R4_ARG2;
+      const Register byteVal = R5_ARG3;
+      const Register rScratch1 = R6;
+
+      // fill_to_memory_atomic(unsigned char*, unsigned long, unsigned char)
+
+      // Check for pointer & size alignment
+      __ orr(rScratch1, dest, size);
+
+      __ andi_(R0, rScratch1, 7);
+      __ beq(CR0, L_fill8Bytes);
+
+      __ andi_(R0, rScratch1, 3);
+      __ beq(CR0, L_fill4Bytes);
+
+      __ andi_(R0, rScratch1, 1);
+      __ bne(CR0, L_fillBytes);
+
+      // Mark remaining code as such which performs Unsafe accesses.
+      UnsafeMemoryAccessMark umam(this, true, false);
+
+      // At this point, we know the lower bit of size is zero and a
+      // multiple of 2
+      do_setmemory_atomic_loop(2, dest, size, byteVal, _masm);
+
+      __ align(32);
+      __ bind(L_fill8Bytes);
+      // At this point, we know the lower 3 bits of size are zero and a
+      // multiple of 8
+      do_setmemory_atomic_loop(8, dest, size, byteVal, _masm);
+
+      __ align(32);
+      __ bind(L_fill4Bytes);
+      // At this point, we know the lower 2 bits of size are zero and a
+      // multiple of 4
+      do_setmemory_atomic_loop(4, dest, size, byteVal, _masm);
+
+      __ align(32);
+      __ bind(L_fillBytes);
+      do_setmemory_atomic_loop(1, dest, size, byteVal, _masm);
+    }
+
+    return start;
+  }
+
+
   //
   //  Generate generic array copy stubs
   //
@@ -3207,6 +3306,7 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_arrayof_jshort_fill = generate_fill(StubGenStubId::arrayof_jshort_fill_id);
       StubRoutines::_arrayof_jint_fill   = generate_fill(StubGenStubId::arrayof_jint_fill_id);
     }
+    StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory(StubRoutines::_jbyte_fill);
 #endif
   }
 

@@ -59,7 +59,6 @@ public class TestAllocationFailure {
     }
 
     static class GCTestWithAllocationFailure {
-        private static byte[] garbage;
         private static byte[] largeObject;
         private static Object[] holder = new Object[200]; // Must be larger than G1GCAllocationFailureALotCount
 
@@ -70,7 +69,7 @@ public class TestAllocationFailure {
             // (Heap size is 32M, we use 17MB for the large object above)
             // which is larger than G1GCAllocationFailureALotInterval.
             for (int i = 0; i < 16 * 1024; i++) {
-                holder[i % holder.length] = new byte[1024];
+                holder[i % holder.length] = new Object[256];
             }
             System.out.println("Done");
         }

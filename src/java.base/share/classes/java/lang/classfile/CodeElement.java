@@ -27,6 +27,7 @@ package java.lang.classfile;
 import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.StackMapTableAttribute;
+import java.lang.classfile.attribute.UnknownAttribute;
 
 /**
  * Marker interface for a member element of a {@link CodeModel}.  Such an
@@ -49,5 +50,5 @@ import java.lang.classfile.attribute.StackMapTableAttribute;
 public sealed interface CodeElement extends ClassFileElement
         permits Instruction, PseudoInstruction,
                 CustomAttribute, RuntimeVisibleTypeAnnotationsAttribute, RuntimeInvisibleTypeAnnotationsAttribute,
-                StackMapTableAttribute {
+                StackMapTableAttribute, UnknownAttribute {
 }

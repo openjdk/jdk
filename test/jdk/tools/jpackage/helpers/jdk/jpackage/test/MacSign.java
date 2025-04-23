@@ -287,7 +287,7 @@ public final class MacSign {
             }
 
             public Builder addCert(CertificateRequest v) {
-                certs.add(v);
+                certs.add(Objects.requireNonNull(v));
                 return this;
             }
 

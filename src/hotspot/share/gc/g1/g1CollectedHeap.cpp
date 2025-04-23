@@ -2161,7 +2161,13 @@ void G1CollectedHeap::print_extended_on(outputStream* st) const {
 }
 
 void G1CollectedHeap::print_on_error(outputStream* st) const {
-  this->CollectedHeap::print_on_error(st);
+  print_extended_on(st);
+  st->cr();
+
+  BarrierSet* bs = BarrierSet::barrier_set();
+  if (bs != nullptr) {
+    bs->print_on(st);
+  }
 
   if (_cm != nullptr) {
     st->cr();

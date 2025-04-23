@@ -371,14 +371,6 @@ class LambdaForm {
         return create(arity, names, DEFAULT_RESULT, forceInline, DEFAULT_CUSTOMIZED, kind);
     }
 
-    private static LambdaForm createBlankForType(MethodType mt) {
-        // Make a dummy blank lambda form.
-        // It is used as a template for managing the invocation of similar forms that are non-empty.
-        // Called only from getPreparedForm.
-        LambdaForm form = new LambdaForm(0, 0, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, new Name[0], Kind.GENERIC);
-        return form;
-    }
-
     private static int fixResult(int result, Name[] names) {
         if (result == LAST_RESULT)
             result = names.length - 1;  // might still be void
@@ -785,14 +777,15 @@ class LambdaForm {
             return;
         }
         MethodType mtype = methodType();
-        LambdaForm prep = mtype.form().cachedLambdaForm(MethodTypeForm.LF_INTERPRET);
-        if (prep == null) {
+        MethodTypeForm form = mtype.form();
+
+        MemberName entry = form.cachedInterpretEntry();
+        if (entry == null) {
             assert (isValidSignature(basicTypeSignature()));
-            prep = LambdaForm.createBlankForType(mtype);
-            prep.vmentry = InvokerBytecodeGenerator.generateLambdaFormInterpreterEntryPoint(mtype);
-            prep = mtype.form().setCachedLambdaForm(MethodTypeForm.LF_INTERPRET, prep);
+            entry = InvokerBytecodeGenerator.generateLambdaFormInterpreterEntryPoint(mtype);
+            entry = form.setCachedInterpretEntry(entry);
         }
-        this.vmentry = prep.vmentry;
+        this.vmentry = entry;
         // TO DO: Maybe add invokeGeneric, invokeWithArguments
     }
 

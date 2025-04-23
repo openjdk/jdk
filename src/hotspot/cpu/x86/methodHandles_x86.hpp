@@ -62,5 +62,5 @@ public:
 
   static Register saved_last_sp_register() {
     // Should be in sharedRuntime, not here.
-    return LP64_ONLY(r13) NOT_LP64(rsi);
+    return r13;
   }

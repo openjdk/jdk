@@ -2381,12 +2381,6 @@ static bool verify_return_address(Method* m, int bci) {
   return false;
 }
 
-void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
-  if (VerifyFPU) {
-    unimplemented("verfiyFPU");
-  }
-}
-
 void InterpreterMacroAssembler::verify_oop_or_return_address(Register reg, Register Rtmp) {
   if (!VerifyOops) return;
 

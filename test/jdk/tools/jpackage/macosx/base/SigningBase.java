@@ -63,12 +63,33 @@ import jdk.jpackage.test.TKit;
 
 public class SigningBase {
 
-    enum StandardKeychain {
-        MAIN(DEFAULT_KEYCHAIN,
-                cert().userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()]).create(),
-                cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()]).create(),
-                cert().userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()]).create(),
-                cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()]).create());
+    public enum StandardCertificateRequest {
+        APP_IMAGE(cert().userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
+        INSTALLER(cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.ASCII_INDEX.value()])),
+        APP_IMAGE_UNICODE(cert().userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()])),
+        INSTALLER_UNICODE(cert().type(CertificateType.INSTALLER).userName(DEV_NAMES[CertIndex.UNICODE_INDEX.value()]));
+
+        StandardCertificateRequest(CertificateRequest.Builder specBuilder) {
+            this.spec = specBuilder.create();
+        }
+
+        public CertificateRequest spec() {
+            return spec;
+        }
+
+        private static CertificateRequest.Builder cert() {
+            return new CertificateRequest.Builder();
+        }
+
+        private final CertificateRequest spec;
+    }
+
+    public enum StandardKeychain {
+        MAIN(DEFAULT_KEYCHAIN, StandardCertificateRequest.values());
+
+        StandardKeychain(String keychainName, StandardCertificateRequest... certs) {
+            this(keychainName, certs[0].spec(), Stream.of(certs).skip(1).map(StandardCertificateRequest::spec).toArray(CertificateRequest[]::new));
+        }
 
         StandardKeychain(String keychainName, CertificateRequest cert, CertificateRequest... otherCerts) {
             final var builder = keychain(keychainName).addCert(cert);
@@ -76,7 +97,7 @@ public class SigningBase {
             this.spec = builder.create();
         }
 
-        KeychainWithCertsSpec spec() {
+        public KeychainWithCertsSpec spec() {
             return spec;
         }
 
@@ -92,7 +113,7 @@ public class SigningBase {
             return Stream.of(values()).map(StandardKeychain::spec).toList();
         }
 
-        final KeychainWithCertsSpec spec;
+        private final KeychainWithCertsSpec spec;
     }
 
     public static void setUp() {
