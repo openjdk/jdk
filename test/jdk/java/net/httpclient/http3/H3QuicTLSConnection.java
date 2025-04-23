@@ -88,11 +88,7 @@ public class H3QuicTLSConnection {
         // enable all logging
         System.setProperty("jdk.httpclient.HttpClient.log", "all,frames:all");
 
-        // initialize JSSE
-        //System.setProperty("javax.net.ssl.keyStore", KEYSTORE);
-        //System.setProperty("javax.net.ssl.keyStorePassword", PASSWORD);
-        //System.setProperty("javax.net.ssl.trustStore", KEYSTORE);
-        //System.setProperty("javax.net.ssl.trustStorePassword", PASSWORD);
+        // create and set the SSLContext
         SSLContext context = new SimpleSSLContext().get();
         SSLContext.setDefault(context);
 
