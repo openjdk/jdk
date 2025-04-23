@@ -23,9 +23,7 @@
 
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
-import jdk.test.lib.artifacts.ArtifactResolverException;
 import jdk.test.lib.json.JSONValue;
-import jtreg.SkippedException;
 
 import java.io.InputStream;
 import java.nio.file.Path;
