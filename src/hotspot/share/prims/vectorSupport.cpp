@@ -618,8 +618,8 @@ JVM_ENTRY(jstring, VectorSupport_GetCPUFeatures(JNIEnv* env, jclass ignored))
   const char* features_string = VM_Version::features_string();
   assert(features_string != nullptr, "missing cpu features info");
 
-  ThreadToNativeFromVM ttn(thread);
-  return env->NewStringUTF(features_string);
+  oop result = java_lang_String::create_oop_from_str(features_string, CHECK_NULL);
+  return (jstring) JNIHandles::make_local(THREAD, result);
 JVM_END
 
 // JVM_RegisterVectorSupportMethods
