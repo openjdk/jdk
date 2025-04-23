@@ -155,6 +155,8 @@ public:
   static Node* make_cast_for_type(Node* c, Node* in, const Type* type, const DependencyType& dependency,
                                   const TypeTuple* types);
 
+  bool follow_uses_until_pinned_accesses(PhaseIterGVN* igvn);
+
   Node* optimize_integer_cast_of_add(PhaseGVN* phase, BasicType bt);
   Node* optimize_integer_cast(PhaseGVN* phase, BasicType bt);
 

@@ -333,7 +333,8 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       const TypeLong* t_in_l = t_in->is_long();
       if (tl->_lo > t_in_l->_lo || tl->_hi < t_in_l->_hi) {
         const TypeInt* ti = TypeInt::make(checked_cast<jint>(tl->_lo), checked_cast<jint>(tl->_hi), tl->_widen);
-        Node* castii = phase->transform(new CastIINode(in(0), in1->in(1), ti));
+        assert(_extra_types == nullptr, "");
+        Node* castii = phase->transform(new CastIINode(in(0), in1->in(1), ti, _dependency));
         Node* convi2l = in1->clone();
         convi2l->set_req(1, castii);
         return convi2l;
@@ -484,6 +485,52 @@ Node* ConstraintCastNode::make_cast_for_type(Node* c, Node* in, const Type* type
   return nullptr;
 }
 
+bool ConstraintCastNode::follow_uses_until_pinned_accesses(PhaseIterGVN* igvn) {
+  ResourceMark rm;
+  Unique_Node_List wq;
+  wq.push(this);
+  for (uint i = 0; i < wq.size(); ++i) {
+    Node* n = wq.at(i);
+    for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+      Node* u = n->fast_out(j);
+      if (u->in(0) == nullptr) {
+        int opcode = u->Opcode();
+        // A node that can fault
+        if (u->is_Load() ||
+            opcode == Op_DivI ||
+            opcode == Op_DivL ||
+            opcode == Op_ModI ||
+            opcode == Op_ModL ||
+            opcode == Op_UModI ||
+            opcode == Op_UModL) {
+          return false;
+        }
+        wq.push(u);
+      } else if (u->is_CallStaticJava() && u->as_CallStaticJava()->is_uncommon_trap()) {
+        // ignore uncommon traps
+      } else {
+        if (!igvn->is_dominator(in(0), u->in(0))) {
+          return false;
+        }
+        if (!u->is_Mem()) {
+          return false;
+        }
+        if (!wq.member(u->in(MemNode::Address))) {
+          assert(!u->is_Load(), "");
+          return false;
+        }
+        if (u->depends_only_on_test()) {
+          return false;
+        }
+      }
+    }
+    if (wq.size() > 10) {
+      return false;
+    }
+  }
+  return true;
+}
+
 Node* ConstraintCastNode::optimize_integer_cast_of_add(PhaseGVN* phase, BasicType bt) {
   PhaseIterGVN *igvn = phase->is_IterGVN();
   const TypeInteger* this_type = this->type()->is_integer(bt);
@@ -505,21 +552,29 @@ Node* ConstraintCastNode::optimize_integer_cast_of_add(PhaseGVN* phase, BasicTyp
     const TypeInteger* tx = phase->type(x)->is_integer(bt);
     const TypeInteger* ty = phase->type(y)->is_integer(bt);
 
+    bool only_used_by_pinned_access = false;
     if (!tx->is_con() && !ty->is_con() && !igvn->C->widen_types_phase()) {
-      phase->C->record_for_widen_types_igvn(this);
-      return nullptr;
+      only_used_by_pinned_access = follow_uses_until_pinned_accesses(igvn);
+      if (!only_used_by_pinned_access) {
+        phase->C->record_for_widen_types_igvn(this);
+        return nullptr;
+      }
     }
 
     // If both inputs are not constant then, with the Cast pushed through the Add/Sub, the cast gets less precised types,
     // and the resulting Add/Sub's type is wider than that of the Cast before pushing.
-    const DependencyType& dependency = (!tx->is_con() && !ty->is_con()) ? _dependency.widen_type_dependency() : _dependency;
+    const DependencyType& dependency = (!tx->is_con() && !ty->is_con() && !only_used_by_pinned_access) ? _dependency.widen_type_dependency() : _dependency;
     Node* cx = find_or_make_integer_cast(igvn, x, rx, dependency);
     Node* cy = find_or_make_integer_cast(igvn, y, ry, dependency);
     if (op == Op_Add(bt)) {
-      return AddNode::make(cx, cy, bt);
+      Node* res = AddNode::make(cx, cy, bt);
+      assert(res->Value(phase) == Value(phase) || !tx->is_con() || !ty->is_con() || igvn->_worklist.member(z), "type widening");
+      return res;
     } else {
       assert(op == Op_Sub(bt), "");
-      return SubNode::make(cx, cy, bt);
+      Node* res = SubNode::make(cx, cy, bt);
+      assert(res->Value(phase) == Value(phase) || !tx->is_con() || !ty->is_con() || igvn->_worklist.member(z), "type widening");
+      return res;
     }
     return nullptr;
   }
