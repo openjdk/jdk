@@ -35,15 +35,15 @@ source %{
 #include "gc/z/zBarrierSetAssembler.hpp"
 
 static void z_color(MacroAssembler* masm, const MachNode* node, Register ref) {
-  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
   __ shlq(ref, barrier_Relocation::unpatched);
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodAfterShX);
   __ orq_imm32(ref, barrier_Relocation::unpatched);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterOr);
 }
 
 static void z_uncolor(MacroAssembler* masm, const MachNode* node, Register ref) {
-  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
   __ shrq(ref, barrier_Relocation::unpatched);
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodAfterShX);
 }
 
 static void z_keep_alive_load_barrier(MacroAssembler* masm, const MachNode* node, Address ref_addr, Register ref) {
