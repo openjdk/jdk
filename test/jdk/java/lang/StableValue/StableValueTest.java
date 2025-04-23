@@ -69,7 +69,7 @@ final class StableValueTest {
         assertFalse(stable.trySet(VALUE2));
         var e = assertThrows(IllegalStateException.class, () -> stable.setOrThrow(VALUE2));
         assertEquals(
-                "The content is already set",
+                "The contents is already set",
                 e.getMessage());
     }
 
@@ -87,7 +87,7 @@ final class StableValueTest {
         StableValue<Integer> stable = StableValue.of();
         stable.setOrThrow(VALUE);
         var e = assertThrows(IllegalStateException.class, () -> stable.setOrThrow(VALUE2));
-        assertEquals("The content is already set", e.getMessage());
+        assertEquals("The contents is already set", e.getMessage());
     }
 
     @Test
@@ -95,7 +95,7 @@ final class StableValueTest {
         StableValue<Integer> stable = StableValue.of();
         stable.setOrThrow(null);
         var e = assertThrows(IllegalStateException.class, () -> stable.setOrThrow(null));
-        assertEquals("The content is already set", e.getMessage());
+        assertEquals("The contents is already set", e.getMessage());
     }
 
     @Test
@@ -111,7 +111,7 @@ final class StableValueTest {
     void orElseThrow() {
         StableValue<Integer> stable = StableValue.of();
         var e = assertThrows(NoSuchElementException.class, stable::orElseThrow);
-        assertEquals("No content set", e.getMessage());
+        assertEquals("No contents set", e.getMessage());
         stable.trySet(VALUE);
         assertEquals(VALUE, stable.orElseThrow());
     }

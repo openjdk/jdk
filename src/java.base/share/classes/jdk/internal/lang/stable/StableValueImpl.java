@@ -40,7 +40,7 @@ import java.util.function.Supplier;
  * @implNote This implementation can be used early in the boot sequence as it does not
  *           rely on reflection, MethodHandles, Streams etc.
  *
- * @param <T> type of the content
+ * @param <T> type of the contents
  */
 public final class StableValueImpl<T> implements StableValue<T> {
 
@@ -50,9 +50,9 @@ public final class StableValueImpl<T> implements StableValue<T> {
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     // Unsafe offsets for direct field access
-    private static final long CONTENT_OFFSET =
-            UNSAFE.objectFieldOffset(StableValueImpl.class, "content");
 
+    private static final long CONTENT_OFFSET =
+            UNSAFE.objectFieldOffset(StableValueImpl.class, "contents");
     // Used to indicate a holder value is `null` (see field `value` below)
     // A wrapper method `nullSentinel()` is used for generic type conversion.
     private static final Object NULL_SENTINEL = new Object();
@@ -69,14 +69,14 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // | other          |  Set(other)   |
     //
     @Stable
-    private Object content;
+    private Object contents;
 
     // Only allow creation via the factory `StableValueImpl::newInstance`
     private StableValueImpl() {}
 
     @ForceInline
     @Override
-    public boolean trySet(T content) {
+    public boolean trySet(T contents) {
         if (wrappedContentAcquire() != null) {
             return false;
         }
@@ -85,17 +85,17 @@ public final class StableValueImpl<T> implements StableValue<T> {
         // Mutual exclusion is required here as `orElseSet` might also
         // attempt to modify the `wrappedValue`
         synchronized (this) {
-            return wrapAndSet(content);
+            return wrapAndSet(contents);
         }
     }
 
     @ForceInline
     @Override
-    public void setOrThrow(T content) {
-        if (!trySet(content)) {
-            // Neither the set content nor the provided content is revealed in the
+    public void setOrThrow(T contents) {
+        if (!trySet(contents)) {
+            // Neither the set contents nor the provided contents is revealed in the
             // exception message as it might be sensitive.
-            throw new IllegalStateException("The content is already set");
+            throw new IllegalStateException("The contents is already set");
         }
     }
 
@@ -104,7 +104,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     public T orElseThrow() {
         final Object t = wrappedContentAcquire();
         if (t == null) {
-            throw new NoSuchElementException("No content set");
+            throw new NoSuchElementException("No contents set");
         }
         return unwrap(t);
     }
@@ -134,7 +134,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     private T orElseSetSlowPath(Supplier<? extends T> supplier) {
         preventReentry();
         synchronized (this) {
-            final Object t = content;  // Plain semantics suffice here
+            final Object t = contents;  // Plain semantics suffice here
             if (t == null) {
                 final T newValue = supplier.get();
                 // The mutex is not reentrant so we know newValue should be returned
@@ -168,6 +168,8 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     // Private methods
 
+    // This method is not annotated with @ForceInline as it is always called
+    // in a slow path.
     private void preventReentry() {
         if (Thread.holdsLock(this)) {
             throw new IllegalStateException("Recursive initialization of a stable value is illegal");
@@ -175,18 +177,18 @@ public final class StableValueImpl<T> implements StableValue<T> {
     }
 
     /**
-     * Wraps the provided {@code newValue} and tries to set the content.
+     * Wraps the provided {@code newValue} and tries to set the contents.
      * <p>
      * This method ensures the {@link Stable} field is written to at most once.
      *
      * @param newValue to wrap and set
-     * @return if the content was set
+     * @return if the contents was set
      */
     @ForceInline
     private boolean wrapAndSet(Object newValue) {
         assert Thread.holdsLock(this);
         // We know we hold the monitor here so plain semantic is enough
-        if (content == null) {
+        if (contents == null) {
             UNSAFE.putReferenceRelease(this, CONTENT_OFFSET, wrap(newValue));
             return true;
         }

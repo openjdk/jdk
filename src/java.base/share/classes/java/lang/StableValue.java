@@ -48,27 +48,27 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A stable value is a holder of content that can be set at most once.
+ * A stable value is a holder of contents that can be set at most once.
  * <p>
  * A {@code StableValue<T>} is typically created using the factory method
  * {@linkplain StableValue#of() {@code StableValue.of()}}. When created this way,
- * the stable value is <em>unset</em>, which means it holds no <em>content</em>.
- * Its content, of type {@code T}, can be <em>set</em> by calling
+ * the stable value is <em>unset</em>, which means it holds no <em>contents</em>.
+ * Its contents, of type {@code T}, can be <em>set</em> by calling
  * {@linkplain #trySet(Object) trySet()}, {@linkplain #setOrThrow(Object) setOrThrow()},
- * or {@linkplain #orElseSet(Supplier) orElseSet()}. Once set, the content
+ * or {@linkplain #orElseSet(Supplier) orElseSet()}. Once set, the contents
  * can never change and can be retrieved by calling {@linkplain #orElseThrow() orElseThrow()}
  * , {@linkplain #orElse(Object) orElse()}, or {@linkplain #orElseSet(Supplier) orElseSet()}.
  * <p>
  * Consider the following example where a stable value field "{@code logger}" is a
- * shallowly immutable holder of content of type {@code Logger} and that is initially
- * created as <em>unset</em>, which means it holds no content. Later in the example, the
+ * shallowly immutable holder of contents of type {@code Logger} and that is initially
+ * created as <em>unset</em>, which means it holds no contents. Later in the example, the
  * state of the "{@code logger}" field is checked and if it is still <em>unset</em>,
- * the content is <em>set</em>:
+ * the contents is <em>set</em>:
  *
  * {@snippet lang = java:
  * public class Component {
  *
- *    // Creates a new unset stable value with no content
+ *    // Creates a new unset stable value with no contents
  *    // @link substring="of" target="#of" :
  *    private final StableValue<Logger> logger = StableValue.of();
  *
@@ -87,19 +87,19 @@ import java.util.function.Supplier;
  *}
  * <p>
  * If {@code getLogger()} is called from several threads, several instances of
- * {@code Logger} might be created. However, the content can only be set at most once
+ * {@code Logger} might be created. However, the contents can only be set at most once
  * meaning the first writer wins.
  * <p>
  * In order to guarantee that, even under races, only one instance of {@code Logger} is
  * ever created, the {@linkplain #orElseSet(Supplier) orElseSet()} method can be used
- * instead, where the content is lazily computed, and atomically set, via a
+ * instead, where the contents are lazily computed, and atomically set, via a
  * {@linkplain Supplier supplier}. In the example below, the supplier is provided in the
  * form of a lambda expression:
  *
  * {@snippet lang = java:
  * public class Component {
  *
- *    // Creates a new unset stable value with no content
+ *    // Creates a new unset stable value with no contents
  *    // @link substring="of" target="#of" :
  *    private final StableValue<Logger> logger = StableValue.of();
  *
@@ -115,13 +115,13 @@ import java.util.function.Supplier;
  *}
  * <p>
  * The {@code getLogger()} method calls {@code logger.orElseSet()} on the stable value to
- * retrieve its content. If the stable value is <em>unset</em>, then {@code orElseSet()}
- * evaluates the given supplier, and sets the content to the result; the content is then
+ * retrieve its contents. If the stable value is <em>unset</em>, then {@code orElseSet()}
+ * evaluates the given supplier, and sets the contents to the result; the contents is then
  * returned to the client. In other words, {@code orElseSet()} guarantees that a
- * stable value's content is <em>set</em> before it returns.
+ * stable value's contents is <em>set</em> before it returns.
  * <p>
  * Furthermore, {@code orElseSet()} guarantees that out of one or more suppliers provided,
- * only at most one is ever evaluated and that one is only ever evaluated once,
+ * only at most one is ever evaluated, and that one is only ever evaluated once,
  * even when {@code logger.orElseSet()} is invoked concurrently. This property is crucial
  * as evaluation of the supplier may have side effects, for example, the call above to
  * {@code Logger.create()} may result in storage resources being prepared.
@@ -359,9 +359,9 @@ import java.util.function.Supplier;
  * a circularity.
  *
  * <h2 id="thread-safety">Thread Safety</h2>
- * The content of a stable value is guaranteed to be set at most once. If competing
- * threads are racing to set a stable value, only one update succeeds, while other updates
- * are blocked until the stable value becomes set whereafter the other updates
+ * The contents of a stable value is guaranteed to be set at most once. If competing
+ * threads are racing to set a stable value, only one update succeeds, while the other
+ * updates are blocked until the stable value is set, whereafter the other updates
  * observes the stable value is set and leave the stable value unchanged.
  * <p>
  * The at-most-once write operation on a stable value that succeeds
@@ -383,9 +383,9 @@ import java.util.function.Supplier;
  * </ul>
  * <p>
  * The method {@link #orElseSet(Supplier)} guarantees that the provided
- * {@linkplain Supplier} is invoked successfully at most once even under race.
+ * {@linkplain Supplier} is invoked successfully at most once, even under race.
  * Invocations of {@link #setOrThrow(Object)} form a total order of zero or more
- * exceptional invocations followed by zero (if the content was already set) or one
+ * exceptional invocations followed by zero (if the contents were already set) or one
  * successful invocation. Since stable functions and stable collections are built on top
  * of the same principles as {@linkplain StableValue#orElseSet(Supplier) orElseSet()} they
  * too are thread safe and guarantee at-most-once-per-input invocation.
@@ -393,7 +393,7 @@ import java.util.function.Supplier;
  * <h2 id="performance">Performance</h2>
  * As the contents of a stable value can never change after it has been set, a JVM
  * implementation may, for a set stable value, elide all future reads of that
- * stable value, and instead directly use any content that it has previously observed.
+ * stable value, and instead directly use any contents that it has previously observed.
  * This is true if the reference to the stable value is a constant (e.g. in cases where
  * the stable value itself is stored in a {@code static final} field). Stable functions
  * and collections are built on top of StableValue. As such, they might also be eligible
@@ -403,7 +403,7 @@ import java.util.function.Supplier;
  *           {@code this} and consequently, it should be avoided to
  *           (directly or indirectly) synchronize on a {@code StableValue}. Hence,
  *           synchronizing on {@code this} may lead to deadlock.
- *           Except for a {@code StableValue}'s content itself,
+ *           Except for a {@code StableValue}'s contents itself,
  *           an {@linkplain #orElse(Object) orElse(other)} parameter, and
  *           an {@linkplain #equals(Object) equals(obj)} parameter; all
  *           method parameters must be <em>non-null</em> or a {@link NullPointerException}
@@ -417,10 +417,10 @@ import java.util.function.Supplier;
  *           of the internal stable values when called.
  *           Stable collections have {@link Object#equals(Object)} operations that try
  *           to minimize evaluation of the internal stable values when called.
- *           As objects can be set via stable values but never removed, this can be a source
- *           of unintended memory leaks. A stable value's content is
+ *           As objects can be set via stable values but never removed, this can be a
+ *           source of unintended memory leaks. A stable value's contents are
  *           {@linkplain java.lang.ref##reachability strongly reachable}.
- *           Be advised that reachable stable values will hold their set content until
+ *           Be advised that reachable stable values will hold their set contents until
  *           the stable value itself is collected.
  *           A {@code StableValue} that has a type parameter {@code T} that is an array
  *           type (of arbitrary rank) will only allow the JVM to treat the
@@ -430,9 +430,9 @@ import java.util.function.Supplier;
  *           stable value can hold other stable values of arbitrary depth and still
  *           provide transitive constantness.
  *
- * @implNote Stable values, functions and collections are not {@link Serializable}.
+ * @implNote Stable values, functions, and collections are not {@link Serializable}.
  *
- * @param <T> type of the content
+ * @param <T> type of the contents
  *
  * @since 25
  */
@@ -443,42 +443,43 @@ public sealed interface StableValue<T>
     // Principal methods
 
     /**
-     * Tries to set the content of this StableValue to the provided {@code content}. The
-     * content of this StableValue can only be set once, implying this method only returns
-     * {@code true} once.
+     * Tries to set the contents of this StableValue to the provided {@code contents}.
+     * The contents of this StableValue can only be set once, implying this method only
+     * returns {@code true} once.
      * <p>
-     * When this method returns, the content of this StableValue is always set.
+     * When this method returns, the contents of this StableValue is always set.
      *
-     * @return {@code true} if the content of this StableValue was set to the
-     *         provided {@code content}, {@code false} otherwise
-     * @param content to set
+     * @return {@code true} if the contents of this StableValue was set to the
+     *         provided {@code contents}, {@code false} otherwise
+     * @param contents to set
      * @throws IllegalStateException if a supplier invoked by {@link #orElseSet(Supplier)}
-     *         recursively attempts to set this stable value by calling this method.
+     *         recursively attempts to set this stable value by calling this method
+     *         directly or indirectly.
      */
-    boolean trySet(T content);
+    boolean trySet(T contents);
 
     /**
-     * {@return the content if set, otherwise, returns the provided {@code other} value}
+     * {@return the contents if set, otherwise, returns the provided {@code other} value}
      *
-     * @param other to return if the content is not set
+     * @param other to return if the contents is not set
      */
     T orElse(T other);
 
     /**
-     * {@return the content if set, otherwise, throws {@code NoSuchElementException}}
+     * {@return the contents if set, otherwise, throws {@code NoSuchElementException}}
      *
-     * @throws NoSuchElementException if no content is set
+     * @throws NoSuchElementException if no contents is set
      */
     T orElseThrow();
 
     /**
-     * {@return {@code true} if the content is set, {@code false} otherwise}
+     * {@return {@code true} if the contents is set, {@code false} otherwise}
      */
     boolean isSet();
 
     /**
-     * {@return the content; if unset, first attempts to compute and set the
-     *          content using the provided {@code supplier}}
+     * {@return the contents; if unset, first attempts to compute and set the
+     *          contents using the provided {@code supplier}}
      * <p>
      * The provided {@code supplier} is guaranteed to be invoked at most once if it
      * completes without throwing an exception. If this method is invoked several times
@@ -486,19 +487,19 @@ public sealed interface StableValue<T>
      * without throwing an exception.
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is rethrown and no
-     * content is set. The most common usage is to construct a new object serving
+     * contents is set. The most common usage is to construct a new object serving
      * as a lazily computed value or memoized result, as in:
      *
      * {@snippet lang=java:
      * Value v = stable.orElseSet(Value::new);
      * }
      * <p>
-     * When this method returns successfully, the content is always set.
+     * When this method returns successfully, the contents is always set.
      * <p>
      * The provided {@code supplier} will only be invoked once even if invoked from
      * several threads unless the {@code supplier} throws an exception.
      *
-     * @param  supplier to be used for computing the content, if not previously set
+     * @param  supplier to be used for computing the contents, if not previously set
      * @throws IllegalStateException if the provided {@code supplier} recursively
      *                               attempts to set this stable value.
      */
@@ -507,15 +508,15 @@ public sealed interface StableValue<T>
     // Convenience methods
 
     /**
-     * Sets the content of this StableValue to the provided {@code content}, or, if
+     * Sets the contents of this StableValue to the provided {@code contents}, or, if
      * already set, throws {@code IllegalStateException}.
      * <p>
-     * When this method returns (or throws an exception), the content is always set.
+     * When this method returns (or throws an exception), the contents is always set.
      *
-     * @param content to set
-     * @throws IllegalStateException if the content was already set
+     * @param contents to set
+     * @throws IllegalStateException if the contents was already set
      */
-    void setOrThrow(T content);
+    void setOrThrow(T contents);
 
     // Object methods
 
@@ -537,23 +538,23 @@ public sealed interface StableValue<T>
     /**
      * {@return a new unset stable value}
      * <p>
-     * An unset stable value has no content.
+     * An unset stable value has no contents.
      *
-     * @param <T> type of the content
+     * @param <T> type of the contents
      */
     static <T> StableValue<T> of() {
         return StableValueImpl.of();
     }
 
     /**
-     * {@return a new pre-set stable value with the provided {@code content}}
+     * {@return a new pre-set stable value with the provided {@code contents}}
      *
-     * @param content to set
-     * @param <T>     type of the content
+     * @param contents to set
+     * @param <T>     type of the contents
      */
-    static <T> StableValue<T> of(T content) {
+    static <T> StableValue<T> of(T contents) {
         final StableValue<T> stableValue = StableValue.of();
-        stableValue.trySet(content);
+        stableValue.trySet(contents);
         return stableValue;
     }
 
@@ -572,7 +573,7 @@ public sealed interface StableValue<T>
      * computed value (if any) and will then never execute.
      * <p>
      * If the provided {@code underlying} supplier throws an exception, it is rethrown
-     * to the initial caller and no content is recorded.
+     * to the initial caller and no contents is recorded.
      * <p>
      * If the provided {@code underlying} supplier recursively calls the returned
      * supplier, an {@linkplain IllegalStateException} will be thrown.
@@ -603,7 +604,7 @@ public sealed interface StableValue<T>
      * the computing thread.
      * <p>
      * If invoking the provided {@code underlying} function throws an exception, it is
-     * rethrown to the initial caller and no content is recorded.
+     * rethrown to the initial caller and no contents is recorded.
      * <p>
      * If the provided {@code underlying} function recursively calls the returned
      * function for the same input, an {@linkplain IllegalStateException} will
@@ -639,7 +640,7 @@ public sealed interface StableValue<T>
      * computed or an exception is thrown by the computing thread.
      * <p>
      * If invoking the provided {@code underlying} function throws an exception, it is
-     * rethrown to the initial caller and no content is recorded.
+     * rethrown to the initial caller and no contents is recorded.
      * <p>
      * If the provided {@code underlying} function recursively calls the returned
      * function for the same input, an {@linkplain IllegalStateException} will

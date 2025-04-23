@@ -90,7 +90,7 @@ final class TrustedFieldTypeTest {
         stableValue.trySet(42);
         jdk.internal.misc.Unsafe unsafe = Unsafe.getUnsafe();
 
-        long offset = unsafe.objectFieldOffset(stableValue.getClass(), "content");
+        long offset = unsafe.objectFieldOffset(stableValue.getClass(), "contents");
         assertTrue(offset > 0);
 
         // Unfortunately, it is possible to update the underlying data via jdk.internal.misc.Unsafe
@@ -104,7 +104,7 @@ final class TrustedFieldTypeTest {
 
         if (Boolean.getBoolean("opens")) {
             // Unfortunately, add-opens allows direct access to the `value` field
-            Field field = StableValueImpl.class.getDeclaredField("content");
+            Field field = StableValueImpl.class.getDeclaredField("contents");
             field.setAccessible(true);
 
             StableValue<Integer> stableValue = StableValue.of();
@@ -116,7 +116,7 @@ final class TrustedFieldTypeTest {
             field.set(stableValue, 13);
             assertEquals(13, stableValue.orElseThrow());
         } else {
-            Field field = StableValueImpl.class.getDeclaredField("content");
+            Field field = StableValueImpl.class.getDeclaredField("contents");
             assertThrows(InaccessibleObjectException.class, ()-> field.setAccessible(true));
         }
     }
