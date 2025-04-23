@@ -45,15 +45,7 @@ public sealed interface BufferStack {
             return tl.get().pushFrame(size, byteAlignment);
         }
 
-        private static final class PerThread {
-            private final ReentrantLock lock = new ReentrantLock();
-            private final SlicingAllocator stack;
-            private final Arena arena;
-
-            public PerThread(long size) {
-                this.arena = Arena.ofAuto();
-                this.stack = new SlicingAllocator(arena.allocate(size));
-            }
+        private record PerThread(ReentrantLock lock, SlicingAllocator stack, Arena arena) {
 
             @ForceInline
             public Arena pushFrame(long size, long byteAlignment) {
@@ -66,8 +58,13 @@ public sealed interface BufferStack {
                     if (needsLock) lock.unlock();
                     return Arena.ofConfined();
                 }
-
                 return new Frame(needsLock, size, byteAlignment);
+            }
+
+            static PerThread of(long size) {
+                final Arena arena = Arena.ofAuto();
+                final SlicingAllocator stack = new SlicingAllocator(arena.allocate(size));
+                return new PerThread(new ReentrantLock(), stack, arena);
             }
 
             private final class Frame implements Arena {
@@ -78,20 +75,22 @@ public sealed interface BufferStack {
                 private final SegmentAllocator frame;
 
                 @SuppressWarnings("restricted")
+                @ForceInline
                 public Frame(boolean locked, long byteSize, long byteAlignment) {
                     this.locked = locked;
-
                     parentOffset = stack.currentOffset();
                     MemorySegment frameSegment = stack.allocate(byteSize, byteAlignment);
                     topOfStack = stack.currentOffset();
                     frame = new SlicingAllocator(frameSegment.reinterpret(scope, null));
                 }
 
+                @ForceInline
                 private void assertOrder() {
                     if (topOfStack != stack.currentOffset())
                         throw new IllegalStateException("Out of order access: frame not top-of-stack");
                 }
 
+                @ForceInline
                 @Override
                 @SuppressWarnings("restricted")
                 public MemorySegment allocate(long byteSize, long byteAlignment) {
@@ -103,6 +102,7 @@ public sealed interface BufferStack {
                     return scope.scope();
                 }
 
+                @ForceInline
                 @Override
                 public void close() {
                     assertOrder();
@@ -121,7 +121,7 @@ public sealed interface BufferStack {
         return new BufferStackImpl(size, new CarrierThreadLocal<>() {
             @Override
             protected BufferStackImpl.PerThread initialValue() {
-                return new BufferStackImpl.PerThread(size);
+                return BufferStackImpl.PerThread.of(size);
             }
         });
     }
