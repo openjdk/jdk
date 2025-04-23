@@ -28,6 +28,7 @@
  *          IOException if there is no clipboard owner or the owner doesn't
  *          export any target types
  * @key headful
+ * @library /test/lib
  * @run main NoOwnerNoTargetsTest
  */
 
@@ -38,12 +39,11 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class NoOwnerNoTargetsTest implements ClipboardOwner {
 
@@ -95,44 +95,22 @@ public class NoOwnerNoTargetsTest implements ClipboardOwner {
     public void start() throws Exception {
         clipboard.getContents(null);
 
-        String javaPath = System.getProperty("java.home", "");
-
         Transferable transferable = new StringSelection("TEXT");
         clipboard.setContents(transferable, this);
 
-        Process process = new ProcessBuilder(
-                javaPath + File.separator + "bin" + File.separator + "java",
-                "-cp", System.getProperty("test.classes", "."),
-                "NoOwnerNoTargetsTest", "child"
-        ).start();
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                NoOwnerNoTargetsTest.class.getName(),
+                "child"
+        );
 
-        ProcessResults pres = ProcessResults.doWaitFor(process, 15);
-        System.out.println("Child returned: " + pres.exitValue);
+        Process process = ProcessTools.startProcess("Child", pb);
+        OutputAnalyzer outputAnalyzer = new OutputAnalyzer(process);
 
-        InputStream errorStream = process.getErrorStream();
-        System.err.println("========= Child process stderr ========");
-        try {
-            dumpStream(errorStream, System.err);
-            System.err.println("=======================================");
-        } catch (IOException ioe) {
-            System.err.println("=======================================");
-            ioe.printStackTrace();
+        if (!process.waitFor(15, TimeUnit.SECONDS)) {
+            throw new TimeoutException("Timed out waiting for Child");
         }
 
-        InputStream outputStream = process.getInputStream();
-        System.out.println("========= Child process stdout ========");
-        try {
-            dumpStream(outputStream, System.out);
-            System.out.println("=======================================");
-        } catch (IOException ioe) {
-            System.out.println("=======================================");
-            ioe.printStackTrace();
-        }
-
-        if (pres.exitValue != 0) {
-            throw new RuntimeException("Child process returned non-zero exit value "
-                    + pres.exitValue);
-        }
+        outputAnalyzer.shouldHaveExitValue(0);
     }
 
     public void lostOwnership(Clipboard clip, Transferable contents) {
@@ -149,76 +127,4 @@ public class NoOwnerNoTargetsTest implements ClipboardOwner {
         final Thread t = new Thread(r);
         t.start();
     }
-
-    public void dumpStream(InputStream in, OutputStream out)
-      throws IOException {
-        int count = in.available();
-        while (count > 0) {
-            byte[] b = new byte[count];
-            in.read(b);
-            out.write(b);
-            count = in.available();
-        }
-    }
 }
-
-class ProcessResults {
-    public int exitValue = -1;
-    public String stdout;
-    public String stderr;
-
-    public static ProcessResults doWaitFor(Process p, int timeoutSeconds)
-            throws Exception {
-        ProcessResults pres = new ProcessResults();
-
-        InReader in = new InReader("I", p.inputReader());
-        InReader err = new InReader("E", p.errorReader());
-
-        in.start();
-        err.start();
-
-        try {
-            if (p.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
-                pres.exitValue = p.exitValue();
-            } else {
-                System.err.println("Process timed out");
-                p.destroyForcibly();
-            }
-        } finally {
-            in.join(500);
-            err.join(500);
-        }
-
-        pres.stdout = in.output.toString();
-        pres.stderr = err.output.toString();
-
-        return pres;
-    }
-
-    static class InReader extends Thread {
-        private final String prefix;
-        private final BufferedReader reader;
-        private final StringBuffer output = new StringBuffer();
-
-        public InReader(String prefix, BufferedReader reader) {
-            this.prefix = prefix;
-            this.reader = reader;
-        }
-
-        @Override
-        public void run() {
-            String line;
-            try {
-                while ((line = reader.readLine()) != null) {
-                    System.out.printf("> %s: %s\n", prefix, line);
-                    output.append(line).append(System.lineSeparator());
-                }
-            } catch (IOException e) {
-                System.out.printf("> %s: %s\n", prefix, e);
-                output.append("Error reading: ")
-                        .append(e).append(System.lineSeparator());
-            }
-        }
-    }
-}
-
