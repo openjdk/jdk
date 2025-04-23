@@ -56,31 +56,31 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   // Find closest node that is LEQ A
   bool LEQ_A_found = false;
   bool is_uncommit_operation = state == StateType::Reserved && use_tag_inplace;
+  bool tree_is_changed = false;
   AddressState LEQ_A;
   TreapNode* leqA_n = _tree.closest_leq(A);
   if (leqA_n == nullptr) {
-    if (is_uncommit_operation) {
-      return SummaryDiff(-1);
-    }
-    assert(!use_tag_inplace, "Cannot use the tag inplace if no pre-existing tag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
-    if (use_tag_inplace) {
-      log_debug(nmt)("Cannot use the tag inplace if no pre-existing tag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
-    }
-    // No match. We add the A node directly, unless it would have no effect.
-    if (!stA.is_noop()) {
-      _tree.upsert(A, stA);
+    if (!is_uncommit_operation) {
+      assert(!use_tag_inplace, "Cannot use the tag inplace if no pre-existing tag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
+      if (use_tag_inplace) {
+        log_debug(nmt)("Cannot use the tag inplace if no pre-existing tag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
+      }
+      // No match. We add the A node directly, unless it would have no effect.
+      if (!stA.is_noop()) {
+        _tree.upsert(A, stA);
+        tree_is_changed = true;
+      }
     }
   } else {
     LEQ_A_found = true;
     LEQ_A = AddressState{leqA_n->key(), leqA_n->val()};
     StateType leqA_state = leqA_n->val().out.type();
     StateType new_state = stA.out.type();
-    if (is_uncommit_operation && leqA_state == StateType::Released) {
-      return SummaryDiff(-1);
-    }
+    bool is_uncommit_over_released = is_uncommit_operation && leqA_state == StateType::Released;
+    tty->print_cr(" == A ..., uncom-over-rel: %d", is_uncommit_over_released);
     // If we specify use_tag_inplace then the new region takes over the current tag instead of the tag in metadata.
     // This is important because the VirtualMemoryTracker API doesn't require supplying the tag for some operations.
-    if (use_tag_inplace) {
+    if (use_tag_inplace && !is_uncommit_over_released) {
       assert(leqA_n->val().out.type() != StateType::Released, "Should not use inplace the tag of a released region");
       MemTag tag = leqA_n->val().out.mem_tag();
       stA.out.set_tag(tag);
@@ -95,6 +95,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     if (leqA_n->key() == A) {
       // Take over in state from old address.
       stA.in = in_state(leqA_n);
+      tty->print_cr("A == ...");
 
       // We may now be able to merge two regions:
       // If the node's old state matches the new, it becomes a noop. That happens, for example,
@@ -102,30 +103,41 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       // and the result should be a larger area, [x1, x3). In that case, the middle node (A and le_n)
       // is not needed anymore. So we just remove the old node.
       stB.in = stA.out;
-      if (stA.is_noop()) {
-        // invalidates leqA_n
-        _tree.remove(leqA_n->key());
-      } else {
-        // If the state is not matching then we have different operations, such as:
-        // reserve [x1, A); ... commit [A, x2); or
-        // reserve [x1, A), mem_tag1; ... reserve [A, x2), mem_tag2; or
-        // reserve [A, x1), mem_tag1; ... reserve [A, x2), mem_tag2;
-        // then we re-use the existing out node, overwriting its old metadata.
-        leqA_n->val() = stA;
+      if (!is_uncommit_over_released) {
+        tree_is_changed = true;
+        tty->print_cr("!uncom-over-rel ...");
+        if (stA.is_noop()) {
+          // invalidates leqA_n
+          _tree.remove(leqA_n->key());
+        } else {
+          // If the state is not matching then we have different operations, such as:
+          // reserve [x1, A); ... commit [A, x2); or
+          // reserve [x1, A), mem_tag1; ... reserve [A, x2), mem_tag2; or
+          // reserve [A, x1), mem_tag1; ... reserve [A, x2), mem_tag2;
+          // then we re-use the existing out node, overwriting its old metadata.
+          leqA_n->val() = stA;
+        }
       }
+
     } else {
       // The address must be smaller.
       assert(A > leqA_n->key(), "must be");
+      tty->print_cr("A > leqA ...");
 
       // We add a new node, but only if there would be a state change. If there would not be a
       // state change, we just omit the node.
       // That happens, for example, when reserving within an already reserved region with identical metadata.
       stA.in = out_state(leqA_n); // .. and the region's prior state is the incoming state
-      if (stA.is_noop()) {
-        // Nothing to do.
-      } else {
-        // Add new node.
-        _tree.upsert(A, stA);
+      if (!is_uncommit_over_released) {
+        tty->print_cr("Not unc-over-rel...");
+        if (stA.is_noop()) {
+          // Nothing to do.
+        } else {
+          // Add new node.
+          _tree.upsert(A, stA);
+          tree_is_changed = true;
+          tty->print_cr("A upsert ...");
+        }
       }
     }
   }
@@ -136,40 +148,49 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   // If there is no node between A and B, its A's incoming state.
   GrowableArrayCHeap<AddressState, mtNMT> to_be_deleted_inbetween_a_b;
   bool B_needs_insert = true;
-
+  auto can_be_deleted = [&](TreapNode* node) -> bool {
+    if (is_uncommit_operation && node->val().out.type() == StateType::Released) {
+      return false;
+    }
+    if (is_uncommit_operation && node->val().out.type() == StateType::Committed) {
+      return false;
+    }
+    return true;
+  };
   // Find all nodes between (A, B] and record their addresses and values. Also update B's
   // outgoing state.
-  bool is_remove_ok = true;
   _tree.visit_range_in_order(A + 1, B + 1, [&](TreapNode* head) {
     int cmp_B = PositionComparator::cmp(head->key(), B);
+    tty->print_cr("visit..., node: %d", (int) head->key());
     stB.out = out_state(head);
-    if (is_uncommit_operation && head->val().out.type() == StateType::Released)  {
-      is_remove_ok = false;
-    }
-    if (is_remove_ok) {
+    if (can_be_deleted(head))  {
       if (cmp_B < 0) {
+        tty->print_cr("to-be-deleted");
         // Record all nodes preceding B.
         to_be_deleted_inbetween_a_b.push({head->key(), head->val()});
       } else if (cmp_B == 0) {
         // Re-purpose B node, unless it would result in a noop node, in
         // which case record old node at B for deletion and summary accounting.
         if (stB.is_noop()) {
+          tty->print_cr("to be deleted");
           to_be_deleted_inbetween_a_b.push(AddressState{B, head->val()});
         } else {
           head->val() = stB;
+          tree_is_changed = true;
         }
         B_needs_insert = false;
       }
     }
   });
-  if (!is_remove_ok) {
-    return SummaryDiff(-1);
-  }
   // Insert B node if needed
   if (B_needs_insert && // Was not already inserted
       !stB.is_noop())   // The operation is differing
     {
-    _tree.upsert(B, stB);
+      if (!is_uncommit_operation) {
+        _tree.upsert(B, stB);
+        tree_is_changed = true;
+        tty->print_cr("upser B after visit ......");
+      }
   }
 
   // We now need to:
@@ -180,6 +201,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found) {
     // We must have smashed a hole in an existing region (or replaced it entirely).
     // LEQ_A < A < B <= C
+    tty->print_cr("len == 0 && not found LEQ...");
     SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(LEQ_A.out().mem_tag())];
     if (LEQ_A.out().type() == StateType::Reserved) {
       rescom.reserve -= B - A;
@@ -194,6 +216,8 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   for (int i = 0; i < to_be_deleted_inbetween_a_b.length(); i++) {
     const AddressState delete_me = to_be_deleted_inbetween_a_b.at(i);
     _tree.remove(delete_me.address);
+    tree_is_changed = true;
+    tty->print_cr("in loop for deleting ...");
 
     // Perform summary accounting
     SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(delete_me.in().mem_tag())];
@@ -206,10 +230,16 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     prev = delete_me;
   }
 
+  if (!tree_is_changed) {
+    return SummaryDiff();
+  }
+
   if (prev.address != A && prev.out().type() != StateType::Released) {
     // The last node wasn't released, so it must be connected to a node outside of (A, B)
     // A - prev - B - (some node >= B)
     // It might be that prev.address == B == (some node >= B), this is fine.
+    tty->print_cr("in If !=A and Released...");
+
     if (prev.out().type() == StateType::Reserved) {
       SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(prev.out().mem_tag())];
       rescom.reserve -= B - prev.address;
@@ -219,6 +249,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       rescom.reserve -= B - prev.address;
     }
   }
+  tty->print_cr("End of routine...");
 
   // Finally, we can register the new region [A, B)'s summary data.
   SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(stA.out.mem_tag())];

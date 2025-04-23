@@ -744,10 +744,10 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccountingWhenUseFlagInplace) {
 TEST_VM_F(NMTVMATreeTest, UncommmitReleasedRegion) {
   {
     Tree tree;
-    VMATree::RegionData rd(si[0], mtTest);
-    VMATree::RegionData rd2(si[0], mtNone);
-    VMATree::SummaryDiff diff = tree.uncommit_mapping(40, 20, rd2);
-    EXPECT_TRUE(diff.has_error());
+    VMATree::RegionData rd(si[0], mtNone);
+    VMATree::SummaryDiff diff = tree.uncommit_mapping(40, 20, rd);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtNone)].reserve);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtNone)].commit);
   }
   {
     Tree tree;
@@ -758,7 +758,40 @@ TEST_VM_F(NMTVMATreeTest, UncommmitReleasedRegion) {
     //0-----50....70-----100
     //   40----60
     VMATree::SummaryDiff diff = tree.uncommit_mapping(40, 20, rd2);
-    EXPECT_TRUE(diff.has_error());
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtNone)].reserve);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtNone)].commit);
+  }
+  {
+    Tree tree;
+    VMATree::RegionData rd(si[0], mtTest);
+    VMATree::RegionData rd2(si[0], mtNone);
+    tree.commit_mapping(0, 10, rd);
+    tree.commit_mapping(20, 10, rd);
+    //0-----10....20-----30
+    //0----------------------------100
+    tree.print_on(tty);
+    VMATree::SummaryDiff diff = tree.uncommit_mapping(0, 100, rd2);
+    tree.print_on(tty);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(-20, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtNone)].reserve);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtNone)].commit);
+  }
+  {
+    Tree tree;
+    VMATree::RegionData rd(si[0], mtTest);
+    VMATree::RegionData rd2(si[0], mtNone);
+    tree.reserve_mapping(40, 60, rd);
+    tree.release_mapping(50, 20);
+    //....40---50....70-----100
+    // 20---------60
+    VMATree::SummaryDiff diff = tree.uncommit_mapping(20, 40, rd2);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtNone)].reserve);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtNone)].commit);
   }
   {
     Tree tree;
@@ -769,7 +802,10 @@ TEST_VM_F(NMTVMATreeTest, UncommmitReleasedRegion) {
     //0-----50....70-----100
     //         60----80
     VMATree::SummaryDiff diff = tree.uncommit_mapping(60, 20, rd2);
-    EXPECT_TRUE(diff.has_error());
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtNone)].reserve);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtNone)].commit);
   }
   {
     Tree tree;
@@ -781,9 +817,12 @@ TEST_VM_F(NMTVMATreeTest, UncommmitReleasedRegion) {
     // mtTest    mtNone     mtClass
     //0-------50.........70---------100
     //    40-------------70
-    // Node 70 should not be changed
     VMATree::SummaryDiff diff = tree.uncommit_mapping(40, 30, rd2);
-    EXPECT_TRUE(diff.has_error());
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtNone)].reserve);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtNone)].commit);
+    // Node 70 should not be changed
     VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(70);
     ASSERT_TRUE(r.start != nullptr);
     EXPECT_TRUE(r.start->val().out.type() == VMATree::StateType::Reserved);
