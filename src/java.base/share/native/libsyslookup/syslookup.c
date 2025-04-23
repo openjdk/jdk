@@ -27,7 +27,6 @@
 // Adding at least one #include removes unwanted warnings on some platforms.
 #include <stdlib.h>
 
-#include <jni.h>
 #include "jni_util.h"
 
 DEF_STATIC_JNI_OnLoad
