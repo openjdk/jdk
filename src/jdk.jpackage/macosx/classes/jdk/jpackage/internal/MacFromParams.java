@@ -31,8 +31,6 @@ import static jdk.jpackage.internal.FromParams.createApplicationBuilder;
 import static jdk.jpackage.internal.FromParams.createApplicationBundlerParam;
 import static jdk.jpackage.internal.FromParams.createPackageBuilder;
 import static jdk.jpackage.internal.FromParams.createPackageBundlerParam;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.StandardBundlerParam.DMG_CONTENT;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
@@ -292,31 +290,36 @@ final class MacFromParams {
     static final BundlerParamInfo<MacPkgPackage> PKG_PACKAGE = createPackageBundlerParam(
             MacFromParams::createMacPkgPackage);
 
-    static final BundlerParamInfo<String> MAC_CF_BUNDLE_NAME = createStringBundlerParam(
+    private static final BundlerParamInfo<String> MAC_CF_BUNDLE_NAME = createStringBundlerParam(
             Arguments.CLIOptions.MAC_BUNDLE_NAME.getId());
 
-    static final BundlerParamInfo<String> APP_CATEGORY = createStringBundlerParam(
+    private static final BundlerParamInfo<String> APP_CATEGORY = createStringBundlerParam(
             Arguments.CLIOptions.MAC_CATEGORY.getId());
 
-    static final BundlerParamInfo<Path> ENTITLEMENTS = createPathBundlerParam(
+    private static final BundlerParamInfo<Path> ENTITLEMENTS = createPathBundlerParam(
             Arguments.CLIOptions.MAC_ENTITLEMENTS.getId());
 
-
-    static final BundlerParamInfo<String> MAC_CF_BUNDLE_IDENTIFIER = createStringBundlerParam(
+    private static final BundlerParamInfo<String> MAC_CF_BUNDLE_IDENTIFIER = createStringBundlerParam(
             Arguments.CLIOptions.MAC_BUNDLE_IDENTIFIER.getId());
 
-    static final BundlerParamInfo<String> SIGN_IDENTIFIER_PREFIX = createStringBundlerParam(
+    private static final BundlerParamInfo<String> SIGN_IDENTIFIER_PREFIX = createStringBundlerParam(
             Arguments.CLIOptions.MAC_BUNDLE_SIGNING_PREFIX.getId());
 
-    static final BundlerParamInfo<String> APP_IMAGE_SIGN_IDENTITY = createStringBundlerParam(
+    private static final BundlerParamInfo<String> APP_IMAGE_SIGN_IDENTITY = createStringBundlerParam(
             Arguments.CLIOptions.MAC_APP_IMAGE_SIGN_IDENTITY.getId());
 
-    static final BundlerParamInfo<String> INSTALLER_SIGN_IDENTITY = createStringBundlerParam(
+    private static final BundlerParamInfo<String> INSTALLER_SIGN_IDENTITY = createStringBundlerParam(
             Arguments.CLIOptions.MAC_INSTALLER_SIGN_IDENTITY.getId());
+
+    private static final BundlerParamInfo<String> SIGNING_KEY_USER = createStringBundlerParam(
+            Arguments.CLIOptions.MAC_SIGNING_KEY_NAME.getId());
+
+    private static final BundlerParamInfo<String> SIGNING_KEYCHAIN = createStringBundlerParam(
+            Arguments.CLIOptions.MAC_SIGNING_KEYCHAIN.getId());
 
     private static final BundlerParamInfo<String> PACKAGE_TYPE = createStringBundlerParam(
             Arguments.CLIOptions.PACKAGE_TYPE.getId());
-    
+
     private static final BundlerParamInfo<Boolean> APP_STORE = createBooleanBundlerParam(
             Arguments.CLIOptions.MAC_APP_STORE.getId());
 

@@ -38,20 +38,6 @@ import jdk.jpackage.internal.model.ConfigException;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
 
-    public static final BundlerParamInfo<String> SIGNING_KEY_USER =
-            new BundlerParamInfo<>(
-            Arguments.CLIOptions.MAC_SIGNING_KEY_NAME.getId(),
-            String.class,
-            params -> "",
-            null);
-
-    public static final BundlerParamInfo<String> SIGNING_KEYCHAIN =
-            new BundlerParamInfo<>(
-            Arguments.CLIOptions.MAC_SIGNING_KEYCHAIN.getId(),
-            String.class,
-            params -> "",
-            null);
-
     public MacBaseInstallerBundler() {
         appImageBundler = new MacAppBundler();
     }
