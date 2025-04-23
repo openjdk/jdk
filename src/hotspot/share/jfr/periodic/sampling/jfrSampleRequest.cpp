@@ -41,7 +41,6 @@ static inline bool is_entry_frame(const JfrSampleRequest& request) {
 }
 
 static inline bool is_interpreter(address pc) {
-  assert(pc != nullptr, "invariant");
   return Interpreter::contains(pc);
 }
 
@@ -212,7 +211,6 @@ static intptr_t* sender_for_interpreter_frame(JfrSampleRequest& request, JavaThr
     return update_continuation_frame_sender(request);
   }
   update_frame_sender_sp(request, jt);
-  assert(sp_in_stack(request, jt), "invariant");
   intptr_t* fp = nullptr;
   if (is_interpreter(request) || is_entry_frame(request)) {
     fp = frame_link(request);
@@ -240,6 +238,9 @@ static bool build_for_interpreter(JfrSampleRequest& request, JavaThread* jt) {
     return true;
   }
   intptr_t* fp = sender_for_interpreter_frame(request, jt);
+  if (request._sample_pc == nullptr || request._sample_sp == nullptr) {
+    return false;
+  }
   return build(request, fp, jt);
 }
 
