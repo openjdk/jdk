@@ -26,7 +26,6 @@
 
 #include "utilities/globalDefinitions.hpp"
 
-#include <Memoryapi.h>
 #include <Windows.h>
 
 class ZSyscall {
