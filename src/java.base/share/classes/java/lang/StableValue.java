@@ -367,7 +367,7 @@ import java.util.function.Supplier;
  * The at-most-once write operation on a stable value that succeeds
  * (e.g. {@linkplain #trySet(Object) trySet()})
  * {@linkplain java.util.concurrent##MemoryVisibility <em>happens-before</em>}
- * any subsequent read operation (e.g. {@linkplain #orElseThrow()}) that is successful.
+ * any successful read operation (e.g. {@linkplain #orElseThrow()}).
  * A successful write operation can be either:
  * <ul>
  *     <li>a {@link #trySet(Object)} that returns {@code true},</li>
