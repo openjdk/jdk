@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage create image with --java-options test
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile JavaOptionsTest.java
+ * @compile -Xlint:all -Werror JavaOptionsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=JavaOptionsTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault
@@ -58,7 +58,7 @@ public class JavaOptionsTest {
     private final String[] expected;
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         List<Object[]> result = new ArrayList<>();
         for (var app : List.of("Hello", "com.other/com.other.Hello")) {
             result.add(new Object[]{app, new String[]{"--java-options", ARG1},
@@ -76,7 +76,7 @@ public class JavaOptionsTest {
 
     public JavaOptionsTest(String javaAppDesc, String[] jpackageArgs,
             String[] expectedParams) {
-        cmd = JPackageCommand.helloAppImage(javaAppDesc);
+        cmd = JPackageCommand.helloAppImage(javaAppDesc).ignoreFakeRuntime();
         if (jpackageArgs != null) {
             cmd.addArguments(jpackageArgs);
         }
@@ -90,7 +90,6 @@ public class JavaOptionsTest {
 
         // 2.) run the launcher it generated
         List<String> output = HelloApp.executeLauncher(cmd).getOutput();
-        TKit.assertNotNull(output, "output is null");
         for (String expect : expected) {
             TKit.assertTextStream(expect).apply(output.stream());
         }

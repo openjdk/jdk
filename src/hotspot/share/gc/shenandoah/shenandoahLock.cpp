@@ -45,6 +45,7 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
   assert(!ALLOW_BLOCK || java_thread != nullptr, "Must have a Java thread when allowing block.");
   // Spin this much, but only on multi-processor systems.
   int ctr = os::is_MP() ? 0xFF : 0;
+  int yields = 0;
   // Apply TTAS to avoid more expensive CAS calls if the lock is still held by other thread.
   while (Atomic::load(&_state) == locked ||
          Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
@@ -67,14 +68,26 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
         // VM thread to arm the poll sooner.
         while (SafepointSynchronize::is_synchronizing() &&
                !SafepointMechanism::local_poll_armed(java_thread)) {
-          os::naked_yield();
+          yield_or_sleep(yields);
         }
       } else {
-        os::naked_yield();
+        yield_or_sleep(yields);
       }
     } else {
-      os::naked_yield();
+      yield_or_sleep(yields);
     }
+  }
+}
+
+void ShenandoahLock::yield_or_sleep(int &yields) {
+  // Simple yield-sleep policy: do one 100us sleep after every N yields.
+  // Tested with different values of N, and chose 3 for best performance.
+  if (yields < 3) {
+    os::naked_yield();
+    yields++;
+  } else {
+    os::naked_short_nanosleep(100000);
+    yields = 0;
   }
 }
 

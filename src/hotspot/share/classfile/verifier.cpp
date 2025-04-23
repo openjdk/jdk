@@ -31,7 +31,6 @@
 #include "classfile/stackMapTableFormat.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -60,6 +59,9 @@
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
+#if INCLUDE_CDS
+#include "classfile/systemDictionaryShared.hpp"
+#endif
 
 #define NOFAILOVER_MAJOR_VERSION                       51
 #define NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION  51
@@ -234,11 +236,13 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
          exception_name == vmSymbols::java_lang_ClassFormatError())) {
       log_info(verification)("Fail over class verification to old verifier for: %s", klass->external_name());
       log_info(class, init)("Fail over class verification to old verifier for: %s", klass->external_name());
+#if INCLUDE_CDS
       // Exclude any classes that fail over during dynamic dumping
       if (CDSConfig::is_dumping_dynamic_archive()) {
         SystemDictionaryShared::warn_excluded(klass, "Failed over class verification while dynamic dumping");
         SystemDictionaryShared::set_excluded(klass);
       }
+#endif
       message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);
       exception_message = message_buffer;
       exception_name = inference_verify(
@@ -736,13 +740,11 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
   Array<u1>* stackmap_data = m->stackmap_data();
   StackMapStream stream(stackmap_data);
-  StackMapReader reader(this, &stream, code_data, code_length, THREAD);
-  StackMapTable stackmap_table(&reader, &current_frame, max_locals, max_stack,
-                               code_data, code_length, CHECK_VERIFY(this));
+  StackMapReader reader(this, &stream, code_data, code_length, &current_frame, max_locals, max_stack, THREAD);
+  StackMapTable stackmap_table(&reader, CHECK_VERIFY(this));
 
   LogTarget(Debug, verification) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm(THREAD);
     LogStream ls(lt);
     stackmap_table.print_on(&ls);
   }
@@ -785,7 +787,6 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
       LogTarget(Debug, verification) lt;
       if (lt.is_enabled()) {
-        ResourceMark rm(THREAD);
         LogStream ls(lt);
         current_frame.print_on(&ls);
         lt.print("offset = %d,  opcode = %s", bci,
@@ -2037,7 +2038,8 @@ void ClassVerifier::verify_cp_type(
 
   verify_cp_index(bci, cp, index, CHECK_VERIFY(this));
   unsigned int tag = cp->tag_at(index).value();
-  if ((types & (1 << tag)) == 0) {
+  // tags up to JVM_CONSTANT_ExternalMax are verifiable and valid for shift op
+  if (tag > JVM_CONSTANT_ExternalMax || (types & (1 << tag)) == 0) {
     verify_error(ErrorContext::bad_cp_index(bci, index),
       "Illegal type at constant pool entry %d in class %s",
       index, cp->pool_holder()->external_name());

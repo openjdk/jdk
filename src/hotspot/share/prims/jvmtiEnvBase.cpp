@@ -864,6 +864,7 @@ JvmtiEnvBase::get_subgroups(JavaThread* current_thread, Handle group_hdl, jint *
 
   // This call collects the strong and weak groups
   JavaThread* THREAD = current_thread;
+  JvmtiJavaUpcallMark jjum(current_thread); // hide JVMTI events for Java upcall
   JavaValue result(T_OBJECT);
   JavaCalls::call_virtual(&result,
                           group_hdl,
@@ -1750,8 +1751,7 @@ JvmtiEnvBase::disable_virtual_threads_notify_jvmti() {
 
 // java_thread - protected by ThreadsListHandle
 jvmtiError
-JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend,
-                             int* need_safepoint_p) {
+JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend) {
   JavaThread* current = JavaThread::current();
   HandleMark hm(current);
   Handle thread_h(current, thread_oop);
@@ -1807,7 +1807,7 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
     assert(single_suspend || thread_h()->is_a(vmClasses::BaseVirtualThread_klass()),
            "SuspendAllVirtualThreads should never suspend non-virtual threads");
     // Case of mounted virtual or attached carrier thread.
-    if (!JvmtiSuspendControl::suspend(java_thread)) {
+    if (!java_thread->java_suspend()) {
       // Thread is already suspended or in process of exiting.
       if (java_thread->is_exiting()) {
         // The thread was in the process of exiting.
@@ -1869,7 +1869,7 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
     assert(single_resume || thread_h()->is_a(vmClasses::BaseVirtualThread_klass()),
            "ResumeAllVirtualThreads should never resume non-virtual threads");
     if (java_thread->is_suspended()) {
-      if (!JvmtiSuspendControl::resume(java_thread)) {
+      if (!java_thread->java_resume()) {
         return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
       }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  *
  * @author Sean Mullan
  * @author Steve Hanna
@@ -645,7 +645,9 @@ public class CertUtils {
      * This class is useful for overriding one or more methods of an
      * X509Certificate for testing purposes.
      */
+    @SuppressWarnings("deprecation")
     public static class ForwardingX509Certificate extends X509Certificate {
+        private static final long serialVersionUID = -8453912214640985478L;
         private final X509Certificate cert;
         public ForwardingX509Certificate(X509Certificate cert) {
             this.cert = cert;

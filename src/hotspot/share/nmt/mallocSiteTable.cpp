@@ -179,7 +179,11 @@ MallocSite* MallocSiteTable::malloc_site(uint32_t marker) {
 MallocSiteHashtableEntry* MallocSiteTable::new_entry(const NativeCallStack& key, MemTag mem_tag) {
   void* p = AllocateHeap(sizeof(MallocSiteHashtableEntry), mtNMT,
     *hash_entry_allocation_stack(), AllocFailStrategy::RETURN_NULL);
-  return ::new (p) MallocSiteHashtableEntry(key, mem_tag);
+  if (p == nullptr) {
+    return nullptr;
+  } else {
+    return ::new (p) MallocSiteHashtableEntry(key, mem_tag);
+  }
 }
 
 bool MallocSiteTable::walk_malloc_site(MallocSiteWalker* walker) {

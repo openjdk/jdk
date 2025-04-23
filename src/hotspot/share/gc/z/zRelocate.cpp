@@ -410,7 +410,7 @@ static void retire_target_page(ZGeneration* generation, ZPage* page) {
   // relocate the remaining objects, leaving the target page empty when
   // relocation completed.
   if (page->used() == 0) {
-    ZHeap::heap()->free_page(page, true /* allow_defragment */);
+    ZHeap::heap()->free_page(page);
   }
 }
 
@@ -669,9 +669,9 @@ private:
     // moved them over to the current bitmap.
     //
     // If the young generation runs multiple cycles while the old generation is
-    // relocating, then the first cycle will have consume the the old remset,
+    // relocating, then the first cycle will have consumed the old remset,
     // bits and moved associated objects to a new old page. The old relocation
-    // could find either the the two bitmaps. So, either it will find the original
+    // could find either of the two bitmaps. So, either it will find the original
     // remset bits for the page, or it will find an empty bitmap for the page. It
     // doesn't matter for correctness, because the young generation marking has
     // already taken care of the bits.
@@ -841,14 +841,12 @@ private:
     const bool promotion = _forwarding->is_promotion();
 
     // Promotions happen through a new cloned page
-    ZPage* const to_page = promotion ? from_page->clone_limited() : from_page;
+    ZPage* const to_page = promotion
+        ? from_page->clone_for_promotion()
+        : from_page->reset(to_age);
 
     // Reset page for in-place relocation
-    to_page->reset(to_age);
     to_page->reset_top_for_allocation();
-    if (promotion) {
-      to_page->remset_alloc();
-    }
 
     // Verify that the inactive remset is clear when resetting the page for
     // in-place relocation.
@@ -865,7 +863,7 @@ private:
     start_in_place_relocation_prepare_remset(from_page);
 
     if (promotion) {
-      // Register the the promotion
+      // Register the promotion
       ZGeneration::young()->in_place_relocate_promote(from_page, to_page);
       ZGeneration::young()->register_in_place_relocate_promoted(from_page);
     }
@@ -1011,7 +1009,7 @@ public:
       page->log_msg(" (relocate page done normal)");
 
       // Free page
-      ZHeap::heap()->free_page(page, true /* allow_defragment */);
+      ZHeap::heap()->free_page(page);
     }
   }
 };
@@ -1260,14 +1258,12 @@ public:
       prev_page->log_msg(promotion ? " (flip promoted)" : " (flip survived)");
 
       // Setup to-space page
-      ZPage* const new_page = promotion ? prev_page->clone_limited() : prev_page;
+      ZPage* const new_page = promotion
+          ? prev_page->clone_for_promotion()
+          : prev_page->reset(to_age);
 
       // Reset page for flip aging
-      new_page->reset(to_age);
       new_page->reset_livemap();
-      if (promotion) {
-        new_page->remset_alloc();
-      }
 
       if (promotion) {
         ZGeneration::young()->flip_promote(prev_page, new_page);

@@ -56,9 +56,14 @@ public class CheckCodeCacheInfo {
                        + pair
                        + "Non-nmethod blobs:\\n"
                        + " #\\d+ runtime = " + entry
+                       + " #\\d+ upcall = " + entry
                        + " #\\d+ uncommon trap = " + entry
                        + " #\\d+ deoptimization = " + entry
+                       + " #\\d+ exception = " + entry
+                       + " #\\d+ safepoint = " + entry
                        + " #\\d+ adapter = " + entry
+                       + " #\\d+ mh_adapter = " + entry
+                       + " #\\d+ vtable = " + entry
                        + " #\\d+ buffer blob = " + entry
                        + " #\\d+ other = " + entry;
     }

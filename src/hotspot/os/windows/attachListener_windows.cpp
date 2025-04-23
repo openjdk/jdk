@@ -92,6 +92,8 @@ public:
 
   void close() {
     if (opened()) {
+      ThreadBlockInVM tbivm(JavaThread::current());
+      FlushFileBuffers(_hPipe);
       CloseHandle(_hPipe);
       _hPipe = INVALID_HANDLE_VALUE;
     }
@@ -123,15 +125,13 @@ public:
                               &written,
                               nullptr);  // not overlapped
     if (!fSuccess) {
-        log_error(attach)("pipe write error (%d)", GetLastError());
-        return -1;
+      log_error(attach)("pipe write error (%d)", GetLastError());
+      return -1;
     }
     return (int)written;
   }
 
   void flush() override {
-    assert(opened(), "must be");
-    FlushFileBuffers(_hPipe);
   }
 };
 
@@ -151,11 +151,15 @@ public:
   }
 
   bool read_request() {
-    return AttachOperation::read_request(&_pipe, &_pipe);
+    return _pipe.read_request(this, &_pipe);
   }
 
 public:
   void complete(jint result, bufferedStream* result_stream) override;
+
+  ReplyWriter* get_reply_writer() override {
+    return &_pipe;
+  }
 };
 
 
@@ -432,11 +436,6 @@ Win32AttachOperation* Win32AttachListener::dequeue() {
 }
 
 void Win32AttachOperation::complete(jint result, bufferedStream* result_stream) {
-  JavaThread* thread = JavaThread::current();
-  ThreadBlockInVM tbivm(thread);
-
-  write_reply(&_pipe, result, result_stream);
-
   delete this;
 }
 

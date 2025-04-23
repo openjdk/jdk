@@ -49,7 +49,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
      * Constructs an X11InputMethod instance. It initializes the XIM
      * environment if it's not done yet.
      *
-     * @exception AWTException if XOpenIM() failed.
+     * @throws AWTException if XOpenIM() failed.
      */
     public X11InputMethod() throws AWTException {
         super();

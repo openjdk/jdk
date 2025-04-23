@@ -55,7 +55,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 3, jvmArgsAppend = {"--add-opens", "java.base/com.sun.crypto.provider=ALL-UNNAMED"})
+@Fork(value = 3, jvmArgs = {"--add-opens", "java.base/com.sun.crypto.provider=ALL-UNNAMED"})
 
 public class MLKEMBench {
         @Param({"ML-KEM-512", "ML-KEM-768", "ML-KEM-1024"} )

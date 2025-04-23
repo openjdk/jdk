@@ -336,11 +336,9 @@ void LogConfiguration::disable_logging() {
   notify_update_listeners();
 }
 
-void LogConfiguration::configure_stdout(LogLevelType level, int exact_match, ...) {
+LogSelectionList LogConfiguration::create_selection_list(LogLevelType level, int exact_match, va_list ap) {
   size_t i;
-  va_list ap;
   LogTagType tags[LogTag::MaxTags];
-  va_start(ap, exact_match);
   for (i = 0; i < LogTag::MaxTags; i++) {
     LogTagType tag = static_cast<LogTagType>(va_arg(ap, int));
     tags[i] = tag;
@@ -351,12 +349,32 @@ void LogConfiguration::configure_stdout(LogLevelType level, int exact_match, ...
   }
   assert(i < LogTag::MaxTags || static_cast<LogTagType>(va_arg(ap, int)) == LogTag::__NO_TAG,
          "Too many tags specified! Can only have up to %zu tags in a tag set.", LogTag::MaxTags);
-  va_end(ap);
 
   LogSelection selection(tags, !exact_match, level);
   assert(selection.tag_sets_selected() > 0,
-         "configure_stdout() called with invalid/non-existing log selection");
-  LogSelectionList list(selection);
+         "create_selection_list() called with invalid/non-existing log selection");
+  return LogSelectionList(selection);
+}
+
+void LogConfiguration::disable_tags(int exact_match, ...) {
+  va_list ap;
+  va_start(ap, exact_match);
+  LogSelectionList list = create_selection_list(LogLevel::Off, exact_match, ap);
+  va_end(ap);
+
+  // Apply configuration to all outputs, with the same decorators as before.
+  ConfigurationLock cl;
+  for (size_t i = 0; i < _n_outputs; i++) {
+    configure_output(i, list, _outputs[i]->decorators());
+  }
+  notify_update_listeners();
+}
+
+void LogConfiguration::configure_stdout(LogLevelType level, int exact_match, ...) {
+  va_list ap;
+  va_start(ap, exact_match);
+  LogSelectionList list = create_selection_list(level, exact_match, ap);
+  va_end(ap);
 
   // Apply configuration to stdout (output #0), with the same decorators as before.
   ConfigurationLock cl;
@@ -636,10 +654,15 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->cr();
 
   out->print_cr("Asynchronous logging (off by default):");
-  out->print_cr(" -Xlog:async");
+  out->print_cr(" -Xlog:async[:[mode]]");
   out->print_cr("  All log messages are written to an intermediate buffer first and will then be flushed"
                 " to the corresponding log outputs by a standalone thread. Write operations at logsites are"
                 " guaranteed non-blocking.");
+  out->print_cr(" A mode, either 'drop' or 'stall', may be provided. If 'drop' is provided then"
+                " messages will be dropped if there is no room in the intermediate buffer."
+                " If 'stall' is provided then the log operation will wait for room to be made by the output thread, without dropping any messages."
+                " The default mode is 'drop'.");
+
   out->cr();
 
   out->print_cr("Some examples:");
@@ -715,4 +738,20 @@ void LogConfiguration::notify_update_listeners() {
   }
 }
 
-bool LogConfiguration::_async_mode = false;
+LogConfiguration::AsyncMode LogConfiguration::_async_mode = AsyncMode::Off;
+
+bool LogConfiguration::parse_async_argument(const char* async_tail) {
+  bool ret = true;
+  if (*async_tail == '\0') {
+    // Default is to drop.
+    LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Drop);
+  } else if (strcmp(async_tail, ":stall") == 0) {
+    LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Stall);
+  } else if (strcmp(async_tail, ":drop") == 0) {
+    LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Drop);
+  } else {
+    // User provided unknown async option
+    ret = false;
+  }
+  return ret;
+}

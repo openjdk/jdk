@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8210496 8346567
+ * @bug 8210496 8349145 8346567
  * @modules java.base/jdk.internal.reflect
  * @run testng Filtering
  * @summary Test that security sensitive fields that filtered by core reflection
@@ -56,6 +56,8 @@ public class Filtering {
             { Class.class, "classLoader" },
             { Class.class, "classData" },
             { Class.class, "modifiers" },
+            { Class.class, "protectionDomain" },
+            { Class.class, "primitive" },
             { ClassLoader.class, "parent" },
             { Field.class, "clazz" },
             { Field.class, "modifiers" },

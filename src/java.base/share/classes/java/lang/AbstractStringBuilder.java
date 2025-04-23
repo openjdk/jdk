@@ -1027,13 +1027,13 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
-     * Returns a new {@code String} that contains a subsequence of
+     * Returns a {@code String} that contains a subsequence of
      * characters currently contained in this character sequence. The
      * substring begins at the specified index and extends to the end of
      * this sequence.
      *
      * @param      start    The beginning index, inclusive.
-     * @return     The new string.
+     * @return     A string containing the specified subsequence of characters.
      * @throws     StringIndexOutOfBoundsException  if {@code start} is
      *             less than zero, or greater than the length of this object.
      */
@@ -1042,7 +1042,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
-     * Returns a new character sequence that is a subsequence of this sequence.
+     * Returns a character sequence that is a subsequence of this sequence.
      *
      * <p> An invocation of this method of the form
      *
@@ -1072,14 +1072,14 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
-     * Returns a new {@code String} that contains a subsequence of
+     * Returns a {@code String} that contains a subsequence of
      * characters currently contained in this sequence. The
      * substring begins at the specified {@code start} and
      * extends to the character at index {@code end - 1}.
      *
      * @param      start    The beginning index, inclusive.
      * @param      end      The ending index, exclusive.
-     * @return     The new string.
+     * @return     A string containing the specified subsequence of characters.
      * @throws     StringIndexOutOfBoundsException  if {@code start}
      *             or {@code end} are negative or greater than
      *             {@code length()}, or {@code start} is
@@ -1602,11 +1602,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
 
     /**
      * Returns a string representing the data in this sequence.
-     * A new {@code String} object is allocated and initialized to
-     * contain the character sequence currently represented by this
-     * object. This {@code String} is then returned. Subsequent
+     * The {@code String} object that is returned contains the character
+     * sequence currently represented by this object. Subsequent
      * changes to this sequence do not affect the contents of the
-     * {@code String}.
+     * returned {@code String}.
      *
      * @return  a string representation of this sequence of characters.
      */

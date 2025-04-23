@@ -59,6 +59,7 @@ public class LayoutPath {
     private static final long[] EMPTY_STRIDES = new long[0];
     private static final long[] EMPTY_BOUNDS = new long[0];
     private static final MethodHandle[] EMPTY_DEREF_HANDLES = new MethodHandle[0];
+    public static final MemoryLayout.PathElement[] EMPTY_PATH_ELEMENTS = new MemoryLayout.PathElement[0];
 
     private static final MethodHandle MH_ADD_SCALED_OFFSET;
     private static final MethodHandle MH_SLICE;
@@ -205,15 +206,13 @@ public class LayoutPath {
                     String.format("Path does not select a value layout: %s", breadcrumbs()));
         }
 
-        VarHandle handle = Utils.makeRawSegmentViewVarHandle(valueLayout);              // (MS, ML, long, long)
-        handle = MethodHandles.insertCoordinates(handle, 1, rootLayout());          // (MS, long, long)
-        if (strides.length > 0) {
-            MethodHandle offsetAdapter = offsetHandle();
+        boolean constantOffset = strides.length == 0;
+        // (MS, long, long) if variable offset, (MS, long) if constant offset
+        VarHandle handle = Utils.makeRawSegmentViewVarHandle(rootLayout(), valueLayout, constantOffset, offset);
+        if (!constantOffset) {
+            MethodHandle offsetAdapter = offsetHandle();  // Adapter performs the bound checks
             offsetAdapter = MethodHandles.insertArguments(offsetAdapter, 0, 0L);
             handle = MethodHandles.collectCoordinates(handle, 2, offsetAdapter);    // (MS, long)
-        } else {
-            // simpler adaptation
-            handle = MethodHandles.insertCoordinates(handle, 2, offset);            // (MS, long)
         }
 
         if (adapt) {

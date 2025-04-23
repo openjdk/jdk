@@ -40,14 +40,14 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage application version testing
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile JLinkOptionsTest.java
+ * @compile -Xlint:all -Werror JLinkOptionsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=JLinkOptionsTest
  */
 
 public final class JLinkOptionsTest {
 
-    public static Collection input() {
+    public static Collection<?> input() {
         return List.of(new Object[][]{
             // default but with strip-native-commands removed
             {"Hello", new String[]{
@@ -58,6 +58,7 @@ public final class JLinkOptionsTest {
                     new String[]{"jdk.jartool", "jdk.unsupported"},
                     null,
                     },
+
             // multiple jlink-options
             {"com.other/com.other.Hello", new String[]{
                     "--jlink-options",
@@ -69,6 +70,7 @@ public final class JLinkOptionsTest {
                     new String[]{"java.smartcardio", "jdk.crypto.cryptoki"},
                     null,
                     },
+
             // bind-services
             {"Hello", new String[]{
                     "--jlink-options",
@@ -139,19 +141,20 @@ public final class JLinkOptionsTest {
 
     @Test
     public void testNoBindServicesByDefault() {
-        final var defaultModules = getModulesInRuntime();
-        final var modulesWithBindServices = getModulesInRuntime("--bind-services");
+        final var defaultModules = getModulesInRuntime("--limit-modules java.smartcardio,jdk.crypto.cryptoki,java.desktop");
+        final var modulesWithBindServices = getModulesInRuntime("--bind-services --limit-modules java.smartcardio,jdk.crypto.cryptoki,java.desktop");
 
         final var moduleComm = Comm.compare(defaultModules, modulesWithBindServices);
 
         TKit.assertStringListEquals(List.of(), moduleComm.unique1().stream().toList(),
                 "Check '--bind-services' option doesn't remove modules");
+        // with the limited set of modules, we expect that jdk.crypto.cryptoki be added through --bind-services
         TKit.assertNotEquals("", moduleComm.unique2().stream().sorted().collect(Collectors.joining(",")),
                 "Check '--bind-services' option adds modules");
     }
 
     private final JPackageCommand createJPackageCommand(String javaAppDesc) {
-        return JPackageCommand.helloAppImage(javaAppDesc).ignoreDefaultRuntime(true);
+        return JPackageCommand.helloAppImage(javaAppDesc);
     }
 
     private final Set<String> getModulesInRuntime(String ... jlinkOptions) {

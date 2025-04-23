@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,10 @@
 # questions.
 #
 
+################################################################################
+
 include CopyFiles.gmk
 include LibCommon.gmk
-
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, modules/java.base/Lib.gmk))
 
 # Prepare the find cache.
 $(call FillFindCache, $(wildcard $(TOPDIR)/src/java.base/*/native))
@@ -82,7 +81,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
     DISABLED_WARNINGS_clang_Net.c := unused-function unused-variable, \
     DISABLED_WARNINGS_clang_UnixNativeDispatcher.c := unused-variable, \
     JDK_LIBS := libjava libnet, \
-    LIBS_linux := $(LIBDL) -lpthread, \
+    LIBS_linux := $(LIBDL) $(LIBPTHREAD), \
     LIBS_aix := $(LIBDL), \
     LIBS_macosx := \
         -framework CoreFoundation \
@@ -125,6 +124,7 @@ ifeq ($(call isTargetOsType, unix), true)
       DISABLED_WARNINGS_clang_jsig.c := unused-but-set-variable, \
       LIBS_linux := $(LIBDL), \
       LIBS_aix := $(LIBDL), \
+      ONLY_EXPORTED := true, \
   ))
 
   TARGETS += $(BUILD_LIBJSIG)
@@ -200,3 +200,5 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)
 
   TARGETS += $(BUILD_LIBSIMD_SORT)
 endif
+
+################################################################################
