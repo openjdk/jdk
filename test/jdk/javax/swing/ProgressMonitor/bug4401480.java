@@ -30,8 +30,8 @@
  * @run main/manual bug4401480
  */
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
@@ -59,43 +59,45 @@ public class bug4401480 {
             """;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame pfj = PassFailJFrame.builder()
+        PassFailJFrame.builder()
                 .title("JProgress Monitor Instructions")
                 .instructions(INSTRUCTIONS)
-                .columns(40)
+                .columns(35)
                 .splitUIBottom(bug4401480::createTestUI)
-                .build();
-
-        if (startLatch.await(2, TimeUnit.MINUTES)) {
-            for (int i = 0; i < 10; i++) {
-                int count = i;
-                SwingUtilities.invokeAndWait(() -> monitor.setProgress(count));
-                Thread.sleep(2000);
-                SwingUtilities.invokeAndWait(() -> cancelled = monitor.isCanceled());
-                if (cancelled) {
-                    break;
-                }
-            }
-
-            if (cancelled) {
-                PassFailJFrame.forcePass();
-            } else {
-                PassFailJFrame.forceFail("Test Failed! JProgress Monitor was not cancelled");
-            }
-        }
-
-        pfj.awaitAndCheck();
+                .build()
+                .awaitAndCheck();
     }
 
-     private static JPanel createTestUI() {
+    private static JPanel createTestUI() {
         JPanel panel = new JPanel();
         JButton startButton = new JButton("Start");
         startButton.addActionListener(e -> {
             monitor = new ProgressMonitor(null, "Progress", "Running ...", 0, 10);
             monitor.setProgress(0);
-            startLatch.countDown();
+
+            new Thread(() -> {
+                for (int i = 0; i < 10; i++) {
+                    int count = i;
+                    try {
+                        SwingUtilities.invokeAndWait(() -> monitor.setProgress(count));
+                        Thread.sleep(2000);
+                        SwingUtilities.invokeAndWait(() -> cancelled = monitor.isCanceled());
+                    } catch (InterruptedException | InvocationTargetException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    if (cancelled) {
+                        break;
+                    }
+                }
+
+                if (cancelled) {
+                    PassFailJFrame.forcePass();
+                } else {
+                    PassFailJFrame.forceFail("Test Failed! JProgress Monitor was not cancelled");
+                }
+            }).start();
         });
         panel.add(startButton);
         return panel;
-     }
+    }
 }
