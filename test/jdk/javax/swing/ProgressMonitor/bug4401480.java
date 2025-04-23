@@ -31,7 +31,6 @@
  */
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.CountDownLatch;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
@@ -40,7 +39,6 @@ import javax.swing.SwingUtilities;
 public class bug4401480 {
     private static ProgressMonitor monitor;
     private static volatile boolean cancelled = false;
-    private static final CountDownLatch startLatch = new CountDownLatch(1);
 
     private static final String INSTRUCTIONS = """
             This is a semi-automated test which automatically
@@ -79,10 +77,13 @@ public class bug4401480 {
                 for (int i = 0; i < 10; i++) {
                     int count = i;
                     try {
-                        SwingUtilities.invokeAndWait(() -> monitor.setProgress(count));
+                        SwingUtilities.invokeAndWait(() ->
+                                        monitor.setProgress(count));
                         Thread.sleep(2000);
-                        SwingUtilities.invokeAndWait(() -> cancelled = monitor.isCanceled());
-                    } catch (InterruptedException | InvocationTargetException ex) {
+                        SwingUtilities.invokeAndWait(() ->
+                                        cancelled = monitor.isCanceled());
+                    } catch (InterruptedException
+                             | InvocationTargetException ex) {
                         throw new RuntimeException(ex);
                     }
                     if (cancelled) {
@@ -93,7 +94,8 @@ public class bug4401480 {
                 if (cancelled) {
                     PassFailJFrame.forcePass();
                 } else {
-                    PassFailJFrame.forceFail("Test Failed! JProgress Monitor was not cancelled");
+                    PassFailJFrame.forceFail("Test Failed! JProgress Monitor"
+                                             + " was not cancelled");
                 }
             }).start();
         });
