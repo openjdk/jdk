@@ -30,58 +30,69 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Predicate;
 import jdk.internal.util.OSVersion;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 final class TempKeychain implements Closeable {
 
-    static void withKeychain(Keychain keychain, ThrowingConsumer<Keychain> keychainConsumer) throws Throwable {
-        Objects.requireNonNull(keychain);
-        if (OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
-            // we need this for OS X 10.12+
-            try (var tempKeychain = new TempKeychain(keychain)) {
-                keychainConsumer.accept(tempKeychain.keychain);
-            }
+    static void withKeychains(ThrowingConsumer<List<Keychain>> keychainConsumer, List<Keychain> keychains) throws Throwable {
+        keychains.forEach(Objects::requireNonNull);
+        if (keychains.isEmpty() || OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
+            keychainConsumer.accept(keychains);
         } else {
-            keychainConsumer.accept(keychain);
+            // we need this for OS X 10.12+
+            try (var tempKeychain = new TempKeychain(keychains)) {
+                keychainConsumer.accept(tempKeychain.keychains);
+            }
         }
     }
 
-    TempKeychain(Keychain keychain) throws IOException {
-        this.keychain = Objects.requireNonNull(keychain);
+    static void withKeychain(ThrowingConsumer<Keychain> keychainConsumer, Keychain keychain) throws Throwable {
+        Objects.requireNonNull(keychainConsumer);
+        withKeychains(keychains -> {
+            keychainConsumer.accept(keychains.getFirst());
+        }, List.of(keychain));
+    }
+
+    TempKeychain(List<Keychain> keychains) throws IOException {
+        this.keychains = Objects.requireNonNull(keychains);
 
         final var currentKeychains = Keychain.listKeychains();
 
-        final var keychainMissing = currentKeychains.stream().map(Keychain::path).filter(Predicate.isEqual(keychain.path())).findAny().isEmpty();
-        if (keychainMissing) {
+        final var currentKeychainPaths = currentKeychains.stream().map(Keychain::path).toList();
+
+        final var missingKeychains = keychains.stream().filter(k -> {
+            return !currentKeychainPaths.contains(k.path());
+        }).toList();
+
+        if (missingKeychains.isEmpty()) {
+            restoreKeychainsCmd = List.of();
+        } else {
             List<String> args = new ArrayList<>();
             args.add("/usr/bin/security");
             args.add("list-keychains");
             args.add("-s");
-            args.addAll(currentKeychains.stream().map(Keychain::name).toList());
+            args.addAll(currentKeychains.stream().map(Keychain::asCliArg).toList());
 
             restoreKeychainsCmd = List.copyOf(args);
 
-            args.add(keychain.asCliArg());
+            args.addAll(missingKeychains.stream().map(Keychain::asCliArg).toList());
 
             Executor.of(args.toArray(String[]::new)).executeExpectSuccess();
-        } else {
-            restoreKeychainsCmd = List.of();
         }
     }
 
-    Keychain keychain() {
-        return keychain;
+    List<Keychain> keychains() {
+        return keychains;
     }
 
     @Override
     public void close() throws IOException {
-        if (restoreKeychainsCmd.isEmpty()) {
+        if (!restoreKeychainsCmd.isEmpty()) {
             Executor.of(restoreKeychainsCmd.toArray(String[]::new)).executeExpectSuccess();
         }
     }
 
-    private final Keychain keychain;
+    private final List<Keychain> keychains;
     private final List<String> restoreKeychainsCmd;
 }
