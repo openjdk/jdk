@@ -2251,6 +2251,11 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
 
+// The scope of NmtVirtualMemoryLocker covers both pd_uncommit_memory and record_virtual_memory_uncommit because
+// these operations must happen atomically to avoid races causing NMT to fall out os sync with the OS reality.
+// We do not have the same lock protection for pd_commit_memory and record_virtual_memory_commit.
+// We assume that there is some external synchronization that prevents a region from being uncommitted
+// before it is finished being committed.
 bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
@@ -2273,6 +2278,11 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   return res;
 }
 
+// The scope of NmtVirtualMemoryLocker covers both pd_release_memory and record_virtual_memory_release because
+// these operations must happen atomically to avoid races causing NMT to fall out os sync with the OS reality.
+// We do not have the same lock protection for pd_reserve_memory and record_virtual_memory_reserve.
+// We assume that there is some external synchronization that prevents a region from being released
+// before it is finished being reserved.
 bool os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
   bool res;
