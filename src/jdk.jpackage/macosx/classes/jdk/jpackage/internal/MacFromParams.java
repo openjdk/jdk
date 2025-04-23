@@ -54,10 +54,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.function.Predicate;
 import jdk.jpackage.internal.ApplicationBuilder.MainLauncherStartupInfo;
+import jdk.jpackage.internal.SigningIdentityBuilder.ExpiredCertificateException;
 import jdk.jpackage.internal.SigningIdentityBuilder.StandardCertificateSelector;
-import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.FileAssociation;
@@ -69,6 +70,7 @@ import jdk.jpackage.internal.model.MacLauncher;
 import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeLayout;
+import jdk.jpackage.internal.util.function.ExceptionBox;
 
 
 final class MacFromParams {
@@ -130,7 +132,7 @@ final class MacFromParams {
         appBuilder.appStore(appStore);
 
         if (sign) {
-            final var signingIdentityBuilder = createSigningIdentityBuilder(params, app);
+            final var signingIdentityBuilder = createSigningIdentityBuilder(params);
             APP_IMAGE_SIGN_IDENTITY.copyInto(params, signingIdentityBuilder::signingIdentity);
             SIGNING_KEY_USER.findIn(params).ifPresent(userName -> {
                 final StandardCertificateSelector domain;
@@ -186,20 +188,53 @@ final class MacFromParams {
         return pkgBuilder.create();
     }
 
+    private record WithExpiredCertificateException<T>(Optional<T> obj, Optional<ExpiredCertificateException> certEx) {
+        WithExpiredCertificateException {
+            if (obj.isEmpty() == certEx.isEmpty()) {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        static <U> WithExpiredCertificateException<U> of(Callable<U> callable) {
+            try {
+                return new WithExpiredCertificateException<>(Optional.of(callable.call()), Optional.empty());
+            } catch (ExpiredCertificateException ex) {
+                return new WithExpiredCertificateException<>(Optional.empty(), Optional.of(ex));
+            } catch (ExceptionBox ex) {
+                if (ex.getCause() instanceof ExpiredCertificateException certEx) {
+                    return new WithExpiredCertificateException<>(Optional.empty(), Optional.of(certEx));
+                }
+                throw ex;
+            } catch (RuntimeException ex) {
+                throw ex;
+            } catch (Throwable t) {
+                throw ExceptionBox.rethrowUnchecked(t);
+            }
+        }
+    }
+
     private static MacPkgPackage createMacPkgPackage(
             Map<String, ? super Object> params) throws ConfigException, IOException {
 
-        final var app = APPLICATION.fetchFrom(params);
-
-        final var superPkgBuilder = createMacPackageBuilder(params, app, MAC_PKG);
-
-        final var pkgBuilder = new MacPkgPackageBuilder(superPkgBuilder);
+        // This is over complicated to make "MacSignTest.testExpiredCertificate" test pass.
 
         final boolean sign = SIGN_BUNDLE.findIn(params).orElse(false);
         final boolean appStore = APP_STORE.findIn(params).orElse(false);
 
+        final var appOrExpiredCertEx = WithExpiredCertificateException.of(() -> {
+            return APPLICATION.fetchFrom(params);
+        });
+
+        final Optional<MacPkgPackageBuilder> pkgBuilder;
+        if (appOrExpiredCertEx.obj().isPresent()) {
+            final var superPkgBuilder = createMacPackageBuilder(params, appOrExpiredCertEx.obj().orElseThrow(), MAC_PKG);
+            pkgBuilder = Optional.of(new MacPkgPackageBuilder(superPkgBuilder));
+        } else {
+            pkgBuilder = Optional.empty();
+        }
+
         if (sign) {
-            final var signingIdentityBuilder = createSigningIdentityBuilder(params, app);
+            final var signingIdentityBuilder = createSigningIdentityBuilder(params);
             INSTALLER_SIGN_IDENTITY.copyInto(params, signingIdentityBuilder::signingIdentity);
             SIGNING_KEY_USER.findIn(params).ifPresent(userName -> {
                 final StandardCertificateSelector domain;
@@ -212,13 +247,21 @@ final class MacFromParams {
                 signingIdentityBuilder.certificateSelector(StandardCertificateSelector.create(userName, domain));
             });
 
-            pkgBuilder.signingBuilder(signingIdentityBuilder);
+            if (pkgBuilder.isPresent()) {
+                pkgBuilder.orElseThrow().signingBuilder(signingIdentityBuilder);
+            } else {
+                final var expiredPkgCert = WithExpiredCertificateException.of(() -> {
+                    return signingIdentityBuilder.create();
+                }).certEx();
+                expiredPkgCert.map(ConfigException::getMessage).ifPresent(Log::error);
+                throw appOrExpiredCertEx.certEx().orElseThrow();
+            }
         }
 
-        return pkgBuilder.create();
+        return pkgBuilder.orElseThrow().create();
     }
 
-    private static SigningIdentityBuilder createSigningIdentityBuilder(Map<String, ? super Object> params, Application app) {
+    private static SigningIdentityBuilder createSigningIdentityBuilder(Map<String, ? super Object> params) {
         final var builder = new SigningIdentityBuilder();
         SIGNING_KEYCHAIN.copyInto(params, builder::keychain);
         return builder;

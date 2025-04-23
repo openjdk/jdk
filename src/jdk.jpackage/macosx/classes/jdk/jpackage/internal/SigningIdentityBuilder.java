@@ -44,6 +44,22 @@ import jdk.jpackage.internal.model.SigningIdentity;
 
 final class SigningIdentityBuilder {
 
+    static class SigningConfigException extends ConfigException {
+        SigningConfigException(ConfigException ex) {
+            super(ex.getMessage(), ex.getAdvice(), ex.getCause());
+        }
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    static class ExpiredCertificateException extends SigningConfigException {
+        ExpiredCertificateException(ConfigException ex) {
+            super(ex);
+        }
+
+        private static final long serialVersionUID = 1L;
+    }
+
     record SigningConfig(SigningIdentity identity, Optional<Keychain> keychain) {
         SigningConfig {
             Objects.requireNonNull(identity);
@@ -115,7 +131,7 @@ final class SigningIdentityBuilder {
         try {
             cert.checkValidity();
         } catch (CertificateExpiredException|CertificateNotYetValidException ex) {
-            throw I18N.buildConfigException("error.certificate.expired", findSubjectCNs(cert).getFirst()).create();
+            throw new ExpiredCertificateException(I18N.buildConfigException("error.certificate.expired", findSubjectCNs(cert).getFirst()).create());
         }
 
         final var signingIdentityHash = CertificateHash.of(cert);
