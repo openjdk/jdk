@@ -72,8 +72,8 @@ public sealed interface MethodTypeEntry
      * type}}
      *
      * @apiNote
-     * If only symbol equivalence is desired, {@link #equalsSymbol(MethodTypeDesc)
-     * equalsSymbol} should be used.  It requires reduced parsing and can
+     * If only symbol equivalence is desired, {@link #matches(MethodTypeDesc)
+     * matches} should be used.  It requires reduced parsing and can
      * improve {@code class} file reading performance.
      */
     MethodTypeDesc asSymbol();
@@ -84,5 +84,5 @@ public sealed interface MethodTypeEntry
      * @param desc the method type descriptor
      * @since 25
      */
-    boolean equalsSymbol(MethodTypeDesc desc);
+    boolean matches(MethodTypeDesc desc);
 }

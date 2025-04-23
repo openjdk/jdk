@@ -92,7 +92,7 @@ public sealed interface Utf8Entry
      * @param desc the field type
      * @since 25
      */
-    boolean equalsSymbol(ClassDesc desc);
+    boolean isFieldType(ClassDesc desc);
 
     /**
      * {@return whether this entry describes the descriptor string of this
@@ -101,5 +101,5 @@ public sealed interface Utf8Entry
      * @param desc the method type
      * @since 25
      */
-    boolean equalsSymbol(MethodTypeDesc desc);
+    boolean isMethodType(MethodTypeDesc desc);
 }

@@ -437,7 +437,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public boolean equalsSymbol(ClassDesc desc) {
+        public boolean isFieldType(ClassDesc desc) {
             var sym = typeSym;
             if (sym != null) {
                 return sym instanceof ClassDesc cd && cd.equals(desc);
@@ -479,7 +479,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public boolean equalsSymbol(MethodTypeDesc desc) {
+        public boolean isMethodType(MethodTypeDesc desc) {
             var sym = typeSym;
             if (sym != null) {
                 return sym instanceof MethodTypeDesc mtd && mtd.equals(desc);
@@ -617,7 +617,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public boolean equalsSymbol(ClassDesc desc) {
+        public boolean matches(ClassDesc desc) {
             var sym = this.sym;
             if (sym != null) {
                 return sym.equals(desc);
@@ -631,7 +631,7 @@ public abstract sealed class AbstractPoolEntry {
 
         private boolean rawEqualsSymbol(ClassDesc desc) {
             if (ref1.mayBeArrayDescriptor()) {
-                return desc.isArray() && ref1.equalsSymbol(desc);
+                return desc.isArray() && ref1.isFieldType(desc);
             } else {
                 return desc instanceof ClassOrInterfaceDescImpl coid
                         && ref1.equalsString(coid.internalName());
@@ -689,7 +689,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public boolean equalsSymbol(PackageDesc desc) {
+        public boolean matches(PackageDesc desc) {
             return ref1.equalsString(desc.internalName());
         }
 
@@ -725,7 +725,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public boolean equalsSymbol(ModuleDesc desc) {
+        public boolean matches(ModuleDesc desc) {
             return ref1.equalsString(desc.name());
         }
 
@@ -1086,8 +1086,8 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public boolean equalsSymbol(MethodTypeDesc desc) {
-            return ref1.equalsSymbol(desc);
+        public boolean matches(MethodTypeDesc desc) {
+            return ref1.isMethodType(desc);
         }
 
         @Override

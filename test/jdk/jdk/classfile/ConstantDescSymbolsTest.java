@@ -211,7 +211,7 @@ final class ConstantDescSymbolsTest {
 
         // Add extra stage of entry spawn to "inflate" entries via positive/negative tests
         public PoolEntryCase<P> inflateByTest(PoolEntryCase<P> last, T arg, String msg) {
-            return new PoolEntryCase<>("+equalsSymbol(" + msg + ")", () -> {
+            return new PoolEntryCase<>("+matches(" + msg + ")", () -> {
                 var ret = last.poolEntry.get();
                 tester.test(ret, arg);
                 return ret;
@@ -236,13 +236,13 @@ final class ConstantDescSymbolsTest {
 
     // Current supported conversions
     static final SymbolicTranslator<String, Utf8Entry> UTF8_STRING_TRANSLATOR = new SymbolicTranslator<>("Utf8", ConstantPoolBuilder::utf8Entry, Utf8Entry::equalsString, Utf8Entry::stringValue);
-    static final SymbolicTranslator<ClassDesc, Utf8Entry> UTF8_CLASS_TRANSLATOR = new SymbolicTranslator<>("FieldDescriptorUtf8", ConstantPoolBuilder::utf8Entry, Utf8Entry::equalsSymbol, Util::fieldTypeSymbol);
-    static final SymbolicTranslator<MethodTypeDesc, Utf8Entry> UTF8_METHOD_TYPE_TRANSLATOR = new SymbolicTranslator<>("MethodDescriptorUtf8", ConstantPoolBuilder::utf8Entry, Utf8Entry::equalsSymbol, Util::methodTypeSymbol);
-    static final SymbolicTranslator<ClassDesc, ClassEntry> CLASS_ENTRY_TRANSLATOR = new SymbolicTranslator<>("ClassEntry", ConstantPoolBuilder::classEntry, ClassEntry::equalsSymbol, ClassEntry::asSymbol);
-    static final SymbolicTranslator<MethodTypeDesc, MethodTypeEntry> METHOD_TYPE_ENTRY_TRANSLATOR = new SymbolicTranslator<>("MethodTypeEntry", ConstantPoolBuilder::methodTypeEntry, MethodTypeEntry::equalsSymbol, MethodTypeEntry::asSymbol);
+    static final SymbolicTranslator<ClassDesc, Utf8Entry> UTF8_CLASS_TRANSLATOR = new SymbolicTranslator<>("FieldDescriptorUtf8", ConstantPoolBuilder::utf8Entry, Utf8Entry::isFieldType, Util::fieldTypeSymbol);
+    static final SymbolicTranslator<MethodTypeDesc, Utf8Entry> UTF8_METHOD_TYPE_TRANSLATOR = new SymbolicTranslator<>("MethodDescriptorUtf8", ConstantPoolBuilder::utf8Entry, Utf8Entry::isMethodType, Util::methodTypeSymbol);
+    static final SymbolicTranslator<ClassDesc, ClassEntry> CLASS_ENTRY_TRANSLATOR = new SymbolicTranslator<>("ClassEntry", ConstantPoolBuilder::classEntry, ClassEntry::matches, ClassEntry::asSymbol);
+    static final SymbolicTranslator<MethodTypeDesc, MethodTypeEntry> METHOD_TYPE_ENTRY_TRANSLATOR = new SymbolicTranslator<>("MethodTypeEntry", ConstantPoolBuilder::methodTypeEntry, MethodTypeEntry::matches, MethodTypeEntry::asSymbol);
     static final SymbolicTranslator<String, StringEntry> STRING_ENTRY_TRANSLATOR = new SymbolicTranslator<>("StringEntry", ConstantPoolBuilder::stringEntry, StringEntry::equalsString, StringEntry::stringValue);
-    static final SymbolicTranslator<PackageDesc, PackageEntry> PACKAGE_ENTRY_TRANSLATOR = new SymbolicTranslator<>("PackageEntry", ConstantPoolBuilder::packageEntry, PackageEntry::equalsSymbol, PackageEntry::asSymbol);
-    static final SymbolicTranslator<ModuleDesc, ModuleEntry> MODULE_ENTRY_TRANSLATOR = new SymbolicTranslator<>("ModuleEntry", ConstantPoolBuilder::moduleEntry, ModuleEntry::equalsSymbol, ModuleEntry::asSymbol);
+    static final SymbolicTranslator<PackageDesc, PackageEntry> PACKAGE_ENTRY_TRANSLATOR = new SymbolicTranslator<>("PackageEntry", ConstantPoolBuilder::packageEntry, PackageEntry::matches, PackageEntry::asSymbol);
+    static final SymbolicTranslator<ModuleDesc, ModuleEntry> MODULE_ENTRY_TRANSLATOR = new SymbolicTranslator<>("ModuleEntry", ConstantPoolBuilder::moduleEntry, ModuleEntry::matches, ModuleEntry::asSymbol);
 
     static Stream<Arguments> equalityCases() {
         return Stream.of(

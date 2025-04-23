@@ -105,8 +105,8 @@ public sealed interface ClassEntry
      * primitive}.
      *
      * @apiNote
-     * If only symbol equivalence is desired, {@link #equalsSymbol(ClassDesc)
-     * equalsSymbol} should be used.  It requires reduced parsing and can
+     * If only symbol equivalence is desired, {@link #matches(ClassDesc)
+     * matches} should be used.  It requires reduced parsing and can
      * improve {@code class} file reading performance.
      *
      * @see ConstantPoolBuilder#classEntry(ClassDesc)
@@ -121,5 +121,5 @@ public sealed interface ClassEntry
      * @param desc the reference type
      * @since 25
      */
-    boolean equalsSymbol(ClassDesc desc);
+    boolean matches(ClassDesc desc);
 }
