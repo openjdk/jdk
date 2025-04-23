@@ -46,6 +46,7 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
 import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.security.SecurityUtils;
 
 import static java.net.http.HttpRequest.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
@@ -57,6 +58,7 @@ import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
  * @library /test/jdk/java/net/httpclient/lib /test/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.security.SecurityUtils
  * @compile ../ReferenceTracker.java
  * @summary Checks that SSL parameters can be set for HTTP/3 connection
  * @run main/othervm
@@ -66,6 +68,7 @@ import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
  */
 public class H3QuicTLSConnection {
 
+    private static final String SYS_PROP_DISABLED_ALGS = "jdk.tls.disabledAlgorithms";
     private static final SSLParameters USE_DEFAULT_SSL_PARAMETERS = new SSLParameters();
 
     // expect highest supported version we know about
@@ -83,7 +86,11 @@ public class H3QuicTLSConnection {
 
     public static void main(String[] args) throws Exception {
         // re-enable 3DES
-        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+        SecurityUtils.removeFromDisabledTlsAlgs("3DES");
+        // print out the updated security property for debug purposes
+        System.out.println("running tests with " + SYS_PROP_DISABLED_ALGS
+                + " security property configured to: "
+                + Security.getProperty(SYS_PROP_DISABLED_ALGS));
 
         // enable all logging
         System.setProperty("jdk.httpclient.HttpClient.log", "all,frames:all");
