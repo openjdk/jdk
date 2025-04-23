@@ -35,36 +35,25 @@ import java.util.random.RandomGenerator;
 @Measurement(iterations = 5, time = 1)
 @Fork(3)
 public class FPComparison {
-    static final int INVOCATIONS = 1024;
+    static final int INVOCATIONS = 10_000;
 
-    float[] f1;
-    double[] d1;
-    float[] f2;
-    double[] d2;
-    int[] res;
-    long[] resLong;
-    Object[] resObject;
-    Object ro1;
-    Object ro2;
-    Class[] resClass;
-    Class rc1;
-    Class rc2;
+    static final float[] f1 = new float[INVOCATIONS];
+    static final double[] d1 = new double[INVOCATIONS];
+    static final float[] f2 = new float[INVOCATIONS];;
+    static final double[] d2 = new double[INVOCATIONS];;
+    static final int[] res = new int[INVOCATIONS];;
+    static final long[] resLong = new long[INVOCATIONS];;
+    static final float[] resFloat = new float[INVOCATIONS];;
+    static final Object[] resObject = new Object[INVOCATIONS];;
+    static final Object ro1 = new Object();;
+    static final Object ro2 = new Object();;
+    static final Class[] resClass = new Class[INVOCATIONS];;
+    static final Class rc1 = Float.class;;
+    static final Class rc2 = Double.class;;
 
     @Setup
     public void setup() {
         var random = RandomGenerator.getDefault();
-        f1 = new float[INVOCATIONS];
-        d1 = new double[INVOCATIONS];
-        f2 = new float[INVOCATIONS];
-        d2 = new double[INVOCATIONS];
-        res = new int[INVOCATIONS];
-        resLong = new long[INVOCATIONS];
-        resObject = new Object[INVOCATIONS];
-        ro1 = new Object();
-        ro2 = new Object();
-        resClass = new Class[INVOCATIONS];
-        rc1 = Float.class;
-        rc2 = Double.class;
         for (int i = 0; i < INVOCATIONS; i++) {
             int type = random.nextInt(5);
             if (type == 1) {
@@ -272,6 +261,169 @@ public class FPComparison {
     public void greaterEqualDoubleResLong() {
         for (int i = 0; i < INVOCATIONS; i++) {
             resLong[i] = (d1[i] >= d2[i]) ? Long.MAX_VALUE : Long.MIN_VALUE;
+        }
+    }
+
+    // --------- result: float ---------
+    private static void init(float[] a) {
+        RandomGenerator random = RandomGenerator.getDefault();
+        for (int i = 0; i < SIZE; i++) {
+            a[i] = switch(random.nextInt() % 20) {
+                case 0  -> Float.NaN;
+                case 1  -> 0;
+                case 2  -> 1;
+                case 3  -> Float.POSITIVE_INFINITY;
+                case 4  -> Float.NEGATIVE_INFINITY;
+                case 5  -> Float.MAX_VALUE;
+                case 6  -> Float.MIN_VALUE;
+                case 7, 8, 9 -> random.nextFloat();
+                default -> Float.intBitsToFloat(random.nextInt());
+            };
+        }
+    }
+
+    @Benchmark
+    public void equalFloatResFloatLocal() {
+        final int size = 1024;
+        float[] f1 = new float[size];
+        float[] f2 = new float[size];
+        float[] f3 = new float[size];
+        init(f1);
+        init(f2);
+        init(f3);
+        for (int i = 0; i < size; i++) {
+            f3[i] = (f1[i] == f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void equalFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] == f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void equalDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] == d2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void lessFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] < f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void lessDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] < d2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] <= f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void lessEqualDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] <= d2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void greaterFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] > f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void greaterDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] > d2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualFloatResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (f1[i] >= f2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+    @Benchmark
+    public void greaterEqualDoubleResFloat() {
+        for (int i = 0; i < INVOCATIONS; i++) {
+            resFloat[i] = (d1[i] >= d2[i]) ? 0.1f : 0.2f;
+        }
+    }
+
+
+
+
+    @Benchmark
+    public void equalFloatResFloatState(Blackhole blackhole, BenchState state) {
+        for (int i = 0; i < state.f1.length; i++) {
+            state.f3[i] = (state.f1[i] == state.f2[i]) ? 0.1f : 0.2f;
+        }
+        blackhole.consume(state.f3);
+    }
+
+    @Benchmark
+    public void maxFloatResFloatState(Blackhole blackhole, BenchState state) {
+        for (int i = 0; i < state.f1.length; i++) {
+            state.f3[i] = (state.f1[i] > state.f2[i]) ? state.f1[i] : state.f2[i];
+        }
+        blackhole.consume(state.f3);
+    }
+
+    private static final int SIZE = 10_000;
+
+    @State(Scope.Benchmark)
+    public static class BenchState {
+        private final float[] f1 = new float[SIZE];
+        private final float[] f2 = new float[SIZE];
+        private final float[] f3 = new float[SIZE];
+
+        public BenchState() { }
+
+        private RandomGenerator random = RandomGenerator.getDefault();
+
+        @Setup
+        public void setup() {
+            init(f1);
+            init(f2);
+            init(f3);
+
+            for (int i = 0; i < SIZE; i++) {
+                if (i % 3 == 0) {
+                    f2[i] = f1[i];
+                }
+            }
+        }
+
+        private void init(float[] a) {
+            for (int i = 0; i < SIZE; i++) {
+                a[i] = switch(random.nextInt() % 20) {
+                    case 0  -> Float.NaN;
+                    case 1  -> 0;
+                    case 2  -> 1;
+                    case 3  -> Float.POSITIVE_INFINITY;
+                    case 4  -> Float.NEGATIVE_INFINITY;
+                    case 5  -> Float.MAX_VALUE;
+                    case 6  -> Float.MIN_VALUE;
+                    case 7, 8, 9 -> random.nextFloat();
+                    default -> Float.intBitsToFloat(random.nextInt());
+                };
+            }
         }
     }
 }

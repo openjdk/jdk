@@ -1934,8 +1934,6 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_SqrtHF:
       return UseZfh;
 
-    case Op_CMoveF:
-    case Op_CMoveD:
     case Op_CMoveP:
     case Op_CMoveN:
       return false;
@@ -10216,6 +10214,314 @@ instruct cmovL_cmpP(iRegLNoSp dst, iRegL src, iRegP op1, iRegP op2, cmpOpU cop) 
     __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
                  as_Register($op1$$reg), as_Register($op2$$reg),
                  as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+// --------- CMoveF ---------
+
+instruct cmovF_cmpI(fRegF dst, fRegF src, iRegI op1, iRegI op2, iRegI tmp1, iRegI tmp2, cmpOp cop) %{
+  match(Set dst (CMoveF (Binary cop (CmpI op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveF $dst, ($op1 $cop $op2), $dst, $src\t#@cmovF_cmpI\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp($cop$$cmpcode,
+                 as_Register($op1$$reg), as_Register($op2$$reg), as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                 as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), true /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovF_cmpU(fRegF dst, fRegF src, iRegI op1, iRegI op2, iRegI tmp1, iRegI tmp2, cmpOpU cop) %{
+  match(Set dst (CMoveF (Binary cop (CmpU op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveF $dst, ($op1 $cop $op2), $dst, $src\t#@cmovF_cmpU\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg), as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                 as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), true /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovF_cmpL(fRegF dst, fRegF src, iRegL op1, iRegL op2, iRegI tmp1, iRegI tmp2, cmpOp cop) %{
+  match(Set dst (CMoveF (Binary cop (CmpL op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveF $dst, ($op1 $cop $op2), $dst, $src\t#@cmovF_cmpL\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp($cop$$cmpcode,
+                 as_Register($op1$$reg), as_Register($op2$$reg), as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                 as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), true /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovF_cmpUL(fRegF dst, fRegF src, iRegL op1, iRegL op2, iRegI tmp1, iRegI tmp2, cmpOpU cop) %{
+  match(Set dst (CMoveF (Binary cop (CmpUL op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveF $dst, ($op1 $cop $op2), $dst, $src\t#@cmovF_cmpUL\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg), as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                 as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), true /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovF_cmpF(fRegF dst, fRegF src, fRegF op1, fRegF op2, iRegI tmp1, iRegI tmp2, cmpOp cop) %{
+  match(Set dst (CMoveF (Binary cop (CmpF op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveF $dst, ($op1 $cop $op2), $dst, $src\t#@cmovF_cmpF\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp_fp($cop$$cmpcode,
+                    as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
+                    as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                    as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                    true /* cmp_single */, true /* cmov_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovF_cmpD(fRegF dst, fRegF src, fRegD op1, fRegD op2, iRegI tmp1, iRegI tmp2, cmpOp cop) %{
+  match(Set dst (CMoveF (Binary cop (CmpD op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveF $dst, ($op1 $cop $op2), $dst, $src\t#@cmovF_cmpD\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp_fp($cop$$cmpcode | C2_MacroAssembler::double_branch_mask,
+                    as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
+                    as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                    as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                    false /* cmp_single */, true /* cmov_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovF_cmpN(fRegF dst, fRegF src, iRegN op1, iRegN op2, iRegI tmp1, iRegI tmp2, cmpOp cop) %{
+  match(Set dst (CMoveF (Binary cop (CmpN op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveF $dst, ($op1 $cop $op2), $dst, $src\t#@cmovF_cmpN\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                 as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), true /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovF_cmpP(fRegF dst, fRegF src, iRegN op1, iRegN op2, iRegI tmp1, iRegI tmp2, cmpOp cop) %{
+  match(Set dst (CMoveF (Binary cop (CmpP op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveF $dst, ($op1 $cop $op2), $dst, $src\t#@cmovF_cmpP\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                 as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), true /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+// --------- CMoveD ---------
+
+instruct cmovD_cmpI(fRegD dst, fRegD src, iRegI op1, iRegI op2, iRegI tmp1, iRegI tmp2, cmpOp cop) %{
+  match(Set dst (CMoveD (Binary cop (CmpI op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveD $dst, ($op1 $cop $op2), $dst, $src\t#@cmovD_cmpI\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp($cop$$cmpcode,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                 as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), false /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovD_cmpU(fRegD dst, fRegD src, iRegI op1, iRegI op2, iRegI tmp1, iRegI tmp2, cmpOpU cop) %{
+  match(Set dst (CMoveD (Binary cop (CmpU op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveD $dst, ($op1 $cop $op2), $dst, $src\t#@cmovD_cmpU\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                 as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), false /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovD_cmpL(fRegD dst, fRegD src, iRegL op1, iRegL op2, iRegI tmp1, iRegI tmp2, cmpOp cop) %{
+  match(Set dst (CMoveD (Binary cop (CmpL op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveD $dst, ($op1 $cop $op2), $dst, $src\t#@cmovD_cmpL\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp($cop$$cmpcode,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                 as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), false /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovD_cmpUL(fRegD dst, fRegD src, iRegL op1, iRegL op2, iRegI tmp1, iRegI tmp2, cmpOpU cop) %{
+  match(Set dst (CMoveD (Binary cop (CmpUL op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveD $dst, ($op1 $cop $op2), $dst, $src\t#@cmovD_cmpUL\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                 as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), false /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovD_cmpF(fRegD dst, fRegD src, fRegF op1, fRegF op2, iRegI tmp1, iRegI tmp2, cmpOp cop) %{
+  match(Set dst (CMoveD (Binary cop (CmpF op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveD $dst, ($op1 $cop $op2), $dst, $src\t#@cmovD_cmpF\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp_fp($cop$$cmpcode,
+                    as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
+                    as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                    as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                    true /* cmp_single */, false /* cmov_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovD_cmpD(fRegD dst, fRegD src, fRegD op1, fRegD op2, iRegI tmp1, iRegI tmp2, cmpOp cop) %{
+  match(Set dst (CMoveD (Binary cop (CmpD op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveD $dst, ($op1 $cop $op2), $dst, $src\t#@cmovD_cmpD\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp_fp($cop$$cmpcode | C2_MacroAssembler::double_branch_mask,
+                    as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
+                    as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                    as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                    false /* cmp_single */, false /* cmov_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovD_cmpN(fRegD dst, fRegD src, iRegN op1, iRegN op2, iRegI tmp1, iRegI tmp2, cmpOp cop) %{
+  match(Set dst (CMoveD (Binary cop (CmpN op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveD $dst, ($op1 $cop $op2), $dst, $src\t#@cmovD_cmpN\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                 as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), false /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovD_cmpP(fRegD dst, fRegD src, iRegN op1, iRegN op2, iRegI tmp1, iRegI tmp2, cmpOp cop) %{
+  match(Set dst (CMoveD (Binary cop (CmpP op1 op2)) (Binary dst src)));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveD $dst, ($op1 $cop $op2), $dst, $src\t#@cmovD_cmpP\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove_fp_cmp($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($tmp1$$reg), as_Register($tmp2$$reg),
+                 as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), false /* is_single */);
   %}
 
   ins_pipe(pipe_class_compare);

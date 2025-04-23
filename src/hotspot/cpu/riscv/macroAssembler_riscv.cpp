@@ -1267,7 +1267,309 @@ void MacroAssembler::cmov_gtu(Register cmp1, Register cmp2, Register dst, Regist
   bind(no_set);
 }
 
-// ----------- cmove, compare float -----------
+// ----------- cmove float/double -----------
+
+void MacroAssembler::cmov_fp_eq(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
+  if (UseZicond) {
+    xorr(t0, cmp1, cmp2);
+    if (is_single) {
+      fmv_x_w(tmpDst, dst);
+      fmv_x_w(tmpSrc, src);
+    } else {
+      fmv_x_d(tmpDst, dst);
+      fmv_x_d(tmpSrc, src);
+    }
+    czero_eqz(tmpDst, tmpDst, t0);
+    czero_nez(t0 , tmpSrc, t0);
+    orr(tmpDst, tmpDst, t0);
+    if (is_single) {
+      fmv_w_x(dst, tmpDst);
+    } else {
+      fmv_d_x(dst, tmpDst);
+    }
+    return;
+  }
+  Label no_set;
+  bne(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_ne(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
+  if (UseZicond) {
+    xorr(t0, cmp1, cmp2);
+    if (is_single) {
+      fmv_x_w(tmpDst, dst);
+      fmv_x_w(tmpSrc, src);
+    } else {
+      fmv_x_d(tmpDst, dst);
+      fmv_x_d(tmpSrc, src);
+    }
+    czero_nez(tmpDst, tmpDst, t0);
+    czero_eqz(t0 , tmpSrc, t0);
+    orr(tmpDst, tmpDst, t0);
+    if (is_single) {
+      fmv_w_x(dst, tmpDst);
+    } else {
+      fmv_d_x(dst, tmpDst);
+    }
+    return;
+  }
+  Label no_set;
+  beq(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_le(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
+  if (UseZicond) {
+    slt(t0, cmp2, cmp1);
+    if (is_single) {
+      fmv_x_w(tmpDst, dst);
+      fmv_x_w(tmpSrc, src);
+    } else {
+      fmv_x_d(tmpDst, dst);
+      fmv_x_d(tmpSrc, src);
+    }
+    czero_eqz(tmpDst, tmpDst, t0);
+    czero_nez(t0,  tmpSrc, t0);
+    orr(tmpDst, tmpDst, t0);
+    if (is_single) {
+      fmv_w_x(dst, tmpDst);
+    } else {
+      fmv_d_x(dst, tmpDst);
+    }
+    return;
+  }
+  Label no_set;
+  bgt(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_leu(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
+  if (UseZicond) {
+    sltu(t0, cmp2, cmp1);
+    if (is_single) {
+      fmv_x_w(tmpDst, dst);
+      fmv_x_w(tmpSrc, src);
+    } else {
+      fmv_x_d(tmpDst, dst);
+      fmv_x_d(tmpSrc, src);
+    }
+    czero_eqz(tmpDst, tmpDst, t0);
+    czero_nez(t0,  tmpSrc, t0);
+    orr(tmpDst, tmpDst, t0);
+    if (is_single) {
+      fmv_w_x(dst, tmpDst);
+    } else {
+      fmv_d_x(dst, tmpDst);
+    }
+    return;
+  }
+  Label no_set;
+  bgtu(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_ge(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
+  if (UseZicond) {
+    slt(t0, cmp1, cmp2);
+    if (is_single) {
+      fmv_x_w(tmpDst, dst);
+      fmv_x_w(tmpSrc, src);
+    } else {
+      fmv_x_d(tmpDst, dst);
+      fmv_x_d(tmpSrc, src);
+    }
+    czero_eqz(tmpDst, tmpDst, t0);
+    czero_nez(t0,  tmpSrc, t0);
+    orr(tmpDst, tmpDst, t0);
+    if (is_single) {
+      fmv_w_x(dst, tmpDst);
+    } else {
+      fmv_d_x(dst, tmpDst);
+    }
+    return;
+  }
+  Label no_set;
+  blt(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_geu(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
+  if (UseZicond) {
+    sltu(t0, cmp1, cmp2);
+    if (is_single) {
+      fmv_x_w(tmpDst, dst);
+      fmv_x_w(tmpSrc, src);
+    } else {
+      fmv_x_d(tmpDst, dst);
+      fmv_x_d(tmpSrc, src);
+    }
+    czero_eqz(tmpDst, tmpDst, t0);
+    czero_nez(t0,  tmpSrc, t0);
+    orr(tmpDst, tmpDst, t0);
+    if (is_single) {
+      fmv_w_x(dst, tmpDst);
+    } else {
+      fmv_d_x(dst, tmpDst);
+    }
+    return;
+  }
+  Label no_set;
+  bltu(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_lt(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
+  if (UseZicond) {
+    slt(t0, cmp1, cmp2);
+    if (is_single) {
+      fmv_x_w(tmpDst, dst);
+      fmv_x_w(tmpSrc, src);
+    } else {
+      fmv_x_d(tmpDst, dst);
+      fmv_x_d(tmpSrc, src);
+    }
+    czero_nez(tmpDst, tmpDst, t0);
+    czero_eqz(t0,  tmpSrc, t0);
+    orr(tmpDst, tmpDst, t0);
+    if (is_single) {
+      fmv_w_x(dst, tmpDst);
+    } else {
+      fmv_d_x(dst, tmpDst);
+    }
+    return;
+  }
+  Label no_set;
+  bge(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_ltu(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
+  if (UseZicond) {
+    sltu(t0, cmp1, cmp2);
+    if (is_single) {
+      fmv_x_w(tmpDst, dst);
+      fmv_x_w(tmpSrc, src);
+    } else {
+      fmv_x_d(tmpDst, dst);
+      fmv_x_d(tmpSrc, src);
+    }
+    czero_nez(tmpDst, tmpDst, t0);
+    czero_eqz(t0,  tmpSrc, t0);
+    orr(tmpDst, tmpDst, t0);
+    if (is_single) {
+      fmv_w_x(dst, tmpDst);
+    } else {
+      fmv_d_x(dst, tmpDst);
+    }
+    return;
+  }
+  Label no_set;
+  bgeu(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_gt(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
+  if (UseZicond) {
+    slt(t0, cmp2, cmp1);
+    if (is_single) {
+      fmv_x_w(tmpDst, dst);
+      fmv_x_w(tmpSrc, src);
+    } else {
+      fmv_x_d(tmpDst, dst);
+      fmv_x_d(tmpSrc, src);
+    }
+    czero_nez(tmpDst, tmpDst, t0);
+    czero_eqz(t0,  tmpSrc, t0);
+    orr(tmpDst, tmpDst, t0);
+    if (is_single) {
+      fmv_w_x(dst, tmpDst);
+    } else {
+      fmv_d_x(dst, tmpDst);
+    }
+    return;
+  }
+  Label no_set;
+  ble(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_fp_gtu(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
+  if (UseZicond) {
+    sltu(t0, cmp2, cmp1);
+    if (is_single) {
+      fmv_x_w(tmpDst, dst);
+      fmv_x_w(tmpSrc, src);
+    } else {
+      fmv_x_d(tmpDst, dst);
+      fmv_x_d(tmpSrc, src);
+    }
+    czero_nez(tmpDst, tmpDst, t0);
+    czero_eqz(t0,  tmpSrc, t0);
+    orr(tmpDst, tmpDst, t0);
+    if (is_single) {
+      fmv_w_x(dst, tmpDst);
+    } else {
+      fmv_d_x(dst, tmpDst);
+    }
+    return;
+  }
+  Label no_set;
+  bleu(cmp1, cmp2, no_set);
+  if (is_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+// ----------- cmove, compare float/double -----------
 
 // Move src to dst only if cmp1 == cmp2,
 // otherwise leave dst unchanged, including the case where one of them is NaN.
@@ -1388,6 +1690,206 @@ void MacroAssembler::cmov_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, Regi
     double_bge(cmp1, cmp2, no_set);
   }
   mv(dst, src);
+  bind(no_set);
+}
+
+// ----------- cmove float/double, compare float/double -----------
+
+// Move src to dst only if cmp1 == cmp2,
+// otherwise leave dst unchanged, including the case where one of them is NaN.
+// Clarification:
+//   java code      :  cmp1 != cmp2 ? dst : src
+//   transformed to :  CMove dst, (cmp1 eq cmp2), dst, src
+void MacroAssembler::cmov_fp_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2,
+                                       Register tmpDst, Register tmpSrc,
+                                       FloatRegister dst, FloatRegister src,
+                                       bool cmp_single, bool cmov_single) {
+  if (UseZicond) {
+    if (cmp_single) {
+      feq_s(t0, cmp1, cmp2);
+    } else {
+      feq_d(t0, cmp1, cmp2);
+    }
+    if (cmov_single) {
+      fmv_x_w(tmpDst, dst);
+      fmv_x_w(tmpSrc, src);
+    } else {
+      fmv_x_d(tmpDst, dst);
+      fmv_x_d(tmpSrc, src);
+    }
+    czero_nez(tmpDst, tmpDst, t0);
+    czero_eqz(t0 , tmpSrc, t0);
+    orr(tmpDst, tmpDst, t0);
+    if (cmov_single) {
+      fmv_w_x(dst, tmpDst);
+    } else {
+      fmv_d_x(dst, tmpDst);
+    }
+    return;
+  }
+  Label no_set;
+  if (cmp_single) {
+    // jump if cmp1 != cmp2, including the case of NaN
+    // not jump (i.e. move src to dst) if cmp1 == cmp2
+    float_bne(cmp1, cmp2, no_set);
+  } else {
+    double_bne(cmp1, cmp2, no_set);
+  }
+  if (cmov_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+// Keep dst unchanged only if cmp1 == cmp2,
+// otherwise move src to dst, including the case where one of them is NaN.
+// Clarification:
+//   java code      :  cmp1 == cmp2 ? dst : src
+//   transformed to :  CMove dst, (cmp1 ne cmp2), dst, src
+void MacroAssembler::cmov_fp_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2,
+                                       Register tmpDst, Register tmpSrc,
+                                       FloatRegister dst, FloatRegister src,
+                                       bool cmp_single, bool cmov_single) {
+  if (UseZicond) {
+    if (cmp_single) {
+      feq_s(t0, cmp1, cmp2);
+    } else {
+      feq_d(t0, cmp1, cmp2);
+    }
+    if (cmov_single) {
+      fmv_x_w(tmpDst, dst);
+      fmv_x_w(tmpSrc, src);
+    } else {
+      fmv_x_d(tmpDst, dst);
+      fmv_x_d(tmpSrc, src);
+    }
+    czero_eqz(tmpDst, tmpDst, t0);
+    czero_nez(t0 , tmpSrc, t0);
+    orr(tmpDst, tmpDst, t0);
+    if (cmov_single) {
+      fmv_w_x(dst, tmpDst);
+    } else {
+      fmv_d_x(dst, tmpDst);
+    }
+    return;
+  }
+  Label no_set;
+  if (cmp_single) {
+    // jump if cmp1 == cmp2
+    // not jump (i.e. move src to dst) if cmp1 != cmp2, including the case of NaN
+    float_beq(cmp1, cmp2, no_set);
+  } else {
+    double_beq(cmp1, cmp2, no_set);
+  }
+  if (cmov_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+// When cmp1 <= cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
+// Clarification
+//   scenario 1:
+//     java code      :  cmp2 < cmp1 ? dst : src
+//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
+//   scenario 2:
+//     java code      :  cmp1 > cmp2 ? dst : src
+//     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
+void MacroAssembler::cmov_fp_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2,
+                                       Register tmpDst, Register tmpSrc,
+                                       FloatRegister dst, FloatRegister src,
+                                       bool cmp_single, bool cmov_single) {
+  if (UseZicond) {
+    if (cmp_single) {
+      flt_s(t0, cmp2, cmp1);
+    } else {
+      flt_d(t0, cmp2, cmp1);
+    }
+    if (cmov_single) {
+      fmv_x_w(tmpDst, dst);
+      fmv_x_w(tmpSrc, src);
+    } else {
+      fmv_x_d(tmpDst, dst);
+      fmv_x_d(tmpSrc, src);
+    }
+    czero_eqz(tmpDst, tmpDst, t0);
+    czero_nez(t0 , tmpSrc, t0);
+    orr(tmpDst, tmpDst, t0);
+    if (cmov_single) {
+      fmv_w_x(dst, tmpDst);
+    } else {
+      fmv_d_x(dst, tmpDst);
+    }
+    return;
+  }
+  Label no_set;
+  if (cmp_single) {
+    // jump if cmp1 > cmp2
+    // not jump (i.e. move src to dst) if cmp1 <= cmp2 or either is NaN
+    float_bgt(cmp1, cmp2, no_set);
+  } else {
+    double_bgt(cmp1, cmp2, no_set);
+  }
+  if (cmov_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
+  bind(no_set);
+}
+
+// When cmp1 < cmp2 or any of them is NaN then dst = src, otherwise, dst = dst
+// Clarification
+//   scenario 1:
+//     java code      :  cmp2 <= cmp1 ? dst : src
+//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
+//   scenario 2:
+//     java code      :  cmp1 >= cmp2 ? dst : src
+//     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
+void MacroAssembler::cmov_fp_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2,
+                                       Register tmpDst, Register tmpSrc,
+                                       FloatRegister dst, FloatRegister src,
+                                       bool cmp_single, bool cmov_single) {
+  if (UseZicond) {
+    if (cmp_single) {
+      fle_s(t0, cmp2, cmp1);
+    } else {
+      fle_d(t0, cmp2, cmp1);
+    }
+    if (cmov_single) {
+      fmv_x_w(tmpDst, dst);
+      fmv_x_w(tmpSrc, src);
+    } else {
+      fmv_x_d(tmpDst, dst);
+      fmv_x_d(tmpSrc, src);
+    }
+    czero_eqz(tmpDst, tmpDst, t0);
+    czero_nez(t0 , tmpSrc, t0);
+    orr(tmpDst, tmpDst, t0);
+    if (cmov_single) {
+      fmv_w_x(dst, tmpDst);
+    } else {
+      fmv_d_x(dst, tmpDst);
+    }
+    return;
+  }
+  Label no_set;
+  if (cmp_single) {
+    // jump if cmp1 >= cmp2
+    // not jump (i.e. move src to dst) if cmp1 < cmp2 or either is NaN
+    float_bge(cmp1, cmp2, no_set);
+  } else {
+    double_bge(cmp1, cmp2, no_set);
+  }
+  if (cmov_single) {
+    fmv_s(dst, src);
+  } else {
+    fmv_d(dst, src);
+  }
   bind(no_set);
 }
 

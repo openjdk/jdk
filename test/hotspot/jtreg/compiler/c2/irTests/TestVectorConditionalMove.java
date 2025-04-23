@@ -215,7 +215,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveVFGT(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] > b[i]) ? a[i] : b[i];
@@ -227,7 +227,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveVFGTSwap(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (b[i] > a[i]) ? a[i] : b[i];
@@ -239,7 +239,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveVFLT(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] < b[i]) ? a[i] : b[i];
@@ -251,7 +251,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveVFLTSwap(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (b[i] < a[i]) ? a[i] : b[i];
@@ -263,7 +263,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveVFEQ(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] == b[i]) ? a[i] : b[i];
@@ -275,7 +275,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, ">0",
                   IRNode.VECTOR_BLEND_D, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveVDLE(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] <= b[i]) ? a[i] : b[i];
@@ -287,7 +287,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, ">0",
                   IRNode.VECTOR_BLEND_D, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveVDLESwap(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (b[i] <= a[i]) ? a[i] : b[i];
@@ -299,7 +299,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, ">0",
                   IRNode.VECTOR_BLEND_D, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveVDGE(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] >= b[i]) ? a[i] : b[i];
@@ -311,7 +311,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, ">0",
                   IRNode.VECTOR_BLEND_D, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveVDGESwap(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (b[i] >= a[i]) ? a[i] : b[i];
@@ -323,7 +323,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, ">0",
                   IRNode.VECTOR_BLEND_D, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveVDNE(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] != b[i]) ? a[i] : b[i];
@@ -336,7 +336,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveFGTforFConst(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] > b[i]) ? 0.1f : -0.1f;
@@ -348,7 +348,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveFGEforFConst(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] >= b[i]) ? 0.1f : -0.1f;
@@ -360,7 +360,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveFLTforFConst(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] < b[i]) ? 0.1f : -0.1f;
@@ -372,7 +372,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveFLEforFConst(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] <= b[i]) ? 0.1f : -0.1f;
@@ -384,7 +384,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveFEQforFConst(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] == b[i]) ? 0.1f : -0.1f;
@@ -396,7 +396,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveFNEQforFConst(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] != b[i]) ? 0.1f : -0.1f;
@@ -409,7 +409,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
         applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveFLTforFConstH2(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] < b[i+0]) ? 0.1f : -0.1f;
@@ -427,7 +427,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
         applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveFLEforFConstH2(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] <= b[i+0]) ? 0.1f : -0.1f;
@@ -444,7 +444,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, "=0",
                   IRNode.VECTOR_BLEND_F, "=0",
                   IRNode.STORE_VECTOR, "=0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveFYYforFConstH2(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] <= b[i+0]) ? 0.1f : -0.1f;
@@ -457,7 +457,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, "=0",
                   IRNode.VECTOR_BLEND_F, "=0",
                   IRNode.STORE_VECTOR, "=0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveFXXforFConstH2(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] <  b[i+0]) ? 0.1f : -0.1f;
@@ -470,7 +470,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, ">0",
                   IRNode.VECTOR_BLEND_D, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveDGTforDConst(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] > b[i]) ? 0.1 : -0.1;
@@ -482,7 +482,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, ">0",
                   IRNode.VECTOR_BLEND_D, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveDGEforDConst(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] >= b[i]) ? 0.1 : -0.1;
@@ -494,7 +494,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, ">0",
                   IRNode.VECTOR_BLEND_D, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveDLTforDConst(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] < b[i]) ? 0.1 : -0.1;
@@ -506,7 +506,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, ">0",
                   IRNode.VECTOR_BLEND_D, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveDLEforDConst(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] <= b[i]) ? 0.1 : -0.1;
@@ -518,7 +518,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, ">0",
                   IRNode.VECTOR_BLEND_D, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveDEQforDConst(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] == b[i]) ? 0.1 : -0.1;
@@ -530,7 +530,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, ">0",
                   IRNode.VECTOR_BLEND_D, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveDNEQforDConst(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i++) {
             c[i] = (a[i] != b[i]) ? 0.1 : -0.1;
@@ -542,7 +542,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, ">0",
                   IRNode.VECTOR_BLEND_D, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveDLTforDConstH2(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] < b[i+0]) ? 0.1 : -0.1;
@@ -555,7 +555,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, ">0",
                   IRNode.VECTOR_BLEND_D, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveDLEforDConstH2(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] <= b[i+0]) ? 0.1 : -0.1;
@@ -568,7 +568,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, "=0",
                   IRNode.VECTOR_BLEND_D, "=0",
                   IRNode.STORE_VECTOR, "=0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveDYYforDConstH2(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] <= b[i+0]) ? 0.1 : -0.1;
@@ -581,7 +581,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, "=0",
                   IRNode.VECTOR_BLEND_D, "=0",
                   IRNode.STORE_VECTOR, "=0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveDXXforDConstH2(double[] a, double[] b, double[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] <  b[i+0]) ? 0.1 : -0.1;
@@ -623,7 +623,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
                   IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveIGTforF(int[] a, int[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -683,7 +683,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
                   IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true", "rvv", "true"})
     // Requires avx2, else L is restricted to 16 byte, and D has 32. That leads to a vector elements mismatch of 2 to 4.
     private static void testCMoveLGTforD(long[] a, long[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
@@ -721,7 +721,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveFGTforF(float[] a, float[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -780,7 +780,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_D, ">0",
                   IRNode.VECTOR_BLEND_D, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveDGTforD(double[] a, double[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -796,7 +796,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveFGTforFCmpCon1(float a, float[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < b.length; i++) {
             float cc = c[i];
@@ -811,7 +811,7 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true", "rvv", "true"})
     private static void testCMoveFGTforFCmpCon2(float[] a, float b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
