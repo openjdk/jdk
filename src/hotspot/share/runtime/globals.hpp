@@ -1721,7 +1721,7 @@ const int ObjectAlignmentInBytes = 8;
           "will be replaced by pid")                                        \
                                                                             \
   product(int, PerfDataSamplingInterval, 50,                                \
-          "Data sampling interval (in milliseconds)")                       \
+          "(Deprecated) Data sampling interval (in milliseconds)")                       \
           range(PeriodicTask::min_interval, max_jint)                       \
           constraint(PerfDataSamplingIntervalFunc, AfterErgo)               \
                                                                             \
