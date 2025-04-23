@@ -27,6 +27,7 @@
  * @summary tests that images of all supported native image formats
  *          are transferred properly
  * @key headful
+ * @library /test/lib
  * @run main ImageTransferTest
  */
 
@@ -42,10 +43,11 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.image.BufferedImage;
 import java.awt.image.MemoryImageSource;
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class ImageTransferTest {
     public static final int CODE_NOT_RETURNED = 100;
@@ -55,7 +57,7 @@ public class ImageTransferTest {
     private TImageProducer imPr;
     private int returnCode = CODE_NOT_RETURNED;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         ImageTransferTest imageTransferTest = new ImageTransferTest();
         imageTransferTest.init();
         imageTransferTest.start();
@@ -66,136 +68,59 @@ public class ImageTransferTest {
         imPr.begin();
     }
 
-    public void start() {
-        try {
-            String formats = "";
+    public void start() throws Exception {
+        String formats = "";
 
-            String iniMsg = "Testing all native image formats from \n" +
-                "SystemFlavorMap.getNativesForFlavor(DataFlavor.imageFlavor) \n";
+        String iniMsg = "Testing all native image formats from \n" +
+            "SystemFlavorMap.getNativesForFlavor(DataFlavor.imageFlavor) \n";
 
-            for (int i = 0; i < imPr.formats.length; i++) {
-                formats += (imPr.formats[i] + " ");
-            }
-            System.out.println(iniMsg + formats);
+        for (int i = 0; i < imPr.formats.length; i++) {
+            formats += (imPr.formats[i] + " ");
+        }
+        System.out.println(iniMsg + formats);
 
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                TImageConsumer.class.getName(), formats
+        );
 
-            String javaPath = System.getProperty("java.home", "");
+        Process process = ProcessTools.startProcess("Child", pb);
+        OutputAnalyzer outputAnalyzer = new OutputAnalyzer(process);
 
-            Process process = new ProcessBuilder(
-                    javaPath + File.separator + "bin" + File.separator + "java",
-                    "-cp", System.getProperty("test.classes", "."),
-                    "TImageConsumer", formats
-            ).start();
-
-            ProcessResults pres = ProcessResults.doWaitFor(process, 15);
-            returnCode = pres.exitValue;
-
-            if (!pres.stderr.isEmpty()) {
-                System.err.println("========= Child VM System.err ========");
-                System.err.print(pres.stderr);
-                System.err.println("======================================");
-            }
-
-            if (!pres.stdout.isEmpty()) {
-                System.err.println("========!= Child VM System.out ========");
-                System.err.print(pres.stdout);
-                System.err.println("======================================");
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
+        if (!process.waitFor(15, TimeUnit.SECONDS)) {
+            returnCode = CODE_NOT_RETURNED;
+        } else {
+            returnCode = outputAnalyzer.getExitValue();
         }
 
         switch (returnCode) {
-        case CODE_NOT_RETURNED:
-            System.err.println("Child VM: failed to start");
-            break;
-        case CODE_FAILURE:
-            System.err.println("Child VM: abnormal termination");
-            break;
-        case CODE_CONSUMER_TEST_FAILED:
-            throw new RuntimeException("test failed: images in some " +
-                "native formats are not transferred properly: " +
-                "see output of child VM");
-        default:
-            boolean failed = false;
-            String passedFormats = "";
-            String failedFormats = "";
-
-            for (int i = 0; i < imPr.passedArray.length; i++) {
-               if (imPr.passedArray[i]) passedFormats += imPr.formats[i] + " ";
-               else {
-                   failed = true;
-                   failedFormats += imPr.formats[i] + " ";
-               }
-            }
-            if (failed) {
-                throw new RuntimeException("test failed: images in following " +
+            case CODE_NOT_RETURNED:
+                throw new RuntimeException("Child VM: failed to start");
+            case CODE_FAILURE:
+                throw new RuntimeException("Child VM: abnormal termination");
+            case CODE_CONSUMER_TEST_FAILED:
+                throw new RuntimeException("test failed: images in some " +
                     "native formats are not transferred properly: " +
-                    failedFormats);
-            } else {
-                System.err.println("images in following native formats are " +
-                    "transferred properly: " + passedFormats);
-            }
-        }
-    }
-}
+                    "see output of child VM");
+            default:
+                boolean failed = false;
+                String passedFormats = "";
+                String failedFormats = "";
 
-class ProcessResults {
-    public int exitValue = -1;
-    public String stdout;
-    public String stderr;
-
-    public static ProcessResults doWaitFor(Process p, int timeoutSeconds)
-            throws Exception {
-        ProcessResults pres = new ProcessResults();
-
-        InReader in = new InReader("I", p.inputReader());
-        InReader err = new InReader("E", p.errorReader());
-
-        in.start();
-        err.start();
-
-        try {
-            if (p.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
-                pres.exitValue = p.exitValue();
-            } else {
-                System.err.println("Process timed out");
-                p.destroyForcibly();
-            }
-        } finally {
-            in.join(500);
-            err.join(500);
-        }
-
-        pres.stdout = in.output.toString();
-        pres.stderr = err.output.toString();
-
-        return pres;
-    }
-
-    static class InReader extends Thread {
-        private final String prefix;
-        private final BufferedReader reader;
-        private final StringBuffer output = new StringBuffer();
-
-        public InReader(String prefix, BufferedReader reader) {
-            this.prefix = prefix;
-            this.reader = reader;
-        }
-
-        @Override
-        public void run() {
-            String line;
-            try {
-                while ((line = reader.readLine()) != null) {
-                    System.out.printf("> %s: %s\n", prefix, line);
-                    output.append(line).append(System.lineSeparator());
+                for (int i = 0; i < imPr.passedArray.length; i++) {
+                   if (imPr.passedArray[i]) passedFormats += imPr.formats[i] + " ";
+                   else {
+                       failed = true;
+                       failedFormats += imPr.formats[i] + " ";
+                   }
                 }
-            } catch (IOException e) {
-                System.out.printf("> %s: %s\n", prefix, e);
-                output.append("Error reading: ")
-                      .append(e).append(System.lineSeparator());
-            }
+                if (failed) {
+                    throw new RuntimeException("test failed: images in following " +
+                        "native formats are not transferred properly: " +
+                        failedFormats);
+                } else {
+                    System.err.println("images in following native formats are " +
+                        "transferred properly: " + passedFormats);
+                }
         }
     }
 }

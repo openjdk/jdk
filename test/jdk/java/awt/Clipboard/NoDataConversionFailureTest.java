@@ -27,6 +27,7 @@
  * @summary Tests that there is no data conversion failure when two applications
  *          exchange data via system clipboard
  * @key headful
+ * @library /test/lib
  * @run main NoDataConversionFailureTest
  */
 
@@ -36,10 +37,12 @@ import java.awt.datatransfer.ClipboardOwner;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class NoDataConversionFailureTest {
 
@@ -106,36 +109,21 @@ class SystemClipboardOwner implements ClipboardOwner {
         setClipboardContents(clipboard, new StringSelection(cbo1.m + ""),
                 cbo1);
 
+        ProcessBuilder pb = ProcessTools
+                .createTestJavaProcessBuilder(SystemClipboardOwner.class.getName());
 
-        String javaPath = System.getProperty("java.home", "");
+        Process process = ProcessTools.startProcess("Child", pb);
+        OutputAnalyzer outputAnalyzer = new OutputAnalyzer(process);
 
-        Process process = new ProcessBuilder(
-                javaPath + File.separator + "bin" + File.separator + "java",
-                "-cp", System.getProperty("test.classes", "."),
-                "SystemClipboardOwner"
-        ).start();
-
-        ProcessResults pres = ProcessResults.doWaitFor(process, 15);
-
-        if (!pres.stderr.isEmpty()) {
-            System.err.println("========= Child VM System.err ========");
-            System.err.print(pres.stderr);
-            System.err.println("======================================");
-        }
-
-        if (!pres.stdout.isEmpty()) {
-            System.err.println("========= Child VM System.out ========");
-            System.err.print(pres.stdout);
-            System.err.println("======================================");
+        if (!process.waitFor(15, TimeUnit.SECONDS)) {
+            throw new TimeoutException("Timed out waiting for Child");
         }
 
         if (cbo1.m < CHAIN_LENGTH) {
             System.err.println("chain of calls of lostOwnership() broken!");
         }
 
-        if (pres.exitValue != 0) {
-            throw new Error("Unexpected exit value: " + pres.exitValue);
-        }
+        outputAnalyzer.shouldHaveExitValue(0);
     }
 
     public static void main(String[] args) throws InterruptedException {
@@ -178,66 +166,6 @@ class SystemClipboardOwner implements ClipboardOwner {
                     try { Thread.sleep(100); }
                     catch (InterruptedException e) { e.printStackTrace(); }
                 }
-            }
-        }
-    }
-}
-
-class ProcessResults {
-    public int exitValue = -1;
-    public String stdout;
-    public String stderr;
-
-    public static ProcessResults doWaitFor(Process p, int timeoutSeconds)
-            throws Exception {
-        ProcessResults pres = new ProcessResults();
-
-        InReader in = new InReader("I", p.inputReader());
-        InReader err = new InReader("E", p.errorReader());
-
-        in.start();
-        err.start();
-
-        try {
-            if (p.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
-                pres.exitValue = p.exitValue();
-            } else {
-                System.err.println("Process timed out");
-                p.destroyForcibly();
-            }
-        } finally {
-            in.join(500);
-            err.join(500);
-        }
-
-        pres.stdout = in.output.toString();
-        pres.stderr = err.output.toString();
-
-        return pres;
-    }
-
-    static class InReader extends Thread {
-        private final String prefix;
-        private final BufferedReader reader;
-        private final StringBuffer output = new StringBuffer();
-
-        public InReader(String prefix, BufferedReader reader) {
-            this.prefix = prefix;
-            this.reader = reader;
-        }
-
-        @Override
-        public void run() {
-            String line;
-            try {
-                while ((line = reader.readLine()) != null) {
-                    System.out.printf("> %s: %s\n", prefix, line);
-                    output.append(line).append(System.lineSeparator());
-                }
-            } catch (IOException e) {
-                System.out.printf("> %s: %s\n", prefix, e);
-                output.append("Error reading: ")
-                      .append(e).append(System.lineSeparator());
             }
         }
     }

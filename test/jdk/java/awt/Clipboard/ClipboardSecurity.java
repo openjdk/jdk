@@ -27,6 +27,7 @@
  * @summary Tests that Transferable.getTransferData() and
  *          SelectionOwner.lostOwnership is not called on Toolkit thread.
  * @key headful
+ * @library /test/lib
  * @run main ClipboardSecurity
  */
 
@@ -37,11 +38,13 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class ClipboardSecurity {
     static Clipboard clip = null;
@@ -93,34 +96,20 @@ public class ClipboardSecurity {
         MyClass clipData = new MyClass("clipboard test data");
         clip.setContents(clipData, clipData);
 
-        String javaPath = System.getProperty("java.home", "");
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                ClipboardSecurity.class.getName(),
+                "child"
+        );
 
-        Process proc = new ProcessBuilder(
-                javaPath + File.separator + "bin" + File.separator + "java",
-                "-cp", System.getProperty("test.classes", "."),
-                "ClipboardSecurity", "client"
-        ).start();
+        Process process = ProcessTools.startProcess("Child", pb);
+        OutputAnalyzer outputAnalyzer = new OutputAnalyzer(process);
 
-        ProcessResults pres = ProcessResults.doWaitFor(proc, 15);
-
+        if (!process.waitFor(15, TimeUnit.SECONDS)) {
+            throw new TimeoutException("Timed out waiting for Child");
+        }
         System.out.println("WAIT COMPLETE");
 
-        if (!pres.stderr.isEmpty()) {
-            System.err.println("========= Child VM System.err ========");
-            System.err.print(pres.stderr);
-            System.err.println("======================================");
-        }
-
-        if (!pres.stdout.isEmpty()) {
-            System.err.println("========= Child VM System.out ========");
-            System.err.print(pres.stdout);
-            System.err.println("======================================");
-        }
-
-        if (pres.exitValue != 0) {
-            throw new RuntimeException("child VM failed with exit code "
-                    + pres.exitValue);
-        }
+        outputAnalyzer.shouldHaveExitValue(0);
 
         if (!latch.await(10, TimeUnit.SECONDS)) {
             throw new RuntimeException("timed out");
@@ -162,65 +151,5 @@ class MyClass extends StringSelection implements ClipboardOwner {
                 + Thread.currentThread().getName() + " thread");
         checkIsCorrectThread("getTransferData");
         return super.getTransferData(flav);
-    }
-}
-
-class ProcessResults {
-    public int exitValue = -1;
-    public String stdout;
-    public String stderr;
-
-    public static ProcessResults doWaitFor(Process p, int timeoutSeconds)
-            throws Exception {
-        ProcessResults pres = new ProcessResults();
-
-        InReader in = new InReader("I", p.inputReader());
-        InReader err = new InReader("E", p.errorReader());
-
-        in.start();
-        err.start();
-
-        try {
-            if (p.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
-                pres.exitValue = p.exitValue();
-            } else {
-                System.err.println("Process timed out");
-                p.destroyForcibly();
-            }
-        } finally {
-            in.join(500);
-            err.join(500);
-        }
-
-        pres.stdout = in.output.toString();
-        pres.stderr = err.output.toString();
-
-        return pres;
-    }
-
-    static class InReader extends Thread {
-        private final String prefix;
-        private final BufferedReader reader;
-        private final StringBuffer output = new StringBuffer();
-
-        public InReader(String prefix, BufferedReader reader) {
-            this.prefix = prefix;
-            this.reader = reader;
-        }
-
-        @Override
-        public void run() {
-            String line;
-            try {
-                while ((line = reader.readLine()) != null) {
-                    System.out.printf("> %s: %s\n", prefix, line);
-                    output.append(line).append(System.lineSeparator());
-                }
-            } catch (IOException e) {
-                System.out.printf("> %s: %s\n", prefix, e);
-                output.append("Error reading: ")
-                      .append(e).append(System.lineSeparator());
-            }
-        }
     }
 }

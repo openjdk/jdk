@@ -27,6 +27,7 @@
  * @summary tests new Clipboard methods: getAvailableDataFlavors,
  *          isDataFlavorAvailable, getData
  * @key headful
+ * @library /test/lib
  * @run main SystemClipboardTest
  */
 
@@ -37,14 +38,17 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
 
 public class SystemClipboardTest {
 
@@ -62,31 +66,19 @@ public class SystemClipboardTest {
 
         check(); // JVM-local clipboard data
 
-        String javaPath = System.getProperty("java.home", "");
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                SystemClipboardTest.class.getName(),
+                "child"
+        );
 
-        Process process = new ProcessBuilder(
-                javaPath + File.separator + "bin" + File.separator + "java",
-                "-cp", System.getProperty("test.classes", "."),
-                "SystemClipboardTest", "child"
-                ).start();
+        Process process = ProcessTools.startProcess("Child", pb);
+        OutputAnalyzer outputAnalyzer = new OutputAnalyzer(process);
 
-        ProcessResults pres = ProcessResults.doWaitFor(process, 15);
-
-        if (!pres.stderr.isEmpty()) {
-            System.err.println("========= Child VM System.err ========");
-            System.err.print(pres.stderr);
-            System.err.println("======================================");
+        if (!process.waitFor(15, TimeUnit.SECONDS)) {
+            throw new TimeoutException("Timed out waiting for Child");
         }
 
-        if (!pres.stdout.isEmpty()) {
-            System.err.println("========= Child VM System.out ========");
-            System.err.print(pres.stdout);
-            System.err.println("======================================");
-        }
-
-        if (pres.exitValue != 0) {
-            throw new RuntimeException("child VM failed with exit code " + pres.exitValue);
-        }
+        outputAnalyzer.shouldHaveExitValue(0);
     }
 
     private void check() {
@@ -228,67 +220,6 @@ class Util {
                 } catch (InterruptedException ie) {
                     ie.printStackTrace();
                 }
-            }
-        }
-    }
-
-}
-
-class ProcessResults {
-    public int exitValue = -1;
-    public String stdout;
-    public String stderr;
-
-    public static ProcessResults doWaitFor(Process p, int timeoutSeconds)
-            throws Exception {
-        ProcessResults pres = new ProcessResults();
-
-        InReader in = new InReader("I", p.inputReader());
-        InReader err = new InReader("E", p.errorReader());
-
-        in.start();
-        err.start();
-
-        try {
-            if (p.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
-                pres.exitValue = p.exitValue();
-            } else {
-                System.err.println("Process timed out");
-                p.destroyForcibly();
-            }
-        } finally {
-            in.join(500);
-            err.join(500);
-        }
-
-        pres.stdout = in.output.toString();
-        pres.stderr = err.output.toString();
-
-        return pres;
-    }
-
-    static class InReader extends Thread {
-        private final String prefix;
-        private final BufferedReader reader;
-        private final StringBuffer output = new StringBuffer();
-
-        public InReader(String prefix, BufferedReader reader) {
-            this.prefix = prefix;
-            this.reader = reader;
-        }
-
-        @Override
-        public void run() {
-            String line;
-            try {
-                while ((line = reader.readLine()) != null) {
-                    System.out.printf("> %s: %s\n", prefix, line);
-                    output.append(line).append(System.lineSeparator());
-                }
-            } catch (IOException e) {
-                System.out.printf("> %s: %s\n", prefix, e);
-                output.append("Error reading: ")
-                      .append(e).append(System.lineSeparator());
             }
         }
     }
