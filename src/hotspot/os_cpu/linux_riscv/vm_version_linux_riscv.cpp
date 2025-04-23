@@ -196,9 +196,7 @@ void VM_Version::setup_cpu_available_features() {
 
   _cpu_info_string = os::strdup(buf);
 
-  _features_string = extract_features_string(_cpu_info_string,
-                                             strnlen(_cpu_info_string, sizeof(buf)),
-                                             features_offset);
+  _features_string = _cpu_info_string + features_offset;
 }
 
 void VM_Version::os_aux_features() {
