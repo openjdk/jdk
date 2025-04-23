@@ -1237,6 +1237,10 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
                                               jint start, jint end,
                                               jobjectArray buf_jh, jint pos,
                                               jboolean resolve, jobject ifna_jh)) {
+  if (pos < 0) {
+    THROW_MSG(vmSymbols::java_lang_LinkageError(), "bad BSM argument access");
+  }
+
   Klass* caller_k = java_lang_Class::as_Klass(JNIHandles::resolve(caller_jh));
   if (caller_k == nullptr || !caller_k->is_instance_klass()) {
       THROW_MSG(vmSymbols::java_lang_InternalError(), "bad caller");
@@ -1258,10 +1262,11 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
       THROW_MSG(vmSymbols::java_lang_InternalError(), "bad index info (1)");
   }
 
+
   objArrayHandle buf(THREAD, (objArrayOop) JNIHandles::resolve(buf_jh));
   end = MIN2(0, end);
   while (-4 <= start && start < end) {
-    if (0 > pos || pos >= buf->length()) break;
+    if (pos >= buf->length()) break;
     oop pseudo_arg = nullptr;
     switch (start) {
         case -4:  // bootstrap method
