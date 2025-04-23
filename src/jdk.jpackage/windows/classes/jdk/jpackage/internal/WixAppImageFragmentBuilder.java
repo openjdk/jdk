@@ -903,9 +903,9 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     }
 
     enum ShortcutsFolder {
-        ProgramMenu(PROGRAM_MENU_PATH, WinShortcut.WIN_SHORTCUT_DESKTOP,
+        ProgramMenu(PROGRAM_MENU_PATH, WinShortcut.WIN_SHORTCUT_START_MENU,
                 "JP_INSTALL_STARTMENU_SHORTCUT", "JpStartMenuShortcutPrompt"),
-        Desktop(DESKTOP_PATH, WinShortcut.WIN_SHORTCUT_START_MENU,
+        Desktop(DESKTOP_PATH, WinShortcut.WIN_SHORTCUT_DESKTOP,
                 "JP_INSTALL_DESKTOP_SHORTCUT", "JpDesktopShortcutPrompt");
 
         private ShortcutsFolder(Path root, WinShortcut shortcutId,
