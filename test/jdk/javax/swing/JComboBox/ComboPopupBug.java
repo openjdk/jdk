@@ -82,7 +82,7 @@ public class ComboPopupBug {
         }
     }
 
-    public static void clickComboBox() {
+    private static void clickComboBox() {
         comboBoxLocation = comboBox.getLocationOnScreen();
         comboBoxSize = comboBox.getSize();
 
