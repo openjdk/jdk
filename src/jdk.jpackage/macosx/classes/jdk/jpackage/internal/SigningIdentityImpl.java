@@ -36,7 +36,7 @@ record SigningIdentityImpl(String id) implements SigningIdentity {
         Objects.requireNonNull(id);
 
         if (ADHOC_SIGNING_IDENTITY.equals(id)) {
-            throw new IllegalArgumentException("Adhoc signing identity no allowed");
+            throw new IllegalArgumentException("Adhoc signing identity not allowed");
         }
     }
 }
