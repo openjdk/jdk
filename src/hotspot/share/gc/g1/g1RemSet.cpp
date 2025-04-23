@@ -1665,7 +1665,6 @@ void G1RemSet::print_periodic_summary_info(const char* header, uint period_count
 
     Log(gc, remset) log;
     log.trace("%s", header);
-    ResourceMark rm;
     LogStream ls(log.trace());
     _prev_period_summary.print_on(&ls, show_thread_times);
 
@@ -1678,7 +1677,6 @@ void G1RemSet::print_summary_info() {
   if (log.is_trace()) {
     log.trace(" Cumulative RS summary");
     G1RemSetSummary current;
-    ResourceMark rm;
     LogStream ls(log.trace());
     current.print_on(&ls, true /* show_thread_times*/);
   }

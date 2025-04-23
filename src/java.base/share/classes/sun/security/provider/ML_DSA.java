@@ -1328,6 +1328,7 @@ public class ML_DSA {
     */
 
     public static void mlDsaNtt(int[] coeffs) {
+        assert coeffs.length == ML_DSA_N;
         implDilithiumAlmostNtt(coeffs, MONT_ZETAS_FOR_VECTOR_NTT);
         implDilithiumMontMulByConstant(coeffs,  MONT_R_MOD_Q);
     }
@@ -1354,6 +1355,7 @@ public class ML_DSA {
     }
 
     public static void mlDsaInverseNtt(int[] coeffs) {
+        assert coeffs.length == ML_DSA_N;
         implDilithiumAlmostInverseNtt(coeffs, MONT_ZETAS_FOR_VECTOR_INVERSE_NTT);
         implDilithiumMontMulByConstant(coeffs, MONT_DIM_INVERSE);
     }
@@ -1393,6 +1395,7 @@ public class ML_DSA {
     }
 
     public static void mlDsaNttMultiply(int[] product, int[] coeffs1, int[] coeffs2) {
+        assert (coeffs1.length == ML_DSA_N) && (coeffs2.length == ML_DSA_N);
         implDilithiumNttMult(product, coeffs1, coeffs2);
     }
 
@@ -1423,6 +1426,8 @@ public class ML_DSA {
 
     public static void mlDsaDecomposePoly(int[] input, int[] lowPart, int[] highPart,
                                          int twoGamma2, int multiplier) {
+        assert (input.length == ML_DSA_N) && (lowPart.length == ML_DSA_N)
+                && (highPart.length == ML_DSA_N);
         implDilithiumDecomposePoly(input, lowPart, highPart,twoGamma2, multiplier);
     }
 
@@ -1561,7 +1566,7 @@ public class ML_DSA {
     // precondition: -2^31 * MONT_Q <= a, b < 2^31, -2^31 < a * b < 2^31 * MONT_Q
     // computes a * b * 2^-32 mod MONT_Q
     // the result is greater than -MONT_Q and less than MONT_Q
-    // see e.g. Algorithm 3 in https://eprint.iacr.org/2018/039.pdf
+    // See e.g. Algorithm 3 in https://eprint.iacr.org/2018/039.pdf
     private static int montMul(int b, int c) {
         long a = (long) b * (long) c;
         int aHigh = (int) (a >> MONT_R_BITS);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public class WindowsHelper {
         final Optional<Path> msiLogFile;
         if (createMsiLog) {
             msiLogFile = Optional.of(TKit.createTempFile(String.format("logs\\%s-msi.log",
-                    cmd.packageType().getName())));
+                    cmd.packageType().getType())));
         } else {
             msiLogFile = Optional.empty();
         }
@@ -175,13 +175,19 @@ public class WindowsHelper {
                 Path installationSubDirectory = getInstallationSubDirectory(cmd);
                 Path from = Path.of(extraPathComponent).resolve(installationSubDirectory);
                 Path to = installationSubDirectory;
-                TKit.trace(String.format("Convert [%s] into [%s] in [%s] directory", from, to,
-                        unpackDir));
+
                 ThrowingRunnable.toRunnable(() -> {
                     Files.createDirectories(unpackDir.resolve(to).getParent());
-                    Files.move(unpackDir.resolve(from), unpackDir.resolve(to));
-                    TKit.deleteDirectoryRecursive(unpackDir.resolve(extraPathComponent));
                 }).run();
+
+                // Files.move() occasionally results into java.nio.file.AccessDeniedException
+                Executor.tryRunMultipleTimes(ThrowingRunnable.toRunnable(() -> {
+                    TKit.trace(String.format("Convert [%s] into [%s] in [%s] directory", from, to, unpackDir));
+                    final var dstDir = unpackDir.resolve(to);
+                    TKit.deleteDirectoryRecursive(dstDir);
+                    Files.move(unpackDir.resolve(from), dstDir);
+                    TKit.deleteDirectoryRecursive(unpackDir.resolve(extraPathComponent));
+                }), 3, 5);
             }
         }
         return destinationDir;
@@ -317,18 +323,19 @@ public class WindowsHelper {
     private static long[] findAppLauncherPIDs(JPackageCommand cmd, String launcherName) {
         // Get the list of PIDs and PPIDs of app launcher processes. Run setWinRunWithEnglishOutput(true) for JDK-8344275.
         // wmic process where (name = "foo.exe") get ProcessID,ParentProcessID
-        List<String> output = Executor.of("wmic", "process", "where", "(name",
+        final var result = Executor.of("wmic", "process", "where", "(name",
                 "=",
                 "\"" + cmd.appLauncherPath(launcherName).getFileName().toString() + "\"",
                 ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).saveOutput().
-                setWinRunWithEnglishOutput(true).executeAndGetOutput();
-        if ("No Instance(s) Available.".equals(output.getFirst().trim())) {
+                setWinRunWithEnglishOutput(true).execute();
+        if ("No Instance(s) Available.".equals(result.stderr().findFirstLineOfOutput().map(String::trim).orElse(""))) {
             return new long[0];
         }
 
-        String[] headers = Stream.of(output.getFirst().split("\\s+", 2)).map(
+        final var stdout = result.stdout();
+        String[] headers = Stream.of(stdout.getFirstLineOfOutput().split("\\s+", 2)).map(
                 String::trim).map(String::toLowerCase).toArray(String[]::new);
-        Pattern pattern;
+        final Pattern pattern;
         if (headers[0].equals("parentprocessid") && headers[1].equals(
                 "processid")) {
             pattern = Pattern.compile("^(?<ppid>\\d+)\\s+(?<pid>\\d+)\\s+$");
@@ -340,7 +347,7 @@ public class WindowsHelper {
                     "Unrecognizable output of \'wmic process\' command");
         }
 
-        List<long[]> processes = output.stream().skip(1).map(line -> {
+        List<long[]> processes = stdout.getOutput().stream().skip(1).map(line -> {
             Matcher m = pattern.matcher(line);
             long[] pids = null;
             if (m.matches()) {
@@ -656,7 +663,7 @@ public class WindowsHelper {
         private final RegValuePath reg;
         private final Optional<SpecialFolderDotNet> alt;
 
-        private final static Map<SpecialFolder, Path> CACHE = new ConcurrentHashMap<>();
+        private static final Map<SpecialFolder, Path> CACHE = new ConcurrentHashMap<>();
     }
 
     private static final class ShortPathUtils {

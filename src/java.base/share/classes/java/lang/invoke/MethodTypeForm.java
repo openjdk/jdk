@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,8 @@ final class MethodTypeForm {
     // Cached lambda form information, for basic types only:
     private final Object[] lambdaForms;
 
+    private SoftReference<MemberName> interpretEntry;
+
     // Indexes into lambdaForms:
     static final int
             LF_INVVIRTUAL              =  0,  // DMH invokeVirtual
@@ -72,7 +74,6 @@ final class MethodTypeForm {
             LF_NEWINVSPECIAL           =  3,
             LF_INVINTERFACE            =  4,
             LF_INVSTATIC_INIT          =  5,  // DMH invokeStatic with <clinit> barrier
-            LF_INTERPRET               =  6,  // LF interpreter
             LF_REBIND                  =  7,  // BoundMethodHandle
             LF_DELEGATE                =  8,  // DelegatingMethodHandle
             LF_DELEGATE_BLOCK_INLINING =  9,  // Counting DelegatingMethodHandle w/ @DontInline
@@ -110,7 +111,7 @@ final class MethodTypeForm {
         return basicType;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("unchecked")
     public MethodHandle cachedMethodHandle(int which) {
         Object entry = methodHandles[which];
         if (entry == null) {
@@ -136,7 +137,7 @@ final class MethodTypeForm {
         return mh;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("unchecked")
     public LambdaForm cachedLambdaForm(int which) {
         Object entry = lambdaForms[which];
         if (entry == null) {
@@ -162,12 +163,24 @@ final class MethodTypeForm {
         return form;
     }
 
+    public MemberName cachedInterpretEntry() {
+        return (interpretEntry == null) ? null : interpretEntry.get();
+    }
+
+    public synchronized MemberName setCachedInterpretEntry(MemberName mn) {
+        MemberName prev = cachedInterpretEntry();
+        if (prev != null) {
+            return prev;
+        }
+        this.interpretEntry = new SoftReference<>(mn);
+        return mn;
+    }
+
     /**
      * Build an MTF for a given type, which must have all references erased to Object.
      * This MTF will stand for that type and all un-erased variations.
      * Eagerly compute some basic properties of the type, common to all variations.
      */
-    @SuppressWarnings({"rawtypes", "unchecked"})
     protected MethodTypeForm(MethodType erasedType) {
         this.erasedType = erasedType;
 

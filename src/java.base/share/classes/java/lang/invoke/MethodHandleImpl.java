@@ -1344,7 +1344,6 @@ abstract class MethodHandleImpl {
         ARRAY_STORE,
         ARRAY_LENGTH,
         IDENTITY,
-        ZERO,
         NONE // no intrinsic associated
     }
 
@@ -2232,6 +2231,29 @@ abstract class MethodHandleImpl {
             selectedCase = caseActions[input];
         }
         return selectedCase.invokeWithArguments(args);
+    }
+
+    // type is validated, value is not
+    static MethodHandle makeConstantReturning(Class<?> type, Object value) {
+        var callType = MethodType.methodType(type);
+        var basicType = BasicType.basicType(type);
+        var form = constantForm(basicType);
+
+        if (type.isPrimitive()) {
+            assert type != void.class;
+            var wrapper = Wrapper.forPrimitiveType(type);
+            var v = wrapper.convert(value, type); // throws CCE
+            return switch (wrapper) {
+                case INT    -> BoundMethodHandle.bindSingleI(callType, form, (int) v);
+                case LONG   -> BoundMethodHandle.bindSingleJ(callType, form, (long) v);
+                case FLOAT  -> BoundMethodHandle.bindSingleF(callType, form, (float) v);
+                case DOUBLE -> BoundMethodHandle.bindSingleD(callType, form, (double) v);
+                default -> BoundMethodHandle.bindSingleI(callType, form, ValueConversions.widenSubword(v));
+            };
+        }
+
+        var v = type.cast(value); // throws CCE
+        return BoundMethodHandle.bindSingleL(callType, form, v);
     }
 
     // Indexes into constant method handles:

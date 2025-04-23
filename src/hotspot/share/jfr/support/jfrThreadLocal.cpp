@@ -70,6 +70,7 @@ JfrThreadLocal::JfrThreadLocal() :
   _wallclock_time(os::javaTimeNanos()),
   _stackdepth(0),
   _entering_suspend_flag(0),
+  _non_reentrant_nesting(0),
   _vthread_epoch(0),
   _vthread_excluded(false),
   _jvm_thread_excluded(false),
@@ -298,7 +299,9 @@ void JfrThreadLocal::exclude_vthread(const JavaThread* jt) {
 }
 
 void JfrThreadLocal::include_vthread(const JavaThread* jt) {
-  set(&jt->jfr_thread_local()->_vthread_excluded, false);
+  JfrThreadLocal* const tl = jt->jfr_thread_local();
+  Atomic::store(&tl->_vthread_epoch, static_cast<u2>(0));
+  set(&tl->_vthread_excluded, false);
   JfrJavaEventWriter::include(vthread_id(jt), jt);
 }
 
@@ -363,26 +366,30 @@ typedef JfrOopTraceId<ThreadIdAccess> AccessThreadTraceId;
 void JfrThreadLocal::set_vthread_epoch(const JavaThread* jt, traceid tid, u2 epoch) {
   assert(jt != nullptr, "invariant");
   assert(is_vthread(jt), "invariant");
-  // To support event recursion, we update the native side first,
-  // this provides the terminating case.
+  assert(!is_non_reentrant(), "invariant");
+
   Atomic::store(&jt->jfr_thread_local()->_vthread_epoch, epoch);
-  /*
-  * The java side, i.e. the vthread object, can now be updated.
-  * Accessing the vthread object itself is a recursive case,
-  * because it can trigger additional events, e.g.
-  * loading the oop through load barriers.
-  * Note there is a potential problem with this solution:
-  * The recursive write hitting the terminating case will
-  * use the thread id _before_ the checkpoint is committed.
-  * Hence, the periodic thread can possibly flush that event
-  * to a segment that does not include an associated checkpoint.
-  * Considered rare and quite benign for now. The worst case is
-  * that thread information for that event is not resolvable, i.e. null.
-  */
+
   oop vthread = jt->vthread();
   assert(vthread != nullptr, "invariant");
+
   AccessThreadTraceId::set_epoch(vthread, epoch);
   JfrCheckpointManager::write_checkpoint(const_cast<JavaThread*>(jt), tid, vthread);
+}
+
+void JfrThreadLocal::set_vthread_epoch_checked(const JavaThread* jt, traceid tid, u2 epoch) {
+  assert(jt != nullptr, "invariant");
+  assert(is_vthread(jt), "invariant");
+
+  // If the event is marked as non reentrant, write only a simplified version of the vthread info.
+  // Essentially all the same info except the vthread name, because we cannot touch the oop.
+  // Since we cannot touch the oop, we also cannot update its vthread epoch.
+  if (is_non_reentrant()) {
+    JfrCheckpointManager::write_simplified_vthread_checkpoint(tid);
+    return;
+  }
+
+  set_vthread_epoch(jt, tid, epoch);
 }
 
 traceid JfrThreadLocal::vthread_id(const Thread* t) {
@@ -414,7 +421,7 @@ traceid JfrThreadLocal::thread_id(const Thread* t) {
   if (!tl->is_vthread_excluded()) {
     const u2 current_epoch = AccessThreadTraceId::current_epoch();
     if (vthread_epoch(jt) != current_epoch) {
-      set_vthread_epoch(jt, tid, current_epoch);
+      set_vthread_epoch_checked(jt, tid, current_epoch);
     }
   }
   return tid;
@@ -478,6 +485,26 @@ bool JfrThreadLocal::is_vthread(const JavaThread* jt) {
   return Atomic::load_acquire(&jt->jfr_thread_local()->_vthread) && jt->last_continuation() != nullptr;
 }
 
+int32_t JfrThreadLocal::make_non_reentrant(Thread* t) {
+  assert(t != nullptr, "invariant");
+  if (!t->is_Java_thread() || !is_vthread(JavaThread::cast(t))) {
+    return -1;
+  }
+  return t->jfr_thread_local()->_non_reentrant_nesting++;
+}
+
+void JfrThreadLocal::make_reentrant(Thread* t, int32_t previous_nesting) {
+  assert(t->is_Java_thread() && is_vthread(JavaThread::cast(t)), "invariant");
+  assert(previous_nesting >= 0, "invariant");
+  t->jfr_thread_local()->_non_reentrant_nesting = previous_nesting;
+}
+
+bool JfrThreadLocal::is_non_reentrant() {
+  Thread* const current_thread = Thread::current();
+  assert(current_thread != nullptr, "invariant");
+  return current_thread->jfr_thread_local()->_non_reentrant_nesting > 0;
+}
+
 inline bool is_virtual(const JavaThread* jt, oop thread) {
   assert(jt != nullptr, "invariant");
   return thread != jt->threadObj();
@@ -491,6 +518,7 @@ void JfrThreadLocal::on_set_current_thread(JavaThread* jt, oop thread) {
     Atomic::release_store(&tl->_vthread, false);
     return;
   }
+  assert(tl->_non_reentrant_nesting == 0, "invariant");
   Atomic::store(&tl->_vthread_id, AccessThreadTraceId::id(thread));
   const u2 epoch_raw = AccessThreadTraceId::epoch(thread);
   const bool excluded = epoch_raw & excluded_bit;
