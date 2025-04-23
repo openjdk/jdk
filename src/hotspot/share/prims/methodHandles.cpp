@@ -1257,9 +1257,11 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
       != caller->constants()->bootstrap_argument_count_at(bss_index_in_pool)) {
       THROW_MSG(vmSymbols::java_lang_InternalError(), "bad index info (1)");
   }
+
   objArrayHandle buf(THREAD, (objArrayOop) JNIHandles::resolve(buf_jh));
-  while (-4 <= start && start < 0) {
-    if (start >= end || 0 > pos || pos >= buf->length()) break;
+  end = MIN2(0, end);
+  while (-4 <= start && start < end) {
+    if (0 > pos || pos >= buf->length()) break;
     oop pseudo_arg = nullptr;
     switch (start) {
         case -4:  // bootstrap method
