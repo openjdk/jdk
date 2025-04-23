@@ -64,8 +64,10 @@ public class MathBench {
     public float float1 = 1.0f, float2 = 2.0f, floatNegative99 = -99.0f, float7 = 7.0f, eFloat = 2.718f;
     public double double1 = 1.0d, double2 = 2.0d, double81 = 81.0d, doubleNegative12 = -12.0d, double4Dot1 = 4.1d, double0Dot5 = 0.5d;
 
-    @Param({"-2.0", "-1.0", "-0.5", "-0.1", "0.0", "0.1", "0.5", "1.0", "2.0"})
-    public double tanhConstInput;
+    public static final double tanhConstInputs[] = {-2.0, -1.0, -0.5, -0.1, 0.0, 0.1, 0.5, 1.0, 2.0};
+
+    @Param({"0", "1", "2", "3", "4", "5", "6", "7", "8"})
+    public int tanhConstIndex;
 
     @Param("2048")
     public int tanhInputCount;
@@ -101,7 +103,7 @@ public class MathBench {
     }
 
     @Setup(Level.Invocation)
-    public void updateEveryIndex() {
+    public void updateIndices() {
         // Update the tanh index for the next invocation
         tanhInputIndex = (tanhInputIndex + 1) % tanhInputCount;
     }
@@ -552,7 +554,7 @@ public class MathBench {
 
     @Benchmark
     public double  tanhDouble() {
-        return  Math.tanh(tanhConstInput);
+        return  Math.tanh(tanhConstInputs[tanhConstIndex]);
     }
 
     @Benchmark
