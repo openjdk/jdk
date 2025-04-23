@@ -60,7 +60,9 @@ inline constexpr int objArrayOopDesc::base_offset_in_bytes_nobranches() {
 template <HeaderMode mode, typename OopType>
 inline HeapWord* objArrayOopDesc::base_nobranches() const {
   constexpr int offset = base_offset_in_bytes_nobranches<mode, OopType>();
-  return field_addr<HeapWord>(offset);
+  HeapWord* const rc = field_addr<HeapWord>(offset);
+  assert(rc == base(), "Sanity");
+  return rc;
 }
 
 #endif // SHARE_OOPS_OBJARRAYOOP_INLINE_HPP

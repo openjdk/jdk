@@ -97,7 +97,7 @@ inline size_t KlassLUTEntry::oak_calculate_wordsize_given_oop_fast(oopDesc* obj)
 
   // Load length from object
   const unsigned* const array_len_addr = (unsigned*)(obj->field_addr<unsigned>(length_field_offset));
-  const unsigned array_length = (size_t) (*array_len_addr);
+  const unsigned array_length = (unsigned) (*array_len_addr);
   assert(array_length == (unsigned)((typeArrayOop)obj)->length(), "sanity");
 
   // Calculate size
@@ -122,7 +122,7 @@ inline size_t KlassLUTEntry::tak_calculate_wordsize_given_oop_fast(oopDesc* obj)
 
   // Load length from object
   const unsigned* const array_len_addr = (unsigned*)(obj->field_addr<unsigned>(length_field_offset));
-  const unsigned array_length = (size_t) (*array_len_addr);
+  const unsigned array_length = (unsigned) (*array_len_addr);
   assert(array_length == (unsigned)((typeArrayOop)obj)->length(), "sanity");
 
   // Calculate size

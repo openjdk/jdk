@@ -27,6 +27,7 @@
 
 #include "oops/arrayKlass.hpp"
 #include "oops/klassInfoLUTEntry.hpp"
+#include "oops/objLayout.hpp"
 #include "utilities/macros.hpp"
 
 class ClassLoaderData;
@@ -130,15 +131,15 @@ class ObjArrayKlass : public ArrayKlass {
   static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute);
 
   // Iterate over oop elements within [start, end), and metadata.
-  template <typename T, class OopClosureType>
+  template <HeaderMode mode, typename T, class OopClosureType>
   static inline void oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end);
 
- public:
+ private:
+
   // Iterate over all oop elements.
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure);
 
- private:
   // Iterate over all oop elements with indices within mr.
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);

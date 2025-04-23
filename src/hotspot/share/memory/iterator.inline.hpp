@@ -500,6 +500,59 @@ public:
 
 
 ////////////////////////////////////////////////
+// Abridged dispatch table (just one entry) for oop_iterate_range on ObjArrayOop
+
+template <typename OopClosureType>
+class OopOopIterateDispatchRange : public DispatchBase {
+  typedef void (*FunctionType) (objArrayOop obj, OopClosureType* cl, int start, int end);
+
+  struct Table {
+
+    FunctionType _function;
+
+    template <HeaderMode mode, typename OopType>
+    static void invoke(objArrayOop obj, OopClosureType* cl, int start, int end) {
+      ObjArrayKlass::oop_oop_iterate_range<mode, OopType, OopClosureType>(obj, cl, start, end);
+    }
+
+    static void init_and_execute(objArrayOop obj, OopClosureType* cl, int start, int end) {
+      OopOopIterateDispatchRange<OopClosureType>::_table.set_resolve_function_and_execute(obj, cl, start, end);
+    }
+
+    void set_resolve_function_and_execute(objArrayOop obj, OopClosureType* cl, int start, int end) {
+      set_resolve_function();
+      _function(obj, cl, start, end);
+    }
+
+    void set_resolve_function() {
+      if (UseCompressedOops) {
+        if (UseCompactObjectHeaders) {
+          _function = &invoke<HeaderMode::Compact, narrowOop>;
+        } else {
+          _function = &invoke<HeaderMode::Compressed, narrowOop>;
+        }
+      } else {
+        if (UseCompactObjectHeaders) {
+          _function = &invoke<HeaderMode::Compact, oop>;
+        } else {
+          _function = &invoke<HeaderMode::Compressed, oop>;
+        }
+      }
+    }
+    Table() {
+      _function = &init_and_execute;
+    }
+  };
+
+  static Table _table;
+
+public:
+  static void invoke(objArrayOop obj, OopClosureType* cl, int start, int end) {
+    _table._function(obj, cl, start, end);
+  }
+};
+
+////////////////////////////////////////////////
 // Dispatcher tables
 
 template <typename OopClosureType>
@@ -516,6 +569,9 @@ typename OopOopIterateDispatchReturnSize<OopClosureType>::Table OopOopIterateDis
 
 template <typename OopClosureType>
 typename OopOopIterateDispatchBoundedReturnSize<OopClosureType>::Table OopOopIterateDispatchBoundedReturnSize<OopClosureType>::_table;
+
+template <typename OopClosureType>
+typename OopOopIterateDispatchRange<OopClosureType>::Table OopOopIterateDispatchRange<OopClosureType>::_table;
 
 ////////////////////////////////////////////////
 // Dispatcher entriy points
@@ -548,6 +604,11 @@ template <typename OopClosureType>
 size_t OopIteratorClosureDispatch::oop_oop_iterate_bounded_size(oop obj, OopClosureType* cl, MemRegion mr) {
   const KlassLUTEntry klute = obj->get_klute();
   return OopOopIterateDispatchBoundedReturnSize<OopClosureType>::invoke(obj, cl, mr, klute);
+}
+
+template <typename OopClosureType>
+void OopIteratorClosureDispatch::oop_oop_iterate_range(objArrayOop obj, OopClosureType* cl, int start, int end) {
+  OopOopIterateDispatchRange<OopClosureType>::invoke(obj, cl, start, end);
 }
 
 #endif // SHARE_MEMORY_ITERATOR_INLINE_HPP

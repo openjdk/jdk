@@ -29,7 +29,7 @@
 
 #include "memory/memRegion.hpp"
 #include "oops/arrayKlass.hpp"
-#include "oops/arrayOop.hpp"
+#include "oops/arrayOop.inline.hpp"
 #include "oops/klass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -100,21 +100,20 @@ void ObjArrayKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, Kl
 
 // Like oop_oop_iterate but only iterates over a specified range and only used
 // for objArrayOops.
-template <typename T, class OopClosureType>
+template <HeaderMode mode, typename T, class OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end) {
-  T* low = (T*)a->base() + start;
-  T* high = (T*)a->base() + end;
+  assert(start <= end, "Sanity");
 
-  oop_oop_iterate_elements_bounded<T>(a, closure, low, high);
-}
+  assert(start >= 0, "Sanity");
 
-// Placed here to resolve include cycle between objArrayKlass.inline.hpp and objArrayOop.inline.hpp
-template <typename OopClosureType>
-void objArrayOopDesc::oop_iterate_range(OopClosureType* blk, int start, int end) {
-  if (UseCompressedOops) {
-    ((ObjArrayKlass*)klass())->oop_oop_iterate_range<narrowOop>(this, blk, start, end);
-  } else {
-    ((ObjArrayKlass*)klass())->oop_oop_iterate_range<oop>(this, blk, start, end);
+  const int len = a->length_nobranches<mode>();
+  if (len < end) {
+    end = len;
+  }
+
+  T* const b = (T*)a->base_nobranches<mode, T>();
+  for (int i = start; i < end; i++) {
+    Devirtualizer::do_oop(closure, b + i);
   }
 }
 

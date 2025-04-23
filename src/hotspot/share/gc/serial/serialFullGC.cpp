@@ -412,7 +412,7 @@ void SerialFullGC::follow_array_chunk(objArrayOop array, int index) {
   const int stride = MIN2(len - beg_index, (int) ObjArrayMarkingStride);
   const int end_index = beg_index + stride;
 
-  array->oop_iterate_range(&mark_and_push_closure, beg_index, end_index);
+  OopIteratorClosureDispatch::oop_oop_iterate_range(array, &mark_and_push_closure, beg_index, end_index);
 
   if (end_index < len) {
     SerialFullGC::push_objarray(array, end_index); // Push the continuation.

@@ -40,6 +40,7 @@
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -232,9 +233,10 @@ void G1ParScanThreadState::do_partial_array(PartialArrayState* state, bool stole
   G1HeapRegionAttr dest_attr = _g1h->region_attr(to_array);
   G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor());
   // Process claimed task.
-  to_array->oop_iterate_range(&_scanner,
-                              checked_cast<int>(claim._start),
-                              checked_cast<int>(claim._end));
+  OopIteratorClosureDispatch::oop_oop_iterate_range(to_array,
+                                                    &_scanner,
+                                                    checked_cast<int>(claim._start),
+                                                    checked_cast<int>(claim._end));
 }
 
 MAYBE_INLINE_EVACUATION
@@ -254,7 +256,9 @@ void G1ParScanThreadState::start_partial_objarray(oop from_obj,
   // Process the initial chunk.  No need to process the type in the
   // klass, as it will already be handled by processing the built-in
   // module.
-  to_array->oop_iterate_range(&_scanner, 0, checked_cast<int>(initial_chunk_size));
+  OopIteratorClosureDispatch::oop_oop_iterate_range(to_array,
+                                                    &_scanner,
+                                                    0, checked_cast<int>(initial_chunk_size));
 }
 
 MAYBE_INLINE_EVACUATION
