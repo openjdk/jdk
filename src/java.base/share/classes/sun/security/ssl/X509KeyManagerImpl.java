@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -363,7 +363,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                                     checkType, constraints, null, null);
     }
 
-    public String chooseServerAlias(String keyType,
+    String chooseServerAlias(String keyType,
             X500Principal[] x500Principals,
             AlgorithmConstraints algorithmConstraints,
             List<SNIServerName> requestedServerNames) {
@@ -372,7 +372,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                 "HTTPS");
     }
 
-    public String chooseClientAlias(String[] keyTypes, Principal[] issuers,
+    String chooseClientAlias(String[] keyTypes, Principal[] issuers,
             AlgorithmConstraints algorithmConstraints) {
         return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
                 algorithmConstraints);
