@@ -31,7 +31,6 @@ import static jdk.jpackage.internal.FromParams.createApplicationBuilder;
 import static jdk.jpackage.internal.FromParams.createApplicationBundlerParam;
 import static jdk.jpackage.internal.FromParams.createPackageBuilder;
 import static jdk.jpackage.internal.FromParams.createPackageBundlerParam;
-import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
@@ -317,6 +316,9 @@ final class MacFromParams {
 
     private static final BundlerParamInfo<String> PACKAGE_TYPE = createStringBundlerParam(
             Arguments.CLIOptions.PACKAGE_TYPE.getId());
+    
+    private static final BundlerParamInfo<Boolean> APP_STORE = createBooleanBundlerParam(
+            Arguments.CLIOptions.MAC_APP_STORE.getId());
 
     private static final BundlerParamInfo<String> FA_MAC_CFBUNDLETYPEROLE = createStringBundlerParam(
             Arguments.MAC_CFBUNDLETYPEROLE);
