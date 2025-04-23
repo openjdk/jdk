@@ -321,7 +321,7 @@ final class AltSvcProcessor {
         final int alternativeDelimIndex = altValue.indexOf("=");
         if (alternativeDelimIndex == -1 || alternativeDelimIndex == altValue.length() - 1) {
             // not a valid alt value
-            debug.log("no = in %s", altValue);
+            debug.log("no \"=\" character in %s", altValue);
             return null;
         }
         // key is always the protocol-id. example, in 'h3="localhost:5678"; ma=23232; persist=1'
