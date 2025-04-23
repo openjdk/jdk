@@ -303,7 +303,7 @@ public final class CompositeProxy {
 
         if (interfaceDispatch.size() != interfaces.length) {
             final List<Class<?>> missingInterfaces = new ArrayList<>(Set.of(interfaces));
-            missingInterfaces.removeAll(interfaceDispatch.entrySet());
+            missingInterfaces.removeAll(interfaceDispatch.keySet());
             throw createInterfaceNotImplementedException(missingInterfaces);
         }
 
