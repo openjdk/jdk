@@ -46,6 +46,7 @@ import com.sun.tools.javac.code.Directive.RequiresDirective;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
 import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.resources.CompilerProperties;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
@@ -5667,4 +5668,115 @@ public class Check {
 
     }
 
+    /** Check if a type required an identity class
+     */
+    boolean checkIfIdentityIsRequired(DiagnosticPosition pos, Type t, Env<AttrContext> env) {
+        if (t != null &&
+                env.info.lint != null &&
+                env.info.lint.isEnabled(LintCategory.IDENTITY) &&
+                needsRequiresIdentityWarning(t)) {
+            env.info.lint.logIfEnabled(pos, LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isValueBased(Type t) {
+        return t != null && t.tsym != null && (t.tsym.flags() & VALUE_BASED) != 0;
+    }
+
+    public boolean needsRequiresIdentityWarning(Type t) {
+        if (t != null) {
+            RequiresIdentityVisitor requiresIdentityVisitor = new RequiresIdentityVisitor();
+            // we need to avoid self referencing type vars or captures
+            Set<Type> seen = new HashSet<>();
+            requiresIdentityVisitor.visit(t, seen);
+            return requiresIdentityVisitor.requiresWarning;
+        }
+        return false;
+    }
+
+    public boolean checkIfTypeParamsRequiresIdentity(SymbolMetadata sm, List<Type> typeParams) {
+        return checkIfTypeParamsRequiresIdentity(sm, typeParams, null, null, false);
+    }
+
+    public boolean checkIfTypeParamsRequiresIdentity(SymbolMetadata sm,
+                                                     List<Type> typeParams,
+                                                     JCDiagnostic.DiagnosticPosition pos,
+                                                     Lint lint,
+                                                     boolean warn) {
+        boolean result = false;
+        if (sm != null) {
+            for (Attribute.TypeCompound ta: sm.getTypeAttributes()) {
+                if (ta.type.tsym == syms.requiresIdentityType.tsym) {
+                    TypeAnnotationPosition tap = ta.position;
+                    if (tap.type == TargetType.CLASS_TYPE_PARAMETER || tap.type == TargetType.METHOD_TYPE_PARAMETER) {
+                        int index = tap.parameter_index;
+                        // ClassType::getTypeArguments() can be empty for raw types
+                        Type tparam = typeParams.isEmpty() ? null : typeParams.get(index);
+                        if (tparam != null && isValueBased(tparam)) {
+                            if (warn) {
+                                lint.logIfEnabled(pos,
+                                        CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                            }
+                            result = true;
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    // where
+    class RequiresIdentityVisitor extends Types.SimpleVisitor<Void, Set<Type>> {
+        boolean requiresWarning = false;
+
+        @Override
+        public Void visitType(Type t, Set<Type> seen) {
+            return null;
+        }
+
+        @Override
+        public Void visitWildcardType(WildcardType t, Set<Type> seen) {
+            return visit(t.type, seen);
+        }
+
+        @Override
+        public Void visitTypeVar(TypeVar t, Set<Type> seen) {
+            if (seen.add(t)) {
+                visit(t.getUpperBound(), seen);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitCapturedType(CapturedType t, Set<Type> seen) {
+            if (seen.add(t)) {
+                visit(t.getUpperBound(), seen);
+                visit(t.getLowerBound(), seen);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitArrayType(ArrayType t, Set<Type> seen) {
+            return visit(t.elemtype, seen);
+        }
+
+        @Override
+        public Void visitClassType(ClassType t, Set<Type> seen) {
+            if (t != null && t.tsym != null) {
+                if (checkIfTypeParamsRequiresIdentity(t.tsym.getMetadata(), t.getTypeArguments())) {
+                    requiresWarning = true;
+                    return null;
+                }
+            }
+            visit(t.getEnclosingType(), seen);
+            for (Type targ : t.getTypeArguments()) {
+                visit(targ, seen);
+            }
+            return null;
+        }
+    }
 }
