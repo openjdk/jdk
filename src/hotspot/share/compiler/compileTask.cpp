@@ -141,7 +141,7 @@ CompileTask* CompileTask::select_for_compilation() {
     return nullptr;
   }
 
-  // Block unloading for currently held method holders.
+  // Block unloading for currently held method handles.
   _method_handle.block_unloading();
   _hot_method_handle.block_unloading();
 

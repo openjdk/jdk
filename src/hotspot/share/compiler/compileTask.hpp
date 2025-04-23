@@ -29,8 +29,6 @@
 #include "code/nmethod.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/allocation.hpp"
-#include "oops/oopHandle.hpp"
-#include "oops/weakHandle.hpp"
 #include "runtime/unloadableMethodHandle.hpp"
 #include "utilities/xmlstream.hpp"
 
@@ -225,10 +223,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   size_t       arena_bytes() const               { return _arena_bytes; }
 
 private:
-  static WeakHandle get_unload_blocker_weak(Method* method);
-  static OopHandle get_unload_blocker_strong(Method* method);
-  static oop get_unload_blocker(Method* method);
-
   static void  print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
                                       bool is_osr_method = false, int osr_bci = -1, bool is_blocking = false,
                                       const char* msg = nullptr, bool short_form = false, bool cr = true,
