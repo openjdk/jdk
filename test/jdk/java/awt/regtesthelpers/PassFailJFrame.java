@@ -126,6 +126,11 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * the windows or frames registered in the {@code PassFailJFrame} framework
  * are created.
  *
+ * <p id="addButton">
+ * If you call {@link Builder#addButton(JButton)}, a new button will be added
+ * to the left side of the <i>Pass</i> button. This allows some customized
+ * actions to be performed. The method can be called multiple times.
+ *
  * <p id="logArea">
  * If you enable a log area, the instruction UI frame adds a text component
  * to display log messages below the buttons.
@@ -581,6 +586,7 @@ public final class PassFailJFrame {
         frame.add(createInstructionUIPanel(instructions,
                                            testTimeOut,
                                            rows, columns,
+                                           null,
                                            false,
                                            false, 0),
                   BorderLayout.CENTER);
@@ -599,6 +605,7 @@ public final class PassFailJFrame {
                 createInstructionUIPanel(builder.instructions,
                                          builder.testTimeOut,
                                          builder.rows, builder.columns,
+                                         builder.moreButtons,
                                          builder.screenCapture,
                                          builder.addLogArea,
                                          builder.logAreaRows);
@@ -620,6 +627,7 @@ public final class PassFailJFrame {
     private static JComponent createInstructionUIPanel(String instructions,
                                                        long testTimeOut,
                                                        int rows, int columns,
+                                                       List<JButton> moreButtons,
                                                        boolean enableScreenCapture,
                                                        boolean addLogArea,
                                                        int logAreaRows) {
@@ -656,6 +664,12 @@ public final class PassFailJFrame {
 
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER,
                                                         GAP, 0));
+        if (moreButtons != null) {
+            for (JButton title : moreButtons) {
+                buttonsPanel.add(title);
+            }
+        }
+
         buttonsPanel.add(btnPass);
         buttonsPanel.add(btnFail);
 
@@ -1365,6 +1379,7 @@ public final class PassFailJFrame {
         private int rows;
         private int columns;
         private boolean screenCapture;
+        private List<JButton> moreButtons;
         private boolean addLogArea;
         private int logAreaRows = 10;
 
@@ -1442,6 +1457,18 @@ public final class PassFailJFrame {
          */
         public Builder columns(int columns) {
             this.columns = columns;
+            return this;
+        }
+
+        /**
+         * Adds one more button to the left of the "pass" button.
+         *
+         * @param button the new button
+         * @return this builder
+         */
+        public Builder addButton(JButton button) {
+            if (moreButtons == null) moreButtons = new ArrayList<>();
+            moreButtons.add(button);
             return this;
         }
 

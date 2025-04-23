@@ -45,8 +45,10 @@ public class Password {
      * Used by keytool and jarsigner.
      */
     public static char[] toolReadPassword(String prompt) throws IOException {
-        if (System.in != SharedSecrets.getJavaLangAccess().initialSystemIn() ||
-                System.console() == null) {
+        // If the password is piped into the command, typically
+        // System.in.available() will not be zero. We don't show
+        // the warning in this case.
+        if (System.in.available() == 0 && System.console() == null) {
             System.err.println(PASS_ECHO_WARNING);
         }
         System.err.print(prompt);

@@ -25,103 +25,76 @@
  * @test
  * @bug 8354469
  * @summary keytool password prompt shows warning when cannot suppress echo
- * @library /test/lib
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual/othervm EchoPassword
  */
+
 import javax.swing.*;
 
-import jdk.test.lib.UIBuilder;
-
+import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.io.File;
 
 public class EchoPassword {
 
-    private static final int TIMEOUT_MS = 240000;
-    private volatile boolean failed = false;
-    private volatile boolean aborted = false;
-    private Thread currentThread = null;
+    static int counter = 0;
 
     public static void main(String[] args) throws Exception {
         final String keytool = String.format("\"%s/bin/keytool\" -keystore 8354469.ks",
                 System.getProperty("java.home").replace("\\", File.separator));
-        boolean testFailed = new EchoPassword().validate(
-                "Please copy and run the following commands in a Terminal or Windows Command Prompt window:",
-                String.format("""
 
-                1. %s -genkeypair
+        final String[] titles = {
+                "Copy first command",
+                "Copy second command",
+                "Copy third command"
+        };
 
-                   When prompted, enter "password" and press Enter. Verify that the input is hidden,
-                   and no warning about password echoing appears. At the Re-enter password prompt,
-                   press Ctrl-C to exit.
+        final String[] commands = {
+                keytool + " -genkeypair",
+                keytool + " -genkeypair | type",
+                "(echo changeit & echo changeit ) | " + keytool + " -genkeypair"
+        };
 
-                2. %s -genkeypair | type
+        final String message = """
+                Perform the following steps and record the final result:
 
-                   When prompted, enter "password" and press Enter. Verify that the input is echoed,
-                   and a warning about password echoing is shown. At the Re-enter password prompt,
-                   press Ctrl-C to exit.
+                1. Open a terminal or Windows Command Prompt window.
+
+                2. Press "Copy First Command" to copy the first command into the system clipboard.
+                   Paste it into the terminal window and execute the command.
+
+                   When prompted, enter some characters and press Enter. Verify that the input is
+                   hidden, and no warning about password echoing appears. Press Ctrl-C to exit.
+
+                3. Press "Copy Second Command" to copy the second command into the system clipboard.
+                   Paste it into the terminal window and execute the command.
+
+                   When prompted, enter some characters and press Enter. Verify that the input is
+                   echoed, and a warning about password echoing is shown. Press Ctrl-C to exit.
+
+                4. Press "Copy Third Command" to copy the third command into the system clipboard.
+                   Paste it into the terminal window and execute the command.
+
+                   Verify that the password "changeit" is not shown in the command output, and
+                   no warning about password echoing appears. It's OK to see an exception.
 
                 Press "pass" if the behavior matches expectations; otherwise, press "fail".
-                """, keytool, keytool));
-        if (testFailed) {
-            throw new RuntimeException("Test has failed");
-        }
-    }
+                """;
 
-    public boolean validate(String instruction, String message) {
-        failed = false;
-        currentThread = Thread.currentThread();
-        final JDialog dialog = new UIBuilder.DialogBuilder()
-                .setTitle("Password")
-                .setInstruction(instruction)
-                .setMessage(message)
-                .setPassAction(e -> pass())
-                .setFailAction(e -> fail())
-                .setCloseAction(this::abort)
-                .build();
-
-        SwingUtilities.invokeLater(() -> {
-            try {
-                dialog.setVisible(true);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        var copyButton = new JButton("Copy First Command");
+        copyButton.addActionListener(_ -> {
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
+                    new StringSelection(commands[counter]), null);
+            counter = (counter + 1) % titles.length;
+            copyButton.setText(titles[counter]);
         });
 
-        try {
-            Thread.sleep(TIMEOUT_MS);
-            //Timed out, so fail the test
-            throw new RuntimeException(
-                    "Timed out after " + TIMEOUT_MS / 1000 + " seconds");
-        } catch (final InterruptedException e) {
-            if (aborted) {
-                throw new RuntimeException("TEST ABORTED");
-            }
-
-            if (failed) {
-                System.out.println("TEST FAILED");
-                System.out.println(message);
-            } else {
-                System.out.println("TEST PASSED");
-            }
-        } finally {
-            dialog.dispose();
-        }
-
-        return failed;
-    }
-
-    public void pass() {
-        failed = false;
-        currentThread.interrupt();
-    }
-
-    public void fail() {
-        failed = true;
-        currentThread.interrupt();
-    }
-
-    public void abort() {
-        aborted = true;
-        currentThread.interrupt();
+        PassFailJFrame.builder()
+                .instructions(message)
+                .columns(60)
+                .addButton(copyButton)
+                .build()
+                .awaitAndCheck();
     }
 }
