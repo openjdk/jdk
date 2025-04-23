@@ -45,6 +45,8 @@
 // method().
 //
 class UnloadableMethodHandle {
+  friend class VMStructs;
+
   Method* _method;
   WeakHandle _weak_handle;   // oop that can be used to block unloading
   OopHandle  _strong_handle; // oop that *is* used to block unloading
