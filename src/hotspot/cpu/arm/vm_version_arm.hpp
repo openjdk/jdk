@@ -39,6 +39,7 @@ class VM_Version: public Abstract_VM_Version {
   static bool _is_initialized;
 
  public:
+  static void pre_initialize();
   static void initialize();
   static bool is_initialized()      { return _is_initialized; }
 

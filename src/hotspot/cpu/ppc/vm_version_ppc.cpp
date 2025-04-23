@@ -53,6 +53,8 @@ uint64_t VM_Version::_dscr_val = 0;
                   "warning: -XX:+" #flag " requires -XX:+UseSIGTRAP\n" \
                   "         -XX:+" #flag " will be disabled!\n");
 
+void VM_Version::pre_initialize() {}
+
 void VM_Version::initialize() {
 
   // Test which instructions are supported and measure cache line size.

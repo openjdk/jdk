@@ -411,6 +411,7 @@ class VM_Version: public Abstract_VM_Version {
   };
 
   // Initialization
+  static void pre_initialize();
   static void initialize();
   static void print_features();
   static bool is_determine_features_test_running() { return _is_determine_features_test_running; }

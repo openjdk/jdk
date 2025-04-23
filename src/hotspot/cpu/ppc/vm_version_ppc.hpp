@@ -85,6 +85,7 @@ protected:
 
 public:
   // Initialization
+  static void pre_initialize();
   static void initialize();
   static void check_virtualizations();
 

@@ -144,10 +144,12 @@
                                                                                                                                      \
   static_field(CompilerToVM::Data,             data_section_item_alignment,            int)                                          \
                                                                                                                                      \
-  JVMTI_ONLY(static_field(CompilerToVM::Data,  _should_notify_object_alloc,            int*))                                         \
+  JVMTI_ONLY(static_field(CompilerToVM::Data,  _should_notify_object_alloc,            int*))                                        \
                                                                                                                                      \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
-  static_field(Abstract_VM_Version,            _extra_features,                        uint64_t)                                     \
+  static_field(Abstract_VM_Version,            _dynamic_features_vector,               uint64_t*)                                    \
+  static_field(Abstract_VM_Version,            _dynamic_features_vector_size,          uint64_t)                                     \
+  static_field(Abstract_VM_Version,            _dynamic_features_element_shift_count,  uint64_t)                                     \
                                                                                                                                      \
   nonstatic_field(Annotations,                 _class_annotations,                     AnnotationArray*)                             \
   nonstatic_field(Annotations,                 _fields_annotations,                    Array<AnnotationArray*>*)                     \
@@ -984,10 +986,8 @@
   declare_constant(frame::interpreter_frame_last_sp_offset)
 
 #define DECLARE_LONG_CPU_FEATURE_CONSTANT(id, name, bit) GENERATE_VM_LONG_CONSTANT_ENTRY(VM_Version::CPU_##id)
-#define DECLARE_LONG_EXTRA_CPU_FEATURE_CONSTANT(id, name, bit) GENERATE_VM_LONG_CONSTANT_ENTRY(VM_Version::EXTRA_CPU_##id)
 #define VM_LONG_CPU_FEATURE_CONSTANTS \
-   CPU_FEATURE_FLAGS(DECLARE_LONG_CPU_FEATURE_CONSTANT) \
-   EXTRA_CPU_FEATURE_FLAGS(DECLARE_LONG_EXTRA_CPU_FEATURE_CONSTANT)
+   CPU_FEATURE_FLAGS(DECLARE_LONG_CPU_FEATURE_CONSTANT)
 
 #endif
 

@@ -88,6 +88,8 @@ static const char* z_features[] = {"  ",
                                        "bear_enh, sort_enh, nnpa_assist, storage_key_removal, vpack_decimal_enh"
                                   };
 
+void VM_Version::pre_initialize() {}
+
 void VM_Version::initialize() {
   determine_features();      // Get processor capabilities.
   set_features_string();     // Set a descriptive feature indication.

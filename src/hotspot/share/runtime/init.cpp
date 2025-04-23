@@ -65,6 +65,7 @@ void classLoader_init1();
 void compilationPolicy_init();
 void codeCache_init();
 void VM_Version_init();
+void VM_Version_pre_init();
 void initial_stubs_init();
 
 jint universe_init();           // depends on codeCache_init and initial_stubs_init
@@ -123,6 +124,7 @@ jint init_globals() {
   bytecodes_init();
   classLoader_init1();
   compilationPolicy_init();
+  VM_Version_pre_init();          // allocate feature flags arrays
   codeCache_init();
   VM_Version_init();              // depends on codeCache_init for emitting code
   // stub routines in initial blob are referenced by later generated code

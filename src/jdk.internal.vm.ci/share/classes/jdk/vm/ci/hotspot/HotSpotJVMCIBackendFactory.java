@@ -30,6 +30,7 @@ import java.util.Map.Entry;
 
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.runtime.JVMCIBackend;
+import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 public interface HotSpotJVMCIBackendFactory {
 
@@ -57,7 +58,6 @@ public interface HotSpotJVMCIBackendFactory {
                     Class<CPUFeatureType> enumType,
                     Map<String, Long> constants,
                     long features,
-                    long extra_features,
                     Map<String, String> renaming) {
         EnumSet<CPUFeatureType> outFeatures = EnumSet.noneOf(enumType);
         List<String> missing = new ArrayList<>();
@@ -75,11 +75,56 @@ public interface HotSpotJVMCIBackendFactory {
                     missing.add(name);
                 }
             }
-            if (key.startsWith("VM_Version::EXTRA_CPU_")) {
-                String name = key.substring("VM_Version::EXTRA_CPU_".length());
+        }
+        if (!missing.isEmpty()) {
+            throw new JVMCIError("Missing CPU feature constants: %s", missing);
+        }
+        return outFeatures;
+    }
+
+    /**
+     * Converts a dynamically sized CPU features vector into enum constants.
+     *
+     * @param <CPUFeatureType> CPU feature enum type
+     * @param enumType the class of {@code CPUFeatureType}
+     * @param constants VM constants. Each entry whose key starts with {@code "VM_Version::CPU_"}
+     *            specifies a CPU feature and its value is a mask for a bit in {@code features}
+     * @param dynamic_features_vector_pointer pointer to dyanmic feature vector specifying CPU features
+     * @param dynamic_features_vector_size dyanmic feature array size
+     * @param dynamic_features_element_shift_count log of dyanmic feature vector element size in bits
+     * @param renaming maps from VM feature names to enum constant names where the two differ
+     * @throws IllegalArgumentException if any VM CPU feature constant cannot be converted to an
+     *             enum value
+     * @return the set of converted values
+     */
+    static <CPUFeatureType extends Enum<CPUFeatureType>> EnumSet<CPUFeatureType> convertDynamicFeaturesVector(
+                    Class<CPUFeatureType> enumType,
+                    Map<String, Long> constants,
+                    long dynamic_features_vector_pointer,
+                    long dynamic_features_vector_size,
+                    long dynamic_features_element_shift_count,
+                    Map<String, String> renaming) {
+        EnumSet<CPUFeatureType> outFeatures = EnumSet.noneOf(enumType);
+        List<String> missing = new ArrayList<>();
+        for (Entry<String, Long> e : constants.entrySet()) {
+            String key = e.getKey();
+            long bitIndex = e.getValue();
+            if (key.startsWith("VM_Version::CPU_")) {
+                String name = key.substring("VM_Version::CPU_".length());
                 try {
                     CPUFeatureType feature = Enum.valueOf(enumType, renaming.getOrDefault(name, name));
-                    if ((extra_features & bitMask) != 0) {
+                    long dynamic_features_vector_index = bitIndex >>> dynamic_features_element_shift_count;
+                    assert dynamic_features_vector_index < dynamic_features_vector_size;
+
+                    long  dynamic_features_element_bitsize = (1L << dynamic_features_element_shift_count);
+                    assert (dynamic_features_element_bitsize & (dynamic_features_element_bitsize - 1)) == 0;
+
+                    long  dynamic_features_element_size = dynamic_features_element_bitsize / Byte.SIZE;
+                    long features = UNSAFE.getLong(dynamic_features_vector_pointer +
+                                                   dynamic_features_vector_index * dynamic_features_element_size);
+
+                    long effective_bitMask = 1L << (bitIndex & (dynamic_features_element_bitsize - 1));
+                    if ((features & effective_bitMask) != 0) {
                         outFeatures.add(feature);
                     }
                 } catch (IllegalArgumentException iae) {
