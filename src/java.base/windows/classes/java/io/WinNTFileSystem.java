@@ -362,18 +362,13 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public boolean isInvalid(File f) {
-        if (f.getPath().indexOf('\u0000') >= 0)
-            return true;
+        final String pathname = f.getPath();
 
-        // Invalid if the pathname or a directory in it has a trailing space
-        File theFile = f;
-        do {
-            String p = theFile.getPath();
-            int len = p.length();
-            if (len > 0 && p.charAt(len - 1) == ' ')
-                return true;
-            theFile = theFile.getParentFile();
-        } while (theFile != null);
+        // Invalid if the pathname string contains a null character or if
+        // any name in the pathname's name sequence ends with a space
+        if (pathname.indexOf('\u0000') >= 0 || pathname.endsWith(" ")
+            || pathname.contains(" \\"))
+            return true;
 
         // The remaining checks are irrelevant for alternate data streams (ADS)
         if (ENABLE_ADS)
@@ -381,7 +376,6 @@ final class WinNTFileSystem extends FileSystem {
 
         // Invalid if there is a ":" at a position other than 1, or if there
         // is a ":" at position 1 and the first character is not a letter
-        final String pathname = f.getPath();
         int lastColon = pathname.lastIndexOf(":");
         if (lastColon >= 0 &&
             (lastColon != 1 || !isLetter(pathname.charAt(0))))
