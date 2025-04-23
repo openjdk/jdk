@@ -51,6 +51,7 @@ import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.LambdaToMethod;
 import com.sun.tools.javac.jvm.ClassFile;
+import com.sun.tools.javac.resources.CompilerProperties;
 import com.sun.tools.javac.util.*;
 
 import static com.sun.tools.javac.code.BoundKind.*;
@@ -5327,66 +5328,6 @@ public class Types {
                 return ((DynamicVarSymbol)c).type;
             default:
                 throw new AssertionError("Not a loadable constant: " + c.poolTag());
-        }
-    }
-    // </editor-fold>
-
-    // <editor-fold defaultstate="collapsed" desc="requiresIdentityVisitor">
-    public boolean isValueBased(Type t) {
-        return t != null && t.tsym != null && (t.tsym.flags() & VALUE_BASED) != 0;
-    }
-
-    public boolean needsRequiresIdentityWarning(Type t) {
-        RequiresIdentityVisitor requiresIdentityVisitor = new RequiresIdentityVisitor();
-        requiresIdentityVisitor.visit(t);
-        return requiresIdentityVisitor.requiresWarning;
-    }
-
-    // where
-    class RequiresIdentityVisitor extends Types.UnaryVisitor<Void> {
-        boolean requiresWarning = false;
-
-        @Override
-        public Void visitType(Type t, Void _unused) {
-            return null;
-        }
-
-        @Override
-        public Void visitWildcardType(WildcardType t, Void _unused) {
-            return visit(t.type);
-        }
-
-        @Override
-        public Void visitArrayType(ArrayType t, Void _unused) {
-            return visit(t.elemtype);
-        }
-
-        @Override
-        public Void visitClassType(ClassType t, Void _unused) {
-            if (t != null && t.tsym != null) {
-                SymbolMetadata sm = t.tsym.getMetadata();
-                if (sm != null) {
-                    for (Attribute.TypeCompound ta: sm.getTypeAttributes()) {
-                        if (ta.type.tsym == syms.requiresIdentityType.tsym) {
-                            TypeAnnotationPosition tap = ta.position;
-                            if (tap.type == TargetType.CLASS_TYPE_PARAMETER) {
-                                int index = tap.parameter_index;
-                                // ClassType::getTypeArguments() can be empty for raw types
-                                Type tparam = t.getTypeArguments().isEmpty() ? null : t.getTypeArguments().get(index);
-                                if (tparam != null && isValueBased(tparam)) {
-                                    requiresWarning = true;
-                                    return null;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            visit(t.getEnclosingType());
-            for (Type targ : t.getTypeArguments()) {
-                visit(targ);
-            }
-            return null;
         }
     }
     // </editor-fold>
