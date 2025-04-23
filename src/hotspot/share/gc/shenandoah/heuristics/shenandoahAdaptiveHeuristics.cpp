@@ -69,9 +69,9 @@ const size_t ShenandoahAdaptiveHeuristics::GC_TIME_SAMPLE_SIZE = 3;
 
 // We also keep separate track of recently sampled allocation rates for two purposes:
 //  1. The number of samples examined to determine acceleration of allocation is represented by
-//     ShenandoahRateAccelerationSampleSize, default value 6
+//     ShenandoahRateAccelerationSampleSize
 //  2. The number of most recent samples averaged to determine a momentary allocation spike is represented by
-//     ShenandoahMomentaryAllocationRateSpikeSampleSize, default value 4
+//     ShenandoahMomentaryAllocationRateSpikeSampleSize
 
 // Allocation rates are sampled by the regulator thread, which typically runs every ms.  There may be jitter in the scheduling
 // of the regulator thread.  To reduce signal noise and synchronization overhead, we do not sample allocation rate with every
@@ -88,7 +88,7 @@ const size_t ShenandoahAdaptiveHeuristics::GC_TIME_SAMPLE_SIZE = 3;
 #ifdef KELVIN_DEBUG
 const double ShenandoahAdaptiveHeuristics::MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL = 0.010;
 #else
-const double ShenandoahAdaptiveHeuristics::MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL = 0.0015;
+const double ShenandoahAdaptiveHeuristics::MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL = 0.0045;
 #endif
 
 ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info) :
