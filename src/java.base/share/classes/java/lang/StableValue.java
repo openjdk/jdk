@@ -402,11 +402,10 @@ import java.util.function.Supplier;
  * @implSpec Implementing classes of {@code StableValue} are free to synchronize on
  *           {@code this} and consequently, it should be avoided to
  *           (directly or indirectly) synchronize on a {@code StableValue}. Hence,
- *           synchronizing on {@code this} may lead to deadlock. Stable functions
- *           and collections on the other hand are guaranteed <em>not to synchronize</em>
- *           on {@code this}.
- *           Except for a {@code StableValue}'s content itself, an {@linkplain #orElse(Object) orElse(other)}
- *           parameter, and an {@linkplain #equals(Object) equals(obj)} parameter; all
+ *           synchronizing on {@code this} may lead to deadlock.
+ *           Except for a {@code StableValue}'s content itself,
+ *           an {@linkplain #orElse(Object) orElse(other)} parameter, and
+ *           an {@linkplain #equals(Object) equals(obj)} parameter; all
  *           method parameters must be <em>non-null</em> or a {@link NullPointerException}
  *           will be thrown.
  *
