@@ -769,6 +769,7 @@
   /* Miscellaneous fields */                                                                                                         \
   /************************/                                                                                                         \
                                                                                                                                      \
+  nonstatic_field(CompileTask,                 _method_handle,                                UnloadableMethodHandle)                \
   nonstatic_field(CompileTask,                 _osr_bci,                                      int)                                   \
   nonstatic_field(CompileTask,                 _comp_level,                                   int)                                   \
   nonstatic_field(CompileTask,                 _compile_id,                                   int)                                   \
@@ -1259,6 +1260,7 @@
   declare_toplevel_type(FileMapHeader)                                    \
   declare_toplevel_type(CDSFileMapRegion)                                 \
   declare_toplevel_type(UpcallStub::FrameData)                            \
+  declare_toplevel_type(UnloadableMethodHandle)                           \
                                                                           \
   /************/                                                          \
   /* GC types */                                                          \
