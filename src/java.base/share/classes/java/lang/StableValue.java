@@ -116,7 +116,7 @@ import java.util.function.Supplier;
  * <p>
  * The {@code getLogger()} method calls {@code logger.orElseSet()} on the stable value to
  * retrieve its contents. If the stable value is <em>unset</em>, then {@code orElseSet()}
- * evaluates the given supplier, and sets the contents to the result; the contents is then
+ * evaluates the given supplier, and sets the contents to the result; the result is then
  * returned to the client. In other words, {@code orElseSet()} guarantees that a
  * stable value's contents is <em>set</em> before it returns.
  * <p>
