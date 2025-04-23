@@ -2016,6 +2016,8 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
           }
           size += 4;
         } else {
+          // Other alignment can be used by Vector API (VectorPayload in rearrangeOp,
+          // observed with VectorRearrangeTest.java on Power9).
           if (masm) {
             __ addi(R0, R1_SP, dst_offset);
             __ stxvx(Rsrc, R0); // matches storeV16_Power9 (regarding element ordering)
