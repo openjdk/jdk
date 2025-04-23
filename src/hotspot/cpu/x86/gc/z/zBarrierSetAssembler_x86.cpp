@@ -391,8 +391,8 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     if (rnew_zaddress != noreg) {
       // noreg means null; no need to color
       __ movptr(rnew_zpointer, rnew_zaddress);
-      __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
       __ shlq(rnew_zpointer, barrier_Relocation::unpatched);
+      __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodAfterShX);
       __ orq_imm32(rnew_zpointer, barrier_Relocation::unpatched);
       __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterOr);
     }
@@ -969,13 +969,13 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm,
 #define __ ce->masm()->
 
 static void z_uncolor(LIR_Assembler* ce, LIR_Opr ref) {
-  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
   __ shrq(ref->as_register(), barrier_Relocation::unpatched);
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodAfterShX);
 }
 
 static void z_color(LIR_Assembler* ce, LIR_Opr ref) {
-  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
   __ shlq(ref->as_register(), barrier_Relocation::unpatched);
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodAfterShX);
   __ orq_imm32(ref->as_register(), barrier_Relocation::unpatched);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterOr);
 }
@@ -1278,8 +1278,8 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
 
 static int patch_barrier_relocation_offset(int format) {
   switch (format) {
-  case ZBarrierRelocationFormatLoadGoodBeforeShl:
-    return 3;
+  case ZBarrierRelocationFormatLoadGoodAfterShX:
+    return -1;
 
   case ZBarrierRelocationFormatStoreGoodAfterCmp:
     return -2;
@@ -1300,7 +1300,7 @@ static int patch_barrier_relocation_offset(int format) {
 
 static uint16_t patch_barrier_relocation_value(int format) {
   switch (format) {
-  case ZBarrierRelocationFormatLoadGoodBeforeShl:
+  case ZBarrierRelocationFormatLoadGoodAfterShX:
     return (uint16_t)ZPointerLoadShift;
 
   case ZBarrierRelocationFormatMarkBadAfterTest:
@@ -1327,7 +1327,7 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
   const int offset = patch_barrier_relocation_offset(format);
   const uint16_t value = patch_barrier_relocation_value(format);
   uint8_t* const patch_addr = (uint8_t*)addr + offset;
-  if (format == ZBarrierRelocationFormatLoadGoodBeforeShl) {
+  if (format == ZBarrierRelocationFormatLoadGoodAfterShX) {
     *patch_addr = (uint8_t)value;
   } else {
     *(uint16_t*)patch_addr = value;

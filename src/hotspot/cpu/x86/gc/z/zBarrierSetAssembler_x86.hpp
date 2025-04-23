@@ -49,7 +49,7 @@ class ZLoadBarrierStubC2;
 class ZStoreBarrierStubC2;
 #endif // COMPILER2
 
-const int ZBarrierRelocationFormatLoadGoodBeforeShl = 0;
+const int ZBarrierRelocationFormatLoadGoodAfterShX  = 0;
 const int ZBarrierRelocationFormatLoadBadAfterTest  = 1;
 const int ZBarrierRelocationFormatMarkBadAfterTest  = 2;
 const int ZBarrierRelocationFormatStoreGoodAfterCmp = 3;
