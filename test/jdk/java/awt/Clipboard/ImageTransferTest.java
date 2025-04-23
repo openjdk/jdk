@@ -87,6 +87,7 @@ public class ImageTransferTest {
         OutputAnalyzer outputAnalyzer = new OutputAnalyzer(process);
 
         if (!process.waitFor(15, TimeUnit.SECONDS)) {
+            process.destroyForcibly();
             returnCode = CODE_NOT_RETURNED;
         } else {
             returnCode = outputAnalyzer.getExitValue();

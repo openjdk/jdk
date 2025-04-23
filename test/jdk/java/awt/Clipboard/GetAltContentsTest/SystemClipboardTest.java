@@ -75,6 +75,7 @@ public class SystemClipboardTest {
         OutputAnalyzer outputAnalyzer = new OutputAnalyzer(process);
 
         if (!process.waitFor(15, TimeUnit.SECONDS)) {
+            process.destroyForcibly();
             throw new TimeoutException("Timed out waiting for Child");
         }
 
