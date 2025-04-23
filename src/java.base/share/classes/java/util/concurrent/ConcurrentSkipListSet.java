@@ -37,6 +37,7 @@ package java.util.concurrent;
 
 import jdk.internal.misc.Unsafe;
 
+import java.lang.invoke.VarHandle;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -177,6 +178,8 @@ public class ConcurrentSkipListSet<E>
             ConcurrentSkipListSet<E> clone =
                 (ConcurrentSkipListSet<E>) super.clone();
             clone.setMap(new ConcurrentSkipListMap<E,Object>(m));
+            // Needed to ensure safe publication of setMap()
+            VarHandle.releaseFence();
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new InternalError();
