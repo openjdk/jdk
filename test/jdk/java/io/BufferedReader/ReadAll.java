@@ -56,13 +56,14 @@ public class ReadAll {
 
     private static File file;
     private static Path path;
+    private static Random rnd;
 
     @BeforeAll
     public static void setup() throws IOException {
         path = Files.createTempFile(Path.of("."), "foo", "bar");
         file = path.toFile();
 
-        Random rnd = RandomFactory.getRandom();
+        rnd = RandomFactory.getRandom();
         int size = rnd.nextInt(2, 16386);
 
         int plen = PHRASE.length();
@@ -111,9 +112,11 @@ public class ReadAll {
         assertEquals(stringExpected, string);
 
         // Reader.of implementation
+        int n = rnd.nextInt(stringExpected.length()/2);
         try (Reader r = Reader.of(stringExpected)) {
+            r.skip(n);
             string = r.readAllChars();
         }
-        assertEquals(stringExpected, string);
+        assertEquals(stringExpected.substring(n), string);
     }
 }
