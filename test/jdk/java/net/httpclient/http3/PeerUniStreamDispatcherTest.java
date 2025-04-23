@@ -32,8 +32,6 @@
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -53,7 +51,6 @@ import static org.testng.Assert.*;
 public class PeerUniStreamDispatcherTest {
 
     final Logger debug = Utils.getDebugLogger(() -> "PeerUniStreamDispatcherStub");
-    final Set<PeerUniStreamDispatcher> dispatchers = ConcurrentHashMap.newKeySet();
 
     enum DISPATCHED_STREAM {
         CONTROL, ENCODER, DECODER, PUSH, RESERVED, UNKNOWN
@@ -88,7 +85,7 @@ public class PeerUniStreamDispatcherTest {
         final List<DispatchedStream> dispatched = new CopyOnWriteArrayList<>();
 
         PeerUniStreamDispatcherStub(QuicReceiverStream stream) {
-            super(dispatchers, stream);
+            super(stream);
         }
 
         private void dispatched(DISPATCHED_STREAM type, String description, QuicReceiverStream stream) {

@@ -109,7 +109,6 @@ public final class Http3Connection implements AutoCloseable {
     private final Encoder qpackEncoder;
     private final Decoder qpackDecoder;
     private final FramesDecoder controlFramesDecoder;
-    private final Set<PeerUniStreamDispatcher> dispatchers = ConcurrentHashMap.newKeySet();
     private final Predicate<? super QuicReceiverStream> remoteStreamListener;
     private final H3FrameOrderVerifier frameOrderVerifier = H3FrameOrderVerifier.newForControlStream();
     // streams for HTTP3 exchanges
@@ -648,9 +647,6 @@ public final class Http3Connection implements AutoCloseable {
             var listener = remoteStreamListener;
             if (listener != null) {
                 quicConnection.removeRemoteStreamListener(listener);
-                for (PeerUniStreamDispatcher dispatcher : dispatchers) {
-                    dispatcher.stop();
-                }
             }
         } finally {
             client.connectionClosed(this);
@@ -787,7 +783,7 @@ public final class Http3Connection implements AutoCloseable {
      */
     private final class Http3StreamDispatcher extends PeerUniStreamDispatcher {
         Http3StreamDispatcher(QuicReceiverStream stream) {
-            super(dispatchers, stream);
+            super(stream);
         }
 
         @Override

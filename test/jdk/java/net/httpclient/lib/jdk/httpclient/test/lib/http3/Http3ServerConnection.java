@@ -93,7 +93,6 @@ public class Http3ServerConnection {
     private final Encoder qpackEncoder;
     private final Decoder qpackDecoder;
     private final FramesDecoder controlFramesDecoder;
-    private final Set<PeerUniStreamDispatcher> dispatchers = ConcurrentHashMap.newKeySet();
     private final AtomicLong nextPushId = new AtomicLong();
     private volatile long maxPushId = 0;
     private final ReentrantLock pushIdLock = new ReentrantLock();
@@ -116,7 +115,7 @@ public class Http3ServerConnection {
     // according to their type.
     private final class Http3StreamDispatcher extends PeerUniStreamDispatcher {
         Http3StreamDispatcher(QuicReceiverStream stream) {
-            super(dispatchers, stream);
+            super(stream);
         }
 
         @Override
@@ -636,25 +635,19 @@ public class Http3ServerConnection {
     public void close(long error, String reason) {
         if (markCloseRequested()) {
             try {
-                try {
-                    sendGoAway();
-                } catch (IOException e) {
-                    // it's OK if we couldn't send a GOAWAY
-                    if (debug.on()) {
-                        debug.log("ignoring failure to send GOAWAY from server connection "
-                                + this + " due to " + e);
-                    }
+                sendGoAway();
+            } catch (IOException e) {
+                // it's OK if we couldn't send a GOAWAY
+                if (debug.on()) {
+                    debug.log("ignoring failure to send GOAWAY from server connection "
+                            + this + " due to " + e);
                 }
-                if (quicConnection.isOpen()) {
-                    if (debug.on()) debug.log("closing quic connection: " + reason);
-                    quicConnTerminator.terminate(appLayerClose(error).loggedAs(reason));
-                } else {
-                    if (debug.on()) debug.log("quic connection already closed");
-                }
-            } finally {
-                for (PeerUniStreamDispatcher dispatcher : dispatchers) {
-                    dispatcher.stop();
-                }
+            }
+            if (quicConnection.isOpen()) {
+                if (debug.on()) debug.log("closing quic connection: " + reason);
+                quicConnTerminator.terminate(appLayerClose(error).loggedAs(reason));
+            } else {
+                if (debug.on()) debug.log("quic connection already closed");
             }
         }
     }

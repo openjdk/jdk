@@ -26,7 +26,6 @@ package jdk.internal.net.http.http3.streams;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import jdk.internal.net.http.common.Logger;
@@ -43,7 +42,6 @@ import jdk.internal.net.http.quic.VariableLengthEncoder;
  * out where to dispatch it.
  */
 public abstract class PeerUniStreamDispatcher {
-    private final Set<PeerUniStreamDispatcher> dispatchers;
     private final SequentialScheduler scheduler = SequentialScheduler.lockingScheduler(this::dispatch);
     private final QuicReceiverStream stream;
     private final CompletableFuture<QuicReceiverStream> cf = new MinimalFuture<>();
@@ -59,11 +57,8 @@ public abstract class PeerUniStreamDispatcher {
      * Creates a {@code PeerUniStreamDispatcher} for the given stream.
      * @param stream a new unidirectional stream opened by the peer
      */
-    protected PeerUniStreamDispatcher(Set<PeerUniStreamDispatcher> dispatchers,
-                                      QuicReceiverStream stream) {
+    protected PeerUniStreamDispatcher(QuicReceiverStream stream) {
         this.stream = checkStream(stream);
-        this.dispatchers = dispatchers;
-        dispatchers.add(this);
         this.reader = stream.connectReader(scheduler);
         debug().log("dispatcher created for stream " + stream.streamId());
     }
@@ -234,7 +229,6 @@ public abstract class PeerUniStreamDispatcher {
 
     public void stop() {
         scheduler.stop();
-        dispatchers.remove(this);
     }
 
     // dispatches the peer control stream
