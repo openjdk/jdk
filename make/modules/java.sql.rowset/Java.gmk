@@ -25,7 +25,7 @@
 
 ################################################################################
 
-DISABLED_WARNINGS_java += dangling-doc-comments
+DISABLED_WARNINGS_java += dangling-doc-comments suppression
 
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'

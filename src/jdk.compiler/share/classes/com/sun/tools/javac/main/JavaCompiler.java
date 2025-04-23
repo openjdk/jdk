@@ -1851,6 +1851,7 @@ public class JavaCompiler {
             else
                 log.warning(Warnings.ProcUseProcOrImplicit);
         }
+        lintMapper.reportUnnecessarySuppressionOptions();
         log.reportOutstandingWarnings();
         log.reportOutstandingNotes();
         if (log.compressedOutput) {

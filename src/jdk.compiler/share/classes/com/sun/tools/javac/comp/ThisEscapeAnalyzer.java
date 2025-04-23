@@ -267,7 +267,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         Assert.check(methodMap.isEmpty());      // we are not prepared to be used more than once
 
         // Short circuit if this calculation is unnecessary
-        if (!lintMapper.lintAt(env.toplevel.sourcefile, env.tree.pos()).get().isEnabled(THIS_ESCAPE))
+        if (!lintMapper.lintAt(env.toplevel.sourcefile, env.tree.pos()).get().isActive(THIS_ESCAPE))
             return;
 
         // Determine which packages are exported by the containing module, if any.
@@ -343,17 +343,25 @@ public class ThisEscapeAnalyzer extends TreeScanner {
             }
         }.scan(env.tree);
 
+//System.err.println("METHODS:\n  " + methodMap.values().stream().map(Object::toString).collect((Collectors.joining("\n  "))));
+
         // Analyze the analyzable constructors we found
         methodMap.values().stream()
           .filter(MethodInfo::analyzable)
           .forEach(this::analyzeConstructor);
 
-        // Manually apply any Lint suppressions
+//System.err.println("WARNINGS (INITIAL):\n  " + warningList.stream().map(Object::toString).collect((Collectors.joining("\n  "))));
+
+        // Manually apply (and validate) any Lint suppressions
         filterWarnings(warning -> !warning.isSuppressed());
+
+//System.err.println("WARNINGS (AFTER SUPPRESSION):\n  " + warningList.stream().map(Object::toString).collect((Collectors.joining("\n  "))));
 
         // Field intitializers and initialization blocks will generate a separate warning for each primary constructor.
         // Trim off stack frames up through the super() call so these will have identical stacks and get de-duplicated below.
         warningList.forEach(Warning::trimInitializerFrames);
+
+//System.err.println("WARNINGS (AFTER FIELD TRIM):\n  " + warningList.stream().map(Object::toString).collect((Collectors.joining("\n  "))));
 
         // Sort warnings so redundant warnings immediately follow whatever they are redundant for, then remove them
         warningList.sort(Warning::sortByStackFrames);
@@ -366,9 +374,13 @@ public class ThisEscapeAnalyzer extends TreeScanner {
             return true;
         });
 
+//System.err.println("WARNINGS (AFTER REDUNDANTS):\n  " + warningList.stream().map(Object::toString).collect((Collectors.joining("\n  "))));
+
         // Limit output to one warning per constructor, field initializer, or initializer block
         Set<JCTree> thingsWarnedAbout = new HashSet<>();
         filterWarnings(warning -> thingsWarnedAbout.add(warning.origin));
+
+//System.err.println("WARNINGS (AFTER CONSTRUCTORS):\n  " + warningList.stream().map(Object::toString).collect((Collectors.joining("\n  "))));
 
         // Emit warnings
         for (Warning warning : warningList) {
@@ -1796,17 +1808,17 @@ public class ThisEscapeAnalyzer extends TreeScanner {
             }
         };
 
-        // Determine whether this warning is suppressed. A single "this-escape" warning involves multiple source code
-        // positions, so we must determine suppression manually. We do this as follows: A warning is suppressed if
-        // "this-escape" is disabled at any position in the stack where that stack frame corresponds to a constructor
-        // or field initializer in the target class. That means, for example, @SuppressWarnings("this-escape") annotations
-        // on regular methods are ignored. We work our way back up the call stack from the point of the leak until we
-        // encounter a suppressible stack frame.
+        // Determine whether this warning is suppressed and, if so, validate that suppression. A single "this-escape"
+        // warning involves multiple source code positions, so we must determine and validate suppression manually.
+        // We do this as follows: A warning is suppressed if "this-escape" is disabled at any position in the stack
+        // where that stack frame corresponds to a constructor or field initializer in the target class. That means,
+        // for example, @SuppressWarnings("this-escape") annotations on regular methods are ignored. We work our way
+        // back up the call stack from the point of the leak until we encounter a suppressible stack frame.
         boolean isSuppressed() {
             int index = stack.size();
             while (--index >= 0) {
                 StackFrame frame = stack.get(index);
-                if (frame.suppressible && !frame.lint().isEnabled(THIS_ESCAPE))
+                if (frame.suppressible && !frame.lint().isEnabled(THIS_ESCAPE, true))
                     return true;
             }
             return false;

@@ -26,7 +26,9 @@
 package com.sun.tools.javac.code;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,12 +36,16 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -48,6 +54,14 @@ import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Names;
+import com.sun.tools.javac.util.Options;
+
+import static com.sun.tools.javac.code.Lint.LintCategory.DEPRECATION;
+import static com.sun.tools.javac.code.Lint.LintCategory.OPTIONS;
+import static com.sun.tools.javac.code.Lint.LintCategory.SUPPRESSION;
+import static com.sun.tools.javac.code.Lint.LintCategory.SUPPRESSION_OPTION;
 
 /**
  * Maps source code positions to the applicable {@link Lint} instance based on {@link -Xlint}
@@ -71,11 +85,18 @@ public class LintMapper {
     // Per-source file lint information
     private final Map<JavaFileObject, FileInfo> fileInfoMap = new HashMap<>();
 
+    // Validations of "-Xlint:-foo" suppressions
+    private final EnumSet<LintCategory> optionValidations = LintCategory.newEmptySet();
+
     // Compiler context
     private final Context context;
 
     // These are initialized lazily; see initializeIfNeeded()
+    private Log log;
     private Lint rootLint;
+    private Symtab syms;
+    private Names names;
+    private Options options;
 
     /**
      * Obtain the {@link LintMapper} context singleton.
@@ -98,8 +119,13 @@ public class LintMapper {
 
     // Lazy initialization to avoid dependency loops
     private void initializeIfNeeded() {
-        if (rootLint == null)
+        if (rootLint == null) {
+            log = Log.instance(context);
             rootLint = Lint.instance(context);
+            syms = Symtab.instance(context);
+            names = Names.instance(context);
+            options = Options.instance(context);
+        }
     }
 
 // Lint Operations
@@ -144,6 +170,7 @@ public class LintMapper {
      */
     public void clear() {
         fileInfoMap.clear();
+        optionValidations.clear();
     }
 
 // Parsing Notifications
@@ -161,6 +188,102 @@ public class LintMapper {
      */
     public void finishParsingFile(JCCompilationUnit tree) {
         fileInfoMap.get(tree.sourcefile).afterParse(tree);
+    }
+
+// Suppression Tracking
+
+    /**
+     * Validate the given lint category within the scope of the given symbol's declaration (or globally if symbol is null).
+     *
+     * <p>
+     * This is to indicate that, if the category is being suppressed, a warning would have otherwise been generated.
+     *
+     * @param symbol innermost {@code @SuppressWarnings}-annotated symbol in scope, or null for global scope
+     * @param category lint category to validate
+     */
+    public void validateSuppression(Symbol symbol, LintCategory category) {
+        validationsFor(symbol).add(category);
+    }
+
+    private EnumSet<LintCategory> validationsFor(Symbol symbol) {
+        return symbol != null ? fileInfoMap.get(log.currentSourceFile()).validationsFor(symbol) : optionValidations;
+    }
+
+    /**
+     * Warn about unnecessary {@code @SuppressWarnings} suppressions within the given tree.
+     *
+     * <p>
+     * This step must be done after the given source file has been warned about.
+     *
+     * @param sourceFile source file
+     * @param tree top level declaration
+     */
+    public void reportUnnecessarySuppressionAnnotations(JavaFileObject sourceFile, JCTree tree) {
+        initializeIfNeeded();
+        FileInfo fileInfo = fileInfoMap.get(sourceFile);
+        DeclNode topNode = fileInfo.findTopNode(tree.pos());
+
+        // Propagate validations in this top-level declaration to determine which suppressions never got validated
+        propagateValidations(fileInfo, topNode);
+
+        // Report them if needed
+        if (rootLint.isEnabled(SUPPRESSION, false)) {
+            topNode.stream()
+              .filter(DeclNode::shouldReport)
+              .forEach(node -> report(node.unvalidated, name -> "\"" + name + "\"",
+                names -> log.warning(node.annotation.pos(), LintWarnings.UnnecessaryWarningSuppression(names))));
+        }
+
+        // We are done with this top-level declaration
+        fileInfo.removeTopNode(topNode);
+    }
+
+    /**
+     * Warn about unnecessary {@code -Xlint:-key} flags.
+     *
+     * <p>
+     * This step must be done after all source files have been warned about; it invokes {@link #clear} as a side effect.
+     */
+    public void reportUnnecessarySuppressionOptions() {
+        initializeIfNeeded();
+        if (rootLint.isEnabled(SUPPRESSION_OPTION, false) &&
+            rootLint.isEnabled(OPTIONS, false) &&
+            !options.isSet(Option.XLINT) &&                     // if "-Xlint:all" appears, all "-foo" suppressions are valid
+            !options.isSet(Option.XLINT_CUSTOM, "all")) {
+
+            // If a file has errors, we may never get a call to reportUnnecessaryAnnotations(), which means validations
+            // in that file may never propagate to the global level, which means possible bogus "suppression-option" warnings.
+            // To avoid that, promote any leftover validations to the global level here.
+            fileInfoMap.values().stream()
+              .forEach(fileInfo -> fileInfo.rootNode.children.stream()
+                .forEach(topNode -> propagateValidations(fileInfo, topNode)));
+
+            // Calculate the "Xlint:-foo" suppressions that did not get validated
+            optionValidations.retainAll(rootLint.getActualFlagSuppressions());          // only validate *actual* suppressions
+            EnumSet<LintCategory> unvalidated = rootLint.getNominalFlagSuppressions();
+            unvalidated.removeAll(optionValidations);
+
+            // Report them
+            report(unvalidated, name -> "-" + name, names -> log.warning(LintWarnings.UnnecessaryLintWarningSuppression(names)));
+        }
+
+        // We are completely done
+        clear();
+    }
+
+    private void report(EnumSet<LintCategory> unvalidated, Function<String, String> formatter, Consumer<String> logger) {
+        String names = unvalidated.stream()
+          .filter(lc -> lc.suppressionTracking)
+          .map(category -> category.option)
+          .map(formatter)
+          .collect(Collectors.joining(", "));
+        if (!names.isEmpty())
+            logger.accept(names);
+    }
+
+    // Propagate validations in the given top-level declaration; any that escape validate the corresponding "Xlint" suppression
+    private void propagateValidations(FileInfo fileInfo, DeclNode topNode) {
+        optionValidations.addAll(fileInfo.propagateValidations(topNode));
     }
 
 // FileInfo
@@ -182,6 +305,8 @@ public class LintMapper {
 
         Set<Span> topSpans;                                                 // the spans of all top level declarations
         final DeclNode rootNode = new DeclNode(rootLint);                   // tree of file's "interesting" declaration nodes
+        final Map<Symbol, EnumSet<LintCategory>> validationsMap             // maps declaration symbol to validations therein
+          = new HashMap<>();
 
         // Add an entry to topSpans corresponding to each top-level declaration
         void afterParse(JCCompilationUnit tree) {
@@ -212,6 +337,25 @@ public class LintMapper {
             DeclNode node = topNode.find(pos);              // find the best matching node
             Assert.check(node != null);                     // (it must exist)
             return Optional.of(node.lint);                  // use its Lint
+        }
+
+        // Obtain the validation state for the given symbol
+        EnumSet<LintCategory> validationsFor(Symbol symbol) {
+            return validationsMap.computeIfAbsent(symbol, s -> LintCategory.newEmptySet());
+        }
+
+        // Combine the validation sets for two symbols that are declared together
+        void mergeValidations(Symbol symbol1, Symbol symbol2) {
+            EnumSet<LintCategory> validations1 = validationsFor(symbol1);
+            EnumSet<LintCategory> validations2 = validationsFor(symbol2);
+            Assert.check(validations1.equals(validations2));
+            validationsMap.put(symbol2, validations1);          // now the two symbols share the same validation set
+        }
+
+        // Propagate validations in the given top-level node
+        EnumSet<LintCategory> propagateValidations(DeclNode topNode) {
+            Assert.check(rootNode.children.contains(topNode));
+            return topNode.propagateValidations(validationsMap);
         }
 
         Optional<Span> findTopSpan(DiagnosticPosition pos) {
@@ -308,6 +452,9 @@ public class LintMapper {
         final List<DeclNode> children = new ArrayList<>();      // next level down declarations contained by this node
         final Symbol symbol;                                    // the symbol declared by this declaration (null for root)
         final Lint lint;                                        // the Lint configuration that applies within this declaration
+        final JCAnnotation annotation;                          // the @SuppressWarnings on this declaration, if any
+        final EnumSet<LintCategory> suppressions;               // categories suppressed by @SuppressWarnings, if any
+        final EnumSet<LintCategory> unvalidated;                // categories in "suppressions" that were never validated
 
         // Create a root node representing the entire file
         DeclNode(Lint rootLint) {
@@ -315,14 +462,21 @@ public class LintMapper {
             this.parent = null;
             this.symbol = null;
             this.lint = rootLint;
+            this.annotation = null;
+            this.suppressions = LintCategory.newEmptySet();     // you can't put @SuppressWarnings on a file
+            this.unvalidated = EnumSet.copyOf(suppressions);
         }
 
         // Create a normal declaration node
-        DeclNode(DeclNode parent, Symbol symbol, JCTree tree, EndPosTable endPositions, Lint lint) {
+        DeclNode(DeclNode parent, Symbol symbol, JCTree tree, EndPosTable endPositions,
+          Lint lint, JCAnnotation annotation, EnumSet<LintCategory> suppressions) {
             super(tree, endPositions);
             this.parent = parent;
             this.symbol = symbol;
             this.lint = lint;
+            this.annotation = annotation;
+            this.suppressions = suppressions;
+            this.unvalidated = EnumSet.copyOf(suppressions);
             parent.children.add(this);
         }
 
@@ -340,8 +494,42 @@ public class LintMapper {
             return Stream.concat(Stream.of(this), children.stream().flatMap(DeclNode::stream));
         }
 
+        // Is the "suppression" category suppressed at this node or any parent node?
+        public boolean shouldReport() {
+            return !suppressions.contains(SUPPRESSION) && (parent == null || parent.shouldReport());
+        }
+
         Span toSpan() {
             return new Span(startPos, endPos);
+        }
+
+        // Calculate the unvalidated suppressions in the subtree rooted at this node. We do this by recursively
+        // propagating validations upward until they are "caught" by some matching suppression; this validates
+        // the suppression. Validations that are not caught are returned to the caller.
+        public EnumSet<LintCategory> propagateValidations(Map<Symbol, EnumSet<LintCategory>> validationsMap) {
+
+            // Recurse on subtrees first and gather their uncaught validations
+            EnumSet<LintCategory> validations = LintCategory.newEmptySet();
+            children.stream()
+              .map(child -> child.propagateValidations(validationsMap))
+              .forEach(validations::addAll);
+
+            // Add in the validations that occurred at this node, if any
+            Optional.of(symbol)
+              .map(validationsMap::get)
+              .ifPresent(validations::addAll);
+
+            // Apply (and then discard) validations that match any of this node's suppressions
+            validations.removeIf(category -> {
+                if (suppressions.contains(category)) {
+                    unvalidated.remove(category);
+                    return true;
+                }
+                return false;
+            });
+
+            // Propagate the remaining validations that weren't caught upward
+            return validations;
         }
 
         // Note: no need for equals() or hashCode() here
@@ -349,7 +537,7 @@ public class LintMapper {
         @Override
         public String toString() {
             String label = symbol != null ? "sym=" + symbol : "ROOT";
-            return String.format("DeclNode[%s,lint=%s]", label, lint);
+            return String.format("DeclNode[%s,lint=%s,suppressions=%s]", label, lint, suppressions);
         }
     }
 
@@ -359,6 +547,11 @@ public class LintMapper {
      * Builds a tree of {@link DeclNode}s, starting from a top-level declaration.
      */
     private class DeclNodeTreeBuilder extends TreeScanner {
+
+        // Variables declared together (separated by commas) share their @SuppressWarnings annotation, so they must also share
+        // the set of validated suppressions: the suppression of a category is valid if *any* of the variables validates it.
+        // We detect that situation using this map and, when found, invoke FileInfo.mergeValidations().
+        private final Map<JCAnnotation, Symbol> annotationMap = new HashMap<>();
 
         private final FileInfo fileInfo;
         private final EndPosTable endPositions;
@@ -375,30 +568,30 @@ public class LintMapper {
 
         @Override
         public void visitModuleDef(JCModuleDecl tree) {
-            scanDecl(tree, tree.sym, super::visitModuleDef);
+            scanDecl(tree, tree.sym, findAnnotation(tree.mods), super::visitModuleDef);
         }
 
         @Override
         public void visitPackageDef(JCPackageDecl tree) {
-            scanDecl(tree, tree.packge, super::visitPackageDef);
+            scanDecl(tree, tree.packge, findAnnotation(tree.annotations), super::visitPackageDef);
         }
 
         @Override
         public void visitClassDef(JCClassDecl tree) {
-            scanDecl(tree, tree.sym, super::visitClassDef);
+            scanDecl(tree, tree.sym, findAnnotation(tree.mods), super::visitClassDef);
         }
 
         @Override
         public void visitMethodDef(JCMethodDecl tree) {
-            scanDecl(tree, tree.sym, super::visitMethodDef);
+            scanDecl(tree, tree.sym, findAnnotation(tree.mods), super::visitMethodDef);
         }
 
         @Override
         public void visitVarDef(JCVariableDecl tree) {
-            scanDecl(tree, tree.sym, super::visitVarDef);
+            scanDecl(tree, tree.sym, findAnnotation(tree.mods), super::visitVarDef);
         }
 
-        private <T extends JCTree> void scanDecl(T tree, Symbol symbol, Consumer<? super T> recursion) {
+        private <T extends JCTree> void scanDecl(T tree, Symbol symbol, JCAnnotation annotation, Consumer<? super T> recursion) {
 
             // Symbol can be null if there were earlier errors; skip this declaration if so
             if (symbol == null) {
@@ -410,14 +603,26 @@ public class LintMapper {
             Lint previousLint = lint;
             lint = lint.augment(symbol);
 
+            // Get the lint categories explicitly suppressed at this symbol's declaration by @SuppressedWarnings
+            EnumSet<LintCategory> suppressed = Optional.ofNullable(annotation)
+              .map(anno -> rootLint.suppressionsFrom(anno, true))
+              .orElseGet(LintCategory::newEmptySet);
+
+            // Merge validation sets for variables that share the same declaration and therefore the same @SuppressedWarnings
+            if (annotation != null && tree.getTag() == Tag.VARDEF) {
+                Symbol firstSymbol = annotationMap.computeIfAbsent(annotation, a -> symbol);
+                if (firstSymbol != symbol)
+                    fileInfo.mergeValidations(firstSymbol, symbol);
+            }
+
             // If this declaration is not interesting, we don't need to create a DeclNode for it
-            if (lint == previousLint && parent.parent != null) {
+            if (lint == previousLint && parent.parent != null && suppressed.isEmpty()) {
                 recursion.accept(tree);
                 return;
             }
 
             // Add a DeclNode here
-            DeclNode node = new DeclNode(parent, symbol, tree, endPositions, lint);
+            DeclNode node = new DeclNode(parent, symbol, tree, endPositions, lint, annotation, suppressed);
             parent = node;
             try {
                 recursion.accept(tree);
@@ -425,6 +630,24 @@ public class LintMapper {
                 parent = node.parent;
                 lint = previousLint;
             }
+        }
+
+        // Retrieve the @SuppressWarnings annotation, if any, from the given modifiers
+        private JCAnnotation findAnnotation(JCModifiers mods) {
+            return Optional.ofNullable(mods)
+              .map(m -> m.annotations)
+              .map(this::findAnnotation)
+              .orElse(null);
+        }
+
+        // Retrieve the @SuppressWarnings annotation, if any, from the given list of annotations
+        private JCAnnotation findAnnotation(Collection<JCAnnotation> annotations) {
+            return Optional.ofNullable(annotations)
+              .stream()
+              .flatMap(Collection::stream)
+              .filter(a -> a.attribute.type.tsym == syms.suppressWarningsType.tsym)
+              .findFirst()
+              .orElse(null);
         }
     }
 }

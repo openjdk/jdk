@@ -260,6 +260,13 @@ define SetupJavaCompilationBody
       # If unspecified, default to the new jdk we're building
       $1_TARGET_RELEASE := $$(TARGET_RELEASE_NEWJDK)
     endif
+
+    # Always disable "suppression-option" because, thanks to the Depend plugin, we will
+    # only compile the source files that need to be recompiled, so the "suppression-option"
+    # lint warning can generate a false positive if some source file that would otherwise
+    # generate a suppressed lint warning is not included in the compilation. With a fresh
+    # build, it would be safe to enable "suppression-option" (TODO: automate doing that).
+    $1_FLAGS += -Xlint:-suppression-option
   else
     $$(error Invalid value for COMPILER in SetupJavaCompilation for $1: '$$($1_COMPILER)')
   endif
