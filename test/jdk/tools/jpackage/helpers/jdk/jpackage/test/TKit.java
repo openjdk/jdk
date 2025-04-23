@@ -979,7 +979,7 @@ public final class TKit {
             negate = other.negate;
             createException = other.createException;
             anotherVerifier = other.anotherVerifier;
-            value= other.value;
+            value = other.value;
         }
 
         public TextStreamVerifier label(String v) {
