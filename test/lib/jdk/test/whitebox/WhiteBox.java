@@ -595,8 +595,8 @@ public class WhiteBox {
     try {
       Method wfrp = getWaitForReferenceProcessingMethod();
       return (Boolean) wfrp.invoke(null);
-    } catch (IllegalAccessException t) {
-      throw new RuntimeException("Shouldn't happen, we call setAccessible()", t);
+    } catch (IllegalAccessException e) {
+      throw new RuntimeException("Shouldn't happen, we call setAccessible()", e);
     } catch (InvocationTargetException e) {
       Throwable cause = e.getCause();
       if (cause instanceof InterruptedException) {
