@@ -76,8 +76,7 @@ public class ComboPopupBug {
 
         try {
             SwingUtilities.invokeAndWait(() -> closeButton.doClick());
-        }
-        finally {
+        } finally {
             SwingUtilities.invokeAndWait(() -> frame.dispose());
         }
     }
