@@ -114,7 +114,6 @@ class SystemClipboardOwner implements ClipboardOwner {
         Process process = ProcessTools.startProcess("Child", pb);
         OutputAnalyzer outputAnalyzer = new OutputAnalyzer(process);
 
-        ProcessTools.executeTestJava();
         if (!process.waitFor(15, TimeUnit.SECONDS)) {
             process.destroyForcibly();
             throw new TimeoutException("Timed out waiting for Child");
