@@ -121,6 +121,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
       if (old_time_elapsed < ShenandoahMinimumOldTimeMs) {
         // Do not decline_trigger() when waiting for minimum quantum of Old-gen marking.  It is not at our discretion
         // to trigger at this time.
+	log_debug(gc)("Young heuristics declines to trigger because old_time_elapsed < ShenandoahMinimumOldTimeMs");
         return false;
       }
     }
