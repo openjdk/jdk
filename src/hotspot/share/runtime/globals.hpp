@@ -1720,11 +1720,6 @@ const int ObjectAlignmentInBytes = 8;
           "The string %p in the file name (if present) "                    \
           "will be replaced by pid")                                        \
                                                                             \
-  product(int, PerfDataSamplingInterval, 50,                                \
-          "(Deprecated) Data sampling interval (in milliseconds)")                       \
-          range(PeriodicTask::min_interval, max_jint)                       \
-          constraint(PerfDataSamplingIntervalFunc, AfterErgo)               \
-                                                                            \
   product(bool, PerfDisableSharedMem, false,                                \
           "Store performance data in standard memory")                      \
                                                                             \
