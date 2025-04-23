@@ -2279,7 +2279,7 @@ void ZPageAllocator::decrease_used(size_t size) {
 
 void ZPageAllocator::increase_used_eden(size_t size) {
   // Update atomically since we have concurrent readers and writers
-  Atomic::add(&_used_eden, size);
+  Atomic::add(&_used_eden, size, memory_order_relaxed);
 }
 
 void ZPageAllocator::reset_used_eden() {
