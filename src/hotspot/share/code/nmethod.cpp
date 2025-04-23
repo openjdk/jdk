@@ -1647,6 +1647,10 @@ void nmethod::maybe_print_nmethod(const DirectiveSet* directive) {
 }
 
 void nmethod::print_nmethod(bool printmethod) {
+  // Enter a critical section to prevent a race with deopts that patch code and updates the relocation info.
+  // Unfortunately, we have to lock the NMethodState_lock before the tty lock due to the deadlock rules and
+  // cannot lock in a more finely grained manner.
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   ttyLocker ttyl;  // keep the following output all in one block
   if (xtty != nullptr) {
     xtty->begin_head("print_nmethod");
