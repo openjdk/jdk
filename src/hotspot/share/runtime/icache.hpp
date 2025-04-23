@@ -78,8 +78,11 @@ class AbstractICache : AllStatic {
 #include CPU_HEADER(icache)
 
 class ICacheStubGenerator : public StubCodeGenerator {
+ private:
+   const char* _stub_name;
+
  public:
-  ICacheStubGenerator(CodeBuffer *c) : StubCodeGenerator(c) {}
+  ICacheStubGenerator(const char* stub_name, CodeBuffer *c) : StubCodeGenerator(c), _stub_name(stub_name) {}
 
   // Generate the icache flush stub.
   //
@@ -123,7 +126,7 @@ class ICacheStubGenerator : public StubCodeGenerator {
   // flush_icache_stub to the address of the stub it generates before
   // the StubCodeMark destructor is invoked.
 
-  void generate_icache_flush(const char* name, ICache::flush_icache_stub_t* flush_icache_stub);
+  void generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub);
 };
 
 #endif // SHARE_RUNTIME_ICACHE_HPP

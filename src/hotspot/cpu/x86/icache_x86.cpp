@@ -76,8 +76,8 @@ void x86_generate_icache_flush_insn(MacroAssembler* _masm, Register addr) {
   }
 }
 
-void ICacheStubGenerator::generate_icache_flush(const char* name, ICache::flush_icache_stub_t* flush_icache_stub) {
-  StubCodeMark mark(this, "ICache", this->b);
+void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub) {
+  StubCodeMark mark(this, "ICache", _stub_name);
 
   address start = __ pc();
 

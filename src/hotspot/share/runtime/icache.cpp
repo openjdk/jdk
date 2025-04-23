@@ -53,8 +53,8 @@ void AbstractICache::initialize(int phase) {
   }
   CodeBuffer c(b);
 
-  ICacheStubGenerator g(&c);
-  g.generate_icache_flush(stub_name, &_flush_icache_stub);
+  ICacheStubGenerator g(stub_name, &c);
+  g.generate_icache_flush(&_flush_icache_stub);
 
   // The first use of flush_icache_stub must apply it to itself.
   // The StubCodeMark destructor in generate_icache_flush will

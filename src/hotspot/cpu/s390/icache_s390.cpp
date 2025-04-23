@@ -37,7 +37,7 @@
 // Call c function (which just does nothing).
 int z_flush_icache(address start, int lines, int magic) { return magic; }
 
-void ICacheStubGenerator::generate_icache_flush(const char* name, ICache::flush_icache_stub_t* flush_icache_stub) {
+void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub) {
   *flush_icache_stub = (ICache::flush_icache_stub_t)z_flush_icache;
 
   // First call to flush itself.

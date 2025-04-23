@@ -35,7 +35,7 @@ static int icache_flush(address addr, int lines, int magic) {
 }
 
 
-void ICacheStubGenerator::generate_icache_flush(const char* name, ICache::flush_icache_stub_t* flush_icache_stub) {
+void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub) {
   address start = (address)icache_flush;
 
   *flush_icache_stub = (ICache::flush_icache_stub_t)start;

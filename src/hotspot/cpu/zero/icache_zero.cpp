@@ -27,7 +27,6 @@
 #include "runtime/icache.hpp"
 
 void ICacheStubGenerator::generate_icache_flush(
-    const char* name,
-    ICache::flush_icache_stub_t* flush_icache_stub) {
+  ICache::flush_icache_stub_t* flush_icache_stub) {
   ShouldNotCallThis();
 }

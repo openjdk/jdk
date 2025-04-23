@@ -44,7 +44,7 @@ static int icache_flush(address addr, int lines, int magic) {
   return magic;
 }
 
-void ICacheStubGenerator::generate_icache_flush(const char* name, ICache::flush_icache_stub_t* flush_icache_stub) {
+void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub) {
   // Only riscv_flush_icache is supported as I-cache synchronization.
   // We must make sure the VM can execute such without error.
   if (!RiscvFlushIcache::test()) {
