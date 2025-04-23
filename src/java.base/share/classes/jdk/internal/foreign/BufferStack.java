@@ -34,8 +34,20 @@ import java.lang.foreign.SegmentAllocator;
 import java.lang.ref.Reference;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * A buffer stack that allows efficient reuse of memory segments. This is useful in cases
+ * where temporary memory is needed.
+ * <p>
+ * Note: The reused segments are neither zeroed out before nor after re-use.
+ */
 public sealed interface BufferStack {
 
+    /**
+     * {@return  a new Arena that tries to provided {@code size} and {@code byteAlignment}
+     *           allocations by recycling the BufferStacks internal memory}
+     * @param size to be reserved from this BufferStacks internal memory
+     * @param byteAlignment to be used for reservation
+     */
     Arena pushFrame(long size, long byteAlignment);
 
     record BufferStackImpl(long size, CarrierThreadLocal<PerThread> tl) implements BufferStack {
