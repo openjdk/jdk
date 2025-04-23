@@ -88,7 +88,7 @@ public class ComboPopupBug {
 
         robot.mouseMove(comboBoxLocation.x + comboBoxSize.width - PADDING,
                 comboBoxLocation.y + comboBoxSize.height / 2);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     }
 }
