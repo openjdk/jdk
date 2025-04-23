@@ -27,14 +27,14 @@
 
 #include "compiler/compileTask.hpp"
 
-#include "runtime/methodUnloadBlocker.inline.hpp"
+#include "runtime/unloadableMethodHandle.inline.hpp"
 
 inline Method* CompileTask::method() const {
-  return _method_unload_blocker.method();
+  return _method_handle.method();
 }
 
 inline Method* CompileTask::hot_method() const {
-  return _hot_method_unload_blocker.method();
+  return _hot_method_handle.method();
 }
 
 #endif // SHARE_COMPILER_COMPILETASK_INLINE_HPP

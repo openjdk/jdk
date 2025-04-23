@@ -34,8 +34,8 @@
 #include "oops/method.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
-#include "runtime/methodUnloadBlocker.inline.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/unloadableMethodHandle.inline.hpp"
 
 CompileTask*  CompileTask::_task_free_list = nullptr;
 
@@ -67,8 +67,8 @@ void CompileTask::free(CompileTask* task) {
   MutexLocker locker(CompileTaskAlloc_lock);
   if (!task->is_free()) {
     assert(!task->lock()->is_locked(), "Should not be locked when freed");
-    task->_method_unload_blocker.release();
-    task->_hot_method_unload_blocker.release();
+    task->_method_handle.release();
+    task->_hot_method_handle.release();
     if (task->_failure_reason_on_C_heap && task->_failure_reason != nullptr) {
       os::free((void*) task->_failure_reason);
     }
@@ -92,7 +92,7 @@ void CompileTask::initialize(int compile_id,
   assert(!_lock->is_locked(), "bad locking");
 
   _compile_id = compile_id;
-  _method_unload_blocker = MethodUnloadBlocker(method());
+  _method_handle = UnloadableMethodHandle(method());
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
   JVMCI_ONLY(_has_waiter = CompileBroker::compiler(comp_level)->is_jvmci();)
@@ -121,7 +121,7 @@ void CompileTask::initialize(int compile_id,
   if (LogCompilation) {
     if (hot_method.not_null() && hot_method() != method()) {
       // Only do capture unload blocker if _hot_method is different from _method.
-      _hot_method_unload_blocker = MethodUnloadBlocker(hot_method());
+      _hot_method_handle = UnloadableMethodHandle(hot_method());
     }
   }
 
@@ -142,8 +142,8 @@ CompileTask* CompileTask::select_for_compilation() {
   }
 
   // Block unloading for currently held method holders.
-  _method_unload_blocker.block_unloading();
-  _hot_method_unload_blocker.block_unloading();
+  _method_handle.block_unloading();
+  _hot_method_handle.block_unloading();
 
   return this;
 }
@@ -153,14 +153,14 @@ void CompileTask::mark_on_stack() {
     return;
   }
   // Mark these methods as something redefine classes cannot remove.
-  _method_unload_blocker.method()->set_on_stack(true);
-  if (_hot_method_unload_blocker.method() != nullptr) {
-    _hot_method_unload_blocker.method()->set_on_stack(true);
+  _method_handle.method()->set_on_stack(true);
+  if (_hot_method_handle.method() != nullptr) {
+    _hot_method_handle.method()->set_on_stack(true);
   }
 }
 
 bool CompileTask::is_unloaded() const {
-  return _method_unload_blocker.is_unloaded();
+  return _method_handle.is_unloaded();
 }
 
 // RedefineClasses support
@@ -310,8 +310,8 @@ void CompileTask::log_task_queued() {
   assert(_compile_reason > CompileTask::Reason_None && _compile_reason < CompileTask::Reason_Count, "Valid values");
   xtty->print(" comment='%s'", reason_name(_compile_reason));
 
-  if (_hot_method_unload_blocker.method() != nullptr) {
-    xtty->method(_hot_method_unload_blocker.method());
+  if (_hot_method_handle.method() != nullptr) {
+    xtty->method(_hot_method_handle.method());
   }
   if (_hot_count != 0) {
     xtty->print(" hot_count='%d'", _hot_count);

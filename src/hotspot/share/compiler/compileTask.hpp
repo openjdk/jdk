@@ -31,7 +31,7 @@
 #include "memory/allocation.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
-#include "runtime/methodUnloadBlocker.hpp"
+#include "runtime/unloadableMethodHandle.hpp"
 #include "utilities/xmlstream.hpp"
 
 class DirectiveSet;
@@ -86,7 +86,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   static CompileTask*  _task_free_list;
   Monitor*             _lock;
   int                  _compile_id;
-  MethodUnloadBlocker  _method_unload_blocker;
+  UnloadableMethodHandle _method_handle;
   int                  _osr_bci;
   bool                 _is_complete;
   bool                 _is_success;
@@ -108,7 +108,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   // Fields used for logging why the compilation was initiated:
   jlong                _time_queued;  // time when task was enqueued
   jlong                _time_started; // time when compilation started
-  MethodUnloadBlocker  _hot_method_unload_blocker;  // which method actually triggered this task
+  UnloadableMethodHandle _hot_method_handle;  // which method actually triggered this task
   int                  _hot_count;    // information about its invocation counter
   CompileReason        _compile_reason;      // more info about the task
   const char*          _failure_reason;

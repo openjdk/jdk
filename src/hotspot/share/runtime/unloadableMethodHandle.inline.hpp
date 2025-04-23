@@ -25,14 +25,14 @@
 #ifndef SHARE_RUNTIME_METHOD_UNLOAD_BLOCKER_HANDLE_INLINE_HPP
 #define SHARE_RUNTIME_METHOD_UNLOAD_BLOCKER_HANDLE_INLINE_HPP
 
-#include "runtime/methodUnloadBlocker.hpp"
+#include "runtime/unloadableMethodHandle.hpp"
 
 #include "memory/universe.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
 
-inline MethodUnloadBlocker::MethodUnloadBlocker(Method* method) {
+inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) {
   _method = method;
   if (method != nullptr) {
     oop obj = get_unload_blocker(method);
@@ -42,7 +42,7 @@ inline MethodUnloadBlocker::MethodUnloadBlocker(Method* method) {
   }
 }
 
-oop MethodUnloadBlocker::get_unload_blocker(Method* method) {
+oop UnloadableMethodHandle::get_unload_blocker(Method* method) {
   assert(method != nullptr, "Should be");
   InstanceKlass* ik = method->method_holder();
   oop klass_holder = ik->klass_holder();
@@ -57,7 +57,7 @@ oop MethodUnloadBlocker::get_unload_blocker(Method* method) {
   return nullptr;
 }
 
-void MethodUnloadBlocker::release() {
+void UnloadableMethodHandle::release() {
   if (_method != nullptr) {
     _method = nullptr;
     _weak_handle.release(Universe::vm_weak());
@@ -65,12 +65,12 @@ void MethodUnloadBlocker::release() {
   }
 }
 
-bool MethodUnloadBlocker::is_unloaded() const {
+bool UnloadableMethodHandle::is_unloaded() const {
   // Unloaded if weak handle was set, but now had been cleared by GC.
   return _method != nullptr && !_weak_handle.is_empty() && _weak_handle.peek() == nullptr;
 }
 
-inline void MethodUnloadBlocker::block_unloading() {
+inline void UnloadableMethodHandle::block_unloading() {
   assert(!is_unloaded(), "Pre-condition: should not be unloaded");
 
   if (_method == nullptr) {
@@ -94,7 +94,7 @@ inline void MethodUnloadBlocker::block_unloading() {
   assert(!is_unloaded(), "Post-condition: should not be unloaded");
 }
 
-inline Method* MethodUnloadBlocker::method() const {
+inline Method* UnloadableMethodHandle::method() const {
   assert(!is_unloaded(), "Should not be unloaded");
   return _method;
 }

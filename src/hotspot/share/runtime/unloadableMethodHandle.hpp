@@ -22,19 +22,18 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_METHOD_UNLOAD_BLOCKER_HANDLE_HPP
-#define SHARE_RUNTIME_METHOD_UNLOAD_BLOCKER_HANDLE_HPP
+#ifndef SHARE_RUNTIME_UNLOADABLE_METHOD_HANDLE_HPP
+#define SHARE_RUNTIME_UNLOADABLE_METHOD_HANDLE_HPP
 
 #include "oops/klass.hpp"
 #include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
 
-// Method unload blocker.
+// Unloadable method handle.
 //
 // Useful when one needs to hold to Method* without delaying class unloading.
-// There is normally an associated Method* that is associated with this blocker.
 //
-// This blocker can be in 3 states:
+// This handle can be in 3 states:
 //  1. Initial weak state. Relevant Method* is only weakly-reachable, can be cleared
 //     by class unloading.
 //  2. Accessible strong state. Relevant Method* is strongly reachable, cannot be
@@ -42,10 +41,10 @@
 //  3. Final released state. Relevant Method* is in unknown state, and cannot be
 //     accessed.
 //
-// Users should call block_unloading() to reach accessible state before accessing
-// associated Method*.
+// Users should call block_unloading() to reach accessible state before unwrapping
+// method().
 //
-class MethodUnloadBlocker {
+class UnloadableMethodHandle {
   Method* _method;
   WeakHandle _weak_handle;   // oop that can be used to block unloading
   OopHandle  _strong_handle; // oop that *is* used to block unloading
@@ -53,8 +52,8 @@ class MethodUnloadBlocker {
   inline oop get_unload_blocker(Method* method);
 
 public:
-  MethodUnloadBlocker() : _method(nullptr) {}; // initialization
-  MethodUnloadBlocker(Method* method);
+  UnloadableMethodHandle() : _method(nullptr) {}; // initialization
+  UnloadableMethodHandle(Method* method);
 
   /*
    * Release the handle.
@@ -77,4 +76,4 @@ public:
   void block_unloading();
 };
 
-#endif // SHARE_RUNTIME_METHOD_UNLOAD_BLOCKER_HANDLE_HPP
+#endif // SHARE_RUNTIME_UNLOADABLE_METHOD_HANDLE_HPP
