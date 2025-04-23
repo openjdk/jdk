@@ -67,7 +67,7 @@ import java.lang.annotation.*;
  * validations.  Any validation must be done on values that are exclusively
  * accessed by the current thread: shared fields must be read into local
  * variables, and shared arrays must be copied to an exclusive copy, to ensure
- * each shared location (a field or an array component) is accessed exactly once.
+ * each shared location (a field or an array component) is accessed at most once.
  * If a shared location is read multiple times for check and for use, race
  * conditions may cause two reads to produce distinct values, known as TOCTOU
  * (time of check and time of use), and the read for use may produce an illegal
