@@ -587,9 +587,8 @@ hotspot_metaspace = \
 
 # A subset of AppCDS tests to be run in tier1
 tier1_runtime_appcds = \
-  runtime/cds/appcds/HelloTest.java \
-  runtime/cds/appcds/sharedStrings/SharedStringsBasic.java \
-  runtime/cds/appcds/ClassLoaderTest.java
+  runtime/cds/appcds/aotCache/HelloAOTCache.java \
+  runtime/cds/appcds/HelloTest.java
 
 tier1_runtime_appcds_exclude = \
   runtime/cds/appcds/ \

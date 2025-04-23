@@ -2717,6 +2717,11 @@ public class IRNode {
         macroNodes(MOD_D, regex);
     }
 
+    public static final String BLACKHOLE = PREFIX + "BLACKHOLE" + POSTFIX;
+    static {
+        fromBeforeRemoveUselessToFinalCode(BLACKHOLE, "Blackhole");
+    }
+
     /*
      * Utility methods to set up IR_NODE_MAPPINGS.
      */
@@ -2841,6 +2846,13 @@ public class IRNode {
     private static void storeOfNodes(String irNodePlaceholder, String irNodeRegex) {
         String regex = START + irNodeRegex + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
         beforeMatching(irNodePlaceholder, regex);
+    }
+
+    private static void fromBeforeRemoveUselessToFinalCode(String irNodePlaceholder, String irNodeRegex) {
+        String regex = START + irNodeRegex + MID + END;
+        IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
+                CompilePhase.BEFORE_REMOVEUSELESS,
+                CompilePhase.FINAL_CODE));
     }
 
     /**
