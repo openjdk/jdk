@@ -683,30 +683,43 @@ public class Throwable implements Serializable {
      * @param s {@code PrintStream} to use for output
      */
     public void printStackTrace(PrintStream s) {
-        printStackTrace(new WrappedPrintStream(s));
+        printStackTrace(s);
     }
 
-    private void printStackTrace(PrintStreamOrWriter s) {
+    private void printStackTrace(Object printer) {
         // Guard against malicious overrides of Throwable.equals by
         // using a Set with identity equality semantics.
         Set<Throwable> dejaVu = Collections.newSetFromMap(new IdentityHashMap<>());
         dejaVu.add(this);
 
-        synchronized(s.lock()) {
+        synchronized(printer) {
             // Print our stack trace
-            s.println(this);
+            println(printer, this);
             StackTraceElement[] trace = getOurStackTrace();
             for (StackTraceElement traceElement : trace)
-                s.println("\tat " + traceElement);
+                println(printer, "\tat " + traceElement);
 
             // Print suppressed exceptions, if any
             for (Throwable se : getSuppressed())
-                se.printEnclosedStackTrace(s, trace, SUPPRESSED_CAPTION, "\t", dejaVu);
+                se.printEnclosedStackTrace(printer, trace, SUPPRESSED_CAPTION, "\t", dejaVu);
 
             // Print cause, if any
             Throwable ourCause = getCause();
             if (ourCause != null)
-                ourCause.printEnclosedStackTrace(s, trace, CAUSE_CAPTION, "", dejaVu);
+                ourCause.printEnclosedStackTrace(printer, trace, CAUSE_CAPTION, "", dejaVu);
+        }
+    }
+
+    /**
+     * Prints the specified string as a line on this StreamOrWriter
+     * @param printer PrintStream or PrintWriter to use for output
+     * @param o String to print
+     */
+    private static void println(Object printer, Object o) {
+        if (printer instanceof PrintStream ps) {
+            ps.println(o);
+        } else {
+            ((PrintWriter) printer).println(o);
         }
     }
 
@@ -714,14 +727,14 @@ public class Throwable implements Serializable {
      * Print our stack trace as an enclosed exception for the specified
      * stack trace.
      */
-    private void printEnclosedStackTrace(PrintStreamOrWriter s,
+    private void printEnclosedStackTrace(Object printer,
                                          StackTraceElement[] enclosingTrace,
                                          String caption,
                                          String prefix,
                                          Set<Throwable> dejaVu) {
-        assert Thread.holdsLock(s.lock());
+        assert Thread.holdsLock(printer);
         if (dejaVu.contains(this)) {
-            s.println(prefix + caption + "[CIRCULAR REFERENCE: " + this + "]");
+            println(printer, prefix + caption + "[CIRCULAR REFERENCE: " + this + "]");
         } else {
             dejaVu.add(this);
             // Compute number of frames in common between this and enclosing trace
@@ -734,21 +747,21 @@ public class Throwable implements Serializable {
             int framesInCommon = trace.length - 1 - m;
 
             // Print our stack trace
-            s.println(prefix + caption + this);
+            println(printer, prefix + caption + this);
             for (int i = 0; i <= m; i++)
-                s.println(prefix + "\tat " + trace[i]);
+                println(printer, prefix + "\tat " + trace[i]);
             if (framesInCommon != 0)
-                s.println(prefix + "\t... " + framesInCommon + " more");
+                println(printer, prefix + "\t... " + framesInCommon + " more");
 
             // Print suppressed exceptions, if any
             for (Throwable se : getSuppressed())
-                se.printEnclosedStackTrace(s, trace, SUPPRESSED_CAPTION,
+                se.printEnclosedStackTrace(printer, trace, SUPPRESSED_CAPTION,
                                            prefix +"\t", dejaVu);
 
             // Print cause, if any
             Throwable ourCause = getCause();
             if (ourCause != null)
-                ourCause.printEnclosedStackTrace(s, trace, CAUSE_CAPTION, prefix, dejaVu);
+                ourCause.printEnclosedStackTrace(printer, trace, CAUSE_CAPTION, prefix, dejaVu);
         }
     }
 
@@ -760,39 +773,7 @@ public class Throwable implements Serializable {
      * @since   1.1
      */
     public void printStackTrace(PrintWriter s) {
-        printStackTrace(new WrappedPrintWriter(s));
-    }
-
-    /**
-     * Wrapper class for PrintStream and PrintWriter to enable a single
-     * implementation of printStackTrace.
-     */
-    private interface PrintStreamOrWriter {
-        /** Returns the object to be locked when using this StreamOrWriter */
-        abstract Object lock();
-
-        /** Prints the specified string as a line on this StreamOrWriter */
-        abstract void println(Object o);
-    }
-
-    private record WrappedPrintStream(PrintStream printStream) implements PrintStreamOrWriter {
-        public Object lock() {
-            return printStream;
-        }
-
-        public void println(Object o) {
-            printStream.println(o);
-        }
-    }
-
-    private record WrappedPrintWriter(PrintWriter printWriter) implements PrintStreamOrWriter {
-        public Object lock() {
-            return printWriter;
-        }
-
-        public void println(Object o) {
-            printWriter.println(o);
-        }
+        printStackTrace(s);
     }
 
     /**
