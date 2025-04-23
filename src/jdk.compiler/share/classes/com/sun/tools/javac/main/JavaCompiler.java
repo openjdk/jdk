@@ -79,7 +79,6 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Context.Key;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.Factory;
-import com.sun.tools.javac.util.LintMapper;
 import com.sun.tools.javac.util.Log.DiagnosticHandler;
 import com.sun.tools.javac.util.Log.DiscardDiagnosticHandler;
 import com.sun.tools.javac.util.Log.WriterKind;

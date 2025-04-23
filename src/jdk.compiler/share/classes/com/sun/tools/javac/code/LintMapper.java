@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.tools.javac.util;
+package com.sun.tools.javac.code;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -40,13 +40,13 @@ import java.util.stream.Stream;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
-import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
+import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 /**

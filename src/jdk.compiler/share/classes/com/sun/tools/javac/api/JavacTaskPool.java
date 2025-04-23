@@ -55,6 +55,7 @@ import com.sun.source.util.TaskEvent.Kind;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.code.Kinds;
+import com.sun.tools.javac.code.LintMapper;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symtab;
@@ -76,7 +77,6 @@ import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.LintMapper;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 
