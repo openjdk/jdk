@@ -1654,6 +1654,7 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
   using State = VMATree::StateType;
   SIndex si_1 = si[0];
   SIndex si_2 = si[1];
+  SIndex si_3 = si[2];
 
   const bool ok_to_run = false;
   const State Rs = State::Reserved;
@@ -1662,6 +1663,8 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
   VMATree::RegionData call_stack_1(si_1, mtTest);
   VMATree::RegionData call_stack_1_mtNone(si_1, mtNone);
   VMATree::RegionData call_stack_2(si_2, mtTest);
+  VMATree::RegionData call_stack_2_mtNone(si_2, mtNone);
+  VMATree::RegionData call_stack_3_mtNone(si_3, mtNone);
 
   { // Do 'Reserve' over multiple committed/reserved regions
     Tree tree;
@@ -1757,6 +1760,34 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
     VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(50);
     EXPECT_EQ((int)r.start->key(), 0);
     EXPECT_EQ((int)r.end->key(), 1000);
+  }
+  { // Do 'Uncommit' over multiple committed/reserved regions with different call-stacks
+    Tree tree;
+    // Prepare pre-cond
+    tree.reserve_mapping(0, 1000, call_stack_1);
+    tree.reserve_mapping(100, 100, call_stack_2);
+    tree.reserve_mapping(300, 100, call_stack_2);
+    tree.reserve_mapping(500, 100, call_stack_2);
+    // New request
+    tree.uncommit_mapping(50, 900, call_stack_3_mtNone); // The call-stack should not be taken into account
+
+    // Pre:     ........0----------------100---------200--------300--------400--------500--------600-------------------1000........
+    //                         si_1             si_2       si_1      si_2       si_1       si_2          si_1               -
+    //
+    // Request: (uncommit)       50-----------------------------------------------------------------------------950
+    //                                                       si_3
+    //
+    // Post:    ........0----------------100---------200--------300--------400--------500--------600-------------------1000........
+    //           mtNone       mtTest         mtTest      mtTest     mtTest     mtTest     mtTest        mtTest              mtNone                                      mtNone
+    //           Rl           Rs             Rs          Rs         Rs         Rs         Rs            Rs                  Rl
+    //           -            si_1           si_2        si_1       si_2       si_1       si_2          si_1                -
+    //           -            -              -           -          -          -          -             -                   -
+    ExpectedTree<8> et = {{     0,    100,    200,    300,    400,    500,    600,   1000         },
+                          {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone },
+                          {Rl    , Rs    , Rs    , Rs    , Rs    , Rs    , Rs    , Rs    , Rl     },
+                          {-1    , si_1  , si_2  , si_1  , si_2  , si_1  , si_2  , si_1  , -1     },
+                          {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1     }};
+    if (ok_to_run) check_tree(tree, et, __LINE__);
   }
   { // Do 'Uncommit' [A,B) over multiple committed/reserved regions where B already exists in the nodes
     Tree tree;
