@@ -141,7 +141,7 @@ void MethodHandles::verify_method(MacroAssembler* _masm, Register method, Regist
         break;
 
       case vmIntrinsicID::_linkToStatic:
-        __ clinit_barrier(method_holder, r15_thread, &L_ok);
+        __ clinit_barrier(method_holder, &L_ok);
         break;
 
       case vmIntrinsicID::_linkToVirtual:
