@@ -68,12 +68,12 @@
     frame_anchor()->zap();
   }
   void set_last_Java_frame(ZeroFrame* fp, intptr_t* sp) {
-    frame_anchor()->set(sp, nullptr, fp);
+    frame_anchor()->set(sp, nullptr, (intptr_t*)fp);
   }
 
  public:
   ZeroFrame* last_Java_fp() {
-    return frame_anchor()->last_Java_fp();
+    return (ZeroFrame*)(frame_anchor()->last_Java_fp());
   }
 
  private:
