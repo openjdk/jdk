@@ -137,6 +137,8 @@ public class Usages {
             List.of(
                     new Pair("jdk.crypto.cryptoki/share/classes/sun/security/pkcs11/SunPKCS11.java",
                             List.of(MGR_GETSTRING)),
+                    new Pair("java.base/share/classes/sun/security/util/Password.java",
+                            List.of(MGR_GETSTRING)),
                     new Pair("java.base/share/classes/sun/security/provider/PolicyParser.java",
                             List.of(LOC_GETNONLOC, NEW_LOC)),
                     new Pair("java.base/share/classes/javax/security/auth/",
