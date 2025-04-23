@@ -1991,8 +1991,8 @@ int ConstantPool::find_matching_entry(int pattern_i,
 // Compare this constant pool's BSM attribute entry at idx1 to the constant pool
 // cp2's BSM attribute entry at idx2.
 bool ConstantPool::compare_bsme_to(int idx1, const constantPoolHandle& cp2, int idx2) {
-  auto e1 = bsm_attribute_entry(idx1);
-  auto e2 = cp2->bsm_attribute_entry(idx2);
+  BSMAttributeEntry* e1 = bsm_attribute_entry(idx1);
+  BSMAttributeEntry* e2 = cp2->bsm_attribute_entry(idx2);
   int k1 = e1->bootstrap_method_index();
   int k2 = e2->bootstrap_method_index();
   bool match = compare_entry_to(k1, cp2, k2);

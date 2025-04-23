@@ -3286,9 +3286,9 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
                      CHECK);
 
   // The attribute contains a counted array of counted tuples of shorts,
-  // represending bootstrap specifiers:
+  // representing bootstrap specifiers:
   //    length*{bootstrap_method_index, argument_count, argument_count*{argument_index}}
-  const unsigned int attribute_tail_length = attribute_byte_length - (unsigned)sizeof(u2);
+  const unsigned int attribute_tail_length = attribute_byte_length - static_cast<u4>(sizeof(u2));
 
   Array<u4>* const offsets =
     MetadataFactory::new_array<u4>(_loader_data, attribute_entry_count, CHECK);
@@ -3342,9 +3342,9 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
                      CHECK);
   assert(next_entry == entries->length(), "");
 
-  // check access methods, for extra luck
-  if (attribute_entry_count > 0) {
-    auto bsme = cp->bsm_attribute_entry(0);
+#ifdef ASSERT
+  if (bootstrap_methods_array_length > 0) {
+    BSMAttributeEntry* bsme = cp->bsm_attribute_entry(0);
     assert(bsme->bootstrap_method_index() == entries->at(0), "");
     assert(bsme->argument_count()         == entries->at(1), "");
     int nexti = (attribute_entry_count == 1) ? entries->length() : offsets->at(1);
@@ -3363,6 +3363,7 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
     int expect_lastu2 = (lastac == 0) ? 0 : bsme->argument_index(lastac-1);
     assert(lastu2 == expect_lastu2, "");
   }
+#endif
 }
 
 void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cfs,

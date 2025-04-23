@@ -78,7 +78,7 @@ public:
 };
 
 // A single entry from a BootstrapMethods (BSM) attribute.
-// It is an overlaid view of two or more consuctive u2 words within the
+// It is an overlaid view of two or more consecutive u2 words within the
 // ConstantPool::bsm_attribute_entries array.
 class BSMAttributeEntry {
  private:
@@ -105,7 +105,7 @@ class BSMAttributeEntry {
   static BSMAttributeEntry* entry_at_offset(Array<u2>* entries, int offset) {
     assert(0 <= offset && offset+2 < entries->length(), "oob-1");
     // do not bother to copy u2 data; just overlay the struct within the array
-    BSMAttributeEntry* bsme = (BSMAttributeEntry*) entries->adr_at(offset);
+    BSMAttributeEntry* bsme = (BSMAttributeEntry*)entries->adr_at(offset);
     assert(offset+2+bsme->argument_count() <= entries->length(), "oob-2");
     return bsme;
   }

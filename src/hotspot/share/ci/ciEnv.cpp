@@ -821,7 +821,7 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     // Patch the call site to the nmethod entry point of the static compiled lambda form.
     // As with other two-component call sites, both values must be independently verified.
     assert(index < cpool->cache()->resolved_indy_entries_length(), "impossible");
-    auto rie = cpool->resolved_indy_entry_at(index);
+    ResolvedIndyEntry* rie = cpool->resolved_indy_entry_at(index);
     Method* adapter = rie->method();
     // Resolved if the adapter is non null.
     if (adapter != nullptr) {

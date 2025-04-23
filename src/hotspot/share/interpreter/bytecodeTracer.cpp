@@ -326,7 +326,7 @@ void BytecodePrinter::print_bsm(int cp_index, outputStream* st) {
   }
   st->print("  BSM: %s", ref_kind);
   print_field_or_method(constants()->method_handle_index_at(bsm), st);
-  auto bsme = constants()->bootstrap_methods_attribute_entry(cp_index);
+  BSMAttributeEntry* bsme = constants()->bootstrap_methods_attribute_entry(cp_index);
   int argc = bsme->argument_count();;
   st->print("  arguments[%d] = {", argc);
   if (argc > 0) {

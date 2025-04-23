@@ -97,8 +97,7 @@ public:
     _cp_index = checked_cast<u2>(cpool_index);
   }
 
-  // symbolic reference queries
-  // FIXME: maybe duplicate this pattern in resolved method and field records as well
+  // Symbolic reference queries
   u2 name_index(ConstantPool* cp) const;
   u2 signature_index(ConstantPool* cp) const;
   u2 bsme_index(ConstantPool* cp) const;
