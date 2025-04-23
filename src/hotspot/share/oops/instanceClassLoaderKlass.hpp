@@ -46,11 +46,6 @@ public:
 private:
   InstanceClassLoaderKlass(const ClassFileParser& parser) : InstanceKlass(parser, Kind) {}
 
-  template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate_metadata(oop obj, OopClosureType* closure);
-  template <typename T, class OopClosureType>
-  static inline void oop_oop_iterate_metadata_bounded(oop obj, OopClosureType* closure, MemRegion mr);
-
 public:
   InstanceClassLoaderKlass();
 
@@ -59,12 +54,12 @@ public:
   // The InstanceClassLoaderKlass iterators also visit the CLD pointer
 
   // Forward iteration
-  // Iterate over the oop fields and metadata
+  // Iterate over the oop fields and metadata.
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute);
 
   // Reverse iteration
-  // Iterate over the oop fields and metadata
+  // Iterate over the oop fields and metadata.
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute);
 

@@ -236,4 +236,5 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType
     ik->oop_oop_iterate_oop_maps_bounded<T>(obj, closure, mr);
   }
 }
+
 #endif // SHARE_OOPS_INSTANCEKLASS_INLINE_HPP

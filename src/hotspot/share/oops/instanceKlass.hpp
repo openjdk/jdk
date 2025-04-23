@@ -338,6 +338,7 @@ class InstanceKlass: public Klass {
   void set_nonstatic_field_size(int size)  { _nonstatic_field_size = size; }
 
   int static_field_size() const            { return _static_field_size; }
+  void set_static_field_size(int size)     { _static_field_size = size; }
 
   int static_oop_field_count() const       { return (int)_static_oop_field_count; }
   void set_static_oop_field_count(u2 size) { _static_oop_field_count = size; }
@@ -999,7 +1000,7 @@ public:
   //
   // The InstanceKlass iterators also visits the Object's klass.
 
-  // Iterate over single oop map given by count and offset
+  // Iterate over single oop map entry given by count and offset
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_single_oop_map(oop obj, OopClosureType* closure, unsigned offset, unsigned count);
   template <typename T, class OopClosureType>
@@ -1007,7 +1008,7 @@ public:
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_single_oop_map_bounded(oop obj, OopClosureType* closure, MemRegion mr, unsigned offset, unsigned count);
 
-  // Iterate over multiple oop maps (non-Klute fallback version for classes >2 oop map entries)
+  // Iterate over all fields in all oop map entries (fallback version for classes with more than two oop map entries)
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_oop_maps(oop obj, OopClosureType* closure);
   template <typename T, class OopClosureType>
@@ -1019,12 +1020,18 @@ public:
 
  public:
 
+  // Forward iteration
+  // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute);
 
+  // Reverse iteration
+  // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute);
 
+  // Bounded range iteration
+  // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
   static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute);
 
