@@ -143,6 +143,7 @@ java/awt/Focus/TestDisabledAutoTransfer.java 8159871 macosx-all,windows-all
 java/awt/Focus/TestDisabledAutoTransferSwing.java 6962362 windows-all
 java/awt/Focus/ActivateOnProperAppContextTest.java 8136516 macosx-all
 java/awt/Focus/FocusPolicyTest.java 7160904 linux-all
+java/awt/Graphics/SmallPrimitives.java 8047070 macosx-all,linux-all
 java/awt/EventQueue/6980209/bug6980209.java 8198615 macosx-all
 java/awt/EventQueue/PushPopDeadlock/PushPopDeadlock.java 8024034 generic-all
 java/awt/grab/EmbeddedFrameTest1/EmbeddedFrameTest1.java 7080150 macosx-all
@@ -391,7 +392,6 @@ java/awt/Modal/MultipleDialogs/MultipleDialogs2Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs3Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs4Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs5Test.java 8198665 macosx-all
-java/awt/Modal/NativeDialogToFrontBackTest.java 7188049 windows-all,linux-all
 java/awt/Mouse/EnterExitEvents/DragWindowOutOfFrameTest.java 8177326 macosx-all
 java/awt/Mouse/EnterExitEvents/ResizingFrameTest.java 8005021 macosx-all
 java/awt/Mouse/EnterExitEvents/FullscreenEnterEventTest.java 8051455 macosx-all
@@ -442,6 +442,7 @@ java/awt/Focus/TranserFocusToWindow/TranserFocusToWindow.java 6848810 macosx-all
 java/awt/FileDialog/ModalFocus/FileDialogModalFocusTest.java 8194751 linux-all
 java/awt/image/VolatileImage/BitmaskVolatileImage.java 8133102 linux-all
 java/awt/SplashScreen/MultiResolutionSplash/unix/UnixMultiResolutionSplashTest.java 8203004 linux-all
+java/awt/ScrollPane/ScrollPositionTest.java 8040070 linux-all
 java/awt/ScrollPane/ScrollPaneScrollType/ScrollPaneEventType.java 8296516 macosx-all
 java/awt/Robot/AcceptExtraMouseButtons/AcceptExtraMouseButtons.java 7107528 linux-all,macosx-all
 java/awt/Mouse/MouseDragEvent/MouseDraggedTest.java 8080676 linux-all
@@ -463,6 +464,7 @@ java/awt/TrayIcon/RightClickWhenBalloonDisplayed/RightClickWhenBalloonDisplayed.
 java/awt/PopupMenu/PopupMenuLocation.java 8259913,8315878 windows-all,macosx-aarch64
 java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720,8324782 windows-all,macosx-all
 java/awt/GridLayout/ChangeGridSize/ChangeGridSize.java   8238720,8324782 windows-all,macosx-all
+java/awt/GridBagLayout/ComponentShortage.java 8355280 windows-all,linux-all
 java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java 8238720 windows-all
 
 # Several tests which fail sometimes on macos11
@@ -814,7 +816,10 @@ java/awt/PopupMenu/PopupHangTest.java 8340022 windows-all
 java/awt/Focus/MinimizeNonfocusableWindowTest.java 8024487 windows-all
 java/awt/Focus/InactiveFocusRace.java 8023263 linux-all
 java/awt/List/HandlingKeyEventIfMousePressedTest.java 6848358 macosx-all,windows-all
+java/awt/List/ListScrollbarCursorTest.java 8066410 generic-all
 java/awt/Checkbox/CheckboxBoxSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxIndicatorSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxNullLabelTest.java 8340870 windows-all
 java/awt/dnd/WinMoveFileToShellTest.java 8341665 windows-all
+java/awt/Menu/MenuVisibilityTest.java 8161110 macosx-all
+java/awt/Modal/NativeDialogToFrontBackTest.java 7188049 windows-all,linux-all
