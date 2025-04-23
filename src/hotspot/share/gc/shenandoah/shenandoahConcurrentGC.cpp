@@ -684,10 +684,6 @@ void ShenandoahConcurrentGC::op_init_mark() {
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
   if (heap->mode()->is_generational()) {
-    if (_generation->is_young()) {
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
-      _generation->swap_card_tables();
-    }
 
     if (_generation->is_global()) {
       heap->old_generation()->cancel_gc();
@@ -697,6 +693,14 @@ void ShenandoahConcurrentGC::op_init_mark() {
       // abandoned.
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_transfer_satb);
       heap->old_generation()->transfer_pointers_from_satb();
+    }
+    {
+      // After we swap card table below, the write-table is all clean, and the read table holds
+      // cards dirty prior to the start of GC. Young and bootstrap collection will update
+      // the write card table as a side effect of remembered set scanning. Global collection will
+      // update the card table as a side effect of global marking of old objects.
+      ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
+      _generation->swap_card_tables();
     }
   }
 
