@@ -49,7 +49,7 @@ class ZLoadBarrierStubC2;
 class ZStoreBarrierStubC2;
 #endif // COMPILER2
 
-const int ZBarrierRelocationFormatLoadGoodBeforeShl = 0;
+const int ZBarrierRelocationFormatLoadGoodAfterShX  = 0;
 const int ZBarrierRelocationFormatLoadBadAfterTest  = 1;
 const int ZBarrierRelocationFormatMarkBadAfterTest  = 2;
 const int ZBarrierRelocationFormatStoreGoodAfterCmp = 3;
@@ -73,8 +73,7 @@ public:
                        BasicType type,
                        Register dst,
                        Address src,
-                       Register tmp1,
-                       Register tmp_thread);
+                       Register tmp1);
 
   virtual void store_at(MacroAssembler* masm,
                         DecoratorSet decorators,

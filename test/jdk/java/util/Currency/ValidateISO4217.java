@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,44 @@
  * @bug 4691089 4819436 4942982 5104960 6544471 6627549 7066203 7195759
  *      8039317 8074350 8074351 8145952 8187946 8193552 8202026 8204269
  *      8208746 8209775 8264792 8274658 8283277 8296239 8321480 8334653
+ *      8354344
  * @summary Validate ISO 4217 data for Currency class.
  * @modules java.base/java.util:open
  *          jdk.localedata
- * @run junit ValidateISO4217
+ * @library /test/lib
+ * @run junit/othervm -DMOCKED.TIME=setup ValidateISO4217
+ * @run main/othervm --patch-module java.base=${test.class.path}
+ *      -DMOCKED.TIME=check -Djava.util.currency.data=${test.src}/currency.properties ValidateISO4217
+ * @run junit/othervm --patch-module java.base=${test.class.path}
+ *      -DMOCKED.TIME=true ValidateISO4217
+ */
+
+/* The run invocation order is important. The first invocation will generate
+ * class files for Currency that mock System.currentTimeMillis() as Long.MAX_VALUE,
+ * which is required by the subsequent invocations. The second invocation ensures that
+ * the module patch and mocked time are functioning correctly; it does not run any tests.
+ * The third invocation using the modded class files via a module patch allow us
+ * to test any cut-over dates after the transition.
+ * Valid MOCKED.TIME values are "setup", "check", and "true".
  */
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.IOException;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Currency;
 import java.util.HashSet;
 import java.util.List;
@@ -45,6 +71,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -113,10 +140,102 @@ public class ValidateISO4217 {
             {"XK", "EUR", "978", "2"},      // Kosovo
     };
     private static SimpleDateFormat format = null;
+    private static final String MODULE_PATCH_LOCATION =
+            System.getProperty("test.classes") + "/java/util/";
+    private static final String MOCKED_TIME = System.getProperty("MOCKED.TIME");
+
+    // Classes that should mock System.currentTimeMillis()
+    private static final String[] CLASSES =
+            Stream.concat(
+                Stream.of("Currency.class"),
+                Arrays.stream(Currency.class.getDeclaredClasses())
+                        .map(c -> "Currency$" + c.getSimpleName() + ".class")
+            ).toArray(String[]::new);
+
+    // "check" invocation only runs the main method (and not any tests) to determine if the
+    // future time checking is correct
+    public static void main(String[] args) {
+        if (MOCKED_TIME.equals("check")) {
+            // Check that the module patch class files exist
+            checkModulePatchExists();
+            // Check time is mocked
+            // Override for PK=PKR in test/currency.properties is PKZ - simple
+            // Override for PW=USD in test/currency.properties is MWP - special
+            assertEquals("PKZ", Currency.getInstance(Locale.of("", "PK")).getCurrencyCode(),
+                    "Mocked time / module patch not working");
+            assertEquals("MWP", Currency.getInstance(Locale.of("", "PW")).getCurrencyCode(),
+                    "Mocked time / module patch not working");
+            // Properly working. Do nothing and move to third invocation
+        } else {
+            throw new RuntimeException(
+                    "Incorrect usage of ValidateISO4217. Main method invoked without proper system property value");
+        }
+    }
+
+    @BeforeAll
+    static void setUp() throws Exception {
+        checkUsage();
+        setUpPatchedClasses();
+        setUpTestingData();
+    }
+
+    // Enforce correct usage of ValidateISO4217
+    static void checkUsage() {
+        if (MOCKED_TIME == null
+                || (!MOCKED_TIME.equals("setup") && !MOCKED_TIME.equals("true"))) {
+            throw new RuntimeException(
+                    "Incorrect usage of ValidateISO4217. Missing \"MOCKED.TIME\" system property");
+        }
+        if (MOCKED_TIME.equals("true")) {
+            checkModulePatchExists();
+        }
+    }
+
+    static void checkModulePatchExists() {
+        // Check that the module patch class files exist
+        for (String className : CLASSES) {
+            var file = new File(MODULE_PATCH_LOCATION + className);
+            assertTrue(file.isFile(), "Module patch class files missing");
+        }
+    }
+
+    // Patch the relevant classes required for module patch
+    static void setUpPatchedClasses() throws IOException {
+        if (MOCKED_TIME.equals("setup")) {
+            new File(MODULE_PATCH_LOCATION).mkdirs();
+            for (String s : CLASSES) {
+                patchClass(s);
+            }
+        }
+    }
+
+    // Mock calls of System.currentTimeMillis() within Currency to Long.MAX_VALUE.
+    // This effectively ensures that we are always past any cut-over dates.
+    private static void patchClass(String name) throws IOException {
+        CodeTransform codeTransform = (codeBuilder, e) -> {
+            switch (e) {
+                case InvokeInstruction i when
+                        i.owner().asInternalName().equals("java/lang/System")
+                                && i.name().equalsString("currentTimeMillis") ->
+                    codeBuilder.loadConstant(Long.MAX_VALUE); // mock
+                default -> codeBuilder.accept(e);
+            }
+        };
+        MethodTransform methodTransform = MethodTransform.transformingCode(codeTransform);
+        ClassTransform classTransform = ClassTransform.transformingMethods(methodTransform);
+        ClassFile cf = ClassFile.of();
+        byte[] newBytes = cf.transformClass(cf.parse(
+                Files.readAllBytes(Paths.get(URI.create("jrt:/java.base/java/util/" + name)))), classTransform);
+
+        String patchedClass = MODULE_PATCH_LOCATION + name;
+        var file = new File(patchedClass);
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(newBytes);
+        }
+    }
 
     // Sets up the following test data:
     // ISO4217Codes, additionalCodes, testCurrencies, codes
-    @BeforeAll
     static void setUpTestingData() throws Exception {
         // These functions laterally setup 'testCurrencies' and 'codes'
         // at the same time
@@ -169,8 +288,8 @@ public class ValidateISO4217 {
                 if (format == null) {
                     createDateFormat();
                 }
-                // If the cut-over already passed, use the new curency for ISO4217Codes
-                if (format.parse(tokens.nextToken()).getTime() < System.currentTimeMillis()) {
+                // If the cut-over already passed, use the new currency for ISO4217Codes
+                if (format.parse(tokens.nextToken()).getTime() < currentTimeMillis()) {
                     currency = tokens.nextToken();
                     numeric = tokens.nextToken();
                     minorUnit = tokens.nextToken();
@@ -319,5 +438,11 @@ public class ValidateISO4217 {
         }
         bldr.append("\n");
         return bldr.toString();
+    }
+
+    // Either the current system time, or a mocked value equal to Long.MAX_VALUE
+    static long currentTimeMillis() {
+        var mocked = MOCKED_TIME.equals("true");
+        return mocked ? Long.MAX_VALUE : System.currentTimeMillis();
     }
 }

@@ -371,17 +371,10 @@ public class TransformerFactoryImpl
             return _cdataChunkSize;
         }
 
-        /** Check to see if the property is managed by the security manager **/
-        String propertyValue = (_xmlSecurityManager != null) ?
-                _xmlSecurityManager.getLimitAsString(name) : null;
-        if (propertyValue != null) {
-            return propertyValue;
-        } else {
-            propertyValue = (_xmlSecurityPropertyMgr != null) ?
-                _xmlSecurityPropertyMgr.getValue(name) : null;
-            if (propertyValue != null) {
-                return propertyValue;
-            }
+        //check if the property is managed by security manager
+        String value;
+        if ((value = JdkXmlUtils.getProperty(_xmlSecurityManager, _xmlSecurityPropertyMgr, name)) != null) {
+            return value;
         }
 
         // Throw an exception for all other attributes
