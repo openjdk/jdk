@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
    @bug 4039597
    @summary Check that pathnames containing double-byte characters are not
             corrupted by win32 path processing
+   @requires (os.family == "windows")
    @author Mark Reinhold
 */
 
@@ -46,7 +47,6 @@ public class SJIS {
 
         /* This test is only valid on win32 systems
            that use the SJIS encoding */
-        if (File.separatorChar != '\\') return;
         String enc = System.getProperty("file.encoding");
         if ((enc == null) || !enc.equals("SJIS")) return;
 
