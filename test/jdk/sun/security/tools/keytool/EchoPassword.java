@@ -31,6 +31,7 @@
  */
 
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
 
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
@@ -38,62 +39,70 @@ import java.io.File;
 
 public class EchoPassword {
 
-    static int counter = 0;
+    static JLabel label;
 
     public static void main(String[] args) throws Exception {
+
         final String keytool = String.format("\"%s/bin/keytool\" -keystore 8354469.ks",
                 System.getProperty("java.home").replace("\\", File.separator));
 
-        final String[] titles = {
-                "Copy first command",
-                "Copy second command",
-                "Copy third command"
-        };
+        final String firstCommand = keytool + " -genkeypair";
+        final String secondCommand = keytool + " -genkeypair | type";
+        final String thirdCommand = "(echo changeit & echo changeit ) | " + keytool + " -genkeypair";
 
-        final String[] commands = {
-                keytool + " -genkeypair",
-                keytool + " -genkeypair | type",
-                "(echo changeit & echo changeit ) | " + keytool + " -genkeypair"
-        };
+        final String message = String.format("""
+                <html>Perform the following steps and record the final result:
+                <ol>
+                <li>Open a terminal or Windows Command Prompt window.
 
-        final String message = """
-                Perform the following steps and record the final result:
+                <li>Click <a href='First'>Copy First Command</a> to copy the following command into
+                the system clipboard. Paste it into the terminal window and execute the command.
+                <pre>
+                %s
+                </pre>
+                When prompted, enter some characters and press Enter. Verify that the input is
+                hidden, and no warning about password echoing appears. Press Ctrl-C to exit.
 
-                1. Open a terminal or Windows Command Prompt window.
+                <li>Click <a href='Second'>Copy Second Command</a> to copy the following command into
+                the system clipboard. Paste it into the terminal window and execute the command.
+                <pre>
+                %s
+                </pre>
+                When prompted, enter some characters and press Enter. Verify that the input is
+                echoed, and a warning about password echoing is shown. Press Ctrl-C to exit.
 
-                2. Press "Copy First Command" to copy the first command into the system clipboard.
-                   Paste it into the terminal window and execute the command.
-
-                   When prompted, enter some characters and press Enter. Verify that the input is
-                   hidden, and no warning about password echoing appears. Press Ctrl-C to exit.
-
-                3. Press "Copy Second Command" to copy the second command into the system clipboard.
-                   Paste it into the terminal window and execute the command.
-
-                   When prompted, enter some characters and press Enter. Verify that the input is
-                   echoed, and a warning about password echoing is shown. Press Ctrl-C to exit.
-
-                4. Press "Copy Third Command" to copy the third command into the system clipboard.
-                   Paste it into the terminal window and execute the command.
-
-                   Verify that the password "changeit" is not shown in the command output, and
-                   no warning about password echoing appears. It's OK to see an exception.
-
+                <li>Click <a href='Third'>Copy Third Command</a> to copy the following command into
+                the system clipboard. Paste it into the terminal window and execute the command.
+                <pre>
+                %s
+                </pre>
+                Verify that the password "changeit" is not shown in the command output, and
+                no warning about password echoing appears. It's OK to see an exception.
+                </ol>
                 Press "pass" if the behavior matches expectations; otherwise, press "fail".
-                """;
-
-        var copyButton = new JButton("Copy First Command");
-        copyButton.addActionListener(_ -> {
-            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
-                    new StringSelection(commands[counter]), null);
-            counter = (counter + 1) % titles.length;
-            copyButton.setText(titles[counter]);
-        });
+                """, firstCommand, secondCommand, thirdCommand);
 
         PassFailJFrame.builder()
                 .instructions(message)
-                .columns(60)
-                .addButton(copyButton)
+                .addHyperlinkListener(e -> {
+                    if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
+                                new StringSelection(switch (e.getDescription()) {
+                                    case "First" -> firstCommand;
+                                    case "Second" -> secondCommand;
+                                    default -> thirdCommand;
+                                }), null);
+                        label.setText(e.getDescription() + " command copied");
+                        if (e.getSource() instanceof JEditorPane ep) {
+                            ep.getCaret().setVisible(false);
+                        }
+                    }
+                })
+                .columns(100)
+                .splitUIBottom(() -> {
+                    label = new JLabel("Status");
+                    return label;
+                })
                 .build()
                 .awaitAndCheck();
     }

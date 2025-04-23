@@ -72,6 +72,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
 import javax.swing.border.Border;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
@@ -98,7 +99,8 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * tester. The instructions can be either plain text or HTML. If the
  * text of the instructions starts with {@code "<html>"}, the
  * instructions are displayed as HTML, as supported by Swing, which
- * provides richer formatting options.
+ * provides richer formatting options. {@link Builder#addHyperlinkListener}
+ * can be called to add a listener to hyperlinks inside the HTML.
  * <p>
  * The instructions are displayed in a text component with word-wrapping
  * so that there's no horizontal scroll bar. If the text doesn't fit, a
@@ -125,11 +127,6 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * If the tester selects the <i>Capture Frames</i> mode, screenshots of all
  * the windows or frames registered in the {@code PassFailJFrame} framework
  * are created.
- *
- * <p id="addButton">
- * If you call {@link Builder#addButton(JButton)}, a new button will be added
- * to the left side of the <i>Pass</i> button. This allows some customized
- * actions to be performed. The method can be called multiple times.
  *
  * <p id="logArea">
  * If you enable a log area, the instruction UI frame adds a text component
@@ -605,7 +602,7 @@ public final class PassFailJFrame {
                 createInstructionUIPanel(builder.instructions,
                                          builder.testTimeOut,
                                          builder.rows, builder.columns,
-                                         builder.moreButtons,
+                                         builder.hyperlinkListener,
                                          builder.screenCapture,
                                          builder.addLogArea,
                                          builder.logAreaRows);
@@ -627,7 +624,7 @@ public final class PassFailJFrame {
     private static JComponent createInstructionUIPanel(String instructions,
                                                        long testTimeOut,
                                                        int rows, int columns,
-                                                       List<JButton> moreButtons,
+                                                       HyperlinkListener hyperlinkListener,
                                                        boolean enableScreenCapture,
                                                        boolean addLogArea,
                                                        int logAreaRows) {
@@ -640,9 +637,13 @@ public final class PassFailJFrame {
         JTextComponent text = instructions.startsWith("<html>")
                               ? configureHTML(instructions, rows, columns)
                               : configurePlainText(instructions, rows, columns);
+        if (hyperlinkListener != null && text instanceof JEditorPane ep) {
+            ep.addHyperlinkListener(hyperlinkListener);
+        }
         text.setEditable(false);
         text.setBorder(createTextBorder());
         text.setCaretPosition(0);
+        text.getCaret().setVisible(false);
 
         JPanel textPanel = new JPanel(new BorderLayout());
         textPanel.setBorder(createEmptyBorder(GAP, 0, GAP, 0));
@@ -664,12 +665,6 @@ public final class PassFailJFrame {
 
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER,
                                                         GAP, 0));
-        if (moreButtons != null) {
-            for (JButton title : moreButtons) {
-                buttonsPanel.add(title);
-            }
-        }
-
         buttonsPanel.add(btnPass);
         buttonsPanel.add(btnFail);
 
@@ -1379,7 +1374,7 @@ public final class PassFailJFrame {
         private int rows;
         private int columns;
         private boolean screenCapture;
-        private List<JButton> moreButtons;
+        HyperlinkListener hyperlinkListener;
         private boolean addLogArea;
         private int logAreaRows = 10;
 
@@ -1461,14 +1456,13 @@ public final class PassFailJFrame {
         }
 
         /**
-         * Adds one more button to the left of the "pass" button.
+         * Set the HyperlinkListener of links inside the instructions pane.
          *
-         * @param button the new button
+         * @param hyperlinkListener the listener
          * @return this builder
          */
-        public Builder addButton(JButton button) {
-            if (moreButtons == null) moreButtons = new ArrayList<>();
-            moreButtons.add(button);
+        public Builder addHyperlinkListener(HyperlinkListener hyperlinkListener) {
+            this.hyperlinkListener = hyperlinkListener;
             return this;
         }
 
