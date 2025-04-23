@@ -133,6 +133,11 @@ void ZArguments::initialize() {
     FLAG_SET_ERGO_IF_DEFAULT(ZCollectionIntervalMajor, ZCollectionInterval);
   }
 
+  // Set a small initial TLAB size to avoid depending on the current capacity
+  if (FLAG_IS_DEFAULT(TLABSize)) {
+    FLAG_SET_DEFAULT(TLABSize, 8*K);
+  }
+
   // Set medium page size here because MaxTenuringThreshold may use it.
   ZHeuristics::set_medium_page_size();
 

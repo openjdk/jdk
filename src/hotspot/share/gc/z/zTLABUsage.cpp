@@ -23,10 +23,18 @@
 
 #include "gc/z/zTLABUsage.hpp"
 
-ZTLABUsage::ZTLABUsage()
-  : _used_history() {}
+ZTLABUsage::ZTLABUsage(size_t initial_heap_size)
+  : _used_history() {
+    // To get reasonable values for used and capacity until the first GC
+    // we populate the used history with the initial heap size.
+    _used_history.add(initial_heap_size);
+  }
 
 void ZTLABUsage::update(size_t used) {
+  if (used == 0) {
+    // Avoid updates for the second young generation collection of a SystemGC
+    return;
+  }
   _used_history.add(used);
 }
 
