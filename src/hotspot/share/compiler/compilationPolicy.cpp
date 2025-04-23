@@ -1062,7 +1062,6 @@ bool CompilationPolicy::should_create_mdo(const methodHandle& method, CompLevel 
     if (mtd != nullptr && mtd->saw_level(CompLevel_full_optimization)) {
       return true;
     }
-    return false;
   }
 
   if (is_old(method)) {
@@ -1288,32 +1287,29 @@ CompLevel CompilationPolicy::trained_transition(const methodHandle& method, Comp
 template<typename Predicate>
 CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_level, JavaThread* THREAD, bool disable_feedback) {
   CompLevel next_level = cur_level;
-  int i = method->invocation_count();
-  int b = method->backedge_count();
 
   if (force_comp_at_level_simple(method)) {
     next_level = CompLevel_simple;
-  } else {
-    if (MethodTrainingData::have_data()) {
-      MethodTrainingData* mtd = MethodTrainingData::find_fast(method);
-      if (mtd == nullptr) {
-        // We haven't see compilations of this method in training. It's either very cold or the behavior changed.
-        // Feed it to the standard TF with no profiling delay.
-        next_level = standard_transition<Predicate>(method, cur_level, false /*delay_profiling*/, disable_feedback);
-      } else {
-        next_level = trained_transition(method, cur_level, mtd, THREAD);
-        if (cur_level == next_level) {
-          // trained_transtion() is going to return the same level if no startup/warmup optimizations apply.
-          // In order to catch possible pathologies due to behavior change we feed the event to the regular
-          // TF but with profiling delay.
-          next_level = standard_transition<Predicate>(method, cur_level, true /*delay_profiling*/, disable_feedback);
-        }
-      }
-    } else if (is_trivial(method) || method->is_native()) {
-      next_level = CompilationModeFlag::disable_intermediate() ? CompLevel_full_optimization : CompLevel_simple;
-    } else {
+  } else if (is_trivial(method) || method->is_native()) {
+    // We do not care if there is profiling data for these methods, throw them to compiler.
+    next_level = CompilationModeFlag::disable_intermediate() ? CompLevel_full_optimization : CompLevel_simple;
+  } else if (MethodTrainingData::have_data()) {
+    MethodTrainingData* mtd = MethodTrainingData::find_fast(method);
+    if (mtd == nullptr) {
+      // We haven't see compilations of this method in training. It's either very cold or the behavior changed.
+      // Feed it to the standard TF with no profiling delay.
       next_level = standard_transition<Predicate>(method, cur_level, false /*delay_profiling*/, disable_feedback);
+    } else {
+      next_level = trained_transition(method, cur_level, mtd, THREAD);
+      if (cur_level == next_level) {
+        // trained_transtion() is going to return the same level if no startup/warmup optimizations apply.
+        // In order to catch possible pathologies due to behavior change we feed the event to the regular
+        // TF but with profiling delay.
+        next_level = standard_transition<Predicate>(method, cur_level, true /*delay_profiling*/, disable_feedback);
+      }
     }
+  } else {
+    next_level = standard_transition<Predicate>(method, cur_level, false /*delay_profiling*/, disable_feedback);
   }
   return (next_level != cur_level) ? limit_level(next_level) : next_level;
 }
