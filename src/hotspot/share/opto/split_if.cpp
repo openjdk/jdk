@@ -404,9 +404,10 @@ void PhaseIdealLoop::clone_template_assertion_expression_down(Node* node) {
   auto clone_expression = [&](IfNode* template_assertion_predicate) {
     OpaqueTemplateAssertionPredicateNode* opaque_node =
         template_assertion_predicate->in(1)->as_OpaqueTemplateAssertionPredicate();
-    TemplateAssertionExpression template_assertion_expression(opaque_node);
-    Node* new_ctrl = template_assertion_predicate->in(0);
-    OpaqueTemplateAssertionPredicateNode* cloned_opaque_node = template_assertion_expression.clone(new_ctrl, this);
+    TemplateAssertionExpression template_assertion_expression(opaque_node, this);
+    Node* new_control = template_assertion_predicate->in(0);
+    OpaqueTemplateAssertionPredicateNode* cloned_opaque_node = template_assertion_expression.clone(new_control,
+                                                                                                   opaque_node->loop_node());
     igvn().replace_input_of(template_assertion_predicate, 1, cloned_opaque_node);
   };
   template_assertion_expression_node.for_each_template_assertion_predicate(clone_expression);

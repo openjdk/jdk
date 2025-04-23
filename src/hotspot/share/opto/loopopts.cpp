@@ -843,7 +843,7 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
         break;
       }
     }
-    if (phi == nullptr || _igvn.type(phi) == Type::TOP) {
+    if (phi == nullptr || _igvn.type(phi) == Type::TOP || !CMoveNode::supported(_igvn.type(phi))) {
       break;
     }
     // Move speculative ops
@@ -4484,7 +4484,7 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   return AutoVectorizeStatus::Success;
 }
 
-// Just before insert_pre_post_loops, we can multi-version the loop:
+// Just before insert_pre_post_loops, we can multiversion the loop:
 //
 //              multiversion_if
 //               |       |

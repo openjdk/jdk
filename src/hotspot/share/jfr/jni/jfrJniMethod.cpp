@@ -429,3 +429,11 @@ JVM_END
 NO_TRANSITION(jlong, jfr_nanos_now(JNIEnv* env, jclass jvm))
   return JfrChunk::nanos_now();
 NO_TRANSITION_END
+
+NO_TRANSITION(jboolean, jfr_is_product(JNIEnv* env, jclass jvm))
+#ifdef PRODUCT
+  return true;
+#else
+  return false;
+#endif
+NO_TRANSITION_END

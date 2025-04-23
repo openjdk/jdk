@@ -410,7 +410,7 @@ static void retire_target_page(ZGeneration* generation, ZPage* page) {
   // relocate the remaining objects, leaving the target page empty when
   // relocation completed.
   if (page->used() == 0) {
-    ZHeap::heap()->free_page(page, true /* allow_defragment */);
+    ZHeap::heap()->free_page(page);
   }
 }
 
@@ -841,14 +841,12 @@ private:
     const bool promotion = _forwarding->is_promotion();
 
     // Promotions happen through a new cloned page
-    ZPage* const to_page = promotion ? from_page->clone_limited() : from_page;
+    ZPage* const to_page = promotion
+        ? from_page->clone_for_promotion()
+        : from_page->reset(to_age);
 
     // Reset page for in-place relocation
-    to_page->reset(to_age);
     to_page->reset_top_for_allocation();
-    if (promotion) {
-      to_page->remset_alloc();
-    }
 
     // Verify that the inactive remset is clear when resetting the page for
     // in-place relocation.
@@ -1011,7 +1009,7 @@ public:
       page->log_msg(" (relocate page done normal)");
 
       // Free page
-      ZHeap::heap()->free_page(page, true /* allow_defragment */);
+      ZHeap::heap()->free_page(page);
     }
   }
 };
@@ -1260,14 +1258,12 @@ public:
       prev_page->log_msg(promotion ? " (flip promoted)" : " (flip survived)");
 
       // Setup to-space page
-      ZPage* const new_page = promotion ? prev_page->clone_limited() : prev_page;
+      ZPage* const new_page = promotion
+          ? prev_page->clone_for_promotion()
+          : prev_page->reset(to_age);
 
       // Reset page for flip aging
-      new_page->reset(to_age);
       new_page->reset_livemap();
-      if (promotion) {
-        new_page->remset_alloc();
-      }
 
       if (promotion) {
         ZGeneration::young()->flip_promote(prev_page, new_page);

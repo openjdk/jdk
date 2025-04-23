@@ -1,4 +1,4 @@
-# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ shift_rot_ops = {'sarl', 'sarq', 'sall', 'salq', 'shll', 'shlq', 'shrl', 'shrq',
 
 registers_mapping = {
     # skip rax, rsi, rdi, rsp, rbp as they have special encodings
-    # 'rax': {64: 'rax', 32: 'eax', 16: 'ax', 8: 'al'},
+    'rax': {64: 'rax', 32: 'eax', 16: 'ax', 8: 'al'},
     'rcx': {64: 'rcx', 32: 'ecx', 16: 'cx', 8: 'cl'},
     'rdx': {64: 'rdx', 32: 'edx', 16: 'dx', 8: 'dl'},
     'rbx': {64: 'rbx', 32: 'ebx', 16: 'bx', 8: 'bl'},
@@ -415,7 +415,7 @@ class RegRegRegImmNddInstruction(NFInstruction):
         self.imm = Immediate().generate(imm)
         self.generate_operands(self.reg1, self.reg2, self.reg3, self.imm)
 
-test_regs = list(registers_mapping.keys())
+test_regs = [key for key in registers_mapping.keys() if key != 'rax']
 
 immediates32 = [2 ** i for i in range(0, 32, 4)]
 immediates16 = [2 ** i for i in range(0, 16, 2)]
@@ -623,6 +623,14 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
                 instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, imm=imm)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
+
+                # additional tests with rax as destination
+                if RegOp in [RegRegImmNddInstruction]:
+                    test_reg1 = 'rax'
+                    test_reg2 = random.choice(test_regs)
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2)
+                    instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, imm=imm)
+                    print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [RegMemImmInstruction, RegMemImmNddInstruction]:
             if full_set:

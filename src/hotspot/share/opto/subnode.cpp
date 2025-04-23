@@ -53,11 +53,16 @@ Node* SubNode::Identity(PhaseGVN* phase) {
   assert(in(1) != this, "Must already have called Value");
   assert(in(2) != this, "Must already have called Value");
 
-  // Remove double negation
-  const Type *zero = add_id();
-  if( phase->type( in(1) )->higher_equal( zero ) &&
+  const Type* zero = add_id();
+
+  // Remove double negation if it is not a floating point number since negation
+  // is not the same as subtraction for floating point numbers
+  // (cf. JLS § 15.15.4). `0-(0-(-0.0))` must be equal to positive 0.0 according to
+  // JLS § 15.8.2, but would result in -0.0 if this folding would be applied.
+  if (phase->type(in(1))->higher_equal(zero) &&
       in(2)->Opcode() == Opcode() &&
-      phase->type( in(2)->in(1) )->higher_equal( zero ) ) {
+      phase->type(in(2)->in(1))->higher_equal(zero) &&
+      !phase->type(in(2)->in(2))->is_floatingpoint()) {
     return in(2)->in(2);
   }
 
@@ -398,7 +403,7 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return new SubLNode(sub2, in21);
     } else {
       Node* sub2 = phase->transform(new SubLNode(in1, in21));
-      Node* neg_c0 = phase->longcon(-c0);
+      Node* neg_c0 = phase->longcon(java_negate(c0));
       return new AddLNode(sub2, neg_c0);
     }
   }
@@ -2042,15 +2047,9 @@ const Type* ReverseLNode::Value(PhaseGVN* phase) const {
   return bottom_type();
 }
 
-Node* ReverseINode::Identity(PhaseGVN* phase) {
-  if (in(1)->Opcode() == Op_ReverseI) {
-    return in(1)->in(1);
-  }
-  return this;
-}
-
-Node* ReverseLNode::Identity(PhaseGVN* phase) {
-  if (in(1)->Opcode() == Op_ReverseL) {
+Node* InvolutionNode::Identity(PhaseGVN* phase) {
+  // Op ( Op x ) => x
+  if (in(1)->Opcode() == Opcode()) {
     return in(1)->in(1);
   }
   return this;
