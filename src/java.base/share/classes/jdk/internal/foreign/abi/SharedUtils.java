@@ -24,9 +24,9 @@
  */
 package jdk.internal.foreign.abi;
 
-import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.BufferStack;
 import jdk.internal.foreign.CABI;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
@@ -391,7 +391,7 @@ public final class SharedUtils {
     }
 
     private static final int LINKER_STACK_SIZE = Integer.getInteger("jdk.internal.foreign.LINKER_STACK_SIZE", 256);
-    private static final BufferStack LINKER_STACK = new BufferStack(LINKER_STACK_SIZE);
+    private static final BufferStack LINKER_STACK = BufferStack.of(LINKER_STACK_SIZE);
 
     @ForceInline
     public static Arena newBoundedArena(long size) {

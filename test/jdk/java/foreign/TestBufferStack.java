@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.foreign.abi
+ * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper TestBufferStack
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestBufferStack
  */
 
-import jdk.internal.foreign.abi.BufferStack;
+import jdk.internal.foreign.BufferStack;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -50,7 +50,7 @@ public class TestBufferStack extends NativeTestHelper {
     @Test
     public void testScopedAllocation() {
         int stackSize = 128;
-        BufferStack stack = new BufferStack(stackSize);
+        BufferStack stack = BufferStack.of(stackSize);
         MemorySegment stackSegment;
         try (Arena frame1 = stack.pushFrame(3 * JAVA_INT.byteSize(), JAVA_INT.byteAlignment())) {
             // Segments have expected sizes and are accessible and allocated consecutively in the same scope.
@@ -105,7 +105,7 @@ public class TestBufferStack extends NativeTestHelper {
 
     @Test
     public void stress() throws InterruptedException {
-        BufferStack stack = new BufferStack(256);
+        BufferStack stack = BufferStack.of(256);
         Thread[] vThreads = IntStream.range(0, 1024).mapToObj(_ ->
                 Thread.ofVirtual().start(() -> {
                     long threadId = Thread.currentThread().threadId();
