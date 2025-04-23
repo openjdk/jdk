@@ -47,7 +47,7 @@ import static org.openjdk.bench.java.lang.foreign.CLayouts.C_DOUBLE;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native" })
@@ -93,4 +93,8 @@ public class CallOverheadByValue {
         // unit_ptr(&point);
         MH_UNIT_BY_PTR.invokeExact(point);
     }
+
+    @Fork(value = 3, jvmArgsAppend = "-Djmh.executor=VIRTUAL")
+    public static class OfVirtual extends CallOverheadByValue {}
+
 }
