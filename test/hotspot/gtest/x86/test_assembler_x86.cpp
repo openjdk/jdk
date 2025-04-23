@@ -30,6 +30,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
+#include "code/codeCache.hpp"
 #include "memory/resourceArea.hpp"
 
 #include "unittest.hpp"
