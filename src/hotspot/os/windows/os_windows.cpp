@@ -1221,16 +1221,16 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
   if (freq < NANOSECS_PER_SEC) {
     // the performance counter is 64 bits and we will
     // be multiplying it -- so no wrap in 64 bits
-    info_ptr->max_value = ALL_64_BITS;
+    info_ptr->max_value = all_bits_jlong;
   } else if (freq > NANOSECS_PER_SEC) {
     // use the max value the counter can reach to
     // determine the max value which could be returned
-    julong max_counter = (julong)ALL_64_BITS;
+    julong max_counter = (julong)all_bits_jlong;
     info_ptr->max_value = (jlong)(max_counter / (freq / NANOSECS_PER_SEC));
   } else {
     // the performance counter is 64 bits and we will
     // be using it directly -- so no wrap in 64 bits
-    info_ptr->max_value = ALL_64_BITS;
+    info_ptr->max_value = all_bits_jlong;
   }
 
   // using a counter, so no skipping
@@ -4809,14 +4809,14 @@ jlong os::thread_cpu_time(Thread* thread, bool user_sys_cpu_time) {
 }
 
 void os::current_thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;        // the max value -- all 64 bits
+  info_ptr->max_value = all_bits_jlong;     // the max value -- all 64 bits
   info_ptr->may_skip_backward = false;      // GetThreadTimes returns absolute time
   info_ptr->may_skip_forward = false;       // GetThreadTimes returns absolute time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;   // user+system time is returned
 }
 
 void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
-  info_ptr->max_value = ALL_64_BITS;        // the max value -- all 64 bits
+  info_ptr->max_value = all_bits_jlong;     // the max value -- all 64 bits
   info_ptr->may_skip_backward = false;      // GetThreadTimes returns absolute time
   info_ptr->may_skip_forward = false;       // GetThreadTimes returns absolute time
   info_ptr->kind = JVMTI_TIMER_TOTAL_CPU;   // user+system time is returned

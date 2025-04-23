@@ -161,9 +161,6 @@ class oopDesc;
 #define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
 #endif  // _LP64
 
-// for timer info max values which include all bits
-#define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
-
 // Convert pointer to intptr_t, for use in printing pointers.
 inline intptr_t p2i(const volatile void* p) {
   return (intptr_t) p;
@@ -299,6 +296,9 @@ inline jdouble jdouble_cast(jlong x);
 
 const jlong min_jlong = CONST64(0x8000000000000000);
 const jlong max_jlong = CONST64(0x7fffffffffffffff);
+
+// for timer info max values which include all bits, was CONST64(0x7fffffffffffffff);
+const jlong all_bits_jlong = ~jlong(0);
 
 //-------------------------------------------
 // Constant for jdouble
