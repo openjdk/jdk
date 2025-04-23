@@ -48,15 +48,20 @@ public class Export {
 
         Cipher c1 = newCipher();
         c1.init(Cipher.ENCRYPT_MODE, sk);
-        SecretKey sk11 = c1.exportKey(s2b("hi"), "X", 32);
-        SecretKey sk12 = c1.exportKey(s2b("ho"), "X", 32);
+        SecretKey sk11 = c1.exportKey("X", s2b("hi"), 32);
+        SecretKey sk12 = c1.exportKey("X", s2b("ho"), 32);
+        byte[] b11 = c1.exportData(s2b("hi"), 32);
+        byte[] b12 = c1.exportData(s2b("ho"), 32);
 
         Cipher c2 = newCipher();
         c2.init(Cipher.ENCRYPT_MODE, sk);
-        SecretKey sk21 = c2.exportKey(s2b("hi"), "X", 32);
+        SecretKey sk21 = c2.exportKey("X", s2b("hi"), 32);
+        byte[] b21 = c2.exportData(s2b("hi"), 32);
 
         Asserts.assertEqualsByteArray(sk11.getEncoded(), sk21.getEncoded());
         Asserts.assertNotEqualsByteArray(sk11.getEncoded(), sk12.getEncoded());
+        Asserts.assertEqualsByteArray(b11, b21);
+        Asserts.assertNotEqualsByteArray(b11, b12);
     }
 
     static class CipherImpl extends CipherSpi {
@@ -80,12 +85,17 @@ public class Export {
         }
 
         @Override
-        protected SecretKey engineExportKey(byte[] context, String algorithm, int length) {
+        protected SecretKey engineExportKey(String algorithm, byte[] context, int length) {
+            return new SecretKeySpec(engineExportData(context, length), algorithm);
+        }
+
+        @Override
+        protected byte[] engineExportData(byte[] context, int length) {
             byte[] output = new byte[length];
             for (int i = 0; i < length; i++) {
                 output[i] = (byte)(context[i % context.length] ^ keyBytes[i % keyBytes.length]);
             }
-            return new SecretKeySpec(output, algorithm);
+            return output;
         }
     }
 

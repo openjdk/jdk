@@ -967,12 +967,12 @@ public abstract class CipherSpi {
      * <p>This method guarantees that an encryption cipher and a decryption
      * cipher, if initialized with the same symmetric key or a matching
      * asymmetric key pair and equivalent parameters, will produce identical
-     * derived key when the same arguments are provided.
+     * derived keys when the same arguments are provided.
      *
+     * @param algorithm the algorithm of the derived key
      * @param context a byte array representing additional data or context
      *          information that influences the key derivation process.
      *          The derived key should be unique to the given context.
-     * @param algorithm the algorithm of the derived key
      * @param length the desired length of the derived key in bytes
      *
      * @return the derived key
@@ -989,7 +989,46 @@ public abstract class CipherSpi {
      *
      * @since 25
      */
-    protected SecretKey engineExportKey(byte[] context, String algorithm, int length) {
+    protected SecretKey engineExportKey(String algorithm, byte[] context, int length) {
+        throw new UnsupportedOperationException(
+                "The underlying Cipher implementation "
+                        +  "does not support this method");
+    }
+
+    /**
+     * Export derived data based on the current cryptographic state and
+     * additional context.
+     *
+     * <p>This method is designed to enable the generation of additional
+     * secret data for use in various later operations, ensuring that data
+     * can be securely derived from the existing encryption or
+     * decryption state.
+     *
+     * <p>This method guarantees that an encryption cipher and a decryption
+     * cipher, if initialized with the same symmetric key or a matching
+     * asymmetric key pair and equivalent parameters, will produce identical
+     * derived data when the same arguments are provided.
+     *
+     * @param context a byte array representing additional data or context
+     *          information that influences the key derivation process.
+     *          The derived key should be unique to the given context.
+     * @param length the desired length of the derived data
+     *
+     * @return the derived data
+     *
+     * @throws UnsupportedOperationException if this method has not been
+     *          overridden by an implementation
+     * @throws IllegalArgumentException if one or more of the input arguments
+     *          are invalid
+     * @throws IllegalStateException if this {@code Cipher} object is in a wrong
+     *          state (e.g., has not been initialized)
+     *
+     * @implSpec The default implementation throws an
+     * {@code UnsupportedOperationException}.
+     *
+     * @since 25
+     */
+    protected byte[] engineExportData(byte[] context, int length) {
         throw new UnsupportedOperationException(
                 "The underlying Cipher implementation "
                         +  "does not support this method");
