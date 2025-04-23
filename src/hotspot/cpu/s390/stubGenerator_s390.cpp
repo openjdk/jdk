@@ -1475,36 +1475,33 @@ class StubGenerator: public StubCodeGenerator {
   // We don't care about atomicity because the address and size are not aligned, So we are
   // free to fill the memory with best possible ways.
   static void do_setmemory_atomic_loop_mvc(Register dest, Register size, Register byteVal,
-                                       MacroAssembler *_masm) {
-
+                                           MacroAssembler *_masm) {
     NearLabel L_loop, L_tail, L_mvc;
 
-    __ z_cghi(size, 256);
-    __ z_brc(Assembler::bcondLow, L_tail); // size is <256
+    __ z_aghi(size, -1); // -1 because first byte is preset by stc
+    __ z_bcr(Assembler::bcondLow, Z_R14);   // result  < 0 means size == 0 => return
+    __ z_stc(byteVal, Address(dest));       // initialize first byte
+    __ z_bcr(Assembler::bcondEqual, Z_R14); // result == 0 means size == 1 => return
 
-    // handle size >= 256
+    // handle complete 256 byte blocks
     __ bind(L_loop);
-    __ z_stc(byteVal, Address(dest));
-    __ z_mvc(1, 254, dest, 0, dest);
-    __ z_aghi(dest, 256); // increment the address by 256
-    __ z_aghi(size, -256);
-    __ z_cghi(size, 256);
-    __ z_brh(L_loop);
+    __ z_aghi(size, -256);            // decrement remaining #bytes
+    __ z_brl(L_tail);                 // skip loop if no full 256 byte block left
 
-    __ z_ltr(size, size);
-    __ z_bcr(Assembler::bcondZero, Z_R14); // size is 0
+    __ z_mvc(1, 255, dest, 0, dest);  // propagate byte from dest[0+i*256] to dest[1+i*256]
+    __ z_bcr(Assembler::bcondEqual, Z_R14); // remaining size == 0 => return (mvc does not touch CC)
 
+    __ z_aghi(dest, 256);             // increment target address
+    __ z_bru(L_loop);
+
+    // handle remaining bytes. We know 0 < size < 256
     __ bind(L_tail);
-    __ z_stc(byteVal, Address(dest));
-    __ z_aghi(size, -2); // aghi will set the condition code for "size==zero", "size<zero", "size>zero"
-    __ z_bcr(Assembler::bcondLow, Z_R14); // size < 0
+    __ z_aghi(size, +256-1);         // prepare size value for mvc via exrl
     __ z_exrl(size, L_mvc);
-
     __ z_br(Z_R14);
 
     __ bind(L_mvc);
-    __ z_mvc(1, 0, dest, 0, dest); // mvc template, needs to be generated, not executed
-
+    __ z_mvc(1, 0, dest, 0, dest);   // mvc template, needs to be generated, not executed
   }
 
   static void do_setmemory_atomic_loop(int elem_size, Register dest, Register size, Register byteVal,
