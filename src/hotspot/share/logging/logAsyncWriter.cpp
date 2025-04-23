@@ -354,27 +354,3 @@ void AsyncLogWriter::flush() {
     _instance->_flush_sem.wait();
   }
 }
-
-AsyncLogWriter::BufferUpdater::BufferUpdater(size_t newsize) {
-  ConsumerLocker clocker;
-  auto p = AsyncLogWriter::_instance;
-
-  _buf1 = p->_buffer;
-  _buf2 = p->_buffer_staging;
-  p->_buffer = new Buffer(newsize);
-  p->_buffer_staging = new Buffer(newsize);
-}
-
-AsyncLogWriter::BufferUpdater::~BufferUpdater() {
-  AsyncLogWriter::flush();
-  auto p = AsyncLogWriter::_instance;
-
-  {
-    ConsumerLocker clocker;
-
-    delete p->_buffer;
-    delete p->_buffer_staging;
-    p->_buffer = _buf1;
-    p->_buffer_staging = _buf2;
-  }
-}

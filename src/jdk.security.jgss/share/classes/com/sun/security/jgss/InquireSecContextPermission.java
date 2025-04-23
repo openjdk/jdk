@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,13 @@ import java.security.BasicPermission;
  *
  * <p>The target name is the {@link InquireType} allowed.
  *
- * @apiNote
+ * @deprecated
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  * @since 1.7
  */
+@Deprecated(since="25", forRemoval=true)
 public final class InquireSecContextPermission extends BasicPermission {
     private static final long serialVersionUID = -7131173349668647297L;
 

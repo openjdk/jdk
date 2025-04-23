@@ -31,7 +31,6 @@
 #include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/perfDataTypes.hpp"
 #include "utilities/checkedCast.hpp"
 
 class ObjectMonitor;
@@ -149,8 +148,6 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 #define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
 
 class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
-  friend class ObjectSynchronizer;
-  friend class ObjectWaiter;
   friend class VMStructs;
   JVMCI_ONLY(friend class JVMCIVMStructs;)
 
@@ -203,9 +200,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
                                     // deflated. It is also used by the async deflation protocol. See
                                     // ObjectMonitor::deflate_monitor().
 
-  ObjectWaiter* volatile _WaitSet;  // LL of threads wait()ing on the monitor
+  ObjectWaiter* volatile _wait_set; // LL of threads waiting on the monitor - wait()
   volatile int  _waiters;           // number of waiting threads
-  volatile int _WaitSetLock;        // protects Wait Queue - simple spinlock
+  volatile int _wait_set_lock;      // protects wait set queue - simple spinlock
 
   // Used in LM_LEGACY mode to store BasicLock* in case of inflation by contending thread.
   BasicLock* volatile _stack_locker;
@@ -217,44 +214,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   static OopHandle& vthread_list_head() { return _vthread_list_head; }
   static ParkEvent* vthread_unparker_ParkEvent() { return _vthread_unparker_ParkEvent; }
-
-  // Only perform a PerfData operation if the PerfData object has been
-  // allocated and if the PerfDataManager has not freed the PerfData
-  // objects which can happen at normal VM shutdown. This operation is
-  // only safe when thread is not in safepoint-safe code, i.e. PerfDataManager
-  // could not reach the safepoint and free the counter while we are using it.
-  // If this is not guaranteed, use OM_PERFDATA_SAFE_OP instead.
-  #define OM_PERFDATA_OP(f, op_str)                 \
-    do {                                            \
-      if (ObjectMonitor::_sync_ ## f != nullptr) {  \
-        if (PerfDataManager::has_PerfData()) {      \
-          ObjectMonitor::_sync_ ## f->op_str;       \
-        }                                           \
-      }                                             \
-    } while (0)
-
-  // Only perform a PerfData operation if the PerfData object has been
-  // allocated and if the PerfDataManager has not freed the PerfData
-  // objects which can happen at normal VM shutdown. Additionally, we
-  // enter the critical section to resolve the race against PerfDataManager
-  // entering the safepoint and deleting the counter during shutdown.
-  #define OM_PERFDATA_SAFE_OP(f, op_str)            \
-    do {                                            \
-      if (ObjectMonitor::_sync_ ## f != nullptr) {  \
-        GlobalCounter::CriticalSection cs(Thread::current()); \
-        if (PerfDataManager::has_PerfData()) {      \
-          ObjectMonitor::_sync_ ## f->op_str;       \
-        }                                           \
-      }                                             \
-    } while (0)
-
-  static PerfCounter * _sync_ContendedLockAttempts;
-  static PerfCounter * _sync_FutileWakeups;
-  static PerfCounter * _sync_Parks;
-  static PerfCounter * _sync_Notifications;
-  static PerfCounter * _sync_Inflations;
-  static PerfCounter * _sync_Deflations;
-  static PerfLongVariable * _sync_MonExtant;
 
   static int Knob_SpinLimit;
 
@@ -372,10 +331,11 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      add_to_contentions(int value);
   intx      recursions() const                                         { return _recursions; }
   void      set_recursions(size_t recursions);
+  void      increment_recursions(JavaThread* current);
 
   // JVM/TI GetObjectMonitorUsage() needs this:
   int waiters() const;
-  ObjectWaiter* first_waiter()                                         { return _WaitSet; }
+  ObjectWaiter* first_waiter()                                         { return _wait_set; }
   ObjectWaiter* next_waiter(ObjectWaiter* o)                           { return o->_next; }
   JavaThread* thread_of_waiter(ObjectWaiter* o)                        { return o->_thread; }
 
@@ -423,6 +383,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      wait(jlong millis, bool interruptible, TRAPS);
   void      notify(TRAPS);
   void      notifyAll(TRAPS);
+  void      quick_notify(JavaThread* current);
+  void      quick_notifyAll(JavaThread* current);
 
   void      print() const;
 #ifdef ASSERT
@@ -435,34 +397,38 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
  private:
   void      add_to_entry_list(JavaThread* current, ObjectWaiter* node);
-  void      AddWaiter(ObjectWaiter* waiter);
-  void      INotify(JavaThread* current);
-  ObjectWaiter* DequeueWaiter();
-  void      DequeueSpecificWaiter(ObjectWaiter* waiter);
-  void      EnterI(JavaThread* current);
-  void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
-  void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
+  void      add_waiter(ObjectWaiter* waiter);
+  bool      notify_internal(JavaThread* current);
+  ObjectWaiter* dequeue_waiter();
+  void      dequeue_specific_waiter(ObjectWaiter* waiter);
+  void      enter_internal(JavaThread* current);
+  void      reenter_internal(JavaThread* current, ObjectWaiter* current_node);
+  void      entry_list_build_dll(JavaThread* current);
+  void      unlink_after_acquire(JavaThread* current, ObjectWaiter* current_node);
   ObjectWaiter* entry_list_tail(JavaThread* current);
 
-  bool      VThreadMonitorEnter(JavaThread* current, ObjectWaiter* node = nullptr);
-  void      VThreadWait(JavaThread* current, jlong millis);
-  bool      VThreadWaitReenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
-  void      VThreadEpilog(JavaThread* current, ObjectWaiter* node);
+  bool      vthread_monitor_enter(JavaThread* current, ObjectWaiter* node = nullptr);
+  void      vthread_wait(JavaThread* current, jlong millis);
+  bool      vthread_wait_reenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
+  void      vthread_epilog(JavaThread* current, ObjectWaiter* node);
 
   enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
 
-  bool           TryLockWithContentionMark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
+  bool           try_lock_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
   bool           try_lock_or_add_to_entry_list(JavaThread* current, ObjectWaiter* node);
-  TryLockResult  TryLock(JavaThread* current);
+  TryLockResult  try_lock(JavaThread* current);
 
-  bool      TrySpin(JavaThread* current);
+  bool      try_spin(JavaThread* current);
   bool      short_fixed_spin(JavaThread* current, int spin_count, bool adapt);
-  void      ExitEpilog(JavaThread* current, ObjectWaiter* Wakee);
+  void      exit_epilog(JavaThread* current, ObjectWaiter* Wakee);
 
+ public:
   // Deflation support
   bool      deflate_monitor(Thread* current);
- private:
   void      install_displaced_markword_in_object(const oop obj);
+
+  // JFR support
+  static bool is_jfr_excluded(const Klass* monitor_klass);
 };
 
 // RAII object to ensure that ObjectMonitor::is_being_async_deflated() is

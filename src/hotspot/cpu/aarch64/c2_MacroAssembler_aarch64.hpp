@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,6 +179,8 @@
 
   void neon_reverse_bytes(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
 
+  void neon_rearrange_hsd(FloatRegister dst, FloatRegister src, FloatRegister shuffle,
+                          FloatRegister tmp, BasicType bt, bool isQ);
   // java.lang.Math::signum intrinsics
   void vector_signum_neon(FloatRegister dst, FloatRegister src, FloatRegister zero,
                           FloatRegister one, SIMD_Arrangement T);

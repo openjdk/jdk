@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      8250768 8261976 8277300 8282452 8287597 8325325 8325874 8297879
- *           8331947 8281533 8343239 8318416
+ *           8331947 8281533 8343239 8318416 8346109
  * @summary  test generated docs for items declared using preview
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -88,12 +88,11 @@ public class TestPreview extends JavadocTester {
         checkOutput("preview-list.html", true,
                 """
                     <ul class="preview-feature-list checkboxes">
-                    <li><label for="feature-1">
-                    <input type="checkbox" id="feature-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
-                    <span>2147483647: <a href="https://openjdk.org/jeps/2147483647">Test Feature (Preview)</a></span></label></li>
-                    <li><label for="feature-all">
-                    <input type="checkbox" id="feature-all" disabled checked onclick="toggleGlobal(this, 'all', 3)">
-                    <span>Toggle all</span></label></li>
+                    <li><label for="feature-1"><input type="checkbox" id="feature-1" disabled checked onclick="tog\
+                    gleGlobal(this, '1', 3)"><span>2147483647: <a href="https://openjdk.org/jeps/2147483647">Test \
+                    Feature (Preview)</a></span></label></li>
+                    <li><label for="feature-all"><input type="checkbox" id="feature-all" disabled checked onclick=\
+                    "toggleGlobal(this, 'all', 3)"><span>Toggle all</span></label></li>
                     </ul>
                     <h2 title="Contents">Contents</h2>
                     <ul class="contents-list">
@@ -177,7 +176,7 @@ public class TestPreview extends JavadocTester {
                     reRecord.html#preview-preview.CoreRecord">PREVIEW</a></sup>, <a href="CoreRecor\
                     d.html" title="class in preview"><code>core record</code></a><sup class="previe\
                     w-mark"><a href="CoreRecord.html#preview-preview.CoreRecord">PREVIEW</a></sup>,
-                     <a href="CoreRecord.html" title="class in preview">CoreRecord</a>, <a href="Co\
+                    <a href="CoreRecord.html" title="class in preview">CoreRecord</a>, <a href="Co\
                     reRecord.html" title="class in preview">core record</a>.</div>""",
                 """
                     <li><a href="CoreRecord.html" title="class in preview"><code>CoreRecord</code><\
@@ -296,5 +295,55 @@ public class TestPreview extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                     "Indirect exports from the <code>java.base</code> module are");
+    }
+
+    // Test for JDK hidden option to add an entry for a non-preview element
+    // in the preview page based on the presence of a javadoc tag.
+    @Test
+    public void testPreviewNoteTag(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                import jdk.internal.javac.PreviewFeature;
+
+                /**
+                 * Preview feature
+                 */
+                @PreviewFeature(feature= PreviewFeature.Feature.TEST)
+                public interface CoreInterface {
+                }
+                """, """
+                package p;
+
+                 /**
+                  * Non preview feature.
+                  * {@previewNote 2147483647 Preview API Note}
+                  */
+                 public interface NonPrevieFeature {
+                 }
+                """);
+        javadoc("-d", "out-preview-note-tag",
+                "--add-exports", "java.base/jdk.internal.javac=ALL-UNNAMED",
+                "-tag", "previewNote:a:Preview Note:",
+                "--preview-note-tag", "previewNote",
+                "--source-path",
+                src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("preview-list.html", true,
+                """
+                    <h2 title="Contents">Contents</h2>
+                    <ul class="contents-list">
+                    <li id="contents-preview-api-notes"><a href="#preview-api-notes">Preview API Notes</a></li>
+                    <li id="contents-interface"><a href="#interface">Interfaces</a></li>""",
+                """
+                    <div class="caption"><span>Elements containing Preview Notes</span></div>""",
+                """
+                    <div class="col-summary-item-name even-row-color preview-api-notes preview-api-notes-tab1\
+                    "><a href="p/NonPrevieFeature.html" title="interface in p">p.NonPrevieFeature</a></div>
+                    <div class="col-second even-row-color preview-api-notes preview-api-notes-tab1">Test Feature</div>
+                    <div class="col-last even-row-color preview-api-notes preview-api-notes-tab1">
+                    <div class="block">Non preview feature.</div>""");
     }
 }

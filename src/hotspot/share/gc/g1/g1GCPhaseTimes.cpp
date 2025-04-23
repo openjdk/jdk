@@ -31,11 +31,11 @@
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
-#include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "runtime/timer.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
+#include "runtime/timer.hpp"
 #include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
 
@@ -335,7 +335,6 @@ void G1GCPhaseTimes::debug_phase_merge_remset() const {
     return;
   }
 
-  ResourceMark rm;
   LogStream ls(lt);
 
   WorkerDataArray<double>* phase = _gc_par_phases[MergeRS];
