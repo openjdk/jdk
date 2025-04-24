@@ -46,6 +46,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.stable.StableUtil;
 import jdk.internal.lang.stable.StableValueImpl;
 import jdk.internal.misc.CDS;
+import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.NullableKeyValueHolder;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
@@ -873,8 +874,35 @@ class ImmutableCollections {
         }
 
         @Override
+        public List<E> reversed() {
+            return new StableReverseOrderListView<>(this);
+        }
+
+        @Override
         public String toString() {
             return StableUtil.renderElements(this, "StableList", delegates);
+        }
+
+        private static final class StableReverseOrderListView<E> extends ReverseOrderListView.Rand<E> {
+
+            public StableReverseOrderListView(List<E> base) {
+                super(base, false);
+            }
+
+            // This method does not evaluate the elements
+            @Override
+            public String toString() {
+                final StableValueImpl<E>[] delegates = ((StableList<E>)base).delegates;
+                final StableValueImpl<E>[] reversed = ArraysSupport.reverse(
+                        Arrays.copyOf(delegates, delegates.length));
+                return StableUtil.renderElements(base, "Collection", reversed);
+            }
+
+            @Override
+            public List<E> reversed() {
+                return base;
+            }
+
         }
 
     }
@@ -1613,22 +1641,22 @@ class ImmutableCollections {
             return new StableMapValues();
         }
 
-        final class StableMapValues extends AbstractCollection<V> {
+        final class StableMapValues extends AbstractImmutableCollection<V> {
             @Override public Iterator<V> iterator() { return new ValueIterator(); }
             @Override public int size() { return StableMap.this.size(); }
             @Override public boolean isEmpty() { return StableMap.this.isEmpty();}
-            @Override public void clear() { StableMap.this.clear(); }
             @Override public boolean contains(Object v) { return StableMap.this.containsValue(v); }
+
+            private static final IntFunction<StableValueImpl<?>[]> GENERATOR = new IntFunction<StableValueImpl<?>[]>() {
+                @Override
+                public StableValueImpl<?>[] apply(int len) {
+                    return new StableValueImpl<?>[len];
+                }
+            };
 
             @Override
             public String toString() {
-                final StableValueImpl<V>[] values = delegate.values().toArray(new IntFunction<StableValueImpl<V>[]>() {
-                    @SuppressWarnings({"unchecked"})
-                    @Override
-                    public StableValueImpl<V>[] apply(int len) {
-                        return (StableValueImpl<V>[]) new StableValueImpl<?>[len];
-                    }
-                });
+                final StableValueImpl<?>[] values = delegate.values().toArray(GENERATOR);
                 return StableUtil.renderElements(StableMap.this, "StableMap", values);
             }
         }

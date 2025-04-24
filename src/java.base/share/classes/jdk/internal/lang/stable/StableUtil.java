@@ -36,13 +36,13 @@ public final class StableUtil {
 
     public static <R> String renderElements(Object self,
                                             String selfName,
-                                            StableValueImpl<R>[] delegates) {
+                                            StableValueImpl<?>[] delegates) {
         return renderElements(self, selfName, delegates, 0, delegates.length);
     }
 
     public static <R> String renderElements(Object self,
                                             String selfName,
-                                            StableValueImpl<R>[] delegates,
+                                            StableValueImpl<?>[] delegates,
                                             int offset,
                                             int length) {
         final StringJoiner sj = new StringJoiner(", ", "[", "]");

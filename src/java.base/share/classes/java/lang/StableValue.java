@@ -403,6 +403,7 @@ import java.util.function.Supplier;
  *           {@code this} and consequently, it should be avoided to
  *           (directly or indirectly) synchronize on a {@code StableValue}. Hence,
  *           synchronizing on {@code this} may lead to deadlock.
+ *           <p>
  *           Except for a {@code StableValue}'s contents itself,
  *           an {@linkplain #orElse(Object) orElse(other)} parameter, and
  *           an {@linkplain #equals(Object) equals(obj)} parameter; all
@@ -412,16 +413,19 @@ import java.util.function.Supplier;
  * @implNote A {@code StableValue} is mainly intended to be a non-public field in
  *           a class and is usually neither exposed directly via accessors nor passed as
  *           a method parameter.
+ *           <p>
  *           Stable functions and collections make reasonable efforts to provide
  *           {@link Object#toString()} operations that do not trigger evaluation
  *           of the internal stable values when called.
  *           Stable collections have {@link Object#equals(Object)} operations that try
  *           to minimize evaluation of the internal stable values when called.
+ *           <p>
  *           As objects can be set via stable values but never removed, this can be a
  *           source of unintended memory leaks. A stable value's contents are
  *           {@linkplain java.lang.ref##reachability strongly reachable}.
  *           Be advised that reachable stable values will hold their set contents until
  *           the stable value itself is collected.
+ *           <p>
  *           A {@code StableValue} that has a type parameter {@code T} that is an array
  *           type (of arbitrary rank) will only allow the JVM to treat the
  *           <em>array reference</em> as a stable value but <em>not its components</em>.
@@ -429,8 +433,8 @@ import java.util.function.Supplier;
  *           depth can be used, which provides stable components. More generally, a
  *           stable value can hold other stable values of arbitrary depth and still
  *           provide transitive constantness.
- *
- * @implNote Stable values, functions, and collections are not {@link Serializable}.
+ *           <p>
+ *           Stable values, functions, and collections are not {@link Serializable}.
  *
  * @param <T> type of the contents
  *
