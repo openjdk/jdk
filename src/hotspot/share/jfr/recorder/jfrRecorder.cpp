@@ -48,7 +48,6 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.inline.hpp"
-#include "memory/iterator.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/growableArray.hpp"

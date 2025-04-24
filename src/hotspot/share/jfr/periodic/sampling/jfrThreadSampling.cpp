@@ -28,7 +28,6 @@
 #include "code/nmethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
-#include "jfr/utilities/jfrTime.hpp"
 #include "memory/resourceArea.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"

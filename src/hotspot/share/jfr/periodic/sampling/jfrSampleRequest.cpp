@@ -31,7 +31,6 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/suspendedThreadTask.hpp"
-#include "runtime/thread.hpp"
 
 static inline bool is_entry_frame(address pc) {
   return StubRoutines::returns_to_call_stub(pc);
