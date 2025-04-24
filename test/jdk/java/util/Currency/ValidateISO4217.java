@@ -26,7 +26,7 @@
  * @bug 4691089 4819436 4942982 5104960 6544471 6627549 7066203 7195759
  *      8039317 8074350 8074351 8145952 8187946 8193552 8202026 8204269
  *      8208746 8209775 8264792 8274658 8283277 8296239 8321480 8334653
- *      8354344
+ *      8354343 8354344
  * @summary Validate ISO 4217 data for Currency class.
  * @modules java.base/java.util:open
  *          jdk.localedata
@@ -71,6 +71,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -111,6 +112,8 @@ public class ValidateISO4217 {
     private static final List<Arguments> additionalCodes = new ArrayList<Arguments>();
     // Currencies to test (derived from ISO4217Codes and additionalCodes)
     private static final Set<Currency> testCurrencies = new HashSet<>();
+    // Special case currencies that should only exist after the cut-over occurs
+    private static final Set<String> currenciesNotYetDefined = new HashSet<>();
     // Codes that are obsolete, do not have related country, extra currency
     private static final String otherCodes =
             "ADP-AFA-ATS-AYM-AZM-BEF-BGL-BOV-BYB-BYR-CHE-CHW-CLF-COU-CUC-CYP-"
@@ -235,13 +238,14 @@ public class ValidateISO4217 {
     }
 
     // Sets up the following test data:
-    // ISO4217Codes, additionalCodes, testCurrencies, codes
+    // ISO4217Codes, additionalCodes, testCurrencies, codes, currenciesNotYetDefined
     static void setUpTestingData() throws Exception {
         // These functions laterally setup 'testCurrencies' and 'codes'
         // at the same time
         setUpISO4217Codes();
         setUpAdditionalCodes();
         setUpOtherCurrencies();
+        setUpNotYetDefined();
     }
 
     // Parse the ISO4217 file and populate ISO4217Codes and testCurrencies.
@@ -294,6 +298,11 @@ public class ValidateISO4217 {
                     numeric = tokens.nextToken();
                     minorUnit = tokens.nextToken();
                     testCurrencies.add(Currency.getInstance(currency));
+                } else {
+                    // Add all future currencies to the set.
+                    // We process it later once 'testCurrencies' is complete
+                    // to only include ones that should not be defined yet.
+                    currenciesNotYetDefined.add(tokens.nextToken());
                 }
             }
         }
@@ -337,6 +346,17 @@ public class ValidateISO4217 {
         while (st.hasMoreTokens()) {
             testCurrencies.add(Currency.getInstance(st.nextToken()));
         }
+    }
+
+    // Future currencies that are already defined as ISO 4217 codes should be
+    // removed. For example, in CW=ANG;2025-04-01-04-00-00;EUR "EUR" would be
+    // removed as it is an already valid ISO 4217 code
+    private static void setUpNotYetDefined() {
+        var allFutureCurrencies = testCurrencies
+                .stream()
+                .map(Currency::getCurrencyCode)
+                .collect(Collectors.toSet());
+        currenciesNotYetDefined.removeIf(allFutureCurrencies::contains);
     }
 
     // Check that the data file is up-to-date
@@ -419,6 +439,18 @@ public class ValidateISO4217 {
         return codeCombos;
     }
 
+    // Any future currencies that do not already exist before the cut-over
+    // should not be instantiable. This scenario is when a country transfers
+    // to a new code, that is not already a valid ISO 4217 code. For example,
+    // what occurred in the 176 update situation.
+    @Test
+    public void nonDefinedFutureCurrenciesTest() {
+        for (String curr : currenciesNotYetDefined) {
+            assertThrows(IllegalArgumentException.class, () -> Currency.getInstance(curr),
+                    "The future cut-over currency: %s should not exist".formatted(curr));
+        }
+    }
+
     // This method ensures that getAvailableCurrencies() returns
     // the expected amount of currencies.
     @Test
@@ -427,6 +459,8 @@ public class ValidateISO4217 {
         // Ensure that testCurrencies has all the JRE currency codes
         assertTrue(testCurrencies.containsAll(jreCurrencies),
                 getSetDiffs(jreCurrencies, testCurrencies));
+        // Implicitly checks that jreCurrencies does not contain any currencies
+        // defined in currenciesNotYetDefined
     }
 
     private static String getSetDiffs(Set<Currency> jreCurrencies, Set<Currency> testCurrencies) {
