@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import javax.crypto.spec.GCMParameterSpec;
 
 public class AESGCMBench extends BenchBase {
 
-    @Param({"128"})
+    @Param({"128", "192", "256"})
     int keyLength;
 
     public static final int IV_MODULO = 16;

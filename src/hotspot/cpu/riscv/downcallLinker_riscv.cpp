@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
@@ -79,7 +78,6 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
 #ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     stub->print_on(&ls);
   }
@@ -186,7 +184,6 @@ void DowncallLinker::StubGenerator::generate() {
 #ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     arg_shuffle.print_on(&ls);
   }
@@ -278,6 +275,9 @@ void DowncallLinker::StubGenerator::generate() {
   Label L_reguard;
   Label L_after_reguard;
   if (_needs_transition) {
+    // Restore cpu control state after JNI call
+    __ restore_cpu_control_state_after_jni(t0);
+
     __ block_comment("{ thread native2java");
     __ mv(t0, _thread_in_native_trans);
     __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));

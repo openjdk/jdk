@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -39,30 +40,20 @@ import javax.swing.text.ViewFactory;
  * @bug 8080972 8169887
  * @summary Audit Core Reflection in module java.desktop for places that will
  *          require changes to work with modules
- * @author Alexander Scherbatiy
- * @run main/othervm -Djava.security.manager=allow TestJEditor
+ * @run main TestJEditor
  */
 public class TestJEditor {
 
     public static void main(String[] args) throws Exception {
-
-        SwingUtilities.invokeAndWait(TestJEditor::testJEditorPane);
-        System.setSecurityManager(new SecurityManager());
         SwingUtilities.invokeAndWait(TestJEditor::testJEditorPane);
     }
 
     private static void testJEditorPane() {
+        JEditorPane.registerEditorKitForContentType("text/html", UserEditorKit.class.getName());
+        EditorKit editorKit = JEditorPane.createEditorKitForContentType("text/html");
 
-        try {
-
-            JEditorPane.registerEditorKitForContentType("text/html", UserEditorKit.class.getName());
-            EditorKit editorKit = JEditorPane.createEditorKitForContentType("text/html");
-
-            if (!(editorKit instanceof UserEditorKit)) {
-                throw new RuntimeException("Editor kit is not UserEditorKit!");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if (!(editorKit instanceof UserEditorKit)) {
+            throw new RuntimeException("Editor kit is not UserEditorKit!");
         }
     }
 

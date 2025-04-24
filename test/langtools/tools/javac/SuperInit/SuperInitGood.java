@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -407,29 +407,86 @@ public class SuperInitGood {
         }
     }
 
-    // local class declared before super(), but not used until after super()
+    // we allow 'this' reference prior to super() for field assignments only
     public static class Test20 {
-        public Test20() {
-            class Foo {
-                Foo() {
-                    Test20.this.hashCode();
-                }
-            }
+        private int x;
+        public Test20(short x) {
+            x = x;
             super();
-            new Foo();
+        }
+        public Test20(int x) {
+            this.x = x;
+            super();
+        }
+        public Test20(char x) {
+            Test20.this.x = x;
+            super();
+        }
+        public Test20(byte y) {
+            x = y;
+            this((int)y);
+            this.x++;
         }
     }
 
-    // local class inside super() parameter list
-    public static class Test21 extends AtomicReference<Object> {
-        private int x;
-        public Test21() {
-            super(switch ("foo".hashCode()) {
-                default -> {
-                    class Nested {{ System.out.println(x); }}       // class is NOT instantiated - OK
-                    yield "bar";
+    // allow creating and using local and anonymous classes before super()
+    // they will not have enclosing instances though
+    public static class Test21 {
+        public Test21(int x) {
+            Runnable r = new Runnable() {
+                public void run() {
+                    this.hashCode();
                 }
-            });
+            };
+            r.run();
+            super();
+            r.run();
+        }
+        public Test21(float x) {
+            class Foo {
+                public void bar() {
+                    this.hashCode();
+                }
+            };
+            new Foo().bar();
+            super();
+            new Foo().bar();
+        }
+    }
+
+    // Lambdas within constructors
+    public static class Test22 {
+        public Test22() {
+            Runnable r = () -> System.out.println();
+            super();
+            r.run();
+        }
+        public Test22(int x) {
+            Runnable r = () -> System.out.println();
+            r.run();
+            super();
+        }
+        public Test22(char x) {
+            Runnable r = () -> {
+                class A {
+                    A() {
+                        return;
+                    }
+                    A(int x) {
+                        Runnable r2 = () -> {
+                            return;
+                        };
+                        this();
+                        r2.run();
+                    }
+                    A(char x) {
+                        this(0);
+                    }
+                }
+                return;
+            };
+            r.run();
+            super();
         }
     }
 
@@ -474,7 +531,9 @@ public class SuperInitGood {
             assert false : "unexpected exception: " + e;
         }
         new Test19(123);
-        new Test20();
-        new Test21();
+        new Test20(123);
+        new Test21((int)123);
+        new Test21((float)123);
+        new Test22('x');
     }
 }

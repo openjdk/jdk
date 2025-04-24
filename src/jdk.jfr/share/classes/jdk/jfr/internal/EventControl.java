@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
 import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.events.StackFilter;
-import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.LevelSetting;
@@ -281,7 +280,7 @@ public final class EventControl {
         } catch (Exception e) {
             throw (Error) new InternalError("Could not get constructor for " + settingControlClass.getName()).initCause(e);
         }
-        SecuritySupport.setAccessible(cc);
+        cc.setAccessible(true);
         try {
             return (SettingControl) cc.newInstance();
         } catch (IllegalArgumentException | InvocationTargetException e) {
@@ -290,72 +289,48 @@ public final class EventControl {
     }
 
     private static Control defineEnabled(PlatformEventType type) {
-        Enabled enabled = type.getAnnotation(Enabled.class);
         // Java events are enabled by default,
         // JVM events are not, maybe they should be? Would lower learning curve
         // there too.
-        String def = type.isJVM() ? "false" : "true";
-        if (enabled != null) {
-            def = Boolean.toString(enabled.value());
-        }
+        Boolean defaultValue = Boolean.valueOf(!type.isJVM());
+        String def = type.getAnnotationValue(Enabled.class, defaultValue).toString();
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_ENABLED, Enabled.NAME, def, Collections.emptyList()));
         return new Control(new EnabledSetting(type, def), def);
     }
 
     private static Control defineThreshold(PlatformEventType type) {
-        Threshold threshold = type.getAnnotation(Threshold.class);
-        String def = "0 ns";
-        if (threshold != null) {
-            def = threshold.value();
-        }
+        String def = type.getAnnotationValue(Threshold.class, ThresholdSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THRESHOLD, Threshold.NAME, def, Collections.emptyList()));
         return new Control(new ThresholdSetting(type), def);
     }
 
     private static Control defineStackTrace(PlatformEventType type) {
-        StackTrace stackTrace = type.getAnnotation(StackTrace.class);
-        String def = "true";
-        if (stackTrace != null) {
-            def = Boolean.toString(stackTrace.value());
-        }
+        String def = type.getAnnotationValue(StackTrace.class, Boolean.TRUE).toString();
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_STACK_TRACE, StackTrace.NAME, def, Collections.emptyList()));
         return new Control(new StackTraceSetting(type, def), def);
     }
 
     private static Control defineCutoff(PlatformEventType type) {
-        Cutoff cutoff = type.getAnnotation(Cutoff.class);
-        String def = Cutoff.INFINITY;
-        if (cutoff != null) {
-            def = cutoff.value();
-        }
+        String def = type.getAnnotationValue(Cutoff.class, CutoffSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_CUTOFF, Cutoff.NAME, def, Collections.emptyList()));
         return new Control(new CutoffSetting(type), def);
     }
 
     private static Control defineThrottle(PlatformEventType type) {
-        Throttle throttle = type.getAnnotation(Throttle.class);
-        String def = Throttle.DEFAULT;
-        if (throttle != null) {
-            def = throttle.value();
-        }
+        String def = type.getAnnotationValue(Throttle.class, ThrottleSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THROTTLE, Throttle.NAME, def, Collections.emptyList()));
         return new Control(new ThrottleSetting(type), def);
     }
 
     private static Control defineLevel(PlatformEventType type) {
-        Level level = type.getAnnotation(Level.class);
-        String[] values = level.value();
-        String def = values[0];
+        String[] levels = type.getAnnotationValue(Level.class, new String[0]);
+        String def = levels[0]; // Level value always exists
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_LEVEL, Level.NAME, def, Collections.emptyList()));
-        return new Control(new LevelSetting(type, values), def);
+        return new Control(new LevelSetting(type, levels), def);
     }
 
     private static Control definePeriod(PlatformEventType type) {
-        Period period = type.getAnnotation(Period.class);
-        String def = "everyChunk";
-        if (period != null) {
-            def = period.value();
-        }
+        String def = type.getAnnotationValue(Period.class, PeriodSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_PERIOD, PeriodSetting.NAME, def, Collections.emptyList()));
         return new Control(new PeriodSetting(type), def);
     }
@@ -398,13 +373,6 @@ public final class EventControl {
         return idName;
     }
 
-    /**
-     * A malicious user must never be able to run a callback in the wrong
-     * context. Methods on SettingControl must therefore never be invoked directly
-     * by JFR, instead use jdk.jfr.internal.Control.
-     *
-     * The returned list is only to be used inside EventConfiguration
-     */
     public List<SettingControl> getSettingControls() {
         return settingControls;
     }

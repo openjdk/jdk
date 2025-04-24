@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
                         var clm = newClassReader(path, resource,
                                 ClassFile.DebugElementsOption.DROP_DEBUG,
                                 ClassFile.LineNumbersOption.DROP_LINE_NUMBERS);
-                        byte[] content = ClassFile.of().transform(clm, ClassTransform
+                        byte[] content = ClassFile.of().transformClass(clm, ClassTransform
                                         .dropping(cle -> cle instanceof SourceFileAttribute
                                                             || cle instanceof SourceDebugExtensionAttribute)
                                               .andThen(ClassTransform.transformingMethods(MethodTransform

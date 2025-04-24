@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@
 #include "ci/ciSignature.hpp"
 #include "classfile/vmIntrinsics.hpp"
 #include "compiler/methodLiveness.hpp"
-#include "compiler/compilerOracle.hpp"
 #include "oops/method.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/bitMap.hpp"
+#include "utilities/vmEnums.hpp"
 
 class ciMethodBlocks;
 class MethodLiveness;
@@ -303,8 +303,8 @@ class ciMethod : public ciMetadata {
   // Find the proper vtable index to invoke this method.
   int resolve_vtable_index(ciKlass* caller, ciKlass* receiver);
 
-  bool has_option(enum CompileCommand option);
-  bool has_option_value(enum CompileCommand option, double& value);
+  bool has_option(CompileCommandEnum option);
+  bool has_option_value(CompileCommandEnum option, double& value);
   bool can_be_compiled();
   bool can_be_parsed() const { return _can_be_parsed; }
   bool has_compiled_code();
@@ -352,7 +352,6 @@ class ciMethod : public ciMetadata {
   bool is_getter      () const;
   bool is_setter      () const;
   bool is_accessor    () const;
-  bool is_initializer () const;
   bool is_empty       () const;
   bool can_be_statically_bound() const           { return _can_be_statically_bound; }
   bool has_reserved_stack_access() const         { return _has_reserved_stack_access; }
@@ -360,6 +359,8 @@ class ciMethod : public ciMetadata {
   bool is_unboxing_method() const;
   bool is_vector_method() const;
   bool is_object_initializer() const;
+  bool is_scoped() const;
+  bool is_old() const;
 
   bool can_be_statically_bound(ciInstanceKlass* context) const;
 

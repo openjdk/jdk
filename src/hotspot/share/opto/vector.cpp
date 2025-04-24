@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciSymbols.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "opto/castnode.hpp"
@@ -36,13 +35,8 @@ static bool is_vector_mask(ciKlass* klass) {
   return klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
 }
 
-static bool is_vector_shuffle(ciKlass* klass) {
-  return klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
-}
-
-
 void PhaseVector::optimize_vector_boxes() {
-  Compile::TracePhase tp("vector_elimination", &timers[_t_vector_elimination]);
+  Compile::TracePhase tp(_t_vector_elimination);
 
   // Signal GraphKit it's post-parse phase.
   assert(C->inlining_incrementally() == false, "sanity");
@@ -66,13 +60,13 @@ void PhaseVector::optimize_vector_boxes() {
 void PhaseVector::do_cleanup() {
   if (C->failing())  return;
   {
-    Compile::TracePhase tp("vector_pru", &timers[_t_vector_pru]);
+    Compile::TracePhase tp(_t_vector_pru);
     ResourceMark rm;
     PhaseRemoveUseless pru(C->initial_gvn(), *C->igvn_worklist());
     if (C->failing())  return;
   }
   {
-    Compile::TracePhase tp("incrementalInline_igvn", &timers[_t_vector_igvn]);
+    Compile::TracePhase tp(_t_vector_igvn);
     _igvn.reset_from_gvn(C->initial_gvn());
     _igvn.optimize();
     if (C->failing())  return;
@@ -184,7 +178,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
   // Process merged VBAs
 
   if (EnableVectorAggressiveReboxing) {
-    Unique_Node_List calls(C->comp_arena());
+    Unique_Node_List calls;
     for (DUIterator_Fast imax, i = vec_box->fast_outs(imax); i < imax; i++) {
       Node* use = vec_box->fast_out(i);
       if (use->is_CallJava()) {
@@ -238,9 +232,9 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
   }
 
   // Process debug uses at safepoints
-  Unique_Node_List safepoints(C->comp_arena());
+  Unique_Node_List safepoints;
 
-  Unique_Node_List worklist(C->comp_arena());
+  Unique_Node_List worklist;
   worklist.push(vec_box);
   while (worklist.size() > 0) {
     Node* n = worklist.pop();
@@ -276,7 +270,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
     SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
 
     uint first_ind = (sfpt->req() - sfpt->jvms()->scloff());
-    Node* sobj = new SafePointScalarObjectNode(vec_box->box_type(), vec_box, first_ind, n_fields);
+    Node* sobj = new SafePointScalarObjectNode(vec_box->box_type(), vec_box, first_ind, sfpt->jvms()->depth(), n_fields);
     sobj->init_req(0, C->root());
     sfpt->add_req(vec_value);
 
@@ -460,8 +454,6 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     if (is_vector_mask(from_kls)) {
       bt = T_BOOLEAN;
-    } else if (is_vector_shuffle(from_kls)) {
-      bt = T_BYTE;
     }
 
     ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbols::payload_name(),
@@ -506,9 +498,6 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     if (is_vector_mask(from_kls)) {
       vec_val_load = gvn.transform(new VectorLoadMaskNode(vec_val_load, TypeVect::makemask(masktype, num_elem)));
-    } else if (is_vector_shuffle(from_kls) && !vec_unbox->is_shuffle_to_vector()) {
-      assert(vec_unbox->bottom_type()->is_vect()->element_basic_type() == masktype, "expect shuffle type consistency");
-      vec_val_load = gvn.transform(new VectorLoadShuffleNode(vec_val_load, TypeVect::make(masktype, num_elem)));
     }
 
     gvn.hash_delete(vec_unbox);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,7 @@ import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.foreign.Arena;
@@ -40,7 +38,6 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySegment.Scope;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.util.concurrent.TimeUnit;
@@ -50,23 +47,16 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
+@Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED", "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED" })
 public class AllocTest extends CLayouts {
 
-    Arena arena = Arena.ofConfined();
-
-    @Param({"5", "20", "100", "500", "1000"})
+    @Param({"5", "20", "100", "500", "2000", "8000"})
     public int size;
 
-    @TearDown
-    public void tearDown() {
-        arena.close();
-    }
-
     @Benchmark
-    public MemorySegment alloc_confined() {
+    public long alloc_confined() {
         try (Arena arena = Arena.ofConfined()) {
-            return arena.allocate(size);
+            return arena.allocate(size).address();
         }
     }
 
@@ -84,11 +74,11 @@ public class AllocTest extends CLayouts {
         }
     }
 
-    public static class CallocArena implements Arena {
+    private static class CallocArena implements Arena {
 
         static final MethodHandle CALLOC = Linker.nativeLinker()
                 .downcallHandle(
-                        Linker.nativeLinker().defaultLookup().find("calloc").get(),
+                        Linker.nativeLinker().defaultLookup().findOrThrow("calloc"),
                         FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG));
 
         static MemorySegment calloc(long size) {
@@ -118,7 +108,7 @@ public class AllocTest extends CLayouts {
         }
     }
 
-    public static class UnsafeArena implements Arena {
+    private static class UnsafeArena implements Arena {
 
         final Arena arena = Arena.ofConfined();
 
@@ -134,9 +124,9 @@ public class AllocTest extends CLayouts {
 
         @Override
         public MemorySegment allocate(long byteSize, long byteAlignment) {
-            MemorySegment segment = MemorySegment.ofAddress(Utils.unsafe.allocateMemory(byteSize));
-            Utils.unsafe.setMemory(segment.address(), byteSize, (byte)0);
-            return segment.reinterpret(byteSize, arena, ms -> Utils.unsafe.freeMemory(segment.address()));
+            long address = Utils.unsafe.allocateMemory(byteSize);
+            Utils.unsafe.setMemory(address, byteSize, (byte)0);
+            return MemorySegment.ofAddress(address).reinterpret(byteSize, arena, ms -> Utils.unsafe.freeMemory(ms.address()));
         }
     }
 }

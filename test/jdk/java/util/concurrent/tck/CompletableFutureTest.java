@@ -32,6 +32,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -80,7 +81,14 @@ public class CompletableFutureTest extends JSR166TestCase {
         return new TestSuite(CompletableFutureTest.class);
     }
 
-    static class CFException extends RuntimeException {}
+    static class CFException extends RuntimeException {
+        // This makes sure that CompletableFuture still behaves appropriately
+        // even if thrown exceptions end up throwing exceptions from their String
+        // representations.
+        @Override public String getMessage() {
+            throw new IllegalStateException("malformed");
+        }
+    }
 
     void checkIncomplete(CompletableFuture<?> f) {
         assertFalse(f.isDone());
@@ -94,7 +102,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         assertNull(result);
 
         try {
-            f.get(randomExpiredTimeout(), randomTimeUnit());
+            f.get(1, NANOSECONDS);
             shouldThrow();
         }
         catch (TimeoutException success) {}
@@ -199,27 +207,40 @@ public class CompletableFutureTest extends JSR166TestCase {
         checkCompletedExceptionally(f, false, t -> assertSame(t, ex));
     }
 
+    void checkCancellationException(CancellationException thrown, String message) {
+        assertTrue(message.equals(thrown.getMessage()));
+
+        assertTrue(thrown.getCause() instanceof CancellationException);
+        assertTrue(thrown.getCause().getCause() == null);
+    }
+
     void checkCancelled(CompletableFuture<?> f) {
         long startTime = System.nanoTime();
         try {
             f.get(LONG_DELAY_MS, MILLISECONDS);
             shouldThrow();
         } catch (CancellationException success) {
+            checkCancellationException(success, "get");
         } catch (Throwable fail) { threadUnexpectedException(fail); }
         assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS / 2);
 
         try {
             f.join();
             shouldThrow();
-        } catch (CancellationException success) {}
+        } catch (CancellationException success) {
+            checkCancellationException(success, "join");
+        }
         try {
             f.getNow(null);
             shouldThrow();
-        } catch (CancellationException success) {}
+        } catch (CancellationException success) {
+            checkCancellationException(success, "getNow");
+        }
         try {
             f.get();
             shouldThrow();
         } catch (CancellationException success) {
+            checkCancellationException(success, "get");
         } catch (Throwable fail) { threadUnexpectedException(fail); }
 
         assertTrue(exceptionalCompletion(f) instanceof CancellationException);
@@ -259,8 +280,8 @@ public class CompletableFutureTest extends JSR166TestCase {
      */
     public void testCompleteExceptionally() {
         CompletableFuture<Item> f = new CompletableFuture<>();
-        CFException ex = new CFException();
         checkIncomplete(f);
+        CFException ex = new CFException();
         f.completeExceptionally(ex);
         checkCompletedExceptionally(f, ex);
     }
@@ -638,8 +659,6 @@ public class CompletableFutureTest extends JSR166TestCase {
         }
     }
 
-    static final boolean defaultExecutorIsCommonPool
-        = ForkJoinPool.getCommonPoolParallelism() > 1;
 
     /**
      * Permits the testing of parallel code for the 3 different
@@ -730,8 +749,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         },
         ASYNC {
             public void checkExecutionMode() {
-                mustEqual(defaultExecutorIsCommonPool,
-                             (ForkJoinPool.commonPool() == ForkJoinTask.getPool()));
+                mustEqual(ForkJoinPool.commonPool(), ForkJoinTask.getPool());
             }
             public CompletableFuture<Void> runAsync(Runnable a) {
                 return CompletableFuture.runAsync(a);
@@ -3774,10 +3792,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         CompletableFuture<Item> f = new CompletableFuture<>();
         Executor e = f.defaultExecutor();
         Executor c = ForkJoinPool.commonPool();
-        if (ForkJoinPool.getCommonPoolParallelism() > 1)
-            assertSame(e, c);
-        else
-            assertNotSame(e, c);
+        assertSame(e, c);
     }
 
     /**
@@ -4063,15 +4078,6 @@ public class CompletableFutureTest extends JSR166TestCase {
     //--- tests of implementation details; not part of official tck ---
 
     Object resultOf(CompletableFuture<?> f) {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                System.setSecurityManager(null);
-            } catch (SecurityException giveUp) {
-                return "Reflection not available";
-            }
-        }
-
         try {
             java.lang.reflect.Field resultField
                 = CompletableFuture.class.getDeclaredField("result");
@@ -4079,8 +4085,6 @@ public class CompletableFutureTest extends JSR166TestCase {
             return resultField.get(f);
         } catch (Throwable t) {
             throw new AssertionError(t);
-        } finally {
-            if (sm != null) System.setSecurityManager(sm);
         }
     }
 
@@ -5129,5 +5133,4 @@ public class CompletableFutureTest extends JSR166TestCase {
         checkCompletedWithWrappedException(g.toCompletableFuture(), r.ex);
         r.assertInvoked();
     }}
-
 }

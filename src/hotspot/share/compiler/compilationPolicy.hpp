@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,8 +179,10 @@ class CompilationPolicy : AllStatic {
 
   // Set carry flags in the counters (in Method* and MDO).
   inline static void handle_counter_overflow(const methodHandle& method);
+#ifdef ASSERT
   // Verify that a level is consistent with the compilation mode
   static bool verify_level(CompLevel level);
+#endif
   // Clamp the request level according to various constraints.
   inline static CompLevel limit_level(CompLevel level);
   // Common transition function. Given a predicate determines if a method should transition to another level.
@@ -235,9 +237,9 @@ class CompilationPolicy : AllStatic {
   // Get a compilation level for a given method.
   static CompLevel comp_level(Method* method);
   static void method_invocation_event(const methodHandle& method, const methodHandle& inlinee,
-                               CompLevel level, CompiledMethod* nm, TRAPS);
+                                      CompLevel level, nmethod* nm, TRAPS);
   static void method_back_branch_event(const methodHandle& method, const methodHandle& inlinee,
-                                int bci, CompLevel level, CompiledMethod* nm, TRAPS);
+                                      int bci, CompLevel level, nmethod* nm, TRAPS);
 
   static void set_increase_threshold_at_ratio() { _increase_threshold_at_ratio = 100 / (100 - (double)IncreaseFirstTierCompileThresholdAt); }
   static void set_start_time(jlong t) { _start_time = t;    }
@@ -265,7 +267,7 @@ public:
   // Return initial compile level to use with Xcomp (depends on compilation mode).
   static void reprofile(ScopeDesc* trap_scope, bool is_osr);
   static nmethod* event(const methodHandle& method, const methodHandle& inlinee,
-                 int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, TRAPS);
+                        int branch_bci, int bci, CompLevel comp_level, nmethod* nm, TRAPS);
   // Select task is called by CompileBroker. We should return a task or nullptr.
   static CompileTask* select_task(CompileQueue* compile_queue);
   // Tell the runtime if we think a given method is adequately profiled.

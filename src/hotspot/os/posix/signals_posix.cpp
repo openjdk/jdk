@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
-#include "code/compiledMethod.hpp"
 #include "code/nativeInst.hpp"
+#include "code/nmethod.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "os_posix.hpp"
@@ -50,6 +49,13 @@
 
 #include <signal.h>
 
+#define SEGV_BNDERR_value 3
+
+#if defined(SEGV_BNDERR)
+STATIC_ASSERT(SEGV_BNDERR == SEGV_BNDERR_value);
+#else
+#define SEGV_BNDERR SEGV_BNDERR_value
+#endif
 
 static const char* get_signal_name(int sig, char* out, size_t outlen);
 
@@ -340,7 +346,7 @@ static const struct {
 ////////////////////////////////////////////////////////////////////////////////
 // sun.misc.Signal and BREAK_SIGNAL support
 
-void jdk_misc_signal_init() {
+static void jdk_misc_signal_init() {
   // Initialize signal structures
   ::memset((void*)pending_signals, 0, sizeof(pending_signals));
 
@@ -380,7 +386,7 @@ int os::signal_wait() {
 ////////////////////////////////////////////////////////////////////////////////
 // signal chaining support
 
-struct sigaction* get_chained_signal_action(int sig) {
+static struct sigaction* get_chained_signal_action(int sig) {
   struct sigaction *actp = nullptr;
 
   if (libjsig_is_loaded) {
@@ -503,13 +509,6 @@ void PosixSignals::unblock_error_signals() {
   ::pthread_sigmask(SIG_UNBLOCK, &set, nullptr);
 }
 
-class ErrnoPreserver: public StackObj {
-  const int _saved;
-public:
-  ErrnoPreserver() : _saved(errno) {}
-  ~ErrnoPreserver() { errno = _saved; }
-};
-
 ////////////////////////////////////////////////////////////////////////////////
 // JVM_handle_(linux|aix|bsd)_signal()
 
@@ -585,9 +584,8 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 
   // Handle assertion poison page accesses.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if (!signal_was_handled &&
-      ((sig == SIGSEGV || sig == SIGBUS) && info != nullptr && info->si_addr == g_assert_poison)) {
-    signal_was_handled = handle_assert_poison_fault(ucVoid, info->si_addr);
+  if (VMError::was_assert_poison_crash(info)) {
+    signal_was_handled = handle_assert_poison_fault(ucVoid);
   }
 #endif
 
@@ -620,17 +618,16 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   if (!signal_was_handled && pc != nullptr && os::is_readable_pointer(pc)) {
     if (NativeDeoptInstruction::is_deopt_at(pc)) {
       CodeBlob* cb = CodeCache::find_blob(pc);
-      if (cb != nullptr && cb->is_compiled()) {
-        MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, t);) // can call PcDescCache::add_pc_desc
-        CompiledMethod* cm = cb->as_compiled_method();
-        assert(cm->insts_contains_inclusive(pc), "");
-        address deopt = cm->is_method_handle_return(pc) ?
-          cm->deopt_mh_handler_begin() :
-          cm->deopt_handler_begin();
+      if (cb != nullptr && cb->is_nmethod()) {
+        nmethod* nm = cb->as_nmethod();
+        assert(nm->insts_contains_inclusive(pc), "");
+        address deopt = nm->is_method_handle_return(pc) ?
+          nm->deopt_mh_handler_begin() :
+          nm->deopt_handler_begin();
         assert(deopt != nullptr, "");
 
         frame fr = os::fetch_frame_from_context(uc);
-        cm->set_original_pc(&fr, pc);
+        nm->set_original_pc(&fr, pc);
 
         os::Posix::ucontext_set_pc(uc, deopt);
         signal_was_handled = true;
@@ -969,10 +966,6 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
     { SIGILL,  ILL_PRVREG,   "ILL_PRVREG",   "Privileged register." },
     { SIGILL,  ILL_COPROC,   "ILL_COPROC",   "Coprocessor error." },
     { SIGILL,  ILL_BADSTK,   "ILL_BADSTK",   "Internal stack error." },
-#if defined(IA64) && defined(LINUX)
-    { SIGILL,  ILL_BADIADDR, "ILL_BADIADDR", "Unimplemented instruction address" },
-    { SIGILL,  ILL_BREAK,    "ILL_BREAK",    "Application Break instruction" },
-#endif
     { SIGFPE,  FPE_INTDIV,   "FPE_INTDIV",   "Integer divide by zero." },
     { SIGFPE,  FPE_INTOVF,   "FPE_INTOVF",   "Integer overflow." },
     { SIGFPE,  FPE_FLTDIV,   "FPE_FLTDIV",   "Floating-point divide by zero." },
@@ -983,12 +976,12 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
     { SIGFPE,  FPE_FLTSUB,   "FPE_FLTSUB",   "Subscript out of range." },
     { SIGSEGV, SEGV_MAPERR,  "SEGV_MAPERR",  "Address not mapped to object." },
     { SIGSEGV, SEGV_ACCERR,  "SEGV_ACCERR",  "Invalid permissions for mapped object." },
+#if defined(LINUX)
+    { SIGSEGV, SEGV_BNDERR,  "SEGV_BNDERR",  "Failed address bound checks." },
+#endif
 #if defined(AIX)
     // no explanation found what keyerr would be
     { SIGSEGV, SEGV_KEYERR,  "SEGV_KEYERR",  "key error" },
-#endif
-#if defined(IA64) && !defined(AIX)
-    { SIGSEGV, SEGV_PSTKOVF, "SEGV_PSTKOVF", "Paragraph stack overflow" },
 #endif
     { SIGBUS,  BUS_ADRALN,   "BUS_ADRALN",   "Invalid address alignment." },
     { SIGBUS,  BUS_ADRERR,   "BUS_ADRERR",   "Nonexistent physical address." },
@@ -1144,8 +1137,16 @@ static const char* get_signal_name(int sig, char* out, size_t outlen) {
 }
 
 void os::print_siginfo(outputStream* os, const void* si0) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  // If we are here because of an assert/guarantee, we suppress
+  // printing the siginfo, because it is only an implementation
+  // detail capturing the context for said assert/guarantee.
+  if (VMError::was_assert_poison_crash(si0)) {
+    return;
+  }
+#endif
 
-  const siginfo_t* const si = (const siginfo_t*) si0;
+  const siginfo_t* const si = (const siginfo_t*)si0;
 
   char buf[20];
   os->print("siginfo:");
@@ -1245,7 +1246,7 @@ int os::get_signal_number(const char* signal_name) {
   return -1;
 }
 
-void set_signal_handler(int sig) {
+static void set_signal_handler(int sig) {
   // Check for overwrite.
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)nullptr, &oldAct);
@@ -1292,7 +1293,7 @@ void set_signal_handler(int sig) {
 
 // install signal handlers for signals that HotSpot needs to
 // handle in order to support Java-level exception handling.
-void install_signal_handlers() {
+static void install_signal_handlers() {
   // signal-chaining
   typedef void (*signal_setting_t)();
   signal_setting_t begin_signal_setting = nullptr;
@@ -1723,11 +1724,11 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
   errno = old_errno;
 }
 
-int SR_initialize() {
+static int SR_initialize() {
   struct sigaction act;
   char *s;
   // Get signal number to use for suspend/resume
-  if ((s = ::getenv("_JAVA_SR_SIGNUM")) != 0) {
+  if ((s = ::getenv("_JAVA_SR_SIGNUM")) != nullptr) {
     int sig;
     bool result = parse_integer(s, &sig);
     if (result && sig > MAX2(SIGSEGV, SIGBUS) &&  // See 4355769.
@@ -1750,7 +1751,7 @@ int SR_initialize() {
   pthread_sigmask(SIG_BLOCK, nullptr, &act.sa_mask);
   remove_error_signals_from_set(&(act.sa_mask));
 
-  if (sigaction(PosixSignals::SR_signum, &act, 0) == -1) {
+  if (sigaction(PosixSignals::SR_signum, &act, nullptr) == -1) {
     return -1;
   }
 

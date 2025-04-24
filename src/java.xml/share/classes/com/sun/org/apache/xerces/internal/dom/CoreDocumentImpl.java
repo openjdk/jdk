@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -83,7 +83,7 @@ import org.w3c.dom.ls.LSSerializer;
  * @author Andy Clark, IBM
  * @author Ralf Pfeiffer, IBM
  * @since  PR-DOM-Level-1-19980818.
- * @LastModified: Apr 2022
+ * @LastModified: Nov 2024
  */
 public class CoreDocumentImpl
         extends ParentNode implements Document {
@@ -306,7 +306,7 @@ public class CoreDocumentImpl
         super(null);
         ownerDocument = this;
         allowGrammarAccess = grammarAccess;
-        String systemProp = SecuritySupport.getSystemProperty(Constants.SUN_DOM_PROPERTY_PREFIX+Constants.SUN_DOM_ANCESTOR_CHECCK);
+        String systemProp = System.getProperty(Constants.SUN_DOM_PROPERTY_PREFIX+Constants.SUN_DOM_ANCESTOR_CHECCK);
         if (systemProp != null) {
             if (systemProp.equalsIgnoreCase("false")) {
                 ancestorChecking = false;

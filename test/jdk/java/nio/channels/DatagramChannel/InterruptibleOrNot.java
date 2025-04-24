@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.function.Executable;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 
 public class InterruptibleOrNot {
     // DatagramChannel implementation class
@@ -98,6 +99,7 @@ public class InterruptibleOrNot {
      */
     @Test
     public void testInterruptBeforeUninterruptibleReceive() throws Exception {
+        assumeFalse(Thread.currentThread().isVirtual());
         try (DatagramChannel dc = boundDatagramChannel(false)) {
             ByteBuffer buf = ByteBuffer.allocate(100);
             onReceive(() -> {

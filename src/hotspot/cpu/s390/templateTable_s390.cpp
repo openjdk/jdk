@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -541,7 +540,7 @@ void TemplateTable::condy_helper(Label& Done) {
   const Register rarg  = Z_ARG2;
   __ load_const_optimized(rarg, (int)bytecode());
   call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rarg);
-  __ get_vm_result_2(flags);
+  __ get_vm_result_metadata(flags);
 
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
@@ -2321,7 +2320,7 @@ void TemplateTable::_return(TosState state) {
     assert(state == vtos, "only valid state");
     __ z_lg(Rthis, aaddress(0));
     __ load_klass(Rklass, Rthis);
-    __ testbit(Address(Rklass, Klass::access_flags_offset()), exact_log2(JVM_ACC_HAS_FINALIZER));
+    __ z_tm(Address(Rklass, Klass::misc_flags_offset()), KlassFlags::_misc_has_finalizer);
     __ z_bfalse(skip_register_finalizer);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), Rthis);
     __ bind(skip_register_finalizer);
@@ -2868,7 +2867,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache,
   __ z_lgr(fieldEntry, cache);
 
   if (is_static) {
-    // Life is simple. NULL the object pointer.
+    // Life is simple. Null the object pointer.
     __ clear_reg(obj, true, false); // Don't set CC.
   } else {
     // Life is harder. The stack holds the value on top, followed by
@@ -3914,20 +3913,15 @@ void TemplateTable::_new() {
   __ z_cli(0, tmp, JVM_CONSTANT_Class);
   __ z_brne(slow_case);
 
-  __ z_sllg(offset, offset, LogBytesPerWord); // Convert to to offset.
+  __ z_sllg(offset, offset, LogBytesPerWord); // Convert to offset.
   // Get InstanceKlass.
   Register iklass = cpool;
   __ load_resolved_klass_at_offset(cpool, offset, iklass);
 
-  // Make sure klass is initialized & doesn't have finalizer.
-  // Make sure klass is fully initialized.
-  const int state_offset = in_bytes(InstanceKlass::init_state_offset());
-  if (Immediate::is_uimm12(state_offset)) {
-    __ z_cli(state_offset, iklass, InstanceKlass::fully_initialized);
-  } else {
-    __ z_cliy(state_offset, iklass, InstanceKlass::fully_initialized);
-  }
-  __ z_brne(slow_case);
+  // make sure klass is initialized
+  assert(VM_Version::supports_fast_class_init_checks(),
+         "Optimization requires support for fast class initialization checks");
+  __ clinit_barrier(iklass, Z_thread, nullptr /*L_fast_path*/, &slow_case);
 
   // Get instance_size in InstanceKlass (scaled to a count of bytes).
   Register Rsize = offset;
@@ -3957,7 +3951,12 @@ void TemplateTable::_new() {
     if (!ZeroTLAB) {
       // The object is initialized before the header. If the object size is
       // zero, go directly to the header initialization.
-      __ z_aghi(Rsize, (int)-sizeof(oopDesc)); // Subtract header size, set CC.
+      if (UseCompactObjectHeaders) {
+        assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong), "oop base offset must be 8-byte-aligned");
+        __ z_aghi(Rsize, (int)-oopDesc::base_offset_in_bytes());
+      } else {
+        __ z_aghi(Rsize, (int)-sizeof(oopDesc)); // Subtract header size, set CC.
+      }
       __ z_bre(initialize_header);             // Jump if size of fields is zero.
 
       // Initialize object fields.
@@ -3969,20 +3968,27 @@ void TemplateTable::_new() {
 
       // Set Rzero to 0 and use it as src length, then mvcle will copy nothing
       // and fill the object with the padding value 0.
-      __ add2reg(RobjectFields, sizeof(oopDesc), RallocatedObject);
+      if (UseCompactObjectHeaders) {
+        __ add2reg(RobjectFields, oopDesc::base_offset_in_bytes(), RallocatedObject);
+      } else {
+        __ add2reg(RobjectFields, sizeof(oopDesc), RallocatedObject);
+      }
       __ move_long_ext(RobjectFields, as_Register(Rzero->encoding() - 1), 0);
     }
 
     // Initialize object header only.
     __ bind(initialize_header);
-    __ store_const(Address(RallocatedObject, oopDesc::mark_offset_in_bytes()),
-                   (long)markWord::prototype().value());
+    if (UseCompactObjectHeaders) {
+      __ z_lg(tmp, Address(iklass, in_bytes(Klass::prototype_header_offset())));
+      __ z_stg(tmp, Address(RallocatedObject, oopDesc::mark_offset_in_bytes()));
+    } else {
+      __ store_const(Address(RallocatedObject, oopDesc::mark_offset_in_bytes()),
+                     (long) markWord::prototype().value());
+      __ store_klass_gap(Rzero, RallocatedObject);  // Zero klass gap for compressed oops.
+      __ store_klass(iklass, RallocatedObject);     // Store klass last.
+    }
 
-    __ store_klass_gap(Rzero, RallocatedObject);  // Zero klass gap for compressed oops.
-    __ store_klass(iklass, RallocatedObject);     // Store klass last.
-
-    {
-      SkipIfEqual skip(_masm, &DTraceAllocProbes, false, Z_ARG5 /*scratch*/);
+    if (DTraceAllocProbes) {
       // Trigger dtrace event for fastpath.
       __ push(atos); // Save the return value.
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), RallocatedObject);
@@ -4057,7 +4063,7 @@ void TemplateTable::checkcast() {
 
   __ push(atos); // Save receiver for result, and for GC.
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  __ get_vm_result_2(Z_tos);
+  __ get_vm_result_metadata(Z_tos);
 
   Register   receiver = Z_ARG4;
   Register   klass = Z_tos;
@@ -4129,7 +4135,7 @@ void TemplateTable::instanceof() {
 
   __ push(atos); // Save receiver for result, and for GC.
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  __ get_vm_result_2(Z_tos);
+  __ get_vm_result_metadata(Z_tos);
 
   Register receiver = Z_tmp_2;
   Register klass = Z_tos;

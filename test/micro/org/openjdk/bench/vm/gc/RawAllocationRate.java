@@ -80,7 +80,7 @@ public class RawAllocationRate {
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:TieredStopAtLevel=1"})
+    @Fork(jvmArgs={"-XX:TieredStopAtLevel=1"})
     public Object[] arrayTest_C1() {
         return arrayTest();
     }
@@ -106,7 +106,7 @@ public class RawAllocationRate {
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:TieredStopAtLevel=1"})
+    @Fork(jvmArgs={"-XX:TieredStopAtLevel=1"})
     public Object[] instanceTest_C1() {
         return instanceTest();
     }

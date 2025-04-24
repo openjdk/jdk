@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
+import java.util.stream.Stream;
 
 /**
  * <code>ZoneInfo</code> is an implementation subclass of {@link
@@ -45,14 +46,14 @@ import java.util.TimeZone;
  * for the {@link #getOffset(int,int,int,int,int,int) getOffset}
  * method that takes Gregorian calendar date fields.
  * <p>
- * This table covers transitions from 1900 until 2037 (as of version
- * 1.4), Before 1900, it assumes that there was no daylight saving
+ * This table covers transitions from 1900 until 2100 (as of version
+ * 23), Before 1900, it assumes that there was no daylight saving
  * time and the <code>getOffset</code> methods always return the
  * {@link #getRawOffset} value. No Local Mean Time is supported. If a
  * specified date is beyond the transition table and this time zone is
- * supposed to observe daylight saving time in 2037, it delegates
+ * supposed to observe daylight saving time in 2100, it delegates
  * operations to a {@link java.util.SimpleTimeZone SimpleTimeZone}
- * object created using the daylight saving time schedule as of 2037.
+ * object created using the daylight saving time schedule as of 2100.
  * <p>
  * The date items, transitions, GMT offset(s), etc. are read from a database
  * file. See {@link ZoneInfoFile} for details.
@@ -560,6 +561,27 @@ public class ZoneInfo extends TimeZone {
      */
     public static String[] getAvailableIDs(int rawOffset) {
         return ZoneInfoFile.getZoneIds(rawOffset);
+    }
+
+    /**
+     * Gets all available IDs supported in the Java run-time.
+     *
+     * @return a stream of time zone IDs.
+     */
+    public static Stream<String> availableIDs() {
+        return ZoneInfoFile.zoneIds();
+    }
+
+    /**
+     * Gets all available IDs that have the same value as the
+     * specified raw GMT offset.
+     *
+     * @param rawOffset the GMT offset in milliseconds. This
+     * value should not include any daylight saving time.
+     * @return a stream of time zone IDs.
+     */
+    public static Stream<String> availableIDs(int rawOffset) {
+        return ZoneInfoFile.zoneIds(rawOffset);
     }
 
     /**

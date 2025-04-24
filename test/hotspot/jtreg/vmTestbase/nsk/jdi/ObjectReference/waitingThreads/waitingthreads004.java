@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,10 @@ public class waitingthreads004 {
     //------------------------------------------------------- immutable common methods
 
     public static void main(String argv[]) {
-        System.exit(Consts.JCK_STATUS_BASE + run(argv, System.out));
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     private static void display(String msg) {
@@ -154,6 +157,7 @@ public class waitingthreads004 {
                     fieldName = "lockingObject";
                     display("CHECK2: checking waitingThreads method for ObjectReference of waitingthreads004a." + fieldName);
                     objRef = (ObjectReference) debuggeeClass.getValue(debuggeeClass.fieldByName(fieldName));
+
                     try {
                         List waitingThreads = objRef.waitingThreads();
                         if (waitingThreads.size() != waitingthreads004a.threadCount) {
@@ -161,6 +165,12 @@ public class waitingthreads004 {
                             complain("waitingThreads method returned list with unexpected size for " + fieldName +
                                 "\n\t expected value : " + waitingthreads004a.threadCount + "; got one : " + waitingThreads.size());
                         } else {
+                            debuggee.VM().resume();
+                            debuggee.sendSignal(SIGNAL_GO);
+                            debuggee.receiveExpectedSignal(SIGNAL_GO);
+                            // tested thread must be blocked on re-entering monitor in lockingObject.wait()
+                            debuggee.VM().suspend();
+
                             // check waitingThreads list
                             Iterator itr = waitingThreads.iterator();
                             while (itr.hasNext()) {

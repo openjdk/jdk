@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import jdk.internal.reflect.ReflectionFactory;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -88,10 +87,7 @@ final class PublicMethods {
      * Method (name, parameter types) tuple.
      */
     private static final class Key {
-        @SuppressWarnings("removal")
-        private static final ReflectionFactory reflectionFactory =
-            AccessController.doPrivileged(
-                new ReflectionFactory.GetReflectionFactoryAction());
+        private static final ReflectionFactory reflectionFactory = ReflectionFactory.getReflectionFactory();
 
         private final String name; // must be interned (as from Method.getName())
         private final Class<?>[] ptypes;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,18 @@ import java.util.List;
 
 /*
  * @test
- * @summary Uses GCMBufferTest to run a long test with incrementing through
- * each byte in each byte array
+ * @summary Uses AEADBufferTest to run a long test with incrementing through
+ * each byte in each byte array using AES GCM
  * @run main/manual GCMIncrementByte4
  */
 
 public class GCMIncrementByte4 {
 
     public static void main(String args[]) throws Exception {
-        GCMBufferTest.initTest();
-        new GCMBufferTest("AES/GCM/NoPadding",
-            List.of(GCMBufferTest.dtype.BYTE, GCMBufferTest.dtype.BYTE,
-                GCMBufferTest.dtype.BYTE)).incrementalSegments().dataSet(4).
+        AEADBufferTest.initTest();
+        new AEADBufferTest("AES/GCM/NoPadding",
+            List.of(AEADBufferTest.dtype.BYTE, AEADBufferTest.dtype.BYTE,
+                AEADBufferTest.dtype.BYTE)).incrementalSegments().dataSet(4).
             test();
 
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import static org.testng.Assert.assertEquals;
 import static org.w3c.dom.ptests.DOMTestUtil.createDOM;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.DocumentType;
 import org.w3c.dom.NamedNodeMap;
@@ -35,11 +34,9 @@ import org.w3c.dom.NamedNodeMap;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.DocumentTypeTest
  * @run testng/othervm org.w3c.dom.ptests.DocumentTypeTest
  * @summary Test DocumentType
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class DocumentTypeTest {
 
     /*

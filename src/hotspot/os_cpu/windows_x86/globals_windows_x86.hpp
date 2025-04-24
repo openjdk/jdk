@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@
 
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
-
-define_pd_global(bool, DontYieldALot,            false);
 
 // Default stack size on Windows is determined by the executable (java.exe
 // has a default value of 320K/1MB [32bit/64bit]). Depending on Windows version, changing

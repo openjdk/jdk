@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include <cxxabi.h>
 #include <sys/debug.h>
 #include <pthread.h>
@@ -250,7 +251,7 @@ bool AixSymbols::get_function_name (
           p_name[namelen-1] = '\0';
         }
         if (demangled_name != nullptr) {
-          ALLOW_C_FUNCTION(::free, ::free(demangled_name));
+          permit_forbidden_function::free(demangled_name);
         }
       }
     } else {
@@ -741,7 +742,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
     st->print("(invalid) ");
     goto cleanup;
   } else {
-    st->print("(base - 0x%X) ", PTRDIFF_BYTES(stack_base, cur_sp));
+    st->print("(base - 0x%lX) ", PTRDIFF_BYTES(stack_base, cur_sp));
   }
   st->cr();
 
@@ -797,7 +798,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
       st->print_cr("trying to recover and find backchain...");
       sp = try_find_backchain(sp_last, stack_base, stack_size);
       if (sp) {
-        st->print_cr("found something which looks like a backchain at " PTR_FORMAT ", after 0x%x bytes... ",
+        st->print_cr("found something which looks like a backchain at " PTR_FORMAT ", after 0x%lx bytes... ",
             p2i(sp), PTRDIFF_BYTES(sp, sp_last));
       } else {
         st->print_cr("did not find a backchain, giving up.");
@@ -906,10 +907,11 @@ struct TableLocker {
   ~TableLocker() { pthread_mutex_unlock(&g_handletable_mutex); }
 };
 struct handletableentry{
-    void*   handle;
-    ino64_t inode;
-    dev64_t devid;
-    uint    refcount;
+    void*         handle;
+    ino64_t       inode;
+    dev64_t       devid;
+    char*         member;
+    uint          refcount;
 };
 constexpr unsigned init_num_handles = 128;
 static unsigned max_handletable = 0;
@@ -1034,7 +1036,7 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
 // specific AIX versions for ::dlopen() and ::dlclose(), which handles the struct g_handletable
 // This way we mimic dl handle equality for a library
 // opened a second time, as it is implemented on other platforms.
-void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
+void* Aix_dlopen(const char* filename, int Flags, int *eno, const char** error_report) {
   assert(error_report != nullptr, "error_report is nullptr");
   void* result;
   struct stat64x libstat;
@@ -1046,9 +1048,18 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
     assert(result == nullptr, "dll_load: Could not stat() file %s, but dlopen() worked; Have to improve stat()", filename);
   #endif
     *error_report = "Could not load module .\nSystem error: No such file or directory";
+    *eno = ENOENT;
     return nullptr;
   }
   else {
+    // extract member string if exist duplicate it and store pointer of it
+    // if member does not exist store nullptr
+    char* member = nullptr;
+    const char* substr;
+    if (filename[strlen(filename) - 1] == ')' && (substr = strrchr(filename, '('))) {
+      member = os::strdup(substr);
+    }
+
     unsigned i = 0;
     TableLocker lock;
     // check if library belonging to filename is already loaded.
@@ -1056,7 +1067,10 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
     for (i = 0; i < g_handletable_used; i++) {
       if ((p_handletable + i)->handle &&
           (p_handletable + i)->inode == libstat.st_ino &&
-          (p_handletable + i)->devid == libstat.st_dev) {
+          (p_handletable + i)->devid == libstat.st_dev &&
+          (((p_handletable + i)->member == nullptr && member == nullptr) ||
+           ((p_handletable + i)->member != nullptr && member != nullptr &&
+           strcmp((p_handletable + i)->member, member) == 0))) {
         (p_handletable + i)->refcount++;
         result = (p_handletable + i)->handle;
         break;
@@ -1068,7 +1082,7 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
       if (g_handletable_used == max_handletable) {
         // No place in array anymore; increase array.
         unsigned new_max = MAX2(max_handletable * 2, init_num_handles);
-        struct handletableentry* new_tab = (struct handletableentry*)::realloc(p_handletable, new_max * sizeof(struct handletableentry));
+        struct handletableentry* new_tab = (struct handletableentry*) permit_forbidden_function::realloc(p_handletable, new_max * sizeof(struct handletableentry));
         assert(new_tab != nullptr, "no more memory for handletable");
         if (new_tab == nullptr) {
           *error_report = "dlopen: no more memory for handletable";
@@ -1078,16 +1092,19 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
         p_handletable = new_tab;
       }
       // Library not yet loaded; load it, then store its handle in handle table
+      errno = 0;
       result = ::dlopen(filename, Flags);
       if (result != nullptr) {
         g_handletable_used++;
         (p_handletable + i)->handle = result;
         (p_handletable + i)->inode = libstat.st_ino;
         (p_handletable + i)->devid = libstat.st_dev;
+        (p_handletable + i)->member = member;
         (p_handletable + i)->refcount = 1;
       }
       else {
         // error analysis when dlopen fails
+        *eno = errno;
         *error_report = ::dlerror();
         if (*error_report == nullptr) {
           *error_report = "dlerror returned no error description";
@@ -1131,7 +1148,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
     // while in the second case we simply have to nag.
     res = (0 == ::dlclose(libhandle));
     if (!res) {
-      // error analysis when dlopen fails
+      // error analysis when dlclose fails
       const char* error_report = ::dlerror();
       if (error_report == nullptr) {
         error_report = "dlerror returned no error description";
@@ -1145,7 +1162,11 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
     if (i < g_handletable_used) {
       if (res) {
         // First case: libhandle was found (with refcount == 0) and ::dlclose successful,
-        // so delete entry from array
+        // so delete entry from array (do not forget to free member-string space if member exists)
+        if ((p_handletable + i)->member) {
+          os::free((p_handletable + i)->member);
+          (p_handletable + i)->member = nullptr;
+        }
         g_handletable_used--;
         // If the entry was the last one of the array, the previous g_handletable_used--
         // is sufficient to remove the entry from the array, otherwise we move the last

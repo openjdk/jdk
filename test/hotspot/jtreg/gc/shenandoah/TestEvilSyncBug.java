@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +24,23 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @summary Tests for crash/assert when attaching init thread during shutdown
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver/timeout=480 TestEvilSyncBug
+ * @run driver/timeout=480 TestEvilSyncBug -XX:ShenandoahGCHeuristics=aggressive
+ */
+
+/*
+ * @test id=generational
+ * @summary Tests for crash/assert when attaching init thread during shutdown
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run driver/timeout=480 TestEvilSyncBug -XX:ShenandoahGCMode=generational
  */
 
 import java.util.*;
@@ -46,9 +57,10 @@ public class TestEvilSyncBug {
     static Thread[] hooks = new MyHook[10000];
 
     public static void main(String[] args) throws Exception {
-        if (args.length > 0) {
+        if ("test".equals(args[0])) {
             test();
         } else {
+            String options = args[0];
             // Use 1/4 of available processors to avoid over-saturation.
             int numJobs = Math.max(1, Runtime.getRuntime().availableProcessors() / 4);
             ExecutorService pool = Executors.newFixedThreadPool(numJobs);
@@ -61,7 +73,7 @@ public class TestEvilSyncBug {
                             "-XX:+UnlockExperimentalVMOptions",
                             "-XX:+UnlockDiagnosticVMOptions",
                             "-XX:+UseShenandoahGC",
-                            "-XX:ShenandoahGCHeuristics=aggressive",
+                            options,
                             "TestEvilSyncBug", "test");
                     output.shouldHaveExitValue(0);
                     return null;

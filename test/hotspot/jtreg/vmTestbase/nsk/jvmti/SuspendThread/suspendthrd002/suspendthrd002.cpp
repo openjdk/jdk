@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -49,7 +49,7 @@ static jvmtiEvent eventsList[EVENTS_COUNT] = {
 };
 
 static volatile int eventsReceived = 0;
-static jthread testedThread = NULL;
+static jthread testedThread = nullptr;
 
 /* ============================================================================= */
 
@@ -65,13 +65,13 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     {
         NSK_DISPLAY1("Find thread: %s\n", THREAD_NAME);
         if (!NSK_VERIFY((testedThread =
-                nsk_jvmti_threadByName(THREAD_NAME)) != NULL))
+                nsk_jvmti_threadByName(THREAD_NAME)) != nullptr))
             return;
         NSK_DISPLAY1("  ... found thread: %p\n", (void*)testedThread);
 
         eventsReceived = 0;
         NSK_DISPLAY1("Enable event: %s\n", "THREAD_END");
-        if (!nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, eventsList, NULL))
+        if (!nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, eventsList, nullptr))
             return;
 
         NSK_DISPLAY1("Suspend thread: %p\n", (void*)testedThread);
@@ -99,7 +99,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         }
 
         NSK_DISPLAY1("Disable event: %s\n", "THREAD_END");
-        if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, eventsList, NULL))
+        if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, eventsList, nullptr))
             return;
 
         NSK_DISPLAY1("Resume thread: %p\n", (void*)testedThread);
@@ -126,7 +126,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 JNIEXPORT void JNICALL
 callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     /* check if event is for tested thread */
-    if (thread != NULL &&
+    if (thread != nullptr &&
                 jni->IsSameObject(testedThread, thread)) {
         NSK_DISPLAY1("  ... received THREAD_END event for tested thread: %p\n", (void*)thread);
         eventsReceived++;
@@ -150,7 +150,7 @@ JNIEXPORT jint JNI_OnLoad_suspendthrd002(JavaVM *jvm, char *options, void *reser
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     /* init framework and parse options */
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
@@ -160,7 +160,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* add specific capabilities for suspending thread */
@@ -182,7 +182,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciKlass.hpp"
@@ -127,7 +126,7 @@ Bytecodes::Code ciBytecodeStream::next_wide_or_table(Bytecodes::Code bc) {
   }
 
   default:
-    fatal("unhandled bytecode");
+    fatal("unhandled bytecode : Current Method = %s, BCI = %d, OPCODE = %s (0x%X)", _method->name()->as_utf8(), cur_bci(), Bytecodes::name(bc), bc);
   }
   return bc;
 }
@@ -135,7 +134,7 @@ Bytecodes::Code ciBytecodeStream::next_wide_or_table(Bytecodes::Code bc) {
 // ------------------------------------------------------------------
 // ciBytecodeStream::reset_to_bci
 void ciBytecodeStream::reset_to_bci( int bci ) {
-  _bc_start=_was_wide=0;
+  _bc_start = _was_wide = nullptr;
   _pc = _start+bci;
 }
 
@@ -470,7 +469,7 @@ ciMethod* ciBytecodeStream::get_method(bool& will_link, ciSignature* *declared_s
 bool ciBytecodeStream::has_appendix() {
   VM_ENTRY_MARK;
   constantPoolHandle cpool(THREAD, _method->get_Method()->constants());
-  return ConstantPool::has_appendix_at_if_loaded(cpool, get_method_index());
+  return ConstantPool::has_appendix_at_if_loaded(cpool, get_method_index(), cur_bc());
 }
 
 // ------------------------------------------------------------------
@@ -481,7 +480,7 @@ bool ciBytecodeStream::has_appendix() {
 ciObject* ciBytecodeStream::get_appendix() {
   VM_ENTRY_MARK;
   constantPoolHandle cpool(THREAD, _method->get_Method()->constants());
-  oop appendix_oop = ConstantPool::appendix_at_if_loaded(cpool, get_method_index());
+  oop appendix_oop = ConstantPool::appendix_at_if_loaded(cpool, get_method_index(), cur_bc());
   return CURRENT_ENV->get_object(appendix_oop);
 }
 
@@ -493,7 +492,7 @@ ciObject* ciBytecodeStream::get_appendix() {
 bool ciBytecodeStream::has_local_signature() {
   GUARDED_VM_ENTRY(
     constantPoolHandle cpool(Thread::current(), _method->get_Method()->constants());
-    return ConstantPool::has_local_signature_at_if_loaded(cpool, get_method_index());
+    return ConstantPool::has_local_signature_at_if_loaded(cpool, get_method_index(), cur_bc());
   )
 }
 
@@ -543,4 +542,3 @@ int ciBytecodeStream::get_method_signature_index(const constantPoolHandle& cpool
     return cpool->signature_ref_index_at(name_and_type_index);
   )
 }
-

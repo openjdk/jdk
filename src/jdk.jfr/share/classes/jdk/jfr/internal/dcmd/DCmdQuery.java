@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ public final class DCmdQuery extends AbstractDCmd {
         Configuration configuration = new Configuration();
         configuration.output = getOutput();
         configuration.endTime = Instant.now().minusSeconds(1);
+        configuration.verboseTimespan = true;
         Boolean verbose = parser.getOption("verbose");
         if (verbose != null) {
             configuration.verboseHeaders = verbose;
@@ -87,7 +88,7 @@ public final class DCmdQuery extends AbstractDCmd {
     }
 
     @Override
-    public String[] printHelp() {
+    public String[] getHelp() {
         List<String> lines = new ArrayList<>();
         lines.addAll(getOptions().lines().toList());
         lines.add("");
@@ -141,7 +142,7 @@ public final class DCmdQuery extends AbstractDCmd {
 
                 Options:
 
-                  maxage     (Optional) Length of time for the query to span. (INTEGER followed by
+                  maxage     (Optional) Length of time for the query to span. (INT followed by
                              's' for seconds 'm' for minutes or 'h' for hours, no default value)
 
                   maxsize    (Optional) Maximum size for the query to span in bytes if one of
@@ -154,7 +155,7 @@ public final class DCmdQuery extends AbstractDCmd {
                   verbose    (Optional) Display additional information about the query execution.
                              (BOOLEAN, false)
 
-                  width      (Optional) Maximum number of horizontal characters. (BOOLEAN, false)""";
+                  width      (Optional) Maximum number of horizontal characters. (INT, default value is 100)""";
     }
 
     @Override
@@ -170,7 +171,7 @@ public final class DCmdQuery extends AbstractDCmd {
                     null, false),
             new Argument("verbose", "Display additional information about the query execution", "BOOLEAN", false,
                     true, "false", false),
-            new Argument("width", "Maximum number of horizontal characters", "JULONG", false, true, "100",
+            new Argument("width", "Maximum number of horizontal characters", "INT", false, true, "100",
                     false), };
     }
 }

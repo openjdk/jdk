@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import sun.jvm.hotspot.gc.parallel.*;
 import sun.jvm.hotspot.gc.serial.*;
 import sun.jvm.hotspot.gc.shenandoah.*;
 import sun.jvm.hotspot.gc.shared.*;
-import sun.jvm.hotspot.gc.x.*;
 import sun.jvm.hotspot.gc.z.*;
 import sun.jvm.hotspot.debugger.JVMDebugger;
 import sun.jvm.hotspot.memory.*;
@@ -80,14 +79,13 @@ public class HeapSummary extends Tool {
       printValMB("MaxHeapSize              = ", getFlagValue("MaxHeapSize", flagMap));
       printValMB("NewSize                  = ", getFlagValue("NewSize", flagMap));
       printValMB("MaxNewSize               = ", getFlagValue("MaxNewSize", flagMap));
-      printValMB("OldSize                  = ", getFlagValue("OldSize", flagMap));
       printValue("NewRatio                 = ", getFlagValue("NewRatio", flagMap));
       printValue("SurvivorRatio            = ", getFlagValue("SurvivorRatio", flagMap));
       printValMB("MetaspaceSize            = ", getFlagValue("MetaspaceSize", flagMap));
       printValMB("CompressedClassSpaceSize = ", getFlagValue("CompressedClassSpaceSize", flagMap));
       printValMB("MaxMetaspaceSize         = ", getFlagValue("MaxMetaspaceSize", flagMap));
       if (heap instanceof G1CollectedHeap) {
-        printValMB("G1HeapRegionSize         = ", HeapRegion.grainBytes());
+        printValMB("G1HeapRegionSize       = ", G1HeapRegion.grainBytes());
       }
 
       System.out.println();
@@ -95,27 +93,30 @@ public class HeapSummary extends Tool {
 
       if (heap instanceof SerialHeap) {
          SerialHeap sh = (SerialHeap) heap;
-         for (int n = 0; n < sh.nGens(); n++) {
-            Generation gen = sh.getGen(n);
-            if (gen instanceof DefNewGeneration) {
-               System.out.println("New Generation (Eden + 1 Survivor Space):");
-               printGen(gen);
+         {
+           // youngGen
+           DefNewGeneration youngGen = sh.youngGen();
 
-               ContiguousSpace eden = ((DefNewGeneration)gen).eden();
-               System.out.println("Eden Space:");
-               printSpace(eden);
+           System.out.println("New Generation (Eden + 1 Survivor Space):");
+           printGen(youngGen);
 
-               ContiguousSpace from = ((DefNewGeneration)gen).from();
-               System.out.println("From Space:");
-               printSpace(from);
+           ContiguousSpace eden = youngGen.eden();
+           System.out.println("Eden Space:");
+           printSpace(eden);
 
-               ContiguousSpace to = ((DefNewGeneration)gen).to();
-               System.out.println("To Space:");
-               printSpace(to);
-            } else {
-               System.out.println(gen.name() + ":");
-               printGen(gen);
-            }
+           ContiguousSpace from = youngGen.from();
+           System.out.println("From Space:");
+           printSpace(from);
+
+           ContiguousSpace to = youngGen.to();
+           System.out.println("To Space:");
+           printSpace(to);
+         }
+         {
+           // oldGen
+           TenuredGeneration oldGen = sh.oldGen();
+           System.out.println(oldGen.name() + ":");
+           printGen(oldGen);
          }
       } else if (heap instanceof G1CollectedHeap) {
           printG1HeapSummary((G1CollectedHeap)heap);
@@ -143,9 +144,6 @@ public class HeapSummary extends Tool {
       } else if (heap instanceof EpsilonHeap) {
          EpsilonHeap eh = (EpsilonHeap) heap;
          printSpace(eh.space());
-      } else if (heap instanceof XCollectedHeap) {
-         XCollectedHeap zheap = (XCollectedHeap) heap;
-         zheap.printOn(System.out);
       } else if (heap instanceof ZCollectedHeap) {
          ZCollectedHeap zheap = (ZCollectedHeap) heap;
          zheap.printOn(System.out);
@@ -250,8 +248,8 @@ public class HeapSummary extends Tool {
       G1MonitoringSupport monitoringSupport = g1h.monitoringSupport();
       long edenSpaceRegionNum = monitoringSupport.edenSpaceRegionNum();
       long survivorSpaceRegionNum = monitoringSupport.survivorSpaceRegionNum();
-      HeapRegionSetBase oldSet = g1h.oldSet();
-      HeapRegionSetBase humongousSet = g1h.humongousSet();
+      G1HeapRegionSetBase oldSet = g1h.oldSet();
+      G1HeapRegionSetBase humongousSet = g1h.humongousSet();
       long oldGenRegionNum = oldSet.length() + humongousSet.length();
       printG1Space(tty, "G1 Heap:", g1h.n_regions(),
                    g1h.used(), g1h.capacity());

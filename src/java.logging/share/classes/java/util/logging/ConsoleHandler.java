@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class ConsoleHandler extends StreamHandler {
         // configure with specific defaults for ConsoleHandler
         super(Level.INFO, new SimpleFormatter(), null);
 
-        setOutputStreamPrivileged(System.err);
+        setOutputStream(System.err);
     }
 
     /**
@@ -86,6 +86,12 @@ public class ConsoleHandler extends StreamHandler {
      * <p>
      * The logging request was made initially to a {@code Logger} object,
      * which initialized the {@code LogRecord} and forwarded it here.
+     *
+     * @implSpec This method is not synchronized, and subclasses must not define
+     * overridden {@code publish()} methods to be {@code synchronized} if they
+     * call {@code super.publish()} or format user arguments. See the
+     * {@linkplain Handler##threadSafety discussion in java.util.logging.Handler}
+     * for more information.
      *
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published

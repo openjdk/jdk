@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,6 +221,7 @@ public:
   inline bool ignore_non_patchable_relocations() { return true; }
 
   void align(int modulus);
+  void align(int modulus, int target);
 
   // Support for VM calls
   //
@@ -256,8 +257,8 @@ public:
   void call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3);
   void call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3, Register arg_4);
 
-  void get_vm_result(Register oop_result, Register tmp);
-  void get_vm_result_2(Register metadata_result, Register tmp);
+  void get_vm_result_oop(Register oop_result, Register tmp);
+  void get_vm_result_metadata(Register metadata_result, Register tmp);
 
   // Always sets/resets sp, which default to SP if (last_sp == noreg)
   // Optionally sets/resets fp (use noreg to avoid setting it)
@@ -1077,6 +1078,9 @@ public:
   void safepoint_poll(Register tmp1, Label& slow_path);
   void get_polling_page(Register dest);
   void read_polling_page(Register dest, relocInfo::relocType rtype);
+
+  static int ic_check_size();
+  int ic_check(int end_alignment);
 };
 
 

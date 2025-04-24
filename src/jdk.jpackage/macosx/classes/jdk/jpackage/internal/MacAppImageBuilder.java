@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,13 +51,11 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.OSVersion;
 import static jdk.jpackage.internal.MacAppBundler.BUNDLE_ID_SIGNING_PREFIX;
 import static jdk.jpackage.internal.MacAppBundler.DEVELOPER_ID_APP_SIGNING_KEY;
 import static jdk.jpackage.internal.MacAppBundler.APP_IMAGE_SIGN_IDENTITY;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.INSTALLER_SIGN_IDENTITY;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
@@ -75,8 +73,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
-import static jdk.jpackage.internal.StandardBundlerParam.getPredefinedAppImage;
-import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
 
 public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
@@ -270,6 +267,11 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     }
 
     @Override
+    protected boolean withAppImageFile(Map<String, ? super Object> params) {
+        return !withPackageFile;
+    }
+
+    @Override
     public void prepareApplicationFiles(Map<String, ? super Object> params)
             throws IOException {
         // If predefined app image is provided, then just sign it and return.
@@ -421,12 +423,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 signAppBundle(params, root, "-", null, null);
             }
             restoreKeychainList(params);
-        } else if (OperatingSystem.isMacOS()) {
-            signAppBundle(params, root, "-", null, null);
         } else {
-            // Calling signAppBundle() without signingIdentity will result in
-            // unsigning app bundle
-            signAppBundle(params, root, null, null, null);
+            signAppBundle(params, root, "-", null, null);
         }
     }
 
@@ -733,23 +731,52 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         return args;
     }
 
-    private static void runCodesign(ProcessBuilder pb, boolean quiet)
-                                                            throws IOException {
+    private static void runCodesign(
+            ProcessBuilder pb, boolean quiet, Map<String, ? super Object> params)
+            throws IOException {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              PrintStream ps = new PrintStream(baos)) {
             try {
             IOUtils.exec(pb, false, ps, false,
                          Executor.INFINITE_TIMEOUT, quiet);
             } catch (IOException ioe) {
-                // Log output of "codesign" in case of
-                // error. It should help user to diagnose
-                // issue when using --mac-app-image-sign-identity
+                // Log output of "codesign" in case of error. It should help
+                // user to diagnose issues when using --mac-app-image-sign-identity.
+                // In addition add possible reason for failure. For example
+                // "--app-content" can fail "codesign".
+
+                // APP_CONTENT is never null.
+                if (!APP_CONTENT.fetchFrom(params).isEmpty()) {
+                    Log.info(I18N.getString(
+                        "message.codesign.failed.reason.app.content"));
+                }
+
+                // Signing might not work without Xcode with command line
+                // developer tools. Show user if Xcode is missing as possible
+                // reason.
+                if (!isXcodeDevToolsInstalled()) {
+                    Log.info(I18N.getString(
+                        "message.codesign.failed.reason.xcode.tools"));
+                }
+
+                // Log "codesign" output
                 Log.info(MessageFormat.format(I18N.getString(
                          "error.tool.failed.with.output"), "codesign"));
                 Log.info(baos.toString().strip());
+
                 throw ioe;
             }
         }
+    }
+
+    private static boolean isXcodeDevToolsInstalled() {
+        try {
+            Executor.of("/usr/bin/xcrun", "--help").executeExpectSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+
+        return true;
     }
 
     static void signAppBundle(
@@ -818,7 +845,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                             p.toFile().setWritable(true, true);
                             ProcessBuilder pb = new ProcessBuilder(args);
                             // run quietly
-                            runCodesign(pb, true);
+                            runCodesign(pb, true, params);
                             Files.setPosixFilePermissions(p, oldPermissions);
                         } catch (IOException ioe) {
                             toThrow.set(ioe);
@@ -846,7 +873,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 List<String> args = getCodesignArgs(true, path, signingIdentity,
                             identifierPrefix, entitlements, keyChain);
                 ProcessBuilder pb = new ProcessBuilder(args);
-                runCodesign(pb, false);
+                runCodesign(pb, false, params);
             } catch (IOException e) {
                 toThrow.set(e);
             }
@@ -877,7 +904,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         List<String> args = getCodesignArgs(true, appLocation, signingIdentity,
                 identifierPrefix, entitlements, keyChain);
         ProcessBuilder pb = new ProcessBuilder(args);
-        runCodesign(pb, false);
+        runCodesign(pb, false, params);
     }
 
     private static String extractBundleIdentifier(Map<String, Object> params) {

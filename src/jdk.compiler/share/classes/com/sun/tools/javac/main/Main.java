@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -371,9 +371,10 @@ public class Main {
     }
 
     void printArgumentsToFile(String... params) {
-        Path out = Paths.get(String.format("javac.%s.args",
+        Path tmpDir = Paths.get(System.getProperty("java.io.tmpdir"));
+        Path out = tmpDir.resolve(String.format("javac.%s.args",
                 new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime())));
-        String strOut = "";
+        String strOut = "# javac crashed, this report includes the parameters passed to it in the @-file format\n";
         try {
             try (Writer w = Files.newBufferedWriter(out)) {
                 for (String param : params) {

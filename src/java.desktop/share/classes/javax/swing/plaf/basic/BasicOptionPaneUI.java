@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,6 @@ import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Locale;
-import java.security.AccessController;
-
-import sun.security.action.GetPropertyAction;
-
 
 /**
  * Provides the basic look and feel for a <code>JOptionPane</code>.
@@ -482,7 +478,6 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                 if (nl >= 0) {
                     // break up newlines
                     if (nl == 0) {
-                        @SuppressWarnings("serial") // anonymous class
                                 JPanel breakPanel = new JPanel() {
                             public Dimension getPreferredSize() {
                                 Font f = getFont();
@@ -1101,7 +1096,8 @@ public class BasicOptionPaneUI extends OptionPaneUI {
         /**
          * Returns if the width of children should be synchronized.
          *
-         * @return if the width of children should be synchronized
+         * @return {@code true} if the width of children should be synchronized,
+         *         otherwise {@code false}
          */
         public boolean getSyncAllWidths() {
             return syncAllWidths;

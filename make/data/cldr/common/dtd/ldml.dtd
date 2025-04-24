@@ -1,7 +1,7 @@
 <!--
-Copyright © 1991-2023 Unicode, Inc.
+Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 
@@ -42,7 +42,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:regex/\$Revision.*\$-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "44" >
+<!ATTLIST version cldrVersion CDATA #FIXED "47" >
     <!--@MATCH:any-->
     <!--@VALUE-->
 <!ATTLIST version draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -61,9 +61,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT language ( #PCDATA ) >
 <!ATTLIST language type NMTOKEN #REQUIRED >
-    <!--@MATCH:validity/locale-->
+    <!--@MATCH:validity/locale-for-names-->
 <!ATTLIST language alt NMTOKENS #IMPLIED >
-    <!--@MATCH:literal/long, secondary, short, variant, menu-->
+    <!--@MATCH:literal/long, secondary, short, variant, menu, official-->
 <!ATTLIST language draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED:true, false-->
@@ -95,7 +95,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT variant ( #PCDATA ) >
 <!ATTLIST variant type NMTOKEN #REQUIRED >
-    <!--@MATCH:validity/variant-->
+    <!--@MATCH:or/validity/variant||literal/AREVELA, AREVMDA, LAUKIKA, VAIDIKA-->
 <!ATTLIST variant alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/secondary, variant-->
 <!ATTLIST variant draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -2042,7 +2042,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT decimal ( #PCDATA ) >
 <!ATTLIST decimal alt NMTOKENS #IMPLIED >
-    <!--@MATCH:literal/variant-->
+    <!--@MATCH:literal/variant, us, official-->
 <!ATTLIST decimal draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED:true, false-->
@@ -2053,7 +2053,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT group ( #PCDATA ) >
 <!ATTLIST group alt NMTOKENS #IMPLIED >
-    <!--@MATCH:literal/variant-->
+    <!--@MATCH:literal/variant, us, official-->
 <!ATTLIST group draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED:true, false-->

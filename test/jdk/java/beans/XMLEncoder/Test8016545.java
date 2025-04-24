@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
  * @test
  * @bug 8016545
  * @summary Tests beans with predefined fields
- * @run main/othervm -Djava.security.manager=allow Test8016545
+ * @run main/othervm Test8016545
  * @author Sergey Malenkov
  */
 
 public class Test8016545 extends AbstractTest {
     public static void main(String[] args) {
-        new Test8016545().test(true);
+        new Test8016545().test();
     }
 
     @Override

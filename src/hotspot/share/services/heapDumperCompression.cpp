@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "runtime/os.hpp"
 #include "services/heapDumperCompression.hpp"
@@ -49,11 +48,11 @@ FileWriter::~FileWriter() {
   }
 }
 
-char const* FileWriter::write_buf(char* buf, ssize_t size) {
+char const* FileWriter::write_buf(char* buf, size_t size) {
   assert(_fd >= 0, "Must be open");
   assert(size > 0, "Must write at least one byte");
 
-  if (!os::write(_fd, buf, (size_t)size)) {
+  if (!os::write(_fd, buf, size)) {
     return os::strerror(errno);
   }
 
@@ -77,7 +76,7 @@ char const* GZipCompressor::compress(char* in, size_t in_size, char* out, size_t
     char buf[128];
     // Write the block size used as a comment in the first gzip chunk, so the
     // code used to read it later can make a good choice of the buffer sizes it uses.
-    jio_snprintf(buf, sizeof(buf), "HPROF BLOCKSIZE=" SIZE_FORMAT, _block_size);
+    jio_snprintf(buf, sizeof(buf), "HPROF BLOCKSIZE=%zu", _block_size);
     *compressed_size = ZipLibrary::compress(in, in_size, out, out_size, tmp, tmp_size, _level, buf, &msg);
     _is_first = false;
   } else {

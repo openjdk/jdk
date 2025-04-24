@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,7 +254,7 @@ public interface InvocationHandler {
      * @throws Throwable anything thrown by the default method
 
      * @since 16
-     * @jvms 5.4.3. Method Resolution
+     * @jvms 5.4.3 Resolution
      */
     @CallerSensitive
     public static Object invokeDefault(Object proxy, Method method, Object... args)

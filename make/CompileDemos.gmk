@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,16 @@
 # questions.
 #
 
+include MakeFileStart.gmk
+
 ################################################################################
 # Build demos for the JDK into $(SUPPORT_OUTPUTDIR)/demos/image.
 ################################################################################
 
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
+include CopyFiles.gmk
 include JavaCompilation.gmk
-include NativeCompilation.gmk
 include TextFileProcessing.gmk
 include ZipArchive.gmk
-
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, CompileDemos-pre.gmk))
 
 # Prepare the find cache.
 DEMO_SRC_DIRS += $(TOPDIR)/src/demo
@@ -131,12 +126,19 @@ define SetupBuildDemoBody
         JARMAIN := $$($1_MAIN_CLASS), \
         MANIFEST := $(DEMO_MANIFEST), \
         EXTRA_MANIFEST_ATTR := $$($1_EXTRA_MANIFEST_ATTR), \
-        SRCZIP := $(SUPPORT_OUTPUTDIR)/demos/image/$$($1_DEMO_SUBDIR)/$1/src.zip, \
         EXCLUDE_FILES := $$($1_EXCLUDE_FILES), \
         DISABLED_WARNINGS := $$($1_DISABLED_WARNINGS), \
     ))
 
     $1 += $$(BUILD_DEMO_$1)
+
+    $$(eval $$(call SetupZipArchive, ZIP_SRC_DEMO_$1, \
+        SRC := $$($1_MAIN_SRC) $$($1_EXTRA_SRC_DIR), \
+        ZIP := $(SUPPORT_OUTPUTDIR)/demos/image/$$($1_DEMO_SUBDIR)/$1/src.zip, \
+        EXCLUDE_FILES := $$($1_EXCLUDE_FILES), \
+    ))
+
+    $1 += $$(ZIP_SRC_DEMO_$1)
   endif
 
   # Copy files. Sort is needed to remove duplicates.
@@ -182,7 +184,7 @@ $(eval $(call SetupBuildDemo, SwingSet2, \
 ))
 
 $(eval $(call SetupBuildDemo, Font2DTest, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked serial cast this-escape, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked serial cast this-escape dangling-doc-comments, \
     DEMO_SUBDIR := jfc, \
 ))
 
@@ -215,7 +217,7 @@ $(eval $(call SetupBuildDemo, SampleTree, \
 ))
 
 $(eval $(call SetupBuildDemo, TableExample, \
-    DISABLED_WARNINGS := rawtypes unchecked deprecation this-escape, \
+    DISABLED_WARNINGS := rawtypes unchecked deprecation this-escape dangling-doc-comments, \
     DEMO_SUBDIR := jfc, \
 ))
 
@@ -256,11 +258,8 @@ ifneq ($(filter images, $(MAKECMDGOALS)), )
   IMAGES_TARGETS := $(COPY_TO_TEST_IMAGE)
 endif
 
-################################################################################
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, CompileDemos-post.gmk))
-
-all: $(TARGETS)
 images: $(IMAGES_TARGETS)
 
-.PHONY: all
+################################################################################
+
+include MakeFileEnd.gmk

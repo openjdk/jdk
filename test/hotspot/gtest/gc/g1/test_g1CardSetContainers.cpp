@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
-#include "gc/g1/heapRegionBounds.inline.hpp"
+#include "gc/g1/g1HeapRegionBounds.inline.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -236,8 +235,8 @@ void G1CardSetContainersTest::cardset_bitmap_test(uint threshold, uint size_in_b
 }
 
 TEST_VM_F(G1CardSetContainersTest, basic_cardset_inptr_test) {
-  uint const min = (uint)log2i(HeapRegionBounds::min_size());
-  uint const max = (uint)log2i(HeapRegionBounds::max_size());
+  uint const min = (uint)log2i(G1HeapRegionBounds::min_size());
+  uint const max = (uint)log2i(G1HeapRegionBounds::max_size());
 
   for (uint i = min; i <= max; i++) {
     G1CardSetContainersTest::cardset_inlineptr_test(i - CardTable::card_shift());

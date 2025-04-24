@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
 
 /*
  * @test
- * @bug 4052440 8062588 8210406
+ * @bug 4052440 8062588 8210406 8174269
  * @summary DecimalFormatSymbolsProvider tests
  * @library providersrc/foobarutils
  *          providersrc/fooprovider
  * @modules java.base/sun.util.locale.provider
  * @build com.foobar.Utils
  *        com.foo.*
- * @run main/othervm -Djava.locale.providers=JRE,SPI DecimalFormatSymbolsProviderTest
+ * @run main/othervm -Djava.locale.providers=CLDR,SPI DecimalFormatSymbolsProviderTest
  */
 
 import java.text.DecimalFormatSymbols;
@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import com.foo.DecimalFormatSymbolsProviderImpl;
 
@@ -49,8 +50,12 @@ public class DecimalFormatSymbolsProviderTest extends ProviderTest {
     DecimalFormatSymbolsProviderImpl dfsp = new DecimalFormatSymbolsProviderImpl();
     List<Locale> availloc = Arrays.asList(DecimalFormatSymbols.getAvailableLocales());
     List<Locale> providerloc = Arrays.asList(dfsp.getAvailableLocales());
-    List<Locale> jreloc = Arrays.asList(LocaleProviderAdapter.forJRE().getAvailableLocales());
-    List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forJRE().getDecimalFormatSymbolsProvider().getAvailableLocales());
+    List<Locale> jreloc = Stream.concat(
+            Arrays.stream(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR).getAvailableLocales()),
+            Arrays.stream(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.FALLBACK).getAvailableLocales())).toList();
+    List<Locale> jreimplloc = Stream.concat(
+            Arrays.stream(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR).getDateFormatSymbolsProvider().getAvailableLocales()),
+            Arrays.stream(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.FALLBACK).getDecimalFormatSymbolsProvider().getAvailableLocales())).toList();
 
     public static void main(String[] s) {
         new DecimalFormatSymbolsProviderTest();
@@ -76,7 +81,7 @@ public class DecimalFormatSymbolsProviderTest extends ProviderTest {
 
         for (Locale target: availloc) {
             // pure JRE implementation
-            Object[] data = LocaleProviderAdapter.forJRE().getLocaleResources(target).getDecimalFormatSymbolsData();
+            Object[] data = LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR).getLocaleResources(target).getDecimalFormatSymbolsData();
             boolean jreSupportsLocale = jreimplloc.contains(target);
 
             // JRE string arrays

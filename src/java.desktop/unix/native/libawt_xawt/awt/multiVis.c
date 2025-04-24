@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -793,8 +793,6 @@ static list_ptr make_region_list(Display *disp, Window win, XRectangle *bbox,
     XRectangle          clip;
     int                 image_only;
 
-    int                 count=0 ;
-
     *hasNonDefault = False;
     XUnionRectWithRegion( bbox, bbox_region, bbox_region);
     XGetWindowAttributes( disp, win, &win_attrs);
@@ -823,8 +821,6 @@ static list_ptr make_region_list(Display *disp, Window win, XRectangle *bbox,
                                         malloc( sizeof( image_region_type)))) {
                     return (list_ptr) NULL;
                 }
-                count++;
-
                 new_reg->visible_region = XCreateRegion();
                 new_reg->win            = base_src->win;
                 new_reg->vis            = base_src->vis;

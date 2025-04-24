@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -43,7 +42,7 @@
 #endif // COMPILER2
 
 #ifdef COMPILER2
-const char* VectorSupport::svmlname[VectorSupport::NUM_SVML_OP] = {
+const char* VectorSupport::mathname[VectorSupport::NUM_VECTOR_OP_MATH] = {
     "tan",
     "tanh",
     "sin",
@@ -73,10 +72,6 @@ bool VectorSupport::is_vector_mask(Klass* klass) {
   return klass->is_subclass_of(vmClasses::vector_VectorMask_klass());
 }
 
-bool VectorSupport::is_vector_shuffle(Klass* klass) {
-  return klass->is_subclass_of(vmClasses::vector_VectorShuffle_klass());
-}
-
 BasicType VectorSupport::klass2bt(InstanceKlass* ik) {
   assert(ik->is_subclass_of(vmClasses::vector_VectorPayload_klass()), "%s not a VectorPayload", ik->name()->as_C_string());
   fieldDescriptor fd; // find_field initializes fd if found
@@ -87,9 +82,7 @@ BasicType VectorSupport::klass2bt(InstanceKlass* ik) {
   assert(fd.is_static(), "");
   assert(fd.offset() > 0, "");
 
-  if (is_vector_shuffle(ik)) {
-    return T_BYTE;
-  } else if (is_vector_mask(ik)) {
+  if (is_vector_mask(ik)) {
     return T_BOOLEAN;
   } else { // vector and mask
     oop value = ik->java_mirror()->obj_field(fd.offset());
@@ -138,7 +131,7 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
   int elem_size = type2aelembytes(elem_bt);
 
   // On-heap vector values are represented as primitive arrays.
-  TypeArrayKlass* tak = TypeArrayKlass::cast(Universe::typeArrayKlassObj(elem_bt));
+  TypeArrayKlass* tak = Universe::typeArrayKlass(elem_bt);
 
   typeArrayOop arr = tak->allocate(num_elem, CHECK_NH); // safepoint
 
@@ -199,6 +192,36 @@ instanceOop VectorSupport::allocate_vector(InstanceKlass* ik, frame* fr, Registe
 }
 
 #ifdef COMPILER2
+bool VectorSupport::has_scalar_op(jint id) {
+  VectorOperation vop = (VectorOperation)id;
+  switch (vop) {
+    case VECTOR_OP_COMPRESS:
+    case VECTOR_OP_EXPAND:
+    case VECTOR_OP_SADD:
+    case VECTOR_OP_SUADD:
+    case VECTOR_OP_SSUB:
+    case VECTOR_OP_SUSUB:
+    case VECTOR_OP_UMIN:
+    case VECTOR_OP_UMAX:
+      return false;
+    default:
+      return true;
+  }
+}
+
+bool VectorSupport::is_unsigned_op(jint id) {
+  VectorOperation vop = (VectorOperation)id;
+  switch (vop) {
+    case VECTOR_OP_SUADD:
+    case VECTOR_OP_SUSUB:
+    case VECTOR_OP_UMIN:
+    case VECTOR_OP_UMAX:
+      return true;
+    default:
+      return false;
+  }
+}
+
 int VectorSupport::vop2ideal(jint id, BasicType bt) {
   VectorOperation vop = (VectorOperation)id;
   switch (vop) {
@@ -270,6 +293,26 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
         case T_LONG:   return Op_MaxL;
         case T_FLOAT:  return Op_MaxF;
         case T_DOUBLE: return Op_MaxD;
+        default: fatal("MAX: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_UMIN: {
+      switch (bt) {
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+        case T_LONG:   return Op_UMinV;
+        default: fatal("MIN: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_UMAX: {
+      switch (bt) {
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:
+        case T_LONG:   return Op_UMaxV;
         default: fatal("MAX: %s", type2name(bt));
       }
       break;
@@ -530,6 +573,28 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
         case T_INT:   return Op_ReverseBytesI;
         case T_LONG:  return Op_ReverseBytesL;
         default: fatal("REVERSE_BYTES: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_SADD:
+    case VECTOR_OP_SUADD: {
+      switch(bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:    // fall-through
+        case T_LONG:   return Op_SaturatingAddV;
+        default: fatal("S[U]ADD: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_SSUB:
+    case VECTOR_OP_SUSUB: {
+      switch(bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:    // fall-through
+        case T_LONG:   return Op_SaturatingSubV;
+        default: fatal("S[U}SUB: %s", type2name(bt));
       }
       break;
     }

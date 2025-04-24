@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
+#include "logging/logMessage.hpp"
+#include "os_linux.hpp"
 #include "riscv_hwprobe.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
@@ -49,6 +50,36 @@
 #define   RISCV_HWPROBE_EXT_ZBA                 (1 << 3)
 #define   RISCV_HWPROBE_EXT_ZBB                 (1 << 4)
 #define   RISCV_HWPROBE_EXT_ZBS                 (1 << 5)
+#define   RISCV_HWPROBE_EXT_ZICBOZ              (1 << 6)
+#define   RISCV_HWPROBE_EXT_ZBC                 (1 << 7)
+#define   RISCV_HWPROBE_EXT_ZBKB                (1 << 8)
+#define   RISCV_HWPROBE_EXT_ZBKC                (1 << 9)
+#define   RISCV_HWPROBE_EXT_ZBKX                (1 << 10)
+#define   RISCV_HWPROBE_EXT_ZKND                (1 << 11)
+#define   RISCV_HWPROBE_EXT_ZKNE                (1 << 12)
+#define   RISCV_HWPROBE_EXT_ZKNH                (1 << 13)
+#define   RISCV_HWPROBE_EXT_ZKSED               (1 << 14)
+#define   RISCV_HWPROBE_EXT_ZKSH                (1 << 15)
+#define   RISCV_HWPROBE_EXT_ZKT                 (1 << 16)
+#define   RISCV_HWPROBE_EXT_ZVBB                (1 << 17)
+#define   RISCV_HWPROBE_EXT_ZVBC                (1 << 18)
+#define   RISCV_HWPROBE_EXT_ZVKB                (1 << 19)
+#define   RISCV_HWPROBE_EXT_ZVKG                (1 << 20)
+#define   RISCV_HWPROBE_EXT_ZVKNED              (1 << 21)
+#define   RISCV_HWPROBE_EXT_ZVKNHA              (1 << 22)
+#define   RISCV_HWPROBE_EXT_ZVKNHB              (1 << 23)
+#define   RISCV_HWPROBE_EXT_ZVKSED              (1 << 24)
+#define   RISCV_HWPROBE_EXT_ZVKSH               (1 << 25)
+#define   RISCV_HWPROBE_EXT_ZVKT                (1 << 26)
+#define   RISCV_HWPROBE_EXT_ZFH                 (1 << 27)
+#define   RISCV_HWPROBE_EXT_ZFHMIN              (1 << 28)
+#define   RISCV_HWPROBE_EXT_ZIHINTNTL           (1 << 29)
+#define   RISCV_HWPROBE_EXT_ZVFH                (1 << 30)
+#define   RISCV_HWPROBE_EXT_ZVFHMIN             (1ULL << 31)
+#define   RISCV_HWPROBE_EXT_ZFA                 (1ULL << 32)
+#define   RISCV_HWPROBE_EXT_ZTSO                (1ULL << 33)
+#define   RISCV_HWPROBE_EXT_ZACAS               (1ULL << 34)
+#define   RISCV_HWPROBE_EXT_ZICOND              (1ULL << 35)
 
 #define RISCV_HWPROBE_KEY_CPUPERF_0     5
 #define   RISCV_HWPROBE_MISALIGNED_UNKNOWN      (0 << 0)
@@ -134,7 +165,18 @@ void RiscvHwprobe::add_features_from_query_result() {
     VM_Version::ext_C.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_V)) {
-    VM_Version::ext_V.enable_feature();
+    // Linux signal return bug when using vector with vlen > 128b in pre 6.8.5.
+    long major, minor, patch;
+    os::Linux::kernel_version(&major, &minor, &patch);
+    if (os::Linux::kernel_version_compare(major, minor, patch, 6, 8, 5) == -1) {
+      LogMessage(os) log;
+      if (log.is_info()) {
+        log.info("Linux kernels before 6.8.5 (current %ld.%ld.%ld) have a known bug when using Vector and signals.", major, minor, patch);
+        log.info("Vector not enabled automatically via hwprobe, but can be turned on with -XX:+UseRVV.");
+      }
+    } else {
+      VM_Version::ext_V.enable_feature();
+    }
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBA)) {
     VM_Version::ext_Zba.enable_feature();
@@ -145,6 +187,59 @@ void RiscvHwprobe::add_features_from_query_result() {
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBS)) {
     VM_Version::ext_Zbs.enable_feature();
   }
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBKB)) {
+    VM_Version::ext_Zbkb.enable_feature();
+  }
+#endif
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFH)) {
+    VM_Version::ext_Zfh.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFHMIN)) {
+    VM_Version::ext_Zfhmin.enable_feature();
+  }
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBB)) {
+    VM_Version::ext_Zvbb.enable_feature();
+  }
+#endif
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBC)) {
+    VM_Version::ext_Zvbc.enable_feature();
+  }
+#endif
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKNED) &&
+      is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKNHB) &&
+      is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKB)   &&
+      is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVKT)) {
+    VM_Version::ext_Zvkn.enable_feature();
+  }
+#endif
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVFH)) {
+    VM_Version::ext_Zvfh.enable_feature();
+  }
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFA)) {
+    VM_Version::ext_Zfa.enable_feature();
+  }
+#endif
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZTSO)) {
+    VM_Version::ext_Ztso.enable_feature();
+  }
+#endif
+#ifndef PRODUCT
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZACAS)) {
+    VM_Version::ext_Zacas.enable_feature();
+  }
+  // Currently tests shows that cmove using Zicond instructions will bring
+  // performance regression, but to get a test coverage all the time, will
+  // still prefer to enabling it in debug version.
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICOND)) {
+    VM_Version::ext_Zicond.enable_feature();
+  }
+#endif
   if (is_valid(RISCV_HWPROBE_KEY_CPUPERF_0)) {
     VM_Version::unaligned_access.enable_feature(
        query[RISCV_HWPROBE_KEY_CPUPERF_0].value & RISCV_HWPROBE_MISALIGNED_MASK);

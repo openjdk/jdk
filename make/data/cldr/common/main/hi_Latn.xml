@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 the U.S. and other countries. CLDR data files are interpreted according to
@@ -48,6 +48,7 @@ annotations.
 			<territory type="BL">St. Barthelemy</territory>
 			<territory type="CI">Cote d’Ivoire</territory>
 			<territory type="CW">Curacao</territory>
+			<territory type="IN">Bharat</territory>
 			<territory type="KN">St. Kitts &amp; Nevis</territory>
 			<territory type="LC">St. Lucia</territory>
 			<territory type="MF">St. Martin</territory>
@@ -88,7 +89,6 @@ annotations.
 			<type key="colCaseLevel" type="yes">Case sensitive sorting karein</type>
 			<type key="collation" type="compat">Compatibility ke liye, picchla sort order</type>
 			<type key="collation" type="dictionary">Dictionary kaa sort order</type>
-			<type key="collation" type="reformed">Reform kiya gaya Sort Order</type>
 			<type key="collation" type="searchjl">Hangul initial consonant se search karein</type>
 			<type key="colNormalization" type="no">Bina normalization ke sort karein</type>
 			<type key="colNormalization" type="yes">Sort Unicode Normalized</type>
@@ -168,7 +168,7 @@ annotations.
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE d MMMM, y G</pattern>
+							<pattern>EEEE, d MMMM y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -396,7 +396,7 @@ annotations.
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE d MMMM, y</pattern>
+							<pattern>EEEE, d MMMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -470,6 +470,7 @@ annotations.
 						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y, d MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y, dd MMM, E</dateFormatItem>
+						<dateFormatItem id="GyMMMEEEEd">G y, dd MMMM, E</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMM 'kaa' 'week' W</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM 'kaa' 'week' W</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM, y</dateFormatItem>
@@ -489,14 +490,14 @@ annotations.
 						<intervalFormatItem id="GyMMMd">
 							<greatestDifference id="d">G y MMM d–d</greatestDifference>
 							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
-							<greatestDifference id="M">G y MMM d  – MMM d</greatestDifference>
-							<greatestDifference id="y">G y MMM d –  y d MMM</greatestDifference>
+							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">G y MMM d – y d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
 							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="G">G y MMM d, E –  G y MMM d, E</greatestDifference>
-							<greatestDifference id="M">G y MMM d, E –  MMM d, E</greatestDifference>
-							<greatestDifference id="y">G y MMM d, E –  y MMM d, E</greatestDifference>
+							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH – HH</greatestDifference>
@@ -1174,6 +1175,12 @@ annotations.
 			</field>
 		</fields>
 		<timeZoneNames>
+			<zone type="Pacific/Honolulu">
+				<short>
+					<generic>HST</generic>
+				</short>
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Antarctica/DumontDUrville">
 				<exemplarCity>DumontDUrville</exemplarCity>
 			</zone>
@@ -1233,15 +1240,6 @@ annotations.
 			</zone>
 			<zone type="Africa/Sao_Tome">
 				<exemplarCity>Sao Tome</exemplarCity>
-			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Uzhgorod</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>HST</generic>
-				</short>
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="Asia/Saigon">
 				<exemplarCity>Saigon</exemplarCity>
@@ -1400,11 +1398,16 @@ annotations.
 				<unitPattern count="one">{0} dot per centimeter</unitPattern>
 				<unitPattern count="other">{0} dots per centimeter</unitPattern>
 			</unit>
-			<unit type="length-micrometer">
-				<displayName>micrometres</displayName>
-			</unit>
 			<unit type="length-mile-scandinavian">
 				<displayName>Scandinavian miles</displayName>
+			</unit>
+			<unit type="mass-tonne">
+				<unitPattern count="one">{0} metric ton</unitPattern>
+				<unitPattern count="other">{0} tonnes</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<unitPattern count="one">{0} tonne</unitPattern>
+				<unitPattern count="other">{0} tons</unitPattern>
 			</unit>
 			<unit type="mass-stone">
 				<displayName>stones</displayName>

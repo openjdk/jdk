@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1999-2003
  *  David Corcoran <corcoran@musclecard.com>
- * Copyright (C) 2002-2009
+ * Copyright (C) 2002-2018
  *  Ludovic Rousseau <ludovic.rousseau@free.fr>
  *
 Redistribution and use in source and binary forms, with or without

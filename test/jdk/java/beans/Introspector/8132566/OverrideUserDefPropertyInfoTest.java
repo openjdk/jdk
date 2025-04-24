@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public class OverrideUserDefPropertyInfoTest {
                 m[0] = new MethodDescriptor(Base.class.getMethod("setX", new Class[] {int.class}));
                 m[0].setDisplayName("");
             }
-            catch( NoSuchMethodException | SecurityException e) {}
+            catch( NoSuchMethodException e) {}
             return m;
         }
 

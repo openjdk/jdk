@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import javax.swing.SwingUtilities;
  * @test
  * @key headful
  * @bug 8012026 8027154
- * @summary Component.getMousePosition() does not work in an applet on MacOS
+ * @summary Component.getMousePosition() does not work in some cases on MacOS
  *
  * @requires (os.family == "windows")
  * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=1 GetMousePositionWithPopup
@@ -48,7 +48,7 @@ import javax.swing.SwingUtilities;
  * @test
  * @key headful
  * @bug 8012026 8027154
- * @summary Component.getMousePosition() does not work in an applet on MacOS
+ * @summary Component.getMousePosition() does not work in some cases on MacOS
  *
  * @requires (os.family == "mac" | os.family == "linux")
  * @run main/othervm -Dsun.java2d.uiScale.enabled=true -Dsun.java2d.uiScale=1 GetMousePositionWithPopup
@@ -94,9 +94,13 @@ public class GetMousePositionWithPopup {
             robot.mouseMove(MOUSE_POS3, MOUSE_POS3);
             syncLocationToWindowManager();
         } finally {
-            SwingUtilities.invokeLater(() -> {
-                frame1.dispose();
-                frame2.dispose();
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame1 != null) {
+                    frame1.dispose();
+                }
+                if (frame2 != null) {
+                    frame2.dispose();
+                }
             });
         }
     }

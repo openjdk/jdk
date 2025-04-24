@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -165,7 +164,7 @@ static char* get_user_tmp_dir(const char* user) {
   char* dirname = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
 
   // construct the path name to user specific tmp directory
-  _snprintf(dirname, nbytes, "%s\\%s_%s", tmpdir, perfdir, user);
+  os::snprintf(dirname, nbytes, "%s\\%s_%s", tmpdir, perfdir, user);
 
   return dirname;
 }
@@ -455,7 +454,7 @@ static char *get_sharedmem_objectname(const char* user, int vmid) {
   //
   nbytes += UINT_CHARS;
   char* name = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
-  _snprintf(name, nbytes, "%s_%s_%u", PERFDATA_NAME, user, vmid);
+  os::snprintf(name, nbytes, "%s_%s_%u", PERFDATA_NAME, user, vmid);
 
   return name;
 }
@@ -471,7 +470,7 @@ static char* get_sharedmem_filename(const char* dirname, int vmid) {
   size_t nbytes = strlen(dirname) + UINT_CHARS + 2;
 
   char* name = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
-  _snprintf(name, nbytes, "%s\\%d", dirname, vmid);
+  os::snprintf(name, nbytes, "%s\\%d", dirname, vmid);
 
   return name;
 }
@@ -1561,7 +1560,7 @@ static size_t sharedmem_filesize(const char* filename, TRAPS) {
 
   if ((statbuf.st_size == 0) || (statbuf.st_size % os::vm_page_size() != 0)) {
     if (PrintMiscellaneous && Verbose) {
-      warning("unexpected file size: size = " SIZE_FORMAT "\n",
+      warning("unexpected file size: size = %zu\n",
               statbuf.st_size);
     }
     THROW_MSG_0(vmSymbols::java_io_IOException(),
@@ -1660,7 +1659,7 @@ static void open_file_mapping(int vmid, char** addrp, size_t* sizep, TRAPS) {
   // invalidating the mapped view of the file
   CloseHandle(fmh);
 
-  log_debug(perf, memops)("mapped " SIZE_FORMAT " bytes for vmid %d at "
+  log_debug(perf, memops)("mapped %zu bytes for vmid %d at "
                           INTPTR_FORMAT, size, vmid, mapAddress);
 }
 
@@ -1803,9 +1802,9 @@ void PerfMemory::detach(char* addr, size_t bytes) {
 
   if (MemTracker::enabled()) {
     // it does not go through os api, the operation has to record from here
-    Tracker tkr(Tracker::release);
+    MemTracker::NmtVirtualMemoryLocker nvml;
     remove_file_mapping(addr);
-    tkr.record((address)addr, bytes);
+    MemTracker::record_virtual_memory_release(addr, bytes);
   } else {
     remove_file_mapping(addr);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
  * @test
  * @bug 8005681
  * @summary Repeated annotations on new,array,cast.
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;
@@ -88,7 +86,7 @@ public class TestNewCastArray {
                 memberName = mm.methodName().stringValue();
                 if(codeattr) {
                     //fetch index of and code attribute and annotations from code attribute.
-                    cAttr = mm.findAttribute(Attributes.CODE).orElse(null);
+                    cAttr = mm.findAttribute(Attributes.code()).orElse(null);
                     if(cAttr != null) {
                         attr = cAttr.findAttribute(name).orElse(null);
                     }
@@ -99,7 +97,7 @@ public class TestNewCastArray {
             case FieldModel fm -> {
                 memberName = fm.fieldName().stringValue();
                 if(codeattr) {
-                    cAttr = fm.findAttribute(Attributes.CODE).orElse(null);
+                    cAttr = fm.findAttribute(Attributes.code()).orElse(null);
                     if(cAttr != null) {
                         attr = cAttr.findAttribute(name).orElse(null);
                     }
@@ -207,14 +205,14 @@ public class TestNewCastArray {
             assert cm != null;
             if(clazz.startsWith("Test1")) {
                 for (FieldModel fm: cm.fields())
-                    test(clazz, fm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, false);
+                    test(clazz, fm, Attributes.runtimeVisibleTypeAnnotations(), false);
                 for (MethodModel mm: cm.methods())
-                    test(clazz, mm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, false);
+                    test(clazz, mm, Attributes.runtimeVisibleTypeAnnotations(), false);
             } else {
                 for (FieldModel fm: cm.fields())
-                    test(clazz, fm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, true);
+                    test(clazz, fm, Attributes.runtimeVisibleTypeAnnotations(), true);
                 for (MethodModel mm: cm.methods())
-                    test(clazz, mm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, true);
+                    test(clazz, mm, Attributes.runtimeVisibleTypeAnnotations(), true);
             }
         }
         report();

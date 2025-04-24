@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,47 +24,71 @@
  */
 package java.lang.classfile.attribute;
 
-import java.lang.constant.ClassDesc;
-import java.util.List;
-
 import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributedElement;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.ClassDesc;
+import java.lang.reflect.RecordComponent;
+import java.util.List;
+
 import jdk.internal.classfile.impl.BoundRecordComponentInfo;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
+import jdk.internal.classfile.impl.Util;
 
 /**
- * Models a single record component in the {@link java.lang.classfile.attribute.RecordAttribute}.
+ * Models a single record component in the {@link RecordAttribute}.
+ * <p>
+ * {@link SignatureAttribute}, {@link RuntimeVisibleAnnotationsAttribute},
+ * {@link RuntimeInvisibleAnnotationsAttribute}, {@link
+ * RuntimeVisibleTypeAnnotationsAttribute}, and {@link
+ * RuntimeInvisibleTypeAnnotationsAttribute} are the only predefined attributes
+ * that may exist on record components.
  *
- * @since 22
+ * @see RecordAttribute#components()
+ * @see RecordComponent
+ * @jvms 4.7.30 The {@code Record} Attribute
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface RecordComponentInfo
         extends AttributedElement
         permits BoundRecordComponentInfo, UnboundAttribute.UnboundRecordComponentInfo {
     /**
      * {@return the name of this component}
+     *
+     * @see RecordComponent#getName()
      */
     Utf8Entry name();
 
     /**
-     * {@return the field descriptor of this component}
+     * {@return the field descriptor string of this component}
+     *
+     * @apiNote
+     * A record component may have a generic type; this information is stored
+     * in the {@link SignatureAttribute Signature} attribute in this component.
+     *
+     * @see RecordComponent#getType()
      */
     Utf8Entry descriptor();
 
     /**
-     * {@return the field descriptor of this component, as a {@linkplain ClassDesc}}
+     * {@return the symbolic field descriptor of this component}
+     *
+     * @apiNote
+     * A record component may have a generic type; this information is stored
+     * in the {@link SignatureAttribute Signature} attribute in this component.
+     *
+     * @see RecordComponent#getType()
      */
     default ClassDesc descriptorSymbol() {
-        return ClassDesc.ofDescriptor(descriptor().stringValue());
+        return Util.fieldTypeSymbol(descriptor());
     }
 
     /**
      * {@return a record component description}
+     *
      * @param name the component name
-     * @param descriptor the component field descriptor
+     * @param descriptor the component field descriptor string
      * @param attributes the component attributes
      */
     static RecordComponentInfo of(Utf8Entry name,
@@ -75,8 +99,9 @@ public sealed interface RecordComponentInfo
 
     /**
      * {@return a record component description}
+     *
      * @param name the component name
-     * @param descriptor the component field descriptor
+     * @param descriptor the component field descriptor sting
      * @param attributes the component attributes
      */
     static RecordComponentInfo of(Utf8Entry name,
@@ -87,22 +112,24 @@ public sealed interface RecordComponentInfo
 
     /**
      * {@return a record component description}
+     *
      * @param name the component name
-     * @param descriptor the component field descriptor
+     * @param descriptor the component symbolic field descriptor
      * @param attributes the component attributes
      */
     static RecordComponentInfo of(String name,
                                   ClassDesc descriptor,
                                   List<Attribute<?>> attributes) {
         return new UnboundAttribute.UnboundRecordComponentInfo(TemporaryConstantPool.INSTANCE.utf8Entry(name),
-                                                               TemporaryConstantPool.INSTANCE.utf8Entry(descriptor.descriptorString()),
+                                                               TemporaryConstantPool.INSTANCE.utf8Entry(descriptor),
                                                                attributes);
     }
 
     /**
      * {@return a record component description}
+     *
      * @param name the component name
-     * @param descriptor the component field descriptor
+     * @param descriptor the component symbolic field descriptor
      * @param attributes the component attributes
      */
     static RecordComponentInfo of(String name,

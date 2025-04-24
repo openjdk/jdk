@@ -1,0 +1,2 @@
+EarlyIndirectOuterCapture.java:21:60: compiler.err.cant.ref.before.ctor.called: this
+1 error

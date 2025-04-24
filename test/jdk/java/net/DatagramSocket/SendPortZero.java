@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,7 @@ import java.net.InetSocketAddress;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketException;
-import java.net.SocketPermission;
 import java.nio.channels.DatagramChannel;
-import java.security.AccessControlException;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 
 import static org.testng.Assert.assertThrows;
 
@@ -49,7 +42,7 @@ import static org.testng.Assert.assertThrows;
  * @bug 8236105 8240533
  * @summary Check that DatagramSocket throws expected
  *          Exception when sending a DatagramPacket with port 0
- * @run testng/othervm -Djava.security.manager=allow SendPortZero
+ * @run testng/othervm SendPortZero
  */
 
 public class SendPortZero {
@@ -58,8 +51,6 @@ public class SendPortZero {
     private DatagramPacket loopbackZeroPkt, wildcardZeroPkt, wildcardValidPkt;
 
     private static final Class<SocketException> SE = SocketException.class;
-    private static final Class<AccessControlException> ACE =
-            AccessControlException.class;
 
     @BeforeTest
     public void setUp() throws IOException {
@@ -108,32 +99,6 @@ public class SendPortZero {
     @Test(dataProvider = "data")
     public void testSend(DatagramSocket ds, DatagramPacket pkt) {
         assertThrows(SE, () -> ds.send(pkt));
-    }
-
-    // Check that 0 port check doesn't override security manager check
-    @Test(dataProvider = "data")
-    public void testSendWithSecurityManager(DatagramSocket ds,
-                                            DatagramPacket pkt) {
-        Policy defaultPolicy = Policy.getPolicy();
-        try {
-            Policy.setPolicy(new NoSendPolicy());
-            System.setSecurityManager(new SecurityManager());
-
-            assertThrows(ACE, () -> ds.send(pkt));
-        } finally {
-            System.setSecurityManager(null);
-            Policy.setPolicy(defaultPolicy);
-        }
-    }
-
-    static class NoSendPolicy extends Policy {
-        final PermissionCollection perms = new Permissions();
-        { perms.add(
-                new SocketPermission("*:0", "connect")); }
-
-        public boolean implies(ProtectionDomain domain, Permission perm) {
-            return !perms.implies(perm);
-        }
     }
 
     @AfterTest

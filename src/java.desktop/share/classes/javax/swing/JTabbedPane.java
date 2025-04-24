@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.IllegalComponentStateException;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.FocusListener;
@@ -2337,15 +2338,23 @@ public class JTabbedPane extends JComponent
         }
 
         public Point getLocationOnScreen() {
-             Point parentLocation = parent.getLocationOnScreen();
+             Point parentLocation;
+             try {
+                 parentLocation = parent.getLocationOnScreen();
+             } catch (IllegalComponentStateException icse) {
+                 return null;
+             }
              Point componentLocation = getLocation();
+             if (parentLocation == null || componentLocation == null) {
+                 return null;
+             }
              componentLocation.translate(parentLocation.x, parentLocation.y);
              return componentLocation;
         }
 
         public Point getLocation() {
              Rectangle r = getBounds();
-             return new Point(r.x, r.y);
+             return r == null ? null : new Point(r.x, r.y);
         }
 
         public void setLocation(Point p) {
@@ -2362,7 +2371,7 @@ public class JTabbedPane extends JComponent
 
         public Dimension getSize() {
             Rectangle r = getBounds();
-            return new Dimension(r.width, r.height);
+            return r == null ? null : new Dimension(r.width, r.height);
         }
 
         public void setSize(Dimension d) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,8 @@ import java.util.Objects;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import jdk.internal.util.DateTimeHelper;
+
 /**
  * A date without a time-zone in the ISO-8601 calendar system,
  * such as {@code 2007-12-03}.
@@ -174,15 +176,15 @@ public final class LocalDate
     static final long DAYS_0000_TO_1970 = (DAYS_PER_CYCLE * 5L) - (30L * 365L + 7L);
 
     /**
-     * The year.
+     * @serial The year.
      */
     private final int year;
     /**
-     * The month-of-year.
+     * @serial The month-of-year.
      */
     private final short month;
     /**
-     * The day-of-month.
+     * @serial The day-of-month.
      */
     private final short day;
 
@@ -2147,28 +2149,9 @@ public final class LocalDate
      */
     @Override
     public String toString() {
-        int yearValue = year;
-        int monthValue = month;
-        int dayValue = day;
-        int absYear = Math.abs(yearValue);
-        StringBuilder buf = new StringBuilder(10);
-        if (absYear < 1000) {
-            if (yearValue < 0) {
-                buf.append(yearValue - 10000).deleteCharAt(1);
-            } else {
-                buf.append(yearValue + 10000).deleteCharAt(0);
-            }
-        } else {
-            if (yearValue > 9999) {
-                buf.append('+');
-            }
-            buf.append(yearValue);
-        }
-        return buf.append(monthValue < 10 ? "-0" : "-")
-            .append(monthValue)
-            .append(dayValue < 10 ? "-0" : "-")
-            .append(dayValue)
-            .toString();
+        var buf = new StringBuilder(10);
+        DateTimeHelper.formatTo(buf, this);
+        return buf.toString();
     }
 
     //-----------------------------------------------------------------------

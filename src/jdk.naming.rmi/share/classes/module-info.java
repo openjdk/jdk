@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,11 @@
  *          implementation.
  *     </li>
  * </ul>
+ * <p> Downloading a factory class from a {@linkplain javax.naming.Reference#getFactoryClassLocation()
+ * location} specified in the reference can be supported by a custom implementation of {@link
+ * javax.naming.spi.ObjectFactoryBuilder}. If a location is specified, then
+ * unless an {@link javax.naming.spi.ObjectFactoryBuilder} is installed a
+ * {@link javax.naming.ConfigurationException} is thrown.
  * @provides javax.naming.spi.InitialContextFactory
  * @moduleGraph
  * @since 9

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,7 +196,7 @@ public class ClassWriter extends ClassFile {
         extraAttributeHooks = extraAttributeHooks.prepend(addExtraAttributes);
     }
 
-/******************************************************************
+/* ****************************************************************
  * Diagnostics: dump generated class names and modifiers
  ******************************************************************/
 
@@ -237,7 +237,7 @@ public class ClassWriter extends ClassFile {
             "SUPER", "VOLATILE", "TRANSIENT", "NATIVE", "INTERFACE",
             "ABSTRACT", "STRICTFP"};
 
-/******************************************************************
+/* ****************************************************************
  * Output routines
  ******************************************************************/
 
@@ -259,7 +259,7 @@ public class ClassWriter extends ClassFile {
         buf.elems[adr+3] = (byte)((x      ) & 0xFF);
     }
 
-/******************************************************************
+/* ****************************************************************
  * Writing the Constant Pool
  ******************************************************************/
 
@@ -277,7 +277,7 @@ public class ClassWriter extends ClassFile {
         }
     }
 
-/******************************************************************
+/* ****************************************************************
  * Writing Attributes
  ******************************************************************/
 
@@ -329,7 +329,7 @@ public class ClassWriter extends ClassFile {
         int alenIdx = writeAttr(attributeName);
         ClassSymbol enclClass = c.owner.enclClass();
         MethodSymbol enclMethod =
-            (c.owner.type == null // local to init block
+            ((c.owner.flags() & BLOCK) != 0 // local to init block
              || c.owner.kind != MTH) // or member init
             ? null
             : ((MethodSymbol)c.owner).originalEnclosingMethod();
@@ -480,7 +480,7 @@ public class ClassWriter extends ClassFile {
         return attrCount;
     }
 
-/**********************************************************************
+/* ********************************************************************
  * Writing Java-language annotations (aka metadata, attributes)
  **********************************************************************/
 
@@ -649,8 +649,16 @@ public class ClassWriter extends ClassFile {
         databuf.appendChar(poolWriter.putDescriptor(c.type));
         databuf.appendChar(c.values.length());
         for (Pair<Symbol.MethodSymbol,Attribute> p : c.values) {
+            checkAnnotationArraySizeInternal(p);
             databuf.appendChar(poolWriter.putName(p.fst.name));
             p.snd.accept(awriter);
+        }
+    }
+
+    private void checkAnnotationArraySizeInternal(Pair<Symbol.MethodSymbol, Attribute> p) {
+        if (p.snd instanceof Attribute.Array arrAttr &&
+                arrAttr.values.length > ClassFile.MAX_ANNOTATIONS) {
+            log.error(Errors.AnnotationArrayTooLarge(p.fst.owner));
         }
     }
 
@@ -741,7 +749,7 @@ public class ClassWriter extends ClassFile {
         }
     }
 
-/**********************************************************************
+/* ********************************************************************
  * Writing module attributes
  **********************************************************************/
 
@@ -823,7 +831,7 @@ public class ClassWriter extends ClassFile {
         return 1;
     }
 
-/**********************************************************************
+/* ********************************************************************
  * Writing Objects
  **********************************************************************/
 
@@ -1752,12 +1760,6 @@ public class ClassWriter extends ClassFile {
     }
 
     long getLastModified(FileObject filename) {
-        long mod = 0;
-        try {
-            mod = filename.getLastModified();
-        } catch (SecurityException e) {
-            throw new AssertionError("CRT: couldn't get source file modification date: " + e.getMessage());
-        }
-        return mod;
+        return filename.getLastModified();
     }
 }

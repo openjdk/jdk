@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
 
 class ClassLoaderData;
 class InstanceKlass;
-class MetaspaceClosure;
 
 class vmClasses : AllStatic {
   friend class VMStructs;
@@ -95,7 +94,6 @@ public:
     return &_klasses[as_int(id)];
   }
 
-  static void metaspace_pointers_do(MetaspaceClosure* it);
   static void resolve_all(TRAPS);
 
   static BasicType box_klass_type(Klass* k);  // inverse of box_klass

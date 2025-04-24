@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,15 @@
 #include <string.h>
 #include <jvmti.h>
 
-#include "jni_tools.h"
-#include "nsk_tools.h"
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
+#include "jni_tools.hpp"
+#include "nsk_tools.hpp"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
 
-static jvmtiEnv *test_jvmti = NULL;
+static jvmtiEnv *test_jvmti = nullptr;
 static jvmtiCapabilities caps;
 
 /*
@@ -50,7 +50,7 @@ Java_vm_runtime_defmeth_shared_Util_redefineClassIntl(JNIEnv *env, jclass clazz,
     jvmtiClassDefinition classDef;
     jboolean result = JNI_TRUE;
 
-    if (!NSK_VERIFY(env != NULL) || !NSK_VERIFY(clazzToRedefine != NULL) || !NSK_VERIFY(bytecodeArray != NULL)) {
+    if (!NSK_VERIFY(env != nullptr) || !NSK_VERIFY(clazzToRedefine != nullptr) || !NSK_VERIFY(bytecodeArray != nullptr)) {
         return JNI_FALSE;
     }
 
@@ -61,7 +61,7 @@ Java_vm_runtime_defmeth_shared_Util_redefineClassIntl(JNIEnv *env, jclass clazz,
     }
 
     if (!NSK_JNI_VERIFY(env,
-            (classDef.class_bytes = (const unsigned char *) /* jbyte* */ env->GetByteArrayElements(bytecodeArray, NULL)) != NULL)) {
+            (classDef.class_bytes = (const unsigned char *) /* jbyte* */ env->GetByteArrayElements(bytecodeArray, nullptr)) != nullptr)) {
         return JNI_FALSE;
     }
 
@@ -86,7 +86,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((test_jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     memset(&caps, 0, sizeof(jvmtiCapabilities));

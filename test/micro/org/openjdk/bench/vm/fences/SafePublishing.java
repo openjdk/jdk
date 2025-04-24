@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 @Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 3, jvmArgsAppend = {"-XX:+UseParallelGC", "-Xmx128m"})
+@Fork(value = 3, jvmArgs = {"-XX:+UseParallelGC", "-Xmx128m"})
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
@@ -125,7 +124,7 @@ bool ZRemembered::should_scan_page(ZPage* page) const {
   return false;
 }
 
-bool ZRemembered::scan_page(ZPage* page) const {
+bool ZRemembered::scan_page_and_clear_remset(ZPage* page) const {
   const bool can_trust_live_bits =
       page->is_relocatable() && !ZGeneration::old()->is_phase_mark();
 
@@ -149,6 +148,20 @@ bool ZRemembered::scan_page(ZPage* page) const {
   } else {
     page->log_msg(" (scan_page_remembered_dead)");
     // All objects are dead - do nothing
+  }
+
+  if (ZVerifyRemembered) {
+    // Make sure self healing of pointers is ordered before clearing of
+    // the previous bits so that ZVerify::after_scan can detect missing
+    // remset entries accurately.
+    OrderAccess::storestore();
+  }
+
+  // If we have consumed the remset entries above we also clear them.
+  // The exception is if the page is completely empty/garbage, where we don't
+  // want to race with an old collection modifying the remset as well.
+  if (!can_trust_live_bits || page->is_marked()) {
+    page->clear_remset_previous();
   }
 
   return result;
@@ -460,11 +473,9 @@ public:
       _remset_table_iterator(remembered)  {
     _mark->prepare_work();
     _remembered->_page_allocator->enable_safe_destroy();
-    _remembered->_page_allocator->enable_safe_recycle();
   }
 
   ~ZRememberedScanMarkFollowTask() {
-    _remembered->_page_allocator->disable_safe_recycle();
     _remembered->_page_allocator->disable_safe_destroy();
     _mark->finish_work();
     // We are done scanning the set of old pages.
@@ -500,16 +511,7 @@ public:
       if (page != nullptr) {
         if (_remembered->should_scan_page(page)) {
           // Visit all entries pointing into young gen
-          bool found_roots = _remembered->scan_page(page);
-
-          // ... and as a side-effect clear the previous entries
-          if (ZVerifyRemembered) {
-            // Make sure self healing of pointers is ordered before clearing of
-            // the previous bits so that ZVerify::after_scan can detect missing
-            // remset entries accurately.
-            OrderAccess::storestore();
-          }
-          page->clear_remset_previous();
+          bool found_roots = _remembered->scan_page_and_clear_remset(page);
 
           if (found_roots && !left_marking) {
             // Follow remembered set when possible
@@ -546,7 +548,7 @@ public:
     // publish such marking stacks to prevent that generation from getting a mark continue.
     // We also flush in case of a resize where a new worker thread continues the marking
     // work, causing a mark continue for the collected generation.
-    ZHeap::heap()->mark_flush_and_free(Thread::current());
+    ZHeap::heap()->mark_flush(Thread::current());
   }
 
   virtual void resize_workers(uint nworkers) {

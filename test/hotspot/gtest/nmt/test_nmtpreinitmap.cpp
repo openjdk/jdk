@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "jvm_io.h"
 #include "memory/allocation.hpp"
 #include "nmt/nmtPreInit.hpp"
@@ -106,7 +105,7 @@ TEST_VM(NMTPreInit, stress_test_map) {
     NMTPreInitAllocation* a = table.find_and_remove(allocations[i]->payload);
     ASSERT_EQ(a, allocations[i]);
     NMTPreInitAllocation::do_free(a);
-    allocations[i] = NULL;
+    allocations[i] = nullptr;
   }
 
   print_and_check_table(table, 0);

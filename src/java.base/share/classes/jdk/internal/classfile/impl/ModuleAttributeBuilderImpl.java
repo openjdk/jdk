@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,22 @@
 
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.attribute.*;
+import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.classfile.attribute.ModuleAttribute.ModuleAttributeBuilder;
+import java.lang.classfile.attribute.ModuleExportInfo;
+import java.lang.classfile.attribute.ModuleOpenInfo;
+import java.lang.classfile.attribute.ModuleProvideInfo;
+import java.lang.classfile.attribute.ModuleRequireInfo;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.ClassDesc;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
-
-import java.lang.constant.ClassDesc;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.Objects;
+import java.util.Set;
 
 public final class ModuleAttributeBuilderImpl
         implements ModuleAttributeBuilder {
@@ -58,7 +64,6 @@ public final class ModuleAttributeBuilderImpl
         this(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(moduleName.name())));
     }
 
-    @Override
     public ModuleAttribute build() {
         return new UnboundAttribute.UnboundModuleAttribute(moduleEntry, moduleFlags, moduleVersion,
                                                             requires, exports, opens, uses, provides);

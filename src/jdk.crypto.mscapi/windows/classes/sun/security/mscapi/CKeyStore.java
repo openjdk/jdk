@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.AccessController;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyStoreSpi;
 import java.security.KeyStoreException;
-import java.security.PrivilegedAction;
 import java.security.UnrecoverableKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecurityPermission;
 import java.security.cert.X509Certificate;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -242,9 +239,7 @@ abstract class CKeyStore extends KeyStoreSpi {
 
     CKeyStore(String storeName, int storeLocation) {
         // Get the compatibility mode
-        @SuppressWarnings("removal")
-        String prop = AccessController.doPrivileged(
-            (PrivilegedAction<String>) () -> System.getProperty(KEYSTORE_COMPATIBILITY_MODE_PROP));
+        String prop = System.getProperty(KEYSTORE_COMPATIBILITY_MODE_PROP);
 
         if ("false".equalsIgnoreCase(prop)) {
             keyStoreCompatibilityMode = false;
@@ -695,10 +690,6 @@ abstract class CKeyStore extends KeyStoreSpi {
      * the integrity of the keystore cannot be found
      * @exception CertificateException if any of the certificates in the
      * keystore could not be loaded
-     * @exception SecurityException if the security check for
-     *  <code>SecurityPermission("authProvider.<i>name</i>")</code> does not
-     *  pass, where <i>name</i> is the value returned by
-     *  this provider's <code>getName</code> method.
      */
     public void engineLoad(InputStream stream, char[] password)
             throws IOException, NoSuchAlgorithmException, CertificateException {
@@ -708,16 +699,6 @@ abstract class CKeyStore extends KeyStoreSpi {
 
         if (password != null && !keyStoreCompatibilityMode) {
             throw new IOException("Keystore password must be null");
-        }
-
-        /*
-         * Use the same security check as AuthProvider.login
-         */
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new SecurityPermission(
-                "authProvider.SunMSCAPI"));
         }
 
         // Clear all key entries

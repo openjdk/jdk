@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ public:
   virtual uint size_of() const;
   virtual uint hash() const;    // Check the type
   const Type* widen_type(const PhaseGVN* phase, const Type* res, BasicType bt) const;
+  Node* find_or_make_integer_cast(PhaseIterGVN* igvn, Node* parent, const TypeInteger* type) const;
 
   private:
   // PhiNode::Ideal() transforms a Phi that merges a single uncasted value into a single cast pinned at the region.
@@ -101,12 +102,9 @@ class CastIINode: public ConstraintCastNode {
   virtual uint size_of() const;
 
   public:
-  CastIINode(Node* n, const Type* t, DependencyType dependency = RegularDependency, bool range_check_dependency = false, const TypeTuple* types = nullptr)
-    : ConstraintCastNode(nullptr, n, t, dependency, types), _range_check_dependency(range_check_dependency) {
-    init_class_id(Class_CastII);
-  }
   CastIINode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, bool range_check_dependency = false, const TypeTuple* types = nullptr)
     : ConstraintCastNode(ctrl, n, t, dependency, types), _range_check_dependency(range_check_dependency) {
+    assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastII);
   }
   virtual int Opcode() const;
@@ -124,6 +122,7 @@ class CastIINode: public ConstraintCastNode {
   }
 
   CastIINode* pin_array_access_node() const;
+  void remove_range_check_cast(Compile* C);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream* st) const;
@@ -134,6 +133,7 @@ class CastLLNode: public ConstraintCastNode {
 public:
   CastLLNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
           : ConstraintCastNode(ctrl, n, t, dependency, types) {
+    assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastLL);
   }
 
@@ -143,10 +143,22 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+class CastHHNode: public ConstraintCastNode {
+public:
+  CastHHNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
+          : ConstraintCastNode(ctrl, n, t, dependency, types) {
+    assert(ctrl != nullptr, "control must be set");
+    init_class_id(Class_CastHH);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return in(1)->ideal_reg(); }
+};
+
 class CastFFNode: public ConstraintCastNode {
 public:
   CastFFNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
           : ConstraintCastNode(ctrl, n, t, dependency, types) {
+    assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastFF);
   }
   virtual int Opcode() const;
@@ -157,6 +169,7 @@ class CastDDNode: public ConstraintCastNode {
 public:
   CastDDNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
           : ConstraintCastNode(ctrl, n, t, dependency, types) {
+    assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastDD);
   }
   virtual int Opcode() const;
@@ -167,6 +180,7 @@ class CastVVNode: public ConstraintCastNode {
 public:
   CastVVNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
           : ConstraintCastNode(ctrl, n, t, dependency, types) {
+    assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastVV);
   }
   virtual int Opcode() const;
@@ -180,6 +194,7 @@ class CastPPNode: public ConstraintCastNode {
   public:
   CastPPNode (Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
     : ConstraintCastNode(ctrl, n, t, dependency, types) {
+    init_class_id(Class_CastPP);
   }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
@@ -191,6 +206,7 @@ class CheckCastPPNode: public ConstraintCastNode {
   public:
   CheckCastPPNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
     : ConstraintCastNode(ctrl, n, t, dependency, types) {
+    assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CheckCastPP);
   }
 

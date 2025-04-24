@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,11 @@ import java.awt.peer.ComponentPeer;
 import java.awt.image.*;
 
 import sun.awt.image.ByteInterleavedRaster;
-import sun.security.action.GetPropertyAction;
 
 import java.awt.peer.FramePeer;
-import java.security.PrivilegedAction;
-import  java.security.AccessController;
 
 @SuppressWarnings("serial") // JDK-implementation class
-public class WEmbeddedFrame extends EmbeddedFrame {
+public final class WEmbeddedFrame extends EmbeddedFrame {
 
     static {
         initIDs();
@@ -60,9 +57,7 @@ public class WEmbeddedFrame extends EmbeddedFrame {
      */
     private boolean isEmbeddedInIE = false;
 
-    @SuppressWarnings("removal")
-    private static String printScale = AccessController.doPrivileged(
-        new GetPropertyAction("sun.java2d.print.pluginscalefactor"));
+    private static String printScale = System.getProperty("sun.java2d.print.pluginscalefactor");
 
     public WEmbeddedFrame() {
         this((long)0);
@@ -84,6 +79,7 @@ public class WEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
+    @Override
     public void addNotify() {
         if (!isDisplayable()) {
             WToolkit toolkit = (WToolkit)Toolkit.getDefaultToolkit();
@@ -181,7 +177,6 @@ public class WEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
-    @SuppressWarnings("removal")
     protected static int getPrintScaleFactor() {
         // check if value is already cached
         if (pScale != 0)
@@ -189,13 +184,7 @@ public class WEmbeddedFrame extends EmbeddedFrame {
         if (printScale == null) {
             // if no system property is specified,
             // check for environment setting
-            printScale = AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
-                    public String run() {
-                        return System.getenv("JAVA2D_PLUGIN_PRINT_SCALE");
-                    }
-                }
-            );
+            printScale = System.getenv("JAVA2D_PLUGIN_PRINT_SCALE");
         }
         int default_printDC_scale = 4;
         int scale = default_printDC_scale;
@@ -236,6 +225,7 @@ public class WEmbeddedFrame extends EmbeddedFrame {
     public void activateEmbeddingTopLevel() {
     }
 
+    @Override
     public void synthesizeWindowActivation(final boolean activate) {
         final FramePeer peer = AWTAccessor.getComponentAccessor().getPeer(this);
         if (!activate || EventQueue.isDispatchThread()) {
@@ -253,7 +243,9 @@ public class WEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
+    @Override
     public void registerAccelerator(AWTKeyStroke stroke) {}
+    @Override
     public void unregisterAccelerator(AWTKeyStroke stroke) {}
 
     /**
@@ -268,6 +260,7 @@ public class WEmbeddedFrame extends EmbeddedFrame {
      * NOTE: This method may be called by privileged threads.
      *     DO NOT INVOKE CLIENT CODE ON THIS THREAD!
      */
+    @Override
     public void notifyModalBlocked(Dialog blocker, boolean blocked) {
         try {
             ComponentPeer thisPeer = (ComponentPeer)WToolkit.targetToPeer(this);

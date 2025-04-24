@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -12,6 +12,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="aa" draft="unconfirmed">ᱚᱯᱷᱚᱨ</language>
 			<language type="ab">ᱟᱹᱵᱠᱷᱟᱡᱤᱭᱟᱹᱱ</language>
 			<language type="ace">ᱟᱠᱷᱤᱱᱤᱡᱽ</language>
 			<language type="ada">ᱟᱹᱰᱟᱱᱜᱽᱢᱮ</language>
@@ -53,12 +54,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bi" draft="unconfirmed">ᱵᱤᱥᱞᱟᱢᱟ</language>
 			<language type="bin" draft="unconfirmed">ᱵᱤᱱᱤ</language>
 			<language type="bla" draft="unconfirmed">ᱥᱤᱠᱥᱤᱠᱟ</language>
+			<language type="blo" draft="unconfirmed">ᱟᱱᱤ</language>
 			<language type="bm" draft="unconfirmed">ᱵᱟᱢᱵᱟᱨᱟ</language>
 			<language type="bn" draft="unconfirmed">ᱵᱟᱝᱞᱟ</language>
 			<language type="bo" draft="unconfirmed">ᱛᱤᱵᱮᱛᱟᱱ</language>
 			<language type="br" draft="unconfirmed">ᱵᱽᱨᱚᱴᱚᱱ</language>
 			<language type="brx" draft="unconfirmed">ᱵᱳᱰᱳ</language>
 			<language type="bs" draft="unconfirmed">ᱵᱚᱥᱱᱤᱭᱟᱹᱱ</language>
+			<language type="bss" draft="unconfirmed">ᱟᱠᱩᱥ</language>
 			<language type="bug" draft="unconfirmed">ᱵᱩᱜᱤᱱᱤᱡᱽ</language>
 			<language type="byn" draft="unconfirmed">ᱵᱞᱤᱱ</language>
 			<language type="ca" draft="unconfirmed">ᱠᱟᱴᱟᱞᱟᱱ</language>
@@ -1218,7 +1221,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<era type="1" alt="variant" draft="unconfirmed">ᱥᱟᱫ ᱥᱮᱨᱢᱟ ᱥᱚᱱ</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">ᱥᱮᱨᱢᱟ ᱞᱟᱦᱟ</era>
+						<era type="0">ᱵᱤ ᱥᱤ</era>
+						<era type="0" alt="variant">ᱵᱤ ᱥᱤ ᱤ</era>
 						<era type="1">ᱤᱥᱣᱤ</era>
 					</eraAbbr>
 					<eraNarrow>
@@ -1478,9 +1482,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Creston">
 				<exemplarCity draft="unconfirmed">ᱠᱨᱮᱥᱴᱚᱱ</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity draft="unconfirmed">ᱭᱮᱞᱚᱱᱟᱭᱤᱯᱷ</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity draft="unconfirmed">ᱮᱰᱢᱚᱱᱴᱚᱱ</exemplarCity>
 			</zone>
@@ -1499,29 +1500,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Resolute">
 				<exemplarCity draft="unconfirmed">ᱨᱤᱥᱚᱞᱭᱩᱴ</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity draft="unconfirmed">ᱨᱚᱱᱤ ᱜᱟᱰᱟ</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity draft="unconfirmed">ᱨᱟᱱᱠᱤᱱ ᱤᱱᱞᱮᱴ</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity draft="unconfirmed">ᱟᱴᱤᱠᱚᱠᱟᱱ</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity draft="unconfirmed">ᱛᱷᱚᱱᱰᱚᱨ ᱵᱮ</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity draft="unconfirmed">ᱱᱤᱯᱤᱜᱚᱱ</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity draft="unconfirmed">ᱴᱚᱨᱚᱱᱴᱚ</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity draft="unconfirmed">ᱤᱠᱟᱞᱩᱣᱤᱛ</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity draft="unconfirmed">ᱯᱟᱝᱱᱤᱨᱛᱩᱝ</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity draft="unconfirmed">ᱢᱚᱱᱠᱴᱚᱱ</exemplarCity>
@@ -1874,13 +1863,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">ᱦᱟᱣᱟᱭᱤᱼᱟᱞᱮᱣᱴᱤᱭᱟᱱ ᱥᱤᱧᱟᱜ ᱚᱠᱛᱚ</daylight>
 				</long>
 			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic draft="unconfirmed">ᱮᱛᱚᱢᱯᱟᱪᱮ ᱢᱚᱠᱥᱤᱠᱚ ᱚᱠᱛᱚ</generic>
-					<standard draft="unconfirmed">ᱮᱛᱚᱢᱯᱟᱪᱮ ᱢᱚᱠᱥᱤᱠᱚ ᱢᱟᱱᱚᱠ ᱚᱠᱛᱚ</standard>
-					<daylight draft="unconfirmed">ᱮᱛᱚᱢᱯᱟᱪᱮ ᱢᱚᱠᱥᱤᱠᱚ ᱥᱤᱧᱟᱜ ᱚᱠᱛᱚ</daylight>
-				</long>
-			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
 					<generic draft="unconfirmed">ᱢᱮᱠᱥᱤᱠᱟᱱ ᱯᱨᱚᱥᱟᱱᱛ ᱚᱠᱛᱚ</generic>
@@ -1925,9 +1907,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000" count="other">¤ 000 ᱜᱮᱞᱥᱟᱭ</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="two">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="BMD">

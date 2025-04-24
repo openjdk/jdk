@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ public abstract class Server extends NTLM {
      * @param domain the domain, must not be null
      * @throws NTLMException if {@code domain} is null.
      */
+    @SuppressWarnings("this-escape")
     public Server(String version, String domain) throws NTLMException {
         super(version);
         if (domain == null) {

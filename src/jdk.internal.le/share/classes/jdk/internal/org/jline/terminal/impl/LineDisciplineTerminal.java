@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
+import java.util.EnumSet;
 import java.util.Objects;
 
 import jdk.internal.org.jline.terminal.Attributes;
@@ -23,6 +24,8 @@ import jdk.internal.org.jline.terminal.Attributes.LocalFlag;
 import jdk.internal.org.jline.terminal.Attributes.OutputFlag;
 import jdk.internal.org.jline.terminal.Size;
 import jdk.internal.org.jline.terminal.Terminal;
+import jdk.internal.org.jline.terminal.spi.SystemStream;
+import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 import jdk.internal.org.jline.utils.NonBlocking;
 import jdk.internal.org.jline.utils.NonBlockingPumpInputStream;
 import jdk.internal.org.jline.utils.NonBlockingReader;
@@ -44,21 +47,6 @@ import jdk.internal.org.jline.utils.NonBlockingReader;
  * the input.
  */
 public class LineDisciplineTerminal extends AbstractTerminal {
-
-    private static final String DEFAULT_TERMINAL_ATTRIBUTES =
-                    "speed 9600 baud; 24 rows; 80 columns;\n" +
-                    "lflags: icanon isig iexten echo echoe -echok echoke -echonl echoctl\n" +
-                    "\t-echoprt -altwerase -noflsh -tostop -flusho pendin -nokerninfo\n" +
-                    "\t-extproc\n" +
-                    "iflags: -istrip icrnl -inlcr -igncr ixon -ixoff ixany imaxbel iutf8\n" +
-                    "\t-ignbrk brkint -inpck -ignpar -parmrk\n" +
-                    "oflags: opost onlcr -oxtabs -onocr -onlret\n" +
-                    "cflags: cread cs8 -parenb -parodd hupcl -clocal -cstopb -crtscts -dsrflow\n" +
-                    "\t-dtrflow -mdmbuf\n" +
-                    "cchars: discard = ^O; dsusp = ^Y; eof = ^D; eol = <undef>;\n" +
-                    "\teol2 = <undef>; erase = ^?; intr = ^C; kill = ^U; lnext = ^V;\n" +
-                    "\tmin = 1; quit = ^\\; reprint = ^R; start = ^Q; status = ^T;\n" +
-                    "\tstop = ^S; susp = ^Z; time = 0; werase = ^W;\n";
 
     private static final int PIPE_SIZE = 1024;
 
@@ -84,20 +72,20 @@ public class LineDisciplineTerminal extends AbstractTerminal {
      * Console data
      */
     protected final Attributes attributes;
+
     protected final Size size;
 
-    public LineDisciplineTerminal(String name,
-                                  String type,
-                                  OutputStream masterOutput,
-                                  Charset encoding) throws IOException {
+    protected boolean skipNextLf;
+
+    public LineDisciplineTerminal(String name, String type, OutputStream masterOutput, Charset encoding)
+            throws IOException {
         this(name, type, masterOutput, encoding, SignalHandler.SIG_DFL);
     }
 
-    public LineDisciplineTerminal(String name,
-                                  String type,
-                                  OutputStream masterOutput,
-                                  Charset encoding,
-                                  SignalHandler signalHandler) throws IOException {
+    @SuppressWarnings("this-escape")
+    public LineDisciplineTerminal(
+            String name, String type, OutputStream masterOutput, Charset encoding, SignalHandler signalHandler)
+            throws IOException {
         super(name, type, encoding, signalHandler);
         NonBlockingPumpInputStream input = NonBlocking.nonBlockingPumpInputStream(PIPE_SIZE);
         this.slaveInputPipe = input.getOutputStream();
@@ -106,9 +94,64 @@ public class LineDisciplineTerminal extends AbstractTerminal {
         this.slaveOutput = new FilteringOutputStream();
         this.slaveWriter = new PrintWriter(new OutputStreamWriter(slaveOutput, encoding()));
         this.masterOutput = masterOutput;
-        this.attributes = ExecPty.doGetAttr(DEFAULT_TERMINAL_ATTRIBUTES);
+        this.attributes = getDefaultTerminalAttributes();
         this.size = new Size(160, 50);
         parseInfoCmp();
+    }
+
+    private static Attributes getDefaultTerminalAttributes() {
+        // speed 9600 baud; 24 rows; 80 columns;
+        // lflags: icanon isig iexten echo echoe -echok echoke -echonl echoctl
+        //     -echoprt -altwerase -noflsh -tostop -flusho pendin -nokerninfo
+        //     -extproc
+        // iflags: -istrip icrnl -inlcr -igncr ixon -ixoff ixany imaxbel iutf8
+        //     -ignbrk brkint -inpck -ignpar -parmrk
+        // oflags: opost onlcr -oxtabs -onocr -onlret
+        // cflags: cread cs8 -parenb -parodd hupcl -clocal -cstopb -crtscts -dsrflow
+        //     -dtrflow -mdmbuf
+        // cchars: discard = ^O; dsusp = ^Y; eof = ^D; eol = <undef>;
+        //     eol2 = <undef>; erase = ^?; intr = ^C; kill = ^U; lnext = ^V;
+        //     min = 1; quit = ^\\; reprint = ^R; start = ^Q; status = ^T;
+        //     stop = ^S; susp = ^Z; time = 0; werase = ^W;
+        Attributes attr = new Attributes();
+        attr.setLocalFlags(EnumSet.of(
+                LocalFlag.ICANON,
+                LocalFlag.ISIG,
+                LocalFlag.IEXTEN,
+                LocalFlag.ECHO,
+                LocalFlag.ECHOE,
+                LocalFlag.ECHOKE,
+                LocalFlag.ECHOCTL,
+                LocalFlag.PENDIN));
+        attr.setInputFlags(EnumSet.of(
+                InputFlag.ICRNL,
+                InputFlag.IXON,
+                InputFlag.IXANY,
+                InputFlag.IMAXBEL,
+                InputFlag.IUTF8,
+                InputFlag.BRKINT));
+        attr.setOutputFlags(EnumSet.of(OutputFlag.OPOST, OutputFlag.ONLCR));
+        attr.setControlChar(ControlChar.VDISCARD, ctrl('O'));
+        attr.setControlChar(ControlChar.VDSUSP, ctrl('Y'));
+        attr.setControlChar(ControlChar.VEOF, ctrl('D'));
+        attr.setControlChar(ControlChar.VERASE, ctrl('?'));
+        attr.setControlChar(ControlChar.VINTR, ctrl('C'));
+        attr.setControlChar(ControlChar.VKILL, ctrl('U'));
+        attr.setControlChar(ControlChar.VLNEXT, ctrl('V'));
+        attr.setControlChar(ControlChar.VMIN, 1);
+        attr.setControlChar(ControlChar.VQUIT, ctrl('\\'));
+        attr.setControlChar(ControlChar.VREPRINT, ctrl('R'));
+        attr.setControlChar(ControlChar.VSTART, ctrl('Q'));
+        attr.setControlChar(ControlChar.VSTATUS, ctrl('T'));
+        attr.setControlChar(ControlChar.VSTOP, ctrl('S'));
+        attr.setControlChar(ControlChar.VSUSP, ctrl('Z'));
+        attr.setControlChar(ControlChar.VTIME, 0);
+        attr.setControlChar(ControlChar.VWERASE, ctrl('W'));
+        return attr;
+    }
+
+    private static int ctrl(char c) {
+        return c == '?' ? 177 : c - 64;
     }
 
     public NonBlockingReader reader() {
@@ -130,9 +173,7 @@ public class LineDisciplineTerminal extends AbstractTerminal {
     }
 
     public Attributes getAttributes() {
-        Attributes attr = new Attributes();
-        attr.copy(attributes);
-        return attr;
+        return new Attributes(attributes);
     }
 
     public void setAttributes(Attributes attr) {
@@ -149,9 +190,9 @@ public class LineDisciplineTerminal extends AbstractTerminal {
         size.copy(sz);
     }
 
-   @Override
+    @Override
     public void raise(Signal signal) {
-       Objects.requireNonNull(signal);
+        Objects.requireNonNull(signal);
         // Do not call clear() atm as this can cause
         // deadlock between reading / writing threads
         // TODO: any way to fix that ?
@@ -214,7 +255,19 @@ public class LineDisciplineTerminal extends AbstractTerminal {
                 raise(Signal.INFO);
             }
         }
-        if (c == '\r') {
+        if (attributes.getInputFlag(InputFlag.INORMEOL)) {
+            if (c == '\r') {
+                skipNextLf = true;
+                c = '\n';
+            } else if (c == '\n') {
+                if (skipNextLf) {
+                    skipNextLf = false;
+                    return false;
+                }
+            } else {
+                skipNextLf = false;
+            }
+        } else if (c == '\r') {
             if (attributes.getInputFlag(InputFlag.IGNCR)) {
                 return false;
             }
@@ -273,6 +326,16 @@ public class LineDisciplineTerminal extends AbstractTerminal {
         }
     }
 
+    @Override
+    public TerminalProvider getProvider() {
+        return null;
+    }
+
+    @Override
+    public SystemStream getSystemStream() {
+        return null;
+    }
+
     private class FilteringOutputStream extends OutputStream {
         @Override
         public void write(int b) throws IOException {
@@ -284,13 +347,12 @@ public class LineDisciplineTerminal extends AbstractTerminal {
         public void write(byte[] b, int off, int len) throws IOException {
             if (b == null) {
                 throw new NullPointerException();
-            } else if ((off < 0) || (off > b.length) || (len < 0) ||
-                    ((off + len) > b.length) || ((off + len) < 0)) {
+            } else if ((off < 0) || (off > b.length) || (len < 0) || ((off + len) > b.length) || ((off + len) < 0)) {
                 throw new IndexOutOfBoundsException();
             } else if (len == 0) {
                 return;
             }
-            for (int i = 0 ; i < len ; i++) {
+            for (int i = 0; i < len; i++) {
                 processOutputByte(b[off + i]);
             }
             flush();

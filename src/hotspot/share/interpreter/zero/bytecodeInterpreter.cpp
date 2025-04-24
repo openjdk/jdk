@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-// no precompiled headers
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -53,7 +52,9 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/basicLock.inline.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
@@ -61,6 +62,7 @@
 #include "runtime/threadCritical.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 /*
@@ -624,23 +626,25 @@ void BytecodeInterpreter::run(interpreterState istate) {
         BasicObjectLock* mon = &istate->monitor_base()[-1];
         mon->set_obj(rcvr);
 
-        // Traditional lightweight locking.
-        markWord displaced = rcvr->mark().set_unlocked();
-        mon->lock()->set_displaced_header(displaced);
-        bool call_vm = (LockingMode == LM_MONITOR);
-        bool inc_monitor_count = true;
-        if (call_vm || rcvr->cas_set_mark(markWord::from_pointer(mon), displaced) != displaced) {
-          // Is it simple recursive case?
-          if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-            mon->lock()->set_displaced_header(markWord::from_pointer(nullptr));
-          } else {
-            inc_monitor_count = false;
-            CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
+        bool success = false;
+        if (LockingMode == LM_LEGACY) {
+           // Traditional fast locking.
+          markWord displaced = rcvr->mark().set_unlocked();
+          mon->lock()->set_displaced_header(displaced);
+          success = true;
+          if (rcvr->cas_set_mark(markWord::from_pointer(mon), displaced) != displaced) {
+            // Is it simple recursive case?
+            if (THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
+              mon->lock()->set_displaced_header(markWord::from_pointer(nullptr));
+            } else {
+              success = false;
+            }
           }
         }
-        if (inc_monitor_count) {
-          THREAD->inc_held_monitor_count();
+        if (!success) {
+            CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
         }
+
       }
       THREAD->set_do_not_unlock_if_synchronized(false);
 
@@ -723,23 +727,25 @@ void BytecodeInterpreter::run(interpreterState istate) {
       assert(entry->obj() == nullptr, "Frame manager didn't allocate the monitor");
       entry->set_obj(lockee);
 
-      // traditional lightweight locking
-      markWord displaced = lockee->mark().set_unlocked();
-      entry->lock()->set_displaced_header(displaced);
-      bool call_vm = (LockingMode == LM_MONITOR);
-      bool inc_monitor_count = true;
-      if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
-        // Is it simple recursive case?
-        if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-          entry->lock()->set_displaced_header(markWord::from_pointer(nullptr));
-        } else {
-          inc_monitor_count = false;
-          CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
+      bool success = false;
+      if (LockingMode == LM_LEGACY) {
+        // Traditional fast locking.
+        markWord displaced = lockee->mark().set_unlocked();
+        entry->lock()->set_displaced_header(displaced);
+        success = true;
+        if (lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
+          // Is it simple recursive case?
+          if (THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
+            entry->lock()->set_displaced_header(markWord::from_pointer(nullptr));
+          } else {
+            success = false;
+          }
         }
       }
-      if (inc_monitor_count) {
-        THREAD->inc_held_monitor_count();
+      if (!success) {
+        CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
       }
+
       UPDATE_PC_AND_TOS(1, -1);
       goto run;
     }
@@ -1607,10 +1613,10 @@ run:
           ARRAY_INTRO(-3);
           int item = STACK_INT(-1);
           // if it is a T_BOOLEAN array, mask the stored value to 0/1
-          if (arrObj->klass() == Universe::boolArrayKlassObj()) {
+          if (arrObj->klass() == Universe::boolArrayKlass()) {
             item &= 1;
           } else {
-            assert(arrObj->klass() == Universe::byteArrayKlassObj(),
+            assert(arrObj->klass() == Universe::byteArrayKlass(),
                    "should be byte array otherwise");
           }
           ((typeArrayOop)arrObj)->byte_at_put(index, item);
@@ -1653,23 +1659,25 @@ run:
         if (entry != nullptr) {
           entry->set_obj(lockee);
 
-          // traditional lightweight locking
-          markWord displaced = lockee->mark().set_unlocked();
-          entry->lock()->set_displaced_header(displaced);
-          bool call_vm = (LockingMode == LM_MONITOR);
-          bool inc_monitor_count = true;
-          if (call_vm || lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
-            // Is it simple recursive case?
-            if (!call_vm && THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
-              entry->lock()->set_displaced_header(markWord::from_pointer(nullptr));
-            } else {
-              inc_monitor_count = false;
-              CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
+          bool success = false;
+          if (LockingMode == LM_LEGACY) {
+            // Traditional fast locking.
+            markWord displaced = lockee->mark().set_unlocked();
+            entry->lock()->set_displaced_header(displaced);
+            success = true;
+            if (lockee->cas_set_mark(markWord::from_pointer(entry), displaced) != displaced) {
+              // Is it simple recursive case?
+              if (THREAD->is_lock_owned((address) displaced.clear_lock_bits().to_pointer())) {
+                entry->lock()->set_displaced_header(markWord::from_pointer(nullptr));
+              } else {
+                success = false;
+              }
             }
           }
-          if (inc_monitor_count) {
-            THREAD->inc_held_monitor_count();
+          if (!success) {
+            CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
           }
+
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
         } else {
           istate->set_msg(more_monitors);
@@ -1687,23 +1695,24 @@ run:
         while (most_recent != limit ) {
           if ((most_recent)->obj() == lockee) {
             BasicLock* lock = most_recent->lock();
-            markWord header = lock->displaced_header();
-            most_recent->set_obj(nullptr);
 
-            // If it isn't recursive we either must swap old header or call the runtime
-            bool dec_monitor_count = true;
-            bool call_vm = (LockingMode == LM_MONITOR);
-            if (header.to_pointer() != nullptr || call_vm) {
-              markWord old_header = markWord::encode(lock);
-              if (call_vm || lockee->cas_set_mark(header, old_header) != old_header) {
-                // restore object for the slow case
-                most_recent->set_obj(lockee);
-                dec_monitor_count = false;
-                InterpreterRuntime::monitorexit(most_recent);
+            bool success = false;
+            if (LockingMode == LM_LEGACY) {
+              // If it isn't recursive we either must swap old header or call the runtime
+              most_recent->set_obj(nullptr);
+              success = true;
+              markWord header = lock->displaced_header();
+              if (header.to_pointer() != nullptr) {
+                markWord old_header = markWord::encode(lock);
+                if (lockee->cas_set_mark(header, old_header) != old_header) {
+                  // restore object for the slow case
+                  most_recent->set_obj(lockee);
+                  success = false;
+                }
               }
             }
-            if (dec_monitor_count) {
-              THREAD->dec_held_monitor_count();
+            if (!success) {
+              InterpreterRuntime::monitorexit(most_recent);
             }
             UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
           }
@@ -1991,20 +2000,23 @@ run:
             size_t obj_size = ik->size_helper();
             HeapWord* result = THREAD->tlab().allocate(obj_size);
             if (result != nullptr) {
-              // Initialize object field block:
-              //   - if TLAB is pre-zeroed, we can skip this path
-              //   - in debug mode, ThreadLocalAllocBuffer::allocate mangles
-              //     this area, and we still need to initialize it
-              if (DEBUG_ONLY(true ||) !ZeroTLAB) {
+              // Initialize object field block.
+              if (!ZeroTLAB) {
+                // The TLAB was not pre-zeroed, we need to clear the memory here.
                 size_t hdr_size = oopDesc::header_size();
                 Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
               }
 
               // Initialize header, mirrors MemAllocator.
-              oopDesc::set_mark(result, markWord::prototype());
-              oopDesc::set_klass_gap(result, 0);
-              oopDesc::release_set_klass(result, ik);
-
+              if (UseCompactObjectHeaders) {
+                oopDesc::release_set_mark(result, ik->prototype_header());
+              } else {
+                oopDesc::set_mark(result, markWord::prototype());
+                if (oopDesc::has_klass_gap()) {
+                  oopDesc::set_klass_gap(result, 0);
+                }
+                oopDesc::release_set_klass(result, ik);
+              }
               oop obj = cast_to_oop(result);
 
               // Must prevent reordering of stores for object initialization
@@ -2021,8 +2033,8 @@ run:
         // Must prevent reordering of stores for object initialization
         // with stores that publish the new object.
         OrderAccess::storestore();
-        SET_STACK_OBJECT(THREAD->vm_result(), 0);
-        THREAD->set_vm_result(nullptr);
+        SET_STACK_OBJECT(THREAD->vm_result_oop(), 0);
+        THREAD->set_vm_result_oop(nullptr);
         UPDATE_PC_AND_TOS_AND_CONTINUE(3, 1);
       }
       CASE(_anewarray): {
@@ -2033,8 +2045,8 @@ run:
         // Must prevent reordering of stores for object initialization
         // with stores that publish the new object.
         OrderAccess::storestore();
-        SET_STACK_OBJECT(THREAD->vm_result(), -1);
-        THREAD->set_vm_result(nullptr);
+        SET_STACK_OBJECT(THREAD->vm_result_oop(), -1);
+        THREAD->set_vm_result_oop(nullptr);
         UPDATE_PC_AND_CONTINUE(3);
       }
       CASE(_multianewarray): {
@@ -2050,8 +2062,8 @@ run:
         // Must prevent reordering of stores for object initialization
         // with stores that publish the new object.
         OrderAccess::storestore();
-        SET_STACK_OBJECT(THREAD->vm_result(), -dims);
-        THREAD->set_vm_result(nullptr);
+        SET_STACK_OBJECT(THREAD->vm_result_oop(), -dims);
+        THREAD->set_vm_result_oop(nullptr);
         UPDATE_PC_AND_TOS_AND_CONTINUE(4, -(dims-1));
       }
       CASE(_checkcast):
@@ -2132,8 +2144,8 @@ run:
               oop result = constants->resolved_reference_at(index);
               if (result == nullptr) {
                 CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
-                SET_STACK_OBJECT(THREAD->vm_result(), 0);
-                THREAD->set_vm_result(nullptr);
+                SET_STACK_OBJECT(THREAD->vm_result_oop(), 0);
+                THREAD->set_vm_result_oop(nullptr);
               } else {
                 VERIFY_OOP(result);
                 SET_STACK_OBJECT(result, 0);
@@ -2149,15 +2161,15 @@ run:
           case JVM_CONSTANT_UnresolvedClass:
           case JVM_CONSTANT_UnresolvedClassInError:
             CALL_VM(InterpreterRuntime::ldc(THREAD, wide), handle_exception);
-            SET_STACK_OBJECT(THREAD->vm_result(), 0);
-            THREAD->set_vm_result(nullptr);
+            SET_STACK_OBJECT(THREAD->vm_result_oop(), 0);
+            THREAD->set_vm_result_oop(nullptr);
             break;
 
           case JVM_CONSTANT_Dynamic:
           case JVM_CONSTANT_DynamicInError:
             {
               CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
-              oop result = THREAD->vm_result();
+              oop result = THREAD->vm_result_oop();
               VERIFY_OOP(result);
 
               jvalue value;
@@ -2199,7 +2211,7 @@ run:
           case JVM_CONSTANT_DynamicInError:
             {
               CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
-              oop result = THREAD->vm_result();
+              oop result = THREAD->vm_result_oop();
               VERIFY_OOP(result);
 
               jvalue value;
@@ -2238,7 +2250,7 @@ run:
         if (result == nullptr) {
           CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode),
                   handle_exception);
-          result = THREAD->vm_result();
+          result = THREAD->vm_result_oop();
         }
         if (result == Universe::the_null_sentinel())
           result = nullptr;
@@ -2249,7 +2261,7 @@ run:
       }
 
       CASE(_invokedynamic): {
-        u4 index = cp->constant_pool()->decode_invokedynamic_index(Bytes::get_native_u4(pc+1)); // index is originally negative
+        u4 index = Bytes::get_native_u4(pc+1);
         ResolvedIndyEntry* indy_info = cp->resolved_indy_entry_at(index);
         if (!indy_info->is_resolved()) {
           CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
@@ -2445,7 +2457,7 @@ run:
             CHECK_NULL(STACK_OBJECT(-(entry->number_of_parameters())));
             if (entry->is_vfinal()) {
               callee = entry->method();
-              if (REWRITE_BYTECODES && !UseSharedSpaces && !CDSConfig::is_dumping_archive()) {
+              if (REWRITE_BYTECODES && !CDSConfig::is_using_archive() && !CDSConfig::is_dumping_archive()) {
                 // Rewrite to _fast_invokevfinal.
                 REWRITE_AT_PC(Bytecodes::_fast_invokevfinal);
               }
@@ -2506,8 +2518,8 @@ run:
         // Must prevent reordering of stores for object initialization
         // with stores that publish the new object.
         OrderAccess::storestore();
-        SET_STACK_OBJECT(THREAD->vm_result(), -1);
-        THREAD->set_vm_result(nullptr);
+        SET_STACK_OBJECT(THREAD->vm_result_oop(), -1);
+        THREAD->set_vm_result_oop(nullptr);
 
         UPDATE_PC_AND_CONTINUE(2);
       }
@@ -2947,8 +2959,8 @@ run:
     CALL_VM(continuation_bci = (intptr_t)InterpreterRuntime::exception_handler_for_exception(THREAD, except_oop()),
             handle_exception);
 
-    except_oop = Handle(THREAD, THREAD->vm_result());
-    THREAD->set_vm_result(nullptr);
+    except_oop = Handle(THREAD, THREAD->vm_result_oop());
+    THREAD->set_vm_result_oop(nullptr);
     if (continuation_bci >= 0) {
       // Place exception on top of stack
       SET_STACK_OBJECT(except_oop(), 0);
@@ -3127,22 +3139,25 @@ run:
         oop lockee = end->obj();
         if (lockee != nullptr) {
           BasicLock* lock = end->lock();
-          markWord header = lock->displaced_header();
-          end->set_obj(nullptr);
 
-          // If it isn't recursive we either must swap old header or call the runtime
-          bool dec_monitor_count = true;
-          if (header.to_pointer() != nullptr) {
-            markWord old_header = markWord::encode(lock);
-            if (lockee->cas_set_mark(header, old_header) != old_header) {
-              // restore object for the slow case
-              end->set_obj(lockee);
-              dec_monitor_count = false;
-              InterpreterRuntime::monitorexit(end);
+          bool success = false;
+          if (LockingMode == LM_LEGACY) {
+            markWord header = lock->displaced_header();
+            end->set_obj(nullptr);
+
+            // If it isn't recursive we either must swap old header or call the runtime
+            success = true;
+            if (header.to_pointer() != nullptr) {
+              markWord old_header = markWord::encode(lock);
+              if (lockee->cas_set_mark(header, old_header) != old_header) {
+                // restore object for the slow case
+                end->set_obj(lockee);
+                success = false;
+              }
             }
           }
-          if (dec_monitor_count) {
-            THREAD->dec_held_monitor_count();
+          if (!success) {
+            InterpreterRuntime::monitorexit(end);
           }
 
           // One error is plenty
@@ -3190,7 +3205,7 @@ run:
               illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
               THREAD->clear_pending_exception();
             }
-          } else if (LockingMode == LM_MONITOR) {
+          } else if (LockingMode != LM_LEGACY) {
             InterpreterRuntime::monitorexit(base);
             if (THREAD->has_pending_exception()) {
               if (!suppress_error) illegal_state_oop = Handle(THREAD, THREAD->pending_exception());
@@ -3215,9 +3230,6 @@ run:
                   THREAD->clear_pending_exception();
                 }
               }
-            }
-            if (dec_monitor_count) {
-              THREAD->dec_held_monitor_count();
             }
           }
         }

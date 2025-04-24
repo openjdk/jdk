@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4750141 4895631 8217579 8163326 8279164
+ * @bug 4750141 4895631 8217579 8163326 8279164 8245545
  * @summary Check enabled and supported ciphersuites are correct
  * @run main/othervm CheckCipherSuites default
  * @run main/othervm CheckCipherSuites limited
@@ -99,12 +99,6 @@ public class CheckCipherSuites {
         "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
 
         // deprecated
-        "TLS_RSA_WITH_AES_256_GCM_SHA384",
-        "TLS_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_RSA_WITH_AES_256_CBC_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA256",
-        "TLS_RSA_WITH_AES_256_CBC_SHA",
-        "TLS_RSA_WITH_AES_128_CBC_SHA",
         "TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
     };
 
@@ -124,9 +118,6 @@ public class CheckCipherSuites {
         "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
         "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
         "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
-        "TLS_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA",
         "TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
     };
 
@@ -194,12 +185,6 @@ public class CheckCipherSuites {
         "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
 
         // deprecated
-        "TLS_RSA_WITH_AES_256_GCM_SHA384",
-        "TLS_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_RSA_WITH_AES_256_CBC_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA256",
-        "TLS_RSA_WITH_AES_256_CBC_SHA",
-        "TLS_RSA_WITH_AES_128_CBC_SHA",
         "TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
     };
 
@@ -219,9 +204,6 @@ public class CheckCipherSuites {
         "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
         "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
         "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
-        "TLS_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA256",
-        "TLS_RSA_WITH_AES_128_CBC_SHA",
         "TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
     };
 

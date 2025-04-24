@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,8 @@ public class TestUniverse {
 
         switch (gc) {
         case Serial:
-            expStrings.add("Gen 1:   old");
+            expStrings.add("SerialHeap");
+            expStrings.add("eden");
             break;
 
         case Parallel:
@@ -78,6 +79,9 @@ public class TestUniverse {
 
         case Z:
             expStrings.add("ZHeap");
+            expStrings.add("used");
+            expStrings.add(" capacity ");
+            expStrings.add("max capacity");
             break;
 
         case Shenandoah:

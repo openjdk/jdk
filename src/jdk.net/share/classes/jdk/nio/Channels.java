@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,12 +129,6 @@ public final class Channels {
      * close the file descriptor and to coordinate the closing when the channel
      * is registered with a {@code Selector}. </p>
      *
-     * <p> If there is a security manager set then its
-     * {@link SecurityManager#checkRead(FileDescriptor) checkRead} and
-     * {@link SecurityManager#checkWrite(FileDescriptor) checkWrite} methods
-     * are invoked to check that the caller has permission to both read from and
-     * write to the file descriptor. </p>
-     *
      * @implNote This method throws {@code UnsupportedOperationException} if
      * the default {@code SelectorProvider} is not the JDK built-in implementation.
      *
@@ -147,21 +141,12 @@ public final class Channels {
      *
      * @throws IllegalArgumentException
      *         If the file descriptor is not {@link FileDescriptor#valid() valid}
-     * @throws SecurityException
-     *         If denied by the security manager
      */
     public static SelectableChannel readWriteSelectableChannel(FileDescriptor fd,
                                                                SelectableChannelCloser closer) {
         Objects.requireNonNull(closer);
         if (!fd.valid())
             throw new IllegalArgumentException("file descriptor is not valid");
-
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkRead(fd);
-            sm.checkWrite(fd);
-        }
 
         SelectorProvider provider = SelectorProvider.provider();
         if (!(provider instanceof SelectorProviderImpl))

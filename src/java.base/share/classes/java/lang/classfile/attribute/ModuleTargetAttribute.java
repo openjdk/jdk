@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,21 +26,23 @@
 package java.lang.classfile.attribute;
 
 import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.AttributeMapper.AttributeStability;
+import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassModel;
 import java.lang.classfile.constantpool.Utf8Entry;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code ModuleTarget} attribute, which can
- * appear on classes that represent module descriptors.  This is a JDK-specific
- * attribute, which captures constraints on the target platform.
- * Delivered as a {@link java.lang.classfile.ClassElement} when
- * traversing the elements of a {@link java.lang.classfile.ClassModel}.
- *
- * <p>The specification of the {@code ModuleTarget} attribute is:
+ * Models the {@link Attributes#moduleTarget() ModuleTarget} attribute, which
+ * can appear on classes that {@linkplain ClassModel#isModuleInfo() represent}
+ * module descriptors, to represent constraints on the target platform.
+ * <p>
+ * The specification of the {@code ModuleTarget} attribute is:
  * <pre> {@code
  * TargetPlatform_attribute {
  *   // index to CONSTANT_utf8_info structure in constant pool representing
@@ -53,13 +55,19 @@ import jdk.internal.javac.PreviewFeature;
  * }
  * } </pre>
  * <p>
- * The attribute does not permit multiple instances in a given location.
- * Subsequent occurrence of the attribute takes precedence during the attributed
- * element build or transformation.
+ * This attribute only appears on classes, and does not permit {@linkplain
+ * AttributeMapper#allowMultiple multiple instances} in a class.  It has a
+ * data dependency on the {@linkplain AttributeStability#CP_REFS constant pool}.
+ * <p>
+ * This attribute is not predefined in the Java SE Platform.  This is a
+ * JDK-specific nonstandard attribute produced by the {@code jdk.jlink} module,
+ * which defines the {@code jlink} and {@code jmod} tools.
  *
- * @since 22
+ * @see Attributes#moduleTarget()
+ * @see ModuleHashesAttribute
+ * @see ModuleResolutionAttribute
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ModuleTargetAttribute
         extends Attribute<ModuleTargetAttribute>, ClassElement
         permits BoundAttribute.BoundModuleTargetAttribute, UnboundAttribute.UnboundModuleTargetAttribute {
@@ -71,6 +79,7 @@ public sealed interface ModuleTargetAttribute
 
     /**
      * {@return a {@code ModuleTarget} attribute}
+     *
      * @param targetPlatform the target platform
      */
     static ModuleTargetAttribute of(String targetPlatform) {
@@ -79,6 +88,7 @@ public sealed interface ModuleTargetAttribute
 
     /**
      * {@return a {@code ModuleTarget} attribute}
+     *
      * @param targetPlatform the target platform
      */
     static ModuleTargetAttribute of(Utf8Entry targetPlatform) {

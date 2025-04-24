@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -84,14 +84,6 @@ public class CK_MECHANISM {
      */
     public Object pParameter = null;
 
-    // pointer to native CK_MECHANISM structure
-    // For mechanisms which have only mechanism id, the native structure
-    // can be freed right after init and this field will not be used. However,
-    // for mechanisms which have both mechanism id and parameters, it can
-    // only be freed after operation is finished. Thus, the native pointer
-    // will be stored here and then be explicitly freed by caller.
-    private long pHandle = 0L;
-
     public CK_MECHANISM(long mechanism) {
         this.mechanism = mechanism;
     }
@@ -132,6 +124,14 @@ public class CK_MECHANISM {
     }
 
     public CK_MECHANISM(long mechanism, CK_TLS_MAC_PARAMS params) {
+        init(mechanism, params);
+    }
+
+    public CK_MECHANISM(long mechanism, CK_HKDF_PARAMS params) {
+        init(mechanism, params);
+    }
+
+    public CK_MECHANISM(long mechanism, CK_KEY_DERIVATION_STRING_DATA params) {
         init(mechanism, params);
     }
 
@@ -180,14 +180,7 @@ public class CK_MECHANISM {
         if (this.pParameter != null && this.pParameter.equals(params)) {
             return;
         }
-        freeHandle();
         this.pParameter = params;
-    }
-
-    public void freeHandle() {
-        if (this.pHandle != 0L) {
-            this.pHandle = PKCS11.freeMechanism(pHandle);
-        }
     }
 
     private void init(long mechanism, Object pParameter) {
@@ -219,12 +212,6 @@ public class CK_MECHANISM {
         sb.append("ulParameterLen: ??");
         sb.append(Constants.NEWLINE);
         */
-        if (pHandle != 0L) {
-            sb.append(Constants.INDENT);
-            sb.append("pHandle: ");
-            sb.append(pHandle);
-            sb.append(Constants.NEWLINE);
-        }
         return sb.toString() ;
     }
 }

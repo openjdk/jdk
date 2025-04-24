@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,15 @@
 
 package sun.nio.fs;
 
-import jdk.internal.misc.Unsafe;
 import java.util.concurrent.ExecutionException;
+import jdk.internal.misc.InnocuousThread;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Base implementation of a task (typically native) that polls a memory location
  * during execution so that it may be aborted/cancelled before completion. The
- * task is executed by invoking the {@link runInterruptibly} method defined
- * here and cancelled by invoking Thread.interrupt.
+ * task is executed by invoking the {@linkplain #runInterruptibly} method
+ * defined here and cancelled by invoking Thread.interrupt.
  */
 
 abstract class Cancellable implements Runnable {
@@ -117,7 +118,7 @@ abstract class Cancellable implements Runnable {
      * thread by writing into the memory location that it polls cooperatively.
      */
     static void runInterruptibly(Cancellable task) throws ExecutionException {
-        Thread t = new Thread(null, task, "NIO-Task", 0, false);
+        Thread t = InnocuousThread.newThread("CancellableOp", task);
         t.start();
         boolean cancelledByInterrupt = false;
         while (t.isAlive()) {

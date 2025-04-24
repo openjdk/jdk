@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ public class curcontmonitor001a {
         argumentHandler = new ArgumentHandler(args);
         log = new Log(out, argumentHandler);
         long timeout = argumentHandler.getWaitTime() * 60 * 1000; // milliseconds
+        String signal = null;
 
         // make communication pipe to debugger
         log.display("Creating pipe");
@@ -84,20 +85,18 @@ public class curcontmonitor001a {
 
             // ensure that tested thread is waiting for monitor object
             synchronized (TestedClass.thread.monitor) {
+                TestedClass.thread.monitor.notifyAll();
+
                 // send debugger signal READY
                 log.display("Sending signal to debugger: " + curcontmonitor001.READY);
                 pipe.println(curcontmonitor001.READY);
+
+               // wait for signal QUIT from debugeer
+               log.display("Waiting for signal from debugger: " + curcontmonitor001.QUIT);
+               signal = pipe.readln();
+               log.display("Received signal from debugger: " + signal);
             }
         }
-
-        // wait for signal QUIT from debugeer
-        log.display("Waiting for signal from debugger: " + curcontmonitor001.QUIT);
-        String signal = pipe.readln();
-        log.display("Received signal from debugger: " + signal);
-
-        // interrupt waiting thread
-        log.display("Interrupting tested thread being waited");
-        TestedClass.thread.interrupt();
 
         // check received signal
         if (signal == null || !signal.equals(curcontmonitor001.QUIT)) {

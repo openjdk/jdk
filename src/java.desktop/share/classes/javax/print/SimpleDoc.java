@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,6 @@ public final class SimpleDoc implements Doc {
        Class<?> repClass = null;
        try {
             String className = flavor.getRepresentationClassName();
-            sun.reflect.misc.ReflectUtil.checkPackageAccess(className);
             repClass = Class.forName(className, false,
                               Thread.currentThread().getContextClassLoader());
        } catch (Throwable e) {

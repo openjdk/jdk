@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
  * @test
  * @bug 6991980
  * @summary  polymorphic signature calls don't share the same CP entries
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @run main TestCP
  */
 
@@ -135,7 +133,7 @@ public class TestCP {
             if (testMethod == null) {
                 throw new Error("Test method not found");
             }
-            CodeAttribute ea = testMethod.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute ea = testMethod.findAttribute(Attributes.code()).orElse(null);
             if (ea == null) {
                 throw new Error("Code attribute for test() method not found");
             }

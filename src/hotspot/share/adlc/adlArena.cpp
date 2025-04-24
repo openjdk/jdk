@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ void* AdlReAllocateHeap(void* old_ptr, size_t size) {
 }
 
 void* AdlChunk::operator new(size_t requested_size, size_t length) throw() {
+  assert(requested_size <= SIZE_MAX - length, "overflow");
   return AdlCHeapObj::operator new(requested_size + length);
 }
 
@@ -62,8 +63,6 @@ void AdlChunk::chop() {
   AdlChunk *k = this;
   while( k ) {
     AdlChunk *tmp = k->_next;
-    // clear out this chunk (to detect allocation bugs)
-    memset(k, 0xBE, k->_len);
     free(k);                    // Free chunk (was malloc'd)
     k = tmp;
   }
@@ -129,6 +128,7 @@ void* AdlArena::grow( size_t x ) {
 //------------------------------calloc-----------------------------------------
 // Allocate zeroed storage in AdlArena
 void *AdlArena::Acalloc( size_t items, size_t x ) {
+  assert(items <= SIZE_MAX / x, "overflow");
   size_t z = items*x;   // Total size needed
   void *ptr = Amalloc(z);       // Get space
   memset( ptr, 0, z );          // Zap space
@@ -136,21 +136,26 @@ void *AdlArena::Acalloc( size_t items, size_t x ) {
 }
 
 //------------------------------realloc----------------------------------------
+static size_t pointer_delta(const void *left, const void *right) {
+  assert(left >= right, "pointer delta underflow");
+  return (uintptr_t)left - (uintptr_t)right;
+}
+
 // Reallocate storage in AdlArena.
 void *AdlArena::Arealloc( void *old_ptr, size_t old_size, size_t new_size ) {
   char *c_old = (char*)old_ptr; // Handy name
-  // Stupid fast special case
-  if( new_size <= old_size ) {  // Shrink in-place
-    if( c_old+old_size == _hwm) // Attempt to free the excess bytes
-      _hwm = c_old+new_size;    // Adjust hwm
-    return c_old;
-  }
 
-  // See if we can resize in-place
-  if( (c_old+old_size == _hwm) &&       // Adjusting recent thing
-      (c_old+new_size <= _max) ) {      // Still fits where it sits
-    _hwm = c_old+new_size;      // Adjust hwm
-    return c_old;               // Return old pointer
+  // Reallocating the latest allocation?
+  if (c_old + old_size == _hwm) {
+    assert(_chunk->bottom() <= c_old, "invariant");
+
+    // Reallocate in place if it fits. Also handles shrinking
+    if (pointer_delta(_max, c_old) >= new_size) {
+      _hwm = c_old + new_size;
+      return c_old;
+    }
+  } else if (new_size <= old_size) { // Shrink in place
+    return c_old;
   }
 
   // Oops, got to relocate guts

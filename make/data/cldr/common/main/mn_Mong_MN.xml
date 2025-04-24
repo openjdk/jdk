@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -390,9 +390,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>ᠣᠯᠠᠭᠠᠨᠪᠠᠭᠠᠳᠣᠷ</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>ᠴᠥᠢᠪᠠᠯᠰᠨᠩ</exemplarCity>
-			</zone>
 			<metazone type="America_Central">
 				<long>
 					<generic>ᠲᠥᠪ ᠴᠠᠭ</generic>
@@ -457,9 +454,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<symbols numberSystem="latn">
-			<decimal draft="contributed">,</decimal>
-		</symbols>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">

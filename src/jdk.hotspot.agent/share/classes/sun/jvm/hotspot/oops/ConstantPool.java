@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,18 +304,6 @@ public class ConstantPool extends Metadata implements ClassConstants {
   public Symbol uncachedGetSignatureRefAt(int cp_index) {
     int signatureIndex = getSignatureRefIndexAt(uncachedGetNameAndTypeRefIndexAt(cp_index));
     return getSymbolAt(signatureIndex);
-  }
-
-  public static boolean isInvokedynamicIndex(int i) { return (i < 0); }
-
-  public static int  decodeInvokedynamicIndex(int i) { Assert.that(isInvokedynamicIndex(i),  ""); return ~i; }
-
-  // The invokedynamic points at a CP cache entry.  This entry points back
-  // at the original CP entry (CONSTANT_InvokeDynamic) and also (via f2) at an entry
-  // in the resolved_references array (which provides the appendix argument).
-  public int invokedynamicCPCacheIndex(int index) {
-    Assert.that(isInvokedynamicIndex(index), "should be a invokedynamic index");
-    return decodeInvokedynamicIndex(index);
   }
 
   public int uncachedGetNameAndTypeRefIndexAt(int cp_index) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,8 @@ import sun.security.util.KnownOIDs;
  * <li>{@code AES/CBC/PKCS5Padding} (128)</li>
  * <li>{@code AES/ECB/NoPadding} (128)</li>
  * <li>{@code AES/ECB/PKCS5Padding} (128)</li>
- * <li>{@code AES/GCM/NoPadding} (128)</li>
+ * <li>{@code AES/GCM/NoPadding} (128, 256)</li>
+ * <li>{@code ChaCha20-Poly1305}</li>
  * <li>{@code DESede/CBC/NoPadding} (168)</li>
  * <li>{@code DESede/CBC/PKCS5Padding} (168)</li>
  * <li>{@code DESede/ECB/NoPadding} (168)</li>
@@ -164,6 +165,11 @@ import sun.security.util.KnownOIDs;
  * Consult the release documentation for your implementation to see if any
  * other transformations are supported.
  *
+ * @spec https://www.rfc-editor.org/info/rfc5116
+ *      RFC 5116: An Interface and Algorithms for Authenticated Encryption
+ * @spec https://www.rfc-editor.org/info/rfc7539
+ *      RFC 7539: ChaCha20 and Poly1305 for IETF Protocols
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Jan Luehe
  * @see KeyGenerator
  * @see SecretKey
@@ -515,6 +521,7 @@ public class Cipher {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code Cipher} object that implements the requested
      * transformation
      *
@@ -539,10 +546,9 @@ public class Cipher {
         for (Transform transform : transforms) {
             cipherServices.add(new ServiceId("Cipher", transform.transform));
         }
-        List<Service> services = GetInstance.getServices(cipherServices);
         // make sure there is at least one service from a signed provider
         // and that it can use the specified mode and padding
-        Iterator<Service> t = services.iterator();
+        Iterator<Service> t = GetInstance.getServices(cipherServices);
         Exception failure = null;
         while (t.hasNext()) {
             Service s = t.next();
@@ -607,6 +613,7 @@ public class Cipher {
      *
      * @param provider the name of the provider
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code Cipher} object that implements the requested
      * transformation
      *
@@ -679,6 +686,7 @@ public class Cipher {
      *
      * @param provider the provider
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code Cipher} object that implements the requested
      * transformation
      *

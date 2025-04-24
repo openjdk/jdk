@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 #include "oops/oop.hpp"
 #include "utilities/debug.hpp"
@@ -85,8 +84,8 @@ static inline bool requires_marking(const void* entry, G1CollectedHeap* g1h) {
   assert(g1h->is_in_reserved(entry),
          "Non-heap pointer in SATB buffer: " PTR_FORMAT, p2i(entry));
 
-  HeapRegion* region = g1h->heap_region_containing(entry);
-  if (entry >= region->top_at_mark_start()) {
+  G1ConcurrentMark* cm = g1h->concurrent_mark();
+  if (cm->obj_allocated_since_mark_start(cast_to_oop(entry))) {
     return false;
   }
 

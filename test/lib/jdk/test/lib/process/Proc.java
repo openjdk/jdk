@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,6 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.Permission;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -57,11 +54,9 @@ import java.util.stream.Collectors;
  *        .args("x")            // with args
  *        .env("env", "value")  // and an environment variable
  *        .prop("key","value")  // and a system property
- *        .grant(file)          // grant codes in this codebase
- *        .perm(perm)           // with the permission
  *        .start();             // and start
  *
- * create/start must be called, args/env/prop/perm can be called zero or
+ * create/start must be called, args/env/prop can be called zero or
  * multiple times between create and start.
  *
  * The controller can call inheritIO to share its I/O to the process.
@@ -132,11 +127,6 @@ public class Proc {
     private final StringBuilder stdout = new StringBuilder();
 
     final private static String PREFIX = "PROCISFUN:";
-
-    // policy file
-    final private StringBuilder perms = new StringBuilder();
-    // temporary saving the grant line in a policy file
-    final private StringBuilder grant = new StringBuilder();
 
     // The following methods are called by controllers
 
@@ -215,61 +205,7 @@ public class Proc {
         addcp = true;
         return cp(s);
     }
-    // Adds a permission to policy. Can be called multiple times.
-    // All perm() calls after a series of grant() calls are grouped into
-    // a single grant block. perm() calls before any grant() call are grouped
-    // into a grant block with no restriction.
-    // Please note that in order to make permissions effective, also call
-    // prop("java.security.manager", "").
-    public Proc perm(Permission p) {
-        if (grant.length() != 0) {      // Right after grant(s)
-            if (perms.length() != 0) {  // Not first block
-                perms.append("};\n");
-            }
-            perms.append("grant ").append(grant).append(" {\n");
-            grant.setLength(0);
-        } else {
-            if (perms.length() == 0) {  // First block w/o restriction
-                perms.append("grant {\n");
-            }
-        }
-        if (p.getActions().isEmpty()) {
-            String s = String.format("%s \"%s\"",
-                    p.getClass().getCanonicalName(),
-                    p.getName()
-                            .replace("\\", "\\\\").replace("\"", "\\\""));
-            perms.append("    permission ").append(s).append(";\n");
-        } else {
-            String s = String.format("%s \"%s\", \"%s\"",
-                    p.getClass().getCanonicalName(),
-                    p.getName()
-                            .replace("\\", "\\\\").replace("\"", "\\\""),
-                    p.getActions());
-            perms.append("    permission ").append(s).append(";\n");
-        }
-        return this;
-    }
 
-    // Adds a grant option to policy. If called in a row, a single grant block
-    // with all options will be created. If there are perm() call(s) between
-    // grant() calls, they belong to different grant blocks
-
-    // grant on a principal
-    public Proc grant(Principal p) {
-        grant.append("principal ").append(p.getClass().getName())
-                .append(" \"").append(p.getName()).append("\", ");
-        return this;
-    }
-    // grant on a codebase
-    public Proc grant(File f) {
-        grant.append("codebase \"").append(f.toURI()).append("\", ");
-        return this;
-    }
-    // arbitrary grant
-    public Proc grant(String v) {
-        grant.append(v).append(", ");
-        return this;
-    }
     // Compile as well
     public Proc compile() {
         compile = true;
@@ -354,12 +290,6 @@ public class Proc {
 
         for (Entry<String,String> e: prop.entrySet()) {
             cmd.add("-D" + e.getKey() + "=" + e.getValue());
-        }
-        if (perms.length() > 0) {
-            Path p = Paths.get(getId("policy")).toAbsolutePath();
-            perms.append("};\n");
-            Files.write(p, perms.toString().getBytes());
-            cmd.add("-Djava.security.policy=" + p.toString());
         }
         cmd.add(clazz);
         for (String s: args) {

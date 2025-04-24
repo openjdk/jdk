@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
@@ -62,7 +61,7 @@ TEST_VM(BufferNodeAllocatorTest, test) {
   for (size_t i = 0; i < node_count; ++i) {
     ASSERT_EQ(0u, allocator.free_count());
     nodes[i] = allocator.allocate();
-    ASSERT_EQ((BufferNode*)NULL, nodes[i]->next());
+    ASSERT_EQ(nullptr, nodes[i]->next());
   }
 
   // Release the nodes, adding them to the allocator's free list.
@@ -102,7 +101,7 @@ public:
   }
 
   void push(BufferNode* node) {
-    assert(node != NULL, "precondition");
+    assert(node != nullptr, "precondition");
     _completed_list.push(*node);
   }
 
@@ -142,7 +141,7 @@ public:
       ++_allocations;
       ThreadBlockInVM tbiv(this); // Safepoint check.
     }
-    tty->print_cr("allocations: " SIZE_FORMAT, _allocations);
+    tty->print_cr("allocations: %zu", _allocations);
     Atomic::add(_total_allocations, _allocations);
   }
 };
@@ -169,7 +168,7 @@ public:
     bool shutdown_requested = false;
     while (true) {
       BufferNode* node = _cbl->pop();
-      if (node != NULL) {
+      if (node != nullptr) {
         _allocator->release(node);
       } else if (shutdown_requested) {
         return;
@@ -234,8 +233,8 @@ static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
     post.wait_with_safepoint_check(this_thread);
   }
   ASSERT_TRUE(BufferNode::TestSupport::try_transfer_pending(allocator));
-  tty->print_cr("total allocations: " SIZE_FORMAT, total_allocations);
-  tty->print_cr("allocator free count: " SIZE_FORMAT, allocator->free_count());
+  tty->print_cr("total allocations: %zu", total_allocations);
+  tty->print_cr("allocator free count: %zu", allocator->free_count());
 }
 
 TEST_VM(BufferNodeAllocatorTest, stress_free_list_allocator) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8293177
+ * @bug 8293177 8324774
  * @summary Verify version numbers in legal files
  * @library /test/lib
  * @build jtreg.SkippedException
@@ -47,15 +47,16 @@ import jtreg.SkippedException;
 public class CheckLibraryVersions {
     static class SourceDirNotFound extends Error {}
     // Regex pattern for library name and version in legal Markdown file
-    static final Pattern versionPattern = Pattern.compile("## ([\\w\\s]+) v(\\d+\\.\\d+\\.\\d+)");
+    static final Pattern versionPattern = Pattern.compile("## ([\\w\\s]+) v(\\d+(\\.\\d+){1,2})");
 
     // Map of 3rd party libraries. The keys are the names of files in the legal directory,
     // the values are lists of templates for library files with the following placeholders:
     //  %V is replaced with the version string
     //  %M is replaced twice, once with an empty string and once with ".min"
     static final Map<String, List<String>> libraries = Map.of(
-            "jquery.md", List.of("jquery-%V%M.js"),
-            "jqueryUI.md", List.of("jquery-ui%M.js", "jquery-ui%M.css")
+            "jquery.md", List.of("jquery/jquery-%V%M.js"),
+            "jqueryUI.md", List.of("jquery/jquery-ui%M.js", "jquery/jquery-ui%M.css"),
+            "dejavufonts.md", List.of("fonts/dejavu.css")
     );
 
     public static void main(String... args) throws Exception {
@@ -73,7 +74,7 @@ public class CheckLibraryVersions {
         var legalDir = rootDir.resolve("src/jdk.javadoc/share/legal");
         var scriptDir = rootDir.resolve("src/jdk.javadoc/share/classes")
                                      .resolve("jdk/javadoc/internal/doclets/formats/html")
-                                     .resolve("resources/jquery");
+                                     .resolve("resources");
 
         for (var legalFileName : libraries.keySet()) {
             var legalFile = legalDir.resolve(legalFileName);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
@@ -40,9 +39,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
-#ifdef COMPILER2
-#include "opto/matcher.hpp"
-#endif
 
 // -----------------------------------------------------------------------------------------
 // Implementation of VtableStub
@@ -82,7 +78,7 @@ void* VtableStub::operator new(size_t size, int code_size) throw() {
 
 
 void VtableStub::print_on(outputStream* st) const {
-  st->print("vtable stub (index = %d, receiver_location = " INTX_FORMAT ", code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "])",
+  st->print("vtable stub (index = %d, receiver_location = %zd, code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "])",
              index(), p2i(receiver_location()), p2i(code_begin()), p2i(code_end()));
 }
 
@@ -229,7 +225,7 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
 
       enter(is_vtable_stub, vtable_index, s);
       if (PrintAdapterHandlers) {
-        tty->print_cr("Decoding VtableStub %s[%d]@" PTR_FORMAT " [" PTR_FORMAT ", " PTR_FORMAT "] (" SIZE_FORMAT " bytes)",
+        tty->print_cr("Decoding VtableStub %s[%d]@" PTR_FORMAT " [" PTR_FORMAT ", " PTR_FORMAT "] (%zu bytes)",
                       is_vtable_stub? "vtbl": "itbl", vtable_index, p2i(VtableStub::receiver_location()),
                       p2i(s->code_begin()), p2i(s->code_end()), pointer_delta(s->code_end(), s->code_begin(), 1));
         Disassembler::decode(s->code_begin(), s->code_end());
@@ -255,6 +251,20 @@ inline uint VtableStubs::hash(bool is_vtable_stub, int vtable_index){
 }
 
 
+inline uint VtableStubs::unsafe_hash(address entry_point) {
+  // The entrypoint may or may not be a VtableStub. Generate a hash as if it was.
+  address vtable_stub_addr = entry_point - VtableStub::entry_offset();
+  assert(CodeCache::contains(vtable_stub_addr), "assumed to always be the case");
+  address vtable_type_addr = vtable_stub_addr + offset_of(VtableStub, _type);
+  address vtable_index_addr = vtable_stub_addr + offset_of(VtableStub, _index);
+  bool is_vtable_stub = *vtable_type_addr == static_cast<uint8_t>(VtableStub::Type::vtable_stub);
+  short vtable_index;
+  static_assert(sizeof(VtableStub::_index) == sizeof(vtable_index), "precondition");
+  memcpy(&vtable_index, vtable_index_addr, sizeof(vtable_index));
+  return hash(is_vtable_stub, vtable_index);
+}
+
+
 VtableStub* VtableStubs::lookup(bool is_vtable_stub, int vtable_index) {
   assert_lock_strong(VtableStubs_lock);
   unsigned hash = VtableStubs::hash(is_vtable_stub, vtable_index);
@@ -275,19 +285,15 @@ void VtableStubs::enter(bool is_vtable_stub, int vtable_index, VtableStub* s) {
 }
 
 VtableStub* VtableStubs::entry_point(address pc) {
+  // The pc may or may not be the entry point for a VtableStub. Use unsafe_hash
+  // to generate the hash that would have been used if it was. The lookup in the
+  // _table will only succeed if there is a VtableStub with an entry point at
+  // the pc.
   MutexLocker ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
-  VtableStub* stub = (VtableStub*)(pc - VtableStub::entry_offset());
-  uint hash = VtableStubs::hash(stub->is_vtable_stub(), stub->index());
+  uint hash = VtableStubs::unsafe_hash(pc);
   VtableStub* s;
-  for (s = Atomic::load(&_table[hash]); s != nullptr && s != stub; s = s->next()) {}
-  return (s == stub) ? s : nullptr;
-}
-
-bool VtableStubs::is_icholder_entry(address pc) {
-  assert(contains(pc), "must contain all vtable blobs");
-  VtableStub* stub = (VtableStub*)(pc - VtableStub::entry_offset());
-  // itable stubs use CompiledICHolder.
-  return stub->is_itable_stub();
+  for (s = Atomic::load(&_table[hash]); s != nullptr && s->entry_point() != pc; s = s->next()) {}
+  return (s != nullptr && s->entry_point() == pc) ? s : nullptr;
 }
 
 bool VtableStubs::contains(address pc) {

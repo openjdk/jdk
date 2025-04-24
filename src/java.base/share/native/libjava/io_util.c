@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
 
     (*env)->GetByteArrayRegion(env, bytes, off, len, (jbyte *)buf);
 
-    if (!(*env)->ExceptionOccurred(env)) {
+    if (!(*env)->ExceptionCheck(env)) {
         off = 0;
         while (len > 0) {
             fd = getFD(env, this, fid);

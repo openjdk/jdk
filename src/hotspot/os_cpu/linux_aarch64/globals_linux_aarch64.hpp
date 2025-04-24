@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,8 +28,6 @@
 
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
-
-define_pd_global(bool, DontYieldALot,            false);
 
 // Set default stack sizes < 2MB so as to prevent stacks from getting
 // large-page aligned and backed by THPs on systems where 2MB is the

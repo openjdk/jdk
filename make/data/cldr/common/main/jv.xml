@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -51,6 +51,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bi">Bislama</language>
 			<language type="bin">Bini</language>
 			<language type="bla">Siksiká</language>
+			<language type="blo">Anii</language>
 			<language type="bm">Bambara</language>
 			<language type="bn">Bengali</language>
 			<language type="bo">Tibet</language>
@@ -123,7 +124,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eu">Basque</language>
 			<language type="ewo">Ewondo</language>
 			<language type="fa">Persia</language>
-			<language type="ff">Fulah</language>
+			<language type="ff">Fula</language>
 			<language type="fi">Suomi</language>
 			<language type="fil">Tagalog</language>
 			<language type="fj">Fijian</language>
@@ -169,6 +170,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="iba">Iban</language>
 			<language type="ibb">Ibibio</language>
 			<language type="id">Indonesia</language>
+			<language type="ie">Interlingue</language>
 			<language type="ig">Iqbo</language>
 			<language type="ii">Sichuan Yi</language>
 			<language type="ikt">Kanada Inuktitut Sisih Kulon</language>
@@ -221,6 +223,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kv">Komi</language>
 			<language type="kw">Kernowek</language>
 			<language type="kwk">Kwakʼwala</language>
+			<language type="kxv">Kuvi</language>
 			<language type="ky">Kirgis</language>
 			<language type="la">Latin</language>
 			<language type="lad">Ladino</language>
@@ -229,6 +232,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lez">Lesghian</language>
 			<language type="lg">Ganda</language>
 			<language type="li">Limburgish</language>
+			<language type="lij">Liguria</language>
 			<language type="lil">Lillooet</language>
 			<language type="lkt">Lakota</language>
 			<language type="lmo">Lombard</language>
@@ -342,12 +346,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="rwk">Rwa</language>
 			<language type="sa">Sanskerta</language>
 			<language type="sad">Sandawe</language>
-			<language type="sah">Sakha</language>
+			<language type="sah">Yakut</language>
 			<language type="saq">Samburu</language>
 			<language type="sat">Santali</language>
 			<language type="sba">Ngambai</language>
 			<language type="sbp">Sangu</language>
-			<language type="sc">Sardinian</language>
+			<language type="sc">Sardinia</language>
 			<language type="scn">Sisilia</language>
 			<language type="sco">Skots</language>
 			<language type="sd">Sindhi</language>
@@ -379,6 +383,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sw">Swahili</language>
 			<language type="swb">Komorian</language>
 			<language type="syr">Siriak</language>
+			<language type="szl">Silesia</language>
 			<language type="ta">Tamil</language>
 			<language type="tce">Tutkhone Sisih Kidul</language>
 			<language type="te">Telugu</language>
@@ -418,7 +423,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="uz">Uzbek</language>
 			<language type="vai">Vai</language>
 			<language type="ve">Venda</language>
+			<language type="vec">Venesia</language>
 			<language type="vi">Vietnam</language>
+			<language type="vmw">Makhuwa</language>
 			<language type="vo">Volapuk</language>
 			<language type="vun">Vunjo</language>
 			<language type="wa">Walloon</language>
@@ -429,6 +436,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="wuu">Tyonghwa Wu</language>
 			<language type="xal">Kalmik</language>
 			<language type="xh">Xhosa</language>
+			<language type="xnr">Kangri</language>
 			<language type="xog">Soga</language>
 			<language type="yav">Yangben</language>
 			<language type="ybb">Yemba</language>
@@ -437,6 +445,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yrl">Nheengatu</language>
 			<language type="yue">Kanton</language>
 			<language type="yue" alt="menu">Tyonghwa, Kanton</language>
+			<language type="za">Zhuang</language>
 			<language type="zgh">Tamazight Moroko Standar</language>
 			<language type="zh">Tyonghwa</language>
 			<language type="zh" alt="menu">Tyonghwa, Mandarin</language>
@@ -500,7 +509,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Tfng">Tifinak</script>
 			<script type="Thaa">Thaana</script>
 			<script type="Thai">Thailand</script>
-			<script type="Tibt">Tibetan</script>
+			<script type="Tibt">Tibet</script>
 			<script type="Vaii">Vai</script>
 			<script type="Yiii">Yi</script>
 			<script type="Zmth">Notasi Matematika</script>
@@ -574,7 +583,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BO">Bolivia</territory>
 			<territory type="BQ">Karibia Walanda</territory>
 			<territory type="BR">Brasil</territory>
-			<territory type="BS">Bahamas</territory>
+			<territory type="BS">Bahama</territory>
 			<territory type="BT">Bhutan</territory>
 			<territory type="BV">Pulo Bovèt</territory>
 			<territory type="BW">Botswana</territory>
@@ -925,7 +934,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -1827,9 +1836,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Cordoba">
 				<exemplarCity>Kordoba</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
-			</zone>
 			<zone type="America/St_Barthelemy">
 				<exemplarCity>Santa Barthelemy</exemplarCity>
 			</zone>
@@ -1850,12 +1856,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Cambridge_Bay">
 				<exemplarCity>Teluk Cambridge</exemplarCity>
-			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>Kali Rainy</exemplarCity>
-			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>Teluk Gludhug</exemplarCity>
 			</zone>
 			<zone type="America/Halifax">
 				<exemplarCity>Halifak</exemplarCity>
@@ -2271,13 +2271,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Wektu Ketigo Cina</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Wektu Choibalsan</generic>
-					<standard>Wektu Standar Choibalsan</standard>
-					<daylight>WEktu Ketigo Choibalsan</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Wektu Pulo Natal</standard>
@@ -2516,6 +2509,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Wektu Ketigo Jepang</daylight>
 				</long>
 			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Wektu Kazakhstan</standard>
+				</long>
+			</metazone>
 			<metazone type="Kazakhstan_Eastern">
 				<long>
 					<standard>Wektu Kazakhstan Wetan</standard>
@@ -2562,11 +2560,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Wektu Ketigo Lord Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Wektu Pulo Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Wektu Magadan</generic>
@@ -2604,13 +2597,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>Wektu Mawson</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Wektu Meksiko Lor-Kulon</generic>
-					<standard>Wektu Standar Meksiko Lor-Kulon</standard>
-					<daylight>Wektu Ketigo Meksiko Lor-Kulon</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
@@ -3263,8 +3249,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Dolar Liberia</displayName>
 			</currency>
 			<currency type="LSL">
-				<displayName>Lesotho Loti</displayName>
-				<displayName count="other">Lesotho lotis</displayName>
+				<displayName>Loti Lesotho</displayName>
+				<displayName count="other">Loti Lesotho</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName>Dinar Libya</displayName>
@@ -3346,7 +3332,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Kina Papua Nugini</displayName>
 			</currency>
 			<currency type="PHP">
-				<displayName>Piso Filipina</displayName>
+				<displayName>Peso Filipina</displayName>
+				<displayName count="other">Peso Filipina</displayName>
 			</currency>
 			<currency type="PKR">
 				<displayName>Rupee Pakistan</displayName>
@@ -4146,7 +4133,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} barel</unitPattern>
 			</unit>
 			<unit type="volume-pinch">
-				<displayName>sak juwit</displayName>
+				<displayName>jiwit</displayName>
+				<unitPattern count="other">{0} jiwit</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>cahya</displayName>
+				<unitPattern count="other">{0} cahya</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>wengi</displayName>
+				<unitPattern count="other">{0} wengi</unitPattern>
+				<perUnitPattern>{0}/wengi</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>arah kardinal</displayName>
@@ -4430,7 +4427,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="light-candela">
 				<displayName>kandela</displayName>
-				<unitPattern count="other">{0} kandela</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>luminositas srengenge</displayName>
@@ -4602,12 +4598,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} banyu dram</unitPattern>
 			</unit>
 			<unit type="volume-pinch">
-				<displayName>juwit</displayName>
-				<unitPattern count="other">{0} sak juwit</unitPattern>
+				<displayName>jiwit</displayName>
+				<unitPattern count="other">{0} jiwit</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
 				<displayName>Imp. seprapat galon</displayName>
 				<unitPattern count="other">{0} Imp. seprapat galon</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>cahya</displayName>
+				<unitPattern count="other">{0} cahya</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>wengi</displayName>
+				<unitPattern count="other">{0} wengi</unitPattern>
+				<perUnitPattern>{0}/wengi</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>arah</displayName>
@@ -4664,6 +4669,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="graphics-dot-per-inch">
 				<unitPattern count="other">{0}tpi</unitPattern>
 			</unit>
+			<unit type="light-candela">
+				<unitPattern count="other">{0} cd</unitPattern>
+			</unit>
 			<unit type="mass-tonne">
 				<unitPattern count="other">{0}t</unitPattern>
 			</unit>
@@ -4704,10 +4712,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}by.dr.</unitPattern>
 			</unit>
 			<unit type="volume-pinch">
-				<unitPattern count="other">{0}juwit</unitPattern>
+				<displayName>jiwit</displayName>
+				<unitPattern count="other">{0}jiwit</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
 				<unitPattern count="other">{0}spt-lmp.</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>cahya</displayName>
+				<unitPattern count="other">{0} cahya</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>wengi</displayName>
 			</unit>
 		</unitLength>
 	</units>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,12 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     boolean hasFinalizer();
 
     /**
-     * Checks whether this type has any finalizable subclasses so far. Any decisions based on this
-     * information require the registration of a dependency, since this information may change.
+     * Checks whether this type might have finalizable subclasses. Any decisions based on a
+     * negative answer require the registration of a dependency, since this information may change.
+     * For example, dynamic class loading can later load a finalizable subclass.
      *
-     * @return {@code true} if this class has any subclasses with finalizers
+     * @return an {@link AssumptionResult} specifying if this class may have any subclasses with
+     *         finalizers along with any assumptions under which this answer holds
      */
     AssumptionResult<Boolean> hasFinalizableSubclass();
 
@@ -282,24 +284,21 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     AssumptionResult<ResolvedJavaMethod> findUniqueConcreteMethod(ResolvedJavaMethod method);
 
     /**
-     * Returns the instance fields of this class, including
+     * Returns the non-static fields of this class, including
      * {@linkplain ResolvedJavaField#isInternal() internal} fields. A zero-length array is returned
-     * for array and primitive types. The order of fields returned by this method is stable. That
-     * is, for a single JVM execution the same order is returned each time this method is called. It
-     * is also the "natural" order, which means that the JVM would expect the fields in this order
-     * if no specific order is given.
+     * for array and primitive types. The order of fields declared by a single class returned by
+     * this method is the same as {@link Class#getDeclaredFields}.
      *
-     * @param includeSuperclasses if true, then instance fields for the complete hierarchy of this
-     *            type are included in the result
-     * @return an array of instance fields
+     * @param includeSuperclasses if true, then non-static fields for the complete hierarchy of this
+     *            type are included in the result with superclass fields coming before subclass fields
+     * @return an array of non-static fields
      */
     ResolvedJavaField[] getInstanceFields(boolean includeSuperclasses);
 
     /**
      * Returns the static fields of this class, including {@linkplain ResolvedJavaField#isInternal()
      * internal} fields. A zero-length array is returned for array and primitive types. The order of
-     * fields returned by this method is stable. That is, for a single JVM execution the same order
-     * is returned each time this method is called.
+     * fields returned by this method is the same as {@link Class#getDeclaredFields}.
      */
     ResolvedJavaField[] getStaticFields();
 
@@ -399,5 +398,10 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     @SuppressWarnings("unused")
     default ResolvedJavaField resolveField(UnresolvedJavaField unresolvedJavaField, ResolvedJavaType accessingClass) {
         return null;
+    }
+
+    @Override
+    default boolean isConcrete() {
+        return isArray() || !isAbstract();
     }
 }

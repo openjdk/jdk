@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,10 @@ inline OldGCAllocRegion* G1Allocator::old_gc_alloc_region() {
   return &_old_gc_alloc_region;
 }
 
-inline HeapWord* G1Allocator::attempt_allocation(size_t min_word_size,
+inline HeapWord* G1Allocator::attempt_allocation(uint node_index,
+                                                 size_t min_word_size,
                                                  size_t desired_word_size,
                                                  size_t* actual_word_size) {
-  uint node_index = current_node_index();
-
   HeapWord* result = mutator_alloc_region(node_index)->attempt_retained_allocation(min_word_size, desired_word_size, actual_word_size);
   if (result != nullptr) {
     return result;
@@ -62,18 +61,12 @@ inline HeapWord* G1Allocator::attempt_allocation(size_t min_word_size,
   return mutator_alloc_region(node_index)->attempt_allocation(min_word_size, desired_word_size, actual_word_size);
 }
 
-inline HeapWord* G1Allocator::attempt_allocation_locked(size_t word_size) {
-  uint node_index = current_node_index();
+inline HeapWord* G1Allocator::attempt_allocation_locked(uint node_index, size_t word_size) {
   HeapWord* result = mutator_alloc_region(node_index)->attempt_allocation_locked(word_size);
 
   assert(result != nullptr || mutator_alloc_region(node_index)->get() == nullptr,
          "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT, p2i(mutator_alloc_region(node_index)->get()));
   return result;
-}
-
-inline HeapWord* G1Allocator::attempt_allocation_force(size_t word_size) {
-  uint node_index = current_node_index();
-  return mutator_alloc_region(node_index)->attempt_allocation_force(word_size);
 }
 
 inline PLAB* G1PLABAllocator::alloc_buffer(G1HeapRegionAttr dest, uint node_index) const {

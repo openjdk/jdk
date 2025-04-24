@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.jfc.JFC;
 import jdk.jfr.internal.jfc.model.AbortException;
 import jdk.jfr.internal.jfc.model.JFCModel;
@@ -129,7 +128,7 @@ final class Configure extends Command {
         stream.println("Options for " + name + ":");
         stream.println();
         try {
-            SafePath path = JFC.createSafePath(name);
+            Path path = JFC.ofPath(name);
             JFCModel parameters = JFCModel.create(path, l -> stream.println("Warning! " + l));
             for (XmlInput input : parameters.getInputs()) {
                 stream.println("  " + input.getOptionSyntax());
@@ -144,7 +143,7 @@ final class Configure extends Command {
     public void execute(Deque<String> options) throws UserSyntaxException, UserDataException {
         boolean interactive = false;
         boolean log = false;
-        SafePath output = null;
+        Path output = null;
         Map<String, String> keyValues = new LinkedHashMap<>();
         int optionCount = options.size();
         while (optionCount > 0) {
@@ -192,7 +191,7 @@ final class Configure extends Command {
         return false;
     }
 
-    private void configure(boolean interactive, boolean log, SafePath output, Map<String, String> options) throws UserDataException {
+    private void configure(boolean interactive, boolean log, Path output, Map<String, String> options) throws UserDataException {
         UserInterface ui = new UserInterface();
         if (log) {
             SettingsLog.enable();
@@ -201,14 +200,14 @@ final class Configure extends Command {
         model.setLabel("Custom");
         for (String input : inputFiles) {
             try {
-                model.parse(JFC.createSafePath(input));
+                model.parse(JFC.ofPath(input));
             } catch (InvalidPathException | IOException | JFCModelException | ParseException e) {
                 throw new UserDataException(JFC.formatException("could not", e, input));
             }
         }
         try {
             if (output == null) {
-                output = new SafePath(Path.of("custom.jfc"));
+                output = Path.of("custom.jfc");
             }
             for (var option : options.entrySet()) {
                 model.configure(option.getKey(), option.getValue());
@@ -230,7 +229,7 @@ final class Configure extends Command {
             }
             model.saveToFile(output);
             ui.println("Configuration written successfully to:");
-            ui.println(output.toPath().toAbsolutePath().toString());
+            ui.println(output.toAbsolutePath().toString());
         } catch (IllegalArgumentException iae) {
             throw new UserDataException(iae.getMessage());
         } catch (FileNotFoundException ffe) {
@@ -246,7 +245,7 @@ final class Configure extends Command {
         }
     }
 
-    private static SafePath filename(UserInterface ui, SafePath file) throws AbortException {
+    private static Path filename(UserInterface ui, Path file) throws AbortException {
         ui.println();
         ui.println("Filename: " + file + " (default)");
         while (true) {
@@ -256,7 +255,7 @@ final class Configure extends Command {
                     return file;
                 }
                 if (line.endsWith(".jfc")) {
-                    return new SafePath(line);
+                    return Path.of(line);
                 }
                 ui.println("Filename must end with .jfc.");
             } catch (InvalidPathException ipe) {
@@ -265,14 +264,14 @@ final class Configure extends Command {
         }
     }
 
-    private SafePath makeJFCPath(String file) throws UserDataException, UserSyntaxException {
+    private Path makeJFCPath(String file) throws UserDataException, UserSyntaxException {
         if (file.startsWith("--")) {
             throw new UserSyntaxException("missing file");
         }
         try {
             Path path = Path.of(file).toAbsolutePath();
             ensureFileExtension(path, ".jfc");
-            return new SafePath(path);
+            return path;
         } catch (IOError ioe) {
             throw new UserDataException("i/o error reading file '" + file + "', " + ioe.getMessage());
         } catch (InvalidPathException ipe) {

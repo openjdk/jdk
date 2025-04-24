@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classFileParser.hpp"
@@ -78,7 +77,8 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
       ClassFileStream* stream = new ClassFileStream(ptr,
                                                     pointer_delta_as_int(end_ptr, ptr),
                                                     cfs->source(),
-                                                    ClassFileStream::verify);
+                                                    /* from_boot_loader_modules_image */ false,
+                                                    /* from_class_file_load_hook */ true);
       ClassLoadInfo cl_info(protection_domain);
       ClassFileParser parser(stream,
                              class_name,
@@ -97,6 +97,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
 
       if (class_loader.is_null()) {
         new_ik->set_classpath_index(path_index);
+        new_ik->assign_class_loader_type();
       }
 
       return new_ik;
@@ -157,7 +158,8 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
       stream = new ClassFileStream(ptr,
                                    pointer_delta_as_int(end_ptr, ptr),
                                    stream->source(),
-                                   stream->need_verify());
+                                   /* from_boot_loader_modules_image */ false,
+                                   /* from_class_file_load_hook */ true);
     }
   }
 

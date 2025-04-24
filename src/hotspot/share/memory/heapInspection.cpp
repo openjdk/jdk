@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -83,14 +82,14 @@ const char* KlassInfoEntry::name() const {
   if (_klass->name() != nullptr) {
     name = _klass->external_name();
   } else {
-    if (_klass == Universe::boolArrayKlassObj())         name = "<boolArrayKlass>";         else
-    if (_klass == Universe::charArrayKlassObj())         name = "<charArrayKlass>";         else
-    if (_klass == Universe::floatArrayKlassObj())        name = "<floatArrayKlass>";        else
-    if (_klass == Universe::doubleArrayKlassObj())       name = "<doubleArrayKlass>";       else
-    if (_klass == Universe::byteArrayKlassObj())         name = "<byteArrayKlass>";         else
-    if (_klass == Universe::shortArrayKlassObj())        name = "<shortArrayKlass>";        else
-    if (_klass == Universe::intArrayKlassObj())          name = "<intArrayKlass>";          else
-    if (_klass == Universe::longArrayKlassObj())         name = "<longArrayKlass>";         else
+    if (_klass == Universe::boolArrayKlass())         name = "<boolArrayKlass>";         else
+    if (_klass == Universe::charArrayKlass())         name = "<charArrayKlass>";         else
+    if (_klass == Universe::floatArrayKlass())        name = "<floatArrayKlass>";        else
+    if (_klass == Universe::doubleArrayKlass())       name = "<doubleArrayKlass>";       else
+    if (_klass == Universe::byteArrayKlass())         name = "<byteArrayKlass>";         else
+    if (_klass == Universe::shortArrayKlass())        name = "<shortArrayKlass>";        else
+    if (_klass == Universe::intArrayKlass())          name = "<intArrayKlass>";          else
+    if (_klass == Universe::longArrayKlass())         name = "<longArrayKlass>";         else
       name = "<no name>";
   }
   return name;
@@ -170,7 +169,7 @@ public:
 
 KlassInfoTable::KlassInfoTable(bool add_all_classes) {
   _size_of_instances_in_words = 0;
-  _ref = (HeapWord*) Universe::boolArrayKlassObj();
+  _ref = (uintptr_t) Universe::boolArrayKlass();
   _buckets =
     (KlassInfoBucket*)  AllocateHeap(sizeof(KlassInfoBucket) * _num_buckets,
        mtInternal, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
@@ -196,7 +195,7 @@ KlassInfoTable::~KlassInfoTable() {
 }
 
 uint KlassInfoTable::hash(const Klass* p) {
-  return (uint)(((uintptr_t)p - (uintptr_t)_ref) >> 2);
+  return (uint)(((uintptr_t)p - _ref) >> 2);
 }
 
 KlassInfoEntry* KlassInfoTable::lookup(Klass* k) {
@@ -592,7 +591,7 @@ void HeapInspection::heap_inspection(outputStream* st, WorkerThreads* workers) {
     // populate table with object allocation info
     uintx missed_count = populate_table(&cit, nullptr, workers);
     if (missed_count != 0) {
-      log_info(gc, classhisto)("WARNING: Ran out of C-heap; undercounted " UINTX_FORMAT
+      log_info(gc, classhisto)("WARNING: Ran out of C-heap; undercounted %zu"
                                " total instances in data below",
                                missed_count);
     }

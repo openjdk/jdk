@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
+#include "gc/g1/g1GCPauseType.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1Trace.hpp"
-#include "gc/g1/g1GCPauseType.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "jfr/jfrEvents.hpp"
 #if INCLUDE_JFR
@@ -70,7 +69,7 @@ static void register_jfr_type_constants() {
 #endif
 
 void G1NewTracer::initialize() {
-  JFR_ONLY(register_jfr_type_constants());
+  JFR_ONLY(register_jfr_type_constants();)
 }
 
 void G1NewTracer::report_young_gc_pause(G1GCPauseType pause) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace/chunkHeaderPool.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/metachunk.hpp"
@@ -46,14 +45,14 @@ class ChunkHeaderPoolTest {
 
   void attempt_free_at(size_t index) {
 
-    LOG("attempt_free_at " SIZE_FORMAT ".", index);
+    LOG("attempt_free_at %zu.", index);
 
-    if (_elems[index] == NULL) {
+    if (_elems[index] == nullptr) {
       return;
     }
 
     _pool.return_chunk_header(_elems[index]);
-    _elems[index] = NULL;
+    _elems[index] = nullptr;
 
     _num_allocated.decrement();
     DEBUG_ONLY(_num_allocated.check(_pool.used());)
@@ -64,9 +63,9 @@ class ChunkHeaderPoolTest {
 
   void attempt_allocate_at(size_t index) {
 
-    LOG("attempt_allocate_at " SIZE_FORMAT ".", index);
+    LOG("attempt_allocate_at %zu.", index);
 
-    if (_elems[index] != NULL) {
+    if (_elems[index] != nullptr) {
       return;
     }
 
@@ -82,7 +81,7 @@ class ChunkHeaderPoolTest {
   }
 
   void attempt_allocate_or_free_at(size_t index) {
-    if (_elems[index] == NULL) {
+    if (_elems[index] == nullptr) {
       attempt_allocate_at(index);
     } else {
       attempt_free_at(index);

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -98,13 +98,7 @@ AC_DEFUN([LIB_SETUP_JVM_LIBS],
   # 32-bit platforms needs fallback library for 8-byte atomic ops on Zero
   if HOTSPOT_CHECK_JVM_VARIANT(zero); then
     if test "x$OPENJDK_$1_OS" = xlinux &&
-        (test "x$OPENJDK_$1_CPU" = xarm ||
-         test "x$OPENJDK_$1_CPU" = xm68k ||
-         test "x$OPENJDK_$1_CPU" = xmips ||
-         test "x$OPENJDK_$1_CPU" = xmipsel ||
-         test "x$OPENJDK_$1_CPU" = xppc ||
-         test "x$OPENJDK_$1_CPU" = xsh ||
-         test "x$OPENJDK_$1_CPU" = xriscv32); then
+        test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
       BASIC_JVM_LIBS_$1="$BASIC_JVM_LIBS_$1 -latomic"
     fi
   fi
@@ -129,12 +123,6 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
 
   LIB_TESTS_SETUP_GTEST
 
-  BASIC_JDKLIB_LIBS=""
-  BASIC_JDKLIB_LIBS_TARGET=""
-  if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
-    BASIC_JDKLIB_LIBS="-ljava -ljvm"
-  fi
-
   # Math library
   BASIC_JVM_LIBS="$LIBM"
 
@@ -145,7 +133,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
 
   # Threading library
   if test "x$OPENJDK_TARGET_OS" = xlinux || test "x$OPENJDK_TARGET_OS" = xaix; then
-    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lpthread"
+    BASIC_JVM_LIBS="$BASIC_JVM_LIBS $LIBPTHREAD"
   fi
 
   # librt for legacy clock_gettime
@@ -170,14 +158,10 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   LIB_SETUP_JVM_LIBS(BUILD)
   LIB_SETUP_JVM_LIBS(TARGET)
 
-  JDKLIB_LIBS="$BASIC_JDKLIB_LIBS"
-  JDKEXE_LIBS=""
   JVM_LIBS="$BASIC_JVM_LIBS $BASIC_JVM_LIBS_TARGET"
-  OPENJDK_BUILD_JDKLIB_LIBS="$BASIC_JDKLIB_LIBS"
+  OPENJDK_BUILD_JDKLIB_LIBS=""
   OPENJDK_BUILD_JVM_LIBS="$BASIC_JVM_LIBS $BASIC_JVM_LIBS_BUILD"
 
-  AC_SUBST(JDKLIB_LIBS)
-  AC_SUBST(JDKEXE_LIBS)
   AC_SUBST(JVM_LIBS)
   AC_SUBST(OPENJDK_BUILD_JDKLIB_LIBS)
   AC_SUBST(OPENJDK_BUILD_JVM_LIBS)
@@ -206,6 +190,28 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
   LIBDL="$LIBS"
   AC_SUBST(LIBDL)
   LIBS="$save_LIBS"
+
+  # Setup posix pthread support
+  if test "x$OPENJDK_TARGET_OS" != "xwindows"; then
+    LIBPTHREAD="-lpthread"
+  else
+    LIBPTHREAD=""
+  fi
+  AC_SUBST(LIBPTHREAD)
+
+  # Setup libiconv flags and library
+  if test "x$OPENJDK_TARGET_OS" == "xaix" || test "x$OPENJDK_TARGET_OS" == "xmacosx"; then
+    ICONV_CFLAGS=
+    ICONV_LDFLAGS=
+    ICONV_LIBS=-liconv
+  else
+    ICONV_CFLAGS=
+    ICONV_LDFLAGS=
+    ICONV_LIBS=
+  fi
+  AC_SUBST(ICONV_CFLAGS)
+  AC_SUBST(ICONV_LDFLAGS)
+  AC_SUBST(ICONV_LIBS)
 
   # Control if libzip can use mmap. Available for purposes of overriding.
   LIBZIP_CAN_USE_MMAP=true

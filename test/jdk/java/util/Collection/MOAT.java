@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug     6207984 6272521 6192552 6269713 6197726 6260652 5073546 4137464
  *          4155650 4216399 4294891 6282555 6318622 6355327 6383475 6420753
  *          6431845 4802633 6570566 6570575 6570631 6570924 6691185 6691215
- *          4802647 7123424 8024709 8193128
+ *          4802647 7123424 8024709 8193128 8327858
  * @summary Run many tests on many Collection and Map implementations
  * @author  Martin Buchholz
  * @modules java.base/java.util:open
@@ -246,6 +246,7 @@ public class MOAT {
             testCollection(list);
             testImmutableList(list);
             testListMutatorsAlwaysThrow(list);
+            testImmutableListMutatorsAlwaysThrow(list);
             if (list.size() >= 1) {
                 // test subLists
                 List<Integer> headList = list.subList(0, list.size() - 1);
@@ -478,6 +479,8 @@ public class MOAT {
                    () -> c.removeAll(singleton(first)),
                    () -> c.retainAll(emptyList()));
         }
+        testForEachMatch(c);
+        testSpliteratorMatch(c);
     }
 
     private static <T> void testImmutableSeqColl(final SequencedCollection<T> c, T t) {
@@ -539,6 +542,39 @@ public class MOAT {
                 () -> c.retainAll(c));
     }
 
+    // Ensures forEach supplies in the same order as the iterator
+    private static <T> void testForEachMatch(Collection<T> c) {
+        var itr = c.iterator();
+        int[] index = {0};
+        c.forEach(item -> {
+            T itrNext = null;
+            if (!itr.hasNext() || !Objects.equals(itrNext = itr.next(), item)) {
+                fail("forEach and iterator mismatch at " + index[0] + " forEach: " + item + ", itr: " + itrNext);
+            }
+            index[0]++;
+        });
+        if (itr.hasNext()) {
+            fail("forEach and iterator mismatch at tail, extras in itr");
+        }
+    }
+
+    // Ensures spliterator returns in the same order as the iterator
+    private static <T> void testSpliteratorMatch(Collection<T> c) {
+        var itr = c.iterator();
+        var split = c.spliterator();
+        int[] index = {0};
+        split.forEachRemaining(item -> {
+            T itrNext = null;
+            if (!itr.hasNext() || !Objects.equals(itrNext = itr.next(), item)) {
+                fail("iterator and spliterator mismatch at " + index[0] + " spliterator: " + item + ", itr: " + itrNext);
+            }
+            index[0]++;
+        });
+        if (itr.hasNext()) {
+            fail("iterator and spliterator mismatch at tail, extra item in itr");
+        }
+    }
+
     /**
      * Test that calling a mutator always throws UOE, even if the mutator
      * wouldn't actually do anything on an empty collection.
@@ -562,6 +598,12 @@ public class MOAT {
         testCollMutatorsAlwaysThrow(c);
         THROWS(UnsupportedOperationException.class,
                 () -> c.addAll(0, Collections.emptyList()));
+    }
+
+    private static void testImmutableListMutatorsAlwaysThrow(List<Integer> c) {
+        THROWS(UnsupportedOperationException.class,
+                c::removeFirst,
+                c::removeLast);
     }
 
     /**

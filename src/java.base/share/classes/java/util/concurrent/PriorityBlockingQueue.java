@@ -53,6 +53,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.util.ArraysSupport;
 
 /**
@@ -159,12 +160,12 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     private transient Comparator<? super E> comparator;
 
     /**
-     * Lock used for all public operations.
+     * @serial Lock used for all public operations.
      */
     private final ReentrantLock lock = new ReentrantLock();
 
     /**
-     * Condition for blocking when empty.
+     * @serial Condition for blocking when empty.
      */
     @SuppressWarnings("serial") // Classes implementing Condition may be serializable.
     private final Condition notEmpty = lock.newCondition();
@@ -175,7 +176,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     private transient volatile int allocationSpinLock;
 
     /**
-     * A plain PriorityQueue used only for serialization,
+     * @serial A plain PriorityQueue used only for serialization,
      * to maintain compatibility with previous versions
      * of this class. Non-null only during serialization/deserialization.
      */
@@ -1093,15 +1094,8 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     }
 
     // VarHandle mechanics
-    private static final VarHandle ALLOCATIONSPINLOCK;
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            ALLOCATIONSPINLOCK = l.findVarHandle(PriorityBlockingQueue.class,
-                                                 "allocationSpinLock",
-                                                 int.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
+    private static final VarHandle ALLOCATIONSPINLOCK =
+            MhUtil.findVarHandle(
+                    MethodHandles.lookup(), "allocationSpinLock", int.class);
+
 }

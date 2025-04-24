@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ public class IIOInvalidTreeException extends IIOException {
     /**
      * The {@code Node} that led to the parsing error, or
      * {@code null}.
+     *
+     * @serial
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     protected Node offendingNode = null;

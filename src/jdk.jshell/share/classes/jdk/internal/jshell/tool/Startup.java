@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,9 +118,13 @@ class Startup {
     }
 
     private static final String DEFAULT_STARTUP_NAME = "DEFAULT";
+    private static final String PREVIEW_DEFAULT_STARTUP_NAME = "PREVIEW_DEFAULT";
 
     // cached DEFAULT start-up
-    private static Startup defaultStartup = null;
+    private static Startup[] defaultStartup = new Startup[] {
+        null, //standard startup
+        null  //preview  startup
+    };
 
     // the list of entries
     private List<StartupEntry> entries;
@@ -166,7 +170,8 @@ class Startup {
     boolean isDefault() {
         if (entries.size() == 1) {
             StartupEntry sue = entries.get(0);
-            if (sue.isBuiltIn && sue.name.equals(DEFAULT_STARTUP_NAME)) {
+            if (sue.isBuiltIn && (sue.name.equals(DEFAULT_STARTUP_NAME) ||
+                                  sue.name.equals(PREVIEW_DEFAULT_STARTUP_NAME))) {
                 return true;
             }
         }
@@ -217,7 +222,7 @@ class Startup {
      * @param mh handler for error messages
      * @return Startup, or default startup when error (message has been printed)
      */
-    static Startup unpack(String storedForm, MessageHandler mh) {
+    static Startup unpack(String storedForm, boolean preview, MessageHandler mh) {
         if (storedForm != null) {
             if (storedForm.isEmpty()) {
                 return noStartup();
@@ -255,7 +260,7 @@ class Startup {
                 mh.errormsg("jshell.err.corrupted.stored.startup", ex.getMessage());
             }
         }
-        return defaultStartup(mh);
+        return defaultStartup(preview, mh);
     }
 
     /**
@@ -324,22 +329,26 @@ class Startup {
      * @param mh handler for error messages
      * @return The default Startup, or empty startup when error (message has been printed)
      */
-    static Startup defaultStartup(MessageHandler mh) {
-        if (defaultStartup != null) {
-            return defaultStartup;
+    static Startup defaultStartup(boolean preview, MessageHandler mh) {
+        int idx = preview ? 1 : 0;
+
+        if (defaultStartup[idx] != null) {
+            return defaultStartup[idx];
         }
+        String resourceName = preview ? PREVIEW_DEFAULT_STARTUP_NAME
+                                      : DEFAULT_STARTUP_NAME;
         try {
-            String content = readResource(DEFAULT_STARTUP_NAME);
-            return defaultStartup = new Startup(
-                    new StartupEntry(true, DEFAULT_STARTUP_NAME, content));
+            String content = readResource(resourceName);
+            return defaultStartup[idx] = new Startup(
+                    new StartupEntry(true, resourceName, content));
         } catch (AccessDeniedException e) {
-            mh.errormsg("jshell.err.file.not.accessible", "jshell", DEFAULT_STARTUP_NAME, e.getMessage());
+            mh.errormsg("jshell.err.file.not.accessible", "jshell", resourceName, e.getMessage());
         } catch (NoSuchFileException e) {
-            mh.errormsg("jshell.err.file.not.found", "jshell", DEFAULT_STARTUP_NAME);
+            mh.errormsg("jshell.err.file.not.found", "jshell", resourceName);
         } catch (Exception e) {
-            mh.errormsg("jshell.err.file.exception", "jshell", DEFAULT_STARTUP_NAME, e);
+            mh.errormsg("jshell.err.file.exception", "jshell", resourceName, e);
         }
-        return defaultStartup = noStartup();
+        return defaultStartup[idx] = noStartup();
     }
 
 }

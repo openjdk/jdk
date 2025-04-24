@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package java.lang.invoke;
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ClassFileDumper;
-import sun.security.action.GetPropertyAction;
 
 import java.lang.reflect.ClassFileFormatVersion;
 import java.util.Properties;
@@ -66,7 +65,7 @@ class MethodHandleStatics {
     static final ClassFileDumper DUMP_CLASS_FILES;
 
     static {
-        Properties props = GetPropertyAction.privilegedGetProperties();
+        Properties props = System.getProperties();
         DEBUG_METHOD_HANDLE_NAMES = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.MethodHandle.DEBUG_NAMES"));
 
@@ -134,8 +133,8 @@ class MethodHandleStatics {
                     shortenSignature(basicTypeSignature(type)) +
                     (resolvedMember != null ? " (success)" : " (fail)"));
         }
-        if (CDS.isDumpingClassList()) {
-            CDS.traceLambdaFormInvoker("[LF_RESOLVE]", holder.getName(), name, shortenSignature(basicTypeSignature(type)));
+        if (CDS.isLoggingLambdaFormInvokers()) {
+            CDS.logLambdaFormInvoker("[LF_RESOLVE]", holder.getName(), name, shortenSignature(basicTypeSignature(type)));
         }
     }
 
@@ -148,8 +147,8 @@ class MethodHandleStatics {
         if (TRACE_RESOLVE) {
             System.out.println("[SPECIES_RESOLVE] " + cn + (salvage != null ? " (salvaged)" : " (generated)"));
         }
-        if (CDS.isDumpingClassList()) {
-            CDS.traceSpeciesType("[SPECIES_RESOLVE]", cn);
+        if (CDS.isLoggingLambdaFormInvokers()) {
+            CDS.logSpeciesType("[SPECIES_RESOLVE]", cn);
         }
     }
     // handy shared exception makers (they simplify the common case code)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,15 @@
 
 /**
  * @test
- * @bug 8179503
+ * @bug 8179503 8328638
  * @summary Java should support GET OCSP calls
- * @library /javax/net/ssl/templates /java/security/testlibrary
- * @build SimpleOCSPServer
+ * @library /javax/net/ssl/templates /test/lib
  * @modules java.base/sun.security.util
  *          java.base/sun.security.provider.certpath
  *          java.base/sun.security.x509
  * @run main/othervm GetAndPostTests
+ * @run main/othervm -Dcom.sun.security.ocsp.useget=false GetAndPostTests
+ * @run main/othervm -Dcom.sun.security.ocsp.useget=foo GetAndPostTests
  */
 
 import java.io.ByteArrayInputStream;
@@ -62,7 +63,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import sun.security.testlibrary.SimpleOCSPServer;
+import jdk.test.lib.security.SimpleOCSPServer;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 import sun.security.util.ObjectIdentifier;

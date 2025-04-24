@@ -182,6 +182,11 @@ public class ScheduledThreadPoolExecutor
      */
     private static final AtomicLong sequencer = new AtomicLong();
 
+    /**
+     * Maximum delay is effectively 146 years
+     */
+    private static final long MAX_NANOS = (Long.MAX_VALUE >>> 1) - 1;
+
     private class ScheduledFutureTask<V>
             extends FutureTask<V> implements RunnableScheduledFuture<V> {
 
@@ -525,25 +530,7 @@ public class ScheduledThreadPoolExecutor
      * Returns the nanoTime-based trigger time of a delayed action.
      */
     long triggerTime(long delay) {
-        return System.nanoTime() +
-            ((delay < (Long.MAX_VALUE >> 1)) ? delay : overflowFree(delay));
-    }
-
-    /**
-     * Constrains the values of all delays in the queue to be within
-     * Long.MAX_VALUE of each other, to avoid overflow in compareTo.
-     * This may occur if a task is eligible to be dequeued, but has
-     * not yet been, while some other task is added with a delay of
-     * Long.MAX_VALUE.
-     */
-    private long overflowFree(long delay) {
-        Delayed head = (Delayed) super.getQueue().peek();
-        if (head != null) {
-            long headDelay = head.getDelay(NANOSECONDS);
-            if (headDelay < 0 && (delay - headDelay < 0))
-                delay = Long.MAX_VALUE + headDelay;
-        }
-        return delay;
+        return System.nanoTime() + Math.min(delay, MAX_NANOS);
     }
 
     /**
@@ -835,8 +822,6 @@ public class ScheduledThreadPoolExecutor
      * ContinueExistingPeriodicTasksAfterShutdownPolicy} has been set
      * {@code true}, future executions of existing periodic tasks will
      * be cancelled.
-     *
-     * @throws SecurityException {@inheritDoc}
      */
     public void shutdown() {
         super.shutdown();
@@ -864,7 +849,6 @@ public class ScheduledThreadPoolExecutor
      *         {@code ScheduledFuture}.  For tasks submitted using
      *         {@link #execute execute}, the element will be a
      *         zero-delay {@code ScheduledFuture}.
-     * @throws SecurityException {@inheritDoc}
      */
     public List<Runnable> shutdownNow() {
         return super.shutdownNow();

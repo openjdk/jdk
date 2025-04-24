@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -339,6 +339,22 @@ invoker_requestInvoke(jbyte invokeType, jbyte options, jint id,
 }
 
 static void
+saveGlobalRefHelper(JNIEnv *env, jobject obj, jobject *pobj)
+{
+    // In order to keep -Xcheck:jni happy, we have to clear any pending
+    // exception before calling saveGlobalRef(). We also need to restore
+    // it for the caller of this function.
+    jthrowable exception = JNI_FUNC_PTR(env,ExceptionOccurred)(env);
+    if (exception != NULL) {
+        JNI_FUNC_PTR(env,ExceptionClear)(env);
+    }
+    saveGlobalRef(env, obj, pobj);
+    if (exception != NULL) {
+        JNI_FUNC_PTR(env,Throw)(env, exception);
+    }
+}
+
+static void
 invokeConstructor(JNIEnv *env, InvokeRequest *request)
 {
     jobject object;
@@ -349,7 +365,7 @@ invokeConstructor(JNIEnv *env, InvokeRequest *request)
                                      request->arguments);
     request->returnValue.l = NULL;
     if (object != NULL) {
-        saveGlobalRef(env, object, &(request->returnValue.l));
+        saveGlobalRefHelper(env, object, &(request->returnValue.l));
     }
 }
 
@@ -367,7 +383,7 @@ invokeStatic(JNIEnv *env, InvokeRequest *request)
                                    request->arguments);
         request->returnValue.l = NULL;
         if (object != NULL) {
-            saveGlobalRef(env, object, &(request->returnValue.l));
+            saveGlobalRefHelper(env, object, &(request->returnValue.l));
         }
         return;
     }
@@ -455,7 +471,7 @@ invokeVirtual(JNIEnv *env, InvokeRequest *request)
                              request->arguments);
         request->returnValue.l = NULL;
         if (object != NULL) {
-            saveGlobalRef(env, object, &(request->returnValue.l));
+            saveGlobalRefHelper(env, object, &(request->returnValue.l));
         }
         return;
     }
@@ -545,7 +561,7 @@ invokeNonvirtual(JNIEnv *env, InvokeRequest *request)
                                        request->arguments);
         request->returnValue.l = NULL;
         if (object != NULL) {
-            saveGlobalRef(env, object, &(request->returnValue.l));
+            saveGlobalRefHelper(env, object, &(request->returnValue.l));
         }
         return;
     }
@@ -719,7 +735,9 @@ invoker_completeInvokeRequest(jthread thread)
     exc = NULL;
     id  = 0;
 
-    eventHandler_lock(); /* for proper lock order */
+    callback_lock();     /* for proper lock order in threadControl getLocks() */
+    eventHandler_lock(); /* for proper lock order in threadControl getLocks() */
+    stepControl_lock();  /* for proper lock order in threadControl getLocks() */
     debugMonitorEnter(invokerLock);
 
     request = threadControl_getInvokeRequest(thread);
@@ -772,7 +790,7 @@ invoker_completeInvokeRequest(jthread thread)
      * We cannot delete saved exception or return value references
      * since otherwise a deleted handle would escape when writing
      * the response to the stream. Instead, we clean those refs up
-     * after writing the respone.
+     * after writing the response.
      */
     deleteGlobalArgumentRefs(env, request);
 
@@ -790,7 +808,9 @@ invoker_completeInvokeRequest(jthread thread)
      * Give up the lock before I/O operation
      */
     debugMonitorExit(invokerLock);
+    stepControl_unlock();
     eventHandler_unlock();
+    callback_unlock();
 
     if (!detached) {
         outStream_initReply(&out, id);

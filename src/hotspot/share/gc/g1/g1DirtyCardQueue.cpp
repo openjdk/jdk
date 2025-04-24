@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.inline.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -30,10 +29,10 @@
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1FreeIdSet.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -174,7 +173,7 @@ void G1DirtyCardQueueSet::verify_num_cards() const {
     actual += cur->size();
   }
   assert(actual == Atomic::load(&_num_cards),
-         "Num entries in completed buffers should be " SIZE_FORMAT " but are " SIZE_FORMAT,
+         "Num entries in completed buffers should be %zu but are %zu",
          Atomic::load(&_num_cards), actual);
 }
 #endif // ASSERT
@@ -359,8 +358,7 @@ class G1RefineBufferedCards : public StackObj {
   void sort_cards(size_t start_index) {
     QuickSort::sort(&_node_buffer[start_index],
                     _node_buffer_capacity - start_index,
-                    compare_cards,
-                    false);
+                    compare_cards);
   }
 
   // Returns the index to the first clean card in the buffer.

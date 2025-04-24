@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
@@ -46,7 +45,7 @@ JfrStackTraceRepository& JfrStackTraceRepository::instance() {
   return *_instance;
 }
 
-static JfrStackTraceRepository& leak_profiler_instance() {
+JfrStackTraceRepository& JfrStackTraceRepository::leak_profiler_instance() {
   assert(_leak_profiler_instance != nullptr, "invariant");
   return *_leak_profiler_instance;
 }
@@ -93,16 +92,11 @@ void JfrStackTraceRepository::destroy() {
   _leak_profiler_instance = nullptr;
 }
 
-bool JfrStackTraceRepository::is_modified() const {
-  return _last_entries != _entries;
-}
-
 size_t JfrStackTraceRepository::write(JfrChunkWriter& sw, bool clear) {
-  if (_entries == 0) {
+  MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
+  if ((_entries == _last_entries) && !clear) {
     return 0;
   }
-  MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
-  assert(_entries > 0, "invariant");
   int count = 0;
   for (u4 i = 0; i < TABLE_SIZE; ++i) {
     JfrStackTrace* stacktrace = _table[i];

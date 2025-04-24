@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@
 #include <string.h>
 
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 
-#include "nsk_tools.h"
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
+#include "nsk_tools.hpp"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -41,7 +41,7 @@ extern "C" {
 const char* CLASS_NAME = "nsk/jvmti/ClassFileLoadHook/classfloadhk001";
 
 static jint result = STATUS_FAILED;
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 
 /** callback functions **/
@@ -51,7 +51,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *env, jclass class_beeing_redefine
         jint class_data_len, const unsigned char* class_data,
         jint *new_class_data_len, unsigned char** new_class_data) {
 
-    if (name != NULL && (strcmp(name, CLASS_NAME) == 0)) {
+    if (name != nullptr && (strcmp(name, CLASS_NAME) == 0)) {
         NSK_DISPLAY1("CHECK PASSED: ClassFileLoadHook event received for the class \"%s\" as expected\n",
             name);
         result = PASSED;
@@ -87,7 +87,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks ...\n");
@@ -97,7 +97,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
 
     NSK_DISPLAY0("setting event callbacks done\nenabling ClassFileLoadHook event ...\n");
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling ClassFileLoadHook event done\n");
 

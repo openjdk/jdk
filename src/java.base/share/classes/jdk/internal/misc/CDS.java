@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,10 @@ import java.io.InputStreamReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,50 +43,46 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.StaticProperty;
 
 public class CDS {
-    private static final boolean isDumpingClassList;
-    private static final boolean isDumpingArchive;
-    private static final boolean isSharingEnabled;
-    private static final boolean isDumpingStaticArchive;
-    static {
-        isDumpingClassList = isDumpingClassList0();
-        isDumpingArchive = isDumpingArchive0();
-        isSharingEnabled = isSharingEnabled0();
-        isDumpingStaticArchive = isDumpingArchive && !isSharingEnabled;
-    }
+    // Must be in sync with cdsConfig.hpp
+    private static final int IS_DUMPING_ARCHIVE              = 1 << 0;
+    private static final int IS_DUMPING_METHOD_HANDLES       = 1 << 1;
+    private static final int IS_DUMPING_STATIC_ARCHIVE       = 1 << 2;
+    private static final int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 3;
+    private static final int IS_USING_ARCHIVE                = 1 << 4;
+    private static final int configStatus = getCDSConfigStatus();
 
     /**
-      * indicator for dumping class list.
-      */
-    public static boolean isDumpingClassList() {
-        return isDumpingClassList;
+     * Should we log the use of lambda form invokers?
+     */
+    public static boolean isLoggingLambdaFormInvokers() {
+        return (configStatus & IS_LOGGING_LAMBDA_FORM_INVOKERS) != 0;
     }
 
     /**
       * Is the VM writing to a (static or dynamic) CDS archive.
       */
     public static boolean isDumpingArchive() {
-        return isDumpingArchive;
+        return (configStatus & IS_DUMPING_ARCHIVE) != 0;
     }
 
     /**
-      * Is sharing enabled.
+      * Is the VM using at least one CDS archive?
       */
-    public static boolean isSharingEnabled() {
-        return isSharingEnabled;
+    public static boolean isUsingArchive() {
+        return (configStatus & IS_USING_ARCHIVE) != 0;
     }
 
     /**
       * Is dumping static archive.
       */
     public static boolean isDumpingStaticArchive() {
-        return isDumpingStaticArchive;
+        return (configStatus & IS_DUMPING_STATIC_ARCHIVE) != 0;
     }
 
-    private static native boolean isDumpingClassList0();
-    private static native boolean isDumpingArchive0();
-    private static native boolean isSharingEnabled0();
+    private static native int getCDSConfigStatus();
     private static native void logLambdaFormInvoker(String line);
 
     /**
@@ -112,8 +112,8 @@ public class CDS {
     /**
      * log lambda form invoker holder, name and method type
      */
-    public static void traceLambdaFormInvoker(String prefix, String holder, String name, String type) {
-        if (isDumpingClassList) {
+    public static void logLambdaFormInvoker(String prefix, String holder, String name, String type) {
+        if (isLoggingLambdaFormInvokers()) {
             logLambdaFormInvoker(prefix + " " + holder + " " + name + " " + type);
         }
     }
@@ -121,8 +121,8 @@ public class CDS {
     /**
       * log species
       */
-    public static void traceSpeciesType(String prefix, String cn) {
-        if (isDumpingClassList) {
+    public static void logSpeciesType(String prefix, String cn) {
+        if (isLoggingLambdaFormInvokers()) {
             logLambdaFormInvoker(prefix + " " + cn);
         }
     }
@@ -281,7 +281,7 @@ public class CDS {
                 listFile.delete();
             }
             dumpClassList(listFileName);
-            String jdkHome = System.getProperty("java.home");
+            String jdkHome = StaticProperty.javaHome();
             String classPath = System.getProperty("java.class.path");
             List<String> cmds = new ArrayList<String>();
             cmds.add(jdkHome + File.separator + "bin" + File.separator + "java"); // java
@@ -341,5 +341,136 @@ public class CDS {
         String archiveFilePath = new File(archiveFileName).getAbsolutePath();
         System.out.println("The process was attached by jcmd and dumped a " + (isStatic ? "static" : "dynamic") + " archive " + archiveFilePath);
         return archiveFilePath;
+    }
+
+    /**
+     * Detects if we need to emit explicit class initialization checks in
+     * AOT-cached MethodHandles and VarHandles before accessing static fields
+     * and methods.
+     * @see jdk.internal.misc.Unsafe::shouldBeInitialized
+     *
+     * @return false only if a call to {@code ensureClassInitialized} would have
+     * no effect during the application's production run.
+     */
+    public static boolean needsClassInitBarrier(Class<?> c) {
+        if (c == null) {
+            throw new NullPointerException();
+        }
+
+        if ((configStatus & IS_DUMPING_METHOD_HANDLES) == 0) {
+            return false;
+        } else {
+            return needsClassInitBarrier0(c);
+        }
+    }
+
+    private static native boolean needsClassInitBarrier0(Class<?> c);
+
+    /**
+     * This class is used only by native JVM code at CDS dump time for loading
+     * "unregistered classes", which are archived classes that are intended to
+     * be loaded by custom class loaders during runtime.
+     * See src/hotspot/share/cds/unregisteredClasses.cpp.
+     */
+    private static class UnregisteredClassLoader extends URLClassLoader {
+        private String currentClassName;
+        private Class<?> currentSuperClass;
+        private Class<?>[] currentInterfaces;
+
+        /**
+         * Used only by native code. Construct an UnregisteredClassLoader for loading
+         * unregistered classes from the specified file. If the file doesn't exist,
+         * the exception will be caughted by native code which will print a warning message and continue.
+         *
+         * @param fileName path of the the JAR file to load unregistered classes from.
+         */
+        private UnregisteredClassLoader(String fileName) throws InvalidPathException, IOException {
+            super(toURLArray(fileName), /*parent*/null);
+            currentClassName = null;
+            currentSuperClass = null;
+            currentInterfaces = null;
+        }
+
+        private static URL[] toURLArray(String fileName) throws InvalidPathException, IOException {
+            if (!((new File(fileName)).exists())) {
+                throw new IOException("No such file: " + fileName);
+            }
+            return new URL[] {
+                // Use an intermediate File object to construct a URI/URL without
+                // authority component as URLClassPath can't handle URLs with a UNC
+                // server name in the authority component.
+                Path.of(fileName).toRealPath().toFile().toURI().toURL()
+            };
+        }
+
+
+        /**
+         * Load the class of the given <code>/name<code> from the JAR file that was given to
+         * the constructor of the current UnregisteredClassLoader instance. This class must be
+         * a direct subclass of <code>superClass</code>. This class must be declared to implement
+         * the specified <code>interfaces</code>.
+         * <p>
+         * This method must be called in a single threaded context. It will never be recursed (thus
+         * the asserts)
+         *
+         * @param name the name of the class to be loaded.
+         * @param superClass must not be null. The named class must have a super class.
+         * @param interfaces could be null if the named class does not implement any interfaces.
+         */
+        private Class<?> load(String name, Class<?> superClass, Class<?>[] interfaces)
+            throws ClassNotFoundException
+        {
+            assert currentClassName == null;
+            assert currentSuperClass == null;
+            assert currentInterfaces == null;
+
+            try {
+                currentClassName = name;
+                currentSuperClass = superClass;
+                currentInterfaces = interfaces;
+
+                return findClass(name);
+            } finally {
+                currentClassName = null;
+                currentSuperClass = null;
+                currentInterfaces = null;
+            }
+        }
+
+        /**
+         * This method must be called from inside the <code>load()</code> method. The <code>/name<code>
+         * can be only:
+         * <ul>
+         * <li> the <code>name</code> parameter for <code>load()</code>
+         * <li> the name of the <code>superClass</code> parameter for <code>load()</code>
+         * <li> the name of one of the interfaces in <code>interfaces</code> parameter for <code>load()</code>
+         * <ul>
+         *
+         * For all other cases, a <code>ClassNotFoundException</code> will be thrown.
+         */
+        protected Class<?> findClass(final String name)
+            throws ClassNotFoundException
+        {
+            Objects.requireNonNull(currentClassName);
+            Objects.requireNonNull(currentSuperClass);
+
+            if (name.equals(currentClassName)) {
+                // Note: the following call will call back to <code>this.findClass(name)</code> to
+                // resolve the super types of the named class.
+                return super.findClass(name);
+            }
+            if (name.equals(currentSuperClass.getName())) {
+                return currentSuperClass;
+            }
+            if (currentInterfaces != null) {
+                for (Class<?> c : currentInterfaces) {
+                    if (name.equals(c.getName())) {
+                        return c;
+                    }
+                }
+            }
+
+            throw new ClassNotFoundException(name);
+        }
     }
 }

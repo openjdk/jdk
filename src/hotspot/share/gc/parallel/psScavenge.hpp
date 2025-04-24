@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,12 @@
 #include "gc/parallel/psVirtualspace.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/referenceProcessor.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oop.hpp"
 #include "utilities/stack.hpp"
 
-class ReferenceProcessor;
 class ParallelScavengeHeap;
-class ParallelScavengeTracer;
 class PSIsAliveClosure;
 class STWGCTimer;
 
@@ -43,13 +42,6 @@ class PSScavenge: AllStatic {
   friend class PSIsAliveClosure;
   friend class PSKeepAliveClosure;
   friend class PSPromotionManager;
-
- enum ScavengeSkippedCause {
-   not_skipped = 0,
-   to_space_not_empty,
-   promoted_too_large,
-   full_follows_scavenge
- };
 
  protected:
   // Flags/counters
@@ -104,10 +96,9 @@ class PSScavenge: AllStatic {
   // Called by parallelScavengeHeap to init the tenuring threshold
   static void initialize();
 
-  // Scavenge entry point.  This may invoke a full gc; return true if so.
-  static bool invoke();
-  // Return true if a collection was done; false otherwise.
-  static bool invoke_no_policy();
+  // Scavenge entry point.
+  // Return true iff a young-gc is completed without promotion-failure.
+  static bool invoke(bool clear_soft_refs);
 
   template <class T> static inline bool should_scavenge(T* p);
 

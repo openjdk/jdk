@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import org.ietf.jgss.*;
 import java.io.InputStream;
 import java.io.IOException;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.krb5.*;
 import java.net.InetAddress;
 import sun.security.krb5.internal.AuthorizationData;
@@ -53,7 +52,7 @@ class InitSecContextToken extends InitialToken {
         // property "sun.security.krb5.acceptor.sequence.number.nonmutual",
         // which can be set to "initiator", "zero" or "0".
         String propName = "sun.security.krb5.acceptor.sequence.number.nonmutual";
-        String s = GetPropertyAction.privilegedGetProperty(propName, "initiator");
+        String s = System.getProperty(propName, "initiator");
         if (s.equals("initiator")) {
             ACCEPTOR_USE_INITIATOR_SEQNUM = true;
         } else if (s.equals("zero") || s.equals("0")) {

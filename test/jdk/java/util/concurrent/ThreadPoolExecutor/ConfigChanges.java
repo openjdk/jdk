@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test proper handling of pool state changes
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run main/othervm -Djava.security.manager=allow ConfigChanges
+ * @run main ConfigChanges
  * @key randomness
  * @author Martin Buchholz
  */
@@ -36,7 +36,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
-import java.security.Permission;
 import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CyclicBarrier;
@@ -69,10 +68,6 @@ public class ConfigChanges {
     static void report(String label, ThreadPoolExecutor tpe) {
         System.out.printf("%10s ", label);
         report(tpe);
-    }
-
-    static class PermissiveSecurityManger extends SecurityManager {
-        public void checkPermission(Permission p) { /* bien sur, Monsieur */ }
     }
 
     static void checkShutdown(final ExecutorService es) {
@@ -142,9 +137,6 @@ public class ConfigChanges {
     }
 
     private static void realMain(String[] args) throws Throwable {
-        if (rnd.nextBoolean())
-            System.setSecurityManager(new PermissiveSecurityManger());
-
         final boolean prestart = rnd.nextBoolean();
 
         final Thread.UncaughtExceptionHandler handler

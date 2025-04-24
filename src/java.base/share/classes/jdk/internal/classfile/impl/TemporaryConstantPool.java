@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,32 +24,11 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.*;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.ConstantDynamicEntry;
-import java.lang.classfile.constantpool.ConstantPool;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.constantpool.DoubleEntry;
-import java.lang.classfile.constantpool.FieldRefEntry;
-import java.lang.classfile.constantpool.FloatEntry;
-import java.lang.classfile.constantpool.IntegerEntry;
-import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
-import java.lang.classfile.constantpool.InvokeDynamicEntry;
-import java.lang.classfile.constantpool.LoadableConstantEntry;
-import java.lang.classfile.constantpool.LongEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
-import java.lang.classfile.constantpool.MethodHandleEntry;
-import java.lang.classfile.constantpool.MethodRefEntry;
-import java.lang.classfile.constantpool.MethodTypeEntry;
-import java.lang.classfile.constantpool.ModuleEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
-import java.lang.classfile.constantpool.PackageEntry;
-import java.lang.classfile.constantpool.PoolEntry;
-import java.lang.classfile.constantpool.StringEntry;
-import java.lang.classfile.constantpool.Utf8Entry;
-
+import java.lang.classfile.BootstrapMethodEntry;
+import java.lang.classfile.constantpool.*;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
+import java.util.Objects;
 
 public final class TemporaryConstantPool implements ConstantPoolBuilder {
 
@@ -171,6 +150,11 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
     }
 
     @Override
+    public <T extends PoolEntry> T entryByIndex(int index, Class<T> cls) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public BootstrapMethodEntry bootstrapMethodEntry(int index) {
         throw new UnsupportedOperationException();
     }
@@ -182,16 +166,7 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
 
     @Override
     public boolean canWriteDirect(ConstantPool constantPool) {
+        Objects.requireNonNull(constantPool);
         return false;
-    }
-
-    @Override
-    public boolean writeBootstrapMethods(BufWriter buf) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void writeTo(BufWriter buf) {
-        throw new UnsupportedOperationException();
     }
 }

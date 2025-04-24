@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -62,10 +62,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="dyo" draft="unconfirmed">dzola-fonyigbe</language>
 			<language type="dz">dzongkhagbe</language>
 			<language type="ebu">embugbe</language>
-			<language type="ee">Eʋegbe</language>
+			<language type="ee">eʋegbe</language>
 			<language type="efi">efigbe</language>
 			<language type="el">grisigbe</language>
-			<language type="en">Yevugbe</language>
+			<language type="en">iŋlisigbe</language>
 			<language type="en_AU">Yevugbe (Australia)</language>
 			<language type="en_CA">Yevugbe (Canada)</language>
 			<language type="en_GB">Yevugbe (Britain)</language>
@@ -334,7 +334,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Laoo">laogbeŋɔŋlɔ</script>
 			<script type="Latf" draft="unconfirmed">fraktur latin gbeŋɔŋlɔ</script>
 			<script type="Latg" draft="unconfirmed">gaelia latin gbeŋɔŋlɔ</script>
-			<script type="Latn">Latingbeŋɔŋlɔ</script>
+			<script type="Latn">latingbeŋɔŋlɔ</script>
 			<script type="Lepc" draft="unconfirmed">leptsa gbeŋɔŋlɔ</script>
 			<script type="Limb" draft="unconfirmed">limbu gbeŋɔŋlɔ</script>
 			<script type="Lina" draft="unconfirmed">linia a gbeŋɔŋlɔ</script>
@@ -736,7 +736,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="gb2312han">chinagbe yeye ƒe ɖoɖomɔ nu</type>
 			<type key="collation" type="phonebook">fonegbalẽ me ɖoɖomɔ nu</type>
 			<type key="collation" type="pinyin">pinyin ɖoɖomɔ nu</type>
-			<type key="collation" type="reformed">nugbugbɔtoɖo ƒe ɖoɖomɔ nu</type>
 			<type key="collation" type="search">nudidi hena zazã gbadza</type>
 			<type key="collation" type="searchjl" draft="unconfirmed">nudidi le hangul ƒe ɖoɖo gbãtɔ nu</type>
 			<type key="collation" type="stroke">stroke ɖoɖomɔ nu</type>
@@ -796,14 +795,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="vaii" draft="unconfirmed">vaii digitwo</type>
 		</types>
 		<measurementSystemNames>
-			<measurementSystemName type="metric">metric</measurementSystemName>
+			<measurementSystemName type="metric">dzidzeti</measurementSystemName>
 			<measurementSystemName type="UK">uk</measurementSystemName>
 			<measurementSystemName type="US">us</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language">gbegbɔgblɔ {0}</codePattern>
 			<codePattern type="script">gbeŋɔŋlɔ {0}</codePattern>
-			<codePattern type="territory">memama {0}</codePattern>
+			<codePattern type="territory">nutome {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
@@ -1154,7 +1153,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="2">dzodze</month>
 							<month type="3">tedoxe</month>
 							<month type="4">afɔfĩe</month>
-							<month type="5">dama</month>
+							<month type="5">dame</month>
 							<month type="6">masa</month>
 							<month type="7">siamlɔm</month>
 							<month type="8">deasiamime</month>
@@ -1881,9 +1880,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<gmtFormat>{0} GMT</gmtFormat>
-			<regionFormat>{0} gaƒoƒo me</regionFormat>
-			<regionFormat type="daylight">{0} kele gaƒoƒo me</regionFormat>
-			<regionFormat type="standard">{0} nutome gaƒoƒo me</regionFormat>
+			<regionFormat>{0} game</regionFormat>
+			<regionFormat type="daylight">{0} ŋkekemeɣeyiɣi</regionFormat>
+			<regionFormat type="standard">{0} game ɖoɖoea</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Xexeme gaƒoƒoɖoanyi me</standard>
@@ -1891,9 +1893,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Du manya</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
 				<long>
@@ -1925,9 +1924,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<metazone type="Acre">
 				<long>
@@ -1967,7 +1963,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>West Africa gaƒoƒo me</generic>
+					<generic>West Africa game</generic>
 					<standard>West Africa nutome gaƒoƒo me</standard>
 					<daylight>West Africa dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
@@ -2191,13 +2187,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>China gaƒoƒo me</generic>
 					<standard>China nutome gaƒoƒo me</standard>
 					<daylight>China kele gaƒoƒo me</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Choibalsan gaƒoƒo me</generic>
-					<standard>Choibalsan nutome gaƒoƒo me</standard>
-					<daylight>Choibalsan dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -2493,11 +2482,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">Makau ŋkekeme gaƒoƒome</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarie Island gaƒoƒo me</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadan gaƒoƒo me</generic>
@@ -2535,13 +2519,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>Mawson gaƒoƒo me</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Northwest Mexico gaƒoƒo me</generic>
-					<standard>Northwest Mexico nutome gaƒoƒo me</standard>
-					<daylight>Northwest Mexico kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,12 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
- * @bug 8170349
+ * @bug 8170349 8259550
  * @summary  Verify if printed content is within border and all columns are
  *           printed for PrintMode.FIT_WIDTH
  * @run main/manual PrintManualTest_FitWidthMultiple
+ * @run main/othervm/manual -Dswing.defaultlaf=javax.swing.plaf.nimbus.NimbusLookAndFeel PrintManualTest_FitWidthMultiple
  */
 
 import java.awt.BorderLayout;
@@ -58,7 +60,7 @@ public class PrintManualTest_FitWidthMultiple extends JTable implements Runnable
     static JFrame instructFrame = null;
     private final CountDownLatch latch;
 
-    public PrintManualTest_FitWidthMultiple(CountDownLatch latch){
+    public PrintManualTest_FitWidthMultiple(CountDownLatch latch) {
         this.latch = latch;
     }
 
@@ -75,7 +77,7 @@ public class PrintManualTest_FitWidthMultiple extends JTable implements Runnable
 
     private void createUIandTest() throws Exception {
         /*Message Format Header and Footer */
-        final MessageFormat header=new MessageFormat("JTable Printing Header {0}");
+        final MessageFormat header = new MessageFormat("JTable Printing Header {0}");
         final MessageFormat footer = new MessageFormat("JTable Printing Footer {0}");
 
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -91,8 +93,8 @@ public class PrintManualTest_FitWidthMultiple extends JTable implements Runnable
                     "Prints out with Header and Footer. \n"+
                     "The JTable should have all columns printed within border";
 
-                instructFrame=new JFrame("PrintManualTest_NormalSingle");
-                JPanel panel=new JPanel(new BorderLayout());
+                instructFrame = new JFrame("PrintManualTest_NormalSingle");
+                JPanel panel = new JPanel(new BorderLayout());
                 JButton button1 = new JButton("Pass");
                 JButton button2 = new JButton("Fail");
                 button1.addActionListener((e) -> {
@@ -108,44 +110,50 @@ public class PrintManualTest_FitWidthMultiple extends JTable implements Runnable
                 JPanel btnpanel1 = new JPanel();
                 btnpanel1.add(button1);
                 btnpanel1.add(button2);
-                panel.add(addInfo(info),BorderLayout.CENTER);
+                panel.add(addInfo(info), BorderLayout.CENTER);
                 panel.add(btnpanel1, BorderLayout.SOUTH);
                 instructFrame.getContentPane().add(panel);
-                instructFrame.setBounds(600,100,350,350);
+                instructFrame.setBounds(600, 100, 350, 350);
 
                 /* Print Button */
-                final JButton printButton=new JButton("Print");
+                final JButton printButton = new JButton("Print");
 
                 /* Table Model */
-                final TableModel datamodel=new AbstractTableModel(){
+                final TableModel datamodel = new AbstractTableModel(){
                     @Override
-                    public int getColumnCount() { return 50;}
+                    public int getColumnCount() {
+                        return 50;
+                    }
                     @Override
-                    public int getRowCount() { return 50; }
+                    public int getRowCount() {
+                        return 50;
+                    }
                     @Override
-                    public Object getValueAt(int row, int column){ return new Integer(row*column);}
+                    public Object getValueAt(int row, int column) {
+                        return Integer.valueOf(row*column);
+                    }
                 };
 
                 /* Constructing the JTable */
-                final JTable table=new JTable(datamodel);
+                final JTable table = new JTable(datamodel);
 
                 /* Putting the JTable in ScrollPane and Frame Container */
-                JScrollPane scrollpane=new JScrollPane(table);
+                JScrollPane scrollpane = new JScrollPane(table);
                 fr = new JFrame("PrintManualTest_FitWidthMultiple");
                 fr.getContentPane().add(scrollpane);
 
                 /* Light Weight Panel for holding Print and other buttons */
-                JPanel btnpanel=new JPanel();
+                JPanel btnpanel = new JPanel();
                 btnpanel.add(printButton);
-                fr.getContentPane().add(btnpanel,BorderLayout.SOUTH);
-                fr.setBounds(0,0,400,400);
-                fr.setSize(500,500);
+                fr.getContentPane().add(btnpanel, BorderLayout.SOUTH);
+                fr.setBounds(0, 0, 400, 400);
+                fr.setSize(500, 500);
 
                 /* Binding the KeyStroke to Print Button Action */
                 fr.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl P"), "printButton");
-                fr.getRootPane().getActionMap().put("printButton", new AbstractAction(){
+                fr.getRootPane().getActionMap().put("printButton", new AbstractAction() {
                     @Override
-                    public void actionPerformed(ActionEvent e){
+                    public void actionPerformed(ActionEvent e) {
                         printButton.doClick();
                     }
                 });
@@ -161,14 +169,14 @@ public class PrintManualTest_FitWidthMultiple extends JTable implements Runnable
                     }
                 });
 
-                final PrintRequestAttributeSet prattr=new HashPrintRequestAttributeSet();
+                final PrintRequestAttributeSet prattr = new HashPrintRequestAttributeSet();
                 prattr.add(javax.print.attribute.standard.OrientationRequested.LANDSCAPE);
 
-                printButton.addActionListener(new ActionListener(){
+                printButton.addActionListener(new ActionListener() {
                     @Override
-                    public void actionPerformed(ActionEvent ae){
-                        try{
-                            table.print(JTable.PrintMode.FIT_WIDTH, header,footer,true,prattr,true);
+                    public void actionPerformed(ActionEvent ae) {
+                        try {
+                            table.print(JTable.PrintMode.FIT_WIDTH, header, footer, true, prattr, true);
                         } catch(Exception e){}
                     }
                 });
@@ -184,7 +192,7 @@ public class PrintManualTest_FitWidthMultiple extends JTable implements Runnable
     }
 
     public JScrollPane addInfo(String info) {
-        JTextArea jta = new JTextArea(info,8,20);
+        JTextArea jta = new JTextArea(info, 8, 20);
         jta.setEditable(false);
         jta.setLineWrap(true);
         JScrollPane sp = new JScrollPane(jta);

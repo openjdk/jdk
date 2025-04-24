@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,115 +60,79 @@ struct NSAppArgs {
 #define LD_LIBRARY_PATH "DYLD_FALLBACK_LIBRARY_PATH"
 
 /*
- * If a processor / os combination has the ability to run binaries of
- * two data models and cohabitation of jre/jdk bits with both data
- * models is supported, then DUAL_MODE is defined. MacOSX is a hybrid
- * system in that, the universal library can contain all types of libraries
- * 32/64 and client/server, thus the spawn is capable of linking with the
- * appropriate library as requested.
+ * Following is the high level flow of the launcher
+ * code residing in the common java.c and this
+ * macosx specific java_md_macosx file:
  *
- * Notes:
- * 1. VM. DUAL_MODE is disabled, and not supported, however, it is left here in
- *    for experimentation and perhaps enable it in the future.
- * 2. At the time of this writing, the universal library contains only
- *    a server 64-bit server JVM.
- * 3. "-client" command line option is supported merely as a command line flag,
- *    for, compatibility reasons, however, a server VM will be launched.
- */
-
-/*
- * Flowchart of launcher execs and options processing on unix
+ *  - JLI_Launch function, which is the entry point
+ *    to the launcher, calls CreateExecutionEnvironment.
  *
- * The selection of the proper vm shared library to open depends on
- * several classes of command line options, including vm "flavor"
- * options (-client, -server) and the data model options, -d32  and
- * -d64, as well as a version specification which may have come from
- * the command line or from the manifest of an executable jar file.
- * The vm selection options are not passed to the running
- * virtual machine; they must be screened out by the launcher.
+ *  - CreateExecutionEnvironment does the following
+ *    (not necessarily in this order):
+ *      - determines the relevant JVM type that needs
+ *        to be ultimately created
+ *      - determines the path and asserts the presence
+ *        of libjava and relevant libjvm library
+ *      - removes any JVM selection options from the
+ *        arguments that were passed to the launcher
  *
- * The version specification (if any) is processed first by the
- * platform independent routine SelectVersion.  This may result in
- * the exec of the specified launcher version.
+ *  - CreateExecutionEnvironment then creates a new
+ *    thread, within the same process, to launch the
+ *    application's main() Java method and parks the
+ *    current thread, on which CreateExecutionEnvironment
+ *    was invoked, in Apple's Cocoa event loop. Before
+ *    doing so, CreateExecutionEnvironment maintains a
+ *    state flag to keep note that a new thread has
+ *    been spawned.
  *
- * Now, in most cases,the launcher will dlopen the target libjvm.so. All
- * required libraries are loaded by the runtime linker, using the known paths
- * baked into the shared libraries at compile time. Therefore,
- * in most cases, the launcher will only exec, if the data models are
- * mismatched, and will not set any environment variables, regardless of the
- * data models.
+ *  - The newly created thread (in which the application's
+ *    main() method will ultimately run) starts right from
+ *    the beginning of the current process' main function,
+ *    which effectively means that JLI_Launch is re-invoked
+ *    on this new thread and the same above sequence of code
+ *    flow repeats again. During this "recursive" call, when
+ *    at the point of creating a new thread in
+ *    CreateExecutionEnvironment, the CreateExecutionEnvironment
+ *    will check for the state flag to see if a new thread
+ *    has already been spawned and upon noticing that it
+ *    has, it will skip spawning any more threads and will
+ *    return back from CreateExecutionEnvironment.
  *
+ *  - The control returns back from CreateExecutionEnvironment
+ *    to JLI_Launch, and the thread on which the control
+ *    returns is the thread on which the application's main()
+ *    Java method will be invoked.
  *
+ *  - JLI_Launch then invokes LoadJavaVM which dlopen()s the
+ *    JVM library and asserts the presence of JNI Invocation
+ *    Functions "JNI_CreateJavaVM", "JNI_GetDefaultJavaVMInitArgs"
+ *    and "JNI_GetCreatedJavaVMs" in that library. It then sets
+ *    internal function pointers in the launcher to point to
+ *    those functions.
  *
- *  Main
- *  (incoming argv)
- *  |
- * \|/
- * CreateExecutionEnvironment
- * (determines desired data model)
- *  |
- *  |
- * \|/
- *  Have Desired Model ? --> NO --> Is Dual-Mode ? --> NO --> Exit(with error)
- *  |                                          |
- *  |                                          |
- *  |                                         \|/
- *  |                                         YES
- *  |                                          |
- *  |                                          |
- *  |                                         \|/
- *  |                                CheckJvmType
- *  |                               (removes -client, -server etc.)
- *  |                                          |
- *  |                                          |
- * \|/                                        \|/
- * YES                             Find the desired executable/library
- *  |                                          |
- *  |                                          |
- * \|/                                        \|/
- * CheckJvmType                             POINT A
- * (removes -client, -server, etc.)
- *  |
- *  |
- * \|/
- * TranslateDashJArgs...
- * (Prepare to pass args to vm)
- *  |
- *  |
- * \|/
- * ParseArguments
- * (processes version options,
- *  creates argument list for vm,
- *  etc.)
- *   |
- *   |
- *  \|/
- * POINT A
- *   |
- *   |
- *  \|/
- * Path is desired JRE ? YES --> Continue
- *  NO
- *   |
- *   |
- *  \|/
- * Paths have well known
- * jvm paths ?       --> NO --> Continue
- *  YES
- *   |
- *   |
- *  \|/
- *  Does libjvm.so exist
- *  in any of them ? --> NO --> Continue
- *   YES
- *   |
- *   |
- *  \|/
- * Re-exec / Spawn
- *   |
- *   |
- *  \|/
- * Main
+ *  - JLI_Launch then translates any -J options by invoking
+ *    TranslateApplicationArgs.
+ *
+ *  - JLI_Launch then invokes ParseArguments to parse/process
+ *    the launcher arguments.
+ *
+ *  - JLI_Launch then ultimately calls JVMInit.
+ *
+ *  - JVMInit then invokes JavaMain.
+ *
+ *  - JavaMain, before launching the application, invokes
+ *    PostJVMInit.
+ *
+ *  - PostJVMInit invokes ShowSplashScreen which displays
+ *    a splash screen for the application, if applicable.
+ *
+ *  - Control then returns back from PostJVMInit into
+ *    JavaMain, which then loads the application's main
+ *    class and invokes the relevant main() Java method.
+ *
+ *  - JavaMain then returns back an integer result which
+ *    then gets propagated as a return value all the way
+ *    out of the JLI_Launch function.
  */
 
 /* Store the name of the executable once computed */
@@ -185,7 +149,7 @@ GetExecName() {
 /*
  * Exports the JNI interface from libjli
  *
- * This allows client code to link against the .jre/.jdk bundles,
+ * This allows client code to link against the JDK bundles,
  * and not worry about trying to pick a HotSpot to link against.
  *
  * Switching architectures is unsupported, since client code has
@@ -198,10 +162,10 @@ static char *sPreferredJVMType = NULL;
 static InvocationFunctions *GetExportedJNIFunctions() {
     if (sExportedJNIFunctions != NULL) return sExportedJNIFunctions;
 
-    char jrePath[PATH_MAX];
-    jboolean gotJREPath = GetJREPath(jrePath, sizeof(jrePath), JNI_FALSE);
-    if (!gotJREPath) {
-        JLI_ReportErrorMessage("Failed to GetJREPath()");
+    char jdkRoot[PATH_MAX];
+    jboolean got = GetJDKInstallRoot(jdkRoot, sizeof(jdkRoot), JNI_FALSE);
+    if (!got) {
+        JLI_ReportErrorMessage("Failed to determine JDK installation root");
         return NULL;
     }
 
@@ -219,7 +183,7 @@ static InvocationFunctions *GetExportedJNIFunctions() {
     }
 
     char jvmPath[PATH_MAX];
-    jboolean gotJVMPath = GetJVMPath(jrePath, preferredJVM, jvmPath, sizeof(jvmPath));
+    jboolean gotJVMPath = GetJVMPath(jdkRoot, preferredJVM, jvmPath, sizeof(jvmPath));
     if (!gotJVMPath) {
         JLI_ReportErrorMessage("Failed to GetJVMPath()");
         return NULL;
@@ -333,6 +297,7 @@ static void ParkEventLoop() {
 static void MacOSXStartup(int argc, char *argv[]) {
     // Thread already started?
     static jboolean started = false;
+    int rc;
     if (started) {
         return;
     }
@@ -345,12 +310,14 @@ static void MacOSXStartup(int argc, char *argv[]) {
 
     // Fire up the main thread
     pthread_t main_thr;
-    if (pthread_create(&main_thr, NULL, &apple_main, &args) != 0) {
-        JLI_ReportErrorMessageSys("Could not create main thread: %s\n", strerror(errno));
+    rc = pthread_create(&main_thr, NULL, &apple_main, &args);
+    if (rc != 0) {
+        JLI_ReportErrorMessageSys("Could not create main thread, return code: %d\n", rc);
         exit(1);
     }
-    if (pthread_detach(main_thr)) {
-        JLI_ReportErrorMessageSys("pthread_detach() failed: %s\n", strerror(errno));
+    rc = pthread_detach(main_thr);
+    if (rc != 0) {
+        JLI_ReportErrorMessage("pthread_detach() failed, return code: %d\n", rc);
         exit(1);
     }
 
@@ -359,9 +326,9 @@ static void MacOSXStartup(int argc, char *argv[]) {
 
 void
 CreateExecutionEnvironment(int *pargc, char ***pargv,
-                           char jrepath[], jint so_jrepath,
+                           char jdkroot[], jint so_jdkroot,
                            char jvmpath[], jint so_jvmpath,
-                           char jvmcfg[],  jint so_jvmcfg) {
+                           char jvmcfg[], jint so_jvmcfg) {
     /* Compute/set the name of the executable */
     SetExecname(*pargv);
 
@@ -369,29 +336,31 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     int  argc         = *pargc;
     char **argv       = *pargv;
 
-    /* Find out where the JRE is that we will be using. */
-    if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE) ) {
-        JLI_ReportErrorMessage(JRE_ERROR1);
-        exit(2);
-    }
-    JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
-                 jrepath, FILESEP, FILESEP);
-    /* Find the specified JVM type */
-    if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
-        JLI_ReportErrorMessage(CFG_ERROR7);
-        exit(1);
-    }
+    if (!JLI_IsStaticallyLinked()) {
+        /* Find out where the JDK is that we will be using. */
+        if (!GetJDKInstallRoot(jdkroot, so_jdkroot, JNI_FALSE) ) {
+            JLI_ReportErrorMessage(LAUNCHER_ERROR1);
+            exit(2);
+        }
+        JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
+                     jdkroot, FILESEP, FILESEP);
+        /* Find the specified JVM type */
+        if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
+            JLI_ReportErrorMessage(CFG_ERROR7);
+            exit(1);
+        }
 
-    jvmpath[0] = '\0';
-    jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
-    if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
-        JLI_ReportErrorMessage(CFG_ERROR9);
-        exit(4);
-    }
+        jvmpath[0] = '\0';
+        jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
+        if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
+            JLI_ReportErrorMessage(CFG_ERROR9);
+            exit(4);
+        }
 
-    if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath)) {
-        JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
-        exit(4);
+        if (!GetJVMPath(jdkroot, jvmtype, jvmpath, so_jvmpath)) {
+            JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
+            exit(4);
+        }
     }
 
     /*
@@ -411,7 +380,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
  * VM choosing is done by the launcher (java.c).
  */
 static jboolean
-GetJVMPath(const char *jrepath, const char *jvmtype,
+GetJVMPath(const char *jdkroot, const char *jvmtype,
            char *jvmpath, jint jvmpathsize)
 {
     struct stat s;
@@ -423,14 +392,14 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
          * macosx client library is built thin, i386 only.
          * 64 bit client requests must load server library
          */
-        JLI_Snprintf(jvmpath, jvmpathsize, "%s/lib/%s/" JVM_DLL, jrepath, jvmtype);
+        JLI_Snprintf(jvmpath, jvmpathsize, "%s/lib/%s/" JVM_DLL, jdkroot, jvmtype);
     }
 
     JLI_TraceLauncher("Does `%s' exist ... ", jvmpath);
 
-#ifdef STATIC_BUILD
-    return JNI_TRUE;
-#else
+    if (JLI_IsStaticallyLinked()) {
+        return JNI_TRUE;
+    }
     if (stat(jvmpath, &s) == 0) {
         JLI_TraceLauncher("yes.\n");
         return JNI_TRUE;
@@ -438,66 +407,56 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
         JLI_TraceLauncher("no.\n");
         return JNI_FALSE;
     }
-#endif
 }
 
 /*
- * Find path to JRE based on .exe's location or registry settings.
+ * Find path to the JDK installation root
  */
 static jboolean
-GetJREPath(char *path, jint pathsize, jboolean speculative)
+GetJDKInstallRoot(char *path, jint pathsize, jboolean speculative)
 {
     char libjava[MAXPATHLEN];
 
+    JLI_TraceLauncher("Attempt to get JDK installation root from launcher executable path\n");
+
     if (GetApplicationHome(path, pathsize)) {
-        /* Is JRE co-located with the application? */
-#ifdef STATIC_BUILD
-        char jvm_cfg[MAXPATHLEN];
-        JLI_Snprintf(jvm_cfg, sizeof(jvm_cfg), "%s/lib/jvm.cfg", path);
-        if (access(jvm_cfg, F_OK) == 0) {
-            return JNI_TRUE;
-        }
-#else
-        JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
-        if (access(libjava, F_OK) == 0) {
-            return JNI_TRUE;
-        }
-#endif
-        /* ensure storage for path + /jre + NULL */
-        if ((JLI_StrLen(path) + 4 + 1) > (size_t) pathsize) {
-            JLI_TraceLauncher("Insufficient space to store JRE path\n");
-            return JNI_FALSE;
-        }
-        /* Does the app ship a private JRE in <apphome>/jre directory? */
-        JLI_Snprintf(libjava, sizeof(libjava), "%s/jre/lib/" JAVA_DLL, path);
-        if (access(libjava, F_OK) == 0) {
-            JLI_StrCat(path, "/jre");
-            JLI_TraceLauncher("JRE path is %s\n", path);
-            return JNI_TRUE;
+        /* Is the JDK co-located with the application? */
+        if (JLI_IsStaticallyLinked()) {
+            char jvm_cfg[MAXPATHLEN];
+            JLI_Snprintf(jvm_cfg, sizeof(jvm_cfg), "%s/lib/jvm.cfg", path);
+            if (access(jvm_cfg, F_OK) == 0) {
+                return JNI_TRUE;
+            }
+        } else {
+            JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
+            if (access(libjava, F_OK) == 0) {
+                return JNI_TRUE;
+            }
         }
     }
 
     /* try to find ourselves instead */
     Dl_info selfInfo;
-    dladdr(&GetJREPath, &selfInfo);
+    dladdr(&GetJDKInstallRoot, &selfInfo);
 
-#ifdef STATIC_BUILD
-    char jvm_cfg[MAXPATHLEN];
-    char *p = NULL;
-    strncpy(jvm_cfg, selfInfo.dli_fname, MAXPATHLEN);
-    p = strrchr(jvm_cfg, '/'); *p = '\0';
-    p = strrchr(jvm_cfg, '/');
-    if (strcmp(p, "/.") == 0) {
-      *p = '\0';
-      p = strrchr(jvm_cfg, '/'); *p = '\0';
+    if (JLI_IsStaticallyLinked()) {
+        char jvm_cfg[MAXPATHLEN];
+        char *p = NULL;
+        strncpy(jvm_cfg, selfInfo.dli_fname, MAXPATHLEN);
+        p = strrchr(jvm_cfg, '/'); *p = '\0';
+        p = strrchr(jvm_cfg, '/');
+        if (strcmp(p, "/.") == 0) {
+            *p = '\0';
+            p = strrchr(jvm_cfg, '/'); *p = '\0';
+        } else {
+          *p = '\0';
+        }
+        strncpy(path, jvm_cfg, pathsize);
+        strncat(jvm_cfg, "/lib/jvm.cfg", MAXPATHLEN);
+        if (access(jvm_cfg, F_OK) == 0) {
+           return JNI_TRUE;
+        }
     }
-    else *p = '\0';
-    strncpy(path, jvm_cfg, pathsize);
-    strncat(jvm_cfg, "/lib/jvm.cfg", MAXPATHLEN);
-    if (access(jvm_cfg, F_OK) == 0) {
-      return JNI_TRUE;
-    }
-#endif
 
     char *realPathToSelf = realpath(selfInfo.dli_fname, path);
     if (realPathToSelf != path) {
@@ -521,8 +480,8 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
         return JNI_TRUE;
     }
 
-    // If libjli.dylib is loaded from a macos bundle MacOS dir, find the JRE dir
-    // in ../Home.
+    // If libjli.dylib is loaded from a macos bundle MacOS dir, find the JDK
+    // install root at ../Home.
     const char altLastPathComponent[] = "/MacOS/libjli.dylib";
     size_t sizeOfAltLastPathComponent = sizeof(altLastPathComponent) - 1;
     if (pathLen < sizeOfLastPathComponent) {
@@ -538,7 +497,7 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
     }
 
     if (!speculative)
-      JLI_ReportErrorMessage(JRE_ERROR8 JAVA_DLL);
+      JLI_ReportErrorMessage(LAUNCHER_ERROR2 JAVA_DLL);
     return JNI_FALSE;
 }
 
@@ -549,11 +508,12 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 
     JLI_TraceLauncher("JVM path is %s\n", jvmpath);
 
-#ifndef STATIC_BUILD
-    libjvm = dlopen(jvmpath, RTLD_NOW + RTLD_GLOBAL);
-#else
-    libjvm = dlopen(NULL, RTLD_FIRST);
-#endif
+    if (!JLI_IsStaticallyLinked()) {
+        libjvm = dlopen(jvmpath, RTLD_NOW + RTLD_GLOBAL);
+    } else {
+        libjvm = dlopen(NULL, RTLD_FIRST);
+    }
+
     if (libjvm == NULL) {
         JLI_ReportErrorMessage(DLL_ERROR1, __LINE__);
         JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
@@ -603,14 +563,13 @@ SetExecname(char **argv)
     char* exec_path = NULL;
     {
         Dl_info dlinfo;
-
-#ifdef STATIC_BUILD
         void *fptr;
-        fptr = (void *)&SetExecname;
-#else
-        int (*fptr)();
-        fptr = (int (*)())dlsym(RTLD_DEFAULT, "main");
-#endif
+
+        if (JLI_IsStaticallyLinked()) {
+            fptr = (void *)&SetExecname;
+        } else {
+            fptr = dlsym(RTLD_DEFAULT, "main");
+        }
         if (fptr == NULL) {
             JLI_ReportErrorMessage(DLL_ERROR3, dlerror());
             return JNI_FALSE;
@@ -675,27 +634,27 @@ static void* hSplashLib = NULL;
 
 void* SplashProcAddress(const char* name) {
     if (!hSplashLib) {
-        char jrePath[PATH_MAX];
-        if (!GetJREPath(jrePath, sizeof(jrePath), JNI_FALSE)) {
-            JLI_ReportErrorMessage(JRE_ERROR1);
+        char jdkRoot[PATH_MAX];
+        if (!GetJDKInstallRoot(jdkRoot, sizeof(jdkRoot), JNI_FALSE)) {
+            JLI_ReportErrorMessage(LAUNCHER_ERROR1);
             return NULL;
         }
 
         char splashPath[PATH_MAX];
         const int ret = JLI_Snprintf(splashPath, sizeof(splashPath),
-                "%s/lib/%s", jrePath, SPLASHSCREEN_SO);
+                                     "%s/lib/%s", jdkRoot, SPLASHSCREEN_SO);
         if (ret >= (int)sizeof(splashPath)) {
-            JLI_ReportErrorMessage(JRE_ERROR11);
+            JLI_ReportErrorMessage(LAUNCHER_ERROR3);
             return NULL;
         }
         if (ret < 0) {
-            JLI_ReportErrorMessage(JRE_ERROR13);
+            JLI_ReportErrorMessage(LAUNCHER_ERROR5);
             return NULL;
         }
 
         hSplashLib = dlopen(splashPath, RTLD_LAZY | RTLD_GLOBAL);
         // It's OK if dlopen() fails. The splash screen library binary file
-        // might have been stripped out from the JRE image to reduce its size
+        // might have been stripped out from the JDK image to reduce its size
         // (e.g. on embedded platforms).
 
         if (hSplashLib) {

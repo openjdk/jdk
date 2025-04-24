@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,74 +23,75 @@
 
 import java.awt.Button;
 import java.awt.Choice;
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.Window;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
-/**
+/*
  * @test
  * @bug 4478780
  * @key headful
  * @summary Tests that Choice can be accessed and controlled by keyboard.
  */
+
 public class AccessibleChoiceTest {
-    //Declare things used in the test, like buttons and labels here
-    Frame frame = new Frame("window owner");
-    Window win = new Window(frame);
-    Choice choice = new Choice();
-    Button def = new Button("default owner");
-    CountDownLatch go = new CountDownLatch(1);
+    static Frame frame;
+    static Choice choice;
+    static Button button;
+    static volatile CountDownLatch go;
+    static volatile Point loc;
+    static volatile int bWidth;
+    static volatile int bHeight;
 
-    public static void main(final String[] args) throws IOException {
-        AccessibleChoiceTest app = new AccessibleChoiceTest();
-        app.test();
-    }
-
-    private void test() throws IOException {
+    public static void main(final String[] args) throws Exception {
         try {
-            init();
-            start();
+            createAndShowUI();
+            test();
         } finally {
-            if (frame != null) frame.dispose();
-            if (win != null) win.dispose();
+            if (frame != null) {
+                EventQueue.invokeAndWait(() -> frame.dispose());
+            }
         }
     }
 
-    public void init() {
-        win.setLayout (new FlowLayout ());
-        win.add(def);
-        def.addFocusListener(new FocusAdapter() {
+    public static void createAndShowUI() throws Exception {
+        go = new CountDownLatch(1);
+        EventQueue.invokeAndWait(() -> {
+            frame = new Frame("Accessible Choice Test Frame");
+            choice = new Choice();
+            button = new Button("default owner");
+            frame.setLayout(new FlowLayout());
+            frame.add(button);
+            button.addFocusListener(new FocusAdapter() {
                 public void focusGained(FocusEvent e) {
                     go.countDown();
                 }
             });
-        choice.add("One");
-        choice.add("Two");
-        win.add(choice);
+            choice.add("One");
+            choice.add("Two");
+            frame.add(choice);
+            frame.pack();
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        });
     }
 
-    public void start () throws IOException {
-        frame.setVisible(true);
-        win.pack();
-        win.setLocation(100, 200);
-        win.setVisible(true);
-
-        Robot robot = null;
+    public static void test() throws Exception {
+        Robot robot;
         try {
             robot = new Robot();
         } catch (Exception ex) {
@@ -98,12 +99,17 @@ public class AccessibleChoiceTest {
         }
         robot.waitForIdle();
         robot.delay(1000);
-        robot.setAutoDelay(150);
         robot.setAutoWaitForIdle(true);
 
         // Focus default button and wait till it gets focus
-        Point loc = def.getLocationOnScreen();
-        robot.mouseMove(loc.x+2, loc.y+2);
+        EventQueue.invokeAndWait(() -> {
+            loc = button.getLocationOnScreen();
+            bWidth = button.getWidth();
+            bHeight = button.getHeight();
+        });
+        robot.mouseMove(loc.x + bWidth / 2,
+                        loc.y + bHeight / 2);
+        robot.delay(500);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
@@ -113,9 +119,11 @@ public class AccessibleChoiceTest {
             throw new RuntimeException("Interrupted !!!");
         }
 
-        if (!def.isFocusOwner()) {
+        if (!button.isFocusOwner()) {
             throw new RuntimeException("Button doesn't have focus");
         }
+
+        robot.delay(500);
 
         // Press Tab key to move focus to Choice
         robot.keyPress(KeyEvent.VK_TAB);
@@ -123,15 +131,18 @@ public class AccessibleChoiceTest {
 
         robot.delay(500);
 
-        // Press Down key to select next item in the choice(Motif 2.1)
+        if (!choice.isFocusOwner()) {
+            throw new RuntimeException("Choice doesn't have focus");
+        }
+
+        // Press Down key to select next item in the choice
         // If bug exists we won't be able to do so
         robot.keyPress(KeyEvent.VK_DOWN);
         robot.keyRelease(KeyEvent.VK_DOWN);
 
-        robot.delay(500);
-
         String osName = System.getProperty("os.name").toLowerCase();
         if (osName.startsWith("mac")) {
+            robot.delay(500);
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
             robot.delay(500);
@@ -142,7 +153,7 @@ public class AccessibleChoiceTest {
         robot.delay(1000);
 
         // On success second item should be selected
-        if (choice.getSelectedItem() != choice.getItem(1)) {
+        if (!choice.getSelectedItem().equals(choice.getItem(1))) {
             // Print out os name to check if mac conditional is relevant
             System.err.println("Failed on os: " + osName);
 

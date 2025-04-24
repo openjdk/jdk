@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,12 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -55,6 +55,9 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.AppImageFile.LauncherInfo;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.MsiVersion;
+import jdk.jpackage.internal.model.PackagerException;
 
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
@@ -67,6 +70,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+import jdk.jpackage.internal.util.FileUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -227,7 +231,8 @@ public class WinMsiBundler  extends AbstractBundler {
         appImageBundler = new WinAppBundler().setDependentTask(true);
         wixFragments = Stream.of(
                 Map.entry("bundle.wxf", new WixAppImageFragmentBuilder()),
-                Map.entry("ui.wxf", new WixUiFragmentBuilder())
+                Map.entry("ui.wxf", new WixUiFragmentBuilder()),
+                Map.entry("os-condition.wxf", OSVersionCondition.createWixFragmentBuilder())
         ).<WixFragmentBuilder>map(e -> {
             e.getValue().setOutputFileName(e.getKey());
             return e.getValue();
@@ -253,7 +258,7 @@ public class WinMsiBundler  extends AbstractBundler {
     public boolean supported(boolean platformInstaller) {
         try {
             if (wixToolset == null) {
-                wixToolset = WixTool.toolset();
+                wixToolset = WixTool.createToolset();
             }
             return true;
         } catch (ConfigException ce) {
@@ -300,7 +305,7 @@ public class WinMsiBundler  extends AbstractBundler {
             appImageBundler.validate(params);
 
             if (wixToolset == null) {
-                wixToolset = WixTool.toolset();
+                wixToolset = WixTool.createToolset();
             }
 
             try {
@@ -309,16 +314,17 @@ public class WinMsiBundler  extends AbstractBundler {
                 throw new ConfigException(ex);
             }
 
-            for (var toolInfo: wixToolset.values()) {
+            for (var tool : wixToolset.getType().getTools()) {
                 Log.verbose(MessageFormat.format(I18N.getString(
-                        "message.tool-version"), toolInfo.path.getFileName(),
-                        toolInfo.version));
+                        "message.tool-version"), wixToolset.getToolPath(tool).
+                                getFileName(), wixToolset.getVersion()));
             }
 
-            wixFragments.forEach(wixFragment -> wixFragment.setWixVersion(
-                    wixToolset.get(WixTool.Light).version));
+            wixFragments.forEach(wixFragment -> wixFragment.setWixVersion(wixToolset.getVersion(),
+                    wixToolset.getType()));
 
-            wixFragments.get(0).logWixFeatures();
+            wixFragments.stream().map(WixFragmentBuilder::getLoggableWixFeatures).flatMap(
+                    List::stream).distinct().toList().forEach(Log::verbose);
 
             /********* validate bundle parameters *************/
 
@@ -332,14 +338,7 @@ public class WinMsiBundler  extends AbstractBundler {
 
             FileAssociation.verify(FileAssociation.fetchFrom(params));
 
-            var serviceInstallerResource = initServiceInstallerResource(params);
-            if (serviceInstallerResource != null) {
-                if (!Files.exists(serviceInstallerResource.getExternalPath())) {
-                    throw new ConfigException(I18N.getString(
-                            "error.missing-service-installer"), I18N.getString(
-                                    "error.missing-service-installer.advice"));
-                }
-            }
+            initServiceInstallerResource(params);
 
             return true;
         } catch (RuntimeException re) {
@@ -354,18 +353,14 @@ public class WinMsiBundler  extends AbstractBundler {
     private void prepareProto(Map<String, ? super Object> params)
                 throws PackagerException, IOException {
         Path appImage = StandardBundlerParam.getPredefinedAppImage(params);
-        String appName = APP_NAME.fetchFrom(params);
+        String appName = Objects.requireNonNull(APP_NAME.fetchFrom(params));
         Path appDir;
-        if (appName == null) {
-            // Can happen when no name is given, and using a foreign app-image
-            throw new PackagerException("error.no.name");
-        }
 
         // we either have an application image or need to build one
         if (appImage != null) {
             appDir = MSI_IMAGE_DIR.fetchFrom(params).resolve(appName);
             // copy everything from appImage dir into appDir/name
-            IOUtils.copyRecursive(appImage, appDir);
+            FileUtils.copyRecursive(appImage, appDir);
         } else {
             appDir = appImageBundler.execute(params, MSI_IMAGE_DIR.fetchFrom(
                     params));
@@ -406,11 +401,15 @@ public class WinMsiBundler  extends AbstractBundler {
             ensureByMutationFileIsRTF(destFile);
         }
 
-        var serviceInstallerResource = initServiceInstallerResource(params);
-        if (serviceInstallerResource != null) {
-            var serviceInstallerPath = serviceInstallerResource.getExternalPath();
-            params.put(SERVICE_INSTALLER.getID(), new InstallableFile(
-                    serviceInstallerPath, serviceInstallerPath.getFileName()));
+        try {
+            var serviceInstallerResource = initServiceInstallerResource(params);
+            if (serviceInstallerResource != null) {
+                var serviceInstallerPath = serviceInstallerResource.getExternalPath();
+                params.put(SERVICE_INSTALLER.getID(), new InstallableFile(
+                        serviceInstallerPath, serviceInstallerPath.getFileName()));
+            }
+        } catch (ConfigException ex) {
+            throw new PackagerException(ex);
         }
     }
 
@@ -512,22 +511,6 @@ public class WinMsiBundler  extends AbstractBundler {
             data.put("JpIsSystemWide", "yes");
         }
 
-        // Copy standard l10n files.
-        for (String loc : Arrays.asList("de", "en", "ja", "zh_CN")) {
-            String fname = "MsiInstallerStrings_" + loc + ".wxl";
-            createResource(fname, params)
-                    .setCategory(I18N.getString("resource.wxl-file"))
-                    .saveToFile(configDir.resolve(fname));
-        }
-
-        createResource("main.wxs", params)
-                .setCategory(I18N.getString("resource.main-wix-file"))
-                .saveToFile(configDir.resolve("main.wxs"));
-
-        createResource("overrides.wxi", params)
-                .setCategory(I18N.getString("resource.overrides-wix-file"))
-                .saveToFile(configDir.resolve("overrides.wxi"));
-
         return data;
     }
 
@@ -541,14 +524,13 @@ public class WinMsiBundler  extends AbstractBundler {
                 "message.preparing-msi-config"), msiOut.toAbsolutePath()
                         .toString()));
 
-        WixPipeline wixPipeline = new WixPipeline()
-        .setToolset(wixToolset.entrySet().stream().collect(
-                Collectors.toMap(
-                        entry -> entry.getKey(),
-                        entry -> entry.getValue().path)))
-        .setWixObjDir(TEMP_ROOT.fetchFrom(params).resolve("wixobj"))
-        .setWorkDir(WIN_APP_IMAGE.fetchFrom(params))
-        .addSource(CONFIG_ROOT.fetchFrom(params).resolve("main.wxs"), wixVars);
+        var wixObjDir = TEMP_ROOT.fetchFrom(params).resolve("wixobj");
+
+        var wixPipeline = WixPipeline.build()
+                .setWixObjDir(wixObjDir)
+                .setWorkDir(WIN_APP_IMAGE.fetchFrom(params))
+                .addSource(CONFIG_ROOT.fetchFrom(params).resolve("main.wxs"),
+                        wixVars);
 
         for (var wixFragment : wixFragments) {
             wixFragment.configureWixPipeline(wixPipeline);
@@ -557,16 +539,46 @@ public class WinMsiBundler  extends AbstractBundler {
         Log.verbose(MessageFormat.format(I18N.getString(
                 "message.generating-msi"), msiOut.toAbsolutePath().toString()));
 
-        wixPipeline.addLightOptions("-sice:ICE27");
+        switch (wixToolset.getType()) {
+            case Wix3 -> {
+                wixPipeline.addLightOptions("-sice:ICE27");
 
-        if (!MSI_SYSTEM_WIDE.fetchFrom(params)) {
-            wixPipeline.addLightOptions("-sice:ICE91");
+                if (!MSI_SYSTEM_WIDE.fetchFrom(params)) {
+                    wixPipeline.addLightOptions("-sice:ICE91");
+                }
+            }
+            case Wix4 -> {
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
         }
+
+        final Path configDir = CONFIG_ROOT.fetchFrom(params);
+
+        var primaryWxlFiles = Stream.of("de", "en", "ja", "zh_CN").map(loc -> {
+            return configDir.resolve("MsiInstallerStrings_" + loc + ".wxl");
+        }).toList();
+
+        var wixResources = new WixSourceConverter.ResourceGroup(wixToolset.getType());
+
+        // Copy standard l10n files.
+        for (var path : primaryWxlFiles) {
+            var name = path.getFileName().toString();
+            wixResources.addResource(createResource(name, params).setPublicName(name).setCategory(
+                    I18N.getString("resource.wxl-file")), path);
+        }
+
+        wixResources.addResource(createResource("main.wxs", params).setPublicName("main.wxs").
+                setCategory(I18N.getString("resource.main-wix-file")), configDir.resolve("main.wxs"));
+
+        wixResources.addResource(createResource("overrides.wxi", params).setPublicName(
+                "overrides.wxi").setCategory(I18N.getString("resource.overrides-wix-file")),
+                configDir.resolve("overrides.wxi"));
 
         // Filter out custom l10n files that were already used to
         // override primary l10n files. Ignore case filename comparison,
         // both lists are expected to be short.
-        List<Path> primaryWxlFiles = getWxlFilesFromDir(params, CONFIG_ROOT);
         List<Path> customWxlFiles = getWxlFilesFromDir(params, RESOURCE_DIR).stream()
                 .filter(custom -> primaryWxlFiles.stream().noneMatch(primary ->
                         primary.getFileName().toString().equalsIgnoreCase(
@@ -577,16 +589,28 @@ public class WinMsiBundler  extends AbstractBundler {
                                 custom.getFileName().toString())))
                 .toList();
 
+        // Copy custom l10n files.
+        for (var path : customWxlFiles) {
+            var name = path.getFileName().toString();
+            wixResources.addResource(createResource(name, params).setPublicName(name).
+                    setSourceOrder(OverridableResource.Source.ResourceDir).setCategory(I18N.
+                    getString("resource.wxl-file")), configDir.resolve(name));
+        }
+
+        // Save all WiX resources into config dir.
+        wixResources.saveResources();
+
         // All l10n files are supplied to WiX with "-loc", but only
         // Cultures from custom files and a single primary Culture are
         // included into "-cultures" list
         for (var wxl : primaryWxlFiles) {
-            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().normalize().toString());
+            wixPipeline.addLightOptions("-loc", wxl.toString());
         }
 
         List<String> cultures = new ArrayList<>();
         for (var wxl : customWxlFiles) {
-            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().normalize().toString());
+            wxl = configDir.resolve(wxl.getFileName());
+            wixPipeline.addLightOptions("-loc", wxl.toString());
             cultures.add(getCultureFromWxlFile(wxl));
         }
 
@@ -598,10 +622,23 @@ public class WinMsiBundler  extends AbstractBundler {
         // Build ordered list of unique cultures.
         Set<String> uniqueCultures = new LinkedHashSet<>();
         uniqueCultures.addAll(cultures);
-        wixPipeline.addLightOptions(uniqueCultures.stream().collect(
-                Collectors.joining(";", "-cultures:", "")));
+        switch (wixToolset.getType()) {
+            case Wix3 -> {
+                wixPipeline.addLightOptions(uniqueCultures.stream().collect(Collectors.joining(";",
+                        "-cultures:", "")));
+            }
+            case Wix4 -> {
+                uniqueCultures.forEach(culture -> {
+                    wixPipeline.addLightOptions("-culture", culture);
+                });
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
+        }
 
-        wixPipeline.buildMsi(msiOut.toAbsolutePath());
+        Files.createDirectories(wixObjDir);
+        wixPipeline.create(wixToolset).buildMsi(msiOut.toAbsolutePath());
 
         return msiOut;
     }
@@ -641,14 +678,14 @@ public class WinMsiBundler  extends AbstractBundler {
             if (nodes.getLength() != 1) {
                 throw new IOException(MessageFormat.format(I18N.getString(
                         "error.extract-culture-from-wix-l10n-file"),
-                        wxlPath.toAbsolutePath()));
+                        wxlPath.toAbsolutePath().normalize()));
             }
 
             return nodes.item(0).getNodeValue();
         } catch (XPathExpressionException | ParserConfigurationException
                 | SAXException ex) {
             throw new IOException(MessageFormat.format(I18N.getString(
-                    "error.read-wix-l10n-file"), wxlPath.toAbsolutePath()), ex);
+                    "error.read-wix-l10n-file"), wxlPath.toAbsolutePath().normalize()), ex);
         }
     }
 
@@ -724,7 +761,7 @@ public class WinMsiBundler  extends AbstractBundler {
     }
 
     private static OverridableResource initServiceInstallerResource(
-            Map<String, ? super Object> params) {
+            Map<String, ? super Object> params) throws ConfigException {
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
             // Runtime installer doesn't install launchers,
             // service installer not needed
@@ -742,16 +779,20 @@ public class WinMsiBundler  extends AbstractBundler {
         var result = createResource(null, params)
                 .setPublicName("service-installer.exe")
                 .setSourceOrder(OverridableResource.Source.External);
-        if (result.getResourceDir() == null) {
-            return null;
+        if (result.getResourceDir() != null) {
+            result.setExternal(result.getResourceDir().resolve(result.getPublicName()));
+
+            if (Files.exists(result.getExternalPath())) {
+                return result;
+            }
         }
 
-        return result.setExternal(result.getResourceDir().resolve(
-                result.getPublicName()));
+        throw new ConfigException(I18N.getString("error.missing-service-installer"),
+                I18N.getString("error.missing-service-installer.advice"));
     }
 
     private Path installerIcon;
-    private Map<WixTool, WixTool.ToolInfo> wixToolset;
+    private WixToolset wixToolset;
     private AppImageBundler appImageBundler;
     private final List<WixFragmentBuilder> wixFragments;
 }

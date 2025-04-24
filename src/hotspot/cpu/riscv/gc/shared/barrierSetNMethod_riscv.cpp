@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/nativeInst.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -32,8 +31,8 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/registerMap.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #if INCLUDE_JVMCI

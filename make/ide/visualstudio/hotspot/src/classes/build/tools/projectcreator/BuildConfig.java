@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,7 +221,6 @@ class BuildConfig {
         Vector sysDefines = new Vector();
         sysDefines.add("WIN32");
         sysDefines.add("_WINDOWS");
-        sysDefines.add("HOTSPOT_BUILD_USER=\\\""+System.getProperty("user.name")+"\\\"");
         sysDefines.add("HOTSPOT_BUILD_TARGET=\\\""+get("Build")+"\\\"");
         sysDefines.add("INCLUDE_JFR=1");
         sysDefines.add("_JNI_IMPLEMENTATION_");

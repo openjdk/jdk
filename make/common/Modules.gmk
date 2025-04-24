@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 # questions.
 #
 
-ifndef _MODULES_GMK
-_MODULES_GMK := 1
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
 
 ################################################################################
 # Setup module sets for classloaders
@@ -44,11 +44,6 @@ include $(TOPDIR)/make/conf/docs-modules.conf
 # Setup module sets needed by the build system
 
 include $(TOPDIR)/make/conf/build-module-sets.conf
-
-################################################################################
-# Hook to include the corresponding custom file, if present.
-# Allowing MODULE list extensions setup above.
-$(eval $(call IncludeCustomExtension, common/Modules.gmk))
 
 ################################################################################
 # Depending on the configuration, we might need to filter out some modules that
@@ -92,7 +87,10 @@ SRC_SUBDIRS += share/classes
 
 SPEC_SUBDIRS += share/specs
 
-MAN_SUBDIRS += share/man
+MAN_SUBDIRS += share/man $(TARGET_OS)/man
+
+# The docs should include the sum of all man pages for all platforms
+MAN_DOCS_SUBDIRS += share/man windows/man
 
 # Find all module-info.java files for the current build target platform and
 # configuration.
@@ -158,6 +156,10 @@ FindModuleManDirs = \
     $(strip $(wildcard \
         $(foreach sub, $(MAN_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
 
+FindModuleManDirsForDocs = \
+    $(strip $(wildcard \
+        $(foreach sub, $(MAN_DOCS_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
+
 # Construct the complete module source path
 GetModuleSrcPath = \
     $(call PathList, \
@@ -172,13 +174,14 @@ MODULE_DEPS_MAKEFILE := $(MAKESUPPORT_OUTPUTDIR)/module-deps.gmk
 
 MODULE_INFOS := $(call FindAllModuleInfos, *)
 
-$(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
-    $(call DependOnVariable, MODULE_INFOS, $(MAKESUPPORT_OUTPUTDIR)/MODULE_INFOS.vardeps)
+ifeq ($(GENERATE_MODULE_DEPS_FILE), true)
+  $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
+      $(call DependOnVariable, MODULE_INFOS, $(MAKESUPPORT_OUTPUTDIR)/MODULE_INFOS.vardeps)
 	$(call MakeTargetDir)
 	$(RM) $@
 	$(foreach m, $(MODULE_INFOS), \
-	    ( $(PRINTF) "DEPS_$(call GetModuleNameFromModuleInfo, $m) :=" && \
-	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
+	    ( $(ECHO) -n "DEPS_$(call GetModuleNameFromModuleInfo, $m) := " && \
+	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) ' \
 	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
 	          /^ *requires/ { sub(/;/, ""); \
 	                          sub(/requires /, " "); \
@@ -191,8 +194,8 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	                          gsub(/\r/, ""); \
 	                          printf(" %s", $$0) } \
 	          END           { printf("\n") }' $m && \
-	      $(PRINTF) "TRANSITIVE_MODULES_$(call GetModuleNameFromModuleInfo, $m) :=" && \
-	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
+	      $(ECHO) -n "TRANSITIVE_MODULES_$(call GetModuleNameFromModuleInfo, $m) := " && \
+	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) ' \
 	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
 	          /^ *requires  *transitive/ { \
 	                          sub(/;/, ""); \
@@ -206,6 +209,7 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	                          printf(" %s", $$0) } \
 	          END           { printf("\n") }' $m \
 	    ) >> $@ $(NEWLINE))
+endif
 
 -include $(MODULE_DEPS_MAKEFILE)
 
@@ -221,7 +225,7 @@ FindTransitiveDepsForModule = \
         $(foreach m, $(call FindDepsForModule, $1), \
             $(call FindDepsForModule, $m) \
             $(foreach n, $(call FindDepsForModule, $m), \
-                 $(call FindDepsForModule, $n))))
+                $(call FindDepsForModule, $n))))
 
 # Find dependencies ("requires") transitively in 3 levels for a set of modules.
 # Param 1: List of modules to find dependencies for.
@@ -240,7 +244,7 @@ FindTransitiveIndirectDepsForModule = \
         $(foreach m, $(call FindIndirectExportsForModule, $1), \
             $(call FindIndirectExportsForModule, $m) \
             $(foreach n, $(call FindIndirectExportsForModule, $m), \
-                 $(call FindIndirectExportsForModule, $n))))
+                $(call FindIndirectExportsForModule, $n))))
 
 # Finds indirect exported modules transitively in 3 levels for a set of modules.
 # Param 1: List of modules to find indirect exported modules for.
@@ -314,4 +318,5 @@ endef
 
 ################################################################################
 
-endif # _MODULES_GMK
+endif # include guard
+include MakeIncludeEnd.gmk

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,16 +32,17 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.spi.CurrencyNameProvider;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jdk.internal.util.StaticProperty;
 import sun.util.locale.provider.CalendarDataUtility;
@@ -103,12 +104,12 @@ import sun.util.logging.PlatformLogger;
  * and/or minor unit are encountered, those entries are ignored and the remainder
  * of entries in file are processed.
  *
- * <p>
- * It is recommended to use {@link java.math.BigDecimal} class while dealing
+ * @apiNote
+ * It is recommended to use the {@link java.math.BigDecimal} class while dealing
  * with {@code Currency} or monetary values as it provides better handling of floating
  * point numbers and their operations.
  *
- * @spec http://www.iso.org/iso/home/standards/currency_codes.htm ISO - ISO 4217 - Currency codes
+ * @spec https://www.iso.org/iso-4217-currency-codes.html ISO - ISO 4217 - Currency codes
  * @see java.math.BigDecimal
  * @since 1.4
  */
@@ -213,63 +214,57 @@ public final class Currency implements Serializable {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
     private static void initStatic() {
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public Void run() {
-                try {
-                    try (InputStream in = getClass().getResourceAsStream("/java/util/currency.data")) {
-                        if (in == null) {
-                            throw new InternalError("Currency data not found");
-                        }
-                        DataInputStream dis = new DataInputStream(new BufferedInputStream(in));
-                        if (dis.readInt() != MAGIC_NUMBER) {
-                            throw new InternalError("Currency data is possibly corrupted");
-                        }
-                        formatVersion = dis.readInt();
-                        if (formatVersion != VALID_FORMAT_VERSION) {
-                            throw new InternalError("Currency data format is incorrect");
-                        }
-                        dataVersion = dis.readInt();
-                        mainTable = readIntArray(dis, A_TO_Z * A_TO_Z);
-                        int scCount = dis.readInt();
-                        specialCasesList = readSpecialCases(dis, scCount);
-                        int ocCount = dis.readInt();
-                        otherCurrenciesList = readOtherCurrencies(dis, ocCount);
-                    }
-                } catch (IOException e) {
-                    throw new InternalError(e);
-                }
 
-                // look for the properties file for overrides
-                String propsFile = System.getProperty("java.util.currency.data");
-                if (propsFile == null) {
-                    propsFile = StaticProperty.javaHome() + File.separator + "lib" +
-                        File.separator + "currency.properties";
+        try {
+            try (InputStream in = Currency.class.getResourceAsStream("/java/util/currency.data")) {
+                if (in == null) {
+                    throw new InternalError("Currency data not found");
                 }
-                try {
-                    File propFile = new File(propsFile);
-                    if (propFile.exists()) {
-                        Properties props = new Properties();
-                        try (FileReader fr = new FileReader(propFile)) {
-                            props.load(fr);
-                        }
-                        Pattern propertiesPattern =
-                                Pattern.compile("([A-Z]{3})\\s*,\\s*(\\d{3})\\s*,\\s*" +
-                                        "(\\d+)\\s*,?\\s*(\\d{4}-\\d{2}-\\d{2}T\\d{2}:" +
-                                        "\\d{2}:\\d{2})?");
-                        List<CurrencyProperty> currencyEntries
-                                = getValidCurrencyData(props, propertiesPattern);
-                        currencyEntries.forEach(Currency::replaceCurrencyData);
-                    }
-                } catch (IOException e) {
-                    CurrencyProperty.info("currency.properties is ignored"
-                            + " because of an IOException", e);
+                DataInputStream dis = new DataInputStream(new BufferedInputStream(in));
+                if (dis.readInt() != MAGIC_NUMBER) {
+                    throw new InternalError("Currency data is possibly corrupted");
                 }
-                return null;
+                formatVersion = dis.readInt();
+                if (formatVersion != VALID_FORMAT_VERSION) {
+                    throw new InternalError("Currency data format is incorrect");
+                }
+                dataVersion = dis.readInt();
+                mainTable = readIntArray(dis, A_TO_Z * A_TO_Z);
+                int scCount = dis.readInt();
+                specialCasesList = readSpecialCases(dis, scCount);
+                int ocCount = dis.readInt();
+                otherCurrenciesList = readOtherCurrencies(dis, ocCount);
             }
-        });
+        } catch (IOException e) {
+            throw new InternalError(e);
+        }
+
+        // look for the properties file for overrides
+        String propsFile = System.getProperty("java.util.currency.data");
+        if (propsFile == null) {
+            propsFile = StaticProperty.javaHome() + File.separator + "lib" +
+                File.separator + "currency.properties";
+        }
+        try {
+            File propFile = new File(propsFile);
+            if (propFile.exists()) {
+                Properties props = new Properties();
+                try (FileReader fr = new FileReader(propFile)) {
+                    props.load(fr);
+                }
+                Pattern propertiesPattern =
+                        Pattern.compile("([A-Z]{3})\\s*,\\s*(\\d{3})\\s*,\\s*" +
+                                "(\\d+)\\s*,?\\s*(\\d{4}-\\d{2}-\\d{2}T\\d{2}:" +
+                                "\\d{2}:\\d{2})?");
+                List<CurrencyProperty> currencyEntries
+                        = getValidCurrencyData(props, propertiesPattern);
+                currencyEntries.forEach(Currency::replaceCurrencyData);
+            }
+        } catch (IOException e) {
+            CurrencyProperty.info("currency.properties is ignored"
+                    + " because of an IOException", e);
+        }
     }
 
     /**
@@ -319,8 +314,8 @@ public final class Currency implements Serializable {
             // or in the list of other currencies.
             boolean found = false;
             if (currencyCode.length() != 3) {
-                throw new IllegalArgumentException("The input currency code must " +
-                        "have a length of 3 characters");
+                throw new IllegalArgumentException(
+                        "The input currency code: \"%s\" must have a length of 3 characters".formatted(currencyCode));
             }
             char char1 = currencyCode.charAt(0);
             char char2 = currencyCode.charAt(1);
@@ -343,8 +338,8 @@ public final class Currency implements Serializable {
             if (!found) {
                 OtherCurrencyEntry ocEntry = OtherCurrencyEntry.findEntry(currencyCode);
                 if (ocEntry == null) {
-                    throw new IllegalArgumentException("The input currency code" +
-                            " is not a valid ISO 4217 code");
+                    throw new IllegalArgumentException(
+                            "The input currency code: \"%s\" is not a valid ISO 4217 code".formatted(currencyCode));
                 }
                 defaultFractionDigits = ocEntry.fraction;
                 numericCode = ocEntry.numericCode;
@@ -399,8 +394,8 @@ public final class Currency implements Serializable {
         String country = CalendarDataUtility.findRegionOverride(locale).getCountry();
 
         if (country == null || !country.matches("^[a-zA-Z]{2}$")) {
-            throw new IllegalArgumentException("The country of the input locale" +
-                    " is not a valid ISO 3166 country code");
+            throw new IllegalArgumentException(
+                    "The country of the input locale: \"%s\" is not a valid ISO 3166 country code".formatted(locale));
         }
 
         char char1 = country.charAt(0);
@@ -417,8 +412,8 @@ public final class Currency implements Serializable {
         } else {
             // special cases
             if (tableEntry == INVALID_COUNTRY_ENTRY) {
-                throw new IllegalArgumentException("The country of the input locale" +
-                        " is not a valid ISO 3166 country code");
+                throw new IllegalArgumentException(
+                        "The country of the input locale: \"%s\" is not a valid ISO 3166 country code".formatted(locale));
             }
             if (tableEntry == COUNTRY_WITHOUT_CURRENCY_ENTRY) {
                 return null;
@@ -440,64 +435,82 @@ public final class Currency implements Serializable {
     }
 
     /**
-     * Gets the set of available currencies.  The returned set of currencies
-     * contains all of the available currencies, which may include currencies
-     * that represent obsolete ISO 4217 codes.  The set can be modified
+     * {@return a set of available currencies} The returned set of currencies
+     * contains all the available currencies, which may include currencies
+     * that represent obsolete ISO 4217 codes. If there is no currency available
+     * in the runtime, the returned set is empty. The set can be modified
      * without affecting the available currencies in the runtime.
      *
-     * @return the set of available currencies.  If there is no currency
-     *    available in the runtime, the returned set is empty.
+     * @apiNote Consider using {@link #availableCurrencies()} which returns
+     * a stream of the available currencies.
+     * @see #availableCurrencies()
      * @since 1.7
      */
     public static Set<Currency> getAvailableCurrencies() {
-        synchronized(Currency.class) {
-            if (available == null) {
-                available = new HashSet<>(256);
+        return new HashSet<>(getCurrencies());
+    }
 
-                // Add simple currencies first
-                for (char c1 = 'A'; c1 <= 'Z'; c1 ++) {
-                    for (char c2 = 'A'; c2 <= 'Z'; c2 ++) {
-                        int tableEntry = getMainTableEntry(c1, c2);
-                        if ((tableEntry & COUNTRY_TYPE_MASK) == SIMPLE_CASE_COUNTRY_MASK
-                             && tableEntry != INVALID_COUNTRY_ENTRY) {
-                            char finalChar = (char) ((tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK) + 'A');
-                            int defaultFractionDigits = (tableEntry & SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_MASK) >> SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_SHIFT;
-                            int numericCode = (tableEntry & NUMERIC_CODE_MASK) >> NUMERIC_CODE_SHIFT;
-                            StringBuilder sb = new StringBuilder();
-                            sb.append(c1);
-                            sb.append(c2);
-                            sb.append(finalChar);
-                            available.add(getInstance(sb.toString(), defaultFractionDigits, numericCode));
-                        } else if ((tableEntry & COUNTRY_TYPE_MASK) == SPECIAL_CASE_COUNTRY_MASK
-                                && tableEntry != INVALID_COUNTRY_ENTRY
-                                && tableEntry != COUNTRY_WITHOUT_CURRENCY_ENTRY) {
-                            int index = SpecialCaseEntry.toIndex(tableEntry);
-                            SpecialCaseEntry scEntry = specialCasesList.get(index);
+    /**
+     * {@return a stream of available currencies} The returned stream of currencies
+     * contains all the available currencies, which may include currencies
+     * that represent obsolete ISO 4217 codes. If there is no currency
+     * available in the runtime, the returned stream is empty.
+     *
+     * @implNote Unlike {@link #getAvailableCurrencies()}, this method does
+     * not create a defensive copy of the {@code Currency} set.
+     * @see #getAvailableCurrencies()
+     * @since 25
+     */
+    public static Stream<Currency> availableCurrencies() {
+        return getCurrencies().stream();
+    }
 
-                            if (scEntry.cutOverTime == Long.MAX_VALUE
-                                    || System.currentTimeMillis() < scEntry.cutOverTime) {
-                                available.add(getInstance(scEntry.oldCurrency,
-                                        scEntry.oldCurrencyFraction,
-                                        scEntry.oldCurrencyNumericCode));
-                            } else {
-                                available.add(getInstance(scEntry.newCurrency,
-                                        scEntry.newCurrencyFraction,
-                                        scEntry.newCurrencyNumericCode));
-                            }
+    // Returns the set of available Currencies which are lazily initialized
+    private static synchronized HashSet<Currency> getCurrencies() {
+        if (available == null) {
+            var sysTime = System.currentTimeMillis();
+            available = HashSet.newHashSet(256);
+
+            // Add simple currencies first
+            for (char c1 = 'A'; c1 <= 'Z'; c1 ++) {
+                for (char c2 = 'A'; c2 <= 'Z'; c2 ++) {
+                    int tableEntry = getMainTableEntry(c1, c2);
+                    if ((tableEntry & COUNTRY_TYPE_MASK) == SIMPLE_CASE_COUNTRY_MASK
+                            && tableEntry != INVALID_COUNTRY_ENTRY) {
+                        char finalChar = (char) ((tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK) + 'A');
+                        int defaultFractionDigits = (tableEntry & SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_MASK) >> SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_SHIFT;
+                        int numericCode = (tableEntry & NUMERIC_CODE_MASK) >> NUMERIC_CODE_SHIFT;
+                        StringBuilder sb = new StringBuilder();
+                        sb.append(c1);
+                        sb.append(c2);
+                        sb.append(finalChar);
+                        available.add(getInstance(sb.toString(), defaultFractionDigits, numericCode));
+                    } else if ((tableEntry & COUNTRY_TYPE_MASK) == SPECIAL_CASE_COUNTRY_MASK
+                            && tableEntry != INVALID_COUNTRY_ENTRY
+                            && tableEntry != COUNTRY_WITHOUT_CURRENCY_ENTRY) {
+                        int index = SpecialCaseEntry.toIndex(tableEntry);
+                        SpecialCaseEntry scEntry = specialCasesList.get(index);
+
+                        if (scEntry.cutOverTime == Long.MAX_VALUE
+                                || sysTime < scEntry.cutOverTime) {
+                            available.add(getInstance(scEntry.oldCurrency,
+                                    scEntry.oldCurrencyFraction,
+                                    scEntry.oldCurrencyNumericCode));
+                        } else {
+                            available.add(getInstance(scEntry.newCurrency,
+                                    scEntry.newCurrencyFraction,
+                                    scEntry.newCurrencyNumericCode));
                         }
                     }
                 }
+            }
 
-                // Now add other currencies
-                for (OtherCurrencyEntry entry : otherCurrenciesList) {
-                    available.add(getInstance(entry.currencyCode));
-                }
+            // Now add other currencies
+            for (OtherCurrencyEntry entry : otherCurrenciesList) {
+                available.add(getInstance(entry.currencyCode));
             }
         }
-
-        @SuppressWarnings("unchecked")
-        Set<Currency> result = (Set<Currency>) available.clone();
-        return result;
+        return available;
     }
 
     /**
@@ -521,7 +534,8 @@ public final class Currency implements Serializable {
      * {@linkplain Locale##def_locale_extension Unicode extensions},
      * the symbol returned from this method reflects
      * the value specified with that extension.
-     * <p>
+     *
+     * @implSpec
      * This is equivalent to calling
      * {@link #getSymbol(Locale)
      *     getSymbol(Locale.getDefault(Locale.Category.DISPLAY))}.
@@ -621,7 +635,8 @@ public final class Currency implements Serializable {
      * the default {@link Locale.Category#DISPLAY DISPLAY} locale.
      * If there is no suitable display name found
      * for the default locale, the ISO 4217 currency code is returned.
-     * <p>
+     *
+     * @implSpec
      * This is equivalent to calling
      * {@link #getDisplayName(Locale)
      *     getDisplayName(Locale.getDefault(Locale.Category.DISPLAY))}.
@@ -683,8 +698,8 @@ public final class Currency implements Serializable {
      */
     private static int getMainTableEntry(char char1, char char2) {
         if (char1 < 'A' || char1 > 'Z' || char2 < 'A' || char2 > 'Z') {
-            throw new IllegalArgumentException("The country code is not a " +
-                    "valid ISO 3166 code");
+            throw new IllegalArgumentException(
+                    "The country code: \"%c%c\" is not a valid ISO 3166 code".formatted(char1, char2));
         }
         return mainTable[(char1 - 'A') * A_TO_Z + (char2 - 'A')];
     }
@@ -695,8 +710,8 @@ public final class Currency implements Serializable {
      */
     private static void setMainTableEntry(char char1, char char2, int entry) {
         if (char1 < 'A' || char1 > 'Z' || char2 < 'A' || char2 > 'Z') {
-            throw new IllegalArgumentException("The country code is not a " +
-                    "valid ISO 3166 code");
+            throw new IllegalArgumentException(
+                    "The country code: \"%c%c\" is not a valid ISO 3166 code".formatted(char1, char2));
         }
         mainTable[(char1 - 'A') * A_TO_Z + (char2 - 'A')] = entry;
     }
@@ -1143,7 +1158,7 @@ public final class Currency implements Serializable {
                                 && !isPastCutoverDate(prop.date)) {
                             prop = null;
                         }
-                    } catch (ParseException ex) {
+                    } catch (DateTimeParseException ex) {
                         prop = null;
                     }
                 }
@@ -1183,15 +1198,12 @@ public final class Currency implements Serializable {
                     || prop.fraction != fractionDigit);
         }
 
-        private static boolean isPastCutoverDate(String s)
-                throws ParseException {
-            SimpleDateFormat format = new SimpleDateFormat(
-                    "yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT);
-            format.setTimeZone(TimeZone.getTimeZone("UTC"));
-            format.setLenient(false);
-            long time = format.parse(s.trim()).getTime();
-            return System.currentTimeMillis() > time;
-
+        // cutOver adheres to ISO8601 Local Date Time format (excluding nano secs)
+        private static boolean isPastCutoverDate(String cutOver) {
+            return System.currentTimeMillis() >
+                    LocalDateTime.parse(cutOver, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                            .toInstant(ZoneOffset.UTC)
+                            .toEpochMilli();
         }
 
         private static void info(String message, Throwable t) {

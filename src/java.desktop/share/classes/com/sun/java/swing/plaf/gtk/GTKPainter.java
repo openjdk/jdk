@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,20 +211,7 @@ class GTKPainter extends SynthPainter {
         int gtkState = GTKLookAndFeel.synthStateToGTKState(
                 id, context.getComponentState());
         if (gtkState == SynthConstants.MOUSE_OVER) {
-            if (GTKLookAndFeel.is3()) {
-                paintComponentBackground(context, g, x, y, w, h);
-                return;
-            }
-            synchronized (UNIXToolkit.GTK_LOCK) {
-                if (! ENGINE.paintCachedImage(g, x, y, w, h, id)) {
-                    ShadowType shadow = (GTKLookAndFeel.is2_2() ?
-                        ShadowType.NONE : ShadowType.OUT);
-                    ENGINE.startPainting(g, x, y, w, h, id);
-                    ENGINE.paintBox(g, context, id, gtkState,
-                            shadow, "menuitem", x, y, w, h);
-                    ENGINE.finishPainting();
-                }
-            }
+            paintComponentBackground(context, g, x, y, w, h);
         }
     }
 
@@ -570,21 +557,7 @@ class GTKPainter extends SynthPainter {
         int gtkState = GTKLookAndFeel.synthStateToGTKState(
                 context.getRegion(), context.getComponentState());
         if (gtkState == SynthConstants.MOUSE_OVER) {
-            if (GTKLookAndFeel.is3()) {
-                paintComponentBackground(context, g, x, y, w, h);
-                return;
-            }
-            Region id = Region.MENU_ITEM;
-            synchronized (UNIXToolkit.GTK_LOCK) {
-                if (! ENGINE.paintCachedImage(g, x, y, w, h, id)) {
-                    ShadowType shadow = (GTKLookAndFeel.is2_2() ?
-                        ShadowType.NONE : ShadowType.OUT);
-                    ENGINE.startPainting(g, x, y, w, h, id);
-                    ENGINE.paintBox(g, context, id, gtkState, shadow,
-                            "menuitem", x, y, w, h);
-                    ENGINE.finishPainting();
-                }
-            }
+            paintComponentBackground(context, g, x, y, w, h);
         }
     }
 
@@ -610,10 +583,10 @@ class GTKPainter extends SynthPainter {
                 x + insets.left, y + insets.top, w - insets.left - insets.right,
                 h - insets.top - insets.bottom);
             BufferedImage img = ENGINE.finishPainting();
-            if(!isHW) {
+            if (!isHW && img != null) {
                 int border = img.getRGB(0, h / 2);
-                if (img != null && border == img.getRGB(w / 2, h / 2)) {
-                    // fix no menu borders in Adwaita theme
+                if (border == img.getRGB(w / 2, h / 2)) {
+                    // fix no menu borders
                     Graphics g2 = img.getGraphics();
                     Color c = new Color(border);
                     g2.setColor(new Color(Math.max((int) (c.getRed() * 0.8), 0),
@@ -698,17 +671,14 @@ class GTKPainter extends SynthPainter {
             } else {
                 h -= (insets.top + insets.bottom);
             }
-            if (GTKLookAndFeel.is3()) {
-                if (id == Region.POPUP_MENU_SEPARATOR) {
-                    detail = "menuitem";
-                    h -= (insets.top + insets.bottom);
-                } else {
-                    detail = "separator";
-                }
+
+            if (id == Region.POPUP_MENU_SEPARATOR) {
+                detail = "menuitem";
+                h -= (insets.top + insets.bottom);
             } else {
-                detail = orientation == JSeparator.HORIZONTAL ?
-                                                    "hseparator" : "vseparator";
+                detail = "separator";
             }
+
             synchronized (UNIXToolkit.GTK_LOCK) {
                 if (! ENGINE.paintCachedImage(g, x, y, w, h, id, state,
                             detail, orientation)) {
@@ -823,15 +793,15 @@ class GTKPainter extends SynthPainter {
         // The ubuntulooks engine paints slider troughs differently depending
         // on the current slider value and its component orientation.
         JSlider slider = (JSlider)context.getComponent();
-        if (GTKLookAndFeel.is3()) {
-            if (slider.getOrientation() == JSlider.VERTICAL) {
-                y += 1;
-                h -= 2;
-            } else {
-                x += 1;
-                w -= 2;
-            }
+
+        if (slider.getOrientation() == JSlider.VERTICAL) {
+            y += 1;
+            h -= 2;
+        } else {
+            x += 1;
+            w -= 2;
         }
+
         double value = slider.getValue();
         double min = slider.getMinimum();
         double max = slider.getMaximum();
@@ -865,7 +835,7 @@ class GTKPainter extends SynthPainter {
         Region id = context.getRegion();
         int gtkState = GTKLookAndFeel.synthStateToGTKState(
                 id, context.getComponentState());
-        boolean hasFocus = GTKLookAndFeel.is3() &&
+        boolean hasFocus =
                 ((context.getComponentState() & SynthConstants.FOCUSED) != 0);
         synchronized (UNIXToolkit.GTK_LOCK) {
             if (! ENGINE.paintCachedImage(g, x, y, w, h, id, gtkState, dir,
@@ -968,12 +938,12 @@ class GTKPainter extends SynthPainter {
         Region id = context.getRegion();
         int state = context.getComponentState();
         int gtkState = ((state & SynthConstants.SELECTED) != 0 ?
-            SynthConstants.ENABLED : SynthConstants.PRESSED);
+                SynthConstants.ENABLED : SynthConstants.PRESSED);
         JTabbedPane pane = (JTabbedPane)context.getComponent();
         int placement = pane.getTabPlacement();
 
         synchronized (UNIXToolkit.GTK_LOCK) {
-            if (! ENGINE.paintCachedImage(g, x, y, w, h,
+            if (!ENGINE.paintCachedImage(g, x, y, w, h,
                     id, gtkState, placement, tabIndex)) {
                 PositionType side = POSITIONS[placement - 1];
                 ENGINE.startPainting(g, x, y, w, h,
@@ -1056,21 +1026,10 @@ class GTKPainter extends SynthPainter {
             int yThickness = style.getYThickness();
 
             ENGINE.startPainting(g, x, y, w, h, id, state);
-            if (GTKLookAndFeel.is3()) {
-                ENGINE.paintBackground(g, context, id, gtkState, null,
-                                                                    x, y, w, h);
-            }
+            ENGINE.paintBackground(g, context, id, gtkState, null,
+                                                                x, y, w, h);
             ENGINE.paintShadow(g, context, id, gtkState,
                                ShadowType.IN, "entry", x, y, w, h);
-            if (!GTKLookAndFeel.is3()) {
-                ENGINE.paintFlatBox(g, context, id,
-                        gtkState, ShadowType.NONE, "entry_bg",
-                        x + xThickness,
-                        y + yThickness,
-                        w - (2 * xThickness),
-                        h - (2 * yThickness),
-                        ColorType.TEXT_BACKGROUND);
-            }
 
             if (focusSize > 0 && (state & SynthConstants.FOCUSED) != 0) {
                 if (!interiorFocus) {
@@ -1081,14 +1040,14 @@ class GTKPainter extends SynthPainter {
                 } else {
                     if (containerParent instanceof JComboBox) {
                         x += (focusSize + 2);
-                        y += focusSize + (GTKLookAndFeel.is3() ? 3 : 1);
-                        w -= 2 * focusSize + (GTKLookAndFeel.is3() ? 4 : 1);
-                        h -= 2 * focusSize + (GTKLookAndFeel.is3() ? 6 : 2);
+                        y += focusSize + 3;
+                        w -= 2 * focusSize + 4;
+                        h -= 2 * focusSize + 6;
                     } else {
-                        x += focusSize + (GTKLookAndFeel.is3() ? 2 : 0);
-                        y += focusSize + (GTKLookAndFeel.is3() ? 2 :0 );
-                        w -= 2 * focusSize + (GTKLookAndFeel.is3() ? 4 : 0);
-                        h -= 2 * focusSize + (GTKLookAndFeel.is3() ? 4 : 0);
+                        x += focusSize + 2;
+                        y += focusSize + 2;
+                        w -= 2 * focusSize + 4;
+                        h -= 2 * focusSize + 4;
                     }
                 }
                 ENGINE.paintFocus(g, context, id, gtkState,
@@ -1433,11 +1392,6 @@ class GTKPainter extends SynthPainter {
         ShadowType shadow = ShadowType.OUT;
         if (gtkState == SynthConstants.MOUSE_OVER) {
             shadow = ShadowType.IN;
-        }
-        if (!GTKLookAndFeel.is3()) {
-            x += 3;
-            y += 3;
-            w = h = 7;
         }
         ENGINE.paintArrow(g, context, Region.MENU_ITEM, gtkState, shadow,
                 dir, "menuitem", x, y, w, h);

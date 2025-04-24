@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,13 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.UTF16;
-import static java.lang.String.LATIN1;
 
 final class StringUTF16 {
 
@@ -452,20 +452,6 @@ final class StringUTF16 {
     }
 
     @IntrinsicCandidate
-    public static boolean equals(byte[] value, byte[] other) {
-        if (value.length == other.length) {
-            int len = value.length >> 1;
-            for (int i = 0; i < len; i++) {
-                if (getChar(value, i) != getChar(other, i)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    @IntrinsicCandidate
     public static int compareTo(byte[] value, byte[] other) {
         int len1 = length(value);
         int len2 = length(other);
@@ -597,19 +583,11 @@ final class StringUTF16 {
     }
 
     public static int hashCode(byte[] value) {
-        return switch (value.length) {
-            case 0 -> 0;
-            case 2 -> getChar(value, 0);
-            default -> ArraysSupport.vectorizedHashCode(value, 0, value.length >> 1, 0, ArraysSupport.T_CHAR);
-        };
+        return ArraysSupport.hashCodeOfUTF16(value, 0, value.length >> 1, 0);
     }
 
+    // Caller must ensure that from- and toIndex are within bounds
     public static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
-        fromIndex = Math.max(fromIndex, 0);
-        toIndex = Math.min(toIndex, value.length >> 1);
-        if (fromIndex >= toIndex) {
-            return -1;
-        }
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
             // handle most cases here (ch is a BMP code point or a
             // negative value (invalid code point))
@@ -716,11 +694,6 @@ final class StringUTF16 {
 
     @IntrinsicCandidate
     private static int indexOfChar(byte[] value, int ch, int fromIndex, int max) {
-        checkBoundsBeginEnd(fromIndex, max, value);
-        return indexOfCharUnsafe(value, ch, fromIndex, max);
-    }
-
-    private static int indexOfCharUnsafe(byte[] value, int ch, int fromIndex, int max) {
         for (int i = fromIndex; i < max; i++) {
             if (getChar(value, i) == ch) {
                 return i;
@@ -1539,20 +1512,6 @@ final class StringUTF16 {
         return codePointCount(val, beginIndex, endIndex, true /* checked */);
     }
 
-    public static int getChars(int i, int begin, int end, byte[] value) {
-        checkBoundsBeginEnd(begin, end, value);
-        int pos = getChars(i, end, value);
-        assert begin == pos;
-        return pos;
-    }
-
-    public static int getChars(long l, int begin, int end, byte[] value) {
-        checkBoundsBeginEnd(begin, end, value);
-        int pos = getChars(l, end, value);
-        assert begin == pos;
-        return pos;
-    }
-
     public static boolean contentEquals(byte[] v1, byte[] v2, int len) {
         checkBoundsOffCount(0, len, v2);
         for (int i = 0; i < len; i++) {
@@ -1681,12 +1640,10 @@ final class StringUTF16 {
 
     ////////////////////////////////////////////////////////////////
 
-    private static native boolean isBigEndian();
-
     private static final int HI_BYTE_SHIFT;
     private static final int LO_BYTE_SHIFT;
     static {
-        if (isBigEndian()) {
+        if (Unsafe.getUnsafe().isBigEndian()) {
             HI_BYTE_SHIFT = 8;
             LO_BYTE_SHIFT = 0;
         } else {
@@ -1696,109 +1653,6 @@ final class StringUTF16 {
     }
 
     static final int MAX_LENGTH = Integer.MAX_VALUE >> 1;
-
-    // Used by trusted callers.  Assumes all necessary bounds checks have
-    // been done by the caller.
-
-    /**
-     * This is a variant of {@link StringLatin1#getChars(int, int, byte[])}, but for
-     * UTF-16 coder.
-     *
-     * @param i     value to convert
-     * @param index next index, after the least significant digit
-     * @param buf   target buffer, UTF16-coded.
-     * @return index of the most significant digit or minus sign, if present
-     */
-    static int getChars(int i, int index, byte[] buf) {
-        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
-        int q, r;
-        int charPos = index;
-
-        boolean negative = (i < 0);
-        if (!negative) {
-            i = -i;
-        }
-
-        // Get 2 digits/iteration using ints
-        while (i <= -100) {
-            q = i / 100;
-            r = (q * 100) - i;
-            i = q;
-            charPos -= 2;
-            putPair(buf, charPos, r);
-        }
-
-        // We know there are at most two digits left at this point.
-        if (i < -9) {
-            charPos -= 2;
-            putPair(buf, charPos, -i);
-        } else {
-            putChar(buf, --charPos, '0' - i);
-        }
-
-        if (negative) {
-            putChar(buf, --charPos, '-');
-        }
-        return charPos;
-    }
-
-    /**
-     * This is a variant of {@link StringLatin1#getChars(long, int, byte[])}, but for
-     * UTF-16 coder.
-     *
-     * @param i     value to convert
-     * @param index next index, after the least significant digit
-     * @param buf   target buffer, UTF16-coded.
-     * @return index of the most significant digit or minus sign, if present
-     */
-    static int getChars(long i, int index, byte[] buf) {
-        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
-        long q;
-        int charPos = index;
-
-        boolean negative = (i < 0);
-        if (!negative) {
-            i = -i;
-        }
-
-        // Get 2 digits/iteration using longs until quotient fits into an int
-        while (i <= Integer.MIN_VALUE) {
-            q = i / 100;
-            charPos -= 2;
-            putPair(buf, charPos, (int)((q * 100) - i));
-            i = q;
-        }
-
-        // Get 2 digits/iteration using ints
-        int q2;
-        int i2 = (int)i;
-        while (i2 <= -100) {
-            q2 = i2 / 100;
-            charPos -= 2;
-            putPair(buf, charPos, (q2 * 100) - i2);
-            i2 = q2;
-        }
-
-        // We know there are at most two digits left at this point.
-        if (i2 < -9) {
-            charPos -= 2;
-            putPair(buf, charPos, -i2);
-        } else {
-            putChar(buf, --charPos, '0' - i2);
-        }
-
-        if (negative) {
-            putChar(buf, --charPos, '-');
-        }
-        return charPos;
-    }
-
-    private static void putPair(byte[] buf, int charPos, int v) {
-        int packed = (int) DecimalDigits.digitPair(v);
-        putChar(buf, charPos, packed & 0xFF);
-        putChar(buf, charPos + 1, packed >> 8);
-    }
-    // End of trusted methods.
 
     public static void checkIndex(int off, byte[] val) {
         String.checkIndex(off, length(val));

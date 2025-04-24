@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 // This test performs mocking of certain JVM functionality. This works by
 // including the source file under test inside an anonymous namespace (which
@@ -83,12 +82,6 @@ namespace {
   };
 
   jlong MockJfrTicks::tick = 0;
-
-  // Reincluding source files in the anonymous namespace unfortunately seems to
-  // behave strangely with precompiled headers (only when using gcc though)
-#ifndef DONT_USE_PRECOMPILED_HEADER
-#define DONT_USE_PRECOMPILED_HEADER
-#endif
 
 #define JfrTicks MockJfrTicks
 #define JfrTimeConverter MockJfrTimeConverter
@@ -200,7 +193,7 @@ class JfrGTestAdaptiveSampling : public ::testing::Test {
 };
 
 void JfrGTestAdaptiveSampling::test(JfrGTestAdaptiveSampling::incoming inc, size_t sample_points_per_window, double error_factor, const char* const description) {
-  assert(description != NULL, "invariant");
+  assert(description != nullptr, "invariant");
   char output[1024] = "Adaptive sampling: ";
   strcat(output, description);
   fprintf(stdout, "=== %s\n", output);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,7 @@
  *
  */
 
-// no precompiled headers
 #include "classfile/vmSymbols.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
@@ -181,15 +179,55 @@ void os::Bsd::print_uptime_info(outputStream* st) {
   }
 }
 
+jlong os::total_swap_space() {
+#if defined(__APPLE__)
+  struct xsw_usage vmusage;
+  size_t size = sizeof(vmusage);
+  if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
+    return -1;
+  }
+  return (jlong)vmusage.xsu_total;
+#else
+  return -1;
+#endif
+}
+
+jlong os::free_swap_space() {
+#if defined(__APPLE__)
+  struct xsw_usage vmusage;
+  size_t size = sizeof(vmusage);
+  if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
+    return -1;
+  }
+  return (jlong)vmusage.xsu_avail;
+#else
+  return -1;
+#endif
+}
+
 julong os::physical_memory() {
   return Bsd::physical_memory();
+}
+
+size_t os::rss() {
+  size_t rss = 0;
+#ifdef __APPLE__
+  mach_task_basic_info info;
+  mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
+
+  kern_return_t ret = task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
+                                (task_info_t)&info, &count);
+  if (ret == KERN_SUCCESS) {
+    rss = info.resident_size;
+  }
+#endif // __APPLE__
+
+  return rss;
 }
 
 // Cpu architecture string
 #if   defined(ZERO)
 static char cpu_arch[] = ZERO_LIBARCH;
-#elif defined(IA64)
-static char cpu_arch[] = "ia64";
 #elif defined(IA32)
 static char cpu_arch[] = "i386";
 #elif defined(AMD64)
@@ -203,16 +241,6 @@ static char cpu_arch[] = "ppc";
 #else
   #error Add appropriate cpu_arch setting
 #endif
-
-// JVM variant
-#if   defined(ZERO)
-  #define JVM_VARIANT "zero"
-#elif defined(COMPILER2)
-  #define JVM_VARIANT "server"
-#else
-  #define JVM_VARIANT "client"
-#endif
-
 
 void os::Bsd::initialize_system_info() {
   int mib[2];
@@ -432,9 +460,9 @@ void os::init_system_properties_values() {
     if (pslash != nullptr) {
       *pslash = '\0';            // Get rid of /{client|server|hotspot}.
     }
-#ifdef STATIC_BUILD
-    strcat(buf, "/lib");
-#endif
+    if (is_vm_statically_linked()) {
+      strcat(buf, "/lib");
+    }
 
     Arguments::set_dll_dir(buf);
 
@@ -510,17 +538,6 @@ void os::init_system_properties_values() {
 #undef EXTENSIONS_DIR
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// breakpoint support
-
-void os::breakpoint() {
-  BREAKPOINT;
-}
-
-extern "C" void breakpoint() {
-  // use debugger to set breakpoint here
-}
-
 //////////////////////////////////////////////////////////////////////////////
 // create new thread
 
@@ -577,7 +594,7 @@ static void *thread_native_entry(Thread *thread) {
     }
   }
 
-  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
+  log_info(os, thread)("Thread is alive (tid: %zu, pthread id: %zu).",
     os::current_thread_id(), (uintx) pthread_self());
 
   // call one more level start routine
@@ -587,7 +604,7 @@ static void *thread_native_entry(Thread *thread) {
   // Prevent dereferencing it from here on out.
   thread = nullptr;
 
-  log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
+  log_info(os, thread)("Thread finished (tid: %zu, pthread id: %zu).",
     os::current_thread_id(), (uintx) pthread_self());
 
   return 0;
@@ -603,9 +620,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     return false;
   }
 
-  // set the correct thread state
-  osthread->set_thread_type(thr_type);
-
   // Initial state is ALLOCATED but not INITIALIZED
   osthread->set_state(ALLOCATED);
 
@@ -613,7 +627,12 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // init thread attributes
   pthread_attr_t attr;
-  pthread_attr_init(&attr);
+  int rslt = pthread_attr_init(&attr);
+  if (rslt != 0) {
+    thread->set_osthread(nullptr);
+    delete osthread;
+    return false;
+  }
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   // calculate stack size if it's not specified by caller
@@ -635,7 +654,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
     char buf[64];
     if (ret == 0) {
-      log_info(os, thread)("Thread \"%s\" started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
+      log_info(os, thread)("Thread \"%s\" started (pthread id: %zu, attributes: %s). ",
                            thread->name(), (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
     } else {
       log_warning(os, thread)("Failed to start thread \"%s\" - pthread_create failed (%s) for attributes: %s.",
@@ -719,8 +738,8 @@ bool os::create_attached_thread(JavaThread* thread) {
   // and save the caller's signal mask
   PosixSignals::hotspot_sigmask(thread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT
-                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
+  log_info(os, thread)("Thread attached (tid: %zu, pthread id: %zu"
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (%zuK) ).",
                        os::current_thread_id(), (uintx) pthread_self(),
                        p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
   return true;
@@ -738,9 +757,9 @@ void os::pd_start_thread(Thread* thread) {
 void os::free_thread(OSThread* osthread) {
   assert(osthread != nullptr, "osthread not set");
 
-  // We are told to free resources of the argument thread,
-  // but we can only really operate on the current thread.
-  assert(Thread::current()->osthread() == osthread,
+  // We are told to free resources of the argument thread, but we can only really operate
+  // on the current thread. The current thread may be already detached at this point.
+  assert(Thread::current_or_null() == nullptr || Thread::current()->osthread() == osthread,
          "os::free_thread but not current thread");
 
   // Restore caller's signal mask
@@ -985,6 +1004,13 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
   if (!ieee_handling) {
     Events::log_dll_message(nullptr, "IEEE subnormal handling check failed before loading %s", filename);
     log_info(os)("IEEE subnormal handling check failed before loading %s", filename);
+    if (CheckJNICalls) {
+      tty->print_cr("WARNING: IEEE subnormal handling check failed before loading %s", filename);
+      Thread* current = Thread::current();
+      if (current->is_Java_thread()) {
+        JavaThread::cast(current)->print_jni_stack();
+      }
+    }
   }
 
   // Save and restore the floating-point environment around dlopen().
@@ -1038,6 +1064,13 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
       } else {
         Events::log_dll_message(nullptr, "IEEE subnormal handling could not be corrected after loading %s", filename);
         log_info(os)("IEEE subnormal handling could not be corrected after loading %s", filename);
+        if (CheckJNICalls) {
+          tty->print_cr("WARNING: IEEE subnormal handling could not be corrected after loading %s", filename);
+          Thread* current = Thread::current();
+          if (current->is_Java_thread()) {
+            JavaThread::cast(current)->print_jni_stack();
+          }
+        }
         assert(false, "fesetenv didn't work");
       }
     }
@@ -1049,19 +1082,20 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
 
 #ifdef __APPLE__
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
-#ifdef STATIC_BUILD
-  return os::get_default_process_handle();
-#else
+  if (is_vm_statically_linked()) {
+    return os::get_default_process_handle();
+  }
+
   log_info(os)("attempting shared library load of %s", filename);
 
   return os::Bsd::dlopen_helper(filename, RTLD_LAZY, ebuf, ebuflen);
-#endif // STATIC_BUILD
 }
 #else
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
-#ifdef STATIC_BUILD
-  return os::get_default_process_handle();
-#else
+  if (is_vm_statically_linked()) {
+    return os::get_default_process_handle();
+  }
+
   log_info(os)("attempting shared library load of %s", filename);
 
   void* result;
@@ -1150,8 +1184,6 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_386;
   #elif   (defined AMD64)
   static  Elf32_Half running_arch_code=EM_X86_64;
-  #elif  (defined IA64)
-  static  Elf32_Half running_arch_code=EM_IA_64;
   #elif  (defined __powerpc64__)
   static  Elf32_Half running_arch_code=EM_PPC64;
   #elif  (defined __powerpc__)
@@ -1172,7 +1204,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_68K;
   #else
     #error Method os::dll_load requires that one of following is defined:\
-         IA32, AMD64, IA64, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
+         IA32, AMD64, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
   #endif
 
   // Identify compatibility class for VM's architecture and library's architecture
@@ -1225,11 +1257,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   return nullptr;
-#endif // STATIC_BUILD
 }
 #endif // !__APPLE__
 
-int _print_dll_info_cb(const char * name, address base_address, address top_address, void * param) {
+static int _print_dll_info_cb(const char * name, address base_address,
+                              address top_address, void * param) {
   outputStream * out = (outputStream *) param;
   out->print_cr(INTPTR_FORMAT " \t%s", (intptr_t)base_address, name);
   return 0;
@@ -1421,7 +1453,7 @@ void os::print_memory_info(outputStream* st) {
   size_t size = sizeof(swap_usage);
 
   st->print("Memory:");
-  st->print(" " SIZE_FORMAT "k page", os::vm_page_size()>>10);
+  st->print(" %zuk page", os::vm_page_size()>>10);
 
   st->print(", physical " UINT64_FORMAT "k",
             os::physical_memory() >> 10);
@@ -1464,76 +1496,50 @@ void os::jvm_path(char *buf, jint buflen) {
   assert(ret, "cannot locate libjvm");
   char *rp = nullptr;
   if (ret && dli_fname[0] != '\0') {
-    rp = os::Posix::realpath(dli_fname, buf, buflen);
+    rp = os::realpath(dli_fname, buf, buflen);
   }
   if (rp == nullptr) {
     return;
   }
 
-  if (Arguments::sun_java_launcher_is_altjvm()) {
-    // Support for the java launcher's '-XXaltjvm=<path>' option. Typical
-    // value for buf is "<JAVA_HOME>/jre/lib/<arch>/<vmtype>/libjvm.so"
-    // or "<JAVA_HOME>/jre/lib/<vmtype>/libjvm.dylib". If "/jre/lib/"
-    // appears at the right place in the string, then assume we are
-    // installed in a JDK and we're done. Otherwise, check for a
-    // JAVA_HOME environment variable and construct a path to the JVM
-    // being overridden.
+  // If executing unit tests we require JAVA_HOME to point to the real JDK.
+  if (Arguments::executing_unit_tests()) {
+    // Look for JAVA_HOME in the environment.
+    char* java_home_var = ::getenv("JAVA_HOME");
+    if (java_home_var != nullptr && java_home_var[0] != 0) {
 
-    const char *p = buf + strlen(buf) - 1;
-    for (int count = 0; p > buf && count < 5; ++count) {
-      for (--p; p > buf && *p != '/'; --p)
-        /* empty */ ;
-    }
+      // Check the current module name "libjvm"
+      const char* p = strrchr(buf, '/');
+      assert(strstr(p, "/libjvm") == p, "invalid library name");
 
-    if (strncmp(p, "/jre/lib/", 9) != 0) {
-      // Look for JAVA_HOME in the environment.
-      char* java_home_var = ::getenv("JAVA_HOME");
-      if (java_home_var != nullptr && java_home_var[0] != 0) {
-        char* jrelib_p;
-        int len;
+      stringStream ss(buf, buflen);
+      rp = os::realpath(java_home_var, buf, buflen);
+      if (rp == nullptr) {
+        return;
+      }
 
-        // Check the current module name "libjvm"
-        p = strrchr(buf, '/');
-        assert(strstr(p, "/libjvm") == p, "invalid library name");
+      assert((int)strlen(buf) < buflen, "Ran out of buffer space");
+      // Add the appropriate library and JVM variant subdirs
+      ss.print("%s/lib/%s", buf, Abstract_VM_Version::vm_variant());
 
-        rp = os::Posix::realpath(java_home_var, buf, buflen);
+      if (0 != access(buf, F_OK)) {
+        ss.reset();
+        ss.print("%s/lib", buf);
+      }
+
+      // If the path exists within JAVA_HOME, add the JVM library name
+      // to complete the path to JVM being overridden.  Otherwise fallback
+      // to the path to the current library.
+      if (0 == access(buf, F_OK)) {
+        // Use current module name "libjvm"
+        ss.print("/libjvm%s", JNI_LIB_SUFFIX);
+        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+               "buf has been truncated");
+      } else {
+        // Fall back to path of current library
+        rp = os::realpath(dli_fname, buf, buflen);
         if (rp == nullptr) {
           return;
-        }
-
-        // determine if this is a legacy image or modules image
-        // modules image doesn't have "jre" subdirectory
-        len = strlen(buf);
-        assert(len < buflen, "Ran out of buffer space");
-        jrelib_p = buf + len;
-
-        // Add the appropriate library subdir
-        snprintf(jrelib_p, buflen-len, "/jre/lib");
-        if (0 != access(buf, F_OK)) {
-          snprintf(jrelib_p, buflen-len, "/lib");
-        }
-
-        // Add the appropriate JVM variant subdir
-        len = strlen(buf);
-        jrelib_p = buf + len;
-        snprintf(jrelib_p, buflen-len, "/%s", JVM_VARIANT);
-        if (0 != access(buf, F_OK)) {
-          snprintf(jrelib_p, buflen-len, "%s", "");
-        }
-
-        // If the path exists within JAVA_HOME, add the JVM library name
-        // to complete the path to JVM being overridden.  Otherwise fallback
-        // to the path to the current library.
-        if (0 == access(buf, F_OK)) {
-          // Use current module name "libjvm"
-          len = strlen(buf);
-          snprintf(buf + len, buflen-len, "/libjvm%s", JNI_LIB_SUFFIX);
-        } else {
-          // Fall back to path of current library
-          rp = os::Posix::realpath(dli_fname, buf, buflen);
-          if (rp == nullptr) {
-            return;
-          }
         }
       }
     }
@@ -1548,7 +1554,7 @@ void os::jvm_path(char *buf, jint buflen) {
 
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
-  warning("INFO: os::commit_memory(" INTPTR_FORMAT ", " SIZE_FORMAT
+  warning("INFO: os::commit_memory(" INTPTR_FORMAT ", %zu"
           ", %d) failed; error='%s' (errno=%d)", (intptr_t)addr, size, exec,
            os::errno_name(err), err);
 }
@@ -1561,21 +1567,36 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
 #if defined(__OpenBSD__)
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
-  Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
+  Events::log_memprotect(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
   if (::mprotect(addr, size, prot) == 0) {
     return true;
+  } else {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mprotect failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
   }
 #elif defined(__APPLE__)
   if (exec) {
     // Do not replace MAP_JIT mappings, see JDK-8234930
     if (::mprotect(addr, size, prot) == 0) {
       return true;
+    } else {
+      ErrnoPreserver ep;
+      log_trace(os, map)("mprotect failed: " RANGEFMT " errno=(%s)",
+                         RANGEFMTARGS(addr, size),
+                         os::strerror(ep.saved_errno()));
     }
   } else {
     uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
                                        MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
     if (res != (uintptr_t) MAP_FAILED) {
       return true;
+    } else {
+      ErrnoPreserver ep;
+      log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                         RANGEFMTARGS(addr, size),
+                         os::strerror(ep.saved_errno()));
     }
   }
 #else
@@ -1583,6 +1604,11 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
                                      MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
   if (res != (uintptr_t) MAP_FAILED) {
     return true;
+  } else {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
   }
 #endif
 
@@ -1619,8 +1645,12 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
-void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
+void os::pd_disclaim_memory(char *addr, size_t bytes) {
   ::madvise(addr, bytes, MADV_DONTNEED);
+}
+
+size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
+  return page_size;
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {
@@ -1658,23 +1688,57 @@ bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, siz
 bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
 #if defined(__OpenBSD__)
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
-  Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with PROT_NONE", p2i(addr), p2i(addr+size));
-  return ::mprotect(addr, size, PROT_NONE) == 0;
+  Events::log_memprotect(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with PROT_NONE", p2i(addr), p2i(addr+size));
+  if (::mprotect(addr, size, PROT_NONE) == 0) {
+    return true;
+  } else {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mprotect failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
+    return false;
+  }
 #elif defined(__APPLE__)
   if (exec) {
     if (::madvise(addr, size, MADV_FREE) != 0) {
+      ErrnoPreserver ep;
+      log_trace(os, map)("madvise failed: " RANGEFMT " errno=(%s)",
+                         RANGEFMTARGS(addr, size),
+                         os::strerror(ep.saved_errno()));
       return false;
     }
-    return ::mprotect(addr, size, PROT_NONE) == 0;
+    if (::mprotect(addr, size, PROT_NONE) == 0) {
+      return true;
+    } else {
+      ErrnoPreserver ep;
+      log_trace(os, map)("mprotect failed: " RANGEFMT " errno=(%s)",
+                         RANGEFMTARGS(addr, size),
+                         os::strerror(ep.saved_errno()));
+      return false;
+    }
   } else {
     uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
         MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
-    return res  != (uintptr_t) MAP_FAILED;
+    if (res == (uintptr_t) MAP_FAILED) {
+      ErrnoPreserver ep;
+      log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                         RANGEFMTARGS(addr, size),
+                         os::strerror(ep.saved_errno()));
+      return false;
+    }
+    return true;
   }
 #else
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
                                      MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
-  return res  != (uintptr_t) MAP_FAILED;
+  if (res == (uintptr_t) MAP_FAILED) {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
+    return false;
+  }
+  return true;
 #endif
 }
 
@@ -1700,12 +1764,26 @@ static char* anon_mmap(char* requested_addr, size_t bytes, bool exec) {
   // touch an uncommitted page. Otherwise, the read/write might
   // succeed if we have enough swap space to back the physical page.
   char* addr = (char*)::mmap(requested_addr, bytes, PROT_NONE, flags, -1, 0);
-
-  return addr == MAP_FAILED ? nullptr : addr;
+  if (addr == MAP_FAILED) {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(requested_addr, bytes),
+                       os::strerror(ep.saved_errno()));
+    return nullptr;
+  }
+  return addr;
 }
 
 static int anon_munmap(char * addr, size_t size) {
-  return ::munmap(addr, size) == 0;
+  if (::munmap(addr, size) == 0) {
+    return 1;
+  } else {
+    ErrnoPreserver ep;
+    log_trace(os, map)("munmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
+    return 0;
+  }
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
@@ -1728,7 +1806,7 @@ static bool bsd_mprotect(char* addr, size_t size, int prot) {
   assert(addr == bottom, "sanity check");
 
   size = align_up(pointer_delta(addr, bottom, 1) + size, os::vm_page_size());
-  Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(bottom), p2i(bottom+size), prot);
+  Events::log_memprotect(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(bottom), p2i(bottom+size), prot);
   return ::mprotect(bottom, size, prot) == 0;
 }
 
@@ -1833,15 +1911,6 @@ size_t os::vm_min_address() {
   assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
   return _vm_min_address_default;
 #endif
-}
-
-// Used to convert frequent JVM_Yield() to nops
-bool os::dont_yield() {
-  return DontYieldALot;
-}
-
-void os::naked_yield() {
-  sched_yield();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2039,16 +2108,24 @@ jint os::init_2(void) {
     if (status != 0) {
       log_info(os)("os::init_2 getrlimit failed: %s", os::strerror(errno));
     } else {
-      nbr_files.rlim_cur = nbr_files.rlim_max;
+      rlim_t rlim_original = nbr_files.rlim_cur;
 
-#ifdef __APPLE__
-      // Darwin returns RLIM_INFINITY for rlim_max, but fails with EINVAL if
-      // you attempt to use RLIM_INFINITY. As per setrlimit(2), OPEN_MAX must
-      // be used instead
-      nbr_files.rlim_cur = MIN(OPEN_MAX, nbr_files.rlim_cur);
-#endif
+      // On macOS according to setrlimit(2), OPEN_MAX must be used instead
+      // of RLIM_INFINITY, but testing on macOS >= 10.6, reveals that
+      // we can, in fact, use even RLIM_INFINITY.
+      // However, we need to limit the value to 0x100000 (which is the max value
+      // allowed on Linux) so that any existing code that iterates over all allowed
+      // file descriptors, finishes in a reasonable time, without appearing
+      // to hang.
+      nbr_files.rlim_cur = MIN(0x100000, nbr_files.rlim_max);
 
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
+      if (status != 0) {
+        // If that fails then try lowering the limit to either OPEN_MAX
+        // (which is safe) or the original limit, whichever was greater.
+        nbr_files.rlim_cur = MAX(OPEN_MAX, rlim_original);
+        status = setrlimit(RLIMIT_NOFILE, &nbr_files);
+      }
       if (status != 0) {
         log_info(os)("os::init_2 setrlimit failed: %s", os::strerror(errno));
       }
@@ -2283,71 +2360,6 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
-
-// create binary file, rewriting existing file if required
-int os::create_binary_file(const char* path, bool rewrite_existing) {
-  int oflags = O_WRONLY | O_CREAT;
-  oflags |= rewrite_existing ? O_TRUNC : O_EXCL;
-  return ::open(path, oflags, S_IREAD | S_IWRITE);
-}
-
-// return current position of file pointer
-jlong os::current_file_offset(int fd) {
-  return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
-}
-
-// move file pointer to the specified offset
-jlong os::seek_to_file_offset(int fd, jlong offset) {
-  return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
-}
-
-// Map a block of memory.
-char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
-                        char *addr, size_t bytes, bool read_only,
-                        bool allow_exec) {
-  int prot;
-  int flags;
-
-  if (read_only) {
-    prot = PROT_READ;
-    flags = MAP_SHARED;
-  } else {
-    prot = PROT_READ | PROT_WRITE;
-    flags = MAP_PRIVATE;
-  }
-
-  if (allow_exec) {
-    prot |= PROT_EXEC;
-  }
-
-  if (addr != nullptr) {
-    flags |= MAP_FIXED;
-  }
-
-  char* mapped_address = (char*)mmap(addr, (size_t)bytes, prot, flags,
-                                     fd, file_offset);
-  if (mapped_address == MAP_FAILED) {
-    return nullptr;
-  }
-  return mapped_address;
-}
-
-
-// Remap a block of memory.
-char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
-                          char *addr, size_t bytes, bool read_only,
-                          bool allow_exec) {
-  // same as map_memory() on this OS
-  return os::map_memory(fd, file_name, file_offset, addr, bytes, read_only,
-                        allow_exec);
-}
-
-
-// Unmap a block of memory.
-bool os::pd_unmap_memory(char* addr, size_t bytes) {
-  return munmap(addr, bytes) == 0;
-}
-
 // current_thread_cpu_time(bool) and thread_cpu_time(Thread*, bool)
 // are used by JVM M&M and JVMTI to get user+sys or user CPU time
 // of a thread.
@@ -2480,7 +2492,7 @@ bool os::start_debugging(char *buf, int buflen) {
   jio_snprintf(p, buflen-len,
              "\n\n"
              "Do you want to debug the problem?\n\n"
-             "To debug, run 'gdb /proc/%d/exe %d'; then switch to thread " INTX_FORMAT " (" INTPTR_FORMAT ")\n"
+             "To debug, run 'gdb /proc/%d/exe %d'; then switch to thread %zd (" INTPTR_FORMAT ")\n"
              "Enter 'yes' to launch gdb automatically (PATH must include gdb)\n"
              "Otherwise, press RETURN to abort...",
              os::current_process_id(), os::current_process_id(),

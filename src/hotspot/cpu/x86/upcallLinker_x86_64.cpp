@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
-#include "code/codeBlob.hpp"
+#include "classfile/javaClasses.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/disassembler.hpp"
@@ -40,13 +39,17 @@
 #define __ _masm->
 
 static bool is_valid_XMM(XMMRegister reg) {
-  return reg->is_valid() && (UseAVX >= 3 || (reg->encoding() < 16)); // why is this not covered by is_valid()?
+  return reg->is_valid() && (reg->encoding() < (UseAVX >= 3 ? 32 : 16)); // why is this not covered by is_valid()?
+}
+
+static bool is_valid_gp(Register reg) {
+  return reg->is_valid() && (reg->encoding() < (UseAPX ? 32 : 16));
 }
 
 // for callee saved regs, according to the caller's ABI
 static int compute_reg_save_area_size(const ABIDescriptor& abi) {
   int size = 0;
-  for (Register reg = as_Register(0); reg->is_valid(); reg = reg->successor()) {
+  for (Register reg = as_Register(0); is_valid_gp(reg); reg = reg->successor()) {
     if (reg == rbp || reg == rsp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
       size += 8; // bytes
@@ -73,8 +76,6 @@ static int compute_reg_save_area_size(const ABIDescriptor& abi) {
   return size;
 }
 
-constexpr int MXCSR_MASK = 0xFFC0;  // Mask out any pending exceptions
-
 static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDescriptor& abi, int reg_save_area_offset) {
   // 1. iterate all registers in the architecture
   //     - check if they are volatile or not for the given abi
@@ -84,7 +85,7 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
   int offset = reg_save_area_offset;
 
   __ block_comment("{ preserve_callee_saved_regs ");
-  for (Register reg = as_Register(0); reg->is_valid(); reg = reg->successor()) {
+  for (Register reg = as_Register(0); is_valid_gp(reg); reg = reg->successor()) {
     if (reg == rbp || reg == rsp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
       __ movptr(Address(rsp, offset), reg);
@@ -111,12 +112,9 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
   {
     const Address mxcsr_save(rsp, offset);
     Label skip_ldmx;
-    __ stmxcsr(mxcsr_save);
-    __ movl(rax, mxcsr_save);
-    __ andl(rax, MXCSR_MASK);    // Only check control and mask bits
-    ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-    __ cmp32(rax, mxcsr_std, rscratch1);
+    __ cmp32_mxcsr_std(mxcsr_save, rax, rscratch1);
     __ jcc(Assembler::equal, skip_ldmx);
+    ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
     __ ldmxcsr(mxcsr_std, rscratch1);
     __ bind(skip_ldmx);
   }
@@ -134,7 +132,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   int offset = reg_save_area_offset;
 
   __ block_comment("{ restore_callee_saved_regs ");
-  for (Register reg = as_Register(0); reg->is_valid(); reg = reg->successor()) {
+  for (Register reg = as_Register(0); is_valid_gp(reg); reg = reg->successor()) {
     if (reg == rbp || reg == rsp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
       __ movptr(reg, Address(rsp, offset));
@@ -165,10 +163,10 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   __ block_comment("} restore_callee_saved_regs ");
 }
 
-static const int upcall_stub_code_base_size = 1024;
+static const int upcall_stub_code_base_size = 1200;
 static const int upcall_stub_size_per_arg = 16;
 
-address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
+address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,
@@ -222,7 +220,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 #ifndef PRODUCT
   LogTarget(Trace, foreign, upcall) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     arg_shuffle.print_on(&ls);
   }
@@ -277,7 +274,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("{ on_entry");
   __ vzeroupper();
   __ lea(c_rarg0, Address(rsp, frame_data_offset));
-  __ movptr(c_rarg1, (intptr_t)receiver);
   // stack already aligned
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::on_entry)));
   __ movptr(r15_thread, rax);
@@ -293,14 +289,16 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   arg_shuffle.generate(_masm, shuffle_reg, abi._shadow_space_bytes, 0);
   __ block_comment("} argument shuffle");
 
-  __ block_comment("{ receiver ");
-  __ get_vm_result(j_rarg0, r15_thread);
-  __ block_comment("} receiver ");
+  __ block_comment("{ load target ");
+  __ movptr(j_rarg0, (intptr_t)receiver);
+  __ call(RuntimeAddress(StubRoutines::upcall_stub_load_target())); // puts target Method* in rbx
+  __ block_comment("} load target ");
 
-  __ mov_metadata(rbx, entry);
-  __ movptr(Address(r15_thread, JavaThread::callee_target_offset()), rbx); // just in case callee is deoptimized
+  __ push_cont_fastpath();
 
   __ call(Address(rbx, Method::from_compiled_offset()));
+
+  __ pop_cont_fastpath();
 
   // return value shuffle
   if (!needs_return_buffer) {
@@ -369,7 +367,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
 #ifndef PRODUCT
   stringStream ss;
-  ss.print("upcall_stub_%s", entry->signature()->as_C_string());
+  ss.print("upcall_stub_%s", signature->as_C_string());
   const char* name = _masm->code_string(ss.freeze());
 #else // PRODUCT
   const char* name = "upcall_stub";
@@ -388,7 +386,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
 #ifndef PRODUCT
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     blob->print_on(&ls);
   }

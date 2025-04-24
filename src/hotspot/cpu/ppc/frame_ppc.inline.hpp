@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,14 +35,14 @@
 // Inline functions for ppc64 frames:
 
 // Initialize frame members (_sp must be given)
-inline void frame::setup() {
+inline void frame::setup(kind knd) {
   if (_pc == nullptr) {
     _pc = (address)own_abi()->lr;
     assert(_pc != nullptr, "must have PC");
   }
 
   if (_cb == nullptr) {
-    _cb = CodeCache::find_blob(_pc);
+    _cb = (knd == kind::nmethod) ? CodeCache::find_blob_fast(_pc) : CodeCache::find_blob(_pc);
   }
 
   if (_unextended_sp == nullptr) {
@@ -53,7 +53,10 @@ inline void frame::setup() {
     // The back link for compiled frames on the heap is not valid
     if (is_heap_frame()) {
       // fp for interpreted frames should have been derelativized and passed to the constructor
-      assert(is_compiled_frame(), "");
+      assert(is_compiled_frame()
+             || is_native_frame()   // native wrapper (nmethod) for j.l.Object::wait0
+             || is_runtime_frame(), // e.g. Runtime1::monitorenter, SharedRuntime::complete_monitor_locking_C
+             "sp:" PTR_FORMAT " fp:" PTR_FORMAT " name:%s", p2i(_sp), p2i(_unextended_sp + _cb->frame_size()), _cb->name());
       // The back link for compiled frames on the heap is invalid.
       _fp = _unextended_sp + _cb->frame_size();
     } else {
@@ -61,11 +64,11 @@ inline void frame::setup() {
     }
   }
 
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;
-    assert(_cb == nullptr || _cb->as_compiled_method()->insts_contains_inclusive(_pc),
+    assert(_cb == nullptr || _cb->as_nmethod()->insts_contains_inclusive(_pc),
            "original PC must be in the main code section of the compiled method (or must be immediately following it)");
   } else {
     if (_cb == SharedRuntime::deopt_blob()) {
@@ -89,21 +92,27 @@ inline void frame::setup() {
 inline frame::frame() : _sp(nullptr), _pc(nullptr), _cb(nullptr), _oop_map(nullptr), _deopt_state(unknown),
                         _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(nullptr), _fp(nullptr) {}
 
-inline frame::frame(intptr_t* sp) : frame(sp, nullptr) {}
+inline frame::frame(intptr_t* sp) : frame(sp, nullptr, kind::nmethod) {}
 
 inline frame::frame(intptr_t* sp, intptr_t* fp, address pc) : frame(sp, pc, nullptr, fp, nullptr) {}
+
+inline frame::frame(intptr_t* sp, address pc, kind knd)
+  : _sp(sp), _pc(pc), _cb(nullptr), _oop_map(nullptr),
+    _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(sp), _fp(nullptr) {
+  setup(knd);
+}
 
 inline frame::frame(intptr_t* sp, address pc, intptr_t* unextended_sp, intptr_t* fp, CodeBlob* cb)
   : _sp(sp), _pc(pc), _cb(cb), _oop_map(nullptr),
     _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(unextended_sp), _fp(fp) {
-  setup();
+  setup(kind::nmethod);
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map)
   : _sp(sp), _pc(pc), _cb(cb), _oop_map(oop_map),
     _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(unextended_sp), _fp(fp) {
   assert(_cb != nullptr, "pc: " INTPTR_FORMAT, p2i(pc));
-  setup();
+  setup(kind::nmethod);
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb,
@@ -113,7 +122,7 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
   // In thaw, non-heap frames use this constructor to pass oop_map.  I don't know why.
   assert(_on_heap || _cb != nullptr, "these frames are always heap frames");
   if (cb != nullptr) {
-    setup();
+    setup(kind::nmethod);
   }
 #ifdef ASSERT
   // The following assertion has been disabled because it would sometime trap for Continuation.run,
@@ -300,7 +309,7 @@ inline frame frame::sender_raw(RegisterMap* map) const {
 
   // Must be native-compiled frame, i.e. the marshaling code for native
   // methods that exists in the core system.
-  return frame(sender_sp(), sender_pc());
+  return frame(sender_sp(), sender_pc(), kind::code_blob);
 }
 
 inline frame frame::sender(RegisterMap* map) const {
@@ -323,7 +332,7 @@ inline frame frame::sender_for_compiled_frame(RegisterMap *map) const {
     // Tell GC to use argument oopmaps for some runtime stubs that need it.
     // For C1, the runtime stub might not have oop maps, so set this flag
     // outside of update_register_map.
-    if (!_cb->is_compiled()) { // compiled frames do not use callee-saved registers
+    if (!_cb->is_nmethod()) { // compiled frames do not use callee-saved registers
       map->set_include_argument_oops(_cb->caller_must_gc_arguments(map->thread()));
       if (oop_map() != nullptr) {
         _oop_map->update_register_map(this, map);
@@ -362,8 +371,8 @@ inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
 }
 
 inline int frame::compiled_frame_stack_argsize() const {
-  assert(cb()->is_compiled(), "");
-  return (cb()->as_compiled_method()->method()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
+  assert(cb()->is_nmethod(), "");
+  return (cb()->as_nmethod()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
 }
 
 inline void frame::interpreted_frame_oop_map(InterpreterOopMap* mask) const {

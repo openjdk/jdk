@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.security.AccessController;
 import javax.swing.JComponent;
 
 import javax.swing.JLayeredPane;
@@ -55,7 +54,6 @@ import sun.awt.AWTAccessor;
 import sun.awt.DisplayChangedListener;
 import sun.awt.LightweightFrame;
 import sun.awt.OverrideNativeWindowHandle;
-import sun.security.action.GetPropertyAction;
 import sun.swing.SwingUtilities2.RepaintListener;
 
 /**
@@ -105,24 +103,21 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
      * by the lock (managed with the {@link LightweightContent#paintLock()},
      * {@link LightweightContent#paintUnlock()} methods).
      */
-    @SuppressWarnings("removal")
-    private static boolean copyBufferEnabled = "true".equals(AccessController.
-            doPrivileged(new GetPropertyAction("swing.jlf.copyBufferEnabled", "true")));
+    private static boolean copyBufferEnabled = "true".equals(
+            System.getProperty("swing.jlf.copyBufferEnabled", "true"));
     private int[] copyBuffer;
 
     /**
      * Constructs a new, initially invisible {@code JLightweightFrame}
      * instance.
      */
-    @SuppressWarnings("removal")
     public JLightweightFrame() {
         super();
         AffineTransform defaultTransform =
                            getGraphicsConfiguration().getDefaultTransform();
         scaleFactorX = defaultTransform.getScaleX();
         scaleFactorY = defaultTransform.getScaleY();
-        copyBufferEnabled = "true".equals(AccessController.
-            doPrivileged(new GetPropertyAction("swing.jlf.copyBufferEnabled", "true")));
+        copyBufferEnabled = "true".equals(System.getProperty("swing.jlf.copyBufferEnabled", "true"));
 
         add(rootPane, BorderLayout.CENTER);
         setFocusTraversalPolicy(new LayoutFocusTraversalPolicy());
@@ -331,7 +326,6 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         content.imageUpdated(x, y, width, height);
     }
 
-    @SuppressWarnings({"removal","serial"}) // anonymous class inside
     private void initInterior() {
         contentPane = new JPanel() {
             @Override
@@ -392,8 +386,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         contentPane.add(component);
         contentPane.revalidate();
         contentPane.repaint();
-        if ("true".equals(AccessController.
-            doPrivileged(new GetPropertyAction("swing.jlf.contentPaneTransparent", "false"))))
+        if ("true".equals(System.getProperty("swing.jlf.contentPaneTransparent", "false")))
         {
             contentPane.setOpaque(false);
         }

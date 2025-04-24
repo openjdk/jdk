@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,8 @@ public class Basics {
                 "/" + TRUSTSTORE_FILE;
 
     public static void main(String[] args) throws Exception {
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1");
+        // Re-enable TLSv1.1 and TLS_RSA_* since test depends on it.
+        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1", "TLS_RSA_*");
 
         runTest("TLSv1.3", "TLS_AES_256_GCM_SHA384");
         runTest("TLSv1.2", "TLS_RSA_WITH_AES_256_GCM_SHA384");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.InputSource;
@@ -43,7 +42,6 @@ import org.xml.sax.InputSource;
  * @test
  * @bug 8158084 8162438 8162442 8166220 8166398 8290740
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.CatalogSupport
  * @run testng/othervm catalog.CatalogSupport
  * @summary verifies the use of Catalog in SAX/DOM/StAX/Validation/Transform.
  * The two main scenarios for all processors are:
@@ -66,7 +64,6 @@ import org.xml.sax.InputSource;
  *
  * @author huizhe.wang@oracle.com
  */
-@Listeners({jaxp.library.FilePolicy.class, jaxp.library.NetAccessPolicy.class})
 public class CatalogSupport extends CatalogSupportBase {
     /*
      * Initializing fields

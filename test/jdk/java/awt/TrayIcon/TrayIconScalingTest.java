@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,28 +85,27 @@ public class TrayIconScalingTest {
             System.out.println("SystemTray is not supported");
             return;
         }
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                .title("TrayIcon Test Instructions")
-                .instructions(INSTRUCTIONS)
-                .testTimeOut(8)
-                .rows(25)
-                .columns(70)
-                .screenCapture()
-                .build();
 
-        createAndShowGUI();
-        // does not have a test window,
-        // hence only the instruction frame is positioned
-        PassFailJFrame.positionTestWindow(null,
-                PassFailJFrame.Position.HORIZONTAL);
+        createAndShowTrayIcon();
+
         try {
-            passFailJFrame.awaitAndCheck();
+            PassFailJFrame.builder()
+                    .title("TrayIcon Test Instructions")
+                    .instructions(INSTRUCTIONS)
+                    .testTimeOut(8)
+                    .rows(25)
+                    .columns(70)
+                    .screenCapture()
+                    .build()
+                    .awaitAndCheck();
         } finally {
-            tray.remove(icon);
+            if (tray != null) {
+                tray.remove(icon);
+            }
         }
     }
 
-    private static void createAndShowGUI() {
+    private static void createAndShowTrayIcon() {
         ArrayList<Image> imageList = new ArrayList<>();
         for (int size = 16; size <= 48; size += 4) {
             imageList.add(createIcon(size));
@@ -120,7 +119,7 @@ public class TrayIconScalingTest {
         try {
             tray.add(icon);
         } catch (AWTException e) {
-            throw new RuntimeException("Error while adding icon to system tray");
+            throw new RuntimeException("Error while adding icon to system tray", e);
         }
     }
 

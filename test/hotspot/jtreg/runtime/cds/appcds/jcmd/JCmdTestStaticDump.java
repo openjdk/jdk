@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,13 @@ public class JCmdTestStaticDump extends JCmdTestDumpBase {
         for (int i = 0; i < ITERATION_TIMES; i++) {
             test("0" + i + ".jsa", pid, noBoot,  EXPECT_PASS, STATIC_MESSAGES);
         }
+        app.stopApp();
+
+        // Test static dump with file name containing %p
+        print2ln(test_count++ + " Test static dump with given file name containing %p.");
+        app = createLingeredApp("-cp", allJars);
+        pid = app.getPid();
+        test("%p.jsa", pid, noBoot, EXPECT_PASS, STATIC_MESSAGES);
         app.stopApp();
 
         //  Test static dump with flags with which dumping should fail

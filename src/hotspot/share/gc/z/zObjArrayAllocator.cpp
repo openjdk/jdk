@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zObjArrayAllocator.hpp"
+#include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -49,11 +48,8 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
   // suggested that it offered a good trade-off between allocation
   // time and time-to-safepoint
   const size_t segment_max = ZUtils::bytes_to_words(64 * K);
-  const BasicType element_type = ArrayKlass::cast(_klass)->element_type();
-  const size_t header = arrayOopDesc::header_size(element_type);
-  const size_t payload_size = _word_size - header;
 
-  if (payload_size <= segment_max) {
+  if (_word_size <= segment_max) {
     // To small to use segmented clearing
     return ObjArrayAllocator::initialize(mem);
   }
@@ -66,8 +62,12 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
 
   // Signal to the ZIterator that this is an invisible root, by setting
   // the mark word to "marked". Reset to prototype() after the clearing.
-  arrayOopDesc::set_mark(mem, markWord::prototype().set_marked());
-  arrayOopDesc::release_set_klass(mem, _klass);
+  if (UseCompactObjectHeaders) {
+    oopDesc::release_set_mark(mem, _klass->prototype_header().set_marked());
+  } else {
+    arrayOopDesc::set_mark(mem, markWord::prototype().set_marked());
+    arrayOopDesc::release_set_klass(mem, _klass);
+  }
   assert(_length >= 0, "length should be non-negative");
   arrayOopDesc::set_length(mem, _length);
 
@@ -77,6 +77,22 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
   // Relocation and remembered set code know how to dodge iterating
   // over such objects.
   ZThreadLocalData::set_invisible_root(_thread, (zaddress_unsafe*)&mem);
+
+  const BasicType element_type = ArrayKlass::cast(_klass)->element_type();
+  const size_t base_offset_in_bytes = (size_t)arrayOopDesc::base_offset_in_bytes(element_type);
+  const size_t process_start_offset_in_bytes = align_up(base_offset_in_bytes, (size_t)BytesPerWord);
+
+  if (process_start_offset_in_bytes != base_offset_in_bytes) {
+    // initialize_memory can only fill word aligned memory,
+    // fill the first 4 bytes here.
+    assert(process_start_offset_in_bytes - base_offset_in_bytes == 4, "Must be 4-byte aligned");
+    assert(!is_reference_type(element_type), "Only TypeArrays can be 4-byte aligned");
+    *reinterpret_cast<int*>(reinterpret_cast<char*>(mem) + base_offset_in_bytes) = 0;
+  }
+
+  // Note: initialize_memory may clear padding bytes at the end
+  const size_t process_start_offset = ZUtils::bytes_to_words(process_start_offset_in_bytes);
+  const size_t process_size = _word_size - process_start_offset;
 
   uint32_t old_seqnum_before = ZGeneration::old()->seqnum();
   uint32_t young_seqnum_before = ZGeneration::young()->seqnum();
@@ -90,10 +106,10 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
   bool seen_gc_safepoint = false;
 
   auto initialize_memory = [&]() {
-    for (size_t processed = 0; processed < payload_size; processed += segment_max) {
+    for (size_t processed = 0; processed < process_size; processed += segment_max) {
       // Clear segment
-      uintptr_t* const start = (uintptr_t*)(mem + header + processed);
-      const size_t remaining = payload_size - processed;
+      uintptr_t* const start = (uintptr_t*)(mem + process_start_offset + processed);
+      const size_t remaining = process_size - processed;
       const size_t segment = MIN2(remaining, segment_max);
       // Usually, the young marking code has the responsibility to color
       // raw nulls, before they end up in the old generation. However, the
@@ -116,7 +132,7 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
       yield_for_safepoint();
 
       // Deal with safepoints
-      if (!seen_gc_safepoint && gc_safepoint_happened()) {
+      if (is_reference_type(element_type) && !seen_gc_safepoint && gc_safepoint_happened()) {
         // The first time we observe a GC safepoint in the yield point,
         // we have to restart processing with 11 remembered bits.
         seen_gc_safepoint = true;
@@ -126,16 +142,24 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
     return true;
   };
 
+  mem_zap_start_padding(mem);
+
   if (!initialize_memory()) {
     // Re-color with 11 remset bits if we got intercepted by a GC safepoint
     const bool result = initialize_memory();
     assert(result, "Array initialization should always succeed the second time");
   }
 
+  mem_zap_end_padding(mem);
+
   ZThreadLocalData::clear_invisible_root(_thread);
 
   // Signal to the ZIterator that this is no longer an invisible root
-  oopDesc::release_set_mark(mem, markWord::prototype());
+  if (UseCompactObjectHeaders) {
+    oopDesc::release_set_mark(mem, _klass->prototype_header());
+  } else {
+    oopDesc::release_set_mark(mem, markWord::prototype());
+  }
 
   return cast_to_oop(mem);
 }

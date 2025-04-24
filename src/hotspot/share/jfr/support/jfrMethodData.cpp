@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/support/jfrMethodData.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.inline.hpp"
@@ -56,6 +55,10 @@ static bool mark_mdo(Method* method, int bci, JavaThread* jt) {
   assert(jt != nullptr, "invariant");
   MethodData* const mdo = get_mdo(method, jt);
   assert(mdo != nullptr, "invariant");
+
+  // Lock to access ProfileData, and ensure lock is not broken by a safepoint
+  MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
   // Get the datalayout for the invocation bci.
   BitData* const bit_data = get_bit_data(mdo, bci);
   // Returns true if this callsite is not yet linked and

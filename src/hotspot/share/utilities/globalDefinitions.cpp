@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/signature.hpp"
@@ -60,7 +59,7 @@ uint64_t OopEncodingHeapMax = 0;
 // Something to help porters sleep at night
 
 #ifdef ASSERT
-BasicType char2type(int ch) {
+static BasicType char2type(int ch) {
   switch (ch) {
 #define EACH_SIG(ch, bt, ignore) \
     case ch: return bt;
@@ -157,7 +156,6 @@ void basic_types_init() {
   static_assert(is_power_of_2(HeapWordSize), "HeapWordSize must be power of 2");
   static_assert((size_t)HeapWordSize >= sizeof(juint),
                 "HeapWord should be at least as large as juint");
-  static_assert(sizeof(NULL) == sizeof(char*), "NULL must be same size as pointer");
 #endif
 
   if( JavaPriority1_To_OSPriority != -1 )

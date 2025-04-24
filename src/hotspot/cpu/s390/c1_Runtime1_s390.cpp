@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_MacroAssembler.hpp"
@@ -35,7 +34,6 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_s390.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "register_s390.hpp"
@@ -88,10 +86,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 
     // Make sure that the vm_results are cleared.
     if (oop_result1->is_valid()) {
-      clear_mem(Address(Z_thread, JavaThread::vm_result_offset()), sizeof(jlong));
+      clear_mem(Address(Z_thread, JavaThread::vm_result_oop_offset()), sizeof(jlong));
     }
     if (metadata_result->is_valid()) {
-      clear_mem(Address(Z_thread, JavaThread::vm_result_2_offset()), sizeof(jlong));
+      clear_mem(Address(Z_thread, JavaThread::vm_result_metadata_offset()), sizeof(jlong));
     }
     if (frame_size() == no_frame_size) {
       // Pop the stub frame.
@@ -99,10 +97,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
       restore_return_pc();
       load_const_optimized(Z_R1, StubRoutines::forward_exception_entry());
       z_br(Z_R1);
-    } else if (_stub_id == Runtime1::forward_exception_id) {
+    } else if (_stub_id == (int)C1StubId::forward_exception_id) {
       should_not_reach_here();
     } else {
-      load_const_optimized(Z_R1, Runtime1::entry_for (Runtime1::forward_exception_id));
+      load_const_optimized(Z_R1, Runtime1::entry_for (C1StubId::forward_exception_id));
       z_br(Z_R1);
     }
 
@@ -111,10 +109,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 
   // Get oop results if there are any and reset the values in the thread.
   if (oop_result1->is_valid()) {
-    get_vm_result(oop_result1);
+    get_vm_result_oop(oop_result1);
   }
   if (metadata_result->is_valid()) {
-    get_vm_result_2(metadata_result);
+    get_vm_result_metadata(metadata_result);
   }
 
   return call_offset;
@@ -207,6 +205,11 @@ static void restore_live_registers_except_r2(StubAssembler* sasm, bool restore_f
 
 void Runtime1::initialize_pd() {
   // Nothing to do.
+}
+
+uint Runtime1::runtime_blob_current_thread_offset(frame f) {
+  Unimplemented();
+  return 0;
 }
 
 OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address target, bool has_argument) {
@@ -306,7 +309,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   return oop_maps;
 }
 
-OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
+OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
 
   // for better readability
   const bool must_gc_arguments = true;
@@ -319,26 +322,26 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
   // Stub code and info for the different stubs.
   OopMapSet* oop_maps = nullptr;
   switch (id) {
-    case forward_exception_id:
+    case C1StubId::forward_exception_id:
       {
         oop_maps = generate_handle_exception(id, sasm);
         // will not return
       }
       break;
 
-    case new_instance_id:
-    case fast_new_instance_id:
-    case fast_new_instance_init_check_id:
+    case C1StubId::new_instance_id:
+    case C1StubId::fast_new_instance_id:
+    case C1StubId::fast_new_instance_init_check_id:
       {
         Register klass    = Z_R11; // Incoming
         Register obj      = Z_R2;  // Result
 
-        if (id == new_instance_id) {
+        if (id == C1StubId::new_instance_id) {
           __ set_info("new_instance", dont_gc_arguments);
-        } else if (id == fast_new_instance_id) {
+        } else if (id == C1StubId::fast_new_instance_id) {
           __ set_info("fast new_instance", dont_gc_arguments);
         } else {
-          assert(id == fast_new_instance_init_check_id, "bad StubID");
+          assert(id == C1StubId::fast_new_instance_init_check_id, "bad C1StubId");
           __ set_info("fast new_instance init check", dont_gc_arguments);
         }
 
@@ -353,7 +356,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case counter_overflow_id:
+    case C1StubId::counter_overflow_id:
       {
         // Arguments :
         //   bci    : stack param 0
@@ -372,14 +375,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ z_br(Z_R14);
       }
       break;
-    case new_type_array_id:
-    case new_object_array_id:
+    case C1StubId::new_type_array_id:
+    case C1StubId::new_object_array_id:
       {
         Register length   = Z_R13; // Incoming
         Register klass    = Z_R11; // Incoming
         Register obj      = Z_R2;  // Result
 
-        if (id == new_type_array_id) {
+        if (id == C1StubId::new_type_array_id) {
           __ set_info("new_type_array", dont_gc_arguments);
         } else {
           __ set_info("new_object_array", dont_gc_arguments);
@@ -392,7 +395,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           Register t0 = obj;
           __ mem2reg_opt(t0, Address(klass, Klass::layout_helper_offset()), false);
           __ z_sra(t0, Klass::_lh_array_tag_shift);
-          int tag = ((id == new_type_array_id)
+          int tag = ((id == C1StubId::new_type_array_id)
                      ? Klass::_lh_array_tag_type_value
                      : Klass::_lh_array_tag_obj_value);
           __ compare32_and_branch(t0, tag, Assembler::bcondEqual, ok);
@@ -404,7 +407,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         OopMap* map = save_live_registers_except_r2(sasm);
         int call_offset;
-        if (id == new_type_array_id) {
+        if (id == C1StubId::new_type_array_id) {
           call_offset = __ call_RT(obj, noreg, CAST_FROM_FN_PTR(address, new_type_array), klass, length);
         } else {
           call_offset = __ call_RT(obj, noreg, CAST_FROM_FN_PTR(address, new_object_array), klass, length);
@@ -419,7 +422,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case new_multi_array_id:
+    case C1StubId::new_multi_array_id:
       { __ set_info("new_multi_array", dont_gc_arguments);
         // Z_R3,: klass
         // Z_R4,: rank
@@ -437,14 +440,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case register_finalizer_id:
+    case C1StubId::register_finalizer_id:
       {
         __ set_info("register_finalizer", dont_gc_arguments);
 
         // Load the klass and check the has finalizer flag.
         Register klass = Z_ARG2;
         __ load_klass(klass, Z_ARG1);
-        __ testbit(Address(klass, Klass::access_flags_offset()), exact_log2(JVM_ACC_HAS_FINALIZER));
+        __ z_tm(Address(klass, Klass::misc_flags_offset()), KlassFlags::_misc_has_finalizer);
         __ z_bcr(Assembler::bcondAllZero, Z_R14); // Return if bit is not set.
 
         OopMap* oop_map = save_live_registers(sasm);
@@ -460,62 +463,62 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case throw_range_check_failed_id:
+    case C1StubId::throw_range_check_failed_id:
       { __ set_info("range_check_failed", dont_gc_arguments);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_range_check_exception), true);
       }
       break;
 
-    case throw_index_exception_id:
+    case C1StubId::throw_index_exception_id:
       { __ set_info("index_range_check_failed", dont_gc_arguments);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_index_exception), true);
       }
       break;
-    case throw_div0_exception_id:
+    case C1StubId::throw_div0_exception_id:
       { __ set_info("throw_div0_exception", dont_gc_arguments);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_div0_exception), false);
       }
       break;
-    case throw_null_pointer_exception_id:
+    case C1StubId::throw_null_pointer_exception_id:
       { __ set_info("throw_null_pointer_exception", dont_gc_arguments);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_null_pointer_exception), false);
       }
       break;
-    case handle_exception_nofpu_id:
-    case handle_exception_id:
+    case C1StubId::handle_exception_nofpu_id:
+    case C1StubId::handle_exception_id:
       { __ set_info("handle_exception", dont_gc_arguments);
         oop_maps = generate_handle_exception(id, sasm);
       }
       break;
-    case handle_exception_from_callee_id:
+    case C1StubId::handle_exception_from_callee_id:
       { __ set_info("handle_exception_from_callee", dont_gc_arguments);
         oop_maps = generate_handle_exception(id, sasm);
       }
       break;
-    case unwind_exception_id:
+    case C1StubId::unwind_exception_id:
       { __ set_info("unwind_exception", dont_gc_arguments);
         // Note: no stubframe since we are about to leave the current
         // activation and we are calling a leaf VM function only.
         generate_unwind_exception(sasm);
       }
       break;
-    case throw_array_store_exception_id:
+    case C1StubId::throw_array_store_exception_id:
       { __ set_info("throw_array_store_exception", dont_gc_arguments);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_array_store_exception), true);
       }
       break;
-    case throw_class_cast_exception_id:
+    case C1StubId::throw_class_cast_exception_id:
     { // Z_R1_scratch: object
       __ set_info("throw_class_cast_exception", dont_gc_arguments);
       oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_class_cast_exception), true);
     }
     break;
-    case throw_incompatible_class_change_error_id:
+    case C1StubId::throw_incompatible_class_change_error_id:
       { __ set_info("throw_incompatible_class_cast_exception", dont_gc_arguments);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_incompatible_class_change_error), false);
       }
       break;
-    case slow_subtype_check_id:
+    case C1StubId::slow_subtype_check_id:
     {
       // Arguments :
       //   sub  : stack param 0
@@ -553,7 +556,12 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       __ z_lg(Rsubklass,   0*BytesPerWord + FrameMap::first_available_sp_in_frame + frame_size, Z_SP);
       __ z_lg(Rsuperklass, 1*BytesPerWord + FrameMap::first_available_sp_in_frame + frame_size, Z_SP);
 
-      __ check_klass_subtype_slow_path(Rsubklass, Rsuperklass, Rarray_ptr, Rlength, nullptr, &miss);
+      __ check_klass_subtype_slow_path(Rsubklass,
+                                       Rsuperklass,
+                                       Rarray_ptr  /* temp_reg  */,
+                                       Rlength     /* temp2_reg */,
+                                       nullptr     /* L_success */,
+                                       &miss       /* L_failure */);
 
       // Match falls through here.
       i = 0;
@@ -581,13 +589,74 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       __ z_br(Z_R14);
     }
     break;
-    case monitorenter_nofpu_id:
-    case monitorenter_id:
+    case C1StubId::is_instance_of_id:
+    {
+      // Mirror: Z_ARG1(R2)
+      // Object: Z_ARG2
+      // Temps: Z_ARG3, Z_ARG4, Z_ARG5, Z_R10, Z_R11
+      // Result: Z_RET(R2)
+
+      // Get the Klass* into Z_ARG3
+      Register klass = Z_ARG3 , obj = Z_ARG2, result = Z_RET;
+      Register temp0 = Z_ARG4, temp1 = Z_ARG5, temp2 = Z_R10, temp3 = Z_R11;
+
+      __ z_ltg(klass, Address(Z_ARG1, java_lang_Class::klass_offset())); // Klass is null
+
+      Label is_secondary;
+
+      __ clear_reg(result /* Z_R2 */, true /* whole_reg */, false /* set_cc */);  // sets result=0 (failure)
+
+      __ z_bcr(Assembler::bcondEqual, Z_R14); // cc set by z_ltg above
+
+      __ z_ltgr(obj, obj); // obj is null
+      __ z_bcr(Assembler::bcondEqual, Z_R14);
+
+      __ z_llgf(temp0, Address(klass, in_bytes(Klass::super_check_offset_offset())));
+      __ compare32_and_branch(temp0, in_bytes(Klass::secondary_super_cache_offset()), Assembler::bcondEqual, is_secondary); // Klass is a secondary superclass
+
+      // Klass is a concrete class
+      __ load_klass(temp1, obj);
+      __ z_cg(klass, Address(temp1, temp0));
+
+      // result is already holding 0, denoting NotEqual case
+      __ load_on_condition_imm_32(result, 1, Assembler::bcondEqual);
+      __ z_br(Z_R14);
+
+      __ bind(is_secondary);
+
+      __ load_klass(obj, obj);
+
+      // This is necessary because I am never in my own secondary_super list.
+      __ z_cgr(obj, klass);
+      __ load_on_condition_imm_32(result, 1, Assembler::bcondEqual);
+      __ z_bcr(Assembler::bcondEqual, Z_R14);
+
+      // Z_R10 and Z_R11 are callee saved, so we must need to preserve them before any use
+      __ z_ldgr(Z_F1, Z_R10);
+      __ z_ldgr(Z_F3, Z_R11);
+
+      __ lookup_secondary_supers_table_var(obj, klass,
+                                          /*temps*/ temp0, temp1, temp2, temp3,
+                                          result);
+
+      // lookup_secondary_supers_table_var return 0 on success and 1 on failure.
+      // but this method returns 0 on failure and 1 on success.
+      // so we have to invert the result from lookup_secondary_supers_table_var.
+      __ z_xilf(result, 1);  // invert the result
+
+      __ z_lgdr(Z_R10, Z_F1);
+      __ z_lgdr(Z_R11, Z_F3);
+
+      __ z_br(Z_R14);
+
+    }
+    case C1StubId::monitorenter_nofpu_id:
+    case C1StubId::monitorenter_id:
       { // Z_R1_scratch : object
         // Z_R13       : lock address (see LIRGenerator::syncTempOpr())
         __ set_info("monitorenter", dont_gc_arguments);
 
-        int save_fpu_registers = (id == monitorenter_id);
+        int save_fpu_registers = (id == C1StubId::monitorenter_id);
         // Make a frame and preserve the caller's caller-save registers.
         OopMap* oop_map = save_live_registers(sasm, save_fpu_registers);
 
@@ -601,15 +670,15 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case monitorexit_nofpu_id:
-    case monitorexit_id:
+    case C1StubId::monitorexit_nofpu_id:
+    case C1StubId::monitorexit_id:
       { // Z_R1_scratch : lock address
         // Note: really a leaf routine but must setup last java sp
         //   => Use call_RT for now (speed can be improved by
         //      doing last java sp setup manually).
         __ set_info("monitorexit", dont_gc_arguments);
 
-        int save_fpu_registers = (id == monitorexit_id);
+        int save_fpu_registers = (id == C1StubId::monitorexit_id);
         // Make a frame and preserve the caller's caller-save registers.
         OopMap* oop_map = save_live_registers(sasm, save_fpu_registers);
 
@@ -623,7 +692,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case deoptimize_id:
+    case C1StubId::deoptimize_id:
       { // Args: Z_R1_scratch: trap request
         __ set_info("deoptimize", dont_gc_arguments);
         Register trap_request = Z_R1_scratch;
@@ -640,32 +709,32 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case access_field_patching_id:
+    case C1StubId::access_field_patching_id:
       { __ set_info("access_field_patching", dont_gc_arguments);
         oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, access_field_patching));
       }
       break;
 
-    case load_klass_patching_id:
+    case C1StubId::load_klass_patching_id:
       { __ set_info("load_klass_patching", dont_gc_arguments);
         // We should set up register map.
         oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_klass_patching));
       }
       break;
 
-    case load_mirror_patching_id:
+    case C1StubId::load_mirror_patching_id:
       { __ set_info("load_mirror_patching", dont_gc_arguments);
         oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_mirror_patching));
       }
       break;
 
-    case load_appendix_patching_id:
+    case C1StubId::load_appendix_patching_id:
       { __ set_info("load_appendix_patching", dont_gc_arguments);
         oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_appendix_patching));
       }
       break;
 #if 0
-    case dtrace_object_alloc_id:
+    case C1StubId::dtrace_object_alloc_id:
       { // rax,: object
         StubFrame f(sasm, "dtrace_object_alloc", dont_gc_arguments);
         // We can't gc here so skip the oopmap but make sure that all
@@ -680,7 +749,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case fpu2long_stub_id:
+    case C1StubId::fpu2long_stub_id:
       {
         // rax, and rdx are destroyed, but should be free since the result is returned there
         // preserve rsi,ecx
@@ -755,7 +824,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       break;
 #endif // TODO
 
-    case predicate_failed_trap_id:
+    case C1StubId::predicate_failed_trap_id:
       {
         __ set_info("predicate_failed_trap", dont_gc_arguments);
 
@@ -776,14 +845,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
     default:
       {
-        __ should_not_reach_here(FILE_AND_LINE, id);
+        __ should_not_reach_here(FILE_AND_LINE, (int)id);
       }
       break;
   }
   return oop_maps;
 }
 
-OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
+OopMapSet* Runtime1::generate_handle_exception(C1StubId id, StubAssembler *sasm) {
   __ block_comment("generate_handle_exception");
 
   // incoming parameters: Z_EXC_OOP, Z_EXC_PC
@@ -794,7 +863,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   Register reg_fp = Z_R1_scratch;
 
   switch (id) {
-    case forward_exception_id: {
+    case C1StubId::forward_exception_id: {
       // We're handling an exception in the context of a compiled frame.
       // The registers have been saved in the standard places. Perform
       // an exception lookup in the caller and dispatch to the handler
@@ -817,17 +886,17 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
       DEBUG_ONLY(__ z_lay(reg_fp, Address(Z_SP, frame_size_in_bytes));)
 
       // Make sure that the vm_results are cleared (may be unnecessary).
-      __ clear_mem(Address(Z_thread, JavaThread::vm_result_offset()),   sizeof(oop));
-      __ clear_mem(Address(Z_thread, JavaThread::vm_result_2_offset()), sizeof(Metadata*));
+      __ clear_mem(Address(Z_thread, JavaThread::vm_result_oop_offset()),   sizeof(oop));
+      __ clear_mem(Address(Z_thread, JavaThread::vm_result_metadata_offset()), sizeof(Metadata*));
       break;
     }
-    case handle_exception_nofpu_id:
-    case handle_exception_id:
+    case C1StubId::handle_exception_nofpu_id:
+    case C1StubId::handle_exception_id:
       // At this point all registers MAY be live.
       DEBUG_ONLY(__ z_lgr(reg_fp, Z_SP);)
-      oop_map = save_live_registers(sasm, id != handle_exception_nofpu_id, Z_EXC_PC);
+      oop_map = save_live_registers(sasm, id != C1StubId::handle_exception_nofpu_id, Z_EXC_PC);
       break;
-    case handle_exception_from_callee_id: {
+    case C1StubId::handle_exception_from_callee_id: {
       // At this point all registers except Z_EXC_OOP and Z_EXC_PC are dead.
       DEBUG_ONLY(__ z_lgr(reg_fp, Z_SP);)
       __ save_return_pc(Z_EXC_PC);
@@ -876,15 +945,15 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   __ invalidate_registers(Z_R2);
 
   switch(id) {
-    case forward_exception_id:
-    case handle_exception_nofpu_id:
-    case handle_exception_id:
+    case C1StubId::forward_exception_id:
+    case C1StubId::handle_exception_nofpu_id:
+    case C1StubId::handle_exception_id:
       // Restore the registers that were saved at the beginning.
       __ z_lgr(Z_R1_scratch, Z_R2);   // Restoring live registers kills Z_R2.
-      restore_live_registers(sasm, id != handle_exception_nofpu_id);  // Pops as well the frame.
+      restore_live_registers(sasm, id != C1StubId::handle_exception_nofpu_id);  // Pops as well the frame.
       __ z_br(Z_R1_scratch);
       break;
-    case handle_exception_from_callee_id: {
+    case C1StubId::handle_exception_from_callee_id: {
       __ pop_frame();
       __ z_br(Z_R2); // Jump to exception handler.
     }

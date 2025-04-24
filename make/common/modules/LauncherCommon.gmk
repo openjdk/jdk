@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,16 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
+
+include CopyFiles.gmk
 include JdkNativeCompilation.gmk
 include Modules.gmk
 include ProcessMarkdown.gmk
-include ToolsJdk.gmk
-
-# Tell the compiler not to export any functions unless declared so in
-# the source code. On Windows, this is the default and cannot be changed.
-# On Mac, we have always exported all symbols, probably due to oversight
-# and/or misunderstanding. To emulate this, don't hide any symbols
-# by default.
-# Also provide an override for non-conformant libraries.
-ifeq ($(TOOLCHAIN_TYPE), gcc)
-  LAUNCHER_CFLAGS += -fvisibility=hidden
-  LDFLAGS_JDKEXE += -Wl,--exclude-libs,ALL
-else ifeq ($(TOOLCHAIN_TYPE), clang)
-  LAUNCHER_CFLAGS += -fvisibility=hidden
-else ifeq ($(TOOLCHAIN_TYPE), xlc)
-  LAUNCHER_CFLAGS += -qvisibility=hidden
-endif
+include $(TOPDIR)/make/ToolsJdk.gmk
 
 LAUNCHER_SRC := $(TOPDIR)/src/java.base/share/native/launcher
 LAUNCHER_CFLAGS += -I$(TOPDIR)/src/java.base/share/native/launcher \
@@ -62,20 +53,18 @@ JAVA_MANIFEST := $(TOPDIR)/src/java.base/windows/native/launcher/java.manifest
 # used as the name of the executable.
 #
 # Remaining parameters are named arguments. These include:
-# MAIN_MODULE  The module of the main class to launch if different from the
-#     current module
 # MAIN_CLASS   The Java main class to launch
-# JAVA_ARGS   Processed into a -DJAVA_ARGS and added to CFLAGS
-# EXTRA_JAVA_ARGS Processed into a -DEXTRA_JAVA_ARGS and is prepended
-#     before JAVA_ARGS to CFLAGS, primarily to allow long string literal
-#     compile time defines exceeding Visual Studio 2013 limitations.
-# CFLAGS   Additional CFLAGS
-# CFLAGS_windows   Additional CFLAGS_windows
+# JAVA_ARGS   Additional arguments to pass to Java when launching the main class
+# EXPAND_CLASSPATH_WILDCARDS   Set to true to pass EXPAND_CLASSPATH_WILDCARDS
+# ENABLE_ARG_FILES   Set to true to pass ENABLE_ARG_FILES
+# WINDOWS_JAVAW   Set to true to pass JAVAW on Windows
 # EXTRA_RCFLAGS   Additional EXTRA_RCFLAGS
 # MACOSX_PRIVILEGED   On macosx, allow to access other processes
 # OPTIMIZATION   Override default optimization level (LOW)
 # OUTPUT_DIR   Override default output directory
 # VERSION_INFO_RESOURCE   Override default Windows resource file
+# STATIC_LAUNCHER   If true, will use settings for building a static launcher
+# LIBS   Additional libraries to pass as LIBS argument to SetupJdkExecutable
 SetupBuildLauncher = $(NamedParamsMacroTemplate)
 define SetupBuildLauncherBody
   # Setup default values (unless overridden)
@@ -83,19 +72,25 @@ define SetupBuildLauncherBody
     $1_OPTIMIZATION := LOW
   endif
 
-  ifeq ($$($1_MAIN_MODULE), )
-    $1_MAIN_MODULE := $(MODULE)
-  endif
+  $1_MAIN_MODULE := $(MODULE)
 
   ifneq ($$($1_MAIN_CLASS), )
-    $1_JAVA_ARGS += -ms8m
+    $1_JAVA_ARGS += -Xms8m
     $1_LAUNCHER_CLASS := -m $$($1_MAIN_MODULE)/$$($1_MAIN_CLASS)
   endif
 
-  ifneq ($$($1_EXTRA_JAVA_ARGS), )
-    $1_EXTRA_JAVA_ARGS_STR := '{ $$(strip $$(foreach a, \
-      $$(addprefix -J, $$($1_EXTRA_JAVA_ARGS)), "$$a"$(COMMA) )) }'
-    $1_CFLAGS += -DEXTRA_JAVA_ARGS=$$($1_EXTRA_JAVA_ARGS_STR)
+  ifeq ($$($1_EXPAND_CLASSPATH_WILDCARDS), true)
+    $1_CFLAGS += -DEXPAND_CLASSPATH_WILDCARDS
+  endif
+
+  ifeq ($$($1_ENABLE_ARG_FILES), true)
+    $1_CFLAGS += -DENABLE_ARG_FILES
+  endif
+
+  ifeq ($(call isTargetOs, windows), true)
+    ifeq ($$($1_WINDOWS_JAVAW), true)
+      $1_CFLAGS += -DJAVAW
+    endif
   endif
 
   ifneq ($$($1_JAVA_ARGS), )
@@ -122,26 +117,7 @@ define SetupBuildLauncherBody
     ))
 
     $1_LDFLAGS += -sectcreate __TEXT __info_plist $$($1_PLIST_FILE)
-
-    ifeq ($(STATIC_BUILD), true)
-      $1_LDFLAGS += -exported_symbols_list \
-              $(SUPPORT_OUTPUTDIR)/build-static/exported.symbols
-      $1_LIBS += \
-          $$(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs/java.base -name "*.a") \
-          $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libdt_socket.a \
-          $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libjdwp.a \
-          -framework CoreFoundation \
-          -framework Foundation \
-          -framework SystemConfiguration \
-          -lstdc++ -liconv
-    endif
   endif
-
-  ifeq ($(USE_EXTERNAL_LIBZ), true)
-    $1_LIBS += -lz
-  endif
-
-  $1_WINDOWS_JLI_LIB := $(call FindStaticLib, java.base, jli, /libjli)
 
   $1_EXTRA_FILES := $(LAUNCHER_SRC)/main.c
 
@@ -153,34 +129,42 @@ define SetupBuildLauncherBody
     $1_EXTRA_FILES += $(TOPDIR)/make/data/lsan/lsan_default_options.c
   endif
 
+  ifneq ($$($1_STATIC_LAUNCHER), true)
+      $1_JDK_LIBS := java.base:libjli
+      $1_JDK_LIBS_windows := java.base:libjava
+  else
+    ifneq ($(findstring $(TOOLCHAIN_TYPE), gcc clang), )
+      $1_LDFLAGS_FILTER_OUT := -Wl$(COMMA)--exclude-libs$(COMMA)ALL
+    endif
+  endif
+
+  ##############################################################################
+  ## Build launcher "$1"
+  ##############################################################################
+
   $$(eval $$(call SetupJdkExecutable, BUILD_LAUNCHER_$1, \
       NAME := $1, \
       EXTRA_FILES := $$($1_EXTRA_FILES), \
       OPTIMIZATION := $$($1_OPTIMIZATION), \
-      CFLAGS := $$(CFLAGS_JDKEXE) \
-          $$(LAUNCHER_CFLAGS) \
+      CFLAGS := $$(LAUNCHER_CFLAGS) \
           $$(VERSION_CFLAGS) \
           -DLAUNCHER_NAME='"$$(LAUNCHER_NAME)"' \
           -DPROGNAME='"$1"' \
           $$($1_CFLAGS), \
-      CFLAGS_windows := $$($1_CFLAGS_windows), \
-      DISABLED_WARNINGS_gcc := unused-function, \
-      LDFLAGS := $$(LDFLAGS_JDKEXE) \
-          $$(call SET_EXECUTABLE_ORIGIN) \
-          $$($1_LDFLAGS), \
-      LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
-          -L$(call FindLibDirForModule, java.base), \
-      LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
-          -L$(call FindLibDirForModule, java.base), \
-      LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
-      LIBS := $(JDKEXE_LIBS) $$($1_LIBS), \
-      LIBS_linux := -ljli -lpthread $(LIBDL), \
-      LIBS_macosx := -ljli -framework Cocoa -framework Security \
-          -framework ApplicationServices, \
-      LIBS_aix := -ljli_static, \
-      LIBS_windows := $$($1_WINDOWS_JLI_LIB) \
-          $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib, \
+      EXTRA_HEADER_DIRS := java.base:libjvm, \
+      JAVA_HEADERS := false, \
+      DISABLED_WARNINGS_gcc := unused-function unused-variable, \
+      DISABLED_WARNINGS_clang := unused-function, \
+      LDFLAGS := $$($1_LDFLAGS), \
+      LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
+      LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
+      LDFLAGS_FILTER_OUT := $$($1_LDFLAGS_FILTER_OUT), \
+      JDK_LIBS := $$($1_JDK_LIBS), \
+      JDK_LIBS_windows := $$($1_JDK_LIBS_windows), \
+      LIBS := $$($1_LIBS), \
+      LINK_TYPE := $$($1_LINK_TYPE), \
       OUTPUT_DIR := $$($1_OUTPUT_DIR), \
+      OBJECT_DIR := $$($1_OBJECT_DIR), \
       VERSIONINFO_RESOURCE := $$($1_VERSION_INFO_RESOURCE), \
       EXTRA_RCFLAGS := $$($1_EXTRA_RCFLAGS), \
       MANIFEST := $(JAVA_MANIFEST), \
@@ -191,15 +175,6 @@ define SetupBuildLauncherBody
   TARGETS += $$($1)
 
   $$(BUILD_LAUNCHER_$1): $$(BUILD_PLIST_$1)
-
-  ifeq ($(call isTargetOs, aix), true)
-    $$(BUILD_LAUNCHER_$1): $(call FindStaticLib, java.base, jli_static)
-  endif
-
-  ifeq ($(call isTargetOs, windows), true)
-    $$(BUILD_LAUNCHER_$1): $(call FindStaticLib, java.base, java, /libjava) \
-        $$($1_WINDOWS_JLI_LIB)
-  endif
 
   ifeq ($(call isTargetOs, macosx), true)
     $$(BUILD_LAUNCHER_$1): $$($1_PLIST_FILE)
@@ -218,13 +193,9 @@ ifeq ($(call isTargetOsType, unix)+$(MAKEFILE_PREFIX), true+Launcher)
   # We assume all our man pages should reside in section 1.
 
   MAN_FILES_MD := $(wildcard $(addsuffix /*.md, $(call FindModuleManDirs, $(MODULE))))
-  MAN_FILES_TROFF := $(wildcard $(addsuffix /*.1, $(call FindModuleManDirs, $(MODULE))))
 
   ifneq ($(MAN_FILES_MD), )
-    # If we got markdown files, ignore the troff files
-    ifeq ($(ENABLE_PANDOC), false)
-      $(info Warning: pandoc not found. Not generating man pages)
-    else
+    ifeq ($(ENABLE_PANDOC), true)
       # Create dynamic man pages from markdown using pandoc. We need
       # PANDOC_TROFF_MANPAGE_FILTER, a wrapper around
       # PANDOC_TROFF_MANPAGE_FILTER_JAVASCRIPT. This is created by buildtools-jdk.
@@ -266,16 +237,10 @@ ifeq ($(call isTargetOsType, unix)+$(MAKEFILE_PREFIX), true+Launcher)
 
       TARGETS += $(BUILD_MAN_PAGES)
     endif
-  else
-    # No markdown man pages present
-    ifeq ($(BUILD_MANPAGES), true)
-      # BUILD_MANPAGES is a mis-nomer. It really means "copy the pre-generated man pages".
-      $(eval $(call SetupCopyFiles, COPY_MAN_PAGES, \
-          DEST := $(SUPPORT_OUTPUTDIR)/modules_man/$(MODULE)/man1, \
-          FILES := $(MAN_FILES_TROFF), \
-      ))
-
-      TARGETS += $(COPY_MAN_PAGES)
-    endif
   endif
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,6 +34,15 @@
 #include "jimage.hpp"
 
 #include "imageFile.hpp"
+
+#include "jni_util.h"
+
+/*
+ * Declare jimage library specific JNI_Onload entry for static build.
+ */
+extern "C" {
+DEF_STATIC_JNI_OnLoad
+}
 
 /*
  * JImageOpen - Given the supplied full path file name, open an image file. This

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,22 @@
 
 /**
  * @test
- * @bug 6360339
+ * @bug 6360339 8343224
  * @key printer
  * @summary Test for fp error in paper size calculations.
  * @run main/manual PaperSizeError
  */
 
-import java.awt.print.*;
-import javax.print.*;
-import javax.print.attribute.*;
-import javax.print.attribute.standard.*;
+import javax.print.PrintService;
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.Size2DSyntax;
+import javax.print.attribute.standard.MediaSize;
+import javax.print.attribute.standard.MediaSizeName;
+import javax.print.attribute.standard.OrientationRequested;
+import java.awt.print.PageFormat;
+import java.awt.print.Paper;
+import java.awt.print.PrinterJob;
 
 public class PaperSizeError {
 

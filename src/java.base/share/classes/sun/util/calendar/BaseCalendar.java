@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.util.TimeZone;
  * @since 1.5
  */
 
-public sealed abstract class BaseCalendar extends AbstractCalendar
+public abstract sealed class BaseCalendar extends AbstractCalendar
         permits Gregorian, JulianCalendar, LocalGregorianCalendar {
 
     public static final int JANUARY = 1;
@@ -141,7 +141,7 @@ public sealed abstract class BaseCalendar extends AbstractCalendar
         744365, // 2039
     };
 
-    public sealed abstract static class Date extends CalendarDate
+    public abstract static sealed class Date extends CalendarDate
             permits Gregorian.Date, ImmutableGregorianDate, JulianCalendar.Date, LocalGregorianCalendar.Date {
         protected Date() {
             super();

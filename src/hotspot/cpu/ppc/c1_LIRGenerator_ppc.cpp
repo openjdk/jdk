@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -165,8 +164,10 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
   if (index->is_register()) {
     // Apply the shift and accumulate the displacement.
     if (shift > 0) {
-      LIR_Opr tmp = new_pointer_register();
-      __ shift_left(index, shift, tmp);
+      // Use long register to avoid overflow when shifting large index values left.
+      LIR_Opr tmp = new_register(T_LONG);
+      __ convert(Bytecodes::_i2l, index, tmp);
+      __ shift_left(tmp, shift, tmp);
       index = tmp;
     }
     if (large_disp != 0) {
@@ -294,13 +295,19 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
   assert(left != result, "should be different registers");
-  if (is_power_of_2(c + 1)) {
-    __ shift_left(left, log2i_exact(c + 1), result);
+  // Using unsigned arithmetics to avoid undefined behavior due to integer overflow.
+  // The involved operations are not sensitive to signedness.
+  juint u_value = (juint)c;
+  if (is_power_of_2(u_value + 1)) {
+    __ shift_left(left, log2i_exact(u_value + 1), result);
     __ sub(result, left, result);
     return true;
-  } else if (is_power_of_2(c - 1)) {
-    __ shift_left(left, log2i_exact(c - 1), result);
+  } else if (is_power_of_2(u_value - 1)) {
+    __ shift_left(left, log2i_exact(u_value - 1), result);
     __ add(result, left, result);
+    return true;
+  } else if (c == -1) {
+    __ negate(left, result);
     return true;
   }
   return false;
@@ -576,7 +583,7 @@ inline bool can_handle_logic_op_as_uimm(ValueType *type, Bytecodes::Code bc) {
        is_power_of_2(int_or_long_const) ||
        is_power_of_2(-int_or_long_const))) return true;
   if (bc == Bytecodes::_land &&
-      (is_power_of_2(int_or_long_const+1) ||
+      (is_power_of_2((unsigned long)int_or_long_const+1) ||
        (Assembler::is_uimm(int_or_long_const, 32) && is_power_of_2(int_or_long_const)) ||
        (int_or_long_const != min_jlong && is_power_of_2(-int_or_long_const)))) return true;
 
@@ -688,6 +695,23 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       __ abs(value.result(), dst, LIR_OprFact::illegalOpr);
       break;
     }
+    case vmIntrinsics::_floatToFloat16: {
+      assert(x->number_of_arguments() == 1, "wrong type");
+      LIRItem value(x->argument_at(0), this);
+      value.load_item();
+      LIR_Opr dst = rlock_result(x);
+      LIR_Opr tmp = new_register(T_FLOAT);
+      __ f2hf(value.result(), dst, tmp);
+      break;
+    }
+    case vmIntrinsics::_float16ToFloat: {
+      assert(x->number_of_arguments() == 1, "wrong type");
+      LIRItem value(x->argument_at(0), this);
+      value.load_item();
+      LIR_Opr dst = rlock_result(x);
+      __ hf2f(value.result(), dst, LIR_OprFact::illegalOpr);
+      break;
+    }
     case vmIntrinsics::_dsqrt:
     case vmIntrinsics::_dsqrt_strict: {
       if (VM_Version::has_fsqrt()) {
@@ -756,7 +780,13 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   assert(x->number_of_arguments() == 5, "wrong type");
 
   // Make all state_for calls early since they can emit code.
-  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* info = nullptr;
+  if (x->state_before() != nullptr && x->state_before()->force_reexecute()) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+  } else {
+    info = state_for(x, x->state());
+  }
 
   LIRItem src     (x->argument_at(0), this);
   LIRItem src_pos (x->argument_at(1), this);
@@ -776,7 +806,9 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   int flags;
   ciArrayKlass* expected_type;
   arraycopy_helper(x, &flags, &expected_type);
-
+  if (x->check_flag(Instruction::OmitChecksFlag)) {
+    flags = 0;
+  }
   __ arraycopy(src.result(), src_pos.result(), dst.result(), dst_pos.result(),
                length.result(), tmp,
                expected_type, flags, info);
@@ -901,7 +933,13 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
 
 void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   // Evaluate state_for early since it may emit code.
-  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* info = nullptr;
+  if (x->state_before() != nullptr && x->state_before()->force_reexecute()) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+  } else {
+    info = state_for(x, x->state());
+  }
 
   LIRItem length(x->length(), this);
   length.load_item();
@@ -919,7 +957,7 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   __ metadata2reg(ciTypeArrayKlass::make(elem_type)->constant_encoding(), klass_reg);
 
   CodeStub* slow_path = new NewTypeArrayStub(klass_reg, len, reg, info);
-  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path);
+  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path, x->zero_array());
 
   // Must prevent reordering of stores for object initialization
   // with stores that publish the new object.
@@ -1016,7 +1054,7 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
   args->append(rank);
   args->append(varargs);
   const LIR_Opr reg = result_register_for(x->type());
-  __ call_runtime(Runtime1::entry_for(Runtime1::new_multi_array_id),
+  __ call_runtime(Runtime1::entry_for(C1StubId::new_multi_array_id),
                   LIR_OprFact::illegalOpr,
                   reg, args, info);
 
@@ -1051,7 +1089,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
 
   if (x->is_incompatible_class_change_check()) {
     assert(patching_info == nullptr, "can't patch this");
-    stub = new SimpleExceptionStub(Runtime1::throw_incompatible_class_change_error_id,
+    stub = new SimpleExceptionStub(C1StubId::throw_incompatible_class_change_error_id,
                                    LIR_OprFact::illegalOpr, info_for_exception);
   } else if (x->is_invokespecial_receiver_check()) {
     assert(patching_info == nullptr, "can't patch this");
@@ -1059,7 +1097,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
                               Deoptimization::Reason_class_check,
                               Deoptimization::Action_none);
   } else {
-    stub = new SimpleExceptionStub(Runtime1::throw_class_cast_exception_id, obj.result(), info_for_exception);
+    stub = new SimpleExceptionStub(C1StubId::throw_class_cast_exception_id, obj.result(), info_for_exception);
   }
   // Following registers are used by slow_subtype_check:
   LIR_Opr tmp1 = FrameMap::R4_oop_opr; // super_klass
@@ -1088,6 +1126,12 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   __ instanceof(out_reg, obj.result(), x->klass(), tmp1, tmp2, tmp3,
                 x->direct_compare(), patching_info,
                 x->profiled_method(), x->profiled_bci());
+}
+
+
+// Intrinsic for Class::isInstance
+address LIRGenerator::isInstance_entry() {
+  return Runtime1::entry_for(C1StubId::is_instance_of_id);
 }
 
 

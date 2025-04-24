@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,8 @@ class MachNode;
 
 class MacroAssembler;
 
-class ZBarrierStubC2 : public ArenaObj {
+class ZBarrierStubC2 : public BarrierStubC2 {
 protected:
-  const MachNode* _node;
-  Label           _entry;
-  Label           _continuation;
-
 static void register_stub(ZBarrierStubC2* stub);
 static void inc_trampoline_stubs_count();
 static int trampoline_stubs_count();
@@ -55,11 +51,6 @@ static int stubs_start_offset();
   ZBarrierStubC2(const MachNode* node);
 
 public:
-  RegMask& live() const;
-  Label* entry();
-  Label* continuation();
-
-  virtual Register result() const = 0;
   virtual void emit_code(MacroAssembler& masm) = 0;
 };
 
@@ -78,7 +69,6 @@ public:
   Register ref() const;
   address slow_path() const;
 
-  virtual Register result() const;
   virtual void emit_code(MacroAssembler& masm);
 };
 
@@ -89,27 +79,26 @@ private:
   const Register _new_zpointer;
   const bool     _is_native;
   const bool     _is_atomic;
+  const bool     _is_nokeepalive;
 
 protected:
-  ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic);
+  ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic, bool is_nokeepalive);
 
 public:
-  static ZStoreBarrierStubC2* create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic);
+  static ZStoreBarrierStubC2* create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic, bool is_nokeepalive);
 
   Address ref_addr() const;
   Register new_zaddress() const;
   Register new_zpointer() const;
   bool is_native() const;
   bool is_atomic() const;
+  bool is_nokeepalive() const;
 
-  virtual Register result() const;
   virtual void emit_code(MacroAssembler& masm);
 };
 
 class ZBarrierSetC2 : public BarrierSetC2 {
 private:
-  void compute_liveness_at_stubs() const;
-  void analyze_dominating_barriers_impl(Node_List& accesses, Node_List& access_dominators) const;
   void analyze_dominating_barriers() const;
 
 protected:
@@ -128,6 +117,7 @@ protected:
                                         const Type* val_type) const;
 
 public:
+  virtual uint estimated_barrier_size(const Node* node) const;
   virtual void* create_barrier_state(Arena* comp_arena) const;
   virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc,
                                                BasicType type,
@@ -137,6 +127,7 @@ public:
   virtual void clone_at_expansion(PhaseMacroExpand* phase,
                                   ArrayCopyNode* ac) const;
 
+  virtual void elide_dominated_barrier(MachNode* mach) const;
   virtual void late_barrier_analysis() const;
   virtual int estimate_stub_size() const;
   virtual void emit_stubs(CodeBuffer& cb) const;

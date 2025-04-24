@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public:
   static ZBarrierSetAssembler* assembler();
   static bool barrier_needed(DecoratorSet decorators, BasicType type);
 
-  static void clone_obj_array(objArrayOop src, objArrayOop dst, size_t size);
+  static void clone_obj_array(objArrayOop src, objArrayOop dst);
 
   virtual void on_thread_create(Thread* thread);
   virtual void on_thread_destroy(Thread* thread);
@@ -155,7 +155,7 @@ public:
 };
 
 template<> struct BarrierSet::GetName<ZBarrierSet> {
-  static const BarrierSet::Name value = BarrierSet::ZBarrierSet;
+  static const BarrierSet::Name Value = BarrierSet::ZBarrierSet;
 };
 
 template<> struct BarrierSet::GetType<BarrierSet::ZBarrierSet> {

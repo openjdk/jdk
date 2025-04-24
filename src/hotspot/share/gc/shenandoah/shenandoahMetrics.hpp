@@ -40,7 +40,7 @@ public:
   void snap_before();
   void snap_after();
 
-  bool is_good_progress();
+  bool is_good_progress(ShenandoahGeneration *generation);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMETRICS_HPP

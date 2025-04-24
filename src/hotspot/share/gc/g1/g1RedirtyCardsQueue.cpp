@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "runtime/atomic.hpp"
@@ -65,10 +64,12 @@ void G1RedirtyCardsLocalQueueSet::enqueue(void* value) {
   }
 }
 
-void G1RedirtyCardsLocalQueueSet::flush() {
+BufferNodeList G1RedirtyCardsLocalQueueSet::flush() {
   flush_queue(_queue);
+  BufferNodeList cur_buffers = _buffers;
   _shared_qset->add_bufferlist(_buffers);
   _buffers = BufferNodeList();
+  return cur_buffers;
 }
 
 // G1RedirtyCardsLocalQueueSet::Queue

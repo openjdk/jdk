@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,12 +152,6 @@ public interface PosixFileAttributeView
 
     /**
      * @throws  IOException                {@inheritDoc}
-     * @throws  SecurityException
-     *          In the case of the default provider, a security manager is
-     *          installed, and it denies
-     *          {@link RuntimePermission}{@code ("accessUserInformation")}
-     *          or its {@link SecurityManager#checkRead(String) checkRead} method
-     *          denies read access to the file.
      */
     @Override
     PosixFileAttributes readAttributes() throws IOException;
@@ -173,12 +167,6 @@ public interface PosixFileAttributeView
      *          PosixFilePermission}
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, a security manager is
-     *          installed, and it denies
-     *          {@link RuntimePermission}{@code ("accessUserInformation")}
-     *          or its {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method denies write access to the file.
      */
     void setPermissions(Set<PosixFilePermission> perms) throws IOException;
 
@@ -190,12 +178,6 @@ public interface PosixFileAttributeView
      *
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, it denies
-     *          {@link RuntimePermission}{@code ("accessUserInformation")}
-     *          or its {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method denies write access to the file.
      */
     void setGroup(GroupPrincipal group) throws IOException;
 }

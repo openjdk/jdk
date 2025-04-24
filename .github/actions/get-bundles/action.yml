@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,14 +48,14 @@ runs:
   steps:
     - name: 'Download bundles artifact'
       id: download-bundles
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}
         path: bundles
       continue-on-error: true
 
     - name: 'Download bundles artifact (retry)'
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}
         path: bundles

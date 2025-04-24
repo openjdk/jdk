@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,10 +51,10 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native" })
+@Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native" })
 public class ToCStringTest extends CLayouts {
 
-    @Param({"5", "20", "100", "200"})
+    @Param({"5", "20", "100", "200", "451"})
     public int size;
     public String str;
 
@@ -66,7 +66,7 @@ public class ToCStringTest extends CLayouts {
 
     static {
         Linker abi = Linker.nativeLinker();
-        STRLEN = abi.downcallHandle(abi.defaultLookup().find("strlen").get(),
+        STRLEN = abi.downcallHandle(abi.defaultLookup().findOrThrow("strlen"),
                 FunctionDescriptor.of(C_INT, C_POINTER));
     }
 
@@ -97,6 +97,9 @@ public class ToCStringTest extends CLayouts {
                  fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
                  mollit anim id est laborum.
                 """;
+        while (lorem.length() < size) {
+            lorem += lorem;
+        }
         return lorem.substring(0, size);
     }
 }

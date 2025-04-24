@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import nsk.share.gc.GCTestBase;
 import nsk.share.test.*;
-import vm.share.InMemoryJavaCompiler;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
 /**
  * There is a data structure named "dictionary" in class BlockFreelist. It stores
@@ -178,10 +178,8 @@ public class StressDictionary extends GCTestBase {
     }
 
     private byte[] generateAndCompile() {
-        Map<String, CharSequence> sources = new HashMap<String, CharSequence>();
         String className = "MyClass" + classesCounter.incrementAndGet();
-        sources.put(className, generateSource(className));
-        return InMemoryJavaCompiler.compile(sources).values().iterator().next();
+        return InMemoryJavaCompiler.compile(className, generateSource(className));
     }
 
     private CharSequence generateSource(String className) {

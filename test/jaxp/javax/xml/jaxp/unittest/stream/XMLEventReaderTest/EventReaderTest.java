@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,11 @@ package stream.XMLEventReaderTest;
 import java.io.StringReader;
 import java.util.NoSuchElementException;
 import javax.xml.stream.XMLEventReader;
-
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.StartDocument;
-
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
-
 import static org.testng.Assert.assertEquals;
 
 /*
@@ -44,7 +40,6 @@ import static org.testng.Assert.assertEquals;
  * @run testng stream.XMLEventReaderTest.EventReaderTest
  * @summary Tests XMLEventReader
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class EventReaderTest {
     @Test(expectedExceptions = NoSuchElementException.class)
     public void testNextEvent() throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,13 +42,11 @@ namespace metaspace {
 //  correctly. We currently don't hold members with a larger alignment requirement
 //  than 64-bit inside MetaData, so 8-byte alignment is enough.
 //
-// Klass* structures need to be aligned to KlassAlignmentInBytes, but since that is
-// 64-bit, we don't need special handling for allocating Klass*.
+// Klass* structures need to be aligned to Klass* alignment,
 //
 // On 64-bit platforms, we align to word size; on 32-bit, we align to two words.
 
 static const size_t AllocationAlignmentByteSize = 8;
-STATIC_ASSERT(AllocationAlignmentByteSize == (size_t)KlassAlignmentInBytes);
 
 static const size_t AllocationAlignmentWordSize = AllocationAlignmentByteSize / BytesPerWord;
 
@@ -82,10 +80,10 @@ void print_percentage(outputStream* st, size_t total, size_t part);
 #ifdef ASSERT
 #define assert_is_aligned(value, alignment)                  \
   assert(is_aligned((value), (alignment)),                   \
-         SIZE_FORMAT_X " is not aligned to "                 \
-         SIZE_FORMAT_X, (size_t)(uintptr_t)value, (size_t)(alignment))
+         "0x%zx is not aligned to 0x%zx",                    \
+         (size_t)(uintptr_t)value, (size_t)(alignment))
 #define assert_is_aligned_metaspace_pointer(p) \
-  assert_is_aligned((p), metaspace::AllocationAlignmentByteSize);
+  assert_is_aligned((p), metaspace::AllocationAlignmentByteSize)
 #else
 #define assert_is_aligned(value, alignment)
 #define assert_is_aligned_metaspace_pointer(pointer)
@@ -141,8 +139,8 @@ void print_number_of_classes(outputStream* out, uintx classes, uintx classes_sha
 #define HAVE_UL
 
 #ifdef HAVE_UL
-#define UL(level, message)        log_##level(metaspace)(LOGFMT ": " message, LOGFMT_ARGS);
-#define UL2(level, message, ...)  log_##level(metaspace)(LOGFMT ": " message, LOGFMT_ARGS, __VA_ARGS__);
+#define UL(level, message)        log_##level(metaspace)(LOGFMT ": " message, LOGFMT_ARGS)
+#define UL2(level, message, ...)  log_##level(metaspace)(LOGFMT ": " message, LOGFMT_ARGS, __VA_ARGS__)
 #else
 #define UL(level, ...)
 #define UL2(level, ...)

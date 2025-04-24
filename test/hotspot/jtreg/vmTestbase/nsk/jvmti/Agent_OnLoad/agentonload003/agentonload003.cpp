@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
+#include "agent_common.hpp"
 
 extern "C" {
 
@@ -48,8 +48,8 @@ JNIEXPORT jint JNI_OnLoad_agentonload003(JavaVM *jvm, char *options, void *reser
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
-    if (options == NULL) {
-        printf("# ERROR: Second parameter 'options' in JVM_OnLoad() is NULL: 0x%p\n",
+    if (options == nullptr) {
+        printf("# ERROR: Second parameter 'options' in JVM_OnLoad() is null: 0x%p\n",
                     (void*)options);
         return JNI_ERR;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
@@ -33,7 +32,18 @@
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
-address StubRoutines::zarch::_partial_subtype_check = nullptr;
+// define fields for arch-specific entries
+
+#define DEFINE_ARCH_ENTRY(arch, blob_name, stub_name, field_name, getter_name) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = nullptr;
+
+#define DEFINE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = CAST_FROM_FN_PTR(address, init_function);
+
+STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
+
+#undef DEFINE_ARCH_ENTRY_INIT
+#undef DEFINE_ARCH_ENTRY
 
 // Comapct string intrinsics: Translate table for string inflate intrinsic. Used by trot instruction.
 address StubRoutines::zarch::_trot_table_addr = nullptr;

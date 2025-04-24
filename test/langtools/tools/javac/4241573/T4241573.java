@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
  * @test
  * @bug 4241573
  * @summary SourceFile attribute includes full path
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 
 import java.lang.classfile.*;
@@ -109,7 +107,7 @@ public class T4241573 {
         System.err.println("verify: " + f);
         try {
             ClassModel cf = ClassFile.of().parse(f.toPath());
-            SourceFileAttribute sfa = cf.findAttribute(Attributes.SOURCE_FILE).orElseThrow();
+            SourceFileAttribute sfa = cf.findAttribute(Attributes.sourceFile()).orElseThrow();
             String found = sfa.sourceFile().stringValue();
             String expect = f.getName().replaceAll("([$.].*)?\\.class", ".java");
             if (!expect.equals(found)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
 
 package com.sun.jmx.remote.security;
 
-import com.sun.jmx.mbeanserver.GetPropertyAction;
 import java.io.ObjectInputStream;
-import java.security.AccessController;
 import java.util.Set;
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -74,14 +72,8 @@ import javax.management.remote.MBeanServerForwarder;
  * be overridden, for instance if the default checking behavior is
  * inappropriate.</p>
  *
- * <p>If there is no SecurityManager, then the access controller will refuse
- * to create an MBean that is a ClassLoader, which includes MLets, or to
- * execute the method addURL on an MBean that is an MLet. This prevents
- * people from opening security holes unintentionally. Otherwise, it
- * would not be obvious that granting write access grants the ability to
- * download and execute arbitrary code in the target MBean server. Advanced
- * users who do want the ability to use MLets are presumably advanced enough
- * to handle policy files and security managers.</p>
+ * <p>The access controller will refuse to create an MBean that is a ClassLoader.
+ * </p>
  */
 public abstract class MBeanServerAccessController
         implements MBeanServerForwarder {
@@ -175,15 +167,9 @@ public abstract class MBeanServerAccessController
         MBeanException,
         NotCompliantMBeanException {
         checkCreate(className);
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            Object object = getMBeanServer().instantiate(className);
-            checkClassLoader(object);
-            return getMBeanServer().registerMBean(object, name);
-        } else {
-            return getMBeanServer().createMBean(className, name);
-        }
+        Object object = getMBeanServer().instantiate(className);
+        checkClassLoader(object);
+        return getMBeanServer().registerMBean(object, name);
     }
 
     /**
@@ -199,18 +185,11 @@ public abstract class MBeanServerAccessController
         MBeanException,
         NotCompliantMBeanException {
         checkCreate(className);
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            Object object = getMBeanServer().instantiate(className,
-                                                         params,
-                                                         signature);
-            checkClassLoader(object);
-            return getMBeanServer().registerMBean(object, name);
-        } else {
-            return getMBeanServer().createMBean(className, name,
-                                                params, signature);
-        }
+        Object object = getMBeanServer().instantiate(className,
+                                                     params,
+                                                     signature);
+        checkClassLoader(object);
+        return getMBeanServer().registerMBean(object, name);
     }
 
     /**
@@ -228,16 +207,10 @@ public abstract class MBeanServerAccessController
         NotCompliantMBeanException,
         InstanceNotFoundException {
         checkCreate(className);
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            Object object = getMBeanServer().instantiate(className,
-                                                         loaderName);
-            checkClassLoader(object);
-            return getMBeanServer().registerMBean(object, name);
-        } else {
-            return getMBeanServer().createMBean(className, name, loaderName);
-        }
+        Object object = getMBeanServer().instantiate(className,
+                                                     loaderName);
+        checkClassLoader(object);
+        return getMBeanServer().registerMBean(object, name);
     }
 
     /**
@@ -257,19 +230,12 @@ public abstract class MBeanServerAccessController
         NotCompliantMBeanException,
         InstanceNotFoundException {
         checkCreate(className);
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            Object object = getMBeanServer().instantiate(className,
-                                                         loaderName,
-                                                         params,
-                                                         signature);
-            checkClassLoader(object);
-            return getMBeanServer().registerMBean(object, name);
-        } else {
-            return getMBeanServer().createMBean(className, name, loaderName,
-                                                params, signature);
-        }
+        Object object = getMBeanServer().instantiate(className,
+                                                     loaderName,
+                                                     params,
+                                                     signature);
+        checkClassLoader(object);
+        return getMBeanServer().registerMBean(object, name);
     }
 
     /**
@@ -468,7 +434,6 @@ public abstract class MBeanServerAccessController
         MBeanException,
         ReflectionException {
         checkWrite();
-        checkMLetMethods(name, operationName);
         return getMBeanServer().invoke(name, operationName, params, signature);
     }
 
@@ -616,51 +581,7 @@ public abstract class MBeanServerAccessController
         if (object instanceof ClassLoader)
             throw new SecurityException("Access denied! Creating an " +
                                         "MBean that is a ClassLoader " +
-                                        "is forbidden unless a security " +
-                                        "manager is installed.");
-    }
-
-    private void checkMLetMethods(ObjectName name, String operation)
-    throws InstanceNotFoundException {
-        // Check if security manager installed
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            return;
-        }
-        // Check for addURL and getMBeansFromURL methods
-        if (!operation.equals("addURL") &&
-                !operation.equals("getMBeansFromURL")) {
-            return;
-        }
-        // Check if MBean is instance of MLet
-        if (!getMBeanServer().isInstanceOf(name,
-                "javax.management.loading.MLet")) {
-            return;
-        }
-        // Throw security exception
-        if (operation.equals("addURL")) { // addURL
-            throw new SecurityException("Access denied! MLet method addURL " +
-                    "cannot be invoked unless a security manager is installed.");
-        } else { // getMBeansFromURL
-            // Whether or not calling getMBeansFromURL is allowed is controlled
-            // by the value of the "jmx.remote.x.mlet.allow.getMBeansFromURL"
-            // system property. If the value of this property is true, calling
-            // the MLet's getMBeansFromURL method is allowed. The default value
-            // for this property is false.
-            final String propName = "jmx.remote.x.mlet.allow.getMBeansFromURL";
-            GetPropertyAction propAction = new GetPropertyAction(propName);
-            @SuppressWarnings("removal")
-            String propValue = AccessController.doPrivileged(propAction);
-            boolean allowGetMBeansFromURL = "true".equalsIgnoreCase(propValue);
-            if (!allowGetMBeansFromURL) {
-                throw new SecurityException("Access denied! MLet method " +
-                        "getMBeansFromURL cannot be invoked unless a " +
-                        "security manager is installed or the system property " +
-                        "-Djmx.remote.x.mlet.allow.getMBeansFromURL=true " +
-                        "is specified.");
-            }
-        }
+                                        "is forbidden.");
     }
 
     //------------------

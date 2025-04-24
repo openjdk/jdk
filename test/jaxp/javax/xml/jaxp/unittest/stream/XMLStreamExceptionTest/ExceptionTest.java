@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,14 @@ import java.io.IOException;
 import javax.xml.stream.XMLStreamException;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamExceptionTest.ExceptionTest
  * @run testng/othervm stream.XMLStreamExceptionTest.ExceptionTest
  * @summary Test XMLStreamException contains the message of the wrapped exception.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class ExceptionTest {
 
     @Test

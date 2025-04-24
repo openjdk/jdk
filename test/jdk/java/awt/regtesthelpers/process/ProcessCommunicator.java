@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.io.*;
  *  behavior such as DnD data transfer, Clipboard data transfer, focus
  *  transfer etc., you could use the next scenario:
  *
- *  1. Write an implementation for the parent JVM, using applet test.
+ *  1. Write an implementation for the parent JVM
  *  2. Write an implementation for the child JVM or native application, using
  *     main() function.
  *  3. Execute child process using  ProcessCommunicator.executeChildProcess()
@@ -152,7 +152,6 @@ public class ProcessCommunicator {
     {
         StringBuilder commandBuilder = new StringBuilder();
         commandBuilder.append(javaPath).append(" ");
-        commandBuilder.append("-Djava.security.manager=allow ");
         commandBuilder.append("-cp ").append(System.getProperty("test.classes", ".")).append(File.pathSeparatorChar);
 
         if (classPathArguments.trim().length() > 0) {

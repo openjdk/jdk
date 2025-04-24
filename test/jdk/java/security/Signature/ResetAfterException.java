@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,12 @@
 /**
  * @test
  * @bug 8149802
+ * @library /test/lib
  * @summary Ensure that Signature objects are reset after verification errored out.
  */
 import java.util.Arrays;
 import java.security.*;
+import jdk.test.lib.security.SecurityUtils;
 
 public class ResetAfterException {
 
@@ -51,18 +53,19 @@ public class ResetAfterException {
             boolean res = true;
             System.out.println("Testing Provider: " + p.getName());
             KeyPairGenerator keyGen = null;
+            String kpgAlgorithm = "RSA";
             try {
                 // It's possible that some provider, e.g. SunMSCAPI,
                 // doesn't work well with keys from other providers
                 // so we use the same provider to generate key first
-                keyGen = KeyPairGenerator.getInstance("RSA", p);
+                keyGen = KeyPairGenerator.getInstance(kpgAlgorithm, p);
             } catch (NoSuchAlgorithmException nsae) {
-                keyGen = KeyPairGenerator.getInstance("RSA");
+                keyGen = KeyPairGenerator.getInstance(kpgAlgorithm);
             }
             if (keyGen == null) {
                 throw new RuntimeException("Error: No support for RSA KeyPairGenerator");
             }
-            keyGen.initialize(1024);
+            keyGen.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
             KeyPair keyPair = keyGen.generateKeyPair();
 
             sig.initSign(keyPair.getPrivate());

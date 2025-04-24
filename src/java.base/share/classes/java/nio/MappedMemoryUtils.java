@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package java.nio;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+
+import jdk.internal.access.foreign.MappedMemoryUtilsProxy;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.Unsafe;
 
@@ -98,13 +100,13 @@ import jdk.internal.misc.Unsafe;
             long offset = mappingOffset(address, index);
             long mappingAddress = mappingAddress(address, offset, index);
             long mappingLength = mappingLength(offset, length);
-            long comp = Blocker.begin();
+            boolean attempted = Blocker.begin();
             try {
                 force0(fd, mappingAddress, mappingLength);
             } catch (IOException cause) {
                 throw new UncheckedIOException(cause);
             } finally {
-                Blocker.end(comp);
+                Blocker.end(attempted);
             }
         }
     }
@@ -115,6 +117,17 @@ import jdk.internal.misc.Unsafe;
     private static native void load0(long address, long length);
     private static native void unload0(long address, long length);
     private static native void force0(FileDescriptor fd, long address, long length) throws IOException;
+
+    /* Register the natives via the static initializer.
+     *
+     * This is required, as these native methods are "scoped methods" (see ScopedMemoryAccess).
+     * As such, it's better not to end up doing a full JNI lookup while in a scoped method context,
+     * as that will make the stack trace too deep.
+     */
+    private static native void registerNatives();
+    static {
+        registerNatives();
+    }
 
     // utility methods
 
@@ -164,4 +177,26 @@ import jdk.internal.misc.Unsafe;
         // pageSize must be a power of 2
         return address & ~(pageSize - 1);
     }
+
+    static final MappedMemoryUtilsProxy PROXY = new MappedMemoryUtilsProxy() {
+        @Override
+        public boolean isLoaded(long address, boolean isSync, long size) {
+            return MappedMemoryUtils.isLoaded(address, isSync, size);
+        }
+
+        @Override
+        public void load(long address, boolean isSync, long size) {
+            MappedMemoryUtils.load(address, isSync, size);
+        }
+
+        @Override
+        public void unload(long address, boolean isSync, long size) {
+            MappedMemoryUtils.unload(address, isSync, size);
+        }
+
+        @Override
+        public void force(FileDescriptor fd, long address, boolean isSync, long index, long length) {
+            MappedMemoryUtils.force(fd, address, isSync, index, length);
+        }
+    };
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/instrumentation/jfrJvmtiAgent.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/jni/jfrUpcalls.hpp"
@@ -103,7 +102,7 @@ static jclass* create_classes_array(jint classes_count, TRAPS) {
   if (nullptr == classes) {
     char error_buffer[ERROR_MSG_BUFFER_SIZE];
     jio_snprintf(error_buffer, ERROR_MSG_BUFFER_SIZE,
-      "Thread local allocation (native) of " SIZE_FORMAT " bytes failed "
+      "Thread local allocation (native) of %zu bytes failed "
       "in retransform classes", sizeof(jclass) * classes_count);
     log_error(jfr, system)("%s", error_buffer);
     JfrJavaSupport::throw_out_of_memory_error(error_buffer, CHECK_NULL);
@@ -133,7 +132,7 @@ static void log_and_throw(jvmtiError error, TRAPS) {
 
 static void check_exception_and_log(JNIEnv* env, TRAPS) {
   assert(env != nullptr, "invariant");
-  if (env->ExceptionOccurred()) {
+  if (env->ExceptionCheck()) {
     // array index out of bound
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(THREAD));
     ThreadInVMfromNative tvmfn(THREAD);
@@ -156,6 +155,8 @@ void JfrJvmtiAgent::retransform_classes(JNIEnv* env, jobjectArray classes_array,
     return;
   }
   ResourceMark rm(THREAD);
+  // WXWrite is needed before entering the vm below and in callee methods.
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, THREAD));
   jclass* const classes = create_classes_array(classes_count, CHECK);
   assert(classes != nullptr, "invariant");
   for (jint i = 0; i < classes_count; i++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,11 +54,6 @@ class PhaseCFG;
 #define DEBUG_ARG(x)
 #endif
 
-// Define the initial sizes for allocation of the resizable code buffer
-enum {
-  initial_const_capacity =   4 * 1024
-};
-
 class BufferSizingData {
 public:
   int _stub;
@@ -77,7 +72,6 @@ public:
 class PhaseOutput : public Phase {
 private:
   // Instruction bits passed off to the VM
-  int                    _method_size;           // Size of nmethod code segment in bytes
   CodeBuffer             _code_buffer;           // Where the code is assembled
   int                    _first_block_size;      // Size of unvalidated entry point code / OSR poison code
   ExceptionHandlerTable  _handler_table;         // Table of native-code exception handlers
@@ -122,8 +116,7 @@ public:
                     int               entry_bci,
                     AbstractCompiler* compiler,
                     bool              has_unsafe_access,
-                    bool              has_wide_vectors,
-                    RTMState          rtm_state);
+                    bool              has_wide_vectors);
 
   void install_stub(const char* stub_name);
 
@@ -154,7 +147,7 @@ public:
   CodeBuffer* init_buffer();
 
   // Write out basic block data to code buffer
-  void fill_buffer(CodeBuffer* cb, uint* blk_starts);
+  void fill_buffer(C2_MacroAssembler* masm, uint* blk_starts);
 
   // Compute the information for the exception tables
   void FillExceptionTables(uint cnt, uint *call_returns, uint *inct_starts, Label *blk_labels);
@@ -166,7 +159,6 @@ public:
   void install();
 
   // Instruction bits passed off to the VM
-  int               code_size()                 { return _method_size; }
   CodeBuffer*       code_buffer()               { return &_code_buffer; }
   int               first_block_size()          { return _first_block_size; }
   void              set_frame_complete(int off) { if (!in_scratch_emit_size()) { _code_offsets.set_value(CodeOffsets::Frame_Complete, off); } }
@@ -211,6 +203,9 @@ public:
 
   bool starts_bundle(const Node *n) const;
   bool contains_as_owner(GrowableArray<MonitorValue*> *monarray, ObjectValue *ov) const;
+  bool contains_as_scalarized_obj(JVMState* jvms, MachSafePointNode* sfn,
+                                  GrowableArray<ScopeValue*>* objs,
+                                  ObjectValue* ov) const;
 
   // Dump formatted assembly
 #if defined(SUPPORT_OPTO_ASSEMBLY)

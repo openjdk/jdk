@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,9 +222,9 @@ public final class CRC32C implements Checksum {
         if (end - off >= 8 && Unsafe.ARRAY_BYTE_INDEX_SCALE == 1) {
 
             // align on 8 bytes
-            int alignLength
+            long alignLength
                     = (8 - ((Unsafe.ARRAY_BYTE_BASE_OFFSET + off) & 0x7)) & 0x7;
-            for (int alignEnd = off + alignLength; off < alignEnd; off++) {
+            for (long alignEnd = off + alignLength; off < alignEnd; off++) {
                 crc = (crc >>> 8) ^ byteTable[(crc ^ b[off]) & 0xFF];
             }
 
@@ -238,11 +238,11 @@ public final class CRC32C implements Checksum {
                 int secondHalf;
                 if (Unsafe.ADDRESS_SIZE == 4) {
                     // On 32 bit platforms read two ints instead of a single 64bit long
-                    firstHalf = UNSAFE.getInt(b, (long)Unsafe.ARRAY_BYTE_BASE_OFFSET + off);
-                    secondHalf = UNSAFE.getInt(b, (long)Unsafe.ARRAY_BYTE_BASE_OFFSET + off
+                    firstHalf = UNSAFE.getInt(b, Unsafe.ARRAY_BYTE_BASE_OFFSET + off);
+                    secondHalf = UNSAFE.getInt(b, Unsafe.ARRAY_BYTE_BASE_OFFSET + off
                                                + Integer.BYTES);
                 } else {
-                    long value = UNSAFE.getLong(b, (long)Unsafe.ARRAY_BYTE_BASE_OFFSET + off);
+                    long value = UNSAFE.getLong(b, Unsafe.ARRAY_BYTE_BASE_OFFSET + off);
                     if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
                         firstHalf = (int) value;
                         secondHalf = (int) (value >>> 32);

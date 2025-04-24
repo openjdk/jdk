@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,19 +40,17 @@ import java.net.StandardProtocolFamily;
 import java.net.StandardSocketOptions;
 import java.net.UnknownHostException;
 import java.nio.channels.AlreadyBoundException;
+import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetBoundException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.UnresolvedAddressException;
 import java.nio.channels.UnsupportedAddressTypeException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Enumeration;
 import java.util.Objects;
 
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
-import sun.security.action.GetPropertyAction;
 
 public class Net {
     private Net() { }
@@ -169,6 +167,8 @@ public class Net {
             nx = newSocketException("Socket is not connected");
         else if (x instanceof AlreadyBoundException)
             nx = newSocketException("Already bound");
+        else if (x instanceof AlreadyConnectedException)
+            nx = newSocketException("Already connected");
         else if (x instanceof NotYetBoundException)
             nx = newSocketException("Socket is not bound yet");
         else if (x instanceof UnsupportedAddressTypeException)
@@ -193,58 +193,10 @@ public class Net {
         return new SocketException(msg);
     }
 
-    static void translateException(Exception x,
-                                   boolean unknownHostForUnresolved)
-        throws IOException
-    {
+    static void translateException(Exception x) throws IOException {
         if (x instanceof IOException ioe)
             throw ioe;
-        // Throw UnknownHostException from here since it cannot
-        // be thrown as a SocketException
-        if (unknownHostForUnresolved &&
-            (x instanceof UnresolvedAddressException))
-        {
-             throw new UnknownHostException();
-        }
         translateToSocketException(x);
-    }
-
-    static void translateException(Exception x)
-        throws IOException
-    {
-        translateException(x, false);
-    }
-
-    /**
-     * Returns the local address after performing a SecurityManager#checkConnect.
-     */
-    static InetSocketAddress getRevealedLocalAddress(SocketAddress sa) {
-        InetSocketAddress isa = (InetSocketAddress) sa;
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (isa != null && sm != null) {
-            try {
-                sm.checkConnect(isa.getAddress().getHostAddress(), -1);
-            } catch (SecurityException e) {
-                // Return loopback address only if security check fails
-                isa = getLoopbackAddress(isa.getPort());
-            }
-        }
-        return isa;
-    }
-
-    @SuppressWarnings("removal")
-    static String getRevealedLocalAddressAsString(SocketAddress sa) {
-        InetSocketAddress isa = (InetSocketAddress) sa;
-        if (System.getSecurityManager() == null) {
-            return isa.toString();
-        } else {
-            return getLoopbackAddress(isa.getPort()).toString();
-        }
-    }
-
-    private static InetSocketAddress getLoopbackAddress(int port) {
-        return new InetSocketAddress(InetAddress.getLoopbackAddress(), port);
     }
 
     private static final InetAddress ANY_LOCAL_INET4ADDRESS;
@@ -302,20 +254,15 @@ public class Net {
      * Returns any IPv4 address of the given network interface, or
      * null if the interface does not have any IPv4 addresses.
      */
-    @SuppressWarnings("removal")
     static Inet4Address anyInet4Address(final NetworkInterface interf) {
-        return AccessController.doPrivileged(new PrivilegedAction<Inet4Address>() {
-            public Inet4Address run() {
-                Enumeration<InetAddress> addrs = interf.getInetAddresses();
-                while (addrs.hasMoreElements()) {
-                    InetAddress addr = addrs.nextElement();
-                    if (addr instanceof Inet4Address inet4Address) {
-                        return inet4Address;
-                    }
-                }
-                return null;
+        Enumeration<InetAddress> addrs = interf.getInetAddresses();
+        while (addrs.hasMoreElements()) {
+            InetAddress addr = addrs.nextElement();
+            if (addr instanceof Inet4Address inet4Address) {
+                return inet4Address;
             }
-        });
+        }
+        return null;
     }
 
     /**
@@ -500,8 +447,7 @@ public class Net {
     }
 
     private static boolean isFastTcpLoopbackRequested() {
-        String loopbackProp = GetPropertyAction
-                .privilegedGetProperty("jdk.net.useFastTcpLoopback", "false");
+        String loopbackProp = System.getProperty("jdk.net.useFastTcpLoopback", "false");
         return loopbackProp.isEmpty() || Boolean.parseBoolean(loopbackProp);
     }
 
@@ -827,8 +773,7 @@ public class Net {
     static {
         int availLevel = isExclusiveBindAvailable();
         if (availLevel >= 0) {
-            String exclBindProp = GetPropertyAction
-                    .privilegedGetProperty("sun.net.useExclusiveBind");
+            String exclBindProp = System.getProperty("sun.net.useExclusiveBind");
             if (exclBindProp != null) {
                 EXCLUSIVE_BIND = exclBindProp.isEmpty() || Boolean.parseBoolean(exclBindProp);
             } else {

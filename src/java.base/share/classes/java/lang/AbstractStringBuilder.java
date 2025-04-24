@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.lang;
 
 import jdk.internal.math.DoubleToDecimal;
 import jdk.internal.math.FloatToDecimal;
+import jdk.internal.util.DecimalDigits;
 
 import java.io.IOException;
 import java.nio.CharBuffer;
@@ -836,12 +837,12 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     public AbstractStringBuilder append(int i) {
         int count = this.count;
-        int spaceNeeded = count + Integer.stringSize(i);
+        int spaceNeeded = count + DecimalDigits.stringSize(i);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
-            StringLatin1.getChars(i, spaceNeeded, value);
+            DecimalDigits.getCharsLatin1(i, spaceNeeded, value);
         } else {
-            StringUTF16.getChars(i, count, spaceNeeded, value);
+            DecimalDigits.getCharsUTF16(i, spaceNeeded, value);
         }
         this.count = spaceNeeded;
         return this;
@@ -861,12 +862,12 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     public AbstractStringBuilder append(long l) {
         int count = this.count;
-        int spaceNeeded = count + Long.stringSize(l);
+        int spaceNeeded = count + DecimalDigits.stringSize(l);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
-            StringLatin1.getChars(l, spaceNeeded, value);
+            DecimalDigits.getCharsLatin1(l, spaceNeeded, value);
         } else {
-            StringUTF16.getChars(l, count, spaceNeeded, value);
+            DecimalDigits.getCharsUTF16(l, spaceNeeded, value);
         }
         this.count = spaceNeeded;
         return this;
@@ -885,13 +886,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(float f) {
-        try {
-            FloatToDecimal.appendTo(f, this);
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
+        ensureCapacityInternal(count + FloatToDecimal.MAX_CHARS);
+        FloatToDecimal toDecimal = isLatin1() ? FloatToDecimal.LATIN1 : FloatToDecimal.UTF16;
+        count = toDecimal.putDecimal(value, count, f);
         return this;
-
     }
 
     /**
@@ -907,11 +905,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(double d) {
-        try {
-            DoubleToDecimal.appendTo(d, this);
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
+        ensureCapacityInternal(count + DoubleToDecimal.MAX_CHARS);
+        DoubleToDecimal toDecimal = isLatin1() ? DoubleToDecimal.LATIN1 : DoubleToDecimal.UTF16;
+        count = toDecimal.putDecimal(value, count, d);
         return this;
     }
 
@@ -1031,13 +1027,13 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
-     * Returns a new {@code String} that contains a subsequence of
+     * Returns a {@code String} that contains a subsequence of
      * characters currently contained in this character sequence. The
      * substring begins at the specified index and extends to the end of
      * this sequence.
      *
      * @param      start    The beginning index, inclusive.
-     * @return     The new string.
+     * @return     A string containing the specified subsequence of characters.
      * @throws     StringIndexOutOfBoundsException  if {@code start} is
      *             less than zero, or greater than the length of this object.
      */
@@ -1046,7 +1042,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
-     * Returns a new character sequence that is a subsequence of this sequence.
+     * Returns a character sequence that is a subsequence of this sequence.
      *
      * <p> An invocation of this method of the form
      *
@@ -1076,14 +1072,14 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     /**
-     * Returns a new {@code String} that contains a subsequence of
+     * Returns a {@code String} that contains a subsequence of
      * characters currently contained in this sequence. The
      * substring begins at the specified {@code start} and
      * extends to the character at index {@code end - 1}.
      *
      * @param      start    The beginning index, inclusive.
      * @param      end      The ending index, exclusive.
-     * @return     The new string.
+     * @return     A string containing the specified subsequence of characters.
      * @throws     StringIndexOutOfBoundsException  if {@code start}
      *             or {@code end} are negative or greater than
      *             {@code length()}, or {@code start} is
@@ -1606,11 +1602,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
 
     /**
      * Returns a string representing the data in this sequence.
-     * A new {@code String} object is allocated and initialized to
-     * contain the character sequence currently represented by this
-     * object. This {@code String} is then returned. Subsequent
+     * The {@code String} object that is returned contains the character
+     * sequence currently represented by this object. Subsequent
      * changes to this sequence do not affect the contents of the
-     * {@code String}.
+     * returned {@code String}.
      *
      * @return  a string representation of this sequence of characters.
      */

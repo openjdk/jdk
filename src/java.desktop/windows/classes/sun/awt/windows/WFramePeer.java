@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,9 @@ import java.awt.GraphicsConfiguration;
 import java.awt.MenuBar;
 import java.awt.Rectangle;
 import java.awt.peer.FramePeer;
-import java.security.AccessController;
 
 import sun.awt.AWTAccessor;
 import sun.awt.im.InputMethodManager;
-import sun.security.action.GetPropertyAction;
 
 import static sun.java2d.SunGraphicsEnvironment.getGCDeviceBounds;
 import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
@@ -65,16 +63,23 @@ class WFramePeer extends WWindowPeer implements FramePeer {
         return AWTAccessor.getFrameAccessor().getExtendedState((Frame)target);
     }
 
+    @Override
+    public void toFront() {
+        int state = getState();
+        if ((state & Frame.ICONIFIED) != 0) {
+            setState(state & ~Frame.ICONIFIED);
+        }
+
+        super.toFront();
+    }
+
     // Convenience methods to save us from trouble of extracting
     // Rectangle fields in native code.
     private native void setMaximizedBounds(int x, int y, int w, int h);
     private native void clearMaximizedBounds();
 
-    @SuppressWarnings("removal")
     private static final boolean keepOnMinimize = "true".equals(
-        AccessController.doPrivileged(
-            new GetPropertyAction(
-            "sun.awt.keepWorkingSetOnMinimize")));
+            System.getProperty("sun.awt.keepWorkingSetOnMinimize"));
 
     @Override
     public final void setMaximizedBounds(Rectangle b) {

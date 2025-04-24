@@ -267,18 +267,10 @@ public class LocaleProviders {
             sdf.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
             String result = sdf.format(sampleDate);
             System.out.println(result);
-            if (LocaleProviderAdapter.getAdapterPreference()
-                .contains(LocaleProviderAdapter.Type.JRE)) {
-                if (!expected.equals(result)) {
-                    throw new RuntimeException("Format failed. result: \"" +
-                        result + "\", expected: \"" + expected);
-                }
-            } else {
-                // Windows display names. Subject to change if Windows changes its format.
-                if (!expected.equals(result)) {
-                    throw new RuntimeException("Format failed. result: \"" +
-                        result + "\", expected: \"" + expected);
-                }
+            // Windows display names. Subject to change if Windows changes its format.
+            if (!expected.equals(result)) {
+                throw new RuntimeException("Format failed. result: \"" +
+                    result + "\", expected: \"" + expected);
             }
         }
     }

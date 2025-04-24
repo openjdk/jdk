@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "memory/universe.hpp"
@@ -85,7 +84,7 @@ void JvmtiClassFileReconstituter::write_field_infos() {
     // JVMSpec|         attribute_info attributes[attributes_count];
     // JVMSpec|   }
 
-    write_u2(access_flags.get_flags() & JVM_RECOGNIZED_FIELD_MODIFIERS);
+    write_u2(access_flags.as_field_flags());
     write_u2(name_index);
     write_u2(signature_index);
     u2 attr_count = 0;
@@ -494,7 +493,6 @@ void JvmtiClassFileReconstituter::write_record_attribute() {
     RecordComponent* component = components->at(x);
     if (component->generic_signature_index() != 0) {
       length += 8; // Signature attribute size
-      assert(component->attributes_count() > 0, "Bad component attributes count");
     }
     if (component->annotations() != nullptr) {
       length += 6 + component->annotations()->length();
@@ -511,7 +509,11 @@ void JvmtiClassFileReconstituter::write_record_attribute() {
     RecordComponent* component = components->at(i);
     write_u2(component->name_index());
     write_u2(component->descriptor_index());
-    write_u2(component->attributes_count());
+    u2 attributes_count = (component->generic_signature_index() != 0 ? 1 : 0)
+                        + (component->annotations() != nullptr ? 1 : 0)
+                        + (component->type_annotations() != nullptr ? 1 : 0);
+
+    write_u2(attributes_count);
     if (component->generic_signature_index() != 0) {
       write_signature_attribute(component->generic_signature_index());
     }
@@ -701,7 +703,7 @@ void JvmtiClassFileReconstituter::write_method_info(const methodHandle& method) 
     return;
   }
 
-  write_u2(access_flags.get_flags() & JVM_RECOGNIZED_METHOD_MODIFIERS);
+  write_u2(access_flags.as_method_flags());
   write_u2(const_method->name_index());
   write_u2(const_method->signature_index());
 
@@ -916,7 +918,7 @@ void JvmtiClassFileReconstituter::write_class_file_format() {
   copy_cpool_bytes(writeable_address(cpool_size()));
 
   // JVMSpec|           u2 access_flags;
-  write_u2(ik()->access_flags().get_flags() & JVM_RECOGNIZED_CLASS_MODIFIERS);
+  write_u2(ik()->access_flags().as_class_flags());
 
   // JVMSpec|           u2 this_class;
   // JVMSpec|           u2 super_class;
@@ -1049,7 +1051,7 @@ void JvmtiClassFileReconstituter::copy_bytecodes(const methodHandle& mh,
         int pool_index;
         if (is_invokedynamic) {
           cpci = Bytes::get_native_u4(bcp+1);
-          pool_index = mh->constants()->resolved_indy_entry_at(mh->constants()->decode_invokedynamic_index(cpci))->constant_pool_index();
+          pool_index = mh->constants()->resolved_indy_entry_at(cpci)->constant_pool_index();
         } else {
           // cache cannot be pre-fetched since some classes won't have it yet
           pool_index = mh->constants()->resolved_method_entry_at(cpci)->constant_pool_index();

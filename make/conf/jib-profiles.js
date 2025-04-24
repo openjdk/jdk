@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,8 @@ var getJibProfiles = function (input) {
     // Exclude list to use when Jib creates a source bundle
     data.src_bundle_excludes = [
         "build", "{,**/}webrev*", "{,**/}.hg", "{,**/}JTwork*", "{,**/}JTreport*",
-        "{,**/}.git"
+        "{,**/}.git",
+        "{,**/}core.[0-9]*"
     ];
     // Include list to use when creating a minimal jib source bundle which
     // contains just the jib configuration files.
@@ -241,7 +242,7 @@ var getJibProfilesCommon = function (input, data) {
     // List of the main profile names used for iteration
     common.main_profile_names = [
         "linux-x64", "linux-x86", "macosx-x64", "macosx-aarch64",
-        "windows-x64", "windows-x86", "windows-aarch64",
+        "windows-x64", "windows-aarch64",
         "linux-aarch64", "linux-arm32", "linux-ppc64le", "linux-s390x",
         "linux-riscv64"
     ];
@@ -252,8 +253,8 @@ var getJibProfilesCommon = function (input, data) {
         default_make_targets: ["product-bundles", "test-bundles", "static-libs-bundles"],
         configure_args: concat(
             "--with-exclude-translations=es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
-            "--disable-manpages",
             "--disable-jvm-feature-shenandoahgc",
+            "--disable-cds-archive-coh",
             versionArgs(input, common))
     };
 
@@ -390,8 +391,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "21";
-    common.boot_jdk_build_number = "35";
+    common.boot_jdk_version = "24";
+    common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -415,7 +416,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64": {
             target_os: "linux",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc"],
+            dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc", "tidy"],
             configure_args: concat(
                 (input.build_cpu == "x64" ? common.configure_args_64bit
                  : "--openjdk-target=x86_64-linux-gnu"),
@@ -441,7 +442,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-x64": {
             target_os: "macosx",
             target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "pandoc"],
+            dependencies: ["devkit", "gtest", "graphviz", "pandoc", "tidy"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
                 "--with-macosx-version-max=11.00.00",
                 "--enable-compatible-cds-alignment",
@@ -453,7 +454,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-aarch64": {
             target_os: "macosx",
             target_cpu: "aarch64",
-            dependencies: ["devkit", "gtest", "pandoc"],
+            dependencies: ["devkit", "gtest", "graphviz", "pandoc", "tidy"],
             configure_args: concat(common.configure_args_64bit,
                 "--with-macosx-version-max=11.00.00"),
         },
@@ -463,15 +464,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x64",
             dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit),
-        },
-
-        "windows-x86": {
-            target_os: "windows",
-            target_cpu: "x86",
-            build_cpu: "x64",
-            dependencies: ["devkit", "gtest"],
-            configure_args: concat(common.configure_args_32bit,
-                "--enable-deprecated-ports"),
         },
 
         "windows-aarch64": {
@@ -486,7 +478,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-aarch64": {
             target_os: "linux",
             target_cpu: "aarch64",
-            dependencies: ["devkit", "gtest", "build_devkit", "pandoc"],
+            dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc", "tidy"],
             configure_args: [
                 "--with-zlib=system",
                 "--disable-dtrace",
@@ -716,10 +708,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             platform: "windows-x64",
             jdk_suffix: "zip",
         },
-        "windows-x86": {
-            platform: "windows-x86",
-            jdk_suffix: "zip",
-        },
         "windows-aarch64": {
             platform: "windows-aarch64",
             jdk_suffix: "zip",
@@ -793,7 +781,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
             dependencies: [
-                "boot_jdk", "devkit", "graphviz", "pandoc", buildJdkDep,
+                "autoconf", "boot_jdk", "devkit", "graphviz", "pandoc", buildJdkDep,
             ],
             configure_args: concat(
                 "--enable-full-docs",
@@ -957,7 +945,7 @@ var getJibProfilesProfiles = function (input, common, data) {
 
     // Profiles used to run tests using Jib for internal dependencies.
     var testedProfile = input.testedProfile;
-    if (testedProfile == null) {
+    if (testedProfile == null || testedProfile == "docs") {
         testedProfile = input.build_os + "-" + input.build_cpu;
     }
     var testedProfileJdk = testedProfile + ".jdk";
@@ -999,25 +987,38 @@ var getJibProfilesProfiles = function (input, common, data) {
         testOnlyProfilesPrebuilt["run-test-prebuilt"]["dependencies"].push(testedProfile + ".jdk_symbols");
     }
 
+    var testOnlyProfilesPrebuiltDocs = {
+        "run-test-prebuilt-docs": clone(testOnlyProfilesPrebuilt["run-test-prebuilt"])
+    };
+
+    testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].dependencies.push("docs.doc_api_spec", "tidy");
+    testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].environment["DOCS_JDK_IMAGE_DIR"]
+        = input.get("docs.doc_api_spec", "install_path");
+    testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].environment["TIDY"]
+        = input.get("tidy", "home_path") + "/bin/tidy";
+    testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"].labels = "test-docs";
+
     // If actually running the run-test-prebuilt profile, verify that the input
     // variable is valid and if so, add the appropriate target_* values from
     // the tested profile. Use testImageProfile value as backup.
-    if (input.profile == "run-test-prebuilt") {
+    if (input.profile == "run-test-prebuilt" || input.profile == "run-test-prebuilt-docs") {
         if (profiles[testedProfile] == null && profiles[testImageProfile] == null) {
             error("testedProfile is not defined: " + testedProfile + " " + testImageProfile);
         }
     }
-    if (profiles[testedProfile] != null) {
-        testOnlyProfilesPrebuilt["run-test-prebuilt"]["target_os"]
-            = profiles[testedProfile]["target_os"];
-        testOnlyProfilesPrebuilt["run-test-prebuilt"]["target_cpu"]
-            = profiles[testedProfile]["target_cpu"];
-    } else if (profiles[testImageProfile] != null) {
-        testOnlyProfilesPrebuilt["run-test-prebuilt"]["target_os"]
-            = profiles[testImageProfile]["target_os"];
-        testOnlyProfilesPrebuilt["run-test-prebuilt"]["target_cpu"]
-            = profiles[testImageProfile]["target_cpu"];
+    function updateProfileTargets(profiles, testedProfile, testImageProfile, targetProfile, runTestProfile) {
+        var profileToCheck = profiles[testedProfile] || profiles[testImageProfile];
+
+        if (profileToCheck != null) {
+            targetProfile[runTestProfile]["target_os"] = profileToCheck["target_os"];
+            targetProfile[runTestProfile]["target_cpu"] = profileToCheck["target_cpu"];
+        }
     }
+
+    updateProfileTargets(profiles, testedProfile, testImageProfile, testOnlyProfilesPrebuilt, "run-test-prebuilt");
+    updateProfileTargets(profiles, testedProfile, testImageProfile, testOnlyProfilesPrebuiltDocs, "run-test-prebuilt-docs");
+
+    profiles = concatObjects(profiles, testOnlyProfilesPrebuiltDocs);
     profiles = concatObjects(profiles, testOnlyProfilesPrebuilt);
 
     // On macosx add the devkit bin dir to the path in all the run-test profiles.
@@ -1067,6 +1068,8 @@ var getJibProfilesProfiles = function (input, common, data) {
         }
         profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"],
             runTestPrebuiltSrcFullExtra);
+        profiles["run-test-prebuilt-docs"] = concatObjects(profiles["run-test-prebuilt-docs"],
+            runTestPrebuiltSrcFullExtra);
     }
 
     // Generate the missing platform attributes
@@ -1085,14 +1088,14 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc13.2.0-OL6.4+1.0",
+        linux_x64: "gcc14.2.0-OL6.4+1.0",
         macosx: "Xcode14.3.1+1.0",
         windows_x64: "VS2022-17.6.5+1.0",
-        linux_aarch64: "gcc13.2.0-OL7.6+1.0",
+        linux_aarch64: "gcc14.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
-        linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
-        linux_s390x: "gcc8.2.0-Fedora27+1.0",
-        linux_riscv64: "gcc11.3.0-Fedora_rawhide_68692+1.1"
+        linux_ppc64le: "gcc14.2.0-Fedora_41+1.0",
+        linux_s390x: "gcc14.2.0-Fedora_41+1.0",
+        linux_riscv64: "gcc14.2.0-Fedora_41+1.0"
     };
 
     var devkit_platform = (input.target_cpu == "x86"
@@ -1181,18 +1184,12 @@ var getJibProfilesDependencies = function (input, common) {
             revision: (input.build_cpu == "x64" ? "Xcode11.3.1-MacOSX10.15+1.2" : devkit_platform_revisions[devkit_platform])
         },
 
-        cups: {
-            organization: common.organization,
-            ext: "tar.gz",
-            revision: "1.0118+1.0"
-        },
-
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "7.3.1",
+            version: "7.5.1",
             build_number: "1",
-            file: "bundles/jtreg-7.3.1+1.zip",
+            file: "bundles/jtreg-7.5.1+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1205,9 +1202,11 @@ var getJibProfilesDependencies = function (input, common) {
         },
 
         jcov: {
-            organization: common.organization,
-            revision: "3.0-16-jdk-asm+1.0",
-            ext: "zip",
+            server: "jpg",
+            product: "jcov",
+            version: "3.0",
+            build_number: "1",
+            file: "bundles/jcov-3.0+1.zip",
             environment_name: "JCOV_HOME",
         },
 
@@ -1237,8 +1236,8 @@ var getJibProfilesDependencies = function (input, common) {
         graphviz: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "2.38.0-1+1.1",
-            module: "graphviz-" + input.target_platform,
+            revision: "9.0.0+1.0",
+            module: "graphviz-" + input.build_platform,
             configure_args: "DOT=" + input.get("graphviz", "install_path") + "/dot",
             environment_path: input.get("graphviz", "install_path")
         },
@@ -1280,6 +1279,14 @@ var getJibProfilesDependencies = function (input, common) {
             module: "libffi-" + input.target_platform,
             ext: "tar.gz",
             revision: "3.4.2+1.0"
+        },
+        tidy: {
+            organization: common.organization,
+            ext: "tar.gz",
+            revision: "5.9.20+1",
+            environment_path: input.get("tidy", "home_path") + "/bin/tidy",
+            configure_args: "TIDY=" + input.get("tidy", "home_path") + "/bin/tidy",
+            module: "tidy-html-" + (input.target_os === "macosx" ? input.target_os : input.target_platform),
         },
     };
 

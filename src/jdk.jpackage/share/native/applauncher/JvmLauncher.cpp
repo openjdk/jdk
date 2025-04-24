@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,6 @@
 #include "FileUtils.h"
 #include "Toolbox.h"
 #include "ErrorHandling.h"
-
-#if defined(_WIN32) && !defined(_WIN64)
-#define LAUNCH_FUNC "_JLI_Launch@56"
-#else
-#define LAUNCH_FUNC "JLI_Launch"
-#endif
 
 Jvm::Jvm() {
     LOG_TRACE(tstrings::any() << "Jvm(" << this << ")::Jvm()");
@@ -206,7 +200,7 @@ void Jvm::launch() {
 
     LOG_TRACE(tstrings::any() << "JVM library: \"" << jvmPath << "\"");
 
-    DllFunction<void*> func(Dll(jvmPath), LAUNCH_FUNC);
+    DllFunction<void*> func(Dll(jvmPath), "JLI_Launch");
 
     int exitStatus = jvmLauncherStartJvm(jld.get(), func.operator void*());
 
@@ -265,7 +259,8 @@ private:
 
     int initJvmlLauncherData(JvmlLauncherData* ptr) const {
         // Store path to JLI library just behind JvmlLauncherData header.
-        char* curPtr = reinterpret_cast<char*>(ptr + 1);
+        JvmlLauncherData dummy;
+        char* curPtr = reinterpret_cast<char*>((ptr ? ptr : &dummy) + 1);
         {
             const size_t count = sizeof(char)
                     * (jliLibPath.size() + 1 /* trailing zero */);
@@ -310,7 +305,7 @@ private:
         curPtr = copyStrings(envVarValues, ptr,
                             offsetof(JvmlLauncherData, envVarValues), curPtr);
 
-        const size_t bufferSize = curPtr - reinterpret_cast<char*>(ptr);
+        const size_t bufferSize = curPtr - reinterpret_cast<char*>(ptr ? ptr : &dummy);
         if (ptr) {
             LOG_TRACE(tstrings::any() << "Initialized " << bufferSize
                                         << " bytes at " << ptr << " address");

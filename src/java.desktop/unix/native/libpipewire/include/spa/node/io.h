@@ -31,14 +31,16 @@ extern "C" {
 enum spa_io_type {
     SPA_IO_Invalid,
     SPA_IO_Buffers,        /**< area to exchange buffers, struct spa_io_buffers */
-    SPA_IO_Range,        /**< expected byte range, struct spa_io_range */
+    SPA_IO_Range,        /**< expected byte range, struct spa_io_range (currently not used in PipeWire) */
     SPA_IO_Clock,        /**< area to update clock information, struct spa_io_clock */
-    SPA_IO_Latency,        /**< latency reporting, struct spa_io_latency */
+    SPA_IO_Latency,        /**< latency reporting, struct spa_io_latency (currently not used in
+                  * PipeWire). \see spa_param_latency */
     SPA_IO_Control,        /**< area for control messages, struct spa_io_sequence */
     SPA_IO_Notify,        /**< area for notify messages, struct spa_io_sequence */
     SPA_IO_Position,    /**< position information in the graph, struct spa_io_position */
     SPA_IO_RateMatch,    /**< rate matching between nodes, struct spa_io_rate_match */
-    SPA_IO_Memory,        /**< memory pointer, struct spa_io_memory */
+    SPA_IO_Memory,        /**< memory pointer, struct spa_io_memory (currently not used in PipeWire) */
+    SPA_IO_AsyncBuffers,    /**< async area to exchange buffers, struct spa_io_async_buffers */
 };
 
 /**
@@ -108,29 +110,52 @@ struct spa_io_range {
  *
  * The clock counts the elapsed time according to the clock provider
  * since the provider was last started.
+ *
+ * Driver nodes are supposed to update the contents of \ref SPA_IO_Clock before
+ * signaling the start of a graph cycle.  These updated clock values become
+ * visible to other nodes in \ref SPA_IO_Position. Non-driver nodes do
+ * not need to update the contents of their \ref SPA_IO_Clock.
+ *
+ * The host generally gives each node a separate \ref spa_io_clock in \ref
+ * SPA_IO_Clock, so that updates made by the driver are not visible in the
+ * contents of \ref SPA_IO_Clock of other nodes. Instead, \ref SPA_IO_Position
+ * is used to look up the current graph time.
+ *
+ * A node is a driver when \ref spa_io_clock.id in \ref SPA_IO_Clock and
+ * \ref spa_io_position.clock.id in \ref SPA_IO_Position are the same.
  */
 struct spa_io_clock {
-#define SPA_IO_CLOCK_FLAG_FREEWHEEL (1u<<0)
-    uint32_t flags;            /**< clock flags */
-    uint32_t id;            /**< unique clock id, set by application */
-    char name[64];            /**< clock name prefixed with API, set by node. The clock name
-                      *  is unique per clock and can be used to check if nodes
-                      *  share the same clock. */
-    uint64_t nsec;            /**< time in nanoseconds against monotonic clock */
-    struct spa_fraction rate;    /**< rate for position/duration/delay */
-    uint64_t position;        /**< current position */
-    uint64_t duration;        /**< duration of current cycle */
-    int64_t delay;            /**< delay between position and hardware,
-                      *  positive for capture, negative for playback */
-    double rate_diff;        /**< rate difference between clock and monotonic time */
-    uint64_t next_nsec;        /**< estimated next wakeup time in nanoseconds */
+#define SPA_IO_CLOCK_FLAG_FREEWHEEL    (1u<<0) /* graph is freewheeling */
+#define SPA_IO_CLOCK_FLAG_XRUN_RECOVER    (1u<<1) /* recovering from xrun */
+#define SPA_IO_CLOCK_FLAG_LAZY        (1u<<2) /* lazy scheduling */
+#define SPA_IO_CLOCK_FLAG_NO_RATE    (1u<<3) /* the rate of the clock is only approximately.
+                         * it is recommended to use the nsec as a clock source.
+                         * The rate_diff contains the measured inaccuracy. */
+    uint32_t flags;            /**< Clock flags */
+    uint32_t id;            /**< Unique clock id, set by host application */
+    char name[64];            /**< Clock name prefixed with API, set by node when it receives
+                      *  \ref SPA_IO_Clock. The clock name is unique per clock and
+                      *  can be used to check if nodes share the same clock. */
+    uint64_t nsec;            /**< Time in nanoseconds against monotonic clock
+                      * (CLOCK_MONOTONIC). This fields reflects a real time instant
+                      * in the past. The value may have jitter. */
+    struct spa_fraction rate;    /**< Rate for position/duration/delay/xrun */
+    uint64_t position;        /**< Current position, in samples @ \ref rate */
+    uint64_t duration;        /**< Duration of current cycle, in samples @ \ref rate */
+    int64_t delay;            /**< Delay between position and hardware, in samples @ \ref rate */
+    double rate_diff;        /**< Rate difference between clock and monotonic time, as a ratio of
+                      *  clock speeds. */
+    uint64_t next_nsec;        /**< Estimated next wakeup time in nanoseconds.
+                      *  This time is a logical start time of the next cycle, and
+                      *  is not necessarily in the future.
+                      */
 
-    struct spa_fraction target_rate;    /**< target rate of next cycle */
-    uint64_t target_duration;        /**< target duration of next cycle */
-    uint32_t target_seq;            /**< seq counter. must be equal at start and
+    struct spa_fraction target_rate;    /**< Target rate of next cycle */
+    uint64_t target_duration;        /**< Target duration of next cycle */
+    uint32_t target_seq;            /**< Seq counter. must be equal at start and
                           *  end of read and lower bit must be 0 */
-
-    uint32_t padding[3];
+    uint32_t cycle;            /**< incremented each time the graph is started */
+    uint64_t xrun;            /**< Estimated accumulated xrun duration */
 };
 
 /* the size of the video in this cycle */
@@ -145,7 +170,11 @@ struct spa_io_video_size {
     uint32_t padding[4];
 };
 
-/** latency reporting */
+/**
+ * Latency reporting
+ *
+ * Currently not used in PipeWire. Instead, \see spa_param_latency
+ */
 struct spa_io_latency {
     struct spa_fraction rate;    /**< rate for min/max */
     uint64_t min;            /**< min latency */
@@ -166,7 +195,9 @@ struct spa_io_segment_bar {
     float signature_denom;        /**< time signature denominator */
     double bpm;            /**< beats per minute */
     double beat;            /**< current beat in segment */
-    uint32_t padding[8];
+    double bar_start_tick;
+    double ticks_per_beat;
+    uint32_t padding[4];
 };
 
 /** video frame segment */
@@ -245,8 +276,13 @@ enum spa_io_position_state {
 /**
  * The position information adds extra meaning to the raw clock times.
  *
- * It is set on all nodes and the clock id will contain the clock of the
- * driving node in the graph.
+ * It is set on all nodes in \ref SPA_IO_Position, and the contents of \ref
+ * spa_io_position.clock contain the clock updates made by the driving node in
+ * the graph in its \ref SPA_IO_Clock.  Also, \ref spa_io_position.clock.id
+ * will contain the clock id of the driving node in the graph.
+ *
+ * The position clock indicates the logical start time of the current graph
+ * cycle.
  *
  * The position information contains 1 or more segments that convert the
  * raw clock times to a stream time. They are sorted based on their
@@ -269,14 +305,56 @@ struct spa_io_position {
     struct spa_io_segment segments[SPA_IO_POSITION_MAX_SEGMENTS];    /**< segments */
 };
 
-/** rate matching */
+/**
+ * Rate matching.
+ *
+ * It is usually set on the nodes that process resampled data, by
+ * the component (audioadapter) that handles resampling between graph
+ * and node rates. The \a flags and \a rate fields may be modified by the node.
+ *
+ * The node can request a correction to the resampling rate in its process(), by setting
+ * \ref SPA_IO_RATE_MATCH_ACTIVE on \a flags, and setting \a rate to the desired rate
+ * correction.  Usually the rate is obtained from DLL or other adaptive mechanism that
+ * e.g. drives the node buffer fill level toward a specific value.
+ *
+ * When resampling to (graph->node) direction, the number of samples produced
+ * by the resampler varies on each cycle, as the rates are not commensurate.
+ *
+ * When resampling to (node->graph) direction, the number of samples consumed by the
+ * resampler varies. Node output ports in process() should produce \a size number of
+ * samples to match what the resampler needs to produce one graph quantum of output
+ * samples.
+ *
+ * Resampling filters introduce processing delay, given by \a delay and \a delay_frac, in
+ * samples at node rate. The delay varies on each cycle e.g. when resampling between
+ * noncommensurate rates.
+ *
+ * The first sample output (graph->node) or consumed (node->graph) by the resampler is
+ * offset by \a delay + \a delay_frac / 1e9 node samples relative to the nominal graph
+ * cycle start position:
+ *
+ * \code{.unparsed}
+ * first_resampled_sample_nsec =
+ *    first_original_sample_nsec
+ *    - (rate_match->delay * SPA_NSEC_PER_SEC + rate_match->delay_frac) / node_rate
+ * \endcode
+ */
 struct spa_io_rate_match {
-    uint32_t delay;            /**< extra delay in samples for resampler */
+    uint32_t delay;            /**< resampling delay, in samples at
+                     * node rate */
     uint32_t size;            /**< requested input size for resampler */
-    double rate;            /**< rate for resampler */
+    double rate;            /**< rate for resampler (set by node) */
 #define SPA_IO_RATE_MATCH_FLAG_ACTIVE    (1 << 0)
-    uint32_t flags;            /**< extra flags */
-    uint32_t padding[7];
+    uint32_t flags;            /**< extra flags (set by node) */
+    int32_t delay_frac;        /**< resampling delay fractional part,
+                     * in units of nanosamples (1/10^9 sample) at node rate */
+    uint32_t padding[6];
+};
+
+/** async buffers */
+struct spa_io_async_buffers {
+    struct spa_io_buffers buffers[2];    /**< async buffers, writers write to current (cycle+1)&1,
+                          *  readers read from (cycle)&1 */
 };
 
 /**

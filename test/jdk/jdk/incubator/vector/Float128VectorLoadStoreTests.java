@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
 
 /*
  * @test
+ * @key randomness
+ *
+ * @library /test/lib
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
  * @run testng/othervm -XX:-TieredCompilation Float128VectorLoadStoreTests
  *
@@ -248,7 +251,8 @@ public class Float128VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static FloatVector fromArray(float[] a, int i) {
-        return FloatVector.fromArray(SPECIES, a, i);
+        // Tests the species method and the equivalent vector method it defers to
+        return (FloatVector) SPECIES.fromArray(a, i);
     }
 
     @DontInline
@@ -268,7 +272,8 @@ public class Float128VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static FloatVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
-        return FloatVector.fromMemorySegment(SPECIES, a, i, bo);
+        // Tests the species method and the equivalent vector method it defers to
+        return (FloatVector) SPECIES.fromMemorySegment(a, i, bo);
     }
 
     @DontInline

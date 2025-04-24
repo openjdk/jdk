@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,8 @@ import static jdk.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
+import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.XmlUtils;
 
 /**
  * Helper to create files for desktop integration.
@@ -119,7 +121,7 @@ final class DesktopIntegration extends ShellCustomAction {
         if (withDesktopFile) {
             desktopFile = new DesktopFile(desktopFileName);
             iconFile = new DesktopFile(escapedAppFileName
-                    + IOUtils.getSuffix(Path.of(DEFAULT_ICON)));
+                    + PathUtils.getSuffix(Path.of(DEFAULT_ICON)));
 
             if (curIconResource == null) {
                 // Create default icon.
@@ -420,7 +422,7 @@ final class DesktopIntegration extends ShellCustomAction {
     }
 
     private void createFileAssociationsMimeInfoFile() throws IOException {
-        IOUtils.createXml(mimeInfoFile.srcPath(), xml -> {
+        XmlUtils.createXml(mimeInfoFile.srcPath(), xml -> {
             xml.writeStartElement("mime-info");
             xml.writeDefaultNamespace(
                     "http://www.freedesktop.org/standards/shared-mime-info");
@@ -451,7 +453,7 @@ final class DesktopIntegration extends ShellCustomAction {
 
                 // Create icon name for mime type from mime type.
                 DesktopFile faIconFile = new DesktopFile(mimeType.replace(
-                        File.separatorChar, '-') + IOUtils.getSuffix(
+                        File.separatorChar, '-') + PathUtils.getSuffix(
                                 assoc.data.iconPath));
 
                 IOUtils.copyFile(assoc.data.iconPath,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,8 @@ JNIEXPORT void JNICALL
 Java_java_util_zip_Inflater_initIDs(JNIEnv *env, jclass cls)
 {
     inputConsumedID = (*env)->GetFieldID(env, cls, "inputConsumed", "I");
-    outputConsumedID = (*env)->GetFieldID(env, cls, "outputConsumed", "I");
     CHECK_NULL(inputConsumedID);
+    outputConsumedID = (*env)->GetFieldID(env, cls, "outputConsumed", "I");
     CHECK_NULL(outputConsumedID);
 }
 
@@ -194,14 +194,14 @@ Java_java_util_zip_Inflater_inflateBytesBytes(JNIEnv *env, jobject this, jlong a
     jlong retVal;
 
     if (input == NULL) {
-        if (inputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
+        if (inputLen != 0 && !(*env)->ExceptionCheck(env))
             JNU_ThrowOutOfMemoryError(env, 0);
         return 0L;
     }
     output = (*env)->GetPrimitiveArrayCritical(env, outputArray, 0);
     if (output == NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, inputArray, input, 0);
-        if (outputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
+        if (outputLen != 0 && !(*env)->ExceptionCheck(env))
             JNU_ThrowOutOfMemoryError(env, 0);
         return 0L;
     }
@@ -227,7 +227,7 @@ Java_java_util_zip_Inflater_inflateBytesBuffer(JNIEnv *env, jobject this, jlong 
     jlong retVal;
 
     if (input == NULL) {
-        if (inputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
+        if (inputLen != 0 && !(*env)->ExceptionCheck(env))
             JNU_ThrowOutOfMemoryError(env, 0);
         return 0L;
     }
@@ -252,7 +252,7 @@ Java_java_util_zip_Inflater_inflateBufferBytes(JNIEnv *env, jobject this, jlong 
     jlong retVal;
 
     if (output == NULL) {
-        if (outputLen != 0 && (*env)->ExceptionOccurred(env) == NULL)
+        if (outputLen != 0 && !(*env)->ExceptionCheck(env))
             JNU_ThrowOutOfMemoryError(env, 0);
         return 0L;
     }

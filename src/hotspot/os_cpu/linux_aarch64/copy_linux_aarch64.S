@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, Linaro Ltd. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +22,8 @@
  * questions.
  *
  */
-        .global _Copy_conjoint_words
-        .global _Copy_disjoint_words
+
+#include "defs.S.inc"
 
 s       .req    x0
 d       .req    x1
@@ -37,7 +38,7 @@ t6      .req    x9
 t7      .req    x10
 
         .align  6
-_Copy_disjoint_words:
+DECLARE_FUNC(_Copy_disjoint_words):
         // Ensure 2 word aligned
         tbz     s, #3, fwd_copy_aligned
         ldr     t0, [s], #8
@@ -82,29 +83,41 @@ fwd_copy_drain:
         br      t0
 
         .align  5
-        ret                             // -8 == 0 words
+        // -8 == 0 words
+        hint    #0x24 // bti j
+        ret
         .align  5
-        ldr     t0, [s, #16]            // -7 == 1 word
+        // -7 == 1 word
+        hint    #0x24 // bti j
+        ldr     t0, [s, #16]
         str     t0, [d, #16]
         ret
         .align  5
-        ldp     t0, t1, [s, #16]        // -6 = 2 words
+        // -6 == 2 words
+        hint    #0x24 // bti j
+        ldp     t0, t1, [s, #16]
         stp     t0, t1, [d, #16]
         ret
         .align  5
-        ldp     t0, t1, [s, #16]        // -5 = 3 words
+        // -5 == 3 words
+        hint    #0x24 // bti j
+        ldp     t0, t1, [s, #16]
         ldr     t2, [s, #32]
         stp     t0, t1, [d, #16]
         str     t2, [d, #32]
         ret
         .align  5
-        ldp     t0, t1, [s, #16]        // -4 = 4 words
+        // -4 == 4 words
+        hint    #0x24 // bti j
+        ldp     t0, t1, [s, #16]
         ldp     t2, t3, [s, #32]
         stp     t0, t1, [d, #16]
         stp     t2, t3, [d, #32]
         ret
         .align  5
-        ldp     t0, t1, [s, #16]        // -3 = 5 words
+        // -3 == 5 words
+        hint    #0x24 // bti j
+        ldp     t0, t1, [s, #16]
         ldp     t2, t3, [s, #32]
         ldr     t4, [s, #48]
         stp     t0, t1, [d, #16]
@@ -112,7 +125,9 @@ fwd_copy_drain:
         str     t4, [d, #48]
         ret
         .align  5
-        ldp     t0, t1, [s, #16]        // -2 = 6 words
+        // -2 == 6 words
+        hint    #0x24 // bti j
+        ldp     t0, t1, [s, #16]
         ldp     t2, t3, [s, #32]
         ldp     t4, t5, [s, #48]
         stp     t0, t1, [d, #16]
@@ -120,22 +135,24 @@ fwd_copy_drain:
         stp     t4, t5, [d, #48]
         ret
         .align  5
-        ldp     t0, t1, [s, #16]        // -1 = 7 words
+        // -1 == 7 words
+        hint    #0x24 // bti j
+        ldp     t0, t1, [s, #16]
         ldp     t2, t3, [s, #32]
         ldp     t4, t5, [s, #48]
         ldr     t6, [s, #64]
         stp     t0, t1, [d, #16]
         stp     t2, t3, [d, #32]
         stp     t4, t5, [d, #48]
-        str     t6, [d, #64]
-        // Is always aligned here, code for 7 words is one instruction
+        // Is always aligned here, code for 7 words is two instructions
         // too large so it just falls through.
         .align  5
 0:
+        str     t6, [d, #64]
         ret
 
         .align  6
-_Copy_conjoint_words:
+DECLARE_FUNC(_Copy_conjoint_words):
         sub     t0, d, s
         cmp     t0, count, lsl #3
         bhs     _Copy_disjoint_words
@@ -183,29 +200,41 @@ bwd_copy_drain:
         br      t0
 
         .align  5
-        ret                             // -8 == 0 words
+        // -8 == 0 words
+        hint    #0x24 // bti j
+        ret
         .align  5
-        ldr     t0, [s, #-8]            // -7 == 1 word
+        // -7 == 1 word
+        hint    #0x24 // bti j
+        ldr     t0, [s, #-8]
         str     t0, [d, #-8]
         ret
         .align  5
-        ldp     t0, t1, [s, #-16]       // -6 = 2 words
+        // -6 == 2 words
+        hint    #0x24 // bti j
+        ldp     t0, t1, [s, #-16]
         stp     t0, t1, [d, #-16]
         ret
         .align  5
-        ldp     t0, t1, [s, #-16]       // -5 = 3 words
+        // -5 == 3 words
+        hint    #0x24 // bti j
+        ldp     t0, t1, [s, #-16]
         ldr     t2, [s, #-24]
         stp     t0, t1, [d, #-16]
         str     t2, [d, #-24]
         ret
         .align  5
-        ldp     t0, t1, [s, #-16]       // -4 = 4 words
+        // -4 == 4 words
+        hint    #0x24 // bti j
+        ldp     t0, t1, [s, #-16]
         ldp     t2, t3, [s, #-32]
         stp     t0, t1, [d, #-16]
         stp     t2, t3, [d, #-32]
         ret
         .align  5
-        ldp     t0, t1, [s, #-16]       // -3 = 5 words
+        // -3 == 5 words
+        hint    #0x24 // bti j
+        ldp     t0, t1, [s, #-16]
         ldp     t2, t3, [s, #-32]
         ldr     t4, [s, #-40]
         stp     t0, t1, [d, #-16]
@@ -213,7 +242,9 @@ bwd_copy_drain:
         str     t4, [d, #-40]
         ret
         .align  5
-        ldp     t0, t1, [s, #-16]       // -2 = 6 words
+        // -2 == 6 words
+        hint    #0x24 // bti j
+        ldp     t0, t1, [s, #-16]
         ldp     t2, t3, [s, #-32]
         ldp     t4, t5, [s, #-48]
         stp     t0, t1, [d, #-16]
@@ -221,16 +252,50 @@ bwd_copy_drain:
         stp     t4, t5, [d, #-48]
         ret
         .align  5
-        ldp     t0, t1, [s, #-16]       // -1 = 7 words
+        // -1 == 7 words
+        hint    #0x24 // bti j
+        ldp     t0, t1, [s, #-16]
         ldp     t2, t3, [s, #-32]
         ldp     t4, t5, [s, #-48]
         ldr     t6, [s, #-56]
         stp     t0, t1, [d, #-16]
         stp     t2, t3, [d, #-32]
         stp     t4, t5, [d, #-48]
-        str     t6, [d, #-56]
-        // Is always aligned here, code for 7 words is one instruction
+        // Is always aligned here, code for 7 words is two instructions
         // too large so it just falls through.
         .align  5
 0:
+        str     t6, [d, #-56]
         ret
+
+/* Emit .note.gnu.property section in case of PAC or BTI being enabled.
+ * For more details see "ELF for the Arm(R) 64-bit Architecture (AArch64)".
+ * https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst
+ */
+#ifdef __ARM_FEATURE_BTI_DEFAULT
+    #ifdef __ARM_FEATURE_PAC_DEFAULT
+        #define GNU_PROPERTY_AARCH64_FEATURE 3
+    #else
+        #define GNU_PROPERTY_AARCH64_FEATURE 1
+    #endif
+#else
+    #ifdef __ARM_FEATURE_PAC_DEFAULT
+        #define GNU_PROPERTY_AARCH64_FEATURE 2
+    #else
+        #define GNU_PROPERTY_AARCH64_FEATURE 0
+    #endif
+#endif
+
+#if (GNU_PROPERTY_AARCH64_FEATURE != 0)
+        .pushsection .note.gnu.property, "a"
+        .align  3
+        .long   4          /* name length */
+        .long   0x10       /* data length */
+        .long   5          /* note type: NT_GNU_PROPERTY_TYPE_0 */
+        .string "GNU"      /* vendor name */
+        .long   0xc0000000 /* GNU_PROPERTY_AARCH64_FEATURE_1_AND */
+        .long   4          /* pr_datasze */
+        .long   GNU_PROPERTY_AARCH64_FEATURE
+        .long   0
+        .popsection
+#endif

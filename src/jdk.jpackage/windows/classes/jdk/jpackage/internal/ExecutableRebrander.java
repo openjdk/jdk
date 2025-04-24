@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -39,7 +40,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.function.Supplier;
+import jdk.jpackage.internal.model.DottedVersion;
+
 import static jdk.jpackage.internal.OverridableResource.createResource;
+import static jdk.jpackage.internal.ShortPathUtils.adjustPath;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.COPYRIGHT;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
@@ -48,7 +52,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.WindowsAppImageBuilder.ICON_ICO;
 
-
+@SuppressWarnings("restricted")
 final class ExecutableRebrander {
     private static final ResourceBundle I18N = ResourceBundle.getBundle(
             "jdk.jpackage.internal.resources.WinResources");
@@ -112,7 +116,7 @@ final class ExecutableRebrander {
     }
 
     private void rebrandExecutable(Map<String, ? super Object> params,
-            Path target, UpdateResourceAction action) throws IOException {
+            final Path target, UpdateResourceAction action) throws IOException {
         try {
             String tempDirectory = TEMP_ROOT.fetchFrom(params)
                     .toAbsolutePath().toString();
@@ -125,10 +129,11 @@ final class ExecutableRebrander {
 
             target.toFile().setWritable(true, true);
 
-            long resourceLock = lockResource(target.toString());
+            var shortTargetPath = ShortPathUtils.toShortPath(target);
+            long resourceLock = lockResource(shortTargetPath.orElse(target).toString());
             if (resourceLock == 0) {
                 throw new RuntimeException(MessageFormat.format(
-                    I18N.getString("error.lock-resource"), target));
+                    I18N.getString("error.lock-resource"), shortTargetPath.orElse(target)));
             }
 
             final boolean resourceUnlockedSuccess;
@@ -144,6 +149,14 @@ final class ExecutableRebrander {
                     resourceUnlockedSuccess = true;
                 } else {
                     resourceUnlockedSuccess = unlockResource(resourceLock);
+                    if (shortTargetPath.isPresent()) {
+                        // Windows will rename the excuatble in the unlock operation.
+                        // Should restore executable's name.
+                        var tmpPath = target.getParent().resolve(
+                                target.getFileName().toString() + ".restore");
+                        Files.move(shortTargetPath.get(), tmpPath);
+                        Files.move(tmpPath, target);
+                    }
                 }
             }
 
@@ -236,6 +249,7 @@ final class ExecutableRebrander {
 
     private static void iconSwapWrapper(long resourceLock,
             String iconTarget) {
+        iconTarget = adjustPath(iconTarget);
         if (iconSwap(resourceLock, iconTarget) != 0) {
             throw new RuntimeException(MessageFormat.format(I18N.getString(
                     "error.icon-swap"), iconTarget));

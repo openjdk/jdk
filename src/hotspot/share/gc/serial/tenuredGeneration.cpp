@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,23 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/serialBlockOffsetTable.inline.hpp"
+#include "gc/serial/serialFullGC.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/genArguments.hpp"
 #include "gc/shared/space.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 
 bool TenuredGeneration::grow_by(size_t bytes) {
@@ -53,8 +55,7 @@ bool TenuredGeneration::grow_by(size_t bytes) {
 
     // Fix for bug #4668531
     if (ZapUnusedHeapArea) {
-      MemRegion mangle_region(space()->end(),
-      (HeapWord*)_virtual_space.high());
+      MemRegion mangle_region(space()->end(), (HeapWord*)_virtual_space.high());
       SpaceMangler::mangle_region(mangle_region);
     }
 
@@ -67,7 +68,7 @@ bool TenuredGeneration::grow_by(size_t bytes) {
 
     size_t new_mem_size = _virtual_space.committed_size();
     size_t old_mem_size = new_mem_size - bytes;
-    log_trace(gc, heap)("Expanding %s from " SIZE_FORMAT "K by " SIZE_FORMAT "K to " SIZE_FORMAT "K",
+    log_trace(gc, heap)("Expanding %s from %zuK by %zuK to %zuK",
                     name(), old_mem_size/K, bytes/K, new_mem_size/K);
   }
   return result;
@@ -78,7 +79,7 @@ bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
   if (bytes == 0) {
     return true;  // That's what grow_by(0) would return
   }
-  size_t aligned_bytes  = ReservedSpace::page_align_size_up(bytes);
+  size_t aligned_bytes = os::align_up_vm_page_size(bytes);
   if (aligned_bytes == 0){
     // The alignment caused the number of bytes to wrap.  An expand_by(0) will
     // return true with the implication that an expansion was done when it
@@ -86,9 +87,9 @@ bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
     // but not a guarantee.  Align down to give a best effort.  This is likely
     // the most that the generation can expand since it has some capacity to
     // start with.
-    aligned_bytes = ReservedSpace::page_align_size_down(bytes);
+    aligned_bytes = os::align_down_vm_page_size(bytes);
   }
-  size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
+  size_t aligned_expand_bytes = os::align_up_vm_page_size(expand_bytes);
   bool success = false;
   if (aligned_expand_bytes > aligned_bytes) {
     success = grow_by(aligned_expand_bytes);
@@ -98,9 +99,6 @@ bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
   }
   if (!success) {
     success = grow_to_reserved();
-  }
-  if (success && GCLocker::is_active_and_needs_gc()) {
-    log_trace(gc, heap)("Garbage collection disabled, expanded heap instead");
   }
 
   return success;
@@ -120,7 +118,7 @@ bool TenuredGeneration::grow_to_reserved() {
 void TenuredGeneration::shrink(size_t bytes) {
   assert_correct_size_change_locking();
 
-  size_t size = ReservedSpace::page_align_size_down(bytes);
+  size_t size = os::align_down_vm_page_size(bytes);
   if (size == 0) {
     return;
   }
@@ -138,7 +136,7 @@ void TenuredGeneration::shrink(size_t bytes) {
 
   size_t new_mem_size = _virtual_space.committed_size();
   size_t old_mem_size = new_mem_size + size;
-  log_trace(gc, heap)("Shrinking %s from " SIZE_FORMAT "K to " SIZE_FORMAT "K",
+  log_trace(gc, heap)("Shrinking %s from %zuK to %zuK",
                       name(), old_mem_size/K, new_mem_size/K);
 }
 
@@ -234,7 +232,7 @@ void TenuredGeneration::compute_new_size_inner() {
       assert(shrink_bytes <= max_shrink_bytes, "invalid shrink size");
       log_trace(gc, heap)("    shrinking:  initSize: %.1fK  maximum_desired_capacity: %.1fK",
                                OldSize / (double) K, maximum_desired_capacity / (double) K);
-      log_trace(gc, heap)("    shrink_bytes: %.1fK  current_shrink_factor: " SIZE_FORMAT "  new shrink factor: " SIZE_FORMAT "  _min_heap_delta_bytes: %.1fK",
+      log_trace(gc, heap)("    shrink_bytes: %.1fK  current_shrink_factor: %zu  new shrink factor: %zu  _min_heap_delta_bytes: %.1fK",
                                shrink_bytes / (double) K,
                                current_shrink_factor,
                                _shrink_factor,
@@ -263,19 +261,24 @@ void TenuredGeneration::compute_new_size_inner() {
   }
 }
 
-void TenuredGeneration::space_iterate(SpaceClosure* blk,
-                                                 bool usedOnly) {
-  blk->do_space(space());
+HeapWord* TenuredGeneration::block_start(const void* addr) const {
+  HeapWord* cur_block = _bts->block_start_reaching_into_card(addr);
+
+  while (true) {
+    HeapWord* next_block = cur_block + cast_to_oop(cur_block)->size();
+    if (next_block > addr) {
+      assert(cur_block <= addr, "postcondition");
+      return cur_block;
+    }
+    cur_block = next_block;
+    // Because the BOT is precise, we should never step into the next card
+    // (i.e. crossing the card boundary).
+    assert(!SerialBlockOffsetTable::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
+  }
 }
 
-void TenuredGeneration::younger_refs_iterate(OopIterateClosure* blk) {
-  // Apply "cl->do_oop" to (the address of) (exactly) all the ref fields in
-  // "sp" that point into the young generation.
-  // The iteration is only over objects allocated at the start of the
-  // iterations; objects allocated as a result of applying the closure are
-  // not included.
-
-  _rs->younger_refs_in_space_iterate(space(), blk);
+void TenuredGeneration::scan_old_to_young_refs(HeapWord* saved_top_in_old_gen) {
+  _rs->scan_old_to_young_refs(this, saved_top_in_old_gen);
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
@@ -294,8 +297,8 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   assert((uintptr_t(start) & 3) == 0, "bad alignment");
   assert((reserved_byte_size & 3) == 0, "bad alignment");
   MemRegion reserved_mr(start, heap_word_size(reserved_byte_size));
-  _bts = new SerialBlockOffsetSharedArray(reserved_mr,
-                                          heap_word_size(initial_byte_size));
+  _bts = new SerialBlockOffsetTable(reserved_mr,
+                                    heap_word_size(initial_byte_size));
   MemRegion committed_mr(start, heap_word_size(initial_byte_size));
   _rs->resize_covered_region(committed_mr);
 
@@ -310,19 +313,20 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   _used_at_prologue = 0;
   HeapWord* bottom = (HeapWord*) _virtual_space.low();
   HeapWord* end    = (HeapWord*) _virtual_space.high();
-  _the_space  = new TenuredSpace(_bts, MemRegion(bottom, end));
+  _the_space  = new ContiguousSpace();
+  _the_space->initialize(MemRegion(bottom, end), SpaceDecorator::Clear, SpaceDecorator::Mangle);
   // If we don't shrink the heap in steps, '_shrink_factor' is always 100%.
   _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
   _capacity_at_prologue = 0;
 
-  _gc_stats = new GCStats();
+  _avg_promoted = new AdaptivePaddedNoZeroDevAverage(AdaptiveSizePolicyWeight, PromotedPadding);
 
   // initialize performance counters
 
   const char* gen_name = "old";
   // Generation Counters -- generation 1, 1 subspace
   _gen_counters = new GenerationCounters(gen_name, 1, 1,
-      min_byte_size, max_byte_size, &_virtual_space);
+      min_byte_size, max_byte_size, _virtual_space.committed_size());
 
   _gc_counters = new CollectorCounters("Serial full collection pauses", 1);
 
@@ -331,40 +335,9 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
                                        _the_space, _gen_counters);
 }
 
-void TenuredGeneration::gc_prologue(bool full) {
+void TenuredGeneration::gc_prologue() {
   _capacity_at_prologue = capacity();
   _used_at_prologue = used();
-}
-
-bool TenuredGeneration::should_collect(bool  full,
-                                       size_t size,
-                                       bool   is_tlab) {
-  // This should be one big conditional or (||), but I want to be able to tell
-  // why it returns what it returns (without re-evaluating the conditionals
-  // in case they aren't idempotent), so I'm doing it this way.
-  // DeMorgan says it's okay.
-  if (full) {
-    log_trace(gc)("TenuredGeneration::should_collect: because full");
-    return true;
-  }
-  if (should_allocate(size, is_tlab)) {
-    log_trace(gc)("TenuredGeneration::should_collect: because should_allocate(" SIZE_FORMAT ")", size);
-    return true;
-  }
-  // If we don't have very much free space.
-  // XXX: 10000 should be a percentage of the capacity!!!
-  if (free() < 10000) {
-    log_trace(gc)("TenuredGeneration::should_collect: because free(): " SIZE_FORMAT, free());
-    return true;
-  }
-  // If we had to expand to accommodate promotions from the young generation
-  if (_capacity_at_prologue < capacity()) {
-    log_trace(gc)("TenuredGeneration::should_collect: because_capacity_at_prologue: " SIZE_FORMAT " < capacity(): " SIZE_FORMAT,
-        _capacity_at_prologue, capacity());
-    return true;
-  }
-
-  return false;
 }
 
 void TenuredGeneration::compute_new_size() {
@@ -377,85 +350,65 @@ void TenuredGeneration::compute_new_size() {
   compute_new_size_inner();
 
   assert(used() == used_after_gc && used_after_gc <= capacity(),
-         "used: " SIZE_FORMAT " used_after_gc: " SIZE_FORMAT
-         " capacity: " SIZE_FORMAT, used(), used_after_gc, capacity());
+         "used: %zu used_after_gc: %zu"
+         " capacity: %zu", used(), used_after_gc, capacity());
 }
 
-void TenuredGeneration::update_gc_stats(Generation* current_generation,
-                                        bool full) {
-  // If the young generation has been collected, gather any statistics
-  // that are of interest at this point.
-  bool current_is_young = SerialHeap::heap()->is_young_gen(current_generation);
-  if (!full && current_is_young) {
-    // Calculate size of data promoted from the young generation
-    // before doing the collection.
-    size_t used_before_gc = used();
-
-    // If the young gen collection was skipped, then the
-    // number of promoted bytes will be 0 and adding it to the
-    // average will incorrectly lessen the average.  It is, however,
-    // also possible that no promotion was needed.
-    if (used_before_gc >= _used_at_prologue) {
-      size_t promoted_in_bytes = used_before_gc - _used_at_prologue;
-      gc_stats()->avg_promoted()->sample(promoted_in_bytes);
-    }
+void TenuredGeneration::update_promote_stats() {
+  size_t used_after_gc = used();
+  size_t promoted_in_bytes;
+  if (used_after_gc > _used_at_prologue) {
+    promoted_in_bytes = used_after_gc - _used_at_prologue;
+  } else {
+    promoted_in_bytes = 0;
   }
+  _avg_promoted->sample(promoted_in_bytes);
 }
 
 void TenuredGeneration::update_counters() {
   if (UsePerfData) {
     _space_counters->update_all();
-    _gen_counters->update_all();
+    _gen_counters->update_all(_virtual_space.committed_size());
   }
 }
 
 bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
-  size_t available = max_contiguous_available();
-  size_t av_promo  = (size_t)gc_stats()->avg_promoted()->padded_average();
-  bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
+  size_t available = _the_space->free() + _virtual_space.uncommitted_size();
 
-  log_trace(gc)("Tenured: promo attempt is%s safe: available(" SIZE_FORMAT ") %s av_promo(" SIZE_FORMAT "), max_promo(" SIZE_FORMAT ")",
-    res? "":" not", available, res? ">=":"<", av_promo, max_promotion_in_bytes);
+  size_t avg_promoted  = (size_t)_avg_promoted->padded_average();
+  size_t promotion_estimate = MIN2(avg_promoted, max_promotion_in_bytes);
+
+  bool res = (promotion_estimate <= available);
+
+  log_trace(gc)("Tenured: promo attempt is%s safe: available(%zu) %s av_promo(%zu), max_promo(%zu)",
+    res? "":" not", available, res? ">=":"<", avg_promoted, max_promotion_in_bytes);
 
   return res;
 }
 
-void TenuredGeneration::collect(bool   full,
-                                bool   clear_all_soft_refs,
-                                size_t size,
-                                bool   is_tlab) {
-  SerialHeap* gch = SerialHeap::heap();
+oop TenuredGeneration::allocate_for_promotion(oop obj, size_t obj_size) {
+  assert(obj_size == obj->size(), "bad obj_size passed in");
 
-  STWGCTimer* gc_timer = GenMarkSweep::gc_timer();
-  gc_timer->register_gc_start();
+#ifndef PRODUCT
+  if (SerialHeap::heap()->promotion_should_fail()) {
+    return nullptr;
+  }
+#endif  // #ifndef PRODUCT
 
-  SerialOldTracer* gc_tracer = GenMarkSweep::gc_tracer();
-  gc_tracer->report_gc_start(gch->gc_cause(), gc_timer->gc_start());
+  // Allocate new object.
+  HeapWord* result = allocate(obj_size);
+  if (result == nullptr) {
+    // Promotion of obj into gen failed.  Try to expand and allocate.
+    result = expand_and_allocate(obj_size);
+  }
 
-  gch->pre_full_gc_dump(gc_timer);
-
-  GenMarkSweep::invoke_at_safepoint(clear_all_soft_refs);
-
-  gch->post_full_gc_dump(gc_timer);
-
-  gc_timer->register_gc_end();
-
-  gc_tracer->report_gc_end(gc_timer->gc_end(), gc_timer->time_partitions());
+  return cast_to_oop<HeapWord*>(result);
 }
 
 HeapWord*
-TenuredGeneration::expand_and_allocate(size_t word_size, bool is_tlab) {
-  assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
+TenuredGeneration::expand_and_allocate(size_t word_size) {
   expand(word_size*HeapWordSize, _min_heap_delta_bytes);
-  return _the_space->allocate(word_size);
-}
-
-size_t TenuredGeneration::unsafe_max_alloc_nogc() const {
-  return _the_space->free();
-}
-
-size_t TenuredGeneration::contiguous_available() const {
-  return _the_space->free() + _virtual_space.uncommitted_size();
+  return allocate(word_size);
 }
 
 void TenuredGeneration::assert_correct_size_change_locking() {
@@ -468,34 +421,17 @@ void TenuredGeneration::object_iterate(ObjectClosure* blk) {
 
 void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
   // Create the BOT for the archive space.
-  TenuredSpace* space = _the_space;
   HeapWord* start = archive_space.start();
   while (start < archive_space.end()) {
     size_t word_size = cast_to_oop(start)->size();;
-    space->update_for_block(start, start + word_size);
+    _bts->update_for_block(start, start + word_size);
     start += word_size;
   }
 }
 
-void TenuredGeneration::save_marks() {
-  _the_space->set_saved_mark();
-}
-
-bool TenuredGeneration::no_allocs_since_save_marks() {
-  return _the_space->saved_mark_at_top();
-}
-
-void TenuredGeneration::gc_epilogue(bool full) {
+void TenuredGeneration::gc_epilogue() {
   // update the generation and space performance counters
   update_counters();
-  if (ZapUnusedHeapArea) {
-    _the_space->check_mangled_unused_area_complete();
-  }
-}
-
-void TenuredGeneration::record_spaces_top() {
-  assert(ZapUnusedHeapArea, "Not mangling unused space");
-  _the_space->set_top_for_allocations();
 }
 
 void TenuredGeneration::verify() {
@@ -503,7 +439,15 @@ void TenuredGeneration::verify() {
 }
 
 void TenuredGeneration::print_on(outputStream* st)  const {
-  Generation::print_on(st);
+  st->print(" %-10s", name());
+
+  st->print(" total %zuK, used %zuK",
+            capacity()/K, used()/K);
+  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+               p2i(_virtual_space.low_boundary()),
+               p2i(_virtual_space.high()),
+               p2i(_virtual_space.high_boundary()));
+
   st->print("   the");
   _the_space->print_on(st);
 }

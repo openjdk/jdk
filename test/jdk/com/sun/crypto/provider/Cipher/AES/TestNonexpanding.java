@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,8 @@ import javax.crypto.spec.GCMParameterSpec;
 public class TestNonexpanding {
 
     private static final String ALGORITHM = "AES";
-    private static final String PROVIDER = "SunJCE";
+    private static final String PROVIDER =
+                        System.getProperty("test.provider.name", "SunJCE");
     private static final String[] MODES = { "ECb", "CbC", "OFB", "OFB150",
         "cFB", "CFB7", "cFB8", "cFB16", "cFB24", "cFB32", "Cfb40", "cfB48",
         "cfB56", "cfB64", "cfB72", "cfB80", "cfB88", "cfB96", "cfb104",

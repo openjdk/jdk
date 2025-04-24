@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Stream;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.ScopedValueContainer;
 import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.ThreadContainers;
@@ -84,13 +85,9 @@ public class ThreadFlock implements AutoCloseable {
     private static final VarHandle THREAD_COUNT;
     private static final VarHandle PERMIT;
     static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            THREAD_COUNT = l.findVarHandle(ThreadFlock.class, "threadCount", int.class);
-            PERMIT = l.findVarHandle(ThreadFlock.class, "permit", boolean.class);
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
+        MethodHandles.Lookup l = MethodHandles.lookup();
+        THREAD_COUNT = MhUtil.findVarHandle(l, "threadCount", int.class);
+        PERMIT = MhUtil.findVarHandle(l, "permit", boolean.class);
     }
 
     private final Set<Thread> threads = ConcurrentHashMap.newKeySet();

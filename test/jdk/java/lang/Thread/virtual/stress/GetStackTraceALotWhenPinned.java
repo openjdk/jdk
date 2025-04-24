@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,25 @@
  * @bug 8322818
  * @summary Stress test Thread.getStackTrace on a virtual thread that is pinned
  * @requires vm.debug != true
- * @modules java.base/java.lang:+open
+ * @modules jdk.management
  * @library /test/lib
- * @run main/othervm GetStackTraceALotWhenPinned 500000
+ * @run main/othervm/native/timeout=300 --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 100000
  */
 
 /*
  * @test
  * @requires vm.debug == true
- * @modules java.base/java.lang:+open
+ * @modules jdk.management
  * @library /test/lib
- * @run main/othervm/timeout=300 GetStackTraceALotWhenPinned 200000
+ * @run main/othervm/native/timeout=300 --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 50000
  */
 
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
-import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.Platform;
+import jdk.test.lib.thread.VThreadRunner;   // ensureParallelism requires jdk.management
+import jdk.test.lib.thread.VThreadPinner;
 
 public class GetStackTraceALotWhenPinned {
 
@@ -52,7 +54,15 @@ public class GetStackTraceALotWhenPinned {
             VThreadRunner.ensureParallelism(2);
         }
 
-        int iterations = Integer.parseInt(args[0]);
+        int iterations;
+        int value = Integer.parseInt(args[0]);
+        if (Platform.isOSX() && Platform.isX64()) {
+            // reduced iterations on macosx-x64
+            iterations = Math.max(value / 4, 1);
+        } else {
+            iterations = value;
+        }
+
         var barrier = new Barrier(2);
 
         // Start a virtual thread that loops doing Thread.yield and parking while pinned.
@@ -65,29 +75,35 @@ public class GetStackTraceALotWhenPinned {
                 barrier.await();
 
                 Thread.yield();
-                synchronized (GetStackTraceALotWhenPinned.class) {
-                    if (timed) {
+                boolean b = timed;
+                VThreadPinner.runPinned(() -> {
+                    if (b) {
                         LockSupport.parkNanos(Long.MAX_VALUE);
                     } else {
                         LockSupport.park();
                     }
-                }
+                });
                 timed = !timed;
             }
         });
 
-        long lastTimestamp = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
+        long lastTime = System.nanoTime();
+        for (int i = 1; i <= iterations; i++) {
             // wait for virtual thread to arrive
             barrier.await();
 
             thread.getStackTrace();
             LockSupport.unpark(thread);
 
-            long currentTime = System.currentTimeMillis();
-            if ((currentTime - lastTimestamp) > 500) {
-                System.out.format("%s %d remaining ...%n", Instant.now(), (iterations - i));
-                lastTimestamp = currentTime;
+            long currentTime = System.nanoTime();
+            if (i == iterations || ((currentTime - lastTime) > 1_000_000_000L)) {
+                System.out.format("%s => %d of %d%n", Instant.now(), i, iterations);
+                lastTime = currentTime;
+            }
+
+            if (Thread.currentThread().isInterrupted()) {
+                // fail quickly if interrupted by jtreg
+                throw new RuntimeException("interrupted");
             }
         }
     }

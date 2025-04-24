@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,18 @@
  * questions.
  */
 #include <jni.h>
-#include "jni_tools.h"
+#include "jni_tools.hpp"
 
 extern "C" {
 
 #define FIND_CLASS(_class, _className)\
         if (!NSK_JNI_VERIFY(env, (_class = \
-             env->FindClass(_className)) != NULL))\
+             env->FindClass(_className)) != nullptr))\
                 return
 
 #define GET_OBJECT_CLASS(_class, _obj)\
         if (!NSK_JNI_VERIFY(env, (_class = \
-             env->GetObjectClass(_obj)) != NULL))\
+             env->GetObjectClass(_obj)) != nullptr))\
                 return
 
 #define GET_OBJ_FIELD(_value, _obj, _class, _fieldName, _fieldSig)\
@@ -41,12 +41,12 @@ extern "C" {
 
 #define GET_FIELD_ID(_fieldID, _class, _fieldName, _fieldSig)\
         if (!NSK_JNI_VERIFY(env, (_fieldID = \
-             env->GetFieldID(_class, _fieldName, _fieldSig)) != NULL))\
+             env->GetFieldID(_class, _fieldName, _fieldSig)) != nullptr))\
                 return
 
 #define GET_METHOD_ID(_methodID, _class, _methodName, _sig)\
         if (!NSK_JNI_VERIFY(env, (_methodID = \
-             env->GetMethodID(_class, _methodName, _sig)) != NULL))\
+             env->GetMethodID(_class, _methodName, _sig)) != nullptr))\
                 return
 
 #define CALL_VOID_NOPARAM(_obj, _class, _methodName)\

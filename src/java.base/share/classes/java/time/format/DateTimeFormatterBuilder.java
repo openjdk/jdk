@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.internal.util.DateTimeHelper;
+import jdk.internal.util.DecimalDigits;
+
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -159,7 +162,6 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * @since 1.8
  */
 public final class DateTimeFormatterBuilder {
-
     /**
      * Query for a time-zone that is region-only.
      */
@@ -353,6 +355,10 @@ public final class DateTimeFormatterBuilder {
      * The change will remain in force until the end of the formatter that is eventually
      * constructed or until {@code parseLenient} is called.
      *
+     * @implSpec A {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR} in the input
+     * text will not match any other {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR}s
+     * in the pattern with the strict parse style.
+     *
      * @return this, for chaining, not null
      */
     public DateTimeFormatterBuilder parseStrict() {
@@ -371,6 +377,10 @@ public final class DateTimeFormatterBuilder {
      * When used, this method changes the parsing to be lenient from this point onwards.
      * The change will remain in force until the end of the formatter that is eventually
      * constructed or until {@code parseStrict} is called.
+     *
+     * @implSpec A {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR} in the input
+     * text will match any other {@link Character#SPACE_SEPARATOR SPACE_SEPARATOR}s
+     * in the pattern with the lenient parse style.
      *
      * @return this, for chaining, not null
      */
@@ -1087,14 +1097,14 @@ public final class DateTimeFormatterBuilder {
      * During parsing, the text must match a known zone or offset.
      * There are two types of zone ID, offset-based, such as '+01:30' and
      * region-based, such as 'Europe/London'. These are parsed differently.
-     * If the parse starts with '+', '-', 'UT', 'UTC' or 'GMT', then the parser
-     * expects an offset-based zone and will not match region-based zones.
-     * The offset ID, such as '+02:30', may be at the start of the parse,
-     * or prefixed by  'UT', 'UTC' or 'GMT'. The offset ID parsing is
-     * equivalent to using {@link #appendOffset(String, String)} using the
-     * arguments 'HH:MM:ss' and the no offset string '0'.
-     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser cannot
-     * match a following offset ID, then {@link ZoneOffset#UTC} is selected.
+     * If the parse starts with '+' or '-', then the parser expects an
+     * offset-based zone and will not match region-based zones. The offset
+     * ID parsing is equivalent to using {@link #appendOffset(String, String)}
+     * using the arguments 'HH:MM:ss' and the no offset string '0'.
+     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser can
+     * match a following offset, then a region-based zone with the parsed
+     * offset will be returned, or else if the parser cannot match a following
+     * offset, then {@link ZoneOffset#UTC} is selected.
      * In all other cases, the list of known region-based zones is used to
      * find the longest available match. If no match is found, and the parse
      * starts with 'Z', then {@code ZoneOffset.UTC} is selected.
@@ -1108,9 +1118,9 @@ public final class DateTimeFormatterBuilder {
      *   "UTC"                     -- ZoneId.of("UTC")
      *   "GMT"                     -- ZoneId.of("GMT")
      *   "+01:30"                  -- ZoneOffset.of("+01:30")
-     *   "UT+01:30"                -- ZoneOffset.of("+01:30")
-     *   "UTC+01:30"               -- ZoneOffset.of("+01:30")
-     *   "GMT+01:30"               -- ZoneOffset.of("+01:30")
+     *   "UT+01:30"                -- ZoneId.of("UT+01:30")
+     *   "UTC+01:30"               -- ZoneId.of("UTC+01:30")
+     *   "GMT+01:30"               -- ZoneId.of("GMT+01:30")
      * </pre>
      *
      * @return this, for chaining, not null
@@ -1125,8 +1135,7 @@ public final class DateTimeFormatterBuilder {
      * Appends the time-zone region ID, such as 'Europe/Paris', to the formatter,
      * rejecting the zone ID if it is a {@code ZoneOffset}.
      * <p>
-     * This appends an instruction to format/parse the zone ID to the builder
-     * only if it is a region-based ID.
+     * This appends an instruction to format only region-based zone IDs to the builder.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
      * to querying the temporal with {@link TemporalQueries#zoneId()}.
@@ -1138,14 +1147,14 @@ public final class DateTimeFormatterBuilder {
      * During parsing, the text must match a known zone or offset.
      * There are two types of zone ID, offset-based, such as '+01:30' and
      * region-based, such as 'Europe/London'. These are parsed differently.
-     * If the parse starts with '+', '-', 'UT', 'UTC' or 'GMT', then the parser
-     * expects an offset-based zone and will not match region-based zones.
-     * The offset ID, such as '+02:30', may be at the start of the parse,
-     * or prefixed by  'UT', 'UTC' or 'GMT'. The offset ID parsing is
-     * equivalent to using {@link #appendOffset(String, String)} using the
-     * arguments 'HH:MM:ss' and the no offset string '0'.
-     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser cannot
-     * match a following offset ID, then {@link ZoneOffset#UTC} is selected.
+     * If the parse starts with '+' or '-', then the parser expects an
+     * offset-based zone and will not match region-based zones. The offset
+     * ID parsing is equivalent to using {@link #appendOffset(String, String)}
+     * using the arguments 'HH:MM:ss' and the no offset string '0'.
+     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser can
+     * match a following offset, then a region-based zone with the parsed
+     * offset will be returned, or else if the parser cannot match a following
+     * offset, then {@link ZoneOffset#UTC} is selected.
      * In all other cases, the list of known region-based zones is used to
      * find the longest available match. If no match is found, and the parse
      * starts with 'Z', then {@code ZoneOffset.UTC} is selected.
@@ -1159,9 +1168,9 @@ public final class DateTimeFormatterBuilder {
      *   "UTC"                     -- ZoneId.of("UTC")
      *   "GMT"                     -- ZoneId.of("GMT")
      *   "+01:30"                  -- ZoneOffset.of("+01:30")
-     *   "UT+01:30"                -- ZoneOffset.of("+01:30")
-     *   "UTC+01:30"               -- ZoneOffset.of("+01:30")
-     *   "GMT+01:30"               -- ZoneOffset.of("+01:30")
+     *   "UT+01:30"                -- ZoneId.of("UT+01:30")
+     *   "UTC+01:30"               -- ZoneId.of("UTC+01:30")
+     *   "GMT+01:30"               -- ZoneId.of("GMT+01:30")
      * </pre>
      * <p>
      * Note that this method is identical to {@code appendZoneId()} except
@@ -1196,14 +1205,14 @@ public final class DateTimeFormatterBuilder {
      * During parsing, the text must match a known zone or offset.
      * There are two types of zone ID, offset-based, such as '+01:30' and
      * region-based, such as 'Europe/London'. These are parsed differently.
-     * If the parse starts with '+', '-', 'UT', 'UTC' or 'GMT', then the parser
-     * expects an offset-based zone and will not match region-based zones.
-     * The offset ID, such as '+02:30', may be at the start of the parse,
-     * or prefixed by  'UT', 'UTC' or 'GMT'. The offset ID parsing is
-     * equivalent to using {@link #appendOffset(String, String)} using the
-     * arguments 'HH:MM:ss' and the no offset string '0'.
-     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser cannot
-     * match a following offset ID, then {@link ZoneOffset#UTC} is selected.
+     * If the parse starts with '+' or '-', then the parser expects an
+     * offset-based zone and will not match region-based zones. The offset
+     * ID parsing is equivalent to using {@link #appendOffset(String, String)}
+     * using the arguments 'HH:MM:ss' and the no offset string '0'.
+     * If the parse starts with 'UT', 'UTC' or 'GMT', and the parser can
+     * match a following offset, then a region-based zone with the parsed
+     * offset will be returned, or else if the parser cannot match a following
+     * offset, then {@link ZoneOffset#UTC} is selected.
      * In all other cases, the list of known region-based zones is used to
      * find the longest available match. If no match is found, and the parse
      * starts with 'Z', then {@code ZoneOffset.UTC} is selected.
@@ -1217,9 +1226,9 @@ public final class DateTimeFormatterBuilder {
      *   "UTC"                     -- ZoneId.of("UTC")
      *   "GMT"                     -- ZoneId.of("GMT")
      *   "+01:30"                  -- ZoneOffset.of("+01:30")
-     *   "UT+01:30"                -- ZoneOffset.of("UT+01:30")
-     *   "UTC+01:30"               -- ZoneOffset.of("UTC+01:30")
-     *   "GMT+01:30"               -- ZoneOffset.of("GMT+01:30")
+     *   "UT+01:30"                -- ZoneId.of("UT+01:30")
+     *   "UTC+01:30"               -- ZoneId.of("UTC+01:30")
+     *   "GMT+01:30"               -- ZoneId.of("GMT+01:30")
      * </pre>
      * <p>
      * Note that this method is identical to {@code appendZoneId()} except
@@ -2731,9 +2740,11 @@ public final class DateTimeFormatterBuilder {
      */
     static final class CharLiteralPrinterParser implements DateTimePrinterParser {
         private final char literal;
+        private final boolean isSpaceSeparator;
 
         private CharLiteralPrinterParser(char literal) {
             this.literal = literal;
+            isSpaceSeparator = Character.getType(literal) == Character.SPACE_SEPARATOR;
         }
 
         @Override
@@ -2750,9 +2761,10 @@ public final class DateTimeFormatterBuilder {
             }
             char ch = text.charAt(position);
             if (ch != literal) {
-                if (context.isCaseSensitive() ||
+                if ((context.isCaseSensitive() ||
                         (Character.toUpperCase(ch) != Character.toUpperCase(literal) &&
-                         Character.toLowerCase(ch) != Character.toLowerCase(literal))) {
+                         Character.toLowerCase(ch) != Character.toLowerCase(literal))) &&
+                        !spaceEquals(context, ch)) {
                     return ~position;
                 }
             }
@@ -2766,6 +2778,12 @@ public final class DateTimeFormatterBuilder {
             }
             return "'" + literal + "'";
         }
+
+        private boolean spaceEquals(DateTimeParseContext context, char ch) {
+            return !context.isStrict() && isSpaceSeparator &&
+                    Character.getType(ch) == Character.SPACE_SEPARATOR;
+        }
+
     }
 
     //-----------------------------------------------------------------------
@@ -2891,24 +2909,6 @@ public final class DateTimeFormatterBuilder {
             return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, this.subsequentWidth + subsequentWidth);
         }
 
-        /*
-         * Copied from Long.stringSize
-         */
-        private static int stringSize(long x) {
-            int d = 1;
-            if (x >= 0) {
-                d = 0;
-                x = -x;
-            }
-            long p = -10;
-            for (int i = 1; i < 19; i++) {
-                if (x > p)
-                    return i + d;
-                p = 10 * p;
-            }
-            return 19 + d;
-        }
-
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
             Long valueLong = context.getValue(field);
@@ -2917,7 +2917,7 @@ public final class DateTimeFormatterBuilder {
             }
             long value = getValue(context, valueLong);
             DecimalStyle decimalStyle = context.getDecimalStyle();
-            int size = stringSize(value);
+            int size = DecimalDigits.stringSize(value);
             if (value < 0) {
                 size--;
             }
@@ -2948,8 +2948,9 @@ public final class DateTimeFormatterBuilder {
                 }
             }
             char zeroDigit = decimalStyle.getZeroDigit();
-            for (int i = 0; i < minWidth - size; i++) {
-                buf.append(zeroDigit);
+            int zeros = minWidth - size;
+            if (zeros > 0) {
+                buf.repeat(zeroDigit, zeros);
             }
             if (zeroDigit == '0' && value != Long.MIN_VALUE) {
                 buf.append(Math.abs(value));
@@ -3351,17 +3352,6 @@ public final class DateTimeFormatterBuilder {
             return false;
         }
 
-        // Simplified variant of Integer.stringSize that assumes positive values
-        private static int stringSize(int x) {
-            int p = 10;
-            for (int i = 1; i < 10; i++) {
-                if (x < p)
-                    return i;
-                p = 10 * p;
-            }
-            return 10;
-        }
-
         private static final int[] TENS = new int[] {
             1,
             10,
@@ -3382,7 +3372,7 @@ public final class DateTimeFormatterBuilder {
             }
             int val = field.range().checkValidIntValue(value, field);
             DecimalStyle decimalStyle = context.getDecimalStyle();
-            int stringSize = stringSize(val);
+            int stringSize = DecimalDigits.stringSize(val);
             char zero = decimalStyle.getZeroDigit();
             if (val == 0 || stringSize < 10 - maxWidth) {
                 // 0 or would round down to 0
@@ -3393,17 +3383,16 @@ public final class DateTimeFormatterBuilder {
                     if (decimalPoint) {
                         buf.append(decimalStyle.getDecimalSeparator());
                     }
-                    for (int i = 0; i < width; i++) {
-                        buf.append(zero);
-                    }
+                    buf.repeat(zero, width);
                 }
             } else {
                 if (decimalPoint) {
                     buf.append(decimalStyle.getDecimalSeparator());
                 }
                 // add leading zeros
-                for (int i = 9 - stringSize; i > 0; i--) {
-                    buf.append(zero);
+                int zeros = 9 - stringSize;
+                if (zeros > 0) {
+                    buf.repeat(zero, zeros);
                 }
                 // truncate unwanted digits
                 if (maxWidth < 9) {
@@ -3577,9 +3566,7 @@ public final class DateTimeFormatterBuilder {
                     if (decimalPoint) {
                         buf.append(decimalStyle.getDecimalSeparator());
                     }
-                    for (int i = 0; i < minWidth; i++) {
-                        buf.append(decimalStyle.getZeroDigit());
-                    }
+                    buf.repeat(decimalStyle.getZeroDigit(), minWidth);
                 }
             } else {
                 int outputScale = Math.clamp(fraction.scale(), minWidth, maxWidth);
@@ -3822,56 +3809,71 @@ public final class DateTimeFormatterBuilder {
             }
             long inSec = inSecs;
             int inNano = NANO_OF_SECOND.checkValidIntValue(inNanos != null ? inNanos : 0);
-            // format mostly using LocalDateTime.toString
+            if (fractionalDigits == 0) {
+                inNano = 0;
+            }
+            boolean printNanoInLocalDateTime = fractionalDigits == -2
+                    || (inNano == 0 && (fractionalDigits == 0 || fractionalDigits == -1));
             if (inSec >= -SECONDS_0000_TO_1970) {
-                // current era
-                long zeroSecs = inSec - SECONDS_PER_10000_YEARS + SECONDS_0000_TO_1970;
-                long hi = Math.floorDiv(zeroSecs, SECONDS_PER_10000_YEARS) + 1;
-                long lo = Math.floorMod(zeroSecs, SECONDS_PER_10000_YEARS);
-                LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, 0, ZoneOffset.UTC);
-                if (hi > 0) {
-                    buf.append('+').append(hi);
-                }
-                buf.append(ldt);
-                if (ldt.getSecond() == 0) {
-                    buf.append(":00");
-                }
+                currentEra(buf, inSec, printNanoInLocalDateTime ? inNano : 0);
             } else {
-                // before current era
-                long zeroSecs = inSec + SECONDS_0000_TO_1970;
-                long hi = zeroSecs / SECONDS_PER_10000_YEARS;
-                long lo = zeroSecs % SECONDS_PER_10000_YEARS;
-                LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, 0, ZoneOffset.UTC);
-                int pos = buf.length();
-                buf.append(ldt);
-                if (ldt.getSecond() == 0) {
-                    buf.append(":00");
-                }
-                if (hi < 0) {
-                    if (ldt.getYear() == -10_000) {
-                        buf.replace(pos, pos + 2, Long.toString(hi - 1));
-                    } else if (lo == 0) {
-                        buf.insert(pos, hi);
-                    } else {
-                        buf.insert(pos + 1, Math.abs(hi));
-                    }
-                }
+                beforeCurrentEra(buf, inSec, printNanoInLocalDateTime ? inNano : 0);
             }
             // add fraction
-            if ((fractionalDigits < 0 && inNano > 0) || fractionalDigits > 0) {
-                buf.append('.');
-                int div = 100_000_000;
-                for (int i = 0; ((fractionalDigits == -1 && inNano > 0) ||
-                                    (fractionalDigits == -2 && (inNano > 0 || (i % 3) != 0)) ||
-                                    i < fractionalDigits); i++) {
-                    int digit = inNano / div;
-                    buf.append((char) (digit + '0'));
-                    inNano = inNano - (digit * div);
-                    div = div / 10;
-                }
+            if (!printNanoInLocalDateTime) {
+                printNano(buf, inSec, inNano);
             }
             buf.append('Z');
             return true;
+        }
+
+        private void printNano(StringBuilder buf, long inSec, int inNano) {
+            buf.append('.');
+            int div = 100_000_000;
+            int fractionalDigits = this.fractionalDigits;
+            for (int i = 0; ((fractionalDigits == -1 && inNano > 0) ||
+                    (fractionalDigits == -2 && (inNano > 0 || (i % 3) != 0)) ||
+                    i < fractionalDigits); i++) {
+                int digit = inNano / div;
+                buf.append((char) (digit + '0'));
+                inNano = inNano - (digit * div);
+                div = div / 10;
+            }
+        }
+
+        private static void currentEra(StringBuilder buf, long inSec, int inNano) {
+            long zeroSecs = inSec - SECONDS_PER_10000_YEARS + SECONDS_0000_TO_1970;
+            long hi = Math.floorDiv(zeroSecs, SECONDS_PER_10000_YEARS) + 1;
+            long lo = Math.floorMod(zeroSecs, SECONDS_PER_10000_YEARS);
+            LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, inNano, ZoneOffset.UTC);
+            if (hi > 0) {
+                buf.append('+').append(hi);
+            }
+            DateTimeHelper.formatTo(buf, ldt);
+            if (ldt.getSecond() == 0 && inNano == 0) {
+                buf.append(":00");
+            }
+        }
+
+        private static void beforeCurrentEra(StringBuilder buf, long inSec, int inNano) {
+            long zeroSecs = inSec + SECONDS_0000_TO_1970;
+            long hi = zeroSecs / SECONDS_PER_10000_YEARS;
+            long lo = zeroSecs % SECONDS_PER_10000_YEARS;
+            LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, inNano, ZoneOffset.UTC);
+            int pos = buf.length();
+            DateTimeHelper.formatTo(buf, ldt);
+            if (ldt.getSecond() == 0 && inNano == 0) {
+                buf.append(":00");
+            }
+            if (hi < 0) {
+                if (ldt.getYear() == -10_000) {
+                    buf.replace(pos, pos + 2, Long.toString(hi - 1));
+                } else if (lo == 0) {
+                    buf.insert(pos, hi);
+                } else {
+                    buf.insert(pos + 1, Math.abs(hi));
+                }
+            }
         }
 
         @Override
@@ -4677,10 +4679,14 @@ public final class DateTimeFormatterBuilder {
                     if (length >= position + 3 && context.charEquals(text.charAt(position + 2), 'C')) {
                         // There are localized zone texts that start with "UTC", e.g.
                         // "UTC\u221210:00" (MINUS SIGN instead of HYPHEN-MINUS) in French.
-                        // Exclude those cases.
-                        if (length == position + 3 ||
-                                context.charEquals(text.charAt(position + 3), '+') ||
-                                context.charEquals(text.charAt(position + 3), '-')) {
+                        // Treat them as normal '-' with the offset parser (using text parser would
+                        // be problematic due to std/dst distinction)
+                        if (length > position + 3 && context.charEquals(text.charAt(position + 3), '\u2212')) {
+                            var tmpText = "%s-%s".formatted(
+                                    text.subSequence(0, position + 3),
+                                    text.subSequence(position + 4, text.length()));
+                            return parseOffsetBased(context, tmpText, position, position + 3, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
+                        } else {
                             return parseOffsetBased(context, text, position, position + 3, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
                         }
                     } else {

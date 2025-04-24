@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,10 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zHeuristics.hpp"
+#include "gc/z/zLock.inline.hpp"
 #include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
@@ -45,8 +45,9 @@ ZObjectAllocator::ZObjectAllocator(ZPageAge age)
     _use_per_cpu_shared_small_pages(ZHeuristics::use_per_cpu_shared_small_pages()),
     _used(0),
     _undone(0),
+    _shared_small_page(nullptr),
     _shared_medium_page(nullptr),
-    _shared_small_page(nullptr) {}
+    _medium_page_alloc_lock() {}
 
 ZPage** ZObjectAllocator::shared_small_page_addr() {
   return _use_per_cpu_shared_small_pages ? _shared_small_page.addr() : _shared_small_page.addr(0);
@@ -126,6 +127,42 @@ zaddress ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
   return addr;
 }
 
+zaddress ZObjectAllocator::alloc_object_in_medium_page(size_t size,
+                                                       ZAllocationFlags flags) {
+  zaddress addr = zaddress::null;
+  ZPage** shared_medium_page = _shared_medium_page.addr();
+  ZPage* page = Atomic::load_acquire(shared_medium_page);
+
+  if (page != nullptr) {
+    addr = page->alloc_object_atomic(size);
+  }
+
+  if (is_null(addr)) {
+    // When a new medium page is required, we synchronize the allocation of the
+    // new page using a lock. This is to avoid having multiple threads allocate
+    // medium pages when we know only one of them will succeed in installing
+    // the page at this layer.
+    ZLocker<ZLock> locker(&_medium_page_alloc_lock);
+
+    // When holding the lock we can't allow the page allocator to stall,
+    // which in the common case it won't. The page allocation is thus done
+    // in a non-blocking fashion and only if this fails we below (while not
+    // holding the lock) do the blocking page allocation.
+    ZAllocationFlags non_blocking_flags = flags;
+    non_blocking_flags.set_non_blocking();
+
+    addr = alloc_object_in_shared_page(shared_medium_page, ZPageType::medium, ZPageSizeMedium, size, non_blocking_flags);
+  }
+
+  if (is_null(addr) && !flags.non_blocking()) {
+    // The above allocation attempts failed and this allocation should stall
+    // until memory is available. Redo the allocation with blocking enabled.
+    addr = alloc_object_in_shared_page(shared_medium_page, ZPageType::medium, ZPageSizeMedium, size, flags);
+  }
+
+  return addr;
+}
+
 zaddress ZObjectAllocator::alloc_large_object(size_t size, ZAllocationFlags flags) {
   zaddress addr = zaddress::null;
 
@@ -141,7 +178,7 @@ zaddress ZObjectAllocator::alloc_large_object(size_t size, ZAllocationFlags flag
 }
 
 zaddress ZObjectAllocator::alloc_medium_object(size_t size, ZAllocationFlags flags) {
-  return alloc_object_in_shared_page(_shared_medium_page.addr(), ZPageType::medium, ZPageSizeMedium, size, flags);
+  return alloc_object_in_medium_page(size, flags);
 }
 
 zaddress ZObjectAllocator::alloc_small_object(size_t size, ZAllocationFlags flags) {

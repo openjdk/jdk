@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
@@ -499,11 +498,11 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   // short circuit the directory search if the process doesn't even exist.
   if (kill(vmid, 0) == OS_ERR) {
     if (errno == ESRCH) {
-      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-                  "Process not found");
+      THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                     "Process not found");
     }
     else /* EPERM */ {
-      THROW_MSG_0(vmSymbols::java_io_IOException(), os::strerror(errno));
+      THROW_MSG_NULL(vmSymbols::java_io_IOException(), os::strerror(errno));
     }
   }
 
@@ -1053,7 +1052,7 @@ static char* mmap_create_shared(size_t size) {
     return nullptr;
   }
 
-  mapAddress = (char*)::mmap((char*)0, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+  mapAddress = (char*)::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 
   result = ::close(fd);
   assert(result != OS_ERR, "could not close file");
@@ -1086,17 +1085,16 @@ static char* mmap_create_shared(size_t size) {
 static void unmap_shared(char* addr, size_t bytes) {
   int res;
   if (MemTracker::enabled()) {
-    // Note: Tracker contains a ThreadCritical.
-    Tracker tkr(Tracker::release);
+    MemTracker::NmtVirtualMemoryLocker nvml;
     res = ::munmap(addr, bytes);
     if (res == 0) {
-      tkr.record((address)addr, bytes);
+      MemTracker::record_virtual_memory_release(addr, bytes);
     }
   } else {
     res = ::munmap(addr, bytes);
   }
   if (res != 0) {
-    log_info(os)("os::release_memory failed (" PTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), bytes);
+    log_info(os)("os::release_memory failed (" PTR_FORMAT ", %zu)", p2i(addr), bytes);
   }
 }
 
@@ -1209,7 +1207,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
 
   assert(size > 0, "unexpected size <= 0");
 
-  char* mapAddress = (char*)::mmap((char*)0, size, mmap_prot, MAP_SHARED, fd, 0);
+  char* mapAddress = (char*)::mmap(nullptr, size, mmap_prot, MAP_SHARED, fd, 0);
 
   int result = ::close(fd);
   assert(result != OS_ERR, "could not close file");
@@ -1228,7 +1226,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   *addr = mapAddress;
   *sizep = size;
 
-  log_debug(perf, memops)("mapped " SIZE_FORMAT " bytes for vmid %d at "
+  log_debug(perf, memops)("mapped %zu bytes for vmid %d at "
                           INTPTR_FORMAT, size, vmid, p2i((void*)mapAddress));
 }
 
@@ -1330,7 +1328,7 @@ void PerfMemory::attach(int vmid, char** addrp, size_t* sizep, TRAPS) {
 //
 void PerfMemory::detach(char* addr, size_t bytes) {
 
-  assert(addr != 0, "address sanity check");
+  assert(addr != nullptr, "address sanity check");
   assert(bytes > 0, "capacity sanity check");
 
   if (PerfMemory::contains(addr) || PerfMemory::contains(addr + bytes - 1)) {

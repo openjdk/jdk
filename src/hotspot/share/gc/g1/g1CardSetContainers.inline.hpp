@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1CARDSETCONTAINERS_INLINE_HPP
 
 #include "gc/g1/g1CardSetContainers.hpp"
+
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/checkedCast.hpp"
@@ -145,7 +146,7 @@ inline G1CardSetArray::G1CardSetArray(uint card_in_region, EntryCountType num_ca
   _num_entries(1) {
   assert(_size > 0, "CardSetArray of size 0 not supported.");
   assert(_size < LockBitMask, "Only support CardSetArray of size %u or smaller.", LockBitMask - 1);
-  _data[0] = checked_cast<EntryDataType>(card_in_region);
+  *entry_addr(0) = checked_cast<EntryDataType>(card_in_region);
 }
 
 inline G1CardSetArray::G1CardSetArrayLocker::G1CardSetArrayLocker(EntryCountType volatile* num_entries_addr) :
@@ -167,13 +168,31 @@ inline G1CardSetArray::G1CardSetArrayLocker::G1CardSetArrayLocker(EntryCountType
   }
 }
 
+inline G1CardSetArray::EntryDataType const* G1CardSetArray::base_addr() const {
+  const void* ptr = reinterpret_cast<const char*>(this) + header_size_in_bytes();
+  return reinterpret_cast<EntryDataType const*>(ptr);
+}
+
+inline G1CardSetArray::EntryDataType const* G1CardSetArray::entry_addr(EntryCountType index) const {
+  assert(index < _num_entries, "precondition");
+  return base_addr() + index;
+}
+
+inline G1CardSetArray::EntryDataType* G1CardSetArray::entry_addr(EntryCountType index) {
+  return const_cast<EntryDataType*>(const_cast<const G1CardSetArray*>(this)->entry_addr(index));
+}
+
+inline G1CardSetArray::EntryDataType G1CardSetArray::at(EntryCountType index) const {
+  return *entry_addr(index);
+}
+
 inline G1AddCardResult G1CardSetArray::add(uint card_idx) {
-  assert(card_idx < (1u << (sizeof(_data[0]) * BitsPerByte)),
+  assert(card_idx < (1u << (sizeof(EntryDataType) * BitsPerByte)),
          "Card index %u does not fit allowed card value range.", card_idx);
   EntryCountType num_entries = Atomic::load_acquire(&_num_entries) & EntryMask;
   EntryCountType idx = 0;
   for (; idx < num_entries; idx++) {
-    if (_data[idx] == card_idx) {
+    if (at(idx) == card_idx) {
       return Found;
     }
   }
@@ -186,7 +205,7 @@ inline G1AddCardResult G1CardSetArray::add(uint card_idx) {
   num_entries = x.num_entries();
   // Look if the cards added while waiting for the lock are the same as our card.
   for (; idx < num_entries; idx++) {
-    if (_data[idx] == card_idx) {
+    if (at(idx) == card_idx) {
       return Found;
     }
   }
@@ -196,7 +215,7 @@ inline G1AddCardResult G1CardSetArray::add(uint card_idx) {
     return Overflow;
   }
 
-  _data[num_entries] = checked_cast<EntryDataType>(card_idx);
+  *entry_addr(num_entries) = checked_cast<EntryDataType>(card_idx);
 
   x.inc_num_entries();
 
@@ -207,7 +226,7 @@ inline bool G1CardSetArray::contains(uint card_idx) {
   EntryCountType num_entries = Atomic::load_acquire(&_num_entries) & EntryMask;
 
   for (EntryCountType idx = 0; idx < num_entries; idx++) {
-    if (_data[idx] == card_idx) {
+    if (at(idx) == card_idx) {
       return true;
     }
   }
@@ -218,7 +237,7 @@ template <class CardVisitor>
 void G1CardSetArray::iterate(CardVisitor& found) {
   EntryCountType num_entries = Atomic::load_acquire(&_num_entries) & EntryMask;
   for (EntryCountType idx = 0; idx < num_entries; idx++) {
-    found(_data[idx]);
+    found(at(idx));
   }
 }
 
@@ -257,15 +276,33 @@ inline size_t G1CardSetBitMap::header_size_in_bytes() {
     return offset_of(G1CardSetBitMap, _bits);
 }
 
+inline G1CardSetHowl::ContainerPtr const* G1CardSetHowl::container_addr(EntryCountType index) const {
+  assert(index < _num_entries, "precondition");
+  return buckets() + index;
+}
+
+inline G1CardSetHowl::ContainerPtr* G1CardSetHowl::container_addr(EntryCountType index) {
+  return const_cast<ContainerPtr*>(const_cast<const G1CardSetHowl*>(this)->container_addr(index));
+}
+
+inline G1CardSetHowl::ContainerPtr G1CardSetHowl::at(EntryCountType index) const {
+  return *container_addr(index);
+}
+
+inline G1CardSetHowl::ContainerPtr const* G1CardSetHowl::buckets() const {
+  const void* ptr = reinterpret_cast<const char*>(this) + header_size_in_bytes();
+  return reinterpret_cast<ContainerPtr const*>(ptr);
+}
+
 inline G1CardSetHowl::G1CardSetHowl(EntryCountType card_in_region, G1CardSetConfiguration* config) :
   G1CardSetContainer(),
   _num_entries((config->max_cards_in_array() + 1)) /* Card Transfer will not increment _num_entries */ {
   EntryCountType num_buckets = config->num_buckets_in_howl();
   EntryCountType bucket = config->howl_bucket_index(card_in_region);
   for (uint i = 0; i < num_buckets; ++i) {
-    _buckets[i] = G1CardSetInlinePtr();
+    *container_addr(i) = G1CardSetInlinePtr();
     if (i == bucket) {
-      G1CardSetInlinePtr value(&_buckets[i], _buckets[i]);
+      G1CardSetInlinePtr value(container_addr(i), at(i));
       value.add(card_in_region, config->inline_ptr_bits_per_card(), config->max_cards_in_inline_ptr());
     }
   }
@@ -273,7 +310,7 @@ inline G1CardSetHowl::G1CardSetHowl(EntryCountType card_in_region, G1CardSetConf
 
 inline bool G1CardSetHowl::contains(uint card_idx, G1CardSetConfiguration* config) {
   EntryCountType bucket = config->howl_bucket_index(card_idx);
-  ContainerPtr* array_entry = get_container_addr(bucket);
+  ContainerPtr* array_entry = container_addr(bucket);
   ContainerPtr container = Atomic::load_acquire(array_entry);
 
   switch (G1CardSet::container_type(container)) {
@@ -299,14 +336,14 @@ inline bool G1CardSetHowl::contains(uint card_idx, G1CardSetConfiguration* confi
 template <class CardOrRangeVisitor>
 inline void G1CardSetHowl::iterate(CardOrRangeVisitor& found, G1CardSetConfiguration* config) {
   for (uint i = 0; i < config->num_buckets_in_howl(); ++i) {
-    iterate_cardset(_buckets[i], i, found, config);
+    iterate_cardset(at(i), i, found, config);
   }
 }
 
 template <class ContainerPtrVisitor>
 inline void G1CardSetHowl::iterate(ContainerPtrVisitor& found, uint num_card_sets) {
   for (uint i = 0; i < num_card_sets; ++i) {
-    found(&_buckets[i]);
+    found(container_addr(i));
   }
 }
 

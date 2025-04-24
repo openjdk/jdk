@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,9 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-/**
+/*
  * @test
- * @bug 8215510 8283075
+ * @bug 8215510 8283075 8338544
  * @compile ClassDescTest.java
  * @run testng ClassDescTest
  * @summary unit tests for java.lang.constant.ClassDesc
@@ -68,7 +68,30 @@ public class ClassDescTest extends SymbolicDescTest {
             assertEquals(r, r.componentType().arrayType());
             assertEquals(r, r.resolveConstantDesc(LOOKUP).getComponentType().describeConstable().orElseThrow().arrayType());
             assertEquals(r, Array.newInstance(r.componentType().resolveConstantDesc(LOOKUP), 0).getClass().describeConstable().orElseThrow());
+        } else {
+            assertNull(r.componentType());
         }
+
+        if (!r.isClassOrInterface()) {
+            assertEquals(r.packageName(), "");
+        }
+    }
+
+    private static String classDisplayName(Class<?> c) {
+        int arrayLevel = 0;
+        while (c.isArray()) {
+            arrayLevel++;
+            c = c.componentType();
+        }
+        String name = c.getName();
+        String simpleClassName;
+        if (c.isPrimitive()) {
+            simpleClassName = name;
+        } else {
+            int lastDot = name.lastIndexOf('.');
+            simpleClassName = lastDot == -1 ? name : name.substring(lastDot + 1);
+        }
+        return simpleClassName + "[]".repeat(arrayLevel);
     }
 
     private void testClassDesc(ClassDesc r, Class<?> c) throws ReflectiveOperationException {
@@ -77,6 +100,13 @@ public class ClassDescTest extends SymbolicDescTest {
         assertEquals(r.resolveConstantDesc(LOOKUP), c);
         assertEquals(c.describeConstable().orElseThrow(), r);
         assertEquals(ClassDesc.ofDescriptor(c.descriptorString()), r);
+        if (r.isArray()) {
+            testClassDesc(r.componentType(), c.componentType());
+        }
+        if (r.isClassOrInterface()) {
+            assertEquals(r.packageName(), c.getPackageName());
+        }
+        assertEquals(r.displayName(), classDisplayName(c));
     }
 
     public void testSymbolicDescsConstants() throws ReflectiveOperationException {
@@ -143,7 +173,8 @@ public class ClassDescTest extends SymbolicDescTest {
             assertFalse(r.isPrimitive());
             assertEquals("Ljava/lang/String;", r.descriptorString());
             assertEquals("String", r.displayName());
-            assertEquals(r.arrayType().resolveConstantDesc(LOOKUP), String[].class);
+            testClassDesc(r.arrayType(), String[].class);
+            testClassDesc(r.arrayType(3), String[][][].class);
             stringClassDescs.forEach(rr -> assertEquals(r, rr));
         }
 
@@ -237,12 +268,19 @@ public class ClassDescTest extends SymbolicDescTest {
             testBadArrayRank(ClassDesc.of("Bar"));
             testArrayRankOverflow();
         }
+        try {
+            ConstantDescs.CD_void.arrayType();
+            fail("Should throw IAE");
+        } catch (IllegalArgumentException iae) {
+            // Expected
+        }
     }
 
     public void testBadClassDescs() {
         List<String> badDescriptors = List.of("II", "I;", "Q", "L", "",
                                               "java.lang.String", "[]", "Ljava/lang/String",
-                                              "Ljava.lang.String;", "java/lang/String");
+                                              "Ljava.lang.String;", "java/lang/String", "L;",
+                                              "La//b;", "L/a;", "La/;");
 
         for (String d : badDescriptors) {
             try {
@@ -255,7 +293,7 @@ public class ClassDescTest extends SymbolicDescTest {
         }
 
         List<String> badBinaryNames = List.of("I;", "[]", "Ljava/lang/String",
-                "Ljava.lang.String;", "java/lang/String");
+                "Ljava.lang.String;", "java/lang/String", "");
         for (String d : badBinaryNames) {
             try {
                 ClassDesc constant = ClassDesc.of(d);
@@ -266,7 +304,7 @@ public class ClassDescTest extends SymbolicDescTest {
         }
 
         List<String> badInternalNames = List.of("I;", "[]", "[Ljava/lang/String;",
-                "Ljava.lang.String;", "java.lang.String");
+                "Ljava.lang.String;", "java.lang.String", "");
         for (String d : badInternalNames) {
             try {
                 ClassDesc constant = ClassDesc.ofInternalName(d);

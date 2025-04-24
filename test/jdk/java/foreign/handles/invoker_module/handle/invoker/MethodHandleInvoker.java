@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,7 @@ public class MethodHandleInvoker {
         addDefaultMapping(Consumer.class, (Consumer<Object>)(Object o) -> {});
         addDefaultMapping(FunctionDescriptor.class, FunctionDescriptor.ofVoid());
         addDefaultMapping(Linker.Option[].class, null);
+        addDefaultMapping(Runtime.class, Runtime.getRuntime());
         addDefaultMapping(byte.class, (byte)0);
         addDefaultMapping(boolean.class, true);
         addDefaultMapping(char.class, (char)0);

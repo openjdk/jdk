@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
         TypeKind kind = t.getKind();
         if (kind == TypeKind.PACKAGE || kind == TypeKind.MODULE)
             throw new IllegalArgumentException(t.toString());
-        return types.erasure((Type)t).stripMetadataIfNeeded();
+        return types.erasure((Type)t).stripMetadata();
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
@@ -155,7 +155,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
     @DefinedBy(Api.LANGUAGE_MODEL)
     public TypeMirror capture(TypeMirror t) {
         validateTypeNotIn(t, EXEC_OR_PKG_OR_MOD);
-        return types.capture((Type)t).stripMetadataIfNeeded();
+        return types.capture((Type)t).stripMetadata();
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
@@ -193,10 +193,14 @@ public class JavacTypes implements javax.lang.model.util.Types {
     public ArrayType getArrayType(TypeMirror componentType) {
         switch (componentType.getKind()) {
         case VOID:
+        case NONE:
+        case NULL:
         case EXECUTABLE:
         case WILDCARD:  // heh!
         case PACKAGE:
         case MODULE:
+        case UNION:
+        case INTERSECTION:
             throw new IllegalArgumentException(componentType.toString());
         }
         return new Type.ArrayType((Type) componentType, syms.arrayClass);
@@ -301,6 +305,13 @@ public class JavacTypes implements javax.lang.model.util.Types {
         if (types.asSuper(site, sym.getEnclosingElement()) == null)
             throw new IllegalArgumentException(sym + "@" + site);
         return types.memberType(site, sym);
+    }
+
+
+    @DefinedBy(Api.LANGUAGE_MODEL)
+    @SuppressWarnings("unchecked")
+    public <T extends TypeMirror> T stripAnnotations(T t) {
+        return (T)((Type) t).stripMetadata();
     }
 
 

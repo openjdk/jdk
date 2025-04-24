@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,11 @@ class fileStream;
                     develop_pd,                                             \
                     product,                                                \
                     product_pd,                                             \
-                    notproduct,                                             \
                     range,                                                  \
                     constraint)                                             \
                                                                             \
   product(bool, EnableJVMCI, false, EXPERIMENTAL,                           \
-          "Enable JVMCI")                                                   \
+          "Enable JVMCI. Defaults to true if UseJVMCICompiler is true.")    \
                                                                             \
   product(bool, UseGraalJIT, false, EXPERIMENTAL,                           \
           "Select the Graal JVMCI compiler. This is an alias for: "         \
@@ -141,12 +140,14 @@ class fileStream;
   product(bool, UseJVMCINativeLibrary, false, EXPERIMENTAL,                 \
           "Execute JVMCI Java code from a shared library (\"libjvmci\") "   \
           "instead of loading it from class files and executing it "        \
-          "on the HotSpot heap. Defaults to true if EnableJVMCIProduct is " \
-          "true and a JVMCI native library is available.")                  \
+          "on the HotSpot heap. Defaults to true if UseJVMCICompiler or "   \
+          "EnableJVMCI is true and a JVMCI native library is available.")   \
                                                                             \
-  product(double, JVMCINativeLibraryThreadFraction, 0.33, EXPERIMENTAL,     \
+  product(double, JVMCINativeLibraryThreadFraction, 0.66, EXPERIMENTAL,     \
           "The fraction of compiler threads used by libjvmci. "             \
-          "The remaining compiler threads are used by C1.")                 \
+          "The remaining compiler threads are used by C1. "                 \
+          "Reducing this value could reduce the max RSS but "               \
+          "also increase the warmup time.")                                 \
           range(0.0, 1.0)                                                   \
                                                                             \
   product(ccstr, JVMCINativeLibraryErrorFile, nullptr, EXPERIMENTAL,        \

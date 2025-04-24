@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
@@ -53,7 +52,7 @@ static const size_t GROW_HINT = 32;
 
 static const size_t ResolvedMethodTableSizeLog = 10;
 
-unsigned int method_hash(const Method* method) {
+static unsigned int method_hash(const Method* method) {
   unsigned int hash = method->method_holder()->class_loader_data()->identity_hash();
   hash = (hash * 31) ^ method->klass_name()->identity_hash();
   hash = (hash * 31) ^ method->name()->identity_hash();
@@ -102,7 +101,7 @@ volatile size_t          _items_count           = 0;
 
 void ResolvedMethodTable::create_table() {
   _local_table  = new ResolvedMethodTableHash(ResolvedMethodTableSizeLog, END_SIZE, GROW_HINT);
-  log_trace(membername, table)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
+  log_trace(membername, table)("Start size: %zu (%zu)",
                                _current_size, ResolvedMethodTableSizeLog);
   _oop_storage = OopStorageSet::create_weak("ResolvedMethodTable Weak", mtClass);
   _oop_storage->register_num_dead_callback(&gc_notification);
@@ -176,7 +175,13 @@ oop ResolvedMethodTable::find_method(const Method* method) {
 
   ResolvedMethodTableLookup lookup(thread, method_hash(method), method);
   ResolvedMethodGet rmg(thread, method);
-  _local_table->get(thread, lookup, rmg);
+  bool rehash_warning = false;
+  _local_table->get(thread, lookup, rmg, &rehash_warning);
+  if (rehash_warning) {
+    // if load factor is low but we need to rehash that's a problem with the hash function.
+    log_info(membername, table)("Rehash warning, load factor %g", get_load_factor());
+    trigger_concurrent_work();
+  }
 
   return rmg.get_res_oop();
 }
@@ -231,7 +236,7 @@ static const double PREF_AVG_LIST_LEN = 2.0;
 static const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 
 void ResolvedMethodTable::gc_notification(size_t num_dead) {
-  log_trace(membername, table)("Uncleaned items:" SIZE_FORMAT, num_dead);
+  log_trace(membername, table)("Uncleaned items:%zu", num_dead);
 
   if (has_work()) {
     return;
@@ -291,7 +296,7 @@ void ResolvedMethodTable::grow(JavaThread* jt) {
   }
   gt.done(jt);
   _current_size = table_size();
-  log_info(membername, table)("Grown to size:" SIZE_FORMAT, _current_size);
+  log_info(membername, table)("Grown to size:%zu", _current_size);
 }
 
 struct ResolvedMethodTableDoDelete : StackObj {

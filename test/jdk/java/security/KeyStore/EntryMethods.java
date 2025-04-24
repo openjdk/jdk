@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,15 +70,9 @@ public class EntryMethods
         pre15fis = new FileInputStream
             (System.getProperty("test.src") + "/EntryMethods.pre15.keystore");
 
-        AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                put("KeyStore.Pre15KeyStore", "EntryMethods$Pre15");
-                put("KeyStore.Post15KeyStore", "EntryMethods$Post15");
-                put("KeyStore.UnrecoverableKeyStore",
-                                        "EntryMethods$UnrecoverableKS");
-                return null;
-            }
-        });
+        put("KeyStore.Pre15KeyStore", "EntryMethods$Pre15");
+        put("KeyStore.Post15KeyStore", "EntryMethods$Post15");
+        put("KeyStore.UnrecoverableKeyStore", "EntryMethods$UnrecoverableKS");
     }
 
     public static void main(String[] args) throws Exception {

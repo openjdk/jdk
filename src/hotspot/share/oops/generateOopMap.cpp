@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "logging/log.hpp"
@@ -436,12 +435,12 @@ void GenerateOopMap::mark_bbheaders_and_count_gc_points() {
      /* We will also mark successors of jsr's as basic block headers. */
     switch (bytecode) {
       case Bytecodes::_jsr:
-        assert(!fellThrough, "should not happen");
-        bb_mark_fct(this, bci + Bytecodes::length_for(bytecode), nullptr);
-        break;
       case Bytecodes::_jsr_w:
         assert(!fellThrough, "should not happen");
-        bb_mark_fct(this, bci + Bytecodes::length_for(bytecode), nullptr);
+        // If this is the last bytecode, there is no successor to mark
+        if (bci + Bytecodes::length_for(bytecode) < method()->code_size()) {
+          bb_mark_fct(this, bci + Bytecodes::length_for(bytecode), nullptr);
+        }
         break;
       default:
         break;
@@ -502,7 +501,10 @@ void GenerateOopMap::mark_reachable_code() {
           case Bytecodes::_jsr:
           case Bytecodes::_jsr_w:
             assert(!fell_through, "should not happen");
-            reachable_basicblock(this, bci + Bytecodes::length_for(bytecode), &change);
+            // If this is the last bytecode, there is no successor to mark
+            if (bci + Bytecodes::length_for(bytecode) < method()->code_size()) {
+              reachable_basicblock(this, bci + Bytecodes::length_for(bytecode), &change);
+            }
             break;
           default:
             break;
@@ -586,9 +588,6 @@ bool GenerateOopMap::jump_targets_do(BytecodeStream *bcs, jmpFct_t jmpFct, int *
     case Bytecodes::_jsr:
       assert(bcs->is_wide()==false, "sanity check");
       (*jmpFct)(this, bcs->dest(), data);
-
-
-
       break;
     case Bytecodes::_jsr_w:
       (*jmpFct)(this, bcs->dest_w(), data);
@@ -1280,7 +1279,6 @@ void GenerateOopMap::do_exception_edge(BytecodeStream* itr) {
 }
 
 void GenerateOopMap::report_monitor_mismatch(const char *msg) {
-  ResourceMark rm;
   LogStream ls(Log(monitormismatch)::info());
   ls.print("Monitor mismatch in method ");
   method()->print_short_name(&ls);

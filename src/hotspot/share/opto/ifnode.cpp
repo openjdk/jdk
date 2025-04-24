@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciTypeFlow.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -32,7 +31,7 @@
 #include "opto/connode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/phaseX.hpp"
-#include "opto/predicates.hpp"
+#include "opto/predicates_enums.hpp"
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
@@ -46,6 +45,22 @@
 #ifndef PRODUCT
 extern uint explicit_null_checks_elided;
 #endif
+
+IfNode::IfNode(Node* control, Node* bol, float p, float fcnt)
+    : MultiBranchNode(2),
+      _prob(p),
+      _fcnt(fcnt),
+      _assertion_predicate_type(AssertionPredicateType::None) {
+  init_node(control, bol);
+}
+
+IfNode::IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type)
+    : MultiBranchNode(2),
+      _prob(p),
+      _fcnt(fcnt),
+      _assertion_predicate_type(assertion_predicate_type) {
+  init_node(control, bol);
+}
 
 //=============================================================================
 //------------------------------Value------------------------------------------
@@ -454,6 +469,22 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   return new ConINode(TypeInt::ZERO);
 }
 
+IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, Node* bol) {
+  // Assert here that we only try to create a clone from an If node with the same profiling if that actually makes sense.
+  // Some If node subtypes should not be cloned in this way. In theory, we should not clone BaseCountedLoopEndNodes.
+  // But they can end up being used as normal If nodes when peeling a loop - they serve as zero-trip guard.
+  // Allow them as well.
+  assert(if_node_profile->Opcode() == Op_If || if_node_profile->is_RangeCheck()
+         || if_node_profile->is_BaseCountedLoopEnd(), "should not clone other nodes");
+  if (if_node_profile->is_RangeCheck()) {
+    // RangeCheck nodes could be further optimized.
+    return new RangeCheckNode(ctrl, bol, if_node_profile->_prob, if_node_profile->_fcnt);
+  } else {
+    // Not a RangeCheckNode? Fall back to IfNode.
+    return new IfNode(ctrl, bol, if_node_profile->_prob, if_node_profile->_fcnt);
+  }
+}
+
 // if this IfNode follows a range check pattern return the projection
 // for the failed path
 ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
@@ -739,6 +770,7 @@ bool IfNode::cmpi_folds(PhaseIterGVN* igvn, bool fold_ne) {
 bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
   return ctrl != nullptr &&
     ctrl->is_Proj() &&
+    ctrl->outcnt() == 1 && // No side-effects
     ctrl->in(0) != nullptr &&
     ctrl->in(0)->Opcode() == Op_If &&
     ctrl->in(0)->outcnt() == 2 &&
@@ -805,9 +837,9 @@ bool IfNode::is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* u
 }
 
 // Return projection that leads to an uncommon trap if any
-ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call) const {
+ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call, Deoptimization::DeoptReason reason) const {
   for (int i = 0; i < 2; i++) {
-    call = proj_out(i)->is_uncommon_trap_proj();
+    call = proj_out(i)->is_uncommon_trap_proj(reason);
     if (call != nullptr) {
       return proj_out(i);
     }
@@ -1015,7 +1047,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
       const TypeInt* type2 = filtered_int_type(igvn, n, fail);
       if (type2 != nullptr) {
         failtype = failtype->join(type2)->is_int();
-        if (failtype->_lo > failtype->_hi) {
+        if (failtype->empty()) {
           // previous if determines the result of this if so
           // replace Bool with constant
           igvn->replace_input_of(this, 1, igvn->intcon(success->_con));
@@ -1023,55 +1055,53 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
         }
       }
     }
-    lo = nullptr;
-    hi = nullptr;
+    return false;
   }
 
-  if (lo && hi) {
-    Node* hook = new Node(1);
-    hook->init_req(0, lo); // Add a use to lo to prevent him from dying
-    // Merge the two compares into a single unsigned compare by building (CmpU (n - lo) (hi - lo))
-    Node* adjusted_val = igvn->transform(new SubINode(n,  lo));
-    if (adjusted_lim == nullptr) {
-      adjusted_lim = igvn->transform(new SubINode(hi, lo));
-    }
-    hook->destruct(igvn);
-
-    int lo = igvn->type(adjusted_lim)->is_int()->_lo;
-    if (lo < 0) {
-      // If range check elimination applies to this comparison, it includes code to protect from overflows that may
-      // cause the main loop to be skipped entirely. Delay this transformation.
-      // Example:
-      // for (int i = 0; i < limit; i++) {
-      //   if (i < max_jint && i > min_jint) {...
-      // }
-      // Comparisons folded as:
-      // i - min_jint - 1 <u -2
-      // when RC applies, main loop limit becomes:
-      // min(limit, max(-2 + min_jint + 1, min_jint))
-      // = min(limit, min_jint)
-      // = min_jint
-      if (!igvn->C->post_loop_opts_phase()) {
-        if (adjusted_val->outcnt() == 0) {
-          igvn->remove_dead_node(adjusted_val);
-        }
-        if (adjusted_lim->outcnt() == 0) {
-          igvn->remove_dead_node(adjusted_lim);
-        }
-        igvn->C->record_for_post_loop_opts_igvn(this);
-        return false;
-      }
-    }
-
-    Node* newcmp = igvn->transform(new CmpUNode(adjusted_val, adjusted_lim));
-    Node* newbool = igvn->transform(new BoolNode(newcmp, cond));
-
-    igvn->replace_input_of(dom_iff, 1, igvn->intcon(proj->_con));
-    igvn->replace_input_of(this, 1, newbool);
-
-    return true;
+  assert(lo != nullptr && hi != nullptr, "sanity");
+  Node* hook = new Node(lo); // Add a use to lo to prevent him from dying
+  // Merge the two compares into a single unsigned compare by building (CmpU (n - lo) (hi - lo))
+  Node* adjusted_val = igvn->transform(new SubINode(n,  lo));
+  if (adjusted_lim == nullptr) {
+    adjusted_lim = igvn->transform(new SubINode(hi, lo));
   }
-  return false;
+  hook->destruct(igvn);
+
+  if (adjusted_val->is_top() || adjusted_lim->is_top()) {
+    return false;
+  }
+
+  if (igvn->type(adjusted_lim)->is_int()->_lo < 0 &&
+      !igvn->C->post_loop_opts_phase()) {
+    // If range check elimination applies to this comparison, it includes code to protect from overflows that may
+    // cause the main loop to be skipped entirely. Delay this transformation.
+    // Example:
+    // for (int i = 0; i < limit; i++) {
+    //   if (i < max_jint && i > min_jint) {...
+    // }
+    // Comparisons folded as:
+    // i - min_jint - 1 <u -2
+    // when RC applies, main loop limit becomes:
+    // min(limit, max(-2 + min_jint + 1, min_jint))
+    // = min(limit, min_jint)
+    // = min_jint
+    if (adjusted_val->outcnt() == 0) {
+      igvn->remove_dead_node(adjusted_val);
+    }
+    if (adjusted_lim->outcnt() == 0) {
+      igvn->remove_dead_node(adjusted_lim);
+    }
+    igvn->C->record_for_post_loop_opts_igvn(this);
+    return false;
+  }
+
+  Node* newcmp = igvn->transform(new CmpUNode(adjusted_val, adjusted_lim));
+  Node* newbool = igvn->transform(new BoolNode(newcmp, cond));
+
+  igvn->replace_input_of(dom_iff, 1, igvn->intcon(proj->_con));
+  igvn->replace_input_of(this, 1, newbool);
+
+  return true;
 }
 
 // Merge the branches that trap for this If and the dominating If into
@@ -1314,7 +1344,7 @@ Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
 
   if (cmpi_folds(igvn)) {
     Node* ctrl = in(0);
-    if (is_ctrl_folds(ctrl, igvn) && ctrl->outcnt() == 1) {
+    if (is_ctrl_folds(ctrl, igvn)) {
       // A integer comparison immediately dominated by another integer
       // comparison
       ProjNode* success = nullptr;
@@ -1491,6 +1521,14 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* prev_dom = search_identical(dist, igvn);
 
   if (prev_dom != nullptr) {
+    // Dominating CountedLoopEnd (left over from some now dead loop) will become the new loop exit. Outer strip mined
+    // loop will go away. Mark this loop as no longer strip mined.
+    if (is_CountedLoopEnd()) {
+      CountedLoopNode* counted_loop_node = as_CountedLoopEnd()->loopnode();
+      if (counted_loop_node != nullptr) {
+        counted_loop_node->clear_strip_mined();
+      }
+    }
     // Replace dominated IfNode
     return dominated_by(prev_dom, igvn, false);
   }
@@ -1808,11 +1846,26 @@ void IfProjNode::pin_array_access_nodes(PhaseIterGVN* igvn) {
 }
 
 #ifndef PRODUCT
-//------------------------------dump_spec--------------------------------------
-void IfNode::dump_spec(outputStream *st) const {
-  st->print("P=%f, C=%f",_prob,_fcnt);
+void IfNode::dump_spec(outputStream* st) const {
+  switch (_assertion_predicate_type) {
+    case AssertionPredicateType::InitValue:
+      st->print("#Init Value Assertion Predicate  ");
+      break;
+    case AssertionPredicateType::LastValue:
+      st->print("#Last Value Assertion Predicate  ");
+      break;
+    case AssertionPredicateType::FinalIv:
+      st->print("#Final IV Assertion Predicate  ");
+      break;
+    case AssertionPredicateType::None:
+      // No Assertion Predicate
+      break;
+    default:
+      fatal("Unknown Assertion Predicate type");
+  }
+  st->print("P=%f, C=%f", _prob, _fcnt);
 }
-#endif
+#endif // NOT PRODUCT
 
 //------------------------------idealize_test----------------------------------
 // Try to canonicalize tests better.  Peek at the Cmp/Bool/If sequence and
@@ -1898,6 +1951,46 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // then we are guaranteed to fail, so just start interpreting there.
     // We 'expand' the top 3 range checks to include all post-dominating
     // checks.
+    //
+    // Example:
+    // a[i+x] // (1) 1 < x < 6
+    // a[i+3] // (2)
+    // a[i+4] // (3)
+    // a[i+6] // max = max of all constants
+    // a[i+2]
+    // a[i+1] // min = min of all constants
+    //
+    // If x < 3:
+    //   (1) a[i+x]: Leave unchanged
+    //   (2) a[i+3]: Replace with a[i+max] = a[i+6]: i+x < i+3 <= i+6  -> (2) is covered
+    //   (3) a[i+4]: Replace with a[i+min] = a[i+1]: i+1 < i+4 <= i+6  -> (3) and all following checks are covered
+    //   Remove all other a[i+c] checks
+    //
+    // If x >= 3:
+    //   (1) a[i+x]: Leave unchanged
+    //   (2) a[i+3]: Replace with a[i+min] = a[i+1]: i+1 < i+3 <= i+x  -> (2) is covered
+    //   (3) a[i+4]: Replace with a[i+max] = a[i+6]: i+1 < i+4 <= i+6  -> (3) and all following checks are covered
+    //   Remove all other a[i+c] checks
+    //
+    // We only need the top 2 range checks if x is the min or max of all constants.
+    //
+    // This, however, only works if the interval [i+min,i+max] is not larger than max_int (i.e. abs(max - min) < max_int):
+    // The theoretical max size of an array is max_int with:
+    // - Valid index space: [0,max_int-1]
+    // - Invalid index space: [max_int,-1] // max_int, min_int, min_int - 1 ..., -1
+    //
+    // The size of the consecutive valid index space is smaller than the size of the consecutive invalid index space.
+    // If we choose min and max in such a way that:
+    // - abs(max - min) < max_int
+    // - i+max and i+min are inside the valid index space
+    // then all indices [i+min,i+max] must be in the valid index space. Otherwise, the invalid index space must be
+    // smaller than the valid index space which is never the case for any array size.
+    //
+    // Choosing a smaller array size only makes the valid index space smaller and the invalid index space larger and
+    // the argument above still holds.
+    //
+    // Note that the same optimization with the same maximal accepted interval size can also be found in C1.
+    const jlong maximum_number_of_min_max_interval_indices = (jlong)max_jint;
 
     // The top 3 range checks seen
     const int NRC = 3;
@@ -1932,13 +2025,18 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             found_immediate_dominator = true;
             break;
           }
-          // Gather expanded bounds
-          off_lo = MIN2(off_lo,offset2);
-          off_hi = MAX2(off_hi,offset2);
-          // Record top NRC range checks
-          prev_checks[nb_checks%NRC].ctl = prev_dom->as_IfProj();
-          prev_checks[nb_checks%NRC].off = offset2;
-          nb_checks++;
+
+          // "x - y" -> must add one to the difference for number of elements in [x,y]
+          const jlong diff = (jlong)MIN2(offset2, off_lo) - (jlong)MAX2(offset2, off_hi);
+          if (ABS(diff) < maximum_number_of_min_max_interval_indices) {
+            // Gather expanded bounds
+            off_lo = MIN2(off_lo, offset2);
+            off_hi = MAX2(off_hi, offset2);
+            // Record top NRC range checks
+            prev_checks[nb_checks % NRC].ctl = prev_dom->as_IfProj();
+            prev_checks[nb_checks % NRC].off = offset2;
+            nb_checks++;
+          }
         }
       }
       prev_dom = dom;
@@ -2071,7 +2169,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 ParsePredicateNode::ParsePredicateNode(Node* control, Deoptimization::DeoptReason deopt_reason, PhaseGVN* gvn)
     : IfNode(control, gvn->intcon(1), PROB_MAX, COUNT_UNKNOWN),
       _deopt_reason(deopt_reason),
-      _useless(false) {
+      _predicate_state(PredicateState::Useful) {
   init_class_id(Class_ParsePredicate);
   gvn->C->add_parse_predicate(this);
   gvn->C->record_for_post_loop_opts_igvn(this);
@@ -2079,12 +2177,18 @@ ParsePredicateNode::ParsePredicateNode(Node* control, Deoptimization::DeoptReaso
   switch (deopt_reason) {
     case Deoptimization::Reason_predicate:
     case Deoptimization::Reason_profile_predicate:
+    case Deoptimization::Reason_auto_vectorization_check:
     case Deoptimization::Reason_loop_limit_check:
       break;
     default:
       assert(false, "unsupported deoptimization reason for Parse Predicate");
   }
 #endif // ASSERT
+}
+
+void ParsePredicateNode::mark_useless(PhaseIterGVN& igvn) {
+  _predicate_state = PredicateState::Useless;
+  igvn._worklist.push(this);
 }
 
 Node* ParsePredicateNode::uncommon_trap() const {
@@ -2096,14 +2200,15 @@ Node* ParsePredicateNode::uncommon_trap() const {
 
 // Fold this node away once it becomes useless or at latest in post loop opts IGVN.
 const Type* ParsePredicateNode::Value(PhaseGVN* phase) const {
+  assert(_predicate_state != PredicateState::MaybeUseful, "should only be MaybeUseful when eliminating useless "
+                                                          "predicates during loop opts");
   if (phase->type(in(0)) == Type::TOP) {
     return Type::TOP;
   }
-  if (_useless || phase->C->post_loop_opts_phase()) {
+  if (_predicate_state == PredicateState::Useless || phase->C->post_loop_opts_phase()) {
     return TypeTuple::IFTRUE;
-  } else {
-    return bottom_type();
   }
+  return bottom_type();
 }
 
 #ifndef PRODUCT
@@ -2116,12 +2221,17 @@ void ParsePredicateNode::dump_spec(outputStream* st) const {
     case Deoptimization::DeoptReason::Reason_profile_predicate:
       st->print("Profiled_Loop ");
       break;
+    case Deoptimization::DeoptReason::Reason_auto_vectorization_check:
+      st->print("Auto_Vectorization_Check ");
+      break;
     case Deoptimization::DeoptReason::Reason_loop_limit_check:
       st->print("Loop_Limit_Check ");
       break;
     default:
       fatal("unknown kind");
   }
+  if (_predicate_state == PredicateState::Useless) {
+    st->print("#useless ");
+  }
 }
-
 #endif // NOT PRODUCT

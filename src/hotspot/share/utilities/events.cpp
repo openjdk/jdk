@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/symbol.hpp"
@@ -36,6 +36,8 @@
 
 EventLog* Events::_logs = nullptr;
 StringEventLog* Events::_messages = nullptr;
+StringEventLog* Events::_memprotect_messages = nullptr;
+StringEventLog* Events::_nmethod_flush_messages = nullptr;
 StringEventLog* Events::_vm_operations = nullptr;
 StringEventLog* Events::_zgc_phase_switch = nullptr;
 ExceptionsEventLog* Events::_exceptions = nullptr;
@@ -96,8 +98,12 @@ void Events::print() {
 void Events::init() {
   if (LogEvents) {
     _messages = new StringEventLog("Events", "events");
+    _nmethod_flush_messages = new StringEventLog("Nmethod flushes", "nmethodflushes");
+    _memprotect_messages = new StringEventLog("Memory protections", "memprotects");
     _vm_operations = new StringEventLog("VM Operations", "vmops");
-    _zgc_phase_switch = new StringEventLog("ZGC Phase Switch", "zgcps");
+    if (UseZGC) {
+      _zgc_phase_switch = new StringEventLog("ZGC Phase Switch", "zgcps");
+    }
     _exceptions = new ExceptionsEventLog("Internal exceptions", "exc");
     _redefinitions = new StringEventLog("Classes redefined", "redef");
     _class_unloading = new UnloadingEventLog("Classes unloaded", "unload");
@@ -144,7 +150,9 @@ void UnloadingEventLog::log(Thread* thread, InstanceKlass* ik) {
   ik->name()->print_value_on(&st);
 }
 
-void ExceptionsEventLog::log(Thread* thread, Handle h_exception, const char* message, const char* file, int line) {
+void ExceptionsEventLog::log(Thread* thread, Handle h_exception,
+                             const char* message, const char* file, int line,
+                             int message_length_limit) {
   if (!should_log()) return;
 
   double timestamp = fetch_timestamp();
@@ -156,8 +164,11 @@ void ExceptionsEventLog::log(Thread* thread, Handle h_exception, const char* mes
                   _records[index].data.size());
   st.print("Exception <");
   h_exception->print_value_on(&st);
-  st.print("%s%s> (" PTR_FORMAT ") \n"
+  if (message != nullptr) {
+    int len = message_length_limit > 0 ? message_length_limit : (int)strlen(message);
+    st.print(": %.*s", len, message);
+  }
+  st.print("> (" PTR_FORMAT ") \n"
            "thrown [%s, line %d]",
-           message ? ": " : "", message ? message : "",
            p2i(h_exception()), file, line);
 }

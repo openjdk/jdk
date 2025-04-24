@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,23 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ModuleElement;
+import javax.lang.model.element.PackageElement;
+import javax.tools.JavaFileManager.Location;
+
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.util.DocTreeFactory;
+
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -38,19 +49,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
-import jdk.javadoc.internal.doclint.HtmlTag;
-
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.PackageElement;
-import javax.tools.JavaFileManager.Location;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-
-import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
 
 /**
  * A class to handle any files, including HTML files, found in the {@code doc-files}
@@ -158,8 +159,9 @@ public class DocFilesHandler {
                     configuration.messages.warning("doclet.Copy_Overwrite_warning",
                             srcfile.getPath(), dstdir.getPath());
                 } else {
-                    if (Utils.toLowerCase(srcfile.getPath()).endsWith(".html")) {
-                        handleHtmlFile(srcfile, dstDocPath);
+                    var path = Utils.toLowerCase(srcfile.getPath());
+                    if (path.endsWith(".html") || path.endsWith(".md")) {
+                        handleDocFile(srcfile, dstDocPath);
                     } else {
                         configuration.messages.notice("doclet.Copying_File_0_To_Dir_1",
                                 srcfile.getPath(), dstdir.getPath());
@@ -186,10 +188,10 @@ public class DocFilesHandler {
         }
     }
 
-    private void handleHtmlFile(DocFile srcFile, DocPath dstPath) throws DocletException {
+    private void handleDocFile(DocFile srcFile, DocPath dstPath) throws DocletException {
         var fileObject = srcFile.getFileObject();
         var dfElement = new DocFileElement(utils, element, fileObject);
-        var path = dstPath.resolve(srcFile.getName());
+        var path = dstPath.resolve(srcFile.getName().replaceAll("\\.[a-z]+$", ".html"));
 
         writerFactory.newDocFileWriter(path, dfElement).buildPage();
     }
@@ -214,17 +216,6 @@ public class DocFilesHandler {
         }
 
         @Override
-        protected Navigation getNavBar(PageMode pageMode, Element element) {
-            var pkg = dfElement.getPackageElement();
-            Content mdleLinkContent = getModuleLink(utils.elementUtils.getModuleOf(element),
-                    contents.moduleLabel);
-            Content pkgLinkContent = getPackageLink(pkg, contents.packageLabel);
-            return super.getNavBar(pageMode, element)
-                    .setNavLinkModule(mdleLinkContent)
-                    .setNavLinkPackage(pkgLinkContent);
-        }
-
-        @Override
         public void buildPage() throws DocFileIOException {
 
             List<? extends DocTree> localTags = getLocalHeaderTags(utils.getPreamble(dfElement));
@@ -244,8 +235,13 @@ public class DocFilesHandler {
             printHtmlDocument(List.of(), null, localTagsContent, List.of(), htmlContent);
         }
 
-        private String getWindowTitle(HtmlDocletWriter docletWriter, Element element) {
-            String t = configuration.utils.getHTMLTitle(element);
+        @Override
+        protected TableOfContents createTableOfContents() {
+            return null;
+        }
+
+        private String getWindowTitle(HtmlDocletWriter docletWriter, DocFileElement element) {
+            var t = docletWriter.getFileTitle(element);
             return docletWriter.getWindowTitle(t);
         }
 
@@ -259,7 +255,7 @@ public class DocFilesHandler {
                 switch (dt.getKind()) {
                     case START_ELEMENT:
                         StartElementTree startElem = (StartElementTree)dt;
-                        switch (HtmlTag.get(startElem.getName())) {
+                        switch (HtmlTag.of(startElem.getName())) {
                             case HEAD:
                                 inHead = true;
                                 break;
@@ -277,7 +273,7 @@ public class DocFilesHandler {
                         break;
                     case END_ELEMENT:
                         EndElementTree endElem = (EndElementTree)dt;
-                        switch (HtmlTag.get(endElem.getName())) {
+                        switch (HtmlTag.of(endElem.getName())) {
                             case HEAD:
                                 inHead = false;
                                 break loop;

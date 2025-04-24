@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
         private final Path unitFilename;
     }
 
-    private final static List<String> REQUIRED_PACKAGES = List.of("systemd",
+    private static final List<String> REQUIRED_PACKAGES = List.of("systemd",
             "coreutils" /* /usr/bin/wc */, "grep");
 
     private static final String COMMON_SCRIPTS = "COMMON_SCRIPTS";

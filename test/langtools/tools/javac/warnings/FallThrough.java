@@ -2,7 +2,7 @@
  * @test  /nodynamiccopyright/
  * @bug 4986256
  * @compile/ref=FallThrough.noLint.out                             -XDrawDiagnostics FallThrough.java
- * @compile/ref=FallThrough.lintAll.out         -Xlint:all,-path   -XDrawDiagnostics FallThrough.java
+ * @compile/ref=FallThrough.lintAll.out         -Xlint:all         -XDrawDiagnostics FallThrough.java
  * @compile/ref=FallThrough.lintFallThrough.out -Xlint:fallthrough -XDrawDiagnostics FallThrough.java
  */
 

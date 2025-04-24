@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,6 +285,11 @@ public:
 
   void rf(FloatRegister r, int lsb) {
     f(r->raw_encoding(), lsb + 4, lsb);
+  }
+
+  //<0-15>reg: As `rf(FloatRegister)`, but only the lower  16 FloatRegisters are allowed.
+  void lrf(FloatRegister r, int lsb) {
+    f(r->raw_encoding(), lsb + 3, lsb);
   }
 
   void prf(PRegister r, int lsb) {
@@ -765,6 +770,7 @@ public:
 #define f current_insn.f
 #define sf current_insn.sf
 #define rf current_insn.rf
+#define lrf current_insn.lrf
 #define srf current_insn.srf
 #define zrf current_insn.zrf
 #define prf current_insn.prf
@@ -796,6 +802,8 @@ public:
   }
 
   void adrp(Register Rd, const Address &dest, uint64_t &offset) = delete;
+
+  void prfm(const Address &adr, prfop pfop = PLDL1KEEP);
 
 #undef INSN
 
@@ -1574,17 +1582,6 @@ public:
 
 #undef INSN
 
-#define INSN(NAME, size, op)                                    \
-  void NAME(const Address &adr, prfop pfop = PLDL1KEEP) {       \
-    ld_st2(as_Register(pfop), adr, size, op);                   \
-  }
-
-  INSN(prfm, 0b11, 0b10); // FIXME: PRFM should not be used with
-                          // writeback modes, but the assembler
-                          // doesn't enfore that.
-
-#undef INSN
-
 #define INSN(NAME, size, op)                            \
   void NAME(FloatRegister Rt, const Address &adr) {     \
     ld_st2(as_Register(Rt), adr, size, op, 1);          \
@@ -1598,6 +1595,16 @@ public:
   INSN(ldrq, 0x00, 0b11);
 
 #undef INSN
+
+  // Load/store a register, but with a BasicType parameter. Loaded signed integer values are
+  // extended to 64 bits.
+  void load(Register Rt, const Address &adr, BasicType bt) {
+    int op = (is_signed_subword_type(bt) || bt == T_INT) ? 0b10 : 0b01;
+    ld_st2(Rt, adr, exact_log2(type2aelembytes(bt)), op);
+  }
+  void store(Register Rt, const Address &adr, BasicType bt) {
+    ld_st2(Rt, adr, exact_log2(type2aelembytes(bt)), 0b00);
+  }
 
 /* SIMD extensions
  *
@@ -2545,6 +2552,11 @@ template<typename R, typename... Rx>
     ldst_sstr(T, index, a, op1, op2, Vt, Vt2, Vt3, Vt4);                \
   }
 
+  INSN1(ld1, 0b001101010, 0b0000);
+  INSN2(ld2, 0b001101011, 0b0000);
+  INSN3(ld3, 0b001101010, 0b0010);
+  INSN4(ld4, 0b001101011, 0b0010);
+
   INSN1(st1, 0b001101000, 0b0000);
   INSN2(st2, 0b001101001, 0b0000);
   INSN3(st3, 0b001101000, 0b0010);
@@ -2579,6 +2591,7 @@ template<typename R, typename... Rx>
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
     guarantee(T != T1Q && T != T1D, "incorrect arrangement");                           \
     if (!acceptT2D) guarantee(T != T2D, "incorrect arrangement");                       \
+    if (opc2 ==  0b101101) guarantee(T != T8B && T != T16B, "incorrect arrangement");   \
     starti;                                                                             \
     f(0, 31), f((int)T & 1, 30), f(opc, 29), f(0b01110, 28, 24);                        \
     f((int)T >> 1, 23, 22), f(1, 21), rf(Vm, 16), f(opc2, 15, 10);                      \
@@ -2587,6 +2600,9 @@ template<typename R, typename... Rx>
 
   INSN(addv,   0, 0b100001, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
   INSN(subv,   1, 0b100001, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(sqaddv, 0, 0b000011, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(sqsubv, 0, 0b001011, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
+  INSN(uqaddv, 1, 0b000011, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
   INSN(uqsubv, 1, 0b001011, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
   INSN(mulv,   0, 0b100111, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(mlav,   0, 0b100101, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
@@ -2596,14 +2612,20 @@ template<typename R, typename... Rx>
   INSN(addpv,  0, 0b101111, true);  // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S, T2D
   INSN(smullv, 0, 0b110000, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(umullv, 1, 0b110000, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
+  INSN(smlalv, 0, 0b100000, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(umlalv, 1, 0b100000, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(maxv,   0, 0b011001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(minv,   0, 0b011011, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
+  INSN(umaxv,  1, 0b011001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
+  INSN(uminv,  1, 0b011011, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(smaxp,  0, 0b101001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
   INSN(sminp,  0, 0b101011, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
+  INSN(sqdmulh,0, 0b101101, false); // accepted arrangements: T4H, T8H, T2S, T4S
+  INSN(shsubv, 0, 0b001001, false); // accepted arrangements: T8B, T16B, T4H, T8H, T2S, T4S
 
 #undef INSN
 
+  // Advanced SIMD across lanes
 #define INSN(NAME, opc, opc2, accepted) \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {                   \
     guarantee(T != T1Q && T != T1D, "incorrect arrangement");                           \
@@ -2870,6 +2892,28 @@ template<typename R, typename... Rx>
 
 #undef INSN
 
+#define INSN(NAME, op1, op2)                                                                       \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm, int index) { \
+    starti;                                                                                        \
+    assert(T == T4H || T == T8H || T == T2S || T == T4S, "invalid arrangement");                   \
+    assert(index >= 0 &&                                                                           \
+               ((T == T2S && index <= 1) || (T != T2S && index <= 3) || (T == T8H && index <= 7)), \
+           "invalid index");                                                                       \
+    assert((T != T4H && T != T8H) || Vm->encoding() < 16, "invalid source SIMD&FP register");      \
+    f(0, 31), f((int)T & 1, 30), f(op1, 29), f(0b01111, 28, 24);                                   \
+    if (T == T4H || T == T8H) {                                                                    \
+      f(0b01, 23, 22), f(index & 0b11, 21, 20), lrf(Vm, 16), f(index >> 2 & 1, 11);                \
+    } else {                                                                                       \
+      f(0b10, 23, 22), f(index & 1, 21), rf(Vm, 16), f(index >> 1, 11);                            \
+    }                                                                                              \
+    f(op2, 15, 12), f(0, 10), rf(Vn, 5), rf(Vd, 0);                                                \
+  }
+
+  // MUL - Vector - Scalar
+  INSN(mulvs, 0, 0b1000);
+
+#undef INSN
+
   // Floating-point Reciprocal Estimate
   void frecpe(FloatRegister Vd, FloatRegister Vn, SIMD_RegVariant type) {
     assert(type == D || type == S, "Wrong type for frecpe");
@@ -3030,6 +3074,33 @@ public:
     guarantee(T == S || T == D, "invalid register variant");
     umov(Xd, Vn, T, index);
   }
+
+ protected:
+  void _xaddwv(bool is_unsigned, FloatRegister Vd, FloatRegister Vn, SIMD_Arrangement Ta,
+               FloatRegister Vm, SIMD_Arrangement Tb) {
+    starti;
+    assert((Tb >> 1) + 1 == (Ta >> 1), "Incompatible arrangement");
+    f(0, 31), f((int)Tb & 1, 30), f(is_unsigned ? 1 : 0, 29), f(0b01110, 28, 24);
+    f((int)(Ta >> 1) - 1, 23, 22), f(1, 21), rf(Vm, 16), f(0b000100, 15, 10), rf(Vn, 5), rf(Vd, 0);
+  }
+
+ public:
+#define INSN(NAME, assertion, is_unsigned)                              \
+  void NAME(FloatRegister Vd, FloatRegister Vn, SIMD_Arrangement Ta, FloatRegister Vm, \
+              SIMD_Arrangement Tb) {                                    \
+    assert((assertion), "invalid arrangement");                         \
+    _xaddwv(is_unsigned, Vd, Vn, Ta, Vm, Tb);                           \
+  }
+
+public:
+
+  INSN(uaddwv,  Tb == T8B || Tb == T4H || Tb == T2S,  /*is_unsigned*/true)
+  INSN(uaddwv2, Tb == T16B || Tb == T8H || Tb == T4S, /*is_unsigned*/true)
+  INSN(saddwv,  Tb == T8B || Tb == T4H || Tb == T2S,  /*is_unsigned*/false)
+  INSN(saddwv2, Tb == T16B || Tb == T8H || Tb == T4S, /*is_unsigned*/false)
+
+#undef INSN
+
 
 private:
   void _pmull(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, FloatRegister Vm, SIMD_Arrangement Tb) {
@@ -3257,8 +3328,12 @@ public:
     f(0b00000100, 31, 24), f(T, 23, 22), f(1, 21),                                     \
     rf(Zm, 16), f(0, 15, 13), f(opcode, 12, 10), rf(Zn, 5), rf(Zd, 0);                 \
   }
-  INSN(sve_add, 0b000);
-  INSN(sve_sub, 0b001);
+  INSN(sve_add,   0b000);
+  INSN(sve_sub,   0b001);
+  INSN(sve_sqadd, 0b100);
+  INSN(sve_sqsub, 0b110);
+  INSN(sve_uqadd, 0b101);
+  INSN(sve_uqsub, 0b111);
 #undef INSN
 
 // SVE integer add/subtract immediate (unpredicated)
@@ -3369,6 +3444,8 @@ public:
   INSN(sve_sminv, 0b00000100, 0b001010001); // signed minimum reduction to scalar
   INSN(sve_sub,   0b00000100, 0b000001000); // vector sub
   INSN(sve_uaddv, 0b00000100, 0b000001001); // unsigned add reduction to scalar
+  INSN(sve_umax,  0b00000100, 0b001001000); // unsigned maximum vectors
+  INSN(sve_umin,  0b00000100, 0b001011000); // unsigned minimum vectors
 #undef INSN
 
 // SVE floating-point arithmetic - predicate
@@ -4158,6 +4235,20 @@ public:
   }
 
   INSN(sve_eor3, 0b001); // Bitwise exclusive OR of three vectors
+#undef INSN
+
+// SVE2 saturating operations - predicate
+#define INSN(NAME, op1, op2)                                                          \
+  void NAME(FloatRegister Zdn, SIMD_RegVariant T, PRegister Pg, FloatRegister Znm) {  \
+    assert(T != Q, "invalid register variant");                                       \
+    sve_predicate_reg_insn(op1, op2, Zdn, T, Pg, Znm);                                \
+  }
+
+  INSN(sve_sqadd, 0b01000100, 0b011000100); // signed saturating add
+  INSN(sve_sqsub, 0b01000100, 0b011010100); // signed saturating sub
+  INSN(sve_uqadd, 0b01000100, 0b011001100); // unsigned saturating add
+  INSN(sve_uqsub, 0b01000100, 0b011011100); // unsigned saturating sub
+
 #undef INSN
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {

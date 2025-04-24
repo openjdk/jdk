@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.util.Set;
  * @since 1.8
  */
 
-/*package*/ @SuppressWarnings("removal") class HttpConnectSocketImpl extends DelegatingSocketImpl {
+/*package*/ class HttpConnectSocketImpl extends DelegatingSocketImpl {
 
     private static final String httpURLClazzStr =
                                   "sun.net.www.protocol.http.HttpURLConnection";
@@ -59,18 +59,11 @@ import java.util.Set;
         try {
             Class<?> httpClazz = Class.forName(httpURLClazzStr, true, null);
             httpField = httpClazz.getDeclaredField("http");
+            httpField.setAccessible(true);
             doTunneling = httpClazz.getDeclaredMethod(doTunnelingStr);
             Class<?> netClientClazz = Class.forName(netClientClazzStr, true, null);
             serverSocketField = netClientClazz.getDeclaredField("serverSocket");
-
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<>() {
-                    public Void run() {
-                        httpField.setAccessible(true);
-                        serverSocketField.setAccessible(true);
-                        return null;
-                }
-            });
+            serverSocketField.setAccessible(true);
         } catch (ReflectiveOperationException x) {
             throw new InternalError("Should not reach here", x);
         }
@@ -107,16 +100,12 @@ import java.util.Set;
                                                 : epoint.getAddress().getHostAddress();
         final int destPort = epoint.getPort();
 
-        SecurityManager security = System.getSecurityManager();
-        if (security != null)
-            security.checkConnect(destHost, destPort);
-
         if (destHost.contains(":"))
             destHost = "[" + destHost + "]";
 
         // Connect to the HTTP proxy server
         String urlString = "http://" + destHost + ":" + destPort;
-        Socket httpSocket = privilegedDoTunnel(urlString, timeout);
+        Socket httpSocket = doTunnel(urlString, timeout);
 
         // Success!
         external_address = epoint;
@@ -162,22 +151,6 @@ import java.util.Set;
 
         // store options so that they can be re-applied to the impl after connect
         optionsMap.put(opt, val);
-    }
-
-    private Socket privilegedDoTunnel(final String urlString,
-                                      final int timeout)
-        throws IOException
-    {
-        try {
-            return java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedExceptionAction<>() {
-                    public Socket run() throws IOException {
-                        return doTunnel(urlString, timeout);
-                }
-            });
-        } catch (java.security.PrivilegedActionException pae) {
-            throw (IOException) pae.getException();
-        }
     }
 
     private Socket doTunnel(String urlString, int connectTimeout)

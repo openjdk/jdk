@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary Test the various CPU-specific reservation schemes
  * @requires vm.bits == 64 & !vm.graal.enabled & vm.debug == true
  * @requires vm.flagless
+ * @requires vm.cds
  * @requires (os.family != "windows") & (os.family != "aix")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -55,6 +56,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
                 "-Xshare:" + (CDS ? "on" : "off"),
                 "-Xmx128m",
                 "-XX:CompressedClassSpaceSize=128m",
+                "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders",
                 "-Xlog:metaspace*", "-Xlog:metaspace+map=trace", "-Xlog:os+map=trace",
                 "-XX:+SimulateFullAddressSpace", // So that no resevation attempt will succeed
                 "-version");
@@ -83,15 +85,8 @@ public class CompressedCPUSpecificClassSpaceReservation {
             output.shouldContain(tryReserveFor16bitMoveIntoQ3);
         } else if (Platform.isRISCV64()) {
             output.shouldContain(tryReserveForUnscaled); // unconditionally
-            if (CDS) {
-                output.shouldNotContain(tryReserveForZeroBased);
-                // bits 32..44
-                output.shouldContain("reserve_between (range [0x0000000100000000-0x0000100000000000)");
-            } else {
-                output.shouldContain(tryReserveForZeroBased);
-                // bits 32..44, but not lower than zero-based limit
-                output.shouldContain("reserve_between (range [0x0000000800000000-0x0000100000000000)");
-            }
+            // bits 32..44
+            output.shouldContain("reserve_between (range [0x0000000100000000-0x0000100000000000)");
             // bits 44..64
             output.shouldContain("reserve_between (range [0x0000100000000000-0xffffffffffffffff)");
         } else if (Platform.isS390x()) {

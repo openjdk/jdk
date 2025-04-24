@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "code/nativeInst.hpp"
 #include "interpreter/interpreter.hpp"
@@ -203,24 +201,6 @@ void os::print_context(outputStream *st, const void *context) {
   st->print(", X27=" INTPTR_FORMAT, uc->X27);
   st->print(", X28=" INTPTR_FORMAT, uc->X28);
   st->cr();
-  st->cr();
-}
-
-void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == nullptr) return;
-
-  const CONTEXT* uc = (const CONTEXT*)context;
-
-  address sp = (address)uc->Sp;
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = (address)uc->Pc;
-  st->print_cr("Instructions: (pc=" PTR_FORMAT ")", pc);
-  print_hex_dump(st, pc - 32, pc + 32, sizeof(char));
   st->cr();
 }
 

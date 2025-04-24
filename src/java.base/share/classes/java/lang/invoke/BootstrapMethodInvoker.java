@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ final class BootstrapMethodInvoker {
                 // with empty constant arguments?
                 if (isStringConcatFactoryBSM(bootstrapMethod.type())) {
                     result = (CallSite)bootstrapMethod
-                            .invokeExact(caller, name, (MethodType)type,
+                            .invokeBasic(caller, name, (MethodType)type,
                                          (String)info, new Object[0]);
                 } else {
                     info = maybeReBox(info);
@@ -131,20 +131,19 @@ final class BootstrapMethodInvoker {
                 MethodType bsmType = bootstrapMethod.type();
                 if (isLambdaMetafactoryIndyBSM(bsmType) && argv.length == 3) {
                     result = (CallSite)bootstrapMethod
-                            .invokeExact(caller, name, (MethodType)type, (MethodType)argv[0],
-                                    (MethodHandle)argv[1], (MethodType)argv[2]);
-                } else if (isLambdaMetafactoryCondyBSM(bsmType) && argv.length == 3) {
-                    result = bootstrapMethod
-                            .invokeExact(caller, name, (Class<?>)type, (MethodType)argv[0],
+                            .invokeBasic(caller, name, (MethodType)type, (MethodType)argv[0],
                                     (MethodHandle)argv[1], (MethodType)argv[2]);
                 } else if (isStringConcatFactoryBSM(bsmType) && argv.length >= 1) {
                     String recipe = (String)argv[0];
                     Object[] shiftedArgs = Arrays.copyOfRange(argv, 1, argv.length);
                     maybeReBoxElements(shiftedArgs);
-                    result = (CallSite)bootstrapMethod.invokeExact(caller, name, (MethodType)type, recipe, shiftedArgs);
+                    result = (CallSite)bootstrapMethod.invokeBasic(caller, name, (MethodType)type, recipe, shiftedArgs);
                 } else if (isLambdaMetafactoryAltMetafactoryBSM(bsmType)) {
                     maybeReBoxElements(argv);
-                    result = (CallSite)bootstrapMethod.invokeExact(caller, name, (MethodType)type, argv);
+                    result = (CallSite)bootstrapMethod.invokeBasic(caller, name, (MethodType)type, argv);
+                } else if (isObjectMethodsBootstrapBSM(bsmType)) {
+                    MethodHandle[] mhs = Arrays.copyOfRange(argv, 2, argv.length, MethodHandle[].class);
+                    result = bootstrapMethod.invokeBasic(caller, name, (TypeDescriptor)type, (Class<?>)argv[0], (String)argv[1], mhs);
                 } else {
                     maybeReBoxElements(argv);
                     if (type instanceof Class<?> c) {
@@ -188,7 +187,6 @@ final class BootstrapMethodInvoker {
             throw new BootstrapMethodError("bootstrap method initialization exception", ex);
         }
     }
-
 
     /**
      * If resultType is a reference type, do Class::cast on the result through
@@ -247,8 +245,8 @@ final class BootstrapMethodInvoker {
     private static final MethodType LMF_ALT_MT = MethodType.methodType(CallSite.class,
             Lookup.class, String.class, MethodType.class, Object[].class);
 
-    private static final MethodType LMF_CONDY_MT = MethodType.methodType(Object.class,
-            Lookup.class, String.class, Class.class, MethodType.class, MethodHandle.class, MethodType.class);
+    private static final MethodType OBJECT_METHODS_MT = MethodType.methodType(Object.class,
+            Lookup.class, String.class, TypeDescriptor.class, Class.class, String.class, MethodHandle[].class);
 
     private static final MethodType SCF_MT = MethodType.methodType(CallSite.class,
             Lookup.class, String.class, MethodType.class, String.class, Object[].class);
@@ -260,15 +258,6 @@ final class BootstrapMethodInvoker {
      */
     private static boolean isStringConcatFactoryBSM(MethodType bsmType) {
         return bsmType == SCF_MT;
-    }
-
-    /**
-     * @return true iff the BSM method type exactly matches
-     *         {@link java.lang.invoke.LambdaMetafactory#metafactory(
-     *          MethodHandles.Lookup,String,Class,MethodType,MethodHandle,MethodType)}
-     */
-    private static boolean isLambdaMetafactoryCondyBSM(MethodType bsmType) {
-        return bsmType == LMF_CONDY_MT;
     }
 
     /**
@@ -287,6 +276,15 @@ final class BootstrapMethodInvoker {
      */
     private static boolean isLambdaMetafactoryAltMetafactoryBSM(MethodType bsmType) {
         return bsmType == LMF_ALT_MT;
+    }
+
+    /**
+     * @return true iff the BSM method type exactly matches
+     *         {@link java.lang.runtime.ObjectMethods#bootstrap(
+     *          MethodHandles.Lookup,String,TypeDescriptor,Class,String,MethodHandle[])}
+     */
+    private static boolean isObjectMethodsBootstrapBSM(MethodType bsmType) {
+        return bsmType == OBJECT_METHODS_MT;
     }
 
     /** The JVM produces java.lang.Integer values to box

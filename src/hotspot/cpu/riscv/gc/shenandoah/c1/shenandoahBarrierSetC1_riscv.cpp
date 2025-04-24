@@ -23,13 +23,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
-#include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 
 #define __ masm->masm()->
 
@@ -40,8 +39,6 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
   Register tmp1 = _tmp1->as_register();
   Register tmp2 = _tmp2->as_register();
   Register result = result_opr()->as_register();
-
-  ShenandoahBarrierSet::assembler()->iu_barrier(masm->masm(), newval, t1);
 
   if (UseCompressedOops) {
     __ encode_heap_oop(tmp1, cmpval);
@@ -80,9 +77,14 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LI
       LIR_Opr result = gen->new_register(T_INT);
 
       __ append(new LIR_OpShenandoahCompareAndSwap(addr, cmp_value.result(), new_value.result(), tmp1, tmp2, result));
+
+      if (ShenandoahCardBarrier) {
+        post_barrier(access, access.resolved_addr(), new_value.result());
+      }
       return result;
     }
   }
+
   return BarrierSetC1::atomic_cmpxchg_at_resolved(access, cmp_value, new_value);
 }
 
@@ -93,10 +95,6 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
   LIR_Opr result = gen->new_register(type);
   value.load_item();
   LIR_Opr value_opr = value.result();
-
-  if (access.is_oop()) {
-    value_opr = iu_barrier(access.gen(), value_opr, access.access_emit_info(), access.decorators());
-  }
 
   assert(type == T_INT || is_reference_type(type) LP64_ONLY( || type == T_LONG ), "unexpected type");
   LIR_Opr tmp = gen->new_register(T_INT);
@@ -110,6 +108,9 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
     if (ShenandoahSATBBarrier) {
       pre_barrier(access.gen(), access.access_emit_info(), access.decorators(), LIR_OprFact::illegalOpr,
                   result /* pre_val */);
+    }
+    if (ShenandoahCardBarrier) {
+      post_barrier(access, access.resolved_addr(), result);
     }
   }
 

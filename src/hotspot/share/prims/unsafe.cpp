@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -55,6 +54,7 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
+#include "sanitizers/ub.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -67,7 +67,7 @@
 
 
 #define MAX_OBJECT_SIZE \
-  ( arrayOopDesc::header_size(T_DOUBLE) * HeapWordSize \
+  ( arrayOopDesc::base_offset_in_bytes(T_DOUBLE) \
     + ((julong)max_jint * sizeof(double)) )
 
 #define UNSAFE_ENTRY(result_type, header) \
@@ -76,25 +76,26 @@
 #define UNSAFE_LEAF(result_type, header) \
   JVM_LEAF(static result_type, header)
 
-// Note that scoped accesses (cf. scopedMemoryAccess.cpp) can install
-// an async handshake on the entry to an Unsafe method. When that happens,
-// it is expected that we are not allowed to touch the underlying memory
-// that might have gotten unmapped. Therefore, we check at the entry
-// to unsafe functions, if we have such async exception conditions,
-// and return immediately if that is the case.
+// All memory access methods (e.g. getInt, copyMemory) must use this macro.
+// We call these methods "scoped" methods, as access to these methods is
+// typically governed by a "scope" (a MemorySessionImpl object), and no
+// access is allowed when the scope is no longer alive.
 //
-// We can't have safepoints in this code.
-// It would be problematic if an async exception handshake were installed later on
-// during another safepoint in the function, but before the memory access happens,
-// as the memory will be freed after the handshake is installed. We must notice
-// the installed handshake and return early before doing the memory access to prevent
-// accesses to freed memory.
+// Closing a scope object (cf. scopedMemoryAccess.cpp) can install
+// an async exception during a safepoint. When that happens,
+// scoped methods are not allowed to touch the underlying memory (as that
+// memory might have been released). Therefore, when entering a scoped method
+// we check if an async exception has been installed, and return immediately
+// if that is the case.
 //
-// Note also that we MUST do a scoped memory access in the VM (or Java) thread
-// state. Since we rely on a handshake to check for threads that are accessing
-// scoped memory, and we need the handshaking thread to wait until we get to a
-// safepoint, in order to make sure we are not in the middle of accessing memory
-// that is about to be freed. (i.e. there can be no UNSAFE_LEAF_SCOPED)
+// As a rule, we disallow safepoints in the middle of a scoped method.
+// If an async exception handshake were installed in such a safepoint,
+// memory access might still occur before the handshake is honored by
+// the accessing thread.
+//
+// Corollary: as threads in native state are considered to be at a safepoint,
+// scoped methods must NOT be executed while in the native thread state.
+// Because of this, there can be no UNSAFE_LEAF_SCOPED.
 #define UNSAFE_ENTRY_SCOPED(result_type, header) \
   JVM_ENTRY(static result_type, header) \
   if (thread->has_async_exception_condition()) {return (result_type)0;}
@@ -153,13 +154,9 @@ static inline void assert_field_offset_sane(oop p, jlong field_offset) {
 
 static inline void* index_oop_from_field_offset_long(oop p, jlong field_offset) {
   assert_field_offset_sane(p, field_offset);
-  jlong byte_offset = field_offset_to_byte_offset(field_offset);
-
-  if (sizeof(char*) == sizeof(jint)) {   // (this constant folds!)
-    return cast_from_oop<address>(p) + (jint) byte_offset;
-  } else {
-    return cast_from_oop<address>(p) +        byte_offset;
-  }
+  uintptr_t base_address = cast_from_oop<uintptr_t>(p);
+  uintptr_t byte_offset  = (uintptr_t)field_offset_to_byte_offset(field_offset);
+  return (void*)(base_address + byte_offset);
 }
 
 // Externally callable versions:
@@ -245,6 +242,9 @@ public:
     return normalize_for_read(*addr());
   }
 
+  // we use this method at some places for writing to 0 e.g. to cause a crash;
+  // ubsan does not know that this is the desired behavior
+  ATTRIBUTE_NO_UBSAN
   void put(T x) {
     GuardUnsafeAccess guard(_thread);
     *addr() = normalize_for_write(x);
@@ -392,7 +392,12 @@ UNSAFE_ENTRY_SCOPED(void, Unsafe_SetMemory0(JNIEnv *env, jobject unsafe, jobject
 
   {
     GuardUnsafeAccess guard(thread);
-    Copy::fill_to_memory_atomic(p, sz, value);
+    if (StubRoutines::unsafe_setmemory() != nullptr) {
+      MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
+      StubRoutines::UnsafeSetMemory_stub()(p, sz, value);
+    } else {
+      Copy::fill_to_memory_atomic(p, sz, value);
+    }
   }
 } UNSAFE_END
 
@@ -546,7 +551,7 @@ UNSAFE_ENTRY(jobject, Unsafe_StaticFieldBase0(JNIEnv *env, jobject unsafe, jobje
   int modifiers   = java_lang_reflect_Field::modifiers(reflected);
 
   if ((modifiers & JVM_ACC_STATIC) == 0) {
-    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+    THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
 
   return JNIHandles::make_local(THREAD, mirror);
@@ -646,7 +651,7 @@ static jclass Unsafe_DefineClass_impl(JNIEnv *env, jstring name, jbyteArray data
 
   jbyte *body;
   char *utfName = nullptr;
-  jclass result = 0;
+  jclass result = nullptr;
   char buf[128];
 
   assert(data != nullptr, "Class bytes must not be null");
@@ -659,11 +664,11 @@ static jclass Unsafe_DefineClass_impl(JNIEnv *env, jstring name, jbyteArray data
   body = NEW_C_HEAP_ARRAY_RETURN_NULL(jbyte, length, mtInternal);
   if (body == nullptr) {
     throw_new(env, "java/lang/OutOfMemoryError");
-    return 0;
+    return nullptr;
   }
 
   env->GetByteArrayRegion(data, offset, length, body);
-  if (env->ExceptionOccurred()) {
+  if (env->ExceptionCheck()) {
     goto free_body;
   }
 

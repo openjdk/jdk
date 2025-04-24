@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -27,7 +27,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ann">Ōporo</language>
 			<language type="anp">Anahika</language>
 			<language type="ar">Ārapi</language>
-			<language type="ar_001">Ārapi Moroko</language>
+			<language type="ar_001">Ārapi Moroki</language>
 			<language type="arn">Mapūte</language>
 			<language type="arp">Arapaho</language>
 			<language type="ars">Arapika Nahāri</language>
@@ -158,6 +158,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="hax">Haira ki te Tonga</language>
 			<language type="he">Hīperu</language>
 			<language type="hi">Hīni</language>
+			<language type="hi_Latn" alt="variant">Hīngarihi</language>
 			<language type="hil">Hirikaina</language>
 			<language type="hmn">Mōnga</language>
 			<language type="hr">Koroātiana</language>
@@ -521,7 +522,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="015">Āwherika ki te Raki</territory>
 			<territory type="017">Te Pokapū o Āwherika</territory>
 			<territory type="018">Āwherika Whakatetonga</territory>
-			<territory type="019">Amerika</territory>
+			<territory type="019">Ngā Amerika</territory>
 			<territory type="021">Te Raki o Amerika</territory>
 			<territory type="029">Karapīana</territory>
 			<territory type="030">Āhia ki te Rāwhiti</territory>
@@ -1295,9 +1296,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativeTime type="future">
 					<relativeTimePattern count="other">+{0} Hwh</relativeTimePattern>
 				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} hwh</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="month">
 				<displayName>marama</displayName>
@@ -1350,7 +1348,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativeTime type="past">
 					<relativeTimePattern count="other">-{0} w</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>t w o {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>w</displayName>
@@ -1828,9 +1825,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Cambridge_Bay">
 				<exemplarCity>Kemureti Pei</exemplarCity>
-			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>Whaitiri Pei</exemplarCity>
 			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>Tāroto</exemplarCity>
@@ -2311,13 +2305,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Wā Haina Awatea</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Wā Choibalsan</generic>
-					<standard>Wā Choibalsan Arowhānui</standard>
-					<daylight>Wā Choibalsan Raumati</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Wā o Te Moutere Kirihimete</standard>
@@ -2556,6 +2543,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Wā Hapani Awatea</daylight>
 				</long>
 			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Wā Katatānga</standard>
+				</long>
+			</metazone>
 			<metazone type="Kazakhstan_Eastern">
 				<long>
 					<standard>Wā Katatānga ki te Rāwhiti</standard>
@@ -2602,11 +2594,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Wā Lord Howe Awatea</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Wā o Te Moutere Makoare</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Wā Magadan</generic>
@@ -2644,13 +2631,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>Wā Mawson</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Wā Mēhiko ki te uru-mā-raki</generic>
-					<standard>Wā Arowhānui o Mēhiko ki te uru-mā-raki</standard>
-					<daylight>Wā Awatea o Mēhiko ki te uru-mā-raki</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
@@ -2985,9 +2965,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<currencyFormats numberSystem="latn">
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
 		<currencies>
 			<currency type="AED">
 				<displayName>Dirham UAE</displayName>
@@ -3545,7 +3522,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="TWD">
 				<displayName>Tāra Taiwana Hou</displayName>
-				<displayName count="other">tāra Taiwana hou</displayName>
+				<displayName count="other">tāra Taiwana Hou</displayName>
 			</currency>
 			<currency type="TZS">
 				<displayName>Hereni Tānahia</displayName>
@@ -4063,7 +4040,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<listPatterns>
 		<listPattern type="or">
 			<listPatternPart type="end">{0}, {1} rānei</listPatternPart>
-			<listPatternPart type="2">{0} {1} rānei</listPatternPart>
+			<listPatternPart type="2">{0}, {1} rānei</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="2">{0}, {1} rānei</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="2">{0}, {1} rānei</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-narrow">
 			<listPatternPart type="end">{0}, {1}</listPatternPart>

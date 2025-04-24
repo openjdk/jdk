@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
@@ -49,18 +48,20 @@
 #include "memory/universe.hpp"
 #include "oops/stackChunkOop.hpp"
 #include "runtime/continuationJavaClasses.hpp"
+#include "runtime/java.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/align.hpp"
+#include "utilities/ostream.hpp"
 
 ZCollectedHeap* ZCollectedHeap::heap() {
   return named_heap<ZCollectedHeap>(CollectedHeap::Z);
 }
 
 ZCollectedHeap::ZCollectedHeap()
-  : _soft_ref_policy(),
-    _barrier_set(),
-    _initialize(&_barrier_set),
+  : _barrier_set(),
+    _initializer(&_barrier_set),
     _heap(),
     _driver_minor(new ZDriverMinor()),
     _driver_major(new ZDriverMajor()),
@@ -78,10 +79,13 @@ const char* ZCollectedHeap::name() const {
 
 jint ZCollectedHeap::initialize() {
   if (!_heap.is_initialized()) {
+    vm_shutdown_during_initialization(ZInitialize::error_message());
     return JNI_ENOMEM;
   }
 
   Universe::set_verify_data(~(ZAddressHeapBase - 1) | 0x7, ZAddressHeapBase);
+
+  ZInitialize::finish();
 
   return JNI_OK;
 }
@@ -104,10 +108,6 @@ void ZCollectedHeap::stop() {
   ZAbort::abort();
   ZStopConcurrentGCThreadClosure cl;
   gc_threads_do(&cl);
-}
-
-SoftRefPolicy* ZCollectedHeap::soft_ref_policy() {
-  return &_soft_ref_policy;
 }
 
 size_t ZCollectedHeap::max_capacity() const {
@@ -245,12 +245,8 @@ size_t ZCollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
   return _heap.unsafe_max_tlab_alloc();
 }
 
-bool ZCollectedHeap::uses_stack_watermark_barrier() const {
-  return true;
-}
-
 MemoryUsage ZCollectedHeap::memory_usage() {
-  const size_t initial_size = ZHeap::heap()->initial_capacity();
+  const size_t initial_size = InitialHeapSize;
   const size_t committed    = ZHeap::heap()->capacity();
   const size_t used         = MIN2(ZHeap::heap()->used(), committed);
   const size_t max_size     = ZHeap::heap()->max_capacity();
@@ -343,6 +339,7 @@ bool ZCollectedHeap::contains_null(const oop* p) const {
 }
 
 void ZCollectedHeap::safepoint_synchronize_begin() {
+  StackWatermarkSet::safepoint_synchronize_begin();
   ZGeneration::young()->synchronize_relocation();
   ZGeneration::old()->synchronize_relocation();
   SuspendibleThreadSet::synchronize();
@@ -359,40 +356,15 @@ void ZCollectedHeap::prepare_for_verify() {
 }
 
 void ZCollectedHeap::print_on(outputStream* st) const {
+  StreamAutoIndentor auto_indentor(st);
+
   _heap.print_on(st);
 }
 
 void ZCollectedHeap::print_on_error(outputStream* st) const {
-  st->print_cr("ZGC Globals:");
-  st->print_cr(" Young Collection:   %s/%u", ZGeneration::young()->phase_to_string(), ZGeneration::young()->seqnum());
-  st->print_cr(" Old Collection:     %s/%u", ZGeneration::old()->phase_to_string(), ZGeneration::old()->seqnum());
-  st->print_cr(" Offset Max:         " SIZE_FORMAT "%s (" PTR_FORMAT ")",
-               byte_size_in_exact_unit(ZAddressOffsetMax),
-               exact_unit_for_byte_size(ZAddressOffsetMax),
-               ZAddressOffsetMax);
-  st->print_cr(" Page Size Small:    " SIZE_FORMAT "M", ZPageSizeSmall / M);
-  st->print_cr(" Page Size Medium:   " SIZE_FORMAT "M", ZPageSizeMedium / M);
-  st->cr();
-  st->print_cr("ZGC Metadata Bits:");
-  st->print_cr(" LoadGood:           " PTR_FORMAT, ZPointerLoadGoodMask);
-  st->print_cr(" LoadBad:            " PTR_FORMAT, ZPointerLoadBadMask);
-  st->print_cr(" MarkGood:           " PTR_FORMAT, ZPointerMarkGoodMask);
-  st->print_cr(" MarkBad:            " PTR_FORMAT, ZPointerMarkBadMask);
-  st->print_cr(" StoreGood:          " PTR_FORMAT, ZPointerStoreGoodMask);
-  st->print_cr(" StoreBad:           " PTR_FORMAT, ZPointerStoreBadMask);
-  st->print_cr(" ------------------- ");
-  st->print_cr(" Remapped:           " PTR_FORMAT, ZPointerRemapped);
-  st->print_cr(" RemappedYoung:      " PTR_FORMAT, ZPointerRemappedYoungMask);
-  st->print_cr(" RemappedOld:        " PTR_FORMAT, ZPointerRemappedOldMask);
-  st->print_cr(" MarkedYoung:        " PTR_FORMAT, ZPointerMarkedYoung);
-  st->print_cr(" MarkedOld:          " PTR_FORMAT, ZPointerMarkedOld);
-  st->print_cr(" Remembered:         " PTR_FORMAT, ZPointerRemembered);
-  st->cr();
-  CollectedHeap::print_on_error(st);
-}
+  StreamAutoIndentor auto_indentor(st);
 
-void ZCollectedHeap::print_extended_on(outputStream* st) const {
-  _heap.print_extended_on(st);
+  _heap.print_on_error(st);
 }
 
 void ZCollectedHeap::print_tracing_info() const {

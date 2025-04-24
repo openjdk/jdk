@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,38 @@
 
 package java.security;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.io.*;
+import java.net.URI;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import jdk.internal.access.JavaSecurityPropertiesAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.EventHelper;
 import jdk.internal.event.SecurityPropertyModificationEvent;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
+import sun.security.jca.GetInstance;
+import sun.security.jca.ProviderList;
+import sun.security.jca.Providers;
 import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;
-
-import sun.security.jca.*;
 
 /**
  * <p>This class centralizes all security properties and common security
@@ -63,7 +80,17 @@ public final class Security {
                         Debug.getInstance("properties");
 
     /* The java.security properties */
-    private static Properties props;
+    private static final Properties props = new Properties() {
+        @Override
+        public synchronized Object put(Object key, Object val) {
+            if (key instanceof String strKey && val instanceof String strVal &&
+                    SecPropLoader.isInclude(strKey)) {
+                SecPropLoader.loadInclude(strVal);
+                return null;
+            }
+            return super.put(key, val);
+        }
+    };
 
     /* cache a copy for recording purposes */
     private static Properties initialSecurityProperties;
@@ -74,16 +101,218 @@ public final class Security {
         Provider provider;
     }
 
-    static {
-        // doPrivileged here because there are multiple
-        // things in initialize that might require privs.
-        // (the FileInputStream call and the File.exists call,
-        // the securityPropFile call, etc)
-        @SuppressWarnings("removal")
-        var dummy = AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
-            initialize();
+    private static final class SecPropLoader {
+        private enum LoadingMode {OVERRIDE, APPEND}
+
+        private static final String OVERRIDE_SEC_PROP =
+                "security.overridePropertiesFile";
+
+        private static final String EXTRA_SYS_PROP =
+                "java.security.properties";
+
+        private static Path currentPath;
+
+        private static final Set<Path> activePaths = new HashSet<>();
+
+        static void loadAll() {
+            // first load the master properties file to
+            // determine the value of OVERRIDE_SEC_PROP
+            loadMaster();
+            loadExtra();
+        }
+
+        static boolean isInclude(String key) {
+            return "include".equals(key);
+        }
+
+        static void checkReservedKey(String key)
+                throws IllegalArgumentException {
+            if (isInclude(key)) {
+                throw new IllegalArgumentException("Key '" + key +
+                        "' is reserved and cannot be used as a " +
+                        "Security property name.");
+            }
+        }
+
+        private static void loadMaster() {
+            try {
+                loadFromPath(Path.of(StaticProperty.javaHome(), "conf",
+                        "security", "java.security"), LoadingMode.APPEND);
+            } catch (IOException e) {
+                throw new InternalError("Error loading java.security file", e);
+            }
+        }
+
+        private static void loadExtra() {
+            if ("true".equalsIgnoreCase(props.getProperty(OVERRIDE_SEC_PROP))) {
+                String propFile = System.getProperty(EXTRA_SYS_PROP);
+                if (propFile != null) {
+                    LoadingMode mode = LoadingMode.APPEND;
+                    if (propFile.startsWith("=")) {
+                        mode = LoadingMode.OVERRIDE;
+                        propFile = propFile.substring(1);
+                    }
+                    try {
+                        loadExtraHelper(propFile, mode);
+                    } catch (Exception e) {
+                        if (sdebug != null) {
+                            sdebug.println("unable to load security " +
+                                    "properties from " + propFile);
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void loadExtraHelper(String propFile, LoadingMode mode)
+                throws Exception {
+            propFile = PropertyExpander.expand(propFile);
+            if (propFile.isEmpty()) {
+                throw new IOException("Empty extra properties file path");
+            }
+
+            // Try to interpret propFile as a path
+            Exception error;
+            if ((error = loadExtraFromPath(propFile, mode)) == null) {
+                return;
+            }
+
+            // Try to interpret propFile as a file URL
+            URI uri = null;
+            try {
+                uri = new URI(propFile);
+            } catch (Exception ignore) {}
+            if (uri != null && "file".equalsIgnoreCase(uri.getScheme()) &&
+                    (error = loadExtraFromFileUrl(uri, mode)) == null) {
+                return;
+            }
+
+            // Try to interpret propFile as a URL
+            URL url;
+            try {
+                url = newURL(propFile);
+            } catch (MalformedURLException ignore) {
+                // URL has no scheme: previous error is more accurate
+                throw error;
+            }
+            loadFromUrl(url, mode);
+        }
+
+        private static Exception loadExtraFromPath(String propFile,
+                LoadingMode mode) throws Exception {
+            Path path;
+            try {
+                path = Path.of(propFile);
+                if (!Files.exists(path)) {
+                    return new FileNotFoundException(propFile);
+                }
+            } catch (InvalidPathException e) {
+                return e;
+            }
+            loadFromPath(path, mode);
             return null;
-        });
+        }
+
+
+        private static Exception loadExtraFromFileUrl(URI uri, LoadingMode mode)
+                throws Exception {
+            Path path;
+            try {
+                path = Path.of(uri);
+            } catch (Exception e) {
+                return e;
+            }
+            loadFromPath(path, mode);
+            return null;
+        }
+
+        private static void reset(LoadingMode mode) {
+            if (mode == LoadingMode.OVERRIDE) {
+                if (sdebug != null) {
+                    sdebug.println(
+                            "overriding other security properties files!");
+                }
+                props.clear();
+            }
+        }
+
+        static void loadInclude(String propFile) {
+            String expPropFile = PropertyExpander.expandNonStrict(propFile);
+            if (sdebug != null) {
+                sdebug.println("processing include: '" + propFile + "'" +
+                        (propFile.equals(expPropFile) ? "" :
+                                " (expanded to '" + expPropFile + "')"));
+            }
+            try {
+                Path path = Path.of(expPropFile);
+                if (!path.isAbsolute()) {
+                    if (currentPath == null) {
+                        throw new InternalError("Cannot resolve '" +
+                                expPropFile + "' relative path when included " +
+                                "from a non-regular properties file " +
+                                "(e.g. HTTP served file)");
+                    }
+                    path = currentPath.resolveSibling(path);
+                }
+                loadFromPath(path, LoadingMode.APPEND);
+            } catch (IOException | InvalidPathException e) {
+                throw new InternalError("Unable to include '" + expPropFile +
+                        "'", e);
+            }
+        }
+
+        private static void loadFromPath(Path path, LoadingMode mode)
+                throws IOException {
+            boolean isRegularFile = Files.isRegularFile(path);
+            if (isRegularFile) {
+                path = path.toRealPath();
+            } else if (Files.isDirectory(path)) {
+                throw new IOException("Is a directory");
+            } else {
+                path = path.toAbsolutePath();
+            }
+            if (activePaths.contains(path)) {
+                throw new InternalError("Cyclic include of '" + path + "'");
+            }
+            try (InputStream is = Files.newInputStream(path)) {
+                reset(mode);
+                Path previousPath = currentPath;
+                currentPath = isRegularFile ? path : null;
+                activePaths.add(path);
+                try {
+                    debugLoad(true, path);
+                    props.load(is);
+                    debugLoad(false, path);
+                } finally {
+                    activePaths.remove(path);
+                    currentPath = previousPath;
+                }
+            }
+        }
+
+        private static void loadFromUrl(URL url, LoadingMode mode)
+                throws IOException {
+            try (InputStream is = url.openStream()) {
+                reset(mode);
+                debugLoad(true, url);
+                props.load(is);
+                debugLoad(false, url);
+            }
+        }
+
+        private static void debugLoad(boolean start, Object source) {
+            if (sdebug != null) {
+                int level = activePaths.isEmpty() ? 1 : activePaths.size();
+                sdebug.println((start ?
+                        ">".repeat(level) + " starting to process " :
+                        "<".repeat(level) + " finished processing ") + source);
+            }
+        }
+    }
+
+    static {
+        initialize();
         // Set up JavaSecurityPropertiesAccess in SharedSecrets
         SharedSecrets.setJavaSecurityPropertiesAccess(new JavaSecurityPropertiesAccess() {
             @Override
@@ -94,90 +323,12 @@ public final class Security {
     }
 
     private static void initialize() {
-        props = new Properties();
-        boolean overrideAll = false;
-
-        // first load the system properties file
-        // to determine the value of security.overridePropertiesFile
-        File propFile = securityPropFile("java.security");
-        boolean success = loadProps(propFile, null, false);
-        if (!success) {
-            throw new InternalError("Error loading java.security file");
-        }
-
-        if ("true".equalsIgnoreCase(props.getProperty
-                ("security.overridePropertiesFile"))) {
-
-            String extraPropFile = System.getProperty
-                    ("java.security.properties");
-            if (extraPropFile != null && extraPropFile.startsWith("=")) {
-                overrideAll = true;
-                extraPropFile = extraPropFile.substring(1);
-            }
-            loadProps(null, extraPropFile, overrideAll);
-        }
+        SecPropLoader.loadAll();
         initialSecurityProperties = (Properties) props.clone();
         if (sdebug != null) {
             for (String key : props.stringPropertyNames()) {
                 sdebug.println("Initial security property: " + key + "=" +
                     props.getProperty(key));
-            }
-        }
-
-    }
-
-    private static boolean loadProps(File masterFile, String extraPropFile, boolean overrideAll) {
-        InputStream is = null;
-        try {
-            if (masterFile != null && masterFile.exists()) {
-                is = new FileInputStream(masterFile);
-            } else if (extraPropFile != null) {
-                extraPropFile = PropertyExpander.expand(extraPropFile);
-                File propFile = new File(extraPropFile);
-                URL propURL;
-                if (propFile.exists()) {
-                    propURL = newURL
-                            ("file:" + propFile.getCanonicalPath());
-                } else {
-                    propURL = newURL(extraPropFile);
-                }
-
-                is = propURL.openStream();
-                if (overrideAll) {
-                    props = new Properties();
-                    if (sdebug != null) {
-                        sdebug.println
-                                ("overriding other security properties files!");
-                    }
-                }
-            } else {
-                // unexpected
-                return false;
-            }
-            props.load(is);
-            if (sdebug != null) {
-                // ExceptionInInitializerError if masterFile.getName() is
-                // called here (NPE!). Leave as is (and few lines down)
-                sdebug.println("reading security properties file: " +
-                        masterFile == null ? extraPropFile : "java.security");
-            }
-            return true;
-        } catch (IOException | PropertyExpander.ExpandException e) {
-            if (sdebug != null) {
-                sdebug.println("unable to load security properties from " +
-                        masterFile == null ? extraPropFile : "java.security");
-                e.printStackTrace();
-            }
-            return false;
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException ioe) {
-                    if (sdebug != null) {
-                        sdebug.println("unable to close input stream");
-                    }
-                }
             }
         }
     }
@@ -186,14 +337,6 @@ public final class Security {
      * Don't let anyone instantiate this.
      */
     private Security() {
-    }
-
-    private static File securityPropFile(String filename) {
-        // maybe check for a system property which will specify where to
-        // look. Someday.
-        String sep = File.separator;
-        return new File(StaticProperty.javaHome() + sep + "conf" + sep +
-                        "security" + sep + filename);
     }
 
     /**
@@ -273,6 +416,7 @@ public final class Security {
      *
      * @return the value of the specified property.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @deprecated This method used to return the value of a proprietary
      * property in the master file of the "SUN" Cryptographic Service
      * Provider in order to determine how to parse algorithm-specific
@@ -308,14 +452,6 @@ public final class Security {
      *
      * <p>A provider cannot be added if it is already installed.
      *
-     * <p>If there is a security manager, the
-     * {@link java.lang.SecurityManager#checkSecurityAccess} method is called
-     * with the {@code "insertProvider"} permission target name to see if
-     * it's ok to add a new provider. If this permission check is denied,
-     * {@code checkSecurityAccess} is called again with the
-     * {@code "insertProvider."+provider.getName()} permission target name. If
-     * both checks are denied, a {@code SecurityException} is thrown.
-     *
      * @param provider the provider to be added.
      *
      * @param position the preference position that the caller would
@@ -326,38 +462,23 @@ public final class Security {
      * already installed.
      *
      * @throws  NullPointerException if provider is {@code null}
-     * @throws  SecurityException
-     *          if a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkSecurityAccess} method
-     *          denies access to add a new provider
      *
      * @see #getProvider
      * @see #removeProvider
-     * @see java.security.SecurityPermission
      */
     public static synchronized int insertProviderAt(Provider provider,
             int position) {
-        String providerName = provider.getName();
-        checkInsertProvider(providerName);
         ProviderList list = Providers.getFullProviderList();
         ProviderList newList = ProviderList.insertAt(list, provider, position - 1);
         if (list == newList) {
             return -1;
         }
         Providers.setProviderList(newList);
-        return newList.getIndex(providerName) + 1;
+        return newList.getIndex(provider.getName()) + 1;
     }
 
     /**
      * Adds a provider to the next position available.
-     *
-     * <p>If there is a security manager, the
-     * {@link java.lang.SecurityManager#checkSecurityAccess} method is called
-     * with the {@code "insertProvider"} permission target name to see if
-     * it's ok to add a new provider. If this permission check is denied,
-     * {@code checkSecurityAccess} is called again with the
-     * {@code "insertProvider."+provider.getName()} permission target name. If
-     * both checks are denied, a {@code SecurityException} is thrown.
      *
      * @param provider the provider to be added.
      *
@@ -366,14 +487,9 @@ public final class Security {
      * already installed.
      *
      * @throws  NullPointerException if provider is {@code null}
-     * @throws  SecurityException
-     *          if a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkSecurityAccess} method
-     *          denies access to add a new provider
      *
      * @see #getProvider
      * @see #removeProvider
-     * @see java.security.SecurityPermission
      */
     public static int addProvider(Provider provider) {
         /*
@@ -396,29 +512,12 @@ public final class Security {
      * <p>This method returns silently if the provider is not installed or
      * if name is {@code null}.
      *
-     * <p>First, if there is a security manager, its
-     * {@code checkSecurityAccess}
-     * method is called with the string {@code "removeProvider."+name}
-     * to see if it's ok to remove the provider.
-     * If the default implementation of {@code checkSecurityAccess}
-     * is used (i.e., that method is not overridden), then this will result in
-     * a call to the security manager's {@code checkPermission} method
-     * with a {@code SecurityPermission("removeProvider."+name)}
-     * permission.
-     *
      * @param name the name of the provider to remove.
-     *
-     * @throws  SecurityException
-     *          if a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkSecurityAccess} method
-     *          denies
-     *          access to remove the provider
      *
      * @see #getProvider
      * @see #addProvider
      */
     public static synchronized void removeProvider(String name) {
-        check("removeProvider." + name);
         ProviderList list = Providers.getFullProviderList();
         ProviderList newList = ProviderList.remove(list, name);
         Providers.setProviderList(newList);
@@ -507,6 +606,7 @@ public final class Security {
      *         if the filter is not in the required format
      * @throws NullPointerException if filter is {@code null}
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @see #getProviders(java.util.Map)
      * @since 1.3
      */
@@ -584,6 +684,7 @@ public final class Security {
      *         if the filter is not in the required format
      * @throws NullPointerException if filter is {@code null}
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @see #getProviders(java.lang.String)
      * @since 1.3
      */
@@ -697,34 +798,20 @@ public final class Security {
     /**
      * Gets a security property value.
      *
-     * <p>First, if there is a security manager, its
-     * {@code checkPermission}  method is called with a
-     * {@code java.security.SecurityPermission("getProperty."+key)}
-     * permission to see if it's ok to retrieve the specified
-     * security property value.
-     *
      * @param key the key of the property being retrieved.
      *
      * @return the value of the security property, or {@code null} if there
      *          is no property with that key.
      *
-     * @throws  SecurityException
-     *          if a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkPermission} method
-     *          denies
-     *          access to retrieve the specified security property value
      * @throws  NullPointerException if key is {@code null}
+     * @throws  IllegalArgumentException if key is reserved and cannot be
+     *          used as a Security property name. Reserved keys are:
+     *          "include".
      *
      * @see #setProperty
-     * @see java.security.SecurityPermission
      */
     public static String getProperty(String key) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new SecurityPermission("getProperty."+
-                                                      key));
-        }
+        SecPropLoader.checkReservedKey(key);
         String name = props.getProperty(key);
         if (name != null)
             name = name.trim(); // could be a class name with trailing ws
@@ -734,29 +821,20 @@ public final class Security {
     /**
      * Sets a security property value.
      *
-     * <p>First, if there is a security manager, its
-     * {@code checkPermission} method is called with a
-     * {@code java.security.SecurityPermission("setProperty."+key)}
-     * permission to see if it's ok to set the specified
-     * security property value.
-     *
      * @param key the name of the property to be set.
      *
      * @param datum the value of the property to be set.
      *
-     * @throws  SecurityException
-     *          if a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkPermission} method
-     *          denies access to set the specified security property value
      * @throws  NullPointerException if key or datum is {@code null}
+     * @throws  IllegalArgumentException if key is reserved and cannot be
+     *          used as a Security property name. Reserved keys are:
+     *          "include".
      *
      * @see #getProperty
-     * @see java.security.SecurityPermission
      */
     public static void setProperty(String key, String datum) {
-        check("setProperty." + key);
+        SecPropLoader.checkReservedKey(key);
         props.put(key, datum);
-        invalidateSMCache(key);  /* See below. */
 
         SecurityPropertyModificationEvent spe = new SecurityPropertyModificationEvent();
         // following is a no-op if event is disabled
@@ -766,49 +844,6 @@ public final class Security {
 
         if (EventHelper.isLoggingSecurity()) {
             EventHelper.logSecurityPropertyEvent(key, datum);
-        }
-    }
-
-    /*
-     * Implementation detail:  If the property we just set in
-     * setProperty() was either "package.access" or
-     * "package.definition", we need to signal to the SecurityManager
-     * class that the value has just changed, and that it should
-     * invalidate its local cache values.
-     */
-    private static void invalidateSMCache(String key) {
-
-        final boolean pa = key.equals("package.access");
-        final boolean pd = key.equals("package.definition");
-
-        if (pa || pd) {
-            SharedSecrets.getJavaLangAccess().invalidatePackageAccessCache();
-        }
-    }
-
-    private static void check(String directive) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkSecurityAccess(directive);
-        }
-    }
-
-    private static void checkInsertProvider(String name) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            try {
-                security.checkSecurityAccess("insertProvider");
-            } catch (SecurityException se1) {
-                try {
-                    security.checkSecurityAccess("insertProvider." + name);
-                } catch (SecurityException se2) {
-                    // throw first exception, but add second to suppressed
-                    se1.addSuppressed(se2);
-                    throw se1;
-                }
-            }
         }
     }
 

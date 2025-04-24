@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.common.InitTimer.timer;
-import static jdk.vm.ci.hotspot.HotSpotJVMCICompilerFactory.CompilationLevelAdjustment.None;
-import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
 import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 
 import java.io.IOException;
@@ -63,7 +61,6 @@ import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaField;
@@ -86,7 +83,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     /**
      * Singleton instance lazily initialized via double-checked locking.
      */
-    @NativeImageReinitialize private static volatile HotSpotJVMCIRuntime instance;
+    private static volatile HotSpotJVMCIRuntime instance;
 
     private HotSpotResolvedObjectTypeImpl javaLangObject;
     private HotSpotResolvedObjectTypeImpl javaLangInvokeMethodHandle;
@@ -223,34 +220,59 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     static final Map<String, Object> options = new HashMap<>();
 
     /**
+     * Sentinel help value to denote options that are not printed by -XX:+JVMCIPrintProperties.
+     * Javadoc is used instead to document these options.
+     */
+    private static final String[] NO_HELP = null;
+
+    /**
      * A list of all supported JVMCI options.
      */
     public enum Option {
         // @formatter:off
-        Compiler(String.class, null, "Selects the system compiler. This must match the getCompilerName() value returned " +
-                "by a jdk.vm.ci.runtime.JVMCICompilerFactory provider. " +
-                "An empty string or the value \"null\" selects a compiler " +
-                "that will raise an exception upon receiving a compilation request."),
-        // Note: The following one is not used (see InitTimer.ENABLED). It is added here
-        // so that -XX:+JVMCIPrintProperties shows the option.
-        InitTimer(Boolean.class, false, "Specifies if initialization timing is enabled."),
-        CodeSerializationTypeInfo(Boolean.class, false, "Prepend the size and label of each element to the stream when " +
-                "serializing HotSpotCompiledCode to verify both ends of the protocol agree on the format. " +
-                "Defaults to true in non-product builds."),
-        DumpSerializedCode(String.class, null, "Dump serialized code during code installation for code whose simple " +
-                "name (a stub) or fully qualified name (an nmethod) contains this option's value as a substring."),
-        ForceTranslateFailure(String.class, null, "Forces HotSpotJVMCIRuntime.translate to throw an exception in the context " +
-                "of the peer runtime. The value is a filter that can restrict the forced failure to matching translated " +
-                "objects. See HotSpotJVMCIRuntime.postTranslation for more details. This option exists soley to test " +
-                "correct handling of translation failure."),
-        PrintConfig(Boolean.class, false, "Prints VM configuration available via JVMCI."),
-        AuditHandles(Boolean.class, false, "Record stack trace along with scoped foreign object reference wrappers " +
-                "to debug issue with a wrapper being used after its scope has closed."),
-        TraceMethodDataFilter(String.class, null,
-                "Enables tracing of profiling info when read by JVMCI.",
-                "Empty value: trace all methods",
-                        "Non-empty value: trace methods whose fully qualified name contains the value."),
-        UseProfilingInformation(Boolean.class, true, "");
+        Compiler(String.class, null,
+                "Selects the system compiler. This must match the getCompilerName() value",
+                "returned by a jdk.vm.ci.runtime.JVMCICompilerFactory provider. ",
+                "An empty string or the value \"null\" selects a compiler ",
+                "that raises an exception upon receiving a compilation request."),
+
+        PrintConfig(Boolean.class, false, "Prints VM values (e.g. flags, constants, field offsets etc) exposed to JVMCI."),
+
+        InitTimer(Boolean.class, false, NO_HELP),
+
+        /**
+         * Prepends the size and label of each element to the stream when serializing {@link HotSpotCompiledCode}
+         * to verify both ends of the protocol agree on the format. Defaults to true in non-product builds.
+         */
+        CodeSerializationTypeInfo(Boolean.class, false, NO_HELP),
+
+        /**
+         * Dumps serialized code during code installation for code whose qualified form (e.g.
+         * {@code java.lang.String.hashCode()}) contains this option's value as a substring.
+         */
+        DumpSerializedCode(String.class, null, NO_HELP),
+
+        /**
+         * Forces {@link #translate} to throw an exception in the context of the peer runtime for
+         * translated objects that match this value. See {@link #postTranslation} for more details.
+         * This option exists solely to test correct handling of translation failures.
+         */
+        ForceTranslateFailure(String.class, null, NO_HELP),
+
+        /**
+         * Captures a stack trace along with scoped foreign object reference wrappers
+         * to debug an issue with a wrapper being used after its scope has closed.
+         */
+        AuditHandles(Boolean.class, false, NO_HELP),
+
+        /**
+         * Enables tracing of profiling info when read by JVMCI.
+         *     Empty value: trace all methods
+         * Non-empty value: trace methods whose fully qualified name contains the value
+         */
+        TraceMethodDataFilter(String.class, null, NO_HELP),
+
+        UseProfilingInformation(Boolean.class, true, NO_HELP);
         // @formatter:on
 
         /**
@@ -264,7 +286,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         private static final String NULL_VALUE = "NULL";
 
         private final Class<?> type;
-        @NativeImageReinitialize private Object value;
+        private Object value;
         private final Object defaultValue;
         boolean isDefault = true;
         private final String[] helpLines;
@@ -344,6 +366,9 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             out.println("[JVMCI properties]");
             Option[] values = values();
             for (Option option : values) {
+                if (option.helpLines == null) {
+                    continue;
+                }
                 Object value = option.getValue();
                 if (value instanceof String) {
                     value = '"' + String.valueOf(value) + '"';
@@ -363,6 +388,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                 for (String line : option.helpLines) {
                     out.printf("%" + PROPERTY_HELP_INDENT + "s%s%n", "", line);
                 }
+                out.println();
             }
         }
 
@@ -425,33 +451,26 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         }
     }
 
-    private static HotSpotJVMCIBackendFactory findFactory(String architecture) {
-        Iterable<HotSpotJVMCIBackendFactory> factories = getHotSpotJVMCIBackendFactories();
-        assert factories != null : "sanity";
-        for (HotSpotJVMCIBackendFactory factory : factories) {
-            if (factory.getArchitecture().equalsIgnoreCase(architecture)) {
-                return factory;
+    /**
+     * The backend factory for the JVMCI shared library.
+     */
+    private static final HotSpotJVMCIBackendFactory backendFactory;
+    static {
+        String arch = HotSpotVMConfig.getHostArchitectureName();
+        HotSpotJVMCIBackendFactory selected = null;
+        for (HotSpotJVMCIBackendFactory factory : ServiceLoader.load(HotSpotJVMCIBackendFactory.class)) {
+            if (factory.getArchitecture().equalsIgnoreCase(arch)) {
+                if (selected != null) {
+                    throw new JVMCIError("Multiple factories available for %s: %s and %s",
+                        arch, selected, factory);
+                }
+                selected = factory;
             }
         }
-
-        throw new JVMCIError("No JVMCI runtime available for the %s architecture", architecture);
-    }
-
-    private static volatile List<HotSpotJVMCIBackendFactory> cachedHotSpotJVMCIBackendFactories;
-
-    @SuppressFBWarnings(value = "LI_LAZY_INIT_UPDATE_STATIC", justification = "not sure about this")
-    private static Iterable<HotSpotJVMCIBackendFactory> getHotSpotJVMCIBackendFactories() {
-        if (IS_IN_NATIVE_IMAGE || cachedHotSpotJVMCIBackendFactories != null) {
-            return cachedHotSpotJVMCIBackendFactories;
+        if (selected == null) {
+            throw new JVMCIError("No JVMCI runtime available for the %s architecture", arch);
         }
-        Iterable<HotSpotJVMCIBackendFactory> result = ServiceLoader.load(HotSpotJVMCIBackendFactory.class, ClassLoader.getSystemClassLoader());
-        if (IS_BUILDING_NATIVE_IMAGE) {
-            cachedHotSpotJVMCIBackendFactories = new ArrayList<>();
-            for (HotSpotJVMCIBackendFactory factory : result) {
-                cachedHotSpotJVMCIBackendFactories.add(factory);
-            }
-        }
-        return result;
+        backendFactory = selected;
     }
 
     /**
@@ -468,16 +487,15 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     private final JVMCIBackend hostBackend;
 
     private final JVMCICompilerFactory compilerFactory;
-    private final HotSpotJVMCICompilerFactory hsCompilerFactory;
     private volatile JVMCICompiler compiler;
     protected final HotSpotJVMCIReflection reflection;
 
-    @NativeImageReinitialize private volatile boolean creatingCompiler;
+    private volatile boolean creatingCompiler;
 
     /**
      * Cache for speeding up {@link #fromClass(Class)}.
      */
-    @NativeImageReinitialize private volatile ClassValue<WeakReferenceHolder<HotSpotResolvedJavaType>> resolvedJavaType;
+    private volatile ClassValue<WeakReferenceHolder<HotSpotResolvedJavaType>> resolvedJavaType;
 
     /**
      * To avoid calling ClassValue.remove to refresh the weak reference, which under certain
@@ -519,20 +537,20 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      * A mapping from the {@code Klass*} to the corresponding {@link HotSpotResolvedObjectTypeImpl}.  The value is
      * held weakly through a {@link KlassWeakReference} so that unused types can be unloaded when the compiler no longer needs them.
      */
-    @NativeImageReinitialize private HashMap<Long, KlassWeakReference> resolvedJavaTypes;
+    private HashMap<Long, KlassWeakReference> resolvedJavaTypes;
 
     /**
      * A {@link ReferenceQueue} to track when {@link KlassWeakReference}s have been freed so that the corresponding
      * entry in {@link #resolvedJavaTypes} can be cleared.
      */
-    @NativeImageReinitialize private ReferenceQueue<HotSpotResolvedObjectTypeImpl> resolvedJavaTypesQueue;
+    private ReferenceQueue<HotSpotResolvedObjectTypeImpl> resolvedJavaTypesQueue;
 
     /**
      * Stores the value set by {@link #excludeFromJVMCICompilation(Module...)} so that it can be
      * read from the VM.
      */
     @SuppressWarnings("unused")//
-    @NativeImageReinitialize private Module[] excludeFromJVMCICompilation;
+    private Module[] excludeFromJVMCICompilation;
 
     private final Map<Class<? extends Architecture>, JVMCIBackend> backends = new HashMap<>();
 
@@ -560,30 +578,11 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         // Initialize the Option values.
         Option.parse(this);
 
-        String hostArchitecture = config.getHostArchitectureName();
-
-        HotSpotJVMCIBackendFactory factory;
-        try (InitTimer t = timer("find factory:", hostArchitecture)) {
-            factory = findFactory(hostArchitecture);
-        }
-
-        try (InitTimer t = timer("create JVMCI backend:", hostArchitecture)) {
-            hostBackend = registerBackend(factory.createJVMCIBackend(this, null));
+        try (InitTimer t = timer("create JVMCI backend:", backendFactory.getArchitecture())) {
+            hostBackend = registerBackend(backendFactory.createJVMCIBackend(this, null));
         }
 
         compilerFactory = HotSpotJVMCICompilerConfig.getCompilerFactory(this);
-        if (compilerFactory instanceof HotSpotJVMCICompilerFactory) {
-            hsCompilerFactory = (HotSpotJVMCICompilerFactory) compilerFactory;
-            if (hsCompilerFactory.getCompilationLevelAdjustment() != None) {
-                String name = HotSpotJVMCICompilerFactory.class.getName();
-                String msg = String.format("%s.getCompilationLevelAdjustment() is no longer supported. " +
-                                "Use %s.excludeFromJVMCICompilation() instead.", name, name);
-                throw new UnsupportedOperationException(msg);
-            }
-        } else {
-            hsCompilerFactory = null;
-        }
-
         if (config.getFlag("JVMCIPrintProperties", Boolean.class)) {
             if (vmLogStream == null) {
                 vmLogStream = new PrintStream(getLogStream());
@@ -910,23 +909,23 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     /**
-     * Gets the {@code jobject} value wrapped by {@code peerObject}. The returned "naked" value is
-     * only valid as long as {@code peerObject} is valid. Note that the latter may be shorter than
-     * the lifetime of {@code peerObject}. As such, this method should only be used to pass an
-     * object parameter across a JNI call from the JVMCI shared library to HotSpot. This method must
-     * only be called from within the JVMCI shared library.
+     * Gets the {@code jobject} value wrapped by {@code peerObject}. The returned value is
+     * a JNI local reference whose lifetime is scoped by the nearest Java caller (from
+     * HotSpot's perspective). You can use {@code PushLocalFrame} and {@code PopLocalFrame} to
+     * shorten the lifetime of the reference. The current thread's state must be
+     * {@code _thread_in_native}. A call from the JVMCI shared library (e.g. libgraal) is in such
+     * a state.
      *
-     * @param peerObject a reference to an object in the peer runtime
-     * @return the {@code jobject} value wrapped by {@code peerObject}
+     * @param peerObject a reference to an object in the HotSpot heap
+     * @return the {@code jobject} value unpacked from {@code peerObject}
      * @throws IllegalArgumentException if the current runtime is not the JVMCI shared library or
-     *             {@code peerObject} is not a peer object reference
+     *             {@code peerObject} is not a HotSpot heap object reference
+     * @throws IllegalStateException if not called from within the JVMCI shared library
+     *         or if there is no Java caller frame on the stack
+     *         (i.e., JavaThread::has_last_Java_frame returns false)
      */
     public long getJObjectValue(HotSpotObjectConstant peerObject) {
-        if (peerObject instanceof IndirectHotSpotObjectConstantImpl) {
-            IndirectHotSpotObjectConstantImpl remote = (IndirectHotSpotObjectConstantImpl) peerObject;
-            return remote.getHandle();
-        }
-        throw new IllegalArgumentException("Cannot get jobject value for " + peerObject + " (" + peerObject.getClass().getName() + ")");
+        return compilerToVm.getJObjectValue((HotSpotObjectConstantImpl)peerObject);
     }
 
     @Override
@@ -944,7 +943,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return Collections.unmodifiableMap(backends);
     }
 
-    @SuppressWarnings("try")
     @VMEntryPoint
     private HotSpotCompilationRequestResult compileMethod(HotSpotResolvedJavaMethod method, int entryBCI, long compileState, int id) {
         HotSpotCompilationRequest request = new HotSpotCompilationRequest(method, entryBCI, compileState, id);
@@ -966,10 +964,14 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return hsResult;
     }
 
-    @SuppressWarnings("try")
     @VMEntryPoint
     private boolean isGCSupported(int gcIdentifier) {
         return getCompiler().isGCSupported(gcIdentifier);
+    }
+
+    @VMEntryPoint
+    private boolean isIntrinsicSupported(int intrinsicIdentifier) {
+        return getCompiler().isIntrinsicSupported(intrinsicIdentifier);
     }
 
     /**
@@ -1469,5 +1471,13 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         writeDebugOutput(messageBytes, 0, messageBytes.length, true, true);
         exitHotSpot(status);
         throw JVMCIError.shouldNotReachHere();
+    }
+
+    /**
+     * Returns HotSpot's {@code CompileBroker} compilation activity mode which is one of:
+     * {@code stop_compilation = 0}, {@code run_compilation = 1} or {@code shutdown_compilation = 2}
+     */
+    public int getCompilationActivityMode() {
+        return compilerToVm.getCompilationActivityMode();
     }
 }

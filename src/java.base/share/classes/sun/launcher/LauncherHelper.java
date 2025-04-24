@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.jar.Attributes;
@@ -155,7 +156,6 @@ public final class LauncherHelper {
      *    this code determine this value, using a suitable method or omit the
      *    line entirely.
      */
-    @SuppressWarnings("fallthrough")
     static void showSettings(boolean printToStderr, String optionFlag,
             long initialHeapSize, long maxHeapSize, long stackSize) {
 
@@ -318,6 +318,8 @@ public final class LauncherHelper {
                 Locale.getDefault(Category.DISPLAY).getDisplayName());
         ostream.println(INDENT + "default format locale = " +
                 Locale.getDefault(Category.FORMAT).getDisplayName());
+        ostream.println(INDENT + "default timezone = " +
+                TimeZone.getDefault().getID());
         ostream.println(INDENT + "tzdata version = " +
                 ZoneInfoFile.getVersion());
         if (verbose) {
@@ -370,6 +372,10 @@ public final class LauncherHelper {
         final long longRetvalNotSupported = -2;
 
         ostream.println(INDENT + "Provider: " + c.getProvider());
+        if (!c.isContainerized()) {
+            ostream.println(INDENT + "System not containerized.");
+            return;
+        }
         ostream.println(INDENT + "Effective CPU Count: " + c.getEffectiveCpuCount());
         ostream.println(formatCpuVal(c.getCpuPeriod(), INDENT + "CPU Period: ", longRetvalNotSupported));
         ostream.println(formatCpuVal(c.getCpuQuota(), INDENT + "CPU Quota: ", longRetvalNotSupported));
@@ -582,6 +588,15 @@ public final class LauncherHelper {
         }
     }
 
+    /**
+     * Prints the short usage text to the desired output stream.
+     */
+    static void printConciseUsageMessage(boolean printToStderr) {
+        initOutput(printToStderr);
+        ostream.println(getLocalizedMessage("java.launcher.opt.concise.header",
+                File.pathSeparator));
+    }
+
     static void initOutput(boolean printToStderr) {
         ostream =  (printToStderr) ? System.err : System.out;
     }
@@ -590,73 +605,69 @@ public final class LauncherHelper {
         ostream = ps;
     }
 
-    static String getMainClassFromJar(String jarname) {
-        String mainValue;
-        try (JarFile jarFile = new JarFile(jarname)) {
-            Manifest manifest = jarFile.getManifest();
-            if (manifest == null) {
-                abort(null, "java.launcher.jar.error2", jarname);
-            }
-            Attributes mainAttrs = manifest.getMainAttributes();
-            if (mainAttrs == null) {
-                abort(null, "java.launcher.jar.error3", jarname);
-            }
-
-            // Main-Class
-            mainValue = mainAttrs.getValue(MAIN_CLASS);
-            if (mainValue == null) {
-                abort(null, "java.launcher.jar.error3", jarname);
-            }
-
-            // Launcher-Agent-Class (only check for this when Main-Class present)
-            String agentClass = mainAttrs.getValue(LAUNCHER_AGENT_CLASS);
-            if (agentClass != null) {
-                ModuleLayer.boot().findModule("java.instrument").ifPresent(m -> {
-                    try {
-                        String cn = "sun.instrument.InstrumentationImpl";
-                        Class<?> clazz = Class.forName(cn, false, null);
-                        Method loadAgent = clazz.getMethod("loadAgent", String.class);
-                        loadAgent.invoke(null, jarname);
-                    } catch (Throwable e) {
-                        if (e instanceof InvocationTargetException) e = e.getCause();
-                        abort(e, "java.launcher.jar.error4", jarname);
-                    }
-                });
-            }
-
-            // Add-Exports and Add-Opens
-            String exports = mainAttrs.getValue(ADD_EXPORTS);
-            if (exports != null) {
-                addExportsOrOpens(exports, false);
-            }
-            String opens = mainAttrs.getValue(ADD_OPENS);
-            if (opens != null) {
-                addExportsOrOpens(opens, true);
-            }
-            String enableNativeAccess = mainAttrs.getValue(ENABLE_NATIVE_ACCESS);
-            if (enableNativeAccess != null) {
-                if (!enableNativeAccess.equals("ALL-UNNAMED")) {
-                    abort(null, "java.launcher.jar.error.illegal.ena.value", enableNativeAccess);
-                }
-                Modules.addEnableNativeAccessToAllUnnamed();
-            }
-
-            /*
-             * Hand off to FXHelper if it detects a JavaFX application
-             * This must be done after ensuring a Main-Class entry
-             * exists to enforce compliance with the jar specification
-             */
-            if (mainAttrs.containsKey(
-                    new Attributes.Name(JAVAFX_APPLICATION_MARKER))) {
-                FXHelper.setFXLaunchParameters(jarname, LM_JAR);
-                return FXHelper.class.getName();
-            }
-
-            return mainValue.trim();
-        } catch (IOException ioe) {
-            abort(ioe, "java.launcher.jar.error1", jarname);
+    private static String getMainClassFromJar(JarFile jarFile) throws IOException {
+        String jarname = jarFile.getName();
+        Manifest manifest = jarFile.getManifest();
+        if (manifest == null) {
+            abort(null, "java.launcher.jar.error2", jarname);
         }
-        return null;
+
+        Attributes mainAttrs = manifest.getMainAttributes();
+        if (mainAttrs == null) {
+            abort(null, "java.launcher.jar.error3", jarname);
+        }
+
+        // Main-Class
+        String mainValue = mainAttrs.getValue(MAIN_CLASS);
+        if (mainValue == null) {
+            abort(null, "java.launcher.jar.error3", jarname);
+        }
+
+        // Launcher-Agent-Class (only check for this when Main-Class present)
+        String agentClass = mainAttrs.getValue(LAUNCHER_AGENT_CLASS);
+        if (agentClass != null) {
+            ModuleLayer.boot().findModule("java.instrument").ifPresent(m -> {
+                try {
+                    String cn = "sun.instrument.InstrumentationImpl";
+                    Class<?> clazz = Class.forName(cn, false, null);
+                    Method loadAgent = clazz.getMethod("loadAgent", String.class);
+                    loadAgent.invoke(null, jarname);
+                } catch (Throwable e) {
+                    if (e instanceof InvocationTargetException) e = e.getCause();
+                    abort(e, "java.launcher.jar.error4", jarname);
+                }
+            });
+        }
+
+        // Add-Exports and Add-Opens
+        String exports = mainAttrs.getValue(ADD_EXPORTS);
+        if (exports != null) {
+            addExportsOrOpens(exports, false);
+        }
+        String opens = mainAttrs.getValue(ADD_OPENS);
+        if (opens != null) {
+            addExportsOrOpens(opens, true);
+        }
+        String enableNativeAccess = mainAttrs.getValue(ENABLE_NATIVE_ACCESS);
+        if (enableNativeAccess != null) {
+            if (!enableNativeAccess.equals("ALL-UNNAMED")) {
+                abort(null, "java.launcher.jar.error.illegal.ena.value", enableNativeAccess);
+            }
+            Modules.addEnableNativeAccessToAllUnnamed();
+        }
+
+        /*
+         * Hand off to FXHelper if it detects a JavaFX application
+         * This must be done after ensuring a Main-Class entry
+         * exists to enforce compliance with the jar specification
+         */
+        if (mainAttrs.containsKey(
+                new Attributes.Name(JAVAFX_APPLICATION_MARKER))) {
+            FXHelper.setFXLaunchParameters(jarname, LM_JAR);
+            return FXHelper.class.getName();
+        }
+
+        return mainValue.trim();
     }
 
     /**
@@ -721,7 +732,6 @@ public final class LauncherHelper {
      *
      * @return the application's main class
      */
-    @SuppressWarnings("fallthrough")
     public static Class<?> checkAndLoadMain(boolean printToStderr,
                                             int mode,
                                             String what) {
@@ -819,13 +829,23 @@ public final class LauncherHelper {
      */
     private static Class<?> loadMainClass(int mode, String what) {
         // get the class name
-        String cn;
+        String cn = null;
+        // In LM_JAR mode, keep the underlying file open to retain it in
+        // the JarFile/ZipFile cache. This will avoid needing to re-parse
+        // the central directory when the file is opened on the class path,
+        // triggered by Class.forName below.
+        JarFile jarFile = null;
         switch (mode) {
             case LM_CLASS:
                 cn = what;
                 break;
             case LM_JAR:
-                cn = getMainClassFromJar(what);
+                try {
+                    jarFile = new JarFile(what);
+                    cn = getMainClassFromJar(jarFile);
+                } catch (IOException ioe) {
+                    abort(ioe, "java.launcher.jar.error1", what);
+                }
                 break;
             default:
                 // should never happen
@@ -861,6 +881,14 @@ public final class LauncherHelper {
         } catch (LinkageError le) {
             abort(le, "java.launcher.cls.error4", cn,
                     le.getClass().getName() + ": " + le.getLocalizedMessage());
+        } finally {
+            if (jarFile != null) {
+                try {
+                    jarFile.close();
+                } catch (IOException ioe) {
+                    abort(ioe, "java.launcher.jar.error5", what);
+                }
+            }
         }
         return mainClass;
     }
@@ -890,6 +918,9 @@ public final class LauncherHelper {
         return false;
     }
 
+    private static boolean isStaticMain = false;
+    private static boolean noArgMain = false;
+
     // Check the existence and signature of main and abort if incorrect.
     private static void validateMainMethod(Class<?> mainClass) {
         Method mainMethod = null;
@@ -913,19 +944,19 @@ public final class LauncherHelper {
         }
 
         int mods = mainMethod.getModifiers();
-        boolean isStatic = Modifier.isStatic(mods);
+        isStaticMain = Modifier.isStatic(mods);
         boolean isPublic = Modifier.isPublic(mods);
-        boolean noArgs = mainMethod.getParameterCount() == 0;
+        noArgMain = mainMethod.getParameterCount() == 0;
 
         if (!PreviewFeatures.isEnabled()) {
-            if (!isStatic || !isPublic || noArgs) {
+            if (!isStaticMain || !isPublic || noArgMain) {
                   abort(null, "java.launcher.cls.error2", mainClass.getName(),
                        JAVAFX_APPLICATION_CLASS_NAME);
             }
             return;
         }
 
-        if (!isStatic) {
+        if (!isStaticMain) {
             String className = mainMethod.getDeclaringClass().getName();
             if (mainClass.isMemberClass() && !Modifier.isStatic(mainClass.getModifiers())) {
                 abort(null, "java.launcher.cls.error7", className);

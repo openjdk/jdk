@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package jdk.jfr.internal;
 import java.lang.reflect.Modifier;
 
 import jdk.jfr.internal.event.EventConfiguration;
-import jdk.jfr.internal.instrument.JDKEvents;
 import jdk.jfr.internal.util.Bytecode;
+import jdk.jfr.internal.util.Utils;
 /**
  * All upcalls from the JVM should go through this class.
  *
@@ -60,25 +60,25 @@ final class JVMUpcalls {
     static byte[] onRetransform(long traceId, boolean dummy1, boolean dummy2, Class<?> clazz, byte[] oldBytes) throws Throwable {
         try {
             if (jdk.internal.event.Event.class.isAssignableFrom(clazz) && !Modifier.isAbstract(clazz.getModifiers())) {
-                if (!JVMSupport.shouldInstrument(clazz.getClassLoader() == null, clazz.getName())) {
+                if (!JVMSupport.shouldInstrument(Utils.isJDKClass(clazz), clazz.getName())) {
                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for " + clazz.getName() + " since container support is missing");
                     return oldBytes;
                 }
-                EventWriterKey.ensureEventWriterFactory();
                 EventConfiguration configuration = JVMSupport.getConfiguration(clazz.asSubclass(jdk.internal.event.Event.class));
                 if (configuration == null) {
                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "No event configuration found for " + clazz.getName() + ". Ignoring instrumentation request.");
                     // Probably triggered by some other agent
                     return oldBytes;
                 }
-                boolean bootClassLoader = clazz.getClassLoader() == null;
+                boolean jdkClass = Utils.isJDKClass(clazz);
                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Adding instrumentation to event class " + clazz.getName() + " using retransform");
-                EventInstrumentation ei = new EventInstrumentation(clazz.getSuperclass(), oldBytes, traceId, bootClassLoader, false);
+                ClassInspector c = new ClassInspector(clazz.getSuperclass(), oldBytes, jdkClass);
+                EventInstrumentation ei = new EventInstrumentation(c, traceId, false);
                 byte[] bytes = ei.buildInstrumented();
                 Bytecode.log(clazz.getName(), bytes);
                 return bytes;
             }
-            return JDKEvents.retransformCallback(clazz, oldBytes);
+            return oldBytes;
         } catch (Throwable t) {
             Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Unexpected error when adding instrumentation to event class " + clazz.getName());
         }
@@ -106,13 +106,10 @@ final class JVMUpcalls {
         }
         String eventName = "<Unknown>";
         try {
-            EventInstrumentation ei = new EventInstrumentation(superClass, oldBytes, traceId, bootClassLoader, true);
-            eventName = ei.getEventName();
-            if (!JVMSupport.shouldInstrument(bootClassLoader,  ei.getEventName())) {
+            ClassInspector c = new ClassInspector(superClass, oldBytes, bootClassLoader);
+            eventName = c.getEventName();
+            if (!JVMSupport.shouldInstrument(bootClassLoader,  c.getEventName())) {
                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for " + eventName + " since container support is missing");
-                return oldBytes;
-            }
-            if (ei.isMirrorEvent()) {
                 return oldBytes;
             }
 
@@ -122,18 +119,18 @@ final class JVMUpcalls {
                 // No need to generate bytecode if:
                 // 1) Event class is disabled, and there is not an external configuration that overrides.
                 // 2) Event class has @Registered(false)
-                if (!mr.isEnabled(ei.getEventName()) && !ei.isEnabled() || !ei.isRegistered()) {
+                if (!mr.isEnabled(c.getEventName()) && !c.isEnabled() || !c.isRegistered()) {
                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for event type " + eventName + " since event was disabled on class load");
                     return oldBytes;
                 }
             }
-            EventWriterKey.ensureEventWriterFactory();
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Adding " + (forceInstrumentation ? "forced " : "") + "instrumentation for event type " + eventName + " during initial class load");
+            EventInstrumentation ei = new EventInstrumentation(c, traceId, true);
             byte[] bytes = ei.buildInstrumented();
-            Bytecode.log(ei.getClassName() + "(" + traceId + ")", bytes);
+            Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Adding " + (forceInstrumentation ? "forced " : "") + "instrumentation for event type " + eventName + " during initial class load");
+            Bytecode.log(c.getClassName() + "(" + traceId + ")", bytes);
             return bytes;
         } catch (Throwable t) {
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Unexpected error when adding instrumentation for event type " + eventName);
+            Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Unexpected error when adding instrumentation for event type " + eventName + ". " + t.getMessage());
             return oldBytes;
         }
     }
@@ -158,6 +155,8 @@ final class JVMUpcalls {
      * @return a new thread
      */
     static Thread createRecorderThread(ThreadGroup systemThreadGroup, ClassLoader contextClassLoader) {
-        return SecuritySupport.createRecorderThread(systemThreadGroup, contextClassLoader);
+        Thread thread = new Thread(systemThreadGroup, "JFR Recorder Thread");
+        thread.setContextClassLoader(contextClassLoader);
+        return thread;
     }
 }

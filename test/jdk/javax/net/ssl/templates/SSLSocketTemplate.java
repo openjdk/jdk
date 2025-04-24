@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,7 +245,7 @@ public class SSLSocketTemplate extends SSLContextTemplate {
         //
         // The server side takes care of the issue if the server cannot
         // get started in 90 seconds.  The client side would just ignore
-        // the test case if the serer is not ready.
+        // the test case if the server is not ready.
         boolean serverIsReady =
                 serverCondition.await(90L, TimeUnit.SECONDS);
         if (!serverIsReady) {
@@ -273,7 +273,7 @@ public class SSLSocketTemplate extends SSLContextTemplate {
                 configureClientSocket(sslSocket);
                 InetAddress serverAddress = this.serverAddress;
                 InetSocketAddress connectAddress = serverAddress == null
-                        ? new InetSocketAddress("localhost", serverPort)
+                        ? new InetSocketAddress(InetAddress.getLoopbackAddress(), serverPort)
                         : new InetSocketAddress(serverAddress, serverPort);
                 sslSocket.connect(connectAddress, 15000);
             } catch (IOException ioe) {
@@ -378,7 +378,7 @@ public class SSLSocketTemplate extends SSLContextTemplate {
          * Check various exception conditions.
          */
         if ((local != null) && (remote != null)) {
-            // If both failed, return the curthread's exception.
+            // If both failed, return the current thread's exception.
             local.addSuppressed(remote);
             exception = local;
         } else if (local != null) {

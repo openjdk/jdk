@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +32,20 @@
 #include "utilities/sizes.hpp"
 
 class JavaThread;
+class ObjectMonitor;
 class OopClosure;
 class outputStream;
+template<typename>
+class GrowableArray;
+class Thread;
 
 class LockStack {
+  friend class LockStackTest;
   friend class VMStructs;
   JVMCI_ONLY(friend class JVMCIVMStructs;)
-private:
+ public:
   static const int CAPACITY = 8;
+ private:
 
   // TODO: It would be very useful if JavaThread::lock_stack_offset() and friends were constexpr,
   // but this is currently not the case because we're using offset_of() which is non-constexpr,
@@ -51,6 +58,9 @@ private:
   // We do this instead of a simple index into the array because this allows for
   // efficient addressing in generated code.
   uint32_t _top;
+  // The _bad_oop_sentinel acts as a sentinel value to elide underflow checks in generated code.
+  // The correct layout is statically asserted in the constructor.
+  const uintptr_t _bad_oop_sentinel = badOopVal;
   oop _base[CAPACITY];
 
   // Get the owning thread of this lock-stack.
@@ -65,7 +75,7 @@ private:
   // Given an offset (in bytes) calculate the index into the lock-stack.
   static inline int to_index(uint32_t offset);
 
-public:
+ public:
   static ByteSize top_offset()  { return byte_offset_of(LockStack, _top); }
   static ByteSize base_offset() { return byte_offset_of(LockStack, _base); }
 
@@ -75,23 +85,73 @@ public:
   static uint32_t start_offset();
   static uint32_t end_offset();
 
-  // Return true if we have room to push onto this lock-stack, false otherwise.
-  inline bool can_push() const;
+  // Returns true if the lock-stack is full. False otherwise.
+  inline bool is_full() const;
 
   // Pushes an oop on this lock-stack.
   inline void push(oop o);
 
+  // Get the oldest oop from this lock-stack.
+  // Precondition: This lock-stack must not be empty.
+  inline oop bottom() const;
+
+  // Is the lock-stack empty.
+  inline bool is_empty() const;
+
+  // Check if object is recursive.
+  // Precondition: This lock-stack must contain the oop.
+  inline bool is_recursive(oop o) const;
+
+  // Try recursive enter.
+  // Precondition: This lock-stack must not be full.
+  inline bool try_recursive_enter(oop o);
+
+  // Try recursive exit.
+  // Precondition: This lock-stack must contain the oop.
+  inline bool try_recursive_exit(oop o);
+
   // Removes an oop from an arbitrary location of this lock-stack.
-  inline void remove(oop o);
+  // Precondition: This lock-stack must contain the oop.
+  // Returns the number of oops removed.
+  inline size_t remove(oop o);
 
   // Tests whether the oop is on this lock-stack.
   inline bool contains(oop o) const;
+
+  inline int monitor_count() const;
+  inline void move_to_address(oop* start);
+  inline void move_from_address(oop* start, int count);
 
   // GC support
   inline void oops_do(OopClosure* cl);
 
   // Printing
   void print_on(outputStream* st);
+};
+
+class OMCache {
+  friend class VMStructs;
+ public:
+  static constexpr int CAPACITY = 8;
+
+ private:
+  struct OMCacheEntry {
+    oop _oop = nullptr;
+    ObjectMonitor* _monitor = nullptr;
+  } _entries[CAPACITY];
+  const oop _null_sentinel = nullptr;
+
+ public:
+  static ByteSize entries_offset() { return byte_offset_of(OMCache, _entries); }
+  static constexpr ByteSize oop_to_oop_difference() { return in_ByteSize(sizeof(OMCacheEntry)); }
+  static constexpr ByteSize oop_to_monitor_difference() { return in_ByteSize(sizeof(oop)); }
+
+  explicit OMCache(JavaThread* jt);
+
+  inline ObjectMonitor* get_monitor(oop o);
+  inline void set_monitor(ObjectMonitor* monitor);
+  inline void clear();
+
 };
 
 #endif // SHARE_RUNTIME_LOCKSTACK_HPP

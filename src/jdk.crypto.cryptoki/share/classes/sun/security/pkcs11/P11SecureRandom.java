@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,9 +187,23 @@ final class P11SecureRandom extends SecureRandomSpi {
         }
     }
 
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  in the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
         in.defaultReadObject();
+        if (token == null) {
+            throw new InvalidObjectException("token is null");
+        }
+        if (mixBuffer != null) {
+            mixBuffer = mixBuffer.clone();
+        }
         // assign default values to non-null transient fields
         iBuffer = new byte[IBUFFER_SIZE];
         ibuffered = 0;
