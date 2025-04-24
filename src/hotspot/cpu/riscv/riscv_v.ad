@@ -3120,10 +3120,10 @@ instruct vlsrL_masked(vReg dst_src, vReg shift, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vasrB_imm(vReg dst, vReg src, immI shift) %{
+instruct vasrB_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (RShiftVB src (RShiftCntV shift)));
   ins_cost(VEC_COST);
-  format %{ "vasrB_imm $dst, $src, $shift" %}
+  format %{ "vasrB_vi $dst, $src, $shift" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_BYTE, Matcher::vector_length(this));
@@ -3138,10 +3138,10 @@ instruct vasrB_imm(vReg dst, vReg src, immI shift) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vasrS_imm(vReg dst, vReg src, immI shift) %{
+instruct vasrS_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (RShiftVS src (RShiftCntV shift)));
   ins_cost(VEC_COST);
-  format %{ "vasrS_imm $dst, $src, $shift" %}
+  format %{ "vasrS_vi $dst, $src, $shift" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_SHORT, Matcher::vector_length(this));
@@ -3156,10 +3156,10 @@ instruct vasrS_imm(vReg dst, vReg src, immI shift) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vasrI_imm(vReg dst, vReg src, immI shift) %{
+instruct vasrI_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (RShiftVI src (RShiftCntV shift)));
   ins_cost(VEC_COST);
-  format %{ "vasrI_imm $dst, $src, $shift" %}
+  format %{ "vasrI_vi $dst, $src, $shift" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_INT, Matcher::vector_length(this));
@@ -3173,11 +3173,11 @@ instruct vasrI_imm(vReg dst, vReg src, immI shift) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vasrL_imm(vReg dst, vReg src, immI shift) %{
+instruct vasrL_vi(vReg dst, vReg src, immI shift) %{
   predicate((n->in(2)->in(1)->get_int() & 0x3f) < 32);
   match(Set dst (RShiftVL src (RShiftCntV shift)));
   ins_cost(VEC_COST);
-  format %{ "vasrL_imm $dst, $src, $shift" %}
+  format %{ "vasrL_vi $dst, $src, $shift" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
@@ -3191,10 +3191,10 @@ instruct vasrL_imm(vReg dst, vReg src, immI shift) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vasrB_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+instruct vasrB_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   match(Set dst_src (RShiftVB (Binary dst_src (RShiftCntV shift)) v0));
   ins_cost(VEC_COST);
-  format %{ "vasrB_imm_masked $dst_src, $dst_src, $shift, $v0" %}
+  format %{ "vasrB_vi_masked $dst_src, $dst_src, $shift, $v0" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     if (con == 0) {
@@ -3208,10 +3208,10 @@ instruct vasrB_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vasrS_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+instruct vasrS_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   match(Set dst_src (RShiftVS (Binary dst_src (RShiftCntV shift)) v0));
   ins_cost(VEC_COST);
-  format %{ "vasrS_imm_masked $dst_src, $dst_src, $shift, $v0" %}
+  format %{ "vasrS_vi_masked $dst_src, $dst_src, $shift, $v0" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     if (con == 0) {
@@ -3225,10 +3225,10 @@ instruct vasrS_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vasrI_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+instruct vasrI_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   match(Set dst_src (RShiftVI (Binary dst_src (RShiftCntV shift)) v0));
   ins_cost(VEC_COST);
-  format %{ "vasrI_imm_masked $dst_src, $dst_src, $shift, $v0" %}
+  format %{ "vasrI_vi_masked $dst_src, $dst_src, $shift, $v0" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     if (con == 0) {
@@ -3241,11 +3241,11 @@ instruct vasrI_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vasrL_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+instruct vasrL_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   predicate((n->in(1)->in(2)->in(1)->get_int() & 0x3f) < 32);
   match(Set dst_src (RShiftVL (Binary dst_src (RShiftCntV shift)) v0));
   ins_cost(VEC_COST);
-  format %{ "vasrL_imm_masked $dst_src, $dst_src, $shift, $v0" %}
+  format %{ "vasrL_vi_masked $dst_src, $dst_src, $shift, $v0" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     if (con == 0) {
@@ -3258,10 +3258,10 @@ instruct vasrL_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlsrB_imm(vReg dst, vReg src, immI shift) %{
+instruct vlsrB_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (URShiftVB src (RShiftCntV shift)));
   ins_cost(VEC_COST);
-  format %{ "vlsrB_imm $dst, $src, $shift" %}
+  format %{ "vlsrB_vi $dst, $src, $shift" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_BYTE, Matcher::vector_length(this));
@@ -3280,10 +3280,10 @@ instruct vlsrB_imm(vReg dst, vReg src, immI shift) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlsrS_imm(vReg dst, vReg src, immI shift) %{
+instruct vlsrS_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (URShiftVS src (RShiftCntV shift)));
   ins_cost(VEC_COST);
-  format %{ "vlsrS_imm $dst, $src, $shift" %}
+  format %{ "vlsrS_vi $dst, $src, $shift" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_SHORT, Matcher::vector_length(this));
@@ -3302,10 +3302,10 @@ instruct vlsrS_imm(vReg dst, vReg src, immI shift) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlsrI_imm(vReg dst, vReg src, immI shift) %{
+instruct vlsrI_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (URShiftVI src (RShiftCntV shift)));
   ins_cost(VEC_COST);
-  format %{ "vlsrI_imm $dst, $src, $shift" %}
+  format %{ "vlsrI_vi $dst, $src, $shift" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_INT, Matcher::vector_length(this));
@@ -3319,11 +3319,11 @@ instruct vlsrI_imm(vReg dst, vReg src, immI shift) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlsrL_imm(vReg dst, vReg src, immI shift) %{
+instruct vlsrL_vi(vReg dst, vReg src, immI shift) %{
   predicate((n->in(2)->in(1)->get_int() & 0x3f) < 32);
   match(Set dst (URShiftVL src (RShiftCntV shift)));
   ins_cost(VEC_COST);
-  format %{ "vlsrL_imm $dst, $src, $shift" %}
+  format %{ "vlsrL_vi $dst, $src, $shift" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
@@ -3337,10 +3337,10 @@ instruct vlsrL_imm(vReg dst, vReg src, immI shift) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlsrB_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+instruct vlsrB_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   match(Set dst_src (URShiftVB (Binary dst_src (RShiftCntV shift)) v0));
   ins_cost(VEC_COST);
-  format %{ "vlsrB_imm_masked $dst_src, $dst_src, $shift, $v0" %}
+  format %{ "vlsrB_vi_masked $dst_src, $dst_src, $shift, $v0" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     if (con == 0) {
@@ -3358,10 +3358,10 @@ instruct vlsrB_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlsrS_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+instruct vlsrS_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   match(Set dst_src (URShiftVS (Binary dst_src (RShiftCntV shift)) v0));
   ins_cost(VEC_COST);
-  format %{ "vlsrS_imm_masked $dst_src, $dst_src, $shift, $v0" %}
+  format %{ "vlsrS_vi_masked $dst_src, $dst_src, $shift, $v0" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     if (con == 0) {
@@ -3379,10 +3379,10 @@ instruct vlsrS_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlsrI_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+instruct vlsrI_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   match(Set dst_src (URShiftVI (Binary dst_src (RShiftCntV shift)) v0));
   ins_cost(VEC_COST);
-  format %{ "vlsrI_imm_masked $dst_src, $dst_src, $shift, $v0" %}
+  format %{ "vlsrI_vi_masked $dst_src, $dst_src, $shift, $v0" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     if (con == 0) {
@@ -3395,11 +3395,11 @@ instruct vlsrI_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlsrL_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+instruct vlsrL_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   predicate((n->in(1)->in(2)->in(1)->get_int() & 0x3f) < 32);
   match(Set dst_src (URShiftVL (Binary dst_src (RShiftCntV shift)) v0));
   ins_cost(VEC_COST);
-  format %{ "vlsrL_imm_masked $dst_src, $dst_src, $shift, $v0" %}
+  format %{ "vlsrL_vi_masked $dst_src, $dst_src, $shift, $v0" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     if (con == 0) {
@@ -3412,10 +3412,10 @@ instruct vlsrL_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlslB_imm(vReg dst, vReg src, immI shift) %{
+instruct vlslB_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (LShiftVB src (LShiftCntV shift)));
   ins_cost(VEC_COST);
-  format %{ "vlslB_imm $dst, $src, $shift" %}
+  format %{ "vlslB_vi $dst, $src, $shift" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_BYTE, Matcher::vector_length(this));
@@ -3429,10 +3429,10 @@ instruct vlslB_imm(vReg dst, vReg src, immI shift) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlslS_imm(vReg dst, vReg src, immI shift) %{
+instruct vlslS_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (LShiftVS src (LShiftCntV shift)));
   ins_cost(VEC_COST);
-  format %{ "vlslS_imm $dst, $src, $shift" %}
+  format %{ "vlslS_vi $dst, $src, $shift" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_SHORT, Matcher::vector_length(this));
@@ -3446,10 +3446,10 @@ instruct vlslS_imm(vReg dst, vReg src, immI shift) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlslI_imm(vReg dst, vReg src, immI shift) %{
+instruct vlslI_vi(vReg dst, vReg src, immI shift) %{
   match(Set dst (LShiftVI src (LShiftCntV shift)));
   ins_cost(VEC_COST);
-  format %{ "vlslI_imm $dst, $src, $shift" %}
+  format %{ "vlslI_vi $dst, $src, $shift" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_INT, Matcher::vector_length(this));
@@ -3458,11 +3458,11 @@ instruct vlslI_imm(vReg dst, vReg src, immI shift) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlslL_imm(vReg dst, vReg src, immI shift) %{
+instruct vlslL_vi(vReg dst, vReg src, immI shift) %{
   predicate((n->in(2)->in(1)->get_int() & 0x3f) < 32);
   match(Set dst (LShiftVL src (LShiftCntV shift)));
   ins_cost(VEC_COST);
-  format %{ "vlslL_imm $dst, $src, $shift" %}
+  format %{ "vlslL_vi $dst, $src, $shift" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
@@ -3471,10 +3471,10 @@ instruct vlslL_imm(vReg dst, vReg src, immI shift) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlslB_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+instruct vlslB_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   match(Set dst_src (LShiftVB (Binary dst_src (LShiftCntV shift)) v0));
   ins_cost(VEC_COST);
-  format %{ "vlslB_imm_masked $dst_src, $dst_src, $shift, $v0" %}
+  format %{ "vlslB_vi_masked $dst_src, $dst_src, $shift, $v0" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_BYTE, Matcher::vector_length(this));
@@ -3489,10 +3489,10 @@ instruct vlslB_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlslS_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+instruct vlslS_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   match(Set dst_src (LShiftVS (Binary dst_src (LShiftCntV shift)) v0));
   ins_cost(VEC_COST);
-  format %{ "vlslS_imm_masked $dst_src, $dst_src, $shift, $v0" %}
+  format %{ "vlslS_vi_masked $dst_src, $dst_src, $shift, $v0" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_SHORT, Matcher::vector_length(this));
@@ -3507,10 +3507,10 @@ instruct vlslS_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlslI_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+instruct vlslI_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   match(Set dst_src (LShiftVI (Binary dst_src (LShiftCntV shift)) v0));
   ins_cost(VEC_COST);
-  format %{ "vlslI_imm_masked $dst_src, $dst_src, $shift, $v0" %}
+  format %{ "vlslI_vi_masked $dst_src, $dst_src, $shift, $v0" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_INT, Matcher::vector_length(this));
@@ -3520,11 +3520,11 @@ instruct vlslI_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vlslL_imm_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
+instruct vlslL_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
   predicate((n->in(1)->in(2)->in(1)->get_int() & 0x3f) < 32);
   match(Set dst_src (LShiftVL (Binary dst_src (LShiftCntV shift)) v0));
   ins_cost(VEC_COST);
-  format %{ "vlslL_imm_masked $dst_src, $dst_src, $shift, $v0" %}
+  format %{ "vlslL_vi_masked $dst_src, $dst_src, $shift, $v0" %}
   ins_encode %{
     uint32_t con = (unsigned)$shift$$constant & 0x1f;
     __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
