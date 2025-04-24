@@ -3747,11 +3747,6 @@ void ClassFileParser::apply_parsed_class_metadata(
   this_klass->set_permitted_subclasses(_permitted_subclasses);
   this_klass->set_record_components(_record_components);
 
-  // Initialize cached modifier_flags to support Class.getModifiers().
-  // This must follow setting inner_class attributes.
-  u2 computed_modifiers = this_klass->compute_modifier_flags();
-  this_klass->set_modifier_flags(computed_modifiers);
-
   // Delay the setting of _local_interfaces and _transitive_interfaces until after
   // initialize_supers() in fill_instance_klass(). It is because the _local_interfaces could
   // be shared with _transitive_interfaces and _transitive_interfaces may be shared with
@@ -5338,7 +5333,8 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   assert(0 == _access_flags.as_unsigned_short(), "invariant");
 
   // Figure out whether we can skip format checking (matching classic VM behavior)
-  _need_verify = Verifier::should_verify_for(_loader_data->class_loader());
+  // Always verify CFLH bytes from the user agents.
+  _need_verify = stream->from_class_file_load_hook() ? true : Verifier::should_verify_for(_loader_data->class_loader());
 
   // synch back verification state to stream to check for truncation.
   stream->set_need_verify(_need_verify);

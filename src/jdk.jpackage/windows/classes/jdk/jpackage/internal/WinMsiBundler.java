@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -54,6 +55,9 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.AppImageFile.LauncherInfo;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.MsiVersion;
+import jdk.jpackage.internal.model.PackagerException;
 
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
@@ -227,7 +231,8 @@ public class WinMsiBundler  extends AbstractBundler {
         appImageBundler = new WinAppBundler().setDependentTask(true);
         wixFragments = Stream.of(
                 Map.entry("bundle.wxf", new WixAppImageFragmentBuilder()),
-                Map.entry("ui.wxf", new WixUiFragmentBuilder())
+                Map.entry("ui.wxf", new WixUiFragmentBuilder()),
+                Map.entry("os-condition.wxf", OSVersionCondition.createWixFragmentBuilder())
         ).<WixFragmentBuilder>map(e -> {
             e.getValue().setOutputFileName(e.getKey());
             return e.getValue();
@@ -348,12 +353,8 @@ public class WinMsiBundler  extends AbstractBundler {
     private void prepareProto(Map<String, ? super Object> params)
                 throws PackagerException, IOException {
         Path appImage = StandardBundlerParam.getPredefinedAppImage(params);
-        String appName = APP_NAME.fetchFrom(params);
+        String appName = Objects.requireNonNull(APP_NAME.fetchFrom(params));
         Path appDir;
-        if (appName == null) {
-            // Can happen when no name is given, and using a foreign app-image
-            throw new PackagerException("error.no.name");
-        }
 
         // we either have an application image or need to build one
         if (appImage != null) {

@@ -31,7 +31,8 @@ package com.sun.java.swing.plaf.windows;
  * @since 1.5
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-public class WindowsClassicLookAndFeel extends WindowsLookAndFeel {
+public final class WindowsClassicLookAndFeel extends WindowsLookAndFeel {
+    @Override
     public String getName() {
         return "Windows Classic";
     }

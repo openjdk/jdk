@@ -131,6 +131,9 @@ void VM_Version::initialize() {
     }
   }
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    FLAG_SET_ERGO(AlignVector, false);
+  }
 
   if (PowerArchitecturePPC64 >= 9) {
     if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstructionsPPC64)) {

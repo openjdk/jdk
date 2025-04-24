@@ -48,7 +48,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     // Any changes to this needs to be synchronized with HotSpot.
     private static final String tmpdir;
     String socket_path;
-    private int ver = VERSION_1;        // updated in ctor depending on detectVersion result
+    private OperationProperties props = new OperationProperties(VERSION_1); // updated in ctor
 
     /**
      * Attaches to the target VM
@@ -72,13 +72,15 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         if (!socket_file.exists()) {
             File f = createAttachFile(pid);
             try {
-                sendQuitTo(pid);
+                checkCatchesAndSendQuitTo(pid, false);
 
                 // give the target VM time to start the attach mechanism
                 final int delay_step = 100;
                 final long timeout = attachTimeout();
-                long time_spend = 0;
+                long time_spent = 0;
                 long delay = 0;
+
+                boolean timedout = false;
                 do {
                     // Increase timeout on each attempt to reduce polling
                     delay += delay_step;
@@ -86,18 +88,19 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                         Thread.sleep(delay);
                     } catch (InterruptedException x) { }
 
-                    time_spend += delay;
-                    if (time_spend > timeout/2 && !socket_file.exists()) {
+                    timedout = (time_spent += delay) > timeout;
+
+                    if (time_spent > timeout/2 && !socket_file.exists()) {
                         // Send QUIT again to give target VM the last chance to react
-                        sendQuitTo(pid);
+                        checkCatchesAndSendQuitTo(pid, !timedout);
                     }
-                } while (time_spend <= timeout && !socket_file.exists());
+                } while (!timedout && !socket_file.exists());
                 if (!socket_file.exists()) {
                     throw new AttachNotSupportedException(
                         String.format("Unable to open socket file %s: " +
                                       "target process %d doesn't respond within %dms " +
                                       "or HotSpot VM not loaded", socket_path,
-                                      pid, time_spend));
+                                      pid, time_spent));
                 }
             } finally {
                 f.delete();
@@ -109,7 +112,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         checkPermissions(socket_path);
 
         if (isAPIv2Enabled()) {
-            ver = detectVersion();
+            props = getDefaultProps();
         } else {
             // Check that we can connect to the process
             // - this ensures we throw the permission denied error now rather than
@@ -161,10 +164,9 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         IOException ioe = null;
 
         // connected - write request
-        // <ver> <cmd> <args...>
         try {
             SocketOutputStream writer = new SocketOutputStream(s);
-            writeCommand(writer, ver, cmd, args);
+            writeCommand(writer, props, cmd, args);
         } catch (IOException x) {
             ioe = x;
         }
@@ -217,7 +219,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     //-- native methods
 
-    static native void sendQuitTo(int pid) throws IOException;
+    static native boolean checkCatchesAndSendQuitTo(int pid, boolean throwIfNotReady) throws IOException, AttachNotSupportedException;
 
     static native void checkPermissions(String path) throws IOException;
 

@@ -60,7 +60,6 @@ int ShenandoahOldHeuristics::compare_by_index(RegionData a, RegionData b) {
 ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahOldGeneration* generation, ShenandoahGenerationalHeap* gen_heap) :
   ShenandoahHeuristics(generation),
   _heap(gen_heap),
-  _old_gen(generation),
   _first_pinned_candidate(NOT_FOUND),
   _last_old_collection_candidate(0),
   _next_old_collection_candidate(0),
@@ -567,9 +566,9 @@ void ShenandoahOldHeuristics::set_trigger_if_old_is_fragmented(size_t first_old_
     // allocation request will require a STW full GC.
     size_t allowed_old_gen_span = num_regions - (ShenandoahGenerationalHumongousReserve * num_regions) / 100;
 
-    size_t old_available = _old_gen->available() / HeapWordSize;
+    size_t old_available = _old_generation->available() / HeapWordSize;
     size_t region_size_words = ShenandoahHeapRegion::region_size_words();
-    size_t old_unaffiliated_available = _old_gen->free_unaffiliated_regions() * region_size_words;
+    size_t old_unaffiliated_available = _old_generation->free_unaffiliated_regions() * region_size_words;
     assert(old_available >= old_unaffiliated_available, "sanity");
     size_t old_fragmented_available = old_available - old_unaffiliated_available;
 
@@ -603,12 +602,12 @@ void ShenandoahOldHeuristics::set_trigger_if_old_is_fragmented(size_t first_old_
 }
 
 void ShenandoahOldHeuristics::set_trigger_if_old_is_overgrown() {
-  size_t old_used = _old_gen->used() + _old_gen->get_humongous_waste();
-  size_t trigger_threshold = _old_gen->usage_trigger_threshold();
+  size_t old_used = _old_generation->used() + _old_generation->get_humongous_waste();
+  size_t trigger_threshold = _old_generation->usage_trigger_threshold();
   // Detects unsigned arithmetic underflow
   assert(old_used <= _heap->capacity(),
          "Old used (%zu, %zu) must not be more than heap capacity (%zu)",
-         _old_gen->used(), _old_gen->get_humongous_waste(), _heap->capacity());
+         _old_generation->used(), _old_generation->get_humongous_waste(), _heap->capacity());
   if (old_used > trigger_threshold) {
     _growth_trigger = true;
   }
@@ -620,13 +619,32 @@ void ShenandoahOldHeuristics::evaluate_triggers(size_t first_old_region, size_t 
   set_trigger_if_old_is_overgrown();
 }
 
+bool ShenandoahOldHeuristics::should_resume_old_cycle() {
+  // If we are preparing to mark old, or if we are already marking old, then try to continue that work.
+  if (_old_generation->is_concurrent_mark_in_progress()) {
+    assert(_old_generation->state() == ShenandoahOldGeneration::MARKING, "Unexpected old gen state: %s", _old_generation->state_name());
+    log_trigger("Resume marking old");
+    return true;
+  }
+
+  if (_old_generation->is_preparing_for_mark()) {
+    assert(_old_generation->state() == ShenandoahOldGeneration::FILLING, "Unexpected old gen state: %s", _old_generation->state_name());
+    log_trigger("Resume preparing to mark old");
+    return true;
+  }
+
+  return false;
+}
+
 bool ShenandoahOldHeuristics::should_start_gc() {
-  // Cannot start a new old-gen GC until previous one has finished.
-  //
-  // Future refinement: under certain circumstances, we might be more sophisticated about this choice.
-  // For example, we could choose to abandon the previous old collection before it has completed evacuations.
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (!_old_generation->can_start_gc() || heap->collection_set()->has_old_regions()) {
+
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (_old_generation->is_doing_mixed_evacuations()) {
+    // Do not try to start an old cycle if we are waiting for old regions to be evacuated (we need
+    // a young cycle for this). Note that the young heuristic has a feature to expedite old evacuations.
+    // Future refinement: under certain circumstances, we might be more sophisticated about this choice.
+    // For example, we could choose to abandon the previous old collection before it has completed evacuations.
+    log_debug(gc)("Not starting an old cycle because we are waiting for mixed evacuations");
     return false;
   }
 

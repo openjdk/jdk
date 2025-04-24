@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 # questions.
 #
 
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
 
 include CopyFiles.gmk
 include MakeIO.gmk
@@ -43,8 +42,6 @@ ifeq ($(call isBuildOs, windows), true)
   TAR_IGNORE_EXIT_VALUE := || test "$$$$?" = "1"
 endif
 
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, Bundles-pre.gmk))
 ################################################################################
 # BUNDLE : Name of bundle to create
 # FILES : Files in BASE_DIRS to add to bundle
@@ -245,7 +242,10 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
       )
 
   JDK_SYMBOLS_BUNDLE_FILES := \
-      $(call FindFiles, $(SYMBOLS_IMAGE_DIR))
+      $(filter-out \
+          %.stripped.pdb, \
+          $(call FindFiles, $(SYMBOLS_IMAGE_DIR)) \
+      )
 
   TEST_DEMOS_BUNDLE_FILES := $(filter $(JDK_DEMOS_IMAGE_HOMEDIR)/demo/%, \
       $(ALL_JDK_DEMOS_FILES))
@@ -502,11 +502,6 @@ endif
 
 ################################################################################
 
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, Bundles.gmk))
-
-################################################################################
-
 product-bundles: $(PRODUCT_TARGETS)
 legacy-bundles: $(LEGACY_TARGETS)
 test-bundles: $(TEST_TARGETS)
@@ -517,6 +512,10 @@ static-libs-bundles: $(STATIC_LIBS_TARGETS)
 static-libs-graal-bundles: $(STATIC_LIBS_GRAAL_TARGETS)
 jcov-bundles: $(JCOV_TARGETS)
 
-.PHONY: all default product-bundles test-bundles \
+.PHONY: product-bundles test-bundles \
     docs-jdk-bundles docs-javase-bundles docs-reference-bundles \
     static-libs-bundles static-libs-graal-bundles jcov-bundles
+
+################################################################################
+
+include MakeFileEnd.gmk

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,8 +106,8 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
             Content constructorDetailsHeader = getConstructorDetailsHeader(target);
             Content memberList = getMemberList();
-            writer.tableOfContents.addLink(HtmlIds.CONSTRUCTOR_DETAIL, contents.constructorDetailsLabel);
-            writer.tableOfContents.pushNestedList();
+            writer.tableOfContents.addLink(HtmlIds.CONSTRUCTOR_DETAIL, contents.constructorDetailsLabel,
+                    TableOfContents.Level.FIRST);
 
             for (Element constructor : constructors) {
                 currentConstructor = (ExecutableElement)constructor;
@@ -122,11 +122,11 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
                 memberList.add(getMemberListItem(constructorContent));
                 writer.tableOfContents.addLink(htmlIds.forMember(currentConstructor).getFirst(),
                         Text.of(utils.getSimpleName(constructor)
-                                + utils.makeSignature(currentConstructor, typeElement, false, true)));
+                                + utils.makeSignature(currentConstructor, typeElement, false, true)),
+                        TableOfContents.Level.SECOND);
             }
             Content constructorDetails = getConstructorDetails(constructorDetailsHeader, memberList);
             target.add(constructorDetails);
-            writer.tableOfContents.popNestedList();
         }
     }
 

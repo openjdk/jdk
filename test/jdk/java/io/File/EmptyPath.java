@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,257 @@
  */
 
 /* @test
-   @bug 4842706
-   @summary Test some file operations with empty path
+ * @bug 4842706 8024695
+ * @summary Test some file operations with empty path
+ * @run junit EmptyPath
  */
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.FileStore;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class EmptyPath {
-    public static void main(String [] args) throws Exception {
-        File f = new File("");
-        f.mkdir();
-        try {
-            f.createNewFile();
-            throw new RuntimeException("Expected exception not thrown");
-        } catch (IOException ioe) {
-            // Correct result
+    private static final String EMPTY_STRING = "";
+
+    static File f;
+    static Path p;
+
+    @BeforeAll
+    public static void init() {
+        f = new File(EMPTY_STRING);
+        p = Path.of(EMPTY_STRING);
+    }
+
+    @Test
+    public void canExecute() {
+        assertTrue(f.canExecute());
+    }
+
+    @Test
+    public void canRead() {
+        assertTrue(f.canRead());
+    }
+
+    @Test
+    public void canWrite() {
+        assertTrue(f.canWrite());
+    }
+
+    @Test
+    public void compareTo() {
+        assertEquals(0, f.compareTo(p.toFile()));
+    }
+
+    @Test
+    public void createNewFile() {
+        assertThrows(IOException.class, () -> f.createNewFile());
+    }
+
+    @Test
+    public void open() throws FileNotFoundException {
+        assertThrows(FileNotFoundException.class,
+                     () -> new FileInputStream(f));
+    }
+
+    @Test
+    public void delete() {
+        assertFalse(f.delete());
+    }
+
+    @Test
+    public void equals() {
+        assertTrue(f.equals(p.toFile()));
+    }
+
+    @Test
+    public void exists() {
+        assertTrue(f.exists());
+    }
+
+    @Test
+    public void getAbsolutePath() {
+        System.out.println(p.toAbsolutePath().toString() + "\n" +
+                           f.getAbsolutePath());
+        assertEquals(p.toAbsolutePath().toString(), f.getAbsolutePath());
+    }
+
+    private void checkSpace(long expected, long actual) {
+        if (expected == 0) {
+            assertEquals(0L, actual);
+        } else {
+            assertTrue(actual > 0);
         }
+    }
+
+    @Test
+    public void getFreeSpace() throws IOException {
+        FileStore fs = Files.getFileStore(f.toPath());
+        checkSpace(fs.getUnallocatedSpace(), f.getFreeSpace());
+    }
+
+    @Test
+    public void getName() {
+        assertEquals(p.getFileName().toString(), f.getName());
+    }
+
+    @Test
+    public void getParent() {
+        assertNull(f.getParent());
+    }
+
+    @Test
+    public void getPath() {
+        assertEquals(p.toString(), f.getPath());
+    }
+
+    @Test
+    public void getTotalSpace() throws IOException {
+        FileStore fs = Files.getFileStore(f.toPath());
+        checkSpace(fs.getTotalSpace(), f.getTotalSpace());
+    }
+
+    @Test
+    public void getUsableSpace() throws IOException {
+        FileStore fs = Files.getFileStore(f.toPath());
+        checkSpace(fs.getUsableSpace(), f.getUsableSpace());
+    }
+
+    @Test
+    public void isNotAbsolute() {
+        assertFalse(f.isAbsolute());
+    }
+
+    @Test
+    public void isAbsolute() {
+        assertTrue(f.getAbsoluteFile().isAbsolute());
+    }
+
+    @Test
+    public void isDirectory() {
+        assertTrue(f.isDirectory());
+    }
+
+    @Test
+    public void isFile() {
+        assertFalse(f.isFile());
+    }
+
+    @Test
+    public void isHidden() {
+        assertFalse(f.isHidden());
+    }
+
+    @Test
+    public void lastModified() {
+        assertTrue(f.lastModified() > 0);
+    }
+
+    @Test
+    public void length() throws IOException {
+        assertEquals(Files.size(f.toPath()), f.length());
+    }
+
+    @Test
+    public void list() throws IOException {
+        String[] files = f.list();
+        assertNotNull(files);
+        Set<String> ioSet = new HashSet(Arrays.asList(files));
+        Set<String> nioSet = new HashSet();
+        Files.list(p).forEach((x) -> nioSet.add(x.toString()));
+        assertEquals(nioSet, ioSet);
+    }
+
+    @Test
+    public void mkdir() {
+        assertFalse(f.mkdir());
+    }
+
+    @Test
+    public void setLastModified() {
+        long t0 = f.lastModified();
+        long t = System.currentTimeMillis();
         try {
-            FileInputStream fis = new FileInputStream(f);
-            fis.close();
-            throw new RuntimeException("Expected exception not thrown");
-        } catch (FileNotFoundException fnfe) {
-            // Correct result
+            assertTrue(f.setLastModified(t));
+            assertEquals(t, f.lastModified());
+            assertTrue(f.setLastModified(t0));
+            assertEquals(t0, f.lastModified());
+        } finally {
+            f.setLastModified(t0);
         }
+    }
+
+    // Note: Testing File.setExecutable is omitted because calling
+    // File.setExecutable(false) makes it impossible to set the CWD to
+    // executable again which makes subsequent tests fail
+
+    @Test
+    @DisabledOnOs({OS.WINDOWS})
+    public void setReadable() {
+        assertTrue(f.canRead());
+        try {
+            assertTrue(f.setReadable(false));
+            assertFalse(f.canRead());
+            assertTrue(f.setReadable(true));
+            assertTrue(f.canRead());
+        } finally {
+            f.setReadable(true);
+        }
+    }
+
+    @Test
+    @DisabledOnOs({OS.WINDOWS})
+    public void setReadOnly() {
+        assertTrue(f.canExecute());
+        assertTrue(f.canRead());
+        assertTrue(f.canWrite());
+        try {
+            assertTrue(f.setReadOnly());
+            assertTrue(f.canRead());
+            assertFalse(f.canWrite());
+            assertTrue(f.setWritable(true, true));
+            assertTrue(f.canWrite());
+        } finally {
+            f.setWritable(true, true);
+        }
+    }
+
+    @Test
+    @DisabledOnOs({OS.WINDOWS})
+    public void setWritable() {
+        assertTrue(f.canWrite());
+        try {
+            assertTrue(f.setWritable(false, true));
+            assertFalse(f.canWrite());
+            assertTrue(f.setWritable(true, true));
+            assertTrue(f.canWrite());
+        } finally {
+            f.setWritable(true, true);
+        }
+    }
+
+    @Test
+    public void toPath() {
+        assertEquals(p, f.toPath());
+    }
+
+    @Test
+    public void toURI() {
+        assertEquals(f.toPath().toUri(), f.toURI());
     }
 }

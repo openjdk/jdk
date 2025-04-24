@@ -27,8 +27,8 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
-#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CardSet.hpp"
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
@@ -450,7 +450,7 @@ private:
   // Second-level mutator allocation attempt: take the Heap_lock and
   // retry the allocation attempt, potentially scheduling a GC
   // pause. This should only be used for non-humongous allocations.
-  HeapWord* attempt_allocation_slow(size_t word_size);
+  HeapWord* attempt_allocation_slow(uint node_index, size_t word_size);
 
   // Takes the Heap_lock and attempts a humongous allocation. It can
   // potentially schedule a GC pause.
@@ -1313,7 +1313,7 @@ private:
 
 public:
   void print_on(outputStream* st) const override;
-  void print_extended_on(outputStream* st) const override;
+  void print_extended_on(outputStream* st) const;
   void print_on_error(outputStream* st) const override;
 
   void gc_threads_do(ThreadClosure* tc) const override;

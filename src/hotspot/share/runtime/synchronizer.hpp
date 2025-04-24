@@ -47,6 +47,7 @@ private:
   volatile size_t _max;
 
 public:
+  MonitorList() : _head(nullptr), _count(0), _max(0) {};
   void add(ObjectMonitor* monitor);
   size_t unlink_deflated(size_t deflated_count,
                          GrowableArray<ObjectMonitor*>* unlinked_list,
@@ -187,6 +188,8 @@ public:
 
   // Deflate idle monitors:
   static size_t deflate_monitor_list(ObjectMonitorDeflationSafepointer* safepointer);
+  static size_t in_use_list_count();
+  static size_t in_use_list_max();
   static size_t in_use_list_ceiling();
   static void dec_in_use_list_ceiling();
   static void inc_in_use_list_ceiling();

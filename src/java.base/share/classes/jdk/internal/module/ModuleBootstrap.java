@@ -143,7 +143,6 @@ public final class ModuleBootstrap {
                getProperty("jdk.module.patch.0") == null &&       // --patch-module
                getProperty("jdk.module.limitmods") == null &&     // --limit-modules
                getProperty("jdk.module.addreads.0") == null &&    // --add-reads
-               getProperty("jdk.module.addexports.0") == null &&  // --add-exports
                getProperty("jdk.module.addopens.0") == null;      // --add-opens
     }
 

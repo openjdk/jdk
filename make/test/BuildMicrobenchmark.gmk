@@ -23,11 +23,9 @@
 # questions.
 #
 
-# This must be the first rule
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
 
 include CopyFiles.gmk
 include JarArchive.gmk
@@ -124,9 +122,20 @@ $(JMH_UNPACKED_JARS_DONE): $(JMH_RUNTIME_JARS)
 	$(RM) $(JMH_UNPACKED_DIR)/*.xml
 	$(TOUCH) $@
 
+# Copy dependency files for inclusion in the benchmark JARs
+$(eval $(call SetupCopyFiles, COPY_JAXP_TEST_XML, \
+    SRC := $(TOPDIR)/test/jaxp/javax/xml/jaxp/unittest, \
+    DEST := $(MICROBENCHMARK_CLASSES)/org/openjdk/bench/javax/xml, \
+    FILES := \
+        stream/XMLStreamWriterTest/message_12.xml \
+        validation/tck/reZ003vExc23082309.xml \
+        transform/msgAttach.xml, \
+    FLATTEN := true, \
+))
+
 # Create benchmarks JAR file with benchmarks for both the old and new JDK
 $(eval $(call SetupJarArchive, BUILD_JDK_JAR, \
-    DEPENDENCIES := $(BUILD_JDK_MICROBENCHMARK) $(JMH_UNPACKED_JARS_DONE), \
+    DEPENDENCIES := $(BUILD_JDK_MICROBENCHMARK) $(JMH_UNPACKED_JARS_DONE) $(COPY_JAXP_TEST_XML), \
     SRCS := $(MICROBENCHMARK_CLASSES) $(JMH_UNPACKED_DIR), \
     BIN := $(MICROBENCHMARK_JAR_BIN), \
     SUFFIXES := .*, \
@@ -155,4 +164,6 @@ $(eval $(call SetupCopyFiles, COPY_MICROBENCHMARK_NATIVE, \
 
 all: $(MICROBENCHMARK_JAR) $(BUILD_MICROBENCHMARK_LIBRARIES) $(COPY_MICROBENCHMARK_NATIVE)
 
-.PHONY: all
+################################################################################
+
+include MakeFileEnd.gmk

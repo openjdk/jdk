@@ -84,7 +84,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     //       super.bOp((Byte128Vector) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
-    // into a sharply type- and size-specific
+    // into a sharply-typed and size-specific
     // wrapper in the subclass file, so that
     // the JIT can specialize the code.
     // The code is only inlined and expanded
@@ -543,7 +543,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     // Note: A surprising behavior in javadoc
     // sometimes makes a lone /** {@inheritDoc} */
     // comment drop the method altogether,
-    // apparently if the method mentions an
+    // apparently if the method mentions a
     // parameter or return type of Vector<Double>
     // instead of Vector<E> as originally specified.
     // Adding an empty HTML fragment appears to
@@ -2771,7 +2771,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     /** {@inheritDoc} <!--workaround-->
      * @implNote
      * This is an alias for {@link #toArray()}
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code DoubleVector},
      * there will be no loss of precision.
      */
@@ -2836,7 +2836,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<Double>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
@@ -3064,7 +3065,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_IN_RANGE).maybeSwap(bo);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 8, ms.byteSize());
+        ((AbstractMask<Double>)m)
+            .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 8);
         return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_OUT_OF_RANGE).maybeSwap(bo);
     }
 
@@ -3132,7 +3134,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         } else {
             DoubleSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<Double>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoArray0(a, offset, m);
         }
@@ -3290,7 +3293,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             }
             DoubleSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
-                checkMaskFromIndexSize(offset, vsp, m, 8, ms.byteSize());
+                ((AbstractMask<Double>)m)
+                    .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 8);
             }
             maybeSwap(bo).intoMemorySegment0(ms, offset, m);
         }
@@ -3553,26 +3557,6 @@ public abstract class DoubleVector extends AbstractVector<Double> {
 
 
     // End of low-level memory operations.
-
-    private static
-    void checkMaskFromIndexSize(int offset,
-                                DoubleSpecies vsp,
-                                VectorMask<Double> m,
-                                int scale,
-                                int limit) {
-        ((AbstractMask<Double>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
-
-    private static
-    void checkMaskFromIndexSize(long offset,
-                                DoubleSpecies vsp,
-                                VectorMask<Double> m,
-                                int scale,
-                                long limit) {
-        ((AbstractMask<Double>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
 
     @ForceInline
     private void conditionalStoreNYI(int offset,

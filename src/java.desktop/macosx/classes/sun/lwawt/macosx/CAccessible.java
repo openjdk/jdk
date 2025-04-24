@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,11 @@ package sun.lwawt.macosx;
 import java.awt.Component;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.Objects;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
+import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 
 import static javax.accessibility.AccessibleContext.ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY;
@@ -120,7 +122,11 @@ class CAccessible extends CFRetainedResource implements Accessible {
                 if (name.equals(ACCESSIBLE_CARET_PROPERTY)) {
                     selectedTextChanged(ptr);
                 } else if (name.equals(ACCESSIBLE_TEXT_PROPERTY)) {
-                    valueChanged(ptr);
+                    AccessibleContext thisAC = accessible.getAccessibleContext();
+                    Accessible parentAccessible = thisAC.getAccessibleParent();
+                    if (!(parentAccessible instanceof JSpinner.NumberEditor)) {
+                        valueChanged(ptr);
+                    }
                 } else if (name.equals(ACCESSIBLE_SELECTION_PROPERTY)) {
                     selectionChanged(ptr);
                 } else if (name.equals(ACCESSIBLE_TABLE_MODEL_CHANGED)) {
@@ -182,7 +188,7 @@ class CAccessible extends CFRetainedResource implements Accessible {
 
                     // Do send check box state changes to native side
                     if (thisRole == AccessibleRole.CHECK_BOX) {
-                        if (newValue != null && !newValue.equals(oldValue)) {
+                        if (!Objects.equals(newValue, oldValue)) {
                             valueChanged(ptr);
                         }
 
@@ -208,7 +214,7 @@ class CAccessible extends CFRetainedResource implements Accessible {
 
                     // Do send toggle button state changes to native side
                     if (thisRole == AccessibleRole.TOGGLE_BUTTON) {
-                        if (newValue != null && !newValue.equals(oldValue)) {
+                        if (!Objects.equals(newValue, oldValue)) {
                             valueChanged(ptr);
                         }
                     }

@@ -13,6 +13,8 @@ extern "C" {
 
 /** \page page_proxy Proxy
  *
+ * \see \ref pw_proxy
+ *
  * \section sec_page_proxy_overview Overview
  *
  * The proxy object is a client side representation of a resource
@@ -76,7 +78,7 @@ extern "C" {
  * invoked by the client to PipeWire messages. Events will call the handlers
  * set in listener.
  *
- * See \ref page_proxy
+ * \see \ref page_proxy
  */
 
 /**

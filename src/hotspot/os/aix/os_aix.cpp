@@ -73,6 +73,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
@@ -163,6 +164,12 @@ extern "C" int getargs(procsinfo*, int, char*, int);
 #endif
 #ifndef PV_10_Compat
   #define PV_10_Compat  0x508000  /* Power PC 10 */
+#endif
+#ifndef PV_11
+  #define PV_11           0x600000        /* Power PC 11 */
+#endif
+#ifndef PV_11_Compat
+  #define PV_11_Compat    0x608000        /* Power PC 11 */
 #endif
 
 static address resolve_function_descriptor_to_code_pointer(address p);
@@ -363,9 +370,9 @@ static void query_multipage_support() {
   // or by environment variable LDR_CNTRL (suboption DATAPSIZE). If none is given,
   // default should be 4K.
   {
-    void* p = ::malloc(16*M);
+    void* p = permit_forbidden_function::malloc(16*M);
     g_multipage_support.datapsize = os::Aix::query_pagesize(p);
-    ::free(p);
+    permit_forbidden_function::free(p);
   }
 
   // Query default shm page size (LDR_CNTRL SHMPSIZE).
@@ -705,8 +712,12 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // Init thread attributes.
   pthread_attr_t attr;
   int rslt = pthread_attr_init(&attr);
-  guarantee(rslt == 0, "pthread_attr_init has to return 0");
-  guarantee(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0, "???");
+  if (rslt != 0) {
+    thread->set_osthread(nullptr);
+    delete osthread;
+    return false;
+  }
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
   // Make sure we run in 1:1 kernel-user-thread mode.
   guarantee(pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM) == 0, "???");
@@ -786,6 +797,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // OSThread::thread_id is the pthread id.
   osthread->set_thread_id(tid);
 
+  // child thread synchronization is not done here on AIX, a thread is started in suspended state
+
   return true;
 }
 
@@ -826,13 +839,6 @@ bool os::create_attached_thread(JavaThread* thread) {
   osthread->set_state(RUNNABLE);
 
   thread->set_osthread(osthread);
-
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
 
   // initialize signal mask for this thread
   // and save the caller's signal mask
@@ -1219,6 +1225,9 @@ void os::print_memory_info(outputStream* st) {
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
   // read _system_configuration.version
   switch (_system_configuration.version) {
+  case PV_11:
+    strncpy(buf, "Power PC 11", buflen);
+    break;
   case PV_10:
     strncpy(buf, "Power PC 10", buflen);
     break;
@@ -1264,6 +1273,9 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
   case PV_10_Compat:
     strncpy(buf, "PV_10_Compat", buflen);
     break;
+  case PV_11_Compat:
+    strncpy(buf, "PV_11_Compat", buflen);
+    break;
   default:
     strncpy(buf, "unknown", buflen);
   }
@@ -1295,59 +1307,38 @@ void os::jvm_path(char *buf, jint buflen) {
   char* rp = os::realpath((char *)dlinfo.dli_fname, buf, buflen);
   assert(rp != nullptr, "error in realpath(): maybe the 'path' argument is too long?");
 
-  if (Arguments::sun_java_launcher_is_altjvm()) {
-    // Support for the java launcher's '-XXaltjvm=<path>' option. Typical
-    // value for buf is "<JAVA_HOME>/jre/lib/<vmtype>/libjvm.so".
-    // If "/jre/lib/" appears at the right place in the string, then
-    // assume we are installed in a JDK and we're done. Otherwise, check
-    // for a JAVA_HOME environment variable and fix up the path so it
-    // looks like libjvm.so is installed there (append a fake suffix
-    // hotspot/libjvm.so).
-    const char *p = buf + strlen(buf) - 1;
-    for (int count = 0; p > buf && count < 4; ++count) {
-      for (--p; p > buf && *p != '/'; --p)
-        /* empty */ ;
-    }
+  // If executing unit tests we require JAVA_HOME to point to the real JDK.
+  if (Arguments::executing_unit_tests()) {
+    // Look for JAVA_HOME in the environment.
+    char* java_home_var = ::getenv("JAVA_HOME");
+    if (java_home_var != nullptr && java_home_var[0] != 0) {
 
-    if (strncmp(p, "/jre/lib/", 9) != 0) {
-      // Look for JAVA_HOME in the environment.
-      char* java_home_var = ::getenv("JAVA_HOME");
-      if (java_home_var != nullptr && java_home_var[0] != 0) {
-        char* jrelib_p;
-        int len;
+      // Check the current module name "libjvm.so".
+      const char* p = strrchr(buf, '/');
+      if (p == nullptr) {
+        return;
+      }
+      assert(strstr(p, "/libjvm") == p, "invalid library name");
 
-        // Check the current module name "libjvm.so".
-        p = strrchr(buf, '/');
-        if (p == nullptr) {
-          return;
-        }
-        assert(strstr(p, "/libjvm") == p, "invalid library name");
+      stringStream ss(buf, buflen);
+      rp = os::realpath(java_home_var, buf, buflen);
+      if (rp == nullptr) {
+        return;
+      }
 
-        rp = os::realpath(java_home_var, buf, buflen);
+      assert((int)strlen(buf) < buflen, "Ran out of buffer room");
+      ss.print("%s/lib", buf);
+
+      if (0 == access(buf, F_OK)) {
+        // Use current module name "libjvm.so"
+        ss.print("/%s/libjvm%s", Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+               "buf has been truncated");
+      } else {
+        // Go back to path of .so
+        rp = os::realpath((char *)dlinfo.dli_fname, buf, buflen);
         if (rp == nullptr) {
           return;
-        }
-
-        // determine if this is a legacy image or modules image
-        // modules image doesn't have "jre" subdirectory
-        len = strlen(buf);
-        assert(len < buflen, "Ran out of buffer room");
-        jrelib_p = buf + len;
-        snprintf(jrelib_p, buflen-len, "/jre/lib");
-        if (0 != access(buf, F_OK)) {
-          snprintf(jrelib_p, buflen-len, "/lib");
-        }
-
-        if (0 == access(buf, F_OK)) {
-          // Use current module name "libjvm.so"
-          len = strlen(buf);
-          snprintf(buf + len, buflen-len, "/hotspot/libjvm.so");
-        } else {
-          // Go back to path of .so
-          rp = os::realpath((char *)dlinfo.dli_fname, buf, buflen);
-          if (rp == nullptr) {
-            return;
-          }
         }
       }
     }
@@ -1408,7 +1399,7 @@ static struct {
 } vmem;
 
 static void vmembk_add(char* addr, size_t size, size_t pagesize, int type) {
-  vmembk_t* p = (vmembk_t*) ::malloc(sizeof(vmembk_t));
+  vmembk_t* p = (vmembk_t*) permit_forbidden_function::malloc(sizeof(vmembk_t));
   assert0(p);
   if (p) {
     MiscUtils::AutoCritSect lck(&vmem.cs);
@@ -1437,7 +1428,7 @@ static void vmembk_remove(vmembk_t* p0) {
   for (vmembk_t** pp = &(vmem.first); *pp; pp = &((*pp)->next)) {
     if (*pp == p0) {
       *pp = p0->next;
-      ::free(p0);
+      permit_forbidden_function::free(p0);
       return;
     }
   }

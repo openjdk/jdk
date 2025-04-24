@@ -53,6 +53,53 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
+#include <type_traits>
+
+// Virtual methods are not allowed in code blobs to simplify caching compiled code.
+// Check all "leaf" subclasses of CodeBlob class.
+
+static_assert(!std::is_polymorphic<nmethod>::value,            "no virtual methods are allowed in nmethod");
+static_assert(!std::is_polymorphic<AdapterBlob>::value,        "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<VtableBlob>::value,         "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<MethodHandlesAdapterBlob>::value, "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<RuntimeStub>::value,        "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<DeoptimizationBlob>::value, "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<SafepointBlob>::value,      "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<UpcallStub>::value,         "no virtual methods are allowed in code blobs");
+#ifdef COMPILER2
+static_assert(!std::is_polymorphic<ExceptionBlob>::value,      "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<UncommonTrapBlob>::value,   "no virtual methods are allowed in code blobs");
+#endif
+
+// Add proxy vtables.
+// We need only few for now - they are used only from prints.
+const nmethod::Vptr                  nmethod::_vpntr;
+const BufferBlob::Vptr               BufferBlob::_vpntr;
+const RuntimeStub::Vptr              RuntimeStub::_vpntr;
+const SingletonBlob::Vptr            SingletonBlob::_vpntr;
+const DeoptimizationBlob::Vptr       DeoptimizationBlob::_vpntr;
+const UpcallStub::Vptr               UpcallStub::_vpntr;
+
+const CodeBlob::Vptr* CodeBlob::vptr() const {
+  constexpr const CodeBlob::Vptr* array[(size_t)CodeBlobKind::Number_Of_Kinds] = {
+      nullptr/* None */,
+      &nmethod::_vpntr,
+      &BufferBlob::_vpntr,
+      &AdapterBlob::_vpntr,
+      &VtableBlob::_vpntr,
+      &MethodHandlesAdapterBlob::_vpntr,
+      &RuntimeStub::_vpntr,
+      &DeoptimizationBlob::_vpntr,
+      &SafepointBlob::_vpntr,
+#ifdef COMPILER2
+      &ExceptionBlob::_vpntr,
+      &UncommonTrapBlob::_vpntr,
+#endif
+      &UpcallStub::_vpntr
+  };
+
+  return array[(size_t)_kind];
+}
 
 unsigned int CodeBlob::align_code_offset(int offset) {
   // align the size to CodeEntryAlignment
@@ -62,26 +109,26 @@ unsigned int CodeBlob::align_code_offset(int offset) {
 
 // This must be consistent with the CodeBlob constructor's layout actions.
 unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
-  unsigned int size = header_size;
-  size += align_up(cb->total_relocation_size(), oopSize);
   // align the size to CodeEntryAlignment
-  size = align_code_offset(size);
+  unsigned int size = align_code_offset(header_size);
   size += align_up(cb->total_content_size(), oopSize);
   size += align_up(cb->total_oop_size(), oopSize);
-  size += align_up(cb->total_metadata_size(), oopSize);
   return size;
 }
 
 CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
-                   int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
+                   int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
+                   int mutable_data_size) :
   _oop_maps(nullptr), // will be set by set_oop_maps() call
   _name(name),
+  _mutable_data(header_begin() + size), // default value is blob_end()
   _size(size),
   _relocation_size(align_up(cb->total_relocation_size(), oopSize)),
-  _content_offset(CodeBlob::align_code_offset(header_size + _relocation_size)),
+  _content_offset(CodeBlob::align_code_offset(header_size)),
   _code_offset(_content_offset + cb->total_offset_of(cb->insts())),
   _data_offset(_content_offset + align_up(cb->total_content_size(), oopSize)),
   _frame_size(frame_size),
+  _mutable_data_size(mutable_data_size),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),
   _frame_complete_offset(frame_complete_offset),
@@ -92,11 +139,22 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
   assert(is_aligned(header_size,      oopSize), "unaligned size");
   assert(is_aligned(_relocation_size, oopSize), "unaligned size");
   assert(_data_offset <= _size, "codeBlob is too small: %d > %d", _data_offset, _size);
+  assert(is_nmethod() || (cb->total_oop_size() + cb->total_metadata_size() == 0), "must be nmethod");
   assert(code_end() == content_end(), "must be the same - see code_end()");
 #ifdef COMPILER1
   // probably wrong for tiered
   assert(_frame_size >= -1, "must use frame size or -1 for runtime stubs");
 #endif // COMPILER1
+
+  if (_mutable_data_size > 0) {
+    _mutable_data = (address)os::malloc(_mutable_data_size, mtCode);
+    if (_mutable_data == nullptr) {
+      vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
+    }
+  } else {
+    // We need unique and valid not null address
+    assert(_mutable_data = blob_end(), "sanity");
+  }
 
   set_oop_maps(oop_maps);
 }
@@ -105,6 +163,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
 CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size) :
   _oop_maps(nullptr),
   _name(name),
+  _mutable_data(header_begin() + size), // default value is blob_end()
   _size(size),
   _relocation_size(0),
   _content_offset(CodeBlob::align_code_offset(header_size)),
@@ -119,9 +178,15 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
 {
   assert(is_aligned(size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,     oopSize), "unaligned size");
+  assert(_mutable_data = blob_end(), "sanity");
 }
 
 void CodeBlob::purge() {
+  assert(_mutable_data != nullptr, "should never be null");
+  if (_mutable_data != blob_end()) {
+    os::free(_mutable_data);
+    _mutable_data = blob_end(); // Valid not null address
+  }
   if (_oop_maps != nullptr) {
     delete _oop_maps;
     _oop_maps = nullptr;
@@ -163,7 +228,8 @@ RuntimeBlob::RuntimeBlob(
   int         frame_size,
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments)
-  : CodeBlob(name, kind, cb, size, header_size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments)
+  : CodeBlob(name, kind, cb, size, header_size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments,
+             align_up(cb->total_relocation_size(), oopSize))
 {
   cb->copy_code_and_locs_to(this);
 }
@@ -386,7 +452,7 @@ RuntimeStub::RuntimeStub(
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments
 )
-: RuntimeBlob(name, CodeBlobKind::Runtime_Stub, cb, size, sizeof(RuntimeStub),
+: RuntimeBlob(name, CodeBlobKind::RuntimeStub, cb, size, sizeof(RuntimeStub),
               frame_complete, frame_size, oop_maps, caller_must_gc_arguments)
 {
 }
@@ -424,9 +490,9 @@ void* RuntimeStub::operator new(size_t s, unsigned size) throw() {
 }
 
 // operator new shared by all singletons:
-void* SingletonBlob::operator new(size_t s, unsigned size) throw() {
+void* SingletonBlob::operator new(size_t s, unsigned size, bool alloc_fail_is_fatal) throw() {
   void* p = CodeCache::allocate(size, CodeBlobType::NonNMethod);
-  if (!p) fatal("Initial size of CodeCache is too small");
+  if (alloc_fail_is_fatal && !p) fatal("Initial size of CodeCache is too small");
   return p;
 }
 
@@ -482,18 +548,18 @@ DeoptimizationBlob* DeoptimizationBlob::create(
   return blob;
 }
 
+#ifdef COMPILER2
 
 //----------------------------------------------------------------------------------------------------
 // Implementation of UncommonTrapBlob
 
-#ifdef COMPILER2
 UncommonTrapBlob::UncommonTrapBlob(
   CodeBuffer* cb,
   int         size,
   OopMapSet*  oop_maps,
   int         frame_size
 )
-: SingletonBlob("UncommonTrapBlob", CodeBlobKind::Uncommon_Trap, cb,
+: SingletonBlob("UncommonTrapBlob", CodeBlobKind::UncommonTrap, cb,
                 size, sizeof(UncommonTrapBlob), frame_size, oop_maps)
 {}
 
@@ -508,7 +574,7 @@ UncommonTrapBlob* UncommonTrapBlob::create(
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) UncommonTrapBlob(cb, size, oop_maps, frame_size);
+    blob = new (size, false) UncommonTrapBlob(cb, size, oop_maps, frame_size);
   }
 
   trace_new_stub(blob, "UncommonTrapBlob");
@@ -516,14 +582,9 @@ UncommonTrapBlob* UncommonTrapBlob::create(
   return blob;
 }
 
-
-#endif // COMPILER2
-
-
 //----------------------------------------------------------------------------------------------------
 // Implementation of ExceptionBlob
 
-#ifdef COMPILER2
 ExceptionBlob::ExceptionBlob(
   CodeBuffer* cb,
   int         size,
@@ -545,7 +606,7 @@ ExceptionBlob* ExceptionBlob::create(
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) ExceptionBlob(cb, size, oop_maps, frame_size);
+    blob = new (size, false) ExceptionBlob(cb, size, oop_maps, frame_size);
   }
 
   trace_new_stub(blob, "ExceptionBlob");
@@ -553,9 +614,7 @@ ExceptionBlob* ExceptionBlob::create(
   return blob;
 }
 
-
 #endif // COMPILER2
-
 
 //----------------------------------------------------------------------------------------------------
 // Implementation of SafepointBlob
@@ -644,19 +703,47 @@ void UpcallStub::free(UpcallStub* blob) {
 //----------------------------------------------------------------------------------------------------
 // Verification and printing
 
+void CodeBlob::verify() {
+  if (is_nmethod()) {
+    as_nmethod()->verify();
+  }
+}
+
 void CodeBlob::print_on(outputStream* st) const {
-  st->print_cr("[CodeBlob (" INTPTR_FORMAT ")]", p2i(this));
-  st->print_cr("Framesize: %d", _frame_size);
+  vptr()->print_on(this, st);
 }
 
 void CodeBlob::print() const { print_on(tty); }
 
 void CodeBlob::print_value_on(outputStream* st) const {
+  vptr()->print_value_on(this, st);
+}
+
+void CodeBlob::print_on_impl(outputStream* st) const {
+  st->print_cr("[CodeBlob (" INTPTR_FORMAT ")]", p2i(this));
+  st->print_cr("Framesize: %d", _frame_size);
+}
+
+void CodeBlob::print_value_on_impl(outputStream* st) const {
   st->print_cr("[CodeBlob]");
 }
 
+void CodeBlob::print_block_comment(outputStream* stream, address block_begin) const {
+#if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
+  if (is_nmethod()) {
+    as_nmethod()->print_nmethod_labels(stream, block_begin);
+  }
+#endif
+
+#ifndef PRODUCT
+  ptrdiff_t offset = block_begin - code_begin();
+  assert(offset >= 0, "Expecting non-negative offset!");
+  _asm_remarks.print(uint(offset), stream);
+#endif
+  }
+
 void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const {
-  if (is_buffer_blob()) {
+  if (is_buffer_blob() || is_adapter_blob() || is_vtable_blob() || is_method_handles_adapter_blob()) {
     // the interpreter is generated into a buffer blob
     InterpreterCodelet* i = Interpreter::codelet_containing(addr);
     if (i != nullptr) {
@@ -708,7 +795,7 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
       // verbose is only ever true when called from findpc in debug.cpp
       nm->print_nmethod(true);
     } else {
-      nm->print(st);
+      nm->print_on(st);
     }
     return;
   }
@@ -716,61 +803,45 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
   print_on(st);
 }
 
-void BufferBlob::verify() {
-  // unimplemented
+void BufferBlob::print_on_impl(outputStream* st) const {
+  RuntimeBlob::print_on_impl(st);
+  print_value_on_impl(st);
 }
 
-void BufferBlob::print_on(outputStream* st) const {
-  RuntimeBlob::print_on(st);
-  print_value_on(st);
-}
-
-void BufferBlob::print_value_on(outputStream* st) const {
+void BufferBlob::print_value_on_impl(outputStream* st) const {
   st->print_cr("BufferBlob (" INTPTR_FORMAT  ") used for %s", p2i(this), name());
 }
 
-void RuntimeStub::verify() {
-  // unimplemented
-}
-
-void RuntimeStub::print_on(outputStream* st) const {
+void RuntimeStub::print_on_impl(outputStream* st) const {
   ttyLocker ttyl;
-  RuntimeBlob::print_on(st);
+  RuntimeBlob::print_on_impl(st);
   st->print("Runtime Stub (" INTPTR_FORMAT "): ", p2i(this));
   st->print_cr("%s", name());
   Disassembler::decode((RuntimeBlob*)this, st);
 }
 
-void RuntimeStub::print_value_on(outputStream* st) const {
+void RuntimeStub::print_value_on_impl(outputStream* st) const {
   st->print("RuntimeStub (" INTPTR_FORMAT "): ", p2i(this)); st->print("%s", name());
 }
 
-void SingletonBlob::verify() {
-  // unimplemented
-}
-
-void SingletonBlob::print_on(outputStream* st) const {
+void SingletonBlob::print_on_impl(outputStream* st) const {
   ttyLocker ttyl;
-  RuntimeBlob::print_on(st);
+  RuntimeBlob::print_on_impl(st);
   st->print_cr("%s", name());
   Disassembler::decode((RuntimeBlob*)this, st);
 }
 
-void SingletonBlob::print_value_on(outputStream* st) const {
+void SingletonBlob::print_value_on_impl(outputStream* st) const {
   st->print_cr("%s", name());
 }
 
-void DeoptimizationBlob::print_value_on(outputStream* st) const {
+void DeoptimizationBlob::print_value_on_impl(outputStream* st) const {
   st->print_cr("Deoptimization (frame not available)");
 }
 
-void UpcallStub::verify() {
-  // unimplemented
-}
-
-void UpcallStub::print_on(outputStream* st) const {
-  RuntimeBlob::print_on(st);
-  print_value_on(st);
+void UpcallStub::print_on_impl(outputStream* st) const {
+  RuntimeBlob::print_on_impl(st);
+  print_value_on_impl(st);
   st->print_cr("Frame data offset: %d", (int) _frame_data_offset);
   oop recv = JNIHandles::resolve(_receiver);
   st->print("Receiver MH=");
@@ -778,6 +849,6 @@ void UpcallStub::print_on(outputStream* st) const {
   Disassembler::decode((RuntimeBlob*)this, st);
 }
 
-void UpcallStub::print_value_on(outputStream* st) const {
+void UpcallStub::print_value_on_impl(outputStream* st) const {
   st->print_cr("UpcallStub (" INTPTR_FORMAT  ") used for %s", p2i(this), name());
 }

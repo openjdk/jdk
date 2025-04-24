@@ -24,44 +24,35 @@
 #
 
 ################################################################################
-# This is the main makefile containing most actual top level targets. It needs
-# to be called with a SPEC file defined.
+# This is the main makefile containing most actual top level targets.
 ################################################################################
 
-# Declare default target
-default:
+# Declare ALL_TARGETS as an immediate variable. This variable is a list of all
+# valid top level targets. It's used to declare them all as PHONY and to
+# generate the -only targets.
 
-ifeq ($(wildcard $(SPEC)), )
-  $(error Main.gmk needs SPEC set to a proper spec.gmk)
-endif
+ALL_TARGETS :=
 
-# Now load the spec
-include $(SPEC)
+DEFAULT_TARGET := default-target
 
-# Load the vital tools for all the makefiles.
-include $(TOPDIR)/make/common/MakeBase.gmk
-include $(TOPDIR)/make/common/Modules.gmk
-include $(TOPDIR)/make/common/FindTests.gmk
+include MakeFileStart.gmk
+
+################################################################################
 
 include $(TOPDIR)/make/MainSupport.gmk
+
+include FindTests.gmk
+include Modules.gmk
 
 # Are we requested to ignore dependencies?
 ifneq ($(findstring -only, $(MAKECMDGOALS)), )
   DEPS := none
 endif
 
-# Declare ALL_TARGETS as an immediate variable. This variable is a list of all
-# valid top level targets. It's used to declare them all as PHONY and to
-# generate the -only targets.
-ALL_TARGETS :=
-
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, Main.gmk))
 
 # All modules for the current target platform.
 ALL_MODULES := $(call FindAllModules)
 
-################################################################################
 ################################################################################
 #
 # Recipes for all targets. Only recipes, dependencies are declared later.
@@ -762,6 +753,17 @@ $(eval $(call SetupTarget, test-image-lib, \
     DEPS := build-test-lib, \
 ))
 
+$(eval $(call SetupTarget, build-test-setup-aot, \
+    MAKEFILE := test/BuildTestSetupAOT, \
+    DEPS := interim-langtools exploded-image, \
+))
+
+$(eval $(call SetupTarget, test-image-setup-aot, \
+    MAKEFILE := test/BuildTestSetupAOT, \
+    TARGET := images, \
+    DEPS :=  build-test-setup-aot, \
+))
+
 ifeq ($(BUILD_FAILURE_HANDLER), true)
   # Builds the failure handler jtreg extension
   $(eval $(call SetupTarget, build-test-failure-handler, \
@@ -1290,7 +1292,8 @@ all-docs-bundles: docs-jdk-bundles docs-javase-bundles docs-reference-bundles
 # This target builds the test image
 test-image: prepare-test-image test-image-jdk-jtreg-native \
     test-image-demos-jdk test-image-libtest-jtreg-native \
-    test-image-lib test-image-lib-native
+    test-image-lib test-image-lib-native \
+    test-image-setup-aot
 
 ifneq ($(JVM_TEST_IMAGE_TARGETS), )
   # If JVM_TEST_IMAGE_TARGETS is externally defined, use it instead of the
@@ -1318,10 +1321,7 @@ endif
 ################################################################################
 
 # all-images builds all our deliverables as images.
-all-images: product-images test-image all-docs-images
-ifeq ($(call isTargetOs, linux macosx windows), true)
-  all-images: static-jdk-image
-endif
+all-images: product-images static-jdk-image test-image all-docs-images
 
 # all-bundles packages all our deliverables as tar.gz bundles.
 all-bundles: product-bundles test-bundles docs-bundles static-libs-bundles
@@ -1342,7 +1342,7 @@ ALL_TARGETS += buildtools hotspot hotspot-libs hotspot-static-libs \
 # Traditional targets typically run by users.
 # These can be considered aliases for the targets now named by a more
 # "modern" naming scheme.
-default: $(DEFAULT_MAKE_TARGET)
+default-target: $(DEFAULT_MAKE_TARGET)
 jdk: exploded-image
 images: product-images
 docs: docs-image
@@ -1377,7 +1377,6 @@ ALL_TARGETS += $(RUN_TEST_TARGETS) run-test exploded-run-test check \
     test-hotspot-jtreg test-hotspot-jtreg-native test-hotspot-gtest \
     test-jdk-jtreg-native test-docs
 
-################################################################################
 ################################################################################
 #
 # Clean targets
@@ -1487,10 +1486,8 @@ create-main-targets-include:
 	  @$(ECHO) ALL_MAIN_TARGETS := $(sort $(ALL_TARGETS)) > \
 	      $(MAKESUPPORT_OUTPUTDIR)/main-targets.gmk
 
-################################################################################
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, Main-post.gmk))
-
 .PHONY: $(ALL_TARGETS)
 
 FRC: # Force target
+
+include MakeFileEnd.gmk

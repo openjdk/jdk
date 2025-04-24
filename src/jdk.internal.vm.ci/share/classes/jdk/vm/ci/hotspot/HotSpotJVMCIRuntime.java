@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.common.InitTimer.timer;
-import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
 import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 
 import java.io.IOException;
@@ -62,7 +61,6 @@ import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.common.NativeImageReinitialize;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaField;
@@ -85,7 +83,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     /**
      * Singleton instance lazily initialized via double-checked locking.
      */
-    @NativeImageReinitialize private static volatile HotSpotJVMCIRuntime instance;
+    private static volatile HotSpotJVMCIRuntime instance;
 
     private HotSpotResolvedObjectTypeImpl javaLangObject;
     private HotSpotResolvedObjectTypeImpl javaLangInvokeMethodHandle;
@@ -288,7 +286,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         private static final String NULL_VALUE = "NULL";
 
         private final Class<?> type;
-        @NativeImageReinitialize private Object value;
+        private Object value;
         private final Object defaultValue;
         boolean isDefault = true;
         private final String[] helpLines;
@@ -453,33 +451,26 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         }
     }
 
-    private static HotSpotJVMCIBackendFactory findFactory(String architecture) {
-        Iterable<HotSpotJVMCIBackendFactory> factories = getHotSpotJVMCIBackendFactories();
-        assert factories != null : "sanity";
-        for (HotSpotJVMCIBackendFactory factory : factories) {
-            if (factory.getArchitecture().equalsIgnoreCase(architecture)) {
-                return factory;
+    /**
+     * The backend factory for the JVMCI shared library.
+     */
+    private static final HotSpotJVMCIBackendFactory backendFactory;
+    static {
+        String arch = HotSpotVMConfig.getHostArchitectureName();
+        HotSpotJVMCIBackendFactory selected = null;
+        for (HotSpotJVMCIBackendFactory factory : ServiceLoader.load(HotSpotJVMCIBackendFactory.class)) {
+            if (factory.getArchitecture().equalsIgnoreCase(arch)) {
+                if (selected != null) {
+                    throw new JVMCIError("Multiple factories available for %s: %s and %s",
+                        arch, selected, factory);
+                }
+                selected = factory;
             }
         }
-
-        throw new JVMCIError("No JVMCI runtime available for the %s architecture", architecture);
-    }
-
-    private static volatile List<HotSpotJVMCIBackendFactory> cachedHotSpotJVMCIBackendFactories;
-
-    @SuppressFBWarnings(value = "LI_LAZY_INIT_UPDATE_STATIC", justification = "not sure about this")
-    private static Iterable<HotSpotJVMCIBackendFactory> getHotSpotJVMCIBackendFactories() {
-        if (IS_IN_NATIVE_IMAGE || cachedHotSpotJVMCIBackendFactories != null) {
-            return cachedHotSpotJVMCIBackendFactories;
+        if (selected == null) {
+            throw new JVMCIError("No JVMCI runtime available for the %s architecture", arch);
         }
-        Iterable<HotSpotJVMCIBackendFactory> result = ServiceLoader.load(HotSpotJVMCIBackendFactory.class, ClassLoader.getSystemClassLoader());
-        if (IS_BUILDING_NATIVE_IMAGE) {
-            cachedHotSpotJVMCIBackendFactories = new ArrayList<>();
-            for (HotSpotJVMCIBackendFactory factory : result) {
-                cachedHotSpotJVMCIBackendFactories.add(factory);
-            }
-        }
-        return result;
+        backendFactory = selected;
     }
 
     /**
@@ -499,12 +490,12 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     private volatile JVMCICompiler compiler;
     protected final HotSpotJVMCIReflection reflection;
 
-    @NativeImageReinitialize private volatile boolean creatingCompiler;
+    private volatile boolean creatingCompiler;
 
     /**
      * Cache for speeding up {@link #fromClass(Class)}.
      */
-    @NativeImageReinitialize private volatile ClassValue<WeakReferenceHolder<HotSpotResolvedJavaType>> resolvedJavaType;
+    private volatile ClassValue<WeakReferenceHolder<HotSpotResolvedJavaType>> resolvedJavaType;
 
     /**
      * To avoid calling ClassValue.remove to refresh the weak reference, which under certain
@@ -546,20 +537,20 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      * A mapping from the {@code Klass*} to the corresponding {@link HotSpotResolvedObjectTypeImpl}.  The value is
      * held weakly through a {@link KlassWeakReference} so that unused types can be unloaded when the compiler no longer needs them.
      */
-    @NativeImageReinitialize private HashMap<Long, KlassWeakReference> resolvedJavaTypes;
+    private HashMap<Long, KlassWeakReference> resolvedJavaTypes;
 
     /**
      * A {@link ReferenceQueue} to track when {@link KlassWeakReference}s have been freed so that the corresponding
      * entry in {@link #resolvedJavaTypes} can be cleared.
      */
-    @NativeImageReinitialize private ReferenceQueue<HotSpotResolvedObjectTypeImpl> resolvedJavaTypesQueue;
+    private ReferenceQueue<HotSpotResolvedObjectTypeImpl> resolvedJavaTypesQueue;
 
     /**
      * Stores the value set by {@link #excludeFromJVMCICompilation(Module...)} so that it can be
      * read from the VM.
      */
     @SuppressWarnings("unused")//
-    @NativeImageReinitialize private Module[] excludeFromJVMCICompilation;
+    private Module[] excludeFromJVMCICompilation;
 
     private final Map<Class<? extends Architecture>, JVMCIBackend> backends = new HashMap<>();
 
@@ -587,15 +578,8 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         // Initialize the Option values.
         Option.parse(this);
 
-        String hostArchitecture = config.getHostArchitectureName();
-
-        HotSpotJVMCIBackendFactory factory;
-        try (InitTimer t = timer("find factory:", hostArchitecture)) {
-            factory = findFactory(hostArchitecture);
-        }
-
-        try (InitTimer t = timer("create JVMCI backend:", hostArchitecture)) {
-            hostBackend = registerBackend(factory.createJVMCIBackend(this, null));
+        try (InitTimer t = timer("create JVMCI backend:", backendFactory.getArchitecture())) {
+            hostBackend = registerBackend(backendFactory.createJVMCIBackend(this, null));
         }
 
         compilerFactory = HotSpotJVMCICompilerConfig.getCompilerFactory(this);
