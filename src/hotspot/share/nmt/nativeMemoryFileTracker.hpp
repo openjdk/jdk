@@ -35,7 +35,7 @@
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
-// The MemoryFileTracker tracks memory of 'memory files',
+// The NativeMemoryFileTracker tracks native memory of 'memory files',
 // storage with its own memory space separate from the process.
 // A typical example of such a file is a memory mapped file.
 // All memory is accounted as committed, there is no reserved memory.
