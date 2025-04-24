@@ -370,7 +370,7 @@ JRT_ENTRY(void, Runtime1::new_instance(JavaThread* current, Klass* klass))
   h->initialize(CHECK);
   // allocate instance and return via TLS
   oop obj = h->allocate_instance(CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 
@@ -386,7 +386,7 @@ JRT_ENTRY(void, Runtime1::new_type_array(JavaThread* current, Klass* klass, jint
   assert(klass->is_klass(), "not a class");
   BasicType elt_type = TypeArrayKlass::cast(klass)->element_type();
   oop obj = oopFactory::new_typeArray(elt_type, length, CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
   // This is pretty rare but this runtime patch is stressful to deoptimization
   // if we deoptimize here so force a deopt to stress the path.
   if (DeoptimizeALot) {
@@ -409,7 +409,7 @@ JRT_ENTRY(void, Runtime1::new_object_array(JavaThread* current, Klass* array_kla
   Handle holder(current, array_klass->klass_holder()); // keep the klass alive
   Klass* elem_klass = ObjArrayKlass::cast(array_klass)->element_klass();
   objArrayOop obj = oopFactory::new_objArray(elem_klass, length, CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
   // This is pretty rare but this runtime patch is stressful to deoptimization
   // if we deoptimize here so force a deopt to stress the path.
   if (DeoptimizeALot) {
@@ -428,7 +428,7 @@ JRT_ENTRY(void, Runtime1::new_multi_array(JavaThread* current, Klass* klass, int
   assert(rank >= 1, "rank must be nonzero");
   Handle holder(current, klass->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(klass)->multi_allocate(rank, dims, CHECK);
-  current->set_vm_result(obj);
+  current->set_vm_result_oop(obj);
 JRT_END
 
 
@@ -642,7 +642,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
     }
   }
 
-  current->set_vm_result(exception());
+  current->set_vm_result_oop(exception());
   // Set flag if return address is a method handle call site.
   current->set_is_method_handle_return(nm->is_method_handle_return(pc));
 
