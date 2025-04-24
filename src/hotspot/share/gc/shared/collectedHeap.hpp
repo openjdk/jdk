@@ -435,12 +435,14 @@ protected:
   // explicitly checks if the given memory location contains a null value.
   virtual bool contains_null(const oop* p) const;
 
-  // Print heap information on the given outputStream.
-  virtual void print_on(outputStream* st) const = 0;
-  // The default behavior is to call print_on() on tty.
-  virtual void print() const;
+  // Print heap information.
+  virtual void print_heap_on(outputStream* st) const = 0;
 
-  virtual void print_on_error(outputStream* st) const = 0;
+  // Print additional information about the GC that is not included in print_heap_on().
+  virtual void print_gc_on(outputStream* st) const = 0;
+
+  // The default behavior is to call print_heap_on() and print_gc_on() on tty.
+  virtual void print() const;
 
   // Used to print information about locations in the hs_err file.
   virtual bool print_location(outputStream* st, void* addr) const = 0;
