@@ -696,8 +696,8 @@ void PhaseChaitin::remove_interference_from_copy(Block* b, uint location, uint l
 void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG& lrg, IndexSet* liveout, uint& must_spill) {
   if (liveout->is_empty()) return;
   // Check for common case
-  const RegMask& rm = lrg.mask();
-  ResourceMark r(C->regmask_arena());
+  const RegMask& mask = lrg.mask();
+  ResourceMark rm(C->regmask_arena());
   RegMask old(C->regmask_arena());
   RegMask r2mask(C->regmask_arena());
   int r_size = lrg.num_regs();
@@ -717,13 +717,13 @@ void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG& lrg, 
     old = interfering_lrg.mask();
     uint old_size = interfering_lrg.mask_size();
 
-    // Remove the bits from LRG 'rm' from LRG 'l' so 'l' no
-    // longer interferes with 'rm'.  If 'l' requires aligned
+    // Remove the bits from LRG 'mask' from LRG 'l' so 'l' no
+    // longer interferes with 'mask'.  If 'l' requires aligned
     // adjacent pairs, subtract out bit pairs.
     assert(!interfering_lrg._is_vector || !interfering_lrg._fat_proj, "sanity");
 
     if (interfering_lrg.num_regs() > 1 && !interfering_lrg._fat_proj) {
-      r2mask = rm;
+      r2mask = mask;
       // Leave only aligned set of bits.
       r2mask.smear_to_sets(interfering_lrg.num_regs());
       // It includes vector case.
@@ -731,11 +731,11 @@ void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG& lrg, 
       interfering_lrg.compute_set_mask_size();
     } else if (r_size != 1) {
       // fat proj
-      interfering_lrg.SUBTRACT(rm);
+      interfering_lrg.SUBTRACT(mask);
       interfering_lrg.compute_set_mask_size();
     } else {
       // Common case: size 1 bound removal
-      OptoReg::Name r_reg = rm.find_first_elem();
+      OptoReg::Name r_reg = mask.find_first_elem();
       if (interfering_lrg.mask().Member(r_reg)) {
         interfering_lrg.Remove(r_reg);
         interfering_lrg.set_mask_size(interfering_lrg.mask().is_AllStack() ? LRG::AllStack_size : old_size - 1);

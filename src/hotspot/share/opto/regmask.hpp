@@ -40,7 +40,7 @@ class LRG;
 // below is rather arbitrary but should be quite generous and cover all
 // practical cases. We reach this limit by, e.g., deeply nesting synchronized
 // statements in Java.
-const int BoxLockNode_slot_limit = 200;
+const int BoxLockNode_SLOT_LIMIT = 200;
 
 //-------------Non-zero bit search methods used by RegMask---------------------
 // Find lowest 1, undefined if empty/0
@@ -87,7 +87,7 @@ class RegMask {
       (((RM_SIZE_MIN << 5) +                // Slots for machine registers
         (max_method_parameter_length * 2) + // Slots for incoming arguments
         (max_method_parameter_length * 2) + // Slots for outgoing arguments
-        BoxLockNode_slot_limit +            // Slots for locks
+        BoxLockNode_SLOT_LIMIT +            // Slots for locks
         64                                  // Padding, reserved words, etc.
         ) + 31) >> 5; // Number of bits -> number of 32-bit words
   static const unsigned int _RM_SIZE_MAX =
@@ -139,12 +139,12 @@ class RegMask {
   //
   // The original address of the _RM_UP_EXT variable, set when using
   // constructors. If we get copied/cloned, &_RM_UP_EXT will no longer equal
-  // orig_ext_adr.
-  uintptr_t** orig_ext_adr = &_RM_UP_EXT;
+  // _original_ext_address.
+  uintptr_t** _original_ext_address = &_RM_UP_EXT;
   //
   // If the original version, of which we may be a clone, is read-only. In such
   // cases, we can allow read-only sharing.
-  bool orig_const = false;
+  bool _read_only = false;
 #endif
 
   // Current total register mask size in words
@@ -174,50 +174,51 @@ class RegMask {
   // (with _offset = 0, for a made-up platform with 10 registers and 4-bit
   // words) that has been extended with two additional words to represent more
   // stack locations:
-  //                                   _hwm=3
-  //            _lwm=1                RM_SIZE=3                _rm_size=5
-  //              |                       |                        |
-  //   r0 r1 r2 r3 r4 r5 r6 r7 r8 r9 s0 s1   s2 s3 s4 s5 s6 s7 s8 s9 s10 s11 ...
-  //  [0  0  0  0 |0  1  1  0 |0  0  1  0 ] [1  1  0  1 |0  0  0  0] as  as  as
-  // [0]         [1]         [2]           [0]         [1]
+  //                                            _hwm=3
+  //                     _lwm=1                RM_SIZE=3                _rm_size=5
+  //                       |                       |                        |
+  //            r0 r1 r2 r3 r4 r5 r6 r7 r8 r9 s0 s1   s2 s3 s4 s5 s6 s7 s8 s9 s10 s11 ...
+  // Content:  [0  0  0  0 |0  1  1  0 |0  0  1  0 ] [1  1  0  1 |0  0  0  0] as  as  as
+  //   Index: [0]         [1]         [2]           [0]         [1]
   //
-  // \____________________________________/ \______________________/
-  //                        |                           |
-  //                      RM_UP                     RM_UP_EXT
-  // \_____________________________________________________________/
-  //                                 |
-  //                             _rm_size
+  //          \____________________________________/ \______________________/
+  //                                 |                           |
+  //                               RM_UP                     RM_UP_EXT
+  //          \_____________________________________________________________/
+  //                                          |
+  //                                      _rm_size
   //
   // In this example, registers {r5, r6} and stack locations {s0, s2, s3, s5}
-  // are included in the register mask. Depending on the value of _all_stack,
-  // (s10, s11, ...) are all included (as = 1) or excluded (as = 0). Note that
-  // all registers/stack locations under _lwm and over _hwm are excluded.
-  // The exception is (s10, s11, ...), where the value is decided solely by
-  // _all_stack, regardless of the value of _hwm.
+  // are included in the register mask. Depending on the value of _all_stack
+  // (denoted with as), {s10, s11, ...} are all included (as = 1) or excluded
+  // (as = 0). Note that all registers/stack locations under _lwm and over _hwm
+  // are excluded. The exception is {s10, s11, ...}, where the value is decided
+  // solely by _all_stack, regardless of the value of _hwm.
   //
   // The only operation that may update the _offset attribute is
-  // RegMask::rollover(). This operation requires the register mask to be clean
-  // and _all_stack to be true, and has the effect of increasing _offset by
-  // _rm_size and setting all bits (now necessarily representing stack
-  // locations) to 1. Here is how the above register mask looks like after
-  // clearing, setting _all_stack to true, and successfully rolling over:
+  // RegMask::rollover(). This operation requires the register mask to be
+  // clean/empty (all zeroes), except for _all_stack, which must be true, and
+  // has the effect of increasing _offset by _rm_size and setting all bits (now
+  // necessarily representing stack locations) to 1. Here is how the above
+  // register mask looks like after clearing, setting _all_stack to true, and
+  // successfully rolling over:
   //
-  // _lwm=0                                      RM_SIZE=3           _hwm=3      _rm_size=5
-  //  |                                              |                 |             |
-  //   s10 s11 s12 s13 s14 s15 s16 s17 s18 s19 s20 s21  s22 s23 s24 s25 s26 s27 s28 s29 s30 s31 ...
-  //  [1   1   1   1  |1   1   1   1  |1   1   1   1 ] [1   1   1   1  |1   1   1   1]  1   1   1
-  // [0]             [1]             [2]              [0]             [1]
+  //          _lwm=0                                      RM_SIZE=3           _hwm=3      _rm_size=5
+  //           |                                              |                 |             |
+  //            s10 s11 s12 s13 s14 s15 s16 s17 s18 s19 s20 s21  s22 s23 s24 s25 s26 s27 s28 s29 s30 s31 ...
+  // Content:  [1   1   1   1  |1   1   1   1  |1   1   1   1 ] [1   1   1   1  |1   1   1   1]  1   1   1
+  //   Index: [0]             [1]             [2]              [0]             [1]
   //
-  // \_______________________________________________/ \_____________________________/
-  //                           |                                     |
-  //                         RM_UP                               RM_UP_EXT
-  // \_______________________________________________________________________________/
-  //                                         |
-  //                                     _rm_size
+  //          \_______________________________________________/ \_____________________________/
+  //                                    |                                     |
+  //                                  RM_UP                               RM_UP_EXT
+  //          \_______________________________________________________________________________/
+  //                                                  |
+  //                                              _rm_size
 
   // Access word i in the register mask.
-  const uintptr_t& _rm_up(unsigned int i) const {
-    assert(orig_const || orig_ext_adr == &_RM_UP_EXT, "clone sanity check");
+  const uintptr_t& rm_up(unsigned int i) const {
+    assert(_read_only || _original_ext_address == &_RM_UP_EXT, "clone sanity check");
     assert(i < _rm_size, "sanity");
     if (i < _RM_SIZE) {
       return _RM_UP[i];
@@ -228,13 +229,13 @@ class RegMask {
   }
 
   // Non-const version of the above.
-  uintptr_t& _rm_up(unsigned int i) {
-    assert(orig_ext_adr == &_RM_UP_EXT, "clone sanity check");
-    return const_cast<uintptr_t&>(const_cast<const RegMask*>(this)->_rm_up(i));
+  uintptr_t& rm_up(unsigned int i) {
+    assert(_original_ext_address == &_RM_UP_EXT, "clone sanity check");
+    return const_cast<uintptr_t&>(const_cast<const RegMask*>(this)->rm_up(i));
   }
 
   // The maximum word index
-  unsigned int _rm_max() const {
+  unsigned int rm_max() const {
     return _rm_size - 1U;
   }
 
@@ -242,7 +243,7 @@ class RegMask {
   Arena* _arena;
 
   // Grow the register mask to ensure it can fit at least min_size words.
-  void _grow(unsigned int min_size, bool init = true) {
+  void grow(unsigned int min_size, bool init = true) {
     if (min_size > _rm_size) {
       assert(min_size <= _RM_SIZE_MAX, "unexpected register mask growth");
       assert(_arena != nullptr, "register mask not growable");
@@ -255,7 +256,7 @@ class RegMask {
         assert(old_ext_size == 0, "sanity");
         _RM_UP_EXT = NEW_ARENA_ARRAY(_arena, uintptr_t, new_ext_size);
       } else {
-        assert(orig_ext_adr == &_RM_UP_EXT, "clone sanity check");
+        assert(_original_ext_address == &_RM_UP_EXT, "clone sanity check");
         _RM_UP_EXT = REALLOC_ARENA_ARRAY(_arena, uintptr_t, _RM_UP_EXT,
                                          old_ext_size, new_ext_size);
       }
@@ -263,15 +264,15 @@ class RegMask {
         int fill = 0;
         if (is_AllStack()) {
           fill = 0xFF;
-          _hwm = _rm_max();
+          _hwm = rm_max();
         }
-        _set_range(old_size, fill, _rm_size - old_size);
+        set_range(old_size, fill, _rm_size - old_size);
       }
     }
   }
 
   // Make us a copy of src
-  void _copy(const RegMask& src) {
+  void copy(const RegMask& src) {
     assert(_offset == src._offset, "offset mismatch");
     _hwm = src._hwm;
     _lwm = src._lwm;
@@ -283,8 +284,8 @@ class RegMask {
     // Copy extension
     if (src._RM_UP_EXT != nullptr) {
       assert(src._rm_size > _RM_SIZE, "sanity");
-      assert(orig_ext_adr == &_RM_UP_EXT, "clone sanity check");
-      _grow(src._rm_size, false);
+      assert(_original_ext_address == &_RM_UP_EXT, "clone sanity check");
+      grow(src._rm_size, false);
       memcpy(_RM_UP_EXT, src._RM_UP_EXT,
              sizeof(uintptr_t) * (src._rm_size - _RM_SIZE));
     }
@@ -295,39 +296,39 @@ class RegMask {
       int value = 0;
       if (src.is_AllStack()) {
         value = 0xFF;
-        _hwm = _rm_max();
+        _hwm = rm_max();
       }
-      _set_range(src._rm_size, value, _rm_size - src._rm_size);
+      set_range(src._rm_size, value, _rm_size - src._rm_size);
     }
 
     assert(valid_watermarks(), "post-condition");
   }
 
-  void _trim_watermarks() {
+  void trim_watermarks() {
     if (_hwm < _lwm) {
       return;
     }
-    while ((_hwm > _lwm) && _rm_up(_hwm) == 0) {
+    while ((_hwm > _lwm) && rm_up(_hwm) == 0) {
       _hwm--;
     }
-    while ((_lwm < _hwm) && _rm_up(_lwm) == 0) {
+    while ((_lwm < _hwm) && rm_up(_lwm) == 0) {
       _lwm++;
     }
-    if ((_lwm == _hwm) && _rm_up(_lwm) == 0) {
-      _lwm = _rm_max();
+    if ((_lwm == _hwm) && rm_up(_lwm) == 0) {
+      _lwm = rm_max();
       _hwm = 0;
     }
   }
 
   // Set a span of words in the register mask to a given value.
-  void _set_range(unsigned int start, int value, unsigned int length) {
+  void set_range(unsigned int start, int value, unsigned int length) {
     if (start < _RM_SIZE) {
       memset(_RM_UP + start, value,
              sizeof(uintptr_t) * MIN2((int)length, (int)_RM_SIZE - (int)start));
     }
     if (start + length > _RM_SIZE) {
       assert(_RM_UP_EXT != nullptr, "sanity");
-      assert(orig_ext_adr == &_RM_UP_EXT, "clone sanity check");
+      assert(_original_ext_address == &_RM_UP_EXT, "clone sanity check");
       memset(_RM_UP_EXT + MAX2((int)start - (int)_RM_SIZE, 0), value,
              sizeof(uintptr_t) *
                  MIN2((int)length, (int)length - ((int)_RM_SIZE - (int)start)));
@@ -352,7 +353,7 @@ public:
   bool is_AllStack() const {
     return _all_stack;
   }
-  void set_AllStack(bool value = true) {
+  void set_AllStack(bool value) {
     _all_stack = value;
   }
 
@@ -402,9 +403,9 @@ public:
   }
 
   // Construct an empty mask
-  RegMask(Arena* arena)
-      : _RM_UP(), _rm_size(_RM_SIZE), _offset(0), _all_stack(false),
-        _lwm(_RM_MAX), _hwm(0), _arena(arena) {
+  RegMask(Arena* arena DEBUG_ONLY(COMMA bool read_only = false))
+      : _RM_UP() DEBUG_ONLY(COMMA _read_only(read_only)), _rm_size(_RM_SIZE),
+        _offset(0), _all_stack(false), _lwm(_RM_MAX), _hwm(0), _arena(arena) {
     assert(valid_watermarks(), "post-condition");
   }
   RegMask() : RegMask(nullptr) {
@@ -413,23 +414,21 @@ public:
 
   // Construct a mask with a single bit
   RegMask(OptoReg::Name reg,
-          Arena* arena
-          DEBUG_ONLY(COMMA bool orig_const = false))
-      : RegMask(arena) {
+          Arena* arena DEBUG_ONLY(COMMA bool read_only = false))
+      : RegMask(arena DEBUG_ONLY(COMMA read_only)) {
     Insert(reg);
-    DEBUG_ONLY(this->orig_const = orig_const;)
   }
   RegMask(OptoReg::Name reg) : RegMask(reg, nullptr) {}
 
   RegMask(const RegMask& rm, Arena* arena)
       : _rm_size(_RM_SIZE), _offset(rm._offset), _arena(arena) {
-    _copy(rm);
+    copy(rm);
   }
 
   RegMask(const RegMask& rm) : RegMask(rm, nullptr) {}
 
   RegMask& operator=(const RegMask& rm) {
-    _copy(rm);
+    copy(rm);
     return *this;
   }
 
@@ -442,14 +441,14 @@ public:
       return is_AllStack();
     }
     unsigned int r = (unsigned int)reg;
-    return _rm_up(r >> _LogWordBits) & (uintptr_t(1) << (r & _WordBitMask));
+    return rm_up(r >> _LogWordBits) & (uintptr_t(1) << (r & _WordBitMask));
   }
 
-  // Empty mask check. Ignores registers included through the all-stack flag.
+  // Empty mask check. Ignores registers included through the all_stack flag.
   bool is_Empty() const {
     assert(valid_watermarks(), "sanity");
     for (unsigned i = _lwm; i <= _hwm; i++) {
-      if (_rm_up(i)) {
+      if (rm_up(i)) {
         return false;
       }
     }
@@ -460,7 +459,7 @@ public:
   OptoReg::Name find_first_elem() const {
     assert(valid_watermarks(), "sanity");
     for (unsigned i = _lwm; i <= _hwm; i++) {
-      uintptr_t bits = _rm_up(i);
+      uintptr_t bits = rm_up(i);
       if (bits) {
         return OptoReg::Name(offset_bits() + (i << _LogWordBits) +
                              find_lowest_bit(bits));
@@ -470,13 +469,13 @@ public:
   }
 
   // Get highest-numbered register from mask, or BAD if mask is empty. Ignores
-  // registers included through the all-stack flag.
+  // registers included through the all_stack flag.
   OptoReg::Name find_last_elem() const {
     assert(valid_watermarks(), "sanity");
     // Careful not to overflow if _lwm == 0
     unsigned i = _hwm + 1;
     while (i > _lwm) {
-      uintptr_t bits = _rm_up(--i);
+      uintptr_t bits = rm_up(--i);
       if (bits) {
         return OptoReg::Name(offset_bits() + (i << _LogWordBits) +
                              find_highest_bit(bits));
@@ -495,21 +494,26 @@ public:
     assert(_hwm < _rm_size, "_hwm out of range: %d", _hwm);
     assert(_lwm < _rm_size, "_lwm out of range: %d", _lwm);
     for (unsigned i = 0; i < _lwm; i++) {
-      assert(_rm_up(i) == 0, "_lwm too high: %d regs at: %d", _lwm, i);
+      assert(rm_up(i) == 0, "_lwm too high: %d regs at: %d", _lwm, i);
     }
     for (unsigned i = _hwm + 1; i < _rm_size; i++) {
-      assert(_rm_up(i) == 0, "_hwm too low: %d regs at: %d", _hwm, i);
+      assert(rm_up(i) == 0, "_hwm too low: %d regs at: %d", _hwm, i);
     }
     return true;
   }
 
   bool is_AllStack_only() const {
     assert(valid_watermarks(), "sanity");
+    if (!is_AllStack()) {
+      return false;
+    }
     uintptr_t tmp = 0;
     for (unsigned int i = _lwm; i <= _hwm; i++) {
-      tmp |= _rm_up(i);
+      if (rm_up(i)) {
+        return false;
+      }
     }
-    return !tmp && is_AllStack();
+    return true;
   }
 #endif // !ASSERT
 
@@ -548,7 +552,7 @@ public:
   static int num_registers(uint ireg);
   static int num_registers(uint ireg, LRG &lrg);
 
-  // Overlap test. Non-zero if any registers in common, including all-stack.
+  // Overlap test. Non-zero if any registers in common, including all_stack.
   bool overlap(const RegMask &rm) const {
     assert(_offset == rm._offset, "offset mismatch");
     assert(valid_watermarks() && rm.valid_watermarks(), "sanity");
@@ -558,31 +562,31 @@ public:
     unsigned hwm = MIN2(_hwm, rm._hwm);
     unsigned lwm = MAX2(_lwm, rm._lwm);
     for (unsigned i = lwm; i <= hwm; i++) {
-      if (_rm_up(i) & rm._rm_up(i)) {
+      if (rm_up(i) & rm.rm_up(i)) {
         return true;
       }
     }
 
     // Very rare overlap cases below.
 
-    // We are both all-stack
+    // We are both all_stack
     if (is_AllStack() && rm.is_AllStack()) {
       return true;
     }
 
-    // We are all-stack and rm _hwm is bigger than us
+    // We are all_stack and rm _hwm is bigger than us
     if (is_AllStack() && rm._hwm >= _rm_size) {
       for (unsigned i = MAX2(rm._lwm, _rm_size); i <= rm._hwm; i++) {
-        if (rm._rm_up(i)) {
+        if (rm.rm_up(i)) {
           return true;
         }
       }
     }
 
-    // rm is all-stack and our _hwm is bigger than rm
+    // rm is all_stack and our _hwm is bigger than rm
     if (rm.is_AllStack() && _hwm >= rm._rm_size) {
       for (unsigned i = MAX2(_lwm, rm._rm_size); i <= _hwm; i++) {
-        if (_rm_up(i)) {
+        if (rm_up(i)) {
           return true;
         }
       }
@@ -598,9 +602,9 @@ public:
 
   // Clear a register mask. Does not clear any offset.
   void Clear() {
-    _lwm = _rm_max();
+    _lwm = rm_max();
     _hwm = 0;
-    _set_range(0, 0, _rm_size);
+    set_range(0, 0, _rm_size);
     set_AllStack(false);
     assert(valid_watermarks(), "sanity");
   }
@@ -614,8 +618,8 @@ public:
   // Fill a register mask with 1's from the current offset.
   void Set_All_From_Offset() {
     _lwm = 0;
-    _hwm = _rm_max();
-    _set_range(0, 0xFF, _rm_size);
+    _hwm = rm_max();
+    set_range(0, 0xFF, _rm_size);
     set_AllStack(true);
     assert(valid_watermarks(), "sanity");
   }
@@ -630,16 +634,16 @@ public:
     unsigned int r = (unsigned int)reg;
     unsigned int index = r >> _LogWordBits;
     unsigned int min_size = index + 1;
-    _grow(min_size);
-    _rm_up(index) |= (uintptr_t(-1) << (r & _WordBitMask));
-    if (index < _rm_max()) {
-      _set_range(index + 1, 0xFF, _rm_max() - index);
+    grow(min_size);
+    rm_up(index) |= (uintptr_t(-1) << (r & _WordBitMask));
+    if (index < rm_max()) {
+      set_range(index + 1, 0xFF, rm_max() - index);
     }
     if (index < _lwm) {
       _lwm = index;
     }
-    _hwm = _rm_max();
-    set_AllStack();
+    _hwm = rm_max();
+    set_AllStack(true);
     assert(valid_watermarks(), "post-condition");
   }
 
@@ -653,10 +657,10 @@ public:
     unsigned int r = (unsigned int)reg;
     unsigned int index = r >> _LogWordBits;
     unsigned int min_size = index + 1;
-    _grow(min_size);
+    grow(min_size);
     if (index > _hwm) _hwm = index;
     if (index < _lwm) _lwm = index;
-    _rm_up(index) |= (uintptr_t(1) << (r & _WordBitMask));
+    rm_up(index) |= (uintptr_t(1) << (r & _WordBitMask));
     assert(valid_watermarks(), "post-condition");
   }
 
@@ -666,26 +670,26 @@ public:
     assert(reg >= 0, "register outside mask");
     assert(reg < (int)rm_size_bits(), "register outside mask");
     unsigned int r = (unsigned int)reg;
-    _rm_up(r >> _LogWordBits) &= ~(uintptr_t(1) << (r & _WordBitMask));
+    rm_up(r >> _LogWordBits) &= ~(uintptr_t(1) << (r & _WordBitMask));
   }
 
   // OR 'rm' into 'this'
   void OR(const RegMask &rm) {
     assert(_offset == rm._offset, "offset mismatch");
     assert(valid_watermarks() && rm.valid_watermarks(), "sanity");
-    _grow(rm._rm_size);
+    grow(rm._rm_size);
     // OR widens the live range
     if (_lwm > rm._lwm) _lwm = rm._lwm;
     if (_hwm < rm._hwm) _hwm = rm._hwm;
     // Compute OR with all words from rm
     for (unsigned int i = _lwm; i <= _hwm && i < rm._rm_size; i++) {
-      _rm_up(i) |= rm._rm_up(i);
+      rm_up(i) |= rm.rm_up(i);
     }
-    // If rm is smaller than us and has the all-stack flag set, we need to set
+    // If rm is smaller than us and has the all_stack flag set, we need to set
     // all bits in the gap to 1.
     if (rm.is_AllStack() && rm._rm_size < _rm_size) {
-      _set_range(rm._rm_size, 0xFF, _rm_size - rm._rm_size);
-      _hwm = _rm_max();
+      set_range(rm._rm_size, 0xFF, _rm_size - rm._rm_size);
+      _hwm = rm_max();
     }
     set_AllStack(is_AllStack() || rm.is_AllStack());
     assert(valid_watermarks(), "sanity");
@@ -695,27 +699,27 @@ public:
   void AND(const RegMask &rm) {
     assert(_offset == rm._offset, "offset mismatch");
     assert(valid_watermarks() && rm.valid_watermarks(), "sanity");
-    _grow(rm._rm_size);
+    grow(rm._rm_size);
     // Compute AND with all words from rm. Do not evaluate words outside the
     // current watermark range, as they are already zero and an &= would not
     // change that
     for (unsigned int i = _lwm; i <= _hwm && i < rm._rm_size; i++) {
-      _rm_up(i) &= rm._rm_up(i);
+      rm_up(i) &= rm.rm_up(i);
     }
-    // If rm is smaller than our high watermark and has the all-stack flag not
+    // If rm is smaller than our high watermark and has the all_stack flag not
     // set, we need to set all bits in the gap to 0.
-    if (!rm.is_AllStack() && _hwm > rm._rm_max()) {
-      _set_range(rm._rm_size, 0, _hwm - rm._rm_max());
-      _hwm = rm._rm_max();
+    if (!rm.is_AllStack() && _hwm > rm.rm_max()) {
+      set_range(rm._rm_size, 0, _hwm - rm.rm_max());
+      _hwm = rm.rm_max();
     }
-    // Narrow the watermarks if &rm spans a narrower range. Update after to
-    // ensure non-overlapping words are zeroed out. If rm has the all-stack
+    // Narrow the watermarks if rm spans a narrower range. Update after to
+    // ensure non-overlapping words are zeroed out. If rm has the all_stack
     // flag set and is smaller than our high watermark, take care not to
     // incorrectly lower the high watermark according to rm.
     if (_lwm < rm._lwm) {
       _lwm = rm._lwm;
     }
-    if (_hwm > rm._hwm && !(rm.is_AllStack() && _hwm > rm._rm_max())) {
+    if (_hwm > rm._hwm && !(rm.is_AllStack() && _hwm > rm.rm_max())) {
       _hwm = rm._hwm;
     }
     set_AllStack(is_AllStack() && rm.is_AllStack());
@@ -726,26 +730,26 @@ public:
   void SUBTRACT(const RegMask &rm) {
     assert(_offset == rm._offset, "offset mismatch");
     assert(valid_watermarks() && rm.valid_watermarks(), "sanity");
-    _grow(rm._rm_size);
+    grow(rm._rm_size);
     unsigned int hwm = MIN2(_hwm, rm._hwm);
     unsigned int lwm = MAX2(_lwm, rm._lwm);
     for (unsigned int i = lwm; i <= hwm; i++) {
-      _rm_up(i) &= ~rm._rm_up(i);
+      rm_up(i) &= ~rm.rm_up(i);
     }
-    // If rm is smaller than our high watermark and has the all-stack flag set,
+    // If rm is smaller than our high watermark and has the all_stack flag set,
     // we need to set all bits in the gap to 0.
-    if (rm.is_AllStack() && _hwm > rm._rm_max()) {
-      _set_range(rm.rm_size(), 0, _hwm - rm._rm_max());
-      _hwm = rm._rm_max();
+    if (rm.is_AllStack() && _hwm > rm.rm_max()) {
+      set_range(rm.rm_size(), 0, _hwm - rm.rm_max());
+      _hwm = rm.rm_max();
     }
     set_AllStack(is_AllStack() && !rm.is_AllStack());
-    _trim_watermarks();
+    trim_watermarks();
     assert(valid_watermarks(), "sanity");
   }
 
   // Subtract 'rm' from 'this', but ignore everything in 'rm' that does not
-  // overlap with us and to not modify our all-stack flag. Supports masks of
-  // differing offsets. Does not support 'rm' with the all-stack flag set.
+  // overlap with us and does not modify our all_stack flag. Supports masks of
+  // differing offsets. Does not support 'rm' with the all_stack flag set.
   void SUBTRACT_inner(const RegMask& rm) {
     assert(valid_watermarks() && rm.valid_watermarks(), "sanity");
     assert(!rm.is_AllStack(), "not supported");
@@ -753,16 +757,16 @@ public:
     int rm_index_diff = _offset - rm._offset;
     int rm_hwm_tr = (int)rm._hwm - rm_index_diff;
     int rm_lwm_tr = (int)rm._lwm - rm_index_diff;
-    int rm_rm_max_tr = (int)rm._rm_max() - rm_index_diff;
+    int rm_rm_max_tr = (int)rm.rm_max() - rm_index_diff;
     int rm_rm_size_tr = (int)rm._rm_size - rm_index_diff;
     int hwm = MIN2((int)_hwm, rm_hwm_tr);
     int lwm = MAX2((int)_lwm, rm_lwm_tr);
     for (int i = lwm; i <= hwm; i++) {
       assert(i + rm_index_diff < (int)rm._rm_size, "sanity");
       assert(i + rm_index_diff >= 0, "sanity");
-      _rm_up(i) &= ~rm._rm_up(i + rm_index_diff);
+      rm_up(i) &= ~rm.rm_up(i + rm_index_diff);
     }
-    _trim_watermarks();
+    trim_watermarks();
     assert(valid_watermarks(), "sanity");
   }
 
@@ -785,18 +789,20 @@ public:
     uint sum = 0;
     assert(valid_watermarks(), "sanity");
     for (unsigned i = _lwm; i <= _hwm; i++) {
-      sum += population_count(_rm_up(i));
+      sum += population_count(rm_up(i));
     }
     return sum;
   }
 
 #ifndef PRODUCT
 private:
-  bool _dump_end_run(outputStream* st, OptoReg::Name start,
-                     OptoReg::Name last) const;
+  bool dump_end_run(outputStream* st, OptoReg::Name start,
+                    OptoReg::Name last) const;
 
 public:
-  unsigned int static basic_rm_size() { return _RM_SIZE; }
+  unsigned int static basic_rm_size() {
+    return _RM_SIZE;
+  }
   unsigned int static rm_size_max_bits() {
     return _RM_SIZE_MAX * BitsPerWord;
   }
@@ -807,21 +813,21 @@ public:
     }
     // Shared segment
     for (unsigned int i = 0; i < MIN2(_rm_size, rm._rm_size); i++) {
-      if (_rm_up(i) != rm._rm_up(i)) {
+      if (rm_up(i) != rm.rm_up(i)) {
         return false;
       }
     }
     // If there is a size difference, check the protruding segment against
-    // all-stack.
+    // all_stack.
     const unsigned int start = MIN2(_rm_size, rm._rm_size);
     const uintptr_t value = _all_stack ? uintptr_t(-1) : 0;
     for (unsigned int i = start; i < _rm_size; i++) {
-      if (_rm_up(i) != value) {
+      if (rm_up(i) != value) {
         return false;
       }
     }
     for (unsigned int i = start; i < rm._rm_size; i++) {
-      if (rm._rm_up(i) != value) {
+      if (rm.rm_up(i) != value) {
         return false;
       }
     }
@@ -887,7 +893,7 @@ class RegMaskIterator {
 
     // Find the next word with bits
     while (_next_index <= _rm._hwm) {
-      _current_bits = _rm._rm_up(_next_index++);
+      _current_bits = _rm.rm_up(_next_index++);
       if (_current_bits != 0) {
         // Found a word. Calculate the first register element and
         // prepare _current_bits by shifting it down and clearing

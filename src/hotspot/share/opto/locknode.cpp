@@ -44,9 +44,9 @@ BoxLockNode::BoxLockNode(int slot)
       // In debug mode, signal that the register mask is constant.
       _inmask(OptoReg::stack2reg(_slot),
               Compile::current()->comp_arena()
-              DEBUG_ONLY(COMMA /*orig_const*/ true)),
+              DEBUG_ONLY(COMMA /*read_only*/ true)),
       _kind(BoxLockNode::Regular) {
-  if (_slot > BoxLockNode_slot_limit) {
+  if (_slot > BoxLockNode_SLOT_LIMIT) {
     Compile::current()->record_method_not_compilable(
         "reached BoxLockNode slot limit");
     return;

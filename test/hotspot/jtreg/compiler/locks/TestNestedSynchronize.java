@@ -35,6 +35,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+AbortVMOnCompilationFailure
  *                   compiler.locks.TestNestedSynchronize
+ * @run main compiler.locks.TestNestedSynchronize
  */
 
 package compiler.locks;

@@ -1610,20 +1610,20 @@ uint PhaseChaitin::Select( ) {
         if (nreg < LRG::SPILL_REG) {
 #ifndef PRODUCT
           uint size = lrg->mask().Size();
-          ResourceMark r(C->regmask_arena());
-          RegMask rm(lrg->mask(), C->regmask_arena());
+          ResourceMark rm(C->regmask_arena());
+          RegMask trace_mask(lrg->mask(), C->regmask_arena());
 #endif
           lrg->SUBTRACT_inner(nlrg.mask());
 #ifndef PRODUCT
           if (trace_spilling() && lrg->mask().Size() != size) {
             ttyLocker ttyl;
             tty->print("L%d ", lidx);
-            rm.dump();
+            trace_mask.dump();
             tty->print(" intersected L%d ", neighbor);
             nlrg.mask().dump();
             tty->print(" removed ");
-            rm.SUBTRACT(lrg->mask());
-            rm.dump();
+            trace_mask.SUBTRACT(lrg->mask());
+            trace_mask.dump();
             tty->print(" leaving ");
             lrg->mask().dump();
             tty->cr();

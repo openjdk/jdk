@@ -1337,7 +1337,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   msfpt->_in_rms = NEW_RESOURCE_ARRAY( RegMask, cnt );
   // Empty them all.
   for (uint i = 0; i < cnt; i++) {
-    ::new (&(msfpt->_in_rms[i])) RegMask(C->comp_arena());
+    ::new (msfpt->_in_rms + i) RegMask(C->comp_arena());
   }
 
   // Do all the pre-defined non-Empty register masks

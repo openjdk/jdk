@@ -521,10 +521,15 @@ public:
   Matcher*              _matcher;               // Engine to map ideal to machine instructions
   PhaseRegAlloc*        _regalloc;              // Results of register allocation.
   RegMask               _FIRST_STACK_mask;      // All stack slots usable for spills (depends on frame layout)
-  ResourceArea          _regmask_arena;         // Holds dynamically allocated extensions of short-lived register masks
   Arena*                _indexSet_arena;        // control IndexSet allocation within PhaseChaitin
   void*                 _indexSet_free_block_list; // free list of IndexSet bit blocks
   int                   _interpreter_frame_size;
+
+  // Holds dynamically allocated extensions of short-lived register masks. Such
+  // extensions are potentially quite large and need tight resource marks which
+  // may conflict with other allocations in the default resource area.
+  // Therefore, we use a dedicated resource area for register masks.
+  ResourceArea          _regmask_arena;
 
   PhaseOutput*          _output;
 

@@ -693,13 +693,13 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
 
   // Check for compatibility of the 2 live ranges by
   // intersecting their allowed register sets.
-  ResourceMark r(C->regmask_arena());
-  RegMask rm(lrgs(lr1).mask(), C->regmask_arena());
-  rm.AND(lrgs(lr2).mask());
+  ResourceMark rm(C->regmask_arena());
+  RegMask mask(lrgs(lr1).mask(), C->regmask_arena());
+  mask.AND(lrgs(lr2).mask());
   // Number of bits free
-  uint rm_size = rm.Size();
+  uint rm_size = mask.Size();
 
-  if (UseFPUForSpilling && rm.is_AllStack() ) {
+  if (UseFPUForSpilling && mask.is_AllStack() ) {
     // Don't coalesce when frequency difference is large
     Block *dst_b = _phc._cfg.get_block_for_node(dst_copy);
     Block *src_def_b = _phc._cfg.get_block_for_node(src_def);
@@ -708,7 +708,7 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   }
 
   // If we can use any stack slot, then effective size is infinite
-  if( rm.is_AllStack() ) rm_size += 1000000;
+  if( mask.is_AllStack() ) rm_size += 1000000;
   // Incompatible masks, no way to coalesce
   if( rm_size == 0 ) return false;
 
@@ -731,7 +731,7 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   }
 
   // Union the two interference sets together into '_ulr'
-  uint reg_degree = _ulr.lrg_union( lr1, lr2, rm_size, _phc._ifg, rm );
+  uint reg_degree = _ulr.lrg_union( lr1, lr2, rm_size, _phc._ifg, mask );
 
   if( reg_degree >= rm_size ) {
     record_bias( _phc._ifg, lr1, lr2 );
@@ -744,7 +744,7 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   // line of previous blocks.  I give up at merge points or when I get
   // more interferences than my degree.  I can stop when I find src_copy.
   if( dst_copy != src_copy ) {
-    reg_degree = compute_separating_interferences(dst_copy, src_copy, b, bindex, rm, rm_size, reg_degree, lr1, lr2 );
+    reg_degree = compute_separating_interferences(dst_copy, src_copy, b, bindex, mask, rm_size, reg_degree, lr1, lr2 );
     if( reg_degree == max_juint ) {
       record_bias( _phc._ifg, lr1, lr2 );
       return false;
@@ -791,7 +791,7 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   // union-find tree
   union_helper( lr1_node, lr2_node, lr1, lr2, src_def, dst_copy, src_copy, b, bindex );
   // Combine register restrictions
-  lrgs(lr1).set_mask(rm);
+  lrgs(lr1).set_mask(mask);
   lrgs(lr1).compute_set_mask_size();
   lrgs(lr1)._cost += lrgs(lr2)._cost;
   lrgs(lr1)._area += lrgs(lr2)._area;
