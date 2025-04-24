@@ -25,6 +25,8 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/support/jfrAnnotationIterator.hpp"
 #include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "jfr/support/methodtracer/jfrFilter.hpp"
@@ -45,24 +47,25 @@ JfrFilter::JfrFilter(Symbol** class_names,
   _method_names(method_names),
   _annotation_names(annotation_names),
   _modifications(modifications),
-  _count(count) {
-}
+  _count(count) {}
 
-int JfrFilter::combine_bits(int a, int b) {
-  if (a == -1) {
-    return b;
+JfrFilter::~JfrFilter() {
+  for (int i = 0; i < _count; i++) {
+    Symbol::maybe_decrement_refcount(_class_names[i]);
+    Symbol::maybe_decrement_refcount(_method_names[i]);
+    Symbol::maybe_decrement_refcount(_annotation_names[i]);
   }
-  if (b == -1) {
-    return a;
-  }
-  return a | b;
+  FREE_C_HEAP_ARRAY(Symbol*, _class_names);
+  FREE_C_HEAP_ARRAY(Symbol*, _method_names);
+  FREE_C_HEAP_ARRAY(Symbol*, _annotation_names);
+  FREE_C_HEAP_ARRAY(int, _modifications);
 }
 
 bool JfrFilter::can_instrument_module(const ModuleEntry* module) const {
   if (module == nullptr) {
     return true;
   }
-  Symbol* name = module->name();
+  const Symbol* name = module->name();
   if (name == nullptr) {
     return true;
   }
@@ -77,6 +80,9 @@ bool JfrFilter::can_instrument_module(const ModuleEntry* module) const {
 
 bool JfrFilter::can_instrument_class(const InstanceKlass* ik) const {
   assert(ik != nullptr, "invariant");
+  if (JfrTraceId::has_sticky_bit(ik)) {
+    return true;
+  }
   if (ik->is_hidden()) {
     return false;
   }
@@ -93,6 +99,9 @@ bool JfrFilter::can_instrument_class(const InstanceKlass* ik) const {
 // to avoid executing the same code for every method in a class
 bool JfrFilter::can_instrument_method(const Method* method) const {
   assert(method != nullptr, "invariant");
+  if (JfrTraceId::has_sticky_bit(method)) {
+    return true;
+  }
   if (method->is_abstract()) {
     return false;
   }
@@ -108,27 +117,41 @@ bool JfrFilter::can_instrument_method(const Method* method) const {
   return true;
 }
 
-int JfrFilter::method_modifications(const Method* method) const {
-  assert(method != nullptr, "invariant");
-  InstanceKlass* klass = method->method_holder();
-  int result = -1;
-  for (int i = 0; i < _count; i++) {
-    Symbol* annotation_name = _annotation_names[i];
-    if (annotation_name != nullptr) {
-      if (match_annotations(klass, method->annotations(), annotation_name, false)) {
-        result = combine_bits(result, _modifications[i]);
-      }
-    } else {
-      Symbol* class_name = _class_names[i];
-      if (class_name == nullptr || klass->name() == class_name) {
-        Symbol* method_name = _method_names[i];
-        if (method_name == nullptr || (method->name() == method_name && can_instrument_method(method))) {
-          result = combine_bits(result, _modifications[i]);
-        }
-      }
+bool JfrFilter::match_annotations(const InstanceKlass* ik, AnnotationArray* annotations, const Symbol* symbol, bool log) const {
+  assert(ik != nullptr, "invariant");
+  assert(symbol != nullptr, "invariant");
+  if (annotations == nullptr) {
+    return false;
+  }
+  JfrAnnotationIterator it(ik, annotations);
+  while (it.has_next()) {
+    it.move_to_next();
+    const Symbol* current = it.type();
+    bool equal = current == symbol;
+    if (log && log_is_enabled(Trace, methodtrace)) {
+      ResourceMark rm;
+      log_trace(jfr, methodtrace)(
+        "match_annotations: Class %s has annotation %s %s",
+        ik->external_name(),
+        current->as_C_string(),
+        (equal ? "true" : "false")
+        );
+    }
+    if (current == symbol) {
+      return true;
     }
   }
-  return result;
+  return false;
+}
+
+int JfrFilter::combine_bits(int a, int b) {
+  if (a == -1) {
+    return b;
+  }
+  if (b == -1) {
+    return a;
+  }
+  return a | b;
 }
 
 int JfrFilter::class_modifications(const InstanceKlass* ik, bool log) const {
@@ -166,31 +189,27 @@ bool JfrFilter::match(const InstanceKlass* ik) const {
   return false;
 }
 
-bool JfrFilter::match_annotations(const InstanceKlass* ik, AnnotationArray* annotations, const Symbol* symbol, bool log) const {
-  assert(ik != nullptr, "invariant");
-  assert(symbol != nullptr, "invariant");
-  if (annotations == nullptr) {
-    return false;
-  }
-  JfrAnnotationIterator it(ik, annotations);
-  while (it.has_next()) {
-    it.move_to_next();
-    const Symbol* current = it.type();
-    bool equal = current == symbol;
-    if (log && log_is_enabled(Trace, methodtrace)) {
-      ResourceMark rm;
-      log_trace(jfr, methodtrace)(
-        "match_annotations: Class %s has annotation %s %s",
-        ik->external_name(),
-        current->as_C_string(),
-        (equal ? "true" : "false")
-      );
-    }
-    if (current == symbol) {
-      return true;
+int JfrFilter::method_modifications(const Method* method) const {
+  assert(method != nullptr, "invariant");
+  InstanceKlass* klass = method->method_holder();
+  int result = -1;
+  for (int i = 0; i < _count; i++) {
+    Symbol* annotation_name = _annotation_names[i];
+    if (annotation_name != nullptr) {
+      if (match_annotations(klass, method->annotations(), annotation_name, false)) {
+        result = combine_bits(result, _modifications[i]);
+      }
+    } else {
+      Symbol* class_name = _class_names[i];
+      if (class_name == nullptr || klass->name() == class_name) {
+        Symbol* method_name = _method_names[i];
+        if (method_name == nullptr || (method->name() == method_name && can_instrument_method(method))) {
+          result = combine_bits(result, _modifications[i]);
+        }
+      }
     }
   }
-  return false;
+  return result;
 }
 
 void JfrFilter::log(const char* caption) const {
@@ -201,13 +220,24 @@ void JfrFilter::log(const char* caption) const {
     const Symbol* m = _method_names[i];
     const Symbol* c = _class_names[i];
     const Symbol* a = _annotation_names[i];
+    const int mod = _modifications[i];
+    const char* modification = "-timing -tracing";
+
+    if (mod == 1) {
+      modification = "+timing";
+    } else if (mod == 2) {
+      modification = "+tracing";
+    } else if (mod == 3) {
+      modification = "+timing +tracing";
+    }
+
     if (a != nullptr) {
       char annotation_buffer[100];
       a->as_klass_external_name(annotation_buffer, 100);
       size_t length = strlen(annotation_buffer);
       if (length > 2) {
         annotation_buffer[length - 1] = '\0'; // remove trailing ';'
-        msg.debug(" @%s", annotation_buffer + 1); // Skip 'L'
+        msg.debug(" @%s %s", annotation_buffer + 1, modification); // Skip 'L'
       }
     } else {
       char class_buffer[100];
@@ -219,61 +249,116 @@ void JfrFilter::log(const char* caption) const {
       if (m != nullptr) {
         char method_buffer[100];
         m->as_klass_external_name(method_buffer, 100);
-        msg.debug(" %s::%s", class_buffer, method_buffer);
+        msg.debug(" %s::%s %s", class_buffer, method_buffer, modification);
       } else {
-        msg.debug(" %s", class_buffer);
+        msg.debug(" %s %s", class_buffer, modification);
       }
     }
   }
   msg.debug("}");
 }
 
-JfrFilter* JfrFilter::from(jobjectArray classes, jobjectArray methods, jobjectArray annotations, jintArray modification_array, TRAPS) {
+static constexpr const int initial_array_size = 4;
+
+static GrowableArray<const JfrFilter*>* c_heap_allocate_array(int size = initial_array_size) {
+  return new (mtTracing) GrowableArray<const JfrFilter*>(size, mtTracing);
+}
+
+// Track the set of previous filters during a chunk / epoch.
+static GrowableArray<const JfrFilter*>* _previous_filters_epoch_0 = nullptr;
+static GrowableArray<const JfrFilter*>* _previous_filters_epoch_1 = nullptr;
+
+static GrowableArray<const JfrFilter*>* previous_filters_epoch_0() {
+  if (_previous_filters_epoch_0 == nullptr) {
+    _previous_filters_epoch_0 = c_heap_allocate_array(initial_array_size);
+  }
+  return _previous_filters_epoch_0;
+}
+
+static GrowableArray<const JfrFilter*>* previous_filters_epoch_1() {
+  if (_previous_filters_epoch_1 == nullptr) {
+    _previous_filters_epoch_1 = c_heap_allocate_array(initial_array_size);
+  }
+  return _previous_filters_epoch_1;
+}
+
+static GrowableArray<const JfrFilter*>* get_previous_filters(u1 epoch) {
+  return epoch == 0 ? previous_filters_epoch_0() : previous_filters_epoch_1();
+}
+
+static GrowableArray<const JfrFilter*>* get_previous_filters() {
+  return get_previous_filters(JfrTraceIdEpoch::current());
+}
+
+static GrowableArray<const JfrFilter*>* get_previous_filters_previous_epoch() {
+  return get_previous_filters(JfrTraceIdEpoch::previous());
+}
+
+static void add_previous_filter(const JfrFilter* previous_filter) {
+  if (previous_filter != nullptr) {
+    get_previous_filters()->append(previous_filter);
+  }
+}
+
+const JfrFilter* JfrFilterManager::_current = nullptr;
+
+const JfrFilter* JfrFilterManager::current() {
+  return Atomic::load(&_current);
+}
+
+void JfrFilterManager::install(const JfrFilter* new_filter) {
+  assert(new_filter != nullptr, "invarinat");
+  add_previous_filter(Atomic::xchg(&_current, new_filter));
+  new_filter->log("New filter installed");
+}
+
+static void delete_filters(GrowableArray<const JfrFilter*>* filters) {
+  assert(filters != nullptr, "invariant");
+  for (int i = 0; i < filters->length(); ++i) {
+    delete filters->at(i);
+  }
+  filters->clear();
+}
+
+void JfrFilterManager::clear_previous_filters() {
+  delete_filters(get_previous_filters_previous_epoch());
+}
+
+bool JfrFilterManager::install(jobjectArray classes, jobjectArray methods, jobjectArray annotations, jintArray modification_array, JavaThread* jt) {
   assert(classes != nullptr, "invariant");
   assert(methods != nullptr, "invariant");
   assert(annotations != nullptr, "invariant");
   assert(modification_array != nullptr, "invariant");
 
   intptr_t class_size = 0;
-  Symbol** class_names = JfrJavaSupport::symbol_array(classes, THREAD, &class_size, true);
+  Symbol** class_names = JfrJavaSupport::symbol_array(classes, jt, &class_size, true);
   assert(class_names != nullptr, "invariant");
 
   intptr_t method_size = 0;
-  Symbol** method_names = JfrJavaSupport::symbol_array(methods, THREAD, &method_size, true);
+  Symbol** method_names = JfrJavaSupport::symbol_array(methods, jt, &method_size, true);
   assert(method_names != nullptr, "invariant");
 
   intptr_t annotation_size = 0;
-  Symbol** annotation_names = JfrJavaSupport::symbol_array(annotations, THREAD, &annotation_size, true);
+  Symbol** annotation_names = JfrJavaSupport::symbol_array(annotations, jt, &annotation_size, true);
   assert(annotation_names != nullptr, "invariant");
 
-  ResourceMark rm(THREAD);
   typeArrayOop ta = typeArrayOop(JfrJavaSupport::resolve_non_null(modification_array));
-  typeArrayHandle modification_tah(THREAD, ta);
-  int modification_size = modification_tah->length();
-  int* modifications = NEW_C_HEAP_ARRAY(int, modification_size, mtTracing);
+  const typeArrayHandle modification_tah(jt, ta);
+  const int modification_size = modification_tah->length();
+  int* const modifications = NEW_C_HEAP_ARRAY(int, modification_size, mtTracing);
   for (int i = 0; i < modification_size; i++) {
     modifications[i] = modification_tah->int_at(i);
   }
-  if (class_size != method_size || class_size != annotation_size ||
-      class_size != modification_size) {
+  if (class_size != method_size || class_size != annotation_size || class_size != modification_size) {
     FREE_C_HEAP_ARRAY(Symbol*, class_names);
     FREE_C_HEAP_ARRAY(Symbol*, method_names);
     FREE_C_HEAP_ARRAY(Symbol*, annotation_names);
     FREE_C_HEAP_ARRAY(int, modifications);
-    JfrJavaSupport::throw_internal_error("Method array sizes don't match", THREAD);
-    return nullptr;
+    JfrJavaSupport::throw_internal_error("Method array sizes don't match", jt);
+    return false;
   }
-  return new JfrFilter(class_names, method_names, annotation_names, modifications, modification_size);
-}
-
-JfrFilter::~JfrFilter() {
-  for (int i = 0; i < _count; i++) {
-    Symbol::maybe_decrement_refcount(_class_names[i]);
-    Symbol::maybe_decrement_refcount(_method_names[i]);
-    Symbol::maybe_decrement_refcount(_annotation_names[i]);
-  }
-  FREE_C_HEAP_ARRAY(Symbol*, _class_names);
-  FREE_C_HEAP_ARRAY(Symbol*, _method_names);
-  FREE_C_HEAP_ARRAY(Symbol*, _annotation_names);
-  FREE_C_HEAP_ARRAY(int, _modifications);
+  const JfrFilter* const new_filter = new JfrFilter(class_names, method_names, annotation_names, modifications, modification_size);
+  assert(new_filter != nullptr, "invariant");
+  install(new_filter);
+  return true;
 }

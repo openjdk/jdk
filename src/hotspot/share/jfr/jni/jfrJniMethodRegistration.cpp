@@ -103,7 +103,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"nanosNow", (char*)"()J", (void*)jfr_nanos_now,
       (char*)"isProduct", (char*)"()Z", (void*)jfr_is_product,
       (char*)"setMethodTraceFilters", (char*)"([Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;[I)[J", (void*)jfr_set_method_trace_filters,
-      (char*)"drainStaleMethodTracerIds", (char*)"()[J", (void*)jfr_drain_stale_method_tracer_ids,
+      (char*)"drainStaleMethodTracerIds", (char*)"()[J", (void*)jfr_drain_stale_method_tracer_ids
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);

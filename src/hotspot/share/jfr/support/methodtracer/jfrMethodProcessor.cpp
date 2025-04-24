@@ -25,18 +25,64 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/support/methodtracer/jfrFilter.hpp"
 #include "jfr/support/methodtracer/jfrMethodProcessor.hpp"
-#include "jfr/support/methodtracer/jfrTracedMethod.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "logging/log.hpp"
 #include "oops/instanceKlass.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/growableArray.hpp"
 
-JfrMethodProcessor::JfrMethodProcessor(const InstanceKlass* ik) :
+JfrMethodProcessor::JfrMethodProcessor(const InstanceKlass* ik, Thread* thread) :
   _klass(ik),
   _methods(nullptr),
+  _thread(thread),
   _has_timing(false),
   _log(log_is_enabled(Debug, jfr, methodtrace)) {
+    assert(ik != nullptr, "invariant");
+    assert(Thread::current() == thread, "invariant");
+    process();
+}
+
+JfrMethodProcessor::~JfrMethodProcessor() {
+  assert(_thread != nullptr, "invariant");
+  if (_methods != nullptr) {
+    // Removal of pushed metadata keep-alive entries.
+    for (int i = 0; i < _methods->length(); ++i) {
+      Method* const method = const_cast<Method*>(_methods->at(i).method());
+      if (method != nullptr) {
+        const int idx = _thread->metadata_handles()->find_from_end(method);
+        assert(idx >= 0, "invariant");
+        _thread->metadata_handles()->remove_at(idx);
+      }
+    }
+  }
+}
+
+void JfrMethodProcessor::update_methods(const InstanceKlass* ik) {
   assert(ik != nullptr, "invariant");
+  assert(_methods != nullptr, "invariant");
+  const Array<Method*>* const ik_methods = ik->methods();
+  assert(ik_methods != nullptr, "invariant");
+  for (int i = 0; i < _methods->length(); ++i) {
+    const uint32_t idx = _methods->at(i).methods_array_index();
+    Method* const method = ik_methods->at(idx);
+    assert(method != nullptr, "invariant");
+    _methods->at(i).set_method(method);
+    // This is to keep the method from being unloaded during redefine / retransform.
+    // Equivalent functionality to that provided by the methodHandle. Unfortunately,
+    // we cannot use that directly because our handles would reside not on the stack
+    // but in an Arena managed by a thread-local ResourceArea, which is not allowed.
+    // Removal of pushed metadata entries happens in the destructor.
+    _thread->metadata_handles()->push(method);
+  }
+}
+
+void JfrMethodProcessor::set_timing(int modification) {
+  if (_has_timing) {
+    return;
+  }
+  if (modification > 0 && (modification & 1)) {
+    _has_timing = true;
+  }
 }
 
 static inline bool is_timing(int modification) {
@@ -47,16 +93,10 @@ static inline bool is_tracing(int modification) {
   return modification == -1 ? false : (modification & 2) != 0;
 }
 
-static void log(const Method* method, traceid id, int previous_modification, int new_modification) {
+static void log(const Method* method, traceid id, int new_modification) {
   assert(method != nullptr, "invariant");
-  const char* tracing = "";
-  const char* timing = "";
-  if (is_tracing(previous_modification) != is_tracing(new_modification)) {
-    tracing = is_tracing(new_modification) ? "+tracing " : "-tracing";
-  }
-  if (is_timing(previous_modification) != is_timing(new_modification)) {
-    tracing = is_timing(new_modification) ? "+timing " : "-timing";
-  }
+  const char* timing = is_timing(new_modification) ? "+timing" : "-timing";
+  const char* tracing = is_tracing(new_modification) ? "+tracing" : "-tracing";
   stringStream param_stream;
   method->signature()->print_as_signature_external_parameters(&param_stream);
   const char* param_string = param_stream.as_string();
@@ -72,60 +112,36 @@ static void log(const Method* method, traceid id, int previous_modification, int
     ss.print("...");
   }
   ss.print(")");
-  log_debug(jfr, methodtrace)("Modify bytecode: %s %s%s (Method ID:" UINT64_FORMAT ")", ss.as_string(), tracing, timing, id);
+  log_debug(jfr, methodtrace)("Modify bytecode for %s %s %s (Method ID: " UINT64_FORMAT_X ")", ss.as_string(), timing, tracing, id);
 }
 
-void JfrMethodProcessor::process(const JfrFilter* previous_filter, const JfrFilter* filter) {
+void JfrMethodProcessor::process() {
+  const JfrFilter* const filter = JfrFilterManager::current();
   assert(filter != nullptr, "invariant");
   if (!filter->can_instrument_class(_klass)) {
     return;
   }
-  const bool has_previous_filter = previous_filter != nullptr;
   const int class_modifications = filter->class_modifications(_klass, false);
-  const int previous_class_modifications = has_previous_filter ? previous_filter->class_modifications(_klass, false) : -1;
   const Array<Method*>* const methods = _klass->methods();
   const int method_count = methods->length();
   for (int i = 0; i < method_count; i++) {
     const Method* const m = methods->at(i);
     assert(m != nullptr, "invariant");
     if (filter->can_instrument_method(m)) {
-      int new_modification = filter->method_modifications(m);
-      new_modification = JfrFilter::combine_bits(class_modifications, new_modification);
-      int previous_modification = class_modifications;
-      if (has_previous_filter) {
-        previous_modification = JfrFilter::combine_bits(previous_modification, previous_filter->method_modifications(m));
-      }
-      const int previous_and_new = JfrFilter::combine_bits(previous_modification, new_modification);
-      if (previous_and_new != -1) {
+      const int new_modification = JfrFilter::combine_bits(class_modifications, filter->method_modifications(m));
+      if (new_modification != -1 || JfrTraceId::has_sticky_bit(m)) {
         // Allocate lazy, most classes will not match a filter
         if (_methods == nullptr) {
           _methods = new GrowableArray<JfrTracedMethod>();
         }
         set_timing(new_modification);
-        int modification = new_modification == -1 ? 0 : new_modification;
+        const int modification = new_modification == -1 ? 0 : new_modification;
         JfrTracedMethod traced_method(_klass, m, modification, i);
         _methods->append(traced_method);
         if (_log) {
-          log(m, traced_method.id(), previous_modification, new_modification);
+          log(m, traced_method.id(), modification);
         }
       }
     }
   }
-}
-
-void JfrMethodProcessor::set_timing(int modification) {
-  if (_has_timing) {
-    return;
-  }
-  if (modification > 0 && (modification & 1)) {
-    _has_timing = true;
-  }
-}
-
-void JfrMethodProcessor::update_methods(const InstanceKlass* ik) {
- assert(ik != nullptr, "invariant");
- assert(_methods != nullptr, "invariant");
- for (int i = 0; i < _methods->length(); ++i) {
-     _methods->at(i).set_method_from_klass(ik);
-   }
 }

@@ -62,14 +62,27 @@ public final class PlatformTracer {
         }
         try {
             Instrumentation instrumentation = new Instrumentation(module, classLoader, className, oldBytecode);
+
             for (int i = 0; i < ids.length; i++) {
                 instrumentation.addMethod(ids[i], names[i], signatures[i], modifications[i]);
             }
-            byte[] bytecode = instrumentation.generateBytecode();
+
+            Long classId = ids[0] >> 16;
+            boolean hasTiming = false;
             for (Method method : instrumentation.getMethods()) {
-                updateTiming(method);
+                boolean isTiming = method.modification().timing();
+                if (isTiming && !hasTiming) {
+                    hasTiming = true;
+                }
+                updateTiming(method, isTiming, classId);
             }
-            return bytecode; // Returns null if bytecode was not modified.
+            if (!hasTiming) {
+                TimedClass timedClass = timedClasses.remove(classId);
+                if (timedClass != null) {
+                    Logger.log(LogTag.JFR_METHODTRACE, LogLevel.DEBUG, "TimedClass removed (Klass ID " + String.format("0x%08X)", classId));
+                }
+            }
+            return instrumentation.generateBytecode(); // Returns null if bytecode was not modified.
         } catch (ClassCircularityError cce) {
             log(LogLevel.WARN, "Class circularity error, skipping instrumentation", module, className);
             return null;
@@ -79,10 +92,7 @@ public final class PlatformTracer {
         }
     }
 
-    private static void updateTiming(Method method) {
-        boolean isTiming = method.modification().timing();
-        Long classId = method.classId();
-
+    private static void updateTiming(Method method, boolean isTiming, Long classId) {
         if (!timedMethods.containsKey(method.methodId())) {
             if (isTiming) {
                 // Timing started
@@ -192,8 +202,8 @@ public final class PlatformTracer {
                     timedMethods.remove(tm.method().methodId());
                     tm.method().log("Timing entry unloaded");
                 }
-                if (Logger.shouldLog(LogTag.JFR_METHODTRACE, LogLevel.INFO)) {
-                    Logger.log(LogTag.JFR_METHODTRACE, LogLevel.INFO, "Timing entry unloaded for class " + classIds[i]);
+                if (Logger.shouldLog(LogTag.JFR_METHODTRACE, LogLevel.DEBUG)) {
+                    Logger.log(LogTag.JFR_METHODTRACE, LogLevel.DEBUG, "TimedClass unloaded and removed for klass ID " + String.format("0x%08X", classIds[i]));
                 }
             }
         }
@@ -256,7 +266,7 @@ public final class PlatformTracer {
     // MethodTiming event.
     public static void initialize() {
         try {
-            Logger.log(LogTag.JFR_METHODTRACE, LogLevel.INFO, "Method tracer initialization started.");
+            Logger.log(LogTag.JFR_METHODTRACE, LogLevel.DEBUG, "Method tracer initialization started.");
             Thread current = Thread.currentThread();
             JVM.exclude(current);
             long classId = Type.getKnownType(String.class).getId();
@@ -284,7 +294,7 @@ public final class PlatformTracer {
             reset();
             JVM.include(current);
             SecuritySupport.addTracingExport();
-            Logger.log(LogTag.JFR_METHODTRACE, LogLevel.INFO, "Method tracer initialization complete.");
+            Logger.log(LogTag.JFR_METHODTRACE, LogLevel.DEBUG, "Method tracer initialization complete.");
         } catch (Exception e) {
             Logger.log(LogTag.JFR_METHODTRACE, LogLevel.WARN, "Method tracer initialization failed. " + e.getMessage());
         }

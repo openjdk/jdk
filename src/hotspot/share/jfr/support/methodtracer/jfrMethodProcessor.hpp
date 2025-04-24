@@ -25,11 +25,13 @@
 #ifndef SHARE_JFR_SUPPORT_METHODTRACER_JFRMETHODPROCESSOR_HPP
 #define SHARE_JFR_SUPPORT_METHODTRACER_JFRMETHODPROCESSOR_HPP
 
+#include "jfr/support/methodtracer/jfrTracedMethod.hpp"
 #include "memory/allocation.hpp"
 
 class InstanceKlass;
 class JfrFilter;
-class JfrTracedMethod;
+class Thread;
+
 template <typename> class GrowableArray;
 
 //
@@ -40,13 +42,16 @@ class JfrMethodProcessor: public StackObj {
  private:
   const InstanceKlass* const      _klass;
   GrowableArray<JfrTracedMethod>* _methods;
+  Thread*                         _thread;
   bool                            _has_timing;
   bool                            _log;
 
   void set_timing(int modification);
+  void process();
+
  public:
-  JfrMethodProcessor(const InstanceKlass* klass);
-  void process(const JfrFilter* previous_filter, const JfrFilter* filter);
+  JfrMethodProcessor(const InstanceKlass* klass, Thread* thread);
+  ~JfrMethodProcessor();
 
   bool has_methods() const {
     return _methods != nullptr;

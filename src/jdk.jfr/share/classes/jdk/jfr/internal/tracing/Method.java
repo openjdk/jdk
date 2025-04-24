@@ -34,7 +34,7 @@ import jdk.jfr.internal.Logger;
 record Method(long methodId, Modification modification, String name) {
     @Override
     public String toString() {
-        return name + " ID:" + String.format("0x%08X", methodId) + " timing:" + modification.timing() + " tracing:" + modification.tracing();
+        return name + (modification.timing() ? " +timing" : " -timing") + (modification.tracing() ? " +tracing" : " -tracing") + " (Method ID: " + String.format("0x%08X)", methodId);
     }
 
     public long classId() {
@@ -42,8 +42,8 @@ record Method(long methodId, Modification modification, String name) {
     }
 
     public void log(String msg) {
-        if (Logger.shouldLog(LogTag.JFR_METHODTRACE, LogLevel.INFO)) {
-            Logger.log(LogTag.JFR_METHODTRACE, LogLevel.INFO, msg + " for " + this);
+        if (Logger.shouldLog(LogTag.JFR_METHODTRACE, LogLevel.DEBUG)) {
+            Logger.log(LogTag.JFR_METHODTRACE, LogLevel.DEBUG, msg + " for " + this);
         }
     }
 }

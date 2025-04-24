@@ -25,15 +25,15 @@
 #ifndef SHARE_JFR_SUPPORT_METHODTRACER_JFRTRACEDMETHOD_HPP
 #define SHARE_JFR_SUPPORT_METHODTRACER_JFRTRACEDMETHOD_HPP
 
-#include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 
 class InstanceKlass;
 class Method;
+class Symbol;
 
 //
-// Method that has been filtered out for tracing, may or may not yet be
-// instrumented.
+// Method that has been filtered out for tracing,
+// may or may not yet be instrumented.
 //
 class JfrTracedMethod {
  private:
@@ -45,14 +45,11 @@ class JfrTracedMethod {
   int32_t       _methods_array_index;
 
  public:
-  JfrTracedMethod(const InstanceKlass* ik, const Method* method, int32_t modification, int32_t methods_array_index) :
-      _id(method_id(ik, method)), _name(method->name()), _signature(method->signature()), _method(nullptr), _modification(modification), _methods_array_index(methods_array_index) {
-    assert(_method == nullptr, "invariant");
-  }
-
-  JfrTracedMethod() :
-      _id(0), _name(nullptr), _signature(nullptr), _method(nullptr), _modification(0), _methods_array_index(0) {
-  }
+  JfrTracedMethod();
+  JfrTracedMethod(const InstanceKlass* ik,
+                  const Method* method,
+                  int32_t modification,
+                  int32_t methods_array_index);
 
   traceid id() const {
     return _id;
@@ -67,24 +64,17 @@ class JfrTracedMethod {
   }
 
   const Method* method() const {
-    assert(_method != nullptr, "Traced method must be set before it can be used");
     return _method;
   }
 
-  void set_method_from_klass(const InstanceKlass* ik) {
-    Array<Method*>* ik_methods = ik->methods();
-    assert(ik_methods != nullptr, "invariant");
-    _method = ik_methods->at(_methods_array_index);
-  }
+  void set_method(const Method* method);
 
   int32_t modification() const {
     return _modification;
   }
 
-  static traceid method_id(const InstanceKlass* ik, const Method* m) {
-    assert(ik != nullptr, "invariant");
-    assert(m != nullptr, "invariant");
-    return METHOD_ID(ik, m);
+  int32_t methods_array_index() const {
+    return _methods_array_index;
   }
 };
 

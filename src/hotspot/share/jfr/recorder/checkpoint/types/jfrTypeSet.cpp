@@ -515,10 +515,6 @@ static void clear_method_tracer_klasses() {
   GrowableArray<JfrInstrumentedClass>* const instrumented = JfrMethodTracer::instrumented_classes();
   assert(instrumented != nullptr, "invariant");
   const int length = instrumented->length();
-  if (length != 0 && !JfrTraceIdEpoch::has_method_tracer_changed_tag_state()) {
-    // Turn the tag state back on for next chunk.
-    JfrTraceIdEpoch::set_method_tracer_tag_state();
-  }
   bool trim = false;
   for (int i = 0; i < length; ++i) {
     JfrInstrumentedClass& jic = instrumented->at(i);
@@ -531,9 +527,7 @@ static void clear_method_tracer_klasses() {
       trim = true;
     }
   }
-  if (trim) {
-    JfrMethodTracer::trim_instrumented_classes();
-  }
+  JfrMethodTracer::trim_instrumented_classes(trim);
 }
 
 static void do_unloading_klass(Klass* klass) {
@@ -543,6 +537,9 @@ static void do_unloading_klass(Klass* klass) {
     return;
   }
   if (JfrKlassUnloading::on_unload(klass)) {
+    if (JfrTraceId::has_sticky_bit(klass)) {
+      JfrMethodTracer::add_to_unloaded_set(klass);
+    }
     _subsystem_callback->do_artifact(klass);
   }
 }
@@ -1317,7 +1314,6 @@ size_t JfrTypeSet::serialize(JfrCheckpointWriter* writer, JfrCheckpointWriter* l
 void JfrTypeSet::clear(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer) {
   ResourceMark rm;
   setup(writer, leakp_writer, false, false);
-  JfrMethodTracer::clear_instrumented_classes();
   write_klasses_on_clear();
   write_packages_on_clear();
   write_modules_on_clear();
