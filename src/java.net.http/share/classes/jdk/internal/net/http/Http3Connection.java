@@ -37,7 +37,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -842,14 +841,6 @@ public final class Http3Connection implements AutoCloseable {
             assert !stream.isBidirectional();
             var dispatcher = conn.new Http3StreamDispatcher(stream);
             dispatcher.start();
-            conn.lock();
-            try {
-                if (!conn.isOpen()) {
-                    dispatcher.stop();
-                }
-            } finally {
-                conn.unlock();
-            }
             return dispatcher.dispatchCF();
         }
     }
@@ -1217,7 +1208,6 @@ public final class Http3Connection implements AutoCloseable {
         assert pushStream.isRemoteInitiated();
         assert !pushStream.isBidirectional();
 
-        if (pushId < 0) return; // pushId not received yet.
         onPushPromiseStream(pushStream, pushId);
     }
 

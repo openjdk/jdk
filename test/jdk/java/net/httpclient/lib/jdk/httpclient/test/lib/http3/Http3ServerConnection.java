@@ -181,18 +181,8 @@ public class Http3ServerConnection {
                                                               QuicReceiverStream stream) {
             var dispatcher = conn.new Http3StreamDispatcher(stream);
             dispatcher.start();
-            return conn.closeIfRequested(dispatcher).dispatchCF();
+            return dispatcher.dispatchCF();
         }
-    }
-
-    private Http3StreamDispatcher closeIfRequested(Http3StreamDispatcher dispatcher) {
-        synchronized (this) {
-            if (closeRequested) {
-                // OK - does not log
-                dispatcher.stop();
-            }
-        }
-        return dispatcher;
     }
 
     /**

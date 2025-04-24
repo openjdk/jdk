@@ -328,24 +328,15 @@ public class PeerUniStreamDispatcherTest {
         assertFalse(reader.connected());
         assertFalse(dispatcher.dispatched.isEmpty());
         assertTrue(stream.buffers.isEmpty());
-        if (type == DISPATCHED_STREAM.PUSH) {
-            assertEquals(dispatcher.dispatched.size(), 2);
-            var dispatched = dispatcher.dispatched.get(0);
-            checkDispatched(type, code, stream, dispatched, 0);
-            dispatched = dispatcher.dispatched.get(1);
-            checkDispatched(type, code, stream, dispatched, 1);
-        } else {
-            assertEquals(dispatcher.dispatched.size(), 1);
-            var dispatched = dispatcher.dispatched.get(0);
-            checkDispatched(type, code, stream, dispatched, 0);
-        }
+        assertEquals(dispatcher.dispatched.size(), 1);
+        var dispatched = dispatcher.dispatched.get(0);
+        checkDispatched(type, code, stream, dispatched);
     }
 
     private void checkDispatched(DISPATCHED_STREAM type,
                                  long code,
                                  QuicReceiverStream stream,
-                                 DispatchedStream dispatched,
-                                 int index) {
+                                 DispatchedStream dispatched) {
         var streamClass = switch (type) {
             case CONTROL, ENCODER, DECODER -> DispatchedStream.StandardStream.class;
             case PUSH -> DispatchedStream.PushStream.class;
@@ -374,11 +365,7 @@ public class PeerUniStreamDispatcherTest {
             System.out.println("Got expected stream: " + push);
             assertEquals(push.type(), type);
             assertEquals(push.stream, stream);
-            if (index == 0) {
-                assertEquals(push.pushId, -1);
-            } else {
-                assertEquals(push.pushId, 1L << 62 - 5);
-            }
+            assertEquals(push.pushId, 1L << 62 - 5);
             assertEquals(push.type(), DISPATCHED_STREAM.PUSH);
         }
 
@@ -443,7 +430,7 @@ public class PeerUniStreamDispatcherTest {
         assertTrue(stream.buffers.isEmpty());
         assertEquals(dispatcher.dispatched.size(), 1);
         var dispatched = dispatcher.dispatched.get(0);
-        checkDispatched(type, code, stream, dispatched, 0);
+        checkDispatched(type, code, stream, dispatched);
     }
 
 }
