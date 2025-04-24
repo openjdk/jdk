@@ -1176,6 +1176,7 @@ class CloneUnswitchedLoopPredicatesVisitor : public PredicateVisitor {
   ClonePredicateToTargetLoop _clone_predicate_to_false_path_loop;
 
   PhaseIdealLoop* const _phase;
+  const bool _is_counted_loop;
 
  public:
   CloneUnswitchedLoopPredicatesVisitor(LoopNode* true_path_loop_head,
