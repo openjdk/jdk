@@ -98,8 +98,13 @@ public class RC2ParameterSpec implements AlgorithmParameterSpec {
      */
     public RC2ParameterSpec(int effectiveKeyBits, byte[] iv, int offset) {
         this.effectiveKeyBits = effectiveKeyBits;
-        if (iv == null) throw new IllegalArgumentException("IV missing");
+        if (iv == null) {
+            throw new IllegalArgumentException("IV missing");
+        }
         int blockSize = 8;
+        if (offset < 0) {
+            throw new ArrayIndexOutOfBoundsException("offset is negative");
+        }
         if (iv.length - offset < blockSize) {
             throw new IllegalArgumentException("IV too short");
         }
