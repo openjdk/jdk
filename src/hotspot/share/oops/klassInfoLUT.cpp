@@ -196,10 +196,12 @@ KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
   assert(nk != 0, "null narrow Klass - is this class encodable?");
   const Klass* k = CompressedKlassPointers::decode(nk);
   assert(k->is_shared(), "Only for CDS classes");
-  // In the CDS case, we expect the original class to have been registered during dumptime; so
-  // it should carry a valid klute. We just copy that value into the lookup table. Note that
-  // we cannot calculate the klute from the Klass here even if we wanted, since the Klass may not
-  // yet carry a CLD (CDS calls Klass functions on Klass structures that are not yet fully initialized).
+  ClassLoaderData* const cld = k->class_loader_data();
+  if (cld != nullptr) {
+    // CDS may call functions on Klass without Klass being fully initialized (CLD null)
+    // We retain the original loader here
+    register_cld_if_needed(cld);
+  }
   const KlassLUTEntry klute = k->klute();
   assert(klute.is_valid(), "Must be a valid klute");
   _entries[nk] = klute.value();

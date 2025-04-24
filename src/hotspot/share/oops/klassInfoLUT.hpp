@@ -100,8 +100,6 @@ class KlassInfoLUT : public AllStatic {
 
   static bool use_lookup_table() { return _entries != nullptr; }
 
-  static void register_cld_if_needed(ClassLoaderData* cld);
-
 public:
 
   static void initialize();
@@ -113,6 +111,8 @@ public:
   static inline ClassLoaderData* lookup_cld(int index);
 
   static void print_statistics(outputStream* out);
+
+  static void register_cld_if_needed(ClassLoaderData* cld);
 
 };
 

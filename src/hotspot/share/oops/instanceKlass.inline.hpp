@@ -158,11 +158,15 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_bounded(oop obj, OopCl
 ALWAYSINLINE ClassLoaderData* InstanceKlass::cld_from_klut_or_klass(oop obj, KlassLUTEntry klute) {
   const unsigned perma_cld_index = klute.loader_index();
   ClassLoaderData* cld = KlassInfoLUT::lookup_cld(perma_cld_index);
-  if (cld == nullptr) {
-    // Rare path
-    cld = obj->klass()->class_loader_data();
+  if (cld != nullptr) {
+#ifdef ASSERT
+    const ClassLoaderData* const cld_real = obj->klass()->class_loader_data();
+    assert(cld == cld_real, "CLD mismatch (" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(cld_real), p2i(cld));
+#endif
+    return cld;
   }
-  return cld;
+  // Rare path
+  return obj->klass()->class_loader_data();
 }
 
 // Iterate over all oop fields and metadata.
