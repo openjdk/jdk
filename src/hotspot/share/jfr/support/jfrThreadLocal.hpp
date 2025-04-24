@@ -34,6 +34,7 @@
 #include "runtime/mutexLocker.hpp"
 
 #ifdef LINUX
+#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
 // required for timer_t type
 #include <signal.h>
 #endif
@@ -83,8 +84,25 @@ class JfrThreadLocal {
   bool _notified;
   bool _dead;
   bool _sampling_critical_section;
-  LINUX_ONLY(bool _has_cpu_timer = false);
-  LINUX_ONLY(timer_t _cpu_timer);
+
+#ifdef LINUX
+  bool _has_cpu_timer = false;
+  timer_t _cpu_timer;
+
+  enum CPUTimeLockState {
+    UNLOCKED,
+    // locked for enqueuing
+    ENQUEUE,
+    // locked for dequeuing
+    DEQUEUE,
+    // locked for writing native event out of safepoint
+    NATIVE
+  };
+  volatile CPUTimeLockState _cpu_time_jfr_locked = UNLOCKED;
+  volatile bool _has_cpu_time_jfr_requests = false;
+  JfrCPUTimeTraceQueue _cpu_time_jfr_queue{0};
+  volatile bool _wants_out_of_safepoint_sampling = false;
+#endif
 
   JfrBuffer* install_native_buffer() const;
   JfrBuffer* install_java_buffer() const;
@@ -350,22 +368,41 @@ class JfrThreadLocal {
 
   // CPU time sampling
 #ifdef LINUX
-  void set_timerid(timer_t timer) {
+  void set_cpu_timer(timer_t timer) {
     _has_cpu_timer = true;
     _cpu_timer = timer;
   }
 
-  void unset_timerid() {
+  void unset_cpu_timer() {
     _has_cpu_timer = false;
   }
 
-  timer_t timerid() const {
+  timer_t cpu_timer() const {
     return _cpu_timer;
   }
 
-  bool has_timerid() const {
+  bool has_cpu_timer() const {
     return _has_cpu_timer;
   }
+
+  bool is_cpu_time_jfr_enqueue_locked() { return Atomic::load(&_cpu_time_jfr_locked) == ENQUEUE; }
+  bool is_cpu_time_jfr_dequeue_locked() { return Atomic::load(&_cpu_time_jfr_locked) == DEQUEUE; }
+
+  bool acquire_cpu_time_jfr_enqueue_lock();
+  bool acquire_cpu_time_jfr_native_lock();
+  void acquire_cpu_time_jfr_dequeue_lock();
+  void release_cpu_time_jfr_queue_lock();
+
+  void set_has_cpu_time_jfr_requests(bool has_events);
+  bool has_cpu_time_jfr_requests();
+
+  JfrCPUTimeTraceQueue& cpu_time_jfr_queue();
+  void disable_cpu_time_jfr_queue();
+
+  void set_wants_out_of_safepoint_sampling(bool wants);
+  bool wants_out_of_safepoint_sampling();
+#else
+  bool has_cpu_time_jfr_requests() { return false; }
 #endif
 
   // Hooks

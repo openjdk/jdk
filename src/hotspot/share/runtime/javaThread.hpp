@@ -50,9 +50,6 @@
 #if INCLUDE_JFR
 #include "jfr/support/jfrThreadExtension.hpp"
 #include "utilities/ticks.hpp"
-#if defined(LINUX)
-#include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
-#endif
 #endif
 
 class AsyncExceptionHandshake;
@@ -1315,74 +1312,6 @@ public:
   static bool has_oop_handles_to_release() {
     return _oop_handle_list != nullptr;
   }
-
-#if INCLUDE_JFR && defined(LINUX)
-private:
-  enum CPUTimeLockState {
-    UNLOCKED,
-    // locked for enqueuing
-    ENQUEUE,
-    // locked for dequeuing
-    DEQUEUE,
-    // locked for writing native event out of safepoint
-    NATIVE
-  };
-  volatile CPUTimeLockState _cpu_time_jfr_locked = UNLOCKED;
-  volatile bool _has_cpu_time_jfr_requests = false;
-  JfrCPUTimeTraceQueue _cpu_time_jfr_queue{0};
-  volatile bool _wants_out_of_safepoint_sampling = false;
-
-public:
-
-
-  bool is_cpu_time_jfr_enqueue_locked() { return Atomic::load(&_cpu_time_jfr_locked) == ENQUEUE; }
-  bool is_cpu_time_jfr_dequeue_locked() { return Atomic::load(&_cpu_time_jfr_locked) == DEQUEUE; }
-
-  bool acquire_cpu_time_jfr_enqueue_lock() {
-    return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, ENQUEUE) == UNLOCKED;
-  }
-
-  bool acquire_cpu_time_jfr_native_lock() {
-    return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, NATIVE) == UNLOCKED;
-  }
-
-  void acquire_cpu_time_jfr_dequeue_lock() {
-    while (Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE) != UNLOCKED);
-  }
-
-  void release_cpu_time_jfr_queue_lock() {
-    Atomic::store(&_cpu_time_jfr_locked, UNLOCKED);
-  }
-
-  void set_has_cpu_time_jfr_requests(bool has_events) {
-    Atomic::release_store(&_has_cpu_time_jfr_requests, has_events);
-  }
-
-  bool has_cpu_time_jfr_requests() {
-    return Atomic::load(&_has_cpu_time_jfr_requests);
-  }
-
-  JfrCPUTimeTraceQueue& cpu_time_jfr_queue() { return _cpu_time_jfr_queue; }
-
-  void disable_cpu_time_jfr_queue() {
-    cpu_time_jfr_queue().ensure_capacity(0);
-  }
-
-  void set_wants_out_of_safepoint_sampling(bool wants) {
-    Atomic::release_store(&_wants_out_of_safepoint_sampling, wants);
-  }
-
-  bool wants_out_of_safepoint_sampling() {
-    return Atomic::load(&_wants_out_of_safepoint_sampling);
-  }
-
-#else
-
-public:
-  bool has_cpu_time_jfr_requests() {
-    return false;
-  }
-#endif
 };
 
 inline JavaThread* JavaThread::current_or_null() {

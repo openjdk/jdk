@@ -23,6 +23,7 @@
  */
 
 #include "gc/shared/barrierSet.hpp"
+#include "jfr/support/jfrThreadLocal.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
@@ -82,7 +83,7 @@ JfrCPUTimeTraceQueue::~JfrCPUTimeTraceQueue() {
 }
 
 bool JfrCPUTimeTraceQueue::enqueue(JfrCPUTimeSampleRequest& request) {
-  assert(JavaThread::current()->is_cpu_time_jfr_enqueue_locked(), "invariant");
+  assert(JavaThread::current()->jfr_thread_local()->is_cpu_time_jfr_enqueue_locked(), "invariant");
   u4 elementIndex;
   do {
     elementIndex = Atomic::load_acquire(&_head);
@@ -239,21 +240,27 @@ void JfrCPUTimeThreadSampler::on_javathread_create(JavaThread* thread) {
   if (thread->is_Compiler_thread()) {
     return;
   }
-  thread->cpu_time_jfr_queue().ensure_capacity_for_period(_current_sampling_period_ns / 1000000);
-  if (thread->jfr_thread_local() != nullptr) {
-    timer_t timerid;
-    if (create_timer_for_thread(thread, timerid)) {
-      thread->jfr_thread_local()->set_timerid(timerid);
-    }
+  JfrThreadLocal* tl = thread->jfr_thread_local();
+  if (tl == nullptr) {
+    return;
+  }
+  tl->cpu_time_jfr_queue().ensure_capacity_for_period(_current_sampling_period_ns / 1000000);
+  timer_t timerid;
+  if (create_timer_for_thread(thread, timerid)) {
+    tl->set_cpu_timer(timerid);
   }
 }
 
 void JfrCPUTimeThreadSampler::on_javathread_terminate(JavaThread* thread) {
-  if (thread->jfr_thread_local() != nullptr && thread->jfr_thread_local()->has_timerid()) {
-    timer_delete(thread->jfr_thread_local()->timerid());
-    thread->jfr_thread_local()->unset_timerid();
-    thread->disable_cpu_time_jfr_queue();
-    s4 lost_samples = thread->cpu_time_jfr_queue().lost_samples();
+  JfrThreadLocal* tl = thread->jfr_thread_local();
+  if (tl == nullptr) {
+    return;
+  }
+  if (tl->has_cpu_timer()) {
+    timer_delete(tl->cpu_timer());
+    tl->unset_cpu_timer();
+    tl->disable_cpu_time_jfr_queue();
+    s4 lost_samples = tl->cpu_time_jfr_queue().lost_samples();
     if (lost_samples > 0) {
       JfrCPUTimeThreadSampling::send_lost_event(JfrTicks::now(), JfrThreadLocal::thread_id(thread), lost_samples);
     }
@@ -322,13 +329,14 @@ void JfrCPUTimeThreadSampler::sample_out_of_safepoint() {
   ThreadsListHandle tlh;
   for (size_t i = 0; i < tlh.list()->length(); i++) {
     JavaThread* jt = tlh.list()->thread_at(i);
-    if (jt->wants_out_of_safepoint_sampling()) {
-      if (!jt->acquire_cpu_time_jfr_native_lock()) {
+    JfrThreadLocal* tl = jt->jfr_thread_local();
+    if (tl != nullptr && tl->wants_out_of_safepoint_sampling()) {
+      if (!tl->acquire_cpu_time_jfr_native_lock()) {
         continue;
       }
-      jt->set_wants_out_of_safepoint_sampling(false);
+      tl->set_wants_out_of_safepoint_sampling(false);
       sample_out_of_safepoint(jt);
-      jt->release_cpu_time_jfr_queue_lock();
+      tl->release_cpu_time_jfr_queue_lock();
     }
   }
 }
@@ -341,7 +349,8 @@ inline bool operator==(const JfrSampleRequest& lhs, const JfrSampleRequest& rhs)
 }
 
 void JfrCPUTimeThreadSampler::sample_out_of_safepoint(JavaThread* thread) {
-  JfrCPUTimeTraceQueue& queue = thread->cpu_time_jfr_queue();
+  assert(thread->jfr_thread_local() != nullptr, "invariant");
+  JfrCPUTimeTraceQueue& queue = thread->jfr_thread_local()->cpu_time_jfr_queue();
   assert(!queue.is_empty(), "invariant");
   if (queue.is_empty()) {
     return;
@@ -557,15 +566,19 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
   if (jt == nullptr) {
     return;
   }
+  JfrThreadLocal* tl = jt->jfr_thread_local();
+  if (tl == nullptr) {
+    return;
+  }
   if (!check_state(jt) ||
       jt->is_at_poll_safepoint() ||
       jt->is_JfrRecorder_thread() || jt->is_JfrSampler_thread()) {
-    jt->cpu_time_jfr_queue().increment_lost_samples();
-    jt->set_wants_out_of_safepoint_sampling(false);
+      tl->cpu_time_jfr_queue().increment_lost_samples();
+      tl->set_wants_out_of_safepoint_sampling(false);
     return;
   }
-  if (!jt->acquire_cpu_time_jfr_enqueue_lock()) {
-    jt->cpu_time_jfr_queue().increment_lost_samples();
+  if (!tl->acquire_cpu_time_jfr_enqueue_lock()) {
+    tl->cpu_time_jfr_queue().increment_lost_samples();
     return;
   }
 
@@ -577,23 +590,23 @@ void JfrCPUTimeThreadSampler::handle_timer_signal(siginfo_t* info, void* context
   request._cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
   sample_thread(request._request, context, jt);
 
-  if (jt->cpu_time_jfr_queue().enqueue(request)) {
-    jt->set_has_cpu_time_jfr_requests(true);
+  if (tl->cpu_time_jfr_queue().enqueue(request)) {
+    tl->set_has_cpu_time_jfr_requests(true);
     SafepointMechanism::arm_local_poll_release(jt);
   } else {
-    jt->cpu_time_jfr_queue().increment_lost_samples();
+    tl->cpu_time_jfr_queue().increment_lost_samples();
   }
 
   if (jt->thread_state() == _thread_in_native &&
-    jt->cpu_time_jfr_queue().size() > jt->cpu_time_jfr_queue().capacity() * 2 / 3) {
+    tl->cpu_time_jfr_queue().size() > tl->cpu_time_jfr_queue().capacity() * 2 / 3) {
     // we are in native code and the queue is getting full
-    jt->set_wants_out_of_safepoint_sampling(true);
+    tl->set_wants_out_of_safepoint_sampling(true);
     JfrCPUTimeThreadSampling::trigger_out_of_safepoint_sampling();
   } else {
-    jt->set_wants_out_of_safepoint_sampling(false);
+    tl->set_wants_out_of_safepoint_sampling(false);
   }
 
-  jt->release_cpu_time_jfr_queue_lock();
+  tl->release_cpu_time_jfr_queue_lock();
 }
 
 static const int SIG = SIGPROF;
@@ -678,11 +691,11 @@ class VM_CPUTimeSamplerThreadTerminator : public VM_Operation {
     JfrJavaThreadIterator iter;
     while (iter.has_next()) {
       JavaThread *thread = iter.next();
-      JfrThreadLocal* jfr_thread_local = thread->jfr_thread_local();
-      if (jfr_thread_local != nullptr && jfr_thread_local->has_timerid()) {
-        timer_delete(jfr_thread_local->timerid());
-        thread->disable_cpu_time_jfr_queue();
-        thread->jfr_thread_local()->unset_timerid();
+      JfrThreadLocal* tl = thread->jfr_thread_local();
+      if (tl != nullptr && tl->has_cpu_timer()) {
+        timer_delete(tl->cpu_timer());
+        tl->disable_cpu_time_jfr_queue();
+        tl->unset_cpu_timer();
       }
     }
   };
@@ -728,8 +741,8 @@ void JfrCPUTimeThreadSampler::update_all_thread_timers() {
   for (size_t i = 0; i < tlh.length(); i++) {
     JavaThread* thread = tlh.thread_at(i);
     JfrThreadLocal* jfr_thread_local = thread->jfr_thread_local();
-    if (jfr_thread_local != nullptr && jfr_thread_local->has_timerid()) {
-      set_timer_time(jfr_thread_local->timerid(), period_millis);
+    if (jfr_thread_local != nullptr && jfr_thread_local->has_cpu_timer()) {
+      set_timer_time(jfr_thread_local->cpu_timer(), period_millis);
     }
   }
 }

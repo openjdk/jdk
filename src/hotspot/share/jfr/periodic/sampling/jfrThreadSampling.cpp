@@ -339,21 +339,21 @@ static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl,
   assert(current != nullptr, "invariant");
   drain_enqueued_requests(now, tl, jt, current);
 #ifdef LINUX
-  if (jt->has_cpu_time_jfr_requests()) {
+  if (tl->has_cpu_time_jfr_requests()) {
     JfrTicks now = JfrTicks::now();
-    jt->acquire_cpu_time_jfr_dequeue_lock();
-    JfrCPUTimeTraceQueue& queue = jt->cpu_time_jfr_queue();
+    tl->acquire_cpu_time_jfr_dequeue_lock();
+    JfrCPUTimeTraceQueue& queue = tl->cpu_time_jfr_queue();
     for (u4 i = 0; i < queue.size(); i++) {
       record_cpu_time_thread(queue.at(i), now, jt, current);
     }
     queue.set_size(0);
     assert(queue.is_empty(), "invariant");
-    jt->set_has_cpu_time_jfr_requests(false);
+    tl->set_has_cpu_time_jfr_requests(false);
     if (queue.lost_samples() > 0) {
       JfrCPUTimeThreadSampling::send_lost_event( now, JfrThreadLocal::thread_id(jt), queue.get_and_reset_lost_samples());
     }
     queue.clear();
-    jt->release_cpu_time_jfr_queue_lock();
+    tl->release_cpu_time_jfr_queue_lock();
   }
 #endif
 }
