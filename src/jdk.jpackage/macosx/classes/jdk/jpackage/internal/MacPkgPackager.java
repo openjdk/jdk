@@ -188,7 +188,7 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
             final var enqouter = Enquoter.forShellLiterals().setEnquotePredicate(str -> true);
 
             final var mainInstallDir = Path.of("/").resolve(pkg.relativeInstallDir());
-            final var supportInstallDir = Path.of("/Library/Application Support").resolve(mainInstallDir.getFileName());
+            final var supportInstallDir = Path.of("/Library/Application Support").resolve(pkg.packageName());
 
             Map<String, String> data = new HashMap<>(servicesSubstitutionData);
             data.put("APP_INSTALLATION_FOLDER", mainInstallDir.toString());
