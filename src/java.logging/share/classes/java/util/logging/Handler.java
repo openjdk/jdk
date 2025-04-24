@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,25 @@ import java.io.UnsupportedEncodingException;
  * and {@code Level}.  See the specific documentation for each concrete
  * {@code Handler} class.
  *
+ * <h2><a id=threadSafety>Thread Safety and Deadlock Risk in Handlers</a></h2>
+ *
+ * Implementations of {@code Handler} should be thread-safe. Handlers are
+ * expected to be invoked concurrently from arbitrary threads. However,
+ * over-use of synchronization may result in unwanted thread contention,
+ * performance issues or even deadlocking.
+ * <p>
+ * In particular, subclasses should avoid acquiring locks around code which
+ * calls back to arbitrary user-supplied objects, especially during log record
+ * formatting. Holding a lock around any such callbacks creates a deadlock risk
+ * between logging code and user code.
+ * <p>
+ * As such, general purpose {@code Handler} subclasses should not synchronize
+ * their {@link #publish(LogRecord)} methods, or call {@code super.publish()}
+ * while holding locks, since these are typically expected to need to process
+ * and format user-supplied arguments.
  *
  * @since 1.4
  */
-
 public abstract class Handler {
     private static final int offValue = Level.OFF.intValue();
 
@@ -123,6 +138,10 @@ public abstract class Handler {
      * <p>
      * The {@code Handler}  is responsible for formatting the message, when and
      * if necessary.  The formatting should include localization.
+     *
+     * @apiNote To avoid the risk of deadlock, implementations of this method
+     * should avoid holding any locks while calling out to application code,
+     * such as the formatting of {@code LogRecord}.
      *
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published

@@ -272,7 +272,7 @@ define SetupGenBuffer
 	  $$($1_long_CMD) -i$$($1_SRC_BIN) -o$$($1_DST).tmp
 	  $$($1_float_CMD) -i$$($1_SRC_BIN) -o$$($1_DST).tmp
 	  $$($1_double_CMD) -i$$($1_SRC_BIN) -o$$($1_DST).tmp
-	  $(PRINTF) "}\n" >> $$($1_DST).tmp
+	  $(ECHO) "}" >> $$($1_DST).tmp
 	  mv $$($1_DST).tmp $$($1_DST)
         endif
 

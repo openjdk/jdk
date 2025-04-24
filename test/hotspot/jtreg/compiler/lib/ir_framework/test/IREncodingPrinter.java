@@ -108,12 +108,16 @@ public class IREncodingPrinter {
         "sha3",
         "asimd",
         "sve",
+        "sve2",
         "fphp",
         "asimdhp",
-        // Riscv64
+        // RISCV64
         "rvv",
+        "zbkb",
+        "zfh",
         "zvbb",
-        "zvfh"
+        "zvfh",
+        "zvkn"
     ));
 
     public IREncodingPrinter() {

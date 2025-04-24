@@ -38,7 +38,7 @@ import java.awt.TextArea;
 public class TextScrollTest extends Frame {
     private static final String INSTRUCTIONS = """
             1. A TextArea whose content starts with the text ",
-               'Scroll till the' will appear on the applet ",
+               'Scroll till the' will appear on the window ",
             2. Use the Horizontal thumb button of the TextArea to view the entire",
                content of the TextArea",
             3. While scrolling, if the text 'Scroll till the' appears repeatedly, Click Fail  ",

@@ -1447,6 +1447,12 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
         the potential leaking object was allocated is included in the
         information collected.
 
+    `report-on-exit=`*identifier*
+    :   Specifies the name of the view to display when the Java Virtual Machine
+        (JVM) shuts down. This option is not available if the disk option is set
+        to false. For a list of available views, see `jfr help view`. By default,
+        no report is generated.
+
     `settings=`*path*
     :   Specifies the path and name of the event settings file (of type JFC).
         By default, the `default.jfc` file is used, which is located in
@@ -3357,16 +3363,18 @@ getting overwritten.
 ### -Xlog Output Mode
 
 By default logging messages are output synchronously - each log message is written to
-the designated output when the logging call is made. But you can instead use asynchronous
+the designated output when the logging call is made. You can instead use asynchronous
 logging mode by specifying:
 
-`-Xlog:async`
+`-Xlog:async[:[stall|drop]]`
 :     Write all logging asynchronously.
 
 In asynchronous logging mode, log sites enqueue all logging messages to an intermediate buffer
 and a standalone thread is responsible for flushing them to the corresponding outputs. The
-intermediate buffer is bounded and on buffer exhaustion the enqueuing message is discarded.
-Log entry write operations are guaranteed non-blocking.
+intermediate buffer is bounded. On buffer exhaustion the enqueuing message is either discarded (`async:drop`),
+or logging threads are stalled until the flushing thread catches up (`async:stall`).
+If no specific mode is chosen, then `async:drop` is chosen by default.
+Log entry write operations are guaranteed to be non-blocking in the `async:drop` case.
 
 The option `-XX:AsyncLogBufferSize=N` specifies the memory budget in bytes for the intermediate buffer.
 The default value should be big enough to cater for most cases. Users can provide a custom value to

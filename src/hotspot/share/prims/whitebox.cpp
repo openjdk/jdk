@@ -45,7 +45,6 @@
 #include "compiler/methodMatcher.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcConfig.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genArguments.hpp"
 #include "jvm.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
@@ -324,6 +323,17 @@ WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
   tty->print_cr("Reading from no access area... ");
   tty->print_cr("*(vs.low_boundary() - rhs.noaccess_prefix() / 2 ) = %c",
                 *(vs.low_boundary() - rhs.noaccess_prefix() / 2 ));
+WB_END
+
+WB_ENTRY(void, WB_DecodeNKlassAndAccessKlass(JNIEnv* env, jobject o, jint nKlass))
+  assert(UseCompressedClassPointers, "Should only call for UseCompressedClassPointers");
+  const narrowKlass nk = (narrowKlass)nKlass;
+  const Klass* const k = CompressedKlassPointers::decode_not_null_without_asserts(nKlass);
+  printf("WB_DecodeNKlassAndAccessKlass: nk %u k " PTR_FORMAT "\n", nk, p2i(k));
+  printf("Will attempt to crash now...\n");
+  fflush(stdout); // flush now - we will crash below
+  // Access k by calling a virtual function - will result in loading the vtable from *k
+  k->print_on(tty);
 WB_END
 
 static jint wb_stress_virtual_space_resize(size_t reserved_space_size,
@@ -784,7 +794,7 @@ class VM_WhiteBoxDeoptimizeFrames : public VM_WhiteBoxOperation {
             if (_make_not_entrant) {
                 nmethod* nm = CodeCache::find_nmethod(f->pc());
                 assert(nm != nullptr, "did not find nmethod");
-                nm->make_not_entrant();
+                nm->make_not_entrant("Whitebox deoptimization");
             }
             ++_result;
           }
@@ -1075,12 +1085,13 @@ WB_ENTRY(jboolean, WB_TestSetForceInlineMethod(JNIEnv* env, jobject o, jobject m
 WB_END
 
 #ifdef LINUX
-bool WhiteBox::validate_cgroup(const char* proc_cgroups,
+bool WhiteBox::validate_cgroup(bool cgroups_v2_enabled,
+                               const char* controllers_file,
                                const char* proc_self_cgroup,
                                const char* proc_self_mountinfo,
                                u1* cg_flags) {
   CgroupInfo cg_infos[CG_INFO_LENGTH];
-  return CgroupSubsystemFactory::determine_type(cg_infos, proc_cgroups,
+  return CgroupSubsystemFactory::determine_type(cg_infos, cgroups_v2_enabled, controllers_file,
                                                     proc_self_cgroup,
                                                     proc_self_mountinfo, cg_flags);
 }
@@ -2508,13 +2519,14 @@ WB_END
 
 WB_ENTRY(jint, WB_ValidateCgroup(JNIEnv* env,
                                     jobject o,
-                                    jstring proc_cgroups,
+                                    jboolean cgroups_v2_enabled,
+                                    jstring controllers_file,
                                     jstring proc_self_cgroup,
                                     jstring proc_self_mountinfo))
   jint ret = 0;
 #ifdef LINUX
   ThreadToNativeFromVM ttnfv(thread);
-  const char* p_cgroups = env->GetStringUTFChars(proc_cgroups, nullptr);
+  const char* c_file = env->GetStringUTFChars(controllers_file, nullptr);
   CHECK_JNI_EXCEPTION_(env, 0);
   const char* p_s_cgroup = env->GetStringUTFChars(proc_self_cgroup, nullptr);
   CHECK_JNI_EXCEPTION_(env, 0);
@@ -2522,9 +2534,9 @@ WB_ENTRY(jint, WB_ValidateCgroup(JNIEnv* env,
   CHECK_JNI_EXCEPTION_(env, 0);
   u1 cg_type_flags = 0;
   // This sets cg_type_flags
-  WhiteBox::validate_cgroup(p_cgroups, p_s_cgroup, p_s_mountinfo, &cg_type_flags);
+  WhiteBox::validate_cgroup(cgroups_v2_enabled, c_file, p_s_cgroup, p_s_mountinfo, &cg_type_flags);
   ret = (jint)cg_type_flags;
-  env->ReleaseStringUTFChars(proc_cgroups, p_cgroups);
+  env->ReleaseStringUTFChars(controllers_file, c_file);
   env->ReleaseStringUTFChars(proc_self_cgroup, p_s_cgroup);
   env->ReleaseStringUTFChars(proc_self_mountinfo, p_s_mountinfo);
 #endif
@@ -2649,14 +2661,6 @@ WB_ENTRY(jstring, WB_GetLibcName(JNIEnv* env, jobject o))
   return info_string;
 WB_END
 
-WB_ENTRY(void, WB_LockCritical(JNIEnv* env, jobject wb))
-  GCLocker::lock_critical(thread);
-WB_END
-
-WB_ENTRY(void, WB_UnlockCritical(JNIEnv* env, jobject wb))
-  GCLocker::unlock_critical(thread);
-WB_END
-
 WB_ENTRY(void, WB_PinObject(JNIEnv* env, jobject wb, jobject o))
 #if INCLUDE_G1GC
   if (!UseG1GC) {
@@ -2742,6 +2746,7 @@ static JNINativeMethod methods[] = {
       (void*)&WB_GetCompressedOopsMaxHeapSize},
   {CC"printHeapSizes",     CC"()V",                   (void*)&WB_PrintHeapSizes    },
   {CC"readFromNoaccessArea",CC"()V",                  (void*)&WB_ReadFromNoaccessArea},
+  {CC"decodeNKlassAndAccessKlass",CC"(I)V",            (void*)&WB_DecodeNKlassAndAccessKlass},
   {CC"stressVirtualSpaceResize",CC"(JJJ)I",           (void*)&WB_StressVirtualSpaceResize},
 #if INCLUDE_CDS
   {CC"getCDSOffsetForName0", CC"(Ljava/lang/String;)I",  (void*)&WB_GetCDSOffsetForName},
@@ -2971,7 +2976,7 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_CheckLibSpecifiesNoexecstack},
   {CC"isContainerized",           CC"()Z",            (void*)&WB_IsContainerized },
   {CC"validateCgroup",
-      CC"(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I",
+      CC"(ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)I",
                                                       (void*)&WB_ValidateCgroup },
   {CC"hostPhysicalMemory",        CC"()J",            (void*)&WB_HostPhysicalMemory },
   {CC"hostPhysicalSwap",          CC"()J",            (void*)&WB_HostPhysicalSwap },
@@ -2997,8 +3002,6 @@ static JNINativeMethod methods[] = {
   {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},
   {CC"getLibcName",     CC"()Ljava/lang/String;",     (void*)&WB_GetLibcName},
 
-  {CC"lockCritical",    CC"()V",                      (void*)&WB_LockCritical},
-  {CC"unlockCritical",  CC"()V",                      (void*)&WB_UnlockCritical},
   {CC"pinObject",       CC"(Ljava/lang/Object;)V",    (void*)&WB_PinObject},
   {CC"unpinObject",     CC"(Ljava/lang/Object;)V",    (void*)&WB_UnpinObject},
   {CC"setVirtualThreadsNotifyJvmtiMode", CC"(Z)Z",    (void*)&WB_SetVirtualThreadsNotifyJvmtiMode},

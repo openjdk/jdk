@@ -403,7 +403,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
   switch (op->code()) {
 
 // LIR_Op0
-    case lir_fpop_raw:                 // result and info always invalid
     case lir_breakpoint:               // result and info always invalid
     case lir_membar:                   // result and info always invalid
     case lir_membar_acquire:           // result and info always invalid
@@ -443,8 +442,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
 
 
 // LIR_Op1
-    case lir_fxch:           // input always valid, result and info always invalid
-    case lir_fld:            // input always valid, result and info always invalid
     case lir_push:           // input always valid, result and info always invalid
     case lir_pop:            // input always valid, result and info always invalid
     case lir_leal:           // input and result always valid, info always invalid
@@ -546,20 +543,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       if (opAllocObj->_tmp4->is_valid())         do_temp(opAllocObj->_tmp4);
       if (opAllocObj->_result->is_valid())       do_output(opAllocObj->_result);
       if (opAllocObj->_stub != nullptr)          do_stub(opAllocObj->_stub);
-      break;
-    }
-
-
-// LIR_OpRoundFP;
-    case lir_roundfp: {
-      assert(op->as_OpRoundFP() != nullptr, "must be");
-      LIR_OpRoundFP* opRoundFP = (LIR_OpRoundFP*)op;
-
-      assert(op->_info == nullptr, "info not used by this instruction");
-      assert(opRoundFP->_tmp->is_illegal(), "not used");
-      do_input(opRoundFP->_opr);
-      do_output(opRoundFP->_result);
-
       break;
     }
 
@@ -1716,12 +1699,9 @@ const char * LIR_Op::name() const {
      case lir_on_spin_wait:          s = "on_spin_wait";  break;
      case lir_std_entry:             s = "std_entry";     break;
      case lir_osr_entry:             s = "osr_entry";     break;
-     case lir_fpop_raw:              s = "fpop_raw";      break;
      case lir_breakpoint:            s = "breakpoint";    break;
      case lir_get_thread:            s = "get_thread";    break;
      // LIR_Op1
-     case lir_fxch:                  s = "fxch";          break;
-     case lir_fld:                   s = "fld";           break;
      case lir_push:                  s = "push";          break;
      case lir_pop:                   s = "pop";           break;
      case lir_null_check:            s = "null_check";    break;
@@ -1731,7 +1711,6 @@ const char * LIR_Op::name() const {
      case lir_branch:                s = "branch";        break;
      case lir_cond_float_branch:     s = "flt_cond_br";   break;
      case lir_move:                  s = "move";          break;
-     case lir_roundfp:               s = "roundfp";       break;
      case lir_abs:                   s = "abs";           break;
      case lir_neg:                   s = "neg";           break;
      case lir_sqrt:                  s = "sqrt";          break;
@@ -1974,12 +1953,6 @@ void LIR_OpAllocObj::print_instr(outputStream* out) const {
   out->print("[hdr:%d]", header_size()); out->print(" ");
   out->print("[obj:%d]", object_size()); out->print(" ");
   out->print("[lbl:" INTPTR_FORMAT "]", p2i(stub()->entry()));
-}
-
-void LIR_OpRoundFP::print_instr(outputStream* out) const {
-  _opr->print(out);         out->print(" ");
-  tmp()->print(out);        out->print(" ");
-  result_opr()->print(out); out->print(" ");
 }
 
 // LIR_Op2
