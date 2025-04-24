@@ -31,6 +31,7 @@ import jdk.test.lib.Asserts;
  * @test
  * @bug 8338061
  * @summary Test that Ideal transformations of ConvF2HF are being performed as expected.
+ * @requires (os.arch != "ppc64" & os.arch != "ppc64le") | vm.cpu.features ~= ".*darn.*"
  * @modules jdk.incubator.vector
  * @library /test/lib /
  * @run driver compiler.c2.irTests.ConvF2HFIdealizationTests
@@ -53,7 +54,7 @@ public class ConvF2HFIdealizationTests {
     @Test
     @IR(counts = {IRNode.REINTERPRET_S2HF, ">=1", IRNode.REINTERPRET_HF2S, ">=1", IRNode.ADD_HF, ">=1" },
         failOn = {IRNode.ADD_F, IRNode.CONV_HF2F, IRNode.CONV_F2HF},
-        applyIfCPUFeature = {"avx512_fp16", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
     // Test pattern - ConvHF2F -> AddF -> ConvF2HF is optimized to ReinterpretS2HF -> AddHF -> ReinterpretHF2S
     public void test1() {
         for (int i = 0; i < SIZE; i++) {

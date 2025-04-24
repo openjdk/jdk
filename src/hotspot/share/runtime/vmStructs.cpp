@@ -23,18 +23,9 @@
  */
 
 #include "cds/filemap.hpp"
-#include "ci/ciField.hpp"
-#include "ci/ciInstance.hpp"
-#include "ci/ciMethodData.hpp"
-#include "ci/ciObjArrayKlass.hpp"
-#include "ci/ciSymbol.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
-#include "classfile/stringTable.hpp"
-#include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBlob.hpp"
@@ -103,10 +94,8 @@
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/serviceThread.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/threadSMR.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vmStructs.hpp"
 #include "runtime/vm_version.hpp"
@@ -411,7 +400,7 @@
      volatile_static_field(PerfMemory,         _initialized,                                  int)                                   \
                                                                                                                                      \
   /********************/                                                                                                             \
-  /* SystemDictionary */                                                                                                             \
+  /* VM Classes       */                                                                                                             \
   /********************/                                                                                                             \
                                                                                                                                      \
      static_field(vmClasses,                   VM_CLASS_AT(Object_klass),                        InstanceKlass*)                     \
@@ -530,6 +519,8 @@
   nonstatic_field(CodeBlob,                    _frame_size,                                   int)                                   \
   nonstatic_field(CodeBlob,                    _oop_maps,                                     ImmutableOopMapSet*)                   \
   nonstatic_field(CodeBlob,                    _caller_must_gc_arguments,                     bool)                                  \
+  nonstatic_field(CodeBlob,                    _mutable_data,                                 address)                               \
+  nonstatic_field(CodeBlob,                    _mutable_data_size,                            int)                                   \
                                                                                                                                      \
   nonstatic_field(DeoptimizationBlob,          _unpack_offset,                                int)                                   \
                                                                                                                                      \
@@ -552,8 +543,7 @@
   nonstatic_field(nmethod,                     _deopt_mh_handler_offset,                      int)                                   \
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
-  nonstatic_field(nmethod,                     _metadata_offset,                              u2)                                    \
-  nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                    \
+  nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                   \
   nonstatic_field(nmethod,                     _scopes_data_offset,                           int)                                   \
   nonstatic_field(nmethod,                     _handler_table_offset,                         u2)                                    \
   nonstatic_field(nmethod,                     _nul_chk_table_offset,                         u2)                                    \
@@ -614,10 +604,8 @@
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
   nonstatic_field(JavaThread,                  _vthread,                                      OopHandle)                             \
   nonstatic_field(JavaThread,                  _jvmti_vthread,                                OopHandle)                             \
-  nonstatic_field(JavaThread,                  _scopedValueCache,                              OopHandle)                             \
+  nonstatic_field(JavaThread,                  _scopedValueCache,                              OopHandle)                            \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
-  nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
-  nonstatic_field(JavaThread,                  _vm_result_2,                                  Metadata*)                             \
   volatile_nonstatic_field(JavaThread,         _current_pending_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(JavaThread,                  _current_pending_monitor_is_from_java,         bool)                                  \
   volatile_nonstatic_field(JavaThread,         _current_waiting_monitor,                      ObjectMonitor*)                        \
@@ -635,7 +623,6 @@
   nonstatic_field(JavaThread,                  _monitor_owner_id,                             int64_t)                               \
   volatile_nonstatic_field(JavaThread,         _terminated,                                   JavaThread::TerminatedTypes)           \
   nonstatic_field(Thread,                      _osthread,                                     OSThread*)                             \
-  nonstatic_field(Thread,                      _resource_area,                                ResourceArea*)                         \
                                                                                                                                      \
   /************/                                                                                                                     \
   /* OSThread */                                                                                                                     \
@@ -1009,17 +996,14 @@
   declare_type(PerfData, CHeapObj<mtInternal>)                            \
                                                                           \
   /********************/                                                  \
-  /* SystemDictionary */                                                  \
+  /* VM Classes       */                                                  \
   /********************/                                                  \
                                                                           \
-  declare_toplevel_type(SystemDictionary)                                 \
   declare_toplevel_type(vmClasses)                                        \
   declare_toplevel_type(vmSymbols)                                        \
                                                                           \
   declare_toplevel_type(GrowableArrayBase)                                \
   declare_toplevel_type(GrowableArray<int>)                               \
-  declare_toplevel_type(Arena)                                            \
-    declare_type(ResourceArea, Arena)                                     \
                                                                           \
   /***********************************************************/           \
   /* Thread hierarchy (needed for run-time type information) */           \
@@ -1089,8 +1073,6 @@
   /*************************************************************/         \
   /* CodeBlob hierarchy (needed for run-time type information) */         \
   /*************************************************************/         \
-                                                                          \
-  declare_toplevel_type(SharedRuntime)                                    \
                                                                           \
   declare_toplevel_type(CodeBlob)                                         \
   declare_type(RuntimeBlob,              CodeBlob)                        \
@@ -1162,12 +1144,6 @@
   declare_toplevel_type(ObjectSynchronizer)                               \
   declare_toplevel_type(BasicLock)                                        \
   declare_toplevel_type(BasicObjectLock)                                  \
-                                                                          \
-  /*********************/                                                 \
-  /* Adapter Blob Entries */                                              \
-  /*********************/                                                 \
-  declare_toplevel_type(AdapterHandlerEntry)                              \
-  declare_toplevel_type(AdapterHandlerEntry*)                             \
                                                                           \
   /********************/                                                  \
   /* -XX flags        */                                                  \

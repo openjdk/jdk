@@ -72,7 +72,6 @@ public final class SharedUtils {
     private SharedUtils() {
     }
 
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
 
     private static final MethodHandle MH_ALLOC_BUFFER;
@@ -310,7 +309,7 @@ public final class SharedUtils {
                 t.printStackTrace();
                 System.err.println("Unrecoverable uncaught exception encountered. The VM will now exit");
             } finally {
-                JLA.exit(1);
+                System.exit(1);
             }
         }
     }

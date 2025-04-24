@@ -36,8 +36,6 @@ public class Entity extends Content {
     public static final Entity GREATER_THAN = new Entity("&gt;");
     public static final Entity AMPERSAND = new Entity("&amp;");
     public static final Entity NO_BREAK_SPACE = new Entity("&nbsp;");
-    public static final Entity LEFT_POINTING_ANGLE = new Entity("&#10094;");
-    public static final Entity RIGHT_POINTING_ANGLE = new Entity("&#10095;");
 
     public final String text;
 

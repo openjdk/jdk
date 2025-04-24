@@ -270,6 +270,7 @@ class stringStream : public outputStream {
   bool is_empty() const { return _buffer[0] == '\0'; }
   // Copy to a resource, or C-heap, array as requested
   char* as_string(bool c_heap = false) const;
+  char* as_string(Arena* arena) const;
 };
 
 class fileStream : public outputStream {

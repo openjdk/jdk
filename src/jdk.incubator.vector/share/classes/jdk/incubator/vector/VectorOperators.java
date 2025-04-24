@@ -452,23 +452,23 @@ public abstract class VectorOperators {
     public static final Unary ABS = unary("ABS", "abs", VectorSupport.VECTOR_OP_ABS, VO_ALL);
     /** Produce {@code -a}. */
     public static final Unary NEG = unary("NEG", "-a", VectorSupport.VECTOR_OP_NEG, VO_ALL|VO_SPECIAL);
-    /** Produce {@code bitCount(a)}
+    /** Produce {@code bitCount(a)}. Integral only.
      * @since 19
      */
     public static final Unary BIT_COUNT = unary("BIT_COUNT", "bitCount", VectorSupport.VECTOR_OP_BIT_COUNT, VO_NOFP);
-    /** Produce {@code numberOfTrailingZeros(a)}
+    /** Produce {@code numberOfTrailingZeros(a)}. Integral only.
      * @since 19
      */
     public static final Unary TRAILING_ZEROS_COUNT = unary("TRAILING_ZEROS_COUNT", "numberOfTrailingZeros", VectorSupport.VECTOR_OP_TZ_COUNT, VO_NOFP);
-    /** Produce {@code numberOfLeadingZeros(a)}
+    /** Produce {@code numberOfLeadingZeros(a)}. Integral only.
      * @since 19
      */
     public static final Unary LEADING_ZEROS_COUNT = unary("LEADING_ZEROS_COUNT", "numberOfLeadingZeros", VectorSupport.VECTOR_OP_LZ_COUNT, VO_NOFP);
-    /** Produce {@code reverse(a)}
+    /** Produce {@code reverse(a)}. Integral only.
      * @since 19
      */
     public static final Unary REVERSE = unary("REVERSE", "reverse", VectorSupport.VECTOR_OP_REVERSE, VO_NOFP);
-    /** Produce {@code reverseBytes(a)}
+    /** Produce {@code reverseBytes(a)}. Integral only.
      * @since 19
      */
     public static final Unary REVERSE_BYTES = unary("REVERSE_BYTES", "reverseBytes", VectorSupport.VECTOR_OP_REVERSE_BYTES, VO_NOFP);

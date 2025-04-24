@@ -189,21 +189,18 @@ bool PSOldGen::expand(size_t bytes) {
   assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
 #endif
+  const size_t remaining_bytes = virtual_space()->uncommitted_size();
+  if (remaining_bytes == 0) {
+    return false;
+  }
   const size_t alignment = virtual_space()->alignment();
-  size_t aligned_bytes  = align_up(bytes, alignment);
+  size_t aligned_bytes = align_up(MIN2(bytes, remaining_bytes), alignment);
   size_t aligned_expand_bytes = align_up(MinHeapDeltaBytes, alignment);
 
   if (UseNUMA) {
     // With NUMA we use round-robin page allocation for the old gen. Expand by at least
     // providing a page per lgroup. Alignment is larger or equal to the page size.
     aligned_expand_bytes = MAX2(aligned_expand_bytes, alignment * os::numa_get_groups_num());
-  }
-  if (aligned_bytes == 0) {
-    // The alignment caused the number of bytes to wrap.  A call to expand
-    // implies a best effort to expand by "bytes" but not a guarantee.  Align
-    // down to give a best effort.  This is likely the most that the generation
-    // can expand since it has some capacity to start with.
-    aligned_bytes = align_down(bytes, alignment);
   }
 
   bool success = false;
@@ -265,8 +262,9 @@ bool PSOldGen::expand_to_reserved() {
 }
 
 void PSOldGen::shrink(size_t bytes) {
-  assert_lock_strong(PSOldGenExpand_lock);
-  assert_locked_or_safepoint(Heap_lock);
+  assert(Thread::current()->is_VM_thread(), "precondition");
+  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
+  assert(bytes > 0, "precondition");
 
   size_t size = align_down(bytes, virtual_space()->alignment());
   if (size > 0) {
@@ -317,11 +315,9 @@ void PSOldGen::resize(size_t desired_free_space) {
   }
   if (new_size > current_size) {
     size_t change_bytes = new_size - current_size;
-    MutexLocker x(PSOldGenExpand_lock);
     expand(change_bytes);
   } else {
     size_t change_bytes = current_size - new_size;
-    MutexLocker x(PSOldGenExpand_lock);
     shrink(change_bytes);
   }
 

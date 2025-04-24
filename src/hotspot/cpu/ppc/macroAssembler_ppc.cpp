@@ -1284,13 +1284,7 @@ int MacroAssembler::ic_check(int end_alignment) {
     if (use_trap_based_null_check) {
       trap_null_check(receiver);
     }
-    if (UseCompactObjectHeaders) {
-      load_narrow_klass_compact(tmp1, receiver);
-    } else if (UseCompressedClassPointers) {
-      lwz(tmp1, oopDesc::klass_offset_in_bytes(), receiver);
-    } else {
-      ld(tmp1, oopDesc::klass_offset_in_bytes(), receiver);
-    }
+    load_klass_no_decode(tmp1, receiver); // 2 instructions with UseCompactObjectHeaders
     ld(tmp2, in_bytes(CompiledICData::speculated_klass_offset()), data);
     trap_ic_miss_check(tmp1, tmp2);
 
@@ -1306,11 +1300,7 @@ int MacroAssembler::ic_check(int end_alignment) {
       cmpdi(CR0, receiver, 0);
       beqctr(CR0);
     }
-    if (UseCompressedClassPointers) {
-      lwz(tmp1, oopDesc::klass_offset_in_bytes(), receiver);
-    } else {
-      ld(tmp1, oopDesc::klass_offset_in_bytes(), receiver);
-    }
+    load_klass_no_decode(tmp1, receiver); // 2 instructions with UseCompactObjectHeaders
     ld(tmp2, in_bytes(CompiledICData::speculated_klass_offset()), data);
     cmpd(CR0, tmp1, tmp2);
     bnectr(CR0);
@@ -1347,7 +1337,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   // Get oop result if there is one and reset the value in the thread.
   if (oop_result->is_valid()) {
-    get_vm_result(oop_result);
+    get_vm_result_oop(oop_result);
   }
 
   _last_calls_return_pc = return_pc;
@@ -2958,10 +2948,8 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   // StoreLoad achieves this.
   membar(StoreLoad);
 
-  // Check if the entry lists are empty (EntryList first - by convention).
-  ld(temp,             in_bytes(ObjectMonitor::EntryList_offset()), current_header);
-  ld(displaced_header, in_bytes(ObjectMonitor::cxq_offset()), current_header);
-  orr(temp, temp, displaced_header); // Will be 0 if both are 0.
+  // Check if the entry_list is empty.
+  ld(temp, in_bytes(ObjectMonitor::entry_list_offset()), current_header);
   cmpdi(flag, temp, 0);
   beq(flag, success);  // If so we are done.
 
@@ -3012,7 +3000,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
   Label slow_path;
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     li(tmp1, 0);
     std(tmp1, in_bytes(BasicObjectLock::lock_offset()) + BasicLock::object_monitor_cache_offset_in_bytes(), box);
   }
@@ -3299,8 +3287,6 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
 
     bind(not_recursive);
 
-    const Register t2 = tmp2;
-
     // Set owner to null.
     // Release to satisfy the JMM
     release();
@@ -3310,10 +3296,8 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     // StoreLoad achieves this.
     membar(StoreLoad);
 
-    // Check if the entry lists are empty (EntryList first - by convention).
-    ld(t, in_bytes(ObjectMonitor::EntryList_offset()), monitor);
-    ld(t2, in_bytes(ObjectMonitor::cxq_offset()), monitor);
-    orr(t, t, t2);
+    // Check if the entry_list is empty.
+    ld(t, in_bytes(ObjectMonitor::entry_list_offset()), monitor);
     cmpdi(CR0, t, 0);
     beq(CR0, unlocked); // If so we are done.
 
@@ -3441,34 +3425,34 @@ void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, R
   set_last_Java_frame(/*sp=*/sp, /*pc=*/tmp1);
 }
 
-void MacroAssembler::get_vm_result(Register oop_result) {
+void MacroAssembler::get_vm_result_oop(Register oop_result) {
   // Read:
   //   R16_thread
-  //   R16_thread->in_bytes(JavaThread::vm_result_offset())
+  //   R16_thread->in_bytes(JavaThread::vm_result_oop_offset())
   //
   // Updated:
   //   oop_result
-  //   R16_thread->in_bytes(JavaThread::vm_result_offset())
+  //   R16_thread->in_bytes(JavaThread::vm_result_oop_offset())
 
-  ld(oop_result, in_bytes(JavaThread::vm_result_offset()), R16_thread);
+  ld(oop_result, in_bytes(JavaThread::vm_result_oop_offset()), R16_thread);
   li(R0, 0);
-  std(R0, in_bytes(JavaThread::vm_result_offset()), R16_thread);
+  std(R0, in_bytes(JavaThread::vm_result_oop_offset()), R16_thread);
 
   verify_oop(oop_result, FILE_AND_LINE);
 }
 
-void MacroAssembler::get_vm_result_2(Register metadata_result) {
+void MacroAssembler::get_vm_result_metadata(Register metadata_result) {
   // Read:
   //   R16_thread
-  //   R16_thread->in_bytes(JavaThread::vm_result_2_offset())
+  //   R16_thread->in_bytes(JavaThread::vm_result_metadata_offset())
   //
   // Updated:
   //   metadata_result
-  //   R16_thread->in_bytes(JavaThread::vm_result_2_offset())
+  //   R16_thread->in_bytes(JavaThread::vm_result_metadata_offset())
 
-  ld(metadata_result, in_bytes(JavaThread::vm_result_2_offset()), R16_thread);
+  ld(metadata_result, in_bytes(JavaThread::vm_result_metadata_offset()), R16_thread);
   li(R0, 0);
-  std(R0, in_bytes(JavaThread::vm_result_2_offset()), R16_thread);
+  std(R0, in_bytes(JavaThread::vm_result_metadata_offset()), R16_thread);
 }
 
 Register MacroAssembler::encode_klass_not_null(Register dst, Register src) {
@@ -3542,15 +3526,20 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   }
 }
 
-void MacroAssembler::load_klass(Register dst, Register src) {
+void MacroAssembler::load_klass_no_decode(Register dst, Register src) {
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(dst, src);
-    decode_klass_not_null(dst);
   } else if (UseCompressedClassPointers) {
     lwz(dst, oopDesc::klass_offset_in_bytes(), src);
-    decode_klass_not_null(dst);
   } else {
     ld(dst, oopDesc::klass_offset_in_bytes(), src);
+  }
+}
+
+void MacroAssembler::load_klass(Register dst, Register src) {
+  load_klass_no_decode(dst, src);
+  if (UseCompressedClassPointers) { // also true for UseCompactObjectHeaders
+    decode_klass_not_null(dst);
   }
 }
 
@@ -5010,18 +4999,26 @@ void MacroAssembler::atomically_flip_locked_state(bool is_unlock, Register obj, 
 //  - t1, t2: temporary register
 void MacroAssembler::lightweight_lock(Register box, Register obj, Register t1, Register t2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(box, obj, t1, t2);
+  assert_different_registers(box, obj, t1, t2, R0);
 
   Label push;
-  const Register top = t1;
-  const Register mark = t2;
   const Register t = R0;
 
   if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds.
+    // Clear cache in case fast locking succeeds or we need to take the slow-path.
     li(t, 0);
     std(t, in_bytes(BasicObjectLock::lock_offset()) + BasicLock::object_monitor_cache_offset_in_bytes(), box);
   }
+
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    load_klass(t1, obj);
+    lbz(t1, in_bytes(Klass::misc_flags_offset()), t1);
+    testbitdi(CR0, R0, t1, exact_log2(KlassFlags::_misc_is_value_based_class));
+    bne(CR0, slow);
+  }
+
+  const Register top = t1;
+  const Register mark = t2;
 
   // Check if the lock-stack is full.
   lwz(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);

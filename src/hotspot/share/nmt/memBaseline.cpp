@@ -61,7 +61,7 @@ int compare_malloc_site(const MallocSite& s1, const MallocSite& s2) {
 }
 
 // Sort into allocation site addresses and memory tag order for baseline comparison
-int compare_malloc_site_and_type(const MallocSite& s1, const MallocSite& s2) {
+int compare_malloc_site_and_tag(const MallocSite& s1, const MallocSite& s2) {
   int res = compare_malloc_site(s1, s2);
   if (res == 0) {
     res = (int)(NMTUtil::tag_to_index(s1.mem_tag()) - NMTUtil::tag_to_index(s2.mem_tag()));
@@ -231,8 +231,8 @@ MallocSiteIterator MemBaseline::malloc_sites(SortingOrder order) {
     case by_site:
       malloc_sites_to_allocation_site_order();
       break;
-    case by_site_and_type:
-      malloc_sites_to_allocation_site_and_type_order();
+    case by_site_and_tag:
+      malloc_sites_to_allocation_site_and_tag_order();
       break;
     case by_address:
     default:
@@ -272,7 +272,7 @@ void MemBaseline::malloc_sites_to_size_order() {
 }
 
 void MemBaseline::malloc_sites_to_allocation_site_order() {
-  if (_malloc_sites_order != by_site && _malloc_sites_order != by_site_and_type) {
+  if (_malloc_sites_order != by_site && _malloc_sites_order != by_site_and_tag) {
     SortedLinkedList<MallocSite, compare_malloc_site> tmp;
     // Add malloc sites to sorted linked list to sort into site (address) order
     tmp.move(&_malloc_sites);
@@ -282,14 +282,14 @@ void MemBaseline::malloc_sites_to_allocation_site_order() {
   }
 }
 
-void MemBaseline::malloc_sites_to_allocation_site_and_type_order() {
-  if (_malloc_sites_order != by_site_and_type) {
-    SortedLinkedList<MallocSite, compare_malloc_site_and_type> tmp;
+void MemBaseline::malloc_sites_to_allocation_site_and_tag_order() {
+  if (_malloc_sites_order != by_site_and_tag) {
+    SortedLinkedList<MallocSite, compare_malloc_site_and_tag> tmp;
     // Add malloc sites to sorted linked list to sort into site (address) order
     tmp.move(&_malloc_sites);
     _malloc_sites.set_head(tmp.head());
     tmp.set_head(nullptr);
-    _malloc_sites_order = by_site_and_type;
+    _malloc_sites_order = by_site_and_tag;
   }
 }
 

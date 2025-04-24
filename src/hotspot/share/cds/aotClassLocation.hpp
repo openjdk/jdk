@@ -34,6 +34,7 @@
 
 class AllClassLocationStreams;
 class ClassLocationStream;
+class ClassPathZipEntry;
 class LogStream;
 
 // An AOTClassLocation is a location where the application is configured to load Java classes
@@ -139,6 +140,8 @@ class AOTClassLocationConfig : public CHeapObj<mtClassShared> {
   static const AOTClassLocationConfig* _runtime_instance;
 
   Array<AOTClassLocation*>* _class_locations; // jrt -> -Xbootclasspath/a -> -classpath -> --module_path
+  static Array<ClassPathZipEntry*>* _dumptime_jar_files;
+
   int _boot_classpath_end;
   int _app_classpath_end;
   int _module_end;
@@ -263,6 +266,8 @@ public:
 
   // Functions used only during runtime
   bool validate(bool has_aot_linked_classes, bool* has_extra_module_paths) const;
+
+  bool is_valid_classpath_index(int classpath_index, InstanceKlass* ik);
 };
 
 

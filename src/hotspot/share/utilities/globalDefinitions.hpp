@@ -307,7 +307,6 @@ const jdouble max_jdouble = jdouble_cast(max_jlongDouble);
 const size_t K                  = 1024;
 const size_t M                  = K*K;
 const size_t G                  = M*K;
-const size_t HWperKB            = K / sizeof(HeapWord);
 
 // Constants for converting from a base unit to milli-base units.  For
 // example from seconds to milliseconds and microseconds
@@ -795,6 +794,14 @@ inline jlong min_signed_integer(BasicType bt) {
   }
   assert(bt == T_LONG, "unsupported");
   return min_jlong;
+}
+
+inline uint bits_per_java_integer(BasicType bt) {
+  if (bt == T_INT) {
+    return BitsPerJavaInteger;
+  }
+  assert(bt == T_LONG, "int or long only");
+  return BitsPerJavaLong;
 }
 
 // Auxiliary math routines
