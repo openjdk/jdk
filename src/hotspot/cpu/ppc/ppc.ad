@@ -1921,15 +1921,23 @@ static enum RC rc_class(OptoReg::Name reg) {
   if (reg == OptoReg::Bad) return rc_bad;
 
   // We have 64 integer register halves, starting at index 0.
-  if (reg < 64) return rc_int;
+  const int first_float_slot = Register::number_of_registers * 2;
+  STATIC_ASSERT(first_float_slot == MachRegisterNumbers::F0_num);
+  if (reg < first_float_slot) return rc_int;
 
   // We have 64 floating-point register halves, starting at index 64.
-  if (reg < 64+64) return rc_float;
+  const int first_condition_register_slot = first_float_slot + FloatRegister::number_of_registers * 2;
+  STATIC_ASSERT(first_condition_register_slot == MachRegisterNumbers::CR0_num);
+  if (reg < first_condition_register_slot) return rc_float;
 
-  assert(OptoReg::is_stack(reg) || reg >= 128+8, "flags are not expected");
+  const int first_vs_register_slot = first_condition_register_slot + ConditionRegister::number_of_registers;
+  STATIC_ASSERT(first_vs_register_slot == MachRegisterNumbers::VSR0_num);
+  assert(reg >= first_vs_register_slot, "ConditionRegisters are not expected");
 
   // We have 64 vector-scalar registers, starting at index 136.
-  if (reg < 136+256) return rc_vs;
+  const int first_special_register_slot = first_vs_register_slot + VectorSRegister::number_of_registers * 4;
+  STATIC_ASSERT(first_special_register_slot == MachRegisterNumbers::SR_XER_num);
+  if (reg < first_special_register_slot) return rc_vs;
 
   // Special purpose registers are not allocated. We only accept stack from here.
   assert(OptoReg::is_stack(reg), "what else is it?");
