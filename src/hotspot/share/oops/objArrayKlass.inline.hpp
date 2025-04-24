@@ -86,7 +86,7 @@ void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, Me
   objArrayOop a  = objArrayOop(obj);
 
   if (Devirtualizer::do_metadata(closure)) {
-    Devirtualizer::do_klass(closure, a->klass()); // Todo: why not "this" ??
+    Devirtualizer::do_klass(closure, a->klass());
   }
 
   oop_oop_iterate_elements_bounded<T>(a, closure, mr.start(), mr.end());
