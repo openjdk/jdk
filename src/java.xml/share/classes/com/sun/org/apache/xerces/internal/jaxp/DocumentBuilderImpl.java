@@ -43,7 +43,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import jdk.xml.internal.FeaturePropertyBase.State;
 import jdk.xml.internal.JdkConstants;
-import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityPropertyManager;
 import jdk.xml.internal.XMLSecurityPropertyManager.Property;
@@ -297,17 +297,10 @@ public class DocumentBuilderImpl extends DocumentBuilder
                         }
                      }
                   } else {
-                     //check if the property is managed by security manager
-                     if (fSecurityManager == null ||
-                             !fSecurityManager.setLimit(name, JdkProperty.State.APIPROPERTY, val)) {
-                         //check if the property is managed by security property manager
-                         if (fSecurityPropertyMgr == null ||
-                                 !fSecurityPropertyMgr.setValue(name, State.APIPROPERTY, val)) {
-                             //fall back to the existing property manager
-                             domParser.setProperty(name, val);
-                         }
+                     if (!JdkXmlUtils.setProperty(fSecurityManager, fSecurityPropertyMgr, name, val)) {
+                         //fall back to the existing property manager
+                         domParser.setProperty(name, val);
                      }
-
                   }
              }
         }
