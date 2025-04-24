@@ -1291,6 +1291,12 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 
   bool accessible = is_readable_pointer(addr);
 
+  // Check if addr points into the narrow Klass protection zone
+  if (UseCompressedClassPointers && CompressedKlassPointers::is_in_protection_zone(addr)) {
+    st->print_cr(PTR_FORMAT " points into nKlass protection zone", p2i(addr));
+    return;
+  }
+
   // Check if addr is a JNI handle.
   if (align_down((intptr_t)addr, sizeof(intptr_t)) != 0 && accessible) {
     if (JNIHandles::is_global_handle((jobject) addr)) {
@@ -1526,6 +1532,56 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   FREE_C_HEAP_ARRAY(char, base_classes);
 
   return false;
+}
+
+static char* _image_release_file_content = nullptr;
+
+void os::read_image_release_file() {
+  assert(_image_release_file_content == nullptr, "release file content must not be already set");
+  const char* home = Arguments::get_java_home();
+  stringStream ss;
+  ss.print("%s/release", home);
+
+  FILE* file = fopen(ss.base(), "rb");
+  if (file == nullptr) {
+    return;
+  }
+  fseek(file, 0, SEEK_END);
+  long sz = ftell(file);
+  if (sz == -1) {
+    return;
+  }
+  fseek(file, 0, SEEK_SET);
+
+  char* tmp = (char*) os::malloc(sz + 1, mtInternal);
+  if (tmp == nullptr) {
+    fclose(file);
+    return;
+  }
+
+  size_t elements_read = fread(tmp, 1, sz, file);
+  if (elements_read < (size_t)sz) {
+    tmp[elements_read] = '\0';
+  } else {
+    tmp[sz] = '\0';
+  }
+  // issues with \r in line endings on Windows, so better replace those
+  for (size_t i = 0; i < elements_read; i++) {
+    if (tmp[i] == '\r') {
+      tmp[i] = ' ';
+    }
+  }
+  Atomic::release_store(&_image_release_file_content, tmp);
+  fclose(file);
+}
+
+void os::print_image_release_file(outputStream* st) {
+  char* ifrc = Atomic::load_acquire(&_image_release_file_content);
+  if (ifrc != nullptr) {
+    st->print_cr("%s", ifrc);
+  } else {
+    st->print_cr("<release file has not been read>");
+  }
 }
 
 bool os::file_exists(const char* filename) {
@@ -1810,8 +1866,6 @@ int os::create_binary_file(const char* path, bool rewrite_existing) {
   return ::open(path, oflags, S_IREAD | S_IWRITE);
 }
 
-#define trace_page_size_params(size) byte_size_in_exact_unit(size), exact_unit_for_byte_size(size)
-
 void os::trace_page_sizes(const char* str,
                           const size_t region_min_size,
                           const size_t region_max_size,
@@ -1820,17 +1874,17 @@ void os::trace_page_sizes(const char* str,
                           const size_t page_size) {
 
   log_info(pagesize)("%s: "
-                     " min=%zu%s"
-                     " max=%zu%s"
+                     " min=" EXACTFMT
+                     " max=" EXACTFMT
                      " base=" PTR_FORMAT
-                     " size=%zu%s"
-                     " page_size=%zu%s",
+                     " size=" EXACTFMT
+                     " page_size=" EXACTFMT,
                      str,
-                     trace_page_size_params(region_min_size),
-                     trace_page_size_params(region_max_size),
+                     EXACTFMTARGS(region_min_size),
+                     EXACTFMTARGS(region_max_size),
                      p2i(base),
-                     trace_page_size_params(size),
-                     trace_page_size_params(page_size));
+                     EXACTFMTARGS(size),
+                     EXACTFMTARGS(page_size));
 }
 
 void os::trace_page_sizes_for_requested_size(const char* str,
@@ -1841,17 +1895,17 @@ void os::trace_page_sizes_for_requested_size(const char* str,
                                              const size_t page_size) {
 
   log_info(pagesize)("%s:"
-                     " req_size=%zu%s"
-                     " req_page_size=%zu%s"
+                     " req_size=" EXACTFMT
+                     " req_page_size=" EXACTFMT
                      " base=" PTR_FORMAT
-                     " size=%zu%s"
-                     " page_size=%zu%s",
+                     " size=" EXACTFMT
+                     " page_size=" EXACTFMT,
                      str,
-                     trace_page_size_params(requested_size),
-                     trace_page_size_params(requested_page_size),
+                     EXACTFMTARGS(requested_size),
+                     EXACTFMTARGS(requested_page_size),
                      p2i(base),
-                     trace_page_size_params(size),
-                     trace_page_size_params(page_size));
+                     EXACTFMTARGS(size),
+                     EXACTFMTARGS(page_size));
 }
 
 
@@ -2197,6 +2251,11 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
 
+// The scope of NmtVirtualMemoryLocker covers both pd_uncommit_memory and record_virtual_memory_uncommit because
+// these operations must happen atomically to avoid races causing NMT to fall out os sync with the OS reality.
+// We do not have the same lock protection for pd_commit_memory and record_virtual_memory_commit.
+// We assume that there is some external synchronization that prevents a region from being uncommitted
+// before it is finished being committed.
 bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
@@ -2219,6 +2278,11 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   return res;
 }
 
+// The scope of NmtVirtualMemoryLocker covers both pd_release_memory and record_virtual_memory_release because
+// these operations must happen atomically to avoid races causing NMT to fall out os sync with the OS reality.
+// We do not have the same lock protection for pd_reserve_memory and record_virtual_memory_reserve.
+// We assume that there is some external synchronization that prevents a region from being released
+// before it is finished being reserved.
 bool os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
   bool res;
@@ -2531,7 +2595,7 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
       if ((start = strrchr(lib_name, *os::file_separator())) != nullptr) {
         lib_name = ++start;
       }
-#ifdef WINDOWS
+#ifdef _WINDOWS
       else { // Need to check for drive prefix e.g. C:L.dll
         if ((start = strchr(lib_name, ':')) != nullptr) {
           lib_name = ++start;

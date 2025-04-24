@@ -42,7 +42,7 @@
 //------------------------------generate_uncommon_trap_blob--------------------
 // Ought to generate an ideal graph & compile, but here's some ASM
 // instead.
-void OptoRuntime::generate_uncommon_trap_blob() {
+UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // allocate space for the code
   ResourceMark rm;
 
@@ -174,7 +174,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   __ pop(RegisterSet(FP) | RegisterSet(PC));
 
   masm->flush();
-  _uncommon_trap_blob = UncommonTrapBlob::create(&buffer, nullptr, 2 /* LR+FP */);
+  return UncommonTrapBlob::create(&buffer, nullptr, 2 /* LR+FP */);
 }
 
 //------------------------------ generate_exception_blob ---------------------------
@@ -201,7 +201,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
 //
 // Note: the exception pc MUST be at a call (precise debug information)
 //
-void OptoRuntime::generate_exception_blob() {
+ExceptionBlob* OptoRuntime::generate_exception_blob() {
   // allocate space for code
   ResourceMark rm;
 
@@ -283,7 +283,7 @@ void OptoRuntime::generate_exception_blob() {
   // make sure all code is generated
   masm->flush();
 
-  _exception_blob = ExceptionBlob::create(&buffer, oop_maps, framesize_in_words);
+  return ExceptionBlob::create(&buffer, oop_maps, framesize_in_words);
 }
 
 #endif // COMPILER2

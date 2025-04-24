@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,8 +144,8 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
      * Builds the list of contents for the groups of packages appearing in the constants summary page.
      */
     protected void buildContents() {
-        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, Text.of(resources.getText("doclet.Constants_Summary")))
-                .pushNestedList();
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, Text.of(resources.getText("doclet.Constants_Summary")),
+                TableOfContents.Level.FIRST);
         packageGroupHeadings.clear();
         for (PackageElement pkg : configuration.packages) {
             String abbrevPackageName = getAbbrevPackageName(pkg);
@@ -154,7 +154,6 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
                 packageGroupHeadings.add(abbrevPackageName);
             }
         }
-        tableOfContents.popNestedList();
         bodyContents.setSideContent(tableOfContents.toContent(true));
     }
 
@@ -341,9 +340,11 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
 
     void addLinkToTableOfContents(String abbrevPackageName) {
         if (abbrevPackageName.isEmpty()) {
-            tableOfContents.addLink(HtmlIds.UNNAMED_PACKAGE_ANCHOR, contents.defaultPackageLabel);
+            tableOfContents.addLink(HtmlIds.UNNAMED_PACKAGE_ANCHOR, contents.defaultPackageLabel,
+                    TableOfContents.Level.SECOND);
         } else {
-            tableOfContents.addLink(HtmlId.of(abbrevPackageName), Text.of(abbrevPackageName + ".*"));
+            tableOfContents.addLink(HtmlId.of(abbrevPackageName), Text.of(abbrevPackageName + ".*"),
+                    TableOfContents.Level.SECOND);
         }
     }
 

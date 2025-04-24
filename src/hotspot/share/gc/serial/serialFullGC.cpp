@@ -22,8 +22,8 @@
  *
  */
 
-#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -43,11 +43,11 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/fullGCForwarding.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"

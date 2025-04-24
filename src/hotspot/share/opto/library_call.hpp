@@ -202,7 +202,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_string_getCharsU();
   bool inline_string_copy(bool compress);
   bool inline_string_char_access(bool is_store);
-  Node* round_double_node(Node* n);
   bool runtime_math(const TypeFunc* call_type, address funcAddr, const char* funcName);
   bool inline_math_native(vmIntrinsics::ID id);
   bool inline_math(vmIntrinsics::ID id);
@@ -210,7 +209,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_pow();
   template <typename OverflowOp>
   bool inline_math_overflow(Node* arg1, Node* arg2);
-  void inline_math_mathExact(Node* math, Node* test);
+  bool inline_math_mathExact(Node* math, Node* test);
   bool inline_math_addExactI(bool is_increment);
   bool inline_math_addExactL(bool is_increment);
   bool inline_math_multiplyExactI();
@@ -315,6 +314,13 @@ class LibraryCallKit : public GraphKit {
   Node* get_key_start_from_aescrypt_object(Node* aescrypt_object);
   bool inline_ghash_processBlocks();
   bool inline_chacha20Block();
+  bool inline_kyberNtt();
+  bool inline_kyberInverseNtt();
+  bool inline_kyberNttMult();
+  bool inline_kyberAddPoly_2();
+  bool inline_kyberAddPoly_3();
+  bool inline_kyber12To16();
+  bool inline_kyberBarrettReduce();
   bool inline_dilithiumAlmostNtt();
   bool inline_dilithiumAlmostInverseNtt();
   bool inline_dilithiumNttMult();

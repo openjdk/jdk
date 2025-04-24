@@ -137,11 +137,11 @@ public class CheckStylesheetClasses {
         removeAll(styleSheetNames, "borderless", "plain", "striped");
 
         // used in search.js and search-page.js; may be worth documenting in HtmlStyle
-        removeAll(styleSheetNames, "result-highlight", "result-item", "anchor-link",
-                "search-tag-desc-result", "search-tag-holder-result", "page-search-header",
-                "ui-autocomplete", "ui-autocomplete-category", "ui-state-active", "ui-menu",
-                "ui-menu-item-wrapper", "ui-static-link", "expanded", "search-result-link",
-                "two-column-search-results", "sort-asc", "sort-desc", "visible");
+        removeAll(styleSheetNames, "result-highlight", "result-item", "anchor-link", "expanded",
+                "page-search-header", "result-table", "ui-autocomplete", "ui-autocomplete-category",
+                "ui-state-active", "ui-menu", "ui-menu-item-wrapper", "ui-static-link",
+                "search-result-desc", "search-result-label", "search-result-link", "selected",
+                "sort-asc", "sort-desc", "two-column-search-results", "visible");
 
         // very JDK specific
         styleSheetNames.remove("module-graph");

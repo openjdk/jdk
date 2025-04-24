@@ -413,7 +413,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
   }
 }
 
-void VirtualMemoryTracker::set_reserved_region_tag(address addr, MemTag mem_tag) {
+void VirtualMemoryTracker::set_reserved_region_type(address addr, size_t size, MemTag mem_tag) {
   assert(addr != nullptr, "Invalid address");
   assert(_reserved_regions != nullptr, "Sanity check");
   MemTracker::assert_locked();

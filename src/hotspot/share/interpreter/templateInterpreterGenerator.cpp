@@ -232,11 +232,6 @@ void TemplateInterpreterGenerator::generate_all() {
   native_method_entry(java_util_zip_CRC32_updateBytes)
   native_method_entry(java_util_zip_CRC32_updateByteBuffer)
 
-  native_method_entry(java_lang_Float_intBitsToFloat)
-  native_method_entry(java_lang_Float_floatToRawIntBits)
-  native_method_entry(java_lang_Double_longBitsToDouble)
-  native_method_entry(java_lang_Double_doubleToRawLongBits)
-
 #undef native_method_entry
 
   // Bytecodes
@@ -376,7 +371,6 @@ void TemplateInterpreterGenerator::generate_and_dispatch(Template* t, TosState t
   if (PrintBytecodePairHistogram)                                histogram_bytecode_pair(t);
   if (TraceBytecodes)                                            trace_bytecode(t);
   if (StopInterpreterAt > 0)                                     stop_interpreter_at();
-  __ verify_FPU(1, t->tos_in());
 #endif // !PRODUCT
   int step = 0;
   if (!t->does_dispatch()) {
@@ -487,17 +481,6 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : entry_point = generate_Float_float16ToFloat_entry(); break;
   case Interpreter::java_lang_Float_floatToFloat16
                                            : entry_point = generate_Float_floatToFloat16_entry(); break;
-
-  // On x86_32 platforms, a special entry is generated for the following four methods.
-  // On other platforms the native entry is used to enter these methods.
-  case Interpreter::java_lang_Float_intBitsToFloat
-                                           : entry_point = generate_Float_intBitsToFloat_entry(); break;
-  case Interpreter::java_lang_Float_floatToRawIntBits
-                                           : entry_point = generate_Float_floatToRawIntBits_entry(); break;
-  case Interpreter::java_lang_Double_longBitsToDouble
-                                           : entry_point = generate_Double_longBitsToDouble_entry(); break;
-  case Interpreter::java_lang_Double_doubleToRawLongBits
-                                           : entry_point = generate_Double_doubleToRawLongBits_entry(); break;
   default:
     fatal("unexpected intrinsic method kind: %d", kind);
     break;

@@ -52,8 +52,7 @@ public final class ArenaImpl implements Arena, NoInitSegmentAllocator {
     @ForceInline
     @Override
     public NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
-        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
-        return SegmentFactories.allocateSegment(byteSize, byteAlignment, session, shouldReserveMemory);
+        return SegmentFactories.allocateNativeSegment(byteSize, byteAlignment, session, shouldReserveMemory, false);
     }
 
     @ForceInline
