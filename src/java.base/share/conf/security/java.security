@@ -1294,9 +1294,10 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 #
 # The categories are:
 #
-#  socket   - IOExceptions thrown by java.net.Socket and the socket types in the
-#             java.nio.channels package will contain enhanced exception
-#             message information
+#  socket   - IOExceptions thrown by the java.net socket types (for example, Socket,
+#             ServerSocket, DatagramSocket) and the NetworkChannel types in the
+#             java.nio.channels package will contain enhanced exception message
+#             information
 #
 #  addressLookup - UnknownHostExceptions and other exceptions thrown by the
 #             java.net.InetAddress class
