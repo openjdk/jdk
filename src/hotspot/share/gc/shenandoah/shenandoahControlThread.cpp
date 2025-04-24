@@ -23,6 +23,8 @@
  *
  */
 
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
@@ -34,11 +36,9 @@
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "logging/log.hpp"
-#include "memory/metaspaceUtils.hpp"
 #include "memory/metaspaceStats.hpp"
+#include "memory/metaspaceUtils.hpp"
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ShenandoahController(),
