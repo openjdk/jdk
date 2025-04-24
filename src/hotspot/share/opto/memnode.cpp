@@ -5891,7 +5891,7 @@ Node* MergeMemNode::memory_at(uint alias_idx) const {
            || n->adr_type() == nullptr // address is TOP
            || n->adr_type() == TypePtr::BOTTOM
            || n->adr_type() == TypeRawPtr::BOTTOM
-           || n->Opcode() == Op_NarrowMemProj
+           || n->is_NarrowMemProj()
            || !Compile::current()->do_aliasing(),
            "must be a wide memory");
     // do_aliasing == false if we are organizing the memory states manually.

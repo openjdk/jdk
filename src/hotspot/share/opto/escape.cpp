@@ -4120,10 +4120,9 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       }
       result = result->in(MemNode::Memory);
     }
-    if (!is_instance && result->Opcode() == Op_NarrowMemProj) {
+    if (!is_instance && result->is_NarrowMemProj()) {
       // Memory for non known instance can safely skip over a known instance allocation (that memory state doesn't access
       // the result of an allocation for a known instance).
-      assert(result->as_Proj()->_con == TypeFunc::Memory, "a NarrowMemProj can only be a memory projection");
       assert(toop != nullptr, "");
       Node* proj_in = result->in(0);
       if (proj_in->is_Initialize()) {
@@ -4456,15 +4455,15 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         InitializeNode* init = alloc->as_Allocate()->initialization();
         assert(init != nullptr, "can't find Initialization node for this Allocate node");
         for (DUIterator_Fast imax, i = init->fast_outs(imax); i < imax; i++) {
-          ProjNode* proj = init->fast_out(i)->as_Proj();
-          if (proj->Opcode() == Op_NarrowMemProj) {
+          NarrowMemProjNode* proj = init->fast_out(i)->as_Proj()->isa_NarrowMemProj();
+          if (proj != nullptr) {
             const TypePtr* adr_type = proj->adr_type();
             const TypePtr* new_adr_type = tinst->add_offset(adr_type->offset());
             if (adr_type != new_adr_type) {
               DEBUG_ONLY( uint alias_idx = _compile->get_alias_index(new_adr_type); )
               assert(_compile->get_general_index(alias_idx) == _compile->get_alias_index(adr_type), "new adr type should be narrowed down from existing adr type");
               igvn->hash_delete(proj);
-              ((NarrowMemProjNode*)proj)->set_adr_type(new_adr_type);
+              proj->set_adr_type(new_adr_type);
               igvn->hash_insert(proj);
               record_for_optimizer(proj);
             }
@@ -4873,7 +4872,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         }
         mem = mem->in(MemNode::Memory);
       }
-      if (mem->Opcode() == Op_NarrowMemProj) {
+      if (mem->is_NarrowMemProj()) {
         const TypePtr* at = mem->adr_type();
         uint alias_idx = (uint) _compile->get_alias_index(at->is_ptr());
         if (alias_idx == i) {

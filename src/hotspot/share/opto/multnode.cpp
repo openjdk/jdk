@@ -226,3 +226,27 @@ ProjNode* ProjNode::other_if_proj() const {
   assert(_con == 0 || _con == 1, "not an if?");
   return in(0)->as_If()->proj_out(1-_con);
 }
+
+#ifndef PRODUCT
+void NarrowMemProjNode::dump_adr_type(outputStream* st) const {
+  st->print(" @"); _adr_type->dump_on(st);
+  Compile* C = Compile::current();
+  Compile::AliasType* atp = C->alias_type(_adr_type);
+  ciField* field = atp->field();
+  if (field) {
+    st->print(", name=");
+    field->print_name_on(st);
+  }
+  st->print(", idx=%d;", atp->index());
+}
+
+void NarrowMemProjNode::dump_spec(outputStream *st) const {
+  ProjNode::dump_spec(st);
+  dump_adr_type(st);
+}
+
+void NarrowMemProjNode::dump_compact_spec(outputStream *st) const {
+  ProjNode::dump_compact_spec(st);
+  dump_adr_type(st);
+}
+#endif

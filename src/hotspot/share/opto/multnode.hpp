@@ -121,8 +121,9 @@ protected:
     return sizeof(*this);
   }
 public:
-  NarrowMemProjNode(Node* src, uint con, const TypePtr* adr_type)
-    : ProjNode(src, con), _adr_type(adr_type) {
+  NarrowMemProjNode(Node* src, const TypePtr* adr_type)
+    : ProjNode(src, TypeFunc::Memory), _adr_type(adr_type) {
+    init_class_id(Class_NarrowMemProj);
   }
 
   virtual const TypePtr* adr_type() const {
@@ -132,6 +133,12 @@ public:
     _adr_type = adr_type;
   }
   virtual int Opcode() const;
+
+#ifndef PRODUCT
+  void dump_adr_type(outputStream* st) const;
+  virtual void dump_spec(outputStream *st) const;
+  virtual void dump_compact_spec(outputStream *st) const;
+#endif
 };
 
 #endif // SHARE_OPTO_MULTNODE_HPP
