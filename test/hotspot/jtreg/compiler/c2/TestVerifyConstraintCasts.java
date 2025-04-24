@@ -25,7 +25,7 @@
  * @test
  * @bug 8346836
  * @requires vm.debug == true & vm.flavor == "server"
- * @summary Run with -Xcomp to test -XX:+StressGCM -XX:VerifyConstraintCasts=1 in debug builds.
+ * @summary Empty main program to run with flag VerifyConstraintCasts.
  *
  * @run main/othervm/timeout=300 -Xbatch -Xcomp -XX:+StressGCM -XX:VerifyConstraintCasts=1 compiler.c2.TestVerifyConstraintCasts
  * @run main/othervm/timeout=300 -Xbatch -Xcomp -XX:+StressGCM -XX:VerifyConstraintCasts=2 compiler.c2.TestVerifyConstraintCasts
