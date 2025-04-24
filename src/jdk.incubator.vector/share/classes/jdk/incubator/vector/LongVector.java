@@ -2976,8 +2976,8 @@ public abstract class LongVector extends AbstractVector<Long> {
 
         return VectorSupport.loadWithMap(
             vectorType, null, long.class, vsp.laneCount(),
-            isp.vectorType(),
-            a, ARRAY_BASE, vix, null,
+            isp.vectorType(), isp.length(),
+            a, ARRAY_BASE, vix, null, null, null, null,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(n -> c[idx + iMap[idy+n]]));
@@ -3267,7 +3267,7 @@ public abstract class LongVector extends AbstractVector<Long> {
 
         VectorSupport.storeWithMap(
             vsp.vectorType(), null, vsp.elementType(), vsp.laneCount(),
-            isp.vectorType(),
+            isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, null,
             a, offset, indexMap, mapOffset,
@@ -3462,8 +3462,8 @@ public abstract class LongVector extends AbstractVector<Long> {
 
         return VectorSupport.loadWithMap(
             vectorType, maskClass, long.class, vsp.laneCount(),
-            isp.vectorType(),
-            a, ARRAY_BASE, vix, m,
+            isp.vectorType(), isp.length(),
+            a, ARRAY_BASE, vix, null, null, null, m,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(vm, n -> c[idx + iMap[idy+n]]));
@@ -3578,7 +3578,7 @@ public abstract class LongVector extends AbstractVector<Long> {
 
         VectorSupport.storeWithMap(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            isp.vectorType(),
+            isp.vectorType(), isp.length(),
             a, arrayAddress(a, 0), vix,
             this, m,
             a, offset, indexMap, mapOffset,
