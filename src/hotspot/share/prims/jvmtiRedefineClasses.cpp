@@ -1642,7 +1642,7 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
 
   // merge_cp_len should be the same as old_cp->length() at this point
   // so this trace message is really a "warm-and-breathing" message.
-  log_debug(redefine, class, constantpool)("after pass 0: merge_cp_len=%d", *merge_cp_length_p);
+  log_debug(redefine, class, constantpool)("after pass 0: merge_cp_len=%d", merge_cp_length_p);
 
   int scratch_i;  // index into scratch_cp
   {
