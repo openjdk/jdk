@@ -53,7 +53,7 @@ public class UNCTest {
         }
 
         // File URL for the UNC path
-        URL url = new URI("file:" + path.replace('\\', '/')).toURL();
+        URL url = new URI("file://" + hostName + "/C$/Windows").toURL();
 
         // Should return an UNCFileURLConnection
         URLConnection conn = url.openConnection();
