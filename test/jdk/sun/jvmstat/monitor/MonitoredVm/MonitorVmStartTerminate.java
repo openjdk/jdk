@@ -204,7 +204,10 @@ public final class MonitorVmStartTerminate {
                 } catch (MonitorException e) {
                     // Process probably not running or not ours, e.g.
                     // sun.jvmstat.monitor.MonitorException: Could not attach to PID
-                    System.out.println("hasMainArgs(" + id + "): " + e);
+                    // Only log if something else, to avoid filling log:
+                    if (!e.getMessage().contains("Could not attach")) {
+                        System.out.println("hasMainArgs(" + id + "): " + e);
+                    }
                 }
             }
             return false;
