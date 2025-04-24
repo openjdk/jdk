@@ -43,51 +43,55 @@ public class ComboPopupBug {
     private static JFrame frame;
     private static JButton closeButton;
     private static JComboBox<String> comboBox;
-    private static Point comboBoxLocation;
-    private static Dimension comboBoxSize;
     private static Robot robot;
     private static final int PADDING = 10;
 
     public static void main(String[] args) throws Exception {
-        robot = new Robot();
-        SwingUtilities.invokeAndWait(() -> {
-            frame = new JFrame("ComboPopup");
-
-            comboBox = new JComboBox<>();
-            comboBox.setEditable(true);
-            comboBox.addItem("test");
-            comboBox.addItem("test2");
-            comboBox.addItem("test3");
-
-            closeButton = new JButton("Close");
-            closeButton.addActionListener((e) -> {
-                clickComboBox();
-                frame.setVisible(false);
-            });
-
-            frame.getContentPane().add(comboBox, "North");
-            frame.getContentPane().add(closeButton, "South");
-            frame.setSize(200, 200);
-            frame.setVisible(true);
-        });
-
-        robot.waitForIdle();
-        robot.delay(1000);
-
         try {
+            robot = new Robot();
+            robot.setAutoDelay(50);
+
+            SwingUtilities.invokeAndWait(ComboPopupBug::createUI);
+
+            robot.waitForIdle();
+            robot.delay(1000);
+
             SwingUtilities.invokeAndWait(() -> closeButton.doClick());
         } finally {
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
+            if (frame != null) {
+                SwingUtilities.invokeAndWait(() -> frame.dispose());
+            }
         }
     }
 
     private static void clickComboBox() {
-        comboBoxLocation = comboBox.getLocationOnScreen();
-        comboBoxSize = comboBox.getSize();
+        Point comboBoxLocation = comboBox.getLocationOnScreen();
+        Dimension comboBoxSize = comboBox.getSize();
 
         robot.mouseMove(comboBoxLocation.x + comboBoxSize.width - PADDING,
                 comboBoxLocation.y + comboBoxSize.height / 2);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+    }
+
+    private static void createUI() {
+        frame = new JFrame("ComboPopup");
+
+        comboBox = new JComboBox<>();
+        comboBox.setEditable(true);
+        comboBox.addItem("test");
+        comboBox.addItem("test2");
+        comboBox.addItem("test3");
+
+        closeButton = new JButton("Close");
+        closeButton.addActionListener((e) -> {
+            clickComboBox();
+            frame.setVisible(false);
+        });
+
+        frame.getContentPane().add(comboBox, "North");
+        frame.getContentPane().add(closeButton, "South");
+        frame.setSize(200, 200);
+        frame.setVisible(true);
     }
 }
