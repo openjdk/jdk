@@ -90,7 +90,7 @@ static void* raw_realloc(void* old, size_t s)   { ALLOW_C_FUNCTION(::realloc, re
 
 #define NMT_HEADER_SIZE 16
 
-Mutex* NMT_LogRecorder::_lock = nullptr;
+Mutex* NMT_LogRecorder::_lock = new MutexLocker();
 NMT_MemoryLogRecorder NMT_MemoryLogRecorder::_recorder;
 NMT_VirtualMemoryLogRecorder NMT_VirtualMemoryLogRecorder::_recorder;
 
