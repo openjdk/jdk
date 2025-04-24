@@ -22,6 +22,7 @@
  *
  */
 
+#include "memory/resourceArea.hpp"
 #include "oops/fieldInfo.inline.hpp"
 #include "runtime/atomic.hpp"
 
