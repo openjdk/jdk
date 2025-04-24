@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,40 +251,27 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
     void checkServerTrusted(X509Certificate[] chain, String authType,
             QuicTLSEngineImpl quicTLSEngine) throws CertificateException {
-        // TODO: review the necessity of using ExtendedSSLSession for
-        // algorithm constraints
-//        if (isExtSession &&
-//                ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-//            ExtendedSSLSession extSession = (ExtendedSSLSession)session;
-//            String[] localSupportedSignAlgs =
-//                    extSession.getLocalSupportedSignatureAlgorithms();
-//
-//            constraints = SSLAlgorithmConstraints.forEngine(
-//                    engine, localSupportedSignAlgs, false);
-//        } else {
-//            constraints = SSLAlgorithmConstraints.forEngine(engine, false);
-//        }
-
-        // TODO: review if any of this is needed/applicable for QUIC TLS
-        // Grab any stapled OCSP responses for use in validation
-        // SSLSession session;
-        // try {
-        //      session = quicTLSEngine.getHandshakeSession();
-        // } catch (IllegalStateException ise) {
-        //      throw new CertificateException("No handshake session");
-        // }
-        // boolean isExtSession = (session instanceof ExtendedSSLSession);
-        // List<byte[]> responseList = Collections.emptyList();
-        // if (isExtSession) {
-        //  responseList = ((ExtendedSSLSession)session).getStatusResponses();
-        // }
-
-        SSLParameters sslParameters = quicTLSEngine.getSSLParameters();
-        Validator v = checkTrustedInit(chain, authType, false);
-        X509Certificate[] trustedChain = v.validate(chain, null,
-                Collections.emptyList(),
-                sslParameters.getAlgorithmConstraints(), authType);
-        SSLSession handshakeSession = quicTLSEngine.getHandshakeSession();
+        final SSLSession handshakeSession = quicTLSEngine.getHandshakeSession();
+        final List<byte[]> responseList;
+        final AlgorithmConstraints constraints;
+        // determine the AlgorithmConstraints and the OCSP responses
+        // to be applied when validating the certificate chain
+        if (handshakeSession instanceof ExtendedSSLSession extSession) {
+            final String[] localSupportedSignAlgs =
+                    extSession.getLocalSupportedSignatureAlgorithms();
+            constraints = SSLAlgorithmConstraints.forQUIC(
+                    quicTLSEngine, localSupportedSignAlgs, false);
+            // grab any stapled OCSP responses for use in validation
+            responseList = extSession.getStatusResponses();
+        } else {
+            constraints = SSLAlgorithmConstraints.forQUIC(quicTLSEngine, false);
+            responseList = Collections.emptyList();
+        }
+        final SSLParameters sslParameters = quicTLSEngine.getSSLParameters();
+        final Validator v = checkTrustedInit(chain, authType, false);
+        // do the certificate chain validation
+        final X509Certificate[] trustedChain = v.validate(chain, null,
+                responseList, constraints, authType);
         if (sslParameters != null && handshakeSession != null) {
             // check endpoint identity
             String identityAlg =

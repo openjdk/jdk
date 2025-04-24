@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
+import java.security.AlgorithmConstraints;
 import java.security.GeneralSecurityException;
 import java.util.HashSet;
 import java.util.List;
@@ -201,6 +202,20 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
         return handshakeContext == null
                 ? null
                 : handshakeContext.handshakeSession;
+    }
+
+    /**
+     * {@return the {@link AlgorithmConstraints} that are applicable for this engine,
+     * or null if none are applicable}
+     */
+    AlgorithmConstraints getAlgorithmConstraints() {
+        final HandshakeContext handshakeContext = conContext.handshakeContext;
+        // if we are handshaking then use the handshake context
+        // to determine the constraints, else use the configured
+        // SSLParameters
+        return handshakeContext == null
+                ? getSSLParameters().getAlgorithmConstraints()
+                : handshakeContext.sslConfig.userSpecifiedAlgorithmConstraints;
     }
 
     @Override
