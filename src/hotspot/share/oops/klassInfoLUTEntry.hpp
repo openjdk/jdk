@@ -38,38 +38,93 @@ class oopDesc;
 class OopMapBlock;
 class outputStream;
 
-//                                     msb                                       lsb
+// A Klass Info Lookup Table Entry (klute) is a 32-bit value carrying, in a very condensed form, some of the most
+// important information about a Klass.
 //
-// invalid_entry (debug zap):             1111 1111 1111 1111 1111 1111 1111 1111  (relies on ClassKind == 0b111 == 7 being invalid)
+// It carries the following information:
+// - The Klass kind
+// - The ClassLoaderData association (if the Klass belongs to one of the three permanent CLDs - boot, system, app)
 //
-// All valid entries:                     KKKL L... .... .... .... .... .... ....
+// - For InstanceKlass klasses, it may carry more information iff the object satisfies the following conditions:
+//   - its size, in words, is less than 64 heap words (512 bytes)
+//   - it has less than three oop map entries, and these oop map entries are within certain limits for position and count
+// - in that case, the klute carries the object size information and information for both entries.
 //
-// InstanceKlass:                         KKKL LSSS SSSO OOOO CCCC CCOO OOCC CCCC
-//                                                     2 2222 2222 2211 1111 1111
-// InstanceKlass, has_no_addinfo:         KKKL L000 0000 0000 0000 0000 0000 0000  (all IK specific bits 0) (note: means that "0" is a valid IK entry with no add. info)
-// InstanceKlass, has no oopmap entries:  KKKL LSSS SSS. .... .... .... 0000 0000  (omb count bits are 0)   (only valid if !has_no_addinfo)
+// - For ArrayKlass klasses, it carries parts of the layout helper needed to calculate the object size.
 //
-// ArrayKlass:                            KKKL L--- ---- ---- ---- ---- -eeh hhhh
+// ----------------- Common bits ---------------------------------
+//
+// These bits are always populated.
+//
+// Bit    31          27          23          19          15          11          7           3        0
+//        K  K  K  L  L  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+//        \     /  \ /
+//         -----    -
+//         kind     loader
+//
+// K (3 bits): The Klass kind. Note that 0b111 = 7 is not a valid KlassKind, and therefore used (see below) to designate an invalid klute).
+// L (2 bits): Whether the Klass is associated with one of the three permanent CLDs:
+//             '0' unknown CLD, '1' boot loader CLD, '2' system loader CLD, '3' platform loader CLD
 //
 //
-// IK specific bits:
-// C1 : Count of first OMB                        (6 bits)
-// O1 : Offset, in number-of-oops, of first OMB   (4 bits)
-// C2 : Count of second OMB                       (6 bits)
-// O2 : Offset, in number-of-oops, of second OMB  (5 bits)
-// S  : Object instance size in words             (6 bits)
+// ----------------- InstanceKlass encoding ----------------------
 //
-// AK specific bits:
-// h : header size                                (5 bits)
-// e : log2 element size                          (2 bits)
+// Bit    31          27          23          19          15          11          7           3        0
+//        K  K  K  L  L  S  S  S  S  S  O2 O2 O2 O2 O2 C2 C2 C2 C2 C2 C2 C2 O1 O1 O1 O1 C1 C1 C1 C1 C1 C1
+//                       \           /  \                                 / \                          /
+//                        -----------    ---------------------------------   --------------------------
+//                         obj size        offset, count for oop map 2        offset, count for oop map 1
 //
-// Common bits:
-// L : Loader                                     (2 bits)
-//    (0 unknown, 1 boot loader,
-//     2 system loader, 3 platform loader)
-// K : KlassKind                                  (3 bits)
+// C1 (6 bits): Count of first Oop Map Entry
+// O1 (4 bits): Offset, in number-of-(oop|narrowOop), of second Oop Map Entry
+// C2 (6 bits): Count of first Oop Map Entry
+// O2 (5 bits): Offset, in number-of-(oop|narrowOop), of second Oop Map Entry
+// S  (5 bits): Object instance size in heap words
 //
-// - : unused
+// If the InstanceKlass cannot be represented by this scheme (instance size too large, too many or too large oop map entries), then
+// the IK-specific bits are all zero'd out (this is rare):
+//
+// Bit    31          27          23          19          15          11          7           3        0
+//        K  K  K  L  L  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+//
+//
+// ----------------- ArrayKlass encoding -------------------------
+//
+// Bit   31          27          23          19          15          11          7           3        0
+//       K  K  K  L  L  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  E  E  H  H  H  H  H
+//                      \                                                        /  \ /   \           /
+//                       --------------------------------------------------------    -     -----------
+//                                                (unused)                          elem      header
+//                                                                                  size      size
+//
+// H (5 bits): header size, in bytes (same as layouthelper header size)
+// E (2 bits): log2 elem size, in bytes
+//
+//
+// ----------------- Invalid Klute encoding -------------------------
+//
+// A klute that has all bits set (1) is invalid:
+//
+// Bit   31          27          23          19          15          11          7           3        0
+//       1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1
+//
+// It is the KLUT table entry initialization value (KLUT is zapped with '-1' on startup).
+//
+// The "invalid" has two different uses:
+// - if CDS is disabled at build time, it simply designates an invalid entry that should never be encountered
+//   at runtime. In other words, when doing a lookup with a narrowKlass value into the KLUT table, one should
+//   always find a valid klute, since a narrowKlass value can only result from a Klass that was loaded, and as
+//   part of Klass creation, the klute table entry is created.
+//
+// - if CDS is enabled at build time: unfortunately, CDS maps in archived Klass structures into memory and these
+//   Klass structures never go through a normal loading process; they just appear and then they are just there.
+//   These may be accessed via narrowKlass values that are the result of a precalculation during CDS archive dump
+//   time.
+//   in that case, an "invalid_entry" can mean a Klass that was loaded from CDS archive and for that no table
+//   entry in the KLUT exists yet. If we encounter such an entry, we generate it on the fly (see KlassInfoLUT::late_register_klass()).
+//
+// Implementation note: the value -1 (all bits 1) relies on the fact that a KlassKind of 7 (0b111) is invalid. We
+// don't use zero as "invalid entry" since zero would encode a valid Klass.
 
 class KlassLUTEntry {
 
