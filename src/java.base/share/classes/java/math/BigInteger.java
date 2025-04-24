@@ -2702,6 +2702,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // This allows to use fp arithmetic where possible.
         final int maxExp = Math.max(2, Double.PRECISION / bitLengthForInt(x));
         final int maxExpLen = bitLengthForInt(maxExp);
+        final BigInteger[] powerCache = new BigInteger[1 << maxExpLen];
 
         final int nZeros = Integer.numberOfLeadingZeros(n);
         n <<= nZeros;
@@ -2719,20 +2720,28 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             // add exp to power's exponent
             int exp = n >>> -blockLen;
             if (exp > 0) {
-                // adjust exp to fit x^expAdj into a double
-                int expAdj = exp <= maxExp ? exp : exp >>> 1;
+                BigInteger xToExp = powerCache[exp];
+                if (xToExp == null) {
+                    // adjust exp to fit x^expAdj into a double
+                    int expAdj = exp <= maxExp ? exp : exp >>> 1;
 
-                long xLong = x & LONG_MASK;
-                // don't use fp arithmetic if expAdj <= 2
-                long xToExpAdj = expAdj == 1 ? xLong :
-                                (expAdj == 2 ? xLong*xLong : (long) Math.pow(xLong, expAdj));
+                    long xLong = x & LONG_MASK;
+                    // don't use fp arithmetic if expAdj <= 2
+                    long xToExpAdj = expAdj == 1 ? xLong :
+                                    (expAdj == 2 ? xLong*xLong : (long) Math.pow(xLong, expAdj));
 
-                // append exp's rightmost bit to expAdj
-                BigInteger xToExp = new BigInteger(1, new int[] { (int) (xToExpAdj >>> 32), (int) xToExpAdj });
-                if (expAdj != exp) {
-                    xToExp = xToExp.multiply(xToExp);
-                    if ((exp & 1) == 1)
-                        xToExp = xToExp.multiply(xLong);
+                    xToExp = new BigInteger(1, new int[] { (int) (xToExpAdj >>> 32), (int) xToExpAdj });
+                    powerCache[expAdj] = xToExp;
+                    // append exp's rightmost bit to expAdj
+                    if (expAdj != exp) {
+                        xToExp = xToExp.multiply(xToExp);
+                        powerCache[expAdj << 1] = xToExp;
+
+                        if ((exp & 1) == 1) {
+                            xToExp = xToExp.multiply(xLong);
+                            powerCache[exp] = xToExp;
+                        }
+                    }
                 }
                 pow = pow.multiply(xToExp);
             }
@@ -2752,6 +2761,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // This allows to use fp arithmetic where possible.
         final int maxExp = Math.max(3, Double.PRECISION / bitLengthForLong(x));
         final int maxExpLen = bitLengthForInt(maxExp);
+        final long[] powerCache = new long[1 << maxExpLen];
 
         final int nZeros = Integer.numberOfLeadingZeros(n);
         n <<= nZeros;
@@ -2769,19 +2779,27 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             // add exp to power's exponent
             int exp = n >>> -blockLen;
             if (exp > 0) {
-                // adjust exp to fit x^expAdj into a double
-                int expAdj = exp <= maxExp ? exp : exp >>> 1;
+                long xToExp = powerCache[exp];
+                if (xToExp == 0) {
+                    // adjust exp to fit x^expAdj into a double
+                    int expAdj = exp <= maxExp ? exp : exp >>> 1;
 
-                // don't use fp arithmetic if expAdj <= 3
-                long xToExp = expAdj == 1 ? x :
-                             (expAdj == 2 ? x*x :
-                             (expAdj == 3 ? x*x*x : (long) Math.pow(x, expAdj)));
+                    // don't use fp arithmetic if expAdj <= 3
+                    xToExp = expAdj == 1 ? x :
+                            (expAdj == 2 ? x*x :
+                            (expAdj == 3 ? x*x*x : (long) Math.pow(x, expAdj)));
+                    powerCache[expAdj] = xToExp;
 
-                // append exp's rightmost bit to expAdj
-                if (expAdj != exp) {
-                    xToExp *= xToExp;
-                    if ((exp & 1) == 1)
-                        xToExp *= x;
+                    // append exp's rightmost bit to expAdj
+                    if (expAdj != exp) {
+                        xToExp *= xToExp;
+                        powerCache[expAdj << 1] = xToExp;
+
+                        if ((exp & 1) == 1) {
+                            xToExp *= x;
+                            powerCache[exp] = xToExp;
+                        }
+                    }
                 }
                 pow *= xToExp;
             }
