@@ -183,8 +183,14 @@ public class TestMergeLoads {
 
         // Load value is not masked
         testGroups.put("test13", new HashMap<String,TestFunction>());
-        testGroups.get("test13").put("test13R", (_,_) -> { return test12R(aB.clone()); });
-        testGroups.get("test13").put("test13a", (_,_) -> { return test12a(aB.clone()); });
+        testGroups.get("test13").put("test13R", (_,_) -> { return test13R(aB.clone()); });
+        testGroups.get("test13").put("test13a", (_,_) -> { return test13a(aB.clone()); });
+
+        // Merged value is combined with other operator
+        testGroups.put("test14", new HashMap<String,TestFunction>());
+        testGroups.get("test14").put("test14R", (_,_) -> { return test14R(aS.clone()); });
+        testGroups.get("test14").put("test14a", (_,_) -> { return test14a(aS.clone()); });
+        testGroups.get("test14").put("test14b", (_,_) -> { return test14b(aS.clone()); });
 
         // Mix different loads
         testGroups.put("test100", new HashMap<String,TestFunction>());
@@ -273,6 +279,9 @@ public class TestMergeLoads {
                  "test12a",
 
                  "test13a",
+
+                 "test14a",
+                 "test14b",
 
                  "test100a",
                 })
@@ -1780,6 +1789,73 @@ public class TestMergeLoads {
       return new long[] {i1, aB[7]};
     }
 
+    /**
+     * Group 14: merged value is combined with other opeartor
+     */
+    @DontCompile
+    static long[] test14R(short[] a) {
+      /* only one group which access array in platform order can be merged */
+      long i1 = (((long)(a[0] & 0xffff)) << 48)|
+                (((long)(a[1] & 0xffff)) << 32)|
+                (((long)(a[2] & 0xffff)) << 16)|
+                 ((long)(a[3] & 0xffff))       |
+                 ((long)(a[4] & 0xffff));
+      long i2 =  ((long)(a[5] & 0xffff))       |
+                (((long)(a[6] & 0xffff)) << 16)|
+                (((long)(a[7] & 0xffff)) << 32)|
+                (((long)(a[8] & 0xffff)) << 48)|
+                (((long)(a[9] & 0xffff)));
+      return new long[] {i1 | i2};
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "6",
+          IRNode.LOAD_I_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static long[] test14a(short[] a) {
+      /* only one group which access array in platform order can be merged */
+      long i1 = (((long)(a[0] & 0xffff)) << 48)|
+                (((long)(a[1] & 0xffff)) << 32)|
+                (((long)(a[2] & 0xffff)) << 16)|
+                 ((long)(a[3] & 0xffff))       |
+                 ((long)(a[4] & 0xffff));
+      long i2 =  ((long)(a[5] & 0xffff))       |
+                (((long)(a[6] & 0xffff)) << 16)|
+                (((long)(a[7] & 0xffff)) << 32)|
+                (((long)(a[8] & 0xffff)) << 48)|
+                (((long)(a[9] & 0xffff)));
+      return new long[] {i1 | i2};
+    }
+
+    @Test
+    @IR(counts = {
+          IRNode.LOAD_B_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_UB_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_S_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_US_OF_CLASS, "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "6",
+          IRNode.LOAD_I_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+          IRNode.LOAD_L_OF_CLASS,  "short\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1",
+        },
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static long[] test14b(short[] a) {
+      /* only one group which access array in platform order can be merged */
+      long i1 = (((long)(a[0] & 0xffff)) << 48)|
+                (((long)(a[1] & 0xffff)) << 32)|
+                (((long)(a[2] & 0xffff)) << 16)|
+                 ((long)(a[3] & 0xffff));
+      long i2 =  ((long)(a[5] & 0xffff))       |
+                (((long)(a[6] & 0xffff)) << 16)|
+                (((long)(a[7] & 0xffff)) << 32)|
+                (((long)(a[8] & 0xffff)) << 48);
+      long i3 =  ((long)(a[4] & 0xffff)) | ((long)(a[9] & 0xffff));
+      return new long[] {i1 | i2 |i3};
+    }
     /**
      * Group 100: Mix different patterns
      */

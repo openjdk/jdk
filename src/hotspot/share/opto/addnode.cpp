@@ -846,14 +846,14 @@ class MergePrimitiveLoads : public StackObj {
 
 private:
   PhaseGVN* const      _phase;
-  Node*     const    _combine;
+  AddNode*  const    _combine;
   MemoryAdjacentStatus _order;
   bool _require_reverse_bytes;    // Do we need to add a ReverseBytes for merged load
 
   NOT_PRODUCT( const CHeapBitMap &_trace_tags; )
 
 public:
-  MergePrimitiveLoads(PhaseGVN* phase, Node* combine) :
+  MergePrimitiveLoads(PhaseGVN* phase, AddNode* combine) :
     _phase(phase), _combine(combine), _order(Unknown), _require_reverse_bytes(false)
     NOT_PRODUCT( COMMA _trace_tags(Compile::current()->directive()->trace_merge_loads_tags()) )
   {}
@@ -882,6 +882,8 @@ private:
   MemoryAdjacentStatus get_adjacent_load_status(const LoadNode* first, const LoadNode* second) const;
   // Go through ConvI2L which is unique output of input node
   static const Node* bypass_i2l(const Node* n);
+  // Add operators of combine operator to IGVN worklist
+  void add_operators_to_worklist(const AddNode* combine) const;
 
 #ifndef PRODUCT
   // Access to TraceMergeLoads tags
@@ -946,14 +948,21 @@ const Node* MergePrimitiveLoads::bypass_i2l(const Node* n) {
 
 /*
  * Check the _combine operator is the last one of combine operators
- * And it can be a candidate for merge load optimization
+ * It can be a candidate for merge load optimization
  */
 bool MergePrimitiveLoads::has_no_merge_load_combine_below() const {
   assert(is_supported_combine_opcode(_combine->Opcode()), "sanity");
   const Node* check = bypass_i2l(_combine);
-  if (check->outcnt() == 1 && check->unique_out()->Opcode() == _combine->Opcode()) {
-    // It's in the middle of combine operators
-    return false;
+  if (check->outcnt() == 1 &&
+      check->unique_out()->Opcode() == _combine->Opcode()) {
+    AddNode* out = check->unique_out()->as_Add();
+    if (out->is_merge_memops_checked()) {
+      // the next operator is checked before, so _combine can be last one of combine operators
+      return true;
+    } else {
+      // It's in the middle of combine operators
+      return false;
+    }
   }
   return true;
 }
@@ -1011,14 +1020,17 @@ MergeLoadInfo MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
   if (combine_oper == nullptr) {
     return invalid;
   }
+
   assert(shift != -1, "must be set");
   return MergeLoadInfo(load, combine_oper, shift);
 }
 
 Node* MergePrimitiveLoads::run() {
-  if (!has_no_merge_load_combine_below()) {
+  if (_combine->is_merge_memops_checked() || !has_no_merge_load_combine_below()) {
+    // no progress
     return nullptr;
   }
+  _combine->set_merge_memops_checked(true);
 
   // go up through combine operators to find load node
   LoadNode* load = nullptr;
@@ -1037,7 +1049,8 @@ Node* MergePrimitiveLoads::run() {
       break;
     } else {
       // not found
-      return nullptr;
+      add_operators_to_worklist(_combine);
+      return _combine;
     }
   }
   assert(load != nullptr, "reach loop limit");
@@ -1047,13 +1060,42 @@ Node* MergePrimitiveLoads::run() {
   MergeLoadInfoList* merge_list = new GrowableArray<MergeLoadInfo>(8, 8, MergeLoadInfo());
   int count = collect_merge_list(merge_list, load);
   if (count == -1) {
-    return nullptr;
+    add_operators_to_worklist(_combine);
+    return _combine;
   }
 
   Node* replace = make_merged_load(merge_list, count);
   NOT_PRODUCT( if (is_trace_success() && replace != nullptr) { tty->print("[TraceMergeLoads] replace node is:"); replace->dump(); tty->cr(); })
 
-  return replace;
+  if (replace == nullptr) {
+    add_operators_to_worklist(_combine);
+    return _combine;
+  } else {
+    return replace;
+  }
+}
+
+/* When combine operator is checked and failed to make merged load,
+ * push its operators to worklist
+ */
+void MergePrimitiveLoads::add_operators_to_worklist(const AddNode* combine) const {
+  assert(combine->is_merge_memops_checked(), "must be checked");
+  // add left operator
+  Node* oper = combine->in(1);
+  if (oper->Opcode() == Op_ConvI2L) {
+    oper = oper->in(1);
+  }
+  if (is_supported_combine_opcode(oper->Opcode()) && !oper->as_Add()->is_merge_memops_checked()) {
+    _phase->is_IterGVN()->_worklist.push(oper);
+  }
+  // add right operator
+  oper = combine->in(2);
+  if (oper->Opcode() == Op_ConvI2L) {
+    oper = oper->in(1);
+  }
+  if (is_supported_combine_opcode(oper->Opcode()) && !oper->as_Add()->is_merge_memops_checked()) {
+    _phase->is_IterGVN()->_worklist.push(oper);
+  }
 }
 
 // Check other_load is compatible with load

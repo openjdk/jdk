@@ -42,8 +42,10 @@ typedef const Pair<Node*, jint> ConstAddOperands;
 // by virtual functions.
 class AddNode : public Node {
   virtual uint hash() const;
+  // A flag to indicate if this node is checked by merge_memops phase
+  bool _merge_memops_checked;
 public:
-  AddNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
+  AddNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2), _merge_memops_checked(false) {
     init_class_id(Class_Add);
   }
 
@@ -76,6 +78,9 @@ public:
 
   // Supplied function to return the multiplicative opcode
   virtual int min_opcode() const = 0;
+
+  bool is_merge_memops_checked()  const { return _merge_memops_checked; }
+  void set_merge_memops_checked(bool v) { _merge_memops_checked = v;    }
 
   static AddNode* make(Node* in1, Node* in2, BasicType bt);
 
