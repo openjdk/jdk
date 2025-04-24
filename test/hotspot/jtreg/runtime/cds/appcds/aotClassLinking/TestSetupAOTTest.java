@@ -34,7 +34,7 @@
  * @build TestSetupAOTTest JavacBenchApp TestSetupAOT
  * @run driver jdk.test.lib.helpers.ClassFileInstaller
  *                 TestSetupAOT
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar 
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 TestSetupAOT
  *                 TestSetupAOT$ToolOutput
  *                 JavacBenchApp

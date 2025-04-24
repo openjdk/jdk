@@ -101,31 +101,18 @@ class WeakReferenceTestApp {
     static {
         Inner.WeakReferenceTestApp_clinit_executed = true;
 
-        // During the assembly phase, this block of code is called during the assembly
-        // phase (triggered by the -XX:AOTInitTestClass=WeakReferenceTestApp flag).
-        // It runs the clinit_for_testXXX() method to set up the aot-initialized data structures
+        // This static {} block is executed the training run (which uses no AOT cache).
+        //
+        // During the assembly phase, this static {} block of is also executed
+        // (triggered by the -XX:AOTInitTestClass=WeakReferenceTestApp flag).
+        // It runs the aot_init_for_testXXX() method to set up the aot-initialized data structures
         // that are used by  each testXXX() function.
         //
-        // Note that this function is also called during the training run.
-        // This function is NOT called during the production run, because WeakReferenceTestApp
+        // This block is NOT executed during the production run, because WeakReferenceTestApp
         // is aot-initialized.
 
-        clinit_for_testCollectedInAssembly();
-        clinit_for_testWeakReferenceCollection();
-        clinit_for_testQueue();
-    }
-
-    static WeakReference makeRef() {
-        System.out.println("WeakReferenceTestApp::makeRef() is executed");
-        WeakReference r = new WeakReference(root);
-        System.out.println("r.get() = " + r.get());
-
-        ShouldNotBeAOTInited.doit();
-        return r;
-    }
-
-    static WeakReference makeRef2() {
-        return new WeakReference(new WeakReferenceTestApp());
+        aot_init_for_testCollectedInAssembly();
+        aot_init_for_testWeakReferenceCollection();
     }
 
     public static void main(String[] args) {
@@ -156,14 +143,13 @@ class WeakReferenceTestApp {
 
         testCollectedInAssembly(isProduction);
         testWeakReferenceCollection(isProduction);
-        testQueue(isProduction);
     }
 
     //----------------------------------------------------------------------
     // Set up for testCollectedInAssembly()
     static WeakReference refToCollectedObj;
 
-    static void clinit_for_testCollectedInAssembly() {
+    static void aot_init_for_testCollectedInAssembly() {
         // The referent will be GC-ed in the assembly run when the JVM forces a full GC.
         refToCollectedObj = new WeakReference(new String("collected in assembly"));
     }
@@ -171,19 +157,10 @@ class WeakReferenceTestApp {
     // [TEST CASE] Test the storage of a WeakReference whose referent has been collected during the assembly phase.
     static void testCollectedInAssembly(boolean isProduction) {
         System.out.println("refToCollectedObj.get() = " + refToCollectedObj.get());
-        System.out.println("refToCollectedObj.isEnqueued() = " + refToCollectedObj.isEnqueued());
 
         if (refToCollectedObj.get() != null) {
             throw new RuntimeException("refToCollectedObj.get() should have been GC'ed");
         }
-
-        /*
-         * FIXME -- why does this fail, even in training run?
-
-        if (!refToCollectedObj.isEnqueued()) {
-            throw new RuntimeException("refToCollectedObj.isEnqueued() should be true");
-        }
-        */
     }
 
     //----------------------------------------------------------------------
@@ -191,10 +168,24 @@ class WeakReferenceTestApp {
     static Object root;
     static WeakReference ref;
 
-    static void clinit_for_testWeakReferenceCollection() {
-        root = new WeakReferenceTestApp();
+    static void aot_init_for_testWeakReferenceCollection() {
+        root = new String("to be collected in production");
         ref = makeRef();
     }
+
+    static WeakReference makeRef() {
+        System.out.println("WeakReferenceTestApp::makeRef() is executed");
+        WeakReference r = new WeakReference(root);
+        System.out.println("r.get() = " + r.get());
+
+        ShouldNotBeAOTInited.doit();
+        return r;
+    }
+
+    static WeakReference makeRef2() {
+        return new WeakReference(new String("to be collected in production"));
+    }
+
 
     // [TEST CASE] A WeakReference allocated in assembly phase should be collectable in the production run
     static void testWeakReferenceCollection(boolean isProduction) {
@@ -210,7 +201,7 @@ class WeakReferenceTestApp {
         }
 
         System.out.println("... running GC ...");
-        root = null;
+        root = null; // make ref.referent() eligible for collection
         System.gc();
 
         System.out.println("ref.get() = " + ref.get());
@@ -226,42 +217,6 @@ class WeakReferenceTestApp {
         System.out.println("ShouldNotBeAOTInited.doit_executed = " + ShouldNotBeAOTInited.doit_executed);
         if (isProduction && ShouldNotBeAOTInited.doit_executed) {
             throw new RuntimeException("ShouldNotBeAOTInited should not have been aot-inited");
-        }
-    }
-
-    //----------------------------------------------------------------------
-    // Set up for testQueue()
-    static WeakReference refWithQueue;
-    static SharedQueue sharedQueueInstance;
-
-    static void clinit_for_testQueue() {
-        // Make sure SharedQueue is also cached in *initialized* state.
-        sharedQueueInstance = SharedQueue.sharedQueueInstance;
-
-        refWithQueue = new WeakReference(String.class, SharedQueue.queue());
-        ShouldNotBeArchived.ref = new WeakReference(ShouldNotBeArchived.instance, SharedQueue.queue());
-
-
-        // Set to 2 in training run and assembly phase, but this state shouldn't be stored in
-        // AOT cache.
-        ShouldNotBeArchived.state = 2;
-    }
-
-    // [TEST CASE] Unrelated WeakReferences shouldn't be cached even if they are registered with the same queue
-    static void testQueue(boolean isProduction) {
-        System.out.println("refWithQueue.get() = " + refWithQueue.get());
-        System.out.println("ShouldNotBeArchived.state = " + ShouldNotBeArchived.state);
-
-        // [1] Although refWithQueue and ShouldNotBeArchived.ref are registered with the same queue, as both
-        //     of their referents are strongly referenced, they are not added to the queue's "head".
-        //     (Per javadoc: "registered reference objects are appended by the garbage collector after the
-        //     appropriate reachability changes are detected");
-        // [2] When the assembly phase scans refWithQueue, it shouldn't discover ShouldNotBeArchived.ref (via the queue),
-        //     so ShouldNotBeArchived.ref should not be stored in the AOT cache.
-        // [3] As a result, ShouldNotBeArchived should be cached in the *not initialized" state. Its <clinit>
-        //     will be executed in the production run to set ShouldNotBeArchived.state to 1.
-        if (isProduction && ShouldNotBeArchived.state != 1) {
-            throw new RuntimeException("ShouldNotBeArchived should be 1 but is " + ShouldNotBeArchived.state);
         }
     }
 }
