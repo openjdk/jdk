@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8327012
+ * @bug 8327012 8327963
  * @summary Test that initializing store gets captured, i.e. moved before the InitializeNode
  *          and made into a raw-store.
  * @library /test/lib /
