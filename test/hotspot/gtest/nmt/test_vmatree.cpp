@@ -1918,7 +1918,7 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
     tree.commit_mapping(300, 100, call_stack_1_mtNone, true);
     tree.commit_mapping(500, 100, call_stack_1_mtNone, true);
     // New request
-    tree.release_mapping(50, 650);
+    tree.release_mapping(0, 700);
     // Pre:     ........0----------------100*********200--------300********400--------500********600-------------------1000........
     // Request:         0..................................................................................700
     // Post:    ...........................................................................................700---------1000........
@@ -1931,12 +1931,9 @@ TEST_VM_F(NMTVMATreeTest, MultipleRegionsAllWithSameTag) {
                           {Rl    , Rs    , Rl     },
                           {-1    , si_1  , -1     },
                           {-1    , -1    , -1     }};
-    // Skipped until JDK-8354115 is integrated
-    if (ok_to_run) {
-      check_tree(tree, et, __LINE__);
-      VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(0);
-      EXPECT_EQ(r.start, nullptr);  // make sure 0 is removed
-      EXPECT_EQ((int)r.end->key(), 700);
-    }
+    check_tree(tree, et, __LINE__);
+    VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(0);
+    EXPECT_EQ(r.start, nullptr);  // make sure 0 is removed
+    EXPECT_EQ((int)r.end->key(), 700);
  }
 }

@@ -194,6 +194,20 @@ private:
       return state.in;
     }
   };
+  struct RequestInfo {
+    position A,B;
+    StateType op;
+    MemTag tag;
+    NativeCallStackStorage::StackIndex callstack;
+    bool use_tag_inplace;
+    int op_to_index() const {
+      return
+            op == StateType::Released ? 0 :
+            op == StateType::Reserved && !use_tag_inplace ? 1 :
+            op == StateType::Committed ? 2 :
+            op == StateType::Reserved && use_tag_inplace ? 3 : -1;
+    }
+  };
 
 public:
   VMATree() : _tree() {}
@@ -226,6 +240,10 @@ public:
 
  private:
   SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool use_tag_inplace = false);
+  SummaryDiff register_mapping_new(position A, position B, StateType state, const RegionData& metadata, bool use_tag_inplace = false);
+  StateType new_state(StateType existinting_state, const RequestInfo& req);
+  NativeCallStackStorage::StackIndex new_reserve_callstack(NativeCallStackStorage::StackIndex existinting_stack, StateType ex, const RequestInfo& req);
+  NativeCallStackStorage::StackIndex new_commit_callstack(NativeCallStackStorage::StackIndex existinting_stack, StateType ex, const RequestInfo& req);
 
  public:
   SummaryDiff reserve_mapping(position from, size size, const RegionData& metadata) {
