@@ -34,7 +34,7 @@
  * @bug 7149464
  * @requires vm.flagless
  * @library /test/lib
- * @compile OOMCrashClass4000_1.jasm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  *          java.desktop
  *          java.management
@@ -44,17 +44,28 @@
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import java.io.File;
+import java.nio.file.Files;
+
+
 public class JsrRewriting {
 
     public static void main(String[] args) throws Exception {
 
-        // Compiled from jasm
+        // create a file in the scratch dir
         String className = "OOMCrashClass4000_1";
+        File classFile = new File(className + ".class");
+        classFile.createNewFile();
+
+        // fill it with the binary data of the class file
+        byte[] bytes = OOMCrashClass4000_1.dump();
+        Files.write(classFile.toPath(), bytes);
 
         // ======= execute the test
         // We run the test with MallocLimit set to 768m in oom mode,
         // in order to trigger and observe a fake os::malloc oom. This needs NMT.
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-cp", ".",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:NativeMemoryTracking=summary",
             "-XX:MallocLimit=768m:oom",
