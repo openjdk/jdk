@@ -31,25 +31,21 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.List;
 
 /**
- * This immutable class defines the parameters for modern signature algorithm
- * like ML-DSA.
+ * This immutable class defines the parameters to be used with ML-DSA.
  * <p>
- * A modern signature algorithm can operate in multiple modes. When a pre-hash
- * algorithm is specified, the message is first processed by the message digest
- * algorithm, and only the resulting hash is signed. Additionally, the message
- * can be concatenated with a context string to enable domain separation.
- * Furthermore, different algorithms may support specific features, represented
- * as case-sensitive strings.
+ * Note: this is not a public API. There is a strict domain separation defined
+ * between ML-DSA and HashML-DSA, and they are treated as totally different
+ * algorithms. Therefore, keys created for one algorithm must not be used in
+ * signature generation or verification of the other algorithm.
  * <p>
- * Use {@link java.security.Signature#setParameter(AlgorithmParameterSpec)}
- * to configure parameters before calling {@link java.security.Signature#initSign(PrivateKey)}
- * or {@link java.security.Signature#initVerify(PublicKey)}.
- * If the signature object does not accept the parameters, it must throw an
- * {@code InvalidAlgorithmParameterException}.
- *
- * @implNote
- * The ML-DSA implementation in the SunJCE provider included in this JDK
- * implementation supports three specific features:
+ * This class provides 3 features:
+ * <ol>
+ * <li> When a pre-hash algorithm is specified, the message is first processed
+ * by the message digest algorithm, and only the resulting hash is signed.
+ * <li> The message can be concatenated with a context string to enable
+ * (application-level) domain separation.
+ * <li> More fine-tuned features, represented as case-sensitive strings, can be
+ * specified.
  * <ul>
  * <li><code>deterministic</code>: signature generation uses constant byte
  *  string <code>new byte[32]</code>.
@@ -59,6 +55,10 @@ import java.util.List;
  *  <code>ML-DSA.Sign_internal</code> is computed in a different cryptographic
  *  module and directly provided as the input message.
  * </ul>
+ * </ol>
+ * Call {@link java.security.Signature#setParameter(AlgorithmParameterSpec)}
+ * to configure parameters before calling {@link java.security.Signature#initSign(PrivateKey)}
+ * or {@link java.security.Signature#initVerify(PublicKey)}.
  *
  * @since 25
  */

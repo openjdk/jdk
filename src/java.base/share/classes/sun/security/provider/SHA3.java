@@ -476,6 +476,7 @@ public abstract class SHA3 extends DigestBase {
 
         public void reset() {
             engineReset();
+            implReset();
         }
     }
 
