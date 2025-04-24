@@ -1016,9 +1016,10 @@ void Klass::print_on(outputStream* st) const {
   st->print("Klass: %s", internal_name());
   print_address_on(st);
   st->cr();
-  st->print(" - kind:              %d", kind());                               st->cr();
-  st->print(" - layouthelper raw 0x%x", layout_helper());                      st->cr();
-  st->print(" - name:              "); name()->print_value_on(st);             st->cr();
+  st->print_cr(" - kind:              %d", kind());
+  st->print_cr(" - name:              "); name()->print_value_on(st);
+  st->print_cr(" - klute              " UINT32_FORMAT_X_0, klute().value());
+  st->print_cr(" - layouthelper       " INT32_FORMAT_X_0, layout_helper());
 }
 
 #define BULLET  " - "

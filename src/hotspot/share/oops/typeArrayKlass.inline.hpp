@@ -54,4 +54,5 @@ template <typename T, typename OopClosureType>
 void TypeArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute) {
   oop_oop_iterate_impl(obj, closure);
 }
+
 #endif // SHARE_OOPS_TYPEARRAYKLASS_INLINE_HPP
