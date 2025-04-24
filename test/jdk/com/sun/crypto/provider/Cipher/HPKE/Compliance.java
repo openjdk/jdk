@@ -139,7 +139,7 @@ public class Compliance {
         // Still at BEGIN, not initialized
         Asserts.assertEQ(c1.getIV(), null);
         Asserts.assertEQ(c1.getParameters(), null);
-        Asserts.assertThrows(IllegalStateException.class, () -> c1.getBlockSize());
+        Asserts.assertEquals(0, c1.getBlockSize());
         Asserts.assertThrows(IllegalStateException.class, () -> c1.getOutputSize(100));
         Asserts.assertThrows(IllegalStateException.class, () -> c1.update(new byte[1]));
         Asserts.assertThrows(IllegalStateException.class, () -> c1.update(new byte[1], 0, 1));

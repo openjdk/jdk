@@ -99,10 +99,8 @@ public class HPKE extends CipherSpi {
     protected int engineGetBlockSize() {
         if (state == ENCRYPT_AND_EXPORT || state == AFTER_FINAL) {
             return impl.aead.cipher.getBlockSize();
-        } else if (state == EXPORT_ONLY) {
-            return 0;
         } else {
-            throw new IllegalStateException("AEAD cipher not initialized yet");
+            return 0;
         }
     }
 
@@ -110,10 +108,8 @@ public class HPKE extends CipherSpi {
     protected int engineGetOutputSize(int inputLen) {
         if (state == ENCRYPT_AND_EXPORT || state == AFTER_FINAL) {
             return impl.aead.cipher.getOutputSize(inputLen);
-        } else if (state == EXPORT_ONLY) {
-            return 0;
         } else {
-            throw new IllegalStateException("AEAD cipher not initialized yet");
+            return 0;
         }
     }
 
