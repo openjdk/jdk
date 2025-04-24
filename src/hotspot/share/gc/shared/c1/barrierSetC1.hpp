@@ -26,9 +26,9 @@
 #define SHARE_GC_SHARED_C1_BARRIERSETC1_HPP
 
 #include "c1/c1_Decorators.hpp"
-#include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_LIR.hpp"
+#include "c1/c1_LIRGenerator.hpp"
 #include "memory/allocation.hpp"
 
 class LIRGenerator;

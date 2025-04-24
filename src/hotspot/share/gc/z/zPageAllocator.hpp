@@ -140,7 +140,7 @@ public:
 
   void print_on(outputStream* st) const;
   void print_cache_on(outputStream* st) const;
-  void print_extended_on_error(outputStream* st) const;
+  void print_cache_extended_on(outputStream* st) const;
 };
 
 using ZPartitionIterator = ZPerNUMAIterator<ZPartition>;
@@ -238,8 +238,6 @@ private:
   void update_collection_stats(ZGenerationId id);
   ZPageAllocatorStats stats_inner(ZGeneration* generation) const;
 
-  void print_on_inner(outputStream* st) const;
-
 public:
   ZPageAllocator(size_t min_capacity,
                  size_t initial_capacity,
@@ -285,9 +283,10 @@ public:
 
   void threads_do(ThreadClosure* tc) const;
 
-  void print_on(outputStream* st) const;
-  void print_extended_on_error(outputStream* st) const;
-  void print_on_error(outputStream* st) const;
+  void print_usage_on(outputStream* st) const;
+  void print_total_usage_on(outputStream* st) const;
+  void print_partition_usage_on(outputStream* st) const;
+  void print_cache_extended_on(outputStream* st) const;
 };
 
 class ZPageAllocatorStats {

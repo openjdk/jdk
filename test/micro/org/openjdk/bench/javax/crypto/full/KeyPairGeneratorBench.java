@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,9 @@ public class KeyPairGeneratorBench extends CryptoBase {
         setupProvider();
         generator = (prov == null) ? KeyPairGenerator.getInstance(algorithm)
                                 : KeyPairGenerator.getInstance(algorithm, prov);
-        generator.initialize(keyLength);
+        if (keyLength > 0) { // not all key pair generators allow the use of key length
+            generator.initialize(keyLength);
+        }
     }
 
     @Benchmark
@@ -97,4 +99,23 @@ public class KeyPairGeneratorBench extends CryptoBase {
         @Param({"255", "448"})
         private int keyLength;
     }
+
+    public static class MLDSA extends KeyPairGeneratorBench {
+
+        @Param({"ML-DSA-44", "ML-DSA-65", "ML-DSA-87" })
+        private String algorithm;
+
+        @Param({"0"}) // ML-DSA key length is not supported
+        private int keyLength;
+    }
+
+    public static class MLKEM extends KeyPairGeneratorBench {
+
+        @Param({"ML-KEM-512", "ML-KEM-768", "ML-KEM-1024" })
+        private String algorithm;
+
+        @Param({"0"}) // ML-KEM key length is not supported
+        private int keyLength;
+    }
+
 }
