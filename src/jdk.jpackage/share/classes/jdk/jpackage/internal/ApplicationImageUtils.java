@@ -126,7 +126,10 @@ final class ApplicationImageUtils {
                     Files.copy(in, executableFile);
                 }
 
-                executableFile.toFile().setExecutable(true);
+                // Make it executable for everyone. It is essential to make the launcher executable for others
+                // on macOS. Otherwise, launchers in installed DMG or PKG packages will be
+                // unavailable for anyone but the user who installed them.
+                executableFile.toFile().setExecutable(true, false);
             }
         };
     }
