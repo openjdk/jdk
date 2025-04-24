@@ -116,7 +116,7 @@ inline HeapWord* ParMarkBitMap::find_obj_beg(HeapWord* beg, HeapWord* end) const
 inline HeapWord* ParMarkBitMap::find_obj_beg_reverse(HeapWord* beg, HeapWord* end) const {
   const idx_t beg_bit = addr_to_bit(beg);
   const idx_t end_bit = addr_to_bit(end);
-  const idx_t res_bit = _beg_bits.find_last_set_bit_aligned_left(beg_bit, end_bit);
+  const idx_t res_bit = _beg_bits.find_last_set_bit(beg_bit, end_bit);
   return bit_to_addr(res_bit);
 }
 
