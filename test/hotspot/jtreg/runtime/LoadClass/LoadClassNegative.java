@@ -43,11 +43,11 @@ public class LoadClassNegative {
 
     // Create an empty file in the scratch directory
     final String filename = "empty.jar";
-    File dummyFile = new File(filename);
-    dummyFile.createNewFile();
+    File emptyJar = new File(filename);
+    emptyJar.createNewFile();
 
     // Explicitly tell to use it for class loading
-    String bootCP = "-Xbootclasspath/a:" + dummyFile.getAbsolutePath();
+    String bootCP = "-Xbootclasspath/a:" + emptyJar.getAbsolutePath();
 
     ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         bootCP,
@@ -56,6 +56,5 @@ public class LoadClassNegative {
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldContain("ClassNotFoundException");
     output.shouldHaveExitValue(0);
-
   }
 }
