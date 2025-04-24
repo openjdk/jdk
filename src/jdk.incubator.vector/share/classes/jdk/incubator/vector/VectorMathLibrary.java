@@ -152,7 +152,7 @@ import static jdk.internal.vm.vector.Utils.debug;
             }
             int maxLaneCount = VectorSupport.getMaxLaneCount(vspecies.elementType());
             if (vspecies.length() > maxLaneCount) {
-                return false; // lacking vector support
+                return false; // lacking vector support (either hardware or disabled on JVM side)
             }
             if (vspecies == DoubleVector.SPECIES_64) {
                 return false; // 64-bit double vectors are not supported
@@ -228,7 +228,7 @@ import static jdk.internal.vm.vector.Utils.debug;
             }
             int maxLaneCount = VectorSupport.getMaxLaneCount(vspecies.elementType());
             if (vspecies.length() > maxLaneCount) {
-                return false; // lacking vector support
+                return false; // lacking vector support (either hardware or disabled on JVM side)
             }
             if (vspecies == DoubleVector.SPECIES_64) {
                 return false; // 64-bit double vectors are not supported
