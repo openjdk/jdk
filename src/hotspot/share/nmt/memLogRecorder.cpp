@@ -99,7 +99,7 @@ void NMT_LogRecorder::initialize() {
   if (NMTRecordMemoryAllocations != nullptr) {
     long count = atol(NMTRecordMemoryAllocations);
     if (count == 0) {
-      count = strtol(NMTRecordMemoryAllocations, NULL, 16);
+      count = strtol(NMTRecordMemoryAllocations, nullptr, 16);
     }
     NMT_MemoryLogRecorder::initialize(count);
   }
@@ -107,7 +107,7 @@ void NMT_LogRecorder::initialize() {
   if (NMTRecordVirtualMemoryAllocations != nullptr) {
     long count = atol(NMTRecordVirtualMemoryAllocations);
     if (count == 0) {
-      count = strtol(NMTRecordVirtualMemoryAllocations, NULL, 16);
+      count = strtol(NMTRecordVirtualMemoryAllocations, nullptr, 16);
     }
     NMT_VirtualMemoryLogRecorder::initialize(count);
   }
@@ -292,7 +292,7 @@ static file_info _open_file_and_read(const char* pattern, const char* path, int 
   ::lseek(info.fd, 0, SEEK_SET);
 
 #if !defined(_WIN64)
-  info.ptr = ::mmap(NULL, info.size, PROT_READ, MAP_PRIVATE, info.fd, 0);
+  info.ptr = ::mmap(nullptr, info.size, PROT_READ, MAP_PRIVATE, info.fd, 0);
   assert(info.ptr != MAP_FAILED, "info.ptr != MAP_FAILED");
 #endif
 
@@ -382,7 +382,7 @@ void NMT_MemoryLogRecorder::replay(const int pid) {
   long int size_pointers = (long int)(count * sizeof(address));
   address *pointers = nullptr;
 #if !defined(_WIN64)
-  pointers = (address*)::mmap(NULL, size_pointers, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
+  pointers = (address*)::mmap(nullptr, size_pointers, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
   assert(pointers != MAP_FAILED, "pointers != MAP_FAILED");
 #endif
 
