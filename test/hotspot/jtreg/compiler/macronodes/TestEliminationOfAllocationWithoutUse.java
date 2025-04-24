@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8327012
+ * @bug 8327012 8327963
  * @summary Revealed issue where hook_memory_on_init links some array slice to the rawptr slice.
  *          Now that array slice depends on the rawslice. And then when the Initialize MemBar gets
  *          removed in expand_allocate_common, the rawslice sees that it has now no effect, looks
