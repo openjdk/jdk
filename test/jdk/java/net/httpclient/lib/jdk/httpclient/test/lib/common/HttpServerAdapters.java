@@ -978,9 +978,9 @@ public interface HttpServerAdapters {
             }
 
             @Override
-            public void close() {
+            public void close() throws Exception {
                 System.out.println("Http2TestServerImpl: close");
-                impl.stop();
+                impl.close();
             }
 
             @Override
