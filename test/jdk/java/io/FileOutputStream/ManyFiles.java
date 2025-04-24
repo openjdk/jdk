@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test
  * @bug 4189011 5019303
  * @summary Test opening over 2048 files
+ * @requires (os.family != "linux")
  * @run main/timeout=300 ManyFiles
  */
 
@@ -37,14 +38,12 @@ public class ManyFiles {
     static int NUM_FILES = 2050;
 
     public static void main(String args[]) throws Exception {
+        // Vestigial comment from before @requires tag was added:
         // Linux does not yet allow opening this many files; Solaris
         // 8 requires an explicit allocation of more file descriptors
         // to succeed. Since this test is written to check for a
         // Windows capability it is much simpler to only run it
         // on that platform.
-        String osName = System.getProperty("os.name");
-        if (osName.startsWith("Linux"))
-            return;
 
         for (int n = 0; n < NUM_FILES; n++) {
             File f = new File("file" + count++);
