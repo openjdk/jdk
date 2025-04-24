@@ -4875,7 +4875,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       }
       if (mem->Opcode() == Op_NarrowMemProj) {
         const TypePtr* at = mem->adr_type();
-        uint idx = (uint) _compile->get_alias_index(at->is_ptr());
+        uint alias_idx = (uint) _compile->get_alias_index(at->is_ptr());
         if (idx == i) {
           // projection for a non known allocation on a non known allocation slice: can't skip over the allocation
           if (cur == nullptr) {
