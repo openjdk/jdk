@@ -533,7 +533,7 @@ public final class LinuxHelper {
                 TKit.assertEquals(fa.getMime(), mimeType, String.format(
                         "Check mime type of [%s] file", testFile));
 
-                String desktopFileName = queryMimeTypeDefaultHandler(mimeType);
+                String desktopFileName = queryMimeTypeDefaultHandler(mimeType).orElse(null);
 
                 Path systemDesktopFile = getSystemDesktopFilesFolder().resolve(
                         desktopFileName);
@@ -557,7 +557,7 @@ public final class LinuxHelper {
                 TKit.assertNotEquals(fa.getMime(), mimeType, String.format(
                         "Check mime type of [%s] file", testFile));
 
-                String desktopFileName = queryMimeTypeDefaultHandler(fa.getMime());
+                String desktopFileName = queryMimeTypeDefaultHandler(fa.getMime()).orElse(null);
 
                 TKit.assertNull(desktopFileName, String.format(
                         "Check there is no default handler for [%s] mime type",
@@ -584,9 +584,9 @@ public final class LinuxHelper {
                 .executeAndGetFirstLineOfOutput();
     }
 
-    private static String queryMimeTypeDefaultHandler(String mimeType) {
+    private static Optional<String> queryMimeTypeDefaultHandler(String mimeType) {
         return Executor.of("xdg-mime", "query", "default", mimeType)
-                .executeAndGetFirstLineOfOutput();
+                .discardStderr().saveFirstLineOfOutput().execute().findFirstLineOfOutput();
     }
 
     private static void verifyIconInScriptlet(Scriptlet scriptletType,
@@ -708,7 +708,7 @@ public final class LinuxHelper {
 
         static final Map<String, Scriptlet> RPM_MAP = Stream.of(values()).collect(
                 Collectors.toMap(v -> v.rpm, v -> v));
-    };
+    }
 
     public static String getDefaultPackageArch(PackageType type) {
         if (archs == null) {
