@@ -4125,7 +4125,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       // the result of an allocation for a known instance).
       assert(result->as_Proj()->_con == TypeFunc::Memory, "a NarrowMemProj can only be a memory projection");
       assert(toop != nullptr, "");
-      Node *proj_in = result->in(0);
+      Node* proj_in = result->in(0);
       if (proj_in->is_Initialize()) {
         AllocateNode* alloc = proj_in->as_Initialize()->allocation();
         assert(alloc->result_cast() == nullptr ||
