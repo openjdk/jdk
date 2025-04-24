@@ -33,10 +33,13 @@ import java.nio.file.attribute.AclEntryType;
 import java.nio.file.attribute.AclFileAttributeView;
 import java.util.List;
 
+import static java.nio.file.StandardOpenOption.APPEND;
+
 /*
  * @test
- * @summary Ensures java.security is loadable in Windows, even when the user
- * does not have permissions on one of the parent directories.
+ * @summary Ensures java.security is loadable in Windows and filesystem
+ * soft-links are resolved, even when the user does not have permissions
+ * on one of the parent directories.
  * @bug 8352728
  * @requires os.family == "windows"
  * @library /test/lib
@@ -44,14 +47,69 @@ import java.util.List;
  */
 
 public class ConfigFileTestDirPermissions {
+    private static final String LF = System.lineSeparator();
+    private static final String TEST_PROPERTY =
+            "test.property.name=test_property_value";
+
+    // Unlike symbolic links, directory junctions do not require elevation
+    private static void createJunction(Path target, Path link)
+            throws IOException, InterruptedException {
+        if (!Files.isDirectory(target)) {
+            throw new IOException("The target must be a directory: " + target);
+        }
+        int exitCode =
+                new ProcessBuilder("cmd", "/c", "MKLINK", "/J", link.toString(),
+                        target.toString()).inheritIO().start().waitFor();
+        if (exitCode != 0) {
+            throw new IOException("Unexpected exit code: " + exitCode);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         Path temp = Files.createTempDirectory("JDK-8352728-tmp-");
+        // We will create the following directories structure:
+        //
+        // 📁 JDK-8352728-tmp-*/
+        // ├─🔒 jdk-parent-dir/         (ACL with REMOVED-PERMISSIONS)
+        // │ └─📁 jdk/
+        // │   ├─📁 conf/
+        // │   │ ├─📁 security/
+        // │   │ │ ├─📄 java.security
+        // │   │ │ │    📝 include link-to-other-dir/other.properties
+        // │   │ │ ├─🔗 link-to-other-dir/ ⟹ 📁 JDK-8352728-tmp-*/other-dir
+        // │   │ │ └─...               (JUNCTION)
+        // │   │ └─...
+        // │   └─...
+        // ├─📁 other-dir/
+        // │ └─📄 other.properties
+        // │      📝 include ../relatively.included.properties
+        // └─📄 relatively.included.properties
+        //      📝 test.property.name=test_property_value
         try {
             // Copy the jdk to a different directory
             Path originalJdk = Path.of(System.getProperty("test.jdk"));
             Path jdk = temp.resolve("jdk-parent-dir", "jdk");
             Files.createDirectories(jdk);
             FileUtils.copyDirectory(originalJdk, jdk);
+
+            // Create a properties file with a relative include in it
+            Path otherDir = temp.resolve("other-dir");
+            Files.createDirectories(otherDir);
+            Path other = otherDir.resolve("other.properties");
+            Path included = temp.resolve("relatively.included.properties");
+            Files.writeString(included, TEST_PROPERTY + LF);
+            Files.writeString(other,
+                    "include ../" + included.getFileName() + LF);
+
+            // Create a junction to the properties file dir, from the jdk dir
+            Path javaSec = jdk.resolve("conf", "security", "java.security");
+            Path linkDir = javaSec.resolveSibling("link-to-other-dir");
+            createJunction(otherDir, linkDir);
+
+            // Include the properties file from java.security (through the link)
+            Files.writeString(javaSec,
+                    LF + "include " + linkDir.getFileName() + "/" +
+                            other.getFileName() + LF, APPEND);
 
             // Remove current user permissions from jdk-parent-dir
             Path parent = jdk.getParent();
@@ -71,10 +129,12 @@ public class ConfigFileTestDirPermissions {
                 // Execute the copied jdk, ensuring java.security.Security is
                 // loaded (i.e. use -XshowSettings:security:properties)
                 ProcessTools.executeProcess(new ProcessBuilder(
-                        List.of(jdk.resolve("bin", "java.exe").toString(),
+                                jdk.resolve("bin", "java.exe").toString(),
                                 "-Djava.security.debug=properties",
                                 "-XshowSettings:security:properties",
-                                "-version"))).shouldHaveExitValue(0);
+                                "-version"))
+                        .shouldHaveExitValue(0)
+                        .shouldContain(TEST_PROPERTY);
             } finally {
                 view.setAcl(originalAcl);
             }
