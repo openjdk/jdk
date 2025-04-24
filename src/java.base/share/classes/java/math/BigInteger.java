@@ -2589,7 +2589,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (exponent < 0) {
             throw new ArithmeticException("Negative exponent");
         }
-        if (signum == 0) {
+        if (signum == 0 || this.equals(ONE)) {
             return (exponent == 0 ? ONE : this);
         }
 
@@ -2696,7 +2696,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Computes {@code x^n} using repeated squaring trick.
      * Assumes {@code x != 0}.
      */
-    static BigInteger unsignedIntPow(int x, int n) {
+    private static BigInteger unsignedIntPow(int x, int n) {
+        if (x == 1)
+            return ONE;
         // Double.PRECISION / bitLength(x) is the largest integer e
         // such that x^e fits into a double. If e <= 2, we won't use fp arithmetic.
         // This allows to use fp arithmetic where possible.
@@ -2756,6 +2758,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Assumes {@code x != 0 && x^n < 2^Long.SIZE}.
      */
     static long unsignedLongPow(long x, int n) {
+        if (x == 1L)
+            return 1L;
+
+        if (x == 2L)
+            return 1L << n;
         // Double.PRECISION / bitLength(x) is the largest integer e
         // such that x^e fits into a double. If e <= 3, we won't use fp arithmetic.
         // This allows to use fp arithmetic where possible.
