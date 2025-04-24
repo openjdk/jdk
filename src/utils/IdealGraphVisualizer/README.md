@@ -54,12 +54,12 @@ name.
 
 The JVM provides some entry functions to dump graphs from a debugger such as
 `gdb` or `rr`, see the different variants of `igv_print` and `igv_append` in
-`compile.cpp`. In combination with the IGV network interface, these functions
-enable a powerful interactive workflow where the user can simultaneously step
-through C2's code and visualize the evolving Ideal graph. Note that, to produce
-and print meaningful C2 stack traces, these functions take the stack pointer,
-frame pointer, and program counter registers as arguments. These are usually
-`$sp`, `$fp`, and `$pc`:
+[`compile.cpp`](/src/hotspot/share/opto/compile.cpp). In combination with the
+IGV network interface, these functions enable a powerful interactive workflow
+where the user can simultaneously step through C2's code and visualize the
+evolving Ideal graph. Note that, to produce and print meaningful C2 stack
+traces, these functions take the stack pointer, frame pointer, and program
+counter registers as arguments. These are usually `$sp`, `$fp`, and `$pc`:
 
 ```
 (gdb) p igv_print(true, $sp, $fp, $pc)
