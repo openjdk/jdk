@@ -35,7 +35,6 @@ import javax.swing.SwingUtilities;
  * @bug 8322754
  * @key headful
  * @summary Verifies clicking JComboBox during frame closure causes Exception
- * @library /javax/swing/regtesthelpers
  * @run main ComboPopupBug
  */
 
