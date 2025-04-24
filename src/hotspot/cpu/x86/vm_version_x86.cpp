@@ -1089,6 +1089,30 @@ void VM_Version::get_processor_features() {
     _has_intel_jcc_erratum = IntelJccErratumMitigation;
   }
 
+  assert(supports_cpuid(), "Always present");
+  assert(supports_clflush(), "Always present");
+  if (X86ICacheSync == -1) {
+    // Auto-detect, choosing the best performant one that still flushes
+    // the cache. We could switch to CPUID/SERIALIZE ("4"/"5") going forward.
+    if (supports_clwb()) {
+      FLAG_SET_ERGO(X86ICacheSync, 3);
+    } else if (supports_clflushopt()) {
+      FLAG_SET_ERGO(X86ICacheSync, 2);
+    } else {
+      FLAG_SET_ERGO(X86ICacheSync, 1);
+    }
+  } else {
+    if ((X86ICacheSync == 2) && !supports_clflushopt()) {
+      vm_exit_during_initialization("CPU does not support CLFLUSHOPT, unable to use X86ICacheSync=2");
+    }
+    if ((X86ICacheSync == 3) && !supports_clwb()) {
+      vm_exit_during_initialization("CPU does not support CLWB, unable to use X86ICacheSync=3");
+    }
+    if ((X86ICacheSync == 5) && !supports_serialize()) {
+      vm_exit_during_initialization("CPU does not support SERIALIZE, unable to use X86ICacheSync=5");
+    }
+  }
+
   char buf[1024];
   int res = jio_snprintf(
               buf, sizeof(buf),
@@ -3062,6 +3086,10 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
     result |= CPU_TSCINV_BIT;
   if (std_cpuid1_ecx.bits.aes != 0)
     result |= CPU_AES;
+  if (ext_cpuid1_ecx.bits.lzcnt != 0)
+    result |= CPU_LZCNT;
+  if (ext_cpuid1_ecx.bits.prefetchw != 0)
+    result |= CPU_3DNOW_PREFETCH;
   if (sef_cpuid7_ebx.bits.erms != 0)
     result |= CPU_ERMS;
   if (sef_cpuid7_edx.bits.fast_short_rep_mov != 0)
@@ -3080,48 +3108,36 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
     result |= CPU_FMA;
   if (sef_cpuid7_ebx.bits.clflushopt != 0)
     result |= CPU_FLUSHOPT;
+  if (sef_cpuid7_ebx.bits.clwb != 0)
+    result |= CPU_CLWB;
   if (ext_cpuid1_edx.bits.rdtscp != 0)
     result |= CPU_RDTSCP;
   if (sef_cpuid7_ecx.bits.rdpid != 0)
     result |= CPU_RDPID;
 
-  // AMD|Hygon features.
+  // AMD|Hygon additional features.
   if (is_amd_family()) {
-    if ((ext_cpuid1_edx.bits.tdnow != 0) ||
-        (ext_cpuid1_ecx.bits.prefetchw != 0))
+    // PREFETCHW was checked above, check TDNOW here.
+    if ((ext_cpuid1_edx.bits.tdnow != 0))
       result |= CPU_3DNOW_PREFETCH;
-    if (ext_cpuid1_ecx.bits.lzcnt != 0)
-      result |= CPU_LZCNT;
     if (ext_cpuid1_ecx.bits.sse4a != 0)
       result |= CPU_SSE4A;
   }
 
-  // Intel features.
+  // Intel additional features.
   if (is_intel()) {
-    if (ext_cpuid1_ecx.bits.lzcnt != 0) {
-      result |= CPU_LZCNT;
-    }
-    if (ext_cpuid1_ecx.bits.prefetchw != 0) {
-      result |= CPU_3DNOW_PREFETCH;
-    }
-    if (sef_cpuid7_ebx.bits.clwb != 0) {
-      result |= CPU_CLWB;
-    }
     if (sef_cpuid7_edx.bits.serialize != 0)
       result |= CPU_SERIALIZE;
-
     if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0)
       result |= CPU_AVX512_FP16;
   }
 
-  // ZX features.
+  // ZX additional features.
   if (is_zx()) {
-    if (ext_cpuid1_ecx.bits.lzcnt != 0) {
-      result |= CPU_LZCNT;
-    }
-    if (ext_cpuid1_ecx.bits.prefetchw != 0) {
-      result |= CPU_3DNOW_PREFETCH;
-    }
+    // We do not know if these are supported by ZX, so we cannot trust
+    // common CPUID bit for them.
+    assert((result & CPU_CLWB) == 0, "Check if it is supported?");
+    result &= ~CPU_CLWB;
   }
 
   // Protection key features.
