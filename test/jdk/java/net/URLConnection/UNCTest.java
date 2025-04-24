@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,47 @@
  * @test
  * @bug 4401485
  * @requires (os.family == "windows")
+ * @modules java.base/sun.net.www.protocol.file
+ * @library /test/lib
  * @summary  Check that URL.openConnection() doesn't open connection to UNC
- * @run main UNCTest file://jdk/LOCAL-JAVA/jdk1.4/win/README.txt
+ * @run main UNCTest
  */
 
+import jtreg.SkippedException;
+import sun.net.www.protocol.file.FileURLConnection;
+
+import java.io.File;
+import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLConnection;
 
 public class UNCTest {
     public static void main(String args[]) throws Exception {
-        URL url = new URL( args[0] );
+        // Get the "computer name" for this host
+        String hostName = InetAddress.getLocalHost().getHostName();
+        // Skip the test if Administrative Shares is disabled
+        skipIfAdministrativeSharesDisabled(hostName);
+        // Should always exist with Administrative Shares enabled
+        URL url = new URL("file://" + hostName +"/C$/Windows");
+        // Should return an UNCFileURLConnection
         URLConnection conn = url.openConnection();
+        // Sanity check that the UNC path resulted in a FileURLConnection
+        if (! (conn instanceof FileURLConnection)) {
+            throw new Exception("Expected FileURLConnection for UNC path, instead got " + conn.getClass().getName());
+        }
+        // Verify that the connection is not already connected
         conn.setRequestProperty( "User-Agent", "Java" );
+    }
+
+    /**
+     * If the UNC path "\\hostname\C$\Windows" does not exists, then
+     * 'Administrative Shares' is not enabled on this host and we skip the test
+     * @param hostName the name of the local computer
+     */
+    private static void skipIfAdministrativeSharesDisabled(String hostName) {
+        String uncPath = "\\\\" + hostName + "\\C$\\Windows";
+        if (! new File(uncPath).exists()) {
+            throw new SkippedException("Administrative shares not enabled");
+        }
     }
 }
