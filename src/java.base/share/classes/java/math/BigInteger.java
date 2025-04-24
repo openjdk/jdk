@@ -2660,17 +2660,22 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             // Large number algorithm.  This is basically identical to
             // the algorithm above, but calls multiply()
             // which may use more efficient algorithms for large numbers.
-            BigInteger answer = ONE;
+            BigInteger answer;
+            if (base.mag.length == 1) {
+                answer = unsignedIntPow(base.mag[0], exponent);
+            } else {
+                answer = ONE;
 
-            final int expZeros = Integer.numberOfLeadingZeros(exponent);
-            int workingExp = exponent << expZeros;
-            // Perform exponentiation using repeated squaring trick
-            for (int expLen = Integer.SIZE - expZeros; expLen > 0; expLen--) {
-                answer = answer.multiply(answer);
-                if (workingExp < 0) // leading bit is set
-                    answer = answer.multiply(base);
+                final int expZeros = Integer.numberOfLeadingZeros(exponent);
+                int workingExp = exponent << expZeros;
+                // Perform exponentiation using repeated squaring trick
+                for (int expLen = Integer.SIZE - expZeros; expLen > 0; expLen--) {
+                    answer = answer.multiply(answer);
+                    if (workingExp < 0) // leading bit is set
+                        answer = answer.multiply(base);
 
-                workingExp <<= 1;
+                    workingExp <<= 1;
+                }
             }
 
             // Multiply back the (exponentiated) powers of two (quickly,
@@ -2685,6 +2690,56 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 return answer;
             }
         }
+    }
+
+    /**
+     * Computes {@code x^n} using repeated squaring trick.
+     * Assumes {@code x != 0}.
+     */
+    static BigInteger unsignedIntPow(int x, int n) {
+        // Double.PRECISION / bitLength(x) is the largest integer e
+        // such that x^e fits into a double. If e <= 2, we won't use fp arithmetic.
+        // This allows to use fp arithmetic where possible.
+        final int maxExp = Math.max(2, Double.PRECISION / bitLengthForInt(x));
+        final int maxExpLen = bitLengthForInt(maxExp);
+
+        final int nZeros = Integer.numberOfLeadingZeros(n);
+        n <<= nZeros;
+
+        BigInteger pow = ONE;
+        int blockLen;
+        for (int nLen = Integer.SIZE - nZeros; nLen > 0; nLen -= blockLen) {
+            blockLen = maxExpLen < nLen ? maxExpLen : nLen;
+            // compute pow^(2^blockLen)
+            if (!pow.equals(ONE)) {
+                for (int i = 0; i < blockLen; i++)
+                    pow = pow.multiply(pow);
+            }
+
+            // add exp to power's exponent
+            int exp = n >>> -blockLen;
+            if (exp > 0) {
+                // adjust exp to fit x^expAdj into a double
+                int expAdj = exp <= maxExp ? exp : exp >>> 1;
+
+                long xLong = x & LONG_MASK;
+                // don't use fp arithmetic if expAdj <= 2
+                long xToExpAdj = expAdj == 1 ? xLong :
+                                (expAdj == 2 ? xLong*xLong : (long) Math.pow(xLong, expAdj));
+
+                // append exp's rightmost bit to expAdj
+                BigInteger xToExp = new BigInteger(1, new int[] { (int) (xToExpAdj >>> 32), (int) xToExpAdj });
+                if (expAdj != exp) {
+                    xToExp = xToExp.multiply(xToExp);
+                    if ((exp & 1) == 1)
+                        xToExp = xToExp.multiply(xLong);
+                }
+                pow = pow.multiply(xToExp);
+            }
+            n <<= blockLen; // shift to next block of bits
+        }
+
+        return pow;
     }
 
     /**
