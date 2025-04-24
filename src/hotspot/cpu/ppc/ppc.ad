@@ -696,19 +696,6 @@ alloc_class chunk1 (
 );
 
 alloc_class chunk2 (
-  // Chunk2 contains *all* 8 condition code registers.
-
-  CR0,
-  CR1,
-  CR2,
-  CR3,
-  CR4,
-  CR5,
-  CR6,
-  CR7
-);
-
-alloc_class chunk3 (
   VSR0 , VSR0_H , VSR0_J , VSR0_K ,
   VSR1 , VSR1_H , VSR1_J , VSR1_K ,
   VSR2 , VSR2_H , VSR2_J , VSR2_K ,
@@ -773,6 +760,18 @@ alloc_class chunk3 (
   VSR61, VSR61_H, VSR61_J, VSR61_K,
   VSR62, VSR62_H, VSR62_J, VSR62_K,
   VSR63, VSR63_H, VSR63_J, VSR63_K
+);
+
+alloc_class chunk3 (
+  // Chunk2 contains *all* 8 condition code registers.
+  CR0,
+  CR1,
+  CR2,
+  CR3,
+  CR4,
+  CR5,
+  CR6,
+  CR7
 );
 
 alloc_class chunk4 (
@@ -1921,25 +1920,18 @@ static enum RC rc_class(OptoReg::Name reg) {
   if (reg == OptoReg::Bad) return rc_bad;
 
   // We have 64 integer register halves, starting at index 0.
-  const int first_float_slot = Register::number_of_registers * 2;
-  STATIC_ASSERT(first_float_slot == MachRegisterNumbers::F0_num);
-  if (reg < first_float_slot) return rc_int;
+  STATIC_ASSERT((int)ConcreteRegisterImpl::max_gpr == (int)MachRegisterNumbers::F0_num);
+  if (reg < ConcreteRegisterImpl::max_gpr) return rc_int;
 
   // We have 64 floating-point register halves, starting at index 64.
-  const int first_condition_register_slot = first_float_slot + FloatRegister::number_of_registers * 2;
-  STATIC_ASSERT(first_condition_register_slot == MachRegisterNumbers::CR0_num);
-  if (reg < first_condition_register_slot) return rc_float;
+  STATIC_ASSERT((int)ConcreteRegisterImpl::max_fpr == (int)MachRegisterNumbers::VSR0_num);
+  if (reg < ConcreteRegisterImpl::max_fpr) return rc_float;
 
-  const int first_vs_register_slot = first_condition_register_slot + ConditionRegister::number_of_registers;
-  STATIC_ASSERT(first_vs_register_slot == MachRegisterNumbers::VSR0_num);
-  assert(reg >= first_vs_register_slot, "ConditionRegisters are not expected");
+  // We have 64 vector-scalar registers, starting at index 128.
+  STATIC_ASSERT((int)ConcreteRegisterImpl::max_vsr == (int)MachRegisterNumbers::CR0_num);
+  if (reg < ConcreteRegisterImpl::max_vsr) return rc_vs;
 
-  // We have 64 vector-scalar registers, starting at index 136.
-  const int first_special_register_slot = first_vs_register_slot + VectorSRegister::number_of_registers * 4;
-  STATIC_ASSERT(first_special_register_slot == MachRegisterNumbers::SR_XER_num);
-  if (reg < first_special_register_slot) return rc_vs;
-
-  // Special purpose registers are not allocated. We only accept stack from here.
+  // Condition and special purpose registers are not allocated. We only accept stack from here.
   assert(OptoReg::is_stack(reg), "what else is it?");
   return rc_stack;
 }
