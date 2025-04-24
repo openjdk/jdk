@@ -307,10 +307,9 @@ public class JavadocTokenizer extends JavaTokenizer {
 
             while (need > grow) {
                 grow <<= 1;
-            }
-
-            if (grow <= 0) {
-                throw new IndexOutOfBoundsException();
+                if (grow <= 0) {
+                    throw new IndexOutOfBoundsException();
+                }
             }
 
             // Handle overflow.
