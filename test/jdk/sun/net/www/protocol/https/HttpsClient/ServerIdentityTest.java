@@ -144,7 +144,6 @@ public final class ServerIdentityTest extends SSLSocketTemplate {
         hostname = args[1];
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        kpg.initialize(2048);
         KeyPair caKeys = kpg.generateKeyPair();
         KeyPair serverKeys = kpg.generateKeyPair();
         KeyPair clientKeys = kpg.generateKeyPair();
