@@ -808,15 +808,23 @@ class MergePrimitiveLoads;
  *
  * Note: combine operator can be shared in different MergeLoadInfo
  */
-class MergeLoadInfo : ResourceObj {
+class MergeLoadInfo {
   friend MergePrimitiveLoads;
 private:
-  LoadNode* const    _load;
-  Node*     const _combine;
-  jint      const   _shift;
+  LoadNode* _load;
+  Node*     _combine;
+  jint      _shift;
 public:
-  MergeLoadInfo(LoadNode* load, Node* combine, jint shift) : _load(load), _combine(combine), _shift(shift) {}
+  // Constructor for invalid item
+  MergeLoadInfo() : _load(nullptr), _combine(nullptr), _shift(-1) {}
+  // Constructor
+  MergeLoadInfo(LoadNode* load, Node* combine, jint shift) : _load(load), _combine(combine), _shift(shift) {
+    assert(load != nullptr && combine != nullptr && shift != -1, "invalid value");
+  }
 
+  MergeLoadInfo& operator=(const MergeLoadInfo& other) = default;
+
+  bool is_invalid() { return _load == nullptr; }
 #ifdef ASSERT
   void dump() {
     tty->print_cr("MergeLoadInfo: load: %s(%d), combine: %d, shift: %d",
@@ -825,7 +833,7 @@ public:
 #endif
 };
 
-typedef GrowableArray<MergeLoadInfo*> MergeLoadInfoList;
+typedef GrowableArray<MergeLoadInfo> MergeLoadInfoList;
 
 class MergePrimitiveLoads : public StackObj {
   // The adjacent status of 2 loads
@@ -859,11 +867,12 @@ private:
   // Check other_load and load are compatible
   bool is_compatible_load(const LoadNode* other_load, const LoadNode* load) const;
   // From the seed load to collect load items for merging
-  void collect_merge_list(MergeLoadInfoList& merge_list, const LoadNode* load);
+  // Return the count of collected items, return -1 for failure
+  int collect_merge_list(MergeLoadInfoList* merge_list, const LoadNode* load);
   // Construct merge information item from input load
-  MergeLoadInfo* merge_load_info(LoadNode* load) const;
+  MergeLoadInfo merge_load_info(LoadNode* load) const;
   // Make the merged load and optional ReverseByte for replace
-  Node* make_merged_load(const MergeLoadInfoList& merge_list);
+  Node* make_merged_load(const MergeLoadInfoList* merge_list, int count);
 
   // Helper methods for merge loads optimization
   static bool is_supported_load_opcode(int opcode);
@@ -950,7 +959,8 @@ bool MergePrimitiveLoads::has_no_merge_load_combine_below() const {
 }
 
 // Construct merge information item from input load
-MergeLoadInfo* MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
+MergeLoadInfo MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
+  const MergeLoadInfo invalid = MergeLoadInfo();
   const Node* check = bypass_i2l(load);
   Node* combine_oper = nullptr;
   jint shift = -1;
@@ -967,7 +977,7 @@ MergeLoadInfo* MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
           shift = 0;
         } else {
           // Too much Or usages
-          return nullptr;
+          return invalid;
         }
         break;
       }
@@ -978,31 +988,31 @@ MergeLoadInfo* MergePrimitiveLoads::merge_load_info(LoadNode* load) const {
         if (shift_oper->outcnt() != 1 ||                                               // Shift should has only one usage
             !is_supported_combine_opcode(shift_oper->unique_out()->Opcode()) ||    // Not used by combine operator
             !shift_oper->in(2)->is_ConI()) {                                         // Not shift by constant
-          return nullptr;
+          return invalid;
         }
         if (combine_oper == nullptr) {
           combine_oper = shift_oper->unique_out();
         } else {
           // Too much combine operators
-          return nullptr;
+          return invalid;
         }
         shift = shift_oper->in(2)->as_ConI()->get_int();
         if (shift % (load->memory_size() * BitsPerByte) != 0) {
           // Shift value is not aligned with memory size
-          return nullptr;
+          return invalid;
         }
         break;
       }
       default:
         // can not handle other usage
-        return nullptr;
+        return invalid;
     }
   }
   if (combine_oper == nullptr) {
-    return nullptr;
+    return invalid;
   }
   assert(shift != -1, "must be set");
-  return new MergeLoadInfo(load, combine_oper, shift);
+  return MergeLoadInfo(load, combine_oper, shift);
 }
 
 Node* MergePrimitiveLoads::run() {
@@ -1034,10 +1044,13 @@ Node* MergePrimitiveLoads::run() {
   NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeLoads] candidate:"); _combine->dump(); tty->cr(); })
 
   ResourceMark rm;
-  MergeLoadInfoList merge_list;
-  collect_merge_list(merge_list, load);
+  MergeLoadInfoList* merge_list = new GrowableArray<MergeLoadInfo>(8, 8, MergeLoadInfo());
+  int count = collect_merge_list(merge_list, load);
+  if (count == -1) {
+    return nullptr;
+  }
 
-  Node* replace = make_merged_load(merge_list);
+  Node* replace = make_merged_load(merge_list, count);
   NOT_PRODUCT( if (is_trace_success() && replace != nullptr) { tty->print("[TraceMergeLoads] replace node is:"); replace->dump(); tty->cr(); })
 
   return replace;
@@ -1118,16 +1131,13 @@ MergePrimitiveLoads::MemoryAdjacentStatus MergePrimitiveLoads::get_adjacent_load
 }
 
 // From the seed load to collect load items for merging
-void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list, const LoadNode* load) {
+// Return the count of collected items, return -1 for failure
+int MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList* merge_list, const LoadNode* load) {
   const int max_bytes = 8; // The largest load is LoadLong
   const int max_merged_nodes = max_bytes/load->memory_size();
+  assert(merge_list->length() == max_bytes, "have enough item slots");
+  assert(merge_list->find_if([&](MergeLoadInfo item) {return !item.is_invalid();}) == -1, "all items should be invalid");
 
-  MergeLoadInfo* array[8] = {nullptr};
-#ifdef ASSERT
-  for (auto & i : array) {
-    assert(i == nullptr, "must be initialized");
-  }
-#endif
   // collect load nodes info from the same memory input
   Node* mem = load->in(MemNode::Memory);
   int collected = 0;
@@ -1136,28 +1146,29 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list, cons
     LoadNode* out = mem->fast_out(iter)->isa_Load();
     if (out == nullptr || !is_compatible_load(out, load)) continue;
 
-    MergeLoadInfo* info = merge_load_info(out);
-    if (info == nullptr || !is_reachable_combine_nodes(info->_combine, _combine)) {
-      NOT_PRODUCT( if (is_trace_basic() && info != nullptr) { tty->print("[TraceMergeLoads]: merge_list:unreachable combine nodes"); info->_combine->dump(); tty->cr(); });
+    MergeLoadInfo info = merge_load_info(out);
+    if (info.is_invalid() || !is_reachable_combine_nodes(info._combine, _combine)) {
+      NOT_PRODUCT( if (is_trace_basic() && !info.is_invalid()) { tty->print("[TraceMergeLoads]: merge_list:unreachable combine nodes"); info._combine->dump(); tty->cr(); });
       continue;
     }
 
-    int index = info->_shift / (load->memory_size() * BitsPerByte);
-    if (index < max_merged_nodes && array[index] == nullptr) {
-      array[index] = info;
+    int index = info._shift / (load->memory_size() * BitsPerByte);
+    if (index < max_merged_nodes && merge_list->at(index).is_invalid()) {
+      merge_list->at_put(index, info);
       collected ++;
     } else {
-      NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeLoads]: merge_list:wrong index or duplicate loads at same place: index:%d", index); out->dump(); array[index]->_load->dump(); tty->cr(); });
-      return;
+      NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeLoads]: merge_list:wrong index or duplicate loads at same place: index:%d", index); out->dump(); merge_list->at(index)._load->dump(); tty->cr(); });
+      return -1;
     }
   }
 
 #ifdef ASSERT
   if (is_trace_basic()) {
     tty->print_cr("[TraceMergeLoads]: dump draft merge info array, collected: %d", collected);
-    for (auto & info : array) {
-      if (info) {
-        info->dump();
+    for (int i=0; i<merge_list->length(); i++) {
+      MergeLoadInfo* item = merge_list->adr_at(i);
+      if (!item->is_invalid()) {
+        item->dump();
       }
     }
   }
@@ -1166,12 +1177,12 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list, cons
   int bytes = collected * load->memory_size();
   if (collected < 2 || bytes < 4 || !is_power_of_2(bytes)) {
     // too few or not aligned
-    return;
+    return -1;
   }
 
   if (_combine->bottom_type() == TypeLong::LONG && bytes < 8) {
     // not cover all bits of result
-    return;
+    return -1;
   }
 
   // check loads are adjacent in the same order
@@ -1179,19 +1190,20 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list, cons
   bool find_candidate = false;
 
   for (int i = 0; i < collected; i++) {
-    MergeLoadInfo* info = array[i];
-    if (info == nullptr) {
-      return;
+    // MergeLoadInfo* info = array[i];
+    MergeLoadInfo* info = merge_list->adr_at(i);
+    if (info->is_invalid()) {
+      return -1;
     }
     if (i > 0) {
-      MemoryAdjacentStatus adjacent = get_adjacent_load_status(array[i-1]->_load, info->_load);
+      MemoryAdjacentStatus adjacent = get_adjacent_load_status(merge_list->at(i-1)._load, info->_load);
       if (adjacent == NotAdjacent) {
-        return;
+        return -1;
       } else if (order == Unknown) {
         order = adjacent;
       } else if (adjacent != order) {
         // Different adjacent order
-        return;
+        return -1;
       }
     }
 
@@ -1202,7 +1214,7 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list, cons
       if (!info->_load->is_unsigned()) {
         // no unsigned Load of LoadI, so LoadI can not be merged
         // we may check value, if it's greater than 0, it can be merged
-        return;
+        return -1;
       }
     }
 
@@ -1211,7 +1223,7 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list, cons
 
   // candidate combine operator is not in the list
   if (!find_candidate) {
-    return;
+    return -1;
   }
 
   _order = order;
@@ -1222,13 +1234,13 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list, cons
 #ifdef VM_LITTLE_ENDIAN
   // LowToHigh match the platform order
   if (order != LowToHigh && load->memory_size() != 1) {
-    return;
+    return -1;
   }
   _require_reverse_bytes = (order == HighToLow);
 #else
   // HighToLow match the platform order
   if (order != HighToLow && load->memory_size() != 1) {
-    return;
+    return -1;
   }
   _require_reverse_bytes = (order == LowToHigh);
 #endif
@@ -1237,37 +1249,29 @@ void MergePrimitiveLoads::collect_merge_list(MergeLoadInfoList& merge_list, cons
        !Matcher::match_rule_supported(Op_ReverseBytesI) ||
        !Matcher::match_rule_supported(Op_ReverseBytesL))) {
     // Reverse Bytes is not supported
-    return;
+    return -1;
   }
 
   // All checks are passed
-  for (int i=0; i<collected; i++) {
-    merge_list.push(array[i]);
-  }
 #ifdef ASSERT
   if (is_trace_basic()) {
     tty->print_cr("[TraceMergeLoads]: dump final merge info list, collected: %d", collected);
-    for (int i=0; i < merge_list.length(); i++) {
-      MergeLoadInfo* info = merge_list.at(i);
-      info->dump();
+    for (int i=0; i < collected; i++) {
+      merge_list->at(i).dump();
     }
   }
 #endif
-  return;
+  return collected;
 }
 
 // Make the merged load and optional ReverBytes for replace
-Node* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList& merge_list) {
-  if (merge_list.is_empty()) {
-    return nullptr;
-  }
-
+Node* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList* merge_list, int count) {
   LoadNode* load;
   // Get address of merged load
   if (_order == LowToHigh) {
-    load = merge_list.at(0)->_load;
+    load = merge_list->at(0)._load;
   } else {
-    load = merge_list.at(merge_list.length()-1)->_load;
+    load = merge_list->at(count-1)._load;
   }
   Node* adr  = load->in(MemNode::Address);
   Node* ctrl = load->in(MemNode::Control);
@@ -1276,7 +1280,7 @@ Node* MergePrimitiveLoads::make_merged_load(const MergeLoadInfoList& merge_list)
   const TypePtr* at = load->adr_type();
   const Type* rt = nullptr;
 
-  int merge_size = merge_list.length() * load->memory_size();
+  int merge_size = count * load->memory_size();
   BasicType bt = T_ILLEGAL;
   switch (merge_size) {
     case 4: bt = T_INT;   rt = TypeInt::INT;   break;
