@@ -68,7 +68,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
  */
 public class H3QuicTLSConnection {
 
-    private static final String SYS_PROP_DISABLED_ALGS = "jdk.tls.disabledAlgorithms";
+    private static final String SECURITY_PROP_DISABLED_ALGS = "jdk.tls.disabledAlgorithms";
     private static final SSLParameters USE_DEFAULT_SSL_PARAMETERS = new SSLParameters();
 
     // expect highest supported version we know about
@@ -88,9 +88,9 @@ public class H3QuicTLSConnection {
         // re-enable 3DES
         SecurityUtils.removeFromDisabledTlsAlgs("3DES");
         // print out the updated security property for debug purposes
-        System.out.println("running tests with " + SYS_PROP_DISABLED_ALGS
+        System.out.println("running tests with " + SECURITY_PROP_DISABLED_ALGS
                 + " security property configured to: "
-                + Security.getProperty(SYS_PROP_DISABLED_ALGS));
+                + Security.getProperty(SECURITY_PROP_DISABLED_ALGS));
 
         // enable all logging
         System.setProperty("jdk.httpclient.HttpClient.log", "all,frames:all");
