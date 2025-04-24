@@ -92,8 +92,18 @@ endif
 # Define external dependencies
 
 # Latest that could be made to work.
-GCC_VER := 13.2.0
-ifeq ($(GCC_VER), 13.2.0)
+GCC_VER := 14.2.0
+ifeq ($(GCC_VER), 14.2.0)
+  gcc_ver := gcc-14.2.0
+  binutils_ver := binutils-2.43
+  ccache_ver := ccache-4.10.2
+  CCACHE_CMAKE_BASED := 1
+  mpfr_ver := mpfr-4.2.1
+  gmp_ver := gmp-6.3.0
+  mpc_ver := mpc-1.3.1
+  gdb_ver := gdb-15.2
+  REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
+else ifeq ($(GCC_VER), 13.2.0)
   gcc_ver := gcc-13.2.0
   binutils_ver := binutils-2.41
   ccache_ver := ccache-3.7.12
@@ -262,10 +272,18 @@ define Download
   # Allow override
   $(1)_DIRNAME ?= $(basename $(basename $(notdir $($(1)))))
   $(1)_DIR = $(abspath $(SRCDIR)/$$($(1)_DIRNAME))
-  $(1)_CFG = $$($(1)_DIR)/configure
+  ifeq ($$($(1)_CMAKE_BASED),)
+    $(1)_CFG = $$($(1)_DIR)/configure
+    $(1)_SRC_MARKER = $$($(1)_DIR)/configure
+    $(1)_CONFIG = $(CONFIG)
+  else
+    $(1)_CFG = cmake
+    $(1)_SRC_MARKER = $$($(1)_DIR)/CMakeLists.txt
+    $(1)_CONFIG = $$(CMAKE_CONFIG) $$($(1)_DIR)
+  endif
   $(1)_FILE = $(DOWNLOAD)/$(notdir $($(1)))
 
-  $$($(1)_CFG) : $$($(1)_FILE)
+  $$($(1)_SRC_MARKER) : $$($(1)_FILE)
 	mkdir -p $$(SRCDIR)
 	tar -C $$(SRCDIR) -xf $$<
 	$$(foreach p,$$(abspath $$(wildcard patches/$$(ARCH)-$$(notdir $$($(1)_DIR)).patch)), \
@@ -364,6 +382,8 @@ $(foreach t,binutils mpfr gmp mpc gcc ccache gdb,$(eval $(t) = $(TARGETDIR)/$($(
 CONFIG = --target=$(TARGET) \
     --host=$(HOST) --build=$(BUILD) \
     --prefix=$(PREFIX)
+
+CMAKE_CONFIG = -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(PREFIX)
 
 PATHEXT = $(PREFIX)/bin:
 
@@ -576,6 +596,8 @@ ifeq ($(HOST), $(TARGET))
 	  $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" $(GDB_CFG) \
 	      $(CONFIG) \
 	      --with-sysroot=$(SYSROOT) \
+	      --with-mpfr=$(PREFIX) \
+	      --with-gmp=$(PREFIX) \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
@@ -591,13 +613,13 @@ endif
 ################################################################################
 # very straightforward. just build a ccache. it is only for host.
 $(BUILDDIR)/$(ccache_ver)/Makefile \
-    : $(CCACHE_CFG)
+    : $(CCACHE_SRC_MARKER)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	@mkdir -p $(@D)
 	@( \
 	  cd $(@D) ; \
 	  $(PATHPRE) $(ENVS) $(CCACHE_CFG) \
-	      $(CONFIG) \
+	      $(CCACHE_CONFIG) \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
@@ -702,6 +724,14 @@ ifeq ($(TARGET), $(HOST))
       addr2line ar as c++ c++filt dwp elfedit g++ gcc gcc-$(GCC_VER) gprof ld ld.bfd \
       ld.gold nm objcopy objdump ranlib readelf size strings strip)
 endif
+
+# Add link to work around "plugin needed to handle lto object" (JDK-8344272)
+$(PREFIX)/lib/bfd-plugins/liblto_plugin.so: $(PREFIX)/libexec/gcc/$(TARGET)/$(GCC_VER)/liblto_plugin.so
+	@echo 'Creating missing $(@F) soft link'
+	@mkdir -p $(@D)
+	ln -s $$(realpath -s --relative-to=$(@D) $<) $@
+
+missing-links += $(PREFIX)/lib/bfd-plugins/liblto_plugin.so
 
 ################################################################################
 
