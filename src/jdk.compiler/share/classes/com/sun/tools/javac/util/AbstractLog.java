@@ -195,11 +195,10 @@ public abstract class AbstractLog {
      *  @param flags         Any additional flags required
      */
     public void mandatoryWarning(DiagnosticPosition pos, Warning warningKey, DiagnosticFlag... flags) {
-        DiagnosticFlag[] flags2 = new DiagnosticFlag[flags.length + 2];
-        System.arraycopy(flags, 0, flags2, 0, flags.length);
-        flags2[flags.length + 0] = DiagnosticFlag.MANDATORY;
-        flags2[flags.length + 1] = DiagnosticFlag.DEFAULT_ENABLED;
-        warning(pos, warningKey, flags2);
+        EnumSet<DiagnosticFlag> flagSet = EnumSet.of(DiagnosticFlag.MANDATORY, DiagnosticFlag.DEFAULT_ENABLED);
+        for (DiagnosticFlag flag : flags)
+            flagSet.add(flag);
+        report(diags.create(flagSet, source, pos, warningKey));
     }
 
     /** Provide a non-fatal notification, unless suppressed by the -nowarn option.

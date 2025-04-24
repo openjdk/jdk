@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,13 +49,17 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 /**
- * Maps source code positions to the applicable {@link Lint} instance based on {@link -Xlint}
- * command line flags and {@code @SuppressWarnings} annotations on containing declarations.
+ * Maps source code positions to the applicable {@link Lint} instance.
  *
  * <p>
- * This mapping can't be cannot be calculated until after attribution. As each top-level
- * declaration (class, package, or module) is attributed, this singleton is notified by
- * Attr and the {@link Lint}s contained in that declaration are calculated.
+ * Because {@code @SuppressWarnings} is a Java symbol, in general this mapping can't be be
+ * calculated until after attribution. As each top-level declaration (class, package, or module)
+ * is attributed, this singleton is notified and the {@link Lint}s that apply to every source
+ * position within that top-level declaration are calculated.
+ *
+ * <p>
+ * The method {@link #lintAt} returns the {@link Lint} instance applicable to source position;
+ * if it can't be determined yet, an empty {@link Optional} is returned.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
@@ -135,7 +138,7 @@ public class LintMapper {
      * @param tree top-level declaration (class, package, or module)
      */
     public void calculateLints(JavaFileObject sourceFile, JCTree tree, EndPosTable endPositions) {
-        initializeIfNeeded();
+        Assert.check(rootLint != null);
         fileInfoMap.get(sourceFile).afterAttr(tree, endPositions);
     }
 
@@ -160,45 +163,29 @@ public class LintMapper {
      * Invoked when file parsing completes to identify the top-level declarations.
      */
     public void finishParsingFile(JCCompilationUnit tree) {
+        Assert.check(rootLint != null);
         fileInfoMap.get(tree.sourcefile).afterParse(tree);
     }
 
 // FileInfo
 
     /**
-     * Holds {@link Lint} related information for one source file.
+     * Holds {@link Lint} information for one source file.
      *
      * <p>
-     * Instances evolve through these states:
+     * Instances evolve through three states:
      * <ul>
      *  <li>Before the file has been completely parsed, {@link #topSpans} is null.
-     *  <li>Immediately after the file has been parsed, {@link #topSpans} contains zero or
-     *      more {@link Span}s corresponding to the top-level declarations in the file.
-     *  <li>When a top-level declaration is attributed, a corresponding {@link DeclNode} child
-     *      matching one of the {@link Span}s in {@link #topSpans} is added to {@link #rootNode}.
+     *  <li>Immediately after the file has been parsed, {@link #topSpans} contains zero or more {@link Span}s
+     *      corresponding to the top-level declarations in the file, and {@code rootNode} has no children.
+     *  <li>When a top-level declaration is attributed, a corresponding {@link DeclNode} child matching one
+     *      of the {@link Span}s in {@link #topSpans} is created and added to {@link #rootNode}.
      * </ul>
      */
     private class FileInfo {
 
-        Set<Span> topSpans;                                                 // the spans of all top level declarations
-        final DeclNode rootNode = new DeclNode(rootLint);                   // tree of file's "interesting" declaration nodes
-
-        // Add an entry to topSpans corresponding to each top-level declaration
-        void afterParse(JCCompilationUnit tree) {
-            Assert.check(topSpans == null, "source already parsed");
-            topSpans = tree.defs.stream()
-              .filter(this::isTopLevelDecl)
-              .map(decl -> new Span(decl, tree.endPositions))
-              .collect(Collectors.toSet());
-        }
-
-        // Mark the given top-level declaration as attributed and build its DeclNode subtree
-        void afterAttr(JCTree tree, EndPosTable endPositions) {
-            Assert.check(topSpans != null, "source not parsed");
-            Assert.check(topSpans.contains(new Span(tree, endPositions)), "unknown declaration");
-            Assert.check(findTopNode(tree.pos()) == null, "duplicate call");
-            new DeclNodeTreeBuilder(this, rootNode, endPositions).scan(tree);
-        }
+        List<Span> topSpans;                                // the spans of all top level declarations
+        final DeclNode rootNode = new DeclNode(rootLint);   // tree of file's "interesting" declaration nodes
 
         // Find the Lint that applies to the given position, if known
         Optional<Lint> lintAt(DiagnosticPosition pos) {
@@ -209,9 +196,22 @@ public class LintMapper {
             DeclNode topNode = findTopNode(pos);
             if (topNode == null)                            // has that declaration been attributed yet?
                 return Optional.empty();                    // -> no, we don't know yet
-            DeclNode node = topNode.find(pos);              // find the best matching node
-            Assert.check(node != null);                     // (it must exist)
+            DeclNode node = topNode.find(pos);              // find the best matching node (it must exist)
             return Optional.of(node.lint);                  // use its Lint
+        }
+
+        void afterParse(JCCompilationUnit tree) {
+            Assert.check(topSpans == null, "source already parsed");
+            topSpans = tree.defs.stream()
+              .filter(this::isTopLevelDecl)
+              .map(decl -> new Span(decl, tree.endPositions))
+              .collect(Collectors.toList());
+        }
+
+        void afterAttr(JCTree tree, EndPosTable endPositions) {
+            Assert.check(topSpans != null, "source not parsed");
+            Assert.check(findTopNode(tree.pos()) == null, "duplicate call");
+            new DeclNodeTreeBuilder(rootNode, endPositions).scan(tree);
         }
 
         Optional<Span> findTopSpan(DiagnosticPosition pos) {
@@ -225,13 +225,6 @@ public class LintMapper {
               .filter(node -> node.contains(pos))
               .findFirst()
               .orElse(null);
-        }
-
-        void removeTopNode(DeclNode topNode) {
-            boolean removed = rootNode.children.remove(topNode);
-            Assert.check(removed);
-            removed = topSpans.remove(topNode.toSpan());
-            Assert.check(removed);
         }
 
         boolean isTopLevelDecl(JCTree tree) {
@@ -273,21 +266,6 @@ public class LintMapper {
         }
 
         @Override
-        public int hashCode() {
-            return Integer.hashCode(startPos) ^ Integer.hashCode(endPos);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == this)
-                return true;
-            if (obj == null || obj.getClass() != this.getClass())
-                return false;
-            final Span that = (Span)obj;
-            return this.startPos == that.startPos && this.endPos == that.endPos;
-        }
-
-        @Override
         public String toString() {
             return String.format("Span[%d-%d]", startPos, endPos);
         }
@@ -299,29 +277,29 @@ public class LintMapper {
      * Represents a declaration and the {@link Lint} configuration that applies within its lexical range.
      *
      * <p>
-     * For each file, a root node represents the entire source file. At the next level down are nodes that
-     * represent the top-level declarations in the file, and so on.
+     * For each file, there is a root node represents the entire source file. At the next level down are
+     * nodes representing the top-level declarations in the file, and so on.
      */
     private static class DeclNode extends Span {
 
-        final DeclNode parent;                                  // immediate containing declaration (null for root)
-        final List<DeclNode> children = new ArrayList<>();      // next level down declarations contained by this node
         final Symbol symbol;                                    // the symbol declared by this declaration (null for root)
-        final Lint lint;                                        // the Lint configuration that applies within this declaration
+        final DeclNode parent;                                  // the immediately containing declaration (null for root)
+        final List<DeclNode> children = new ArrayList<>();      // the immediately next level down declarations under this node
+        final Lint lint;                                        // the Lint configuration that applies at this declaration
 
         // Create a root node representing the entire file
         DeclNode(Lint rootLint) {
             super(Integer.MIN_VALUE, Integer.MAX_VALUE);
-            this.parent = null;
             this.symbol = null;
+            this.parent = null;
             this.lint = rootLint;
         }
 
         // Create a normal declaration node
-        DeclNode(DeclNode parent, Symbol symbol, JCTree tree, EndPosTable endPositions, Lint lint) {
+        DeclNode(Symbol symbol, DeclNode parent, JCTree tree, EndPosTable endPositions, Lint lint) {
             super(tree, endPositions);
-            this.parent = parent;
             this.symbol = symbol;
+            this.parent = parent;
             this.lint = lint;
             parent.children.add(this);
         }
@@ -340,12 +318,6 @@ public class LintMapper {
             return Stream.concat(Stream.of(this), children.stream().flatMap(DeclNode::stream));
         }
 
-        Span toSpan() {
-            return new Span(startPos, endPos);
-        }
-
-        // Note: no need for equals() or hashCode() here
-
         @Override
         public String toString() {
             String label = symbol != null ? "sym=" + symbol : "ROOT";
@@ -356,18 +328,16 @@ public class LintMapper {
 // DeclNodeTreeBuilder
 
     /**
-     * Builds a tree of {@link DeclNode}s, starting from a top-level declaration.
+     * Builds a tree of {@link DeclNode}s starting from a top-level declaration.
      */
     private class DeclNodeTreeBuilder extends TreeScanner {
 
-        private final FileInfo fileInfo;
         private final EndPosTable endPositions;
 
         private DeclNode parent;
         private Lint lint;
 
-        DeclNodeTreeBuilder(FileInfo fileInfo, DeclNode rootNode, EndPosTable endPositions) {
-            this.fileInfo = fileInfo;
+        DeclNodeTreeBuilder(DeclNode rootNode, EndPosTable endPositions) {
             this.endPositions = endPositions;
             this.parent = rootNode;
             this.lint = rootNode.lint;              // i.e, rootLint
@@ -400,24 +370,24 @@ public class LintMapper {
 
         private <T extends JCTree> void scanDecl(T tree, Symbol symbol, Consumer<? super T> recursion) {
 
-            // Symbol can be null if there were earlier errors; skip this declaration if so
+            // "symbol" can be null if there were earlier errors; skip this declaration if so
             if (symbol == null) {
                 recursion.accept(tree);
                 return;
             }
 
-            // Update the current Lint in effect. Note lint.augment() returns the same instance if there's no change.
+            // Update the current Lint in effect; note lint.augment() returns the same instance if there's no change
             Lint previousLint = lint;
             lint = lint.augment(symbol);
 
-            // If this declaration is not interesting, we don't need to create a DeclNode for it
+            // If this declaration is not "interesting", we don't need to create a DeclNode for it
             if (lint == previousLint && parent.parent != null) {
                 recursion.accept(tree);
                 return;
             }
 
             // Add a DeclNode here
-            DeclNode node = new DeclNode(parent, symbol, tree, endPositions, lint);
+            DeclNode node = new DeclNode(symbol, parent, tree, endPositions, lint);
             parent = node;
             try {
                 recursion.accept(tree);

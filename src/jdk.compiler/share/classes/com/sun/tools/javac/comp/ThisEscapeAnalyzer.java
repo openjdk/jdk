@@ -170,7 +170,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
 
     /** Environment for symbol lookup.
      */
-    private Env<AttrContext> attrEnv;
+    private Env<AttrContext> topLevelEnv;
 
     /** Maps symbols of all methods to their corresponding declarations.
      */
@@ -187,7 +187,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
 
     /** Snapshots of {@link #callStack} where possible 'this' escapes occur.
      */
-    private final ArrayList<Warning> warningList = new ArrayList<>();
+    private final java.util.List<Warning> warningList = new ArrayList<>();
 
 // These fields are scoped to the constructor being analyzed
 
@@ -200,7 +200,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
      *  constructor we started with, and subsequent entries correspond to invoked methods.
      *  If we're still in the initial constructor, the list will be empty.
      */
-    private final ArrayList<StackFrame> callStack = new ArrayList<>();
+    private final java.util.List<StackFrame> callStack = new ArrayList<>();
 
     /** Used to terminate recursion in {@link #invokeInvokable invokeInvokable()}.
      */
@@ -243,11 +243,11 @@ public class ThisEscapeAnalyzer extends TreeScanner {
 //
 
     public void analyzeTree(Env<AttrContext> env) {
-        attrEnv = env;
+        topLevelEnv = env;
         try {
             doAnalyzeTree(env);
         } finally {
-            attrEnv = null;
+            topLevelEnv = null;
             methodMap.clear();
             nonPublicOuters.clear();
             targetClass = null;
@@ -282,7 +282,6 @@ public class ThisEscapeAnalyzer extends TreeScanner {
 
         // Build a mapping from symbols of methods to their declarations.
         // Classify all ctors and methods as analyzable and/or invokable.
-        // Track which constructors and fields don't need to be analyzed.
         // Record classes whose outer instance (if any) is non-public.
         new TreeScanner() {
 
@@ -763,13 +762,13 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         MethodSymbol hasNext = null;
         MethodSymbol next = null;
         if (elemType == null) {
-            Symbol iteratorSym = rs.resolveQualifiedMethod(tree.expr.pos(), attrEnv,
+            Symbol iteratorSym = rs.resolveQualifiedMethod(tree.expr.pos(), topLevelEnv,
               tree.expr.type, names.iterator, List.nil(), List.nil());
             if (iteratorSym instanceof MethodSymbol) {
                 iterator = (MethodSymbol)iteratorSym;
-                Symbol hasNextSym = rs.resolveQualifiedMethod(tree.expr.pos(), attrEnv,
+                Symbol hasNextSym = rs.resolveQualifiedMethod(tree.expr.pos(), topLevelEnv,
                   iterator.getReturnType(), names.hasNext, List.nil(), List.nil());
-                Symbol nextSym = rs.resolveQualifiedMethod(tree.expr.pos(), attrEnv,
+                Symbol nextSym = rs.resolveQualifiedMethod(tree.expr.pos(), topLevelEnv,
                   iterator.getReturnType(), names.next, List.nil(), List.nil());
                 if (hasNextSym instanceof MethodSymbol)
                     hasNext = (MethodSymbol)hasNextSym;
@@ -1397,7 +1396,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
               + "[" + properties.stream().collect(Collectors.joining(",")) + "]";
         }
 
-        protected void addProperties(ArrayList<String> properties) {
+        protected void addProperties(java.util.List<String> properties) {
         }
 
         // Return a modified copy of this Ref's Indirections. The modified set must not be empty.
@@ -1527,7 +1526,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         }
 
         @Override
-        protected void addProperties(ArrayList<String> properties) {
+        protected void addProperties(java.util.List<String> properties) {
             super.addProperties(properties);
             properties.add("depth=" + depth);
         }
@@ -1607,7 +1606,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         }
 
         @Override
-        protected void addProperties(ArrayList<String> properties) {
+        protected void addProperties(java.util.List<String> properties) {
             super.addProperties(properties);
             properties.add("sym=" + sym);
         }
@@ -1710,18 +1709,14 @@ public class ThisEscapeAnalyzer extends TreeScanner {
 
         final MethodInfo method;                    // the method containing the statement
         final JCTree site;                          // the call site within the method
-        final JCTree initializer;                   // originating field or init block, else null
+        final JCTree initializer;                   // originating field or initialization block, else null
         final boolean suppressible;                 // whether warning can be suppressed at this frame
 
         StackFrame(MethodInfo method, JCTree initializer, JCTree site) {
             this.method = method;
             this.initializer = initializer;
-            this.suppressible = initializer != null || (method.constructor && method.declaringClass == targetClass);
             this.site = site;
-        }
-
-        int pos() {
-            return site.pos().getPreferredPosition();
+            this.suppressible = initializer != null || (method.constructor && method.declaringClass == targetClass);
         }
 
         DiagnosticPosition warningPos() {
@@ -1729,15 +1724,22 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         }
 
         Lint lint() {
-            return lintMapper.lintAt(attrEnv.toplevel.sourcefile, site.pos()).get();
+            return lintMapper.lintAt(topLevelEnv.toplevel.sourcefile, site.pos()).get();
+        }
+
+        boolean isSuppressed() {
+            return suppressible && !lint().isEnabled(THIS_ESCAPE);
+        }
+
+        int comparePos(StackFrame that) {
+            return Integer.compare(this.site.pos().getPreferredPosition(), that.site.pos().getPreferredPosition());
         }
 
         @Override
         public String toString() {
             return "StackFrame"
-              + "[" + method.declaration.sym + "@" + pos()
+              + "[" + method.declaration.sym + "@" + site.pos().getPreferredPosition()
               + (initializer != null ? ",init@" + initializer.pos().getPreferredPosition() : "")
-              + (suppressible ? ",suppressible" : "")
               + "]";
         }
     }
@@ -1748,36 +1750,31 @@ public class ThisEscapeAnalyzer extends TreeScanner {
     private class Warning {
 
         final JCClassDecl declaringClass;           // the class whose instance is leaked
-        final ArrayList<StackFrame> stack;          // the call stack where the leak happens
+        final java.util.List<StackFrame> stack;     // the call stack where the leak happens
         final JCTree origin;                        // the originating ctor, field, or init block
 
-        Warning(JCClassDecl declaringClass, ArrayList<StackFrame> stack) {
+        Warning(JCClassDecl declaringClass, java.util.List<StackFrame> stack) {
             this.declaringClass = declaringClass;
             this.stack = stack;
             this.origin = stack.stream()
               .map(frame -> frame.initializer)
               .filter(Objects::nonNull)
               .findFirst()
-              .orElseGet(() -> initialConstructor().declaration);
-        }
-
-        // Get the initial constructor that generated this warning, which is found at the bottom of the call stack
-        MethodInfo initialConstructor() {
-            return stack.get(0).method;
+              .orElseGet(() -> stack.get(0).method.declaration);    // default to the initial constructor
         }
 
         // Used to eliminate redundant warnings. Warning A is redundant with warning B if the call stack of A includes
-        // the call stack of B plus additional outer frame(s). For example, if constructor B = Foo(int x) generates a
-        // warning, then generating another warning for some constructor A where it invokes this(123) would be redundant.
+        // the call stack of B plus additional initial frame(s). For example, if constructor B = Foo(int x) generates a
+        // warning, then generating warning for some other constructor A when it invokes this(123) would be redundant.
         boolean isRedundantWith(Warning that) {
             int numExtra = this.stack.size() - that.stack.size();
             return numExtra >= 0 &&
               IntStream.range(0, that.stack.size())
-                .allMatch(i -> this.stack.get(numExtra + i).pos() == that.stack.get(i).pos());
+                .allMatch(index -> this.stack.get(numExtra + index).comparePos(that.stack.get(index)) == 0);
         };
 
-        // Order warnings by stack frame lexicographically from top to bottom, which will cause all
-        // warnings that are isRedundantWith() some other warning to immediately follow that warning.
+        // Order warnings by their stack frames, lexicographically in reverse calling order, which will cause
+        // all warnings that are isRedundantWith() some other warning to immediately follow that warning.
         static int sortByStackFrames(Warning warning1, Warning warning2) {
             int index1 = warning1.stack.size();
             int index2 = warning2.stack.size();
@@ -1790,7 +1787,7 @@ public class ThisEscapeAnalyzer extends TreeScanner {
                     return -1;
                 if (end2)
                     return 1;
-                int diff = Integer.compare(warning1.stack.get(index1).pos(), warning2.stack.get(index2).pos());
+                int diff = warning1.stack.get(index1).comparePos(warning2.stack.get(index2));
                 if (diff != 0)
                     return diff;
             }
@@ -1803,10 +1800,8 @@ public class ThisEscapeAnalyzer extends TreeScanner {
         // on regular methods are ignored. We work our way back up the call stack from the point of the leak until we
         // encounter a suppressible stack frame.
         boolean isSuppressed() {
-            int index = stack.size();
-            while (--index >= 0) {
-                StackFrame frame = stack.get(index);
-                if (frame.suppressible && !frame.lint().isEnabled(THIS_ESCAPE))
+            for (int index = stack.size() - 1; index >= 0; index--) {
+                if (stack.get(index).isSuppressed())
                     return true;
             }
             return false;
