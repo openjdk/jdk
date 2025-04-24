@@ -76,7 +76,7 @@ define igv
 end
 ```
 
-Another way to dump graphs interactively is through the `Node::dump_dfs`
+Another way to dump graphs interactively is through the `Node::dump_bfs`
 functionality with the option `!` (run `p find_node(0)->dump_bfs(0,0,"H")` to
 see the complete list of options). One of the versions of this function also
 takes the three stack management registers to produce a C2 call stack:
