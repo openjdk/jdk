@@ -2103,6 +2103,8 @@ void PrintBFS::print_options_help(bool print_examples) {
   _output->print_cr("      B: print scheduling blocks (if available)");
   _output->print_cr("      $: dump only, no header, no other columns");
   _output->print_cr("      !: show nodes on IGV (sent over network stream)");
+  _output->print_cr("        (use preferably with dump_bfs(int, Node*, char*, void*, void*, void*)");
+  _output->print_cr("         to produce a C2 stack trace along with the graph dump, see examples below)");
   _output->print_cr("");
   _output->print_cr("recursively follow edges to nodes with permitted visit types,");
   _output->print_cr("on the boundary additionally display nodes allowed in boundary types");
@@ -2152,6 +2154,9 @@ void PrintBFS::print_options_help(bool print_examples) {
     _output->print_cr("    find all paths (A) between two nodes of length at most 8");
     _output->print_cr("  find_node(741)->dump_bfs(7, find_node(741), \"c+A\")");
     _output->print_cr("    find all control loops for this node");
+    _output->print_cr("  find_node(741)->dump_bfs(7, find_node(741), \"c+A!\", $sp, $fp, $pc)");
+    _output->print_cr("    same as above, but printing the resulting subgraph");
+    _output->print_cr("    along with a C2 stack trace on IGV");
   }
 }
 
