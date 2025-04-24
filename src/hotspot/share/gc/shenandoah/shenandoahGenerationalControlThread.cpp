@@ -27,22 +27,22 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
-#include "gc/shenandoah/shenandoahGenerationalControlThread.hpp"
 #include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahFullGC.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahGenerationalControlThread.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-#include "gc/shenandoah/shenandoahOldGC.hpp"
-#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahOldGC.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
-#include "memory/metaspaceUtils.hpp"
 #include "memory/metaspaceStats.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/events.hpp"
 
@@ -273,13 +273,9 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     }
   }
 
-  // If this was the requested GC cycle, notify waiters about it
-  if (ShenandoahCollectorPolicy::is_explicit_gc(request.cause)) {
-    notify_gc_waiters();
-  }
-
-  // If this cycle completed successfully, notify threads waiting to retry allocation
+  // If this cycle completed successfully, notify threads waiting for gc
   if (!_heap->cancelled_gc()) {
+    notify_gc_waiters();
     notify_alloc_failure_waiters();
   }
 
