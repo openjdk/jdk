@@ -1293,21 +1293,16 @@ public final class PassFailJFrame {
 
 
     /**
-     * Forcibly pass the test. This should be used in semi-automatic tests when
+     * Forcibly pass the test. This method should be used in semi-automatic tests when
      * the test determines that all the conditions for passing the test are met.
-     * This should not be used in cases where a resource is unavailable or a
+     * <p>
+     * This method should not be used in cases where a resource is unavailable or a
      * feature isn't supported, instead the test should
      * throw jtreg.SkippedException.
      *
-     * <p>The sample usage:
-     * <pre><code>
-     *     String output = fd.getFile();
-     *     if ("input".equals(output)) {
-     *     PassFailJFrame.forcePass();
-     *     } else {
-     *     PassFailJFrame.forceFail("TEST FAILED (output file - " + output + ")");
-     *     }
-     * </code></pre>
+     * <p> A sample usage can be found in this test :
+     * <a href="https://github.com/openjdk/jdk/blob/master/test/jdk/java/awt/FileDialog/SaveFileNameOverrideTest.java#L84">SaveFileNameOverrideTest.java</a>
+     *
      */
     public static void forcePass() {
         latch.countDown();
