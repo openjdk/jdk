@@ -267,7 +267,7 @@ public class filter_s002 extends JDIBase {
         for (int i = 0; ; i++) {
 
             vm.resume();
-            breakpointForCommunication();
+            breakpointForCommunication(debuggeeName);
 
             int instruction = ((IntegerValue)
                                (debuggeeClass.getValue(debuggeeClass.fieldByName("instruction")))).value();
@@ -331,29 +331,6 @@ public class filter_s002 extends JDIBase {
         }
         log1("    TESTING ENDS");
         return;
-    }
-    protected void breakpointForCommunication()
-            throws JDITestRuntimeException {
-        log2("breakpointForCommunication");
-
-        do {
-            getEventSet();
-
-            Event event = eventIterator.nextEvent();
-            if (event instanceof BreakpointEvent)
-                return;
-
-            log2("      received: " + event);
-
-            if (EventFilters.filtered(event, debuggeeName)) {
-                eventSet.resume();
-            }
-            else {
-                break;
-            }
-        } while (true);
-
-        throw new JDITestRuntimeException("** event IS NOT a breakpoint **");
     }
 
     // ============================== test's additional methods
