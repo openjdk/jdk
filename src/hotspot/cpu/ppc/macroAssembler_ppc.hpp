@@ -745,8 +745,8 @@ class MacroAssembler: public Assembler {
   void set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, Label* jpc = nullptr);
 
   // Read vm result from thread: oop_result = R16_thread->result;
-  void get_vm_result  (Register oop_result);
-  void get_vm_result_2(Register metadata_result);
+  void get_vm_result_oop(Register oop_result);
+  void get_vm_result_metadata(Register metadata_result);
 
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);

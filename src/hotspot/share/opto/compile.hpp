@@ -106,7 +106,6 @@ enum LoopOptsMode {
   LoopOptsNone,
   LoopOptsMaxUnroll,
   LoopOptsShenandoahExpand,
-  LoopOptsShenandoahPostExpand,
   LoopOptsSkipSplitIf,
   LoopOptsVerify
 };
@@ -680,7 +679,7 @@ public:
 
   void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
   void igv_print_method_to_network(const char* phase_name = "Debug");
-  void igv_print_graph_to_network(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes);
+  void igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes);
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif

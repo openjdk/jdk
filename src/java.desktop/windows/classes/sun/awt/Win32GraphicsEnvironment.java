@@ -92,9 +92,11 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
     public Win32GraphicsEnvironment() {
     }
 
+    @Override
     protected native int getNumScreens();
     private native int getDefaultScreen();
 
+    @Override
     public GraphicsDevice getDefaultScreenDevice() {
         GraphicsDevice[] screens = getScreenDevices();
         if (screens.length == 0) {
@@ -207,6 +209,7 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
  * ----END DISPLAY CHANGE SUPPORT----
  */
 
+    @Override
     protected GraphicsDevice makeScreenDevice(int screennum) {
         GraphicsDevice device = null;
         if (WindowsFlags.isD3DEnabled()) {
@@ -218,6 +221,7 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
         return device;
     }
 
+    @Override
     public boolean isDisplayLocal() {
         return true;
     }
