@@ -114,7 +114,7 @@ protected:
   virtual uint hash() const {
     return ProjNode::hash() + _adr_type->hash();
   }
-  virtual bool cmp(const Node &n) const {
+  virtual bool cmp(const Node& n) const {
     return ProjNode::cmp(n) && ((NarrowMemProjNode&)n)._adr_type == _adr_type;
   }
   virtual uint size_of() const {
