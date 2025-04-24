@@ -87,7 +87,7 @@ public class ProdRed_Float {
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.MUL_REDUCTION_VF, ">= 1"})
     // There is no efficient way to implement strict-ordered version on riscv64.
-    @IR(applyIfPlatform = {"riscv64", "true"},
+    @IR(applyIfCPUFeature = {"rvv", "true"},
         applyIf = {"SuperWordReductions", "true"},
         failOn = {IRNode.MUL_REDUCTION_VF})
     public static float prodReductionImplement(float[] a, float[] b, float total) {

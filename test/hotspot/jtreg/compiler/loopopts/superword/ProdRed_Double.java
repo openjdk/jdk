@@ -89,9 +89,9 @@ public class ProdRed_Double {
         applyIfCPUFeature = {"sse2", "true"},
         counts = {IRNode.MUL_REDUCTION_VD, ">= 1"})
     // There is no efficient way to implement strict-ordered version on riscv64.
-    @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIf = {"SuperWordReductions", "true"},
-        failOn = {IRNode.MUL_REDUCTION_VF})
+    @IR(applyIf = {"SuperWordReductions", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        failOn = {IRNode.MUL_REDUCTION_VD})
     public static double prodReductionImplement(double[] a, double[] b, double total) {
         for (int i = 0; i < a.length; i++) {
             total *= a[i] - b[i];
@@ -106,9 +106,9 @@ public class ProdRed_Double {
         applyIfCPUFeature = {"sse2", "true"},
         counts = {IRNode.MUL_REDUCTION_VD, ">= 1"})
     // There is no efficient way to implement strict-ordered version on riscv64.
-    @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIf = {"SuperWordReductions", "true"},
-        failOn = {IRNode.MUL_REDUCTION_VF})
+    @IR(applyIf = {"SuperWordReductions", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        failOn = {IRNode.MUL_REDUCTION_VD})
     public static double prodReductionWithStoreImplement(double[] a, double[] b, double[] c, double total) {
         for (int i = 0; i < a.length; i++) {
             c[i] = a[i] - b[i];
