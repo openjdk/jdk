@@ -57,7 +57,7 @@ The JVM provides some entry functions to dump graphs from a debugger such as
 `compile.cpp`. In combination with the IGV network interface, these functions
 enable a powerful interactive workflow where the user can simultaneously step
 through C2's code and visualize the evolving Ideal graph. Note that, to produce
-and print meaningful C2 call stacks, these functions take the stack pointer,
+and print meaningful C2 stack traces, these functions take the stack pointer,
 frame pointer, and program counter registers as arguments. These are usually
 `$sp`, `$fp`, and `$pc`:
 
@@ -79,7 +79,7 @@ end
 Another way to dump graphs interactively is through the `Node::dump_bfs`
 functionality with the option `!` (run `p find_node(0)->dump_bfs(0,0,"H")` to
 see the complete list of options). One of the versions of this function also
-takes the three stack management registers to produce a C2 call stack:
+takes the three stack management registers to produce a C2 stack trace:
 
 ```
 (gdb) p find_node(3)->dump_bfs(0, 0, "!", $sp, $fp, $pc)
