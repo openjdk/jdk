@@ -86,10 +86,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 
     // Make sure that the vm_results are cleared.
     if (oop_result1->is_valid()) {
-      clear_mem(Address(Z_thread, JavaThread::vm_result_offset()), sizeof(jlong));
+      clear_mem(Address(Z_thread, JavaThread::vm_result_oop_offset()), sizeof(jlong));
     }
     if (metadata_result->is_valid()) {
-      clear_mem(Address(Z_thread, JavaThread::vm_result_2_offset()), sizeof(jlong));
+      clear_mem(Address(Z_thread, JavaThread::vm_result_metadata_offset()), sizeof(jlong));
     }
     if (frame_size() == no_frame_size) {
       // Pop the stub frame.
@@ -109,10 +109,10 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 
   // Get oop results if there are any and reset the values in the thread.
   if (oop_result1->is_valid()) {
-    get_vm_result(oop_result1);
+    get_vm_result_oop(oop_result1);
   }
   if (metadata_result->is_valid()) {
-    get_vm_result_2(metadata_result);
+    get_vm_result_metadata(metadata_result);
   }
 
   return call_offset;
@@ -886,8 +886,8 @@ OopMapSet* Runtime1::generate_handle_exception(C1StubId id, StubAssembler *sasm)
       DEBUG_ONLY(__ z_lay(reg_fp, Address(Z_SP, frame_size_in_bytes));)
 
       // Make sure that the vm_results are cleared (may be unnecessary).
-      __ clear_mem(Address(Z_thread, JavaThread::vm_result_offset()),   sizeof(oop));
-      __ clear_mem(Address(Z_thread, JavaThread::vm_result_2_offset()), sizeof(Metadata*));
+      __ clear_mem(Address(Z_thread, JavaThread::vm_result_oop_offset()),   sizeof(oop));
+      __ clear_mem(Address(Z_thread, JavaThread::vm_result_metadata_offset()), sizeof(Metadata*));
       break;
     }
     case C1StubId::handle_exception_nofpu_id:
