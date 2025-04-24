@@ -49,304 +49,6 @@
 
 // Optimization - Graph Style
 
-uint PureCallNode::size_of() const { return sizeof(*this); }
-bool PureCallNode::cmp(const Node& n) const {
-  const PureCallNode& call = static_cast<const PureCallNode&>(n);
-  return Opcode() == call.Opcode() && _tf->eq(call._tf) && _addr == call._addr && _name == call._name;
-}
-uint PureCallNode::hash() const {
-  return Node::hash() + _tf->hash() + reinterpret_cast<uintptr_t>(_addr) + reinterpret_cast<uintptr_t>(_name);
-}
-PureCallNode::PureCallNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name) : Node(required) {
-  init_class_id(Class_PureCall);
-  add_flag(Flag_is_macro);
-  C->add_macro_node(this);
-  _tf = tf;
-  _addr = addr;
-  _name = name;
-}
-PureFloatingModuloNode::PureFloatingModuloNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name)
-    : PureCallNode(C, required, tf, addr, name) {
-  init_class_id(Class_PureFloatingModulo);
-}
-PureModFNode::PureModFNode(Compile* C, Node* ctrl, Node* lhs, Node* rhs)
-    : PureFloatingModuloNode(C, 3, OptoRuntime::modf_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::frem), "frem") {
-  init_class_id(Class_PureModF);
-}
-PureModDNode::PureModDNode(Compile* C, Node* ctrl, Node* lhs, Node* rhs)
-    : PureFloatingModuloNode(C, 5, OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::drem), "drem") {
-  init_class_id(Class_PureModF);
-}
-PureModFNode* PureModFNode::make(Compile* C, Node* ctrl, Node* lhs, Node* rhs) {
-  auto* node = new PureModFNode(C, ctrl, lhs, rhs);
-  node->init_req(Control, ctrl);
-  node->init_req(Parms, lhs);
-  node->init_req(Parms + 1, rhs);
-  return node;
-}
-PureModDNode* PureModDNode::make(Compile* C, Node* ctrl, Node* lhs, Node* rhs) {
-  auto* node = new PureModDNode(C, ctrl, lhs, rhs);
-  node->init_req(Control, ctrl);
-  node->init_req(Parms, lhs);
-  node->init_req(Parms + 1, C->top());
-  node->init_req(Parms + 2, rhs);
-  node->init_req(Parms + 3, C->top());
-  return node;
-}
-
-ProjNode* PureCallNode::proj_out_or_null(uint which_proj) const {
-  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
-    Node* p = fast_out(i);
-    if (p->is_Proj()) {
-      ProjNode* proj = p->as_Proj();
-      if (proj->_con == which_proj) {
-        return proj;
-      }
-    } else {
-      assert(p == this && is_Start(), "else must be proj");
-      continue;
-    }
-  }
-  return nullptr;
-}
-
-void PureCallNode::extract_projections(Node*& ctrl_proj, Node*& data_proj) const {
-  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
-    ProjNode* pn = fast_out(i)->as_Proj();
-    if (pn->outcnt() == 0) {
-      continue;
-    }
-    switch (pn->_con) {
-    case TypeFunc::Control:
-      ctrl_proj = pn;
-      break;
-    case TypeFunc::Parms:
-      data_proj = pn;
-      break;
-    default:
-      assert(false, "unexpected projection type for a pure function");
-    }
-  }
-}
-
-void PureCallNode::replace_with_con(PhaseIterGVN* phase, const Type* con) {
-  Compile* C = phase->C;
-  Node* con_node = phase->makecon(con);
-  Node* ctrl_proj = nullptr;
-  Node* data_proj = nullptr;
-  extract_projections(ctrl_proj, data_proj);
-  if (ctrl_proj == nullptr) {
-    return;
-  }
-  phase->replace_node(ctrl_proj, in(Control));
-  if (data_proj != nullptr) {
-    phase->replace_node(data_proj, con_node);
-  }
-  phase->replace_node(this, C->top());
-  C->remove_macro_node(this);
-}
-
-void PureCallNode::remove_unused_node(PhaseIterGVN* phase) {
-  Compile* C = phase->C;
-  Node* ctrl_proj = nullptr;
-  Node* data_proj = nullptr;
-  extract_projections(ctrl_proj, data_proj);
-  assert(data_proj == nullptr, "result is not unused");
-  if (ctrl_proj == nullptr) {
-    return;
-  }
-  phase->replace_node(ctrl_proj, in(Control));
-  phase->replace_node(this, C->top());
-  C->remove_macro_node(this);
-}
-
-Node* PureCallNode::expand_macro(Compile* C) const {
-  CallNode* call = new CallLeafNode(tf(), addr(), name(), TypeRawPtr::BOTTOM);
-  call->init_req(TypeFunc::Control, in(Control));
-  call->init_req(TypeFunc::I_O, C->top());
-  call->init_req(TypeFunc::Memory, C->top());
-  call->init_req(TypeFunc::ReturnAdr, C->top());
-  call->init_req(TypeFunc::FramePtr, C->top());
-  for (uint i = 0; i < tf()->domain()->cnt() - TypeFunc::Parms; i++) {
-    call->init_req(TypeFunc::Parms + i, in(Parms + i));
-  }
-  return call;
-}
-
-const Type* PureCallNode::bottom_type() const {
-  return tf()->range();
-}
-const Type* PureCallNode::Value(PhaseGVN* phase) const {
-  if (in(0) == nullptr || phase->type(in(0)) == Type::TOP) {
-    return Type::TOP;
-  }
-  return bottom_type();
-}
-bool PureCallNode::remove_if_result_is_unused(PhaseIterGVN* igvn) {
-  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
-  bool not_dead = proj_out_or_null(TypeFunc::Control) != nullptr;
-  if (result_is_unused && not_dead) {
-    remove_unused_node(igvn);
-    return true;
-  }
-  return false;
-}
-Node* PureCallNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (!can_reshape) {
-    return nullptr;
-  }
-
-  remove_if_result_is_unused(phase->is_IterGVN());
-  return nullptr;
-}
-
-#ifndef PRODUCT
-void PureCallNode::dump_spec(outputStream* st) const {
-  st->print("# %s", name());
-}
-#endif
-
-Node* PureModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (!can_reshape) {
-    return nullptr;
-  }
-  PhaseIterGVN* igvn = phase->is_IterGVN();
-
-  if (remove_if_result_is_unused(igvn)) {
-    return nullptr;
-  }
-
-  // Either input is TOP ==> the result is TOP
-  const Type* t1 = phase->type(dividend());
-  const Type* t2 = phase->type(divisor());
-  if (t1 == Type::TOP || t2 == Type::TOP) {
-    return phase->C->top();
-  }
-
-  // If either number is not a constant, we know nothing.
-  if ((t1->base() != Type::FloatCon) || (t2->base() != Type::FloatCon)) {
-    return nullptr; // note: x%x can be either NaN or 0
-  }
-
-  float f1 = t1->getf();
-  float f2 = t2->getf();
-  jint x1 = jint_cast(f1); // note:  *(int*)&f1, not just (int)f1
-  jint x2 = jint_cast(f2);
-
-  // If either is a NaN, return an input NaN
-  if (g_isnan(f1)) {
-    replace_with_con(igvn, t1);
-    return nullptr;
-  }
-  if (g_isnan(f2)) {
-    replace_with_con(igvn, t2);
-    return nullptr;
-  }
-
-  // If an operand is infinity or the divisor is +/- zero, punt.
-  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jint) {
-    return nullptr;
-  }
-
-  // We must be modulo'ing 2 float constants.
-  // Make sure that the sign of the fmod is equal to the sign of the dividend
-  jint xr = jint_cast(fmod(f1, f2));
-  if ((x1 ^ xr) < 0) {
-    xr ^= min_jint;
-  }
-
-  replace_with_con(igvn, TypeF::make(jfloat_cast(xr)));
-  return nullptr;
-}
-
-Node* PureModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (!can_reshape) {
-    return nullptr;
-  }
-  PhaseIterGVN* igvn = phase->is_IterGVN();
-
-  if (remove_if_result_is_unused(igvn)) {
-    return nullptr;
-  }
-
-  // Either input is TOP ==> the result is TOP
-  const Type* t1 = phase->type(dividend());
-  const Type* t2 = phase->type(divisor());
-  if (t1 == Type::TOP || t2 == Type::TOP) {
-    return nullptr;
-  }
-
-  // If either number is not a constant, we know nothing.
-  if ((t1->base() != Type::DoubleCon) || (t2->base() != Type::DoubleCon)) {
-    return nullptr; // note: x%x can be either NaN or 0
-  }
-
-  double f1 = t1->getd();
-  double f2 = t2->getd();
-  jlong x1 = jlong_cast(f1); // note:  *(long*)&f1, not just (long)f1
-  jlong x2 = jlong_cast(f2);
-
-  // If either is a NaN, return an input NaN
-  if (g_isnan(f1)) {
-    replace_with_con(igvn, t1);
-    return nullptr;
-  }
-  if (g_isnan(f2)) {
-    replace_with_con(igvn, t2);
-    return nullptr;
-  }
-
-  // If an operand is infinity or the divisor is +/- zero, punt.
-  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jlong) {
-    return nullptr;
-  }
-
-  // We must be modulo'ing 2 double constants.
-  // Make sure that the sign of the fmod is equal to the sign of the dividend
-  jlong xr = jlong_cast(fmod(f1, f2));
-  if ((x1 ^ xr) < 0) {
-    xr ^= min_jlong;
-  }
-
-  replace_with_con(igvn, TypeD::make(jdouble_cast(xr)));
-  return nullptr;
-}
-
-Node* PureModFNode::dividend() const { return in(Parms); }
-Node* PureModFNode::divisor() const { return in(Parms + 1); }
-Node* PureModDNode::dividend() const { return in(Parms); }
-Node* PureModDNode::divisor() const { return in(Parms + 2); }
-
-PureNativeMathNode::PureNativeMathNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name)
-    : PureCallNode(C, required, tf, addr, name) {
-  init_class_id(Class_PureNativeMath);
-}
-PureUnaryNativeMathNode::PureUnaryNativeMathNode(Compile* C, address addr, const char* name)
-    : PureNativeMathNode(C, 3, OptoRuntime::Math_D_D_Type(), addr, name) {
-  init_class_id(Class_PureUnaryNativeMath);
-}
-PureBinaryNativeMathNode::PureBinaryNativeMathNode(Compile* C, address addr, const char* name)
-    : PureNativeMathNode(C, 5, OptoRuntime::Math_DD_D_Type(), addr, name) {
-  init_class_id(Class_PureBinaryNativeMath);
-}
-
-PureUnaryNativeMathNode* PureUnaryNativeMathNode::make(Compile* C, address addr, const char* name, Node* ctrl, Node* arg) {
-  auto* node = new PureUnaryNativeMathNode(C, addr, name);
-  node->init_req(Control, ctrl);
-  node->init_req(Parms, arg);
-  node->init_req(Parms + 1, C->top());
-  return node;
-}
-PureBinaryNativeMathNode* PureBinaryNativeMathNode::make(Compile* C, address addr, const char* name, Node* ctrl, Node* lhs, Node* rhs) {
-  auto* node = new PureBinaryNativeMathNode(C, addr, name);
-  node->init_req(Control, ctrl);
-  node->init_req(Parms, lhs);
-  node->init_req(Parms + 1, C->top());
-  node->init_req(Parms + 2, rhs);
-  node->init_req(Parms + 3, C->top());
-  return node;
-}
-
 //=============================================================================
 uint StartNode::size_of() const { return sizeof(*this); }
 bool StartNode::cmp( const Node &n ) const
@@ -2654,4 +2356,302 @@ bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeO
   }
 
   return true;
+}
+
+uint PureCallNode::size_of() const { return sizeof(*this); }
+bool PureCallNode::cmp(const Node& n) const {
+  const PureCallNode& call = static_cast<const PureCallNode&>(n);
+  return Opcode() == call.Opcode() && _tf->eq(call._tf) && _addr == call._addr && _name == call._name;
+}
+uint PureCallNode::hash() const {
+  return Node::hash() + _tf->hash() + reinterpret_cast<uintptr_t>(_addr) + reinterpret_cast<uintptr_t>(_name);
+}
+PureCallNode::PureCallNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name) : Node(required) {
+  init_class_id(Class_PureCall);
+  add_flag(Flag_is_macro);
+  C->add_macro_node(this);
+  _tf = tf;
+  _addr = addr;
+  _name = name;
+}
+PureFloatingModuloNode::PureFloatingModuloNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name)
+    : PureCallNode(C, required, tf, addr, name) {
+  init_class_id(Class_PureFloatingModulo);
+}
+PureModFNode::PureModFNode(Compile* C, Node* ctrl, Node* lhs, Node* rhs)
+    : PureFloatingModuloNode(C, 3, OptoRuntime::modf_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::frem), "frem") {
+  init_class_id(Class_PureModF);
+}
+PureModDNode::PureModDNode(Compile* C, Node* ctrl, Node* lhs, Node* rhs)
+    : PureFloatingModuloNode(C, 5, OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::drem), "drem") {
+  init_class_id(Class_PureModF);
+}
+PureModFNode* PureModFNode::make(Compile* C, Node* ctrl, Node* lhs, Node* rhs) {
+  auto* node = new PureModFNode(C, ctrl, lhs, rhs);
+  node->init_req(Control, ctrl);
+  node->init_req(Parms, lhs);
+  node->init_req(Parms + 1, rhs);
+  return node;
+}
+PureModDNode* PureModDNode::make(Compile* C, Node* ctrl, Node* lhs, Node* rhs) {
+  auto* node = new PureModDNode(C, ctrl, lhs, rhs);
+  node->init_req(Control, ctrl);
+  node->init_req(Parms, lhs);
+  node->init_req(Parms + 1, C->top());
+  node->init_req(Parms + 2, rhs);
+  node->init_req(Parms + 3, C->top());
+  return node;
+}
+
+ProjNode* PureCallNode::proj_out_or_null(uint which_proj) const {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    Node* p = fast_out(i);
+    if (p->is_Proj()) {
+      ProjNode* proj = p->as_Proj();
+      if (proj->_con == which_proj) {
+        return proj;
+      }
+    } else {
+      assert(p == this && is_Start(), "else must be proj");
+      continue;
+    }
+  }
+  return nullptr;
+}
+
+void PureCallNode::extract_projections(Node*& ctrl_proj, Node*& data_proj) const {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    ProjNode* pn = fast_out(i)->as_Proj();
+    if (pn->outcnt() == 0) {
+      continue;
+    }
+    switch (pn->_con) {
+    case TypeFunc::Control:
+      ctrl_proj = pn;
+      break;
+    case TypeFunc::Parms:
+      data_proj = pn;
+      break;
+    default:
+      assert(false, "unexpected projection type for a pure function");
+    }
+  }
+}
+
+void PureCallNode::replace_with_con(PhaseIterGVN* phase, const Type* con) {
+  Compile* C = phase->C;
+  Node* con_node = phase->makecon(con);
+  Node* ctrl_proj = nullptr;
+  Node* data_proj = nullptr;
+  extract_projections(ctrl_proj, data_proj);
+  if (ctrl_proj == nullptr) {
+    return;
+  }
+  phase->replace_node(ctrl_proj, in(Control));
+  if (data_proj != nullptr) {
+    phase->replace_node(data_proj, con_node);
+  }
+  phase->replace_node(this, C->top());
+  C->remove_macro_node(this);
+}
+
+void PureCallNode::remove_unused_node(PhaseIterGVN* phase) {
+  Compile* C = phase->C;
+  Node* ctrl_proj = nullptr;
+  Node* data_proj = nullptr;
+  extract_projections(ctrl_proj, data_proj);
+  assert(data_proj == nullptr, "result is not unused");
+  if (ctrl_proj == nullptr) {
+    return;
+  }
+  phase->replace_node(ctrl_proj, in(Control));
+  phase->replace_node(this, C->top());
+  C->remove_macro_node(this);
+}
+
+Node* PureCallNode::expand_macro(Compile* C) const {
+  CallNode* call = new CallLeafNode(tf(), addr(), name(), TypeRawPtr::BOTTOM);
+  call->init_req(TypeFunc::Control, in(Control));
+  call->init_req(TypeFunc::I_O, C->top());
+  call->init_req(TypeFunc::Memory, C->top());
+  call->init_req(TypeFunc::ReturnAdr, C->top());
+  call->init_req(TypeFunc::FramePtr, C->top());
+  for (uint i = 0; i < tf()->domain()->cnt() - TypeFunc::Parms; i++) {
+    call->init_req(TypeFunc::Parms + i, in(Parms + i));
+  }
+  return call;
+}
+
+const Type* PureCallNode::bottom_type() const {
+  return tf()->range();
+}
+const Type* PureCallNode::Value(PhaseGVN* phase) const {
+  if (in(0) == nullptr || phase->type(in(0)) == Type::TOP) {
+    return Type::TOP;
+  }
+  return bottom_type();
+}
+bool PureCallNode::remove_if_result_is_unused(PhaseIterGVN* igvn) {
+  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
+  bool not_dead = proj_out_or_null(TypeFunc::Control) != nullptr;
+  if (result_is_unused && not_dead) {
+    remove_unused_node(igvn);
+    return true;
+  }
+  return false;
+}
+Node* PureCallNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (!can_reshape) {
+    return nullptr;
+  }
+
+  remove_if_result_is_unused(phase->is_IterGVN());
+  return nullptr;
+}
+
+#ifndef PRODUCT
+void PureCallNode::dump_spec(outputStream* st) const {
+  st->print("# %s", name());
+}
+#endif
+
+Node* PureModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (!can_reshape) {
+    return nullptr;
+  }
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+
+  if (remove_if_result_is_unused(igvn)) {
+    return nullptr;
+  }
+
+  // Either input is TOP ==> the result is TOP
+  const Type* t1 = phase->type(dividend());
+  const Type* t2 = phase->type(divisor());
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return phase->C->top();
+  }
+
+  // If either number is not a constant, we know nothing.
+  if ((t1->base() != Type::FloatCon) || (t2->base() != Type::FloatCon)) {
+    return nullptr; // note: x%x can be either NaN or 0
+  }
+
+  float f1 = t1->getf();
+  float f2 = t2->getf();
+  jint x1 = jint_cast(f1); // note:  *(int*)&f1, not just (int)f1
+  jint x2 = jint_cast(f2);
+
+  // If either is a NaN, return an input NaN
+  if (g_isnan(f1)) {
+    replace_with_con(igvn, t1);
+    return nullptr;
+  }
+  if (g_isnan(f2)) {
+    replace_with_con(igvn, t2);
+    return nullptr;
+  }
+
+  // If an operand is infinity or the divisor is +/- zero, punt.
+  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jint) {
+    return nullptr;
+  }
+
+  // We must be modulo'ing 2 float constants.
+  // Make sure that the sign of the fmod is equal to the sign of the dividend
+  jint xr = jint_cast(fmod(f1, f2));
+  if ((x1 ^ xr) < 0) {
+    xr ^= min_jint;
+  }
+
+  replace_with_con(igvn, TypeF::make(jfloat_cast(xr)));
+  return nullptr;
+}
+
+Node* PureModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (!can_reshape) {
+    return nullptr;
+  }
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+
+  if (remove_if_result_is_unused(igvn)) {
+    return nullptr;
+  }
+
+  // Either input is TOP ==> the result is TOP
+  const Type* t1 = phase->type(dividend());
+  const Type* t2 = phase->type(divisor());
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return nullptr;
+  }
+
+  // If either number is not a constant, we know nothing.
+  if ((t1->base() != Type::DoubleCon) || (t2->base() != Type::DoubleCon)) {
+    return nullptr; // note: x%x can be either NaN or 0
+  }
+
+  double f1 = t1->getd();
+  double f2 = t2->getd();
+  jlong x1 = jlong_cast(f1); // note:  *(long*)&f1, not just (long)f1
+  jlong x2 = jlong_cast(f2);
+
+  // If either is a NaN, return an input NaN
+  if (g_isnan(f1)) {
+    replace_with_con(igvn, t1);
+    return nullptr;
+  }
+  if (g_isnan(f2)) {
+    replace_with_con(igvn, t2);
+    return nullptr;
+  }
+
+  // If an operand is infinity or the divisor is +/- zero, punt.
+  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jlong) {
+    return nullptr;
+  }
+
+  // We must be modulo'ing 2 double constants.
+  // Make sure that the sign of the fmod is equal to the sign of the dividend
+  jlong xr = jlong_cast(fmod(f1, f2));
+  if ((x1 ^ xr) < 0) {
+    xr ^= min_jlong;
+  }
+
+  replace_with_con(igvn, TypeD::make(jdouble_cast(xr)));
+  return nullptr;
+}
+
+Node* PureModFNode::dividend() const { return in(Parms); }
+Node* PureModFNode::divisor() const { return in(Parms + 1); }
+Node* PureModDNode::dividend() const { return in(Parms); }
+Node* PureModDNode::divisor() const { return in(Parms + 2); }
+
+PureNativeMathNode::PureNativeMathNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name)
+    : PureCallNode(C, required, tf, addr, name) {
+  init_class_id(Class_PureNativeMath);
+}
+PureUnaryNativeMathNode::PureUnaryNativeMathNode(Compile* C, address addr, const char* name)
+    : PureNativeMathNode(C, 3, OptoRuntime::Math_D_D_Type(), addr, name) {
+  init_class_id(Class_PureUnaryNativeMath);
+}
+PureBinaryNativeMathNode::PureBinaryNativeMathNode(Compile* C, address addr, const char* name)
+    : PureNativeMathNode(C, 5, OptoRuntime::Math_DD_D_Type(), addr, name) {
+  init_class_id(Class_PureBinaryNativeMath);
+}
+
+PureUnaryNativeMathNode* PureUnaryNativeMathNode::make(Compile* C, address addr, const char* name, Node* ctrl, Node* arg) {
+  auto* node = new PureUnaryNativeMathNode(C, addr, name);
+  node->init_req(Control, ctrl);
+  node->init_req(Parms, arg);
+  node->init_req(Parms + 1, C->top());
+  return node;
+}
+PureBinaryNativeMathNode* PureBinaryNativeMathNode::make(Compile* C, address addr, const char* name, Node* ctrl, Node* lhs, Node* rhs) {
+  auto* node = new PureBinaryNativeMathNode(C, addr, name);
+  node->init_req(Control, ctrl);
+  node->init_req(Parms, lhs);
+  node->init_req(Parms + 1, C->top());
+  node->init_req(Parms + 2, rhs);
+  node->init_req(Parms + 3, C->top());
+  return node;
 }

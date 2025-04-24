@@ -203,7 +203,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_string_copy(bool compress);
   bool inline_string_char_access(bool is_store);
   bool runtime_math(const TypeFunc* call_type, address funcAddr, const char* funcName);
-  bool runtime_math2(const TypeFunc* call_type, address funcAddr, const char* funcName);
   bool inline_math_native(vmIntrinsics::ID id);
   bool inline_math(vmIntrinsics::ID id);
   bool inline_double_math(vmIntrinsics::ID id);

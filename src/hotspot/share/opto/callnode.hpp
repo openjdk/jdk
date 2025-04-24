@@ -55,103 +55,13 @@ class     AbstractLockNode;
 class       LockNode;
 class       UnlockNode;
 class FastLockNode;
-
-class PureCallNode : public Node {
-  uint size_of() const override; // Size is bigger
-  bool cmp(const Node& n) const override;
-  uint hash() const override;
-
-protected:
-  const TypeFunc* _tf;
-  address _addr;
-  const char* _name;
-
-  PureCallNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name);
-
-  bool remove_if_result_is_unused(PhaseIterGVN* phase);
-
-public:
-  enum {
-    Control = 0,
-    Parms = 1,
-  };
-
-  int Opcode() const override;
-
-  const Type* bottom_type() const override;
-  const Type* Value(PhaseGVN* phase) const override;
-  Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
-  Node* Identity(PhaseGVN* phase) override { return this; }
-
-  const TypeFunc* tf() const { return _tf; }
-  address addr() const { return _addr; }
-  const char* name() const { return _name; }
-  bool is_CFG() const override { return true; }
-  bool depends_only_on_test() const override { return false; }
-
-  ProjNode* proj_out_or_null(uint which_proj) const;
-  void remove_unused_node(PhaseIterGVN* phase);
-  void replace_with_con(PhaseIterGVN* phase, const Type* con);
-  void extract_projections(Node*& ctrl_proj, Node*& data_proj) const;
-
-  Node* expand_macro(Compile* C) const;
-
-  NOT_PRODUCT(void dump_spec(outputStream* st) const override;)
-};
-
-class PureFloatingModuloNode : public PureCallNode {
-protected:
-  PureFloatingModuloNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name);
-  virtual Node* dividend() const = 0;
-  virtual Node* divisor() const = 0;
-
-public:
-  virtual int Opcode() const;
-};
-
-class PureModFNode : public PureFloatingModuloNode {
-  PureModFNode(Compile* C, Node* ctrl, Node* lhs, Node* rhs);
-  Node* dividend() const override;
-  Node* divisor() const override;
-
-public:
-  static PureModFNode* make(Compile* C, Node* ctrl, Node* lhs, Node* rhs);
-  Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
-  int Opcode() const override;
-};
-class PureModDNode : public PureFloatingModuloNode {
-  PureModDNode(Compile* C, Node* ctrl, Node* lhs, Node* rhs);
-  Node* dividend() const override;
-  Node* divisor() const override;
-
-public:
-  static PureModDNode* make(Compile* C, Node* ctrl, Node* lhs, Node* rhs);
-  Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
-  int Opcode() const override;
-};
-class PureNativeMathNode : public PureCallNode {
-protected:
-  PureNativeMathNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name);
-
-public:
-  int Opcode() const override;
-};
-class PureUnaryNativeMathNode : public PureNativeMathNode {
-protected:
-  PureUnaryNativeMathNode(Compile* C, address addr, const char* name);
-
-public:
-  int Opcode() const override;
-  static PureUnaryNativeMathNode* make(Compile* C, address addr, const char* name, Node* ctrl, Node* arg);
-};
-class PureBinaryNativeMathNode : public PureNativeMathNode {
-protected:
-  PureBinaryNativeMathNode(Compile* C, address addr, const char* name);
-
-public:
-  int Opcode() const override;
-  static PureBinaryNativeMathNode* make(Compile* C, address addr, const char* name, Node* ctrl, Node* lhs, Node* rhs);
-};
+class PureCallNode;
+class   PureFloatingModuloNode;
+class     PureModFNode;
+class     PureModDNode;
+class   PureNativeMathNode;
+class     PureUnaryNativeMathNode;
+class     PureBinaryNativeMathNode;
 
 //------------------------------StartNode--------------------------------------
 // The method start node
@@ -1358,5 +1268,103 @@ public:
 #else
   JVMState* dbg_jvms() const { return nullptr; }
 #endif
+};
+
+//------------------------------PureCall-----------------------------------
+class PureCallNode : public Node {
+  uint size_of() const override; // Size is bigger
+  bool cmp(const Node& n) const override;
+  uint hash() const override;
+
+protected:
+  const TypeFunc* _tf;
+  address _addr;
+  const char* _name;
+
+  PureCallNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name);
+
+  bool remove_if_result_is_unused(PhaseIterGVN* phase);
+
+public:
+  enum {
+    Control = 0,
+    Parms = 1,
+  };
+
+  int Opcode() const override;
+
+  const Type* bottom_type() const override;
+  const Type* Value(PhaseGVN* phase) const override;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
+  Node* Identity(PhaseGVN* phase) override { return this; }
+
+  const TypeFunc* tf() const { return _tf; }
+  address addr() const { return _addr; }
+  const char* name() const { return _name; }
+  bool is_CFG() const override { return true; }
+  bool depends_only_on_test() const override { return false; }
+
+  ProjNode* proj_out_or_null(uint which_proj) const;
+  void remove_unused_node(PhaseIterGVN* phase);
+  void replace_with_con(PhaseIterGVN* phase, const Type* con);
+  void extract_projections(Node*& ctrl_proj, Node*& data_proj) const;
+
+  Node* expand_macro(Compile* C) const;
+
+  NOT_PRODUCT(void dump_spec(outputStream* st) const override;)
+};
+
+class PureFloatingModuloNode : public PureCallNode {
+protected:
+  PureFloatingModuloNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name);
+  virtual Node* dividend() const = 0;
+  virtual Node* divisor() const = 0;
+
+public:
+  virtual int Opcode() const;
+};
+
+class PureModFNode : public PureFloatingModuloNode {
+  PureModFNode(Compile* C, Node* ctrl, Node* lhs, Node* rhs);
+  Node* dividend() const override;
+  Node* divisor() const override;
+
+public:
+  static PureModFNode* make(Compile* C, Node* ctrl, Node* lhs, Node* rhs);
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
+  int Opcode() const override;
+};
+class PureModDNode : public PureFloatingModuloNode {
+  PureModDNode(Compile* C, Node* ctrl, Node* lhs, Node* rhs);
+  Node* dividend() const override;
+  Node* divisor() const override;
+
+public:
+  static PureModDNode* make(Compile* C, Node* ctrl, Node* lhs, Node* rhs);
+  Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
+  int Opcode() const override;
+};
+class PureNativeMathNode : public PureCallNode {
+protected:
+  PureNativeMathNode(Compile* C, uint required, const TypeFunc* tf, address addr, const char* name);
+
+public:
+  int Opcode() const override;
+};
+class PureUnaryNativeMathNode : public PureNativeMathNode {
+protected:
+  PureUnaryNativeMathNode(Compile* C, address addr, const char* name);
+
+public:
+  int Opcode() const override;
+  static PureUnaryNativeMathNode* make(Compile* C, address addr, const char* name, Node* ctrl, Node* arg);
+};
+class PureBinaryNativeMathNode : public PureNativeMathNode {
+protected:
+  PureBinaryNativeMathNode(Compile* C, address addr, const char* name);
+
+public:
+  int Opcode() const override;
+  static PureBinaryNativeMathNode* make(Compile* C, address addr, const char* name, Node* ctrl, Node* lhs, Node* rhs);
 };
 #endif // SHARE_OPTO_CALLNODE_HPP

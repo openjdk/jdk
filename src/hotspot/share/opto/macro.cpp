@@ -2433,8 +2433,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
-               n->Opcode() == Op_ModD ||
-               n->Opcode() == Op_ModF ||
                n->is_PureCall()            ||
                n->is_OpaqueNotNull()       ||
                n->is_OpaqueInitializedAssertionPredicate() ||
@@ -2587,37 +2585,14 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       expand_subtypecheck_node(n->as_SubTypeCheck());
       break;
     default:
-      switch (n->Opcode()) {
-      case Op_ModD:
-      case Op_ModF: {
-        bool is_drem = n->Opcode() == Op_ModD;
-        CallNode* mod_macro = n->as_Call();
-        CallNode* call = new CallLeafNode(mod_macro->tf(),
-                                          is_drem ? CAST_FROM_FN_PTR(address, SharedRuntime::drem)
-                                                  : CAST_FROM_FN_PTR(address, SharedRuntime::frem),
-                                          is_drem ? "drem" : "frem", TypeRawPtr::BOTTOM);
-        call->init_req(TypeFunc::Control, mod_macro->in(TypeFunc::Control));
-        call->init_req(TypeFunc::I_O, mod_macro->in(TypeFunc::I_O));
-        call->init_req(TypeFunc::Memory, mod_macro->in(TypeFunc::Memory));
-        call->init_req(TypeFunc::ReturnAdr, mod_macro->in(TypeFunc::ReturnAdr));
-        call->init_req(TypeFunc::FramePtr, mod_macro->in(TypeFunc::FramePtr));
-        for (unsigned int i = 0; i < mod_macro->tf()->domain()->cnt() - TypeFunc::Parms; i++) {
-          call->init_req(TypeFunc::Parms + i, mod_macro->in(TypeFunc::Parms + i));
-        }
-        _igvn.replace_node(mod_macro, call);
-        transform_later(call);
+      if (n->is_PureCall()) {
+        PureCallNode* pure_call = n->as_PureCall();
+        Node* new_node = pure_call->expand_macro(C);
+        _igvn.replace_node(pure_call, new_node);
+        transform_later(new_node);
         break;
-      }
-      default:
-        if (n->is_PureCall()) {
-          PureCallNode* pure_call = n->as_PureCall();
-          Node* new_node = pure_call->expand_macro(C);
-          _igvn.replace_node(pure_call, new_node);
-          transform_later(new_node);
-          break;
-        } else {
-          assert(false, "unknown node type in macro list");
-        }
+      } else {
+        assert(false, "unknown node type in macro list");
       }
     }
     assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
