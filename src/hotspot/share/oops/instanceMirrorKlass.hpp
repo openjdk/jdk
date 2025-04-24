@@ -46,7 +46,7 @@ class InstanceMirrorKlass: public InstanceKlass {
   friend class InstanceKlass;
 
  public:
-  static const KlassKind Kind = InstanceMirrorKlassKind;
+  static constexpr KlassKind Kind = InstanceMirrorKlassKind;
 
  private:
   static int _offset_of_static_fields;
