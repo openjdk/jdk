@@ -885,7 +885,7 @@ class ImmutableCollections {
 
         private static final class StableReverseOrderListView<E> extends ReverseOrderListView.Rand<E> {
 
-            public StableReverseOrderListView(List<E> base) {
+            private StableReverseOrderListView(List<E> base) {
                 super(base, false);
             }
 
