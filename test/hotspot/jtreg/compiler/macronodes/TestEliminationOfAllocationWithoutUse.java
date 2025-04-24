@@ -66,7 +66,7 @@ public class TestEliminationOfAllocationWithoutUse {
         test1(arr1, arr2);
 
         double sum = 0;
-        for(int i = 0; i < arr1.length; ++i) {
+        for (int i = 0; i < arr1.length; ++i) {
             sum += arr1[i] - arr2[i];
         }
 
