@@ -27,8 +27,7 @@ package jdk.jpackage.internal;
 import java.nio.file.Path;
 import java.util.List;
 import jdk.jpackage.internal.model.Launcher;
-import jdk.jpackage.internal.model.MacApplication;
-import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.util.PathUtils;
 
 /**
@@ -36,7 +35,7 @@ import jdk.jpackage.internal.util.PathUtils;
  */
 public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
 
-    MacLaunchersAsServices(BuildEnv env, Package pkg) {
+    MacLaunchersAsServices(BuildEnv env, MacPackage pkg) {
         super(env.appImageDir(), pkg.app(), List.of(), launcher -> {
             return new MacLauncherAsService(env, pkg, launcher);
         });
@@ -50,11 +49,11 @@ public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
 
     private static class MacLauncherAsService extends UnixLauncherAsService {
 
-        MacLauncherAsService(BuildEnv env, Package pkg, Launcher launcher) {
+        MacLauncherAsService(BuildEnv env, MacPackage pkg, Launcher launcher) {
             super(launcher, env.createResource("launchd.plist.template").setCategory(I18N
                     .getString("resource.launchd-plist-file")));
 
-            plistFilename = getServicePListFileName(((MacApplication)pkg.app()).bundleIdentifier(), getName());
+            plistFilename = getServicePListFileName(pkg.app().bundleIdentifier(), getName());
 
             // It is recommended to set value of "label" property in launchd
             // .plist file equal to the name of this .plist file without the suffix.

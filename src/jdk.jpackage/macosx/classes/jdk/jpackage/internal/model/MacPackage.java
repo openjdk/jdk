@@ -29,6 +29,8 @@ import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface MacPackage extends Package, MacPackageMixin {
 
+    MacApplication app();
+
     @Override
     default AppImageLayout appImageLayout() {
         if (isRuntimeInstaller()) {

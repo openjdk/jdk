@@ -66,7 +66,7 @@ final class MacDmgPackageBuilder {
         final var pkg = pkgBuilder.create();
 
         return MacDmgPackage.create(pkg, new MacDmgPackageMixin.Stub(
-                Optional.ofNullable(icon).or(((MacApplication)pkg.app())::icon),
+                Optional.ofNullable(icon).or((pkg.app())::icon),
                 validatedDmgContent()));
     }
 
