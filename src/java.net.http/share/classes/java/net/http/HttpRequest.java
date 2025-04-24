@@ -112,7 +112,7 @@ public abstract class HttpRequest {
          * java.net.http.HttpClient.Version three HTTP protocol versions}, depending on
          * whether an Alternate Service record for HTTP/3 could be found, and which HTTP version
          * was negotiated with the origin server, if no such record could be found.
-         *
+         * <p>
          * In this mode, requests sent to the target server will be sent through HTTP/1.1 or HTTP/2
          * until a {@code h3} <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
          * endpoint for that server is advertised to the client. Usually, an alternate service is
