@@ -1263,8 +1263,8 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
   objArrayHandle buf(THREAD, (objArrayOop)JNIHandles::resolve(buf_jh));
   // A pos < 0 is invalid, but we delegate throwing the error to ConstantPool::copy_bootstrap_arguments_at
   if (pos >= 0) {
-    int end = MIN2(0, end);
-    while (-4 <= start && start < end) {
+    int min_end = MIN2(0, end);
+    while (-4 <= start && start < min_end) {
       if (pos >= buf->length()) break;
       oop pseudo_arg = nullptr;
       switch (start) {
