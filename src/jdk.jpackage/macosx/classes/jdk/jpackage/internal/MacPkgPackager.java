@@ -270,7 +270,7 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
 
         final List<TaskID> disabledTasks = new ArrayList<>();
 
-        if (!pkg.app().isService()) {
+        if (services.isEmpty()) {
             disabledTasks.addAll(List.of(PkgPackageTaskID.PREPARE_SERVICES, InternalPackageType.SERVICES, InternalPackageType.SUPPORT));
         }
 
