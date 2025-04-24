@@ -70,7 +70,6 @@ inline void ClaimMetadataVisitingOopIterateClosure::do_method(Method* m) {
   m->record_gc_epoch();
 }
 
-// TODO update comment
 // Dispatch table implementation for *Klass::oop_oop_iterate
 //
 // It allows for a single call to do a multi-dispatch to an optimized version
@@ -574,7 +573,7 @@ template <typename OopClosureType>
 typename OopOopIterateDispatchRange<OopClosureType>::Table OopOopIterateDispatchRange<OopClosureType>::_table;
 
 ////////////////////////////////////////////////
-// Dispatcher entriy points
+// Dispatcher entry points
 
 template <typename OopClosureType>
 void OopIteratorClosureDispatch::oop_oop_iterate  (oop obj, OopClosureType* cl) {

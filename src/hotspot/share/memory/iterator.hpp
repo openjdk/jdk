@@ -28,7 +28,6 @@
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "oops/klassInfoLUT.hpp"
 
 class CodeBlob;
 class nmethod;

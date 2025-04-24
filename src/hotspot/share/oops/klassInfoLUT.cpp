@@ -187,41 +187,43 @@ KlassLUTEntry KlassInfoLUT::register_klass(const Klass* k) {
 }
 
 #if INCLUDE_CDS
-// We only tolerate this for CDS.
-// CDS calls methods on oops for Klass instances that are just mapped into the address space.
-// (e.g. oop->size()). These operations use the klute from the KLUT to avoid dereferencing
-// Klass itself. However, for CDS the Klass instance may not yet be registered with KLUT, so
-// their table entry is missing.
-// We currently don't have a good way to iterate all Klass structures that are loaded
-// before CDS calls any operations on oops belonging to that Klass. So we self-correct the
-// table on the fly. This, unfortunately, adds a branch into the very hot oop iteration path,
-// albeit one that should be taken rarely and will hopefully be mitigated by branch prediction.
+// We only tolerate this for CDS:
+// We currently have no simple way to iterate all Klass structures in a CDS/AOT archive
+// before the JVM starts calling methods on oops that refer to these classes. This is because
+// these Klasses don't go through normal construction but are mapped into the address space
+// when the CDS archive is mapped.
+// So it can happen, early during CDS initialization, when CDS revives archived heap objects,
+// that the entry in the KLUT table for this Klass is still uninitialized. If that happens,
+// this function is called where we add the table entry on the fly.
+// Unfortunately, this adds a branch into the very hot oop iteration path, albeit one that
+// would hopefully be mitigated by branch prediction since this should be exceedingly rare.
 KlassLUTEntry KlassInfoLUT::late_register_klass(narrowKlass nk) {
   assert(nk != 0, "null narrow Klass - is this class encodable?");
   const Klass* k = CompressedKlassPointers::decode(nk);
   assert(k->is_shared(), "Only for CDS classes");
-  // Here we rely on the Klass itself carrying a valid klute that would have been pre-calculated
-  // during CDS dump time. We just copy that entry.
+  // Here we rely on the Klass itself carrying a valid klute already. No need to calculate it.
+  // That klute would have been pre-calculated during CDS dump time when the to-be-dumped Klass
+  // was dynamically constructed.
+  // We just copy that entry into the table slot.
   const KlassLUTEntry klute = k->klute();
   assert(klute.is_valid(), "Must be a valid klute");
   _entries[nk] = klute.value();
   ClassLoaderData* const cld = k->class_loader_data();
   if (cld != nullptr) { // May be too early; CLD may not yet been initialized by CDS
     register_cld_if_needed(cld);
-    klute.verify_against_klass(k);
+    DEBUG_ONLY(klute.verify_against_klass(k);)
+  } else {
+    // Note: cld may still be nullptr; in that case it will be initialized by CDS before the Klass
+    // is used. At that point we may correct the klute entry to account for the new CDS.
   }
-  // Note: if Klass->class_loader_data is still nullptr, it would be initialized shortly via
-  // Klass->set_class_loader_data(). There, we will correct the Klass klute if necessary to
-  // reflect the new CLD.
   log_klass_registration(k, nk, true, klute.value(), "late-registered");
   return klute;
 }
 
 void KlassInfoLUT::shared_klass_cld_changed(Klass* k) {
   // Called when a shared class gets its ClassLoaderData restored after being loaded.
-  // The table entry (klute) may already exist, since CDS may have called an operation
-  // on an oop of that Klass and hence triggered "KlassInfoLUT::late_register_klass".
-  // But the CLD bits in the klute may need correction.
+  // The function makes sure that the CLD bits in the Klass' klute match the new
+  // ClassLoaderData.
   const KlassLUTEntry klute = k->klute();
   ClassLoaderData* cld = k->class_loader_data();
   assert(cld != nullptr, "must be");

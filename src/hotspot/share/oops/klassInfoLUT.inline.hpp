@@ -46,8 +46,6 @@ ALWAYSINLINE KlassLUTEntry KlassInfoLUT::lookup(narrowKlass nk) {
   if (!e.is_valid()) {
     // This branch only exists because it is so very difficult to iterate CDS classes after loading
     // CDS archives. See discussion surrounding 8353225. Hopefully we can remove this in the future.
-    // And equally hopefully branch prediction takes the sting out of this branch in real oop iteration.
-    // In order to measure without this branch, build without CDS.
     return late_register_klass(nk);
   }
 #else
