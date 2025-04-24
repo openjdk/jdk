@@ -2589,9 +2589,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (exponent < 0) {
             throw new ArithmeticException("Negative exponent");
         }
-        if (signum == 0 || this.equals(ONE)) {
-            return (exponent == 0 ? ONE : this);
-        }
+        if (exponent == 0 || this.equals(ONE))
+            return ONE;
+
+        if (signum == 0)
+            return ZERO;
 
         BigInteger base = this.abs();
 
