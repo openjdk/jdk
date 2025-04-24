@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+#include "export.h"
+
 #ifdef __clang__
 #pragma clang optimize off
 #elif defined __GNUC__
@@ -29,11 +31,6 @@
 #pragma optimize( "", off )
 #endif
 
-#ifdef _WIN64
-#define EXPORT __declspec(dllexport)
-#else
-#define EXPORT
-#endif
 #ifdef _AIX
 #pragma align (natural)
 #endif
@@ -122,7 +119,6 @@ struct S_PPI { void* p0; void* p1; int p2; };
 struct S_PPF { void* p0; void* p1; float p2; };
 struct S_PPD { void* p0; void* p1; double p2; };
 struct S_PPP { void* p0; void* p1; void* p2; };
-struct S_FFFF { float p0; float p1; float p2; float p3; };
 
 #ifdef _AIX
 #pragma align (reset)

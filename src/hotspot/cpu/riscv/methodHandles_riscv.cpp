@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,10 +24,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
+#include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/allocation.inline.hpp"
@@ -37,7 +37,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 
-#define __ _masm->
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -108,19 +108,19 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     // compiled code in threads for which the event is enabled.  Check here for
     // interp_only_mode if these events CAN be enabled.
 
-    __ lwu(t0, Address(xthread, JavaThread::interp_only_mode_offset()));
-    __ beqz(t0, run_compiled_code);
-    __ ld(t0, Address(method, Method::interpreter_entry_offset()));
-    __ jr(t0);
+    __ lwu(t1, Address(xthread, JavaThread::interp_only_mode_offset()));
+    __ beqz(t1, run_compiled_code);
+    __ ld(t1, Address(method, Method::interpreter_entry_offset()));
+    __ jr(t1);
     __ BIND(run_compiled_code);
   }
 
   const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_offset() :
                                                      Method::from_interpreted_offset();
-  __ ld(t0,Address(method, entry_offset));
-  __ jr(t0);
+  __ ld(t1, Address(method, entry_offset));
+  __ jr(t1);
   __ bind(L_no_such_method);
-  __ far_jump(RuntimeAddress(StubRoutines::throw_AbstractMethodError_entry()));
+  __ far_jump(RuntimeAddress(SharedRuntime::throw_AbstractMethodError_entry()));
 }
 
 void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
@@ -441,10 +441,9 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     jump_from_method_handle(_masm, xmethod, temp1, for_compiler_entry);
     if (iid == vmIntrinsics::_linkToInterface) {
       __ bind(L_incompatible_class_change_error);
-      __ far_jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
+      __ far_jump(RuntimeAddress(SharedRuntime::throw_IncompatibleClassChangeError_entry()));
     }
   }
-
 }
 
 #ifndef PRODUCT

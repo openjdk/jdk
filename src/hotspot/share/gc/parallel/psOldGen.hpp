@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,12 @@
 
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/objectStartArray.hpp"
-#include "gc/parallel/psGenerationCounters.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
 #include "gc/parallel/spaceCounters.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
+
+class ReservedSpace;
 
 class PSOldGen : public CHeapObj<mtGC> {
   friend class VMStructs;
@@ -41,7 +42,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   MutableSpace*            _object_space;      // Where all the objects live
 
   // Performance Counters
-  PSGenerationCounters*    _gen_counters;
+  GenerationCounters*      _gen_counters;
   SpaceCounters*           _space_counters;
 
   // Sizing information, in bytes, set in constructor
@@ -105,17 +106,9 @@ class PSOldGen : public CHeapObj<mtGC> {
   ObjectStartArray*     start_array()             { return &_start_array; }
   PSVirtualSpace*       virtual_space() const     { return _virtual_space;}
 
-  // Has the generation been successfully allocated?
-  bool is_allocated();
-
   // Size info
   size_t capacity_in_bytes() const        { return object_space()->capacity_in_bytes(); }
   size_t used_in_bytes() const            { return object_space()->used_in_bytes(); }
-  size_t free_in_bytes() const            { return object_space()->free_in_bytes(); }
-
-  size_t capacity_in_words() const        { return object_space()->capacity_in_words(); }
-  size_t used_in_words() const            { return object_space()->used_in_words(); }
-  size_t free_in_words() const            { return object_space()->free_in_words(); }
 
   bool is_maximal_no_gc() const {
     return virtual_space()->uncommitted_size() == 0;
@@ -126,6 +119,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Calculating new sizes
   void resize(size_t desired_free_space);
 
+  // Invoked by mutators and GC-workers.
   HeapWord* allocate(size_t word_size) {
     HeapWord* res;
     do {
@@ -134,6 +128,9 @@ class PSOldGen : public CHeapObj<mtGC> {
     } while ((res == nullptr) && expand_for_allocate(word_size));
     return res;
   }
+
+  // Invoked by VM thread inside a safepoint.
+  HeapWord* expand_and_allocate(size_t word_size);
 
   // Iteration.
   void oop_iterate(OopIterateClosure* cl) { object_space()->oop_iterate(cl); }
@@ -152,7 +149,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   virtual void print_on(outputStream* st) const;
 
   void verify();
-  void verify_object_start_array();
 
   // Performance Counter support
   void update_counters();
@@ -160,9 +156,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Printing support
   const char* name() const { return "ParOldGen"; }
 
-  // Debugging support
-  // Save the tops of all spaces for later use during mangling.
-  void record_spaces_top() PRODUCT_RETURN;
 };
 
 #endif // SHARE_GC_PARALLEL_PSOLDGEN_HPP

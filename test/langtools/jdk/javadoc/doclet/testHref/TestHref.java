@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,8 @@ public class TestHref extends JavadocTester {
 
         checkOutput("pkg/C4.html", true,
                 //Header does not link to the page itself.
-                "Class C4&lt;E extends C4&lt;E&gt;&gt;</h1>",
+                """
+                    Class C4&lt;<span id="type-param-E">E extends C4&lt;E&gt;</span>&gt;</h1>""",
                 //Signature does not link to the page itself.
                 """
                     <span class="modifiers">public abstract class </span><span class="element-name type-name\

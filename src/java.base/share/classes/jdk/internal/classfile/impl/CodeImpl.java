@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,25 +24,26 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Consumer;
-
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.StackMapTableAttribute;
+import java.lang.classfile.attribute.UnknownAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.instruction.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
 
-import static java.lang.classfile.ClassFile.*;
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 public final class CodeImpl
         extends BoundAttribute.BoundCodeAttribute
-        implements CodeModel, LabelContext {
+        implements LabelContext {
 
     static final Instruction[] SINGLETON_INSTRUCTIONS = new Instruction[256];
 
@@ -54,13 +55,13 @@ public final class CodeImpl
                     case ARRAY_STORE -> ArrayStoreInstruction.of(o);
                     case CONSTANT -> ConstantInstruction.ofIntrinsic(o);
                     case CONVERT -> ConvertInstruction.of(o);
-                    case LOAD -> LoadInstruction.of(o, o.slot());
+                    case LOAD -> new AbstractInstruction.UnboundLoadInstruction(o, BytecodeHelpers.intrinsicLoadSlot(o));
                     case MONITOR -> MonitorInstruction.of(o);
                     case NOP -> NopInstruction.of();
                     case OPERATOR -> OperatorInstruction.of(o);
                     case RETURN -> ReturnInstruction.of(o);
                     case STACK -> StackInstruction.of(o);
-                    case STORE -> StoreInstruction.of(o, o.slot());
+                    case STORE -> new AbstractInstruction.UnboundStoreInstruction(o, BytecodeHelpers.intrinsicStoreSlot(o));
                     case THROW_EXCEPTION -> ThrowInstruction.of();
                     default -> throw new AssertionError("invalid opcode: " + o);
                 };
@@ -121,7 +122,7 @@ public final class CodeImpl
         if (!inflated) {
             if (labels == null)
                 labels = new LabelImpl[codeLength + 1];
-            if (((ClassReaderImpl)classReader).context().lineNumbersOption() == ClassFile.LineNumbersOption.PASS_LINE_NUMBERS)
+            if (classReader.context().passLineNumbers())
                 inflateLineNumbers();
             inflateJumpTargets();
             inflateTypeAnnotations();
@@ -140,20 +141,15 @@ public final class CodeImpl
     }
 
     @Override
-    public void writeTo(BufWriter buf) {
+    public void writeTo(BufWriterImpl buf) {
         if (buf.canWriteDirect(classReader)) {
             super.writeTo(buf);
         }
         else {
             DirectCodeBuilder.build((MethodInfo) enclosingMethod,
-                                    new Consumer<CodeBuilder>() {
-                                        @Override
-                                        public void accept(CodeBuilder cb) {
-                                            forEachElement(cb);
-                                        }
-                                    },
+                                    Util.writingAll(this),
                                     (SplitConstantPool)buf.constantPool(),
-                                    ((BufWriterImpl)buf).context(),
+                                    buf.context(),
                                     null).writeTo(buf);
         }
     }
@@ -166,12 +162,14 @@ public final class CodeImpl
     }
 
     @Override
-    public void forEachElement(Consumer<CodeElement> consumer) {
+    public void forEach(Consumer<? super CodeElement> consumer) {
+        Objects.requireNonNull(consumer);
         inflateMetadata();
         boolean doLineNumbers = (lineNumbers != null);
         generateCatchTargets(consumer);
-        if (((ClassReaderImpl)classReader).context().debugElementsOption() == ClassFile.DebugElementsOption.PASS_DEBUG)
+        if (classReader.context().passDebugElements())
             generateDebugElements(consumer);
+        generateUserAttributes(consumer);
         for (int pos=codeStart; pos<codeEnd; ) {
             if (labels[pos - codeStart] != null)
                 consumer.accept(labels[pos - codeStart]);
@@ -199,7 +197,7 @@ public final class CodeImpl
                 public void accept(int s, int e, int h, int c) {
                     ClassEntry catchTypeEntry = c == 0
                                                              ? null
-                                                             : (ClassEntry) constantPool().entryByIndex(c);
+                                                             : constantPool().entryByIndex(c, ClassEntry.class);
                     exceptionTable.add(new AbstractPseudoInstruction.ExceptionCatchImpl(getLabel(h), getLabel(s), getLabel(e), catchTypeEntry));
                 }
             });
@@ -208,7 +206,15 @@ public final class CodeImpl
         return exceptionTable;
     }
 
-    public boolean compareCodeBytes(BufWriter buf, int offset, int len) {
+    private void generateUserAttributes(Consumer<? super CodeElement> consumer) {
+        for (var attr : attributes) {
+            if (attr instanceof CustomAttribute || attr instanceof UnknownAttribute) {
+                consumer.accept((CodeElement) attr);
+            }
+        }
+    }
+
+    public boolean compareCodeBytes(BufWriterImpl buf, int offset, int len) {
         return codeLength == len
                && classReader.compare(buf, offset, codeStart, codeLength);
     }
@@ -221,13 +227,16 @@ public final class CodeImpl
     }
 
     private void inflateLabel(int bci) {
+        if (bci < 0 || bci > codeLength)
+            throw new IllegalArgumentException(String.format("Bytecode offset out of range; bci=%d, codeLength=%d",
+                                                             bci, codeLength));
         if (labels[bci] == null)
             labels[bci] = new LabelImpl(this, bci);
     }
 
     private void inflateLineNumbers() {
         for (Attribute<?> a : attributes()) {
-            if (a.attributeMapper() == Attributes.LINE_NUMBER_TABLE) {
+            if (a.attributeMapper() == Attributes.lineNumberTable()) {
                 BoundLineNumberTableAttribute attr = (BoundLineNumberTableAttribute) a;
                 if (lineNumbers == null)
                     lineNumbers = new int[codeLength + 1];
@@ -237,6 +246,10 @@ public final class CodeImpl
                 int pEnd = p + (nLn * 4);
                 for (; p < pEnd; p += 4) {
                     int startPc = classReader.readU2(p);
+                    if (startPc > codeLength) {
+                        throw new IllegalArgumentException(String.format(
+                                "Line number start_pc out of range; start_pc=%d, codeLength=%d", startPc, codeLength));
+                    }
                     int lineNumber = classReader.readU2(p + 2);
                     lineNumbers[startPc] = lineNumber;
                 }
@@ -245,15 +258,25 @@ public final class CodeImpl
     }
 
     private void inflateJumpTargets() {
-        Optional<StackMapTableAttribute> a = findAttribute(Attributes.STACK_MAP_TABLE);
+        Optional<StackMapTableAttribute> a = findAttribute(Attributes.stackMapTable());
         if (a.isEmpty()) {
             if (classReader.readU2(6) <= ClassFile.JAVA_6_VERSION) {
                 //fallback to jump targets inflation without StackMapTableAttribute
                 for (int pos=codeStart; pos<codeEnd; ) {
                     var i = bcToInstruction(classReader.readU1(pos), pos);
-                    switch (i) {
-                        case BranchInstruction br -> br.target();
-                        case DiscontinuedInstruction.JsrInstruction jsr -> jsr.target();
+                    switch (i.opcode().kind()) {
+                        case BRANCH -> ((BranchInstruction) i).target();
+                        case DISCONTINUED_JSR -> ((DiscontinuedInstruction.JsrInstruction) i).target();
+                        case LOOKUP_SWITCH -> {
+                            var ls = (LookupSwitchInstruction) i;
+                            ls.defaultTarget();
+                            ls.cases();
+                        }
+                        case TABLE_SWITCH -> {
+                            var ts = (TableSwitchInstruction) i;
+                            ts.defaultTarget();
+                            ts.cases();
+                        }
                         default -> {}
                     }
                     pos += i.sizeInBytes();
@@ -261,7 +284,6 @@ public final class CodeImpl
             }
             return;
         }
-        @SuppressWarnings("unchecked")
         int stackMapPos = ((BoundAttribute<StackMapTableAttribute>) a.get()).payloadStart;
 
         int bci = -1; //compensate for offsetDelta + 1
@@ -318,11 +340,11 @@ public final class CodeImpl
     }
 
     private void inflateTypeAnnotations() {
-        findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS).ifPresent(RuntimeVisibleTypeAnnotationsAttribute::annotations);
-        findAttribute(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS).ifPresent(RuntimeInvisibleTypeAnnotationsAttribute::annotations);
+        findAttribute(Attributes.runtimeVisibleTypeAnnotations()).ifPresent(RuntimeVisibleTypeAnnotationsAttribute::annotations);
+        findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).ifPresent(RuntimeInvisibleTypeAnnotationsAttribute::annotations);
     }
 
-    private void generateCatchTargets(Consumer<CodeElement> consumer) {
+    private void generateCatchTargets(Consumer<? super CodeElement> consumer) {
         // We attach all catch targets to bci zero, because trying to attach them
         // to their range could subtly affect the order of exception processing
         iterateExceptionHandlers(new ExceptionHandlerAction() {
@@ -330,15 +352,15 @@ public final class CodeImpl
             public void accept(int s, int e, int h, int c) {
                 ClassEntry catchType = c == 0
                                                     ? null
-                                                    : (ClassEntry) classReader.entryByIndex(c);
+                                                    : classReader.entryByIndex(c, ClassEntry.class);
                 consumer.accept(new AbstractPseudoInstruction.ExceptionCatchImpl(getLabel(h), getLabel(s), getLabel(e), catchType));
             }
         });
     }
 
-    private void generateDebugElements(Consumer<CodeElement> consumer) {
+    private void generateDebugElements(Consumer<? super CodeElement> consumer) {
         for (Attribute<?> a : attributes()) {
-            if (a.attributeMapper() == Attributes.CHARACTER_RANGE_TABLE) {
+            if (a.attributeMapper() == Attributes.characterRangeTable()) {
                 var attr = (BoundCharacterRangeTableAttribute) a;
                 int cnt = classReader.readU2(attr.payloadStart);
                 int p = attr.payloadStart + 2;
@@ -350,7 +372,7 @@ public final class CodeImpl
                     consumer.accept(instruction);
                 }
             }
-            else if (a.attributeMapper() == Attributes.LOCAL_VARIABLE_TABLE) {
+            else if (a.attributeMapper() == Attributes.localVariableTable()) {
                 var attr = (BoundLocalVariableTableAttribute) a;
                 int cnt = classReader.readU2(attr.payloadStart);
                 int p = attr.payloadStart + 2;
@@ -362,7 +384,7 @@ public final class CodeImpl
                     consumer.accept(instruction);
                 }
             }
-            else if (a.attributeMapper() == Attributes.LOCAL_VARIABLE_TYPE_TABLE) {
+            else if (a.attributeMapper() == Attributes.localVariableTypeTable()) {
                 var attr = (BoundLocalVariableTypeTableAttribute) a;
                 int cnt = classReader.readU2(attr.payloadStart);
                 int p = attr.payloadStart + 2;
@@ -374,10 +396,10 @@ public final class CodeImpl
                     consumer.accept(instruction);
                 }
             }
-            else if (a.attributeMapper() == Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS) {
+            else if (a.attributeMapper() == Attributes.runtimeVisibleTypeAnnotations()) {
                 consumer.accept((BoundRuntimeVisibleTypeAnnotationsAttribute) a);
             }
-            else if (a.attributeMapper() == Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS) {
+            else if (a.attributeMapper() == Attributes.runtimeInvisibleTypeAnnotations()) {
                 consumer.accept((BoundRuntimeInvisibleTypeAnnotationsAttribute) a);
             }
         }

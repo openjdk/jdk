@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/epsilon/epsilonMonitoringSupport.hpp"
 #include "gc/epsilon/epsilonHeap.hpp"
+#include "gc/epsilon/epsilonMonitoringSupport.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspaceCounters.hpp"
@@ -91,8 +90,8 @@ public:
           _heap(heap)
   {};
 
-  virtual void update_all() {
-    _current_size->set_value(_heap->capacity());
+  void update_all() {
+    GenerationCounters::update_all(_heap->capacity());
   }
 };
 

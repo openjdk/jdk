@@ -68,7 +68,8 @@ id="toc-native-compiler-toolchain-requirements">Native Compiler
 <li><a href="#apple-xcode" id="toc-apple-xcode">Apple Xcode</a></li>
 <li><a href="#microsoft-visual-studio"
 id="toc-microsoft-visual-studio">Microsoft Visual Studio</a></li>
-<li><a href="#ibm-xl-cc" id="toc-ibm-xl-cc">IBM XL C/C++</a></li>
+<li><a href="#ibm-open-xl-cc" id="toc-ibm-open-xl-cc">IBM Open XL
+C/C++</a></li>
 </ul></li>
 <li><a href="#boot-jdk-requirements" id="toc-boot-jdk-requirements">Boot
 JDK Requirements</a>
@@ -92,6 +93,8 @@ id="toc-build-tools-requirements">Build Tools Requirements</a>
 <li><a href="#autoconf" id="toc-autoconf">Autoconf</a></li>
 <li><a href="#gnu-make" id="toc-gnu-make">GNU Make</a></li>
 <li><a href="#gnu-bash" id="toc-gnu-bash">GNU Bash</a></li>
+<li><a href="#graphviz-and-pandoc" id="toc-graphviz-and-pandoc">Graphviz
+and Pandoc</a></li>
 </ul></li>
 <li><a href="#running-configure" id="toc-running-configure">Running
 Configure</a>
@@ -326,8 +329,8 @@ GB of free disk space is required.</p>
 <p>Even for 32-bit builds, it is recommended to use a 64-bit build
 machine, and instead create a 32-bit target using
 <code>--with-target-bits=32</code>.</p>
-<p>Note: The Windows 32-bit x86 port is deprecated and may be removed in
-a future release.</p>
+<p>Note: The 32-bit x86 port is deprecated and may be removed in a
+future release.</p>
 <h3 id="building-on-aarch64">Building on aarch64</h3>
 <p>At a minimum, a machine with 8 cores is advisable, as well as 8 GB of
 RAM. (The more cores to use, the more memory you need.) At least 6 GB of
@@ -390,8 +393,7 @@ Build Platforms</a>. From time to time, this is updated by contributors
 to list successes or failures of building on different platforms.</p>
 <h3 id="windows">Windows</h3>
 <p>Windows XP is not a supported platform, but all newer Windows should
-be able to build the JDK. (Note: The Windows 32-bit x86 port is
-deprecated and may be removed in a future release.)</p>
+be able to build the JDK.</p>
 <p>On Windows, it is important that you pay attention to the
 instructions in the <a href="#special-considerations">Special
 Considerations</a>.</p>
@@ -524,7 +526,7 @@ header files as provided by your distribution.</p>
 <p>The basic tooling is provided as part of the core operating system,
 but you will most likely need to install developer packages.</p>
 <p>For apt-based distributions (Debian, Ubuntu, etc), try this:</p>
-<pre><code>sudo apt-get install build-essential</code></pre>
+<pre><code>sudo apt-get install build-essential autoconf</code></pre>
 <p>For rpm-based distributions (Fedora, Red Hat, etc), try this:</p>
 <pre><code>sudo yum groupinstall &quot;Development Tools&quot;</code></pre>
 <p>For Alpine Linux, aside from basic tooling, install the GNU versions
@@ -560,7 +562,7 @@ system and toolchain.</p>
 </tr>
 <tr class="odd">
 <td>AIX</td>
-<td>IBM XL C/C++</td>
+<td>IBM Open XL C/C++</td>
 </tr>
 <tr class="even">
 <td>Windows</td>
@@ -584,7 +586,7 @@ to compile successfully without issues.</p>
 <tbody>
 <tr class="odd">
 <td>Linux</td>
-<td>gcc 13.2.0</td>
+<td>gcc 14.2.0</td>
 </tr>
 <tr class="even">
 <td>macOS</td>
@@ -599,22 +601,21 @@ to compile successfully without issues.</p>
 <p>All compilers are expected to be able to handle the C11 language
 standard for C, and C++14 for C++.</p>
 <h3 id="gcc">gcc</h3>
-<p>The minimum accepted version of gcc is 6.0. Older versions will not
+<p>The minimum accepted version of gcc is 10.0. Older versions will not
 be accepted by <code>configure</code>.</p>
 <p>The JDK is currently known to compile successfully with gcc version
-13.2 or newer.</p>
+14.2 or newer.</p>
 <p>In general, any version between these two should be usable.</p>
 <h3 id="clang">clang</h3>
-<p>The minimum accepted version of clang is 3.5. Older versions will not
+<p>The minimum accepted version of clang is 13. Older versions will not
 be accepted by <code>configure</code>.</p>
 <p>To use clang instead of gcc on Linux, use
 <code>--with-toolchain-type=clang</code>.</p>
 <h3 id="apple-xcode">Apple Xcode</h3>
-<p>The oldest supported version of Xcode is 8.</p>
-<p>You will need the Xcode command line developer tools to be able to
-build the JDK. (Actually, <em>only</em> the command line tools are
-needed, not the IDE.) The simplest way to install these is to run:</p>
-<pre><code>xcode-select --install</code></pre>
+<p>The oldest supported version of Xcode is 13.0.</p>
+<p>You will need to download Xcode either from the App Store or specific
+versions can be easily located via the <a
+href="https://xcodereleases.com">Xcode Releases</a> website.</p>
 <p>When updating Xcode, it is advisable to keep an older version for
 building the JDK. To use a specific version of Xcode you have multiple
 options:</p>
@@ -671,11 +672,10 @@ the following line: (note that the " characters are essential)</p>
 version number accordingly. If you have not installed the
 <code>BuildTools</code>, but e.g. <code>Professional</code>, adjust the
 product ID accordingly.</p>
-<h3 id="ibm-xl-cc">IBM XL C/C++</h3>
-<p>Please consult the AIX section of the <a
-href="https://wiki.openjdk.org/display/Build/Supported+Build+Platforms">Supported
-Build Platforms</a> OpenJDK Build Wiki page for details about which
-versions of XLC are supported.</p>
+<h3 id="ibm-open-xl-cc">IBM Open XL C/C++</h3>
+<p>The minimum accepted version of Open XL is 17.1.1.4. This is in
+essence clang 15, and will be treated as such by the OpenJDK build
+system.</p>
 <h2 id="boot-jdk-requirements">Boot JDK Requirements</h2>
 <p>Paradoxically, building the JDK requires a pre-existing JDK. This is
 called the "boot JDK". The boot JDK does not, however, have to be a JDK
@@ -753,6 +753,8 @@ macOS.</p>
 <code>sudo apt-get install libfontconfig-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running
 <code>sudo yum install fontconfig-devel</code>.</li>
+<li>To install on Alpine Linux, try running
+<code>sudo apk add fontconfig-dev</code>.</li>
 </ul>
 <p>Use <code>--with-fontconfig-include=&lt;path&gt;</code> and
 <code>--with-fontconfig=&lt;path&gt;</code> if <code>configure</code>
@@ -860,6 +862,13 @@ e.g. <code>configure MAKE=/opt/gnu/make</code>.</p>
 href="https://www.gnu.org/software/bash">GNU Bash</a>. No other shells
 are supported.</p>
 <p>At least version 3.2 of GNU Bash must be used.</p>
+<h3 id="graphviz-and-pandoc">Graphviz and Pandoc</h3>
+<p>In order to build man pages and the full docs (see the
+<code>--enable-full-docs</code> configure option) <a
+href="https://pandoc.org">Pandoc</a> is required. For full docs also <a
+href="https://www.graphviz.org">Graphviz</a> is required. Any recent
+versions should work. For reference, and subject to change, Oracle
+builds use Graphviz 9.0.0 and Pandoc 2.19.2.</p>
 <h2 id="running-configure">Running Configure</h2>
 <p>To build the JDK, you need a "configuration", which consists of a
 directory where to store the build output, coupled with information
@@ -1713,6 +1722,20 @@ packages in the sysroot, configure the build with
 --with-devkit=$DEVKIT \
 --with-sysroot=$SYSROOT</code></pre>
 <p>and run <code>make</code> normally.</p>
+<h4 id="building-for-windows-aarch64">Building for Windows AArch64</h4>
+<p>The Visual Studio Build Tools can be used for building the JDK
+without a full Visual Studio installation. To set up the Visual Studio
+2022 Build Tools on a Windows AArch64 machine for a native build, launch
+the installer as follows in a Windows command prompt:</p>
+<pre><code>vs_buildtools.exe --quiet --wait --norestart --nocache ^
+--installPath &quot;%ProgramFiles(x86)%\Microsoft Visual Studio\2022\BuildTools&quot; ^
+--add Microsoft.VisualStudio.Component.VC.CoreBuildTools ^
+--add Microsoft.VisualStudio.Component.VC.Tools.ARM64 ^
+--add Microsoft.VisualStudio.Component.Windows11SDK.22621</code></pre>
+<p>To generate Windows AArch64 builds using Cygwin on a Windows x64
+machine, you must set the proper target platform by adding
+<code>--openjdk-target=aarch64-unknown-cygwin</code> to your configure
+command line.</p>
 <h2 id="build-performance">Build Performance</h2>
 <p>Building the JDK requires a lot of horsepower. Some of the build
 tools can be adjusted to utilize more or less of resources such as
@@ -2006,10 +2029,18 @@ some directory names have spaces. Usually, it assumes those directories
 have <a
 href="https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name">short
 paths</a>. You can run <code>fsutil file setshortname</code> in
-<code>cmd</code> on certain directories, such as
-<code>Microsoft Visual Studio</code> or <code>Windows Kits</code>, to
-assign arbitrary short paths so <code>configure</code> can access
-them.</p>
+<code>cmd</code> on directories to assign arbitrary short paths so
+<code>configure</code> can access them. If the result says "Access
+denied", it may be that there are processes running in that directory;
+in this case, you can reboot Windows in safe mode and run the command on
+those directories again.</p>
+<p>The only directories required to have short paths are
+<code>Microsoft Visual Studio</code> and <code>Windows Kits</code>; the
+rest of the "contains space" warnings from <code>configure</code>, such
+as <code>IntelliJ IDEA</code>, can be ignored. You can choose any short
+name; once it is set, <code>configure</code>'s tools like
+<code>cygpath</code> can convert the directory with spaces to your
+chosen short name and pass it to the build system.</p>
 <h3 id="getting-help">Getting Help</h3>
 <p>If none of the suggestions in this document helps you, or if you find
 what you believe is a bug in the build system, please contact the Build
@@ -2155,15 +2186,26 @@ you can create a directory under <code>build</code> and run
 <code>configure</code> from there, e.g.
 <code>mkdir build/&lt;name&gt; &amp;&amp; cd build/&lt;name&gt; &amp;&amp; bash ../../configure</code>.</p>
 <p>Then you can build that configuration using
-<code>make CONF_NAME=&lt;name&gt;</code> or
-<code>make CONF=&lt;pattern&gt;</code>, where
-<code>&lt;pattern&gt;</code> is a substring matching one or several
-configurations, e.g. <code>CONF=debug</code>. The special empty pattern
-(<code>CONF=</code>) will match <em>all</em> available configuration, so
-<code>make CONF= hotspot</code> will build the <code>hotspot</code>
-target for all configurations. Alternatively, you can execute
-<code>make</code> in the configuration directory, e.g.
-<code>cd build/&lt;name&gt; &amp;&amp; make</code>.</p>
+<code>make CONF=&lt;selector&gt;</code>, where
+<code>&lt;selector&gt;</code> is interpreted as follows:</p>
+<ul>
+<li>If <code>&lt;selector&gt;</code> exacly matches the name of a
+configuration, this and only this configuration will be selected.</li>
+<li>If <code>&lt;selector&gt;</code> matches (i.e. is a substring of)
+the names of several configurations, then all these configurations will
+be selected.</li>
+<li>If <code>&lt;selector&gt;</code> is empty (i.e. <code>CONF=</code>),
+then all configurations will be selected.</li>
+<li>If <code>&lt;selector&gt;</code> begins with <code>!</code>, then
+all configurations <strong>not</strong> matching the string following
+<code>!</code> will be selected.</li>
+</ul>
+<p>A more specialized version, <code>CONF_NAME=&lt;name&gt;</code> also
+exists, which will only match if the given <code>&lt;name&gt;</code>
+exactly matches a single configuration.</p>
+<p>Alternatively, you can execute <code>make</code> in the configuration
+directory, e.g. <code>cd build/&lt;name&gt; &amp;&amp; make</code>.</p>
+<p><code>make CONF_NAME=&lt;name&gt;</code> or</p>
 <h3 id="handling-reconfigurations">Handling Reconfigurations</h3>
 <p>If you update the repository and part of the configure script has
 changed, the build system will force you to re-run

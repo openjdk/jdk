@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     UpdateDerivedPointers,
 #endif
     EagerlyReclaimHumongousObjects,
-    RestorePreservedMarks,
+    ResetPartialArrayStateManager,
     ProcessEvacuationFailedRegions,
     ResetMarkingState,
     NoteStartOfMark,
@@ -116,9 +116,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   };
 
   static constexpr const char* GCMergeRSWorkItemsStrings[MergeRSContainersSentinel] =
-    { "Merged Inline", "Merged ArrayOfCards", "Merged Howl", "Merged Full",
-      "Merged Howl Inline", "Merged Howl ArrayOfCards", "Merged Howl BitMap", "Merged Howl Full",
-      "Merged Cards" };
+    { "Merged Inline:", "Merged ArrayOfCards:", "Merged Howl:", "Merged Full:",
+      "Merged Howl Inline:", "Merged Howl ArrayOfCards:", "Merged Howl BitMap:", "Merged Howl Full:",
+      "Merged Cards:" };
 
   enum GCScanHRWorkItems {
     ScanHRScannedCards,
@@ -177,6 +177,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _cur_merge_heap_roots_time_ms;
   double _cur_optional_merge_heap_roots_time_ms;
+  // Included in above merge and optional-merge time.
+  double _cur_distribute_log_buffers_time_ms;
 
   double _cur_prepare_merge_heap_roots_time_ms;
   double _cur_optional_prepare_merge_heap_roots_time_ms;
@@ -190,6 +192,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_ref_proc_time_ms;
 
   double _cur_collection_start_sec;
+  // Not included in _gc_pause_time_ms
   double _root_region_scan_wait_time_ms;
 
   double _external_accounted_time_ms;
@@ -209,8 +212,12 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _cur_region_register_time;
 
+  // Not included in _gc_pause_time_ms
   double _cur_verify_before_time_ms;
   double _cur_verify_after_time_ms;
+
+  // Time spent to trigger concurrent tasks of ResetMarkingState and NoteStartOfMark.
+  double _cur_prepare_concurrent_task_time_ms;
 
   ReferenceProcessorPhaseTimes _ref_phase_times;
   WeakProcessorTimes _weak_phase_times;
@@ -304,12 +311,20 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _cur_prepare_merge_heap_roots_time_ms += ms;
   }
 
+  void record_distribute_log_buffers_time_ms(double ms) {
+    _cur_distribute_log_buffers_time_ms += ms;
+  }
+
   void record_or_add_optional_prepare_merge_heap_roots_time(double ms) {
     _cur_optional_prepare_merge_heap_roots_time_ms += ms;
   }
 
   void record_ref_proc_time(double ms) {
     _cur_ref_proc_time_ms = ms;
+  }
+
+  void record_prepare_concurrent_task_time_ms(double ms) {
+    _cur_prepare_concurrent_task_time_ms = ms;
   }
 
   void record_root_region_scan_wait_time(double time_ms) {
@@ -376,11 +391,18 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     return _cur_collection_start_sec;
   }
 
+  double cur_distribute_log_buffers_time_ms() {
+    return _cur_distribute_log_buffers_time_ms;
+  }
+
   double cur_collection_par_time_ms() {
     return _cur_collection_initial_evac_time_ms +
            _cur_optional_evac_time_ms +
+           _cur_prepare_merge_heap_roots_time_ms +
            _cur_merge_heap_roots_time_ms +
-           _cur_optional_merge_heap_roots_time_ms;
+           _cur_optional_prepare_merge_heap_roots_time_ms +
+           _cur_optional_merge_heap_roots_time_ms +
+           _cur_collection_nmethod_list_cleanup_time_ms;
   }
 
   double cur_expand_heap_time_ms() {

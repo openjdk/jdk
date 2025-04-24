@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2023, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,7 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "hugepages.hpp"
-
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/globals_extension.hpp"
@@ -36,15 +34,15 @@
 
 #include <dirent.h>
 
-StaticHugePageSupport::StaticHugePageSupport() :
+ExplicitHugePageSupport::ExplicitHugePageSupport() :
   _initialized(false), _pagesizes(), _default_hugepage_size(SIZE_MAX), _inconsistent(false) {}
 
-os::PageSizes StaticHugePageSupport::pagesizes() const {
+os::PageSizes ExplicitHugePageSupport::pagesizes() const {
   assert(_initialized, "Not initialized");
   return _pagesizes;
 }
 
-size_t StaticHugePageSupport::default_hugepage_size() const {
+size_t ExplicitHugePageSupport::default_hugepage_size() const {
   assert(_initialized, "Not initialized");
   return _default_hugepage_size;
 }
@@ -55,8 +53,7 @@ static size_t scan_default_hugepagesize() {
 
   // large_page_size on Linux is used to round up heap size. x86 uses either
   // 2M or 4M page, depending on whether PAE (Physical Address Extensions)
-  // mode is enabled. AMD64/EM64T uses 2M page in 64bit mode. IA64 can use
-  // page as large as 1G.
+  // mode is enabled. AMD64/EM64T uses 2M page in 64bit mode.
   //
   // Here we try to figure out page size by parsing /proc/meminfo and looking
   // for a line with the following format:
@@ -96,7 +93,7 @@ static bool read_number_file(const char* file, size_t* out) {
   bool rc = false;
   if (f != nullptr) {
     uint64_t i = 0;
-    if (::fscanf(f, SIZE_FORMAT, out) == 1) {
+    if (::fscanf(f, "%zu", out) == 1) {
       rc = true;
     }
     ::fclose(f);
@@ -132,9 +129,9 @@ static os::PageSizes scan_hugepages() {
   return pagesizes;
 }
 
-void StaticHugePageSupport::print_on(outputStream* os) {
+void ExplicitHugePageSupport::print_on(outputStream* os) {
   if (_initialized) {
-    os->print_cr("Static hugepage support:");
+    os->print_cr("Explicit hugepage support:");
     for (size_t s = _pagesizes.smallest(); s != 0; s = _pagesizes.next_larger(s)) {
       os->print_cr("  hugepage size: " EXACTFMT, EXACTFMTARGS(s));
     }
@@ -143,20 +140,20 @@ void StaticHugePageSupport::print_on(outputStream* os) {
     os->print_cr("  unknown.");
   }
   if (_inconsistent) {
-    os->print_cr("  Support inconsistent. JVM will not use static hugepages.");
+    os->print_cr("  Support inconsistent. JVM will not use explicit hugepages.");
   }
 }
 
-void StaticHugePageSupport::scan_os() {
+void ExplicitHugePageSupport::scan_os() {
   _default_hugepage_size = scan_default_hugepagesize();
   if (_default_hugepage_size > 0) {
     _pagesizes = scan_hugepages();
     // See https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt: /proc/meminfo should match
     // /sys/kernel/mm/hugepages/hugepages-xxxx. However, we may run on a broken kernel (e.g. on WSL)
     // that only exposes /proc/meminfo but not /sys/kernel/mm/hugepages. In that case, we are not
-    // sure about the state of hugepage support by the kernel, so we won't use static hugepages.
+    // sure about the state of hugepage support by the kernel, so we won't use explicit hugepages.
     if (!_pagesizes.contains(_default_hugepage_size)) {
-      log_info(pagesize)("Unexpected configuration: default pagesize (" SIZE_FORMAT ") "
+      log_info(pagesize)("Unexpected configuration: default pagesize (%zu) "
                          "has no associated directory in /sys/kernel/mm/hugepages..", _default_hugepage_size);
       _inconsistent = true;
     }
@@ -307,18 +304,31 @@ void ShmemTHPSupport::print_on(outputStream* os) {
   }
 }
 
-StaticHugePageSupport HugePages::_static_hugepage_support;
+ExplicitHugePageSupport HugePages::_explicit_hugepage_support;
 THPSupport HugePages::_thp_support;
 ShmemTHPSupport HugePages::_shmem_thp_support;
 
+size_t HugePages::thp_pagesize_fallback() {
+    // Older kernels won't publish the THP page size. Fall back to default explicit huge page size,
+    // since that is likely to be the THP page size as well. Don't do it if the page size is considered
+    // too large to avoid large alignment waste. If explicit huge page size is unknown, use educated guess.
+    if (thp_pagesize() != 0) {
+        return thp_pagesize();
+    }
+    if (supports_explicit_hugepages()) {
+        return MIN2(default_explicit_hugepage_size(), 16 * M);
+    }
+    return 2 * M;
+}
+
 void HugePages::initialize() {
-  _static_hugepage_support.scan_os();
+  _explicit_hugepage_support.scan_os();
   _thp_support.scan_os();
   _shmem_thp_support.scan_os();
 }
 
 void HugePages::print_on(outputStream* os) {
-  _static_hugepage_support.print_on(os);
+  _explicit_hugepage_support.print_on(os);
   _thp_support.print_on(os);
   _shmem_thp_support.print_on(os);
 }

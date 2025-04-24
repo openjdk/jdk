@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,13 @@ package sun.security.util;
 
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HexFormat;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.Locale;
-import sun.security.action.GetPropertyAction;
 
 /**
  * A utility class for debugging.
@@ -41,14 +43,19 @@ import sun.security.action.GetPropertyAction;
 public class Debug {
 
     private String prefix;
+    private boolean printDateTime;
+    private boolean printThreadDetails;
 
     private static String args;
+    private static boolean threadInfoAll;
+    private static boolean timeStampInfoAll;
+    private static final String TIMESTAMP_OPTION = "+timestamp";
+    private static final String THREAD_OPTION = "+thread";
 
     static {
-        args = GetPropertyAction.privilegedGetProperty("java.security.debug");
+        args = System.getProperty("java.security.debug");
 
-        String args2 = GetPropertyAction
-                .privilegedGetProperty("java.security.auth.debug");
+        String args2 = System.getProperty("java.security.auth.debug");
 
         if (args == null) {
             args = args2;
@@ -61,15 +68,23 @@ public class Debug {
             args = marshal(args);
             if (args.equals("help")) {
                 Help();
+            } else if (args.contains("all")) {
+                // "all" option has special handling for decorator options
+                // If the thread or timestamp decorator option is detected
+                // with the "all" option, then it impacts decorator options
+                // for other categories
+                int beginIndex = args.lastIndexOf("all") + "all".length();
+                int commaIndex = args.indexOf(',', beginIndex);
+                if (commaIndex == -1) commaIndex = args.length();
+                threadInfoAll = args.substring(beginIndex, commaIndex).contains(THREAD_OPTION);
+                timeStampInfoAll = args.substring(beginIndex, commaIndex).contains(TIMESTAMP_OPTION);
             }
         }
     }
 
-    public static void Help()
-    {
+    public static void Help() {
         System.err.println();
         System.err.println("all           turn on all debugging");
-        System.err.println("access        print all checkPermission results");
         System.err.println("certpath      PKIX CertPathBuilder and");
         System.err.println("              CertPathValidator debugging");
         System.err.println("combiner      SubjectDomainCombiner debugging");
@@ -82,7 +97,6 @@ public class Debug {
         System.err.println("jca           JCA engine class debugging");
         System.err.println("keystore      KeyStore debugging");
         System.err.println("pcsc          Smartcard library debugging");
-        System.err.println("policy        loading and granting");
         System.err.println("provider      security provider debugging");
         System.err.println("pkcs11        PKCS11 session manager debugging");
         System.err.println("pkcs11keystore");
@@ -90,33 +104,21 @@ public class Debug {
         System.err.println("pkcs12        PKCS12 KeyStore debugging");
         System.err.println("properties    Security property and configuration file debugging");
         System.err.println("sunpkcs11     SunPKCS11 provider debugging");
-        System.err.println("scl           permissions SecureClassLoader assigns");
         System.err.println("securerandom  SecureRandom");
         System.err.println("ts            timestamping");
         System.err.println("x509          X.509 certificate debugging");
         System.err.println();
-        System.err.println("The following can be used with access:");
-        System.err.println();
-        System.err.println("stack         include stack trace");
-        System.err.println("domain        dump all domains in context");
-        System.err.println("failure       before throwing exception, dump stack");
-        System.err.println("              and domain that didn't have permission");
-        System.err.println();
-        System.err.println("The following can be used with stack and domain:");
-        System.err.println();
-        System.err.println("permission=<classname>");
-        System.err.println("              only dump output if specified permission");
-        System.err.println("              is being checked");
-        System.err.println("codebase=<URL>");
-        System.err.println("              only dump output if specified codebase");
-        System.err.println("              is being checked");
+        System.err.println("+timestamp can be appended to any of above options to print");
+        System.err.println("              a timestamp for that debug option");
+        System.err.println("+thread can be appended to any of above options to print");
+        System.err.println("              thread and caller information for that debug option");
         System.err.println();
         System.err.println("The following can be used with provider:");
         System.err.println();
         System.err.println("engine=<engines>");
         System.err.println("              only dump output for the specified list");
         System.err.println("              of JCA engines. Supported values:");
-        System.err.println("              Cipher, KeyAgreement, KeyGenerator,");
+        System.err.println("              Cipher, KDF, KeyAgreement, KeyGenerator,");
         System.err.println("              KeyPairGenerator, KeyStore, Mac,");
         System.err.println("              MessageDigest, SecureRandom, Signature.");
         System.err.println();
@@ -139,8 +141,7 @@ public class Debug {
      * option is set. Set the prefix to be the same as option.
      */
 
-    public static Debug getInstance(String option)
-    {
+    public static Debug getInstance(String option) {
         return getInstance(option, option);
     }
 
@@ -148,23 +149,92 @@ public class Debug {
      * Get a Debug object corresponding to whether or not the given
      * option is set. Set the prefix to prefix.
      */
-    public static Debug getInstance(String option, String prefix)
-    {
+    public static Debug getInstance(String option, String prefix) {
         if (isOn(option)) {
             Debug d = new Debug();
             d.prefix = prefix;
+            d.configureExtras(option);
             return d;
         } else {
             return null;
         }
     }
 
+    private static String formatCaller() {
+        return StackWalker.getInstance().walk(s ->
+                s.dropWhile(f ->
+                    f.getClassName().startsWith("sun.security.util.Debug"))
+                        .map(f -> f.getFileName() + ":" + f.getLineNumber())
+                        .findFirst().orElse("unknown caller"));
+    }
+
+    // parse an option string to determine if extra details,
+    // like thread and timestamp, should be printed
+    private void configureExtras(String option) {
+        // treat "all" as special case, only used for java.security.debug property
+        this.printDateTime = timeStampInfoAll;
+        this.printThreadDetails = threadInfoAll;
+
+        if (printDateTime && printThreadDetails) {
+            // nothing left to configure
+            return;
+        }
+
+        // args is converted to lower case for the most part via marshal method
+        int optionIndex = args.lastIndexOf(option);
+        if (optionIndex == -1) {
+            // option not in args list. Only here since "all" was present
+            // in debug property argument. "all" option already parsed
+            return;
+        }
+        int beginIndex = optionIndex + option.length();
+        int commaIndex = args.indexOf(',', beginIndex);
+        if (commaIndex == -1) commaIndex = args.length();
+        String subOpt = args.substring(beginIndex, commaIndex);
+        printDateTime = printDateTime || subOpt.contains(TIMESTAMP_OPTION);
+        printThreadDetails = printThreadDetails || subOpt.contains(THREAD_OPTION);
+    }
+
+    /**
+     * Get a Debug object corresponding to the given option on the given
+     * property value.
+     * <p>
+     * Note: unlike other {@code getInstance} methods, this method does not
+     * use the {@code java.security.debug} system property.
+     * <p>
+     * Usually, this method is used by other individual area-specific debug
+     * settings. For example,
+     * {@snippet lang=java:
+     * Map<String, String> settings = loadLoginSettings();
+     * String property = settings.get("login");
+     * Debug debug = Debug.of("login", property);
+     * }
+     *
+     * +timestamp string can be appended to property value
+     * to print timestamp information. (e.g. true+timestamp)
+     * +thread string can be appended to property value
+     * to print thread and caller information. (e.g. true+thread)
+     *
+     * @param prefix the debug option name
+     * @param property debug setting for this option
+     * @return a new Debug object if the property is true
+     */
+    public static Debug of(String prefix, String property) {
+        if (property != null && property.toLowerCase(Locale.ROOT).startsWith("true")) {
+            Debug d = new Debug();
+            d.prefix = prefix;
+            d.printThreadDetails = property.contains(THREAD_OPTION);
+            d.printDateTime = property.contains(TIMESTAMP_OPTION);
+            return d;
+        }
+        return null;
+    }
+
     /**
      * True if the system property "security.debug" contains the
      * string "option".
      */
-    public static boolean isOn(String option)
-    {
+    public static boolean isOn(String option) {
         if (args == null)
             return false;
         else {
@@ -187,18 +257,16 @@ public class Debug {
      * created from the call to getInstance.
      */
 
-    public void println(String message)
-    {
-        System.err.println(prefix + ": "+message);
+    public void println(String message) {
+        System.err.println(prefix + extraInfo() + ": " + message);
     }
 
     /**
      * print a message to stderr that is prefixed with the prefix
      * created from the call to getInstance and obj.
      */
-    public void println(Object obj, String message)
-    {
-        System.err.println(prefix + " [" + obj.getClass().getSimpleName() +
+    public void println(Object obj, String message) {
+        System.err.println(prefix + extraInfo() + " [" + obj.getClass().getSimpleName() +
                 "@" + System.identityHashCode(obj) + "]: "+message);
     }
 
@@ -206,18 +274,36 @@ public class Debug {
      * print a blank line to stderr that is prefixed with the prefix.
      */
 
-    public void println()
-    {
-        System.err.println(prefix + ":");
+    public void println() {
+        System.err.println(prefix + extraInfo() + ":");
     }
 
     /**
      * print a message to stderr that is prefixed with the prefix.
      */
 
-    public static void println(String prefix, String message)
-    {
-        System.err.println(prefix + ": "+message);
+    public void println(String prefix, String message) {
+        System.err.println(prefix + extraInfo() + ": " + message);
+    }
+
+    /**
+     * If thread debug option enabled, include information containing
+     * hex value of threadId and the current thread name
+     * If timestamp debug option enabled, include timestamp string
+     * @return extra info if debug option enabled.
+     */
+    private String extraInfo() {
+        String retString = "";
+        if (printThreadDetails) {
+            retString = "0x" + Long.toHexString(
+                    Thread.currentThread().threadId()).toUpperCase(Locale.ROOT) +
+                    "|" + Thread.currentThread().getName() + "|" + formatCaller();
+        }
+        if (printDateTime) {
+            retString += (retString.isEmpty() ? "" : "|")
+                    + FormatHolder.DATE_TIME_FORMATTER.format(Instant.now());
+        }
+        return retString.isEmpty() ? "" : "[" + retString + "]";
     }
 
     /**
@@ -337,4 +423,11 @@ public class Debug {
         return toString(b.toByteArray());
     }
 
+    // Holder class to break cyclic dependency seen during build
+    private static class FormatHolder {
+        private static final String PATTERN = "yyyy-MM-dd kk:mm:ss.SSS";
+        private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
+                .ofPattern(PATTERN, Locale.ENGLISH)
+                .withZone(ZoneId.systemDefault());
+    }
 }

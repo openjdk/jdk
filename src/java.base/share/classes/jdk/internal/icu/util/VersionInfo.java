@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 
 package jdk.internal.icu.util;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Class to store version numbers of the form major.minor.milli.micro.
@@ -48,13 +48,13 @@ public final class VersionInfo
     // public data members -------------------------------------------------
 
     /**
-     * Data version string for ICU's internal data.
-     * Used for appending to data path (e.g. icudt43b)
+     * Data version string for ICU's data file.
+     * Not used when loading from resources packaged in the .jar.
      * @internal
      * @deprecated This API is ICU internal only.
      */
     @Deprecated
-    public static final String ICU_DATA_VERSION_PATH = "74b";
+    public static final String ICU_DATA_VERSION_PATH = "76b";
 
     // public methods ------------------------------------------------------
 
@@ -171,7 +171,7 @@ public final class VersionInfo
     /**
      * Map of singletons
      */
-    private static final HashMap<Integer, Object> MAP_ = new HashMap<>();
+    private static final ConcurrentHashMap<Integer, Object> MAP_ = new ConcurrentHashMap<>();
     /**
      * Error statement string
      */

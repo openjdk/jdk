@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ static void _log(const char* format, ...) {
     va_start(args, format);
     vprintf(format, args);
     va_end(args);
-    fflush(0);
+    fflush(nullptr);
 }
 
 static bool isTestClass(const char* name) {
@@ -152,7 +152,7 @@ public:
 
     jbyteArray getSavedHookClassBytes() {
         if (savedClassBytes == nullptr) {
-            _log("%s: savedClassBytes is NULL\n", mode);
+            _log("%s: savedClassBytes is null\n", mode);
             return nullptr;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ define_pd_global(bool,  TrapBasedNullChecks,      false); // Not needed
 
 define_pd_global(bool,  DelayCompilerStubsGeneration, false); // No need - only few compiler's stubs
 
-define_pd_global(uintx, CodeCacheSegmentSize, 64 COMPILER1_AND_COMPILER2_PRESENT(+64)); // Tiered compilation has large code-entry alignment.
+define_pd_global(uintx, CodeCacheSegmentSize,     64);
 define_pd_global(intx,  CodeEntryAlignment,       16);
 define_pd_global(intx,  OptoLoopAlignment,        16);
 
@@ -75,7 +75,6 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 
 #define ARCH_FLAGS(develop,     \
                    product,     \
-                   notproduct,  \
                    range,       \
                    constraint)
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
@@ -102,7 +101,7 @@ void ZBarrierSet::on_thread_attach(Thread* thread) {
 
 void ZBarrierSet::on_thread_detach(Thread* thread) {
   // Flush and free any remaining mark stacks
-  ZHeap::heap()->mark_flush_and_free(thread);
+  ZHeap::heap()->mark_flush(thread);
 }
 
 static void deoptimize_allocation(JavaThread* thread) {
@@ -152,11 +151,12 @@ void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
   deoptimize_allocation(thread);
 }
 
-void ZBarrierSet::clone_obj_array(objArrayOop src_obj, objArrayOop dst_obj, size_t size) {
+void ZBarrierSet::clone_obj_array(objArrayOop src_obj, objArrayOop dst_obj) {
   volatile zpointer* src = (volatile zpointer*)src_obj->base();
   volatile zpointer* dst = (volatile zpointer*)dst_obj->base();
+  const int length = src_obj->length();
 
-  for (const zpointer* const end = cast_from_oop<const zpointer*>(src_obj) + size; src < end; src++, dst++) {
+  for (const volatile zpointer* const end = src + length; src < end; src++, dst++) {
     zaddress elem = ZBarrier::load_barrier_on_oop_field(src);
     // We avoid healing here because the store below colors the pointer store good,
     // hence avoiding the cost of a CAS.

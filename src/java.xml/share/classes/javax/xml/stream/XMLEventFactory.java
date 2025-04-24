@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,9 +258,9 @@ public abstract class XMLEventFactory {
    * an empty NamespaceContext.  Querying this event for its namespaces or
    * attributes will result in an empty iterator being returned.
    *
+   * @param prefix the prefix of the QName of the new StartElement
    * @param namespaceUri the uri of the QName of the new StartElement
    * @param localName the local name of the QName of the new StartElement
-   * @param prefix the prefix of the QName of the new StartElement
    * @return an instance of the requested StartElement
    */
   public abstract StartElement createStartElement(String prefix,
@@ -272,9 +272,9 @@ public abstract class XMLEventFactory {
    * Attributes can be added to this StartElement by passing an iterator
    * that walks over a set of Attribute interfaces.
    *
+   * @param prefix the prefix of the QName of the new StartElement
    * @param namespaceUri the uri of the QName of the new StartElement
    * @param localName the local name of the QName of the new StartElement
-   * @param prefix the prefix of the QName of the new StartElement
    * @param attributes an unordered set of objects that implement
    * Attribute to add to the new StartElement
    * @param namespaces an unordered set of objects that implement
@@ -293,9 +293,9 @@ public abstract class XMLEventFactory {
    * Attributes can be added to this StartElement by passing an iterator
    * that walks over a set of Attribute interfaces.
    *
+   * @param prefix the prefix of the QName of the new StartElement
    * @param namespaceUri the uri of the QName of the new StartElement
    * @param localName the local name of the QName of the new StartElement
-   * @param prefix the prefix of the QName of the new StartElement
    * @param attributes an unordered set of objects that implement
    * Attribute to add to the new StartElement, may be null
    * @param namespaces an unordered set of objects that implement
@@ -323,9 +323,9 @@ public abstract class XMLEventFactory {
 
   /**
    * Create a new EndElement
+   * @param prefix the prefix of the QName of the new StartElement
    * @param namespaceUri the uri of the QName of the new StartElement
    * @param localName the local name of the QName of the new StartElement
-   * @param prefix the prefix of the QName of the new StartElement
    * @return an instance of the requested EndElement
    */
   public abstract EndElement createEndElement(String prefix,
@@ -333,9 +333,9 @@ public abstract class XMLEventFactory {
                                               String localName);
   /**
    * Create a new EndElement
+   * @param prefix the prefix of the QName of the new StartElement
    * @param namespaceUri the uri of the QName of the new StartElement
    * @param localName the local name of the QName of the new StartElement
-   * @param prefix the prefix of the QName of the new StartElement
    * @param namespaces an unordered set of objects that implement
    * Namespace that have gone out of scope, may be null
    * @return an instance of the requested EndElement

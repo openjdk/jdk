@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.jfr.Event;
 import jdk.jfr.internal.event.EventConfiguration;
 import jdk.jfr.internal.event.EventWriter;
+import jdk.jfr.internal.management.HiddenWait;
 
 /**
  * Interface against the JVM.
@@ -41,16 +42,12 @@ public final class JVM {
 
     static final long RESERVED_CLASS_ID_LIMIT = 500;
 
-    private static class ChunkRotationMonitor {}
-
     /*
      * The JVM uses the chunk rotation monitor to notify Java that a rotation is warranted.
-     * The monitor type is used to exclude jdk.JavaMonitorWait events from being generated
-     * when Object.wait() is called on this monitor.
      */
-    public static final Object CHUNK_ROTATION_MONITOR = new ChunkRotationMonitor();
+    public static final Object CHUNK_ROTATION_MONITOR = new HiddenWait();
 
-    private volatile static boolean nativeOK;
+    private static volatile boolean nativeOK;
 
     private static native void registerNatives();
 
@@ -173,6 +170,11 @@ public final class JVM {
      * @return frequency
      */
     public static native long getTicksFrequency();
+
+    /**
+     * Returns the same clock that sets the start time of a chunk (in nanos).
+     */
+    public static native long nanosNow();
 
     /**
      * Write message to log. Should swallow null or empty message, and be able
@@ -628,6 +630,12 @@ public final class JVM {
     public static native long hostTotalMemory();
 
     /**
+     * Returns the total amount of swap memory of the host system whether or not this
+     * JVM runs in a container.
+     */
+    public static native long hostTotalSwapMemory();
+
+    /**
      * Emit a jdk.DataLoss event for the specified amount of bytes.
      *
      * @param bytes number of bytes that were lost
@@ -667,4 +675,11 @@ public final class JVM {
      * @param value
      */
     public static native void setMiscellaneous(long eventTypeId, long value);
+
+    /**
+     * Returns whether the current build is a product build.
+     *
+     * @return {@code true} if this is a product build, {@code false} otherwise.
+     */
+    public static native boolean isProduct();
 }

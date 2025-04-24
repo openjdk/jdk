@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -36,11 +36,11 @@ extern "C" {
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 
-#define RETURN_FAILED errCode = STATUS_FAILED; fflush(0); return
+#define RETURN_FAILED errCode = STATUS_FAILED; fflush(nullptr); return
 
 static jint      errCode       = PASSED;
-static jvmtiEnv *jvmti         = NULL;
-static jmethodID midCheckPoint = NULL;
+static jvmtiEnv *jvmti         = nullptr;
+static jmethodID midCheckPoint = nullptr;
 
 
 JNIEXPORT void JNICALL
@@ -51,7 +51,7 @@ Java_nsk_jvmti_unit_GetConstantPool_getcpool001_getCP(
     int           rep          = 0;
     jint          cp_cnt       = 0;
     jint          cp_bytes_cnt = 0;
-    unsigned char *cp_bytes    = NULL;
+    unsigned char *cp_bytes    = nullptr;
 
     err = jvmti->GetConstantPool(cls, &cp_cnt, &cp_bytes_cnt, &cp_bytes);
     if (err != JVMTI_ERROR_NONE) {
@@ -63,7 +63,7 @@ Java_nsk_jvmti_unit_GetConstantPool_getcpool001_getCP(
     /* Print Constant Pool attrs*/
     printf("getCP: id = %d, cnt = %03d, bytes_cnt = %04d\n",
             id, cp_cnt, cp_bytes_cnt);
-    fflush(0);
+    fflush(nullptr);
 }
 
 void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
@@ -83,7 +83,7 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
                TranslateError(err), err);
         RETURN_FAILED;
     }
-    fflush(0);
+    fflush(nullptr);
 }
 
 #ifdef STATIC_BUILD
@@ -102,7 +102,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -151,7 +151,7 @@ Java_nsk_jvmti_unit_GetConstantPool_getcpool001_getReady(
     JNIEnv *env, jclass c, jclass cls) {
     jvmtiError err;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         RETURN_FAILED;
     }
@@ -163,7 +163,7 @@ Java_nsk_jvmti_unit_GetConstantPool_getcpool001_getReady(
     }
 
     midCheckPoint = env->GetMethodID(cls, "checkPoint", "()V");
-    if (midCheckPoint == NULL) {
+    if (midCheckPoint == nullptr) {
         printf("Cannot find Method ID for method checkPoint\n");
         RETURN_FAILED;
     }
@@ -175,7 +175,7 @@ Java_nsk_jvmti_unit_GetConstantPool_getcpool001_getReady(
         RETURN_FAILED;
     }
 
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable BREAKPOINT event: %s (%d)\n",
                TranslateError(err), err);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,8 @@ package java.lang.constant;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleInfo;
-import java.util.OptionalInt;
-import java.util.stream.Stream;
 
+import jdk.internal.constant.DirectMethodHandleDescImpl;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.invoke.MethodHandleInfo.REF_getField;
@@ -89,7 +88,7 @@ public sealed interface DirectMethodHandleDesc
          */
         public final boolean isInterface;
         Kind(int refKind) {
-            this(refKind, false);
+            this.refKind = refKind; this.isInterface = false;
         }
 
         Kind(int refKind, boolean isInterface) { this.refKind = refKind; this.isInterface = isInterface; }
@@ -177,23 +176,6 @@ public sealed interface DirectMethodHandleDesc
                         TABLE[i] = kind;
                     }
                 }
-            }
-        }
-
-        /**
-         * Does this {@code Kind} correspond to a virtual method invocation?
-         *
-         * @return if this {@code Kind} corresponds to a virtual method invocation
-         */
-        boolean isVirtualMethod() {
-            switch (this) {
-                case VIRTUAL:
-                case SPECIAL:
-                case INTERFACE_VIRTUAL:
-                case INTERFACE_SPECIAL:
-                    return true;
-                default:
-                    return false;
             }
         }
     }

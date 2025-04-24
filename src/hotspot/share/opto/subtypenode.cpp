@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/connode.hpp"
@@ -43,18 +42,6 @@ const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const 
     if (!superklass->is_interface() && superklass->is_abstract() &&
         !superklass->as_instance_klass()->has_subklass()) {
       Compile::current()->dependencies()->assert_leaf_type(superklass);
-      if (subk->is_same_java_type_as(superk) && !sub_t->maybe_null()) {
-        // The super_t has no subclasses, and sub_t has the same type and is not null,
-        // hence the check should always evaluate to EQ. However, this is an impossible
-        // situation since super_t is also abstract, and hence sub_t cannot have the
-        // same type and be non-null.
-        // Still, if the non-static method of an abstract class without subclasses is
-        // force-compiled, the Param0 has the self/this pointer with NotNull. This
-        // method would now never be called, because of the leaf-type dependency. Hence,
-        // just for consistency with verification, we return EQ.
-        return TypeInt::CC_EQ;
-      }
-      // subk is either a supertype of superk, or null. In either case, superk is a subtype.
       return TypeInt::CC_GT;
     }
   }
@@ -208,7 +195,7 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
           chk_off_X = phase->transform(new ConvI2LNode(chk_off_X));
 #endif
           Node* p2 = phase->transform(new AddPNode(subklass, subklass, chk_off_X));
-          Node* nkls = phase->transform(LoadKlassNode::make(*phase, nullptr, C->immutable_memory(), p2, phase->type(p2)->is_ptr(), TypeInstKlassPtr::OBJECT_OR_NULL));
+          Node* nkls = phase->transform(LoadKlassNode::make(*phase, C->immutable_memory(), p2, phase->type(p2)->is_ptr(), TypeInstKlassPtr::OBJECT_OR_NULL));
 
           return verify_helper(phase, nkls, cached_t);
         }
@@ -231,7 +218,7 @@ Node* SubTypeCheckNode::load_klass(PhaseGVN* phase) const {
   Node* subklass = nullptr;
   if (sub_t->isa_oopptr()) {
     Node* adr = phase->transform(new AddPNode(obj_or_subklass, obj_or_subklass, phase->MakeConX(oopDesc::klass_offset_in_bytes())));
-    subklass  = phase->transform(LoadKlassNode::make(*phase, nullptr, phase->C->immutable_memory(), adr, TypeInstPtr::KLASS));
+    subklass  = phase->transform(LoadKlassNode::make(*phase, phase->C->immutable_memory(), adr, TypeInstPtr::KLASS));
     record_for_cleanup(subklass, phase);
   } else {
     subklass = obj_or_subklass;
@@ -251,7 +238,7 @@ uint SubTypeCheckNode::hash() const {
 #ifndef PRODUCT
 void SubTypeCheckNode::dump_spec(outputStream* st) const {
   if (_method != nullptr) {
-    st->print(" profiled at: ");
+    st->print(" profiled at:");
     _method->print_short_name(st);
     st->print(":%d", _bci);
   }

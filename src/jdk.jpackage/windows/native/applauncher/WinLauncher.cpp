@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <windows.h>
 
+#include "CfgFile.h"
 #include "AppLauncher.h"
 #include "JvmLauncher.h"
 #include "Log.h"
@@ -226,6 +227,35 @@ private:
 };
 
 
+bool needRestartLauncher(AppLauncher& appLauncher, CfgFile& cfgFile) {
+    if (appLauncher.libEnvVariableContainsAppDir()) {
+        return false;
+    }
+
+    std::unique_ptr<CfgFile>(appLauncher.createCfgFile())->swap(cfgFile);
+
+    const CfgFile::Properties& appOptions = cfgFile.getProperties(
+            SectionName::Application);
+
+    const CfgFile::Properties::const_iterator winNorestart = appOptions.find(
+                PropertyName::winNorestart);
+
+    bool result;
+    if (winNorestart != appOptions.end()) {
+        const bool norestart = CfgFile::asBoolean(*winNorestart);
+        LOG_TRACE(tstrings::any() << PropertyName::winNorestart.name() << "="
+                << (norestart ? "true" : "false") << " from config file");
+        result = !norestart;
+    } else {
+        result = true;
+    }
+
+    appLauncher.setCfgFile(&cfgFile);
+
+    return result;
+}
+
+
 void launchApp() {
     // [RT-31061] otherwise UI can be left in back of other windows.
     ::AllowSetForegroundWindow(ASFW_ANY);
@@ -248,7 +278,8 @@ void launchApp() {
         addCfgFileLookupDirForEnvVariable(pkgFile, appLauncher, _T("APPDATA"));
     }
 
-    const bool restart = !appLauncher.libEnvVariableContainsAppDir();
+    CfgFile dummyCfgFile;
+    const bool restart = needRestartLauncher(appLauncher, dummyCfgFile);
 
     std::unique_ptr<Jvm> jvm(appLauncher.createJvmLauncher());
 
@@ -264,7 +295,7 @@ void launchApp() {
         }
         JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobInfo = { };
         jobInfo.BasicLimitInformation.LimitFlags =
-                                          JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+                JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK;
         if (!SetInformationJobObject(jobHandle.get(),
                 JobObjectExtendedLimitInformation, &jobInfo, sizeof(jobInfo))) {
             JP_THROW(SysError(tstrings::any() <<
@@ -308,13 +339,13 @@ void launchApp() {
 
 #ifndef JP_LAUNCHERW
 
-int __cdecl  wmain() {
+int wmain() {
     return app::launch(std::nothrow, launchApp);
 }
 
 #else
 
-int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
+int wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
     return app::wlaunch(std::nothrow, launchApp);
 }
 

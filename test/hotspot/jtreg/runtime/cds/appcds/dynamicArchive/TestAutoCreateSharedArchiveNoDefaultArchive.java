@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public class TestAutoCreateSharedArchiveNoDefaultArchive {
                                                          "-version");
             TestCommon.executeAndLog(pb, "show-version")
                       .shouldHaveExitValue(0)
-                      .shouldContain("Initialize static archive failed")
+                      .shouldContain("Loading static archive failed")
                       .shouldContain("Unable to map shared spaces")
                       .shouldNotContain("sharing");
         }
@@ -132,7 +132,7 @@ public class TestAutoCreateSharedArchiveNoDefaultArchive {
                                                          mainClass);
             TestCommon.executeAndLog(pb, "no-default-archive")
                       .shouldHaveExitValue(0)
-                      .shouldContain("Initialize static archive failed")
+                      .shouldContain("Loading static archive failed")
                       .shouldContain("Unable to map shared spaces")
                       .shouldNotContain("Dumping shared data to file");
             if (jsaFile.exists()) {
@@ -144,6 +144,7 @@ public class TestAutoCreateSharedArchiveNoDefaultArchive {
     private static void removeDefaultArchives(String java_home_dst, String variant) {
         removeDefaultArchive(java_home_dst, variant, "");
         removeDefaultArchive(java_home_dst, variant, "_nocoops");
+        removeDefaultArchive(java_home_dst, variant, "_coh");
     }
 
     private static void removeDefaultArchive(String java_home_dst, String variant, String suffix) {

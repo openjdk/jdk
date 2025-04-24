@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 /**
  * Usage: java StringCodingBenchmark
  * [-Diterations=N] [-Dsize=N] [-Dsubsize=N] [-Dmaxchar=N]
- * [-Dfilter=REGEXP] [-DSecurityManager=true]
+ * [-Dfilter=REGEXP]
  */
 public class StrCodingBenchmark {
     abstract static class Job {
@@ -126,11 +126,6 @@ public class StrCodingBenchmark {
         return ret;
     }
 
-    static class PermissiveSecurityManger extends SecurityManager {
-        @Override public void checkPermission(java.security.Permission p) {
-        }
-    }
-
     public static void main(String[] args) throws Throwable {
         final int itrs = Integer.getInteger("iterations", 100000);
         final int size       = Integer.getInteger("size", 2048);
@@ -138,9 +133,6 @@ public class StrCodingBenchmark {
         final int maxchar    = Integer.getInteger("maxchar", 128);
         final String regex = System.getProperty("filter");
         final Pattern filter = (regex == null) ? null : Pattern.compile(regex);
-        final boolean useSecurityManager = Boolean.getBoolean("SecurityManager");
-        if (useSecurityManager)
-            System.setSecurityManager(new PermissiveSecurityManger());
         final Random rnd = new Random();
 
         for (Charset charset:  Charset.availableCharsets().values()) {

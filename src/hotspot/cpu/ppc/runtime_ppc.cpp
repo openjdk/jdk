@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #ifdef COMPILER2
 #include "asm/macroAssembler.inline.hpp"
 #include "code/vmreg.hpp"
@@ -68,11 +67,12 @@
 //
 // Note: the exception pc MUST be at a call (precise debug information)
 //
-void OptoRuntime::generate_exception_blob() {
+ExceptionBlob* OptoRuntime::generate_exception_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
-  CodeBuffer buffer("exception_blob", 2048, 1024);
+  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
 
   address start = __ pc();
@@ -99,15 +99,10 @@ void OptoRuntime::generate_exception_blob() {
   __ set_last_Java_frame(/*sp=*/R1_SP, noreg);
 
   __ mr(R3_ARG1, R16_thread);
-#if defined(ABI_ELFv2)
-  __ call_c((address) OptoRuntime::handle_exception_C, relocInfo::none);
-#else
-  __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, OptoRuntime::handle_exception_C),
-            relocInfo::none);
-#endif
+  __ call_c((address) OptoRuntime::handle_exception_C);
   address calls_return_pc = __ last_calls_return_pc();
 # ifdef ASSERT
-  __ cmpdi(CCR0, R3_RET, 0);
+  __ cmpdi(CR0, R3_RET, 0);
   __ asm_assert_ne("handle_exception_C must not return null");
 # endif
 
@@ -148,7 +143,7 @@ void OptoRuntime::generate_exception_blob() {
   masm->flush();
 
   // Set exception blob.
-  _exception_blob = ExceptionBlob::create(&buffer, oop_maps,
+  return ExceptionBlob::create(&buffer, oop_maps,
                                           frame_size_in_bytes/wordSize);
 }
 

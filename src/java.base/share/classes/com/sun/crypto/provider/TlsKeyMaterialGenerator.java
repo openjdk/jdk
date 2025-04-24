@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,11 +62,11 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
     @SuppressWarnings("deprecation")
     protected void engineInit(AlgorithmParameterSpec params,
             SecureRandom random) throws InvalidAlgorithmParameterException {
-        if (params instanceof TlsKeyMaterialParameterSpec == false) {
+        if (!(params instanceof TlsKeyMaterialParameterSpec)) {
             throw new InvalidAlgorithmParameterException(MSG);
         }
         this.spec = (TlsKeyMaterialParameterSpec)params;
-        if ("RAW".equals(spec.getMasterSecret().getFormat()) == false) {
+        if (!"RAW".equals(spec.getMasterSecret().getFormat())) {
             throw new InvalidAlgorithmParameterException(
                 "Key format must be RAW");
         }
@@ -105,8 +105,6 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
 
         SecretKey clientMacKey = null;
         SecretKey serverMacKey = null;
-        SecretKey clientCipherKey = null;
-        SecretKey serverCipherKey = null;
         IvParameterSpec clientIv = null;
         IvParameterSpec serverIv = null;
 
@@ -194,8 +192,10 @@ public final class TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         System.arraycopy(keyBlock, ofs, serverKeyBytes, 0, keyLength);
         ofs += keyLength;
 
+        SecretKey clientCipherKey;
+        SecretKey serverCipherKey;
         try {
-            if (isExportable == false) {
+            if (!isExportable) {
                 // cipher keys
                 clientCipherKey = new SecretKeySpec(clientKeyBytes, alg);
                 serverCipherKey = new SecretKeySpec(serverKeyBytes, alg);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
@@ -34,6 +33,7 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zHeapIterator.hpp"
 #include "gc/z/zHeuristics.hpp"
+#include "gc/z/zInitialize.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zResurrection.hpp"
@@ -59,7 +59,7 @@ ZHeap::ZHeap()
     _page_table(),
     _allocator_eden(),
     _allocator_relocation(),
-    _serviceability(initial_capacity(), min_capacity(), max_capacity()),
+    _serviceability(InitialHeapSize, min_capacity(), max_capacity()),
     _old(&_page_table, &_page_allocator),
     _young(&_page_table, _old.forwarding_table(), &_page_allocator),
     _initialized(false) {
@@ -68,13 +68,13 @@ ZHeap::ZHeap()
   assert(_heap == nullptr, "Already initialized");
   _heap = this;
 
-  if (!_page_allocator.is_initialized() || !_young.is_initialized() || !_old.is_initialized()) {
+  if (!_page_allocator.is_initialized()) {
     return;
   }
 
   // Prime cache
   if (!_page_allocator.prime_cache(_old.workers(), InitialHeapSize)) {
-    log_error_p(gc)("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", InitialHeapSize / M);
+    ZInitialize::error("Failed to allocate initial Java heap (%zuM)", InitialHeapSize / M);
     return;
   }
 
@@ -92,10 +92,6 @@ ZHeap::ZHeap()
 
 bool ZHeap::is_initialized() const {
   return _initialized;
-}
-
-size_t ZHeap::initial_capacity() const {
-  return _page_allocator.initial_capacity();
 }
 
 size_t ZHeap::min_capacity() const {
@@ -237,7 +233,7 @@ void ZHeap::undo_alloc_page(ZPage* page) {
   assert(page->is_allocating(), "Invalid page state");
 
   ZStatInc(ZCounterUndoPageAllocation);
-  log_trace(gc)("Undo page allocation, thread: " PTR_FORMAT " (%s), page: " PTR_FORMAT ", size: " SIZE_FORMAT,
+  log_trace(gc)("Undo page allocation, thread: " PTR_FORMAT " (%s), page: " PTR_FORMAT ", size: %zu",
                 p2i(Thread::current()), ZUtils::thread_name(), p2i(page), page->size());
 
   free_page(page);
@@ -247,31 +243,21 @@ void ZHeap::free_page(ZPage* page) {
   // Remove page table entry
   _page_table.remove(page);
 
-  if (page->is_old()) {
-    page->verify_remset_cleared_current();
-    page->verify_remset_cleared_previous();
-  }
-
   // Free page
   _page_allocator.free_page(page);
 }
 
-size_t ZHeap::free_empty_pages(const ZArray<ZPage*>* pages) {
+size_t ZHeap::free_empty_pages(ZGenerationId id, const ZArray<ZPage*>* pages) {
   size_t freed = 0;
   // Remove page table entries
   ZArrayIterator<ZPage*> iter(pages);
   for (ZPage* page; iter.next(&page);) {
-    if (page->is_old()) {
-      // The remset of pages should be clean when installed into the page
-      // cache.
-      page->remset_clear();
-    }
     _page_table.remove(page);
     freed += page->size();
   }
 
   // Free pages
-  _page_allocator.free_pages(pages);
+  _page_allocator.free_pages(id, pages);
 
   return freed;
 }
@@ -281,9 +267,9 @@ void ZHeap::keep_alive(oop obj) {
   ZBarrier::mark<ZMark::Resurrect, ZMark::AnyThread, ZMark::Follow, ZMark::Strong>(addr);
 }
 
-void ZHeap::mark_flush_and_free(Thread* thread) {
-  _young.mark_flush_and_free(thread);
-  _old.mark_flush_and_free(thread);
+void ZHeap::mark_flush(Thread* thread) {
+  _young.mark_flush(thread);
+  _old.mark_flush(thread);
 }
 
 bool ZHeap::is_allocating(zaddress addr) const {
@@ -328,23 +314,53 @@ ZServiceabilityCounters* ZHeap::serviceability_counters() {
   return _serviceability.counters();
 }
 
-void ZHeap::print_on(outputStream* st) const {
-  st->print_cr(" ZHeap           used " SIZE_FORMAT "M, capacity " SIZE_FORMAT "M, max capacity " SIZE_FORMAT "M",
-               used() / M,
-               capacity() / M,
-               max_capacity() / M);
-  MetaspaceUtils::print_on(st);
+void ZHeap::print_usage_on(outputStream* st) const {
+  _page_allocator.print_usage_on(st);
 }
 
-void ZHeap::print_extended_on(outputStream* st) const {
-  print_on(st);
+void ZHeap::print_gc_on(outputStream* st) const {
+  print_globals_on(st);
   st->cr();
 
+  print_page_table_on(st);
+  st->cr();
+
+  _page_allocator.print_cache_extended_on(st);
+}
+
+void ZHeap::print_globals_on(outputStream* st) const {
+  st->print_cr("ZGC Globals:");
+  st->print_cr(" Young Collection:   %s/%u", ZGeneration::young()->phase_to_string(), ZGeneration::young()->seqnum());
+  st->print_cr(" Old Collection:     %s/%u", ZGeneration::old()->phase_to_string(), ZGeneration::old()->seqnum());
+  st->print_cr(" Offset Max:         " EXACTFMT " (" PTR_FORMAT ")", EXACTFMTARGS(ZAddressOffsetMax), ZAddressOffsetMax);
+  st->print_cr(" Page Size Small:    %zuM", ZPageSizeSmall / M);
+  st->print_cr(" Page Size Medium:   %zuM", ZPageSizeMedium / M);
+  st->cr();
+  st->print_cr("ZGC Metadata Bits:");
+  st->print_cr(" LoadGood:           " PTR_FORMAT, ZPointerLoadGoodMask);
+  st->print_cr(" LoadBad:            " PTR_FORMAT, ZPointerLoadBadMask);
+  st->print_cr(" MarkGood:           " PTR_FORMAT, ZPointerMarkGoodMask);
+  st->print_cr(" MarkBad:            " PTR_FORMAT, ZPointerMarkBadMask);
+  st->print_cr(" StoreGood:          " PTR_FORMAT, ZPointerStoreGoodMask);
+  st->print_cr(" StoreBad:           " PTR_FORMAT, ZPointerStoreBadMask);
+  st->print_cr(" ------------------- ");
+  st->print_cr(" Remapped:           " PTR_FORMAT, ZPointerRemapped);
+  st->print_cr(" RemappedYoung:      " PTR_FORMAT, ZPointerRemappedYoungMask);
+  st->print_cr(" RemappedOld:        " PTR_FORMAT, ZPointerRemappedOldMask);
+  st->print_cr(" MarkedYoung:        " PTR_FORMAT, ZPointerMarkedYoung);
+  st->print_cr(" MarkedOld:          " PTR_FORMAT, ZPointerMarkedOld);
+  st->print_cr(" Remembered:         " PTR_FORMAT, ZPointerRemembered);
+}
+
+void ZHeap::print_page_table_on(outputStream* st) const {
   // Do not allow pages to be deleted
   _page_allocator.enable_safe_destroy();
 
   // Print all pages
   st->print_cr("ZGC Page Table:");
+
+  StreamAutoIndentor indentor(st, 1);
+
   ZPageTableIterator iter(&_page_table);
   for (ZPage* page; iter.next(&page);) {
     page->print_on(st);

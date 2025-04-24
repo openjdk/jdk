@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -136,13 +136,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<days>
 					<dayContext type="format">
 						<dayWidth type="short">
-							<day type="sun">1</day>
-							<day type="mon">2</day>
-							<day type="tue">3</day>
-							<day type="wed">4</day>
-							<day type="thu">5</day>
-							<day type="fri">6</day>
-							<day type="sat">7</day>
+							<day type="sun">A1</day>
+							<day type="mon">A2</day>
+							<day type="tue">A3</day>
+							<day type="wed">A4</day>
+							<day type="thu">A5</day>
+							<day type="fri">A6</day>
+							<day type="sat">A7</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">Aneg 1</day>
@@ -156,13 +156,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="narrow">
-							<day type="sun">A1</day>
-							<day type="mon">A2</day>
-							<day type="tue">A3</day>
-							<day type="wed">A4</day>
-							<day type="thu">A5</day>
-							<day type="fri">A6</day>
-							<day type="sat">A7</day>
+							<day type="sun">1</day>
+							<day type="mon">2</day>
+							<day type="tue">3</day>
+							<day type="wed">4</day>
+							<day type="thu">5</day>
+							<day type="fri">6</day>
+							<day type="sat">7</day>
 						</dayWidth>
 					</dayContext>
 				</days>

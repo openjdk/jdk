@@ -44,7 +44,7 @@ public class VectorizationTestRunner {
     private static final int NMETHOD_COMP_LEVEL_IDX = 1;
     private static final int NMETHOD_INSTS_IDX = 2;
 
-    protected void run() {
+    protected void run(String[] args) {
         Class klass = getClass();
 
         // 1) Vectorization correctness test
@@ -68,7 +68,13 @@ public class VectorizationTestRunner {
         // To test vectorizability, invoke the IR test framework to check existence of
         // expected C2 IR node.
         TestFramework irTest = new TestFramework(klass);
+        irTest.addFlags(testVMFlags(args));
         irTest.start();
+    }
+
+    // Override this to add extra flags.
+    protected String[] testVMFlags(String[] args) {
+        return new String[0]; // by default no extra flags
     }
 
     private void verifyTestMethod(Method method) {
@@ -191,6 +197,6 @@ public class VectorizationTestRunner {
 
     public static void main(String[] args) {
         VectorizationTestRunner testObj = createTestInstance(Utils.TEST_NAME);
-        testObj.run();
+        testObj.run(args);
     }
 }

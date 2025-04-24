@@ -240,7 +240,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
-        counts = {IRNode.MAX_VD, ">0"})
+        counts = {IRNode.MAX_VD, "0"})
     public double[] vectorMax_8322090() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {

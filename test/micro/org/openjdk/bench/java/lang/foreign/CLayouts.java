@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
 public class CLayouts {
-    private static Linker LINKER = Linker.nativeLinker();
+    private static final Linker LINKER = Linker.nativeLinker();
 
     // the constants below are useful aliases for C types. The type/carrier association is only valid for 64-bit platforms.
 
@@ -73,10 +73,10 @@ public class CLayouts {
             .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, C_CHAR));
 
     private static final MethodHandle FREE = LINKER.downcallHandle(
-            LINKER.defaultLookup().find("free").get(), FunctionDescriptor.ofVoid(C_POINTER));
+            LINKER.defaultLookup().findOrThrow("free"), FunctionDescriptor.ofVoid(C_POINTER));
 
     private static final MethodHandle MALLOC = LINKER.downcallHandle(
-            LINKER.defaultLookup().find("malloc").get(), FunctionDescriptor.of(C_POINTER, ValueLayout.JAVA_LONG));
+            LINKER.defaultLookup().findOrThrow("malloc"), FunctionDescriptor.of(C_POINTER, ValueLayout.JAVA_LONG));
 
     public static void freeMemory(MemorySegment address) {
         try {

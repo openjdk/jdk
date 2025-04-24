@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,17 +39,13 @@ import jdk.internal.net.http.common.Pair;
 import jdk.internal.net.http.common.Utils;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLPermission;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Base64;
@@ -61,11 +57,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static jdk.internal.net.http.common.Utils.isValidName;
-import static jdk.internal.net.http.common.Utils.permissionForProxy;
 import static jdk.internal.net.http.common.Utils.stringOf;
 
 public class OpeningHandshake {
@@ -112,7 +106,6 @@ public class OpeningHandshake {
     public OpeningHandshake(BuilderImpl b) {
         checkURI(b.getUri());
         Proxy proxy = proxyFor(b.getProxySelector(), b.getUri());
-        checkPermissions(b, proxy);
         this.client = b.getClient();
         URI httpURI = createRequestURI(b.getUri());
         HttpRequestBuilderImpl requestBuilder = new HttpRequestBuilderImpl(httpURI);
@@ -185,12 +178,9 @@ public class OpeningHandshake {
         }
     }
 
-    @SuppressWarnings("removal")
     public CompletableFuture<Result> send() {
-        PrivilegedAction<CompletableFuture<Result>> pa = () ->
-                client.sendAsync(this.request, BodyHandlers.ofString())
+        return client.sendAsync(this.request, BodyHandlers.ofString())
                       .thenCompose(this::resultFrom);
-        return AccessController.doPrivileged(pa);
     }
 
     /*
@@ -376,27 +366,4 @@ public class OpeningHandshake {
         return proxy;
     }
 
-    /**
-     * Performs the necessary security permissions checks to connect ( possibly
-     * through a proxy ) to the builders WebSocket URI.
-     *
-     * @throws SecurityException if the security manager denies access
-     */
-    static void checkPermissions(BuilderImpl b, Proxy proxy) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            return;
-        }
-        Stream<String> headers = b.getHeaders().stream().map(p -> p.first).distinct();
-        URLPermission perm1 = Utils.permissionForServer(b.getUri(), "", headers);
-        sm.checkPermission(perm1);
-        if (proxy == null) {
-            return;
-        }
-        URLPermission perm2 = permissionForProxy((InetSocketAddress) proxy.address());
-        if (perm2 != null) {
-            sm.checkPermission(perm2);
-        }
-    }
 }

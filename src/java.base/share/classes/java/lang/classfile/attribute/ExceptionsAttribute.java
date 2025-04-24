@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,31 +24,44 @@
  */
 package java.lang.classfile.attribute;
 
+import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.AttributeMapper.AttributeStability;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.MethodElement;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.constant.ClassDesc;
+import java.lang.reflect.Executable;
 import java.util.Arrays;
 import java.util.List;
 
-import java.lang.classfile.Attribute;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.MethodElement;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code Exceptions} attribute {@jvms 4.7.5}, which can appear on
- * methods, and records the exceptions declared to be thrown by this method.
- * Delivered as a {@link MethodElement} when traversing the elements of a
- * {@link java.lang.classfile.MethodModel}.
+ * Models the {@link Attributes#exceptions() Exceptions} attribute (JVMS {@jvms
+ * 4.7.5}), which records the exceptions declared to be thrown by this
+ * method.
  * <p>
- * The attribute does not permit multiple instances in a given location.
- * Subsequent occurrence of the attribute takes precedence during the attributed
- * element build or transformation.
+ * This attribute only appears on methods, and does not permit {@linkplain
+ * AttributeMapper#allowMultiple multiple instances} in a method.  It has a
+ * data dependency on the {@linkplain AttributeStability#CP_REFS constant pool}.
+ * <p>
+ * The attribute was introduced in the Java Platform version 1.0.2, major
+ * version {@value ClassFile#JAVA_1_VERSION}.
  *
- * @since 22
+ * @apiNote
+ * Generic exceptions types thrown by a method and potentially annotated use of
+ * those types are defined by {@link SignatureAttribute} and {@link
+ * RuntimeVisibleTypeAnnotationsAttribute} respectively, which requires this
+ * attribute to be present.
+ *
+ * @see Attributes#exceptions()
+ * @jvms 4.7.5 The {@code Exceptions} Attribute
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ExceptionsAttribute
         extends Attribute<ExceptionsAttribute>, MethodElement
         permits BoundAttribute.BoundExceptionsAttribute,
@@ -56,12 +69,14 @@ public sealed interface ExceptionsAttribute
 
     /**
      * {@return the exceptions declared to be thrown by this method}
+     *
+     * @see Executable#getExceptionTypes()
      */
     List<ClassEntry> exceptions();
 
     /**
      * {@return an {@code Exceptions} attribute}
-     * @param exceptions the checked exceptions that may be thrown from this method
+     * @param exceptions the exceptions that may be thrown from this method
      */
     static ExceptionsAttribute of(List<ClassEntry> exceptions) {
         return new UnboundAttribute.UnboundExceptionsAttribute(exceptions);
@@ -69,7 +84,7 @@ public sealed interface ExceptionsAttribute
 
     /**
      * {@return an {@code Exceptions} attribute}
-     * @param exceptions the checked exceptions that may be thrown from this method
+     * @param exceptions the exceptions that may be thrown from this method
      */
     static ExceptionsAttribute of(ClassEntry... exceptions) {
         return of(List.of(exceptions));
@@ -77,7 +92,7 @@ public sealed interface ExceptionsAttribute
 
     /**
      * {@return an {@code Exceptions} attribute}
-     * @param exceptions the checked exceptions that may be thrown from this method
+     * @param exceptions the exceptions that may be thrown from this method
      */
     static ExceptionsAttribute ofSymbols(List<ClassDesc> exceptions) {
         return of(Util.entryList(exceptions));
@@ -85,7 +100,7 @@ public sealed interface ExceptionsAttribute
 
     /**
      * {@return an {@code Exceptions} attribute}
-     * @param exceptions the checked exceptions that may be thrown from this method
+     * @param exceptions the exceptions that may be thrown from this method
      */
     static ExceptionsAttribute ofSymbols(ClassDesc... exceptions) {
         return ofSymbols(Arrays.asList(exceptions));

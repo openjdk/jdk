@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.security.AlgorithmConstraints;
-import java.security.AccessController;
 import sun.security.util.LegacyAlgorithmConstraints;
-import sun.security.action.GetLongAction;
 
 class ServerHandshakeContext extends HandshakeContext {
     // To prevent the TLS renegotiation issues, by setting system property
@@ -55,15 +53,15 @@ class ServerHandshakeContext extends HandshakeContext {
     CertificateMessage.CertificateEntry currentCertEntry;
     private static final long DEFAULT_STATUS_RESP_DELAY = 5000L;
     final long statusRespTimeout;
+    boolean acceptCliHelloFragments = false;
 
 
     ServerHandshakeContext(SSLContextImpl sslContext,
             TransportContext conContext) throws IOException {
         super(sslContext, conContext);
-        @SuppressWarnings("removal")
-        long respTimeOut = AccessController.doPrivileged(
-                    new GetLongAction("jdk.tls.stapling.responseTimeout",
-                        DEFAULT_STATUS_RESP_DELAY));
+        long respTimeOut = Long.getLong(
+                    "jdk.tls.stapling.responseTimeout",
+                    DEFAULT_STATUS_RESP_DELAY);
         statusRespTimeout = respTimeOut >= 0 ? respTimeOut :
                 DEFAULT_STATUS_RESP_DELAY;
         handshakeConsumers.put(

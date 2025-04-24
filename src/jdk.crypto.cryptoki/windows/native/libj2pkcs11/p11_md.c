@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -186,7 +186,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
         if (C_GetInterface != NULL) {
             TRACE0("Connect: Found C_GetInterface func\n");
             rv = (C_GetInterface)(NULL, NULL, &interface, 0);
-            if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+            if (rv == CKR_OK && interface != NULL) {
                 goto setModuleData;
             }
         }
@@ -234,7 +234,8 @@ setModuleData:
         p11ThrowIOException(env, "ERROR: No function list ptr found");
         goto cleanup;
     }
-    if (((CK_VERSION *)moduleData->ckFunctionListPtr)->major == 3) {
+    if (((CK_VERSION *)moduleData->ckFunctionListPtr)->major == 3 &&
+            interface != NULL) {
         moduleData->ckFunctionList30Ptr = interface->pFunctionList;
     } else {
         moduleData->ckFunctionList30Ptr = NULL;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,19 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.OverridableResource.createResource;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Map;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.util.PathUtils;
 
+@SuppressWarnings("restricted")
 public class WinExeBundler extends AbstractBundler {
 
     static {
@@ -126,10 +132,12 @@ public class WinExeBundler extends AbstractBundler {
                 outdir.toAbsolutePath().toString()));
 
         // Copy template msi wrapper next to msi file
-        final Path exePath = IOUtils.replaceSuffix(msi, ".exe");
-        try (InputStream is = OverridableResource.readDefault(EXE_WRAPPER_NAME)) {
-            Files.copy(is, exePath);
-        }
+        final Path exePath = PathUtils.replaceSuffix(msi, ".exe");
+
+        createResource(EXE_WRAPPER_NAME, params)
+                .setCategory(I18N.getString("resource.installer-exe"))
+                .setPublicName("installer.exe")
+                .saveToFile(exePath);
 
         new ExecutableRebrander().addAction((resourceLock) -> {
             // Embed msi in msi wrapper exe.

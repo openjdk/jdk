@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,11 @@ class ZLiveMap {
   friend class ZLiveMapTest;
 
 private:
-  static const size_t nsegments = 64;
+  static const uint32_t NumSegments = 64;
+  static const uint32_t BitsPerObject = 2;
+
+  const uint32_t    _segment_size;
+  const int         _segment_shift;
 
   volatile uint32_t _seqnum;
   volatile uint32_t _live_objects;
@@ -43,15 +47,12 @@ private:
   BitMap::bm_word_t _segment_live_bits;
   BitMap::bm_word_t _segment_claim_bits;
   ZBitMap           _bitmap;
-  size_t            _segment_shift;
 
   const BitMapView segment_live_bits() const;
   const BitMapView segment_claim_bits() const;
 
   BitMapView segment_live_bits();
   BitMapView segment_claim_bits();
-
-  BitMap::idx_t segment_size() const;
 
   BitMap::idx_t segment_start(BitMap::idx_t segment) const;
   BitMap::idx_t segment_end(BitMap::idx_t segment) const;
@@ -65,6 +66,8 @@ private:
 
   bool claim_segment(BitMap::idx_t segment);
 
+  void initialize_bitmap();
+
   void reset(ZGenerationId id);
   void reset_segment(BitMap::idx_t segment);
 
@@ -74,11 +77,10 @@ private:
   void iterate_segment(BitMap::idx_t segment, Function function);
 
 public:
-  ZLiveMap(uint32_t size);
+  ZLiveMap(uint32_t object_max_count);
   ZLiveMap(const ZLiveMap& other) = delete;
 
   void reset();
-  void resize(uint32_t size);
 
   bool is_marked(ZGenerationId id) const;
 

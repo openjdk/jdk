@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,19 +42,20 @@ public class JavaCodeGenerator extends TestsGenerator {
     }
 
     @Override
-    public void accept(IRNode mainClass, IRNode privateClasses) {
+    public void accept(IRTreeGenerator.Test test) {
+        IRNode mainClass = test.mainClass();
         String mainClassName = mainClass.getName();
-        generateSources(mainClass, privateClasses);
+        generateSources(test.seed(), mainClass, test.privateClasses());
         compilePrinter();
         compileJavaFile(mainClassName);
         generateGoldenOut(mainClassName);
     }
 
-    private void generateSources(IRNode mainClass, IRNode privateClasses) {
+    private void generateSources(long seed, IRNode mainClass, IRNode privateClasses) {
         String mainClassName = mainClass.getName();
         StringBuilder code = new StringBuilder();
         JavaCodeVisitor vis = new JavaCodeVisitor();
-        code.append(getJtregHeader(mainClassName));
+        code.append(getJtregHeader(mainClassName, seed));
         if (privateClasses != null) {
             code.append(privateClasses.accept(vis));
         }
@@ -64,13 +65,13 @@ public class JavaCodeGenerator extends TestsGenerator {
     }
 
     private void compileJavaFile(String mainClassName) {
-        String classPath = tmpDir.toString();
+        String classPath = tmpDir.path.toString();
         ProcessBuilder pb = new ProcessBuilder(JAVAC,
                 "-d", classPath,
                 "-cp", classPath,
                 generatorDir.resolve(mainClassName + ".java").toString());
         try {
-            int r = runProcess(pb, tmpDir.resolve(mainClassName + ".javac").toString());
+            int r = runProcess(pb, tmpDir.path.resolve(mainClassName + ".javac").toString());
             if (r != 0) {
                 throw new Error("Can't compile sources, exit code = " + r);
             }
@@ -79,7 +80,19 @@ public class JavaCodeGenerator extends TestsGenerator {
         }
     }
 
-    private static String[] generatePrerunAction(String mainClassName) {
+    protected static String[] generatePrerunAction(String mainClassName) {
         return new String[] {"@compile " + mainClassName + ".java"};
+    }
+
+    public static void main(String[] args) throws Exception {
+        ProductionParams.initializeFromCmdline(args);
+        IRTreeGenerator.initializeWithProductionParams();
+
+        JavaCodeGenerator generator = new JavaCodeGenerator();
+
+        for (String mainClass : ProductionParams.mainClassNames.value()) {
+            var test = IRTreeGenerator.generateIRTree(mainClass);
+            generator.generateSources(test.seed(), test.mainClass(), test.privateClasses());
+        }
     }
 }

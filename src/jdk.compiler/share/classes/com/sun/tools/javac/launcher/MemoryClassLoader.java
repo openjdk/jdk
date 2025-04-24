@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,6 +191,20 @@ final class MemoryClassLoader extends ClassLoader {
             throw new ClassNotFoundException(name);
         }
         return foundOrCompiledClass;
+    }
+
+    @Override
+    protected Class<?> findClass(String moduleName, String name) {
+        try {
+            if (moduleName == null) {
+                return findClass(name);
+            }
+            if (moduleDescriptor != null && moduleDescriptor.name().equals(moduleName)) {
+                return findClass(name);
+            }
+            return super.findClass(moduleName, name);
+        } catch (ClassNotFoundException ignore) { }
+        return null;
     }
 
     private Class<?> findOrCompileClass(String name) {

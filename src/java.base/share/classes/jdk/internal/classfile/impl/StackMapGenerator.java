@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,31 +26,31 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.ClassDesc;
-import static java.lang.constant.ConstantDescs.*;
-import java.lang.constant.MethodTypeDesc;
-import java.lang.classfile.ClassFile;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.Label;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantDynamicEntry;
-import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.nio.ByteBuffer;
+import java.lang.classfile.constantpool.InvokeDynamicEntry;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.lang.classfile.Attribute;
+
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.util.Preconditions;
 
 import static java.lang.classfile.ClassFile.*;
-import java.lang.classfile.BufWriter;
-import java.lang.classfile.Label;
-import java.lang.classfile.attribute.StackMapTableAttribute;
-import java.lang.classfile.Attributes;
-import java.lang.classfile.components.ClassPrinter;
-import java.lang.classfile.attribute.CodeAttribute;
+import static java.lang.classfile.constantpool.PoolEntry.*;
+import static java.lang.constant.ConstantDescs.*;
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 /**
  * StackMapGenerator is responsible for stack map frames generation.
@@ -58,8 +59,8 @@ import java.lang.classfile.attribute.CodeAttribute;
  * <p>
  * The {@linkplain #generate() frames computation} consists of following steps:
  * <ol>
- * <li>{@linkplain #detectFrameOffsets() Detection} of mandatory stack map frames offsets:<ul>
- *      <li>Mandatory stack map frame offsets include all jump and switch instructions targets,
+ * <li>{@linkplain #detectFrames() Detection} of mandatory stack map frames:<ul>
+ *      <li>Mandatory stack map frame include all jump and switch instructions targets,
  *          offsets immediately following {@linkplain #noControlFlow(int) "no control flow"}
  *          and all exception table handlers.
  *      <li>Detection is performed in a single fast pass through the bytecode,
@@ -153,7 +154,7 @@ public final class StackMapGenerator {
                 dcb.methodInfo.methodName().stringValue(),
                 dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
-                dcb.bytecodesBufWriter.asByteBuffer().slice(0, dcb.bytecodesBufWriter.size()),
+                dcb.bytecodesBufWriter.bytecodeView(),
                 dcb.constantPool,
                 dcb.context,
                 dcb.handlers);
@@ -163,6 +164,7 @@ public final class StackMapGenerator {
     private static final int FLAG_THIS_UNINIT = 0x01;
     private static final int FRAME_DEFAULT_CAPACITY = 10;
     private static final int T_BOOLEAN = 4, T_LONG = 11;
+    private static final Frame[] EMPTY_FRAME_ARRAY = {};
 
     private static final int ITEM_TOP = 0,
             ITEM_INTEGER = 1,
@@ -189,7 +191,7 @@ public final class StackMapGenerator {
     private final Type thisType;
     private final String methodName;
     private final MethodTypeDesc methodDesc;
-    private final ByteBuffer bytecode;
+    private final RawBytecodeHelper.CodeRange bytecode;
     private final SplitConstantPool cp;
     private final boolean isStatic;
     private final LabelContext labelContext;
@@ -198,7 +200,8 @@ public final class StackMapGenerator {
     private final ClassHierarchyImpl classHierarchy;
     private final boolean patchDeadCode;
     private final boolean filterDeadLabels;
-    private List<Frame> frames;
+    private Frame[] frames = EMPTY_FRAME_ARRAY;
+    private int framesCount = 0;
     private final Frame currentFrame;
     private int maxStack, maxLocals;
 
@@ -223,7 +226,7 @@ public final class StackMapGenerator {
                      String methodName,
                      MethodTypeDesc methodDesc,
                      boolean isStatic,
-                     ByteBuffer bytecode,
+                     RawBytecodeHelper.CodeRange bytecode,
                      SplitConstantPool cp,
                      ClassFileImpl context,
                      List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {
@@ -236,9 +239,9 @@ public final class StackMapGenerator {
         this.labelContext = labelContext;
         this.handlers = handlers;
         this.rawHandlers = new ArrayList<>(handlers.size());
-        this.classHierarchy = new ClassHierarchyImpl(context.classHierarchyResolverOption().classHierarchyResolver());
-        this.patchDeadCode = context.deadCodeOption() == ClassFile.DeadCodeOption.PATCH_DEAD_CODE;
-        this.filterDeadLabels = context.deadLabelsOption() == ClassFile.DeadLabelsOption.DROP_DEAD_LABELS;
+        this.classHierarchy = new ClassHierarchyImpl(context.classHierarchyResolver());
+        this.patchDeadCode = context.patchDeadCode();
+        this.filterDeadLabels = context.dropDeadLabels();
         this.currentFrame = new Frame(classHierarchy);
         generate();
     }
@@ -262,10 +265,10 @@ public final class StackMapGenerator {
     private Frame getFrame(int offset) {
         //binary search over frames ordered by offset
         int low = 0;
-        int high = frames.size() - 1;
+        int high = framesCount - 1;
         while (low <= high) {
             int mid = (low + high) >>> 1;
-            var f = frames.get(mid);
+            var f = frames[mid];
             if (f.offset < offset)
                 low = mid + 1;
             else if (f.offset > offset)
@@ -283,16 +286,38 @@ public final class StackMapGenerator {
     private int exMin, exMax;
 
     private boolean isAnyFrameDirty() {
-        for (var f : frames) {
-            if (f.dirty) return true;
+        for (int i = 0; i < framesCount; i++) {
+            if (frames[i].dirty) return true;
         }
         return false;
     }
 
     private void generate() {
-        exMin = bytecode.capacity();
+        exMin = bytecode.length();
         exMax = -1;
-        for (var exhandler : handlers) {
+        if (!handlers.isEmpty()) {
+            generateHandlers();
+        }
+        detectFrames();
+        do {
+            processMethod();
+        } while (isAnyFrameDirty());
+        maxLocals = currentFrame.frameMaxLocals;
+        maxStack = currentFrame.frameMaxStack;
+
+        //dead code patching
+        for (int i = 0; i < framesCount; i++) {
+            var frame = frames[i];
+            if (frame.flags == -1) {
+                deadCodePatching(frame, i);
+            }
+        }
+    }
+
+    private void generateHandlers() {
+        var labelContext = this.labelContext;
+        for (int i = 0; i < handlers.size(); i++) {
+            var exhandler = handlers.get(i);
             int start_pc = labelContext.labelToBci(exhandler.tryStart());
             int end_pc = labelContext.labelToBci(exhandler.tryEnd());
             int handler_pc = labelContext.labelToBci(exhandler.handler());
@@ -302,42 +327,23 @@ public final class StackMapGenerator {
                 var catchType = exhandler.catchType();
                 rawHandlers.add(new RawExceptionCatch(start_pc, end_pc, handler_pc,
                         catchType.isPresent() ? cpIndexToType(catchType.get().index(), cp)
-                                              : Type.THROWABLE_TYPE));
+                                : Type.THROWABLE_TYPE));
             }
         }
-        BitSet frameOffsets = detectFrameOffsets();
-        int framesCount = frameOffsets.cardinality();
-        frames = new ArrayList<>(framesCount);
-        int offset = -1;
-        for (int i = 0; i < framesCount; i++) {
-            offset = frameOffsets.nextSetBit(offset + 1);
-            frames.add(new Frame(offset, classHierarchy));
-        }
-        do {
-            processMethod();
-        } while (isAnyFrameDirty());
-        maxLocals = currentFrame.frameMaxLocals;
-        maxStack = currentFrame.frameMaxStack;
+    }
 
-        //dead code patching
-        for (int i = 0; i < framesCount; i++) {
-            var frame = frames.get(i);
-            if (frame.flags == -1) {
-                if (!patchDeadCode) throw generatorError("Unable to generate stack map frame for dead code", frame.offset);
-                //patch frame
-                frame.pushStack(Type.THROWABLE_TYPE);
-                if (maxStack < 1) maxStack = 1;
-                int blockSize = (i < framesCount - 1 ? frames.get(i + 1).offset : bytecode.limit()) - frame.offset;
-                //patch bytecode
-                bytecode.position(frame.offset);
-                for (int n=1; n<blockSize; n++) {
-                    bytecode.put((byte) NOP);
-                }
-                bytecode.put((byte) ATHROW);
-                //patch handlers
-                removeRangeFromExcTable(frame.offset, frame.offset + blockSize);
-            }
-        }
+    private void deadCodePatching(Frame frame, int i) {
+        if (!patchDeadCode) throw generatorError("Unable to generate stack map frame for dead code", frame.offset);
+        //patch frame
+        frame.pushStack(Type.THROWABLE_TYPE);
+        if (maxStack < 1) maxStack = 1;
+        int end = (i < framesCount - 1 ? frames[i + 1].offset : bytecode.length()) - 1;
+        //patch bytecode
+        var arr = bytecode.array();
+        Arrays.fill(arr, frame.offset, end, (byte) NOP);
+        arr[end] = (byte) ATHROW;
+        //patch handlers
+        removeRangeFromExcTable(frame.offset, end + 1);
     }
 
     private void removeRangeFromExcTable(int rangeStart, int rangeEnd) {
@@ -382,57 +388,65 @@ public final class StackMapGenerator {
      * @return <code>StackMapTableAttribute</code> or null if stack map is empty
      */
     public Attribute<? extends StackMapTableAttribute> stackMapTableAttribute() {
-        return frames.isEmpty() ? null : new UnboundAttribute.AdHocAttribute<>(Attributes.STACK_MAP_TABLE) {
+        return framesCount == 0 ? null : new UnboundAttribute.AdHocAttribute<>(Attributes.stackMapTable()) {
             @Override
-            public void writeBody(BufWriter b) {
-                b.writeU2(frames.size());
+            public void writeBody(BufWriterImpl b) {
+                b.writeU2(framesCount);
                 Frame prevFrame =  new Frame(classHierarchy);
                 prevFrame.setLocalsFromArg(methodName, methodDesc, isStatic, thisType);
                 prevFrame.trimAndCompress();
-                for (var fr : frames) {
+                for (int i = 0; i < framesCount; i++) {
+                    var fr = frames[i];
                     fr.trimAndCompress();
                     fr.writeTo(b, prevFrame, cp);
                     prevFrame = fr;
                 }
             }
+
+            @Override
+            public Utf8Entry attributeName() {
+                return cp.utf8Entry(Attributes.NAME_STACK_MAP_TABLE);
+            }
         };
     }
 
     private static Type cpIndexToType(int index, ConstantPoolBuilder cp) {
-        return Type.referenceType(((ClassEntry)cp.entryByIndex(index)).asSymbol());
+        return Type.referenceType(cp.entryByIndex(index, ClassEntry.class).asSymbol());
     }
 
     private void processMethod() {
+        var frames = this.frames;
+        var currentFrame = this.currentFrame;
         currentFrame.setLocalsFromArg(methodName, methodDesc, isStatic, thisType);
         currentFrame.stackSize = 0;
         currentFrame.flags = 0;
         currentFrame.offset = -1;
         int stackmapIndex = 0;
-        RawBytecodeHelper bcs = new RawBytecodeHelper(bytecode);
+        var bcs = bytecode.start();
         boolean ncf = false;
-        while (!bcs.isLastBytecode()) {
-            bcs.rawNext();
-            currentFrame.offset = bcs.bci;
-            if (stackmapIndex < frames.size()) {
-                int thisOffset = frames.get(stackmapIndex).offset;
-                if (ncf && thisOffset > bcs.bci) {
+        while (bcs.next()) {
+            currentFrame.offset = bcs.bci();
+            if (stackmapIndex < framesCount) {
+                int thisOffset = frames[stackmapIndex].offset;
+                if (ncf && thisOffset > bcs.bci()) {
                     throw generatorError("Expecting a stack map frame");
                 }
-                if (thisOffset == bcs.bci) {
+                if (thisOffset == bcs.bci()) {
+                    Frame nextFrame = frames[stackmapIndex++];
                     if (!ncf) {
-                        currentFrame.checkAssignableTo(frames.get(stackmapIndex));
+                        currentFrame.checkAssignableTo(nextFrame);
                     }
-                    Frame nextFrame = frames.get(stackmapIndex++);
                     while (!nextFrame.dirty) { //skip unmatched frames
-                        if (stackmapIndex == frames.size()) return; //skip the rest of this round
-                        nextFrame = frames.get(stackmapIndex++);
+                        if (stackmapIndex == framesCount) return; //skip the rest of this round
+                        nextFrame = frames[stackmapIndex++];
                     }
-                    bcs.rawNext(nextFrame.offset); //skip code up-to the next frame
-                    currentFrame.offset = bcs.bci;
+                    bcs.reset(nextFrame.offset); //skip code up-to the next frame
+                    bcs.next();
+                    currentFrame.offset = bcs.bci();
                     currentFrame.copyFrom(nextFrame);
                     nextFrame.dirty = false;
-                } else if (thisOffset < bcs.bci) {
-                    throw new ClassFormatError(String.format("Bad stack map offset %d", thisOffset));
+                } else if (thisOffset < bcs.bci()) {
+                    throw generatorError("Bad stack map offset");
                 }
             } else if (ncf) {
                 throw generatorError("Expecting a stack map frame");
@@ -442,11 +456,11 @@ public final class StackMapGenerator {
     }
 
     private boolean processBlock(RawBytecodeHelper bcs) {
-        int opcode = bcs.rawCode;
+        int opcode = bcs.opcode();
         boolean ncf = false;
         boolean this_uninit = false;
         boolean verified_exc_handlers = false;
-        int bci = bcs.bci;
+        int bci = bcs.bci();
         Type type1, type2, type3, type4;
         if (RawBytecodeHelper.isStoreIntoLocal(opcode) && bci >= exMin && bci < exMax) {
             processExceptionHandlerTargets(bci, this_uninit);
@@ -652,7 +666,7 @@ public final class StackMapGenerator {
                 currentFrame.decStack(1).pushStack(cpIndexToType(bcs.getIndexU2(), cp));
             case MULTIANEWARRAY -> {
                 type1 = cpIndexToType(bcs.getIndexU2(), cp);
-                int dim = bcs.getU1(bcs.bci + 3);
+                int dim = bcs.getU1Unchecked(bcs.bci() + 3);
                 for (int i = 0; i < dim; i++) {
                     currentFrame.popStack();
                 }
@@ -697,26 +711,26 @@ public final class StackMapGenerator {
                 currentFrame.pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             case TAG_LONG ->
                 currentFrame.pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-            case TAG_METHODHANDLE ->
+            case TAG_METHOD_HANDLE ->
                 currentFrame.pushStack(Type.METHOD_HANDLE_TYPE);
-            case TAG_METHODTYPE ->
+            case TAG_METHOD_TYPE ->
                 currentFrame.pushStack(Type.METHOD_TYPE);
-            case TAG_CONSTANTDYNAMIC ->
-                currentFrame.pushStack(((ConstantDynamicEntry)cp.entryByIndex(index)).asSymbol().constantType());
+            case TAG_DYNAMIC ->
+                currentFrame.pushStack(cp.entryByIndex(index, ConstantDynamicEntry.class).asSymbol().constantType());
             default ->
                 throw generatorError("CP entry #%d %s is not loadable constant".formatted(index, cp.entryByIndex(index).tag()));
         }
     }
 
     private void processSwitch(RawBytecodeHelper bcs) {
-        int bci = bcs.bci;
+        int bci = bcs.bci();
         int alignedBci = RawBytecodeHelper.align(bci + 1);
-        int defaultOfset = bcs.getInt(alignedBci);
+        int defaultOffset = bcs.getIntUnchecked(alignedBci);
         int keys, delta;
         currentFrame.popStack();
-        if (bcs.rawCode == TABLESWITCH) {
-            int low = bcs.getInt(alignedBci + 4);
-            int high = bcs.getInt(alignedBci + 2 * 4);
+        if (bcs.opcode() == TABLESWITCH) {
+            int low = bcs.getIntUnchecked(alignedBci + 4);
+            int high = bcs.getIntUnchecked(alignedBci + 2 * 4);
             if (low > high) {
                 throw generatorError("low must be less than or equal to high in tableswitch");
             }
@@ -726,45 +740,42 @@ public final class StackMapGenerator {
             }
             delta = 1;
         } else {
-            keys = bcs.getInt(alignedBci + 4);
+            keys = bcs.getIntUnchecked(alignedBci + 4);
             if (keys < 0) {
                 throw generatorError("number of keys in lookupswitch less than 0");
             }
             delta = 2;
             for (int i = 0; i < (keys - 1); i++) {
-                int this_key = bcs.getInt(alignedBci + (2 + 2 * i) * 4);
-                int next_key = bcs.getInt(alignedBci + (2 + 2 * i + 2) * 4);
+                int this_key = bcs.getIntUnchecked(alignedBci + (2 + 2 * i) * 4);
+                int next_key = bcs.getIntUnchecked(alignedBci + (2 + 2 * i + 2) * 4);
                 if (this_key >= next_key) {
                     throw generatorError("Bad lookupswitch instruction");
                 }
             }
         }
-        int target = bci + defaultOfset;
+        int target = bci + defaultOffset;
         checkJumpTarget(currentFrame, target);
         for (int i = 0; i < keys; i++) {
-            alignedBci = RawBytecodeHelper.align(bcs.bci + 1);
-            target = bci + bcs.getInt(alignedBci + (3 + i * delta) * 4);
+            target = bci + bcs.getIntUnchecked(alignedBci + (3 + i * delta) * 4);
             checkJumpTarget(currentFrame, target);
         }
     }
 
     private void processFieldInstructions(RawBytecodeHelper bcs) {
-        var desc = Util.fieldTypeSymbol(((MemberRefEntry)cp.entryByIndex(bcs.getIndexU2())).nameAndType());
-        switch (bcs.rawCode) {
+        var desc = Util.fieldTypeSymbol(cp.entryByIndex(bcs.getIndexU2(), MemberRefEntry.class).type());
+        var currentFrame = this.currentFrame;
+        switch (bcs.opcode()) {
             case GETSTATIC ->
                 currentFrame.pushStack(desc);
             case PUTSTATIC -> {
-                currentFrame.popStack();
-                if (Util.isDoubleSlot(desc)) currentFrame.popStack();
+                currentFrame.decStack(Util.isDoubleSlot(desc) ? 2 : 1);
             }
             case GETFIELD -> {
-                currentFrame.popStack();
+                currentFrame.decStack(1);
                 currentFrame.pushStack(desc);
             }
             case PUTFIELD -> {
-                currentFrame.popStack();
-                currentFrame.popStack();
-                if (Util.isDoubleSlot(desc)) currentFrame.popStack();
+                currentFrame.decStack(Util.isDoubleSlot(desc) ? 3 : 2);
             }
             default -> throw new AssertionError("Should not reach here");
         }
@@ -772,15 +783,16 @@ public final class StackMapGenerator {
 
     private boolean processInvokeInstructions(RawBytecodeHelper bcs, boolean inTryBlock, boolean thisUninit) {
         int index = bcs.getIndexU2();
-        int opcode = bcs.rawCode;
-        var cpe = cp.entryByIndex(index);
-        var nameAndType = opcode == INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
-        String invokeMethodName = nameAndType.name().stringValue();
-        var mDesc = Util.methodTypeSymbol(nameAndType);
-        int bci = bcs.bci;
+        int opcode = bcs.opcode();
+        var nameAndType = opcode == INVOKEDYNAMIC
+                ? cp.entryByIndex(index, InvokeDynamicEntry.class).nameAndType()
+                : cp.entryByIndex(index, MemberRefEntry.class).nameAndType();
+        var mDesc = Util.methodTypeSymbol(nameAndType.type());
+        int bci = bcs.bci();
+        var currentFrame = this.currentFrame;
         currentFrame.decStack(Util.parameterSlots(mDesc));
         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
-            if (OBJECT_INITIALIZER_NAME.equals(invokeMethodName)) {
+            if (nameAndType.name().equalsString(OBJECT_INITIALIZER_NAME)) {
                 Type type = currentFrame.popStack();
                 if (type == Type.UNITIALIZED_THIS_TYPE) {
                     if (inTryBlock) {
@@ -789,9 +801,7 @@ public final class StackMapGenerator {
                     currentFrame.initializeObject(type, thisType);
                     thisUninit = true;
                 } else if (type.tag == ITEM_UNINITIALIZED) {
-                    int new_offset = type.bci;
-                    int new_class_index = bcs.getIndexU2Raw(new_offset + 1);
-                    Type new_class_type = cpIndexToType(new_class_index, cp);
+                    Type new_class_type = cpIndexToType(bcs.getU2(type.bci + 1), cp);
                     if (inTryBlock) {
                         processExceptionHandlerTargets(bci, thisUninit);
                     }
@@ -800,7 +810,7 @@ public final class StackMapGenerator {
                     throw generatorError("Bad operand type when invoking <init>");
                 }
             } else {
-                currentFrame.popStack();
+                currentFrame.decStack(1);
             }
         }
         currentFrame.pushStack(mDesc.returnType());
@@ -836,93 +846,56 @@ public final class StackMapGenerator {
                 offset,
                 methodName,
                 methodDesc.parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","))));
-        //try to attach debug info about corrupted bytecode to the message
-        try {
-            var cc = ClassFile.of();
-            var clm = cc.parse(cc.build(cp.classEntry(thisType.sym()), cp, clb ->
-                    clb.withMethod(methodName, methodDesc, isStatic ? ACC_STATIC : 0, mb ->
-                            ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.CODE) {
-                                @Override
-                                public void writeBody(BufWriter b) {
-                                    b.writeU2(-1);//max stack
-                                    b.writeU2(-1);//max locals
-                                    b.writeInt(bytecode.limit());
-                                    b.writeBytes(bytecode.array(), 0, bytecode.limit());
-                                    b.writeU2(0);//exception handlers
-                                    b.writeU2(0);//attributes
-                                }
-                    }))));
-            ClassPrinter.toYaml(clm.methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, sb::append);
-        } catch (Error | Exception suppresed) {
-            //fallback to bytecode hex dump
-            bytecode.rewind();
-            while (bytecode.position() < bytecode.limit()) {
-                sb.append("%n%04x:".formatted(bytecode.position()));
-                for (int i = 0; i < 16 && bytecode.position() < bytecode.limit(); i++) {
-                    sb.append(" %02x".formatted(bytecode.get()));
-                }
-            }
-            var err = new IllegalArgumentException(sb.toString());
-            err.addSuppressed(suppresed);
-            return err;
-        }
+        Util.dumpMethod(cp, thisType.sym(), methodName, methodDesc, isStatic ? ACC_STATIC : 0, bytecode, sb::append);
         return new IllegalArgumentException(sb.toString());
     }
 
     /**
-     * Performs detection of mandatory stack map frames offsets
-     * in a single bytecode traversing pass
-     * @return <code>java.lang.BitSet</code> of detected frames offsets
+     * Performs detection of mandatory stack map frames in a single bytecode traversing pass
+     * @return detected frames
      */
-    private BitSet detectFrameOffsets() {
-        var offsets = new BitSet() {
-            @Override
-            public void set(int i) {
-                if (i < 0 || i >= bytecode.capacity()) throw new IllegalArgumentException();
-                super.set(i);
-            }
-        };
-        RawBytecodeHelper bcs = new RawBytecodeHelper(bytecode);
+    private void detectFrames() {
+        var bcs = bytecode.start();
         boolean no_control_flow = false;
         int opcode, bci = 0;
-        while (!bcs.isLastBytecode()) try {
-            opcode = bcs.rawNext();
-            bci = bcs.bci;
+        while (bcs.next()) try {
+            opcode = bcs.opcode();
+            bci = bcs.bci();
             if (no_control_flow) {
-                offsets.set(bci);
+                addFrame(bci);
             }
             no_control_flow = switch (opcode) {
                 case GOTO -> {
-                            offsets.set(bcs.dest());
+                            addFrame(bcs.dest());
                             yield true;
                         }
                 case GOTO_W -> {
-                            offsets.set(bcs.destW());
+                            addFrame(bcs.destW());
                             yield true;
                         }
                 case IF_ICMPEQ, IF_ICMPNE, IF_ICMPLT, IF_ICMPGE,
                      IF_ICMPGT, IF_ICMPLE, IFEQ, IFNE,
                      IFLT, IFGE, IFGT, IFLE, IF_ACMPEQ,
                      IF_ACMPNE , IFNULL , IFNONNULL -> {
-                            offsets.set(bcs.dest());
+                            addFrame(bcs.dest());
                             yield false;
                         }
                 case TABLESWITCH, LOOKUPSWITCH -> {
                             int aligned_bci = RawBytecodeHelper.align(bci + 1);
-                            int default_ofset = bcs.getInt(aligned_bci);
+                            int default_ofset = bcs.getIntUnchecked(aligned_bci);
                             int keys, delta;
-                            if (bcs.rawCode == TABLESWITCH) {
-                                int low = bcs.getInt(aligned_bci + 4);
-                                int high = bcs.getInt(aligned_bci + 2 * 4);
+                            if (bcs.opcode() == TABLESWITCH) {
+                                int low = bcs.getIntUnchecked(aligned_bci + 4);
+                                int high = bcs.getIntUnchecked(aligned_bci + 2 * 4);
                                 keys = high - low + 1;
                                 delta = 1;
                             } else {
-                                keys = bcs.getInt(aligned_bci + 4);
+                                keys = bcs.getIntUnchecked(aligned_bci + 4);
                                 delta = 2;
                             }
-                            offsets.set(bci + default_ofset);
+                            addFrame(bci + default_ofset);
                             for (int i = 0; i < keys; i++) {
-                                offsets.set(bci + bcs.getInt(aligned_bci + (3 + i * delta) * 4));
+                                addFrame(bci + bcs.getIntUnchecked(aligned_bci + (3 + i * delta) * 4));
                             }
                             yield true;
                         }
@@ -933,13 +906,36 @@ public final class StackMapGenerator {
         } catch (IllegalArgumentException iae) {
             throw generatorError("Detected branch target out of bytecode range", bci);
         }
-        for (var exhandler : rawHandlers) try {
-             offsets.set(exhandler.handler());
+        for (int i = 0; i < rawHandlers.size(); i++) try {
+            addFrame(rawHandlers.get(i).handler());
         } catch (IllegalArgumentException iae) {
             if (!filterDeadLabels)
                 throw generatorError("Detected exception handler out of bytecode range");
         }
-        return offsets;
+    }
+
+    private void addFrame(int offset) {
+        Preconditions.checkIndex(offset, bytecode.length(), RawBytecodeHelper.IAE_FORMATTER);
+        var frames = this.frames;
+        int i = 0, framesCount = this.framesCount;
+        for (; i < framesCount; i++) {
+            var frameOffset = frames[i].offset;
+            if (frameOffset == offset) {
+                return;
+            }
+            if (frameOffset > offset) {
+                break;
+            }
+        }
+        if (framesCount >= frames.length) {
+            int newCapacity = framesCount + 8;
+            this.frames = frames = framesCount == 0 ? new Frame[newCapacity] : Arrays.copyOf(frames, newCapacity);
+        }
+        if (i != framesCount) {
+            System.arraycopy(frames, i, frames, i + 1, framesCount - i);
+        }
+        frames[i] = new Frame(offset, classHierarchy);
+        this.framesCount = framesCount + 1;
     }
 
     private final class Frame {
@@ -979,20 +975,13 @@ public final class StackMapGenerator {
         }
 
         Frame pushStack(ClassDesc desc) {
-            return switch (desc.descriptorString().charAt(0)) {
-                case 'J' ->
-                    pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-                case 'D' ->
-                    pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
-                case 'I', 'Z', 'B', 'C', 'S' ->
-                    pushStack(Type.INTEGER_TYPE);
-                case 'F' ->
-                    pushStack(Type.FLOAT_TYPE);
-                case 'V' ->
-                    this;
-                default ->
-                    pushStack(Type.referenceType(desc));
-            };
+            if (desc == CD_long)   return pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
+            if (desc == CD_double) return pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+            return desc == CD_void ? this
+                    : pushStack(
+                    desc.isPrimitive()
+                            ? (desc == CD_float ? Type.FLOAT_TYPE : Type.INTEGER_TYPE)
+                            : Type.referenceType(desc));
         }
 
         Frame pushStack(Type type) {
@@ -1073,36 +1062,42 @@ public final class StackMapGenerator {
         }
 
         void setLocalsFromArg(String name, MethodTypeDesc methodDesc, boolean isStatic, Type thisKlass) {
-            localsSize = 0;
+            int localsSize = 0;
+            // Pre-emptively create a locals array that encompass all parameter slots
+            checkLocal(Util.parameterSlots(methodDesc) + (isStatic ? -1 : 0));
+            Type type;
+            Type[] locals = this.locals;
             if (!isStatic) {
-                localsSize++;
                 if (OBJECT_INITIALIZER_NAME.equals(name) && !CD_Object.equals(thisKlass.sym)) {
-                    setLocal(0, Type.UNITIALIZED_THIS_TYPE);
+                    type = Type.UNITIALIZED_THIS_TYPE;
                     flags |= FLAG_THIS_UNINIT;
                 } else {
-                    setLocalRawInternal(0, thisKlass);
+                    type = thisKlass;
                 }
+                locals[localsSize++] = type;
             }
             for (int i = 0; i < methodDesc.parameterCount(); i++) {
                 var desc = methodDesc.parameterType(i);
-                if (desc.isClassOrInterface() || desc.isArray()) {
-                    setLocalRawInternal(localsSize++, Type.referenceType(desc));
-                } else switch (desc.descriptorString().charAt(0)) {
-                    case 'J' -> {
-                        setLocalRawInternal(localsSize++, Type.LONG_TYPE);
-                        setLocalRawInternal(localsSize++, Type.LONG2_TYPE);
+                if (desc == CD_long) {
+                    locals[localsSize    ] = Type.LONG_TYPE;
+                    locals[localsSize + 1] = Type.LONG2_TYPE;
+                    localsSize += 2;
+                } else if (desc == CD_double) {
+                    locals[localsSize    ] = Type.DOUBLE_TYPE;
+                    locals[localsSize + 1] = Type.DOUBLE2_TYPE;
+                    localsSize += 2;
+                } else {
+                    if (!desc.isPrimitive()) {
+                        type = Type.referenceType(desc);
+                    } else if (desc == CD_float) {
+                        type = Type.FLOAT_TYPE;
+                    } else {
+                        type = Type.INTEGER_TYPE;
                     }
-                    case 'D' -> {
-                        setLocalRawInternal(localsSize++, Type.DOUBLE_TYPE);
-                        setLocalRawInternal(localsSize++, Type.DOUBLE2_TYPE);
-                    }
-                    case 'I', 'Z', 'B', 'C', 'S' ->
-                        setLocalRawInternal(localsSize++, Type.INTEGER_TYPE);
-                    case 'F' ->
-                        setLocalRawInternal(localsSize++, Type.FLOAT_TYPE);
-                    default -> throw new AssertionError("Should not reach here");
+                    locals[localsSize++] = type;
                 }
             }
+            this.localsSize = localsSize;
         }
 
         void copyFrom(Frame src) {
@@ -1119,11 +1114,15 @@ public final class StackMapGenerator {
         }
 
         void checkAssignableTo(Frame target) {
+            int localsSize = this.localsSize;
+            int stackSize = this.stackSize;
             if (target.flags == -1) {
-                target.locals = locals == null ? null : Arrays.copyOf(locals, localsSize);
+                target.locals = locals == null ? null : locals.clone();
                 target.localsSize = localsSize;
-                target.stack = stack == null ? null : Arrays.copyOf(stack, stackSize);
-                target.stackSize = stackSize;
+                if (stackSize > 0) {
+                    target.stack = stack.clone();
+                    target.stackSize = stackSize;
+                }
                 target.flags = flags;
                 target.dirty = true;
             } else {
@@ -1203,7 +1202,10 @@ public final class StackMapGenerator {
             int compressed = 0;
             for (int i = 0; i < count; i++) {
                 if (!types[i].isCategory2_2nd()) {
-                    types[compressed++] = types[i];
+                    if (compressed != i) {
+                        types[compressed] = types[i];
+                    }
+                    compressed++;
                 }
             }
             return compressed;
@@ -1219,7 +1221,9 @@ public final class StackMapGenerator {
             return Arrays.equals(l1, 0, commonSize, l2, 0, commonSize);
         }
 
-        void writeTo(BufWriter out, Frame prevFrame, ConstantPoolBuilder cp) {
+        void writeTo(BufWriterImpl out, Frame prevFrame, ConstantPoolBuilder cp) {
+            int localsSize = this.localsSize;
+            int stackSize = this.stackSize;
             int offsetDelta = offset - prevFrame.offset - 1;
             if (stackSize == 0) {
                 int commonLocalsSize = localsSize > prevFrame.localsSize ? prevFrame.localsSize : localsSize;
@@ -1228,8 +1232,7 @@ public final class StackMapGenerator {
                     if (diffLocalsSize == 0 && offsetDelta < 64) { //same frame
                         out.writeU1(offsetDelta);
                     } else {   //chop, same extended or append frame
-                        out.writeU1(251 + diffLocalsSize);
-                        out.writeU2(offsetDelta);
+                        out.writeU1U2(251 + diffLocalsSize, offsetDelta);
                         for (int i=commonLocalsSize; i<localsSize; i++) locals[i].writeTo(out, cp);
                     }
                     return;
@@ -1238,16 +1241,13 @@ public final class StackMapGenerator {
                 if (offsetDelta < 64) {  //same locals 1 stack item frame
                     out.writeU1(64 + offsetDelta);
                 } else {  //same locals 1 stack item extended frame
-                    out.writeU1(247);
-                    out.writeU2(offsetDelta);
+                    out.writeU1U2(247, offsetDelta);
                 }
                 stack[0].writeTo(out, cp);
                 return;
             }
             //full frame
-            out.writeU1(255);
-            out.writeU2(offsetDelta);
-            out.writeU2(localsSize);
+            out.writeU1U2U2(255, offsetDelta, localsSize);
             for (int i=0; i<localsSize; i++) locals[i].writeTo(out, cp);
             out.writeU2(stackSize);
             for (int i=0; i<stackSize; i++) stack[i].writeTo(out, cp);
@@ -1346,8 +1346,8 @@ public final class StackMapGenerator {
             }
         }
 
-        private static final ClassDesc CD_Cloneable = ClassDesc.of("java.lang.Cloneable");
-        private static final ClassDesc CD_Serializable = ClassDesc.of("java.io.Serializable");
+        private static final ClassDesc CD_Cloneable = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/Cloneable;");
+        private static final ClassDesc CD_Serializable = ClassOrInterfaceDescImpl.ofValidated("Ljava/io/Serializable;");
 
         private Type mergeReferenceFrom(Type from, ClassHierarchyImpl context) {
             if (from == NULL_TYPE) {
@@ -1414,13 +1414,14 @@ public final class StackMapGenerator {
             return Type.TOP_TYPE;
         }
 
-        void writeTo(BufWriter bw, ConstantPoolBuilder cp) {
-            bw.writeU1(tag);
+        void writeTo(BufWriterImpl bw, ConstantPoolBuilder cp) {
             switch (tag) {
                 case ITEM_OBJECT ->
-                    bw.writeU2(cp.classEntry(sym).index());
+                    bw.writeU1U2(tag, cp.classEntry(sym).index());
                 case ITEM_UNINITIALIZED ->
-                    bw.writeU2(bci);
+                    bw.writeU1U2(tag, bci);
+                default ->
+                    bw.writeU1(tag);
             }
         }
     }

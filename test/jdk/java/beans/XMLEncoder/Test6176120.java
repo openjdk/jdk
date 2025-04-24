@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6176120
  * @summary Tests bean that contains constructor marked with ConstructorProperties annotation
- * @run main/othervm -Djava.security.manager=allow Test6176120
+ * @run main/othervm Test6176120
  * @author Sergey Malenkov
  */
 
@@ -33,7 +33,7 @@ import java.beans.ConstructorProperties;
 
 public final class Test6176120 extends AbstractTest {
     public static void main(String[] args) {
-        new Test6176120().test(true);
+        new Test6176120().test();
     }
 
     protected ImmutableBean getObject() {

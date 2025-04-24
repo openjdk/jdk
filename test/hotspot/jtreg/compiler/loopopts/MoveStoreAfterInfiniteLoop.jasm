@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+super public class MoveStoreAfterInfiniteLoop
+{
+  static Field a:I;
+  static Field b:I;
+  static Field c:S;
+
+  public Method "<init>":"()V"
+	stack 1 locals 1
+  {
+		aload_0;
+		invokespecial	Method java/lang/Object."<init>":"()V";
+		return;
+  }
+
+public static Method test:"()V"
+    stack 3 locals 3
+  {
+    LTOP:
+        iconst_0;
+        istore_1;
+
+    LOUTER:
+        iload_1;
+        bipush    10;
+        if_icmpge    LTOP;
+
+        getstatic    Field c:"S";
+        putstatic    Field a:"I";
+
+        iconst_0;
+        istore_2;
+
+    LINNER:
+        iload_2;
+        iconst_2;
+        if_icmpge    LBOTTOM;
+
+        getstatic    Field b:"I";
+        i2s;
+        putstatic    Field c:"S";
+
+        iinc    2, 1;
+
+        goto    LINNER;
+
+    LBOTTOM:
+        iinc    1, 1;
+
+        goto    LOUTER;
+  }
+}

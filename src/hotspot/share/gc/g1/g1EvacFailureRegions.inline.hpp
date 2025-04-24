@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_G1_G1EVACFAILUREREGIONS_INLINE_HPP
 #define SHARE_GC_G1_G1EVACFAILUREREGIONS_INLINE_HPP
 
-#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
+
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "runtime/atomic.hpp"
 
@@ -60,7 +61,7 @@ bool G1EvacFailureRegions::record(uint worker_id, uint region_idx, bool cause_pi
     _evac_failed_regions[offset] = region_idx;
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    HeapRegion* hr = g1h->region_at(region_idx);
+    G1HeapRegion* hr = g1h->region_at(region_idx);
     hr->note_evacuation_failure();
   }
 

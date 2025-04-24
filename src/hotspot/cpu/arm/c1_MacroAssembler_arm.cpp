@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -42,16 +41,6 @@
 // correct as long as it is not implicitly used in lower layers (the
 // arm [macro]assembler) and used with care in the other C1 specific
 // files.
-
-void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
-  Label verified;
-  load_klass(Rtemp, receiver);
-  cmp(Rtemp, iCache);
-  b(verified, eq); // jump over alignment no-ops
-  jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type);
-  align(CodeEntryAlignment);
-  bind(verified);
-}
 
 void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
@@ -163,10 +152,9 @@ void C1_MacroAssembler::allocate_object(Register obj, Register tmp1, Register tm
 
 void C1_MacroAssembler::allocate_array(Register obj, Register len,
                                        Register tmp1, Register tmp2, Register tmp3,
-                                       int header_size, int element_size,
+                                       int header_size_in_bytes, int element_size,
                                        Register klass, Label& slow_case) {
   assert_different_registers(obj, len, tmp1, tmp2, tmp3, klass, Rtemp);
-  const int header_size_in_bytes = header_size * BytesPerWord;
   const int scale_shift = exact_log2(element_size);
   const Register obj_size = Rtemp; // Rtemp should be free at c1 LIR level
 
@@ -206,8 +194,8 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp2, obj);
-    ldr_u32(tmp2, Address(tmp2, Klass::access_flags_offset()));
-    tst(tmp2, JVM_ACC_IS_VALUE_BASED_CLASS);
+    ldrb(tmp2, Address(tmp2, Klass::misc_flags_offset()));
+    tst(tmp2, KlassFlags::_misc_is_value_based_class);
     b(slow_case, ne);
   }
 

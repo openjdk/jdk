@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.net.URI;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -155,10 +153,7 @@ public class Modules {
     public static void addProvides(Module m, Class<?> service, Class<?> impl) {
         ModuleLayer layer = m.getLayer();
 
-        PrivilegedAction<ClassLoader> pa = m::getClassLoader;
-        @SuppressWarnings("removal")
-        ClassLoader loader = AccessController.doPrivileged(pa);
-
+        ClassLoader loader = m.getClassLoader();
         ClassLoader platformClassLoader = ClassLoaders.platformClassLoader();
         if (layer == null || loader == null || loader == platformClassLoader) {
             // update ClassLoader catalog
@@ -258,9 +253,6 @@ public class Modules {
             assert parents.size() <= 1;
             layer = parents.isEmpty() ? null : parents.get(0);
         }
-
-        // update security manager before making types visible
-        JLA.addNonExportedPackages(newLayer);
 
         // update the built-in class loaders to make the types visible
         for (ResolvedModule resolvedModule : cf.modules()) {

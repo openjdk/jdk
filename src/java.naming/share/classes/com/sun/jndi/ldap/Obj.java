@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,19 @@ final class Obj {
 
     private Obj () {}; // Make sure no one can create one
 
-    // package private; used by Connection
-    static VersionHelper helper = VersionHelper.getVersionHelper();
+    /**
+     * Determines whether objects may be deserialized or reconstructed from a content of
+     * 'javaSerializedData', 'javaRemoteLocation' or 'javaReferenceAddress' LDAP attributes.
+     */
+    private static final boolean trustSerialData;
+
+    static {
+        // System property to control whether classes are allowed to be loaded from
+        // 'javaSerializedData', 'javaRemoteLocation' or 'javaReferenceAddress' attributes.
+        String trustSerialDataSp = System.getProperty(
+                "com.sun.jndi.ldap.object.trustSerialData", "false");
+        trustSerialData = "true".equalsIgnoreCase(trustSerialDataSp);
+    }
 
     // LDAP attributes used to support Java objects.
     static final String[] JAVA_ATTRIBUTES = {
@@ -233,20 +244,20 @@ final class Obj {
         String[] codebases = getCodebases(attrs.get(JAVA_ATTRIBUTES[CODEBASE]));
         try {
             if ((attr = attrs.get(JAVA_ATTRIBUTES[SERIALIZED_DATA])) != null) {
-                if (!VersionHelper.isSerialDataAllowed()) {
+                if (!trustSerialData) {
                     throw new NamingException("Object deserialization is not allowed");
                 }
-                ClassLoader cl = helper.getURLClassLoader(codebases);
+                ClassLoader cl = Thread.currentThread().getContextClassLoader();
                 return deserializeObject((byte[])attr.get(), cl);
             } else if ((attr = attrs.get(JAVA_ATTRIBUTES[REMOTE_LOC])) != null) {
                  // javaRemoteLocation attribute (RMI stub will be created)
-                 if (!VersionHelper.isSerialDataAllowed()) {
+                 if (!trustSerialData) {
                      throw new NamingException("Object deserialization is not allowed");
                  }
                 // For backward compatibility only
                 return decodeRmiObject(
                     (String)attrs.get(JAVA_ATTRIBUTES[CLASSNAME]).get(),
-                    (String)attr.get(), codebases);
+                    (String)attr.get());
             }
 
             attr = attrs.get(JAVA_ATTRIBUTES[OBJECT_CLASS]);
@@ -368,7 +379,7 @@ final class Obj {
      * @deprecated For backward compatibility only
      */
     private static Object decodeRmiObject(String className,
-        String rmiName, String[] codebases) throws NamingException {
+                                          String rmiName) throws NamingException {
             return new Reference(className, new StringRefAddr("URL", rmiName));
     }
 
@@ -410,7 +421,7 @@ final class Obj {
             int start, sep, posn;
             Base64.Decoder decoder = null;
 
-            ClassLoader cl = helper.getURLClassLoader(codebases);
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
 
             /*
              * Temporary array for decoded RefAddr addresses - used to ensure
@@ -471,7 +482,7 @@ final class Obj {
                 } else if (val.charAt(start) == separator) {
                     // Check if deserialization of binary RefAddr is allowed from
                     // 'javaReferenceAddress' LDAP attribute.
-                    if (!VersionHelper.isSerialDataAllowed()) {
+                    if (!trustSerialData) {
                         throw new NamingException("Object deserialization is not allowed");
                     }
 

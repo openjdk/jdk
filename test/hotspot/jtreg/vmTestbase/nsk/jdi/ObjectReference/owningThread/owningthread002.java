@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,10 @@ public class owningthread002 {
     //------------------------------------------------------ immutable common methods
 
     public static void main (String argv[]) {
-        System.exit(run(argv, System.out) + PASS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     //------------------------------------------------------ test specific fields
@@ -197,6 +200,15 @@ public class owningthread002 {
                              try {
                                  ThreadReference thread = lockRef.owningThread();
 
+                                 // The lockRef.owningThread() is expected to return null if tested threads are virtual.
+                                 if (eventThread.isVirtual()) {
+                                     if (thread == null) {
+                                        display("expected null is returned` by owningThread method on virtual thread: " + eventThread.name());
+                                     } else {
+                                        complain("owningThread returned ThreadReference of virtual thread instead of null: " + thread.name());
+                                     }
+                                     continue;
+                                 }
                                  if (thread.name().indexOf(owningthread002a.threadNamePrefix) < 0) {
                                      exitCode = Consts.TEST_FAILED;
                                      complain("owningThread returned ThreadReference with unexpected name: " + thread.name());

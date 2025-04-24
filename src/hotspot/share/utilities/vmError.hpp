@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,9 @@
 #ifndef SHARE_UTILITIES_VMERROR_HPP
 #define SHARE_UTILITIES_VMERROR_HPP
 
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 class Decoder;
 class frame;
@@ -46,14 +48,14 @@ class VMError : public AllStatic {
 
   // additional info for crashes
   static address     _pc;               // faulting PC
-  static void*       _siginfo;          // ExceptionRecord on Windows,
+  static const void* _siginfo;          // ExceptionRecord on Windows,
                                         // siginfo_t on Solaris/Linux
-  static void*       _context;          // ContextRecord on Windows,
+  static const void* _context;          // ContextRecord on Windows,
                                         // ucontext_t on Solaris/Linux
 
-  // records if VMError::print_native_stack was used to
+  // records if frame-based stack walking was used to
   // print the native stack instead of os::platform_print_native_stack
-  static bool        _print_native_stack_used;
+  static bool        _print_stack_from_frame_used;
 
   // additional info for VM internal errors
   static const char* _filename;
@@ -108,11 +110,7 @@ class VMError : public AllStatic {
   static void print_stack_trace(outputStream* st, JavaThread* jt,
                                 char* buf, int buflen, bool verbose = false);
 
-  static const char* get_filename_only() {
-    char separator = os::file_separator()[0];
-    const char* p = strrchr(_filename, separator);
-    return p ? p+1 : _filename;
-  }
+  static const char* get_filename_only();
 
   static bool should_report_bug(unsigned int id) {
     return (id != OOM_MALLOC_ERROR) && (id != OOM_MMAP_ERROR);
@@ -144,15 +142,9 @@ class VMError : public AllStatic {
   static jlong get_step_start_time();
   static void clear_step_start_time();
 
-  WINDOWS_ONLY([[noreturn]] static void raise_fail_fast(void* exrecord, void* context);)
+  WINDOWS_ONLY([[noreturn]] static void raise_fail_fast(const void* exrecord, const void* context);)
 
 public:
-
-  // print_source_info: if true, we try to resolve the source information on platforms that support it
-  //  (useful but may slow down, timeout or misfunction in error situations)
-  // max_frames: if not -1, overrides StackPrintLimit
-  static void print_native_stack(outputStream* st, frame fr, Thread* t, bool print_source_info,
-                                 int max_frames, char* buf, int buf_size);
 
   // return a string to describe the error
   static char* error_string(char* buf, int buflen);
@@ -164,32 +156,32 @@ public:
   static void print_vm_info(outputStream* st);
 
   // main error reporting function
-  ATTRIBUTE_NORETURN
+  [[noreturn]]
   ATTRIBUTE_PRINTF(6, 7)
-  static void report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo,
-                             void* context, const char* detail_fmt, ...);
+  static void report_and_die(Thread* thread, unsigned int sig, address pc, const void* siginfo,
+                             const void* context, const char* detail_fmt, ...);
 
-  ATTRIBUTE_NORETURN
+  [[noreturn]]
   ATTRIBUTE_PRINTF(6, 7)
-  static void report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
-                             const char* detail_fmt, ...);
+  static void report_and_die(Thread* thread, const void* context, const char* filename,
+                             int lineno, const char* message, const char* detail_fmt, ...);
 
-  ATTRIBUTE_NORETURN
+  [[noreturn]]
   ATTRIBUTE_PRINTF(3, 0)
   static void report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,
-                             Thread* thread, address pc, void* siginfo, void* context,
+                             Thread* thread, address pc, const void* siginfo, const void* context,
                              const char* filename, int lineno, size_t size);
 
-  ATTRIBUTE_NORETURN
+  [[noreturn]]
   static void report_and_die(Thread* thread, unsigned int sig, address pc,
-                             void* siginfo, void* context);
+                             const void* siginfo, const void* context);
 
-  ATTRIBUTE_NORETURN
+  [[noreturn]]
   ATTRIBUTE_PRINTF(6, 0)
-  static void report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
-                             const char* detail_fmt, va_list detail_args);
+  static void report_and_die(Thread* thread, const void* context, const char* filename,
+                             int lineno, const char* message, const char* detail_fmt, va_list detail_args);
 
-  ATTRIBUTE_NORETURN
+  [[noreturn]]
   ATTRIBUTE_PRINTF(6, 0)
   static void report_and_die(Thread* thread, const char* filename, int lineno, size_t size,
                              VMErrorType vm_err_type, const char* detail_fmt,
@@ -225,6 +217,7 @@ public:
   // permissions.
   static int prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen);
 
+  static bool was_assert_poison_crash(const void* sigInfo);
 };
 
 class VMErrorCallback {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
@@ -45,9 +46,6 @@
 // class defines the functions that a heap must implement, and contains
 // infrastructure common to all heaps.
 
-class WorkerTask;
-class AdaptiveSizePolicy;
-class BarrierSet;
 class GCHeapLog;
 class GCHeapSummary;
 class GCTimer;
@@ -56,7 +54,6 @@ class GCMemoryManager;
 class MemoryPool;
 class MetaspaceSummary;
 class ReservedHeapSpace;
-class SoftRefPolicy;
 class Thread;
 class ThreadClosure;
 class VirtualSpaceSummary;
@@ -93,10 +90,8 @@ public:
 class CollectedHeap : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
-  friend class IsGCActiveMark; // Block structured external access to _is_gc_active
-  friend class DisableIsGCActiveMark; // Disable current IsGCActiveMark
+  friend class IsSTWGCActiveMark; // Block structured external access to _is_stw_gc_active
   friend class MemAllocator;
-  friend class ParallelObjectIterator;
 
  private:
   GCHeapLog* _gc_heap_log;
@@ -104,6 +99,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // Historic gc information
   size_t _capacity_at_last_gc;
   size_t _used_at_last_gc;
+
+  SoftRefPolicy _soft_ref_policy;
 
   // First, set it to java_lang_Object.
   // Then, set it to FillerObject after the FillerObject_klass loading is complete.
@@ -113,7 +110,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // Not used by all GCs
   MemRegion _reserved;
 
-  bool _is_gc_active;
+  bool _is_stw_gc_active;
 
   // (Minimum) Alignment reserve for TLABs and PLABs.
   static size_t _lab_alignment_reserve;
@@ -150,7 +147,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // returned in actual_size.
   virtual HeapWord* allocate_new_tlab(size_t min_size,
                                       size_t requested_size,
-                                      size_t* actual_size);
+                                      size_t* actual_size) = 0;
 
   // Reinitialize tlabs before resuming mutators.
   virtual void resize_all_tlabs();
@@ -309,7 +306,7 @@ protected:
   }
 
   virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
-  static constexpr size_t min_dummy_object_size() {
+  static size_t min_dummy_object_size() {
     return oopDesc::header_size();
   }
 
@@ -346,15 +343,7 @@ protected:
   // An estimate of the maximum allocation that could be performed
   // for thread-local allocation buffers without triggering any
   // collection or expansion activity.
-  virtual size_t unsafe_max_tlab_alloc(Thread *thr) const {
-    guarantee(false, "thread-local allocation buffers not supported");
-    return 0;
-  }
-
-  // If a GC uses a stack watermark barrier, the stack processing is lazy, concurrent,
-  // incremental and cooperative. In order for that to work well, mechanisms that stop
-  // another thread might want to ensure its roots are in a sane state.
-  virtual bool uses_stack_watermark_barrier() const { return false; }
+  virtual size_t unsafe_max_tlab_alloc(Thread *thr) const = 0;
 
   // Perform a collection of the heap; intended for use in implementing
   // "System.gc".  This probably implies as full a collection as the
@@ -383,10 +372,8 @@ protected:
   // allocated object.
   virtual bool requires_barriers(stackChunkOop obj) const = 0;
 
-  // Returns "true" iff there is a stop-world GC in progress.  (I assume
-  // that it should answer "false" for the concurrent part of a concurrent
-  // collector -- dld).
-  bool is_gc_active() const { return _is_gc_active; }
+  // Returns "true" iff there is a stop-world GC in progress.
+  bool is_stw_gc_active() const { return _is_stw_gc_active; }
 
   // Total number of GC collections (started)
   unsigned int total_collections() const { return _total_collections; }
@@ -396,14 +383,12 @@ protected:
   void increment_total_collections(bool full = false) {
     _total_collections++;
     if (full) {
-      increment_total_full_collections();
+      _total_full_collections++;
     }
   }
 
-  void increment_total_full_collections() { _total_full_collections++; }
-
   // Return the SoftRefPolicy for the heap;
-  virtual SoftRefPolicy* soft_ref_policy() = 0;
+  SoftRefPolicy* soft_ref_policy() { return &_soft_ref_policy; }
 
   virtual MemoryUsage memory_usage();
   virtual GrowableArray<GCMemoryManager*> memory_managers() = 0;
@@ -412,12 +397,10 @@ protected:
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl) = 0;
 
- protected:
   virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num) {
     return nullptr;
   }
 
- public:
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   virtual void keep_alive(oop obj) {}
 
@@ -452,20 +435,14 @@ protected:
   // explicitly checks if the given memory location contains a null value.
   virtual bool contains_null(const oop* p) const;
 
-  // Print heap information on the given outputStream.
-  virtual void print_on(outputStream* st) const = 0;
-  // The default behavior is to call print_on() on tty.
+  // Print heap information.
+  virtual void print_heap_on(outputStream* st) const = 0;
+
+  // Print additional information about the GC that is not included in print_heap_on().
+  virtual void print_gc_on(outputStream* st) const = 0;
+
+  // The default behavior is to call print_heap_on() and print_gc_on() on tty.
   virtual void print() const;
-
-  // Print more detailed heap information on the given
-  // outputStream. The default behavior is to call print_on(). It is
-  // up to each subclass to override it and add any additional output
-  // it needs.
-  virtual void print_extended_on(outputStream* st) const {
-    print_on(st);
-  }
-
-  virtual void print_on_error(outputStream* st) const;
 
   // Used to print information about locations in the hs_err file.
   virtual bool print_location(outputStream* st, void* addr) const = 0;

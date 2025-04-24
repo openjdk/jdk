@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/bytecode.inline.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "oops/constantPool.hpp"
@@ -179,7 +178,7 @@ int Bytecode_member_ref::pool_index() const {
 ResolvedIndyEntry* Bytecode_member_ref::resolved_indy_entry() const {
   int index = this->index();
   assert(invoke_code() == Bytecodes::_invokedynamic, "should not call this");
-  return cpcache()->resolved_indy_entry_at(ConstantPool::decode_invokedynamic_index(index));
+  return cpcache()->resolved_indy_entry_at(index);
 }
 
 ResolvedMethodEntry* Bytecode_member_ref::resolved_method_entry() const {

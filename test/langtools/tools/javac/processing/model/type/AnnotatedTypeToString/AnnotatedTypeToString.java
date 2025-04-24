@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8284220
+ * @bug 8284220 8342934
  * @summary Tests DeclaredType.toString with type annotations present, for example that '@A
  * Map.Entry' is printed as 'java.util.@A Map.Entry' (and not '@A java.util.Map.Entry' or
  * 'java.util.@A Entry').

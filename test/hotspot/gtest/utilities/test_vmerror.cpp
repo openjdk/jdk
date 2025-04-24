@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,23 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "unittest.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "runtime/thread.hpp"
 
 #ifdef ASSERT
+
+#ifdef _WINDOWS
+
+#include <windows.h>
+
+TEST_VM_ASSERT_MSG(vmErrorTest, fatalWithError,
+                   "fatal error: GetLastError should be 6 - actually: 6") {
+  SetLastError(6);
+  fatal("GetLastError should be 6 - actually: %lu", GetLastError());
+}
+#endif // WINDOWS
 
 TEST_VM_ASSERT_MSG(vmErrorTest, resourceMark,
                   "fatal error: memory leak: allocating without ResourceMark") {
@@ -43,22 +53,22 @@ TEST_VM_ASSERT_MSG(vmErrorTest, resourceMark,
 const char* const str = "hello";
 const size_t      num = 500;
 
-TEST_VM_ASSERT_MSG(vmErrorTest, assert1, "assert.str == NULL. failed: expected null") {
-  vmassert(str == NULL, "expected null");
+TEST_VM_ASSERT_MSG(vmErrorTest, assert1, "assert.str == nullptr. failed: expected null") {
+  vmassert(str == nullptr, "expected null");
 }
 
 TEST_VM_ASSERT_MSG(vmErrorTest, assert2, "assert.num == 1023 && .str == 'X'. failed: num=500 str=\"hello\"") {
   vmassert(num == 1023 && *str == 'X',
-           "num=" SIZE_FORMAT " str=\"%s\"", num, str);
+           "num=%zu str=\"%s\"", num, str);
 }
 
-TEST_VM_ASSERT_MSG(vmErrorTest, guarantee1, "guarantee.str == NULL. failed: expected null") {
-  guarantee(str == NULL, "expected null");
+TEST_VM_ASSERT_MSG(vmErrorTest, guarantee1, "guarantee.str == nullptr. failed: expected null") {
+  guarantee(str == nullptr, "expected null");
 }
 
 TEST_VM_ASSERT_MSG(vmErrorTest, guarantee2, "guarantee.num == 1023 && .str == 'X'. failed: num=500 str=\"hello\"") {
   guarantee(num == 1023 && *str == 'X',
-            "num=" SIZE_FORMAT " str=\"%s\"", num, str);
+            "num=%zu str=\"%s\"", num, str);
 }
 
 TEST_VM_ASSERT_MSG(vmErrorTest, fatal1, "fatal error: expected null") {
@@ -66,7 +76,7 @@ TEST_VM_ASSERT_MSG(vmErrorTest, fatal1, "fatal error: expected null") {
 }
 
 TEST_VM_ASSERT_MSG(vmErrorTest, fatal2, "fatal error: num=500 str=\"hello\"") {
-  fatal("num=" SIZE_FORMAT " str=\"%s\"", num, str);
+  fatal("num=%zu str=\"%s\"", num, str);
 }
 
 TEST_VM_ASSERT_MSG(vmErrorTest, fatal3, "fatal error: this message should be truncated during formatting") {

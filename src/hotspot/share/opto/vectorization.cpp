@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,688 +22,447 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
-#include "opto/matcher.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 
+bool VLoop::check_preconditions() {
 #ifndef PRODUCT
-int VPointer::Tracer::_depth = 0;
+  if (is_trace_preconditions()) {
+    tty->print_cr("\nVLoop::check_preconditions");
+    lpt()->dump_head();
+    lpt()->head()->dump();
+  }
 #endif
 
-VPointer::VPointer(const MemNode* mem,
-                   PhaseIdealLoop* phase, IdealLoopTree* lpt,
-                   Node_Stack* nstack, bool analyze_only) :
-  _mem(mem), _phase(phase), _lpt(lpt),
-  _iv(lpt->_head->as_CountedLoop()->phi()->as_Phi()),
-  _base(nullptr), _adr(nullptr), _scale(0), _offset(0), _invar(nullptr),
-#ifdef ASSERT
-  _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
-#endif
-  _nstack(nstack), _analyze_only(analyze_only), _stack_idx(0)
+  VStatus status = check_preconditions_helper();
+  if (!status.is_success()) {
 #ifndef PRODUCT
-  , _tracer((phase->C->directive()->VectorizeDebugOption & 2) > 0)
+    if (is_trace_preconditions()) {
+      tty->print_cr("VLoop::check_preconditions: failed: %s", status.failure_reason());
+    }
 #endif
-{
-  NOT_PRODUCT(_tracer.ctor_1(mem);)
-
-  Node* adr = mem->in(MemNode::Address);
-  if (!adr->is_AddP()) {
-    assert(!valid(), "too complex");
-    return;
+    return false; // failure
   }
-  // Match AddP(base, AddP(ptr, k*iv [+ invariant]), constant)
-  Node* base = adr->in(AddPNode::Base);
-  // The base address should be loop invariant
-  if (is_loop_member(base)) {
-    assert(!valid(), "base address is loop variant");
-    return;
-  }
-  // unsafe references require misaligned vector access support
-  if (base->is_top() && !Matcher::misaligned_vectors_ok()) {
-    assert(!valid(), "unsafe access");
-    return;
-  }
-
-  NOT_PRODUCT(if(_tracer._is_trace_alignment) _tracer.store_depth();)
-  NOT_PRODUCT(_tracer.ctor_2(adr);)
-
-  int i;
-  for (i = 0; ; i++) {
-    NOT_PRODUCT(_tracer.ctor_3(adr, i);)
-
-    if (!scaled_iv_plus_offset(adr->in(AddPNode::Offset))) {
-      assert(!valid(), "too complex");
-      return;
-    }
-    adr = adr->in(AddPNode::Address);
-    NOT_PRODUCT(_tracer.ctor_4(adr, i);)
-
-    if (base == adr || !adr->is_AddP()) {
-      NOT_PRODUCT(_tracer.ctor_5(adr, base, i);)
-      break; // stop looking at addp's
-    }
-  }
-  if (is_loop_member(adr)) {
-    assert(!valid(), "adr is loop variant");
-    return;
-  }
-
-  if (!base->is_top() && adr != base) {
-    assert(!valid(), "adr and base differ");
-    return;
-  }
-
-  NOT_PRODUCT(if(_tracer._is_trace_alignment) _tracer.restore_depth();)
-  NOT_PRODUCT(_tracer.ctor_6(mem);)
-
-  _base = base;
-  _adr  = adr;
-  assert(valid(), "Usable");
+  return true; // success
 }
 
-// Following is used to create a temporary object during
-// the pattern match of an address expression.
-VPointer::VPointer(VPointer* p) :
-  _mem(p->_mem), _phase(p->_phase), _lpt(p->_lpt), _iv(p->_iv),
-  _base(nullptr), _adr(nullptr), _scale(0), _offset(0), _invar(nullptr),
-#ifdef ASSERT
-  _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
-#endif
-  _nstack(p->_nstack), _analyze_only(p->_analyze_only), _stack_idx(p->_stack_idx)
+VStatus VLoop::check_preconditions_helper() {
+  // Only accept vector width that is power of 2
+  int vector_width = Matcher::vector_width_in_bytes(T_BYTE);
+  if (vector_width < 2 || !is_power_of_2(vector_width)) {
+    return VStatus::make_failure(VLoop::FAILURE_VECTOR_WIDTH);
+  }
+
+  // Only accept valid counted loops (int)
+  if (!_lpt->_head->as_Loop()->is_valid_counted_loop(T_INT)) {
+    return VStatus::make_failure(VLoop::FAILURE_VALID_COUNTED_LOOP);
+  }
+  _cl = _lpt->_head->as_CountedLoop();
+  _iv = _cl->phi()->as_Phi();
+
+  if (_cl->is_vectorized_loop()) {
+    return VStatus::make_failure(VLoop::FAILURE_ALREADY_VECTORIZED);
+  }
+
+  if (_cl->is_unroll_only()) {
+    return VStatus::make_failure(VLoop::FAILURE_UNROLL_ONLY);
+  }
+
+  // Check for control flow in the body
+  _cl_exit = _cl->loopexit();
+  bool has_cfg = _cl_exit->in(0) != _cl;
+  if (has_cfg && !is_allow_cfg()) {
 #ifndef PRODUCT
-  , _tracer(p->_tracer._is_trace_alignment)
+    if (is_trace_preconditions()) {
+      tty->print_cr("VLoop::check_preconditions: fails because of control flow.");
+      tty->print("  cl_exit %d", _cl_exit->_idx); _cl_exit->dump();
+      tty->print("  cl_exit->in(0) %d", _cl_exit->in(0)->_idx); _cl_exit->in(0)->dump();
+      tty->print("  lpt->_head %d", _cl->_idx); _cl->dump();
+      _lpt->dump_head();
+    }
 #endif
-{}
-
-// Biggest detectable factor of the invariant.
-int VPointer::invar_factor() const {
-  Node* n = invar();
-  if (n == nullptr) {
-    return 0;
+    return VStatus::make_failure(VLoop::FAILURE_CONTROL_FLOW);
   }
-  int opc = n->Opcode();
-  if (opc == Op_LShiftI && n->in(2)->is_Con()) {
-    return 1 << n->in(2)->get_int();
-  } else if (opc == Op_LShiftL && n->in(2)->is_Con()) {
-    return 1 << n->in(2)->get_int();
+
+  // Make sure the are no extra control users of the loop backedge
+  if (_cl->back_control()->outcnt() != 1) {
+    return VStatus::make_failure(VLoop::FAILURE_BACKEDGE);
   }
-  // All our best-effort has failed.
-  return 1;
-}
 
-bool VPointer::is_loop_member(Node* n) const {
-  Node* n_c = phase()->get_ctrl(n);
-  return lpt()->is_member(phase()->get_loop(n_c));
-}
-
-bool VPointer::invariant(Node* n) const {
-  NOT_PRODUCT(Tracer::Depth dd;)
-  bool is_not_member = !is_loop_member(n);
-  if (is_not_member) {
-    CountedLoopNode* cl = lpt()->_head->as_CountedLoop();
-    if (cl->is_main_loop()) {
-      // Check that n_c dominates the pre loop head node. If it does not, then
-      // we cannot use n as invariant for the pre loop CountedLoopEndNode check
-      // because n_c is either part of the pre loop or between the pre and the
-      // main loop (Illegal invariant happens when n_c is a CastII node that
-      // prevents data nodes to flow above the main loop).
-      Node* n_c = phase()->get_ctrl(n);
-      return phase()->is_dominator(n_c, cl->pre_loop_head());
+  if (_cl->is_main_loop()) {
+    // To align vector memory accesses in the main-loop, we will have to adjust
+    // the pre-loop limit.
+    CountedLoopEndNode* pre_end = _cl->find_pre_loop_end();
+    if (pre_end == nullptr) {
+      return VStatus::make_failure(VLoop::FAILURE_PRE_LOOP_LIMIT);
     }
-  }
-  return is_not_member;
-}
-
-// Match: k*iv + offset
-// where: k is a constant that maybe zero, and
-//        offset is (k2 [+/- invariant]) where k2 maybe zero and invariant is optional
-bool VPointer::scaled_iv_plus_offset(Node* n) {
-  NOT_PRODUCT(Tracer::Depth ddd;)
-  NOT_PRODUCT(_tracer.scaled_iv_plus_offset_1(n);)
-
-  if (scaled_iv(n)) {
-    NOT_PRODUCT(_tracer.scaled_iv_plus_offset_2(n);)
-    return true;
-  }
-
-  if (offset_plus_k(n)) {
-    NOT_PRODUCT(_tracer.scaled_iv_plus_offset_3(n);)
-    return true;
-  }
-
-  int opc = n->Opcode();
-  if (opc == Op_AddI) {
-    if (offset_plus_k(n->in(2)) && scaled_iv_plus_offset(n->in(1))) {
-      NOT_PRODUCT(_tracer.scaled_iv_plus_offset_4(n);)
-      return true;
+    Node* pre_opaq1 = pre_end->limit();
+    if (pre_opaq1->Opcode() != Op_Opaque1) {
+      return VStatus::make_failure(VLoop::FAILURE_PRE_LOOP_LIMIT);
     }
-    if (offset_plus_k(n->in(1)) && scaled_iv_plus_offset(n->in(2))) {
-      NOT_PRODUCT(_tracer.scaled_iv_plus_offset_5(n);)
-      return true;
-    }
-  } else if (opc == Op_SubI || opc == Op_SubL) {
-    if (offset_plus_k(n->in(2), true) && scaled_iv_plus_offset(n->in(1))) {
-      NOT_PRODUCT(_tracer.scaled_iv_plus_offset_6(n);)
-      return true;
-    }
-    if (offset_plus_k(n->in(1)) && scaled_iv_plus_offset(n->in(2))) {
-      _scale *= -1;
-      NOT_PRODUCT(_tracer.scaled_iv_plus_offset_7(n);)
-      return true;
-    }
-  }
+    _pre_loop_end = pre_end;
 
-  NOT_PRODUCT(_tracer.scaled_iv_plus_offset_8(n);)
-  return false;
-}
-
-// Match: k*iv where k is a constant that's not zero
-bool VPointer::scaled_iv(Node* n) {
-  NOT_PRODUCT(Tracer::Depth ddd;)
-  NOT_PRODUCT(_tracer.scaled_iv_1(n);)
-
-  if (_scale != 0) { // already found a scale
-    NOT_PRODUCT(_tracer.scaled_iv_2(n, _scale);)
-    return false;
-  }
-
-  if (n == iv()) {
-    _scale = 1;
-    NOT_PRODUCT(_tracer.scaled_iv_3(n, _scale);)
-    return true;
-  }
-  if (_analyze_only && (is_loop_member(n))) {
-    _nstack->push(n, _stack_idx++);
-  }
-
-  int opc = n->Opcode();
-  if (opc == Op_MulI) {
-    if (n->in(1) == iv() && n->in(2)->is_Con()) {
-      _scale = n->in(2)->get_int();
-      NOT_PRODUCT(_tracer.scaled_iv_4(n, _scale);)
-      return true;
-    } else if (n->in(2) == iv() && n->in(1)->is_Con()) {
-      _scale = n->in(1)->get_int();
-      NOT_PRODUCT(_tracer.scaled_iv_5(n, _scale);)
-      return true;
+    // See if we find the infrastructure for speculative runtime-checks.
+    //  (1) Auto Vectorization Parse Predicate
+    Node* pre_ctrl = pre_loop_head()->in(LoopNode::EntryControl);
+    const Predicates predicates(pre_ctrl);
+    const PredicateBlock* predicate_block = predicates.auto_vectorization_check_block();
+    if (predicate_block->has_parse_predicate()) {
+      _auto_vectorization_parse_predicate_proj = predicate_block->parse_predicate_success_proj();
     }
-  } else if (opc == Op_LShiftI) {
-    if (n->in(1) == iv() && n->in(2)->is_Con()) {
-      _scale = 1 << n->in(2)->get_int();
-      NOT_PRODUCT(_tracer.scaled_iv_6(n, _scale);)
-      return true;
-    }
-  } else if (opc == Op_ConvI2L || opc == Op_CastII) {
-    if (scaled_iv_plus_offset(n->in(1))) {
-      NOT_PRODUCT(_tracer.scaled_iv_7(n);)
-      return true;
-    }
-  } else if (opc == Op_LShiftL && n->in(2)->is_Con()) {
-    if (!has_iv()) {
-      // Need to preserve the current _offset value, so
-      // create a temporary object for this expression subtree.
-      // Hacky, so should re-engineer the address pattern match.
-      NOT_PRODUCT(Tracer::Depth dddd;)
-      VPointer tmp(this);
-      NOT_PRODUCT(_tracer.scaled_iv_8(n, &tmp);)
 
-      if (tmp.scaled_iv_plus_offset(n->in(1))) {
-        int scale = n->in(2)->get_int();
-        _scale   = tmp._scale  << scale;
-        _offset += tmp._offset << scale;
-        if (tmp._invar != nullptr) {
-          BasicType bt = tmp._invar->bottom_type()->basic_type();
-          assert(bt == T_INT || bt == T_LONG, "");
-          maybe_add_to_invar(register_if_new(LShiftNode::make(tmp._invar, n->in(2), bt)), false);
-#ifdef ASSERT
-          _debug_invar_scale = n->in(2);
+    //  (2) Multiversioning fast-loop projection
+    IfTrueNode* before_predicates = predicates.entry()->isa_IfTrue();
+    if (before_predicates != nullptr &&
+        before_predicates->in(0)->is_If() &&
+        before_predicates->in(0)->in(1)->is_OpaqueMultiversioning()) {
+      _multiversioning_fast_proj = before_predicates;
+    }
+#ifndef PRODUCT
+    if (is_trace_preconditions() || is_trace_speculative_runtime_checks()) {
+      tty->print_cr(" Infrastructure for speculative runtime-checks:");
+      if (_auto_vectorization_parse_predicate_proj != nullptr) {
+        tty->print_cr("  auto_vectorization_parse_predicate_proj: speculate and trap");
+        _auto_vectorization_parse_predicate_proj->dump_bfs(5,0,"");
+      } else if (_multiversioning_fast_proj != nullptr) {
+        tty->print_cr("  multiversioning_fast_proj: speculate and multiversion");
+        _multiversioning_fast_proj->dump_bfs(5,0,"");
+      } else {
+        tty->print_cr("  Not found.");
+      }
+    }
 #endif
+    assert(_auto_vectorization_parse_predicate_proj == nullptr ||
+           _multiversioning_fast_proj == nullptr, "we should only have at most one of these");
+    assert(_cl->is_multiversion_fast_loop() == (_multiversioning_fast_proj != nullptr),
+           "must find the multiversion selector IFF loop is a multiversion fast loop");
+  }
+
+  return VStatus::make_success();
+}
+
+// Return true iff all submodules are loaded successfully
+bool VLoopAnalyzer::setup_submodules() {
+#ifndef PRODUCT
+  if (_vloop.is_trace_loop_analyzer()) {
+    tty->print_cr("\nVLoopAnalyzer::setup_submodules");
+    _vloop.lpt()->dump_head();
+    _vloop.cl()->dump();
+  }
+#endif
+
+  VStatus status = setup_submodules_helper();
+  if (!status.is_success()) {
+#ifndef PRODUCT
+    if (_vloop.is_trace_loop_analyzer()) {
+      tty->print_cr("\nVLoopAnalyze::setup_submodules: failed: %s", status.failure_reason());
+    }
+#endif
+    return false; // failed
+  }
+  return true; // success
+}
+
+VStatus VLoopAnalyzer::setup_submodules_helper() {
+  // Skip any loop that has not been assigned max unroll by analysis.
+  if (SuperWordLoopUnrollAnalysis && _vloop.cl()->slp_max_unroll() == 0) {
+    return VStatus::make_failure(VLoopAnalyzer::FAILURE_NO_MAX_UNROLL);
+  }
+
+  if (SuperWordReductions) {
+    _reductions.mark_reductions();
+  }
+
+  _memory_slices.find_memory_slices();
+
+  // If there is no memory slice detected, it means there is no store.
+  // If there is no reduction and no store, then we give up, because
+  // vectorization is not possible anyway (given current limitations).
+  if (!_reductions.is_marked_reduction_loop() &&
+      _memory_slices.heads().is_empty()) {
+    return VStatus::make_failure(VLoopAnalyzer::FAILURE_NO_REDUCTION_OR_STORE);
+  }
+
+  VStatus body_status = _body.construct();
+  if (!body_status.is_success()) {
+    return body_status;
+  }
+
+  _types.compute_vector_element_type();
+
+  _vpointers.compute_vpointers();
+
+  _dependency_graph.construct();
+
+  return VStatus::make_success();
+}
+
+void VLoopVPointers::compute_vpointers() {
+  count_vpointers();
+  allocate_vpointers_array();
+  compute_and_cache_vpointers();
+  NOT_PRODUCT( if (_vloop.is_trace_vpointers()) { print(); } )
+}
+
+void VLoopVPointers::count_vpointers() {
+  _vpointers_length = 0;
+  _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
+    _vpointers_length++;
+  });
+}
+
+void VLoopVPointers::allocate_vpointers_array() {
+  uint bytes = _vpointers_length * sizeof(VPointer);
+  _vpointers = (VPointer*)_arena->Amalloc(bytes);
+}
+
+void VLoopVPointers::compute_and_cache_vpointers() {
+  int pointers_idx = 0;
+  _body.for_each_mem([&] (MemNode* const mem, int bb_idx) {
+    // Placement new: construct directly into the array.
+    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop);
+    _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
+    pointers_idx++;
+  });
+}
+
+const VPointer& VLoopVPointers::vpointer(const MemNode* mem) const {
+  assert(mem != nullptr && _vloop.in_bb(mem), "only mem in loop");
+  int bb_idx = _body.bb_idx(mem);
+  int pointers_idx = _bb_idx_to_vpointer.at(bb_idx);
+  assert(0 <= pointers_idx && pointers_idx < _vpointers_length, "valid range");
+  return _vpointers[pointers_idx];
+}
+
+#ifndef PRODUCT
+void VLoopVPointers::print() const {
+  tty->print_cr("\nVLoopVPointers::print:");
+
+  _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
+    const VPointer& p = vpointer(mem);
+    tty->print("  ");
+    p.print_on(tty);
+  });
+}
+#endif
+
+// Construct the dependency graph:
+//  - Data-dependencies: implicit (taken from C2 node inputs).
+//  - Memory-dependencies:
+//    - No edges between different slices.
+//    - No Load-Load edges.
+//    - Inside a slice, add all Store-Load, Load-Store, Store-Store edges,
+//      except if we can prove that the memory does not overlap.
+void VLoopDependencyGraph::construct() {
+  const GrowableArray<PhiNode*>& mem_slice_heads = _memory_slices.heads();
+  const GrowableArray<MemNode*>& mem_slice_tails = _memory_slices.tails();
+
+  ResourceMark rm;
+  GrowableArray<MemNode*> slice_nodes;
+  GrowableArray<int> memory_pred_edges;
+
+  // For each memory slice, create the memory subgraph
+  for (int i = 0; i < mem_slice_heads.length(); i++) {
+    PhiNode* head = mem_slice_heads.at(i);
+    MemNode* tail = mem_slice_tails.at(i);
+
+    _memory_slices.get_slice_in_reverse_order(head, tail, slice_nodes);
+
+    // In forward order (reverse of reverse), visit all memory nodes in the slice.
+    for (int j = slice_nodes.length() - 1; j >= 0 ; j--) {
+      MemNode* n1 = slice_nodes.at(j);
+      memory_pred_edges.clear();
+
+      const VPointer& p1 = _vpointers.vpointer(n1);
+      // For all memory nodes before it, check if we need to add a memory edge.
+      for (int k = slice_nodes.length() - 1; k > j; k--) {
+        MemNode* n2 = slice_nodes.at(k);
+
+        // Ignore Load-Load dependencies:
+        if (n1->is_Load() && n2->is_Load()) { continue; }
+
+        const VPointer& p2 = _vpointers.vpointer(n2);
+        if (!p1.never_overlaps_with(p2)) {
+          // Possibly overlapping memory
+          memory_pred_edges.append(_body.bb_idx(n2));
         }
-        NOT_PRODUCT(_tracer.scaled_iv_9(n, _scale, _offset, _invar);)
-        return true;
+      }
+      if (memory_pred_edges.is_nonempty()) {
+        // Data edges are taken implicitly from the C2 graph, thus we only add
+        // a dependency node if we have memory edges.
+        add_node(n1, memory_pred_edges);
+      }
+    }
+    slice_nodes.clear();
+  }
+
+  compute_depth();
+
+  NOT_PRODUCT( if (_vloop.is_trace_dependency_graph()) { print(); } )
+}
+
+void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& memory_pred_edges) {
+  assert(_dependency_nodes.at_grow(_body.bb_idx(n), nullptr) == nullptr, "not yet created");
+  assert(!memory_pred_edges.is_empty(), "no need to create a node without edges");
+  DependencyNode* dn = new (_arena) DependencyNode(n, memory_pred_edges, _arena);
+  _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
+}
+
+int VLoopDependencyGraph::find_max_pred_depth(const Node* n) const {
+  int max_pred_depth = 0;
+  if (!n->is_Phi()) { // ignore backedge
+    for (PredsIterator it(*this, n); !it.done(); it.next()) {
+      Node* pred = it.current();
+      if (_vloop.in_bb(pred)) {
+        max_pred_depth = MAX2(max_pred_depth, depth(pred));
       }
     }
   }
-  NOT_PRODUCT(_tracer.scaled_iv_10(n);)
-  return false;
+  return max_pred_depth;
 }
 
-// Match: offset is (k [+/- invariant])
-// where k maybe zero and invariant is optional, but not both.
-bool VPointer::offset_plus_k(Node* n, bool negate) {
-  NOT_PRODUCT(Tracer::Depth ddd;)
-  NOT_PRODUCT(_tracer.offset_plus_k_1(n);)
-
-  int opc = n->Opcode();
-  if (opc == Op_ConI) {
-    _offset += negate ? -(n->get_int()) : n->get_int();
-    NOT_PRODUCT(_tracer.offset_plus_k_2(n, _offset);)
-    return true;
-  } else if (opc == Op_ConL) {
-    // Okay if value fits into an int
-    const TypeLong* t = n->find_long_type();
-    if (t->higher_equal(TypeLong::INT)) {
-      jlong loff = n->get_long();
-      jint  off  = (jint)loff;
-      _offset += negate ? -off : loff;
-      NOT_PRODUCT(_tracer.offset_plus_k_3(n, _offset);)
-      return true;
-    }
-    NOT_PRODUCT(_tracer.offset_plus_k_4(n);)
-    return false;
-  }
-  assert((_debug_invar == nullptr) == (_invar == nullptr), "");
-
-  if (_analyze_only && is_loop_member(n)) {
-    _nstack->push(n, _stack_idx++);
-  }
-  if (opc == Op_AddI) {
-    if (n->in(2)->is_Con() && invariant(n->in(1))) {
-      maybe_add_to_invar(n->in(1), negate);
-      _offset += negate ? -(n->in(2)->get_int()) : n->in(2)->get_int();
-      NOT_PRODUCT(_tracer.offset_plus_k_6(n, _invar, negate, _offset);)
-      return true;
-    } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
-      _offset += negate ? -(n->in(1)->get_int()) : n->in(1)->get_int();
-      maybe_add_to_invar(n->in(2), negate);
-      NOT_PRODUCT(_tracer.offset_plus_k_7(n, _invar, negate, _offset);)
-      return true;
-    }
-  }
-  if (opc == Op_SubI) {
-    if (n->in(2)->is_Con() && invariant(n->in(1))) {
-      maybe_add_to_invar(n->in(1), negate);
-      _offset += !negate ? -(n->in(2)->get_int()) : n->in(2)->get_int();
-      NOT_PRODUCT(_tracer.offset_plus_k_8(n, _invar, negate, _offset);)
-      return true;
-    } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
-      _offset += negate ? -(n->in(1)->get_int()) : n->in(1)->get_int();
-      maybe_add_to_invar(n->in(2), !negate);
-      NOT_PRODUCT(_tracer.offset_plus_k_9(n, _invar, !negate, _offset);)
-      return true;
-    }
+// We iterate over the body, which is already ordered by the dependencies, i.e. pred comes
+// before use. With a single pass, we can compute the depth of every node, since we can
+// assume that the depth of all preds is already computed when we compute the depth of use.
+void VLoopDependencyGraph::compute_depth() {
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    set_depth(n, find_max_pred_depth(n) + 1);
   }
 
-  if (!is_loop_member(n)) {
-    // 'n' is loop invariant. Skip ConvI2L and CastII nodes before checking if 'n' is dominating the pre loop.
-    if (opc == Op_ConvI2L) {
-      n = n->in(1);
-    }
-    if (n->Opcode() == Op_CastII) {
-      // Skip CastII nodes
-      assert(!is_loop_member(n), "sanity");
-      n = n->in(1);
-    }
-    // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).
-    if (invariant(n)) {
-      maybe_add_to_invar(n, negate);
-      NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, negate, _offset);)
-      return true;
-    }
-  }
-
-  NOT_PRODUCT(_tracer.offset_plus_k_11(n);)
-  return false;
-}
-
-Node* VPointer::maybe_negate_invar(bool negate, Node* invar) {
 #ifdef ASSERT
-  _debug_negate_invar = negate;
-#endif
-  if (negate) {
-    BasicType bt = invar->bottom_type()->basic_type();
-    assert(bt == T_INT || bt == T_LONG, "");
-    PhaseIterGVN& igvn = phase()->igvn();
-    Node* zero = igvn.zerocon(bt);
-    phase()->set_ctrl(zero, phase()->C->root());
-    Node* sub = SubNode::make(zero, invar, bt);
-    invar = register_if_new(sub);
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    int max_pred_depth = find_max_pred_depth(n);
+    if (depth(n) != max_pred_depth + 1) {
+      print();
+      tty->print_cr("Incorrect depth: %d vs %d", depth(n), max_pred_depth + 1);
+      n->dump();
+    }
+    assert(depth(n) == max_pred_depth + 1, "must have correct depth");
   }
-  return invar;
+#endif
 }
 
-Node* VPointer::register_if_new(Node* n) const {
-  PhaseIterGVN& igvn = phase()->igvn();
-  Node* prev = igvn.hash_find_insert(n);
-  if (prev != nullptr) {
-    n->destruct(&igvn);
-    n = prev;
-  } else {
-    Node* c = phase()->get_early_ctrl(n);
-    phase()->register_new_node(n, c);
-  }
-  return n;
-}
-
-void VPointer::maybe_add_to_invar(Node* new_invar, bool negate) {
-  new_invar = maybe_negate_invar(negate, new_invar);
-  if (_invar == nullptr) {
-    _invar = new_invar;
-#ifdef ASSERT
-    _debug_invar = new_invar;
-#endif
-    return;
-  }
-#ifdef ASSERT
-  _debug_invar = NodeSentinel;
-#endif
-  BasicType new_invar_bt = new_invar->bottom_type()->basic_type();
-  assert(new_invar_bt == T_INT || new_invar_bt == T_LONG, "");
-  BasicType invar_bt = _invar->bottom_type()->basic_type();
-  assert(invar_bt == T_INT || invar_bt == T_LONG, "");
-
-  BasicType bt = (new_invar_bt == T_LONG || invar_bt == T_LONG) ? T_LONG : T_INT;
-  Node* current_invar = _invar;
-  if (invar_bt != bt) {
-    assert(bt == T_LONG && invar_bt == T_INT, "");
-    assert(new_invar_bt == bt, "");
-    current_invar = register_if_new(new ConvI2LNode(current_invar));
-  } else if (new_invar_bt != bt) {
-    assert(bt == T_LONG && new_invar_bt == T_INT, "");
-    assert(invar_bt == bt, "");
-    new_invar = register_if_new(new ConvI2LNode(new_invar));
-  }
-  Node* add = AddNode::make(current_invar, new_invar, bt);
-  _invar = register_if_new(add);
-}
-
-// Function for printing the fields of a VPointer
-void VPointer::print() {
 #ifndef PRODUCT
-  tty->print("base: [%d]  adr: [%d]  scale: %d  offset: %d",
-             _base != nullptr ? _base->_idx : 0,
-             _adr  != nullptr ? _adr->_idx  : 0,
-             _scale, _offset);
-  if (_invar != nullptr) {
-    tty->print("  invar: [%d]", _invar->_idx);
+void VLoopDependencyGraph::print() const {
+  tty->print_cr("\nVLoopDependencyGraph::print:");
+
+  tty->print_cr(" Memory pred edges:");
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    const DependencyNode* dn = dependency_node(n);
+    if (dn != nullptr) {
+      tty->print("  DependencyNode[%d %s:", n->_idx, n->Name());
+      for (uint j = 0; j < dn->memory_pred_edges_length(); j++) {
+        Node* pred = _body.body().at(dn->memory_pred_edge(j));
+        tty->print("  %d %s", pred->_idx, pred->Name());
+      }
+      tty->print_cr("]");
+    }
   }
   tty->cr();
+
+  tty->print_cr(" Complete dependency graph:");
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    tty->print("  d%02d Dependencies[%d %s:", depth(n), n->_idx, n->Name());
+    for (PredsIterator it(*this, n); !it.done(); it.next()) {
+      Node* pred = it.current();
+      tty->print("  %d %s", pred->_idx, pred->Name());
+    }
+    tty->print_cr("]");
+  }
+}
 #endif
+
+VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
+                                                     GrowableArray<int>& memory_pred_edges,
+                                                     Arena* arena) :
+    _node(n),
+    _memory_pred_edges_length(memory_pred_edges.length()),
+    _memory_pred_edges(nullptr)
+{
+  assert(memory_pred_edges.is_nonempty(), "not empty");
+  uint bytes = memory_pred_edges.length() * sizeof(int);
+  _memory_pred_edges = (int*)arena->Amalloc(bytes);
+  memcpy(_memory_pred_edges, memory_pred_edges.adr_at(0), bytes);
 }
 
-// Following are functions for tracing VPointer match
+VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& dependency_graph,
+                                                   const Node* node) :
+    _dependency_graph(dependency_graph),
+    _node(node),
+    _dependency_node(dependency_graph.dependency_node(node)),
+    _current(nullptr),
+    _is_current_memory_edge(false),
+    _next_pred(0),
+    _end_pred(node->req()),
+    _next_memory_pred(0),
+    _end_memory_pred((_dependency_node != nullptr) ? _dependency_node->memory_pred_edges_length() : 0)
+{
+  if (_node->is_Store() || _node->is_Load()) {
+    // Load: address
+    // Store: address, value
+    _next_pred = MemNode::Address;
+  } else {
+    assert(!_node->is_Mem(), "only loads and stores are expected mem nodes");
+    _next_pred = 1; // skip control
+  }
+  next();
+}
+
+void VLoopDependencyGraph::PredsIterator::next() {
+  if (_next_pred < _end_pred) {
+    _current = _node->in(_next_pred++);
+    _is_current_memory_edge = false;
+  } else if (_next_memory_pred < _end_memory_pred) {
+    int pred_bb_idx = _dependency_node->memory_pred_edge(_next_memory_pred++);
+    _current = _dependency_graph._body.body().at(pred_bb_idx);
+    _is_current_memory_edge = true;
+  } else {
+    _current = nullptr; // done
+    _is_current_memory_edge = false;
+  }
+}
+
 #ifndef PRODUCT
-void VPointer::Tracer::print_depth() const {
-  for (int ii = 0; ii < _depth; ++ii) {
-    tty->print("  ");
-  }
-}
+void VPointer::print_on(outputStream* st, bool end_with_cr) const {
+  st->print("VPointer[");
 
-void VPointer::Tracer::ctor_1(const Node* mem) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print(" %d VPointer::VPointer: start alignment analysis", mem->_idx); mem->dump();
+  if (!is_valid()) {
+    st->print_cr("invalid]");
+    return;
   }
-}
 
-void VPointer::Tracer::ctor_2(Node* adr) {
-  if (_is_trace_alignment) {
-    //store_depth();
-    inc_depth();
-    print_depth(); tty->print(" %d (adr) VPointer::VPointer: ", adr->_idx); adr->dump();
-    inc_depth();
-    print_depth(); tty->print(" %d (base) VPointer::VPointer: ", adr->in(AddPNode::Base)->_idx); adr->in(AddPNode::Base)->dump();
-  }
-}
+  st->print("size: %2d, %s, ", size(),
+            _mem_pointer.base().is_object() ? "object" : "native");
 
-void VPointer::Tracer::ctor_3(Node* adr, int i) {
-  if (_is_trace_alignment) {
-    inc_depth();
-    Node* offset = adr->in(AddPNode::Offset);
-    print_depth(); tty->print(" %d (offset) VPointer::VPointer: i = %d: ", offset->_idx, i); offset->dump();
-  }
-}
+  Node* base = _mem_pointer.base().object_or_native();
+  tty->print("base(%d %s) + con(%3d) + iv_scale(%3d) * iv + invar(",
+             base->_idx, base->Name(),
+             _mem_pointer.con().value(),
+             _iv_scale);
 
-void VPointer::Tracer::ctor_4(Node* adr, int i) {
-  if (_is_trace_alignment) {
-    inc_depth();
-    print_depth(); tty->print(" %d (adr) VPointer::VPointer: i = %d: ", adr->_idx, i); adr->dump();
-  }
-}
-
-void VPointer::Tracer::ctor_5(Node* adr, Node* base, int i) {
-  if (_is_trace_alignment) {
-    inc_depth();
-    if (base == adr) {
-      print_depth(); tty->print_cr("  \\ %d (adr) == %d (base) VPointer::VPointer: breaking analysis at i = %d", adr->_idx, base->_idx, i);
-    } else if (!adr->is_AddP()) {
-      print_depth(); tty->print_cr("  \\ %d (adr) is NOT Addp VPointer::VPointer: breaking analysis at i = %d", adr->_idx, i);
+  int count = 0;
+  for_each_invar_summand([&] (const MemPointerSummand& s) {
+    if (count > 0) {
+      st->print(" + ");
     }
+    s.print_on(tty);
+    count++;
+  });
+  if (count == 0) {
+    st->print("0");
   }
-}
-
-void VPointer::Tracer::ctor_6(const Node* mem) {
-  if (_is_trace_alignment) {
-    //restore_depth();
-    print_depth(); tty->print_cr(" %d (adr) VPointer::VPointer: stop analysis", mem->_idx);
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_1(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print(" %d VPointer::scaled_iv_plus_offset testing node: ", n->_idx);
-    n->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_2(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: PASSED", n->_idx);
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_3(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: PASSED", n->_idx);
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_4(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: Op_AddI PASSED", n->_idx);
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(1) is scaled_iv: ", n->in(1)->_idx); n->in(1)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(2) is offset_plus_k: ", n->in(2)->_idx); n->in(2)->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_5(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: Op_AddI PASSED", n->_idx);
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(2) is scaled_iv: ", n->in(2)->_idx); n->in(2)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(1) is offset_plus_k: ", n->in(1)->_idx); n->in(1)->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_6(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: Op_%s PASSED", n->_idx, n->Name());
-    print_depth(); tty->print("  \\  %d VPointer::scaled_iv_plus_offset: in(1) is scaled_iv: ", n->in(1)->_idx); n->in(1)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(2) is offset_plus_k: ", n->in(2)->_idx); n->in(2)->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_7(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: Op_%s PASSED", n->_idx, n->Name());
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(2) is scaled_iv: ", n->in(2)->_idx); n->in(2)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(1) is offset_plus_k: ", n->in(1)->_idx); n->in(1)->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_8(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: FAILED", n->_idx);
-  }
-}
-
-void VPointer::Tracer::scaled_iv_1(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print(" %d VPointer::scaled_iv: testing node: ", n->_idx); n->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_2(Node* n, int scale) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: FAILED since another _scale has been detected before", n->_idx);
-    print_depth(); tty->print_cr("  \\ VPointer::scaled_iv: _scale (%d) != 0", scale);
-  }
-}
-
-void VPointer::Tracer::scaled_iv_3(Node* n, int scale) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: is iv, setting _scale = %d", n->_idx, scale);
-  }
-}
-
-void VPointer::Tracer::scaled_iv_4(Node* n, int scale) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: Op_MulI PASSED, setting _scale = %d", n->_idx, scale);
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(1) is iv: ", n->in(1)->_idx); n->in(1)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_5(Node* n, int scale) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: Op_MulI PASSED, setting _scale = %d", n->_idx, scale);
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(2) is iv: ", n->in(2)->_idx); n->in(2)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_6(Node* n, int scale) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: Op_LShiftI PASSED, setting _scale = %d", n->_idx, scale);
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(1) is iv: ", n->in(1)->_idx); n->in(1)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_7(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: Op_ConvI2L PASSED", n->_idx);
-    print_depth(); tty->print_cr("  \\ VPointer::scaled_iv: in(1) %d is scaled_iv_plus_offset: ", n->in(1)->_idx);
-    inc_depth(); inc_depth();
-    print_depth(); n->in(1)->dump();
-    dec_depth(); dec_depth();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_8(Node* n, VPointer* tmp) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print(" %d VPointer::scaled_iv: Op_LShiftL, creating tmp VPointer: ", n->_idx); tmp->print();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_9(Node* n, int scale, int offset, Node* invar) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: Op_LShiftL PASSED, setting _scale = %d, _offset = %d", n->_idx, scale, offset);
-    print_depth(); tty->print_cr("  \\ VPointer::scaled_iv: in(1) [%d] is scaled_iv_plus_offset, in(2) [%d] used to scale: _scale = %d, _offset = %d",
-    n->in(1)->_idx, n->in(2)->_idx, scale, offset);
-    if (invar != nullptr) {
-      print_depth(); tty->print_cr("  \\ VPointer::scaled_iv: scaled invariant: [%d]", invar->_idx);
-    }
-    inc_depth(); inc_depth();
-    print_depth(); n->in(1)->dump();
-    print_depth(); n->in(2)->dump();
-    if (invar != nullptr) {
-      print_depth(); invar->dump();
-    }
-    dec_depth(); dec_depth();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_10(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: FAILED", n->_idx);
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_1(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print(" %d VPointer::offset_plus_k: testing node: ", n->_idx); n->dump();
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_2(Node* n, int _offset) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_ConI PASSED, setting _offset = %d", n->_idx, _offset);
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_3(Node* n, int _offset) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_ConL PASSED, setting _offset = %d", n->_idx, _offset);
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_4(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: FAILED", n->_idx);
-    print_depth(); tty->print_cr("  \\ " JLONG_FORMAT " VPointer::offset_plus_k: Op_ConL FAILED, k is too big", n->get_long());
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_5(Node* n, Node* _invar) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: FAILED since another invariant has been detected before", n->_idx);
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: _invar is not null: ", _invar->_idx); _invar->dump();
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_6(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_AddI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
-    n->_idx, _negate_invar, _invar->_idx, _offset);
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(1) is invariant: ", _invar->_idx); _invar->dump();
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_7(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_AddI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
-    n->_idx, _negate_invar, _invar->_idx, _offset);
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(2) is invariant: ", _invar->_idx); _invar->dump();
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_8(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_SubI is PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
-    n->_idx, _negate_invar, _invar->_idx, _offset);
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(1) is invariant: ", _invar->_idx); _invar->dump();
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_9(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_SubI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(2) is invariant: ", _invar->_idx); _invar->dump();
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_10(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
-    print_depth(); tty->print_cr("  \\ %d VPointer::offset_plus_k: is invariant", n->_idx);
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_11(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: FAILED", n->_idx);
-  }
+  st->print(")]");
+  if (end_with_cr) { st->cr(); }
 }
 #endif
-
 
 AlignmentSolution* AlignmentSolver::solve() const {
   DEBUG_ONLY( trace_start_solve(); )
@@ -715,9 +474,9 @@ AlignmentSolution* AlignmentSolver::solve() const {
   assert(is_power_of_2(abs(_main_stride)), "main_stride is power of 2");
   assert(_aw > 0 && is_power_of_2(_aw), "aw must be power of 2");
 
-  // Out of simplicity: non power-of-2 scale not supported.
-  if (abs(_scale) == 0 || !is_power_of_2(abs(_scale))) {
-    return new EmptyAlignmentSolution("non power-of-2 scale not supported");
+  // Out of simplicity: non power-of-2 iv_scale not supported.
+  if (abs(iv_scale()) == 0 || !is_power_of_2(abs(iv_scale()))) {
+    return new EmptyAlignmentSolution("non power-of-2 iv_scale not supported");
   }
 
   // We analyze the address of mem_ref. The idea is to disassemble it into a linear
@@ -726,7 +485,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   // The Simple form of the address is disassembled by VPointer into:
   //
-  //   adr = base + offset + invar + scale * iv
+  //   adr = base + invar + iv_scale * iv + con
   //
   // Where the iv can be written as:
   //
@@ -742,36 +501,52 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // expanding the iv variable. In a second step, we reshape the expression again, and
   // state it as a linear expression, consisting of 6 terms.
   //
-  //          Simple form           Expansion of iv variable                  Reshaped with constants   Comments for terms
-  //          -----------           ------------------------                  -----------------------   ------------------
-  //   adr =  base               =  base                                   =  base                      (base % aw = 0)
-  //        + offset              + offset                                  + C_const                   (sum of constant terms)
-  //        + invar               + invar_factor * var_invar                + C_invar * var_invar       (term for invariant)
-  //                          /   + scale * init                            + C_init  * var_init        (term for variable init)
-  //        + scale * iv   -> |   + scale * pre_stride * pre_iter           + C_pre   * pre_iter        (adjustable pre-loop term)
-  //                          \   + scale * main_stride * main_iter         + C_main  * main_iter       (main-loop term)
+  //          Simple form             Expansion of iv variable                  Reshaped with constants   Comments for terms
+  //          -----------             ------------------------                  -----------------------   ------------------
+  //   adr =  base                 =  base                                   =  base                      (assume: base % aw = 0)
+  //        + invar                 + invar_factor * var_invar                + C_invar * var_invar       (term for invariant)
+  //                            /   + iv_scale * init                         + C_init  * var_init        (term for variable init)
+  //        + iv_scale * iv  -> |   + iv_scale * pre_stride * pre_iter        + C_pre   * pre_iter        (adjustable pre-loop term)
+  //                            \   + iv_scale * main_stride * main_iter      + C_main  * main_iter       (main-loop term)
+  //        + con                   + con                                     + C_const                   (sum of constant terms)
   //
   // We describe the 6 terms:
-  //   1) The "base" of the address is the address of a Java object (e.g. array),
-  //      and as such ObjectAlignmentInBytes (a power of 2) aligned. We have
-  //      defined aw = MIN(vector_width, ObjectAlignmentInBytes), which is also
+  //   1) The "base" of the address:
+  //        - For heap objects, this is the base of the object, and as such
+  //          ObjectAlignmentInBytes (a power of 2) aligned.
+  //        - For off-heap / native memory, the "base" has no alignment
+  //          gurantees. To ensure alignment we can do either of these:
+  //          - Add a runtime check to verify ObjectAlignmentInBytes alignment,
+  //            i.e. we can speculatively compile with an alignment assumption.
+  //            If we pass the check, we can go into the loop with the alignment
+  //            assumption, if we fail we have to trap/deopt or take the other
+  //            loop version without alignment assumptions.
+  //          - If runtime checks are not possible, then we return an empty
+  //            solution, i.e. we do not vectorize the corresponding pack.
+  //
+  //      Let us assume we have an object "base", or passed the alignment
+  //      runtime check for native "bases", hence we know:
+  //
+  //        base % ObjectAlignmentInBytes = 0
+  //
+  //      We defined aw = MIN(vector_width, ObjectAlignmentInBytes), which is
   //      a power of 2. And hence we know that "base" is thus also aw-aligned:
   //
-  //        base % ObjectAlignmentInBytes = 0     ==>    base % aw = 0
+  //        base % ObjectAlignmentInBytes = 0     ==>    base % aw = 0              (BASE_ALIGNED)
   //
-  //   2) The "C_const" term is the sum of all constant terms. This is "offset",
-  //      plus "scale * init" if it is constant.
+  //   2) The "C_const" term is the sum of all constant terms. This is "con",
+  //      plus "iv_scale * init" if it is constant.
   //   3) The "C_invar * var_invar" is the factorization of "invar" into a constant
   //      and variable term. If there is no invariant, then "C_invar" is zero.
   //
   //        invar = C_invar * var_invar                                             (FAC_INVAR)
   //
-  //   4) The "C_init * var_init" is the factorization of "scale * init" into a
+  //   4) The "C_init * var_init" is the factorization of "iv_scale * init" into a
   //      constant and a variable term. If "init" is constant, then "C_init" is
   //      zero, and "C_const" accounts for "init" instead.
   //
-  //        scale * init = C_init * var_init + scale * C_const_init                 (FAC_INIT)
-  //        C_init       = (init is constant) ? 0    : scale
+  //        iv_scale * init = C_init * var_init + iv_scale * C_const_init           (FAC_INIT)
+  //        C_init       = (init is constant) ? 0    : iv_scale
   //        C_const_init = (init is constant) ? init : 0
   //
   //   5) The "C_pre * pre_iter" term represents how much the iv is incremented
@@ -782,23 +557,30 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   6) The "C_main * main_iter" term represents how much the iv is increased
   //      during "main_iter" main-loop iterations.
 
+  // For native memory, we must add a runtime-check that "base % ObjectAlignmentInBytes = ",
+  // to ensure (BASE_ALIGNED). If we cannot add this runtime-check, we have no guarantee on
+  // its alignment.
+  if (!_vpointer.mem_pointer().base().is_object() && !_are_speculative_checks_possible) {
+    return new EmptyAlignmentSolution("Cannot add speculative check for native memory alignment.");
+  }
+
   // Attribute init (i.e. _init_node) either to C_const or to C_init term.
   const int C_const_init = _init_node->is_ConI() ? _init_node->as_ConI()->get_int() : 0;
-  const int C_const =      _offset + C_const_init * _scale;
+  const int C_const =      _vpointer.con() + C_const_init * iv_scale();
 
   // Set C_invar depending on if invar is present
-  const int C_invar = (_invar == nullptr) ? 0 : abs(_invar_factor);
+  const int C_invar = _vpointer.compute_invar_factor();
 
-  const int C_init = _init_node->is_ConI() ? 0 : _scale;
-  const int C_pre =  _scale * _pre_stride;
-  const int C_main = _scale * _main_stride;
+  const int C_init = _init_node->is_ConI() ? 0 : iv_scale();
+  const int C_pre =  iv_scale() * _pre_stride;
+  const int C_main = iv_scale() * _main_stride;
 
   DEBUG_ONLY( trace_reshaped_form(C_const, C_const_init, C_invar, C_init, C_pre, C_main); )
 
   // We must find a pre_iter, such that adr is aw aligned: adr % aw = 0. Note, that we are defining the
   // modulo operator "%" such that the remainder is always positive, see AlignmentSolution::mod(i, q).
   //
-  // Since "base % aw = 0", we only need to ensure alignment of the other 5 terms:
+  // Since "base % aw = 0" (BASE_ALIGNED), we only need to ensure alignment of the other 5 terms:
   //
   //   (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter + C_main * main_iter) % aw = 0      (1)
   //
@@ -1076,7 +858,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   pre_iter_C_const = mx2 * q - sign(C_pre) * X
   //                    = mx2 * q - sign(C_pre) * C_const             / abs(C_pre)
   //                    = mx2 * q - C_const / C_pre
-  //                    = mx2 * q - C_const / (scale * pre_stride)                                  (11a)
+  //                    = mx2 * q - C_const / (iv_scale * pre_stride)                               (11a)
   //
   // If there is an invariant:
   //
@@ -1084,19 +866,19 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //                    = my2 * q - sign(C_pre) * C_invar * var_invar / abs(C_pre)
   //                    = my2 * q - sign(C_pre) * invar               / abs(C_pre)
   //                    = my2 * q - invar / C_pre
-  //                    = my2 * q - invar / (scale * pre_stride)                                    (11b, with invar)
+  //                    = my2 * q - invar / (iv_scale * pre_stride)                                 (11b, with invar)
   //
   // If there is no invariant (i.e. C_invar = 0 ==> Y = 0):
   //
   //   pre_iter_C_invar = my2 * q                                                                   (11b, no invar)
   //
-  // If init is variable (i.e. C_init = scale, init = var_init):
+  // If init is variable (i.e. C_init = iv_scale, init = var_init):
   //
-  //   pre_iter_C_init  = mz2 * q - sign(C_pre) * Z       * var_init
-  //                    = mz2 * q - sign(C_pre) * C_init  * var_init  / abs(C_pre)
-  //                    = mz2 * q - sign(C_pre) * scale   * init      / abs(C_pre)
-  //                    = mz2 * q - scale * init / C_pre
-  //                    = mz2 * q - scale * init / (scale * pre_stride)
+  //   pre_iter_C_init  = mz2 * q - sign(C_pre) * Z          * var_init
+  //                    = mz2 * q - sign(C_pre) * C_init     * var_init  / abs(C_pre)
+  //                    = mz2 * q - sign(C_pre) * iv_scale   * init      / abs(C_pre)
+  //                    = mz2 * q - iv_scale * init / C_pre
+  //                    = mz2 * q - iv_scale * init / (iv_scale * pre_stride)
   //                    = mz2 * q - init / pre_stride                                               (11c, variable init)
   //
   // If init is constant (i.e. C_init = 0 ==> Z = 0):
@@ -1107,35 +889,35 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // with m = mx2 + my2 + mz2:
   //
   //   pre_iter =   pre_iter_C_const + pre_iter_C_invar + pre_iter_C_init
-  //            =   mx2 * q  - C_const / (scale * pre_stride)
-  //              + my2 * q [- invar / (scale * pre_stride) ]
-  //              + mz2 * q [- init / pre_stride            ]
+  //            =   mx2 * q  - C_const / (iv_scale * pre_stride)
+  //              + my2 * q [- invar / (iv_scale * pre_stride) ]
+  //              + mz2 * q [- init / pre_stride               ]
   //
   //            =   m * q                                 (periodic part)
-  //              - C_const / (scale * pre_stride)        (align constant term)
-  //             [- invar / (scale * pre_stride)   ]      (align invariant term, if present)
-  //             [- init / pre_stride              ]      (align variable init term, if present)    (12)
+  //              - C_const / (iv_scale * pre_stride)        (align constant term)
+  //             [- invar / (iv_scale * pre_stride)   ]      (align invariant term, if present)
+  //             [- init / pre_stride                 ]      (align variable init term, if present)    (12)
   //
   // We can further simplify this solution by introducing integer 0 <= r < q:
   //
-  //   r = (-C_const / (scale * pre_stride)) % q                                                    (13)
+  //   r = (-C_const / (iv_scale * pre_stride)) % q                                                    (13)
   //
-  const int r = AlignmentSolution::mod(-C_const / (_scale * _pre_stride), q);
+  const int r = AlignmentSolution::mod(-C_const / (iv_scale() * _pre_stride), q);
   //
   //   pre_iter = m * q + r
-  //                   [- invar / (scale * pre_stride)  ]
-  //                   [- init / pre_stride             ]                                           (14)
+  //                   [- invar / (iv_scale * pre_stride)  ]
+  //                   [- init / pre_stride                ]                                           (14)
   //
   // We thus get a solution that can be stated in terms of:
   //
-  //   q (periodicity), r (constant alignment), invar, scale, pre_stride, init
+  //   q (periodicity), r (constant alignment), invar, iv_scale, pre_stride, init
   //
   // However, pre_stride and init are shared by all mem_ref in the loop, hence we do not need to provide
   // them in the solution description.
 
   DEBUG_ONLY( trace_constrained_solution(C_const, C_invar, C_init, C_pre, q, r); )
 
-  return new ConstrainedAlignmentSolution(_mem_ref, q, r, _invar, _scale);
+  return new ConstrainedAlignmentSolution(_mem_ref, q, r, _vpointer /* holds invar and iv_scale */);
 
   // APPENDIX:
   // We can now verify the success of the solution given by (12):
@@ -1143,71 +925,61 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   adr % aw =
   //
   //   -> Simple form
-  //   (base + offset + invar + scale * iv) % aw =
+  //   (base + invar + iv_scale * iv + con) % aw =
   //
   //   -> Expand iv
-  //   (base + offset + invar + scale * (init + pre_stride * pre_iter + main_stride * main_iter)) % aw =
+  //   (base + con + invar + iv_scale * (init + pre_stride * pre_iter + main_stride * main_iter)) % aw =
   //
   //   -> Reshape
-  //   (base + offset + invar
-  //         + scale * init
-  //         + scale * pre_stride * pre_iter
-  //         + scale * main_stride * main_iter)) % aw =
+  //   (base + con + invar
+  //         + iv_scale * init
+  //         + iv_scale * pre_stride * pre_iter
+  //         + iv_scale * main_stride * main_iter)) % aw =
   //
-  //   -> base aligned: base % aw = 0
-  //   -> main-loop iterations aligned (2): C_main % aw = (scale * main_stride) % aw = 0
-  //   (offset + invar + scale * init + scale * pre_stride * pre_iter) % aw =
+  //   -> apply (BASE_ALIGNED): base % aw = 0
+  //   -> main-loop iterations aligned (2): C_main % aw = (iv_scale * main_stride) % aw = 0
+  //   (con + invar + iv_scale * init + iv_scale * pre_stride * pre_iter) % aw =
   //
   //   -> apply (12)
-  //   (offset + invar + scale * init
-  //           + scale * pre_stride * (m * q - C_const / (scale * pre_stride)
-  //                                        [- invar / (scale * pre_stride) ]
-  //                                        [- init / pre_stride            ]
+  //   (con + invar + iv_scale * init
+  //        + iv_scale * pre_stride * (m * q - C_const / (iv_scale * pre_stride)
+  //                                        [- invar / (iv_scale * pre_stride) ]
+  //                                        [- init / pre_stride               ]
   //                                  )
   //   ) % aw =
   //
-  //   -> expand C_const = offset [+ init * scale]  (if init const)
-  //   (offset + invar + scale * init
-  //           + scale * pre_stride * (m * q - offset / (scale * pre_stride)
-  //                                        [- init / pre_stride            ]             (if init constant)
-  //                                        [- invar / (scale * pre_stride) ]             (if invar present)
-  //                                        [- init / pre_stride            ]             (if init variable)
+  //   -> expand C_const = con [+ init * iv_scale]  (if init const)
+  //   (con + invar + iv_scale * init
+  //        + iv_scale * pre_stride * (m * q - con / (iv_scale * pre_stride)
+  //                                        [- init / pre_stride               ]          (if init constant)
+  //                                        [- invar / (iv_scale * pre_stride) ]          (if invar present)
+  //                                        [- init / pre_stride               ]          (if init variable)
   //                                  )
   //   ) % aw =
   //
   //   -> assuming invar = 0 if it is not present
   //   -> merge the two init terms (variable or constant)
-  //   -> apply (8): q = aw / (abs(C_pre)) = aw / abs(scale * pre_stride)
-  //   -> and hence: (scale * pre_stride * q) % aw = 0
+  //   -> apply (8): q = aw / (abs(C_pre)) = aw / abs(iv_scale * pre_stride)
+  //   -> and hence: (iv_scale * pre_stride * q) % aw = 0
   //   -> all terms are canceled out
-  //   (offset + invar + scale * init
-  //           + scale * pre_stride * m * q                             -> aw aligned
-  //           - scale * pre_stride * offset / (scale * pre_stride)     -> = offset
-  //           - scale * pre_stride * init / pre_stride                 -> = scale * init
-  //           - scale * pre_stride * invar / (scale * pre_stride)      -> = invar
+  //   (con + invar + iv_scale * init
+  //        + iv_scale * pre_stride * m * q                              -> aw aligned
+  //        - iv_scale * pre_stride * con   / (iv_scale * pre_stride)    -> = con
+  //        - iv_scale * pre_stride * init  / pre_stride                 -> = iv_scale * init
+  //        - iv_scale * pre_stride * invar / (iv_scale * pre_stride)    -> = invar
   //   ) % aw = 0
   //
   // The solution given by (12) does indeed guarantee alignment.
 }
 
 #ifdef ASSERT
-void print_con_or_idx(const Node* n) {
-  if (n == nullptr) {
-    tty->print("(0)");
-  } else if (n->is_ConI()) {
-    jint val = n->as_ConI()->get_int();
-    tty->print("(%d)", val);
-  } else {
-    tty->print("[%d]", n->_idx);
-  }
-}
-
 void AlignmentSolver::trace_start_solve() const {
   if (is_trace()) {
     tty->print(" vector mem_ref:");
     _mem_ref->dump();
-    tty->print_cr("  vector_width = vector_length(%d) * element_size(%d) = %d",
-                  _vector_length, _element_size, _vector_width);
+    tty->print("  VPointer: ");
+    _vpointer.print_on(tty);
+    tty->print_cr("  vector_width = %d", _vector_width);
     tty->print_cr("  aw = alignment_width = min(vector_width(%d), ObjectAlignmentInBytes(%d)) = %d",
                   _vector_width, ObjectAlignmentInBytes, _aw);
 
@@ -1216,25 +988,34 @@ void AlignmentSolver::trace_start_solve() const {
       _init_node->dump();
     }
 
-    if (_invar != nullptr) {
-      tty->print("  invar:");
-      _invar->dump();
+    tty->print_cr("  invar = SUM(invar_summands), invar_summands:");
+    int invar_count = 0;
+    _vpointer.for_each_invar_summand([&] (const MemPointerSummand& s) {
+      tty->print("   ");
+      s.print_on(tty);
+      tty->print(" -> ");
+      s.variable()->dump();
+      invar_count++;
+    });
+    if (invar_count == 0) {
+      tty->print_cr("   No invar_summands.");
     }
 
-    tty->print_cr("  invar_factor = %d", _invar_factor);
+    const jint invar_factor = _vpointer.compute_invar_factor();
+    tty->print_cr("  invar_factor = %d", invar_factor);
 
     // iv = init + pre_iter * pre_stride + main_iter * main_stride
     tty->print("  iv = init");
-    print_con_or_idx(_init_node);
+    if (_init_node->is_ConI()) {
+      tty->print("(%4d)", _init_node->as_ConI()->get_int());
+    } else {
+      tty->print("[%4d]", _init_node->_idx);
+    }
     tty->print_cr(" + pre_iter * pre_stride(%d) + main_iter * main_stride(%d)",
                   _pre_stride, _main_stride);
-
-    // adr = base + offset + invar + scale * iv
-    tty->print("  adr = base");
-    print_con_or_idx(_base);
-    tty->print(" + offset(%d) + invar", _offset);
-    print_con_or_idx(_invar);
-    tty->print_cr(" + scale(%d) * iv", _scale);
+    // adr = base + con + invar + iv_scale * iv
+    tty->print("  adr = base[%d]", base().object_or_native()->_idx);
+    tty->print_cr(" + invar + iv_scale(%d) * iv + con(%d)", iv_scale(), _vpointer.con());
   }
 }
 
@@ -1246,7 +1027,7 @@ void AlignmentSolver::trace_reshaped_form(const int C_const,
                                           const int C_main) const
 {
   if (is_trace()) {
-    tty->print("      = base[%d] + ", _base->_idx);
+    tty->print("      = base[%d] + ", base().object_or_native()->_idx);
     tty->print_cr("C_const(%d) + C_invar(%d) * var_invar + C_init(%d) * var_init + C_pre(%d) * pre_iter + C_main(%d) * main_iter",
                   C_const, C_invar, C_init,  C_pre, C_main);
     if (_init_node->is_ConI()) {
@@ -1256,21 +1037,21 @@ void AlignmentSolver::trace_reshaped_form(const int C_const,
     } else {
       tty->print_cr("  init is variable:");
       tty->print_cr("    C_const_init = %d", C_const_init);
-      tty->print_cr("    C_init = abs(scale)= %d", C_init);
+      tty->print_cr("    C_init = abs(iv_scale)= %d", C_init);
     }
-    if (_invar != nullptr) {
+    if (C_invar != 0) {
       tty->print_cr("  invariant present:");
-      tty->print_cr("    C_invar = abs(invar_factor) = %d", C_invar);
+      tty->print_cr("    C_invar = invar_factor = %d", C_invar);
     } else {
       tty->print_cr("  no invariant:");
       tty->print_cr("    C_invar = %d", C_invar);
     }
-    tty->print_cr("  C_const = offset(%d) + scale(%d) * C_const_init(%d) = %d",
-                  _offset, _scale, C_const_init, C_const);
-    tty->print_cr("  C_pre   = scale(%d) * pre_stride(%d) = %d",
-                  _scale, _pre_stride, C_pre);
-    tty->print_cr("  C_main  = scale(%d) * main_stride(%d) = %d",
-                  _scale, _main_stride, C_main);
+    tty->print_cr("  C_const = con(%d) + iv_scale(%d) * C_const_init(%d) = %d",
+                  _vpointer.con(), iv_scale(), C_const_init, C_const);
+    tty->print_cr("  C_pre   = iv_scale(%d) * pre_stride(%d) = %d",
+                  iv_scale(), _pre_stride, C_pre);
+    tty->print_cr("  C_main  = iv_scale(%d) * main_stride(%d) = %d",
+                  iv_scale(), _main_stride, C_main);
   }
 }
 
@@ -1339,13 +1120,13 @@ void AlignmentSolver::trace_constrained_solution(const int C_const,
     tty->print_cr("  EQ(10b): pre_iter_C_invar = my2 * q(%d) - sign(C_pre) * Y(%d) * var_invar", q, Y);
     tty->print_cr("  EQ(10c): pre_iter_C_init  = mz2 * q(%d) - sign(C_pre) * Z(%d) * var_init ", q, Z);
 
-    tty->print_cr("  r = (-C_const(%d) / (scale(%d) * pre_stride(%d)) %% q(%d) = %d",
-                  C_const, _scale, _pre_stride, q, r);
+    tty->print_cr("  r = (-C_const(%d) / (iv_scale(%d) * pre_stride(%d)) %% q(%d) = %d",
+                  C_const, iv_scale(), _pre_stride, q, r);
 
     tty->print_cr("  EQ(14):  pre_iter = m * q(%3d) - r(%d)", q, r);
-    if (_invar != nullptr) {
-      tty->print_cr("                                 - invar / (scale(%d) * pre_stride(%d))",
-                    _scale, _pre_stride);
+    if (C_invar != 0) {
+      tty->print_cr("                                 - invar / (iv_scale(%d) * pre_stride(%d))",
+                    iv_scale(), _pre_stride);
     }
     if (!_init_node->is_ConI()) {
       tty->print_cr("                                 - init / pre_stride(%d)",

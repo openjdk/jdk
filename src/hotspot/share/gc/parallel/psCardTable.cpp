@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psCardTable.hpp"
@@ -33,18 +32,16 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "utilities/spinYield.hpp"
 #include "utilities/align.hpp"
+#include "utilities/spinYield.hpp"
 
 // Checks an individual oop for missing precise marks. Mark
 // may be either dirty or newgen.
-class CheckForUnmarkedOops : public BasicOopIterateClosure {
- private:
+class PSCheckForUnmarkedOops : public BasicOopIterateClosure {
   PSYoungGen*  _young_gen;
   PSCardTable* _card_table;
   HeapWord*    _unmarked_addr;
 
- protected:
   template <class T> void do_oop_work(T* p) {
     oop obj = RawAccess<>::oop_load(p);
     if (_young_gen->is_in_reserved(obj) &&
@@ -57,11 +54,11 @@ class CheckForUnmarkedOops : public BasicOopIterateClosure {
   }
 
  public:
-  CheckForUnmarkedOops(PSYoungGen* young_gen, PSCardTable* card_table) :
+  PSCheckForUnmarkedOops(PSYoungGen* young_gen, PSCardTable* card_table) :
     _young_gen(young_gen), _card_table(card_table), _unmarked_addr(nullptr) { }
 
-  virtual void do_oop(oop* p)       { CheckForUnmarkedOops::do_oop_work(p); }
-  virtual void do_oop(narrowOop* p) { CheckForUnmarkedOops::do_oop_work(p); }
+  void do_oop(oop* p)       override { do_oop_work(p); }
+  void do_oop(narrowOop* p) override { do_oop_work(p); }
 
   bool has_unmarked_oop() {
     return _unmarked_addr != nullptr;
@@ -70,13 +67,13 @@ class CheckForUnmarkedOops : public BasicOopIterateClosure {
 
 // Checks all objects for the existence of some type of mark,
 // precise or imprecise, dirty or newgen.
-class CheckForUnmarkedObjects : public ObjectClosure {
+class PSCheckForUnmarkedObjects : public ObjectClosure {
  private:
   PSYoungGen*  _young_gen;
   PSCardTable* _card_table;
 
  public:
-  CheckForUnmarkedObjects() {
+  PSCheckForUnmarkedObjects() {
     ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
     _young_gen = heap->young_gen();
     _card_table = heap->card_table();
@@ -87,7 +84,7 @@ class CheckForUnmarkedObjects : public ObjectClosure {
   // we test for missing precise marks first. If any are found, we don't
   // fail unless the object head is also unmarked.
   virtual void do_object(oop obj) {
-    CheckForUnmarkedOops object_check(_young_gen, _card_table);
+    PSCheckForUnmarkedOops object_check(_young_gen, _card_table);
     obj->oop_iterate(&object_check);
     if (object_check.has_unmarked_oop()) {
       guarantee(_card_table->is_dirty_for_addr(obj), "Found unmarked young_gen object");
@@ -124,13 +121,38 @@ class PSStripeShadowCardTable {
   const uint _card_shift;
   const uint _card_size;
   CardValue _table[PSCardTable::num_cards_in_stripe];
-  const CardValue* _table_base;
+  uintptr_t _table_base;
+
+  // Avoid UB pointer operations by using integers internally.
+
+  static_assert(sizeof(uintptr_t) == sizeof(CardValue*), "simplifying assumption");
+  static_assert(sizeof(CardValue) == 1, "simplifying assumption");
+
+  static uintptr_t iaddr(const void* p) {
+    return reinterpret_cast<uintptr_t>(p);
+  }
+
+  uintptr_t compute_table_base(HeapWord* start) const {
+    uintptr_t offset = iaddr(start) >> _card_shift;
+    return iaddr(_table) - offset;
+  }
+
+  void verify_card_inclusive(const CardValue* card) const {
+    assert(iaddr(card) >= iaddr(_table), "out of bounds");
+    assert(iaddr(card) <= (iaddr(_table) + sizeof(_table)), "out of bounds");
+  }
+
+  void verify_card_exclusive(const CardValue* card) const {
+    assert(iaddr(card) >= iaddr(_table), "out of bounds");
+    assert(iaddr(card) < (iaddr(_table) + sizeof(_table)), "out of bounds");
+  }
 
 public:
   PSStripeShadowCardTable(PSCardTable* pst, HeapWord* const start, HeapWord* const end) :
     _card_shift(CardTable::card_shift()),
     _card_size(CardTable::card_size()),
-    _table_base(_table - (uintptr_t(start) >> _card_shift)) {
+    _table_base(compute_table_base(start))
+  {
     size_t stripe_byte_size = pointer_delta(end, start) * HeapWordSize;
     size_t copy_length = align_up(stripe_byte_size, _card_size) >> _card_shift;
     // The end of the last stripe may not be card aligned as it is equal to old
@@ -145,12 +167,16 @@ public:
   }
 
   HeapWord* addr_for(const CardValue* const card) {
-    assert(card >= _table && card <=  &_table[PSCardTable::num_cards_in_stripe], "out of bounds");
-    return (HeapWord*) ((card - _table_base) << _card_shift);
+    verify_card_inclusive(card);
+    uintptr_t addr = (iaddr(card) - _table_base) << _card_shift;
+    return reinterpret_cast<HeapWord*>(addr);
   }
 
   const CardValue* card_for(HeapWord* addr) {
-    return &_table_base[uintptr_t(addr) >> _card_shift];
+    uintptr_t icard = _table_base + (iaddr(addr) >> _card_shift);
+    const CardValue* card = reinterpret_cast<const CardValue*>(icard);
+    verify_card_inclusive(card);
+    return card;
   }
 
   bool is_dirty(const CardValue* const card) {
@@ -158,7 +184,7 @@ public:
   }
 
   bool is_clean(const CardValue* const card) {
-    assert(card >= _table && card <  &_table[PSCardTable::num_cards_in_stripe], "out of bounds");
+    verify_card_exclusive(card);
     return *card == PSCardTable::clean_card_val();
   }
 
@@ -379,7 +405,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
 
 // This should be called before a scavenge.
 void PSCardTable::verify_all_young_refs_imprecise() {
-  CheckForUnmarkedObjects check;
+  PSCheckForUnmarkedObjects check;
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();

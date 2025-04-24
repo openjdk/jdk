@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "memory/resourceArea.hpp"
@@ -234,6 +233,13 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
     // See if dead (no reaching def).
     Node *def = _defs[reg];     // Get reaching def
     assert( def, "since live better have reaching def" );
+
+    if (def->is_MachTemp()) {
+      assert(!def->bottom_type()->isa_oop_ptr(),
+             "ADLC only assigns OOP types to MachTemp defs corresponding to xRegN operands");
+      // Exclude MachTemp definitions even if they are typed as oops.
+      continue;
+    }
 
     // Classify the reaching def as oop, derived, callee-save, dead, or other
     const Type *t = def->bottom_type();
@@ -489,7 +495,7 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
         // GEN use'd bits
         for( uint l=1; l<n->req(); l++ ) {
           Node *def = n->in(l);
-          assert(def != 0, "input edge required");
+          assert(def != nullptr, "input edge required");
           int first = regalloc->get_reg_first(def);
           int second = regalloc->get_reg_second(def);
           //If peephole had removed the node,do not set live bit for it.
@@ -594,7 +600,7 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
 
 // Collect GC mask info - where are all the OOPs?
 void PhaseOutput::BuildOopMaps() {
-  Compile::TracePhase tp("bldOopMaps", &timers[_t_buildOopMaps]);
+  Compile::TracePhase tp(_t_buildOopMaps);
   // Can't resource-mark because I need to leave all those OopMaps around,
   // or else I need to resource-mark some arena other than the default.
   // ResourceMark rm;              // Reclaim all OopFlows when done

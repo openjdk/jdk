@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,8 @@ public class CDSTestUtils {
         "Unable to allocate region, java heap range is already in use.";
     public static final String MSG_DYNAMIC_NOT_SUPPORTED =
         "-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded";
+    public static final String MSG_STATIC_FIELD_MAY_HOLD_DIFFERENT_VALUE =
+        "an object points to a static field that may hold a different value at runtime";
     public static final boolean DYNAMIC_DUMP = Boolean.getBoolean("test.dynamic.cds.archive");
 
     public interface Checker {
@@ -284,6 +286,7 @@ public class CDSTestUtils {
             output.shouldContain("Written dynamic archive 0x");
         }
         output.shouldHaveExitValue(0);
+        output.shouldNotContain(MSG_STATIC_FIELD_MAY_HOLD_DIFFERENT_VALUE);
 
         for (String match : extraMatches) {
             output.shouldContain(match);
@@ -296,6 +299,7 @@ public class CDSTestUtils {
     public static OutputAnalyzer checkBaseDump(OutputAnalyzer output) throws Exception {
         output.shouldContain("Loading classes to share");
         output.shouldHaveExitValue(0);
+        output.shouldNotContain(MSG_STATIC_FIELD_MAY_HOLD_DIFFERENT_VALUE);
         return output;
     }
 
@@ -858,5 +862,25 @@ public class CDSTestUtils {
         Path destPath = newDir.resolve(jarName);
         Files.copy(srcPath, destPath, REPLACE_EXISTING, COPY_ATTRIBUTES);
         return destPath;
+    }
+
+    // Some tests were initially written without the knowledge of -XX:+AOTClassLinking. These tests need to
+    // be adjusted if -XX:+AOTClassLinking is specified in jtreg -vmoptions or -javaoptions:
+    public static boolean isAOTClassLinkingEnabled() {
+        return isBooleanVMOptionEnabledInCommandLine("AOTClassLinking");
+    }
+
+    public static boolean isBooleanVMOptionEnabledInCommandLine(String optionName) {
+        String lastMatch = null;
+        String pattern = "^-XX:." + optionName + "$";
+        for (String s : Utils.getTestJavaOpts()) {
+            if (s.matches(pattern)) {
+                lastMatch = s;
+            }
+        }
+        if (lastMatch != null && lastMatch.equals("-XX:+" + optionName)) {
+            return true;
+        }
+        return false;
     }
 }

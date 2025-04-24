@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,24 +141,15 @@ final class Float128Vector extends FloatVector {
     @ForceInline
     Float128Shuffle iotaShuffle() { return Float128Shuffle.IOTA; }
 
+    @Override
     @ForceInline
     Float128Shuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (Float128Shuffle)VectorSupport.shuffleIota(ETYPE, Float128Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (Float128Shuffle)VectorSupport.shuffleIota(ETYPE, Float128Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+        return (Float128Shuffle) iotaShuffleTemplate(start, step, wrap);
     }
 
     @Override
     @ForceInline
-    Float128Shuffle shuffleFromBytes(byte[] reorder) { return new Float128Shuffle(reorder); }
-
-    @Override
-    @ForceInline
-    Float128Shuffle shuffleFromArray(int[] indexes, int i) { return new Float128Shuffle(indexes, i); }
+    Float128Shuffle shuffleFromArray(int[] indices, int i) { return new Float128Shuffle(indices, i); }
 
     @Override
     @ForceInline
@@ -344,9 +335,16 @@ final class Float128Vector extends FloatVector {
         return (long) super.reduceLanesTemplate(op, Float128Mask.class, (Float128Mask) m);  // specialized
     }
 
+    @Override
     @ForceInline
-    public VectorShuffle<Float> toShuffle() {
-        return super.toShuffleTemplate(Float128Shuffle.class); // specialize
+    final <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp) {
+        throw new AssertionError();
+    }
+
+    @Override
+    @ForceInline
+    public final Float128Shuffle toShuffle() {
+        return (Float128Shuffle) toShuffle(vspecies(), false);
     }
 
     // Specialized unary testing
@@ -490,9 +488,16 @@ final class Float128Vector extends FloatVector {
                                    VectorMask<Float> m) {
         return (Float128Vector)
             super.selectFromTemplate((Float128Vector) v,
-                                     (Float128Mask) m);  // specialize
+                                     Float128Mask.class, (Float128Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Float128Vector selectFrom(Vector<Float> v1,
+                                   Vector<Float> v2) {
+        return (Float128Vector)
+            super.selectFromTemplate((Float128Vector) v1, (Float128Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -508,13 +513,14 @@ final class Float128Vector extends FloatVector {
         return Float.intBitsToFloat(bits);
     }
 
+    @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
                      VCLASS, ETYPE, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      float[] vecarr = vec.vec();
-                     return (long)Float.floatToIntBits(vecarr[ix]);
+                     return (long)Float.floatToRawIntBits(vecarr[ix]);
                      });
     }
 
@@ -530,10 +536,11 @@ final class Float128Vector extends FloatVector {
         }
     }
 
+    @ForceInline
     public Float128Vector withLaneHelper(int i, float e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
-                                this, i, (long)Float.floatToIntBits(e),
+                                this, i, (long)Float.floatToRawIntBits(e),
                                 (v, ix, bits) -> {
                                     float[] res = v.vec().clone();
                                     res[ix] = Float.intBitsToFloat((int)bits);
@@ -777,25 +784,28 @@ final class Float128Vector extends FloatVector {
 
     static final class Float128Shuffle extends AbstractShuffle<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Float> ETYPE = float.class; // used by the JVM
+        static final Class<Integer> ETYPE = int.class; // used by the JVM
 
-        Float128Shuffle(byte[] reorder) {
-            super(VLENGTH, reorder);
+        Float128Shuffle(int[] indices) {
+            super(indices);
+            assert(VLENGTH == indices.length);
+            assert(indicesInRange(indices));
         }
 
-        public Float128Shuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+        Float128Shuffle(int[] indices, int i) {
+            this(prepare(indices, i));
         }
 
-        public Float128Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+        Float128Shuffle(IntUnaryOperator fn) {
+            this(prepare(fn));
         }
 
-        public Float128Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+        int[] indices() {
+            return (int[])getPayload();
         }
 
         @Override
+        @ForceInline
         public FloatSpecies vspecies() {
             return VSPECIES;
         }
@@ -803,40 +813,98 @@ final class Float128Vector extends FloatVector {
         static {
             // There must be enough bits in the shuffle lanes to encode
             // VLENGTH valid indexes and VLENGTH exceptional ones.
-            assert(VLENGTH < Byte.MAX_VALUE);
-            assert(Byte.MIN_VALUE <= -VLENGTH);
+            assert(VLENGTH < Integer.MAX_VALUE);
+            assert(Integer.MIN_VALUE <= -VLENGTH);
         }
         static final Float128Shuffle IOTA = new Float128Shuffle(IDENTITY);
 
         @Override
         @ForceInline
         public Float128Vector toVector() {
-            return VectorSupport.shuffleToVector(VCLASS, ETYPE, Float128Shuffle.class, this, VLENGTH,
-                                                    (s) -> ((Float128Vector)(((AbstractShuffle<Float>)(s)).toVectorTemplate())));
+            return (Float128Vector) toBitsVector().castShape(vspecies(), 0);
         }
 
         @Override
         @ForceInline
-        public <F> VectorShuffle<F> cast(VectorSpecies<F> s) {
-            AbstractSpecies<F> species = (AbstractSpecies<F>) s;
-            if (length() != species.laneCount())
-                throw new IllegalArgumentException("VectorShuffle length and species length differ");
-            int[] shuffleArray = toArray();
-            return s.shuffleFromArray(shuffleArray, 0).check(s);
+        Int128Vector toBitsVector() {
+            return (Int128Vector) super.toBitsVectorTemplate();
+        }
+
+        @Override
+        Int128Vector toBitsVector0() {
+            return ((Int128Vector) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+        }
+
+        @Override
+        @ForceInline
+        public int laneSource(int i) {
+            return (int)toBitsVector().lane(i);
+        }
+
+        @Override
+        @ForceInline
+        public void intoArray(int[] a, int offset) {
+            toBitsVector().intoArray(a, offset);
+        }
+
+        @Override
+        @ForceInline
+        public final Float128Mask laneIsValid() {
+            return (Float128Mask) toBitsVector().compare(VectorOperators.GE, 0)
+                    .cast(vspecies());
         }
 
         @ForceInline
         @Override
-        public Float128Shuffle rearrange(VectorShuffle<Float> shuffle) {
-            Float128Shuffle s = (Float128Shuffle) shuffle;
-            byte[] reorder1 = reorder();
-            byte[] reorder2 = s.reorder();
-            byte[] r = new byte[reorder1.length];
-            for (int i = 0; i < reorder1.length; i++) {
-                int ssi = reorder2[i];
-                r[i] = reorder1[ssi];  // throws on exceptional index
+        public final Float128Shuffle rearrange(VectorShuffle<Float> shuffle) {
+            Float128Shuffle concreteShuffle = (Float128Shuffle) shuffle;
+            return (Float128Shuffle) toBitsVector().rearrange(concreteShuffle.cast(IntVector.SPECIES_128))
+                    .toShuffle(vspecies(), false);
+        }
+
+        @ForceInline
+        @Override
+        public final Float128Shuffle wrapIndexes() {
+            Int128Vector v = toBitsVector();
+            if ((length() & (length() - 1)) == 0) {
+                v = (Int128Vector) v.lanewise(VectorOperators.AND, length() - 1);
+            } else {
+                v = (Int128Vector) v.blend(v.lanewise(VectorOperators.ADD, length()),
+                            v.compare(VectorOperators.LT, 0));
             }
-            return new Float128Shuffle(r);
+            return (Float128Shuffle) v.toShuffle(vspecies(), false);
+        }
+
+        private static int[] prepare(int[] indices, int offset) {
+            int[] a = new int[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = indices[offset + i];
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (int)si;
+            }
+            return a;
+        }
+
+        private static int[] prepare(IntUnaryOperator f) {
+            int[] a = new int[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = f.applyAsInt(i);
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (int)si;
+            }
+            return a;
+        }
+
+        private static boolean indicesInRange(int[] indices) {
+            int length = indices.length;
+            for (int si : indices) {
+                if (si >= (int)length || si < (int)(-length)) {
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
+                                  java.util.Arrays.toString(indices));
+                    throw new AssertionError(msg);
+                }
+            }
+            return true;
         }
     }
 

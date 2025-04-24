@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2023 Marti Maria Saguer
+//  Copyright (c) 1998-2024 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -393,12 +393,7 @@ cmsBool CMSEXPORT  _cmsWriteXYZNumber(cmsIOHANDLER* io, const cmsCIEXYZ* XYZ)
 // from Fixed point 8.8 to double
 cmsFloat64Number CMSEXPORT _cms8Fixed8toDouble(cmsUInt16Number fixed8)
 {
-       cmsUInt8Number  msb, lsb;
-
-       lsb = (cmsUInt8Number) (fixed8 & 0xff);
-       msb = (cmsUInt8Number) (((cmsUInt16Number) fixed8 >> 8) & 0xff);
-
-       return (cmsFloat64Number) ((cmsFloat64Number) msb + ((cmsFloat64Number) lsb / 256.0));
+    return fixed8 / 256.0;
 }
 
 cmsUInt16Number CMSEXPORT _cmsDoubleTo8Fixed8(cmsFloat64Number val)
@@ -410,19 +405,7 @@ cmsUInt16Number CMSEXPORT _cmsDoubleTo8Fixed8(cmsFloat64Number val)
 // from Fixed point 15.16 to double
 cmsFloat64Number CMSEXPORT _cms15Fixed16toDouble(cmsS15Fixed16Number fix32)
 {
-    cmsFloat64Number floater, sign, mid;
-    int Whole, FracPart;
-
-    sign  = (fix32 < 0 ? -1 : 1);
-    fix32 = abs(fix32);
-
-    Whole     = (cmsUInt16Number)(fix32 >> 16) & 0xffff;
-    FracPart  = (cmsUInt16Number)(fix32 & 0xffff);
-
-    mid     = (cmsFloat64Number) FracPart / 65536.0;
-    floater = (cmsFloat64Number) Whole + mid;
-
-    return sign * floater;
+    return fix32 / 65536.0;
 }
 
 // from double to Fixed point 15.16
@@ -952,7 +935,10 @@ cmsContext CMSEXPORT cmsDupContext(cmsContext ContextID, void* NewUserData)
     if (!InitContextMutex()) return NULL;
 
     // Setup default memory allocators
-    memcpy(&ctx->DefaultMemoryManager, &src->DefaultMemoryManager, sizeof(ctx->DefaultMemoryManager));
+    if (ContextID == NULL)
+        _cmsInstallAllocFunctions(NULL, &ctx->DefaultMemoryManager);
+    else
+        memcpy(&ctx->DefaultMemoryManager, &src->DefaultMemoryManager, sizeof(ctx->DefaultMemoryManager));
 
     // Maintain the linked list
     _cmsEnterCriticalSectionPrimitive(&_cmsContextPoolHeadMutex);

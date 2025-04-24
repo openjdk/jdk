@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,14 +60,13 @@ typedef struct _jmetadata *jmetadata;
 class CompilerThreadCanCallJava : StackObj {
  private:
   CompilerThread* _current; // Only non-null if state of thread changed
-  bool _reset_state;        // Value prior to state change, undefined
-                            // if no state change.
 public:
-  // Enters a scope in which the ability of the current CompilerThread
-  // to call Java is specified by `new_state`. This call only makes a
-  // change if the current thread is a CompilerThread associated with
-  // a JVMCI compiler whose CompilerThread::_can_call_java is not
-  // currently `new_state`.
+  // If the current thread is a CompilerThread associated with
+  // a JVMCI compiler where CompilerThread::_can_call_java != new_state,
+  // then _can_call_java is set to `new_state`
+  // Returns nullptr if no change was made, otherwise the current CompilerThread
+  static CompilerThread* update(JavaThread* current, bool new_state);
+
   CompilerThreadCanCallJava(JavaThread* current, bool new_state);
 
   // Resets CompilerThread::_can_call_java of the current thread if the
@@ -117,8 +116,8 @@ class JVMCI : public AllStatic {
   // The path of the file underlying _fatal_log_fd if it is a normal file.
   static const char* _fatal_log_filename;
 
-  // Native thread id of thread that will initialize _fatal_log_fd.
-  static volatile intx _fatal_log_init_thread;
+  // Thread id of the first thread reporting a libjvmci error.
+  static volatile intx _first_error_tid;
 
   // JVMCI event log (shows up in hs_err crash logs).
   static StringEventLog* _events;

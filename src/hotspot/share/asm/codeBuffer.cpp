@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
+#include "code/compiledIC.hpp"
 #include "code/oopRecorder.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "logging/log.hpp"
@@ -65,17 +65,17 @@
 // The structure of the CodeBuffer while code is being accumulated:
 //
 //    _total_start ->    \
-//    _insts._start ->              +----------------+
+//    _consts._start ->             +----------------+
+//                                  |                |
+//                                  |   Constants    |
+//                                  |                |
+//    _insts._start ->              |----------------|
 //                                  |                |
 //                                  |     Code       |
 //                                  |                |
 //    _stubs._start ->              |----------------|
 //                                  |                |
 //                                  |    Stubs       | (also handlers for deopt/exception)
-//                                  |                |
-//    _consts._start ->             |----------------|
-//                                  |                |
-//                                  |   Constants    |
 //                                  |                |
 //                                  +----------------+
 //    + _total_size ->              |                |
@@ -134,10 +134,11 @@ CodeBuffer::~CodeBuffer() {
     // Previous incarnations of this buffer are held live, so that internal
     // addresses constructed before expansions will not be confused.
     cb->free_blob();
-    // free any overflow storage
-    delete cb->_overflow_arena;
   }
-
+  if (_overflow_arena != nullptr) {
+    // free any overflow storage
+    delete _overflow_arena;
+  }
   if (_shared_trampoline_requests != nullptr) {
     delete _shared_trampoline_requests;
   }
@@ -524,7 +525,7 @@ void CodeBuffer::finalize_oop_references(const methodHandle& mh) {
   for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
     // pull code out of each section
     CodeSection* cs = code_section(n);
-    if (cs->is_empty() || !cs->has_locs()) continue;  // skip trivial section
+    if (cs->is_empty() || (cs->locs_count() == 0)) continue;  // skip trivial section
     RelocIterator iter(cs);
     while (iter.next()) {
       if (iter.type() == relocInfo::metadata_type) {
@@ -790,10 +791,8 @@ void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
   // call) is relocated. Stubs are placed behind the main code
   // section, so that section has to be copied before relocating.
   for (int n = (int) SECT_FIRST; n < (int)SECT_LIMIT; n++) {
-    // pull code out of each section
-    const CodeSection* cs = code_section(n);
-    if (cs->is_empty() || !cs->has_locs()) continue;  // skip trivial section
     CodeSection* dest_cs = dest->code_section(n);
+    if (dest_cs->is_empty() || (dest_cs->locs_count() == 0)) continue;  // skip trivial section
     { // Repair the pc relative information in the code after the move
       RelocIterator iter(dest_cs);
       while (iter.next()) {
@@ -889,6 +888,7 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
 
   // Create a new (temporary) code buffer to hold all the new data
   CodeBuffer cb(name(), new_total_cap, 0);
+  cb.set_const_section_alignment(_const_section_alignment);
   if (cb.blob() == nullptr) {
     // Failed to allocate in code cache.
     free_blob();
@@ -929,6 +929,10 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   // Move all the code and relocations to the new blob:
   relocate_code_to(&cb);
 
+  // some internal addresses, _last_insn _last_label, are used during code emission,
+  // adjust them in expansion
+  adjust_internal_address(insts_begin(), cb.insts_begin());
+
   // Copy the temporary code buffer into the current code buffer.
   // Basically, do {*this = cb}, except for some control information.
   this->take_over_code_from(&cb);
@@ -950,6 +954,15 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
 #endif //PRODUCT
 }
 
+void CodeBuffer::adjust_internal_address(address from, address to) {
+  if (_last_insn != nullptr) {
+    _last_insn += to - from;
+  }
+  if (_last_label != nullptr) {
+    _last_label += to - from;
+  }
+}
+
 void CodeBuffer::take_over_code_from(CodeBuffer* cb) {
   // Must already have disposed of the old blob somehow.
   assert(blob() == nullptr, "must be empty");
@@ -961,14 +974,13 @@ void CodeBuffer::take_over_code_from(CodeBuffer* cb) {
     CodeSection* this_sect = code_section(n);
     this_sect->take_over_code_from(cb_sect);
   }
-  _overflow_arena = cb->_overflow_arena;
-  cb->_overflow_arena = nullptr;
   // Make sure the old cb won't try to use it or free it.
   DEBUG_ONLY(cb->_blob = (BufferBlob*)badAddress);
 }
 
 void CodeBuffer::verify_section_allocation() {
   address tstart = _total_start;
+  if (tstart == nullptr) return;  // ignore not fully initialized buffer
   if (tstart == badAddress)  return;  // smashed by set_blob(nullptr)
   address tend   = tstart + _total_size;
   if (_blob != nullptr) {
@@ -1054,7 +1066,7 @@ void CodeSection::print(const char* name) {
                 name, p2i(start()), p2i(end()), p2i(limit()), size(), capacity());
   tty->print_cr(" %7s.locs = " PTR_FORMAT " : " PTR_FORMAT " : " PTR_FORMAT " (%d of %d) point=%d",
                 name, p2i(locs_start()), p2i(locs_end()), p2i(locs_limit()), locs_size, locs_capacity(), locs_point_off());
-  if (PrintRelocations) {
+  if (PrintRelocations && (locs_size != 0)) {
     RelocIterator iter(this);
     iter.print();
   }

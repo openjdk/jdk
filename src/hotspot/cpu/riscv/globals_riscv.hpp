@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -78,12 +78,9 @@ define_pd_global(intx, InlineSmallCode,          1000);
 
 #define ARCH_FLAGS(develop,                                                      \
                    product,                                                      \
-                   notproduct,                                                   \
                    range,                                                        \
                    constraint)                                                   \
                                                                                  \
-  product(bool, NearCpool, true,                                                 \
-         "constant pool is close to instructions")                               \
   product(bool, UseBlockZeroing, false,                                          \
           "Use Zicboz for block zeroing")                                        \
   product(intx, BlockZeroingLowLimit, 256,                                       \
@@ -93,29 +90,38 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Size in bytes of a CPU cache line")                                   \
           range(wordSize, max_jint)                                              \
   product(bool, TraceTraps, false, "Trace all traps the signal handler")         \
-  /* For now we're going to be safe and add the I/O bits to userspace fences. */ \
-  product(bool, UseConservativeFence, true,                                      \
+  product(bool, UseConservativeFence, false,                                     \
           "Extend i for r and o for w in the pred/succ flags of fence")          \
   product(bool, AvoidUnalignedAccesses, true,                                    \
           "Avoid generating unaligned memory accesses")                          \
   product(bool, UseRVA20U64, true, "Use RVA20U64 profile")                       \
-  product(bool, UseRVC, false, "Use RVC instructions")                           \
   product(bool, UseRVA22U64, false, EXPERIMENTAL, "Use RVA22U64 profile")        \
-  product(bool, UseRVV, false, "Use RVV instructions")                           \
-  product(bool, UseZba, false, "Use Zba instructions")                           \
-  product(bool, UseZbb, false, "Use Zbb instructions")                           \
-  product(bool, UseZbs, false, "Use Zbs instructions")                           \
+  product(bool, UseRVA23U64, false, EXPERIMENTAL, "Use RVA23U64 profile")        \
+  product(bool, UseRVC, false, DIAGNOSTIC, "Use RVC instructions")               \
+  product(bool, UseRVV, false, DIAGNOSTIC, "Use RVV instructions")               \
+  product(bool, UseZba, false, DIAGNOSTIC, "Use Zba instructions")               \
+  product(bool, UseZbb, false, DIAGNOSTIC, "Use Zbb instructions")               \
+  product(bool, UseZbkb, false, EXPERIMENTAL, "Use Zbkb instructions")           \
+  product(bool, UseZbs, false, DIAGNOSTIC, "Use Zbs instructions")               \
+  product(bool, UseZfa, false, EXPERIMENTAL, "Use Zfa instructions")             \
+  product(bool, UseZfh, false, DIAGNOSTIC, "Use Zfh instructions")               \
+  product(bool, UseZfhmin, false, DIAGNOSTIC, "Use Zfhmin instructions")         \
   product(bool, UseZacas, false, EXPERIMENTAL, "Use Zacas instructions")         \
+  product(bool, UseZcb, false, EXPERIMENTAL, "Use Zcb instructions")             \
   product(bool, UseZic64b, false, EXPERIMENTAL, "Use Zic64b instructions")       \
   product(bool, UseZicbom, false, EXPERIMENTAL, "Use Zicbom instructions")       \
   product(bool, UseZicbop, false, EXPERIMENTAL, "Use Zicbop instructions")       \
   product(bool, UseZicboz, false, EXPERIMENTAL, "Use Zicboz instructions")       \
-  product(bool, UseZtso, false, EXPERIMENTAL, "Assume Ztso memory model")        \
+  product(bool, UseZicond, false, DIAGNOSTIC, "Use Zicond instructions")         \
   product(bool, UseZihintpause, false, EXPERIMENTAL,                             \
           "Use Zihintpause instructions")                                        \
+  product(bool, UseZtso, false, EXPERIMENTAL, "Assume Ztso memory model")        \
+  product(bool, UseZvbb, false, EXPERIMENTAL, "Use Zvbb instructions")           \
+  product(bool, UseZvbc, false, EXPERIMENTAL, "Use Zvbc instructions")           \
+  product(bool, UseZvfh, false, DIAGNOSTIC, "Use Zvfh instructions")             \
   product(bool, UseZvkn, false, EXPERIMENTAL,                                    \
           "Use Zvkn group extension, Zvkned, Zvknhb, Zvkb, Zvkt")                \
-  product(bool, UseRVVForBigIntegerShiftIntrinsics, true,                        \
-          "Use RVV instructions for left/right shift of BigInteger")
+  product(bool, UseCtxFencei, false, EXPERIMENTAL,                               \
+          "Use PR_RISCV_CTX_SW_FENCEI_ON to avoid explicit icache flush")
 
 #endif // CPU_RISCV_GLOBALS_RISCV_HPP

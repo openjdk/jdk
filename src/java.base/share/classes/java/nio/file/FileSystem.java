@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,21 +172,14 @@ public abstract class FileSystem
      *
      * <p> A file system provides access to a file store that may be composed
      * of a number of distinct file hierarchies, each with its own top-level
-     * root directory. Unless denied by the security manager, each element in
-     * the returned iterator corresponds to the root directory of a distinct
-     * file hierarchy. The order of the elements is not defined. The file
-     * hierarchies may change during the lifetime of the Java virtual machine.
+     * root directory. Each element in the returned iterator corresponds to the
+     * root directory of a distinct file hierarchy. The order of the elements is
+     * not defined. The file hierarchies may change during the lifetime of the
+     * ava virtual machine.
      * For example, in some implementations, the insertion of removable media
      * may result in the creation of a new file hierarchy with its own
      * top-level directory. There is no guarantee that a root directory
      * can be accessed.
-     *
-     * <p> When a security manager is installed, it is invoked to check access
-     * to the each root directory. If denied, the root directory is not returned
-     * by the iterator. In the case of the default provider, the {@link
-     * SecurityManager#checkRead(String)} method is invoked to check read access
-     * to each root directory. It is system dependent if the permission checks
-     * are done when the iterator is obtained or during iteration.
      *
      * @return  An object to iterate over the root directories
      */
@@ -200,16 +193,6 @@ public abstract class FileSystem
      * not defined and the file stores may change during the lifetime of the
      * Java virtual machine. When an I/O error occurs, perhaps because a file
      * store is not accessible, then it is not returned by the iterator.
-     *
-     * <p> In the case of the default provider, and a security manager is
-     * installed, the security manager is invoked to check {@link
-     * RuntimePermission}{@code ("getFileStoreAttributes")}. If denied, then
-     * no file stores are returned by the iterator. In addition, the security
-     * manager's {@link SecurityManager#checkRead(String)} method is invoked to
-     * check read access to the file store's <em>top-most</em> directory. If
-     * denied, the file store is not returned by the iterator. It is system
-     * dependent if the permission checks are done when the iterator is obtained
-     * or during iteration.
      *
      * <p> <b>Usage Example:</b>
      * Suppose we want to print the space usage for all file stores:

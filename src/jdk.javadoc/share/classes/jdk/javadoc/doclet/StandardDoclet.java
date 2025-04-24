@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,10 @@ import jdk.javadoc.internal.doclets.formats.html.HtmlDoclet;
 
 /**
  * This doclet generates HTML-formatted documentation for the specified modules,
- * packages and types.
+ * packages and types. It is the doclet that is used by the
+ * <a href="{@docRoot}/../specs/man/javadoc.html"><em>javadoc</em></a> tool
+ * and the {@linkplain javax.tools.ToolProvider#getSystemDocumentationTool
+ * system documentation tool} when no other doclet is specified to be used.
  *
  * <h2><a id="user-defined-taglets">User-Defined Taglets</a></h2>
  *

@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2023 Marti Maria Saguer
+//  Copyright (c) 1998-2024 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -152,7 +152,7 @@ cmsBool  BlackPointAsDarkerColorant(cmsHPROFILE    hInput,
     // Convert black to Lab
     cmsDoTransform(xform, Black, &Lab, 1);
 
-    // Force it to be neutral, check for inconsistences
+    // Force it to be neutral, check for inconsistencies
     Lab.a = Lab.b = 0;
     if (Lab.L > 50 || Lab.L < 0) Lab.L = 0;
 

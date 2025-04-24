@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.krb5.internal.util;
 
 import java.io.IOException;
-import sun.security.action.GetPropertyAction;
 import sun.security.util.DerValue;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -58,8 +57,8 @@ public final class KerberosString {
     public static final boolean MSNAME;
 
     static {
-        String prop = GetPropertyAction
-                .privilegedGetProperty("sun.security.krb5.msinterop.kstring", "true");
+        String prop =
+            System.getProperty("sun.security.krb5.msinterop.kstring", "true");
         MSNAME = Boolean.parseBoolean(prop);
     }
 

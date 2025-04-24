@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1CardSetMemory.inline.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "memory/allocation.inline.hpp"
@@ -57,24 +56,24 @@ static uint default_log2_card_regions_per_region() {
   uint log2_card_regions_per_heap_region = 0;
 
   const uint card_container_limit = G1CardSetContainer::LogCardsPerRegionLimit;
-  if (card_container_limit < (uint)HeapRegion::LogCardsPerRegion) {
-    log2_card_regions_per_heap_region = (uint)HeapRegion::LogCardsPerRegion - card_container_limit;
+  if (card_container_limit < (uint)G1HeapRegion::LogCardsPerRegion) {
+    log2_card_regions_per_heap_region = (uint)G1HeapRegion::LogCardsPerRegion - card_container_limit;
   }
 
   return log2_card_regions_per_heap_region;
 }
 
 G1CardSetConfiguration::G1CardSetConfiguration() :
-  G1CardSetConfiguration(HeapRegion::LogCardsPerRegion - default_log2_card_regions_per_region(),                                                                                   /* inline_ptr_bits_per_card */
+  G1CardSetConfiguration(G1HeapRegion::LogCardsPerRegion - default_log2_card_regions_per_region(),                                                                                   /* inline_ptr_bits_per_card */
                          G1RemSetArrayOfCardsEntries,                               /* max_cards_in_array */
                          (double)G1RemSetCoarsenHowlBitmapToHowlFullPercent / 100,  /* cards_in_bitmap_threshold_percent */
                          G1RemSetHowlNumBuckets,                                    /* num_buckets_in_howl */
                          (double)G1RemSetCoarsenHowlToFullPercent / 100,            /* cards_in_howl_threshold_percent */
-                         (uint)HeapRegion::CardsPerRegion >> default_log2_card_regions_per_region(),
+                         (uint)G1HeapRegion::CardsPerRegion >> default_log2_card_regions_per_region(),
                                                                                     /* max_cards_in_card_set */
                          default_log2_card_regions_per_region())                    /* log2_card_regions_per_region */
 {
-  assert((_log2_card_regions_per_heap_region + _log2_cards_per_card_region) == (uint)HeapRegion::LogCardsPerRegion,
+  assert((_log2_card_regions_per_heap_region + _log2_cards_per_card_region) == (uint)G1HeapRegion::LogCardsPerRegion,
          "inconsistent heap region virtualization setup");
 }
 
@@ -244,6 +243,10 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
   using CHTScanTask = CardSetHash::ScanTask;
 
   const static uint BucketClaimSize = 16;
+  // The claim size for group cardsets should be smaller to facilitate
+  // better work distribution. The group cardsets should be larger than
+  // the per region cardsets.
+  const static uint GroupBucketClaimSize = 4;
   // Did we insert at least one card in the table?
   bool volatile _inserted_card;
 
@@ -286,7 +289,10 @@ public:
                      size_t initial_log_table_size = InitialLogTableSize) :
     _inserted_card(false),
     _mm(mm),
-    _table(mm, initial_log_table_size, false),
+    _table(Mutex::service-1,
+           mm,
+           initial_log_table_size,
+           false /* enable_statistics */),
     _table_scanner(&_table, BucketClaimSize) {
   }
 
@@ -344,7 +350,15 @@ public:
   }
 
   void reset_table_scanner() {
-    _table_scanner.set(&_table, BucketClaimSize);
+    reset_table_scanner(BucketClaimSize);
+  }
+
+  void reset_table_scanner_for_groups() {
+    reset_table_scanner(GroupBucketClaimSize);
+  }
+
+  void reset_table_scanner(uint claim_size) {
+    _table_scanner.set(&_table, claim_size);
   }
 
   void grow() {
@@ -392,7 +406,7 @@ G1CardSet::~G1CardSet() {
 
 void G1CardSet::initialize(MemRegion reserved) {
   const uint BitsInUint = sizeof(uint) * BitsPerByte;
-  const uint CardBitsWithinCardRegion = MIN2((uint)HeapRegion::LogCardsPerRegion, G1CardSetContainer::LogCardsPerRegionLimit);
+  const uint CardBitsWithinCardRegion = MIN2((uint)G1HeapRegion::LogCardsPerRegion, G1CardSetContainer::LogCardsPerRegionLimit);
 
   // Check if the number of cards within a region fits an uint.
   if (CardBitsWithinCardRegion > BitsInUint) {
@@ -530,7 +544,7 @@ G1AddCardResult G1CardSet::add_to_howl(ContainerPtr parent_container,
   ContainerPtr container;
 
   uint bucket = _config->howl_bucket_index(card_in_region);
-  ContainerPtr volatile* bucket_entry = howl->get_container_addr(bucket);
+  ContainerPtr volatile* bucket_entry = howl->container_addr(bucket);
 
   while (true) {
     if (Atomic::load(&howl->_num_entries) >= _config->cards_in_howl_threshold()) {
@@ -764,6 +778,15 @@ G1AddCardResult G1CardSet::add_card(uintptr_t card) {
   uint card_region;
   uint card_within_region;
   split_card(card, card_region, card_within_region);
+
+#ifdef ASSERT
+  {
+    uint region_idx = card_region >> config()->log2_card_regions_per_heap_region();
+    G1HeapRegion* r = G1CollectedHeap::heap()->region_at(region_idx);
+    assert(!r->rem_set()->is_added_to_cset_group() ||
+           r->rem_set()->cset_group()->card_set() != this, "Should not be sharing a cardset");
+  }
+#endif
 
   return add_card(card_region, card_within_region, true /* increment_total */);
 }
@@ -1038,4 +1061,8 @@ void G1CardSet::clear() {
 
 void G1CardSet::reset_table_scanner() {
   _table->reset_table_scanner();
+}
+
+void G1CardSet::reset_table_scanner_for_groups() {
+  _table->reset_table_scanner_for_groups();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -65,7 +65,13 @@ public class PerfMapTest {
         output.stderrShouldBeEmpty();
         output.stdoutShouldBeEmpty();
 
-        Assert.assertTrue(Files.exists(path));
+        try {
+            Assert.assertTrue(Files.exists(path), "File must exist: " + path);
+            Assert.assertTrue(Files.size(path) > 0,
+                              "File must not be empty. Possible file permission issue: " + path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         // Sanity check the file contents
         try {
@@ -79,10 +85,11 @@ public class PerfMapTest {
     }
 
     @Test
-    public void defaultMapFile() {
+    public void defaultMapFile() throws IOException {
         final long pid = ProcessHandle.current().pid();
         final Path path = Paths.get(String.format("/tmp/perf-%d.map", pid));
         run(new JMXExecutor(), "Compiler.perfmap", path);
+        Files.deleteIfExists(path);
     }
 
     @Test
@@ -93,5 +100,29 @@ public class PerfMapTest {
             path = Paths.get(String.format("%s/%s.map", test_dir, UUID.randomUUID().toString()));
         } while(Files.exists(path));
         run(new JMXExecutor(), "Compiler.perfmap " + path.toString(), path);
+    }
+
+    @Test
+    public void specifiedDefaultMapFile() throws IOException {
+        // This is a special case of specifiedMapFile() where the filename specified
+        // is the same as the default filename as given in the help output. The dcmd
+        // should treat this literally as the filename and not expand <pid> into
+        // the actual PID of the process.
+        String test_dir = System.getProperty("test.dir", ".");
+        Path path = Paths.get("/tmp/perf-<pid>.map");
+        run(new JMXExecutor(), "Compiler.perfmap " + path.toString(), path);
+        Files.deleteIfExists(path);
+    }
+
+    @Test
+    public void logErrorsDcmdOutputStream() throws IOException {
+        String test_dir = System.getProperty("test.dir", ".");
+        Path path = Paths.get("nonexistent", test_dir);
+        try {
+            OutputAnalyzer output = new JMXExecutor().execute("Compiler.perfmap %s".formatted(path));
+            output.shouldContain("Warning: Failed to create nonexistent/%s for perf map".formatted(test_dir));
+        } finally {
+            Files.deleteIfExists(path);
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -45,9 +44,10 @@ int MachOper::reg(PhaseRegAlloc *ra_, const Node *node, int idx) const {
 }
 intptr_t  MachOper::constant() const { return 0x00; }
 relocInfo::relocType MachOper::constant_reloc() const { return relocInfo::none; }
-jdouble MachOper::constantD() const { ShouldNotReachHere(); return 0.0; }
-jfloat  MachOper::constantF() const { ShouldNotReachHere(); return 0.0; }
-jlong   MachOper::constantL() const { ShouldNotReachHere(); return CONST64(0) ; }
+jdouble MachOper::constantD() const { ShouldNotReachHere(); }
+jfloat  MachOper::constantF() const { ShouldNotReachHere(); }
+jshort  MachOper::constantH() const { ShouldNotReachHere(); }
+jlong   MachOper::constantL() const { ShouldNotReachHere(); }
 TypeOopPtr *MachOper::oop() const { return nullptr; }
 int MachOper::ccode() const { return 0x00; }
 // A zero, default, indicates this value is not needed.
@@ -62,8 +62,8 @@ int MachOper::index_position() const { return -1; }  // no index input
 // Check for PC-Relative displacement
 relocInfo::relocType MachOper::disp_reloc() const { return relocInfo::none; }
 // Return the label
-Label*   MachOper::label()  const { ShouldNotReachHere(); return 0; }
-intptr_t MachOper::method() const { ShouldNotReachHere(); return 0; }
+Label*   MachOper::label()  const { ShouldNotReachHere(); }
+intptr_t MachOper::method() const { ShouldNotReachHere(); }
 
 
 //------------------------------negate-----------------------------------------
@@ -80,7 +80,6 @@ const Type *MachOper::type() const {
 //------------------------------in_RegMask-------------------------------------
 const RegMask *MachOper::in_RegMask(int index) const {
   ShouldNotReachHere();
-  return nullptr;
 }
 
 //------------------------------dump_spec--------------------------------------
@@ -93,14 +92,12 @@ void MachOper::dump_spec(outputStream *st) const { }
 // Print any per-operand special info
 uint MachOper::hash() const {
   ShouldNotCallThis();
-  return 5;
 }
 
 //------------------------------cmp--------------------------------------------
 // Print any per-operand special info
 bool MachOper::cmp( const MachOper &oper ) const {
   ShouldNotCallThis();
-  return opcode() == oper.opcode();
 }
 
 //------------------------------hash-------------------------------------------
@@ -132,7 +129,7 @@ bool methodOper::cmp( const MachOper &oper ) const {
 //------------------------------MachNode---------------------------------------
 
 //------------------------------emit-------------------------------------------
-void MachNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   #ifdef ASSERT
   tty->print("missing MachNode emit function: ");
   dump();
@@ -207,7 +204,6 @@ void MachNode::fill_new_machnode(MachNode* node) const {
 // Return an equivalent instruction using memory for cisc_operand position
 MachNode *MachNode::cisc_version(int offset) {
   ShouldNotCallThis();
-  return nullptr;
 }
 
 void MachNode::use_cisc_RegMask() {
@@ -395,7 +391,14 @@ const class TypePtr *MachNode::adr_type() const {
     // 32-bit unscaled narrow oop can be the base of any address expression
     t = t->make_ptr();
   }
-  if (t->isa_intptr_t() && offset != 0 && offset != Type::OffsetBot) {
+
+  if (t->isa_intptr_t() &&
+#if !defined(AARCH64)
+      // AArch64 supports the addressing mode:
+      // [base, 0], in which [base] is converted from a long value
+      offset != 0 &&
+#endif
+      offset != Type::OffsetBot) {
     // We cannot assert that the offset does not look oop-ish here.
     // Depending on the heap layout the cardmark base could land
     // inside some oopish region.  It definitely does for Win2K.
@@ -548,6 +551,11 @@ void MachNode::dump_spec(outputStream *st) const {
     if( C->alias_type(t)->is_volatile() )
       st->print(" Volatile!");
   }
+  if (barrier_data() != 0) {
+    st->print(" barrier(");
+    BarrierSet::barrier_set()->barrier_set_c2()->dump_barrier_data(this, st);
+    st->print(") ");
+  }
 }
 
 //------------------------------dump_format------------------------------------
@@ -560,15 +568,11 @@ void MachNode::dump_format(PhaseRegAlloc *ra, outputStream *st) const {
 //=============================================================================
 #ifndef PRODUCT
 void MachTypeNode::dump_spec(outputStream *st) const {
+  MachNode::dump_spec(st);
   if (_bottom_type != nullptr) {
     _bottom_type->dump_on(st);
   } else {
     st->print(" null");
-  }
-  if (barrier_data() != 0) {
-    st->print(" barrier(");
-    BarrierSet::barrier_set()->barrier_set_c2()->dump_barrier_data(this, st);
-    st->print(")");
   }
 }
 #endif
@@ -604,7 +608,7 @@ void MachNullCheckNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 }
 #endif
 
-void MachNullCheckNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachNullCheckNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // only emits entries in the null-pointer exception handler table
 }
 void MachNullCheckNode::label_set(Label* label, uint block_num) {

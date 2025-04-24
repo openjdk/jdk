@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Hashtable;
+import java.util.Map;
 
 import javax.swing.text.AttributeSet;
 import javax.swing.text.StyleConstants;
@@ -1169,7 +1170,16 @@ public class HTML {
     private static final Hashtable<String, Tag> tagHashtable = new Hashtable<String, Tag>(73);
 
     /** Maps from StyleConstant key to HTML.Tag. */
-    private static final Hashtable<Object, Tag> scMapping = new Hashtable<Object, Tag>(8);
+    private static final Map<Object, Tag> scMapping = Map.of(
+            StyleConstants.Bold, Tag.B,
+            StyleConstants.Italic, Tag.I,
+            StyleConstants.Underline, Tag.U,
+            StyleConstants.StrikeThrough, Tag.STRIKE,
+            StyleConstants.Superscript, Tag.SUP,
+            StyleConstants.Subscript, Tag.SUB,
+            StyleConstants.FontFamily, Tag.FONT,
+            StyleConstants.FontSize, Tag.FONT
+    );
 
     static {
 
@@ -1185,14 +1195,6 @@ public class HTML {
                                                     allAttributes[i]);
         }
         StyleContext.registerStaticAttributeKey(HTML.NULL_ATTRIBUTE_VALUE);
-        scMapping.put(StyleConstants.Bold, Tag.B);
-        scMapping.put(StyleConstants.Italic, Tag.I);
-        scMapping.put(StyleConstants.Underline, Tag.U);
-        scMapping.put(StyleConstants.StrikeThrough, Tag.STRIKE);
-        scMapping.put(StyleConstants.Superscript, Tag.SUP);
-        scMapping.put(StyleConstants.Subscript, Tag.SUB);
-        scMapping.put(StyleConstants.FontFamily, Tag.FONT);
-        scMapping.put(StyleConstants.FontSize, Tag.FONT);
     }
 
     /**

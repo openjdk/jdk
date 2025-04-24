@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,50 +24,84 @@
  */
 package java.lang.classfile.instruction;
 
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.Instruction;
-import java.lang.classfile.Label;
-import java.lang.classfile.Opcode;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.StackMapTableAttribute;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
+import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models instruction discontinued from the {@code code} array of a {@code Code}
- * attribute. Delivered as a {@link CodeElement} when traversing the elements of
- * a {@link CodeModel}.
+ * Marker interface for instruction discontinued from the {@code code} array of
+ * a {@code Code} attribute.  Delivered as a {@link CodeElement} when traversing
+ * the elements of a {@link CodeModel}.
  *
- * @since 22
+ * @apiNote
+ * While most instructions have convenience factory methods in {@link
+ * CodeBuilder}, discontinued instructions can only be supplied to code builders
+ * explicitly with {@link CodeBuilder#with CodeBuilder::with} to discourage
+ * their use.
+ *
+ * @jvms 4.9.1 Static Constraints
+ * @sealedGraph
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface DiscontinuedInstruction extends Instruction {
 
     /**
-     * Models JSR and JSR_W instructions discontinued from the {@code code}
-     * array of a {@code Code} attribute since class file version 51.0.
-     * Corresponding opcodes will have a {@code kind} of
-     * {@link Opcode.Kind#DISCONTINUED_JSR}.  Delivered as a {@link CodeElement}
-     * when traversing the elements of a {@link CodeModel}.
+     * Models jump subroutine instructions discontinued from the {@code code}
+     * array of a {@code Code} attribute since class file major version {@value
+     * ClassFile#JAVA_7_VERSION} (JVMS {@jvms 4.9.1}).  Corresponding opcodes
+     * have a {@linkplain Opcode#kind() kind} of {@link Opcode.Kind#DISCONTINUED_JSR}.
+     * Delivered as a {@link CodeElement} when traversing the elements of a
+     * {@link CodeModel}.
+     * <p>
+     * A jump subroutine instruction is composite:
+     * {@snippet lang=text :
+     * // @link substring="JsrInstruction" target="#of(Label)" :
+     * JsrInstruction(Label target) // @link substring="target" target="#target()"
+     * }
+     * <p>
+     * Due to physical restrictions, {@link Opcode#JSR jsr} instructions cannot
+     * encode labels too far away in the list of code elements.  In such cases,
+     * the {@link ClassFile.ShortJumpsOption} controls how an invalid {@code jsr}
+     * instruction model is written by a {@link CodeBuilder}.
+     * <p>
+     * Jump subroutine instructions push a {@link TypeKind##returnAddress
+     * returnAddress} value to the operand stack, and {@link StoreInstruction
+     * astore} series of instructions can then store this value to a local
+     * variable slot.
      *
-     * @since 22
+     * @apiNote
+     * Jump subroutine instructions are discontinued to enforce verification by
+     * type checking (JVMS {@jvms 4.10.1}) using the {@link StackMapTableAttribute
+     * StackMapTable} attribute.
+     *
+     * @see Opcode.Kind#DISCONTINUED_JSR
+     * @see StackMapTableAttribute
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface JsrInstruction extends DiscontinuedInstruction
             permits AbstractInstruction.BoundJsrInstruction,
                     AbstractInstruction.UnboundJsrInstruction {
 
         /**
-         * {@return the target of the JSR instruction}
+         * {@return the target of the jump subroutine instruction}
          */
         Label target();
 
         /**
-         * {@return a JSR instruction}
+         * {@return a jump subroutine instruction}
          *
-         * @param op the opcode for the specific type of JSR instruction,
+         * @apiNote
+         * The explicit {@code op} argument allows creating {@link Opcode#JSR_W
+         * jsr_w} instructions to avoid short jumps.
+         *
+         * @param op the opcode for the specific type of jump subroutine instruction,
          *           which must be of kind {@link Opcode.Kind#DISCONTINUED_JSR}
          * @param target target label of the subroutine
+         * @throws IllegalArgumentException if the opcode kind is not
+         *         {@link Opcode.Kind#DISCONTINUED_JSR}.
          */
         static JsrInstruction of(Opcode op, Label target) {
             Util.checkKind(op, Opcode.Kind.DISCONTINUED_JSR);
@@ -75,7 +109,7 @@ public sealed interface DiscontinuedInstruction extends Instruction {
         }
 
         /**
-         * {@return a JSR instruction}
+         * {@return a jump subroutine instruction}
          *
          * @param target target label of the subroutine
          */
@@ -85,40 +119,74 @@ public sealed interface DiscontinuedInstruction extends Instruction {
     }
 
     /**
-     * Models RET and RET_W instructions discontinued from the {@code code}
-     * array of a {@code Code} attribute since class file version 51.0.
-     * Corresponding opcodes will have a {@code kind} of
+     * Models return from subroutine instructions discontinued from the {@code
+     * code} array of a {@code Code} attribute since class file major version
+     * {@value ClassFile#JAVA_7_VERSION} (JVMS {@jvms 4.9.1}).
+     * Corresponding opcodes have a {@linkplain Opcode#kind() kind} of
      * {@link Opcode.Kind#DISCONTINUED_RET}.  Delivered as a {@link CodeElement}
      * when traversing the elements of a {@link CodeModel}.
+     * <p>
+     * A return from subroutine instruction is composite:
+     * {@snippet lang=text :
+     * // @link substring="RetInstruction" target="#of(int)" :
+     * RetInstruction(int slot) // @link substring="slot" target="#slot()"
+     * }
+     * where {@code slot} must be within {@code [0, 65535]}.
+     * <p>
+     * {@link StoreInstruction astore} series of instructions store a {@link
+     * TypeKind##returnAddress returnAddress} value to a local variable slot,
+     * making the slot usable by a return from subroutine instruction.
      *
-     * @since 22
+     * @apiNote
+     * Return from subroutine instructions are discontinued to enforce
+     * verification by type checking (JVMS {@jvms 4.10.1}) using the {@link
+     * StackMapTableAttribute StackMapTable} attribute.
+     *
+     * @jvms 6.5.ret <em>ret</em>
+     * @see Opcode.Kind#DISCONTINUED_RET
+     * @see StackMapTableAttribute
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface RetInstruction extends DiscontinuedInstruction
             permits AbstractInstruction.BoundRetInstruction,
                     AbstractInstruction.UnboundRetInstruction {
 
         /**
          * {@return the local variable slot with return address}
+         * The value is within {@code [0, 65535]}.
          */
         int slot();
 
         /**
-         * {@return a RET or RET_W instruction}
+         * {@return a return from subroutine instruction}
+         * <p>
+         * {@code slot} must be in the closed range of {@code [0, 255]} for
+         * {@link Opcode#RET ret}, or within {@code [0, 65535]} for {@link
+         * Opcode#RET_W wide ret}.
          *
-         * @param op the opcode for the specific type of RET instruction,
+         * @apiNote
+         * The explicit {@code op} argument allows creating {@code wide ret}
+         * instructions with {@code slot} in the range of regular {@code ret}
+         * instructions.
+         *
+         * @param op the opcode for the specific type of return from subroutine instruction,
          *           which must be of kind {@link Opcode.Kind#DISCONTINUED_RET}
          * @param slot the local variable slot to load return address from
+         * @throws IllegalArgumentException if the opcode kind is not
+         *         {@link Opcode.Kind#DISCONTINUED_RET} or if {@code slot} is out of range
          */
         static RetInstruction of(Opcode op, int slot) {
-            Util.checkKind(op, Opcode.Kind.DISCONTINUED_RET);
+            BytecodeHelpers.validateRet(op, slot);
             return new AbstractInstruction.UnboundRetInstruction(op, slot);
         }
 
         /**
-         * {@return a RET instruction}
+         * {@return a return from subroutine instruction}
+         * <p>
+         * {@code slot} must be within {@code [0, 65535]}.
          *
          * @param slot the local variable slot to load return address from
+         * @throws IllegalArgumentException if {@code slot} is out of range
          */
         static RetInstruction of(int slot) {
             return of(slot < 256 ? Opcode.RET : Opcode.RET_W, slot);

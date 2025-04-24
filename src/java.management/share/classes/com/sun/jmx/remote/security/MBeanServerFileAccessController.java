@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,7 @@ package com.sun.jmx.remote.security;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.Principal;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -301,15 +298,7 @@ public class MBeanServerFileAccessController
     }
 
     private synchronized void checkAccess(AccessType requiredAccess, String arg) {
-        @SuppressWarnings("removal")
-        final AccessControlContext acc = AccessController.getContext();
-        @SuppressWarnings("removal")
-        final Subject s =
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                    public Subject run() {
-                        return Subject.getSubject(acc);
-                    }
-                });
+        final Subject s = Subject.current();
         if (s == null) return; /* security has not been enabled */
         final Set<Principal> principals = s.getPrincipals();
         String newPropertyValue = null;

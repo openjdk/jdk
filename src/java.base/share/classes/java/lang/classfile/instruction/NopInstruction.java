@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,25 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
+import java.lang.classfile.Opcode;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
-import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code nop} invocation instruction in the {@code code}
+ * Models a {@link Opcode#NOP nop} instruction in the {@code code}
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
+ * <p>
+ * A no-op instruction has no visible state.
  *
- * @since 22
+ * @see CodeBuilder#nop CodeBuilder::nop
+ * @jvms 6.5.nop <em>nop</em>
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface NopInstruction extends Instruction
         permits AbstractInstruction.UnboundNopInstruction {
     /**

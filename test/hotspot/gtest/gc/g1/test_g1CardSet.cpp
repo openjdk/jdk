@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,11 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardSetContainers.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
+#include "gc/g1/g1HeapRegionRemSet.hpp"
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
@@ -50,7 +49,7 @@ class G1CardSetTest : public ::testing::Test {
   static uint _max_workers;
 
   static WorkerThreads* workers() {
-    if (_workers == NULL) {
+    if (_workers == nullptr) {
       _max_workers = os::processor_count();
       _workers = new WorkerThreads("G1CardSetTest Workers", _max_workers);
       _workers->initialize_workers();
@@ -71,7 +70,7 @@ public:
   ~G1CardSetTest() { }
 
   static uint next_random(uint& seed, uint i) {
-    // Park–Miller random number generator
+    // Park-Miller random number generator
     seed = (seed * 279470273u) % 0xfffffffb;
     return (seed % i);
   }
@@ -87,7 +86,7 @@ public:
   static void iterate_cards(G1CardSet* card_set, G1CardSet::CardClosure* cl);
 };
 
-WorkerThreads* G1CardSetTest::_workers = NULL;
+WorkerThreads* G1CardSetTest::_workers = nullptr;
 uint G1CardSetTest::_max_workers = 0;
 
 void G1CardSetTest::add_cards(G1CardSet* card_set, uint cards_per_region, uint* cards, uint num_cards, G1AddCardResult* results) {
@@ -97,7 +96,7 @@ void G1CardSetTest::add_cards(G1CardSet* card_set, uint cards_per_region, uint* 
     uint card_idx = cards[i] % cards_per_region;
 
     G1AddCardResult res = card_set->add_card(region_idx, card_idx);
-    if (results != NULL) {
+    if (results != nullptr) {
       ASSERT_TRUE(res == results[i]);
     }
   }
@@ -269,7 +268,7 @@ void G1CardSetTest::cardset_basic_test() {
     translate_cards(CardsPerRegion, 100, &cards1[0], 4);
     translate_cards(CardsPerRegion, 990, &cards1[4], 4);
 
-    add_cards(&card_set, CardsPerRegion, cards1, ARRAY_SIZE(cards1), NULL);
+    add_cards(&card_set, CardsPerRegion, cards1, ARRAY_SIZE(cards1), nullptr);
     contains_cards(&card_set, CardsPerRegion, cards1, ARRAY_SIZE(cards1));
     ASSERT_TRUE(card_set.occupied() == ARRAY_SIZE(cards1));
 
@@ -291,7 +290,7 @@ void G1CardSetTest::cardset_basic_test() {
       cards1[i] = i + 3;
       translate_cards(CardsPerRegion, i, &cards1[i], 1);
     }
-    add_cards(&card_set, CardsPerRegion, cards1, ARRAY_SIZE(cards1), NULL);
+    add_cards(&card_set, CardsPerRegion, cards1, ARRAY_SIZE(cards1), nullptr);
     contains_cards(&card_set, CardsPerRegion, cards1, ARRAY_SIZE(cards1));
 
     ASSERT_TRUE(card_set.num_containers() == ARRAY_SIZE(cards1));

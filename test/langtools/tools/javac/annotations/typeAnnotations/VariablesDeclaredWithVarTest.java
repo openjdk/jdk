@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
  * @bug 8261205
  * @summary check that potentially applicable type annotations are skip if the variable or parameter was declared with var
  * @library /tools/lib
- * @enablePreview
  * @modules
- *      java.base/jdk.internal.classfile.impl
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.code
@@ -110,15 +108,15 @@ public class VariablesDeclaredWithVarTest {
     }
 
     void findAnnotations(ClassModel cf, MethodModel m, List<TypeAnnotation> annos) {
-        findAnnotations(cf, m, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, annos);
-        findAnnotations(cf, m, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, annos);
+        findAnnotations(cf, m, Attributes.runtimeVisibleTypeAnnotations(), annos);
+        findAnnotations(cf, m, Attributes.runtimeInvisibleTypeAnnotations(), annos);
     }
 
     <T extends Attribute<T>> void findAnnotations(ClassModel cf, AttributedElement m, AttributeMapper<T> attrName, List<TypeAnnotation> annos) {
         Attribute<T> attr = m.findAttribute(attrName).orElse(null);
         addAnnos(annos, attr);
         if (m instanceof MethodModel) {
-            CodeAttribute cattr = m.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute cattr = m.findAttribute(Attributes.code()).orElse(null);
             if (cattr != null) {
                 attr = cattr.findAttribute(attrName).orElse(null);
                 addAnnos(annos, attr);

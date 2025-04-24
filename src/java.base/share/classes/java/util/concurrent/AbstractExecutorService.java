@@ -117,6 +117,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
      * @throws RejectedExecutionException {@inheritDoc}
      * @throws NullPointerException       {@inheritDoc}
      */
+    @Override
     public Future<?> submit(Runnable task) {
         if (task == null) throw new NullPointerException();
         RunnableFuture<Void> ftask = newTaskFor(task, null);
@@ -128,6 +129,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
      * @throws RejectedExecutionException {@inheritDoc}
      * @throws NullPointerException       {@inheritDoc}
      */
+    @Override
     public <T> Future<T> submit(Runnable task, T result) {
         if (task == null) throw new NullPointerException();
         RunnableFuture<T> ftask = newTaskFor(task, result);
@@ -139,6 +141,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
      * @throws RejectedExecutionException {@inheritDoc}
      * @throws NullPointerException       {@inheritDoc}
      */
+    @Override
     public <T> Future<T> submit(Callable<T> task) {
         if (task == null) throw new NullPointerException();
         RunnableFuture<T> ftask = newTaskFor(task);
@@ -219,6 +222,14 @@ public abstract class AbstractExecutorService implements ExecutorService {
         }
     }
 
+    /**
+     * @throws InterruptedException       {@inheritDoc}
+     * @throws NullPointerException       {@inheritDoc}
+     * @throws IllegalArgumentException   {@inheritDoc}
+     * @throws ExecutionException         {@inheritDoc}
+     * @throws RejectedExecutionException {@inheritDoc}
+     */
+    @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
         throws InterruptedException, ExecutionException {
         try {
@@ -229,12 +240,26 @@ public abstract class AbstractExecutorService implements ExecutorService {
         }
     }
 
+    /**
+     * @throws InterruptedException       {@inheritDoc}
+     * @throws NullPointerException       {@inheritDoc}
+     * @throws TimeoutException           {@inheritDoc}
+     * @throws ExecutionException         {@inheritDoc}
+     * @throws RejectedExecutionException {@inheritDoc}
+     */
+    @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks,
                            long timeout, TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException {
         return doInvokeAny(tasks, true, unit.toNanos(timeout));
     }
 
+    /**
+     * @throws InterruptedException       {@inheritDoc}
+     * @throws NullPointerException       {@inheritDoc}
+     * @throws RejectedExecutionException {@inheritDoc}
+     */
+    @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
         throws InterruptedException {
         if (tasks == null)
@@ -260,6 +285,12 @@ public abstract class AbstractExecutorService implements ExecutorService {
         }
     }
 
+    /**
+     * @throws InterruptedException       {@inheritDoc}
+     * @throws NullPointerException       {@inheritDoc}
+     * @throws RejectedExecutionException {@inheritDoc}
+     */
+    @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
                                          long timeout, TimeUnit unit)
         throws InterruptedException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,39 +21,62 @@
  * questions.
  */
 
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.UIManager;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+
 /*
  * @test
  * @bug 4129681
- * @summary Tests enabling/disabling of titled border's caption
- * @author Sergey Malenkov
- * @run applet/manual=yesno Test4129681.html
+ * @summary Tests disabling of titled border's caption
+ * @run main/othervm -Dsun.java2d.uiScale=1 Test4129681
  */
 
-import java.awt.BorderLayout;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import javax.swing.BorderFactory;
-import javax.swing.JApplet;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
+public class Test4129681 {
+    public static void main(String[] args) throws Exception {
+        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+        int correctColoredPixels = 0;
+        int totalPixels = 0;
+        int tolerance = 20;
+        JLabel label;
+        Color labelDisableColor = Color.RED;
+        Dimension SIZE = new Dimension(100, 40);
+        Point startPoint = new Point(8, 4);
+        Point endPoint = new Point(18, 14);
 
-public class Test4129681 extends JApplet implements ItemListener {
-    private JLabel label;
+        label = new JLabel("Label");
+        label.setBorder(BorderFactory.createTitledBorder("\u2588".repeat(5)));
+        UIManager.getDefaults().put("Label.disabledForeground", labelDisableColor);
+        label.setSize(SIZE);
+        label.setEnabled(false);
+        BufferedImage image = new BufferedImage(label.getWidth(), label.getHeight(),
+                BufferedImage.TYPE_INT_ARGB);
 
-    @Override
-    public void init() {
-        JCheckBox check = new JCheckBox("disable");
-        check.addItemListener(this);
+        Graphics2D g2d = image.createGraphics();
+        label.paint(g2d);
+        g2d.dispose();
 
-        this.label = new JLabel("message");
-        this.label.setBorder(BorderFactory.createTitledBorder("label"));
-        this.label.setEnabled(!check.isSelected());
+        for (int x = startPoint.x; x < endPoint.x; x++) {
+            for (int y = startPoint.y; y < endPoint.y; y++) {
+                if (image.getRGB(x, y) == labelDisableColor.getRGB()) {
+                    correctColoredPixels++;
+                }
+                totalPixels++;
+            }
+        }
 
-        add(BorderLayout.NORTH, check);
-        add(BorderLayout.CENTER, this.label);
-    }
-
-    public void itemStateChanged(ItemEvent event) {
-        this.label.setEnabled(ItemEvent.DESELECTED == event.getStateChange());
+        if (((double) correctColoredPixels / totalPixels * 100) <= tolerance) {
+            ImageIO.write(image, "png", new File("failureImage.png"));
+            throw new RuntimeException("Label with border is not disabled");
+        }
+        System.out.println("Test Passed");
     }
 }

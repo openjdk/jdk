@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,11 @@
  * questions.
  */
 
-#include "precompiled.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
-#include "classfile/moduleEntry.hpp"
-#include "classfile/vmSymbols.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -87,7 +86,7 @@ void JVMCICompiler::bootstrap(TRAPS) {
   int len = objectMethods->length();
   for (int i = 0; i < len; i++) {
     methodHandle mh(THREAD, objectMethods->at(i));
-    if (!mh->is_native() && !mh->is_static() && !mh->is_initializer()) {
+    if (!mh->is_native() && !mh->is_static() && !mh->is_object_initializer() && !mh->is_static_initializer()) {
       ResourceMark rm;
       int hot_count = 10; // TODO: what's the appropriate value?
       CompileBroker::compile_method(mh, InvocationEntryBci, CompLevel_full_optimization, mh, hot_count, CompileTask::Reason_Bootstrap, CHECK);
@@ -200,6 +199,15 @@ void JVMCICompiler::print_timers() {
   _hosted_code_installs.print_on(tty, "       Install Code:   ");
 }
 
+bool JVMCICompiler::is_intrinsic_supported(const methodHandle& method) {
+  vmIntrinsics::ID id = method->intrinsic_id();
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  JavaThread* thread = JavaThread::current();
+  JVMCIEnv jvmciEnv(thread, __FILE__, __LINE__);
+  JVMCIRuntime* runtime = JVMCI::compiler_runtime(thread, false);
+  return runtime->is_intrinsic_supported(&jvmciEnv, (jint) id);
+}
+
 void JVMCICompiler::CodeInstallStats::print_on(outputStream* st, const char* prefix) const {
   double time = _timer.seconds();
   st->print_cr("%s%7.3f s (installs: %d, CodeBlob total size: %d, CodeBlob code size: %d)",
@@ -229,9 +237,12 @@ void JVMCICompiler::on_upcall(const char* error, JVMCICompileState* compile_stat
     if (err > 10 && err * 10 > ok && !_disabled) {
       _disabled = true;
       int total = err + ok;
-      const char* disable_msg = err_msg("JVMCI compiler disabled "
-      "after %d of %d upcalls had errors (Last error: \"%s\"). "
-      "Use -Xlog:jit+compilation for more detail.", err, total, error);
+      // Using stringStream instead of err_msg to avoid truncation
+      stringStream st;
+      st.print("JVMCI compiler disabled "
+               "after %d of %d upcalls had errors (Last error: \"%s\"). "
+               "Use -Xlog:jit+compilation for more detail.", err, total, error);
+      const char* disable_msg = st.freeze();
       log_warning(jit,compilation)("%s", disable_msg);
       if (compile_state != nullptr) {
         const char* disable_error = os::strdup(disable_msg);

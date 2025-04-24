@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -75,5 +75,7 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #endif
 
 #define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
+
+#define USE_TRAMPOLINE_STUB_FIX_OWNER
 
 #endif // CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @summary Interoperability tests with "D-Trust Root Class 3 CA 2 2009" and
  *          "D-Trust Root Class 3 CA 2 EV 2009" CAs
  * @build ValidatePathWithParams
- * @run main/othervm -Djava.security.debug=certpath DTrustCA OCSP
- * @run main/othervm -Djava.security.debug=certpath DTrustCA CRL
+ * @run main/othervm/manual -Djava.security.debug=certpath DTrustCA OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath DTrustCA CRL
  */
 public class DTrustCA {
 

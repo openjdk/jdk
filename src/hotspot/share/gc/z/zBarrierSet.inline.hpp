@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -430,7 +430,7 @@ public:
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(oop src, oop dst, size_t size) {
-  assert_is_valid(to_zaddress(src));
+  check_is_valid_zaddress(src);
 
   if (dst->is_objArray()) {
     // Cloning an object array is similar to performing array copy.
@@ -439,7 +439,7 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(o
     // for cloning arrays transform the clone to an optimized allocation
     // and arraycopy sequence, so the performance of this runtime call
     // does not matter for object arrays.
-    clone_obj_array(objArrayOop(src), objArrayOop(dst), size);
+    clone_obj_array(objArrayOop(src), objArrayOop(dst));
     return;
   }
 
@@ -473,11 +473,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 inline oop ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_not_in_heap(oop* p) {
   verify_decorators_absent<ON_UNKNOWN_OOP_REF>();
 
-  if (HasDecorator<decorators, IN_NMETHOD>::value) {
-    return ZNMethod::load_oop(p, decorators);
-  } else {
-    return oop_load_not_in_heap((zpointer*)p);
-  }
+  return oop_load_not_in_heap((zpointer*)p);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>

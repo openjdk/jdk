@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,24 +141,15 @@ final class Float64Vector extends FloatVector {
     @ForceInline
     Float64Shuffle iotaShuffle() { return Float64Shuffle.IOTA; }
 
+    @Override
     @ForceInline
     Float64Shuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (Float64Shuffle)VectorSupport.shuffleIota(ETYPE, Float64Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (Float64Shuffle)VectorSupport.shuffleIota(ETYPE, Float64Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+        return (Float64Shuffle) iotaShuffleTemplate(start, step, wrap);
     }
 
     @Override
     @ForceInline
-    Float64Shuffle shuffleFromBytes(byte[] reorder) { return new Float64Shuffle(reorder); }
-
-    @Override
-    @ForceInline
-    Float64Shuffle shuffleFromArray(int[] indexes, int i) { return new Float64Shuffle(indexes, i); }
+    Float64Shuffle shuffleFromArray(int[] indices, int i) { return new Float64Shuffle(indices, i); }
 
     @Override
     @ForceInline
@@ -344,9 +335,16 @@ final class Float64Vector extends FloatVector {
         return (long) super.reduceLanesTemplate(op, Float64Mask.class, (Float64Mask) m);  // specialized
     }
 
+    @Override
     @ForceInline
-    public VectorShuffle<Float> toShuffle() {
-        return super.toShuffleTemplate(Float64Shuffle.class); // specialize
+    final <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp) {
+        throw new AssertionError();
+    }
+
+    @Override
+    @ForceInline
+    public final Float64Shuffle toShuffle() {
+        return (Float64Shuffle) toShuffle(vspecies(), false);
     }
 
     // Specialized unary testing
@@ -490,9 +488,16 @@ final class Float64Vector extends FloatVector {
                                    VectorMask<Float> m) {
         return (Float64Vector)
             super.selectFromTemplate((Float64Vector) v,
-                                     (Float64Mask) m);  // specialize
+                                     Float64Mask.class, (Float64Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Float64Vector selectFrom(Vector<Float> v1,
+                                   Vector<Float> v2) {
+        return (Float64Vector)
+            super.selectFromTemplate((Float64Vector) v1, (Float64Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -506,13 +511,14 @@ final class Float64Vector extends FloatVector {
         return Float.intBitsToFloat(bits);
     }
 
+    @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
                      VCLASS, ETYPE, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      float[] vecarr = vec.vec();
-                     return (long)Float.floatToIntBits(vecarr[ix]);
+                     return (long)Float.floatToRawIntBits(vecarr[ix]);
                      });
     }
 
@@ -526,10 +532,11 @@ final class Float64Vector extends FloatVector {
         }
     }
 
+    @ForceInline
     public Float64Vector withLaneHelper(int i, float e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
-                                this, i, (long)Float.floatToIntBits(e),
+                                this, i, (long)Float.floatToRawIntBits(e),
                                 (v, ix, bits) -> {
                                     float[] res = v.vec().clone();
                                     res[ix] = Float.intBitsToFloat((int)bits);
@@ -773,25 +780,28 @@ final class Float64Vector extends FloatVector {
 
     static final class Float64Shuffle extends AbstractShuffle<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Float> ETYPE = float.class; // used by the JVM
+        static final Class<Integer> ETYPE = int.class; // used by the JVM
 
-        Float64Shuffle(byte[] reorder) {
-            super(VLENGTH, reorder);
+        Float64Shuffle(int[] indices) {
+            super(indices);
+            assert(VLENGTH == indices.length);
+            assert(indicesInRange(indices));
         }
 
-        public Float64Shuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+        Float64Shuffle(int[] indices, int i) {
+            this(prepare(indices, i));
         }
 
-        public Float64Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+        Float64Shuffle(IntUnaryOperator fn) {
+            this(prepare(fn));
         }
 
-        public Float64Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+        int[] indices() {
+            return (int[])getPayload();
         }
 
         @Override
+        @ForceInline
         public FloatSpecies vspecies() {
             return VSPECIES;
         }
@@ -799,40 +809,98 @@ final class Float64Vector extends FloatVector {
         static {
             // There must be enough bits in the shuffle lanes to encode
             // VLENGTH valid indexes and VLENGTH exceptional ones.
-            assert(VLENGTH < Byte.MAX_VALUE);
-            assert(Byte.MIN_VALUE <= -VLENGTH);
+            assert(VLENGTH < Integer.MAX_VALUE);
+            assert(Integer.MIN_VALUE <= -VLENGTH);
         }
         static final Float64Shuffle IOTA = new Float64Shuffle(IDENTITY);
 
         @Override
         @ForceInline
         public Float64Vector toVector() {
-            return VectorSupport.shuffleToVector(VCLASS, ETYPE, Float64Shuffle.class, this, VLENGTH,
-                                                    (s) -> ((Float64Vector)(((AbstractShuffle<Float>)(s)).toVectorTemplate())));
+            return (Float64Vector) toBitsVector().castShape(vspecies(), 0);
         }
 
         @Override
         @ForceInline
-        public <F> VectorShuffle<F> cast(VectorSpecies<F> s) {
-            AbstractSpecies<F> species = (AbstractSpecies<F>) s;
-            if (length() != species.laneCount())
-                throw new IllegalArgumentException("VectorShuffle length and species length differ");
-            int[] shuffleArray = toArray();
-            return s.shuffleFromArray(shuffleArray, 0).check(s);
+        Int64Vector toBitsVector() {
+            return (Int64Vector) super.toBitsVectorTemplate();
+        }
+
+        @Override
+        Int64Vector toBitsVector0() {
+            return ((Int64Vector) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
+        }
+
+        @Override
+        @ForceInline
+        public int laneSource(int i) {
+            return (int)toBitsVector().lane(i);
+        }
+
+        @Override
+        @ForceInline
+        public void intoArray(int[] a, int offset) {
+            toBitsVector().intoArray(a, offset);
+        }
+
+        @Override
+        @ForceInline
+        public final Float64Mask laneIsValid() {
+            return (Float64Mask) toBitsVector().compare(VectorOperators.GE, 0)
+                    .cast(vspecies());
         }
 
         @ForceInline
         @Override
-        public Float64Shuffle rearrange(VectorShuffle<Float> shuffle) {
-            Float64Shuffle s = (Float64Shuffle) shuffle;
-            byte[] reorder1 = reorder();
-            byte[] reorder2 = s.reorder();
-            byte[] r = new byte[reorder1.length];
-            for (int i = 0; i < reorder1.length; i++) {
-                int ssi = reorder2[i];
-                r[i] = reorder1[ssi];  // throws on exceptional index
+        public final Float64Shuffle rearrange(VectorShuffle<Float> shuffle) {
+            Float64Shuffle concreteShuffle = (Float64Shuffle) shuffle;
+            return (Float64Shuffle) toBitsVector().rearrange(concreteShuffle.cast(IntVector.SPECIES_64))
+                    .toShuffle(vspecies(), false);
+        }
+
+        @ForceInline
+        @Override
+        public final Float64Shuffle wrapIndexes() {
+            Int64Vector v = toBitsVector();
+            if ((length() & (length() - 1)) == 0) {
+                v = (Int64Vector) v.lanewise(VectorOperators.AND, length() - 1);
+            } else {
+                v = (Int64Vector) v.blend(v.lanewise(VectorOperators.ADD, length()),
+                            v.compare(VectorOperators.LT, 0));
             }
-            return new Float64Shuffle(r);
+            return (Float64Shuffle) v.toShuffle(vspecies(), false);
+        }
+
+        private static int[] prepare(int[] indices, int offset) {
+            int[] a = new int[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = indices[offset + i];
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (int)si;
+            }
+            return a;
+        }
+
+        private static int[] prepare(IntUnaryOperator f) {
+            int[] a = new int[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = f.applyAsInt(i);
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (int)si;
+            }
+            return a;
+        }
+
+        private static boolean indicesInRange(int[] indices) {
+            int length = indices.length;
+            for (int si : indices) {
+                if (si >= (int)length || si < (int)(-length)) {
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
+                                  java.util.Arrays.toString(indices));
+                    throw new AssertionError(msg);
+                }
+            }
+            return true;
         }
     }
 

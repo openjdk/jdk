@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 
-#include "nsk_tools.h"
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
+#include "nsk_tools.hpp"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -81,12 +81,12 @@ typedef struct {    /* local variables of a method */
 
 /* list of tested methods */
 static methodInfo methInfo[] = {
-    { 1, (char*) "<init>", (char*) "()V", 6, constr_lv, NULL },
-    { 1, (char*) "finMethod", (char*) "(CJIJ)V", 7, finMeth_lv, NULL },
-    { 0, (char*) "statMethod", (char*) "(III)D", 5, statMeth_lv, NULL }
+    { 1, (char*) "<init>", (char*) "()V", 6, constr_lv, nullptr },
+    { 1, (char*) "finMethod", (char*) "(CJIJ)V", 7, finMeth_lv, nullptr },
+    { 0, (char*) "statMethod", (char*) "(III)D", 5, statMeth_lv, nullptr }
 };
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 
 static int checkAttr(JNIEnv *jni_env, jclass testedCls) {
@@ -102,7 +102,7 @@ static int checkAttr(JNIEnv *jni_env, jclass testedCls) {
             methInfo[i].mid = jni_env->GetMethodID(testedCls, methInfo[i].m_name, methInfo[i].m_sign);
         else                   /* a static method */
             methInfo[i].mid = jni_env->GetStaticMethodID(testedCls, methInfo[i].m_name, methInfo[i].m_sign);
-        if (methInfo[i].mid == NULL) {
+        if (methInfo[i].mid == nullptr) {
             NSK_COMPLAIN3("TEST FAILURE: unable to get the method ID for the %s method \"%s\", signature \"%s\"\n\n",
                 methInfo[i].inst ? "instance" : "static",
                 methInfo[i].m_name, methInfo[i].m_sign);
@@ -196,7 +196,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* add capability to access local variables */

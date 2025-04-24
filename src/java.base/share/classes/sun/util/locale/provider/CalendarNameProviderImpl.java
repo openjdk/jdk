@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,29 +84,17 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                         Era[] jeras = CalendarSystem.forName("japanese").getEras();
                         if (value <= jeras.length) {
                             // Localized era name could not be retrieved from this provider.
-                            // This can occur either for Reiwa or SupEra.
-                            //
-                            // If it's CLDR provider, try COMPAT first, which is guaranteed to have
-                            // the name for Reiwa.
-                            if (type == LocaleProviderAdapter.Type.CLDR) {
-                                lr = LocaleProviderAdapter.forJRE().getLocaleResources(locale);
-                                key = getResourceKeyFor(LocaleProviderAdapter.Type.JRE,
-                                                calendarType, field, style, javatime);
-                                strings =
-                                    javatime ? lr.getJavaTimeNames(key) : lr.getCalendarNames(key);
-                            }
-                            if (strings == null || value >= strings.length) {
-                                // Get the default name for SupEra
-                                Era supEra = jeras[value - 1]; // 0-based index
-                                if (javatime) {
-                                    return getBaseStyle(style) == NARROW_FORMAT ?
-                                        supEra.getAbbreviation() :
-                                        supEra.getName();
-                                } else {
-                                    return (style & LONG) != 0 ?
-                                        supEra.getName() :
-                                        supEra.getAbbreviation();
-                                }
+                            // This can occur for SupEra.
+                            // Get the default name for SupEra
+                            Era supEra = jeras[value - 1]; // 0-based index
+                            if (javatime) {
+                                return getBaseStyle(style) == NARROW_FORMAT ?
+                                    supEra.getAbbreviation() :
+                                    supEra.getName();
+                            } else {
+                                return (style & LONG) != 0 ?
+                                    supEra.getName() :
+                                    supEra.getAbbreviation();
                             }
                         } else {
                             return null;
@@ -314,7 +302,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
                 // JRE and CLDR use different resource key conventions
                 // due to historical reasons. (JRE DateFormatSymbols.getEras returns
                 // abbreviations while other getShort*() return abbreviations.)
-                if (adapterType == LocaleProviderAdapter.Type.JRE) {
+                if (adapterType == LocaleProviderAdapter.Type.FALLBACK) {
                     if (javatime) {
                         if (baseStyle == LONG) {
                             key.append("long.");

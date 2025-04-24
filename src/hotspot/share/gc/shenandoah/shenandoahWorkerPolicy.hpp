@@ -35,6 +35,9 @@ public:
   // Calculate the number of workers for concurrent marking
   static uint calc_workers_for_conc_marking();
 
+  // Calculate the number of workers for remembered set scanning
+  static uint calc_workers_for_rs_scanning();
+
   // Calculate the number of workers for final marking
   static uint calc_workers_for_final_marking();
 
@@ -61,6 +64,9 @@ public:
 
   // Calculate workers for concurrent reset
   static uint calc_workers_for_conc_reset();
+
+  // Calculate workers for concurrent cleanup
+  static uint calc_workers_for_conc_cleanup();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHWORKERPOLICY_HPP

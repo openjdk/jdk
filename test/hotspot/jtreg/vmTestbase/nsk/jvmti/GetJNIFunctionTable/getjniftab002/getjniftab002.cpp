@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -33,8 +33,8 @@ extern "C" {
 #define STATUS_FAILED  2
 
 static JavaVM *vm;
-static jvmtiEnv *jvmti = NULL;
-static jniNativeInterface *orig_jni_functions = NULL;
+static jvmtiEnv *jvmti = nullptr;
+static jniNativeInterface *orig_jni_functions = nullptr;
 
 static int verbose = 0;
 static jint result = PASSED;
@@ -46,7 +46,7 @@ void redirect(JNIEnv *env, jvmtiError exError) {
         printf("\ntrying to get the JNI function table expecting the error %s to be returned ...\n",
             TranslateError(exError));
 
-    err = jvmti->GetJNIFunctionTable((exError == JVMTI_ERROR_NULL_POINTER) ? NULL : &orig_jni_functions);
+    err = jvmti->GetJNIFunctionTable((exError == JVMTI_ERROR_NULL_POINTER) ? nullptr : &orig_jni_functions);
     if (err != exError) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: GetJNIFunctionTable() returns %s instead of %s as expected\n",
@@ -61,9 +61,9 @@ void redirect(JNIEnv *env, jvmtiError exError) {
 JNIEXPORT jint JNICALL
 Java_nsk_jvmti_GetJNIFunctionTable_getjniftab002_check(JNIEnv *env, jobject obj) {
     jint err;
-    JNIEnv *nextEnv = NULL;
+    JNIEnv *nextEnv = nullptr;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("(%s,%d): TEST FAILURE: JVMTI client was not properly loaded\n",
             __FILE__, __LINE__);
         return STATUS_FAILED;
@@ -115,14 +115,14 @@ JNIEXPORT jint JNI_OnLoad_getjniftab002(JavaVM *jvm, char *options, void *reserv
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "-verbose") == 0)
+    if (options != nullptr && strcmp(options, "-verbose") == 0)
         verbose = 1;
 
     if (verbose)
         printf("verbose mode on\n");
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("(%s,%d): Failed to call GetEnv\n", __FILE__, __LINE__);
         return JNI_ERR;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shared/c2/cardTableBarrierSetC2.hpp"
@@ -32,6 +31,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+const TypeFunc* ArrayCopyNode::_arraycopy_type_Type = nullptr;
 
 ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard)
   : CallNode(arraycopy_type(), nullptr, TypePtr::BOTTOM),
@@ -152,7 +153,10 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
 }
 
 Node* ArrayCopyNode::load(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMemNode* mem, Node* adr, const TypePtr* adr_type, const Type *type, BasicType bt) {
-  DecoratorSet decorators = C2_READ_ACCESS | C2_CONTROL_DEPENDENT_LOAD | IN_HEAP | C2_ARRAY_COPY;
+  // Pin the load: if this is an array load, it's going to be dependent on a condition that's not a range check for that
+  // access. If that condition is replaced by an identical dominating one, then an unpinned load would risk floating
+  // above runtime checks that guarantee it is within bounds.
+  DecoratorSet decorators = C2_READ_ACCESS | C2_CONTROL_DEPENDENT_LOAD | IN_HEAP | C2_ARRAY_COPY | C2_UNKNOWN_CONTROL_LOAD;
   C2AccessValuePtr addr(adr, adr_type);
   C2OptAccess access(*phase, ctl, mem, decorators, bt, adr->in(AddPNode::Base), addr);
   Node* res = bs->load_at(access, type);
@@ -217,6 +221,10 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
     Node* off = phase->MakeConX(field->offset_in_bytes());
     Node* next_src = phase->transform(new AddPNode(base_src,base_src,off));
     Node* next_dest = phase->transform(new AddPNode(base_dest,base_dest,off));
+    assert(phase->C->get_alias_index(adr_type) == phase->C->get_alias_index(phase->type(next_src)->isa_ptr()),
+      "slice of address and input slice don't match");
+    assert(phase->C->get_alias_index(adr_type) == phase->C->get_alias_index(phase->type(next_dest)->isa_ptr()),
+      "slice of address and input slice don't match");
     BasicType bt = field->layout_type();
 
     const Type *type;
@@ -673,18 +681,21 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
   return CallNode::may_modify_arraycopy_helper(dest_t, t_oop, phase);
 }
 
-bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, CallNode*& call) {
+bool ArrayCopyNode::may_modify_helper(const TypeOopPtr* t_oop, Node* n, PhaseValues* phase, ArrayCopyNode*& ac) {
   if (n != nullptr &&
-      n->is_Call() &&
-      n->as_Call()->may_modify(t_oop, phase) &&
-      (n->as_Call()->is_ArrayCopy() || n->as_Call()->is_call_to_arraycopystub())) {
-    call = n->as_Call();
+      n->is_ArrayCopy() &&
+      n->as_ArrayCopy()->may_modify(t_oop, phase)) {
+    ac = n->as_ArrayCopy();
     return true;
   }
   return false;
 }
 
 bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseValues* phase, ArrayCopyNode*& ac) {
+  if (mb->trailing_expanded_array_copy()) {
+    return true;
+  }
+
   Node* c = mb->in(0);
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -697,22 +708,18 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseVal
     for (uint i = 1; i < c->req(); i++) {
       if (c->in(i) != nullptr) {
         Node* n = c->in(i)->in(0);
-        if (may_modify_helper(t_oop, n, phase, call)) {
-          ac = call->isa_ArrayCopy();
+        if (may_modify_helper(t_oop, n, phase, ac)) {
           assert(c == mb->in(0), "only for clone");
           return true;
         }
       }
     }
-  } else if (may_modify_helper(t_oop, c->in(0), phase, call)) {
-    ac = call->isa_ArrayCopy();
+  } else if (may_modify_helper(t_oop, c->in(0), phase, ac)) {
 #ifdef ASSERT
     bool use_ReduceInitialCardMarks = BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
       static_cast<CardTableBarrierSetC2*>(bs)->use_ReduceInitialCardMarks();
-    assert(c == mb->in(0) || (ac != nullptr && ac->is_clonebasic() && !use_ReduceInitialCardMarks), "only for clone");
+    assert(c == mb->in(0) || (ac->is_clonebasic() && !use_ReduceInitialCardMarks), "only for clone");
 #endif
-    return true;
-  } else if (mb->trailing_partial_array_copy()) {
     return true;
   }
 

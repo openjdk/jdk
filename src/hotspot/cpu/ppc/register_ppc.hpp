@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #define CPU_PPC_REGISTER_PPC_HPP
 
 #include "asm/register.hpp"
+#include "utilities/count_trailing_zeros.hpp"
 
 // forward declaration
 class VMRegImpl;
@@ -178,14 +179,14 @@ inline constexpr ConditionRegister as_ConditionRegister(int encoding) {
   return ConditionRegister(encoding);
 }
 
-constexpr ConditionRegister CCR0 = as_ConditionRegister(0);
-constexpr ConditionRegister CCR1 = as_ConditionRegister(1);
-constexpr ConditionRegister CCR2 = as_ConditionRegister(2);
-constexpr ConditionRegister CCR3 = as_ConditionRegister(3);
-constexpr ConditionRegister CCR4 = as_ConditionRegister(4);
-constexpr ConditionRegister CCR5 = as_ConditionRegister(5);
-constexpr ConditionRegister CCR6 = as_ConditionRegister(6);
-constexpr ConditionRegister CCR7 = as_ConditionRegister(7);
+constexpr ConditionRegister CR0 = as_ConditionRegister(0);
+constexpr ConditionRegister CR1 = as_ConditionRegister(1);
+constexpr ConditionRegister CR2 = as_ConditionRegister(2);
+constexpr ConditionRegister CR3 = as_ConditionRegister(3);
+constexpr ConditionRegister CR4 = as_ConditionRegister(4);
+constexpr ConditionRegister CR5 = as_ConditionRegister(5);
+constexpr ConditionRegister CR6 = as_ConditionRegister(6);
+constexpr ConditionRegister CR7 = as_ConditionRegister(7);
 
 
 class VectorSRegister;
@@ -554,5 +555,13 @@ constexpr Register R29_TOC = R29;
 // Scratch registers are volatile.
 constexpr Register R11_scratch1 = R11;
 constexpr Register R12_scratch2 = R12;
+
+template <>
+inline Register AbstractRegSet<Register>::first() {
+  if (_bitset == 0) { return noreg; }
+  return as_Register(count_trailing_zeros(_bitset));
+}
+
+typedef AbstractRegSet<Register> RegSet;
 
 #endif // CPU_PPC_REGISTER_PPC_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@
  * Linker linker = Linker.nativeLinker();
  * SymbolLookup stdlib = linker.defaultLookup();
  * MethodHandle strlen = linker.downcallHandle(
- *     stdlib.find("strlen").orElseThrow(),
+ *     stdlib.findOrThrow("strlen"),
  *     FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)
  * );
  *
@@ -111,7 +111,7 @@
  *}
  *
  * Here, we obtain a {@linkplain java.lang.foreign.Linker#nativeLinker() native linker}
- * and we use it to {@linkplain java.lang.foreign.SymbolLookup#find(java.lang.String) look up}
+ * and we use it to {@linkplain java.lang.foreign.SymbolLookup#findOrThrow(java.lang.String) look up}
  * the {@code strlen} function in the standard C library; a <em>downcall method handle</em>
  * targeting said function is subsequently
  * {@linkplain java.lang.foreign.Linker#downcallHandle(FunctionDescriptor, Linker.Option...) obtained}.
@@ -128,47 +128,8 @@
  * {@linkplain java.lang.foreign.SegmentAllocator#allocateFrom(java.lang.String) converting}
  * Java strings into zero-terminated, UTF-8 strings, as demonstrated in the above example.
  *
- * <h2 id="restricted">Restricted methods</h2>
- *
- * Some methods in this package are considered <em>restricted</em>. Restricted methods
- * are typically used to bind native foreign data and/or functions to first-class
- * Java API elements which can then be used directly by clients. For instance the
- * restricted method {@link java.lang.foreign.MemorySegment#reinterpret(long)} can be
- * used to create a fresh segment with the same address and temporal bounds, but with
- * the provided size. This can be useful to resize memory segments obtained when
- * interacting with native functions.
- * <p>
- * Binding foreign data and/or functions is generally unsafe and, if done incorrectly,
- * can result in VM crashes, or memory corruption when the bound Java API element
- * is accessed. For instance, incorrectly resizing a native memory segment using
- * {@link java.lang.foreign.MemorySegment#reinterpret(long)} can lead to a JVM crash, or,
- * worse, lead to silent memory corruption when attempting to access the resized segment.
- * For these reasons, it is crucial for code that calls a restricted method to never pass
- * arguments that might cause incorrect binding of foreign data and/or functions to
- * a Java API.
- * <p>
- * Given the potential danger of restricted methods, the Java runtime issues a warning on
- * the standard error stream every time a restricted method is invoked. Such warnings can
- * be disabled by granting access to restricted methods to selected modules. This can be
- * done either via implementation-specific command line options or programmatically, e.g.
- * by calling {@link java.lang.ModuleLayer.Controller#enableNativeAccess(java.lang.Module)}.
- * <p>
- * For every class in this package, unless specified otherwise, any method arguments of
- * reference type must not be {@code null}, and any null argument will elicit a
- * {@code NullPointerException}. This fact is not individually documented for methods of
- * this API.
- *
  * @apiNote Usual memory model guarantees (see {@jls 17.4}) do not apply when accessing
  * native memory segments as these segments are backed by off-heap regions of memory.
- *
- * @implNote
- * In the reference implementation, access to restricted methods can be granted to
- * specific modules using the command line option {@code --enable-native-access=M1,M2, ... Mn},
- * where {@code M1}, {@code M2}, {@code ... Mn} are module names (for the unnamed module,
- * the special value {@code ALL-UNNAMED} can be used). If this option is specified,
- * access to restricted methods are only granted to the modules listed by that option.
- * If this option is not specified, access to restricted methods is enabled for all
- * modules, but access to restricted methods will result in runtime warnings.
  *
  * @spec jni/index.html Java Native Interface Specification
  *

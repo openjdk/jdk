@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ class outputStream;
   LOG_TAG(age) \
   LOG_TAG(alloc) \
   LOG_TAG(annotation) \
+  LOG_TAG(aot) \
   LOG_TAG(arguments) \
   LOG_TAG(array) \
   LOG_TAG(attach) \
@@ -67,6 +68,7 @@ class outputStream;
   LOG_TAG(data) \
   LOG_TAG(datacreation) \
   LOG_TAG(dcmd) \
+  DEBUG_ONLY(LOG_TAG(deathtest)) /* Log Internal death test tag */ \
   LOG_TAG(decoder) \
   LOG_TAG(defaultmethods) \
   LOG_TAG(deoptimization) \
@@ -104,11 +106,13 @@ class outputStream;
   LOG_TAG(itables) \
   LOG_TAG(jfr) \
   LOG_TAG(jit) \
+  LOG_TAG(jmethod) \
   LOG_TAG(jni) \
   LOG_TAG(jvmci) \
   LOG_TAG(jvmti) \
   LOG_TAG(lambda) \
   LOG_TAG(library) \
+  LOG_TAG(link) \
   LOG_TAG(liveness) \
   LOG_TAG(load) /* Trace all classes loaded */ \
   LOG_TAG(loader) \
@@ -128,6 +132,7 @@ class outputStream;
   LOG_TAG(module) \
   LOG_TAG(monitorinflation) \
   LOG_TAG(monitormismatch) \
+  LOG_TAG(monitortable) \
   LOG_TAG(native) \
   LOG_TAG(nestmates) \
   LOG_TAG(nmethod) \
@@ -157,7 +162,6 @@ class outputStream;
   LOG_TAG(preorder)  /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(preview)   /* Trace loading of preview feature types */ \
   LOG_TAG(promotion) \
-  LOG_TAG(protectiondomain) /* "Trace protection domain verification" */ \
   LOG_TAG(ptrqueue) \
   LOG_TAG(purge) \
   LOG_TAG(record) \

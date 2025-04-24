@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,54 +30,14 @@ import nsk.share.jdi.ArgumentHandler;
 import java.io.*;
 
 /**
- * Interface defining methods to control mirror of debuggee (i.e. debugged VM).
+ * Class defining methods to control mirror of debuggee (i.e. debugged VM).
  */
-public interface Debuggee {
+public class Debuggee extends LocalProcess {
 
     /** Default prefix for log messages. */
     public static final String LOG_PREFIX = "debuggee> ";
     public static final String DEBUGEE_STDOUT_LOG_PREFIX = "debuggee.stdout> ";
     public static final String DEBUGEE_STDERR_LOG_PREFIX = "debuggee.stderr> ";
-
-    /**
-     * Launch debuggee.
-     *
-     * @throws IOException
-     */
-    public void launch (String[] args) throws IOException;
-
-    /** Return exit status. */
-    public int getStatus ();
-
-    /** Check whether the process has been terminated. */
-    public boolean terminated();
-
-    /** Kill the debuggee VM. */
-    public void killDebuggee ();
-
-    /** Wait until the debuggee VM shutdown or crash. */
-    public int waitForDebuggee () throws InterruptedException;
-
-    /** Get a pipe to write to the debuggee's stdin stream. */
-    public OutputStream getInPipe ();
-
-    /** Get a pipe to read the debuggee's stdout stream. */
-    public InputStream getOutPipe ();
-
-    /** Get a pipe to read the debuggee's stderr stream. */
-    public InputStream getErrPipe ();
-
-    /** Redirect stdout stream to <code>Log</code> */
-    public void redirectStdout(Log log, String prefix);
-
-    /** Redirect stderr stream to <code>Log</code> */
-    public void redirectStderr(Log log, String prefix);
-}
-
-/**
- * Mirror of locally launched debuggee.
- */
-final class LocalLaunchedDebuggee extends LocalProcess implements Debuggee {
 
     private IORedirector stdoutRedirector = null;
     private IORedirector stderrRedirector = null;
@@ -90,7 +50,7 @@ final class LocalLaunchedDebuggee extends LocalProcess implements Debuggee {
     private Launcher launcher = null;
 
     /** Enwrap the existing <code>VM</code> mirror. */
-    LocalLaunchedDebuggee (Launcher launcher) {
+    Debuggee(Launcher launcher) {
         super();
         this.launcher = launcher;
     }
@@ -235,70 +195,3 @@ final class LocalLaunchedDebuggee extends LocalProcess implements Debuggee {
 }
 
 
-/**
- * Mirror of remotely launched debuggee.
- */
-final class RemoteLaunchedDebuggee implements Debuggee {
-
-    /** Launcher that creates this debuggee. */
-    private Launcher launcher = null;
-
-    /** Enwrap the existing <code>VM</code> mirror. */
-    RemoteLaunchedDebuggee (Launcher launcher) {
-        super();
-        this.launcher = launcher;
-    }
-
-    /**
-     * Launch debugee on remote host via <code>Launcher</code> object.
-     */
-    public void launch(String[] args) throws IOException {
-        String cmdLine = ArgumentHandler.joinArguments(args, "\"");
-        launcher.display("Starting remote java process:\n" + cmdLine);
-        launcher.launchRemoteProcess(args);
-    }
-
-    /** Return exit status of the debuggee VM. */
-    public int getStatus () {
-        return launcher.getRemoteProcessStatus();
-    }
-
-    /** Check whether the debuggee VM has been terminated. */
-    public boolean terminated () {
-        return launcher.isRemoteProcessTerminated();
-    }
-
-    // ---------------------------------------------- //
-
-    /** Kill the debuggee VM. */
-    public void killDebuggee () {
-        launcher.killRemoteProcess();
-    }
-
-    /** Wait until the debuggee VM shutdown or crash. */
-    public int waitForDebuggee () {
-        return launcher.waitForRemoteProcess();
-    }
-
-    /** Get a pipe to write to the debuggee's stdin stream. */
-    public OutputStream getInPipe () {
-        return null;
-    }
-
-    /** Get a pipe to read the debuggee's stdout stream. */
-    public InputStream getOutPipe () {
-        return null;
-    }
-
-    /** Get a pipe to read the debuggee's stderr stream. */
-    public InputStream getErrPipe () {
-        return null;
-    }
-
-    public void redirectStdout(Log log, String prefix) {
-    }
-
-    public void redirectStderr(Log log, String prefix) {
-    }
-
-}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,6 +209,7 @@ public class Enter extends JCTree.Visitor {
         localEnv.info.lint = null; // leave this to be filled in by Attr,
                                    // when annotations have been processed
         localEnv.info.isAnonymousDiamond = TreeInfo.isDiamond(env.tree);
+        localEnv.info.ctorPrologue = false;
         return localEnv;
     }
 
@@ -222,6 +223,7 @@ public class Enter extends JCTree.Visitor {
         tree.toplevelScope = WriteableScope.create(tree.packge);
         tree.namedImportScope = new NamedImportScope(tree.packge);
         tree.starImportScope = new StarImportScope(tree.packge);
+        tree.moduleImportScope = new StarImportScope(tree.packge);
         localEnv.info.scope = tree.toplevelScope;
         localEnv.info.lint = lint;
         return localEnv;
@@ -501,7 +503,7 @@ public class Enter extends JCTree.Visitor {
 
         // Fill out class fields.
         c.completer = Completer.NULL_COMPLETER; // do not allow the initial completer linger on.
-        c.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, c, tree) | FROM_SOURCE;
+        c.flags_field = chk.checkFlags(tree.mods.flags, c, tree) | FROM_SOURCE;
         c.classfile = c.sourcefile = env.toplevel.sourcefile;
         c.members_field = WriteableScope.create(c);
         c.isPermittedExplicit = tree.permitting.nonEmpty();
@@ -544,7 +546,7 @@ public class Enter extends JCTree.Visitor {
 
 //        Assert.checkNonNull(c.modle, c.sourcefile.toString());
 
-        result = c.type;
+        result = tree.type = c.type;
     }
     //where
         /** Does class have the same name as the file it appears in?

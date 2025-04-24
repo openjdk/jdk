@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,66 @@
 #include <dlfcn.h>
 #include "jni_util.h"
 #include "awt.h"
+
+#ifndef _AIX
 #include "screencast_pipewire.h"
-#include "fp_pipewire.h"
+
+struct pw_buffer *(*fp_pw_stream_dequeue_buffer)(struct pw_stream *stream);
+const char * (*fp_pw_stream_state_as_string)(enum pw_stream_state state);
+int (*fp_pw_stream_queue_buffer)(struct pw_stream *stream,
+                                 struct pw_buffer *buffer);
+int (*fp_pw_stream_set_active)(struct pw_stream *stream, bool active);
+
+int (*fp_pw_stream_connect)(
+        struct pw_stream *stream,
+        enum pw_direction direction,
+        uint32_t target_id,
+        enum pw_stream_flags flags,
+        const struct spa_pod **params,
+        uint32_t n_params);
+
+struct pw_stream *(*fp_pw_stream_new)(
+        struct pw_core *core,
+        const char *name,
+        struct pw_properties *props
+);
+void (*fp_pw_stream_add_listener)(struct pw_stream *stream,
+                            struct spa_hook *listener,
+                            const struct pw_stream_events *events,
+                            void *data);
+int (*fp_pw_stream_disconnect)(struct pw_stream *stream);
+void (*fp_pw_stream_destroy)(struct pw_stream *stream);
+
+
+void (*fp_pw_init)(int *argc, char **argv[]);
+
+struct pw_core *
+(*fp_pw_context_connect_fd)(struct pw_context *context,
+                      int fd,
+                      struct pw_properties *properties,
+                      size_t user_data_size);
+
+int (*fp_pw_core_disconnect)(struct pw_core *core);
+
+struct pw_context * (*fp_pw_context_new)(struct pw_loop *main_loop,
+                                   struct pw_properties *props,
+                                   size_t user_data_size);
+
+struct pw_thread_loop *
+(*fp_pw_thread_loop_new)(const char *name, const struct spa_dict *props);
+struct pw_loop * (*fp_pw_thread_loop_get_loop)(struct pw_thread_loop *loop);
+void (*fp_pw_thread_loop_signal)(struct pw_thread_loop *loop,
+                                 bool wait_for_accept);
+void (*fp_pw_thread_loop_wait)(struct pw_thread_loop *loop);
+void (*fp_pw_thread_loop_accept)(struct pw_thread_loop *loop);
+int (*fp_pw_thread_loop_start)(struct pw_thread_loop *loop);
+void (*fp_pw_thread_loop_stop)(struct pw_thread_loop *loop);
+void (*fp_pw_thread_loop_destroy)(struct pw_thread_loop *loop);
+void (*fp_pw_thread_loop_lock)(struct pw_thread_loop *loop);
+void (*fp_pw_thread_loop_unlock)(struct pw_thread_loop *loop);
+
+struct pw_properties * (*fp_pw_properties_new)(const char *key, ...);
+
 #include <stdio.h>
 
 #include "gtk_interface.h"
@@ -49,6 +107,7 @@ static GString *activeSessionToken;
 
 struct ScreenSpace screenSpace = {0};
 static struct PwLoopData pw = {0};
+volatile bool isGtkMainThread = FALSE;
 
 jclass tokenStorageClass = NULL;
 jmethodID storeTokenMethodID = NULL;
@@ -130,10 +189,6 @@ static void doCleanup() {
         free(screenSpace.screens);
         screenSpace.screens = NULL;
         screenSpace.screenCount = 0;
-    }
-
-    if (!sessionClosed) {
-        fp_pw_deinit();
     }
 
     gtk->g_string_set_size(activeSessionToken, 0);
@@ -582,6 +637,13 @@ static gboolean doLoop(GdkRectangle requestedArea) {
         pw.loop = fp_pw_thread_loop_new("AWT Pipewire Thread", NULL);
 
         if (!pw.loop) {
+            // in case someone called the pw_deinit before
+            DEBUG_SCREENCAST("pw_init\n", NULL);
+            fp_pw_init(NULL, NULL);
+            pw.loop = fp_pw_thread_loop_new("AWT Pipewire Thread", NULL);
+        }
+
+        if (!pw.loop) {
             DEBUG_SCREENCAST("!!! Could not create a loop\n", NULL);
             doCleanup();
             return FALSE;
@@ -675,7 +737,6 @@ static gboolean isAllDataReady() {
 
 
 static void *pipewire_libhandle = NULL;
-//glib_version_2_68 false for gtk2, as it comes from gtk3_interface.c
 
 extern gboolean glib_version_2_68;
 
@@ -712,7 +773,6 @@ static gboolean loadSymbols() {
     LOAD_SYMBOL(fp_pw_stream_disconnect, "pw_stream_disconnect");
     LOAD_SYMBOL(fp_pw_stream_destroy, "pw_stream_destroy");
     LOAD_SYMBOL(fp_pw_init, "pw_init");
-    LOAD_SYMBOL(fp_pw_deinit, "pw_deinit");
     LOAD_SYMBOL(fp_pw_context_connect_fd, "pw_context_connect_fd");
     LOAD_SYMBOL(fp_pw_core_disconnect, "pw_core_disconnect");
     LOAD_SYMBOL(fp_pw_context_new, "pw_context_new");
@@ -946,9 +1006,10 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
                          ? (*env)->GetStringUTFChars(env, jtoken, NULL)
                          : NULL;
 
+    isGtkMainThread = gtk->g_main_context_is_owner(gtk->g_main_context_default());
     DEBUG_SCREENCAST(
-            "taking screenshot at \n\tx: %5i y %5i w %5i h %5i with token |%s|\n",
-            jx, jy, jwidth, jheight, token
+            "taking screenshot at \n\tx: %5i y %5i w %5i h %5i\n\twith token |%s| isGtkMainThread %d\n",
+            jx, jy, jwidth, jheight, token, isGtkMainThread
     );
 
     int attemptResult = makeScreencast(
@@ -1036,3 +1097,28 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
     releaseToken(env, jtoken, token);
     return 0;
 }
+#else
+JNIEXPORT void JNICALL
+Java_sun_awt_screencast_ScreencastHelper_closeSession(JNIEnv *env, jclass cls) {
+}
+
+JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl(
+        JNIEnv *env,
+        jclass cls,
+        jint jx,
+        jint jy,
+        jint jwidth,
+        jint jheight,
+        jintArray pixelArray,
+        jintArray affectedScreensBoundsArray,
+        jstring jtoken
+) {
+    return -1; /* RESULT_ERROR */
+}
+
+JNIEXPORT jboolean JNICALL Java_sun_awt_screencast_ScreencastHelper_loadPipewire(
+        JNIEnv *env, jclass cls, jboolean screencastDebug
+) {
+    return JNI_FALSE;
+}
+#endif

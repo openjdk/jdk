@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,9 @@
 # questions.
 #
 
-DISABLED_WARNINGS_java += lossy-conversions this-escape
+################################################################################
+
+DISABLED_WARNINGS_java += dangling-doc-comments lossy-conversions this-escape
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
 COPY += .gif .png .wav .txt .xml .css .pf
@@ -46,18 +48,6 @@ EXCLUDE_FILES += \
     javax/swing/plaf/nimbus/SpinnerPainter.java \
     javax/swing/plaf/nimbus/SplitPanePainter.java \
     javax/swing/plaf/nimbus/TabbedPanePainter.java \
-    sun/awt/resources/security-icon-bw16.png \
-    sun/awt/resources/security-icon-bw24.png \
-    sun/awt/resources/security-icon-bw32.png \
-    sun/awt/resources/security-icon-bw48.png \
-    sun/awt/resources/security-icon-interim16.png \
-    sun/awt/resources/security-icon-interim24.png \
-    sun/awt/resources/security-icon-interim32.png \
-    sun/awt/resources/security-icon-interim48.png \
-    sun/awt/resources/security-icon-yellow16.png \
-    sun/awt/resources/security-icon-yellow24.png \
-    sun/awt/resources/security-icon-yellow32.png \
-    sun/awt/resources/security-icon-yellow48.png \
     sun/awt/X11/java-icon16.png \
     sun/awt/X11/java-icon24.png \
     sun/awt/X11/java-icon32.png \
@@ -151,3 +141,5 @@ EXCLUDE_FILES += \
     javax/swing/plaf/nimbus/SplitPanePainter.java \
     javax/swing/plaf/nimbus/TabbedPanePainter.java \
     #
+
+################################################################################

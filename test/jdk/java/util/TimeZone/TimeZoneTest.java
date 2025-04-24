@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4028006 4044013 4096694 4107276 4107570 4112869 4130885 7039469 7126465 7158483
  *      8008577 8077685 8098547 8133321 8138716 8148446 8151876 8159684 8166875 8181157
- *      8228469 8274407 8285844 8305113
+ *      8228469 8274407 8285844 8305113 8174269
  * @modules java.base/sun.util.resources
  * @summary test TimeZone
  * @run junit TimeZoneTest
@@ -363,9 +363,9 @@ public class TimeZoneTest
 
         // Now be smart -- check to see if zh resource is even present.
         // If not, we expect the en fallback behavior.
-        ResourceBundle enRB = LocaleData.getBundle("sun.util.resources.TimeZoneNames",
+        ResourceBundle enRB = LocaleData.getBundle("sun.util.resources.cldr.TimeZoneNames",
                                                    Locale.ENGLISH);
-        ResourceBundle zhRB = LocaleData.getBundle("sun.util.resources.TimeZoneNames",
+        ResourceBundle zhRB = LocaleData.getBundle("sun.util.resources.cldr.TimeZoneNames",
                                                    zh_CN);
 
         boolean noZH = enRB == zhRB;

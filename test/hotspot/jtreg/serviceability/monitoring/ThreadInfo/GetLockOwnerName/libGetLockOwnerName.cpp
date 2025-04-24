@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 extern "C" {
 
-static jvmtiEnv* jvmti = NULL;
+static jvmtiEnv* jvmti = nullptr;
 
 #define LOG(...) \
   do { \
@@ -53,7 +53,7 @@ Java_GetLockOwnerName_wait4ContendedEnter(JNIEnv *jni, jclass cls, jthread thr) 
       if (err != JVMTI_ERROR_NONE) {
         return err;
       }
-      if (monitor_ptr != NULL) {
+      if (monitor_ptr != nullptr) {
         break;
       }
     }

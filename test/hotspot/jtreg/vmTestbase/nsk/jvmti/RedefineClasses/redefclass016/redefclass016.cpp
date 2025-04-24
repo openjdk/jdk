@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -33,12 +33,12 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
-static jmethodID mid = NULL;
+static jmethodID mid = nullptr;
 static jint bpeakpointsExpected = 0;
 static jint bpeakpointsCount = 0;
 static jlocation loc = 0;
@@ -48,7 +48,7 @@ static jint magicNumber;
 void check(jvmtiEnv *jvmti_env, jthread thr, jclass cls, jmethodID mid, jint i) {
     jvmtiError err;
     char *sigClass, *name, *sig, *generic;
-    jvmtiLocalVariableEntry *table = NULL;
+    jvmtiLocalVariableEntry *table = nullptr;
     jint entryCount = 0;
     jint varValue = -1;
     jint j;
@@ -77,7 +77,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jclass cls, jmethodID mid, jint i) 
         result = STATUS_FAILED;
         return;
     }
-    if (table != NULL) {
+    if (table != nullptr) {
         for (j = 0; j < entryCount; j++) {
             if (strcmp(table[j].name, "localVar") == 0) {
                 err = jvmti_env->GetLocalInt(thr, 0,
@@ -102,16 +102,16 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jclass cls, jmethodID mid, jint i) 
         result = STATUS_FAILED;
     }
 
-    if (sigClass != NULL) {
+    if (sigClass != nullptr) {
         jvmti_env->Deallocate((unsigned char*)sigClass);
     }
-    if (name != NULL) {
+    if (name != nullptr) {
         jvmti_env->Deallocate((unsigned char*)name);
     }
-    if (sig != NULL) {
+    if (sig != nullptr) {
         jvmti_env->Deallocate((unsigned char*)sig);
     }
-    if (table != NULL) {
+    if (table != nullptr) {
         for (j = 0; j < entryCount; j++) {
             jvmti_env->Deallocate((unsigned char*)(table[j].name));
             jvmti_env->Deallocate((unsigned char*)(table[j].signature));
@@ -148,7 +148,7 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
 
     classDef.klass = klass;
     classDef.class_byte_count = env->GetArrayLength(classBytes);
-    bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
+    bytes = (unsigned char *) env->GetByteArrayElements(classBytes, nullptr);
 
     for (i = 0; i < classDef.class_byte_count - 3; i++) {
         if (((jint)bytes[i+3] |
@@ -202,12 +202,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -264,10 +264,10 @@ JNIEXPORT void JNICALL
 Java_nsk_jvmti_RedefineClasses_redefclass016_getReady(JNIEnv *env, jclass cls,
         jclass clazz, jbyteArray bytes, jint magic, jint line) {
     jvmtiError err;
-    jvmtiLineNumberEntry *lines = NULL;
+    jvmtiLineNumberEntry *lines = nullptr;
     jint i = 0, entryCount = 0;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -279,7 +279,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass016_getReady(JNIEnv *env, jclass cls,
         !caps.can_access_local_variables) return;
 
     mid = env->GetMethodID(clazz, "run", "()V");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot find Method ID for method run\n");
         result = STATUS_FAILED;
         return;
@@ -295,7 +295,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass016_getReady(JNIEnv *env, jclass cls,
         return;
     }
 
-    if (lines != NULL && entryCount > 0) {
+    if (lines != nullptr && entryCount > 0) {
         for (i = 0; i < entryCount; i++) {
             if (line == lines[i].line_number) {
                 loc = lines[i].start_location;
@@ -318,7 +318,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass016_getReady(JNIEnv *env, jclass cls,
     }
 
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_BREAKPOINT, NULL);
+        JVMTI_EVENT_BREAKPOINT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable BREAKPOINT event: %s (%d)\n",
                TranslateError(err), err);

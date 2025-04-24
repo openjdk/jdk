@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,88 +26,49 @@
 #ifndef SHARE_COMPILER_COMPILATIONMEMORYSTATISTIC_HPP
 #define SHARE_COMPILER_COMPILATIONMEMORYSTATISTIC_HPP
 
-#include "compiler/compilerDefinitions.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class outputStream;
-class Symbol;
 class DirectiveSet;
-
-// Counters for allocations from one arena
-class ArenaStatCounter : public CHeapObj<mtCompiler> {
-  // Current bytes, total
-  size_t _current;
-  // bytes when compilation started
-  size_t _start;
-  // bytes at last peak, total
-  size_t _peak;
-  // Current bytes used for node arenas, total
-  size_t _na;
-  // Current bytes used for resource areas
-  size_t _ra;
-  // MemLimit handling
-  size_t _limit;
-  bool _hit_limit;
-
-  // Peak composition:
-  // Size of node arena when total peaked (c2 only)
-  size_t _na_at_peak;
-  // Size of resource area when total peaked
-  size_t _ra_at_peak;
-  // Number of live nodes when total peaked (c2 only)
-  unsigned _live_nodes_at_peak;
-
-  void update_c2_node_count();
-
-public:
-  ArenaStatCounter();
-
-  // Size of peak since last compilation
-  size_t peak_since_start() const;
-
-  // Peak details
-  size_t na_at_peak() const { return _na_at_peak; }
-  size_t ra_at_peak() const { return _ra_at_peak; }
-  unsigned live_nodes_at_peak() const { return _live_nodes_at_peak; }
-
-  // Mark the start and end of a compilation.
-  void start(size_t limit);
-  void end();
-
-  // Account an arena allocation or de-allocation.
-  // Returns true if new peak reached
-  bool account(ssize_t delta, int tag);
-
-  void set_live_nodes_at_peak(unsigned i) { _live_nodes_at_peak = i; }
-
-  void print_on(outputStream* st) const;
-
-  size_t limit() const              { return _limit; }
-  bool   hit_limit() const          { return _hit_limit; }
-};
+class outputStream;
 
 class CompilationMemoryStatistic : public AllStatic {
-  static bool _enabled;
+  friend class CompilationMemoryStatisticMark;
+  static bool _enabled; // set to true if memstat is active for any method.
+
+  // Private, should only be called via CompilationMemoryStatisticMark
+  static void on_start_compilation(const DirectiveSet* directive);
+
+  // Private, should only be called via CompilationMemoryStatisticMark
+  static void on_end_compilation();
+
+  static void print_all_by_size(outputStream* st, bool verbose, bool legend, size_t minsize, int max_num_printed);
+
 public:
   static void initialize();
   // true if CollectMemStat or PrintMemStat has been enabled for any method
   static bool enabled() { return _enabled; }
-  static void on_start_compilation(const DirectiveSet* directive);
+  // true if we are in a fatal error inited by hitting the MemLimit
+  static bool in_oom_crash();
 
-  // Called at end of compilation. Records the arena usage peak. Also takes over
-  // status information from ciEnv (compilation failed, oom'ed or went okay). ciEnv::_failure_reason
-  // must be set at this point (so place CompilationMemoryStatisticMark correctly).
-  static void on_end_compilation();
-  static void on_arena_change(ssize_t diff, const Arena* arena);
-  static void print_all_by_size(outputStream* st, bool human_readable, size_t minsize);
+  static void on_phase_start(int phase_trc_id, const char* text);
+  static void on_phase_end();
+  static void on_arena_chunk_allocation(size_t size, int arenatag, uint64_t* stamp);
+  static void on_arena_chunk_deallocation(size_t size, uint64_t stamp);
+
+  static void print_final_report(outputStream* st);
+  static void print_error_report(outputStream* st);
+  static void print_jcmd_report(outputStream* st, bool verbose, bool legend, size_t minsize);
+
   // For compilers
   static const char* failure_reason_memlimit();
+
+  DEBUG_ONLY(static void do_test_allocations();)
 };
 
 // RAII object to wrap one compilation
-class CompilationMemoryStatisticMark {
+class CompilationMemoryStatisticMark : public StackObj {
   const bool _active;
 public:
   CompilationMemoryStatisticMark(const DirectiveSet* directive);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,8 +385,8 @@ final class CertificateMessage {
                 if (shc.sslConfig.clientAuthType !=
                         ClientAuthType.CLIENT_AUTH_REQUESTED) {
                     // unexpected or require client authentication
-                    throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
-                        "Empty server certificate chain");
+                    throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "Empty client certificate chain");
                 } else {
                     return;
                 }
@@ -403,7 +403,7 @@ final class CertificateMessage {
                 }
             } catch (CertificateException ce) {
                 throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
-                    "Failed to parse server certificates", ce);
+                    "Failed to parse client certificates", ce);
             }
 
             checkClientCerts(shc, x509Certs);
@@ -695,46 +695,6 @@ final class CertificateMessage {
             } catch (CertificateException ce) {
                 throw shc.conContext.fatal(Alert.CERTIFICATE_UNKNOWN, ce);
             }
-        }
-
-        /**
-         * When a failure happens during certificate checking from an
-         * {@link X509TrustManager}, determine what TLS alert description
-         * to use.
-         *
-         * @param cexc The exception thrown by the {@link X509TrustManager}
-         *
-         * @return A byte value corresponding to a TLS alert description number.
-         */
-        private static Alert getCertificateAlert(
-                ClientHandshakeContext chc, CertificateException cexc) {
-            // The specific reason for the failure will determine how to
-            // set the alert description value
-            Alert alert = Alert.CERTIFICATE_UNKNOWN;
-
-            Throwable baseCause = cexc.getCause();
-            if (baseCause instanceof CertPathValidatorException cpve) {
-                Reason reason = cpve.getReason();
-                if (reason == BasicReason.REVOKED) {
-                    alert = chc.staplingActive ?
-                            Alert.BAD_CERT_STATUS_RESPONSE :
-                            Alert.CERTIFICATE_REVOKED;
-                } else if (
-                        reason == BasicReason.UNDETERMINED_REVOCATION_STATUS) {
-                    alert = chc.staplingActive ?
-                            Alert.BAD_CERT_STATUS_RESPONSE :
-                            Alert.CERTIFICATE_UNKNOWN;
-                } else if (reason == BasicReason.ALGORITHM_CONSTRAINED) {
-                    alert = Alert.UNSUPPORTED_CERTIFICATE;
-                } else if (reason == BasicReason.EXPIRED) {
-                    alert = Alert.CERTIFICATE_EXPIRED;
-                } else if (reason == BasicReason.INVALID_SIGNATURE ||
-                        reason == BasicReason.NOT_YET_VALID) {
-                    alert = Alert.BAD_CERTIFICATE;
-                }
-            }
-
-            return alert;
         }
 
     }
@@ -1162,7 +1122,7 @@ final class CertificateMessage {
                 shc.handshakeConsumers.remove(
                         SSLHandshake.CERTIFICATE_VERIFY.id);
                 if (shc.sslConfig.clientAuthType == CLIENT_AUTH_REQUIRED) {
-                    throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
+                    throw shc.conContext.fatal(Alert.CERTIFICATE_REQUIRED,
                         "Empty client certificate chain");
                 } else {
                     // optional client authentication
@@ -1186,7 +1146,7 @@ final class CertificateMessage {
                 T13CertificateMessage certificateMessage )throws IOException {
             if (certificateMessage.certEntries == null ||
                     certificateMessage.certEntries.isEmpty()) {
-                throw chc.conContext.fatal(Alert.BAD_CERTIFICATE,
+                throw chc.conContext.fatal(Alert.DECODE_ERROR,
                     "Empty server certificate chain");
             }
 
@@ -1224,7 +1184,7 @@ final class CertificateMessage {
                 }
             } catch (CertificateException ce) {
                 throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
-                    "Failed to parse server certificates", ce);
+                    "Failed to parse client certificates", ce);
             }
 
             // find out the types of client authentication used
@@ -1329,37 +1289,57 @@ final class CertificateMessage {
             return certs;
         }
 
-        /**
-         * When a failure happens during certificate checking from an
-         * {@link X509TrustManager}, determine what TLS alert description
-         * to use.
-         *
-         * @param cexc The exception thrown by the {@link X509TrustManager}
-         *
-         * @return A byte value corresponding to a TLS alert description number.
-         */
-        private static Alert getCertificateAlert(
-                ClientHandshakeContext chc, CertificateException cexc) {
-            // The specific reason for the failure will determine how to
-            // set the alert description value
-            Alert alert = Alert.CERTIFICATE_UNKNOWN;
+    }
 
-            Throwable baseCause = cexc.getCause();
-            if (baseCause instanceof CertPathValidatorException cpve) {
-                Reason reason = cpve.getReason();
-                if (reason == BasicReason.REVOKED) {
-                    alert = chc.staplingActive ?
-                            Alert.BAD_CERT_STATUS_RESPONSE :
-                            Alert.CERTIFICATE_REVOKED;
-                } else if (
-                        reason == BasicReason.UNDETERMINED_REVOCATION_STATUS) {
-                    alert = chc.staplingActive ?
-                            Alert.BAD_CERT_STATUS_RESPONSE :
-                            Alert.CERTIFICATE_UNKNOWN;
+    /**
+     * When a failure happens during certificate checking from an
+     * {@link X509TrustManager}, determine what TLS alert description
+     * to use.
+     *
+     * @param cexc The exception thrown by the {@link X509TrustManager}
+     * @return A byte value corresponding to a TLS alert description number.
+     */
+    private static Alert getCertificateAlert(
+            ClientHandshakeContext chc, CertificateException cexc) {
+        // The specific reason for the failure will determine how to
+        // set the alert description value
+        Alert alert = Alert.CERTIFICATE_UNKNOWN;
+
+        Throwable baseCause = cexc.getCause();
+        if (baseCause instanceof CertPathValidatorException cpve) {
+            Reason reason = cpve.getReason();
+            if (reason == BasicReason.REVOKED) {
+                alert = chc.staplingActive ?
+                        Alert.BAD_CERT_STATUS_RESPONSE :
+                        Alert.CERTIFICATE_REVOKED;
+            } else if (reason == BasicReason.UNDETERMINED_REVOCATION_STATUS) {
+                alert = chc.staplingActive ?
+                        Alert.BAD_CERT_STATUS_RESPONSE :
+                        Alert.CERTIFICATE_UNKNOWN;
+            } else if (reason == BasicReason.EXPIRED) {
+                alert = Alert.CERTIFICATE_EXPIRED;
+            } else if (reason == BasicReason.INVALID_SIGNATURE
+                    || reason == BasicReason.NOT_YET_VALID) {
+                alert = Alert.BAD_CERTIFICATE;
+            } else if (reason == BasicReason.ALGORITHM_CONSTRAINED) {
+                alert = Alert.UNSUPPORTED_CERTIFICATE;
+
+                // Per TLSv1.3 RFC we MUST abort the handshake with a
+                // "bad_certificate" alert if we reject certificate
+                // because of the signature using MD5 or SHA1 algorithm.
+                if (chc.negotiatedProtocol != null
+                        && chc.negotiatedProtocol.useTLS13PlusSpec()) {
+                    final String exMsg = cexc.getMessage().toUpperCase();
+
+                    if (exMsg.contains("MD5WITH")
+                            || exMsg.contains("SHA1WITH")) {
+                        alert = Alert.BAD_CERTIFICATE;
+                    }
                 }
             }
-
-            return alert;
         }
+
+        return alert;
     }
+
 }

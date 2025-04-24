@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,14 +76,6 @@ public class SALauncherLoader extends URLClassLoader {
      */
     public synchronized Class loadClass(String name, boolean resolve)
             throws ClassNotFoundException {
-        int i = name.lastIndexOf('.');
-        if (i != -1) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPackageAccess(name.substring(0, i));
-            }
-        }
 
         Class clazz = findLoadedClass(name);
         if (clazz != null) return clazz;
@@ -102,15 +94,6 @@ public class SALauncherLoader extends URLClassLoader {
         } catch (ClassNotFoundException cnfe) {
             return (super.loadClass(name, resolve));
         }
-    }
-
-    /**
-     * allow any classes loaded from classpath to exit the VM.
-     */
-    protected PermissionCollection getPermissions(CodeSource codesource) {
-        PermissionCollection perms = super.getPermissions(codesource);
-        perms.add(new RuntimePermission("exitVM"));
-        return perms;
     }
 
     //-- Internals only below this point

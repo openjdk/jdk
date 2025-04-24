@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -33,7 +33,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
@@ -53,12 +53,12 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }
@@ -94,13 +94,15 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_GetObjectMonitorUsage_objmonusage001_check(JNIEnv *env,
         jclass cls, jint i, jobject obj,
-        jthread owner, jint entryCount, jint waiterCount) {
+        jthread owner, jint entryCount,
+        jthread waiterThread, jint waiterCount,
+        jthread notifyWaiterThread, jint notifyWaiterCount) {
     jvmtiError err;
     jvmtiMonitorUsage inf;
     jvmtiThreadInfo tinf;
     int j;
 
-    if (result == STATUS_FAILED) {
+    if (result == STATUS_FAILED && printdump != JNI_TRUE) {
         return;
     }
 
@@ -117,7 +119,7 @@ Java_nsk_jvmti_GetObjectMonitorUsage_objmonusage001_check(JNIEnv *env,
     }
 
     if (printdump == JNI_TRUE) {
-        if (inf.owner == NULL) {
+        if (inf.owner == nullptr) {
             printf(">>> [%2d]    owner: none (0x0)\n", i);
         } else {
             jvmti->GetThreadInfo(inf.owner, &tinf);
@@ -152,14 +154,36 @@ Java_nsk_jvmti_GetObjectMonitorUsage_objmonusage001_check(JNIEnv *env,
     }
 
     if (inf.entry_count != entryCount) {
-        printf("(%d) entry_count expected: %d, actually: %d\n",
+        printf("FAILED: (%d) entry_count expected: %d, actually: %d\n",
                i, entryCount, inf.entry_count);
         result = STATUS_FAILED;
     }
 
     if (inf.waiter_count != waiterCount) {
-        printf("(%d) waiter_count expected: %d, actually: %d\n",
+        printf("FAILED: (%d) waiter_count expected: %d, actually: %d\n",
                i, waiterCount, inf.waiter_count);
+        result = STATUS_FAILED;
+    }
+
+    if (inf.waiters != nullptr &&
+        !env->IsSameObject(waiterThread, inf.waiters[0])) {
+        jvmti->GetThreadInfo(inf.waiters[0], &tinf);
+        printf("FAILED: (%d) unexpected waiterThread: %s (0x%p)\n", i,
+               tinf.name, inf.waiters[0]);
+        result = STATUS_FAILED;
+    }
+
+    if (inf.notify_waiter_count != notifyWaiterCount) {
+        printf("FAILED: (%d) notify_waiter_count expected: %d, actually: %d\n",
+               i, notifyWaiterCount, inf.notify_waiter_count);
+        result = STATUS_FAILED;
+    }
+
+    if (inf.notify_waiters != nullptr &&
+        !env->IsSameObject(notifyWaiterThread, inf.notify_waiters[0])) {
+        jvmti->GetThreadInfo(inf.notify_waiters[0], &tinf);
+        printf("FAILED: (%d) unexpected waiterThread: %s (0x%p)\n", i,
+               tinf.name, inf.notify_waiters[0]);
         result = STATUS_FAILED;
     }
 }

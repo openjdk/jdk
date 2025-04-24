@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jni/jfrJniMethod.hpp"
 #include "jfr/jni/jfrJniMethodRegistration.hpp"
 #include "logging/log.hpp"
@@ -97,9 +96,12 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"isInstrumented", (char*)"(Ljava/lang/Class;)Z", (void*) jfr_is_class_instrumented,
       (char*)"isContainerized", (char*)"()Z", (void*) jfr_is_containerized,
       (char*)"hostTotalMemory", (char*)"()J", (void*) jfr_host_total_memory,
+      (char*)"hostTotalSwapMemory", (char*)"()J", (void*) jfr_host_total_swap_memory,
       (char*)"emitDataLoss", (char*)"(J)V", (void*)jfr_emit_data_loss,
       (char*)"registerStackFilter", (char*)"([Ljava/lang/String;[Ljava/lang/String;)J", (void*)jfr_register_stack_filter,
-      (char*)"unregisterStackFilter", (char*)"(J)V", (void*)jfr_unregister_stack_filter
+      (char*)"unregisterStackFilter", (char*)"(J)V", (void*)jfr_unregister_stack_filter,
+      (char*)"nanosNow", (char*)"()J", (void*)jfr_nanos_now,
+      (char*)"isProduct", (char*)"()Z", (void*)jfr_is_product
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);

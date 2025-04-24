@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +55,7 @@ public:
   enum { Control,               // When is it safe to do this load?
          Memory,                // Chunk of memory is being loaded from
          Address,               // Actually address, derived from base
-         ValueIn,               // Value to store
-         OopStore               // Preceding oop store, only in StoreCM
+         ValueIn                // Value to store
   };
   typedef enum { unordered = 0,
                  acquire,       // Load has to acquire or be succeeded by MemBarAcquire.
@@ -105,8 +105,12 @@ public:
 
   static Node *optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oop, Node *load, PhaseGVN *phase);
   static Node *optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *load, PhaseGVN *phase);
-  // This one should probably be a phase-specific function:
-  static bool all_controls_dominate(Node* dom, Node* sub);
+  // The following two should probably be phase-specific functions:
+  static DomResult maybe_all_controls_dominate(Node* dom, Node* sub);
+  static bool all_controls_dominate(Node* dom, Node* sub) {
+    DomResult dom_result = maybe_all_controls_dominate(dom, sub);
+    return dom_result == DomResult::Dominate;
+  }
 
   virtual const class TypePtr *adr_type() const;  // returns bottom_type of address
 
@@ -119,24 +123,27 @@ public:
   // Raw access function, to allow copying of adr_type efficiently in
   // product builds and retain the debug info for debug builds.
   const TypePtr *raw_adr_type() const {
-#ifdef ASSERT
-    return _adr_type;
-#else
-    return 0;
-#endif
+    return DEBUG_ONLY(_adr_type) NOT_DEBUG(nullptr);
   }
+
+  // Return the barrier data of n, if available, or 0 otherwise.
+  static uint8_t barrier_data(const Node* n);
 
   // Map a load or store opcode to its corresponding store opcode.
   // (Return -1 if unknown.)
   virtual int store_Opcode() const { return -1; }
 
   // What is the type of the value in memory?  (T_VOID mean "unspecified".)
-  virtual BasicType memory_type() const = 0;
+  // The returned type is a property of the value that is loaded/stored and
+  // not the memory that is accessed. For mismatched memory accesses
+  // they might differ. For instance, a value of type 'short' may be stored
+  // into an array of elements of type 'long'.
+  virtual BasicType value_basic_type() const = 0;
   virtual int memory_size() const {
 #ifdef ASSERT
-    return type2aelembytes(memory_type(), true);
+    return type2aelembytes(value_basic_type(), true);
 #else
-    return type2aelembytes(memory_type());
+    return type2aelembytes(value_basic_type());
 #endif
   }
 
@@ -193,7 +200,7 @@ private:
   // non-pinned LoadNode by the pinned LoadNode.
   ControlDependency _control_dependency;
 
-  // On platforms with weak memory ordering (e.g., PPC, Ia64) we distinguish
+  // On platforms with weak memory ordering (e.g., PPC) we distinguish
   // loads that can be reordered, and such requiring acquire semantics to
   // adhere to the Java specification.  The required behaviour is stored in
   // this field.
@@ -334,7 +341,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual int store_Opcode() const { return Op_StoreB; }
-  virtual BasicType memory_type() const { return T_BYTE; }
+  virtual BasicType value_basic_type() const { return T_BYTE; }
 };
 
 //------------------------------LoadUBNode-------------------------------------
@@ -348,7 +355,7 @@ public:
   virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual int store_Opcode() const { return Op_StoreB; }
-  virtual BasicType memory_type() const { return T_BYTE; }
+  virtual BasicType value_basic_type() const { return T_BYTE; }
 };
 
 //------------------------------LoadUSNode-------------------------------------
@@ -362,7 +369,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual int store_Opcode() const { return Op_StoreC; }
-  virtual BasicType memory_type() const { return T_CHAR; }
+  virtual BasicType value_basic_type() const { return T_CHAR; }
 };
 
 //------------------------------LoadSNode--------------------------------------
@@ -376,7 +383,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual int store_Opcode() const { return Op_StoreC; }
-  virtual BasicType memory_type() const { return T_SHORT; }
+  virtual BasicType value_basic_type() const { return T_SHORT; }
 };
 
 //------------------------------LoadINode--------------------------------------
@@ -388,7 +395,7 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual int store_Opcode() const { return Op_StoreI; }
-  virtual BasicType memory_type() const { return T_INT; }
+  virtual BasicType value_basic_type() const { return T_INT; }
 };
 
 //------------------------------LoadRangeNode----------------------------------
@@ -421,7 +428,7 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegL; }
   virtual int store_Opcode() const { return Op_StoreL; }
-  virtual BasicType memory_type() const { return T_LONG; }
+  virtual BasicType value_basic_type() const { return T_LONG; }
   bool require_atomic_access() const { return _require_atomic_access; }
 
 #ifndef PRODUCT
@@ -450,7 +457,7 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual int store_Opcode() const { return Op_StoreF; }
-  virtual BasicType memory_type() const { return T_FLOAT; }
+  virtual BasicType value_basic_type() const { return T_FLOAT; }
 };
 
 //------------------------------LoadDNode--------------------------------------
@@ -471,7 +478,7 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegD; }
   virtual int store_Opcode() const { return Op_StoreD; }
-  virtual BasicType memory_type() const { return T_DOUBLE; }
+  virtual BasicType value_basic_type() const { return T_DOUBLE; }
   bool require_atomic_access() const { return _require_atomic_access; }
 
 #ifndef PRODUCT
@@ -500,7 +507,7 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
   virtual int store_Opcode() const { return Op_StoreP; }
-  virtual BasicType memory_type() const { return T_ADDRESS; }
+  virtual BasicType value_basic_type() const { return T_ADDRESS; }
 };
 
 
@@ -513,39 +520,46 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegN; }
   virtual int store_Opcode() const { return Op_StoreN; }
-  virtual BasicType memory_type() const { return T_NARROWOOP; }
+  virtual BasicType value_basic_type() const { return T_NARROWOOP; }
 };
 
 //------------------------------LoadKlassNode----------------------------------
 // Load a Klass from an object
 class LoadKlassNode : public LoadPNode {
-protected:
-  // In most cases, LoadKlassNode does not have the control input set. If the control
-  // input is set, it must not be removed (by LoadNode::Ideal()).
-  virtual bool can_remove_control() const;
+private:
+  LoadKlassNode(Node* mem, Node* adr, const TypePtr* at, const TypeKlassPtr* tk, MemOrd mo)
+    : LoadPNode(nullptr, mem, adr, at, tk, mo) {}
+
 public:
-  LoadKlassNode(Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeKlassPtr *tk, MemOrd mo)
-    : LoadPNode(c, mem, adr, at, tk, mo) {}
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual bool depends_only_on_test() const { return true; }
 
   // Polymorphic factory method:
-  static Node* make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* at,
+  static Node* make(PhaseGVN& gvn, Node* mem, Node* adr, const TypePtr* at,
                     const TypeKlassPtr* tk = TypeInstKlassPtr::OBJECT);
 };
 
 //------------------------------LoadNKlassNode---------------------------------
 // Load a narrow Klass from an object.
+// With compact headers, the input address (adr) does not point at the exact
+// header position where the (narrow) class pointer is located, but into the
+// middle of the mark word (see oopDesc::klass_offset_in_bytes()). This node
+// implicitly shifts the loaded value (markWord::klass_shift_at_offset bits) to
+// extract the actual class pointer. C2's type system is agnostic on whether the
+// input address directly points into the class pointer.
 class LoadNKlassNode : public LoadNNode {
+private:
+  friend Node* LoadKlassNode::make(PhaseGVN&, Node*, Node*, const TypePtr*, const TypeKlassPtr*);
+  LoadNKlassNode(Node* mem, Node* adr, const TypePtr* at, const TypeNarrowKlass* tk, MemOrd mo)
+    : LoadNNode(nullptr, mem, adr, at, tk, mo) {}
+
 public:
-  LoadNKlassNode(Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeNarrowKlass *tk, MemOrd mo)
-    : LoadNNode(c, mem, adr, at, tk, mo) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegN; }
   virtual int store_Opcode() const { return Op_StoreNKlass; }
-  virtual BasicType memory_type() const { return T_NARROWKLASS; }
+  virtual BasicType value_basic_type() const { return T_NARROWKLASS; }
 
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
@@ -557,7 +571,7 @@ public:
 // Store value; requires Store, Address and Value
 class StoreNode : public MemNode {
 private:
-  // On platforms with weak memory ordering (e.g., PPC, Ia64) we distinguish
+  // On platforms with weak memory ordering (e.g., PPC) we distinguish
   // stores that can be reordered, and such requiring release semantics to
   // adhere to the Java specification.  The required behaviour is stored in
   // this field.
@@ -569,7 +583,7 @@ protected:
   virtual bool depends_only_on_test() const { return false; }
 
   Node *Ideal_masked_input       (PhaseGVN *phase, uint mask);
-  Node *Ideal_sign_extended_input(PhaseGVN *phase, int  num_bits);
+  Node* Ideal_sign_extended_input(PhaseGVN* phase, int num_rejected_bits);
 
 public:
   // We must ensure that stores of object references will be visible
@@ -656,7 +670,7 @@ public:
     : StoreNode(c, mem, adr, at, val, mo) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual BasicType memory_type() const { return T_BYTE; }
+  virtual BasicType value_basic_type() const { return T_BYTE; }
 };
 
 //------------------------------StoreCNode-------------------------------------
@@ -667,7 +681,7 @@ public:
     : StoreNode(c, mem, adr, at, val, mo) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual BasicType memory_type() const { return T_CHAR; }
+  virtual BasicType value_basic_type() const { return T_CHAR; }
 };
 
 //------------------------------StoreINode-------------------------------------
@@ -677,7 +691,7 @@ public:
   StoreINode(Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, MemOrd mo)
     : StoreNode(c, mem, adr, at, val, mo) {}
   virtual int Opcode() const;
-  virtual BasicType memory_type() const { return T_INT; }
+  virtual BasicType value_basic_type() const { return T_INT; }
 };
 
 //------------------------------StoreLNode-------------------------------------
@@ -695,7 +709,7 @@ public:
   StoreLNode(Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, MemOrd mo, bool require_atomic_access = false)
     : StoreNode(c, mem, adr, at, val, mo), _require_atomic_access(require_atomic_access) {}
   virtual int Opcode() const;
-  virtual BasicType memory_type() const { return T_LONG; }
+  virtual BasicType value_basic_type() const { return T_LONG; }
   bool require_atomic_access() const { return _require_atomic_access; }
 
 #ifndef PRODUCT
@@ -713,7 +727,7 @@ public:
   StoreFNode(Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, MemOrd mo)
     : StoreNode(c, mem, adr, at, val, mo) {}
   virtual int Opcode() const;
-  virtual BasicType memory_type() const { return T_FLOAT; }
+  virtual BasicType value_basic_type() const { return T_FLOAT; }
 };
 
 //------------------------------StoreDNode-------------------------------------
@@ -731,7 +745,7 @@ public:
              MemOrd mo, bool require_atomic_access = false)
     : StoreNode(c, mem, adr, at, val, mo), _require_atomic_access(require_atomic_access) {}
   virtual int Opcode() const;
-  virtual BasicType memory_type() const { return T_DOUBLE; }
+  virtual BasicType value_basic_type() const { return T_DOUBLE; }
   bool require_atomic_access() const { return _require_atomic_access; }
 
 #ifndef PRODUCT
@@ -750,7 +764,7 @@ public:
   StorePNode(Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, MemOrd mo)
     : StoreNode(c, mem, adr, at, val, mo) {}
   virtual int Opcode() const;
-  virtual BasicType memory_type() const { return T_ADDRESS; }
+  virtual BasicType value_basic_type() const { return T_ADDRESS; }
 };
 
 //------------------------------StoreNNode-------------------------------------
@@ -760,7 +774,7 @@ public:
   StoreNNode(Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, MemOrd mo)
     : StoreNode(c, mem, adr, at, val, mo) {}
   virtual int Opcode() const;
-  virtual BasicType memory_type() const { return T_NARROWOOP; }
+  virtual BasicType value_basic_type() const { return T_NARROWOOP; }
 };
 
 //------------------------------StoreNKlassNode--------------------------------------
@@ -770,37 +784,7 @@ public:
   StoreNKlassNode(Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, MemOrd mo)
     : StoreNNode(c, mem, adr, at, val, mo) {}
   virtual int Opcode() const;
-  virtual BasicType memory_type() const { return T_NARROWKLASS; }
-};
-
-//------------------------------StoreCMNode-----------------------------------
-// Store card-mark byte to memory for CM
-// The last StoreCM before a SafePoint must be preserved and occur after its "oop" store
-// Preceding equivalent StoreCMs may be eliminated.
-class StoreCMNode : public StoreNode {
- private:
-  virtual uint hash() const { return StoreNode::hash() + _oop_alias_idx; }
-  virtual bool cmp( const Node &n ) const {
-    return _oop_alias_idx == ((StoreCMNode&)n)._oop_alias_idx
-      && StoreNode::cmp(n);
-  }
-  virtual uint size_of() const { return sizeof(*this); }
-  int _oop_alias_idx;   // The alias_idx of OopStore
-
-public:
-  StoreCMNode( Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, Node *oop_store, int oop_alias_idx ) :
-    StoreNode(c, mem, adr, at, val, oop_store, MemNode::release),
-    _oop_alias_idx(oop_alias_idx) {
-    assert(_oop_alias_idx >= Compile::AliasIdxRaw ||
-           (_oop_alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing()),
-           "bad oop alias idx");
-  }
-  virtual int Opcode() const;
-  virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type* Value(PhaseGVN* phase) const;
-  virtual BasicType memory_type() const { return T_VOID; } // unspecific
-  int oop_alias_idx() const { return _oop_alias_idx; }
+  virtual BasicType value_basic_type() const { return T_NARROWKLASS; }
 };
 
 //------------------------------SCMemProjNode---------------------------------------
@@ -1152,7 +1136,7 @@ class MemBarNode: public MultiNode {
     LeadingStore,
     TrailingLoadStore,
     LeadingLoadStore,
-    TrailingPartialArrayCopy
+    TrailingExpandedArrayCopy
   } _kind;
 
 #ifdef ASSERT
@@ -1189,8 +1173,8 @@ public:
   bool trailing() const { return _kind == TrailingLoad || _kind == TrailingStore || _kind == TrailingLoadStore; }
   bool leading() const { return _kind == LeadingStore || _kind == LeadingLoadStore; }
   bool standalone() const { return _kind == Standalone; }
-  void set_trailing_partial_array_copy() { _kind = TrailingPartialArrayCopy; }
-  bool trailing_partial_array_copy() const { return _kind == TrailingPartialArrayCopy; }
+  void set_trailing_expanded_array_copy() { _kind = TrailingExpandedArrayCopy; }
+  bool trailing_expanded_array_copy() const { return _kind == TrailingExpandedArrayCopy; }
 
   static void set_store_pair(MemBarNode* leading, MemBarNode* trailing);
   static void set_load_store_pair(MemBarNode* leading, MemBarNode* trailing);
@@ -1678,7 +1662,7 @@ public:
 // Allocation prefetch which may fault, TLAB size have to be adjusted.
 class PrefetchAllocationNode : public Node {
 public:
-  PrefetchAllocationNode(Node *mem, Node *adr) : Node(0,mem,adr) {}
+  PrefetchAllocationNode(Node *mem, Node *adr) : Node(nullptr,mem,adr) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const { return idx==2; }

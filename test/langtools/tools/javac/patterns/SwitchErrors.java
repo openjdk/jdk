@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8262891 8269146 8269113
+ * @bug 8262891 8269146 8269113 8348928
  * @summary Verify errors related to pattern switches.
  * @compile/fail/ref=SwitchErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
  */
@@ -127,12 +127,6 @@ public class SwitchErrors {
             default: break;
         }
     }
-    void primitivePattern(Object o) {
-        switch (o) {
-            case int i: break;
-            default: break;
-        }
-    }
     void patternAndDefault1(Object o) {
         switch (o) {
             case String s, default: break;
@@ -239,16 +233,6 @@ public class SwitchErrors {
             case CharSequence cs: break;
         }
     }
-    void primitiveToReference(int i) {
-        switch (i) {
-            case Integer j: break;
-        }
-    }
-    void referenceToPrimitive(Integer i) {
-        switch (i) {
-            case int j: break;
-        }
-    }
     void nullAndParenthesized1(Object o) {
         record R(Object o) {}
         switch (o) {
@@ -321,6 +305,24 @@ public class SwitchErrors {
             //error - illegal combination of pattern, constant and default
             case Integer o when o != null, 1, default:
                 break;
+        }
+    }
+
+    void testPatternWithoutBindingCantOverridePatternWithBinding8348928a(Object o) {
+        record R(int i, String s) {}
+        switch (o) {
+            case Integer _, R(int x, String _) -> {}
+            default -> {}
+        }
+    }
+
+    void testPatternWithoutBindingCantOverridePatternWithBinding8348928b(Object o) {
+        record R(int i, String s) {}
+        switch (o) {
+            case Integer _:
+            case R(int x, String _):
+                break;
+            default:
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,7 @@ import static java.lang.classfile.ClassFile.ACC_STATIC;
 @BenchmarkMode(Mode.SingleShotTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
-@Fork(value = 10, warmups = 5, jvmArgsAppend = {
-        "--enable-preview"
-})
+@Fork(value = 10, warmups = 5)
 public class LazyStaticColdStart {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
@@ -76,7 +74,7 @@ public class LazyStaticColdStart {
             static final byte[] classBytes = ClassFile.of().build(describedClass, clb -> {
                 clb.withField("v", CD_long, ACC_STATIC);
                 clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
-                    cob.constantInstruction(100L);
+                    cob.loadConstant(100L);
                     cob.invokestatic(CD_Blackhole, "consumeCPU", MTD_void_long);
                     cob.invokestatic(CD_ThreadLocalRandom, "current", MTD_ThreadLocalRandom);
                     cob.invokevirtual(CD_ThreadLocalRandom, "nextLong", MTD_long);

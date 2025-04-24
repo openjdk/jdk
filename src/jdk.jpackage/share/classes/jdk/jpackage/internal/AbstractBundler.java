@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.jpackage.internal;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
+import jdk.jpackage.internal.util.FileUtils;
 
 
 /**
@@ -55,7 +56,7 @@ abstract class AbstractBundler implements Bundler {
     @Override
     public void cleanup(Map<String, ? super Object> params) {
         try {
-            IOUtils.deleteRecursive(
+            FileUtils.deleteRecursive(
                     StandardBundlerParam.TEMP_ROOT.fetchFrom(params));
         } catch (IOException e) {
             Log.verbose(e.getMessage());

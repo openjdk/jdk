@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,6 @@
 
 // Major contributions by JL, LS
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_s390.hpp"
@@ -59,7 +58,7 @@ void NativeInstruction::verify() {
   //  - any address in first page (0x0000 .. 0x0fff)
   //  - odd address (will cause a "specification exception")
   address addr = addr_at(0);
-  if ((addr == 0) || (((unsigned long)addr & ~0x0fff) == 0) || ((intptr_t)addr & 1) != 0) {
+  if ((addr == nullptr) || (((unsigned long)addr & ~0x0fff) == 0) || ((intptr_t)addr & 1) != 0) {
     tty->print_cr(INTPTR_FORMAT ": bad instruction address", p2i(addr));
     fatal("not an instruction address");
   }
@@ -540,7 +539,7 @@ void NativeMovConstReg::set_narrow_klass(intptr_t data) {
   ICache::invalidate_range(start, range);
 }
 
-void NativeMovConstReg::set_pcrel_addr(intptr_t newTarget, CompiledMethod *passed_nm /* = nullptr */) {
+void NativeMovConstReg::set_pcrel_addr(intptr_t newTarget, nmethod *passed_nm /* = nullptr */) {
   address next_address;
   address loc = addr_at(0);
 
@@ -565,7 +564,7 @@ void NativeMovConstReg::set_pcrel_addr(intptr_t newTarget, CompiledMethod *passe
   }
 }
 
-void NativeMovConstReg::set_pcrel_data(intptr_t newData, CompiledMethod *passed_nm /* = nullptr */) {
+void NativeMovConstReg::set_pcrel_data(intptr_t newData, nmethod *passed_nm /* = nullptr */) {
   address  next_address;
   address  loc = addr_at(0);
 
@@ -658,8 +657,8 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
 
 void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer) {
   assert(((intptr_t)instr_addr & (BytesPerWord-1)) == 0, "requirement for mt safe patching");
-  // Bytes_after_jump cannot change, because we own the Patching_lock.
-  assert(Patching_lock->owned_by_self(), "must hold lock to patch instruction");
+  // Bytes_after_jump cannot change, because we own the CodeCache_lock.
+  assert(CodeCache_lock->owned_by_self(), "must hold lock to patch instruction");
   intptr_t bytes_after_jump = (*(intptr_t*)instr_addr)  & 0x000000000000ffffL; // 2 bytes after jump.
   intptr_t load_const_bytes = (*(intptr_t*)code_buffer) & 0xffffffffffff0000L;
   *(intptr_t*)instr_addr = load_const_bytes | bytes_after_jump;

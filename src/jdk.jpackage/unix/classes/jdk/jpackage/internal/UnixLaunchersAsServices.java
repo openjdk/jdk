@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
         return launchers.isEmpty();
     }
 
-    static abstract class UnixLauncherAsService extends LauncherAsService {
+    abstract static class UnixLauncherAsService extends LauncherAsService {
 
         UnixLauncherAsService(String name, Map<String, Object> mainParams,
                 OverridableResource resource) {

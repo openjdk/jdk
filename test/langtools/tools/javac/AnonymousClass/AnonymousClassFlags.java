@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
  * @test
  * @bug 8161013
  * @summary Verify that anonymous class binaries have the correct flags set
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @run main AnonymousClassFlags
  */
 
@@ -125,7 +123,7 @@ public class AnonymousClassFlags {
     }
 
     private static int lookupInnerFlags(ClassModel classFile, String innerName) {
-        InnerClassesAttribute inners = classFile.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+        InnerClassesAttribute inners = classFile.findAttribute(Attributes.innerClasses()).orElse(null);
         if (inners == null) {
             throw new AssertionError("InnerClasses attribute missing in class " + classFile.thisClass().asInternalName());
         }

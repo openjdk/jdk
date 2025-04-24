@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -26,7 +26,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="afh">afrihili</language>
 			<language type="agq">aghem</language>
 			<language type="ain">ainu</language>
-			<language type="ajp">urduni</language>
 			<language type="ak">akan</language>
 			<language type="akk">akkadi</language>
 			<language type="akz">alabama</language>
@@ -38,6 +37,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ang">muinaisenglanti</language>
 			<language type="ann">obolo</language>
 			<language type="anp">angika</language>
+			<language type="apc">urduni</language>
 			<language type="ar">arabia</language>
 			<language type="ar_001">yleisarabia</language>
 			<language type="arc">valtakunnanaramea</language>
@@ -84,7 +84,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bjn">banjar</language>
 			<language type="bkm">kom</language>
 			<language type="bla">siksika</language>
-			<language type="blo" draft="contributed">anii</language>
+			<language type="blo">anii</language>
 			<language type="blt" draft="contributed">tai dam</language>
 			<language type="bm">bambara</language>
 			<language type="bn">bengali</language>
@@ -229,7 +229,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gmh">keskiyläsaksa</language>
 			<language type="gn">guarani</language>
 			<language type="goh">muinaisyläsaksa</language>
-			<language type="gom">goankonkani</language>
 			<language type="gon">gondi</language>
 			<language type="gor">gorontalo</language>
 			<language type="got">gootti</language>
@@ -342,7 +341,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">komi</language>
 			<language type="kw">korni</language>
 			<language type="kwk">kwakʼwala</language>
-			<language type="kxv" draft="contributed">kuvi</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky">kirgiisi</language>
 			<language type="la">latina</language>
 			<language type="lad">ladino</language>
@@ -359,6 +358,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lil">lillooet</language>
 			<language type="liv">liivi</language>
 			<language type="lkt">lakota</language>
+			<language type="lld" draft="contributed">ladin</language>
 			<language type="lmo">lombardi</language>
 			<language type="ln">lingala</language>
 			<language type="lo">lao</language>
@@ -373,7 +373,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lua">luluanluba</language>
 			<language type="lui">luiseño</language>
 			<language type="lun">lunda</language>
-			<language type="luo">luo</language>
 			<language type="lus">lusai</language>
 			<language type="luy">luhya</language>
 			<language type="lv">latvia</language>
@@ -635,14 +634,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="und">tuntematon kieli</language>
 			<language type="ur">urdu</language>
 			<language type="uz">uzbekki</language>
-			<language type="vai">vai</language>
 			<language type="ve">venda</language>
 			<language type="vec">venetsia</language>
 			<language type="vep">vepsä</language>
 			<language type="vi">vietnam</language>
 			<language type="vls">länsiflaami</language>
 			<language type="vmf">maininfrankki</language>
-			<language type="vmw" draft="contributed">makhuwa</language>
+			<language type="vmw">makhuwa</language>
 			<language type="vo">volapük</language>
 			<language type="vot">vatja</language>
 			<language type="vro">võro</language>
@@ -658,7 +656,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="xal">kalmukki</language>
 			<language type="xh">xhosa</language>
 			<language type="xmf">mingreli</language>
-			<language type="xnr" draft="contributed">kangri</language>
+			<language type="xnr">kangri</language>
 			<language type="xog">soga</language>
 			<language type="yao">jao</language>
 			<language type="yap">japi</language>
@@ -1048,8 +1046,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Mansaari</territory>
 			<territory type="IN">Intia</territory>
-			<territory type="IO" draft="contributed">Brittiläinen Intian valtameren alue</territory>
-			<territory type="IO" alt="chagos" draft="contributed">Chagossaaret</territory>
+			<territory type="IO">Brittiläinen Intian valtameren alue</territory>
+			<territory type="IO" alt="chagos">Chagossaaret</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Islanti</territory>
@@ -1386,7 +1384,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">puhelinluettelojärjestys</type>
 			<type key="collation" type="phonetic">äänteellinen järjestys</type>
 			<type key="collation" type="pinyin">pinyin-järjestys</type>
-			<type key="collation" type="reformed">uudistettu järjestys</type>
 			<type key="collation" type="search">yleishakujärjestys</type>
 			<type key="collation" type="searchjl">haku hangul-alkukonsonantin mukaan</type>
 			<type key="collation" type="standard">normaalijärjestys</type>
@@ -1540,7 +1537,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -1981,18 +1978,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1">tammik.</month>
-							<month type="2">helmik.</month>
-							<month type="3">maalisk.</month>
-							<month type="4">huhtik.</month>
-							<month type="5">toukok.</month>
-							<month type="6">kesäk.</month>
-							<month type="7">heinäk.</month>
-							<month type="8">elok.</month>
-							<month type="9">syysk.</month>
-							<month type="10">lokak.</month>
-							<month type="11">marrask.</month>
-							<month type="12">jouluk.</month>
+							<month type="1">tammi</month>
+							<month type="2">helmi</month>
+							<month type="3">maalis</month>
+							<month type="4">huhti</month>
+							<month type="5">touko</month>
+							<month type="6">kesä</month>
+							<month type="7">heinä</month>
+							<month type="8">elo</month>
+							<month type="9">syys</month>
+							<month type="10">loka</month>
+							<month type="11">marras</month>
+							<month type="12">joulu</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">tammikuuta</month>
@@ -2066,7 +2063,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="sat">la</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">sunnuntaina</day>
+							<day type="sun">sunnuntai</day>
 							<day type="mon">maanantaina</day>
 							<day type="tue">tiistaina</day>
 							<day type="wed">keskiviikkona</day>
@@ -2289,8 +2286,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">M.d.y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">LLL y G</dateFormatItem>
-						<dateFormatItem id="GyMMMd">d. MMM y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E d. MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d.M.y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E d.M.y G</dateFormatItem>
 						<dateFormatItem id="GyMMMMd">d. MMMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMMEd">E d. MMMM y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
@@ -2305,8 +2302,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Hmv">H.mm v</dateFormatItem>
 						<dateFormatItem id="Md">d.M.</dateFormatItem>
 						<dateFormatItem id="MEd">E d.M.</dateFormatItem>
-						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
-						<dateFormatItem id="MMMEd">ccc d. MMM</dateFormatItem>
+						<dateFormatItem id="MMMd">d.M.</dateFormatItem>
+						<dateFormatItem id="MMMEd">ccc d.M.</dateFormatItem>
 						<dateFormatItem id="MMMMd">d. MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">ccc d. MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">LLLL'n' W. 'viikko'</dateFormatItem>
@@ -2317,8 +2314,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMEd">E d.M.y</dateFormatItem>
 						<dateFormatItem id="yMM">M.y</dateFormatItem>
 						<dateFormatItem id="yMMM">LLL y</dateFormatItem>
-						<dateFormatItem id="yMMMd">d. MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMEd">E d. MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d.M.y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E d.M.y</dateFormatItem>
 						<dateFormatItem id="yMMMM">LLLL y</dateFormatItem>
 						<dateFormatItem id="yMMMMccccd">cccc d. MMMM y</dateFormatItem>
 						<dateFormatItem id="yMMMMd">d. MMMM y</dateFormatItem>
@@ -3178,8 +3175,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>aikavyöhyke: {0}</regionFormat>
 			<regionFormat type="daylight">{0} (kesäaika)</regionFormat>
 			<regionFormat type="standard">{0} (normaaliaika)</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="Etc/UTC">
 				<long>
@@ -3203,9 +3200,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Wien</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Macquarie">
 				<exemplarCity>Macquariensaari</exemplarCity>
@@ -3261,9 +3255,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity>Kap Verde</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Joulusaari</exemplarCity>
@@ -3417,9 +3408,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Ulan Bator</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Tšoibalsa</exemplarCity>
-			</zone>
 			<zone type="Indian/Maldives">
 				<exemplarCity>Malediivit</exemplarCity>
 			</zone>
@@ -3452,12 +3440,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Lisbon">
 				<exemplarCity>Lissabon</exemplarCity>
-			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
-			</zone>
-			<zone type="Indian/Reunion">
-				<exemplarCity>Réunion</exemplarCity>
 			</zone>
 			<zone type="Europe/Bucharest">
 				<exemplarCity>Bukarest</exemplarCity>
@@ -3510,9 +3492,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Atlantic/St_Helena">
 				<exemplarCity>Saint Helena</exemplarCity>
 			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
-			</zone>
 			<zone type="Asia/Damascus">
 				<exemplarCity>Damaskos</exemplarCity>
 			</zone>
@@ -3531,20 +3510,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ashgabat">
 				<exemplarCity>Ašgabat</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Užgorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiova</exemplarCity>
 			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporižžja</exemplarCity>
-			</zone>
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midwaysaaret</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity>Beulah, Pohjois-Dakota</exemplarCity>
@@ -3825,13 +3795,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Kiinan kesäaika</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Tšoibalsan aika</generic>
-					<standard>Tšoibalsan normaaliaika</standard>
-					<daylight>Tšoibalsan kesäaika</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Joulusaaren aika</standard>
@@ -4082,6 +4045,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Kamtšatkan kesäaika</daylight>
 				</long>
 			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Kazakstanin aika</standard>
+				</long>
+			</metazone>
 			<metazone type="Kazakhstan_Eastern">
 				<long>
 					<standard>Itä-Kazakstanin aika</standard>
@@ -4140,11 +4108,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Macaon kesäaika</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquariensaaren aika</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadanin aika</generic>
@@ -4182,13 +4145,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Mawsonin aika</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Luoteis-Meksikon aika</generic>
-					<standard>Luoteis-Meksikon normaaliaika</standard>
-					<daylight>Luoteis-Meksikon kesäaika</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
@@ -4618,6 +4574,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -4648,8 +4605,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 bilj'.' ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -5862,13 +5817,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="SLE">
 				<displayName>Sierra Leonen leone</displayName>
-				<displayName count="one">Sierra Leonen leonea</displayName>
+				<displayName count="one">Sierra Leonen leone</displayName>
 				<displayName count="other">Sierra Leonen leonea</displayName>
 			</currency>
 			<currency type="SLL">
-				<displayName>Sierra Leonen leone (1964—2022)</displayName>
-				<displayName count="one">Sierra Leonen leone (1964—2022)</displayName>
-				<displayName count="other">Sierra Leonen leonea (1964—2022)</displayName>
+				<displayName>Sierra Leonen leone (1964–2022)</displayName>
+				<displayName count="one">Sierra Leonen leone (1964–2022)</displayName>
+				<displayName count="other">Sierra Leonen leonea (1964–2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somalian šillinki</displayName>
@@ -6058,8 +6013,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="VEB">
 				<displayName>Venezuelan bolívar (1871–2008)</displayName>
-				<displayName count="one">Venezuelan bolivar (1871–2008)</displayName>
-				<displayName count="other">Venezuelan bolivaria (1871–2008)</displayName>
+				<displayName count="one">Venezuelan bolívar (1871–2008)</displayName>
+				<displayName count="other">Venezuelan bolívaria (1871–2008)</displayName>
 			</currency>
 			<currency type="VEF">
 				<displayName>Venezuelan bolívar (2008–2018)</displayName>
@@ -6592,7 +6547,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>milligrammat desilitrassa</displayName>
 				<unitPattern count="one">{0} milligramma desilitrassa</unitPattern>
+				<unitPattern count="one" case="elative">{0} milligrammasta desilitrassa</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milligramman desilitrassa</unitPattern>
+				<unitPattern count="one" case="illative">{0} milligrammaan desilitrassa</unitPattern>
+				<unitPattern count="one" case="partitive">{0} milligrammaa desilitrassa</unitPattern>
 				<unitPattern count="other">{0} milligrammaa desilitrassa</unitPattern>
+				<unitPattern count="other" case="elative">{0} milligrammasta desilitrassa</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milligramman desilitrassa</unitPattern>
+				<unitPattern count="other" case="illative">{0} milligrammaan desilitrassa</unitPattern>
+				<unitPattern count="other" case="partitive">{0} milligrammaa desilitrassa</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<displayName>millimoolit litrassa</displayName>
@@ -7095,7 +7058,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="energy-kilocalorie">
 				<displayName>kilokalorit</displayName>
 				<unitPattern count="one">{0} kilokalori</unitPattern>
+				<unitPattern count="one" case="elative">{0} kilokalorista</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilokalorin</unitPattern>
+				<unitPattern count="one" case="illative">{0} kilokaloriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} kilokaloria</unitPattern>
 				<unitPattern count="other">{0} kilokaloria</unitPattern>
+				<unitPattern count="other" case="elative">{0} kilokalorista</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilokalorin</unitPattern>
+				<unitPattern count="other" case="illative">{0} kilokaloriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} kilokaloria</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
 				<displayName>kalorit</displayName>
@@ -7730,7 +7701,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-millimeter-ofhg">
 				<displayName>elohopeamillimetrit</displayName>
 				<unitPattern count="one">{0} elohopeamillimetri</unitPattern>
+				<unitPattern count="one" case="elative">{0} elohopeamillimetristä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} elohopeamillimetrin</unitPattern>
+				<unitPattern count="one" case="illative">{0} elohopeamillimetriin</unitPattern>
+				<unitPattern count="one" case="partitive">{0} elohopeamillimetriä</unitPattern>
 				<unitPattern count="other">{0} elohopeamillimetriä</unitPattern>
+				<unitPattern count="other" case="elative">{0} elohopeamillimetristä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} elohopeamillimetrin</unitPattern>
+				<unitPattern count="other" case="illative">{0} elohopeamillimetriin</unitPattern>
+				<unitPattern count="other" case="partitive">{0} elohopeamillimetriä</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>paunat / neliötuuma</displayName>
@@ -8178,6 +8157,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} br. neljännesgallona</unitPattern>
 				<unitPattern count="other">{0} br. neljännesgallonaa</unitPattern>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>miljardisosat</displayName>
+				<unitPattern count="one">{0} miljardisosa</unitPattern>
+				<unitPattern count="one" case="elative">{0} miljardisosasta</unitPattern>
+				<unitPattern count="one" case="genitive">{0} miljardisosan</unitPattern>
+				<unitPattern count="one" case="illative">{0} miljardisosaan</unitPattern>
+				<unitPattern count="one" case="partitive">{0} miljardisosaa</unitPattern>
+				<unitPattern count="other">{0} miljardisosaa</unitPattern>
+				<unitPattern count="other" case="elative">{0} miljardisosasta</unitPattern>
+				<unitPattern count="other" case="genitive">{0} miljardisosan</unitPattern>
+				<unitPattern count="other" case="illative">{0} miljardisosaan</unitPattern>
+				<unitPattern count="other" case="partitive">{0} miljardisosaa</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>yöt</displayName>
+				<unitPattern count="one">{0} yö</unitPattern>
+				<unitPattern count="one" case="elative">{0} yöstä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} yön</unitPattern>
+				<unitPattern count="one" case="illative">{0} yöhön</unitPattern>
+				<unitPattern count="one" case="partitive">{0} yötä</unitPattern>
+				<unitPattern count="other">{0} yötä</unitPattern>
+				<unitPattern count="other" case="elative">{0} yöstä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} yön</unitPattern>
+				<unitPattern count="other" case="illative">{0} yöhön</unitPattern>
+				<unitPattern count="other" case="partitive">{0} yötä</unitPattern>
+				<perUnitPattern>{0} / yö</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>pääilmansuunta</displayName>
 			</coordinateUnit>
@@ -8570,6 +8576,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>qt br</displayName>
 				<unitPattern count="one">{0} qt br.</unitPattern>
 				<unitPattern count="other">{0} qt br.</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>yöt</displayName>
+				<unitPattern count="one">{0} yö</unitPattern>
+				<unitPattern count="other">{0} yö</unitPattern>
+				<perUnitPattern>{0}/yö</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ilmansuunta</displayName>
@@ -9297,6 +9309,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<unitPattern count="one">{0}qt br.</unitPattern>
 				<unitPattern count="other">{0}qt br.</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>yöt</displayName>
+				<unitPattern count="one">{0}yö</unitPattern>
+				<unitPattern count="other">{0}yöt</unitPattern>
+				<perUnitPattern>{0}/yö</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>suunta</displayName>

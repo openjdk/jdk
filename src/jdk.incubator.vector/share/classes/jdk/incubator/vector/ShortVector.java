@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     //       super.bOp((Byte128Vector) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
-    // into a sharply type- and size-specific
+    // into a sharply-typed and size-specific
     // wrapper in the subclass file, so that
     // the JIT can specialize the code.
     // The code is only inlined and expanded
@@ -536,12 +536,25 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return r;
     }
 
+    static ShortVector selectFromTwoVectorHelper(Vector<Short> indexes, Vector<Short> src1, Vector<Short> src2) {
+        int vlen = indexes.length();
+        short[] res = new short[vlen];
+        short[] vecPayload1 = ((ShortVector)indexes).vec();
+        short[] vecPayload2 = ((ShortVector)src1).vec();
+        short[] vecPayload3 = ((ShortVector)src2).vec();
+        for (int i = 0; i < vlen; i++) {
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
+        }
+        return ((ShortVector)src1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
     // sometimes makes a lone /** {@inheritDoc} */
     // comment drop the method altogether,
-    // apparently if the method mentions an
+    // apparently if the method mentions a
     // parameter or return type of Vector<Short>
     // instead of Vector<E> as originally specified.
     // Adding an empty HTML fragment appears to
@@ -871,6 +884,18 @@ public abstract class ShortVector extends AbstractVector<Short> {
                     v0.bOp(v1, vm, (i, a, n) -> rotateLeft(a, (int)n));
             case VECTOR_OP_RROTATE: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> rotateRight(a, (int)n));
+            case VECTOR_OP_UMAX: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (short)VectorMath.maxUnsigned(a, b));
+            case VECTOR_OP_UMIN: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (short)VectorMath.minUnsigned(a, b));
+            case VECTOR_OP_SADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (short)(VectorMath.addSaturating(a, b)));
+            case VECTOR_OP_SSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (short)(VectorMath.subSaturating(a, b)));
+            case VECTOR_OP_SUADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (short)(VectorMath.addSaturatingUnsigned(a, b)));
+            case VECTOR_OP_SUSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (short)(VectorMath.subSaturatingUnsigned(a, b)));
             default: return null;
         }
     }
@@ -1071,7 +1096,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     // and broadcast, but it would be more surprising not to continue
     // the obvious pattern started by unary and binary.
 
-   /**
+    /**
      * {@inheritDoc} <!--workaround-->
      * @see #lanewise(VectorOperators.Ternary,short,short,VectorMask)
      * @see #lanewise(VectorOperators.Ternary,Vector,short,VectorMask)
@@ -1723,7 +1748,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
      * Computes the bitwise logical conjunction ({@code &})
      * of this vector and a second input vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "and" operation ({@code &})
      * to each pair of corresponding lane values.
      *
@@ -1756,7 +1781,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
      * Computes the bitwise logical conjunction ({@code &})
      * of this vector and a scalar.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "and" operation ({@code &})
      * to each pair of corresponding lane values.
      *
@@ -1780,7 +1805,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
      * Computes the bitwise logical disjunction ({@code |})
      * of this vector and a second input vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "or" operation ({@code |})
      * to each pair of corresponding lane values.
      *
@@ -1813,7 +1838,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
      * Computes the bitwise logical disjunction ({@code |})
      * of this vector and a scalar.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "or" operation ({@code |})
      * to each pair of corresponding lane values.
      *
@@ -1882,7 +1907,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
      * Computes the bitwise logical complement ({@code ~})
      * of this vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "not" operation ({@code ~})
      * to each lane value.
      *
@@ -2284,9 +2309,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortVector that = (ShortVector) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Short> iota = iotaShuffle();
-        VectorMask<Short> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((short)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        ShortVector iotaVector = (ShortVector) iotaShuffle().toBitsVector();
+        ShortVector filter = broadcast((short)(length() - origin));
+        VectorMask<Short> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+        AbstractShuffle<Short> iota = iotaShuffle(origin, 1, true);
         return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
@@ -2314,9 +2340,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
     @ForceInline
     ShortVector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Short> iota = iotaShuffle();
-        VectorMask<Short> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((short)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        ShortVector iotaVector = (ShortVector) iotaShuffle().toBitsVector();
+        ShortVector filter = broadcast((short)(length() - origin));
+        VectorMask<Short> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+        AbstractShuffle<Short> iota = iotaShuffle(origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2335,10 +2362,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortVector that = (ShortVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Short> iota = iotaShuffle();
-        VectorMask<Short> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
-                                                                  (broadcast((short)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        ShortVector iotaVector = (ShortVector) iotaShuffle().toBitsVector();
+        ShortVector filter = broadcast((short)origin);
+        VectorMask<Short> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);
+        AbstractShuffle<Short> iota = iotaShuffle(-origin, 1, true);
         return that.blend(this.rearrange(iota), blendMask);
     }
 
@@ -2375,10 +2402,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
     ShortVector
     unsliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Short> iota = iotaShuffle();
-        VectorMask<Short> blendMask = iota.toVector().compare(VectorOperators.GE,
-                                                                  (broadcast((short)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        ShortVector iotaVector = (ShortVector) iotaShuffle().toBitsVector();
+        ShortVector filter = broadcast((short)origin);
+        VectorMask<Short> blendMask = iotaVector.compare(VectorOperators.GE, filter);
+        AbstractShuffle<Short> iota = iotaShuffle(-origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2394,19 +2421,19 @@ public abstract class ShortVector extends AbstractVector<Short> {
      */
     @Override
     public abstract
-    ShortVector rearrange(VectorShuffle<Short> m);
+    ShortVector rearrange(VectorShuffle<Short> shuffle);
 
     /*package-private*/
     @ForceInline
     final
     <S extends VectorShuffle<Short>>
     ShortVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        shuffle.checkIndexes();
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, short.class, length(),
             this, shuffle, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
-                int ei = s_.laneSource(i);
+                int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
     }
@@ -2427,19 +2454,14 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
-        VectorMask<Short> valid = shuffle.laneIsValid();
-        if (m.andNot(valid).anyTrue()) {
-            shuffle.checkIndexes();
-            throw new AssertionError();
-        }
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, short.class, length(),
                    this, shuffle, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
-                        int ei = s_.laneSource(i);
-                        return ei < 0  || !m_.laneIsSet(i) ? 0 : v1.lane(ei);
+                        int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
+                        return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
     }
 
@@ -2459,30 +2481,29 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                            S shuffle,
                                            ShortVector v) {
         VectorMask<Short> valid = shuffle.laneIsValid();
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
         ShortVector r0 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, short.class, length(),
-                this, ws, null,
+                this, shuffle, null,
                 (v0, s_, m_) -> v0.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
         ShortVector r1 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, short.class, length(),
-                v, ws, null,
+                v, shuffle, null,
                 (v1, s_, m_) -> v1.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));
         return r1.blend(r0, valid);
     }
 
+    @Override
     @ForceInline
-    private final
-    VectorShuffle<Short> toShuffle0(ShortSpecies dsp) {
+    final <F> VectorShuffle<F> bitsToShuffle0(AbstractSpecies<F> dsp) {
+        assert(dsp.length() == vspecies().length());
         short[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
@@ -2491,16 +2512,18 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return VectorShuffle.fromArray(dsp, sa, 0);
     }
 
-    /*package-private*/
     @ForceInline
-    final
-    VectorShuffle<Short> toShuffleTemplate(Class<?> shuffleType) {
-        ShortSpecies vsp = vspecies();
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     getClass(), short.class, length(),
-                                     shuffleType, byte.class, length(),
-                                     this, vsp,
-                                     ShortVector::toShuffle0);
+    final <F>
+    VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap) {
+        assert(dsp.elementSize() == vspecies().elementSize());
+        ShortVector idx = this;
+        ShortVector wrapped = idx.lanewise(VectorOperators.AND, length() - 1);
+        if (!wrap) {
+            ShortVector wrappedEx = wrapped.lanewise(VectorOperators.SUB, length());
+            VectorMask<Short> inBound = wrapped.compare(VectorOperators.EQ, idx);
+            wrapped = wrappedEx.blend(wrapped, inBound);
+        }
+        return wrapped.bitsToShuffle(dsp);
     }
 
     /**
@@ -2552,7 +2575,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
     /*package-private*/
     @ForceInline
     final ShortVector selectFromTemplate(ShortVector v) {
-        return v.rearrange(this.toShuffle());
+        return (ShortVector)VectorSupport.selectFromOp(getClass(), null, short.class,
+                                                        length(), this, v, null,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle()));
     }
 
     /**
@@ -2564,9 +2590,31 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     /*package-private*/
     @ForceInline
-    final ShortVector selectFromTemplate(ShortVector v,
-                                                  AbstractMask<Short> m) {
-        return v.rearrange(this.toShuffle(), m);
+    final
+    <M extends VectorMask<Short>>
+    ShortVector selectFromTemplate(ShortVector v,
+                                            Class<M> masktype, M m) {
+        m.check(masktype, this);
+        return (ShortVector)VectorSupport.selectFromOp(getClass(), masktype, short.class,
+                                                        length(), this, v, m,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle(), _m));
+    }
+
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    ShortVector selectFrom(Vector<Short> v1, Vector<Short> v2);
+
+
+    /*package-private*/
+    @ForceInline
+    final ShortVector selectFromTemplate(ShortVector v1, ShortVector v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), short.class, length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations
@@ -2822,6 +2870,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
                     toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (short) Math.min(a, b)));
             case VECTOR_OP_MAX: return (v, m) ->
                     toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (short) Math.max(a, b)));
+            case VECTOR_OP_UMIN: return (v, m) ->
+                    toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (short) VectorMath.minUnsigned(a, b)));
+            case VECTOR_OP_UMAX: return (v, m) ->
+                    toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (short) VectorMath.maxUnsigned(a, b)));
             case VECTOR_OP_AND: return (v, m) ->
                     toBits(v.rOp((short)-1, m, (i, a, b) -> (short)(a & b)));
             case VECTOR_OP_OR: return (v, m) ->
@@ -2899,7 +2951,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code ShortVector},
      * there will be no loss of precision or range,
      * and so no {@code UnsupportedOperationException} will
@@ -2919,7 +2971,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code ShortVector},
      * there will be no loss of precision or range,
      * and so no {@code UnsupportedOperationException} will
@@ -2939,7 +2991,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code ShortVector},
      * there will be no loss of precision.
      */
@@ -3009,7 +3061,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
             return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<Short>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
@@ -3050,7 +3103,35 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                    short[] a, int offset,
                                    int[] indexMap, int mapOffset) {
         ShortSpecies vsp = (ShortSpecies) species;
-        return vsp.vOp(n -> a[offset + indexMap[mapOffset + n]]);
+        IntVector.IntSpecies isp = IntVector.species(vsp.indexShape());
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(indexMap);
+        Class<? extends ShortVector> vectorType = vsp.vectorType();
+
+
+        // Constant folding should sweep out following conditonal logic.
+        VectorSpecies<Integer> lsp;
+        if (isp.length() > IntVector.SPECIES_PREFERRED.length()) {
+            lsp = IntVector.SPECIES_PREFERRED;
+        } else {
+            lsp = isp;
+        }
+
+        // Check indices are within array bounds.
+        for (int i = 0; i < vsp.length(); i += lsp.length()) {
+            IntVector vix = IntVector
+                .fromArray(lsp, indexMap, mapOffset + i)
+                .add(offset);
+            VectorIntrinsics.checkIndex(vix, a.length);
+        }
+
+        return VectorSupport.loadWithMap(
+            vectorType, null, short.class, vsp.laneCount(),
+            lsp.vectorType(),
+            a, ARRAY_BASE, null, null,
+            a, offset, indexMap, mapOffset, vsp,
+            (c, idx, iMap, idy, s, vm) ->
+            s.vOp(n -> c[idx + iMap[idy+n]]));
     }
 
     /**
@@ -3095,8 +3176,13 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                    short[] a, int offset,
                                    int[] indexMap, int mapOffset,
                                    VectorMask<Short> m) {
-        ShortSpecies vsp = (ShortSpecies) species;
-        return vsp.vOp(m, n -> a[offset + indexMap[mapOffset + n]]);
+        if (m.allTrue()) {
+            return fromArray(species, a, offset, indexMap, mapOffset);
+        }
+        else {
+            ShortSpecies vsp = (ShortSpecies) species;
+            return vsp.dummyVector().fromArray0(a, offset, indexMap, mapOffset, m);
+        }
     }
 
     /**
@@ -3157,7 +3243,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
             return vsp.dummyVector().fromCharArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<Short>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromCharArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
@@ -3345,7 +3432,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
             return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_IN_RANGE).maybeSwap(bo);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 2, ms.byteSize());
+        ((AbstractMask<Short>)m)
+            .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 2);
         return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_OUT_OF_RANGE).maybeSwap(bo);
     }
 
@@ -3413,7 +3501,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
         } else {
             ShortSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<Short>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoArray0(a, offset, m);
         }
@@ -3562,7 +3651,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
         } else {
             ShortSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<Short>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoCharArray0(a, offset, m);
         }
@@ -3689,7 +3779,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
             }
             ShortSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
-                checkMaskFromIndexSize(offset, vsp, m, 2, ms.byteSize());
+                ((AbstractMask<Short>)m)
+                    .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 2);
             }
             maybeSwap(bo).intoMemorySegment0(ms, offset, m);
         }
@@ -3746,6 +3837,49 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                         (arr_, off_, i) -> arr_[off_ + i]));
     }
 
+    /*package-private*/
+    abstract
+    ShortVector fromArray0(short[] a, int offset,
+                                    int[] indexMap, int mapOffset,
+                                    VectorMask<Short> m);
+    @ForceInline
+    final
+    <M extends VectorMask<Short>>
+    ShortVector fromArray0Template(Class<M> maskClass, short[] a, int offset,
+                                            int[] indexMap, int mapOffset, M m) {
+        ShortSpecies vsp = vspecies();
+        IntVector.IntSpecies isp = IntVector.species(vsp.indexShape());
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(indexMap);
+        m.check(vsp);
+        Class<? extends ShortVector> vectorType = vsp.vectorType();
+
+
+        // Constant folding should sweep out following conditonal logic.
+        VectorSpecies<Integer> lsp;
+        if (isp.length() > IntVector.SPECIES_PREFERRED.length()) {
+            lsp = IntVector.SPECIES_PREFERRED;
+        } else {
+            lsp = isp;
+        }
+
+        // Check indices are within array bounds.
+        // FIXME: Check index under mask controlling.
+        for (int i = 0; i < vsp.length(); i += lsp.length()) {
+            IntVector vix = IntVector
+                .fromArray(lsp, indexMap, mapOffset + i)
+                .add(offset);
+            VectorIntrinsics.checkIndex(vix, a.length);
+        }
+
+        return VectorSupport.loadWithMap(
+            vectorType, maskClass, short.class, vsp.laneCount(),
+            lsp.vectorType(),
+            a, ARRAY_BASE, null, m,
+            a, offset, indexMap, mapOffset, vsp,
+            (c, idx, iMap, idy, s, vm) ->
+            s.vOp(vm, n -> c[idx + iMap[idy+n]]));
+    }
 
     /*package-private*/
     abstract
@@ -3897,26 +4031,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
     }
 
     // End of low-level memory operations.
-
-    private static
-    void checkMaskFromIndexSize(int offset,
-                                ShortSpecies vsp,
-                                VectorMask<Short> m,
-                                int scale,
-                                int limit) {
-        ((AbstractMask<Short>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
-
-    private static
-    void checkMaskFromIndexSize(long offset,
-                                ShortSpecies vsp,
-                                VectorMask<Short> m,
-                                int scale,
-                                long limit) {
-        ((AbstractMask<Short>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
 
     @ForceInline
     private void conditionalStoreNYI(int offset,
@@ -4086,9 +4200,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
         private ShortSpecies(VectorShape shape,
                 Class<? extends ShortVector> vectorType,
                 Class<? extends AbstractMask<Short>> maskType,
+                Class<? extends AbstractShuffle<Short>> shuffleType,
                 Function<Object, ShortVector> vectorFactory) {
             super(shape, LaneType.of(short.class),
-                  vectorType, maskType,
+                  vectorType, maskType, shuffleType,
                   vectorFactory);
             assert(this.elementSize() == Short.SIZE);
         }
@@ -4188,9 +4303,19 @@ public abstract class ShortVector extends AbstractVector<Short> {
         @ForceInline
         @Override final
         public ShortVector fromArray(Object a, int offset) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return ShortVector
                 .fromArray(this, (short[]) a, offset);
+        }
+
+        @ForceInline
+        @Override final
+        public ShortVector fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
+            return ShortVector
+                .fromMemorySegment(this, ms, offset, bo);
         }
 
         @ForceInline
@@ -4364,6 +4489,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         = new ShortSpecies(VectorShape.S_64_BIT,
                             Short64Vector.class,
                             Short64Vector.Short64Mask.class,
+                            Short64Vector.Short64Shuffle.class,
                             Short64Vector::new);
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
@@ -4371,6 +4497,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         = new ShortSpecies(VectorShape.S_128_BIT,
                             Short128Vector.class,
                             Short128Vector.Short128Mask.class,
+                            Short128Vector.Short128Shuffle.class,
                             Short128Vector::new);
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
@@ -4378,6 +4505,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         = new ShortSpecies(VectorShape.S_256_BIT,
                             Short256Vector.class,
                             Short256Vector.Short256Mask.class,
+                            Short256Vector.Short256Shuffle.class,
                             Short256Vector::new);
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
@@ -4385,6 +4513,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         = new ShortSpecies(VectorShape.S_512_BIT,
                             Short512Vector.class,
                             Short512Vector.Short512Mask.class,
+                            Short512Vector.Short512Shuffle.class,
                             Short512Vector::new);
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
@@ -4392,6 +4521,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         = new ShortSpecies(VectorShape.S_Max_BIT,
                             ShortMaxVector.class,
                             ShortMaxVector.ShortMaxMask.class,
+                            ShortMaxVector.ShortMaxShuffle.class,
                             ShortMaxVector::new);
 
     /**

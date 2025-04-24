@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -356,7 +356,7 @@ public final class ListFormat extends Format {
     public String format(List<String> input) {
         Objects.requireNonNull(input);
 
-        return format(input, new StringBuffer(),
+        return format(input, StringBufFactory.of(),
                 DontCareFieldPosition.INSTANCE).toString();
     }
 
@@ -381,6 +381,18 @@ public final class ListFormat extends Format {
         Objects.requireNonNull(obj);
         Objects.requireNonNull(toAppendTo);
 
+        return format(obj, StringBufFactory.of(toAppendTo)).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(Object obj, StringBuf toAppendTo, FieldPosition pos) {
+        Objects.requireNonNull(obj);
+        Objects.requireNonNull(toAppendTo);
+
+        return format(obj, toAppendTo);
+    }
+
+    private StringBuf format(Object obj, StringBuf toAppendTo) {
         if (obj instanceof Object[] objs) {
             return generateMessageFormat(objs).format(objs, toAppendTo, DontCareFieldPosition.INSTANCE);
         } else if (obj instanceof List<?> objs) {
@@ -530,7 +542,7 @@ public final class ListFormat extends Format {
     }
 
     /**
-     * {@inheritDoc}
+     * {@return a string identifying this {@code ListFormat}, for debugging}
      */
     @Override
     public String toString() {

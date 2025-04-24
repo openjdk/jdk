@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,14 @@ import javax.swing.plaf.nimbus.AbstractRegionPainter;
 /*
  * @test
  * @bug 8080972
- * @run main/othervm -Djava.security.manager=allow TestAbstractRegionPainter
  * @summary Audit Core Reflection in module java.desktop for places that will
  *          require changes to work with modules
- * @author Alexander Scherbatiy
+ * @run main TestAbstractRegionPainter
  */
 
 public class TestAbstractRegionPainter {
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(TestAbstractRegionPainter::testAbstractRegionPainter);
-        System.setSecurityManager(new SecurityManager());
         SwingUtilities.invokeAndWait(TestAbstractRegionPainter::testAbstractRegionPainter);
     }
 

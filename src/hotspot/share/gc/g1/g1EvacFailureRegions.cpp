@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -64,8 +63,8 @@ bool G1EvacFailureRegions::contains(uint region_idx) const {
   return _regions_evac_failed.par_at(region_idx, memory_order_relaxed);
 }
 
-void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
-                                       HeapRegionClaimer* hrclaimer,
+void G1EvacFailureRegions::par_iterate(G1HeapRegionClosure* closure,
+                                       G1HeapRegionClaimer* hrclaimer,
                                        uint worker_id) const {
   G1CollectedHeap::heap()->par_iterate_regions_array(closure,
                                                      hrclaimer,

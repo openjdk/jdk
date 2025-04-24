@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,23 @@
 /**
  * @test
  * @bug 4508341 7055362
- * @library ../../../java/security/testlibrary
+ * @library /test/lib
  * @summary Test the error conditions of
  * EncryptedPrivateKeyInfo.getKeySpec(...) methods.
  * @author Valerie Peng
+ * @run main/othervm -DcipherAlg=PBEWithMD5AndDES GetKeySpecException
+ * @run main/othervm -DcipherAlg=PBEWithSHA1AndDESede GetKeySpecException
  */
+
 import java.security.*;
-import java.util.Arrays;
 import java.util.Vector;
 import java.security.spec.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
+import jdk.test.lib.security.ProvidersSnapshot;
 
 public class GetKeySpecException {
-    private static final String cipherAlg = "PBEWithMD5AndDES";
+    private static String cipherAlg;
     private static final char[] passwd = { 'p','a','s','s','w','d' };
     private static SecretKey cipherKey;
     private static Cipher cipher = null;
@@ -50,7 +53,8 @@ public class GetKeySpecException {
 
     static {
         try {
-            sunjce = Security.getProvider("SunJCE");
+            cipherAlg = System.getProperty("cipherAlg");
+            sunjce = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
             PBEParameterSpec badParamSpec =
                 new PBEParameterSpec(new byte[10], 10);
             BAD_PARAMS = AlgorithmParameters.getInstance(cipherAlg, sunjce);
@@ -61,7 +65,7 @@ public class GetKeySpecException {
             GOOD_PARAMS.init(goodParamSpec);
             PBEKeySpec keySpec = new PBEKeySpec(passwd);
             SecretKeyFactory skf =
-                SecretKeyFactory.getInstance(cipherAlg, "SunJCE");
+                SecretKeyFactory.getInstance(cipherAlg, System.getProperty("test.provider.name", "SunJCE"));
             cipherKey = skf.generateSecret(keySpec);
         } catch (Exception ex) {
             // should never happen
@@ -164,7 +168,7 @@ public class GetKeySpecException {
         // TEST#3: getKeySpec(Key, String)
         System.out.println("Testing getKeySpec(Key, String)...");
         try {
-            pkcs8Spec = epki.getKeySpec(null, "SunJCE");
+            pkcs8Spec = epki.getKeySpec(null, System.getProperty("test.provider.name", "SunJCE"));
             throwException("Should throw NPE for null Key!");
         } catch (NullPointerException npe) {
             System.out.println("Expected NPE thrown");
@@ -176,13 +180,13 @@ public class GetKeySpecException {
             System.out.println("Expected NPE thrown");
         }
         try {
-            pkcs8Spec = epki.getKeySpec(INVALID_KEY, "SunJCE");
+            pkcs8Spec = epki.getKeySpec(INVALID_KEY, System.getProperty("test.provider.name", "SunJCE"));
             throwException("Should throw IKE for invalid Key!");
         } catch (InvalidKeyException ikse) {
             System.out.println("Expected IKE thrown");
         }
         try {
-            pkcs8Spec = epkiBad.getKeySpec(cipherKey, "SunJCE");
+            pkcs8Spec = epkiBad.getKeySpec(cipherKey, System.getProperty("test.provider.name", "SunJCE"));
             throwException("Should throw IKE for corrupted epki!");
         } catch (InvalidKeyException ike) {
             System.out.println("Expected IKE thrown");
@@ -195,8 +199,9 @@ public class GetKeySpecException {
             System.out.println("Expected NSAE thrown");
         }
         try {
-            Security.removeProvider("SunJCE");
-            pkcs8Spec = epki.getKeySpec(cipherKey, "SunJCE");
+            Security.removeProvider(System.getProperty("test.provider.name", "SunJCE"));
+            pkcs8Spec = epki.getKeySpec(cipherKey,
+                    System.getProperty("test.provider.name", "SunJCE"));
             throwException("Should throw NSPE for unconfigured provider!");
         } catch (NoSuchProviderException nspe) {
             System.out.println("Expected NSPE thrown");

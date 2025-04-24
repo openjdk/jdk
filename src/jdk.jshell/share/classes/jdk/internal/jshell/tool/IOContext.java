@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,12 @@ abstract class IOContext implements AutoCloseable {
     }
 
     public String readUserLine(String prompt) throws IOException {
+        userOutput().write(prompt);
+        userOutput().flush();
+        throw new UserInterruptException("");
+    }
+
+    public String readUserLine() throws IOException {
         throw new UserInterruptException("");
     }
 
@@ -72,6 +78,8 @@ abstract class IOContext implements AutoCloseable {
     }
 
     public char[] readPassword(String prompt) throws IOException {
+        userOutput().write(prompt);
+        userOutput().flush();
         throw new UserInterruptException("");
     }
 

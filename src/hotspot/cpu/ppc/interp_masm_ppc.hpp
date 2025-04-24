@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -48,6 +48,14 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   virtual void check_and_handle_popframe(Register scratch_reg);
   virtual void check_and_handle_earlyret(Register scratch_reg);
+
+  void call_VM_preemptable(Register oop_result, address entry_point, Register arg_1, bool check_exceptions = true);
+  void restore_after_resume(Register fp);
+  // R22 and R31 are preserved when a vthread gets preempted in the interpreter.
+  // The interpreter already assumes that these registers are nonvolatile across native calls.
+  bool nonvolatile_accross_vthread_preemtion(Register r) const {
+    return r->is_nonvolatile() && ((r == R22) || (r == R31));
+  }
 
   // Base routine for all dispatches.
   void dispatch_base(TosState state, address* table);
@@ -182,7 +190,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Special call VM versions that check for exceptions and forward exception
   // via short cut (not via expensive forward exception stub).
   void check_and_forward_exception(Register Rscratch1, Register Rscratch2);
-  void call_VM(Register oop_result, address entry_point, bool check_exceptions = true);
+  void call_VM(Register oop_result, address entry_point, bool check_exceptions = true, Label* last_java_pc = nullptr);
   void call_VM(Register oop_result, address entry_point, Register arg_1, bool check_exceptions = true);
   void call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2, bool check_exceptions = true);
   void call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2, Register arg_3, bool check_exceptions = true);
@@ -257,7 +265,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Debugging
   void verify_oop(Register reg, TosState state = atos);    // only if +VerifyOops && state == atos
   void verify_oop_or_return_address(Register reg, Register rtmp); // for astore
-  void verify_FPU(int stack_depth, TosState state = ftos);
 
   typedef enum { NotifyJVMTI, SkipNotifyJVMTI } NotifyMethodExitMode;
 

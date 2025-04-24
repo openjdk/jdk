@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ class StatSampler : AllStatic {
     static void sample_data(PerfDataList* list);
     static void assert_system_property(const char* name, const char* value, TRAPS);
     static void add_property_constant(CounterNS name_space, const char* name, TRAPS);
+    static void add_optional_property_constant(CounterNS name_space, const char* name, TRAPS);
     static void add_property_constant(CounterNS name_space, const char* name, const char* value, TRAPS);
     static void create_system_property_instrumentation(TRAPS);
 

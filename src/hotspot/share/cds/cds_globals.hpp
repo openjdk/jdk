@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@
                   develop_pd,                                               \
                   product,                                                  \
                   product_pd,                                               \
-                  notproduct,                                               \
                   range,                                                    \
                   constraint)                                               \
   /* Shared spaces */                                                       \
@@ -72,6 +71,10 @@
           "\"archivedObjects\" of the specified class is stored in the "    \
           "CDS archive heap")                                               \
                                                                             \
+  develop(ccstr, AOTInitTestClass, nullptr,                                 \
+          "For JVM internal testing only. The specified class is stored "   \
+          "in the initialized state in the AOT cache ")                     \
+                                                                            \
   product(ccstr, DumpLoadedClassList, nullptr,                              \
           "Dump the names all loaded classes, that could be stored into "   \
           "the CDS archive, in the specified file")                         \
@@ -95,6 +98,35 @@
            "(2) always map at preferred address, and if unsuccessful, "     \
            "do not map the archive")                                        \
            range(0, 2)                                                      \
+                                                                            \
+  /*========== New "AOT" flags =========================================*/  \
+  /* The following 3 flags are aliases of -Xshare:dump,                 */  \
+  /* -XX:SharedArchiveFile=..., etc. See CDSConfig::check_flag_aliases()*/  \
+                                                                            \
+  product(ccstr, AOTMode, nullptr,                                          \
+          "Specifies how AOTCache should be created or used. Valid values " \
+          "are: off, record, create, auto, on; the default is auto")        \
+          constraint(AOTModeConstraintFunc, AtParse)                        \
+                                                                            \
+  product(ccstr, AOTConfiguration, nullptr,                                 \
+          "The configuration file written by -XX:AOTMode=record, and "      \
+          "loaded by -XX:AOTMode=create. This file contains profiling data "\
+          "for deciding what contents should be added to AOTCache. ")       \
+                                                                            \
+  product(ccstr, AOTCache, nullptr,                                         \
+          "Cache for improving start up and warm up")                       \
+                                                                            \
+  product(bool, AOTInvokeDynamicLinking, false, DIAGNOSTIC,                 \
+          "AOT-link JVM_CONSTANT_InvokeDynamic entries in cached "          \
+          "ConstantPools")                                                  \
+                                                                            \
+  product(bool, AOTClassLinking, false,                                     \
+          "Load/link all archived classes for the boot/platform/app "       \
+          "loaders before application main")                                \
+                                                                            \
+  product(bool, AOTCacheParallelRelocation, true, DIAGNOSTIC,               \
+          "Use parallel relocation code to speed up startup.")              \
+                                                                            \
 // end of CDS_FLAGS
 
 DECLARE_FLAGS(CDS_FLAGS)

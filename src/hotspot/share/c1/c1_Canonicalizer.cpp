@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_Canonicalizer.hpp"
 #include "c1/c1_InstructionPrinter.hpp"
 #include "c1/c1_ValueStack.hpp"
@@ -469,9 +468,11 @@ void Canonicalizer::do_CompareOp      (CompareOp*       x) {
 
 
 void Canonicalizer::do_IfOp(IfOp* x) {
-  // Caution: do not use do_Op2(x) here for now since
-  //          we map the condition to the op for now!
-  move_const_to_right(x);
+  // Currently, Canonicalizer is only used by GraphBuilder,
+  // and IfOp is not created by GraphBuilder but only later
+  // when eliminating conditional expressions with CE_Eliminator,
+  // so this method will not be called.
+  ShouldNotReachHere();
 }
 
 
@@ -522,7 +523,7 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
       ciType* t = c->value()->java_mirror_type();
       if (t->is_klass()) {
         // substitute cls.isInstance(obj) of a constant Class into
-        // an InstantOf instruction
+        // an InstanceOf instruction
         InstanceOf* i = new InstanceOf(t->as_klass(), x->argument_at(1), x->state_before());
         set_canonical(i);
         // and try to canonicalize even further
@@ -531,33 +532,6 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
         assert(t->is_primitive_type(), "should be a primitive type");
         // cls.isInstance(obj) always returns false for primitive classes
         set_constant(0);
-      }
-    }
-    break;
-  }
-  case vmIntrinsics::_isPrimitive        : {
-    assert(x->number_of_arguments() == 1, "wrong type");
-
-    // Class.isPrimitive is known on constant classes:
-    InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
-    if (c != nullptr && !c->value()->is_null_object()) {
-      ciType* t = c->value()->java_mirror_type();
-      set_constant(t->is_primitive_type());
-    }
-    break;
-  }
-  case vmIntrinsics::_getModifiers: {
-    assert(x->number_of_arguments() == 1, "wrong type");
-
-    // Optimize for Foo.class.getModifier()
-    InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
-    if (c != nullptr && !c->value()->is_null_object()) {
-      ciType* t = c->value()->java_mirror_type();
-      if (t->is_klass()) {
-        set_constant(t->as_klass()->modifier_flags());
-      } else {
-        assert(t->is_primitive_type(), "should be a primitive type");
-        set_constant(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
       }
     }
     break;
@@ -842,9 +816,18 @@ void Canonicalizer::do_LookupSwitch(LookupSwitch* x) {
   if (x->tag()->type()->is_constant()) {
     int v = x->tag()->type()->as_IntConstant()->value();
     BlockBegin* sux = x->default_sux();
-    for (int i = 0; i < x->length(); i++) {
-      if (v == x->key_at(i)) {
-        sux = x->sux_at(i);
+    int low = 0;
+    int high = x->length() - 1;
+    while (low <= high) {
+      int mid = low + ((high - low) >> 1);
+      int key = x->key_at(mid);
+      if (key == v) {
+        sux = x->sux_at(mid);
+        break;
+      } else if (key > v) {
+        high = mid - 1;
+      } else {
+        low = mid + 1;
       }
     }
     set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
@@ -857,7 +840,6 @@ void Canonicalizer::do_Throw          (Throw*           x) {}
 void Canonicalizer::do_Base           (Base*            x) {}
 void Canonicalizer::do_OsrEntry       (OsrEntry*        x) {}
 void Canonicalizer::do_ExceptionObject(ExceptionObject* x) {}
-void Canonicalizer::do_RoundFP        (RoundFP*         x) {}
 void Canonicalizer::do_UnsafeGet      (UnsafeGet*       x) {}
 void Canonicalizer::do_UnsafePut      (UnsafePut*       x) {}
 void Canonicalizer::do_UnsafeGetAndSet(UnsafeGetAndSet* x) {}

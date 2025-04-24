@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,8 @@ class TzdbZoneRulesProvider {
                         }
                         continue;
                     }
-                    if (line.startsWith("Zone")) {        // parse Zone line
+                    int token0len = tokens.length > 0 ? tokens[0].length() : line.length();
+                    if (line.regionMatches(true, 0, "Zone", 0, token0len)) {        // parse Zone line
                         String name = tokens[1];
                         if (excludedZones.contains(name)){
                             continue;
@@ -182,13 +183,13 @@ class TzdbZoneRulesProvider {
                         if (zLine.parse(tokens, 2)) {
                             openZone = null;
                         }
-                    } else if (line.startsWith("Rule")) { // parse Rule line
+                    } else if (line.regionMatches(true, 0, "Rule", 0, token0len)) { // parse Rule line
                         String name = tokens[1];
                         if (!rules.containsKey(name)) {
                             rules.put(name, new ArrayList<RuleLine>(10));
                         }
                         rules.get(name).add(new RuleLine().parse(tokens));
-                    } else if (line.startsWith("Link")) { // parse link line
+                    } else if (line.regionMatches(true, 0, "Link", 0, token0len)) { // parse link line
                         if (tokens.length >= 3) {
                             String realId = tokens[1];
                             String aliasId = tokens[2];
@@ -304,7 +305,7 @@ class TzdbZoneRulesProvider {
             month = parseMonth(tokens[off++]);
             if (off < tokens.length) {
                 String dayRule = tokens[off++];
-                if (dayRule.startsWith("last")) {
+                if (dayRule.regionMatches(true, 0, "last", 0, 4)) {
                     dayOfMonth = -1;
                     dayOfWeek = parseDayOfWeek(dayRule.substring(4));
                     adjustForwards = false;
@@ -355,42 +356,45 @@ class TzdbZoneRulesProvider {
         }
 
         int parseYear(String year, int defaultYear) {
-            switch (year.toLowerCase()) {
-            case "min":  return 1900;
-            case "max":  return Year.MAX_VALUE;
-            case "only": return defaultYear;
-            }
+            int len = year.length();
+
+            if (year.regionMatches(true, 0, "minimum", 0, len)) return 1900;
+            if (year.regionMatches(true, 0, "maximum", 0, len)) return Year.MAX_VALUE;
+            if (year.regionMatches(true, 0, "only", 0, len)) return defaultYear;
+
             return Integer.parseInt(year);
         }
 
         Month parseMonth(String mon) {
-            switch (mon) {
-            case "Jan": return Month.JANUARY;
-            case "Feb": return Month.FEBRUARY;
-            case "Mar": return Month.MARCH;
-            case "Apr": return Month.APRIL;
-            case "May": return Month.MAY;
-            case "Jun": return Month.JUNE;
-            case "Jul": return Month.JULY;
-            case "Aug": return Month.AUGUST;
-            case "Sep": return Month.SEPTEMBER;
-            case "Oct": return Month.OCTOBER;
-            case "Nov": return Month.NOVEMBER;
-            case "Dec": return Month.DECEMBER;
-            }
+            int len = mon.length();
+
+            if (mon.regionMatches(true, 0, "January", 0, len)) return Month.JANUARY;
+            if (mon.regionMatches(true, 0, "February", 0, len)) return Month.FEBRUARY;
+            if (mon.regionMatches(true, 0, "March", 0, len)) return Month.MARCH;
+            if (mon.regionMatches(true, 0, "April", 0, len)) return Month.APRIL;
+            if (mon.regionMatches(true, 0, "May", 0, len)) return Month.MAY;
+            if (mon.regionMatches(true, 0, "June", 0, len)) return Month.JUNE;
+            if (mon.regionMatches(true, 0, "July", 0, len)) return Month.JULY;
+            if (mon.regionMatches(true, 0, "August", 0, len)) return Month.AUGUST;
+            if (mon.regionMatches(true, 0, "September", 0, len)) return Month.SEPTEMBER;
+            if (mon.regionMatches(true, 0, "October", 0, len)) return Month.OCTOBER;
+            if (mon.regionMatches(true, 0, "November", 0, len)) return Month.NOVEMBER;
+            if (mon.regionMatches(true, 0, "December", 0, len)) return Month.DECEMBER;
+
             throw new IllegalArgumentException("Unknown month: " + mon);
         }
 
         DayOfWeek parseDayOfWeek(String dow) {
-            switch (dow) {
-            case "Mon": return DayOfWeek.MONDAY;
-            case "Tue": return DayOfWeek.TUESDAY;
-            case "Wed": return DayOfWeek.WEDNESDAY;
-            case "Thu": return DayOfWeek.THURSDAY;
-            case "Fri": return DayOfWeek.FRIDAY;
-            case "Sat": return DayOfWeek.SATURDAY;
-            case "Sun": return DayOfWeek.SUNDAY;
-            }
+            int len = dow.length();
+
+            if (dow.regionMatches(true, 0, "Monday", 0, len)) return DayOfWeek.MONDAY;
+            if (dow.regionMatches(true, 0, "Tuesday", 0, len)) return DayOfWeek.TUESDAY;
+            if (dow.regionMatches(true, 0, "Wednesday", 0, len)) return DayOfWeek.WEDNESDAY;
+            if (dow.regionMatches(true, 0, "Thursday", 0, len)) return DayOfWeek.THURSDAY;
+            if (dow.regionMatches(true, 0, "Friday", 0, len)) return DayOfWeek.FRIDAY;
+            if (dow.regionMatches(true, 0, "Saturday", 0, len)) return DayOfWeek.SATURDAY;
+            if (dow.regionMatches(true, 0, "Sunday", 0, len)) return DayOfWeek.SUNDAY;
+
             throw new IllegalArgumentException("Unknown day-of-week: " + dow);
         }
 

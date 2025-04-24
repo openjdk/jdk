@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,101 +21,56 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMT.hpp"
-#include "gc/z/zVirtualMemory.hpp"
-#include "memory/allocation.hpp"
+#include "nmt/memoryFileTracker.hpp"
+#include "nmt/memTag.hpp"
 #include "nmt/memTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 
-ZNMT::Reservation ZNMT::_reservations[ZMaxVirtualReservations] = {};
-size_t ZNMT::_num_reservations = 0;
+MemoryFileTracker::MemoryFile* ZNMT::_device = nullptr;
 
-size_t ZNMT::reservation_index(zoffset offset, size_t* offset_in_reservation) {
-  assert(_num_reservations > 0, "at least one reservation must exist");
-
-  size_t index = 0;
-  *offset_in_reservation = untype(offset);
-  for (; index < _num_reservations; ++index) {
-    const size_t reservation_size = _reservations[index]._size;
-    if (*offset_in_reservation < reservation_size) {
-      break;
-    }
-    *offset_in_reservation -= reservation_size;
-  }
-
-  assert(index != _num_reservations, "failed to find reservation index");
-  return index;
-}
-
-void ZNMT::process_fake_mapping(zoffset offset, size_t size, bool commit) {
-  // In order to satisfy NTM's requirement of an 1:1 mapping between committed
-  // and reserved addresses, a fake mapping from the offset into the reservation
-  // is used.
-  //
-  // These mappings from
-  //   [offset, offset + size) -> {[virtual address range], ...}
-  // are stable after the heap has been reserved. No commits proceed any
-  // reservations. Committing and uncommitting the same [offset, offset + size)
-  // range will result in same virtual memory ranges.
-
-  size_t left_to_process = size;
-  size_t offset_in_reservation;
-  for (size_t i = reservation_index(offset, &offset_in_reservation); i < _num_reservations; ++i) {
-    const zaddress_unsafe reservation_start = _reservations[i]._start;
-    const size_t reservation_size = _reservations[i]._size;
-    const size_t sub_range_size = MIN2(left_to_process, reservation_size - offset_in_reservation);
-    const uintptr_t sub_range_addr = untype(reservation_start) + offset_in_reservation;
-
-    // commit / uncommit memory
-    if (commit) {
-      MemTracker::record_virtual_memory_commit((void*)sub_range_addr, sub_range_size, CALLER_PC);
-    } else {
-      if (MemTracker::enabled()) {
-        Tracker tracker(Tracker::uncommit);
-        tracker.record((address)sub_range_addr, sub_range_size);
-      }
-    }
-
-    left_to_process -= sub_range_size;
-    if (left_to_process == 0) {
-      // Processed all nmt registrations
-      return;
-    }
-
-    offset_in_reservation = 0;
-  }
-
-  assert(left_to_process == 0, "everything was not commited");
+void ZNMT::initialize() {
+  _device = MemTracker::register_file("ZGC heap backing file");
 }
 
 void ZNMT::reserve(zaddress_unsafe start, size_t size) {
-  assert(_num_reservations < ZMaxVirtualReservations, "too many reservations");
-  // Keep track of the reservations made in order to create fake mappings
-  // between the reserved and commited memory.
-  // See details in ZNMT::process_fake_mapping
-  _reservations[_num_reservations++] = {start, size};
-
-  MemTracker::record_virtual_memory_reserve((void*)untype(start), size, CALLER_PC, mtJavaHeap);
+  MemTracker::record_virtual_memory_reserve((address)untype(start), size, CALLER_PC, mtJavaHeap);
 }
 
-void ZNMT::commit(zoffset offset, size_t size) {
-  // NMT expects a 1-to-1 mapping between virtual and physical memory.
-  // ZGC can temporarily have multiple virtual addresses pointing to
-  // the same physical memory.
-  //
-  // When this function is called we don't know where in the virtual memory
-  // this physical memory will be mapped. So we fake the virtual memory
-  // address by mapping the physical offset into offsets in the reserved
-  // memory space.
-  process_fake_mapping(offset, size, true);
+void ZNMT::unreserve(zaddress_unsafe start, size_t size) {
+  precond(is_aligned(untype(start), ZGranuleSize));
+  precond(is_aligned(size, ZGranuleSize));
+
+  if (MemTracker::enabled()) {
+    // We are the owner of the reserved memory, and any failure to unreserve
+    // are fatal, so so we don't need to hold a lock while unreserving memory.
+
+    MemTracker::NmtVirtualMemoryLocker nvml;
+
+    // The current NMT implementation does not support unreserving a memory
+    // region that was built up from smaller memory reservations. Workaround
+    // this problem by splitting the work up into granule-sized chunks, which
+    // is the smallest unit we ever reserve.
+    for (size_t i = 0; i < size; i += ZGranuleSize) {
+      MemTracker::record_virtual_memory_release((address)untype(start + i), ZGranuleSize);
+    }
+  }
 }
 
-void ZNMT::uncommit(zoffset offset, size_t size) {
-  // We fake the virtual memory address by mapping the physical offset
-  // into offsets in the reserved memory space.
-  // See comment in ZNMT::commit
-  process_fake_mapping(offset, size, false);
+void ZNMT::commit(zbacking_offset offset, size_t size) {
+  MemTracker::allocate_memory_in(ZNMT::_device, untype(offset), size, CALLER_PC, mtJavaHeap);
+}
+
+void ZNMT::uncommit(zbacking_offset offset, size_t size) {
+  MemTracker::free_memory_in(ZNMT::_device, untype(offset), size);
+}
+
+void ZNMT::map(zaddress_unsafe addr, size_t size, zbacking_offset offset) {
+  // NMT doesn't track mappings at the moment.
+}
+
+void ZNMT::unmap(zaddress_unsafe addr, size_t size) {
+  // NMT doesn't track mappings at the moment.
 }

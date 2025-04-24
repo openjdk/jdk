@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,7 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -61,9 +61,7 @@ THREAD_LOCAL Thread* Thread::_thr_current = nullptr;
 // Base class for all threads: VMThread, WatcherThread, ConcurrentMarkSweepThread,
 // JavaThread
 
-DEBUG_ONLY(Thread* Thread::_starting_thread = nullptr;)
-
-Thread::Thread() {
+Thread::Thread(MemTag mem_tag) {
 
   DEBUG_ONLY(_run_state = PRE_CALL_RUN;)
 
@@ -77,12 +75,11 @@ Thread::Thread() {
 
   // allocated data structures
   set_osthread(nullptr);
-  set_resource_area(new (mtThread)ResourceArea());
+  set_resource_area(new (mem_tag) ResourceArea(mem_tag));
   DEBUG_ONLY(_current_resource_mark = nullptr;)
-  set_handle_area(new (mtThread) HandleArea(nullptr));
+  set_handle_area(new (mem_tag) HandleArea(mem_tag, nullptr));
   set_metadata_handles(new (mtClass) GrowableArray<Metadata*>(30, mtClass));
   set_last_handle_mark(nullptr);
-  DEBUG_ONLY(_missed_ic_stub_refill_verifier = nullptr);
 
   // Initial value of zero ==> never claimed.
   _threads_do_token = 0;
@@ -103,7 +100,10 @@ Thread::Thread() {
   _vm_error_callbacks = nullptr;
 
   // thread-specific hashCode stream generator state - Marsaglia shift-xor form
-  _hashStateX = os::random();
+  // If we are dumping, keep ihashes constant. Note that during dumping we only
+  // ever run one java thread, and no other thread should generate ihashes either,
+  // so using a constant seed should work fine.
+  _hashStateX = CDSConfig::is_dumping_static_archive() ? 0x12345678 : os::random();
   _hashStateY = 842502087;
   _hashStateZ = 0x8767;    // (int)(3579807591LL & 0xffff) ;
   _hashStateW = 273326509;
@@ -140,6 +140,16 @@ Thread::Thread() {
 
   MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
 }
+
+#ifdef ASSERT
+address Thread::stack_base() const {
+  // Note: can't report Thread::name() here as that can require a ResourceMark which we
+  // can't use because this gets called too early in the thread initialization.
+  assert(_stack_base != nullptr, "Stack base not yet set for thread id:%d (0 if not set)",
+         osthread() != nullptr ? osthread()->thread_id() : 0);
+  return _stack_base;
+}
+#endif
 
 void Thread::initialize_tlab() {
   if (UseTLAB) {
@@ -207,8 +217,8 @@ void Thread::call_run() {
 
   JFR_ONLY(Jfr::on_thread_start(this);)
 
-  log_debug(os, thread)("Thread " UINTX_FORMAT " stack dimensions: "
-    PTR_FORMAT "-" PTR_FORMAT " (" SIZE_FORMAT "k).",
+  log_debug(os, thread)("Thread %zu stack dimensions: "
+    PTR_FORMAT "-" PTR_FORMAT " (%zuk).",
     os::current_thread_id(), p2i(stack_end()),
     p2i(stack_base()), stack_size()/1024);
 
@@ -235,6 +245,9 @@ void Thread::call_run() {
   // delete themselves when they terminate. But no thread should ever be deleted
   // asynchronously with respect to its termination - that is what _run_state can
   // be used to check.
+
+  // Logically we should do this->unregister_thread_stack_with_NMT() here, but we
+  // had to move that into post_run() because of the `this` deletion issue.
 
   assert(Thread::current_or_null() == nullptr, "current thread still present");
 }
@@ -399,7 +412,7 @@ bool Thread::claim_par_threads_do(uintx claim_token) {
   return false;
 }
 
-void Thread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
+void Thread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   // Do oop for ThreadShadow
   f->do_oop((oop*)&_pending_exception);
   handle_area()->oops_do(f);
@@ -429,7 +442,7 @@ public:
   }
 };
 
-void Thread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
+void Thread::oops_do(OopClosure* f, NMethodClosure* cf) {
   // Record JavaThread to GC thread
   RememberProcessedThread rpt(this);
   oops_do_no_frames(f, cf);
@@ -461,7 +474,7 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
               );
     if (is_Java_thread() && (PrintExtendedThreadInfo || print_extended_info)) {
       size_t allocated_bytes = (size_t) const_cast<Thread*>(this)->cooked_allocated_bytes();
-      st->print("allocated=" SIZE_FORMAT "%s ",
+      st->print("allocated=%zu%s ",
                 byte_size_in_proper_unit(allocated_bytes),
                 proper_unit_for_byte_size(allocated_bytes)
                 );
@@ -491,9 +504,11 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
   if (os_thr != nullptr) {
     st->fill_to(67);
     if (os_thr->get_state() != ZOMBIE) {
+      // Use raw field members for stack base/size as this could be
+      // called before a thread has run enough to initialize them.
       st->print(" [id=%d, stack(" PTR_FORMAT "," PTR_FORMAT ") (" PROPERFMT ")]",
-                osthread()->thread_id(), p2i(stack_end()), p2i(stack_base()),
-                PROPERFMTARGS(stack_size()));
+                osthread()->thread_id(), p2i(_stack_base - _stack_size), p2i(_stack_base),
+                PROPERFMTARGS(_stack_size));
     } else {
       st->print(" terminated");
     }
@@ -523,40 +538,29 @@ void Thread::print_owned_locks_on(outputStream* st) const {
     }
   }
 }
+
+Thread* Thread::_starting_thread = nullptr;
+
+bool Thread::is_starting_thread(const Thread* t) {
+  assert(_starting_thread != nullptr, "invariant");
+  return t == _starting_thread;
+}
 #endif // ASSERT
 
-// We had to move these methods here, because vm threads get into ObjectSynchronizer::enter
-// However, there is a note in JavaThread::is_lock_owned() about the VM threads not being
-// used for compilation in the future. If that change is made, the need for these methods
-// should be revisited, and they should be removed if possible.
-
-bool Thread::is_lock_owned(address adr) const {
-  assert(LockingMode != LM_LIGHTWEIGHT, "should not be called with new lightweight locking");
-  return is_in_full_stack(adr);
-}
-
-bool Thread::set_as_starting_thread() {
+bool Thread::set_as_starting_thread(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
   assert(_starting_thread == nullptr, "already initialized: "
          "_starting_thread=" INTPTR_FORMAT, p2i(_starting_thread));
-  // NOTE: this must be called inside the main thread.
-  DEBUG_ONLY(_starting_thread = this;)
-  return os::create_main_thread(JavaThread::cast(this));
+  // NOTE: this must be called from Threads::create_vm().
+  DEBUG_ONLY(_starting_thread = jt;)
+  return os::create_main_thread(jt);
 }
 
-// Ad-hoc mutual exclusion primitives: SpinLock
+// Ad-hoc mutual exclusion primitive: spin lock
 //
-// We employ SpinLocks _only for low-contention, fixed-length
+// We employ a spin lock _only for low-contention, fixed-length
 // short-duration critical sections where we're concerned
 // about native mutex_t or HotSpot Mutex:: latency.
-//
-// TODO-FIXME: ListLock should be of type SpinLock.
-// We should make this a 1st-class type, integrated into the lock
-// hierarchy as leaf-locks.  Critically, the SpinLock structure
-// should have sufficient padding to avoid false-sharing and excessive
-// cache-coherency traffic.
-
-
-typedef volatile int SpinLockT;
 
 void Thread::SpinAcquire(volatile int * adr, const char * LockName) {
   if (Atomic::cmpxchg(adr, 0, 1) == 0) {

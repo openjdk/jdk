@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,6 @@ public interface LightweightContent {
      * @param scaleY the y coordinate scale factor of the pixel buffer
      * @since 9
      */
-    @SuppressWarnings("deprecation")
     default public void imageBufferReset(int[] data,
                                          int x, int y,
                                          int width, int height,
@@ -178,7 +177,6 @@ public interface LightweightContent {
      * default implementations in order to allow a client application to run
      * with any JDK version without breaking backward compatibility.
      */
-    @SuppressWarnings("deprecation")
     default public void imageBufferReset(int[] data,
                                  int x, int y,
                                  int width, int height,

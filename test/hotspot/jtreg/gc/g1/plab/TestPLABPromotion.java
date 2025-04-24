@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@
  * @bug 8141278 8141141
  * @summary Test PLAB promotion
  * @requires vm.gc.G1
- * @requires !vm.flightRecorder
+ * @requires vm.flagless
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/timeout=240 gc.g1.plab.TestPLABPromotion
+ * @run main/othervm/timeout=240 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.g1.plab.TestPLABPromotion
  */
 package gc.g1.plab;
 
@@ -48,11 +48,14 @@ import gc.g1.plab.lib.PlabInfo;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.whitebox.WhiteBox;
 
 /**
  * Test checks PLAB promotion of different size objects.
  */
 public class TestPLABPromotion {
+
+    private static final boolean COMPACT_HEADERS = Platform.is64bit() && WhiteBox.getWhiteBox().getBooleanVMFlag("UseCompactObjectHeaders");
 
     // GC ID with survivor PLAB statistics
     private final static long GC_ID_SURVIVOR_STATS = 1l;
@@ -74,7 +77,7 @@ public class TestPLABPromotion {
     private static final int PLAB_SIZE_HIGH = 65536;
     private static final int OBJECT_SIZE_SMALL  = 10 * HEAP_WORD_SIZE;
     private static final int OBJECT_SIZE_MEDIUM = 128 * HEAP_WORD_SIZE;
-    private static final int OBJECT_SIZE_HIGH   = 3072 * HEAP_WORD_SIZE;
+    private static final int OBJECT_SIZE_HIGH   = (COMPACT_HEADERS ? 3266 : 3250) * HEAP_WORD_SIZE;
     private static final int GC_NUM_SMALL = 1;
     private static final int GC_NUM_MEDIUM = 3;
     private static final int GC_NUM_HIGH = 7;

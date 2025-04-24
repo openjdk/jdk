@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/vtableStubs.hpp"
 #include "interp_masm_ppc.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/klassVtable.hpp"
@@ -92,8 +91,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     // Check offset vs vtable length.
     const Register vtable_len = R12_scratch2;
     __ lwz(vtable_len, in_bytes(Klass::vtable_length_offset()), rcvr_klass);
-    __ cmpwi(CCR0, vtable_len, vtable_index*vtableEntry::size());
-    __ bge(CCR0, L);
+    __ cmpwi(CR0, vtable_len, vtable_index*vtableEntry::size());
+    __ bge(CR0, L);
     __ li(R12_scratch2, vtable_index);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, bad_compiled_vtable_index), R3_ARG1, R12_scratch2, false);
     __ bind(L);
@@ -109,8 +108,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 #ifndef PRODUCT
   if (DebugVtables) {
     Label L;
-    __ cmpdi(CCR0, R19_method, 0);
-    __ bne(CCR0, L);
+    __ cmpdi(CR0, R19_method, 0);
+    __ bne(CR0, L);
     __ stop("Vtable entry is ZERO");
     __ bind(L);
   }
@@ -181,13 +180,13 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ load_klass_check_null(rcvr_klass, R3_ARG1);
 
   // Receiver subtype check against REFC.
-  __ ld(interface, CompiledICHolder::holder_klass_offset(), R19_method);
+  __ ld(interface, CompiledICData::itable_refc_klass_offset(), R19_method);
   __ lookup_interface_method(rcvr_klass, interface, noreg,
                              R0, tmp1, tmp2,
                              L_no_such_interface, /*return_method=*/ false);
 
   // Get Method* and entrypoint for compiler
-  __ ld(interface, CompiledICHolder::holder_metadata_offset(), R19_method);
+  __ ld(interface, CompiledICData::itable_defc_klass_offset(), R19_method);
   __ lookup_interface_method(rcvr_klass, interface, itable_index,
                              R19_method, tmp1, tmp2,
                              L_no_such_interface, /*return_method=*/ true);
@@ -195,8 +194,8 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #ifndef PRODUCT
   if (DebugVtables) {
     Label ok;
-    __ cmpd(CCR0, R19_method, 0);
-    __ bne(CCR0, ok);
+    __ cmpdi(CR0, R19_method, 0);
+    __ bne(CR0, ok);
     __ stop("method is null");
     __ bind(ok);
   }

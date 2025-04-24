@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@
  * Note that when using posix_spawn(3), we exec twice: first a tiny binary called
  * the jspawnhelper, then in the jspawnhelper we do the pre-exec work and exec a
  * second time, this time the target binary (similar to the "exec-twice-technique"
- * described in http://mail.openjdk.org/pipermail/core-libs-dev/2018-September/055333.html).
+ * described in https://mail.openjdk.org/pipermail/core-libs-dev/2018-September/055333.html).
  *
  * This is a JDK-specific implementation detail which just happens to be
  * implemented for jdk.lang.Process.launchMechanism=POSIX_SPAWN.
@@ -200,8 +200,7 @@ setSIGCHLDHandler(JNIEnv *env)
      * non-standard-compliant, and we shouldn't rely on it.
      *
      * References:
-     * http://www.opengroup.org/onlinepubs/7908799/xsh/exec.html
-     * http://www.pasc.org/interps/unofficial/db/p1003.1/pasc-1003.1-132.html
+     * https://pubs.opengroup.org/onlinepubs/7908799/xsh/exec.html
      */
     struct sigaction sa;
     sa.sa_handler = SIG_DFL;
@@ -298,6 +297,10 @@ Java_java_lang_ProcessImpl_init(JNIEnv *env, jclass clazz)
 
 #ifndef WTERMSIG
 #define WTERMSIG(status) ((status)&0x7F)
+#endif
+
+#ifndef VERSION_STRING
+#error VERSION_STRING must be defined
 #endif
 
 static const char *
@@ -488,7 +491,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     pid_t resultPid;
     int i, offset, rval, bufsize, magic;
     char *buf, buf1[(3 * 11) + 3]; // "%d:%d:%d\0"
-    char *hlpargs[3];
+    char *hlpargs[4];
     SpawnInfo sp;
 
     /* need to tell helper which fd is for receiving the childstuff
@@ -497,11 +500,13 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     snprintf(buf1, sizeof(buf1), "%d:%d:%d", c->childenv[0], c->childenv[1], c->fail[1]);
     /* NULL-terminated argv array.
      * argv[0] contains path to jspawnhelper, to follow conventions.
-     * argv[1] contains the fd string as argument to jspawnhelper
+     * argv[1] contains the version string as argument to jspawnhelper
+     * argv[2] contains the fd string as argument to jspawnhelper
      */
     hlpargs[0] = (char*)helperpath;
-    hlpargs[1] = buf1;
-    hlpargs[2] = NULL;
+    hlpargs[1] = VERSION_STRING;
+    hlpargs[2] = buf1;
+    hlpargs[3] = NULL;
 
     /* Following items are sent down the pipe to the helper
      * after it is spawned.
@@ -552,9 +557,20 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
         return -1;
     }
     offset = copystrings(buf, 0, &c->argv[0]);
-    offset = copystrings(buf, offset, &c->envv[0]);
-    memcpy(buf+offset, c->pdir, sp.dirlen);
-    offset += sp.dirlen;
+    if (c->envv != NULL) {
+        offset = copystrings(buf, offset, &c->envv[0]);
+    }
+    if (c->pdir != NULL) {
+        if (sp.dirlen > 0) {
+            memcpy(buf+offset, c->pdir, sp.dirlen);
+            offset += sp.dirlen;
+        }
+    } else {
+        if (sp.dirlen > 0) {
+            free(buf);
+            return -1;
+        }
+    }
     offset = copystrings(buf, offset, parentPathv);
     assert(offset == bufsize);
 

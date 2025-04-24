@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.inline.hpp"
@@ -289,7 +288,7 @@ int PhaseChaitin::split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, 
 
 //------------------------------clone_node----------------------------
 // Clone node with anti dependence check.
-Node* clone_node(Node* def, Block *b, Compile* C) {
+static Node* clone_node(Node* def, Block *b, Compile* C) {
   if (def->needs_anti_dependence_check()) {
 #ifdef ASSERT
     if (PrintOpto && WizardMode) {
@@ -306,10 +305,10 @@ Node* clone_node(Node* def, Block *b, Compile* C) {
       C->record_failure(C2Compiler::retry_no_subsuming_loads());
     } else {
       // Bailout without retry
-      assert(false, "RA Split failed: attempt to clone node with anti_dependence");
-      C->record_method_not_compilable("RA Split failed: attempt to clone node with anti_dependence");
+      assert(C->failure_is_artificial(), "RA Split failed: attempt to clone node with anti_dependence");
+      C->record_method_not_compilable("RA Split failed: attempt to clone node with anti_dependence" DEBUG_ONLY(COMMA true));
     }
-    return 0;
+    return nullptr;
   }
   return def->clone();
 }
@@ -341,7 +340,7 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
       Node *in_spill;
       if (in->ideal_reg() != Op_RegFlags) {
         in_spill = get_spillcopy_wide(MachSpillCopyNode::InputToRematerialization, in, def, i);
-        if (!in_spill) { return 0; } // Bailed out
+        if (!in_spill) { return nullptr; } // Bailed out
         insert_proj(b_def, idx_def, in_spill, maxlrg++);
         if (b_def == b) {
           insidx++;
@@ -357,7 +356,7 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
                  " range and defining node %d: %s may not be rematerialized.",
                  def->_idx, def->Name(), in->_idx, in->Name());
           C->record_method_not_compilable("attempted to spill a non-spillable item with RegFlags input");
-          return 0; // Bailed out
+          return nullptr; // Bailed out
         }
       }
     }
@@ -366,7 +365,7 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
   Node *spill = clone_node(def, b, C);
   if (spill == nullptr || C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
     // Check when generating nodes
-    return 0;
+    return nullptr;
   }
 
   // See if any inputs are currently being spilled, and take the
@@ -495,7 +494,7 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
 //       Else, hoist LRG back up to register only (ie - split is also DEF)
 // We will compute a new maxlrg as we go
 uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
-  Compile::TracePhase tp("regAllocSplit", &timers[_t_regAllocSplit]);
+  Compile::TracePhase tp(_t_regAllocSplit);
 
   // Free thread local resources used by this method on exit.
   ResourceMark rm(split_arena);

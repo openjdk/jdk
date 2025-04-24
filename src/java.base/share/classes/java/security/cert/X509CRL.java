@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,9 @@ import java.util.Set;
  * }
  * }</pre>
  *
+ * @spec https://www.rfc-editor.org/info/rfc5280
+ *      RFC 5280: Internet X.509 Public Key Infrastructure Certificate
+ *              and Certificate Revocation List (CRL) Profile
  * @author Hemma Prafullchandra
  * @since 1.2
  *
@@ -457,6 +460,11 @@ public abstract class X509CRL extends CRL implements X509Extension {
      * relevant ASN.1 definitions.
      *
      * @return the signature algorithm OID string.
+     *
+     * @spec https://www.rfc-editor.org/info/rfc3279
+     *      RFC 3279: Algorithms and Identifiers for the Internet X.509
+     *              Public Key Infrastructure Certificate and Certificate
+     *              Revocation List (CRL) Profile
      */
     public abstract String getSigAlgOID();
 

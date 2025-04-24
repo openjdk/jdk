@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/fieldLayoutBuilder.hpp"
 #include "jvm.h"
@@ -127,17 +126,19 @@ void FieldLayout::initialize_static_layout() {
   }
 }
 
-void FieldLayout::initialize_instance_layout(const InstanceKlass* super_klass) {
+void FieldLayout::initialize_instance_layout(const InstanceKlass* super_klass, bool& super_ends_with_oop) {
   if (super_klass == nullptr) {
+    super_ends_with_oop = false;
     _blocks = new LayoutRawBlock(LayoutRawBlock::EMPTY, INT_MAX);
     _blocks->set_offset(0);
     _last = _blocks;
     _start = _blocks;
     insert(first_empty_block(), new LayoutRawBlock(LayoutRawBlock::RESERVED, instanceOopDesc::base_offset_in_bytes()));
   } else {
-    bool has_fields = reconstruct_layout(super_klass);
+    bool super_has_instance_fields = false;
+    reconstruct_layout(super_klass, super_has_instance_fields, super_ends_with_oop);
     fill_holes(super_klass);
-    if ((UseEmptySlotsInSupers && !super_klass->has_contended_annotations()) || !has_fields) {
+    if (!super_klass->has_contended_annotations() || !super_has_instance_fields) {
       _start = _blocks;  // start allocating fields from the first empty block
     } else {
       _start = _last;    // append fields at the end of the reconstructed layout
@@ -294,15 +295,21 @@ LayoutRawBlock* FieldLayout::insert_field_block(LayoutRawBlock* slot, LayoutRawB
   return block;
 }
 
-bool FieldLayout::reconstruct_layout(const InstanceKlass* ik) {
-  bool has_instance_fields = false;
+void FieldLayout::reconstruct_layout(const InstanceKlass* ik, bool& has_instance_fields, bool& ends_with_oop) {
+  has_instance_fields = ends_with_oop = false;
   GrowableArray<LayoutRawBlock*>* all_fields = new GrowableArray<LayoutRawBlock*>(32);
+  BasicType last_type;
+  int last_offset = -1;
   while (ik != nullptr) {
     for (AllFieldStream fs(ik->fieldinfo_stream(), ik->constants()); !fs.done(); fs.next()) {
       BasicType type = Signature::basic_type(fs.signature());
       // distinction between static and non-static fields is missing
       if (fs.access_flags().is_static()) continue;
       has_instance_fields = true;
+      if (fs.offset() > last_offset) {
+        last_offset = fs.offset();
+        last_type = type;
+      }
       int size = type2aelembytes(type);
       // INHERITED blocks are marked as non-reference because oop_maps are handled by their holder class
       LayoutRawBlock* block = new LayoutRawBlock(fs.index(), LayoutRawBlock::INHERITED, size, size, false);
@@ -310,6 +317,11 @@ bool FieldLayout::reconstruct_layout(const InstanceKlass* ik) {
       all_fields->append(block);
     }
     ik = ik->super() == nullptr ? nullptr : InstanceKlass::cast(ik->super());
+  }
+  assert(last_offset == -1 || last_offset > 0, "Sanity");
+  if (last_offset > 0 &&
+      (last_type == BasicType::T_ARRAY || last_type == BasicType::T_OBJECT)) {
+    ends_with_oop = true;
   }
 
   all_fields->sort(LayoutRawBlock::compare_offset);
@@ -324,7 +336,6 @@ bool FieldLayout::reconstruct_layout(const InstanceKlass* ik) {
     _last = b;
   }
   _start = _blocks;
-  return has_instance_fields;
 }
 
 // Called during the reconstruction of a layout, after fields from super
@@ -362,20 +373,6 @@ void FieldLayout::fill_holes(const InstanceKlass* super_klass) {
     b->set_next_block(p);
     p->set_prev_block(b);
     b = p;
-  }
-
-  if (!UseEmptySlotsInSupers) {
-    // Add an empty slots to align fields of the subclass on a heapOopSize boundary
-    // in order to emulate the behavior of the previous algorithm
-    int align = (b->offset() + b->size()) % heapOopSize;
-    if (align != 0) {
-      int sz = heapOopSize - align;
-      LayoutRawBlock* p = new LayoutRawBlock(LayoutRawBlock::EMPTY, sz);
-      p->set_offset(b->offset() + b->size());
-      b->set_next_block(p);
-      p->set_prev_block(b);
-      b = p;
-    }
   }
 
   LayoutRawBlock* last = new LayoutRawBlock(LayoutRawBlock::EMPTY, INT_MAX);
@@ -531,7 +528,7 @@ FieldGroup* FieldLayoutBuilder::get_or_create_contended_group(int g) {
 void FieldLayoutBuilder::prologue() {
   _layout = new FieldLayout(_field_info, _constant_pool);
   const InstanceKlass* super_klass = _super_klass;
-  _layout->initialize_instance_layout(super_klass);
+  _layout->initialize_instance_layout(super_klass, _super_ends_with_oop);
   if (super_klass != nullptr) {
     _has_nonstatic_fields = super_klass->has_nonstatic_fields();
   }
@@ -609,8 +606,14 @@ void FieldLayoutBuilder::insert_contended_padding(LayoutRawBlock* slot) {
 // Computation of regular classes layout is an evolution of the previous default layout
 // (FieldAllocationStyle 1):
 //   - primitive fields are allocated first (from the biggest to the smallest)
-//   - then oop fields are allocated, either in existing gaps or at the end of
-//     the layout
+//   - oop fields are allocated, either in existing gaps or at the end of
+//     the layout. We allocate oops in a single block to have a single oop map entry.
+//   - if the super class ended with an oop, we lead with oops. That will cause the
+//     trailing oop map entry of the super class and the oop map entry of this class
+//     to be folded into a single entry later. Correspondingly, if the super class
+//     ends with a primitive field, we gain nothing by leading with oops; therefore
+//     we let oop fields trail, thus giving future derived classes the chance to apply
+//     the same trick.
 void FieldLayoutBuilder::compute_regular_layout() {
   bool need_tail_padding = false;
   prologue();
@@ -623,8 +626,14 @@ void FieldLayoutBuilder::compute_regular_layout() {
     insert_contended_padding(_layout->start());
     need_tail_padding = true;
   }
-  _layout->add(_root_group->primitive_fields());
-  _layout->add(_root_group->oop_fields());
+
+  if (_super_ends_with_oop) {
+    _layout->add(_root_group->oop_fields());
+    _layout->add(_root_group->primitive_fields());
+  } else {
+    _layout->add(_root_group->primitive_fields());
+    _layout->add(_root_group->oop_fields());
+  }
 
   if (!_contended_groups.is_empty()) {
     for (int i = 0; i < _contended_groups.length(); i++) {

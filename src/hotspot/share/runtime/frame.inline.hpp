@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "runtime/frame.hpp"
 
 #include "code/codeBlob.inline.hpp"
-#include "code/compiledMethod.inline.hpp"
+#include "code/nmethod.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 #include "oops/method.hpp"
@@ -64,11 +64,21 @@ inline bool frame::is_upcall_stub_frame() const {
 
 inline bool frame::is_compiled_frame() const {
   if (_cb != nullptr &&
-      _cb->is_compiled() &&
-      ((CompiledMethod*)_cb)->is_java_method()) {
+      _cb->is_nmethod() &&
+      _cb->as_nmethod()->is_java_method()) {
     return true;
   }
   return false;
+}
+
+inline address frame::get_deopt_original_pc() const {
+  if (_cb == nullptr)  return nullptr;
+
+  nmethod* nm = _cb->as_nmethod_or_null();
+  if (nm != nullptr && nm->is_deopt_pc(_pc)) {
+    return nm->get_original_pc(this);
+  }
+  return nullptr;
 }
 
 template <typename RegisterMapT>

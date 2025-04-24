@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import jdk.test.lib.SA.SATestUtils;
 
 /**
  * @test
+ * @bug 8214226 8243500
  * @requires vm.hasSA
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @requires os.family=="windows" | os.family == "linux" | os.family == "mac"
@@ -53,7 +54,7 @@ import jdk.test.lib.SA.SATestUtils;
  *
  * The test works by spawning a process that sits in a 10 line loop in the busywork() method,
  * all while the main test does repeated jstacks on the process. The expectation is
- * that at least 5 of the lines in the busywork() loop will eventually show up in at
+ * that at least 4 of the lines in the busywork() loop will eventually show up in at
  * least one of the jstack runs.
  */
 
@@ -94,8 +95,11 @@ class LingeredAppWithBusyWork extends LingeredApp {
 public class TestJhsdbJstackLineNumbers {
     // This is the number of lines in the busywork main loop
     static final int TOTAL_BUSYWORK_LOOP_LINES = 10;
-    // The minimum number of lines that we must at some point see in the jstack output
-    static final int MIN_BUSYWORK_LOOP_LINES = 5;
+    // The minimum number of lines that we must see at some point in the jstack output.
+    // There's always a chance we could see fewer, but the chances are so low that
+    // it is unlikely to ever happen. We can always decrease the odds by lowering
+    // the required number of lines or increasing the number of jstack runs.
+    static final int MIN_BUSYWORK_LOOP_LINES = 4;
 
     static final int MAX_NUMBER_OF_JSTACK_RUNS = 25;
 

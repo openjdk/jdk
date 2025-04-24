@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,26 @@
 
 /**
  * @test
- * @run testng/othervm -Djava.security.manager=allow -Dsun.net.maxDatagramSockets=32 UdpSocket
+ * @run testng/othervm UdpSocket
  * @summary Basic test for a Socket to a UDP socket
  */
 
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.security.Permission;
 import java.util.Arrays;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.net.BindException;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 @Test
 public class UdpSocket {
+
+    private static final int MAX_RETRIES = 3;
 
     /**
      * Test using the Socket API to send/receive datagrams
@@ -79,76 +76,6 @@ public class UdpSocket {
                 assertEquals(Arrays.copyOf(array1, n), Arrays.copyOf(array2, n),
                             "Unexpected contents");
             }
-        }
-    }
-
-    /**
-     * Test that the number of UDP sockets is limited when running with a
-     * security manager.
-     */
-    public void testMaxSockets() throws Exception {
-        int limit = Integer.getInteger("sun.net.maxDatagramSockets");
-
-        // security manager grants all permissions
-        var securityManager = new SecurityManager() {
-            @Override public void checkPermission(Permission perm) { }
-        };
-
-        System.setSecurityManager(securityManager);
-        Deque<Socket> sockets = new ArrayDeque<>();
-        try {
-            // create the maximum number of sockets
-            for (int i=0; i<limit; i++) {
-                sockets.offer(newUdpSocket());
-            }
-
-            // try to create another socket - should fail
-            try {
-                Socket s = newUdpSocket();
-                s.close();
-                assertTrue(false);
-            } catch (IOException expected) { }
-
-            // close one socket
-            sockets.pop().close();
-
-            // try to create another socket - should succeed
-            Socket s = newUdpSocket();
-
-            // unreference the socket and wait for it to be closed by the cleaner
-            var ref = new WeakReference<>(s);
-            s = null;
-            while (ref.get() != null) {
-                System.gc();
-                Thread.sleep(100);
-            }
-
-            // try to create another socket - should succeed
-            s = newUdpSocket();
-            s.close();
-        } finally {
-            closeAll(sockets);
-            System.setSecurityManager(null);
-        }
-    }
-
-
-    private Socket newUdpSocket() throws IOException {
-        Socket s = null;
-
-        try {
-            s = new Socket(InetAddress.getLoopbackAddress(), 8000, false);
-        } catch (BindException unexpected) {
-            System.out.println("BindException caught retry Socket creation");
-            s = new Socket(InetAddress.getLoopbackAddress(), 8000, false);
-        }
-        return s;
-    }
-
-    private void closeAll(Deque<Socket> sockets) throws IOException {
-        Socket s;
-        while ((s = sockets.poll()) != null) {
-            s.close();
         }
     }
 }

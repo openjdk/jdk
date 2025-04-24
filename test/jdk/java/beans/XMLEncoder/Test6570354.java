@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6570354
  * @summary Tests listeners removing
- * @run main/othervm -Djava.security.manager=allow Test6570354
+ * @run main/othervm Test6570354
  * @author Sergey Malenkov
  */
 
@@ -34,7 +34,7 @@ import javax.swing.JLabel;
 
 public final class Test6570354 extends AbstractTest<JLabel> {
     public static void main(String[] args) {
-        new Test6570354().test(true);
+        new Test6570354().test();
     }
 
     protected JLabel getObject() {

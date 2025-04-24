@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1614,11 +1614,6 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         fprintf(fp, "  ((MachIfNode*)n%d)->_fcnt = _fcnt;\n", cnt);
       }
 
-      if (node->is_ideal_fastlock() && new_inst->is_ideal_fastlock()) {
-        fprintf(fp, "  ((MachFastLockNode*)n%d)->_rtm_counters = _rtm_counters;\n", cnt);
-        fprintf(fp, "  ((MachFastLockNode*)n%d)->_stack_rtm_counters = _stack_rtm_counters;\n", cnt);
-      }
-
       // Fill in the bottom_type where requested
       if (node->captures_bottom_type(_globalNames) &&
           new_inst->captures_bottom_type(_globalNames)) {
@@ -1902,7 +1897,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
 // target specific instruction object encodings.
 // Define the ___Node::emit() routine
 //
-// (1) void  ___Node::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+// (1) void  ___Node::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 // (2)   // ...  encoding defined by user
 // (3)
 // (4) }
@@ -2301,7 +2296,7 @@ public:
       // Check results of prior scan
       if ( ! _may_reloc ) {
         // Definitely don't need relocation information
-        fprintf( _fp, "emit_%s(cbuf, ", d32_hi_lo );
+        fprintf( _fp, "emit_%s(masm, ", d32_hi_lo );
         emit_replacement(); fprintf(_fp, ")");
       }
       else {
@@ -2315,26 +2310,26 @@ public:
         fprintf(_fp,"if ( opnd_array(%d)->%s_reloc() != relocInfo::none ) {\n",
                 _operand_idx, disp_constant);
         fprintf(_fp,"  ");
-        fprintf(_fp,"emit_%s_reloc(cbuf, ", d32_hi_lo );
+        fprintf(_fp,"emit_%s_reloc(masm, ", d32_hi_lo );
         emit_replacement();             fprintf(_fp,", ");
         fprintf(_fp,"opnd_array(%d)->%s_reloc(), ",
                 _operand_idx, disp_constant);
         fprintf(_fp, "%d", _reloc_form);fprintf(_fp, ");");
         fprintf(_fp,"\n");
         fprintf(_fp,"} else {\n");
-        fprintf(_fp,"  emit_%s(cbuf, ", d32_hi_lo);
+        fprintf(_fp,"  emit_%s(masm, ", d32_hi_lo);
         emit_replacement(); fprintf(_fp, ");\n"); fprintf(_fp,"}");
       }
     }
     else if ( _doing_emit_d16 ) {
       // Relocation of 16-bit values is not supported
-      fprintf(_fp,"emit_d16(cbuf, ");
+      fprintf(_fp,"emit_d16(masm, ");
       emit_replacement(); fprintf(_fp, ")");
       // No relocation done for 16-bit values
     }
     else if ( _doing_emit8 ) {
       // Relocation of 8-bit values is not supported
-      fprintf(_fp,"emit_d8(cbuf, ");
+      fprintf(_fp,"emit_d8(masm, ");
       emit_replacement(); fprintf(_fp, ")");
       // No relocation done for 8-bit values
     }
@@ -2362,6 +2357,9 @@ private:
 #if defined(PPC64)
     if (strcmp(rep_var,"$VectorRegister") == 0)   return "as_VectorRegister";
     if (strcmp(rep_var,"$VectorSRegister") == 0)  return "as_VectorSRegister";
+#endif
+#if defined(S390)
+    if (strcmp(rep_var,"$VectorRegister") == 0)   return "as_VectorRegister";
 #endif
 #if defined(AARCH64)
     if (strcmp(rep_var,"$PRegister") == 0)  return "as_PRegister";
@@ -2423,6 +2421,8 @@ private:
       if( _constant_status == LITERAL_NOT_SEEN ) {
         if ( _constant_type == Form::idealD ) {
           fprintf(_fp,"->constantD()");
+        } else if ( _constant_type == Form::idealH ) {
+          fprintf(_fp,"->constantH()");
         } else if ( _constant_type == Form::idealF ) {
           fprintf(_fp,"->constantF()");
         } else if ( _constant_type == Form::idealL ) {
@@ -2675,7 +2675,7 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
 
   // (1)
   // Output instruction's emit prototype
-  fprintf(fp, "void %sNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {\n", inst._ident);
+  fprintf(fp, "void %sNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {\n", inst._ident);
 
   // If user did not define an encode section,
   // provide stub that does not generate any machine code.
@@ -2685,12 +2685,9 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
     return;
   }
 
-  // Save current instruction's starting address (helps with relocation).
-  fprintf(fp, "  cbuf.set_insts_mark();\n");
-
   // For MachConstantNodes which are ideal jump nodes, fill the jump table.
   if (inst.is_mach_constant() && inst.is_ideal_jump()) {
-    fprintf(fp, "  ra_->C->output()->constant_table().fill_jump_table(cbuf, (MachConstantNode*) this, _index2label);\n");
+    fprintf(fp, "  ra_->C->output()->constant_table().fill_jump_table(masm, (MachConstantNode*) this, _index2label);\n");
   }
 
   // Output each operand's offset into the array of registers.
@@ -3794,6 +3791,8 @@ static void path_to_constant(FILE *fp, FormDict &globals,
       fprintf(fp, "_leaf->bottom_type()->is_narrowoop()");
     } else if ( (strcmp(optype,"ConNKlass") == 0) ) {
       fprintf(fp, "_leaf->bottom_type()->is_narrowklass()");
+    } else if ( (strcmp(optype,"ConH") == 0) ) {
+      fprintf(fp, "_leaf->geth()");
     } else if ( (strcmp(optype,"ConF") == 0) ) {
       fprintf(fp, "_leaf->getf()");
     } else if ( (strcmp(optype,"ConD") == 0) ) {
@@ -4010,10 +4009,6 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
   }
   if (inst->is_ideal_jump()) {
     fprintf(fp_cpp, "%s node->_probs = _leaf->as_Jump()->_probs;\n", indent);
-  }
-  if( inst->is_ideal_fastlock() ) {
-    fprintf(fp_cpp, "%s node->_rtm_counters = _leaf->as_FastLock()->rtm_counters();\n", indent);
-    fprintf(fp_cpp, "%s node->_stack_rtm_counters = _leaf->as_FastLock()->stack_rtm_counters();\n", indent);
   }
 
 }

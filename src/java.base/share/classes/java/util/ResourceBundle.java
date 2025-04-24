@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ package java.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
@@ -53,10 +52,6 @@ import java.lang.reflect.Modifier;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.jar.JarEntry;
@@ -69,12 +64,9 @@ import jdk.internal.access.JavaUtilResourceBundleAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
-import sun.security.action.GetPropertyAction;
+import jdk.internal.util.ReferencedKeyMap;
 import sun.util.locale.BaseLocale;
-import sun.util.locale.LocaleObjectCache;
 import sun.util.resources.Bundles;
-
-import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
 
 
 /**
@@ -508,8 +500,8 @@ public abstract class ResourceBundle {
      * Gets a string for the given key from this resource bundle or one of its parents.
      * Calling this method is equivalent to calling
      * {@snippet lang=java :
-     *     // @link substring="getObject" target="#getObject(java.lang.String)"
-     *     (String[]) getObject(key);
+     *     // @link substring="getObject" target="#getObject(java.lang.String)" :
+     *     (String) getObject(key);
      * }
      *
      * @param key the key for the desired string
@@ -526,7 +518,7 @@ public abstract class ResourceBundle {
      * Gets a string array for the given key from this resource bundle or one of its parents.
      * Calling this method is equivalent to calling
      * {@snippet lang=java :
-     *     // @link substring="getObject" target="#getObject(java.lang.String)"
+     *     // @link substring="getObject" target="#getObject(java.lang.String)" :
      *     (String[]) getObject(key);
      * }
      *
@@ -581,10 +573,8 @@ public abstract class ResourceBundle {
         return locale;
     }
 
-    @SuppressWarnings("removal")
     private static ClassLoader getLoader(Module module) {
-        PrivilegedAction<ClassLoader> pa = module::getClassLoader;
-        return AccessController.doPrivileged(pa);
+        return module.getClassLoader();
     }
 
     /**
@@ -944,9 +934,6 @@ public abstract class ResourceBundle {
      * @param module   the module for which the resource bundle is searched
      * @throws NullPointerException
      *         if {@code baseName} or {@code module} is {@code null}
-     * @throws SecurityException
-     *         if a security manager exists and the caller is not the specified
-     *         module and doesn't have {@code RuntimePermission("getClassLoader")}
      * @throws MissingResourceException
      *         if no resource bundle for the specified base name can be found in the
      *         specified module
@@ -997,9 +984,6 @@ public abstract class ResourceBundle {
      * @throws NullPointerException
      *         if {@code baseName}, {@code targetLocale}, or {@code module} is
      *         {@code null}
-     * @throws SecurityException
-     *         if a security manager exists and the caller is not the specified
-     *         module and doesn't have {@code RuntimePermission("getClassLoader")}
      * @throws MissingResourceException
      *         if no resource bundle for the specified base name and locale can
      *         be found in the specified {@code module}
@@ -1512,15 +1496,12 @@ public abstract class ResourceBundle {
     }
 
     private static class ResourceBundleControlProviderHolder {
-        private static final PrivilegedAction<List<ResourceBundleControlProvider>> pa =
-            () -> ServiceLoader.load(ResourceBundleControlProvider.class,
-                                   ClassLoader.getSystemClassLoader()).stream()
-                             .map(ServiceLoader.Provider::get)
-                             .toList();
 
-        @SuppressWarnings("removal")
         private static final List<ResourceBundleControlProvider> CONTROL_PROVIDERS =
-            AccessController.doPrivileged(pa);
+                ServiceLoader.load(ResourceBundleControlProvider.class,
+                                ClassLoader.getSystemClassLoader()).stream()
+                        .map(ServiceLoader.Provider::get)
+                        .toList();
 
         private static Control getControl(String baseName) {
             return CONTROL_PROVIDERS.isEmpty() ?
@@ -1600,13 +1581,6 @@ public abstract class ResourceBundle {
                                                       Control control) {
         Objects.requireNonNull(module);
         Module callerModule = getCallerModule(caller);
-        if (callerModule != module) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(GET_CLASSLOADER_PERMISSION);
-            }
-        }
         return getBundleImpl(callerModule, module, baseName, locale, control);
     }
 
@@ -1891,7 +1865,6 @@ public abstract class ResourceBundle {
      * Returns the service type of the given baseName that is visible
      * to the given class loader
      */
-    @SuppressWarnings("removal")
     private static Class<ResourceBundleProvider>
             getResourceBundleProviderType(String baseName, ClassLoader loader)
     {
@@ -1906,27 +1879,20 @@ public abstract class ResourceBundle {
 
         // Use the class loader of the getBundle caller so that the caller's
         // visibility of the provider type is checked.
-        return AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                @Override
-                public Class<ResourceBundleProvider> run() {
-                    try {
-                        Class<?> c = Class.forName(providerName, false, loader);
-                        if (ResourceBundleProvider.class.isAssignableFrom(c)) {
-                            @SuppressWarnings("unchecked")
-                            Class<ResourceBundleProvider> s = (Class<ResourceBundleProvider>) c;
-                            return s;
-                        }
-                    } catch (ClassNotFoundException e) {}
-                    return null;
-                }
-            });
+        try {
+            Class<?> c = Class.forName(providerName, false, loader);
+            if (ResourceBundleProvider.class.isAssignableFrom(c)) {
+                @SuppressWarnings("unchecked")
+                Class<ResourceBundleProvider> s = (Class<ResourceBundleProvider>) c;
+                return s;
+            }
+        } catch (ClassNotFoundException _) {}
+        return null;
     }
 
     /**
      * Loads ResourceBundle from service providers.
      */
-    @SuppressWarnings("removal")
     private static ResourceBundle loadBundleFromProviders(String baseName,
                                                           Locale locale,
                                                           ServiceLoader<ResourceBundleProvider> providers,
@@ -1934,34 +1900,28 @@ public abstract class ResourceBundle {
     {
         if (providers == null) return null;
 
-        return AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    public ResourceBundle run() {
-                        for (Iterator<ResourceBundleProvider> itr = providers.iterator(); itr.hasNext(); ) {
-                            try {
-                                ResourceBundleProvider provider = itr.next();
-                                if (cacheKey != null && cacheKey.callerHasProvider == null
-                                        && cacheKey.getModule() == provider.getClass().getModule()) {
-                                    cacheKey.callerHasProvider = Boolean.TRUE;
-                                }
-                                ResourceBundle bundle = provider.getBundle(baseName, locale);
-                                trace("provider %s %s locale: %s bundle: %s%n", provider, baseName, locale, bundle);
-                                if (bundle != null) {
-                                    return bundle;
-                                }
-                            } catch (ServiceConfigurationError | SecurityException e) {
-                                if (cacheKey != null) {
-                                    cacheKey.setCause(e);
-                                }
-                            }
-                        }
-                        if (cacheKey != null && cacheKey.callerHasProvider == null) {
-                            cacheKey.callerHasProvider = Boolean.FALSE;
-                        }
-                        return null;
-                    }
-                });
-
+        for (Iterator<ResourceBundleProvider> itr = providers.iterator(); itr.hasNext(); ) {
+            try {
+                ResourceBundleProvider provider = itr.next();
+                if (cacheKey != null && cacheKey.callerHasProvider == null
+                        && cacheKey.getModule() == provider.getClass().getModule()) {
+                    cacheKey.callerHasProvider = Boolean.TRUE;
+                }
+                ResourceBundle bundle = provider.getBundle(baseName, locale);
+                trace("provider %s %s locale: %s bundle: %s%n", provider, baseName, locale, bundle);
+                if (bundle != null) {
+                    return bundle;
+                }
+            } catch (ServiceConfigurationError e) {
+                if (cacheKey != null) {
+                    cacheKey.setCause(e);
+                }
+            }
+        }
+        if (cacheKey != null && cacheKey.callerHasProvider == null) {
+            cacheKey.callerHasProvider = Boolean.FALSE;
+        }
+        return null;
     }
 
     /*
@@ -2425,7 +2385,7 @@ public abstract class ResourceBundle {
      * {@snippet lang=java :
      * import java.util.*;
      * import static java.util.ResourceBundle.Control.*;
-     * code: // @replace substring="code:" replacement="..."
+     * ...
      * ResourceBundle bundle =
      *   ResourceBundle.getBundle("MyResources", Locale.forLanguageTag("fr-CH"),
      *                            ResourceBundle.Control.getControl(FORMAT_PROPERTIES));
@@ -2494,7 +2454,7 @@ public abstract class ResourceBundle {
      *         }
      *     });
      *
-     * code: // @replace substring="code:" replacement="..."
+     * ...
      *
      * private static class XMLResourceBundle extends ResourceBundle {
      *     private Properties props;
@@ -2506,7 +2466,7 @@ public abstract class ResourceBundle {
      *         return props.getProperty(key);
      *     }
      *     public Enumeration<String> getKeys() {
-     *         code: // @replace substring="code:" replacement="..."
+     *         ...
      *     }
      * }
      * }
@@ -2867,123 +2827,122 @@ public abstract class ResourceBundle {
             if (baseName == null) {
                 throw new NullPointerException();
             }
-            return new ArrayList<>(CANDIDATES_CACHE.get(locale.getBaseLocale()));
+            return new ArrayList<>(CANDIDATES_CACHE.computeIfAbsent(locale.getBaseLocale(),
+                    Control::createCandidateList));
         }
 
-        private static final CandidateListCache CANDIDATES_CACHE = new CandidateListCache();
+        private static final ReferencedKeyMap<BaseLocale, List<Locale>> CANDIDATES_CACHE = ReferencedKeyMap.create(true, ConcurrentHashMap::new);
 
-        private static class CandidateListCache extends LocaleObjectCache<BaseLocale, List<Locale>> {
-            protected List<Locale> createObject(BaseLocale base) {
-                String language = base.getLanguage();
-                String script = base.getScript();
-                String region = base.getRegion();
-                String variant = base.getVariant();
+        private static List<Locale> createCandidateList(BaseLocale base) {
+            String language = base.getLanguage();
+            String script = base.getScript();
+            String region = base.getRegion();
+            String variant = base.getVariant();
 
-                // Special handling for Norwegian
-                boolean isNorwegianBokmal = false;
-                boolean isNorwegianNynorsk = false;
-                if (language.equals("no")) {
-                    if (region.equals("NO") && variant.equals("NY")) {
-                        variant = "";
-                        isNorwegianNynorsk = true;
-                    } else {
-                        isNorwegianBokmal = true;
+            // Special handling for Norwegian
+            boolean isNorwegianBokmal = false;
+            boolean isNorwegianNynorsk = false;
+            if (language.equals("no")) {
+                if (region.equals("NO") && variant.equals("NY")) {
+                    variant = "";
+                    isNorwegianNynorsk = true;
+                } else {
+                    isNorwegianBokmal = true;
+                }
+            }
+            if (language.equals("nb") || isNorwegianBokmal) {
+                List<Locale> tmpList = getDefaultList("nb", script, region, variant);
+                // Insert a locale replacing "nb" with "no" for every list entry with precedence
+                List<Locale> bokmalList = new ArrayList<>();
+                for (Locale l_nb : tmpList) {
+                    var isRoot = l_nb.getLanguage().isEmpty();
+                    var l_no = Locale.getInstance(isRoot ? "" : "no",
+                            l_nb.getScript(), l_nb.getCountry(), l_nb.getVariant(), null);
+                    bokmalList.add(isNorwegianBokmal ? l_no : l_nb);
+                    if (isRoot) {
+                        break;
+                    }
+                    bokmalList.add(isNorwegianBokmal ? l_nb : l_no);
+                }
+                return bokmalList;
+            } else if (language.equals("nn") || isNorwegianNynorsk) {
+                // Insert no_NO_NY, no_NO, no after nn
+                List<Locale> nynorskList = getDefaultList("nn", script, region, variant);
+                int idx = nynorskList.size() - 1;
+                nynorskList.add(idx++, Locale.getInstance("no", "NO", "NY"));
+                nynorskList.add(idx++, Locale.getInstance("no", "NO", ""));
+                nynorskList.add(idx++, Locale.getInstance("no", "", ""));
+                return nynorskList;
+            }
+            // Special handling for Chinese
+            else if (language.equals("zh")) {
+                if (script.isEmpty() && !region.isEmpty()) {
+                    // Supply script for users who want to use zh_Hans/zh_Hant
+                    // as bundle names (recommended for Java7+)
+                    switch (region) {
+                        case "TW", "HK", "MO" -> script = "Hant";
+                        case "CN", "SG"       -> script = "Hans";
                     }
                 }
-                if (language.equals("nb") || isNorwegianBokmal) {
-                    List<Locale> tmpList = getDefaultList("nb", script, region, variant);
-                    // Insert a locale replacing "nb" with "no" for every list entry with precedence
-                    List<Locale> bokmalList = new ArrayList<>();
-                    for (Locale l_nb : tmpList) {
-                        var isRoot = l_nb.getLanguage().isEmpty();
-                        var l_no = Locale.getInstance(isRoot ? "" : "no",
-                                l_nb.getScript(), l_nb.getCountry(), l_nb.getVariant(), null);
-                        bokmalList.add(isNorwegianBokmal ? l_no : l_nb);
-                        if (isRoot) {
-                            break;
-                        }
-                        bokmalList.add(isNorwegianBokmal ? l_nb : l_no);
-                    }
-                    return bokmalList;
-                } else if (language.equals("nn") || isNorwegianNynorsk) {
-                    // Insert no_NO_NY, no_NO, no after nn
-                    List<Locale> nynorskList = getDefaultList("nn", script, region, variant);
-                    int idx = nynorskList.size() - 1;
-                    nynorskList.add(idx++, Locale.getInstance("no", "NO", "NY"));
-                    nynorskList.add(idx++, Locale.getInstance("no", "NO", ""));
-                    nynorskList.add(idx++, Locale.getInstance("no", "", ""));
-                    return nynorskList;
-                }
-                // Special handling for Chinese
-                else if (language.equals("zh")) {
-                    if (script.isEmpty() && !region.isEmpty()) {
-                        // Supply script for users who want to use zh_Hans/zh_Hant
-                        // as bundle names (recommended for Java7+)
-                        switch (region) {
-                            case "TW", "HK", "MO" -> script = "Hant";
-                            case "CN", "SG"       -> script = "Hans";
-                        }
-                    }
-                }
-
-                return getDefaultList(language, script, region, variant);
             }
 
-            private static List<Locale> getDefaultList(String language, String script, String region, String variant) {
-                List<String> variants = null;
+            return getDefaultList(language, script, region, variant);
+        }
 
-                if (!variant.isEmpty()) {
-                    variants = new ArrayList<>();
-                    int idx = variant.length();
-                    while (idx != -1) {
-                        variants.add(variant.substring(0, idx));
-                        idx = variant.lastIndexOf('_', --idx);
+        private static List<Locale> getDefaultList(String language, String script, String region, String variant) {
+            List<String> variants = null;
+
+            if (!variant.isEmpty()) {
+                variants = new ArrayList<>();
+                int idx = variant.length();
+                while (idx != -1) {
+                    variants.add(variant.substring(0, idx));
+                    idx = variant.lastIndexOf('_', --idx);
+                }
+            }
+
+            List<Locale> list = new ArrayList<>();
+
+            if (variants != null) {
+                for (String v : variants) {
+                    list.add(Locale.getInstance(language, script, region, v, null));
+                }
+            }
+            if (!region.isEmpty()) {
+                list.add(Locale.getInstance(language, script, region, "", null));
+            }
+            if (!script.isEmpty()) {
+                list.add(Locale.getInstance(language, script, "", "", null));
+                // Special handling for Chinese
+                if (language.equals("zh")) {
+                    if (region.isEmpty()) {
+                        // Supply region(country) for users who still package Chinese
+                        // bundles using old convention.
+                        switch (script) {
+                            case "Hans" -> region = "CN";
+                            case "Hant" -> region = "TW";
+                        }
                     }
                 }
 
-                List<Locale> list = new ArrayList<>();
-
+                // With script, after truncating variant, region and script,
+                // start over without script.
                 if (variants != null) {
                     for (String v : variants) {
-                        list.add(Locale.getInstance(language, script, region, v, null));
+                        list.add(Locale.getInstance(language, "", region, v, null));
                     }
                 }
                 if (!region.isEmpty()) {
-                    list.add(Locale.getInstance(language, script, region, "", null));
+                    list.add(Locale.getInstance(language, "", region, "", null));
                 }
-                if (!script.isEmpty()) {
-                    list.add(Locale.getInstance(language, script, "", "", null));
-                    // Special handling for Chinese
-                    if (language.equals("zh")) {
-                        if (region.isEmpty()) {
-                            // Supply region(country) for users who still package Chinese
-                            // bundles using old convention.
-                            switch (script) {
-                                case "Hans" -> region = "CN";
-                                case "Hant" -> region = "TW";
-                            }
-                        }
-                    }
-
-                    // With script, after truncating variant, region and script,
-                    // start over without script.
-                    if (variants != null) {
-                        for (String v : variants) {
-                            list.add(Locale.getInstance(language, "", region, v, null));
-                        }
-                    }
-                    if (!region.isEmpty()) {
-                        list.add(Locale.getInstance(language, "", region, "", null));
-                    }
-                }
-                if (!language.isEmpty()) {
-                    list.add(Locale.getInstance(language, "", "", "", null));
-                }
-                // Add root locale at the end
-                list.add(Locale.ROOT);
-
-                return list;
             }
+            if (!language.isEmpty()) {
+                list.add(Locale.getInstance(language, "", "", "", null));
+            }
+            // Add root locale at the end
+            list.add(Locale.ROOT);
+
+            return list;
         }
 
         /**
@@ -3135,10 +3094,6 @@ public abstract class ResourceBundle {
          *        reason.
          * @throws    ExceptionInInitializerError
          *        if the initialization provoked by this method fails.
-         * @throws    SecurityException
-         *        If a security manager is present and creation of new
-         *        instances is denied. See {@link Class#newInstance()}
-         *        for details.
          * @throws    IOException
          *        if an error occurred when reading resources using
          *        any I/O operations
@@ -3164,7 +3119,6 @@ public abstract class ResourceBundle {
             return bundle;
         }
 
-        @SuppressWarnings("removal")
         private ResourceBundle newBundle0(String bundleName, String format,
                     ClassLoader loader, boolean reload)
                     throws IllegalAccessException, InstantiationException, IOException {
@@ -3188,28 +3142,20 @@ public abstract class ResourceBundle {
                                 bundleClass.getName() + " in " + m.toString());
                         }
                         try {
-                            Constructor<ResourceBundle> ctor = AccessController.doPrivileged(
-                                new PrivilegedExceptionAction<>() {
-                                    @Override
-                                    public Constructor<ResourceBundle> run() throws NoSuchMethodException {
-                                        return bundleClass.getDeclaredConstructor();
-                                    }
-                                });
+                            Constructor<ResourceBundle> ctor = bundleClass.getDeclaredConstructor();
                             if (!Modifier.isPublic(ctor.getModifiers())) {
                                 throw new IllegalAccessException("no-arg constructor in " +
                                     bundleClass.getName() + " is not publicly accessible.");
                             }
 
                             // java.base may not be able to read the bundleClass's module.
-                            PrivilegedAction<Void> pa1 = () -> { ctor.setAccessible(true); return null; };
-                            AccessController.doPrivileged(pa1);
+                            ctor.setAccessible(true);
                             bundle = ctor.newInstance((Object[]) null);
                         } catch (InvocationTargetException e) {
                             uncheckedThrow(e);
-                        } catch (PrivilegedActionException e) {
-                            assert e.getCause() instanceof NoSuchMethodException;
+                        } catch (NoSuchMethodException e) {
                             throw new InstantiationException("public no-arg constructor " +
-                                "does not exist in " + bundleClass.getName());
+                                    "does not exist in " + bundleClass.getName());
                         }
                     } else {
                         throw new ClassCastException(c.getName()
@@ -3223,27 +3169,16 @@ public abstract class ResourceBundle {
                     return bundle;
                 }
 
-                final boolean reloadFlag = reload;
-                InputStream stream = null;
-                try {
-                    stream = AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<>() {
-                            public InputStream run() throws IOException {
-                                URL url = loader.getResource(resourceName);
-                                if (url == null) return null;
+                URL url = loader.getResource(resourceName);
+                if (url == null) return null;
 
-                                URLConnection connection = url.openConnection();
-                                if (reloadFlag) {
-                                    // Disable caches to get fresh data for
-                                    // reloading.
-                                    connection.setUseCaches(false);
-                                }
-                                return connection.getInputStream();
-                            }
-                        });
-                } catch (PrivilegedActionException e) {
-                    throw (IOException) e.getCause();
+                URLConnection connection = url.openConnection();
+                if (reload) {
+                    // Disable caches to get fresh data for
+                    // reloading.
+                    connection.setUseCaches(false);
                 }
+                InputStream stream = connection.getInputStream();
                 if (stream != null) {
                     try {
                         bundle = new PropertyResourceBundle(stream);
@@ -3574,18 +3509,15 @@ public abstract class ResourceBundle {
         /**
          * Returns a new ResourceBundle instance of the given bundleClass
          */
-        @SuppressWarnings("removal")
         static ResourceBundle newResourceBundle(Class<? extends ResourceBundle> bundleClass) {
             try {
-                @SuppressWarnings("unchecked")
                 Constructor<? extends ResourceBundle> ctor =
                     bundleClass.getConstructor();
                 if (!Modifier.isPublic(ctor.getModifiers())) {
                     return null;
                 }
                 // java.base may not be able to read the bundleClass's module.
-                PrivilegedAction<Void> pa = () -> { ctor.setAccessible(true); return null;};
-                AccessController.doPrivileged(pa);
+                ctor.setAccessible(true);
                 try {
                     return ctor.newInstance((Object[]) null);
                 } catch (InvocationTargetException e) {
@@ -3613,9 +3545,7 @@ public abstract class ResourceBundle {
         {
             String bundleName = Control.INSTANCE.toBundleName(baseName, locale);
             try {
-                PrivilegedAction<Class<?>> pa = () -> Class.forName(module, bundleName);
-                @SuppressWarnings("removal")
-                Class<?> c = AccessController.doPrivileged(pa, null, GET_CLASSLOADER_PERMISSION);
+                Class<?> c = Class.forName(module, bundleName);
                 trace("local in %s %s caller %s: %s%n", module, bundleName, callerModule, c);
 
                 if (c == null) {
@@ -3673,56 +3603,46 @@ public abstract class ResourceBundle {
         {
             String bundleName = Control.INSTANCE.toBundleName(baseName, locale);
 
-            PrivilegedAction<InputStream> pa = () -> {
-                try {
-                    String resourceName = Control.INSTANCE
-                        .toResourceName0(bundleName, "properties");
-                    if (resourceName == null) {
-                        return null;
-                    }
-                    trace("local in %s %s caller %s%n", module, resourceName, callerModule);
+            String resourceName = Control.INSTANCE
+                .toResourceName0(bundleName, "properties");
+            if (resourceName == null) {
+                return null;
+            }
+            trace("local in %s %s caller %s%n", module, resourceName, callerModule);
 
-                    // if the package is in the given module but not opened
-                    // locate it from the given module first.
-                    String pn = toPackageName(bundleName);
-                    trace("   %s/%s is accessible to %s : %s%n",
-                            module.getName(), pn, callerModule,
-                            isAccessible(callerModule, module, pn));
-                    if (isAccessible(callerModule, module, pn)) {
-                        InputStream in = module.getResourceAsStream(resourceName);
-                        if (in != null) {
-                            return in;
-                        }
-                    }
 
-                    ClassLoader loader = module.getClassLoader();
-                    trace("loader for %s %s caller %s%n", module, resourceName, callerModule);
-
-                    try {
-                        if (loader != null) {
-                            return loader.getResourceAsStream(resourceName);
-                        } else {
-                            URL url = BootLoader.findResource(resourceName);
-                            if (url != null) {
-                                return url.openStream();
-                            }
-                        }
-                    } catch (Exception e) {}
-                    return null;
-
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
+            // if the package is in the given module but not opened
+            // locate it from the given module first.
+            String pn = toPackageName(bundleName);
+            trace("   %s/%s is accessible to %s : %s%n",
+                    module.getName(), pn, callerModule,
+                    isAccessible(callerModule, module, pn));
+            if (isAccessible(callerModule, module, pn)) {
+                InputStream in = module.getResourceAsStream(resourceName);
+                if (in != null) {
+                    return new PropertyResourceBundle(in);
                 }
-            };
+            }
+            ClassLoader loader = module.getClassLoader();
+            trace("loader for %s %s caller %s%n", module, resourceName, callerModule);
 
-            try (@SuppressWarnings("removal") InputStream stream = AccessController.doPrivileged(pa)) {
+            try {
+                InputStream stream = null;
+                if (loader != null) {
+                    stream = loader.getResourceAsStream(resourceName);
+                } else {
+                    URL url = BootLoader.findResource(resourceName);
+                    if (url != null) {
+                        stream = url.openStream();
+                    }
+                }
                 if (stream != null) {
                     return new PropertyResourceBundle(stream);
                 } else {
                     return null;
                 }
-            } catch (UncheckedIOException e) {
-                throw e.getCause();
+            } catch (Exception e) {
+                return null;
             }
         }
 
@@ -3733,8 +3653,7 @@ public abstract class ResourceBundle {
 
     }
 
-    private static final boolean TRACE_ON = Boolean.parseBoolean(
-        GetPropertyAction.privilegedGetProperty("resource.bundle.debug", "false"));
+    private static final boolean TRACE_ON = Boolean.getBoolean("resource.bundle.debug");
 
     private static void trace(String format, Object... params) {
         if (TRACE_ON)

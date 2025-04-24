@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 #include "GDIHashtable.h"
 #include "awt_GDIObject.h"
 
-GDIHashtable::BatchDestructionManager GDIHashtable::manager;
-
 /*
  * The order of monitor entrance is BatchDestructionManager->List->Hashtable.
  * GDIHashtable::put() and GDIHashtable::release() are designed to be called
@@ -35,12 +33,12 @@ GDIHashtable::BatchDestructionManager GDIHashtable::manager;
  */
 
 void* GDIHashtable::put(void* key, void* value) {
-    manager.decrementCounter();
+    manager().decrementCounter();
     return Hashtable::put(key, value);
 }
 
 void GDIHashtable::release(void* key) {
-    if (!manager.isBatchingEnabled()) {
+    if (!manager().isBatchingEnabled()) {
         void* value = remove(key);
         DASSERT(value != NULL);
         m_deleteProc(value);

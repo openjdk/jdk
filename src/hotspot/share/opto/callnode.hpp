@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ public:
 // Return from subroutine node
 class ReturnNode : public Node {
 public:
-  ReturnNode( uint edges, Node *cntrl, Node *i_o, Node *memory, Node *retadr, Node *frameptr );
+  ReturnNode(uint edges, Node* cntrl, Node* i_o, Node* memory, Node* frameptr, Node* retadr);
   virtual int Opcode() const;
   virtual bool  is_CFG() const { return true; }
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
@@ -151,6 +151,17 @@ class RethrowNode : public Node {
 #endif
 };
 
+
+//------------------------------ForwardExceptionNode---------------------------
+// Pop stack frame and jump to StubRoutines::forward_exception_entry()
+class ForwardExceptionNode : public ReturnNode {
+public:
+  ForwardExceptionNode(Node* cntrl, Node* i_o, Node* memory, Node* frameptr, Node* retadr)
+    : ReturnNode(TypeFunc::Parms, cntrl, i_o, memory, frameptr, retadr) {
+  }
+
+  virtual int Opcode() const;
+};
 
 //------------------------------TailCallNode-----------------------------------
 // Pop stack frame and jump indirect
@@ -187,7 +198,6 @@ public:
 // This provides a way to map the optimized program back into the interpreter,
 // or to let the GC mark the stack.
 class JVMState : public ResourceObj {
-  friend class VMStructs;
 public:
   typedef enum {
     Reexecute_Undefined = -1, // not defined -- will be translated into false later
@@ -320,7 +330,6 @@ public:
 class SafePointNode : public MultiNode {
   friend JVMState;
   friend class GraphKit;
-  friend class VMStructs;
 
   virtual bool           cmp( const Node &n ) const;
   virtual uint           size_of() const;       // Size is bigger
@@ -508,7 +517,7 @@ public:
 class SafePointScalarObjectNode: public TypeNode {
   uint _first_index;              // First input edge relative index of a SafePoint node where
                                   // states of the scalarized object fields are collected.
-                                  // It is relative to the last (youngest) jvms->_scloff.
+  uint _depth;                    // Depth of the JVM state the _first_index field refers to
   uint _n_fields;                 // Number of non-static fields of the scalarized object.
 
   Node* _alloc;                   // Just for debugging purposes.
@@ -519,7 +528,7 @@ class SafePointScalarObjectNode: public TypeNode {
   uint first_index() const { return _first_index; }
 
 public:
-  SafePointScalarObjectNode(const TypeOopPtr* tp, Node* alloc, uint first_index, uint n_fields);
+  SafePointScalarObjectNode(const TypeOopPtr* tp, Node* alloc, uint first_index, uint depth, uint n_fields);
 
   virtual int Opcode() const;
   virtual uint           ideal_reg() const;
@@ -529,7 +538,7 @@ public:
 
   uint first_index(JVMState* jvms) const {
     assert(jvms != nullptr, "missed JVMS");
-    return jvms->scloff() + _first_index;
+    return jvms->of_depth(_depth)->scloff() + _first_index;
   }
   uint n_fields()    const { return _n_fields; }
 
@@ -661,7 +670,6 @@ class CallGenerator;
 // Call nodes now subsume the function of debug nodes at callsites, so they
 // contain the functionality of a full scope chain of debug nodes.
 class CallNode : public SafePointNode {
-  friend class VMStructs;
 
 protected:
   bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase);
@@ -749,23 +757,22 @@ public:
 // convention.  (The "Java" calling convention is the compiler's calling
 // convention, as opposed to the interpreter's or that of native C.)
 class CallJavaNode : public CallNode {
-  friend class VMStructs;
 protected:
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 
+  ciMethod* _method;               // Method being direct called
   bool    _optimized_virtual;
   bool    _method_handle_invoke;
   bool    _override_symbolic_info; // Override symbolic call site info from bytecode
-  ciMethod* _method;               // Method being direct called
   bool    _arg_escape;             // ArgEscape in parameter list
 public:
   CallJavaNode(const TypeFunc* tf , address addr, ciMethod* method)
     : CallNode(tf, addr, TypePtr::BOTTOM),
+      _method(method),
       _optimized_virtual(false),
       _method_handle_invoke(false),
       _override_symbolic_info(false),
-      _method(method),
       _arg_escape(false)
   {
     init_class_id(Class_CallJava);
@@ -783,6 +790,7 @@ public:
   void  set_arg_escape(bool f)             { _arg_escape = f; }
   bool  arg_escape() const                 { return _arg_escape; }
   void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode *sfpt);
+  void register_for_late_inline();
 
   DEBUG_ONLY( bool validate_symbolic_info() const; )
 
@@ -1055,6 +1063,8 @@ public:
   bool is_allocation_MemBar_redundant() { return _is_allocation_MemBar_redundant; }
 
   Node* make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem);
+
+  NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };
 
 //------------------------------AllocateArray---------------------------------
@@ -1154,6 +1164,10 @@ public:
   void set_coarsened()   { _kind = Coarsened; set_eliminated_lock_counter(); }
   void set_nested()      { _kind = Nested; set_eliminated_lock_counter(); }
 
+  // Check that all locks/unlocks associated with object come from balanced regions.
+  // They can become unbalanced after coarsening optimization or on OSR entry.
+  bool is_balanced();
+
   // locking does not modify its arguments
   virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase){ return false; }
 
@@ -1175,9 +1189,16 @@ public:
 //    2 -   a FastLockNode
 //
 class LockNode : public AbstractLockNode {
+  static const TypeFunc* _lock_type_Type;
 public:
 
-  static const TypeFunc *lock_type() {
+  static inline const TypeFunc* lock_type() {
+    assert(_lock_type_Type != nullptr, "should be initialized");
+    return _lock_type_Type;
+  }
+
+  static void initialize_lock_Type() {
+    assert(_lock_type_Type == nullptr, "should be called once");
     // create input type (domain)
     const Type **fields = TypeTuple::fields(3);
     fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
@@ -1190,7 +1211,7 @@ public:
 
     const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0,fields);
 
-    return TypeFunc::make(domain,range);
+    _lock_type_Type = TypeFunc::make(domain,range);
   }
 
   virtual int Opcode() const;

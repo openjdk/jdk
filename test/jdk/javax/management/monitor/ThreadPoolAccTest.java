@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,14 @@
  *
  * @run clean ThreadPoolAccTest
  * @run build ThreadPoolAccTest
- * @run main ThreadPoolAccTest
+ *
+ * @run main/othervm ThreadPoolAccTest
  */
 
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Date;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;
@@ -67,7 +68,7 @@ public class ThreadPoolAccTest {
             return "";
         }
         private void setPrincipal() {
-            Subject subject = Subject.getSubject(AccessController.getContext());
+            Subject subject = Subject.current();
             Set<JMXPrincipal> principals = subject.getPrincipals(JMXPrincipal.class);
             principal = principals.iterator().next().getName();
         }
@@ -136,7 +137,9 @@ public class ThreadPoolAccTest {
                         return null;
                     }
                 };
-                Subject.doAs(subject, action);
+                // Subject.doAs(subject, action);
+                Callable<Void> c = (Callable<Void>) () -> action.run();
+                Subject.callAs(subject, c);
             }
 
             sleep(500); // wait for getX method to be called, which calls setPrincipal

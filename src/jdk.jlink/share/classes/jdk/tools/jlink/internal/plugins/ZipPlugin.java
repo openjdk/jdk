@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,27 +82,27 @@ public final class ZipPlugin extends AbstractPlugin {
     }
 
     static byte[] compress(byte[] bytesIn, int compressionLevel) {
-        Deflater deflater = new Deflater(compressionLevel);
-        deflater.setInput(bytesIn);
-        ByteArrayOutputStream stream = new ByteArrayOutputStream(bytesIn.length);
-        byte[] buffer = new byte[1024];
+        try (Deflater deflater = new Deflater(compressionLevel);
+             ByteArrayOutputStream stream = new ByteArrayOutputStream(bytesIn.length)) {
 
-        deflater.finish();
-        while (!deflater.finished()) {
-            int count = deflater.deflate(buffer);
-            stream.write(buffer, 0, count);
-        }
+            deflater.setInput(bytesIn);
 
-        try {
-            stream.close();
-        } catch (IOException ex) {
+            byte[] buffer = new byte[1024];
+
+            deflater.finish();
+            while (!deflater.finished()) {
+                int count = deflater.deflate(buffer);
+                stream.write(buffer, 0, count);
+            }
+            return stream.toByteArray(); // the compressed output
+        } catch (IOException e) {
+            // the IOException is only declared by ByteArrayOutputStream.close()
+            // but the impl of ByteArrayOutputStream.close() is a no-op, so for
+            // all practical purposes there should never be an IOException thrown
+            assert false : "unexpected " + e;
+            // don't propagate the exception, instead return the original uncompressed input
             return bytesIn;
         }
-
-        byte[] bytesOut = stream.toByteArray();
-        deflater.end();
-
-        return bytesOut;
     }
 
     @Override
@@ -114,7 +114,7 @@ public final class ZipPlugin extends AbstractPlugin {
                 byte[] compressed;
                 compressed = compress(resource.contentBytes(), this.compressionLevel);
                 res = ResourcePoolManager.newCompressedResource(resource,
-                        ByteBuffer.wrap(compressed), getName(), null,
+                        ByteBuffer.wrap(compressed), getName(),
                         ((ResourcePoolImpl)in).getStringTable(), in.byteOrder());
             }
             return res;

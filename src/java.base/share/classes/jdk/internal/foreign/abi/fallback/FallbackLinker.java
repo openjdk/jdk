@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.foreign.abi.fallback;
+
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.abi.AbstractLinker;
+import jdk.internal.foreign.abi.CapturableState;
+import jdk.internal.foreign.abi.LinkerOptions;
+import jdk.internal.foreign.abi.SharedUtils;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
@@ -31,31 +39,18 @@ import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.ValueLayout;
-import static java.lang.foreign.ValueLayout.ADDRESS;
-import static java.lang.foreign.ValueLayout.JAVA_BOOLEAN;
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_CHAR;
-import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
-import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
-import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import static java.lang.invoke.MethodHandles.foldArguments;
 import java.lang.invoke.MethodType;
 import java.lang.ref.Reference;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.abi.AbstractLinker;
-import jdk.internal.foreign.abi.CapturableState;
-import jdk.internal.foreign.abi.LinkerOptions;
-import jdk.internal.foreign.abi.SharedUtils;
+
+import static java.lang.foreign.ValueLayout.*;
+import static java.lang.invoke.MethodHandles.foldArguments;
 
 public final class FallbackLinker extends AbstractLinker {
 
@@ -86,6 +81,7 @@ public final class FallbackLinker extends AbstractLinker {
 
     @Override
     protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options) {
+        assertNotEmpty(function);
         MemorySegment cif = makeCif(inferredMethodType, function, options, Arena.ofAuto());
 
         int capturedStateMask = options.capturedCallState()
@@ -112,6 +108,7 @@ public final class FallbackLinker extends AbstractLinker {
 
     @Override
     protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
+        assertNotEmpty(function);
         MemorySegment cif = makeCif(targetType, function, options, Arena.ofAuto());
 
         UpcallData invData = new UpcallData(function.returnLayout().orElse(null), function.argumentLayouts(), cif);
@@ -121,11 +118,6 @@ public final class FallbackLinker extends AbstractLinker {
             target = MethodHandles.insertArguments(doUpcallMH, 0, target);
             return LibFallback.createClosure(cif, target, scope);
         };
-    }
-
-    @Override
-    protected ByteOrder linkerByteOrder() {
-        return ByteOrder.nativeOrder();
     }
 
     private static MemorySegment makeCif(MethodType methodType, FunctionDescriptor function, LinkerOptions options, Arena scope) {
@@ -166,8 +158,14 @@ public final class FallbackLinker extends AbstractLinker {
             acquiredSessions.add(targetImpl);
 
             MemorySegment capturedState = null;
+            Object captureStateHeapBase = null;
             if (invData.capturedStateMask() != 0) {
                 capturedState = SharedUtils.checkCaptureSegment((MemorySegment) args[argStart++]);
+                if (!invData.allowsHeapAccess) {
+                    SharedUtils.checkNative(capturedState);
+                } else {
+                    captureStateHeapBase = capturedState.heapBase().orElse(null);
+                }
                 MemorySessionImpl capturedStateImpl = ((AbstractMemorySegmentImpl) capturedState).sessionImpl();
                 capturedStateImpl.acquire0();
                 acquiredSessions.add(capturedStateImpl);
@@ -202,7 +200,8 @@ public final class FallbackLinker extends AbstractLinker {
                 retSeg = (invData.returnLayout() instanceof GroupLayout ? returnAllocator : arena).allocate(invData.returnLayout);
             }
 
-            LibFallback.doDowncall(invData.cif, target, retSeg, argPtrs, capturedState, invData.capturedStateMask(),
+            LibFallback.doDowncall(invData.cif, target, retSeg, argPtrs,
+                                   captureStateHeapBase, capturedState, invData.capturedStateMask(),
                                    heapBases, args.length);
 
             Reference.reachabilityFence(invData.cif());
@@ -218,6 +217,7 @@ public final class FallbackLinker extends AbstractLinker {
     // note that cif is not used, but we store it here to keep it alive
     private record UpcallData(MemoryLayout returnLayout, List<MemoryLayout> argLayouts, MemorySegment cif) {}
 
+    @SuppressWarnings("restricted")
     private static void doUpcall(MethodHandle target, MemorySegment retPtr, MemorySegment argPtrs, UpcallData data) throws Throwable {
         List<MemoryLayout> argLayouts = data.argLayouts();
         int numArgs = argLayouts.size();
@@ -225,14 +225,14 @@ public final class FallbackLinker extends AbstractLinker {
         try (Arena upcallArena = Arena.ofConfined()) {
             MemorySegment argsSeg = argPtrs.reinterpret(numArgs * ADDRESS.byteSize(), upcallArena, null);
             MemorySegment retSeg = retLayout != null
-                ? retPtr.reinterpret(retLayout.byteSize(), upcallArena, null)
+                ? retPtr.reinterpret(retLayout.byteSize(), upcallArena, null) // restricted
                 : null;
 
             Object[] args = new Object[numArgs];
             for (int i = 0; i < numArgs; i++) {
                 MemoryLayout argLayout = argLayouts.get(i);
                 MemorySegment argPtr = argsSeg.getAtIndex(ADDRESS, i)
-                        .reinterpret(argLayout.byteSize(), upcallArena, null);
+                        .reinterpret(argLayout.byteSize(), upcallArena, null); // restricted
                 args[i] = readValue(argPtr, argLayout);
             }
 
@@ -306,8 +306,8 @@ public final class FallbackLinker extends AbstractLinker {
                     Map.entry("bool", JAVA_BOOLEAN),
                     Map.entry("char", JAVA_BYTE),
                     Map.entry("float", JAVA_FLOAT),
-                    Map.entry("long long", JAVA_LONG),
-                    Map.entry("double", JAVA_DOUBLE),
+                    Map.entry("long long", JAVA_LONG.withByteAlignment(LibFallback.longLongAlign())),
+                    Map.entry("double", JAVA_DOUBLE.withByteAlignment(LibFallback.doubleAlign())),
                     Map.entry("void*", ADDRESS),
                     // platform-dependent sizes
                     Map.entry("size_t", FFIType.SIZE_T),
@@ -330,4 +330,35 @@ public final class FallbackLinker extends AbstractLinker {
 
         return Holder.CANONICAL_LAYOUTS;
     }
+
+    private static void assertNotEmpty(FunctionDescriptor fd) {
+        fd.returnLayout().ifPresent(FallbackLinker::assertNotEmpty);
+        fd.argumentLayouts().forEach(FallbackLinker::assertNotEmpty);
+    }
+
+    // Recursively tests for emptiness
+    private static void assertNotEmpty(MemoryLayout layout) {
+        switch (layout) {
+            case GroupLayout gl -> {
+                if (gl.memberLayouts().isEmpty()) {
+                    throw empty(gl);
+                } else {
+                    gl.memberLayouts().forEach(FallbackLinker::assertNotEmpty);
+                }
+            }
+            case SequenceLayout sl -> {
+                if (sl.elementCount() == 0) {
+                    throw empty(sl);
+                } else {
+                    assertNotEmpty(sl.elementLayout());
+                }
+            }
+            default -> { /* do nothing */ }
+        }
+    }
+
+    private static IllegalArgumentException empty(MemoryLayout layout) {
+        return new IllegalArgumentException("The layout " + layout + " is empty");
+    }
+
 }

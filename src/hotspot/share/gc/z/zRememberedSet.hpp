@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,8 +115,6 @@ public:
   bool is_initialized() const;
   void initialize(size_t page_size);
 
-  void resize(size_t page_size);
-
   bool at_current(uintptr_t offset) const;
   bool at_previous(uintptr_t offset) const;
   bool set_current(uintptr_t offset);
@@ -133,8 +131,6 @@ public:
   bool is_cleared_current() const;
   bool is_cleared_previous() const;
 
-  void clear_all();
-  void clear_current();
   void clear_previous();
   void swap_remset_bitmaps();
 

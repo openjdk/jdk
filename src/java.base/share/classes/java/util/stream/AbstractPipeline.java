@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -434,6 +434,20 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      }
 
     /**
+     * Returns whether any of the stages in the (entire) pipeline is short-circuiting
+     * or not.
+     * @return {@code true} if any stage in this pipeline is short-circuiting,
+     *         {@code false} if not.
+     */
+    protected final boolean isShortCircuitingPipeline() {
+        for (var u = sourceStage.nextStage; u != null; u = u.nextStage) {
+            if (StreamOpFlag.SHORT_CIRCUIT.isKnown(u.combinedFlags))
+                return true;
+        }
+        return false;
+    }
+
+    /**
      * Get the source spliterator for this pipeline stage.  For a sequential or
      * stateless parallel pipeline, this is the source spliterator.  For a
      * stateful parallel pipeline, this is a spliterator describing the results
@@ -564,7 +578,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     @Override
     @SuppressWarnings("unchecked")
     final <P_IN> boolean copyIntoWithCancel(Sink<P_IN> wrappedSink, Spliterator<P_IN> spliterator) {
-        @SuppressWarnings({"rawtypes","unchecked"})
+        @SuppressWarnings("rawtypes")
         AbstractPipeline p = AbstractPipeline.this;
         while (p.depth > 0) {
             p = p.previousStage;
@@ -608,7 +622,6 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     final <P_IN> Node<E_OUT> evaluate(Spliterator<P_IN> spliterator,
                                       boolean flatten,
                                       IntFunction<E_OUT[]> generator) {
@@ -776,7 +789,6 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * @param spliterator the source {@code Spliterator}
      * @return a {@code Spliterator} describing the result of the evaluation
      */
-    @SuppressWarnings("unchecked")
     <P_IN> Spliterator<E_OUT> opEvaluateParallelLazy(PipelineHelper<E_OUT> helper,
                                                      Spliterator<P_IN> spliterator) {
         return opEvaluateParallel(helper, spliterator, Nodes.castingArray()).spliterator();

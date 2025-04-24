@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "gc/shared/oopStorage.hpp"
@@ -34,8 +33,8 @@
 #include "gc/shared/stringdedup/stringDedupStorageUse.hpp"
 #include "gc/shared/stringdedup/stringDedupTable.hpp"
 #include "logging/log.hpp"
-#include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
+#include "nmt/memTag.hpp"
 #include "oops/access.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/cpuTimeCounters.hpp"

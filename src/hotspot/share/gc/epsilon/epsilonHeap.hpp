@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,7 +37,6 @@
 class EpsilonHeap : public CollectedHeap {
   friend class VMStructs;
 private:
-  SoftRefPolicy _soft_ref_policy;
   EpsilonMonitoringSupport* _monitoring_support;
   MemoryPool* _pool;
   GCMemoryManager _memory_manager;
@@ -63,10 +62,6 @@ public:
 
   const char* name() const override {
     return "Epsilon";
-  }
-
-  SoftRefPolicy* soft_ref_policy() override {
-    return &_soft_ref_policy;
   }
 
   jint initialize() override;
@@ -133,10 +128,11 @@ public:
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
   // Support for loading objects from CDS archive into the heap
-  bool can_load_archived_objects() const override { return UseCompressedOops; }
+  bool can_load_archived_objects() const override { return true; }
   HeapWord* allocate_loaded_archive_space(size_t size) override;
 
-  void print_on(outputStream* st) const override;
+  void print_heap_on(outputStream* st) const override;
+  void print_gc_on(outputStream* st) const override {}
   void print_tracing_info() const override;
   bool print_location(outputStream* st, void* addr) const override;
 

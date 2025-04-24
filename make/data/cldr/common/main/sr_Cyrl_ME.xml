@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -129,11 +129,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</eras>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="MMMMW" count="one" draft="contributed">W. 'сједмица' 'у' MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="few" draft="contributed">W. 'сједмица' 'у' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one" draft="contributed">MMMM: W. 'недеља'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="few" draft="contributed">MMMM: W. 'недеља'</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other" draft="contributed">W. 'сједмица' 'у' MMMM</dateFormatItem>
-						<dateFormatItem id="yw" count="one" draft="contributed">w. 'сједмица' 'у' Y.</dateFormatItem>
-						<dateFormatItem id="yw" count="few" draft="contributed">w. 'сједмица' 'у' Y.</dateFormatItem>
+						<dateFormatItem id="yw" count="one" draft="contributed">w. 'недеља' 'у' Y.</dateFormatItem>
+						<dateFormatItem id="yw" count="few" draft="contributed">w. 'недеља' 'у' Y.</dateFormatItem>
 						<dateFormatItem id="yw" count="other" draft="contributed">w. 'сједмица' 'у' Y.</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>

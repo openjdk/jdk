@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 
-#include "nsk_tools.h"
-#include "jni_tools.h"
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
+#include "nsk_tools.hpp"
+#include "jni_tools.hpp"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
 #define OBJ_MAX_COUNT 100000
 
-static JNIEnv *jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv *jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jvmtiCapabilities caps;
 
@@ -49,13 +49,13 @@ static volatile int modificationCount = 0;
 static volatile int iterationCount = 0;
 static volatile int errorCount = 0;
 
-static jclass debugeeClass = NULL;
+static jclass debugeeClass = nullptr;
 static jfieldID rootFieldID;
 static jfieldID modifiedFieldID;
 
 /***********************************************************************/
 
-static jrawMonitorID counterMonitor_ptr = NULL;
+static jrawMonitorID counterMonitor_ptr = nullptr;
 
 static void increaseCounter(volatile int* counterPtr) {
 
@@ -249,7 +249,7 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverHeap(JNIEnv* jni
     NSK_DISPLAY0("Calling IterateOverHeap...\n");
     if (!NSK_JVMTI_VERIFY(jvmti->IterateOverHeap(JVMTI_HEAP_OBJECT_TAGGED,
                                                  heapObjectCallback,
-                                                 NULL /*user_data*/))) {
+                                                 nullptr /*user_data*/))) {
         nsk_jvmti_setFailStatus();
     }
     NSK_DISPLAY0("IterateOverHeap finished.\n");
@@ -279,7 +279,7 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverReachableObjects
     if (!NSK_JVMTI_VERIFY(jvmti->IterateOverReachableObjects(heapRootCallback,
                                                              stackReferenceCallback,
                                                              objectReferenceCallback,
-                                                             NULL /*user_data*/))) {
+                                                             nullptr /*user_data*/))) {
         nsk_jvmti_setFailStatus();
     }
     NSK_DISPLAY0("IterateOverReachableObjects finished.\n");
@@ -309,7 +309,7 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverInstancesOfClass
     if (!NSK_JVMTI_VERIFY(jvmti->IterateOverInstancesOfClass(debugeeClass,
                                                              JVMTI_HEAP_OBJECT_TAGGED,
                                                              heapObjectCallback,
-                                                             NULL /*user_data*/))) {
+                                                             nullptr /*user_data*/))) {
         nsk_jvmti_setFailStatus();
     }
     NSK_DISPLAY0("IterateOverInstancesOfClass finished.\n");
@@ -329,12 +329,12 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverInstancesOfClass
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverObjectsReachableFromObject(JNIEnv* jni,
                                                                                            jclass  klass) {
-    jobject root = NULL;
+    jobject root = nullptr;
     int count = 0;
 
     if (!NSK_JNI_VERIFY(jni, (root =
-                jni->GetStaticObjectField(debugeeClass, rootFieldID)) != NULL)) {
-        NSK_COMPLAIN0("GetStaticObjectField returned NULL for 'root' field value\n\n");
+                jni->GetStaticObjectField(debugeeClass, rootFieldID)) != nullptr)) {
+        NSK_COMPLAIN0("GetStaticObjectField returned null for 'root' field value\n\n");
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -346,7 +346,7 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t002_runIterateOverObjectsReachable
     NSK_DISPLAY0("Calling IterateOverObjectsReachableFromObject...\n");
     if (!NSK_JVMTI_VERIFY(jvmti->IterateOverObjectsReachableFromObject(root,
                                                                        objectReferenceCallback,
-                                                                       NULL /*user_data*/))) {
+                                                                       nullptr /*user_data*/))) {
         nsk_jvmti_setFailStatus();
     }
     NSK_DISPLAY0("IterateOverObjectsReachableFromObject finished.\n");
@@ -372,24 +372,24 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     NSK_DISPLAY1("Find debugee class: %s\n", DEBUGEE_SIGNATURE);
     debugeeClass = nsk_jvmti_classBySignature(DEBUGEE_SIGNATURE);
-    if (debugeeClass == NULL) {
+    if (debugeeClass == nullptr) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    if (!NSK_JNI_VERIFY(jni, (debugeeClass = (jclass)jni->NewGlobalRef(debugeeClass)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (debugeeClass = (jclass)jni->NewGlobalRef(debugeeClass)) != nullptr))
         return;
 
     NSK_DISPLAY1("Find ID of 'root' field: %s\n", ROOT_SIGNATURE);
     if (!NSK_JNI_VERIFY(jni, (rootFieldID =
-            jni->GetStaticFieldID(debugeeClass, "root", ROOT_SIGNATURE)) != NULL)) {
+            jni->GetStaticFieldID(debugeeClass, "root", ROOT_SIGNATURE)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
     NSK_DISPLAY0("Find ID of 'modified' field\n");
     if (!NSK_JNI_VERIFY(jni, (modifiedFieldID =
-            jni->GetStaticFieldID(debugeeClass, "modified", "I")) != NULL)) {
+            jni->GetStaticFieldID(debugeeClass, "modified", "I")) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -434,7 +434,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("counterMonitor", &counterMonitor_ptr))) {
@@ -469,11 +469,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     NSK_DISPLAY0("enabling JVMTI events ...\n");
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
                                                           JVMTI_EVENT_FIELD_MODIFICATION,
-                                                          NULL)))
+                                                          nullptr)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done.\n");
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
     NSK_DISPLAY0("agentProc has been set\n\n");
 

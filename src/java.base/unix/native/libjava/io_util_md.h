@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ jint handleAvailable(FD fd, jlong *pbytes);
 jint handleSetLength(FD fd, jlong length);
 jlong handleGetLength(FD fd);
 FD handleOpen(const char *path, int oflag, int mode);
+jboolean handleIsRegularFile(JNIEnv* env, FD fd);
 
 /*
  * Functions to get fd from the java.io.FileDescriptor field
@@ -59,36 +60,19 @@ FD getFD(JNIEnv *env, jobject cur, jfieldID fid);
  * Route the routines
  */
 #define IO_Sync fsync
+#define IO_Lseek lseek
 #define IO_Read handleRead
 #define IO_Write handleWrite
 #define IO_Append handleWrite
 #define IO_Available handleAvailable
 #define IO_SetLength handleSetLength
 #define IO_GetLength handleGetLength
-
-#ifdef _ALLBSD_SOURCE
-#define open64 open
-#define fstat64 fstat
-#define stat64 stat
-#define lseek64 lseek
-#define ftruncate64 ftruncate
-#define IO_Lseek lseek
-#else
-#define IO_Lseek lseek64
-#endif
+#define IO_IsRegularFile handleIsRegularFile
 
 /*
  * On Solaris, the handle field is unused
  */
 #define SET_HANDLE(fd) return (jlong)-1
-
-/*
- * Retry the operation if it is interrupted
- */
-#define RESTARTABLE(_cmd, _result)                \
-    do {                                          \
-        _result = _cmd;                           \
-    } while ((_result == -1) && (errno == EINTR))
 
 void fileDescriptorClose(JNIEnv *env, jobject this);
 

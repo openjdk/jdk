@@ -47,7 +47,7 @@ import jdk.test.lib.jfr.TestClassLoader;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @modules jdk.jfr/jdk.jfr.events
  * @library /test/lib /test/jdk

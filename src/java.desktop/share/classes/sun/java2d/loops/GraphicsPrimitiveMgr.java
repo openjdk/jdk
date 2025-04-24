@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,7 +245,7 @@ public final class GraphicsPrimitiveMgr {
      * A holder for general primitives to avoid circular dependencies
      * between GraphicsPrimitiveMgr and Blit/etc classes.
      */
-    final static class GeneralPrimitives {
+    static final class GeneralPrimitives {
 
         private static GraphicsPrimitive[] primitives;
 

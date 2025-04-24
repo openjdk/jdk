@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1219,7 +1219,7 @@ public class Code {
         return !alive || state.stacksize == letExprStackPos;
     }
 
-/**************************************************************************
+/* ************************************************************************
  * Stack map generation
  *************************************************************************/
 
@@ -1394,7 +1394,7 @@ public class Code {
     }
 
 
-/**************************************************************************
+/* ************************************************************************
  * Operations having to do with jumps
  *************************************************************************/
 
@@ -2238,7 +2238,7 @@ public class Code {
         for (int i = nextreg; i < prevNextReg; i++) endScope(i);
     }
 
-/**************************************************************************
+/* ************************************************************************
  * static tables
  *************************************************************************/
 

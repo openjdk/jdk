@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,10 @@ abstract class FileDispatcher extends NativeDispatcher {
     abstract int truncate(FileDescriptor fd, long size) throws IOException;
 
     abstract long size(FileDescriptor fd) throws IOException;
+
+    abstract int available(FileDescriptor fd) throws IOException;
+
+    abstract boolean isOther(FileDescriptor fd) throws IOException;
 
     abstract int lock(FileDescriptor fd, boolean blocking, long pos, long size,
                        boolean shared) throws IOException;

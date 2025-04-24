@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  * Cipher implementation class. This class currently supports
  * DES, DESede, AES, ARCFOUR, and Blowfish.
  *
- * This class is designed to support ECB, CBC, CTR with NoPadding
+ * This class is designed to support ECB, CBC, CTR, CTS with NoPadding
  * and ECB, CBC with PKCS5Padding. It will use its own padding impl
  * if the native mechanism does not support padding.
  *
@@ -60,17 +60,9 @@ final class P11Cipher extends CipherSpi {
 
     private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
-    // mode constant for ECB mode
-    private static final int MODE_ECB = 3;
-    // mode constant for CBC mode
-    private static final int MODE_CBC = 4;
-    // mode constant for CTR mode
-    private static final int MODE_CTR = 5;
-
-    // padding constant for NoPadding
-    private static final int PAD_NONE = 5;
-    // padding constant for PKCS5Padding
-    private static final int PAD_PKCS5 = 6;
+    // mode and padding constants
+    private enum Mode {ECB /* or stream ciphers */, CBC, CTR, CTS}
+    private enum Pad {NONE, PKCS5}
 
     private static interface Padding {
         // ENC: format the specified buffer with padding bytes and return the
@@ -146,14 +138,14 @@ final class P11Cipher extends CipherSpi {
     // flag indicating encrypt or decrypt mode
     private boolean encrypt;
 
-    // mode, one of MODE_* above (MODE_ECB for stream ciphers)
-    private int blockMode;
+    // mode, Mode.ECB for stream ciphers
+    private final Mode blockMode;
 
     // block size, 0 for stream ciphers
     private final int blockSize;
 
-    // padding type, on of PAD_* above (PAD_NONE for stream ciphers)
-    private int paddingType;
+    // padding type, Pad.NONE for stream ciphers
+    private Pad paddingType;
 
     // when the padding is requested but unsupported by the native mechanism,
     // we use the following to do padding and necessary data buffering.
@@ -163,7 +155,7 @@ final class P11Cipher extends CipherSpi {
     private byte[] padBuffer;
     private int padBufferLen;
 
-    // original IV, if in MODE_CBC or MODE_CTR
+    // original IV, if in Mode.CBC, Mode.CTR or Mode.CTS
     private byte[] iv;
 
     // number of bytes buffered internally by the native mechanism and padBuffer
@@ -208,8 +200,7 @@ final class P11Cipher extends CipherSpi {
                 blockSize = 8;
             }
         }
-        this.blockMode =
-            (algoParts.length > 1 ? parseMode(algoParts[1]) : MODE_ECB);
+        blockMode = algoParts.length > 1 ? parseMode(algoParts[1]) : Mode.ECB;
         String defPadding = (blockSize == 0 ? "NoPadding" : "PKCS5Padding");
         String paddingStr =
                 (algoParts.length > 2 ? algoParts[2] : defPadding);
@@ -227,20 +218,19 @@ final class P11Cipher extends CipherSpi {
         throw new NoSuchAlgorithmException("Unsupported mode " + mode);
     }
 
-    private int parseMode(String mode) throws NoSuchAlgorithmException {
+    private Mode parseMode(String mode) throws NoSuchAlgorithmException {
         mode = mode.toUpperCase(Locale.ENGLISH);
-        return switch (mode) {
-            case "ECB" -> MODE_ECB;
-            case "CBC" -> {
-                if (blockSize == 0) {
-                    throw new NoSuchAlgorithmException
-                            ("CBC mode not supported with stream ciphers");
-                }
-                yield MODE_CBC;
-            }
-            case "CTR" -> MODE_CTR;
-            default -> throw new NoSuchAlgorithmException("Unsupported mode " + mode);
-        };
+        Mode result;
+        try {
+            result = Mode.valueOf(mode);
+        } catch (IllegalArgumentException ignored) {
+            throw new NoSuchAlgorithmException("Unsupported mode " + mode);
+        }
+        if (blockSize == 0 && result != Mode.ECB) {
+            throw new NoSuchAlgorithmException(
+                    result + " mode not supported with stream ciphers");
+        }
+        return result;
     }
 
     // see JCE spec
@@ -250,13 +240,22 @@ final class P11Cipher extends CipherSpi {
         padBuffer = null;
         padding = padding.toUpperCase(Locale.ENGLISH);
         if (padding.equals("NOPADDING")) {
-            paddingType = PAD_NONE;
-        } else if (padding.equals("PKCS5PADDING")) {
-            if (this.blockMode == MODE_CTR) {
-                throw new NoSuchPaddingException
-                    ("PKCS#5 padding not supported with CTR mode");
+            paddingType = Pad.NONE;
+            if (blockMode == Mode.CTS) {
+                // Buffer at least two blocks (where the last one may be
+                // partial). When using NSS, buffer one more block to avoid
+                // NSS Bug 1823875: "AES CTS decryption does not update
+                // its own context's IV on full blocks input"
+                // https://bugzilla.mozilla.org/show_bug.cgi?id=1823875#c2
+                int bufferedBlocks = P11Util.isNSS(token) ? 3 : 2;
+                padBuffer = new byte[bufferedBlocks * blockSize];
             }
-            paddingType = PAD_PKCS5;
+        } else if (padding.equals("PKCS5PADDING")) {
+            if (blockMode == Mode.CTR || blockMode == Mode.CTS) {
+                throw new NoSuchPaddingException("PKCS#5 padding not " +
+                        "supported with " + blockMode + " mode");
+            }
+            paddingType = Pad.PKCS5;
             if (mechanism != CKM_DES_CBC_PAD && mechanism != CKM_DES3_CBC_PAD &&
                     mechanism != CKM_AES_CBC_PAD) {
                 // no native padding support; use our own padding impl
@@ -371,7 +370,7 @@ final class P11Cipher extends CipherSpi {
                 // should never happen; checked by Cipher.init()
                     throw new AssertionError("Unknown mode: " + opmode);
         };
-        if (blockMode == MODE_ECB) { // ECB or stream cipher
+        if (blockMode == Mode.ECB) { // ECB or stream cipher
             if (iv != null) {
                 if (blockSize == 0) {
                     throw new InvalidAlgorithmParameterException
@@ -381,14 +380,12 @@ final class P11Cipher extends CipherSpi {
                             ("IV not used in ECB mode");
                 }
             }
-        } else { // MODE_CBC or MODE_CTR
+        } else { // Mode.CBC, Mode.CTR or Mode.CTS
             if (iv == null) {
                 if (!encrypt) {
-                    String exMsg =
-                        (blockMode == MODE_CBC ?
-                         "IV must be specified for decryption in CBC mode" :
-                         "IV must be specified for decryption in CTR mode");
-                    throw new InvalidAlgorithmParameterException(exMsg);
+                    throw new InvalidAlgorithmParameterException(
+                            "IV must be specified for decryption in " +
+                            blockMode + " mode");
                 }
                 // generate random IV
                 if (random == null) {
@@ -433,6 +430,9 @@ final class P11Cipher extends CipherSpi {
             session = token.releaseSession(session);
             bytesBuffered = 0;
             padBufferLen = 0;
+            if (padBuffer != null) {
+                Arrays.fill(padBuffer, (byte) 0);
+            }
         }
     }
 
@@ -487,7 +487,7 @@ final class P11Cipher extends CipherSpi {
             if (session == null) {
                 session = token.getOpSession();
             }
-            CK_MECHANISM mechParams = (blockMode == MODE_CTR ?
+            CK_MECHANISM mechParams = (blockMode == Mode.CTR ?
                     new CK_MECHANISM(mechanism, new CK_AES_CTR_PARAMS(iv)) :
                     new CK_MECHANISM(mechanism, iv));
             if (encrypt) {
@@ -512,7 +512,9 @@ final class P11Cipher extends CipherSpi {
         }
 
         int result = inLen + bytesBuffered;
-        if (blockSize != 0 && blockMode != MODE_CTR) {
+        if (blockMode == Mode.CTS) {
+            result -= getCTSMustBeBuffered(result);
+        } else if (blockSize != 0 && blockMode != Mode.CTR) {
             // minus the number of bytes in the last incomplete block.
             result -= (result & (blockSize - 1));
         }
@@ -526,7 +528,7 @@ final class P11Cipher extends CipherSpi {
         }
 
         int result = inLen + bytesBuffered;
-        if (blockSize != 0 && encrypt && paddingType != PAD_NONE) {
+        if (blockSize != 0 && encrypt && paddingType != Pad.NONE) {
             // add the number of bytes to make the last block complete.
             result += (blockSize - (result & (blockSize - 1)));
         }
@@ -604,7 +606,56 @@ final class P11Cipher extends CipherSpi {
             ensureInitialized();
             int k = 0;
             int newPadBufferLen = 0;
-            if (paddingObj != null && (!encrypt || reqBlockUpdates)) {
+            if (blockMode == Mode.CTS) {
+                // decide how to split the total data (totalInLen) between
+                // the token (dataForP11Update) and padBuffer
+                // (newPadBufferLen)
+                int totalInLen = padBufferLen + inLen;
+                newPadBufferLen = getCTSMustBeBuffered(totalInLen);
+                int dataForP11Update = totalInLen - newPadBufferLen;
+                if (dataForP11Update > 0 && padBufferLen > 0) {
+                    // there is data for the token and part of it is in
+                    // padBuffer
+                    int flushFromPadBuffer;
+                    int fillLen = getBytesToCompleteBlock(padBufferLen);
+                    if (dataForP11Update >= padBufferLen + fillLen) {
+                        // flush the whole padBuffer
+                        if (fillLen > 0) {
+                            // complete the last padBuffer block from the
+                            // input
+                            bufferInputBytes(in, inOfs, fillLen);
+                            inOfs += fillLen;
+                            inLen -= fillLen;
+                        }
+                        flushFromPadBuffer = padBufferLen;
+                    } else {
+                        // There is not enough input data available to
+                        // complete the padBuffer to a multiple of block
+                        // size. Flush part of the padBuffer (up to a
+                        // multiple of blockSize) now. Shift the remaining
+                        // padBuffer data and buffer more up to completing
+                        // newPadBufferLen later.
+                        flushFromPadBuffer = dataForP11Update;
+                    }
+                    if (encrypt) {
+                        k = token.p11.C_EncryptUpdate(session.id(),
+                                0, padBuffer, 0, flushFromPadBuffer,
+                                0, out, outOfs, outLen);
+                    } else {
+                        k = token.p11.C_DecryptUpdate(session.id(),
+                                0, padBuffer, 0, flushFromPadBuffer,
+                                0, out, outOfs, outLen);
+                    }
+                    padBufferLen -= flushFromPadBuffer;
+                    if (padBufferLen > 0) {
+                        // shift remaining data to the padBuffer start
+                        System.arraycopy(padBuffer, flushFromPadBuffer,
+                                padBuffer, 0, padBufferLen);
+                    }
+                }
+                newPadBufferLen -= padBufferLen;
+                inLen -= newPadBufferLen;
+            } else if (paddingObj != null && (!encrypt || reqBlockUpdates)) {
                 if (padBufferLen != 0) {
                     if (padBufferLen != padBuffer.length) {
                         int bufCapacity = padBuffer.length - padBufferLen;
@@ -649,7 +700,8 @@ final class P11Cipher extends CipherSpi {
                 }
             }
             // update 'padBuffer' if using our own padding impl.
-            if (paddingObj != null && newPadBufferLen > 0) {
+            if ((blockMode == Mode.CTS || paddingObj != null) &&
+                    newPadBufferLen > 0) {
                 bufferInputBytes(in, inOfs + inLen, newPadBufferLen);
             }
             bytesBuffered += (inLen - k);
@@ -715,7 +767,56 @@ final class P11Cipher extends CipherSpi {
 
                 int k = 0;
                 int newPadBufferLen = 0;
-                if (paddingObj != null && (!encrypt || reqBlockUpdates)) {
+                if (blockMode == Mode.CTS) {
+                    // decide how to split the total data (totalInLen) between
+                    // the token (dataForP11Update) and padBuffer
+                    // (newPadBufferLen)
+                    int totalInLen = padBufferLen + inLen;
+                    newPadBufferLen = getCTSMustBeBuffered(totalInLen);
+                    int dataForP11Update = totalInLen - newPadBufferLen;
+                    if (dataForP11Update > 0 && padBufferLen > 0) {
+                        // there is data for the token and part of it is in
+                        // padBuffer
+                        int flushFromPadBuffer;
+                        int fillLen = getBytesToCompleteBlock(padBufferLen);
+                        if (dataForP11Update >= padBufferLen + fillLen) {
+                            // flush the whole padBuffer
+                            if (fillLen > 0) {
+                                // complete the last padBuffer block from the
+                                // input
+                                bufferInputBytes(inBuffer, fillLen);
+                                inOfs += fillLen;
+                                inLen -= fillLen;
+                            }
+                            flushFromPadBuffer = padBufferLen;
+                        } else {
+                            // There is not enough input data available to
+                            // complete the padBuffer to a multiple of block
+                            // size. Flush part of the padBuffer (up to a
+                            // multiple of blockSize) now. Shift the remaining
+                            // padBuffer data and buffer more up to completing
+                            // newPadBufferLen later.
+                            flushFromPadBuffer = dataForP11Update;
+                        }
+                        if (encrypt) {
+                            k = token.p11.C_EncryptUpdate(session.id(),
+                                    0, padBuffer, 0, flushFromPadBuffer,
+                                    outAddr, outArray, outOfs, outLen);
+                        } else {
+                            k = token.p11.C_DecryptUpdate(session.id(),
+                                    0, padBuffer, 0, flushFromPadBuffer,
+                                    outAddr, outArray, outOfs, outLen);
+                        }
+                        padBufferLen -= flushFromPadBuffer;
+                        if (padBufferLen > 0) {
+                            // shift remaining data to the padBuffer start
+                            System.arraycopy(padBuffer, flushFromPadBuffer,
+                                    padBuffer, 0, padBufferLen);
+                        }
+                    }
+                    newPadBufferLen -= padBufferLen;
+                    inLen -= newPadBufferLen;
+                } else if (paddingObj != null && (!encrypt || reqBlockUpdates)) {
                     if (padBufferLen != 0) {
                         if (padBufferLen != padBuffer.length) {
                             int bufCapacity = padBuffer.length - padBufferLen;
@@ -768,7 +869,8 @@ final class P11Cipher extends CipherSpi {
                     }
                 }
                 // update 'padBuffer' if using our own padding impl.
-                if (paddingObj != null && newPadBufferLen > 0) {
+                if ((blockMode == Mode.CTS || paddingObj != null) &&
+                        newPadBufferLen > 0) {
                     bufferInputBytes(inBuffer, newPadBufferLen);
                 }
                 bytesBuffered += (inLen - k);
@@ -830,6 +932,10 @@ final class P11Cipher extends CipherSpi {
                     k += token.p11.C_EncryptUpdate(session.id(),
                             0, padBuffer, 0, startOff + actualPadLen,
                             0, out, outOfs + k, outLen - k);
+                } else if (blockMode == Mode.CTS) {
+                    k = token.p11.C_EncryptUpdate(session.id(),
+                            0, padBuffer, 0, padBufferLen,
+                            0, out, outOfs, outLen);
                 }
                 // Some implementations such as the NSS Software Token do not
                 // cancel the operation upon a C_EncryptUpdate failure (as
@@ -839,6 +945,9 @@ final class P11Cipher extends CipherSpi {
                 doCancel = false;
                 k += token.p11.C_EncryptFinal(session.id(),
                         0, out, (outOfs + k), (outLen - k));
+                if (blockMode == Mode.CTS) {
+                    convertCTSVariant(null, out, outOfs + k);
+                }
             } else {
                 // Special handling to match SunJCE provider behavior
                 if (bytesBuffered == 0 && padBufferLen == 0) {
@@ -863,8 +972,16 @@ final class P11Cipher extends CipherSpi {
                     k -= actualPadLen;
                     System.arraycopy(padBuffer, 0, out, outOfs, k);
                 } else {
+                    if (blockMode == Mode.CTS) {
+                        convertCTSVariant(null, padBuffer, padBufferLen);
+                        k = token.p11.C_DecryptUpdate(session.id(),
+                                0, padBuffer, 0, padBufferLen,
+                                0, out, outOfs, outLen);
+                        outOfs += k;
+                        outLen -= k;
+                    }
                     doCancel = false;
-                    k = token.p11.C_DecryptFinal(session.id(), 0, out, outOfs,
+                    k += token.p11.C_DecryptFinal(session.id(), 0, out, outOfs,
                             outLen);
                 }
             }
@@ -928,6 +1045,10 @@ final class P11Cipher extends CipherSpi {
                         k += token.p11.C_EncryptUpdate(session.id(),
                                 0, padBuffer, 0, startOff + actualPadLen,
                                 outAddr, outArray, outOfs + k, outLen - k);
+                    } else if (blockMode == Mode.CTS) {
+                       k = token.p11.C_EncryptUpdate(session.id(),
+                                0, padBuffer, 0, padBufferLen,
+                                outAddr, outArray, outOfs, outLen);
                     }
                     // Some implementations such as the NSS Software Token do not
                     // cancel the operation upon a C_EncryptUpdate failure (as
@@ -937,12 +1058,14 @@ final class P11Cipher extends CipherSpi {
                     doCancel = false;
                     k += token.p11.C_EncryptFinal(session.id(),
                             outAddr, outArray, (outOfs + k), (outLen - k));
+                    if (blockMode == Mode.CTS) {
+                        convertCTSVariant(outBuffer, outArray, outOfs + k);
+                    }
                 } else {
                     // Special handling to match SunJCE provider behavior
                     if (bytesBuffered == 0 && padBufferLen == 0) {
                         return 0;
                     }
-
                     if (paddingObj != null) {
                         if (padBufferLen != 0) {
                             k = token.p11.C_DecryptUpdate(session.id(),
@@ -964,8 +1087,16 @@ final class P11Cipher extends CipherSpi {
                         outArray = padBuffer;
                         outOfs = 0;
                     } else {
+                        if (blockMode == Mode.CTS) {
+                            convertCTSVariant(null, padBuffer, padBufferLen);
+                            k = token.p11.C_DecryptUpdate(session.id(),
+                                    0, padBuffer, 0, padBufferLen,
+                                    outAddr, outArray, outOfs, outLen);
+                            outOfs += k;
+                            outLen -= k;
+                        }
                         doCancel = false;
-                        k = token.p11.C_DecryptFinal(session.id(),
+                        k += token.p11.C_DecryptFinal(session.id(),
                                 outAddr, outArray, outOfs, outLen);
                     }
                 }
@@ -986,6 +1117,83 @@ final class P11Cipher extends CipherSpi {
         } finally {
             NIO_ACCESS.releaseSession(outBuffer);
         }
+    }
+
+    private int getBytesToCompleteBlock(int availableBytes) {
+        int partBlock = availableBytes & (blockSize - 1);
+        return partBlock == 0 ? 0 : blockSize - partBlock;
+    }
+
+    private int getCTSMustBeBuffered(int availableBytes) {
+        return Math.min(availableBytes,
+                padBuffer.length - getBytesToCompleteBlock(availableBytes));
+    }
+
+    /**
+     * The ciphertext ordering for the three variants can be depicted as
+     * follows, where 'p' is the penultimate block (which may be partial
+     * or full), and 'f' the full final block:
+     *
+     *                    'p' is a partial block   'p' is a full block
+     *                   ------------------------ ---------------------
+     *   CS1 (NIST)     |     .... pp ffff       |    .... pppp ffff
+     *   CS2 (Schneier) |     .... ffff pp       |    .... pppp ffff
+     *   CS3 (Kerberos) |     .... ffff pp       |    .... ffff pppp
+     *
+     * After encryption, we get the ciphertext from the token formatted as
+     * specified in the SunPKCS11 'cipherTextStealingVariant' configuration
+     * property. Conversely, before decryption, the ciphertext has to be passed
+     * to the token according to the previous formatting. This method converts
+     * the ciphertext between the format used by the token and the one used by
+     * SunJCE's "AES/CTS/NoPadding" implementation (CS3 as described by RFC
+     * 2040, section 8).
+     */
+    private void convertCTSVariant(ByteBuffer ciphertextBuf,
+            byte[] ciphertextArr, int ciphertextEnd) {
+        if (padBufferLen == blockSize) {
+            // No reordering needed for a single block
+            return;
+        }
+        assert token.ctsVariant != null : "CTS algorithms should not be " +
+                "registered if the CTS variant of the token is unknown";
+        if (token.ctsVariant == Token.CTSVariant.CS3) {
+            // Already CS3
+            return;
+        }
+        int pad = padBufferLen % blockSize;
+        if (token.ctsVariant == Token.CTSVariant.CS2 && pad != 0) {
+            // CS2 and 'p' is a partial block, equal to CS3
+            return;
+        }
+        if (ciphertextArr != null) {
+            ciphertextBuf = ByteBuffer.wrap(ciphertextArr);
+        }
+        if (ciphertextBuf != null) {
+            // No assumptions should be made about the current ciphertextBuf
+            // position. Additionally, if ciphertextBuf was not created here,
+            // the position should not be altered. To ensure this, use offsets
+            // to read and write bytes from the last two blocks (i.e. absolute
+            // ByteBuffer operations). Other blocks should not be modified.
+            pad = pad == 0 ? blockSize : pad;
+            if (encrypt) {
+                // .... pp[pp] ffff -> .... ffff pp[pp]
+                swapLastTwoBlocks(ciphertextBuf, ciphertextEnd, pad, blockSize);
+            } else {
+                // .... ffff pp[pp] -> .... pp[pp] ffff
+                swapLastTwoBlocks(ciphertextBuf, ciphertextEnd, blockSize, pad);
+            }
+        }
+    }
+
+    private static void swapLastTwoBlocks(ByteBuffer ciphertextBuf,
+            int ciphertextEnd, int prevBlockLen, int lastBlockLen) {
+        // .... prevBlock lastBlock -> .... lastBlock prevBlock
+        int prevBlockStart = ciphertextEnd - prevBlockLen - lastBlockLen;
+        byte[] prevBlockBackup = new byte[prevBlockLen];
+        ciphertextBuf.get(prevBlockStart, prevBlockBackup);
+        ciphertextBuf.put(prevBlockStart, ciphertextBuf,
+                ciphertextEnd - lastBlockLen, lastBlockLen);
+        ciphertextBuf.put(ciphertextEnd - prevBlockLen, prevBlockBackup);
     }
 
     private void handleException(PKCS11Exception e)

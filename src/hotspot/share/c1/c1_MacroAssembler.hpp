@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ class C1_MacroAssembler: public MacroAssembler {
   //----------------------------------------------------
   void explicit_null_check(Register base);
 
-  void inline_cache_check(Register receiver, Register iCache);
   void build_frame(int frame_size_in_bytes, int bang_size_in_bytes);
   void remove_frame(int frame_size_in_bytes);
 
@@ -90,7 +89,7 @@ class StubAssembler: public C1_MacroAssembler {
   int call_RT(Register oop_result1, Register metadata_result, address entry, Register arg1, Register arg2, Register arg3);
 
   void prologue(const char* name, bool must_gc_arguments);
-  void epilogue();
+  void epilogue(bool use_pop = false);
 };
 
 #endif // SHARE_C1_C1_MACROASSEMBLER_HPP

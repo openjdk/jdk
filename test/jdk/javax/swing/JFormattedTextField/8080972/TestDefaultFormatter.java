@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,14 @@ import javax.swing.text.DefaultFormatter;
 /*
  * @test
  * @bug 8080972
- * @run main/othervm -Djava.security.manager=allow  TestDefaultFormatter
+ * @run main TestDefaultFormatter
  * @summary Audit Core Reflection in module java.desktop for places that will
  *          require changes to work with modules
- * @author Alexander Scherbatiy
  */
 
 public class TestDefaultFormatter {
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(TestDefaultFormatter::testDefaultFormatter);
-        System.setSecurityManager(new SecurityManager());
         SwingUtilities.invokeAndWait(TestDefaultFormatter::testDefaultFormatter);
     }
     private static void testDefaultFormatter() {

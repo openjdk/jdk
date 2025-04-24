@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,13 @@
 #define SHARE_GC_SERIAL_SERIALHEAP_HPP
 
 #include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/tenuredGeneration.hpp"
-#include "utilities/growableArray.hpp"
-
 #include "gc/serial/generation.hpp"
+#include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/preGCValues.hpp"
 #include "gc/shared/softRefPolicy.hpp"
+#include "utilities/growableArray.hpp"
 
 class CardTableRS;
 class GCPolicyCounters;
@@ -67,98 +66,66 @@ class SerialHeap : public CollectedHeap {
   friend class Generation;
   friend class DefNewGeneration;
   friend class TenuredGeneration;
-  friend class GenMarkSweep;
-  friend class VM_GenCollectForAllocation;
-  friend class VM_GenCollectFull;
+  friend class SerialFullGC;
   friend class VM_GC_HeapInspection;
   friend class VM_HeapDumper;
   friend class HeapInspection;
   friend class GCCauseSetter;
   friend class VMStructs;
-public:
   friend class VM_PopulateDumpSharedSpace;
-
-  enum GenerationType {
-    YoungGen,
-    OldGen
-  };
 
 private:
   DefNewGeneration* _young_gen;
   TenuredGeneration* _old_gen;
+  HeapWord* _young_gen_saved_top;
+  HeapWord* _old_gen_saved_top;
 
-private:
   // The singleton CardTable Remembered Set.
   CardTableRS* _rem_set;
 
-  SoftRefPolicy _soft_ref_policy;
-
   GCPolicyCounters* _gc_policy_counters;
 
-  // Indicates that the most recent previous incremental collection failed.
-  // The flag is cleared when an action is taken that might clear the
-  // condition that caused that incremental collection to fail.
-  bool _incremental_collection_failed;
-
-  // In support of ExplicitGCInvokesConcurrent functionality
-  unsigned int _full_collections_completed;
-
-  // Collects the given generation.
-  void collect_generation(Generation* gen, bool full, size_t size, bool is_tlab,
-                          bool run_verification, bool clear_soft_refs);
+  bool do_young_collection(bool clear_soft_refs);
 
   // Reserve aligned space for the heap as needed by the contained generations.
   ReservedHeapSpace allocate(size_t alignment);
 
   PreGenGCValues get_pre_gc_values() const;
 
-private:
   GCMemoryManager* _young_manager;
   GCMemoryManager* _old_manager;
+
+  // Indicate whether heap is almost or approaching full.
+  // Usually, there is some memory headroom for application/gc to run properly.
+  // However, in extreme cases, e.g. young-gen is non-empty after a full gc, we
+  // will attempt some uncommon measures, e.g. alllocating small objs in
+  // old-gen.
+  bool _is_heap_almost_full;
 
   // Helper functions for allocation
   HeapWord* attempt_allocation(size_t size,
                                bool   is_tlab,
                                bool   first_only);
 
-  // Helper function for two callbacks below.
-  // Considers collection of the first max_level+1 generations.
-  void do_collection(bool           full,
-                     bool           clear_all_soft_refs,
-                     size_t         size,
-                     bool           is_tlab,
-                     GenerationType max_generation);
-
-  // Callback from VM_GenCollectForAllocation operation.
-  // This function does everything necessary/possible to satisfy an
-  // allocation request that failed in the youngest generation that should
-  // have handled it (including collection, expansion, etc.)
-  HeapWord* satisfy_failed_allocation(size_t size, bool is_tlab);
-
-  // Callback from VM_GenCollectFull operation.
-  // Perform a full collection of the first max_level+1 generations.
   void do_full_collection(bool clear_all_soft_refs) override;
-  void do_full_collection(bool clear_all_soft_refs, GenerationType max_generation);
 
   // Does the "cause" of GC indicate that
   // we absolutely __must__ clear soft refs?
   bool must_clear_all_soft_refs();
 
+  bool is_young_gc_safe() const;
+
+  void gc_prologue();
+  void gc_epilogue(bool full);
+
 public:
   // Returns JNI_OK on success
   jint initialize() override;
-  virtual CardTableRS* create_rem_set(const MemRegion& reserved_region);
 
   // Does operations required after initialization has been done.
   void post_initialize() override;
 
-  bool is_young_gen(const Generation* gen) const { return gen == _young_gen; }
-  bool is_old_gen(const Generation* gen) const { return gen == _old_gen; }
-
-  MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
-
-  SoftRefPolicy* soft_ref_policy() override { return &_soft_ref_policy; }
 
   // Performance Counter support
   GCPolicyCounters* counters()     { return _gc_policy_counters; }
@@ -166,12 +133,18 @@ public:
   size_t capacity() const override;
   size_t used() const override;
 
-  // Save the "used_region" for both generations.
-  void save_used_regions();
-
   size_t max_capacity() const override;
 
   HeapWord* mem_allocate(size_t size, bool*  gc_overhead_limit_was_exceeded) override;
+
+  // Callback from VM_SerialCollectForAllocation operation.
+  // This function does everything necessary/possible to satisfy an
+  // allocation request that failed in the youngest generation that should
+  // have handled it (including collection, expansion, etc.)
+  HeapWord* satisfy_failed_allocation(size_t size, bool is_tlab);
+
+  // Callback from VM_SerialGCCollect.
+  void collect_at_safepoint(bool full);
 
   // Perform a full collection of the heap; intended for use in implementing
   // "System.gc". This implies as full a collection as the CollectedHeap
@@ -189,10 +162,6 @@ public:
   bool is_in_young(const void* p) const;
 
   bool requires_barriers(stackChunkOop obj) const override;
-
-#ifdef ASSERT
-  bool is_in_partial_collection(const void* p);
-#endif
 
   // Optimized nmethod scanning support routines
   void register_nmethod(nmethod* nm) override;
@@ -234,27 +203,11 @@ public:
                               size_t requested_size,
                               size_t* actual_size) override;
 
-  // Total number of full collections completed.
-  unsigned int total_full_collections_completed() {
-    assert(_full_collections_completed <= _total_full_collections,
-           "Can't complete more collections than were started");
-    return _full_collections_completed;
-  }
-
-  // Update above counter, as appropriate, at the end of a stop-world GC cycle
-  unsigned int update_full_collections_completed();
-
-  // Update the gc statistics for each generation.
-  void update_gc_stats(Generation* current_generation, bool full) {
-    _old_gen->update_gc_stats(current_generation, full);
-  }
-
-  bool no_gc_in_progress() { return !is_gc_active(); }
-
   void prepare_for_verify() override;
   void verify(VerifyOption option) override;
 
-  void print_on(outputStream* st) const override;
+  void print_heap_on(outputStream* st) const override;
+  void print_gc_on(outputStream* st) const override;
   void gc_threads_do(ThreadClosure* tc) const override;
   void print_tracing_info() const override;
 
@@ -262,19 +215,6 @@ public:
   bool print_location(outputStream* st, void* addr) const override;
 
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;
-
-  // The functions below are helper functions that a subclass of
-  // "CollectedHeap" can use in the implementation of its virtual
-  // functions.
-
-  class GenClosure : public StackObj {
-   public:
-    virtual void do_generation(Generation* gen) = 0;
-  };
-
-  // Apply "cl.do_generation" to all generations in the heap
-  // If "old_to_young" determines the order.
-  void generation_iterate(GenClosure* cl, bool old_to_young);
 
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
@@ -294,49 +234,18 @@ public:
     SO_ScavengeCodeCache   = 0x10
   };
 
- protected:
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
-
  public:
   // Apply closures on various roots in Young GC or marking/adjust phases of Full GC.
   void process_roots(ScanningOption so,
                      OopClosure* strong_roots,
                      CLDClosure* strong_cld_closure,
                      CLDClosure* weak_cld_closure,
-                     CodeBlobToOopClosure* code_roots);
+                     NMethodToOopClosure* code_roots);
 
   // Set the saved marks of generations, if that makes sense.
   // In particular, if any generation might iterate over the oops
   // in other generations, it should call this method.
   void save_marks();
-
-  // Returns "true" iff no allocations have occurred since the last
-  // call to "save_marks".
-  bool no_allocs_since_save_marks();
-
-  // Returns true if an incremental collection is likely to fail.
-  // We optionally consult the young gen, if asked to do so;
-  // otherwise we base our answer on whether the previous incremental
-  // collection attempt failed with no corrective action as of yet.
-  bool incremental_collection_will_fail(bool consult_young) {
-    // The first disjunct remembers if an incremental collection failed, even
-    // when we thought (second disjunct) that it would not.
-    return incremental_collection_failed() ||
-           (consult_young && !_young_gen->collection_attempt_is_safe());
-  }
-
-  // If a generation bails out of an incremental collection,
-  // it sets this flag.
-  bool incremental_collection_failed() const {
-    return _incremental_collection_failed;
-  }
-  void set_incremental_collection_failed() {
-    _incremental_collection_failed = true;
-  }
-  void clear_incremental_collection_failed() {
-    _incremental_collection_failed = false;
-  }
 
 private:
   // Return true if an allocation should be attempted in the older generation
@@ -346,17 +255,8 @@ private:
   // Try to allocate space by expanding the heap.
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
-  HeapWord* mem_allocate_work(size_t size,
-                              bool is_tlab);
+  HeapWord* mem_allocate_work(size_t size, bool is_tlab);
 
-  // Save the tops of the spaces in all generations
-  void record_gen_tops_before_GC() PRODUCT_RETURN;
-
-  // Return true if we need to perform full collection.
-  bool should_do_full_collection(size_t size, bool full,
-                                 bool is_tlab, GenerationType max_gen) const;
-
-private:
   MemoryPool* _eden_pool;
   MemoryPool* _survivor_pool;
   MemoryPool* _old_pool;
@@ -380,32 +280,21 @@ public:
   GrowableArray<MemoryPool*> memory_pools() override;
 
   DefNewGeneration* young_gen() const {
-    assert(_young_gen->kind() == Generation::DefNew, "Wrong generation type");
-    return static_cast<DefNewGeneration*>(_young_gen);
+    return _young_gen;
   }
 
   TenuredGeneration* old_gen() const {
-    assert(_old_gen->kind() == Generation::MarkSweepCompact, "Wrong generation type");
-    return static_cast<TenuredGeneration*>(_old_gen);
+    return _old_gen;
   }
 
-  // Apply "cur->do_oop" or "older->do_oop" to all the oops in objects
-  // allocated since the last call to save_marks in the young generation.
-  // The "cur" closure is applied to references in the younger generation
-  // at "level", and the "older" closure to older generations.
-  template <typename OopClosureType1, typename OopClosureType2>
-  void oop_since_save_marks_iterate(OopClosureType1* cur,
-                                    OopClosureType2* older);
-
-  void young_process_roots(OopClosure* root_closure,
-                           OopIterateClosure* old_gen_closure,
-                           CLDClosure* cld_closure);
+  void scan_evacuated_objs(YoungGenScanClosure* young_cl,
+                           OldGenScanClosure* old_cl);
 
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
 
   // Support for loading objects from CDS archive into the heap
-  bool can_load_archived_objects() const override { return UseCompressedOops; }
+  bool can_load_archived_objects() const override { return true; }
   HeapWord* allocate_loaded_archive_space(size_t size) override;
   void complete_loaded_archive_space(MemRegion archive_space) override;
 

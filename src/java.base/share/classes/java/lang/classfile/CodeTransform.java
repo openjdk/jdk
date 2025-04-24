@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,22 +28,34 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import jdk.internal.classfile.impl.TransformImpl;
-import jdk.internal.javac.PreviewFeature;
+
+import static java.util.Objects.requireNonNull;
 
 /**
- * A transformation on streams of {@link CodeElement}.
+ * A transformation on streams of {@link CodeElement}.  The stream can come
+ * from a {@link CodeModel}, or a handler to a {@link CodeBuilder} as in
+ * {@link CodeBuilder#transforming}.
+ * <p>
+ * Refer to {@link ClassFileTransform} for general guidance and caution around
+ * the use of transforms for structures in the {@code class} file format.
+ * <p>
+ * A code transform can be lifted to a method or a class transform via {@link
+ * MethodTransform#transformingCode(CodeTransform)} and {@link
+ * ClassTransform#transformingMethodBodies(CodeTransform)}, transforming only
+ * the {@link CodeModel} within those structures and passing all other elements
+ * to the builders.
  *
- * @see ClassFileTransform
- *
- * @since 22
+ * @see CodeModel
+ * @see MethodBuilder#transformCode
+ * @see CodeBuilder#transforming
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 @FunctionalInterface
 public non-sealed interface CodeTransform
         extends ClassFileTransform<CodeTransform, CodeElement, CodeBuilder> {
 
     /**
-     * A code transform that sends all elements to the builder.
+     * A code transform that passes all elements to the builder.
      */
     CodeTransform ACCEPT_ALL = new CodeTransform() {
         @Override
@@ -53,7 +65,7 @@ public non-sealed interface CodeTransform
     };
 
     /**
-     * Create a stateful code transform from a {@link Supplier}.  The supplier
+     * Creates a stateful code transform from a {@link Supplier}.  The supplier
      * will be invoked for each transformation.
      *
      * @param supplier a {@link Supplier} that produces a fresh transform object
@@ -61,17 +73,18 @@ public non-sealed interface CodeTransform
      * @return the stateful code transform
      */
     static CodeTransform ofStateful(Supplier<CodeTransform> supplier) {
-        return new TransformImpl.SupplierCodeTransform(supplier);
+        return new TransformImpl.SupplierCodeTransform(requireNonNull(supplier));
     }
 
     /**
-     * Create a code transform that passes each element through to the builder,
+     * Creates a code transform that passes each element through to the builder,
      * and calls the specified function when transformation is complete.
      *
      * @param finisher the function to call when transformation is complete
      * @return the code transform
      */
     static CodeTransform endHandler(Consumer<CodeBuilder> finisher) {
+        requireNonNull(finisher);
         return new CodeTransform() {
             @Override
             public void accept(CodeBuilder builder, CodeElement element) {
@@ -94,17 +107,6 @@ public non-sealed interface CodeTransform
      */
     @Override
     default CodeTransform andThen(CodeTransform t) {
-        return new TransformImpl.ChainedCodeTransform(this, t);
-    }
-
-    /**
-     * @implSpec The default implementation returns a resolved transform bound
-     *           to the given code builder.
-     */
-    @Override
-    default ResolvedTransform<CodeElement> resolve(CodeBuilder builder) {
-        return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
-                                                         () -> atEnd(builder),
-                                                         () -> atStart(builder));
+        return new TransformImpl.ChainedCodeTransform(this, requireNonNull(t));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,10 @@
 #include "sun_java2d_pipe_BufferedOpCodes.h"
 #include "SpanIterator.h"
 #include "Trace.h"
+
+#if defined(_AIX) && defined(open)
+#undef open
+#endif
 
 /* The "header" consists of a jint opcode and a jint span count value */
 #define INTS_PER_HEADER  2

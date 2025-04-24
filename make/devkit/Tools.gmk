@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 # questions.
 #
 
-##########################################################################################
+################################################################################
 #
 # Workhorse makefile for creating ONE cross compiler
 # Needs either to be from BUILD -> BUILD OR have
@@ -63,18 +63,14 @@ ifeq ($(BASE_OS), OL)
     LINUX_VERSION := OL6.4
   endif
 else ifeq ($(BASE_OS), Fedora)
+  DEFAULT_OS_VERSION := 41
+  ifeq ($(BASE_OS_VERSION), )
+    BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
+  endif
   ifeq ($(ARCH), riscv64)
-    DEFAULT_OS_VERSION := rawhide/68692
-    ifeq ($(BASE_OS_VERSION), )
-      BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
-    endif
-    BASE_URL := http://fedora.riscv.rocks/repos-dist/$(BASE_OS_VERSION)/$(ARCH)/Packages/
+    BASE_URL := http://fedora.riscv.rocks/repos-dist/f$(BASE_OS_VERSION)/latest/$(ARCH)/Packages/
   else
-    DEFAULT_OS_VERSION := 27
     LATEST_ARCHIVED_OS_VERSION := 35
-    ifeq ($(BASE_OS_VERSION), )
-      BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
-    endif
     ifeq ($(filter x86_64 armhfp, $(ARCH)), )
       FEDORA_TYPE := fedora-secondary
     else
@@ -92,12 +88,22 @@ else
   $(error Unknown base OS $(BASE_OS))
 endif
 
-##########################################################################################
+################################################################################
 # Define external dependencies
 
 # Latest that could be made to work.
-GCC_VER := 13.2.0
-ifeq ($(GCC_VER), 13.2.0)
+GCC_VER := 14.2.0
+ifeq ($(GCC_VER), 14.2.0)
+  gcc_ver := gcc-14.2.0
+  binutils_ver := binutils-2.43
+  ccache_ver := ccache-4.10.2
+  CCACHE_CMAKE_BASED := 1
+  mpfr_ver := mpfr-4.2.1
+  gmp_ver := gmp-6.3.0
+  mpc_ver := mpc-1.3.1
+  gdb_ver := gdb-15.2
+  REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
+else ifeq ($(GCC_VER), 13.2.0)
   gcc_ver := gcc-13.2.0
   binutils_ver := binutils-2.41
   ccache_ver := ccache-3.7.12
@@ -203,7 +209,7 @@ RPM_LIST := \
     glibc glibc-headers glibc-devel \
     cups-libs cups-devel \
     libX11 libX11-devel \
-    xorg-x11-proto-devel \
+    libxcb xorg-x11-proto-devel \
     alsa-lib alsa-lib-devel \
     libXext libXext-devel \
     libXtst libXtst-devel \
@@ -223,7 +229,7 @@ RPM_LIST := \
     systemtap-sdt-devel \
     #
 
-##########################################################################################
+################################################################################
 # Define common directories and files
 
 # Ensure we have 32-bit libs also for x64. We enable mixed-mode.
@@ -258,7 +264,7 @@ download-rpms:
 	      wget -r -np -nd $(patsubst %, -A "*%*.rpm", $(RPM_LIST)) $(BASE_URL)
         endif
 
-##########################################################################################
+################################################################################
 # Unpack source packages
 
 # Generate downloading + unpacking of sources.
@@ -266,10 +272,18 @@ define Download
   # Allow override
   $(1)_DIRNAME ?= $(basename $(basename $(notdir $($(1)))))
   $(1)_DIR = $(abspath $(SRCDIR)/$$($(1)_DIRNAME))
-  $(1)_CFG = $$($(1)_DIR)/configure
+  ifeq ($$($(1)_CMAKE_BASED),)
+    $(1)_CFG = $$($(1)_DIR)/configure
+    $(1)_SRC_MARKER = $$($(1)_DIR)/configure
+    $(1)_CONFIG = $(CONFIG)
+  else
+    $(1)_CFG = cmake
+    $(1)_SRC_MARKER = $$($(1)_DIR)/CMakeLists.txt
+    $(1)_CONFIG = $$(CMAKE_CONFIG) $$($(1)_DIR)
+  endif
   $(1)_FILE = $(DOWNLOAD)/$(notdir $($(1)))
 
-  $$($(1)_CFG) : $$($(1)_FILE)
+  $$($(1)_SRC_MARKER) : $$($(1)_FILE)
 	mkdir -p $$(SRCDIR)
 	tar -C $$(SRCDIR) -xf $$<
 	$$(foreach p,$$(abspath $$(wildcard patches/$$(ARCH)-$$(notdir $$($(1)_DIR)).patch)), \
@@ -285,7 +299,7 @@ endef
 # Download and unpack all source packages
 $(foreach p,GCC BINUTILS CCACHE MPFR GMP MPC GDB,$(eval $(call Download,$(p))))
 
-##########################################################################################
+################################################################################
 # Unpack RPMS
 
 RPM_ARCHS := $(ARCH) noarch
@@ -324,7 +338,7 @@ endef
 
 $(foreach p,$(RPM_FILE_LIST),$(eval $(call unrpm,$(p))))
 
-##########################################################################################
+################################################################################
 
 # Note: MUST create a <sysroot>/usr/lib even if not really needed.
 # gcc will use a path relative to it to resolve lib64. (x86_64).
@@ -344,7 +358,7 @@ $(libs) : $(rpms)
 	@mkdir -p $(SYSROOT)/usr/lib
 	@touch $@
 
-##########################################################################################
+################################################################################
 # Create links for ffi header files so that they become visible by default when using the
 # devkit.
 ifeq ($(ARCH), x86_64)
@@ -357,17 +371,19 @@ ifeq ($(ARCH), x86_64)
   SYSROOT_LINKS += $(SYSROOT)/usr/include/ffi.h $(SYSROOT)/usr/include/ffitarget.h
 endif
 
-##########################################################################################
+################################################################################
 
 # Define marker files for each source package to be compiled
 $(foreach t,binutils mpfr gmp mpc gcc ccache gdb,$(eval $(t) = $(TARGETDIR)/$($(t)_ver).done))
 
-##########################################################################################
+################################################################################
 
 # Default base config
 CONFIG = --target=$(TARGET) \
     --host=$(HOST) --build=$(BUILD) \
     --prefix=$(PREFIX)
+
+CMAKE_CONFIG = -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(PREFIX)
 
 PATHEXT = $(PREFIX)/bin:
 
@@ -390,7 +406,7 @@ endif
 
 TOOLS ?= $(call declare_tools,_FOR_TARGET,$(TARGET)-)
 
-##########################################################################################
+################################################################################
 
 # Create a TARGET bfd + libiberty only.
 # Configure one or two times depending on mulitlib arch.
@@ -424,7 +440,7 @@ $(bfdmakes) : CONFIG = --target=$(TARGET) \
 
 $(bfdmakes) : TOOLS = $(call declare_tools,_FOR_TARGET,$(TARGET)-) $(call declare_tools,,$(TARGET)-)
 
-##########################################################################################
+################################################################################
 
 $(gcc) \
     $(binutils) \
@@ -441,8 +457,9 @@ $(gcc) \
 # wants.
 $(BUILDDIR)/$(binutils_ver)/Makefile : CONFIG += --enable-64-bit-bfd --libdir=$(PREFIX)/$(word 1,$(LIBDIRS))
 
-ifneq ($(ARCH), riscv64)
-  # gold is not available for riscv64 for some reason,
+ifeq ($(filter $(ARCH), s390x riscv64 ppc64le), )
+  # gold compiles but cannot link properly on s390x @ gcc 13.2 and Fedore 41
+  # gold is not available for riscv64 and ppc64le,
   # and subsequent linking will fail if we try to enable it.
   LINKER_CONFIG := --enable-gold=default
 endif
@@ -548,6 +565,7 @@ $(BUILDDIR)/$(gcc_ver)/Makefile \
 	  $(PATHPRE) $(ENVS) $(GCC_CFG) $(EXTRA_CFLAGS) \
 	      $(CONFIG) \
 	      --with-sysroot=$(SYSROOT) \
+	      --with-debug-prefix-map=$(OUTPUT_ROOT)=devkit \
 	      --enable-languages=c,c++ \
 	      --enable-shared \
 	      --disable-nls \
@@ -578,6 +596,8 @@ ifeq ($(HOST), $(TARGET))
 	  $(PATHPRE) $(ENVS) CFLAGS="$(CFLAGS)" $(GDB_CFG) \
 	      $(CONFIG) \
 	      --with-sysroot=$(SYSROOT) \
+	      --with-mpfr=$(PREFIX) \
+	      --with-gmp=$(PREFIX) \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
@@ -590,22 +610,22 @@ else
 	@echo 'done'
 endif
 
-##########################################################################################
+################################################################################
 # very straightforward. just build a ccache. it is only for host.
 $(BUILDDIR)/$(ccache_ver)/Makefile \
-    : $(CCACHE_CFG)
+    : $(CCACHE_SRC_MARKER)
 	$(info Configuring $@. Log in $(@D)/log.config)
 	@mkdir -p $(@D)
 	@( \
 	  cd $(@D) ; \
 	  $(PATHPRE) $(ENVS) $(CCACHE_CFG) \
-	      $(CONFIG) \
+	      $(CCACHE_CONFIG) \
 	) > $(@D)/log.config 2>&1
 	@echo 'done'
 
 gccpatch = $(TARGETDIR)/gcc-patched
 
-##########################################################################################
+################################################################################
 # For some reason cpp is not created as a target-compiler
 ifeq ($(HOST),$(TARGET))
   $(gccpatch) : $(gcc) link_libs
@@ -620,7 +640,7 @@ ifeq ($(HOST),$(TARGET))
 	@touch $@
 	@echo 'done'
 
-  ##########################################################################################
+  ##############################################################################
   # Ugly at best. Seems that when we compile host->host compiler, that are NOT
   # the BUILD compiler, the result will not try searching for libs in package root.
   # "Solve" this by create links from the target libdirs to where they are.
@@ -640,7 +660,7 @@ else
 	@echo 'done'
 endif
 
-##########################################################################################
+################################################################################
 # Build in two steps.
 # make <default>
 # make install.
@@ -655,7 +675,7 @@ $(TARGETDIR)/%.done : $(BUILDDIR)/%/Makefile
 	@touch $@
 	@echo 'done'
 
-##########################################################################################
+################################################################################
 
 $(PREFIX)/devkit.info:
 	@echo 'Creating devkit.info in the root of the kit'
@@ -669,7 +689,7 @@ $(PREFIX)/devkit.info:
 	echo 'DEVKIT_SYSROOT="$$DEVKIT_ROOT/$(TARGET)/sysroot"' >> $@
 	echo 'DEVKIT_EXTRA_PATH="$$DEVKIT_ROOT/bin"' >> $@
 
-##########################################################################################
+################################################################################
 # Copy these makefiles into the root of the kit
 $(PREFIX)/Makefile: ./Makefile
 	rm -rf $@
@@ -685,7 +705,7 @@ $(PREFIX)/Tars.gmk: ./Tars.gmk
 
 THESE_MAKEFILES := $(PREFIX)/Makefile $(PREFIX)/Tools.gmk $(PREFIX)/Tars.gmk
 
-##########################################################################################
+################################################################################
 
 ifeq ($(TARGET), $(HOST))
   # To build with dtrace support, the build needs access to the dtrace executable from the
@@ -705,7 +725,15 @@ ifeq ($(TARGET), $(HOST))
       ld.gold nm objcopy objdump ranlib readelf size strings strip)
 endif
 
-##########################################################################################
+# Add link to work around "plugin needed to handle lto object" (JDK-8344272)
+$(PREFIX)/lib/bfd-plugins/liblto_plugin.so: $(PREFIX)/libexec/gcc/$(TARGET)/$(GCC_VER)/liblto_plugin.so
+	@echo 'Creating missing $(@F) soft link'
+	@mkdir -p $(@D)
+	ln -s $$(realpath -s --relative-to=$(@D) $<) $@
+
+missing-links += $(PREFIX)/lib/bfd-plugins/liblto_plugin.so
+
+################################################################################
 
 bfdlib : $(bfdlib)
 binutils : $(binutils)

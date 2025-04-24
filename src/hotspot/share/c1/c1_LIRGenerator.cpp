@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -35,6 +34,7 @@
 #include "ci/ciObjArray.hpp"
 #include "ci/ciUtilities.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/klass.inline.hpp"
@@ -205,9 +205,11 @@ void LIRItem::set_result(LIR_Opr opr) {
   assert(value()->operand()->is_illegal() || value()->operand()->is_constant(), "operand should never change");
   value()->set_operand(opr);
 
+#ifdef ASSERT
   if (opr->is_virtual()) {
     _gen->_instruction_for_operand.at_put_grow(opr->vreg_number(), value(), nullptr);
   }
+#endif
 
   _result = opr;
 }
@@ -656,7 +658,7 @@ void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unr
   if (UseFastNewInstance && klass->is_loaded()
       && !Klass::layout_helper_needs_slow_path(klass->layout_helper())) {
 
-    Runtime1::StubID stub_id = klass->is_initialized() ? Runtime1::fast_new_instance_id : Runtime1::fast_new_instance_init_check_id;
+    C1StubId stub_id = klass->is_initialized() ? C1StubId::fast_new_instance_id : C1StubId::fast_new_instance_init_check_id;
 
     CodeStub* slow_path = new NewInstanceStub(klass_reg, dst, klass, info, stub_id);
 
@@ -667,7 +669,7 @@ void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unr
     __ allocate_object(dst, scratch1, scratch2, scratch3, scratch4,
                        oopDesc::header_size(), instance_size, klass_reg, !klass->is_initialized(), slow_path);
   } else {
-    CodeStub* slow_path = new NewInstanceStub(klass_reg, dst, klass, info, Runtime1::new_instance_id);
+    CodeStub* slow_path = new NewInstanceStub(klass_reg, dst, klass, info, C1StubId::new_instance_id);
     __ branch(lir_cond_always, slow_path);
     __ branch_destination(slow_path->continuation());
   }
@@ -876,27 +878,6 @@ void LIRGenerator::arraycopy_helper(Intrinsic* x, int* flagsp, ciArrayKlass** ex
   }
   *flagsp = flags;
   *expected_typep = (ciArrayKlass*)expected_type;
-}
-
-
-LIR_Opr LIRGenerator::round_item(LIR_Opr opr) {
-  assert(opr->is_register(), "why spill if item is not register?");
-
-  if (strict_fp_requires_explicit_rounding) {
-#ifdef IA32
-    if (UseSSE < 1 && opr->is_single_fpu()) {
-      LIR_Opr result = new_register(T_FLOAT);
-      set_vreg_flag(result, must_start_in_memory);
-      assert(opr->is_register(), "only a register can be spilled");
-      assert(opr->value_type()->is_float(), "rounding only for floats available");
-      __ roundfp(opr, LIR_OprFact::illegalOpr, result);
-      return result;
-    }
-#else
-    Unimplemented();
-#endif // IA32
-  }
-  return opr;
 }
 
 
@@ -1229,13 +1210,6 @@ void LIRGenerator::do_Reference_get(Intrinsic* x) {
 void LIRGenerator::do_isInstance(Intrinsic* x) {
   assert(x->number_of_arguments() == 2, "wrong type");
 
-  // TODO could try to substitute this node with an equivalent InstanceOf
-  // if clazz is known to be a constant Class. This will pick up newly found
-  // constants after HIR construction. I'll leave this to a future change.
-
-  // as a first cut, make a simple leaf call to runtime to stay platform independent.
-  // could follow the aastore example in a future change.
-
   LIRItem clazz(x->argument_at(0), this);
   LIRItem object(x->argument_at(1), this);
   clazz.load_item();
@@ -1248,8 +1222,9 @@ void LIRGenerator::do_isInstance(Intrinsic* x) {
     __ null_check(clazz.result(), info);
   }
 
+  address pd_instanceof_fn = isInstance_entry();
   LIR_Opr call_result = call_runtime(clazz.value(), object.value(),
-                                     CAST_FROM_FN_PTR(address, Runtime1::is_instance_of),
+                                     pd_instanceof_fn,
                                      x->type(),
                                      nullptr); // null CodeEmitInfo results in a leaf call
   __ move(call_result, result);
@@ -1280,61 +1255,6 @@ void LIRGenerator::do_getClass(Intrinsic* x) {
   // mirror = ((OopHandle)mirror)->resolve();
   access_load(IN_NATIVE, T_OBJECT,
               LIR_OprFact::address(new LIR_Address(temp, T_OBJECT)), result);
-}
-
-// java.lang.Class::isPrimitive()
-void LIRGenerator::do_isPrimitive(Intrinsic* x) {
-  assert(x->number_of_arguments() == 1, "wrong type");
-
-  LIRItem rcvr(x->argument_at(0), this);
-  rcvr.load_item();
-  LIR_Opr temp = new_register(T_METADATA);
-  LIR_Opr result = rlock_result(x);
-
-  CodeEmitInfo* info = nullptr;
-  if (x->needs_null_check()) {
-    info = state_for(x);
-  }
-
-  __ move(new LIR_Address(rcvr.result(), java_lang_Class::klass_offset(), T_ADDRESS), temp, info);
-  __ cmp(lir_cond_notEqual, temp, LIR_OprFact::metadataConst(0));
-  __ cmove(lir_cond_notEqual, LIR_OprFact::intConst(0), LIR_OprFact::intConst(1), result, T_BOOLEAN);
-}
-
-// Example: Foo.class.getModifiers()
-void LIRGenerator::do_getModifiers(Intrinsic* x) {
-  assert(x->number_of_arguments() == 1, "wrong type");
-
-  LIRItem receiver(x->argument_at(0), this);
-  receiver.load_item();
-  LIR_Opr result = rlock_result(x);
-
-  CodeEmitInfo* info = nullptr;
-  if (x->needs_null_check()) {
-    info = state_for(x);
-  }
-
-  // While reading off the universal constant mirror is less efficient than doing
-  // another branch and returning the constant answer, this branchless code runs into
-  // much less risk of confusion for C1 register allocator. The choice of the universe
-  // object here is correct as long as it returns the same modifiers we would expect
-  // from the primitive class itself. See spec for Class.getModifiers that provides
-  // the typed array klasses with similar modifiers as their component types.
-
-  Klass* univ_klass_obj = Universe::byteArrayKlassObj();
-  assert(univ_klass_obj->modifier_flags() == (JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC), "Sanity");
-  LIR_Opr prim_klass = LIR_OprFact::metadataConst(univ_klass_obj);
-
-  LIR_Opr recv_klass = new_register(T_METADATA);
-  __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), recv_klass, info);
-
-  // Check if this is a Java mirror of primitive type, and select the appropriate klass.
-  LIR_Opr klass = new_register(T_METADATA);
-  __ cmp(lir_cond_equal, recv_klass, LIR_OprFact::metadataConst(0));
-  __ cmove(lir_cond_equal, prim_klass, recv_klass, klass, T_ADDRESS);
-
-  // Get the answer.
-  __ move(new LIR_Address(klass, in_bytes(Klass::modifier_flags_offset()), T_INT), result);
 }
 
 void LIRGenerator::do_getObjectSize(Intrinsic* x) {
@@ -1476,7 +1396,7 @@ void LIRGenerator::do_RegisterFinalizer(Intrinsic* x) {
   args->append(receiver.result());
   CodeEmitInfo* info = state_for(x, x->state());
   call_runtime(&signature, args,
-               CAST_FROM_FN_PTR(address, Runtime1::entry_for(Runtime1::register_finalizer_id)),
+               CAST_FROM_FN_PTR(address, Runtime1::entry_for(C1StubId::register_finalizer_id)),
                voidType, info);
 
   set_no_result(x);
@@ -1494,28 +1414,22 @@ LIR_Opr LIRGenerator::operand_for_instruction(Instruction* x) {
       assert(x->as_Phi() || x->as_Local() != nullptr, "only for Phi and Local");
       // allocate a virtual register for this local or phi
       x->set_operand(rlock(x));
+#ifdef ASSERT
       _instruction_for_operand.at_put_grow(x->operand()->vreg_number(), x, nullptr);
+#endif
     }
   }
   return x->operand();
 }
 
-
-Instruction* LIRGenerator::instruction_for_opr(LIR_Opr opr) {
-  if (opr->is_virtual()) {
-    return instruction_for_vreg(opr->vreg_number());
-  }
-  return nullptr;
-}
-
-
+#ifdef ASSERT
 Instruction* LIRGenerator::instruction_for_vreg(int reg_num) {
   if (reg_num < _instruction_for_operand.length()) {
     return _instruction_for_operand.at(reg_num);
   }
   return nullptr;
 }
-
+#endif
 
 void LIRGenerator::set_vreg_flag(int vreg_num, VregFlag f) {
   if (_vreg_flags.size_in_bits() == 0) {
@@ -2118,25 +2032,6 @@ void LIRGenerator::do_Throw(Throw* x) {
 }
 
 
-void LIRGenerator::do_RoundFP(RoundFP* x) {
-  assert(strict_fp_requires_explicit_rounding, "not required");
-
-  LIRItem input(x->input(), this);
-  input.load_item();
-  LIR_Opr input_opr = input.result();
-  assert(input_opr->is_register(), "why round if value is not in a register?");
-  assert(input_opr->is_single_fpu() || input_opr->is_double_fpu(), "input should be floating-point value");
-  if (input_opr->is_single_fpu()) {
-    set_result(x, round_item(input_opr)); // This code path not currently taken
-  } else {
-    LIR_Opr result = new_register(T_DOUBLE);
-    set_vreg_flag(result, must_start_in_memory);
-    __ roundfp(input_opr, LIR_OprFact::illegalOpr, result);
-    set_result(x, result);
-  }
-}
-
-
 void LIRGenerator::do_UnsafeGet(UnsafeGet* x) {
   BasicType type = x->basic_type();
   LIRItem src(x->object(), this);
@@ -2660,7 +2555,9 @@ void LIRGenerator::do_Base(Base* x) {
     assert(as_ValueType(t)->tag() == local->type()->tag(), "check");
 #endif // __SOFTFP__
     local->set_operand(dest);
+#ifdef ASSERT
     _instruction_for_operand.at_put_grow(dest->vreg_number(), local, nullptr);
+#endif
     java_index += type2size[t];
   }
 
@@ -2958,8 +2855,6 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
 
   case vmIntrinsics::_Object_init:    do_RegisterFinalizer(x); break;
   case vmIntrinsics::_isInstance:     do_isInstance(x);    break;
-  case vmIntrinsics::_isPrimitive:    do_isPrimitive(x);   break;
-  case vmIntrinsics::_getModifiers:   do_getModifiers(x);  break;
   case vmIntrinsics::_getClass:       do_getClass(x);      break;
   case vmIntrinsics::_getObjectSize:  do_getObjectSize(x); break;
   case vmIntrinsics::_currentCarrierThread: do_currentCarrierThread(x); break;
@@ -2972,6 +2867,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_dsqrt:          // fall through
   case vmIntrinsics::_dsqrt_strict:   // fall through
   case vmIntrinsics::_dtan:           // fall through
+  case vmIntrinsics::_dtanh:          // fall through
   case vmIntrinsics::_dsin :          // fall through
   case vmIntrinsics::_dcos :          // fall through
   case vmIntrinsics::_dexp :          // fall through
@@ -3218,7 +3114,7 @@ void LIRGenerator::do_ProfileInvoke(ProfileInvoke* x) {
     // Notify the runtime very infrequently only to take care of counter overflows
     int freq_log = Tier23InlineeNotifyFreqLog;
     double scale;
-    if (_method->has_option_value(CompileCommand::CompileThresholdScaling, scale)) {
+    if (_method->has_option_value(CompileCommandEnum::CompileThresholdScaling, scale)) {
       freq_log = CompilerConfig::scaled_freq_log(freq_log, scale);
     }
     increment_event_counter_impl(info, x->inlinee(), LIR_OprFact::intConst(InvocationCounter::count_increment), right_n_bits(freq_log), InvocationEntryBci, false, true);
@@ -3259,7 +3155,7 @@ void LIRGenerator::increment_event_counter(CodeEmitInfo* info, LIR_Opr step, int
   }
   // Increment the appropriate invocation/backedge counter and notify the runtime.
   double scale;
-  if (_method->has_option_value(CompileCommand::CompileThresholdScaling, scale)) {
+  if (_method->has_option_value(CompileCommandEnum::CompileThresholdScaling, scale)) {
     freq_log = CompilerConfig::scaled_freq_log(freq_log, scale);
   }
   increment_event_counter_impl(info, info->scope()->method(), step, right_n_bits(freq_log), bci, backedge, true);

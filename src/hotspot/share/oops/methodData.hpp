@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,7 @@ class BytecodeStream;
 // counter overflow, multiprocessor races during data collection, space
 // limitations, missing MDO blocks, etc.  Bad or missing data will degrade
 // optimization quality but will not affect correctness.  Also, each MDO
-// is marked with its birth-date ("creation_mileage") which can be used
-// to assess the quality ("maturity") of its data.
+// can be checked for its "maturity" by calling is_mature().
 //
 // Short (<32-bit) counters are designed to overflow to a known "saturated"
 // state.  Also, certain recorded per-BCI events are given one-bit counters
@@ -1946,10 +1945,10 @@ class ciMethodData;
 class MethodData : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
-private:
   friend class ProfileData;
   friend class TypeEntriesAtCall;
   friend class ciMethodData;
+  friend class VM_ReinitializeMDO;
 
   // If you add a new field that points to any metaspace object, you
   // must add this field to MethodData::metaspace_pointers_do().
@@ -1966,11 +1965,18 @@ private:
   Mutex _extra_data_lock;
 
   MethodData(const methodHandle& method);
+
+  void initialize();
+
 public:
   static MethodData* allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS);
 
   virtual bool is_methodData() const { return true; }
-  void initialize();
+
+  // Safely reinitialize the data in the MDO.  This is intended as a testing facility as the
+  // reinitialization is performed at a safepoint so it's isn't cheap and it doesn't ensure that all
+  // readers will see consistent profile data.
+  void reinitialize();
 
   // Whole-method sticky bits and flags
   enum {
@@ -2054,8 +2060,6 @@ private:
   intx              _arg_stack;       // bit set of stack-allocatable arguments
   intx              _arg_returned;    // bit set of returned arguments
 
-  int               _creation_mileage; // method mileage at MDO creation
-
   // How many invocations has this MDO seen?
   // These counters are used to determine the exact age of MDO.
   // We need those because in tiered a method can be concurrently
@@ -2070,11 +2074,6 @@ private:
   int               _invoke_mask;      // per-method Tier0InvokeNotifyFreqLog
   int               _backedge_mask;    // per-method Tier0BackedgeNotifyFreqLog
 
-#if INCLUDE_RTM_OPT
-  // State of RTM code generation during compilation of the method
-  int               _rtm_state;
-#endif
-
   // Number of loops and blocks is computed when compiling the first
   // time with C1. It is used to determine if method is trivial.
   short             _num_loops;
@@ -2085,8 +2084,8 @@ private:
 
 #if INCLUDE_JVMCI
   // Support for HotSpotMethodData.setCompiledIRSize(int)
-  int                _jvmci_ir_size;
   FailedSpeculation* _failed_speculations;
+  int                _jvmci_ir_size;
 #endif
 
   // Size of _data array in bytes.  (Excludes header and extra_data fields.)
@@ -2168,7 +2167,7 @@ private:
   // What is the index of the first data entry?
   int first_di() const { return 0; }
 
-  ProfileData* bci_to_extra_data_helper(int bci, Method* m, DataLayout*& dp, bool concurrent);
+  ProfileData* bci_to_extra_data_find(int bci, Method* m, DataLayout*& dp);
   // Find or create an extra ProfileData:
   ProfileData* bci_to_extra_data(int bci, Method* m, bool create_if_missing);
 
@@ -2223,9 +2222,6 @@ public:
   int size_in_bytes() const { return _size; }
   int size() const    { return align_metadata_size(align_up(_size, BytesPerWord)/BytesPerWord); }
 
-  int      creation_mileage() const { return _creation_mileage; }
-  void set_creation_mileage(int x)  { _creation_mileage = x; }
-
   int invocation_count() {
     if (invocation_counter()->carry()) {
       return InvocationCounter::count_limit;
@@ -2270,22 +2266,6 @@ public:
   }
 #endif
 
-#if INCLUDE_RTM_OPT
-  int rtm_state() const {
-    return _rtm_state;
-  }
-  void set_rtm_state(RTMState rstate) {
-    _rtm_state = (int)rstate;
-  }
-  void atomic_set_rtm_state(RTMState rstate) {
-    Atomic::store(&_rtm_state, (int)rstate);
-  }
-
-  static ByteSize rtm_state_offset() {
-    return byte_offset_of(MethodData, _rtm_state);
-  }
-#endif
-
   void set_would_profile(bool p)              { _would_profile = p ? profile : no_profile; }
   bool would_profile() const                  { return _would_profile != no_profile; }
 
@@ -2294,8 +2274,7 @@ public:
   int num_blocks() const                      { return _num_blocks; }
   void set_num_blocks(short n)                { _num_blocks = n;    }
 
-  bool is_mature() const;  // consult mileage and ProfileMaturityPercentage
-  static int mileage_of(Method* m);
+  bool is_mature() const;
 
   // Support for interprocedural escape analysis, from Thomas Kotzmann.
   enum EscapeFlag {
@@ -2310,20 +2289,12 @@ public:
   intx arg_local()                               { return _arg_local; }
   intx arg_stack()                               { return _arg_stack; }
   intx arg_returned()                            { return _arg_returned; }
-  uint arg_modified(int a)                       { ArgInfoData *aid = arg_info();
-                                                   assert(aid != nullptr, "arg_info must be not null");
-                                                   assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
-                                                   return aid->arg_modified(a); }
-
+  uint arg_modified(int a);
   void set_eflags(intx v)                        { _eflags = v; }
   void set_arg_local(intx v)                     { _arg_local = v; }
   void set_arg_stack(intx v)                     { _arg_stack = v; }
   void set_arg_returned(intx v)                  { _arg_returned = v; }
-  void set_arg_modified(int a, uint v)           { ArgInfoData *aid = arg_info();
-                                                   assert(aid != nullptr, "arg_info must be not null");
-                                                   assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
-                                                   aid->set_arg_modified(a, v); }
-
+  void set_arg_modified(int a, uint v);
   void clear_escape_info()                       { _eflags = _arg_local = _arg_stack = _arg_returned = 0; }
 
   // Location and size of data area
@@ -2371,6 +2342,8 @@ public:
 
   // Same, but try to create an extra_data record if one is needed:
   ProfileData* allocate_bci_to_data(int bci, Method* m) {
+    check_extra_data_locked();
+
     ProfileData* data = nullptr;
     // If m not null, try to allocate a SpeculativeTrapData entry
     if (m == nullptr) {
@@ -2397,7 +2370,10 @@ public:
 
   // Add a handful of extra data records, for trap tracking.
   // Only valid after 'set_size' is called at the end of MethodData::initialize
-  DataLayout* extra_data_base() const  { return limit_data_position(); }
+  DataLayout* extra_data_base() const  {
+    check_extra_data_locked();
+    return limit_data_position();
+  }
   DataLayout* extra_data_limit() const { return (DataLayout*)((address)this + size_in_bytes()); }
   // pointers to sections in extra data
   DataLayout* args_data_limit() const  { return parameters_data_base(); }
@@ -2412,7 +2388,7 @@ public:
   DataLayout* exception_handler_data_base() const { return data_layout_at(_exception_handler_data_di); }
   DataLayout* exception_handler_data_limit() const { return extra_data_limit(); }
 
-  int extra_data_size() const          { return (int)((address)extra_data_limit() - (address)extra_data_base()); }
+  int extra_data_size() const          { return (int)((address)extra_data_limit() - (address)limit_data_position()); }
   static DataLayout* next_extra(DataLayout* dp);
 
   // Return (uint)-1 for overflow.
@@ -2528,7 +2504,8 @@ public:
 
   void clean_method_data(bool always_clean);
   void clean_weak_method_links();
-  Mutex* extra_data_lock() { return &_extra_data_lock; }
+  Mutex* extra_data_lock() const { return const_cast<Mutex*>(&_extra_data_lock); }
+  void check_extra_data_locked() const NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_OOPS_METHODDATA_HPP

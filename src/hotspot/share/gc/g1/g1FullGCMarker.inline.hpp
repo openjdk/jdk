@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,6 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
   if (!_bitmap->par_mark(obj)) {
     // Lost mark race.
     return false;
-  }
-
-  // Marked by us, preserve if needed.
-  if (_collector->is_compacting(obj)) {
-    // It is not necessary to preserve marks for objects in regions we do not
-    // compact because we do not change their headers (i.e. forward them).
-    preserved_stack()->push_if_necessary(obj, obj->mark());
   }
 
   // Check if deduplicatable string.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1MemoryPool.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/g1MemoryPool.hpp"
 #include "gc/shared/hSpaceCounters.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -61,9 +60,9 @@ public:
     }
   }
 
-  virtual void update_all() {
+  void update_all() {
     size_t committed = _monitoring_support->young_gen_committed();
-    _current_size->set_value(committed);
+    GenerationCounters::update_all(committed);
   }
 };
 
@@ -82,9 +81,9 @@ public:
     }
   }
 
-  virtual void update_all() {
+  void update_all() {
     size_t committed = _monitoring_support->old_gen_committed();
-    _current_size->set_value(committed);
+    GenerationCounters::update_all(committed);
   }
 };
 
@@ -253,8 +252,8 @@ void G1MonitoringSupport::recalculate_sizes() {
   uint eden_list_max_length = young_list_target_length - survivor_list_length;
 
   // First calculate the committed sizes that can be calculated independently.
-  _survivor_space_committed = survivor_list_length * HeapRegion::GrainBytes;
-  _old_gen_committed = HeapRegion::align_up_to_region_byte_size(_old_gen_used);
+  _survivor_space_committed = survivor_list_length * G1HeapRegion::GrainBytes;
+  _old_gen_committed = G1HeapRegion::align_up_to_region_byte_size(_old_gen_used);
 
   // Next, start with the overall committed size.
   _overall_committed = _g1h->capacity();
@@ -266,7 +265,7 @@ void G1MonitoringSupport::recalculate_sizes() {
   committed -= _survivor_space_committed + _old_gen_committed;
 
   // Next, calculate and remove the committed size for the eden.
-  _eden_space_committed = (size_t) eden_list_max_length * HeapRegion::GrainBytes;
+  _eden_space_committed = (size_t) eden_list_max_length * G1HeapRegion::GrainBytes;
   // Somewhat defensive: be robust in case there are inaccuracies in
   // the calculations
   _eden_space_committed = MIN2(_eden_space_committed, committed);
@@ -285,12 +284,12 @@ void G1MonitoringSupport::recalculate_sizes() {
   _eden_space_used = MIN2(_eden_space_used, _eden_space_committed);
   // _survivor_space_used is calculated during a safepoint and _survivor_space_committed
   // is calculated from survivor region count * heap region size.
-  assert(_survivor_space_used <= _survivor_space_committed, "Survivor used bytes(" SIZE_FORMAT
-         ") should be less than or equal to survivor committed(" SIZE_FORMAT ")",
+  assert(_survivor_space_used <= _survivor_space_committed, "Survivor used bytes(%zu)"
+         " should be less than or equal to survivor committed(%zu)",
          _survivor_space_used, _survivor_space_committed);
   // _old_gen_committed is calculated in terms of _old_gen_used value.
-  assert(_old_gen_used <= _old_gen_committed, "Old gen used bytes(" SIZE_FORMAT
-         ") should be less than or equal to old gen committed(" SIZE_FORMAT ")",
+  assert(_old_gen_used <= _old_gen_committed, "Old gen used bytes(%zu)"
+         " should be less than or equal to old gen committed(%zu)",
          _old_gen_used, _old_gen_committed);
 }
 

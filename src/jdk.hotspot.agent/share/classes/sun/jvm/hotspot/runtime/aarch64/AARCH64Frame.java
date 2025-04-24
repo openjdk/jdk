@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -292,7 +292,7 @@ public class AARCH64Frame extends Frame {
     }
 
     if (cb != null) {
-      return senderForCompiledFrame(map, cb);
+      return cb.isUpcallStub() ? senderForUpcallStub(map, (UpcallStub)cb) : senderForCompiledFrame(map, cb);
     }
 
     // Must be native-compiled frame, i.e. the marshaling code for native
@@ -319,6 +319,34 @@ public class AARCH64Frame extends Frame {
       fr = new AARCH64Frame(jcw.getLastJavaSP(), jcw.getLastJavaFP(), jcw.getLastJavaPC());
     } else {
       fr = new AARCH64Frame(jcw.getLastJavaSP(), jcw.getLastJavaFP());
+    }
+    map.clear();
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(map.getIncludeArgumentOops(), "should be set by clear");
+    }
+    return fr;
+  }
+
+  private Frame senderForUpcallStub(AARCH64RegisterMap map, UpcallStub stub) {
+    if (DEBUG) {
+      System.out.println("senderForUpcallStub");
+    }
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(map != null, "map must be set");
+    }
+
+    var lastJavaFP = stub.getLastJavaFP(this);
+    var lastJavaSP = stub.getLastJavaSP(this);
+    var lastJavaPC = stub.getLastJavaPC(this);
+
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(lastJavaSP.greaterThan(getSP()), "must be above this frame on stack");
+    }
+    AARCH64Frame fr;
+    if (lastJavaPC != null) {
+      fr = new AARCH64Frame(lastJavaSP, lastJavaFP, lastJavaPC);
+    } else {
+      fr = new AARCH64Frame(lastJavaSP, lastJavaFP);
     }
     map.clear();
     if (Assert.ASSERTS_ENABLED) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,20 +74,36 @@ AccessBridgeJavaEntryPoints::~AccessBridgeJavaEntryPoints() {
         return FALSE; \
     }
 
-#define EXCEPTION_CHECK(situationDescription, returnVal)                                        \
-    if (exception = jniEnv->ExceptionOccurred()) {                                              \
-        PrintDebugString("[ERROR]: *** Exception occured while doing: %s; returning %d", situationDescription, returnVal);   \
-        jniEnv->ExceptionDescribe();                                                            \
-        jniEnv->ExceptionClear();                                                               \
-        return (returnVal);                                                                     \
+#define EXCEPTION_CHECK(situationDescription, returnVal)                                            \
+    if (jniEnv->ExceptionCheck()) {                                                                 \
+        PrintDebugString("[ERROR]: *** Exception occured while doing: %s; returning %d", situationDescription, returnVal);  \
+        jniEnv->ExceptionDescribe();                                                                \
+        jniEnv->ExceptionClear();                                                                   \
+        return (returnVal);                                                                         \
     }
 
-#define EXCEPTION_CHECK_VOID(situationDescription)                                              \
-    if (exception = jniEnv->ExceptionOccurred()) {                                              \
+#define EXCEPTION_CHECK_WITH_RELEASE(situationDescription, returnVal, js, stringBytes)              \
+    if (jniEnv->ExceptionCheck()) {                                                                 \
+        PrintDebugString("[ERROR]: *** Exception occured while doing: %s - call to GetStringLength; returning %d", situationDescription, returnVal);    \
+        jniEnv->ExceptionDescribe();                                                                \
+        jniEnv->ExceptionClear();                                                                   \
+        jniEnv->ReleaseStringChars(js, stringBytes);                                                \
+        return (returnVal);                                                                         \
+    }                                                                                               \
+    jniEnv->ReleaseStringChars(js, stringBytes);                                                    \
+    if (jniEnv->ExceptionCheck()) {                                                                 \
+        PrintDebugString("[ERROR]: *** Exception occured while doing: %s - call to ReleaseStringChars; returning %d", situationDescription, returnVal); \
+        jniEnv->ExceptionDescribe();                                                                \
+        jniEnv->ExceptionClear();                                                                   \
+        return (returnVal);                                                                         \
+    }
+
+#define EXCEPTION_CHECK_VOID(situationDescription)                                                  \
+    if (jniEnv->ExceptionCheck()) {                                                                 \
         PrintDebugString("[ERROR]: *** Exception occured while doing: %s", situationDescription);   \
-        jniEnv->ExceptionDescribe();                                                            \
-        jniEnv->ExceptionClear();                                                               \
-        return;                                                                                 \
+        jniEnv->ExceptionDescribe();                                                                \
+        jniEnv->ExceptionClear();                                                                   \
+        return;                                                                                     \
     }
 
 /**
@@ -874,7 +890,6 @@ AccessBridgeJavaEntryPoints::BuildJavaEntryPoints() {
  */
 BOOL
 AccessBridgeJavaEntryPoints::isJavaWindow(jint window) {
-    jthrowable exception;
     BOOL returnVal;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::isJavaWindow(%X):", window);
@@ -897,7 +912,6 @@ AccessBridgeJavaEntryPoints::isJavaWindow(jint window) {
  */
 BOOL
 AccessBridgeJavaEntryPoints::isSameObject(jobject obj1, jobject obj2) {
-    jthrowable exception;
     BOOL returnVal;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::isSameObject(%p %p):", obj1, obj2);
@@ -919,7 +933,6 @@ jobject
 AccessBridgeJavaEntryPoints::getAccessibleContextFromHWND(jint window) {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::getAccessibleContextFromHWND(%X):", window);
 
@@ -945,7 +958,6 @@ AccessBridgeJavaEntryPoints::getAccessibleContextFromHWND(jint window) {
  */
 HWND
 AccessBridgeJavaEntryPoints::getHWNDFromAccessibleContext(jobject accessibleContext) {
-    jthrowable exception;
     HWND rHWND;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::getHWNDFromAccessibleContext(%X):",
@@ -971,7 +983,6 @@ AccessBridgeJavaEntryPoints::getHWNDFromAccessibleContext(jobject accessibleCont
  */
 BOOL
 AccessBridgeJavaEntryPoints::setTextContents(const jobject accessibleContext, const wchar_t *text) {
-    jthrowable exception;
     BOOL result = FALSE;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::setTextContents(%p, %ls):",
@@ -1008,7 +1019,6 @@ AccessBridgeJavaEntryPoints::setTextContents(const jobject accessibleContext, co
  */
 jobject
 AccessBridgeJavaEntryPoints::getParentWithRole(const jobject accessibleContext, const wchar_t *role) {
-    jthrowable exception;
     jobject rAccessibleContext;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::getParentWithRole(%p):",
@@ -1025,7 +1035,7 @@ AccessBridgeJavaEntryPoints::getParentWithRole(const jobject accessibleContext, 
         rAccessibleContext = jniEnv->CallObjectMethod(accessBridgeObject,
                                                       getParentWithRoleMethod,
                                                       accessibleContext, roleName);
-        EXCEPTION_CHECK("Getting ParentWithRole - call to CallObjectMethod()", (AccessibleContext)0);
+        EXCEPTION_CHECK("Getting ParentWithRole - call to CallObjectMethod()", reinterpret_cast<jobject>((AccessibleContext)0));
         PrintDebugString("[INFO]:     rAccessibleContext = %p", rAccessibleContext);
         jobject globalRef = jniEnv->NewGlobalRef(rAccessibleContext);
         EXCEPTION_CHECK("Getting ParentWithRole - call to NewGlobalRef()", FALSE);
@@ -1046,7 +1056,6 @@ AccessBridgeJavaEntryPoints::getParentWithRole(const jobject accessibleContext, 
  */
 jobject
 AccessBridgeJavaEntryPoints::getTopLevelObject(const jobject accessibleContext) {
-    jthrowable exception;
     jobject rAccessibleContext;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::getTopLevelObject(%p):",
@@ -1077,7 +1086,6 @@ AccessBridgeJavaEntryPoints::getTopLevelObject(const jobject accessibleContext) 
  */
 jobject
 AccessBridgeJavaEntryPoints::getParentWithRoleElseRoot(const jobject accessibleContext, const wchar_t *role) {
-    jthrowable exception;
     jobject rAccessibleContext;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::getParentWithRoleElseRoot(%p):",
@@ -1095,7 +1103,7 @@ AccessBridgeJavaEntryPoints::getParentWithRoleElseRoot(const jobject accessibleC
         rAccessibleContext = jniEnv->CallObjectMethod(accessBridgeObject,
                                                       getParentWithRoleElseRootMethod,
                                                       accessibleContext, roleName);
-        EXCEPTION_CHECK("Getting ParentWithRoleElseRoot - call to CallObjectMethod()", (AccessibleContext)0);
+        EXCEPTION_CHECK("Getting ParentWithRoleElseRoot - call to CallObjectMethod()", reinterpret_cast<jobject>((AccessibleContext)0));
         PrintDebugString("[INFO]:     rAccessibleContext = %p", rAccessibleContext);
         jobject globalRef = jniEnv->NewGlobalRef(rAccessibleContext);
         EXCEPTION_CHECK("Getting ParentWithRoleElseRoot - call to NewGlobalRef()", FALSE);
@@ -1115,7 +1123,6 @@ AccessBridgeJavaEntryPoints::getParentWithRoleElseRoot(const jobject accessibleC
  */
 jint
 AccessBridgeJavaEntryPoints::getObjectDepth(const jobject accessibleContext) {
-    jthrowable exception;
     jint rResult;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::getObjectDepth(%p):",
@@ -1142,7 +1149,6 @@ AccessBridgeJavaEntryPoints::getObjectDepth(const jobject accessibleContext) {
  */
 jobject
 AccessBridgeJavaEntryPoints::getActiveDescendent(const jobject accessibleContext) {
-    jthrowable exception;
     jobject rAccessibleContext;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::getActiveDescendent(%p):",
@@ -1152,7 +1158,7 @@ AccessBridgeJavaEntryPoints::getActiveDescendent(const jobject accessibleContext
         rAccessibleContext = jniEnv->CallObjectMethod(accessBridgeObject,
                                                       getActiveDescendentMethod,
                                                       accessibleContext);
-        EXCEPTION_CHECK("Getting ActiveDescendent - call to CallObjectMethod()", (AccessibleContext)0);
+        EXCEPTION_CHECK("Getting ActiveDescendent - call to CallObjectMethod()", reinterpret_cast<jobject>((AccessibleContext)0));
         PrintDebugString("[INFO]:     rAccessibleContext = %p", rAccessibleContext);
         jobject globalRef = jniEnv->NewGlobalRef(rAccessibleContext);
         EXCEPTION_CHECK("Getting ActiveDescendant - call to NewGlobalRef()", FALSE);
@@ -1161,7 +1167,7 @@ AccessBridgeJavaEntryPoints::getActiveDescendent(const jobject accessibleContext
         return globalRef;
     } else {
         PrintDebugString("[ERROR]: either jniEnv == 0 or getActiveDescendentMethod == 0");
-        return (AccessibleContext)0;
+        return reinterpret_cast<jobject>((AccessibleContext)0);
     }
 }
 
@@ -1199,7 +1205,6 @@ AccessBridgeJavaEntryPoints::getVirtualAccessibleName (
 
     jstring js = NULL;
     const wchar_t * stringBytes = NULL;
-    jthrowable exception = NULL;
     jsize length = 0;
     PrintDebugString("[INFO]:  getVirtualAccessibleName called.");
     if (getVirtualAccessibleNameFromContextMethod != (jmethodID) 0)
@@ -1215,9 +1220,7 @@ AccessBridgeJavaEntryPoints::getVirtualAccessibleName (
             EXCEPTION_CHECK("Getting AccessibleName - call to GetStringChars()", FALSE);
             wcsncpy(name, stringBytes, nameSize - 1);
             length = jniEnv->GetStringLength(js);
-            EXCEPTION_CHECK("Getting AccessibleName - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleName - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleName", FALSE, js, stringBytes);
             jniEnv->CallVoidMethod (
                 accessBridgeObject,
                 decrementReferenceMethod, js);
@@ -1252,7 +1255,6 @@ AccessBridgeJavaEntryPoints::getVirtualAccessibleName (
 BOOL
 AccessBridgeJavaEntryPoints::requestFocus(const jobject accessibleContext) {
 
-    jthrowable exception;
     BOOL result = FALSE;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::requestFocus(%p):",
@@ -1280,7 +1282,6 @@ AccessBridgeJavaEntryPoints::requestFocus(const jobject accessibleContext) {
 BOOL
 AccessBridgeJavaEntryPoints::selectTextRange(const jobject accessibleContext, int startIndex, int endIndex) {
 
-    jthrowable exception;
     BOOL result = FALSE;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::selectTextRange(%p start = %d end = %d):",
@@ -1348,7 +1349,6 @@ AccessBridgeJavaEntryPoints::getTextAttributesInRange(const jobject accessibleCo
 
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
     BOOL result = FALSE;
 
@@ -1380,9 +1380,7 @@ AccessBridgeJavaEntryPoints::getTextAttributesInRange(const jobject accessibleCo
                 length = jniEnv->GetStringLength(js);
                 test_attributes.fullAttributesString[length < (sizeof(test_attributes.fullAttributesString) / sizeof(wchar_t)) ?
                                                      length : (sizeof(test_attributes.fullAttributesString) / sizeof(wchar_t))-2] = (wchar_t) 0;
-                EXCEPTION_CHECK("Getting AccessibleAttributesAtIndex - call to GetStringLength()", FALSE);
-                jniEnv->ReleaseStringChars(js, stringBytes);
-                EXCEPTION_CHECK("Getting AccessibleAttributesAtIndex - call to ReleaseStringChars()", FALSE);
+                EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleAttributesAtIndex", FALSE, js, stringBytes);
                 jniEnv->CallVoidMethod(accessBridgeObject,
                                        decrementReferenceMethod, js);
                 EXCEPTION_CHECK("Getting AccessibleAttributesAtIndex - call to CallVoidMethod()", FALSE);
@@ -1417,7 +1415,6 @@ AccessBridgeJavaEntryPoints::getTextAttributesInRange(const jobject accessibleCo
 int
 AccessBridgeJavaEntryPoints::getVisibleChildrenCount(const jobject accessibleContext) {
 
-    jthrowable exception;
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getVisibleChildrenCount(%p)",
                      accessibleContext);
 
@@ -1442,8 +1439,6 @@ AccessBridgeJavaEntryPoints::getVisibleChildrenCount(const jobject accessibleCon
 BOOL AccessBridgeJavaEntryPoints::getVisibleChildren(const jobject accessibleContext,
                                                      const int nStartIndex,
                                                      /* OUT */ VisibleChildrenInfo *visibleChildrenInfo) {
-
-    jthrowable exception;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getVisibleChildren(%p, startIndex = %d)",
                      accessibleContext, nStartIndex);
@@ -1488,7 +1483,6 @@ BOOL AccessBridgeJavaEntryPoints::getVisibleChildren(const jobject accessibleCon
 BOOL
 AccessBridgeJavaEntryPoints::setCaretPosition(const jobject accessibleContext, int position) {
 
-    jthrowable exception;
     BOOL result = FALSE;
 
     PrintDebugString("[INFO]: In AccessBridgeJavaEntryPoints::setCaretPostion(%p position = %d):",
@@ -1519,7 +1513,6 @@ BOOL
 AccessBridgeJavaEntryPoints::getVersionInfo(AccessBridgeVersionInfo *info) {
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getVersionInfo():");
@@ -1589,7 +1582,6 @@ AccessBridgeJavaEntryPoints::getVersionInfo(AccessBridgeVersionInfo *info) {
 BOOL AccessBridgeJavaEntryPoints::verifyAccessibleText(jobject obj) {
     JavaVM *vm;
     BOOL retval;
-    jthrowable exception;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::verifyAccessibleText");
 
@@ -1641,7 +1633,6 @@ jobject
 AccessBridgeJavaEntryPoints::getAccessibleContextAt(jint x, jint y, jobject accessibleContext) {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleContextAt(%d, %d, %p):",
                      x, y, accessibleContext);
@@ -1676,7 +1667,6 @@ jobject
 AccessBridgeJavaEntryPoints::getAccessibleContextWithFocus() {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleContextWithFocus()");
 
@@ -1712,7 +1702,6 @@ AccessBridgeJavaEntryPoints::getAccessibleContextInfo(jobject accessibleContext,
     jstring js;
     const wchar_t *stringBytes;
     jobject returnedJobject;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleContextInfo(%p):", accessibleContext);
@@ -1735,11 +1724,9 @@ AccessBridgeJavaEntryPoints::getAccessibleContextInfo(jobject accessibleContext,
             EXCEPTION_CHECK("Getting AccessibleName - call to GetStringChars()", FALSE);
             wcsncpy(info->name, stringBytes, (sizeof(info->name) / sizeof(wchar_t)));
             length = jniEnv->GetStringLength(js);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleName", FALSE, js, stringBytes);
             info->name[length < (sizeof(info->name) / sizeof(wchar_t)) ?
                        length : (sizeof(info->name) / sizeof(wchar_t))-2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting AccessibleName - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleName - call to ReleaseStringChars()", FALSE);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting AccessibleName - call to CallVoidMethod()", FALSE);
@@ -1767,11 +1754,9 @@ AccessBridgeJavaEntryPoints::getAccessibleContextInfo(jobject accessibleContext,
             EXCEPTION_CHECK("Getting AccessibleName - call to GetStringChars()", FALSE);
             wcsncpy(info->description, stringBytes, (sizeof(info->description) / sizeof(wchar_t)));
             length = jniEnv->GetStringLength(js);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleName", FALSE, js, stringBytes);
             info->description[length < (sizeof(info->description) / sizeof(wchar_t)) ?
                               length : (sizeof(info->description) / sizeof(wchar_t))-2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting AccessibleName - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleName - call to ReleaseStringChars()", FALSE);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting AccessibleName - call to CallVoidMethod()", FALSE);
@@ -1799,11 +1784,9 @@ AccessBridgeJavaEntryPoints::getAccessibleContextInfo(jobject accessibleContext,
             EXCEPTION_CHECK("Getting AccessibleRole - call to GetStringChars()", FALSE);
             wcsncpy(info->role, stringBytes, (sizeof(info->role) / sizeof(wchar_t)));
             length = jniEnv->GetStringLength(js);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleRole", FALSE, js, stringBytes);
             info->role[length < (sizeof(info->role) / sizeof(wchar_t)) ?
                        length : (sizeof(info->role) / sizeof(wchar_t))-2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting AccessibleRole - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleRole - call to ReleaseStringChars()", FALSE);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting AccessibleRole - call to CallVoidMethod()", FALSE);
@@ -1831,11 +1814,9 @@ AccessBridgeJavaEntryPoints::getAccessibleContextInfo(jobject accessibleContext,
             EXCEPTION_CHECK("Getting AccessibleRole_en_US - call to GetStringChars()", FALSE);
             wcsncpy(info->role_en_US, stringBytes, (sizeof(info->role_en_US) / sizeof(wchar_t)));
             length = jniEnv->GetStringLength(js);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleRole_en_US", FALSE, js, stringBytes);
             info->role_en_US[length < (sizeof(info->role_en_US) / sizeof(wchar_t)) ?
                              length : (sizeof(info->role_en_US) / sizeof(wchar_t))-2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting AccessibleRole_en_US - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleRole_en_US - call to ReleaseStringChars()", FALSE);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting AccessibleRole_en_US - call to CallVoidMethod()", FALSE);
@@ -1862,11 +1843,9 @@ AccessBridgeJavaEntryPoints::getAccessibleContextInfo(jobject accessibleContext,
             EXCEPTION_CHECK("Getting AccessibleState - call to GetStringChars()", FALSE);
             wcsncpy(info->states, stringBytes, (sizeof(info->states) / sizeof(wchar_t)));
             length = jniEnv->GetStringLength(js);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleState", FALSE, js, stringBytes);
             info->states[length < (sizeof(info->states) / sizeof(wchar_t)) ?
                          length : (sizeof(info->states) / sizeof(wchar_t))-2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting AccessibleState - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleState - call to ReleaseStringChars()", FALSE);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting AccessibleState - call to CallVoidMethod()", FALSE);
@@ -1893,11 +1872,9 @@ AccessBridgeJavaEntryPoints::getAccessibleContextInfo(jobject accessibleContext,
             EXCEPTION_CHECK("Getting AccessibleState_en_US - call to GetStringChars()", FALSE);
             wcsncpy(info->states_en_US, stringBytes, (sizeof(info->states_en_US) / sizeof(wchar_t)));
             length = jniEnv->GetStringLength(js);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleState_en_US", FALSE, js, stringBytes);
             info->states_en_US[length < (sizeof(info->states_en_US) / sizeof(wchar_t)) ?
                                length : (sizeof(info->states_en_US) / sizeof(wchar_t))-2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting AccessibleState_en_US - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleState_en_US - call to ReleaseStringChars()", FALSE);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting AccessibleState_en_US - call to CallVoidMethod()", FALSE);
@@ -2156,7 +2133,6 @@ jobject
 AccessBridgeJavaEntryPoints::getAccessibleChildFromContext(jobject accessibleContext, jint childIndex) {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleChildContext(%p, %d):",
                      accessibleContext, childIndex);
@@ -2188,7 +2164,6 @@ AccessBridgeJavaEntryPoints::getAccessibleParentFromContext(jobject accessibleCo
 {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleParentFromContext(%p):", accessibleContext);
 
@@ -2216,8 +2191,6 @@ AccessBridgeJavaEntryPoints::getAccessibleParentFromContext(jobject accessibleCo
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTableInfo(jobject accessibleContext,
                                                     AccessibleTableInfo *tableInfo) {
-
-    jthrowable exception;
 
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleTableInfo(%p):",
                      accessibleContext);
@@ -2291,8 +2264,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableInfo(jobject accessibleContext,
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTableCellInfo(jobject accessibleTable, jint row, jint column,
                                                         AccessibleTableCellInfo *tableCellInfo) {
-
-    jthrowable exception;
 
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleTableCellInfo(%p): row=%d, column=%d",
                      accessibleTable, row, column);
@@ -2373,8 +2344,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableCellInfo(jobject accessibleTable,
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTableRowHeader(jobject acParent, AccessibleTableInfo *tableInfo) {
 
-    jthrowable exception;
-
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleTableRowHeader(%p):",
                      acParent);
 
@@ -2428,7 +2397,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableRowHeader(jobject acParent, Acces
 
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTableColumnHeader(jobject acParent, AccessibleTableInfo *tableInfo) {
-    jthrowable exception;
 
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleTableColumnHeader(%p):",
                      acParent);
@@ -2485,7 +2453,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableRowDescription(jobject acParent, 
 
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
 
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleTableRowDescription(%p):",
                      acParent);
@@ -2513,7 +2480,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableColumnDescription(jobject acParen
 
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
 
     PrintDebugString("[INFO]: ##### Calling AccessBridgeJavaEntryPoints::getAccessibleTableColumnDescription(%p):",
                      acParent);
@@ -2540,7 +2506,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableColumnDescription(jobject acParen
 jint
 AccessBridgeJavaEntryPoints::getAccessibleTableRowSelectionCount(jobject accessibleTable) {
 
-    jthrowable exception;
     jint count;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableRowSelectionCount(%p)",
@@ -2565,7 +2530,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableRowSelectionCount(jobject accessi
 
 BOOL
 AccessBridgeJavaEntryPoints::isAccessibleTableRowSelected(jobject accessibleTable, jint row) {
-    jthrowable exception;
     BOOL result;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::isAccessibleTableRowSelected(%p, %d)",
@@ -2591,7 +2555,6 @@ BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTableRowSelections(jobject accessibleTable, jint count,
                                                              jint *selections) {
 
-    jthrowable exception;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableRowSelections(%p, %d %p)",
                      accessibleTable, count, selections);
@@ -2618,7 +2581,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableRowSelections(jobject accessibleT
 jint
 AccessBridgeJavaEntryPoints::getAccessibleTableColumnSelectionCount(jobject accessibleTable) {
 
-    jthrowable exception;
     jint count;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableColumnSelectionCount(%p)",
@@ -2643,7 +2605,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableColumnSelectionCount(jobject acce
 
 BOOL
 AccessBridgeJavaEntryPoints::isAccessibleTableColumnSelected(jobject accessibleTable, jint column) {
-    jthrowable exception;
     BOOL result;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::isAccessibleTableColumnSelected(%p, %d)",
@@ -2668,7 +2629,6 @@ AccessBridgeJavaEntryPoints::isAccessibleTableColumnSelected(jobject accessibleT
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTableColumnSelections(jobject accessibleTable, jint count,
                                                                 jint *selections) {
-    jthrowable exception;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableColumnSelections(%p, %d, %p)",
                      accessibleTable, count, selections);
@@ -2694,7 +2654,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableColumnSelections(jobject accessib
 
 jint
 AccessBridgeJavaEntryPoints::getAccessibleTableRow(jobject accessibleTable, jint index) {
-    jthrowable exception;
     jint result;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableRow(%p, index=%d)",
@@ -2718,7 +2677,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableRow(jobject accessibleTable, jint
 
 jint
 AccessBridgeJavaEntryPoints::getAccessibleTableColumn(jobject accessibleTable, jint index) {
-    jthrowable exception;
     jint result;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableColumn(%p, index=%d)",
@@ -2742,7 +2700,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTableColumn(jobject accessibleTable, j
 
 jint
 AccessBridgeJavaEntryPoints::getAccessibleTableIndex(jobject accessibleTable, jint row, jint column) {
-    jthrowable exception;
     jint result;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleTableIndex(%p, row=%d, col=%d)",
@@ -2773,7 +2730,6 @@ BOOL
 AccessBridgeJavaEntryPoints::getAccessibleRelationSet(jobject accessibleContext,
                                                       AccessibleRelationSetInfo *relationSet) {
 
-    jthrowable exception;
     const wchar_t *stringBytes;
     jsize length;
 
@@ -2809,11 +2765,9 @@ AccessBridgeJavaEntryPoints::getAccessibleRelationSet(jobject accessibleContext,
             EXCEPTION_CHECK("Getting AccessibleRelation key - call to GetStringChars()", FALSE);
             wcsncpy(relationSet->relations[i].key, stringBytes, (sizeof(relationSet->relations[i].key ) / sizeof(wchar_t)));
             length = jniEnv->GetStringLength(js);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleRelation key", FALSE, js, stringBytes);
             relationSet->relations[i].key [length < (sizeof(relationSet->relations[i].key ) / sizeof(wchar_t)) ?
                                            length : (sizeof(relationSet->relations[i].key ) / sizeof(wchar_t))-2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting AccessibleRelation key - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleRelation key - call to ReleaseStringChars()", FALSE);
             // jniEnv->CallVoidMethod(accessBridgeObject,
             //                        decrementReferenceMethod, js);
             //EXCEPTION_CHECK("Getting AccessibleRelation key - call to CallVoidMethod()", FALSE);
@@ -2855,7 +2809,6 @@ BOOL
 AccessBridgeJavaEntryPoints::getAccessibleHypertext(jobject accessibleContext,
                                                     AccessibleHypertextInfo *hypertext) {
 
-    jthrowable exception;
     const wchar_t *stringBytes;
     jsize length;
 
@@ -2915,9 +2868,7 @@ AccessBridgeJavaEntryPoints::getAccessibleHypertext(jobject accessibleContext,
                 length = (sizeof(hypertext->links[i].text) / sizeof(wchar_t)) - 2;
             }
             hypertext->links[i].text[length] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting AccessibleHyperlink text - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleHyperlink text - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleHyperlink text", FALSE, js, stringBytes);
             // jniEnv->CallVoidMethod(accessBridgeObject,
             //                                     decrementReferenceMethod, js);
             //EXCEPTION_CHECK("Getting AccessibleHyperlink text - call to CallVoidMethod()", FALSE);
@@ -2957,7 +2908,6 @@ BOOL
 AccessBridgeJavaEntryPoints::activateAccessibleHyperlink(jobject accessibleContext,
                                                          jobject accessibleHyperlink) {
 
-    jthrowable exception;
     BOOL returnVal;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::activateAccessibleHyperlink(%p, %p):",
@@ -2987,7 +2937,6 @@ AccessBridgeJavaEntryPoints::getAccessibleHypertextExt(const jobject accessibleC
                                                        const jint nStartIndex,
                                                        /* OUT */ AccessibleHypertextInfo *hypertext) {
 
-    jthrowable exception;
     const wchar_t *stringBytes;
     jsize length;
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleHypertextExt(%p, %p, startIndex = %d)",
@@ -3052,9 +3001,7 @@ AccessBridgeJavaEntryPoints::getAccessibleHypertextExt(const jobject accessibleC
                 length = (sizeof(hypertext->links[bufIndex].text) / sizeof(wchar_t)) - 2;
             }
             hypertext->links[bufIndex].text[length] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting AccessibleHyperlink text - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleHyperlink text - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleHyperlink text", FALSE, js, stringBytes);
             // jniEnv->CallVoidMethod(accessBridgeObject,
             //                        decrementReferenceMethod, js);
             //EXCEPTION_CHECK("Getting AccessibleHyperlink text - call to CallVoidMethod()", FALSE);
@@ -3090,8 +3037,6 @@ AccessBridgeJavaEntryPoints::getAccessibleHypertextExt(const jobject accessibleC
 
 jint AccessBridgeJavaEntryPoints::getAccessibleHyperlinkCount(const jobject accessibleContext) {
 
-    jthrowable exception;
-
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleHyperlinkCount(%X)",
                      accessibleContext);
 
@@ -3111,8 +3056,6 @@ jint AccessBridgeJavaEntryPoints::getAccessibleHyperlinkCount(const jobject acce
 
 jint AccessBridgeJavaEntryPoints::getAccessibleHypertextLinkIndex(const jobject hypertext,
                                                                   const jint nIndex) {
-
-    jthrowable exception;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleHypertextLinkIndex(%p, index = %d)",
                      hypertext, nIndex);
@@ -3135,7 +3078,6 @@ BOOL AccessBridgeJavaEntryPoints::getAccessibleHyperlink(jobject hypertext,
                                                          const jint index,
                                                          /* OUT */ AccessibleHyperlinkInfo *info) {
 
-    jthrowable exception;
     const wchar_t *stringBytes;
     jsize length;
 
@@ -3171,9 +3113,7 @@ BOOL AccessBridgeJavaEntryPoints::getAccessibleHyperlink(jobject hypertext,
             length = (sizeof(info->text) / sizeof(wchar_t)) - 2;
         }
         info->text[length] = (wchar_t) 0;
-        EXCEPTION_CHECK("Getting AccessibleHyperlink text - call to GetStringLength()", FALSE);
-        jniEnv->ReleaseStringChars(js, stringBytes);
-        EXCEPTION_CHECK("Getting AccessibleHyperlink text - call to ReleaseStringChars()", FALSE);
+        EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleHyperlink text", FALSE, js, stringBytes);
         // jniEnv->CallVoidMethod(accessBridgeObject,
         //                        decrementReferenceMethod, js);
         //EXCEPTION_CHECK("Getting AccessibleHyperlink text - call to CallVoidMethod()", FALSE);
@@ -3209,8 +3149,6 @@ BOOL AccessBridgeJavaEntryPoints::getAccessibleHyperlink(jobject hypertext,
 // Accessible Keybinding methods
 BOOL AccessBridgeJavaEntryPoints::getAccessibleKeyBindings(jobject accessibleContext,
                                                            AccessibleKeyBindings *keyBindings) {
-
-    jthrowable exception;
 
     PrintDebugString("[INFO]: ##### AccessBridgeJavaEntryPoints::getAccessibleKeyBindings(%p, %p)",
                      accessibleContext, keyBindings);
@@ -3257,7 +3195,6 @@ BOOL AccessBridgeJavaEntryPoints::getAccessibleKeyBindings(jobject accessibleCon
 BOOL AccessBridgeJavaEntryPoints::getAccessibleIcons(jobject accessibleContext,
                                                      AccessibleIcons *icons) {
 
-    jthrowable exception;
     const wchar_t *stringBytes;
     jsize length;
 
@@ -3300,9 +3237,7 @@ BOOL AccessBridgeJavaEntryPoints::getAccessibleIcons(jobject accessibleContext,
                 length = (sizeof(icons->iconInfo[i].description) / sizeof(wchar_t)) - 2;
             }
             icons->iconInfo[i].description[length] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting AccessibleIcon description - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleIcon description - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleIcon description", FALSE, js, stringBytes);
             // jniEnv->CallVoidMethod(accessBridgeObject,
             //                        decrementReferenceMethod, js);
             //EXCEPTION_CHECK("Getting AccessibleIcon description - call to CallVoidMethod()", FALSE);
@@ -3338,7 +3273,6 @@ BOOL AccessBridgeJavaEntryPoints::getAccessibleIcons(jobject accessibleContext,
 BOOL AccessBridgeJavaEntryPoints::getAccessibleActions(jobject accessibleContext,
                                                        AccessibleActions *actions) {
 
-    jthrowable exception;
     const wchar_t *stringBytes;
     jsize length;
 
@@ -3379,9 +3313,7 @@ BOOL AccessBridgeJavaEntryPoints::getAccessibleActions(jobject accessibleContext
                 length = (sizeof(actions->actionInfo[i].name ) / sizeof(wchar_t)) - 2;
             }
             actions->actionInfo[i].name [length] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting AccessibleAction name  - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleAction name  - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleAction name", FALSE, js, stringBytes);
             // jniEnv->CallVoidMethod(accessBridgeObject,
             //                        decrementReferenceMethod, js);
             //EXCEPTION_CHECK("Getting AccessibleAction name  - call to CallVoidMethod()", FALSE);
@@ -3400,7 +3332,6 @@ BOOL AccessBridgeJavaEntryPoints::doAccessibleActions(jobject accessibleContext,
                                                       AccessibleActionsToDo *actionsToDo,
                                                       jint *failure) {
 
-    jthrowable exception;
     BOOL returnVal;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::doAccessibleActions(%p, #actions %d %s):",
@@ -3448,7 +3379,6 @@ BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTextInfo(jobject accessibleContext,
                                                    AccessibleTextInfo *textInfo,
                                                    jint x, jint y) {
-    jthrowable exception;
 
     // Verify the Java VM still exists and AccessibleContext is
     // an instance of AccessibleText
@@ -3507,7 +3437,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTextItems(jobject accessibleContext,
                                                     AccessibleTextItemsInfo *textItems, jint index) {
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleTextItems(%p):", accessibleContext);
@@ -3561,9 +3490,7 @@ AccessBridgeJavaEntryPoints::getAccessibleTextItems(jobject accessibleContext,
             length = jniEnv->GetStringLength(js);
             textItems->word[length < (sizeof(textItems->word) / sizeof(wchar_t)) ?
                             length : (sizeof(textItems->word) / sizeof(wchar_t))-2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting AccessibleWordAtIndex - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleWordAtIndex - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleWordAtIndex", FALSE, js, stringBytes);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting AccessibleWordAtIndex - call to CallVoidMethod()", FALSE);
@@ -3597,9 +3524,7 @@ AccessBridgeJavaEntryPoints::getAccessibleTextItems(jobject accessibleContext,
             } else {
                 textItems->sentence[(sizeof(textItems->sentence) / sizeof(wchar_t))-2] = (wchar_t) 0;
             }
-            EXCEPTION_CHECK("Getting AccessibleSentenceAtIndex - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleSentenceAtIndex - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleSentenceAtIndex", FALSE, js, stringBytes);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting AccessibleSentenceAtIndex - call to CallVoidMethod()", FALSE);
@@ -3623,7 +3548,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTextSelectionInfo(jobject accessibleCo
                                                             AccessibleTextSelectionInfo *selectionInfo) {
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleTextSelectionInfo(%p):",
@@ -3673,9 +3597,7 @@ AccessBridgeJavaEntryPoints::getAccessibleTextSelectionInfo(jobject accessibleCo
             length = jniEnv->GetStringLength(js);
             selectionInfo->selectedText[length < (sizeof(selectionInfo->selectedText) / sizeof(wchar_t)) ?
                                         length : (sizeof(selectionInfo->selectedText) / sizeof(wchar_t))-2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting AccessibleTextSelectedText - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleTextSelectedText - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleTextSelectedText", FALSE, js, stringBytes);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting AccessibleTextSelectedText - call to CallVoidMethod()", FALSE);
@@ -3698,7 +3620,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTextAttributes(jobject accessibleConte
     jstring js;
     const wchar_t *stringBytes;
     jobject AttributeSet;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleTextAttributes(%p):", accessibleContext);
@@ -3890,9 +3811,7 @@ AccessBridgeJavaEntryPoints::getAccessibleTextAttributes(jobject accessibleConte
             length = jniEnv->GetStringLength(js);
             attributes->backgroundColor[length < (sizeof(attributes->backgroundColor) / sizeof(wchar_t)) ?
                                         length : (sizeof(attributes->backgroundColor) / sizeof(wchar_t))-2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting BackgroundColorFromAttributeSet - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting BackgroundColorFromAttributeSet - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting BackgroundColorFromAttributeSet", FALSE, js, stringBytes);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting BackgroundColorFromAttributeSet - call to CallVoidMethod()", FALSE);
@@ -3927,9 +3846,7 @@ AccessBridgeJavaEntryPoints::getAccessibleTextAttributes(jobject accessibleConte
             length = jniEnv->GetStringLength(js);
             attributes->foregroundColor[length < (sizeof(attributes->foregroundColor) / sizeof(wchar_t)) ?
                                         length : (sizeof(attributes->foregroundColor) / sizeof(wchar_t))-2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting ForegroundColorFromAttributeSet - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting ForegroundColorFromAttributeSet - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting ForegroundColorFromAttributeSet", FALSE, js, stringBytes);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting ForegroundColorFromAttributeSet - call to CallVoidMethod()", FALSE);
@@ -3964,9 +3881,7 @@ AccessBridgeJavaEntryPoints::getAccessibleTextAttributes(jobject accessibleConte
             length = jniEnv->GetStringLength(js);
             attributes->fontFamily[length < (sizeof(attributes->fontFamily) / sizeof(wchar_t)) ?
                                    length : (sizeof(attributes->fontFamily) / sizeof(wchar_t))-2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting FontFamilyFromAttributeSet - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting FontFamilyFromAttributeSet - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting FontFamilyFromAttributeSet", FALSE, js, stringBytes);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting FontFamilyFromAttributeSet - call to CallVoidMethod()", FALSE);
@@ -4170,9 +4085,7 @@ AccessBridgeJavaEntryPoints::getAccessibleTextAttributes(jobject accessibleConte
             length = jniEnv->GetStringLength(js);
             attributes->fullAttributesString[length < (sizeof(attributes->fullAttributesString) / sizeof(wchar_t)) ?
                                              length : (sizeof(attributes->fullAttributesString) / sizeof(wchar_t))-2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting AccessibleAttributesAtIndex - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleAttributesAtIndex - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleAttributesAtIndex", FALSE, js, stringBytes);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting AccessibleAttributesAtIndex - call to CallVoidMethod()", FALSE);
@@ -4199,8 +4112,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTextAttributes(jobject accessibleConte
 
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTextRect(jobject accessibleContext, AccessibleTextRectInfo *rectInfo, jint index) {
-
-    jthrowable exception;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleTextRect(%p), index = %d",
                      accessibleContext, index);
@@ -4270,8 +4181,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTextRect(jobject accessibleContext, Ac
 BOOL
 AccessBridgeJavaEntryPoints::getCaretLocation(jobject accessibleContext, AccessibleTextRectInfo *rectInfo, jint index) {
 
-    jthrowable exception;
-
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getCaretLocation(%p), index = %d",
                      accessibleContext, index);
 
@@ -4337,8 +4246,6 @@ AccessBridgeJavaEntryPoints::getCaretLocation(jobject accessibleContext, Accessi
 BOOL
 AccessBridgeJavaEntryPoints::getAccessibleTextLineBounds(jobject accessibleContext, jint index, jint *startIndex, jint *endIndex) {
 
-    jthrowable exception;
-
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleTextLineBounds(%p):", accessibleContext);
 
     // Verify the Java VM still exists and AccessibleContext is
@@ -4379,7 +4286,6 @@ AccessBridgeJavaEntryPoints::getAccessibleTextRange(jobject accessibleContext,
                                                     jint start, jint end, wchar_t *text, short len) {
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleTextRange(%p, %d, %d, *text, %d):", accessibleContext, start, end, len);
@@ -4413,9 +4319,7 @@ AccessBridgeJavaEntryPoints::getAccessibleTextRange(jobject accessibleContext,
             PrintDebugString("[INFO]:  Accessible Text stringBytes length = %d", length);
             text[length < len ? length : len - 2] = (wchar_t) 0;
             wPrintDebugString(L"[INFO]:   Accessible Text 'text' after null termination = %ls", text);
-            EXCEPTION_CHECK("Getting AccessibleTextRange - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting AccessibleTextRange - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting AccessibleTextRange", FALSE, js, stringBytes);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting AccessibleTextRange - call to CallVoidMethod()", FALSE);
@@ -4440,7 +4344,6 @@ BOOL
 AccessBridgeJavaEntryPoints::getCurrentAccessibleValueFromContext(jobject accessibleContext, wchar_t *value, short len) {
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getCurrentAccessibleValueFromContext(%p):", accessibleContext);
@@ -4458,9 +4361,7 @@ AccessBridgeJavaEntryPoints::getCurrentAccessibleValueFromContext(jobject access
             wcsncpy(value, stringBytes, len);
             length = jniEnv->GetStringLength(js);
             value[length < len ? length : len - 2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting CurrentAccessibleValue - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting CurrentAccessibleValue - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting CurrentAccessibleValue", FALSE, js, stringBytes);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting CurrentAccessibleValue - call to CallVoidMethod()", FALSE);
@@ -4483,7 +4384,6 @@ BOOL
 AccessBridgeJavaEntryPoints::getMaximumAccessibleValueFromContext(jobject accessibleContext, wchar_t *value, short len) {
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getMaximumAccessibleValueFromContext(%p):", accessibleContext);
@@ -4501,9 +4401,7 @@ AccessBridgeJavaEntryPoints::getMaximumAccessibleValueFromContext(jobject access
             wcsncpy(value, stringBytes, len);
             length = jniEnv->GetStringLength(js);
             value[length < len ? length : len - 2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting MaximumAccessibleValue - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting MaximumAccessibleValue - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting MaximumAccessibleValue", FALSE, js, stringBytes);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting MaximumAccessibleValue - call to CallVoidMethod()", FALSE);
@@ -4526,7 +4424,6 @@ BOOL
 AccessBridgeJavaEntryPoints::getMinimumAccessibleValueFromContext(jobject accessibleContext, wchar_t *value, short len) {
     jstring js;
     const wchar_t *stringBytes;
-    jthrowable exception;
     jsize length;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getMinimumAccessibleValueFromContext(%p):", accessibleContext);
@@ -4544,9 +4441,7 @@ AccessBridgeJavaEntryPoints::getMinimumAccessibleValueFromContext(jobject access
             wcsncpy(value, stringBytes, len);
             length = jniEnv->GetStringLength(js);
             value[length < len ? length : len - 2] = (wchar_t) 0;
-            EXCEPTION_CHECK("Getting MinimumAccessibleValue - call to GetStringLength()", FALSE);
-            jniEnv->ReleaseStringChars(js, stringBytes);
-            EXCEPTION_CHECK("Getting MinimumAccessibleValue - call to ReleaseStringChars()", FALSE);
+            EXCEPTION_CHECK_WITH_RELEASE("Getting MinimumAccessibleValue", FALSE, js, stringBytes);
             jniEnv->CallVoidMethod(accessBridgeObject,
                                    decrementReferenceMethod, js);
             EXCEPTION_CHECK("Getting MinimumAccessibleValue - call to CallVoidMethod()", FALSE);
@@ -4570,7 +4465,6 @@ AccessBridgeJavaEntryPoints::getMinimumAccessibleValueFromContext(jobject access
 
 void
 AccessBridgeJavaEntryPoints::addAccessibleSelectionFromContext(jobject accessibleContext, int i) {
-    jthrowable exception;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::addAccessibleSelectionFromContext(%p):", accessibleContext);
 
@@ -4588,7 +4482,6 @@ AccessBridgeJavaEntryPoints::addAccessibleSelectionFromContext(jobject accessibl
 
 void
 AccessBridgeJavaEntryPoints::clearAccessibleSelectionFromContext(jobject accessibleContext) {
-    jthrowable exception;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::clearAccessibleSelectionFromContext(%p):", accessibleContext);
 
@@ -4608,7 +4501,6 @@ jobject
 AccessBridgeJavaEntryPoints::getAccessibleSelectionFromContext(jobject accessibleContext, int i) {
     jobject returnedAccessibleContext;
     jobject globalRef;
-    jthrowable exception;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleSelectionFromContext(%p):", accessibleContext);
 
@@ -4634,7 +4526,6 @@ AccessBridgeJavaEntryPoints::getAccessibleSelectionFromContext(jobject accessibl
 int
 AccessBridgeJavaEntryPoints::getAccessibleSelectionCountFromContext(jobject accessibleContext) {
     int count;
-    jthrowable exception;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::getAccessibleSelectionCountFromContext(%p):", accessibleContext);
 
@@ -4655,7 +4546,6 @@ AccessBridgeJavaEntryPoints::getAccessibleSelectionCountFromContext(jobject acce
 BOOL
 AccessBridgeJavaEntryPoints::isAccessibleChildSelectedFromContext(jobject accessibleContext, int i) {
     jboolean result;
-    jthrowable exception;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::isAccessibleChildSelectedFromContext(%p):", accessibleContext);
 
@@ -4678,7 +4568,6 @@ AccessBridgeJavaEntryPoints::isAccessibleChildSelectedFromContext(jobject access
 
 void
 AccessBridgeJavaEntryPoints::removeAccessibleSelectionFromContext(jobject accessibleContext, int i) {
-    jthrowable exception;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::removeAccessibleSelectionFromContext(%p):", accessibleContext);
 
@@ -4696,7 +4585,6 @@ AccessBridgeJavaEntryPoints::removeAccessibleSelectionFromContext(jobject access
 
 void
 AccessBridgeJavaEntryPoints::selectAllAccessibleSelectionFromContext(jobject accessibleContext) {
-    jthrowable exception;
 
     PrintDebugString("[INFO]: Calling AccessBridgeJavaEntryPoints::selectAllAccessibleSelectionFromContext(%p):", accessibleContext);
 
@@ -4717,7 +4605,6 @@ AccessBridgeJavaEntryPoints::selectAllAccessibleSelectionFromContext(jobject acc
 
 BOOL
 AccessBridgeJavaEntryPoints::addJavaEventNotification(jlong type) {
-    jthrowable exception;
 
     PrintDebugString("[INFO]:   in AccessBridgeJavaEntryPoints::addJavaEventNotification(%016I64X);", type);
 
@@ -4735,7 +4622,6 @@ AccessBridgeJavaEntryPoints::addJavaEventNotification(jlong type) {
 
 BOOL
 AccessBridgeJavaEntryPoints::removeJavaEventNotification(jlong type) {
-    jthrowable exception;
 
     PrintDebugString("[INFO]:  in AccessBridgeJavaEntryPoints::removeJavaEventNotification(%016I64X):", type);
 
@@ -4753,7 +4639,6 @@ AccessBridgeJavaEntryPoints::removeJavaEventNotification(jlong type) {
 
 BOOL
 AccessBridgeJavaEntryPoints::addAccessibilityEventNotification(jlong type) {
-    jthrowable exception;
 
     PrintDebugString("[INFO]:   in AccessBridgeJavaEntryPoints::addAccessibilityEventNotification(%016I64X);", type);
 
@@ -4773,7 +4658,6 @@ AccessBridgeJavaEntryPoints::addAccessibilityEventNotification(jlong type) {
 
 BOOL
 AccessBridgeJavaEntryPoints::removeAccessibilityEventNotification(jlong type) {
-    jthrowable exception;
 
     PrintDebugString("[INFO]:  in AccessBridgeJavaEntryPoints::removeAccessibilityEventNotification(%016I64X):", type);
 

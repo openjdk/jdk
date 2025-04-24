@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, Arm Limited. All rights reserved.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,15 @@ public class TestVectorConditionalMove {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov");
+        // Cross-product: +-AlignVector and +-UseCompactObjectHeaders
+        TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector");
+        TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector");
+        TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector");
+        TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector");
     }
 
     // Compare 2 values, and pick one of them
@@ -400,11 +408,16 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     private static void testCMoveFLTforFConstH2(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] < b[i+0]) ? 0.1f : -0.1f;
             c[i+1] = (a[i+1] < b[i+1]) ? 0.1f : -0.1f;
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                        UseCompactObjectHeaders=true
+            // adr = base + 16 + 8*i      ->  always                adr = base + 12 + 8*i      ->  never
+            // -> vectorize                                         -> no vectorization
         }
     }
 
@@ -413,11 +426,16 @@ public class TestVectorConditionalMove {
                   IRNode.VECTOR_MASK_CMP_F, ">0",
                   IRNode.VECTOR_BLEND_F, ">0",
                   IRNode.STORE_VECTOR, ">0"},
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     private static void testCMoveFLEforFConstH2(float[] a, float[] b, float[] c) {
         for (int i = 0; i < a.length; i+=2) {
             c[i+0] = (a[i+0] <= b[i+0]) ? 0.1f : -0.1f;
             c[i+1] = (a[i+1] <= b[i+1]) ? 0.1f : -0.1f;
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                        UseCompactObjectHeaders=true
+            // adr = base + 16 + 8*i      ->  always                adr = base + 12 + 8*i      ->  never
+            // -> vectorize                                         -> no vectorization
         }
     }
 

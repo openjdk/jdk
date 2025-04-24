@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package sun.net.www.protocol.http;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.HashMap;
@@ -67,10 +65,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * repeatedly, via the Authenticator. Default is false, which means that this
      * behavior is switched off.
      */
-    @SuppressWarnings("removal")
-    static final boolean serializeAuth = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetBooleanAction(
-                "http.auth.serializeRequests")).booleanValue();
+    static final boolean serializeAuth = Boolean.getBoolean("http.auth.serializeRequests");
 
     /* AuthCacheValue: */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -382,6 +382,8 @@ class CharacterData00 extends CharacterData {
             case 0xA7B3: mapChar = 0xAB53; break;
             case 0xA7C5: mapChar = 0x0282; break;
             case 0xA7C6: mapChar = 0x1D8E; break;
+            case 0xA7CB: mapChar = 0x0264; break;
+            case 0xA7DC: mapChar = 0x019B; break;
               // default mapChar is already set, so no
               // need to redo it here.
               // default       : mapChar = ch;
@@ -403,6 +405,7 @@ class CharacterData00 extends CharacterData {
           if ((val & $$maskCaseOffset) == $$maskCaseOffset) {
             switch(ch) {
             case 0x017F: mapChar = 0x0053; break;
+            case 0x019B: mapChar = 0xA7DC; break;
             case 0x023F: mapChar = 0x2C7E; break;
             case 0x0240: mapChar = 0x2C7F; break;
             case 0x0250: mapChar = 0x2C6F; break;
@@ -410,6 +413,7 @@ class CharacterData00 extends CharacterData {
             case 0x0252: mapChar = 0x2C70; break;
             case 0x025C: mapChar = 0xA7AB; break;
             case 0x0261: mapChar = 0xA7AC; break;
+            case 0x0264: mapChar = 0xA7CB; break;
             case 0x0265: mapChar = 0xA78D; break;
             case 0x0266: mapChar = 0xA7AA; break;
             case 0x026A: mapChar = 0xA7AE; break;
@@ -857,6 +861,7 @@ class CharacterData00 extends CharacterData {
             else {
                 switch(ch) {
                     case 0x017F: mapChar = 0x0053; break;
+                    case 0x019B: mapChar = 0xA7DC; break;
                     case 0x023F: mapChar = 0x2C7E; break;
                     case 0x0240: mapChar = 0x2C7F; break;
                     case 0x0250: mapChar = 0x2C6F; break;
@@ -864,6 +869,7 @@ class CharacterData00 extends CharacterData {
                     case 0x0252: mapChar = 0x2C70; break;
                     case 0x025C: mapChar = 0xA7AB; break;
                     case 0x0261: mapChar = 0xA7AC; break;
+                    case 0x0264: mapChar = 0xA7CB; break;
                     case 0x0265: mapChar = 0xA78D; break;
                     case 0x0266: mapChar = 0xA7AA; break;
                     case 0x026A: mapChar = 0xA7AE; break;

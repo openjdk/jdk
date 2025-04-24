@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,8 @@ friend class OptoReg;
 // friend class Location;
 private:
   enum {
-    BAD_REG = -1
+    BAD_REG = -1,
+    FIRST_STACK = (ConcreteRegisterImpl::number_of_registers + 7) & ~7
   };
 
   // Despite being private, this field is exported to the
@@ -71,7 +72,7 @@ private:
 public:
 
   static constexpr VMReg stack_0() {
-    return first() + ((ConcreteRegisterImpl::number_of_registers + 7) & ~7);
+    return first() + FIRST_STACK;
   }
 
   static VMReg as_VMReg(int val, bool bad_ok = false) {

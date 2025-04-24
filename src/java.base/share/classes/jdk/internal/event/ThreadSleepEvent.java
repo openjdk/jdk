@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,5 @@ package jdk.internal.event;
  */
 
 public final class ThreadSleepEvent extends Event {
-    private static final ThreadSleepEvent EVENT = new ThreadSleepEvent();
-
-    /**
-     * Returns {@code true} if event is enabled, {@code false} otherwise.
-     */
-    public static boolean isTurnedOn() {
-        return EVENT.isEnabled();
-    }
-
     public long time;
 }

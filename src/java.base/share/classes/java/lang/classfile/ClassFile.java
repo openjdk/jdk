@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,48 +25,64 @@
 package java.lang.classfile;
 
 import java.io.IOException;
-import java.lang.constant.ClassDesc;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
+import java.lang.classfile.AttributeMapper.AttributeStability;
+import java.lang.classfile.attribute.CharacterRangeInfo;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.LocalVariableInfo;
+import java.lang.classfile.attribute.LocalVariableTypeInfo;
 import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.attribute.UnknownAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.CharacterRange;
+import java.lang.classfile.instruction.DiscontinuedInstruction;
+import java.lang.classfile.instruction.ExceptionCatch;
+import java.lang.classfile.instruction.LineNumber;
+import java.lang.classfile.instruction.LocalVariable;
+import java.lang.classfile.instruction.LocalVariableType;
+import java.lang.constant.ClassDesc;
+import java.lang.reflect.AccessFlag;
+import java.lang.reflect.ClassFileFormatVersion;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import jdk.internal.classfile.impl.ClassFileImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import java.lang.reflect.AccessFlag;
-import java.lang.classfile.attribute.CharacterRangeInfo;
-import java.lang.classfile.attribute.LocalVariableInfo;
-import java.lang.classfile.attribute.LocalVariableTypeInfo;
-import java.lang.classfile.instruction.ExceptionCatch;
-import java.util.List;
+
 import static java.util.Objects.requireNonNull;
-import jdk.internal.javac.PreviewFeature;
+import static jdk.internal.constant.ConstantUtils.CD_module_info;
 
 /**
- * Represents a context for parsing, transforming, and generating classfiles.
- * A {@code ClassFile} has a set of options that condition how parsing and
- * generation is done.
+ * Provides ability to parse, transform, and generate {@code class} files.
+ * A {@code ClassFile} is a context with a set of options that condition how
+ * parsing and generation are done.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassFile
         permits ClassFileImpl {
 
     /**
-     * {@return a context with default options}
+     * {@return a context with default options}  Each subtype of {@link Option}
+     * specifies its default.
+     * <p>
+     * The default {@link AttributeMapperOption} and {@link
+     * ClassHierarchyResolverOption} may be unsuitable for some {@code class}
+     * files and result in parsing or generation errors.
      */
     static ClassFile of() {
         return ClassFileImpl.DEFAULT_CONTEXT;
     }
 
     /**
-     * {@return a new context with options altered from the default}
+     * {@return a context with options altered from the default}  Equivalent to
+     * {@link #of() ClassFile.of().withOptions(options)}.
      * @param options the desired processing options
      */
     static ClassFile of(Option... options) {
@@ -74,33 +90,48 @@ public sealed interface ClassFile
     }
 
     /**
-     * {@return a copy of the context with altered options}
+     * {@return a context with altered options from this context}
      * @param options the desired processing options
      */
     ClassFile withOptions(Option... options);
 
     /**
-     * An option that affects the parsing and writing of classfiles.
+     * An option that affects the parsing or writing of {@code class} files.
      *
+     * @see java.lang.classfile##options Options
      * @sealedGraph
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface Option {
     }
 
     /**
-     * Option describing attribute mappers for custom attributes.
-     * Default is only to process standard attributes.
+     * The option describing user-defined attributes for parsing {@code class}
+     * files.  The default does not recognize any user-defined attribute.
+     * <p>
+     * An {@code AttributeMapperOption} contains a function that maps an
+     * attribute name to a user attribute mapper. The function may return {@code
+     * null} if it does not recognize an attribute name.  The returned mapper
+     * must ensure its {@link AttributeMapper#name() name()} is equivalent to
+     * the {@link Utf8Entry#stringValue() stringValue()} of the input {@link
+     * Utf8Entry}.
+     * <p>
+     * The mapping function in this attribute has lower priority than mappers in
+     * {@link Attributes}, so it is impossible to override built-in attributes
+     * with this option.  If an attribute is not recognized by any mapper in
+     * {@link Attributes} and is not assigned a mapper, or recognized, by this
+     * option, that attribute will be modeled by an {@link UnknownAttribute}.
      *
-     * @since 22
+     * @see AttributeMapper
+     * @see CustomAttribute
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface AttributeMapperOption extends Option
             permits ClassFileImpl.AttributeMapperOptionImpl {
 
         /**
-         * {@return an option describing attribute mappers for custom attributes}
+         * {@return an option describing user-defined attributes for parsing}
+         *
          * @param attributeMapper a function mapping attribute names to attribute mappers
          */
         static AttributeMapperOption of(Function<Utf8Entry, AttributeMapper<?>> attributeMapper) {
@@ -115,18 +146,31 @@ public sealed interface ClassFile
     }
 
     /**
-     * Option describing the class hierarchy resolver to use when generating
-     * stack maps.
+     * The option describing the class hierarchy resolver to use when generating
+     * stack maps or verifying classes.  The default is {@link
+     * ClassHierarchyResolver#defaultResolver()}, which uses core reflection to
+     * find a class with a given name in {@linkplain ClassLoader#getSystemClassLoader()
+     * system class loader} and inspect it, and is insufficient if a class is
+     * not present in the system class loader as in applications, or if loading
+     * of system classes is not desired as in agents.
+     * <p>
+     * A {@code ClassHierarchyResolverOption} contains a {@link ClassHierarchyResolver}.
+     * The resolver must be able to process all classes and interfaces, including
+     * those appearing as the component types of array types, that appear in the
+     * operand stack of the generated bytecode.  If the resolver fails on any
+     * of the classes and interfaces with an {@link IllegalArgumentException},
+     * the {@code class} file generation fails.
      *
-     * @since 22
+     * @see ClassHierarchyResolver
+     * @jvms 4.10.1.2 Verification Type System
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ClassHierarchyResolverOption extends Option
             permits ClassFileImpl.ClassHierarchyResolverOptionImpl {
 
         /**
-         * {@return an option describing the class hierarchy resolver to use when
-         * generating stack maps}
+         * {@return an option describing the class hierarchy resolver to use}
+         *
          * @param classHierarchyResolver the resolver
          */
         static ClassHierarchyResolverOption of(ClassHierarchyResolver classHierarchyResolver) {
@@ -141,190 +185,372 @@ public sealed interface ClassFile
     }
 
     /**
-     * Option describing whether to preserve the original constant pool when
-     * transforming a classfile.  Reusing the constant pool enables significant
-     * optimizations in processing time and minimizes differences between the
-     * original and transformed classfile, but may result in a bigger classfile
-     * when a classfile is significantly transformed.
-     * Default is {@code SHARED_POOL} to preserve the original constant
-     * pool.
+     * Option describing whether to extend from the original constant pool when
+     * transforming a {@code class} file.  The default is {@link #SHARED_POOL}
+     * to extend from the original constant pool.
+     * <p>
+     * This option affects all overloads of {@link #transformClass transformClass}.
+     * Extending from the original constant pool keeps the indices into the
+     * constant pool intact, which enables significant optimizations in processing
+     * time and minimizes differences between the original and transformed {@code
+     * class} files, but may result in a bigger transformed {@code class} file
+     * when many elements of the original {@code class} file are dropped and
+     * many original constant pool entries become unused.
+     * <p>
+     * An alternative to this option is to use {@link #build(ClassEntry,
+     * ConstantPoolBuilder, Consumer)} directly.  It allows extension from
+     * arbitrary constant pools, and may be useful if a built {@code class} file
+     * reuses structures from multiple original {@code class} files.
      *
-     * @since 22
+     * @see ConstantPoolBuilder
+     * @see #build(ClassEntry, ConstantPoolBuilder, Consumer)
+     * @see #transformClass(ClassModel, ClassTransform)
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum ConstantPoolSharingOption implements Option {
 
-        /** Preserves the original constant pool when transforming classfile */
+        /**
+         * Extend the new constant pool from the original constant pool when
+         * transforming the {@code class} file.
+         * <p>
+         * These two transformations below are equivalent:
+         * {@snippet lang=java :
+         * ClassModel originalClass = null; // @replace substring=null; replacement=...
+         * ClassDesc resultClassName = null; // @replace substring=null; replacement=...
+         * ClassTransform classTransform = null; // @replace substring=null; replacement=...
+         * var resultOne = ClassFile.of(ConstantPoolSharingOption.SHARED_POOL)
+         *         .transformClass(originalClass, resultClassName, classTransform);
+         * var resultTwo = ClassFile.of().build(resultClassName, ConstantPoolBuilder.of(originalClass),
+         *         clb -> clb.transform(originalClass, classTransform));
+         * }
+         *
+         * @see ConstantPoolBuilder#of(ClassModel) ConstantPoolBuilder::of(ClassModel)
+         */
         SHARED_POOL,
 
-        /** Creates a new constant pool when transforming classfile */
+        /**
+         * Creates a new constant pool when transforming the {@code class} file.
+         * <p>
+         * These two transformations below are equivalent:
+         * {@snippet lang=java :
+         * ClassModel originalClass = null; // @replace substring=null; replacement=...
+         * ClassDesc resultClassName = null; // @replace substring=null; replacement=...
+         * ClassTransform classTransform = null; // @replace substring=null; replacement=...
+         * var resultOne = ClassFile.of(ConstantPoolSharingOption.NEW_POOL)
+         *         .transformClass(originalClass, resultClassName, classTransform);
+         * var resultTwo = ClassFile.of().build(resultClassName, ConstantPoolBuilder.of(),
+         *         clb -> clb.transform(originalClass, classTransform));
+         * }
+         *
+         * @see ConstantPoolBuilder#of() ConstantPoolBuilder::of()
+         */
         NEW_POOL
     }
 
     /**
-     * Option describing whether to patch out unreachable code.
-     * Default is {@code PATCH_DEAD_CODE} to automatically patch out unreachable
-     * code with NOPs.
+     * The option describing whether to patch out unreachable code for stack map
+     * generation.  The default is {@link #PATCH_DEAD_CODE} to automatically
+     * patch unreachable code and generate a valid stack map entry for the
+     * patched code.
+     * <p>
+     * The stack map generation process may fail when it encounters unreachable
+     * code and {@link #KEEP_DEAD_CODE} is set.  In such cases, users should
+     * set {@link StackMapsOption#DROP_STACK_MAPS} and provide their own stack
+     * maps that passes verification (JVMS {@jvms 4.10.1}).
      *
-     * @since 22
+     * @see StackMapsOption
+     * @jvms 4.10.1 Verification by Type Checking
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum DeadCodeOption implements Option {
 
-        /** Patch unreachable code */
+        /**
+         * Patch unreachable code with dummy code, and generate valid dummy
+         * stack map entries.  This ensures the generated code can pass
+         * verification (JVMS {@jvms 4.10.1}).
+         */
         PATCH_DEAD_CODE,
 
-        /** Keep the unreachable code */
+        /**
+         * Keep the unreachable code for the accuracy of the generated {@code
+         * class} file.  Users should set {@link StackMapsOption#DROP_STACK_MAPS}
+         * to prevent stack map generation from running and provide their own
+         * {@link StackMapTableAttribute} to a {@link CodeBuilder}.
+         */
         KEEP_DEAD_CODE
     }
 
     /**
-     * Option describing whether to filter unresolved labels.
-     * Default is {@code FAIL_ON_DEAD_LABELS} to throw IllegalStateException
-     * when any {@link ExceptionCatch}, {@link LocalVariableInfo},
-     * {@link LocalVariableTypeInfo}, or {@link CharacterRangeInfo}
-     * reference to unresolved {@link Label} during bytecode serialization.
-     * Setting this option to {@code DROP_DEAD_LABELS} filters the above
-     * elements instead.
+     * The option describing whether to filter {@linkplain
+     * CodeBuilder#labelBinding(Label) unbound labels} and drop their
+     * enclosing structures if possible.  The default is {@link
+     * #FAIL_ON_DEAD_LABELS} to fail fast with an {@link IllegalArgumentException}
+     * when a {@link PseudoInstruction} refers to an unbound label during
+     * bytecode generation.
+     * <p>
+     * The affected {@link PseudoInstruction}s include {@link ExceptionCatch},
+     * {@link LocalVariable}, {@link LocalVariableType}, and {@link
+     * CharacterRange}.  Setting this option to {@link #DROP_DEAD_LABELS}
+     * filters these pseudo-instructions from a {@link CodeBuilder} instead.
+     * Note that instructions, such as {@link BranchInstruction}, with unbound
+     * labels always fail-fast with an {@link IllegalArgumentException}.
      *
-     * @since 22
+     * @see DebugElementsOption
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum DeadLabelsOption implements Option {
 
-        /** Fail on unresolved labels */
+        /**
+         * Fail fast on {@linkplain CodeBuilder#labelBinding(Label) unbound
+         * labels}.  This also ensures the accuracy of the generated {@code
+         * class} files.
+         */
         FAIL_ON_DEAD_LABELS,
 
-        /** Filter unresolved labels */
+        /**
+         * Filter {@link PseudoInstruction}s with {@linkplain
+         * CodeBuilder#labelBinding(Label) unbound labels}.  Note that
+         * instructions with unbound labels still cause an {@link
+         * IllegalArgumentException}.
+         */
         DROP_DEAD_LABELS
     }
 
     /**
-     * Option describing whether to process or discard debug elements.
-     * Debug elements include the local variable table, local variable type
-     * table, and character range table.  Discarding debug elements may
-     * reduce the overhead of parsing or transforming classfiles.
-     * Default is {@code PASS_DEBUG} to process debug elements.
+     * The option describing whether to process or discard debug {@link
+     * PseudoInstruction}s in the traversal of a {@link CodeModel} or a {@link
+     * CodeBuilder}.  The default is {@link #PASS_DEBUG} to process debug
+     * pseudo-instructions as all other {@link CodeElement}.
+     * <p>
+     * Debug pseudo-instructions include {@link LocalVariable}, {@link
+     * LocalVariableType}, and {@link CharacterRange}.  Discarding debug
+     * elements may reduce the overhead of parsing or transforming {@code class}
+     * files and has no impact on the run-time behavior.
      *
-     * @since 22
+     * @see LineNumbersOption
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum DebugElementsOption implements Option {
 
-        /** Process debug elements */
+        /**
+         * Process debug pseudo-instructions like other member elements of a
+         * {@link CodeModel}.
+         */
         PASS_DEBUG,
 
-        /** Drop debug elements */
+        /**
+         * Drop debug pseudo-instructions from traversal and builders.
+         */
         DROP_DEBUG
     }
 
     /**
-     * Option describing whether to process or discard line numbers.
+     * The option describing whether to process or discard {@link LineNumber}s
+     * in the traversal of a {@link CodeModel} or a {@link CodeBuilder}.  The
+     * default is {@link #PASS_LINE_NUMBERS} to process all line number entries
+     * as all other {@link CodeElement}.
+     * <p>
      * Discarding line numbers may reduce the overhead of parsing or transforming
-     * classfiles.
-     * Default is {@code PASS_LINE_NUMBERS} to process line numbers.
+     * {@code class} files and has no impact on the run-time behavior.
      *
-     * @since 22
+     * @see DebugElementsOption
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum LineNumbersOption implements Option {
 
-        /** Process line numbers */
+        /**
+         * Process {@link LineNumber} like other member elements of a {@link
+         * CodeModel}.
+         */
         PASS_LINE_NUMBERS,
 
-        /** Drop line numbers */
+        /**
+         * Drop {@link LineNumber} from traversal and builders.
+         */
         DROP_LINE_NUMBERS;
     }
 
     /**
-     * Option describing whether to automatically rewrite short jumps to
-     * long when necessary.
-     * Default is {@code FIX_SHORT_JUMPS} to automatically rewrite jump
-     * instructions.
+     * The option describing whether to automatically rewrite short jumps to
+     * equivalent instructions when necessary.  The default is {@link
+     * #FIX_SHORT_JUMPS} to automatically rewrite.
+     * <p>
+     * Due to physical restrictions, some types of instructions cannot encode
+     * certain jump targets with bci offsets less than -32768 or greater than
+     * 32767, as they use a {@code s2} to encode such an offset.  (The maximum
+     * length of the {@code code} array is 65535.)  These types of instructions
+     * are called "short jumps".
+     * <p>
+     * Disabling rewrite can ensure the physical accuracy of a generated {@code
+     * class} file and avoid the overhead from a failed first attempt for
+     * overflowing forward jumps in some cases, if the generated {@code class}
+     * file is stable.
      *
-     * @since 22
+     * @see BranchInstruction
+     * @see DiscontinuedInstruction.JsrInstruction
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum ShortJumpsOption implements Option {
 
-        /** Automatically convert short jumps to long when necessary */
+        /**
+         * Automatically convert short jumps to long when necessary.
+         * <p>
+         * For an invalid instruction model, a {@link CodeBuilder} may generate
+         * another or a few other instructions to accomplish the same effect.
+         */
         FIX_SHORT_JUMPS,
 
-        /** Fail if short jump overflows */
+        /**
+         * Fail with an {@link IllegalArgumentException} if short jump overflows.
+         * <p>
+         * This is useful to ensure the physical accuracy of a generated {@code
+         * class} file and avoids the overhead from a failed first attempt for
+         * overflowing forward jumps in some cases.
+         */
         FAIL_ON_SHORT_JUMPS
     }
 
     /**
-     * Option describing whether to generate stackmaps.
-     * Default is {@code STACK_MAPS_WHEN_REQUIRED} to generate stack
-     * maps for {@link #JAVA_6_VERSION} or above, where specifically for
-     * {@link #JAVA_6_VERSION} the stack maps may not be generated.
-     * @jvms 4.10.1 Verification by Type Checking
+     * The option describing whether to generate stack maps.  The default is
+     * {@link #STACK_MAPS_WHEN_REQUIRED} to generate stack maps or reuse
+     * existing ones if compatible.
+     * <p>
+     * The {@link StackMapTableAttribute} is a derived property from a {@link
+     * CodeAttribute Code} attribute to allow a Java Virtual Machine to perform
+     * verification in one pass.  Thus, it is not modeled as part of a {@link
+     * CodeModel}, but computed on-demand instead via stack maps generation.
+     * <p>
+     * Stack map generation may fail with an {@link IllegalArgumentException} if
+     * there is {@linkplain DeadCodeOption unreachable code} or legacy
+     * {@linkplain DiscontinuedInstruction.JsrInstruction jump routine}
+     * instructions.  When {@link #DROP_STACK_MAPS} option is used, users can
+     * provide their own stack maps by supplying a {@link StackMapTableAttribute}
+     * to a {@link CodeBuilder}.
      *
-     * @since 22
+     * @see StackMapTableAttribute
+     * @see DeadCodeOption
+     * @jvms 4.10.1 Verification by Type Checking
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum StackMapsOption implements Option {
 
-        /** Generate stack maps when required */
+        /**
+         * Generate stack maps or reuse existing ones if compatible.  Stack maps
+         * are present on major versions {@value #JAVA_6_VERSION} or above.  For
+         * these versions, {@link CodeBuilder} tries to reuse compatible stack
+         * maps information if the code array and exception handlers are still
+         * compatible after a transformation; otherwise, it runs stack map
+         * generation.  However, it does not fail fast if the major version is
+         * {@value #JAVA_6_VERSION}, which allows jump subroutine instructions
+         * that are incompatible with stack maps to exist in the {@code code}
+         * array.
+         */
         STACK_MAPS_WHEN_REQUIRED,
 
-        /** Always generate stack maps */
+        /**
+         * Forces running stack map generation.  This runs stack map generation
+         * unconditionally and fails fast if the generation fails due to any
+         * reason.
+         */
         GENERATE_STACK_MAPS,
 
-        /** Drop stack maps from code */
+        /**
+         * Do not run stack map generation.  Users must supply their own
+         * {@link StackMapTableAttribute} to a {@link CodeBuilder} if the code
+         * has branches or exception handlers; otherwise, the generated code
+         * will fail verification (JVMS {@jvms 4.10.1}).
+         * <p>
+         * This option is required for user-supplied {@link StackMapTableAttribute}
+         * to be respected.  Stack maps on an existing {@link CodeAttribute Code}
+         * attribute can be reused as below with this option:
+         * {@snippet lang=java file="PackageSnippets.java" region="manual-reuse-stack-maps"}
+         */
         DROP_STACK_MAPS
     }
 
     /**
-     * Option describing whether to process or discard unrecognized or problematic
-     * original attributes when a class, record component, field, method or code is
-     * transformed in its exploded form.
-     * Default is {@code PASS_ALL_ATTRIBUTES} to process all original attributes.
-     * @see AttributeMapper.AttributeStability
+     * The option describing whether to retain or discard attributes that cannot
+     * verify their correctness after a transformation.  The default is {@link
+     * #PASS_ALL_ATTRIBUTES} to retain all attributes as-is.
+     * <p>
+     * Many attributes only depend on data managed by the Class-File API, such
+     * as constant pool entries or labels into the {@code code} array.  If they
+     * change, the Class-File API knows their updated values and can write a
+     * correct version by expanding the structures and recomputing the updated
+     * indexes, known as "explosion".  However, some attributes, such as type
+     * annotations, depend on arbitrary data that may be modified during
+     * transformations but the Class-File API does not track, such as index to
+     * an entry in the {@linkplain ClassModel#interfaces() interfaces} of a
+     * {@code ClassFile} structure.  As a result, the Class-File API cannot
+     * verify the correctness of such information.
      *
-     * @since 22
+     * @see AttributeStability
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum AttributesProcessingOption implements Option {
 
-        /** Process all original attributes during transformation */
+        /**
+         * Retain all original attributes during transformation.
+         */
         PASS_ALL_ATTRIBUTES,
 
-        /** Drop unknown attributes during transformation */
+        /**
+         * Drop attributes with {@link AttributeStability#UNKNOWN} data
+         * dependency during transformation.
+         */
         DROP_UNKNOWN_ATTRIBUTES,
 
-        /** Drop unknown and unstable original attributes during transformation */
-        DROP_UNSTABLE_ATRIBUTES;
+        /**
+         * Drop attributes with {@link AttributeStability#UNSTABLE} or higher
+         * data dependency during transformation.
+         */
+        DROP_UNSTABLE_ATTRIBUTES
     }
 
     /**
-     * Parse a classfile into a {@link ClassModel}.
-     * @param bytes the bytes of the classfile
+     * Parses a {@code class} file into a {@link ClassModel}.
+     * <p>
+     * Due to the on-demand nature of {@code class} file parsing, an {@link
+     * IllegalArgumentException} may be thrown on any accessor method invocation
+     * on the returned model or any structure returned by the accessors in the
+     * structure hierarchy.
+     *
+     * @param bytes the bytes of the {@code class} file
      * @return the class model
-     * @throws IllegalArgumentException or its subclass if the classfile format is
-     * not supported or an incompatibility prevents parsing of the classfile
+     * @throws IllegalArgumentException if the {@code class} file is malformed
+     *         or of a version {@linkplain #latestMajorVersion() not supported}
+     *         by the current runtime
      */
     ClassModel parse(byte[] bytes);
 
     /**
-     * Parse a classfile into a {@link ClassModel}.
-     * @param path the path to the classfile
+     * Parses a {@code class} into a {@link ClassModel}.
+     * <p>
+     * Due to the on-demand nature of {@code class} file parsing, an {@link
+     * IllegalArgumentException} may be thrown on any accessor method invocation
+     * on the returned model or any structure returned by the accessors in the
+     * structure hierarchy.
+     *
+     * @param path the path to the {@code class} file
      * @return the class model
-     * @throws java.io.IOException if an I/O error occurs
-     * @throws IllegalArgumentException or its subclass if the classfile format is
-     * not supported or an incompatibility prevents parsing of the classfile
+     * @throws IOException if an I/O error occurs
+     * @throws IllegalArgumentException if the {@code class} file is malformed
+     *         or of a version {@linkplain #latestMajorVersion() not supported}
+     *         by the current runtime
+     * @see #parse(byte[])
      */
     default ClassModel parse(Path path) throws IOException {
         return parse(Files.readAllBytes(path));
     }
 
     /**
-     * Build a classfile into a byte array.
+     * Builds a {@code class} file into a byte array.
+     *
      * @param thisClass the name of the class to build
      * @param handler a handler that receives a {@link ClassBuilder}
-     * @return the classfile bytes
-     * @throws IllegalArgumentException if {@code thisClass} represents a primitive type
+     * @return the {@code class} file bytes
+     * @throws IllegalArgumentException if {@code thisClass} represents a
+     *         primitive type or building encounters a failure
      */
     default byte[] build(ClassDesc thisClass,
                          Consumer<? super ClassBuilder> handler) {
@@ -333,24 +559,27 @@ public sealed interface ClassFile
     }
 
     /**
-     * Build a classfile into a byte array using the provided constant pool
-     * builder.
+     * Builds a {@code class} file into a byte array using the provided constant
+     * pool builder.
      *
      * @param thisClassEntry the name of the class to build
      * @param constantPool the constant pool builder
      * @param handler a handler that receives a {@link ClassBuilder}
-     * @return the classfile bytes
+     * @return the {@code class} file bytes
+     * @throws IllegalArgumentException if building encounters a failure
      */
     byte[] build(ClassEntry thisClassEntry,
                  ConstantPoolBuilder constantPool,
                  Consumer<? super ClassBuilder> handler);
 
     /**
-     * Build a classfile into a file.
+     * Builds a {@code class} file into a file in a file system.
+     *
      * @param path the path to the file to write
      * @param thisClass the name of the class to build
      * @param handler a handler that receives a {@link ClassBuilder}
-     * @throws java.io.IOException if an I/O error occurs
+     * @throws IOException if an I/O error occurs
+     * @throws IllegalArgumentException if building encounters a failure
      */
     default void buildTo(Path path,
                          ClassDesc thisClass,
@@ -359,14 +588,15 @@ public sealed interface ClassFile
     }
 
     /**
-     * Build a classfile into a file using the provided constant pool
-     * builder.
+     * Builds a {@code class} file into a file in a file system using the
+     * provided constant pool builder.
      *
      * @param path the path to the file to write
      * @param thisClassEntry the name of the class to build
      * @param constantPool the constant pool builder
      * @param handler a handler that receives a {@link ClassBuilder}
-     * @throws java.io.IOException if an I/O error occurs
+     * @throws IOException if an I/O error occurs
+     * @throws IllegalArgumentException if building encounters a failure
      */
     default void buildTo(Path path,
                          ClassEntry thisClassEntry,
@@ -376,23 +606,27 @@ public sealed interface ClassFile
     }
 
     /**
-     * Build a module descriptor into a byte array.
+     * Builds a module descriptor into a byte array.
+     *
      * @param moduleAttribute the {@code Module} attribute
-     * @return the classfile bytes
+     * @return the {@code class} file bytes
+     * @throws IllegalArgumentException if building encounters a failure
      */
     default byte[] buildModule(ModuleAttribute moduleAttribute) {
         return buildModule(moduleAttribute, clb -> {});
     }
 
     /**
-     * Build a module descriptor into a byte array.
+     * Builds a module descriptor into a byte array.
+     *
      * @param moduleAttribute the {@code Module} attribute
      * @param handler a handler that receives a {@link ClassBuilder}
-     * @return the classfile bytes
+     * @return the {@code class} file bytes
+     * @throws IllegalArgumentException if building encounters a failure
      */
     default byte[] buildModule(ModuleAttribute moduleAttribute,
-                                     Consumer<? super ClassBuilder> handler) {
-        return build(ClassDesc.of("module-info"), clb -> {
+                               Consumer<? super ClassBuilder> handler) {
+        return build(CD_module_info, clb -> {
             clb.withFlags(AccessFlag.MODULE);
             clb.with(moduleAttribute);
             handler.accept(clb);
@@ -400,10 +634,12 @@ public sealed interface ClassFile
     }
 
     /**
-     * Build a module descriptor into a file.
+     * Builds a module descriptor into a file in a file system.
+     *
      * @param path the file to write
      * @param moduleAttribute the {@code Module} attribute
-     * @throws java.io.IOException if an I/O error occurs
+     * @throws IOException if an I/O error occurs
+     * @throws IllegalArgumentException if building encounters a failure
      */
     default void buildModuleTo(Path path,
                                      ModuleAttribute moduleAttribute) throws IOException {
@@ -411,11 +647,13 @@ public sealed interface ClassFile
     }
 
     /**
-     * Build a module descriptor into a file.
+     * Builds a module descriptor into a file in a file system.
+     *
      * @param path the file to write
      * @param moduleAttribute the {@code Module} attribute
      * @param handler a handler that receives a {@link ClassBuilder}
-     * @throws java.io.IOException if an I/O error occurs
+     * @throws IOException if an I/O error occurs
+     * @throws IllegalArgumentException if building encounters a failure
      */
     default void buildModuleTo(Path path,
                                      ModuleAttribute moduleAttribute,
@@ -424,1076 +662,396 @@ public sealed interface ClassFile
     }
 
     /**
-     * Transform one classfile into a new classfile with the aid of a
-     * {@link ClassTransform}.  The transform will receive each element of
+     * Transform one {@code class} file into a new {@code class} file according
+     * to a {@link ClassTransform}.  The transform will receive each element of
      * this class, as well as a {@link ClassBuilder} for building the new class.
      * The transform is free to preserve, remove, or replace elements as it
      * sees fit.
-     *
-     * @implNote
+     * <p>
      * This method behaves as if:
      * {@snippet lang=java :
-     *     this.build(model.thisClass(), ConstantPoolBuilder.of(model),
-     *                     b -> b.transform(model, transform));
+     * ConstantPoolBuilder cpb = null; // @replace substring=null; replacement=...
+     * this.build(model.thisClass(), cpb,
+     *            clb -> clb.transform(model, transform));
      * }
+     * where {@code cpb} is determined by {@link ConstantPoolSharingOption}.
+     *
+     * @apiNote
+     * This is named {@code transformClass} instead of {@code transform} for
+     * consistency with {@link ClassBuilder#transformField}, {@link
+     * ClassBuilder#transformMethod}, and {@link MethodBuilder#transformCode},
+     * and to distinguish from {@link ClassFileBuilder#transform}, which is
+     * more generic and powerful.
      *
      * @param model the class model to transform
      * @param transform the transform
      * @return the bytes of the new class
+     * @throws IllegalArgumentException if building encounters a failure
+     * @see ConstantPoolSharingOption
      */
-    default byte[] transform(ClassModel model, ClassTransform transform) {
-        return transform(model, model.thisClass(), transform);
+    default byte[] transformClass(ClassModel model, ClassTransform transform) {
+        return transformClass(model, model.thisClass(), transform);
     }
 
     /**
-     * Transform one classfile into a new classfile with the aid of a
-     * {@link ClassTransform}.  The transform will receive each element of
+     * Transform one {@code class} file into a new {@code class} file according
+     * to a {@link ClassTransform}.  The transform will receive each element of
      * this class, as well as a {@link ClassBuilder} for building the new class.
      * The transform is free to preserve, remove, or replace elements as it
      * sees fit.
+     *
+     * @apiNote
+     * This is named {@code transformClass} instead of {@code transform} for
+     * consistency with {@link ClassBuilder#transformField}, {@link
+     * ClassBuilder#transformMethod}, and {@link MethodBuilder#transformCode},
+     * and to distinguish from {@link ClassFileBuilder#transform}, which is
+     * more generic and powerful.
      *
      * @param model the class model to transform
      * @param newClassName new class name
      * @param transform the transform
      * @return the bytes of the new class
+     * @throws IllegalArgumentException if building encounters a failure
+     * @see ConstantPoolSharingOption
      */
-    default byte[] transform(ClassModel model, ClassDesc newClassName, ClassTransform transform) {
-        return transform(model, TemporaryConstantPool.INSTANCE.classEntry(newClassName), transform);
+    default byte[] transformClass(ClassModel model, ClassDesc newClassName, ClassTransform transform) {
+        return transformClass(model, TemporaryConstantPool.INSTANCE.classEntry(newClassName), transform);
     }
 
     /**
-     * Transform one classfile into a new classfile with the aid of a
-     * {@link ClassTransform}.  The transform will receive each element of
+     * Transform one {@code class} file into a new {@code class} file according
+     * to a {@link ClassTransform}.  The transform will receive each element of
      * this class, as well as a {@link ClassBuilder} for building the new class.
      * The transform is free to preserve, remove, or replace elements as it
      * sees fit.
-     *
-     * @implNote
+     * <p>
      * This method behaves as if:
      * {@snippet lang=java :
-     *     this.build(newClassName, ConstantPoolBuilder.of(model),
-     *                     b -> b.transform(model, transform));
+     * ConstantPoolBuilder cpb = null; // @replace substring=null; replacement=...
+     * this.build(newClassName, cpb, clb -> clb.transform(model, transform));
      * }
+     * where {@code cpb} is determined by {@link ConstantPoolSharingOption}.
+     *
+     * @apiNote
+     * This is named {@code transformClass} instead of {@code transform} for
+     * consistency with {@link ClassBuilder#transformField}, {@link
+     * ClassBuilder#transformMethod}, and {@link MethodBuilder#transformCode},
+     * and to distinguish from {@link ClassFileBuilder#transform}, which is
+     * more generic and powerful.
      *
      * @param model the class model to transform
      * @param newClassName new class name
      * @param transform the transform
      * @return the bytes of the new class
+     * @throws IllegalArgumentException if building encounters a failure
+     * @see ConstantPoolSharingOption
      */
-    byte[] transform(ClassModel model, ClassEntry newClassName, ClassTransform transform);
+    byte[] transformClass(ClassModel model, ClassEntry newClassName, ClassTransform transform);
 
     /**
-     * Verify a classfile.  Any verification errors found will be returned.
+     * Verify a {@code class} file.  All verification errors found will be returned.
+     *
      * @param model the class model to verify
-     * @return a list of verification errors, or an empty list if no errors are
+     * @return a list of verification errors, or an empty list if no error is
      * found
      */
     List<VerifyError> verify(ClassModel model);
 
     /**
-     * Verify a classfile.  Any verification errors found will be returned.
-     * @param bytes the classfile bytes to verify
-     * @return a list of verification errors, or an empty list if no errors are
+     * Verify a {@code class} file.  All verification errors found will be returned.
+     *
+     * @param bytes the {@code class} file bytes to verify
+     * @return a list of verification errors, or an empty list if no error is
      * found
      */
     List<VerifyError> verify(byte[] bytes);
 
     /**
-     * Verify a classfile.  Any verification errors found will be returned.
-     * @param path the classfile path to verify
-     * @return a list of verification errors, or an empty list if no errors are
+     * Verify a {@code class} file.  All verification errors found will be returned.
+     *
+     * @param path the {@code class} file path to verify
+     * @return a list of verification errors, or an empty list if no error is
      * found
-     * @throws java.io.IOException if an I/O error occurs
+     * @throws IOException if an I/O error occurs
      */
     default List<VerifyError> verify(Path path) throws IOException {
         return verify(Files.readAllBytes(path));
     }
 
-    /** 0xCAFEBABE */
+    /**
+     * The magic number identifying the {@code class} file format,  {@value
+     * "0x%04x" #MAGIC_NUMBER}.  It is a big-endian 4-byte value.
+     */
     int MAGIC_NUMBER = 0xCAFEBABE;
 
-    /** The integer value used to encode the NOP instruction. */
-    int NOP             = 0;
-
-    /** The integer value used to encode the ACONST_NULL instruction. */
-    int ACONST_NULL     = 1;
-
-    /** The integer value used to encode the ICONST_M1 instruction. */
-    int ICONST_M1       = 2;
-
-    /** The integer value used to encode the ICONST_0 instruction. */
-    int ICONST_0        = 3;
-
-    /** The integer value used to encode the ICONST_1 instruction. */
-    int ICONST_1        = 4;
-
-    /** The integer value used to encode the ICONST_2 instruction. */
-    int ICONST_2        = 5;
-
-    /** The integer value used to encode the ICONST_3 instruction. */
-    int ICONST_3        = 6;
-
-    /** The integer value used to encode the ICONST_4 instruction. */
-    int ICONST_4        = 7;
-
-    /** The integer value used to encode the ICONST_5 instruction. */
-    int ICONST_5        = 8;
-
-    /** The integer value used to encode the LCONST_0 instruction. */
-    int LCONST_0        = 9;
-
-    /** The integer value used to encode the LCONST_1 instruction. */
-    int LCONST_1        = 10;
-
-    /** The integer value used to encode the FCONST_0 instruction. */
-    int FCONST_0        = 11;
-
-    /** The integer value used to encode the FCONST_1 instruction. */
-    int FCONST_1        = 12;
-
-    /** The integer value used to encode the FCONST_2 instruction. */
-    int FCONST_2        = 13;
-
-    /** The integer value used to encode the DCONST_0 instruction. */
-    int DCONST_0        = 14;
-
-    /** The integer value used to encode the DCONST_1 instruction. */
-    int DCONST_1        = 15;
-
-    /** The integer value used to encode the BIPUSH instruction. */
-    int BIPUSH          = 16;
-
-    /** The integer value used to encode the SIPUSH instruction. */
-    int SIPUSH          = 17;
-
-    /** The integer value used to encode the LDC instruction. */
-    int LDC             = 18;
-
-    /** The integer value used to encode the LDC_W instruction. */
-    int LDC_W           = 19;
-
-    /** The integer value used to encode the LDC2_W instruction. */
-    int LDC2_W          = 20;
-
-    /** The integer value used to encode the ILOAD instruction. */
-    int ILOAD           = 21;
-
-    /** The integer value used to encode the LLOAD instruction. */
-    int LLOAD           = 22;
-
-    /** The integer value used to encode the FLOAD instruction. */
-    int FLOAD           = 23;
-
-    /** The integer value used to encode the DLOAD instruction. */
-    int DLOAD           = 24;
-
-    /** The integer value used to encode the ALOAD instruction. */
-    int ALOAD           = 25;
-
-    /** The integer value used to encode the ILOAD_0 instruction. */
-    int ILOAD_0         = 26;
-
-    /** The integer value used to encode the ILOAD_1 instruction. */
-    int ILOAD_1         = 27;
-
-    /** The integer value used to encode the ILOAD_2 instruction. */
-    int ILOAD_2         = 28;
-
-    /** The integer value used to encode the ILOAD_3 instruction. */
-    int ILOAD_3         = 29;
-
-    /** The integer value used to encode the LLOAD_0 instruction. */
-    int LLOAD_0         = 30;
-
-    /** The integer value used to encode the LLOAD_1 instruction. */
-    int LLOAD_1         = 31;
-
-    /** The integer value used to encode the LLOAD_2 instruction. */
-    int LLOAD_2         = 32;
-
-    /** The integer value used to encode the LLOAD_3 instruction. */
-    int LLOAD_3         = 33;
-
-    /** The integer value used to encode the FLOAD_0 instruction. */
-    int FLOAD_0         = 34;
-
-    /** The integer value used to encode the FLOAD_1 instruction. */
-    int FLOAD_1         = 35;
-
-    /** The integer value used to encode the FLOAD_2 instruction. */
-    int FLOAD_2         = 36;
-
-    /** The integer value used to encode the FLOAD_3 instruction. */
-    int FLOAD_3         = 37;
-
-    /** The integer value used to encode the DLOAD_0 instruction. */
-    int DLOAD_0         = 38;
-
-    /** The integer value used to encode the DLOAD_1 instruction. */
-    int DLOAD_1         = 39;
-
-    /** The integer value used to encode the DLOAD_2 instruction. */
-    int DLOAD_2         = 40;
-
-    /** The integer value used to encode the DLOAD_3 instruction. */
-    int DLOAD_3         = 41;
-
-    /** The integer value used to encode the ALOAD_0 instruction. */
-    int ALOAD_0         = 42;
-
-    /** The integer value used to encode the ALOAD_1 instruction. */
-    int ALOAD_1         = 43;
-
-    /** The integer value used to encode the ALOAD_2 instruction. */
-    int ALOAD_2         = 44;
-
-    /** The integer value used to encode the ALOAD_3 instruction. */
-    int ALOAD_3         = 45;
-
-    /** The integer value used to encode the IALOAD instruction. */
-    int IALOAD          = 46;
-
-    /** The integer value used to encode the LALOAD instruction. */
-    int LALOAD          = 47;
-
-    /** The integer value used to encode the FALOAD instruction. */
-    int FALOAD          = 48;
-
-    /** The integer value used to encode the DALOAD instruction. */
-    int DALOAD          = 49;
-
-    /** The integer value used to encode the AALOAD instruction. */
-    int AALOAD          = 50;
-
-    /** The integer value used to encode the BALOAD instruction. */
-    int BALOAD          = 51;
-
-    /** The integer value used to encode the CALOAD instruction. */
-    int CALOAD          = 52;
-
-    /** The integer value used to encode the SALOAD instruction. */
-    int SALOAD          = 53;
-
-    /** The integer value used to encode the ISTORE instruction. */
-    int ISTORE          = 54;
-
-    /** The integer value used to encode the LSTORE instruction. */
-    int LSTORE          = 55;
-
-    /** The integer value used to encode the FSTORE instruction. */
-    int FSTORE          = 56;
-
-    /** The integer value used to encode the DSTORE instruction. */
-    int DSTORE          = 57;
-
-    /** The integer value used to encode the ASTORE instruction. */
-    int ASTORE          = 58;
-
-    /** The integer value used to encode the ISTORE_0 instruction. */
-    int ISTORE_0        = 59;
-
-    /** The integer value used to encode the ISTORE_1 instruction. */
-    int ISTORE_1        = 60;
-
-    /** The integer value used to encode the ISTORE_2 instruction. */
-    int ISTORE_2        = 61;
-
-    /** The integer value used to encode the ISTORE_3 instruction. */
-    int ISTORE_3        = 62;
-
-    /** The integer value used to encode the LSTORE_0 instruction. */
-    int LSTORE_0        = 63;
-
-    /** The integer value used to encode the LSTORE_1 instruction. */
-    int LSTORE_1        = 64;
-
-    /** The integer value used to encode the LSTORE_2 instruction. */
-    int LSTORE_2        = 65;
-
-    /** The integer value used to encode the LSTORE_3 instruction. */
-    int LSTORE_3        = 66;
-
-    /** The integer value used to encode the FSTORE_0 instruction. */
-    int FSTORE_0        = 67;
-
-    /** The integer value used to encode the FSTORE_1 instruction. */
-    int FSTORE_1        = 68;
-
-    /** The integer value used to encode the FSTORE_2 instruction. */
-    int FSTORE_2        = 69;
-
-    /** The integer value used to encode the FSTORE_3 instruction. */
-    int FSTORE_3        = 70;
-
-    /** The integer value used to encode the DSTORE_0 instruction. */
-    int DSTORE_0        = 71;
-
-    /** The integer value used to encode the DSTORE_1 instruction. */
-    int DSTORE_1        = 72;
-
-    /** The integer value used to encode the DSTORE_2 instruction. */
-    int DSTORE_2        = 73;
-
-    /** The integer value used to encode the DSTORE_3 instruction. */
-    int DSTORE_3        = 74;
-
-    /** The integer value used to encode the ASTORE_0 instruction. */
-    int ASTORE_0        = 75;
-
-    /** The integer value used to encode the ASTORE_1 instruction. */
-    int ASTORE_1        = 76;
-
-    /** The integer value used to encode the ASTORE_2 instruction. */
-    int ASTORE_2        = 77;
-
-    /** The integer value used to encode the ASTORE_3 instruction. */
-    int ASTORE_3        = 78;
-
-    /** The integer value used to encode the IASTORE instruction. */
-    int IASTORE         = 79;
-
-    /** The integer value used to encode the LASTORE instruction. */
-    int LASTORE         = 80;
-
-    /** The integer value used to encode the FASTORE instruction. */
-    int FASTORE         = 81;
-
-    /** The integer value used to encode the DASTORE instruction. */
-    int DASTORE         = 82;
-
-    /** The integer value used to encode the AASTORE instruction. */
-    int AASTORE         = 83;
-
-    /** The integer value used to encode the BASTORE instruction. */
-    int BASTORE         = 84;
-
-    /** The integer value used to encode the CASTORE instruction. */
-    int CASTORE         = 85;
-
-    /** The integer value used to encode the SASTORE instruction. */
-    int SASTORE         = 86;
-
-    /** The integer value used to encode the POP instruction. */
-    int POP             = 87;
-
-    /** The integer value used to encode the POP2 instruction. */
-    int POP2            = 88;
-
-    /** The integer value used to encode the DUP instruction. */
-    int DUP             = 89;
-
-    /** The integer value used to encode the DUP_X1 instruction. */
-    int DUP_X1          = 90;
-
-    /** The integer value used to encode the DUP_X2 instruction. */
-    int DUP_X2          = 91;
-
-    /** The integer value used to encode the DUP2 instruction. */
-    int DUP2            = 92;
-
-    /** The integer value used to encode the DUP2_X1 instruction. */
-    int DUP2_X1         = 93;
-
-    /** The integer value used to encode the DUP2_X2 instruction. */
-    int DUP2_X2         = 94;
-
-    /** The integer value used to encode the SWAP instruction. */
-    int SWAP            = 95;
-
-    /** The integer value used to encode the IADD instruction. */
-    int IADD            = 96;
-
-    /** The integer value used to encode the LADD instruction. */
-    int LADD            = 97;
-
-    /** The integer value used to encode the FADD instruction. */
-    int FADD            = 98;
-
-    /** The integer value used to encode the DADD instruction. */
-    int DADD            = 99;
-
-    /** The integer value used to encode the ISUB instruction. */
-    int ISUB            = 100;
-
-    /** The integer value used to encode the LSUB instruction. */
-    int LSUB            = 101;
-
-    /** The integer value used to encode the FSUB instruction. */
-    int FSUB            = 102;
-
-    /** The integer value used to encode the DSUB instruction. */
-    int DSUB            = 103;
-
-    /** The integer value used to encode the IMUL instruction. */
-    int IMUL            = 104;
-
-    /** The integer value used to encode the LMUL instruction. */
-    int LMUL            = 105;
-
-    /** The integer value used to encode the FMUL instruction. */
-    int FMUL            = 106;
-
-    /** The integer value used to encode the DMUL instruction. */
-    int DMUL            = 107;
-
-    /** The integer value used to encode the IDIV instruction. */
-    int IDIV            = 108;
-
-    /** The integer value used to encode the LDIV instruction. */
-    int LDIV            = 109;
-
-    /** The integer value used to encode the FDIV instruction. */
-    int FDIV            = 110;
-
-    /** The integer value used to encode the DDIV instruction. */
-    int DDIV            = 111;
-
-    /** The integer value used to encode the IREM instruction. */
-    int IREM            = 112;
-
-    /** The integer value used to encode the LREM instruction. */
-    int LREM            = 113;
-
-    /** The integer value used to encode the FREM instruction. */
-    int FREM            = 114;
-
-    /** The integer value used to encode the DREM instruction. */
-    int DREM            = 115;
-
-    /** The integer value used to encode the INEG instruction. */
-    int INEG            = 116;
-
-    /** The integer value used to encode the LNEG instruction. */
-    int LNEG            = 117;
-
-    /** The integer value used to encode the FNEG instruction. */
-    int FNEG            = 118;
-
-    /** The integer value used to encode the DNEG instruction. */
-    int DNEG            = 119;
-
-    /** The integer value used to encode the ISHL instruction. */
-    int ISHL            = 120;
-
-    /** The integer value used to encode the LSHL instruction. */
-    int LSHL            = 121;
-
-    /** The integer value used to encode the ISHR instruction. */
-    int ISHR            = 122;
-
-    /** The integer value used to encode the LSHR instruction. */
-    int LSHR            = 123;
-
-    /** The integer value used to encode the IUSHR instruction. */
-    int IUSHR           = 124;
-
-    /** The integer value used to encode the LUSHR instruction. */
-    int LUSHR           = 125;
-
-    /** The integer value used to encode the IAND instruction. */
-    int IAND            = 126;
-
-    /** The integer value used to encode the LAND instruction. */
-    int LAND            = 127;
-
-    /** The integer value used to encode the IOR instruction. */
-    int IOR             = 128;
-
-    /** The integer value used to encode the LOR instruction. */
-    int LOR             = 129;
-
-    /** The integer value used to encode the IXOR instruction. */
-    int IXOR            = 130;
-
-    /** The integer value used to encode the LXOR instruction. */
-    int LXOR            = 131;
-
-    /** The integer value used to encode the IINC instruction. */
-    int IINC            = 132;
-
-    /** The integer value used to encode the I2L instruction. */
-    int I2L             = 133;
-
-    /** The integer value used to encode the I2F instruction. */
-    int I2F             = 134;
-
-    /** The integer value used to encode the I2D instruction. */
-    int I2D             = 135;
-
-    /** The integer value used to encode the L2I instruction. */
-    int L2I             = 136;
-
-    /** The integer value used to encode the L2F instruction. */
-    int L2F             = 137;
-
-    /** The integer value used to encode the L2D instruction. */
-    int L2D             = 138;
-
-    /** The integer value used to encode the F2I instruction. */
-    int F2I             = 139;
-
-    /** The integer value used to encode the F2L instruction. */
-    int F2L             = 140;
-
-    /** The integer value used to encode the F2D instruction. */
-    int F2D             = 141;
-
-    /** The integer value used to encode the D2I instruction. */
-    int D2I             = 142;
-
-    /** The integer value used to encode the D2L instruction. */
-    int D2L             = 143;
-
-    /** The integer value used to encode the D2F instruction. */
-    int D2F             = 144;
-
-    /** The integer value used to encode the I2B instruction. */
-    int I2B             = 145;
-
-    /** The integer value used to encode the I2C instruction. */
-    int I2C             = 146;
-
-    /** The integer value used to encode the I2S instruction. */
-    int I2S             = 147;
-
-    /** The integer value used to encode the LCMP instruction. */
-    int LCMP            = 148;
-
-    /** The integer value used to encode the FCMPL instruction. */
-    int FCMPL           = 149;
-
-    /** The integer value used to encode the FCMPG instruction. */
-    int FCMPG           = 150;
-
-    /** The integer value used to encode the DCMPL instruction. */
-    int DCMPL           = 151;
-
-    /** The integer value used to encode the DCMPG instruction. */
-    int DCMPG           = 152;
-
-    /** The integer value used to encode the IFEQ instruction. */
-    int IFEQ            = 153;
-
-    /** The integer value used to encode the IFNE instruction. */
-    int IFNE            = 154;
-
-    /** The integer value used to encode the IFLT instruction. */
-    int IFLT            = 155;
-
-    /** The integer value used to encode the IFGE instruction. */
-    int IFGE            = 156;
-
-    /** The integer value used to encode the IFGT instruction. */
-    int IFGT            = 157;
-
-    /** The integer value used to encode the IFLE instruction. */
-    int IFLE            = 158;
-
-    /** The integer value used to encode the IF_ICMPEQ instruction. */
-    int IF_ICMPEQ       = 159;
-
-    /** The integer value used to encode the IF_ICMPNE instruction. */
-    int IF_ICMPNE       = 160;
-
-    /** The integer value used to encode the IF_ICMPLT instruction. */
-    int IF_ICMPLT       = 161;
-
-    /** The integer value used to encode the IF_ICMPGE instruction. */
-    int IF_ICMPGE       = 162;
-
-    /** The integer value used to encode the IF_ICMPGT instruction. */
-    int IF_ICMPGT       = 163;
-
-    /** The integer value used to encode the IF_ICMPLE instruction. */
-    int IF_ICMPLE       = 164;
-
-    /** The integer value used to encode the IF_ACMPEQ instruction. */
-    int IF_ACMPEQ       = 165;
-
-    /** The integer value used to encode the IF_ACMPNE instruction. */
-    int IF_ACMPNE       = 166;
-
-    /** The integer value used to encode the GOTO instruction. */
-    int GOTO            = 167;
-
-    /** The integer value used to encode the JSR instruction. */
-    int JSR             = 168;
-
-    /** The integer value used to encode the RET instruction. */
-    int RET             = 169;
-
-    /** The integer value used to encode the TABLESWITCH instruction. */
-    int TABLESWITCH     = 170;
-
-    /** The integer value used to encode the LOOKUPSWITCH instruction. */
-    int LOOKUPSWITCH    = 171;
-
-    /** The integer value used to encode the IRETURN instruction. */
-    int IRETURN         = 172;
-
-    /** The integer value used to encode the LRETURN instruction. */
-    int LRETURN         = 173;
-
-    /** The integer value used to encode the FRETURN instruction. */
-    int FRETURN         = 174;
-
-    /** The integer value used to encode the DRETURN instruction. */
-    int DRETURN         = 175;
-
-    /** The integer value used to encode the ARETURN instruction. */
-    int ARETURN         = 176;
-
-    /** The integer value used to encode the RETURN instruction. */
-    int RETURN          = 177;
-
-    /** The integer value used to encode the GETSTATIC instruction. */
-    int GETSTATIC       = 178;
-
-    /** The integer value used to encode the PUTSTATIC instruction. */
-    int PUTSTATIC       = 179;
-
-    /** The integer value used to encode the GETFIELD instruction. */
-    int GETFIELD        = 180;
-
-    /** The integer value used to encode the PUTFIELD instruction. */
-    int PUTFIELD        = 181;
-
-    /** The integer value used to encode the INVOKEVIRTUAL instruction. */
-    int INVOKEVIRTUAL   = 182;
-
-    /** The integer value used to encode the INVOKESPECIAL instruction. */
-    int INVOKESPECIAL   = 183;
-
-    /** The integer value used to encode the INVOKESTATIC instruction. */
-    int INVOKESTATIC    = 184;
-
-    /** The integer value used to encode the INVOKEINTERFACE instruction. */
-    int INVOKEINTERFACE = 185;
-
-    /** The integer value used to encode the INVOKEDYNAMIC instruction. */
-    int INVOKEDYNAMIC   = 186;
-
-    /** The integer value used to encode the NEW instruction. */
-    int NEW             = 187;
-
-    /** The integer value used to encode the NEWARRAY instruction. */
-    int NEWARRAY        = 188;
-
-    /** The integer value used to encode the ANEWARRAY instruction. */
-    int ANEWARRAY       = 189;
-
-    /** The integer value used to encode the ARRAYLENGTH instruction. */
-    int ARRAYLENGTH     = 190;
-
-    /** The integer value used to encode the ATHROW instruction. */
-    int ATHROW          = 191;
-
-    /** The integer value used to encode the CHECKCAST instruction. */
-    int CHECKCAST       = 192;
-
-    /** The integer value used to encode the INSTANCEOF instruction. */
-    int INSTANCEOF      = 193;
-
-    /** The integer value used to encode the MONITORENTER instruction. */
-    int MONITORENTER    = 194;
-
-    /** The integer value used to encode the MONITOREXIT instruction. */
-    int MONITOREXIT     = 195;
-
-    /** The integer value used to encode the WIDE instruction. */
-    int WIDE            = 196;
-
-    /** The integer value used to encode the MULTIANEWARRAY instruction. */
-    int MULTIANEWARRAY  = 197;
-
-    /** The integer value used to encode the IFNULL instruction. */
-    int IFNULL          = 198;
-
-    /** The integer value used to encode the IFNONNULL instruction. */
-    int IFNONNULL       = 199;
-
-    /** The integer value used to encode the GOTO_W instruction. */
-    int GOTO_W          = 200;
-
-    /** The integer value used to encode the JSR_W instruction. */
-    int JSR_W           = 201;
-
-    /** The value of PUBLIC access and property modifier. */
+    /** The bit mask of {@link AccessFlag#PUBLIC} access and property modifier. */
     int ACC_PUBLIC = 0x0001;
 
-    /** The value of PROTECTED access and property modifier. */
+    /** The bit mask of {@link AccessFlag#PROTECTED} access and property modifier. */
     int ACC_PROTECTED = 0x0004;
 
-    /** The value of PRIVATE access and property modifier. */
+    /** The bit mask of {@link AccessFlag#PRIVATE} access and property modifier. */
     int ACC_PRIVATE = 0x0002;
 
-    /** The value of INTERFACE access and property modifier. */
+    /** The bit mask of {@link AccessFlag#INTERFACE} access and property modifier. */
     int ACC_INTERFACE = 0x0200;
 
-    /** The value of ENUM access and property modifier. */
+    /** The bit mask of {@link AccessFlag#ENUM} access and property modifier. */
     int ACC_ENUM = 0x4000;
 
-    /** The value of ANNOTATION access and property modifier. */
+    /** The bit mask of {@link AccessFlag#ANNOTATION} access and property modifier. */
     int ACC_ANNOTATION = 0x2000;
 
-    /** The value of SUPER access and property modifier. */
+    /** The bit mask of {@link AccessFlag#SUPER} access and property modifier. */
     int ACC_SUPER = 0x0020;
 
-    /** The value of ABSTRACT access and property modifier. */
+    /** The bit mask of {@link AccessFlag#ABSTRACT} access and property modifier. */
     int ACC_ABSTRACT = 0x0400;
 
-    /** The value of VOLATILE access and property modifier. */
+    /** The bit mask of {@link AccessFlag#VOLATILE} access and property modifier. */
     int ACC_VOLATILE = 0x0040;
 
-    /** The value of TRANSIENT access and property modifier. */
+    /** The bit mask of {@link AccessFlag#TRANSIENT} access and property modifier. */
     int ACC_TRANSIENT = 0x0080;
 
-    /** The value of SYNTHETIC access and property modifier. */
+    /** The bit mask of {@link AccessFlag#SYNTHETIC} access and property modifier. */
     int ACC_SYNTHETIC = 0x1000;
 
-    /** The value of STATIC access and property modifier. */
+    /** The bit mask of {@link AccessFlag#STATIC} access and property modifier. */
     int ACC_STATIC = 0x0008;
 
-    /** The value of FINAL access and property modifier. */
+    /** The bit mask of {@link AccessFlag#FINAL} access and property modifier. */
     int ACC_FINAL = 0x0010;
 
-    /** The value of SYNCHRONIZED access and property modifier. */
+    /** The bit mask of {@link AccessFlag#SYNCHRONIZED} access and property modifier. */
     int ACC_SYNCHRONIZED = 0x0020;
 
-    /** The value of BRIDGE access and property modifier. */
+    /** The bit mask of {@link AccessFlag#BRIDGE} access and property modifier. */
     int ACC_BRIDGE = 0x0040;
 
-    /** The value of VARARGS access and property modifier. */
+    /** The bit mask of {@link AccessFlag#VARARGS} access and property modifier. */
     int ACC_VARARGS = 0x0080;
 
-    /** The value of NATIVE access and property modifier. */
+    /** The bit mask of {@link AccessFlag#NATIVE} access and property modifier. */
     int ACC_NATIVE = 0x0100;
 
-    /** The value of STRICT access and property modifier. */
+    /** The bit mask of {@link AccessFlag#STRICT} access and property modifier. */
     int ACC_STRICT = 0x0800;
 
-    /** The value of MODULE access and property modifier. */
+    /** The bit mask of {@link AccessFlag#MODULE} access and property modifier. */
     int ACC_MODULE = 0x8000;
 
-    /** The value of OPEN access and property modifier. */
+    /** The bit mask of {@link AccessFlag#OPEN} access and property modifier. */
     int ACC_OPEN = 0x20;
 
-    /** The value of MANDATED access and property modifier. */
+    /** The bit mask of {@link AccessFlag#MANDATED} access and property modifier. */
     int ACC_MANDATED = 0x8000;
 
-    /** The value of TRANSITIVE access and property modifier. */
+    /** The bit mask of {@link AccessFlag#TRANSITIVE} access and property modifier. */
     int ACC_TRANSITIVE = 0x20;
 
-    /** The value of STATIC_PHASE access and property modifier. */
+    /** The bit mask of {@link AccessFlag#STATIC_PHASE} access and property modifier. */
     int ACC_STATIC_PHASE = 0x40;
 
-    /** The value of STATEMENT {@link CharacterRangeInfo} kind. */
-    int CRT_STATEMENT       = 0x0001;
-
-    /** The value of BLOCK {@link CharacterRangeInfo} kind. */
-    int CRT_BLOCK           = 0x0002;
-
-    /** The value of ASSIGNMENT {@link CharacterRangeInfo} kind. */
-    int CRT_ASSIGNMENT      = 0x0004;
-
-    /** The value of FLOW_CONTROLLER {@link CharacterRangeInfo} kind. */
-    int CRT_FLOW_CONTROLLER = 0x0008;
-
-    /** The value of FLOW_TARGET {@link CharacterRangeInfo} kind. */
-    int CRT_FLOW_TARGET     = 0x0010;
-
-    /** The value of INVOKE {@link CharacterRangeInfo} kind. */
-    int CRT_INVOKE          = 0x0020;
-
-    /** The value of CREATE {@link CharacterRangeInfo} kind. */
-    int CRT_CREATE          = 0x0040;
-
-    /** The value of BRANCH_TRUE {@link CharacterRangeInfo} kind. */
-    int CRT_BRANCH_TRUE     = 0x0080;
-
-    /** The value of BRANCH_FALSE {@link CharacterRangeInfo} kind. */
-    int CRT_BRANCH_FALSE    = 0x0100;
-
-    /** The value of constant pool tag CLASS. */
-    int TAG_CLASS = 7;
-
-    /** The value of constant pool tag CONSTANTDYNAMIC. */
-    int TAG_CONSTANTDYNAMIC = 17;
-
-    /** The value of constant pool tag DOUBLE. */
-    int TAG_DOUBLE = 6;
-
-    /** The value of constant pool tag FIELDREF. */
-    int TAG_FIELDREF = 9;
-
-    /** The value of constant pool tag FLOAT. */
-    int TAG_FLOAT = 4;
-
-    /** The value of constant pool tag INTEGER. */
-    int TAG_INTEGER = 3;
-
-    /** The value of constant pool tag INTERFACEMETHODREF. */
-    int TAG_INTERFACEMETHODREF = 11;
-
-    /** The value of constant pool tag INVOKEDYNAMIC. */
-    int TAG_INVOKEDYNAMIC = 18;
-
-    /** The value of constant pool tag LONG. */
-    int TAG_LONG = 5;
-
-    /** The value of constant pool tag METHODHANDLE. */
-    int TAG_METHODHANDLE = 15;
-
-    /** The value of constant pool tag METHODREF. */
-    int TAG_METHODREF = 10;
-
-    /** The value of constant pool tag METHODTYPE. */
-    int TAG_METHODTYPE = 16;
-
-    /** The value of constant pool tag MODULE. */
-    int TAG_MODULE = 19;
-
-    /** The value of constant pool tag NAMEANDTYPE. */
-    int TAG_NAMEANDTYPE = 12;
-
-    /** The value of constant pool tag PACKAGE. */
-    int TAG_PACKAGE = 20;
-
-    /** The value of constant pool tag STRING. */
-    int TAG_STRING = 8;
-
-    /** The value of constant pool tag UNICODE. */
-    int TAG_UNICODE = 2;
-
-    /** The value of constant pool tag UTF8. */
-    int TAG_UTF8 = 1;
-
-    // annotation element values
-
-    /** The value of annotation element value type AEV_BYTE. */
-    int AEV_BYTE = 'B';
-
-    /** The value of annotation element value type AEV_CHAR. */
-    int AEV_CHAR = 'C';
-
-    /** The value of annotation element value type AEV_DOUBLE. */
-    int AEV_DOUBLE = 'D';
-
-    /** The value of annotation element value type AEV_FLOAT. */
-    int AEV_FLOAT = 'F';
-
-    /** The value of annotation element value type AEV_INT. */
-    int AEV_INT = 'I';
-
-    /** The value of annotation element value type AEV_LONG. */
-    int AEV_LONG = 'J';
-
-    /** The value of annotation element value type AEV_SHORT. */
-    int AEV_SHORT = 'S';
-
-    /** The value of annotation element value type AEV_BOOLEAN. */
-    int AEV_BOOLEAN = 'Z';
-
-    /** The value of annotation element value type AEV_STRING. */
-    int AEV_STRING = 's';
-
-    /** The value of annotation element value type AEV_ENUM. */
-    int AEV_ENUM = 'e';
-
-    /** The value of annotation element value type AEV_CLASS. */
-    int AEV_CLASS = 'c';
-
-    /** The value of annotation element value type AEV_ANNOTATION. */
-    int AEV_ANNOTATION = '@';
-
-    /** The value of annotation element value type AEV_ARRAY. */
-    int AEV_ARRAY = '[';
-
-    //type annotations
-
-    /** The value of type annotation target type CLASS_TYPE_PARAMETER. */
-    int TAT_CLASS_TYPE_PARAMETER = 0x00;
-
-    /** The value of type annotation target type METHOD_TYPE_PARAMETER. */
-    int TAT_METHOD_TYPE_PARAMETER = 0x01;
-
-    /** The value of type annotation target type CLASS_EXTENDS. */
-    int TAT_CLASS_EXTENDS = 0x10;
-
-    /** The value of type annotation target type CLASS_TYPE_PARAMETER_BOUND. */
-    int TAT_CLASS_TYPE_PARAMETER_BOUND = 0x11;
-
-    /** The value of type annotation target type METHOD_TYPE_PARAMETER_BOUND. */
-    int TAT_METHOD_TYPE_PARAMETER_BOUND = 0x12;
-
-    /** The value of type annotation target type FIELD. */
-    int TAT_FIELD = 0x13;
-
-    /** The value of type annotation target type METHOD_RETURN. */
-    int TAT_METHOD_RETURN = 0x14;
-
-    /** The value of type annotation target type METHOD_RECEIVER. */
-    int TAT_METHOD_RECEIVER = 0x15;
-
-    /** The value of type annotation target type METHOD_FORMAL_PARAMETER. */
-    int TAT_METHOD_FORMAL_PARAMETER = 0x16;
-
-    /** The value of type annotation target type THROWS. */
-    int TAT_THROWS = 0x17;
-
-    /** The value of type annotation target type LOCAL_VARIABLE. */
-    int TAT_LOCAL_VARIABLE = 0x40;
-
-    /** The value of type annotation target type RESOURCE_VARIABLE. */
-    int TAT_RESOURCE_VARIABLE = 0x41;
-
-    /** The value of type annotation target type EXCEPTION_PARAMETER. */
-    int TAT_EXCEPTION_PARAMETER = 0x42;
-
-    /** The value of type annotation target type INSTANCEOF. */
-    int TAT_INSTANCEOF = 0x43;
-
-    /** The value of type annotation target type NEW. */
-    int TAT_NEW = 0x44;
-
-    /** The value of type annotation target type CONSTRUCTOR_REFERENCE. */
-    int TAT_CONSTRUCTOR_REFERENCE = 0x45;
-
-    /** The value of type annotation target type METHOD_REFERENCE. */
-    int TAT_METHOD_REFERENCE = 0x46;
-
-    /** The value of type annotation target type CAST. */
-    int TAT_CAST = 0x47;
-
-    /** The value of type annotation target type CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT. */
-    int TAT_CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT = 0x48;
-
-    /** The value of type annotation target type METHOD_INVOCATION_TYPE_ARGUMENT. */
-    int TAT_METHOD_INVOCATION_TYPE_ARGUMENT = 0x49;
-
-    /** The value of type annotation target type CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT. */
-    int TAT_CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT = 0x4A;
-
-    /** The value of type annotation target type METHOD_REFERENCE_TYPE_ARGUMENT. */
-    int TAT_METHOD_REFERENCE_TYPE_ARGUMENT = 0x4B;
-
-    //stackmap verification types
-
-    /** The value of verification type TOP. */
-    int VT_TOP = 0;
-
-    /** The value of verification type INTEGER. */
-    int VT_INTEGER = 1;
-
-    /** The value of verification type FLOAT. */
-    int VT_FLOAT = 2;
-
-    /** The value of verification type DOUBLE. */
-    int VT_DOUBLE = 3;
-
-    /** The value of verification type LONG. */
-    int VT_LONG = 4;
-
-    /** The value of verification type NULL. */
-    int VT_NULL = 5;
-
-    /** The value of verification type UNINITIALIZED_THIS. */
-    int VT_UNINITIALIZED_THIS = 6;
-
-    /** The value of verification type OBJECT. */
-    int VT_OBJECT = 7;
-
-    /** The value of verification type UNINITIALIZED. */
-    int VT_UNINITIALIZED = 8;
-
-    /** The value of default class access flags */
-    int DEFAULT_CLASS_FLAGS = ACC_PUBLIC;
-
-    /** The class major version of JAVA_1. */
+    /**
+     * The class major version of the initial version of Java, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_0
+     * @see ClassFileFormatVersion#RELEASE_1
+     */
     int JAVA_1_VERSION = 45;
 
-    /** The class major version of JAVA_2. */
+    /**
+     * The class major version introduced by Java 2 SE 1.2, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_2
+     */
     int JAVA_2_VERSION = 46;
 
-    /** The class major version of JAVA_3. */
+    /**
+     * The class major version introduced by Java 2 SE 1.3, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_3
+     */
     int JAVA_3_VERSION = 47;
 
-    /** The class major version of JAVA_4. */
+    /**
+     * The class major version introduced by Java 2 SE 1.4, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_4
+     */
     int JAVA_4_VERSION = 48;
 
-    /** The class major version of JAVA_5. */
+    /**
+     * The class major version introduced by Java 2 SE 5.0, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_5
+     */
     int JAVA_5_VERSION = 49;
 
-    /** The class major version of JAVA_6. */
+    /**
+     * The class major version introduced by Java SE 6, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_6
+     */
     int JAVA_6_VERSION = 50;
 
-    /** The class major version of JAVA_7. */
+    /**
+     * The class major version introduced by Java SE 7, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_7
+     */
     int JAVA_7_VERSION = 51;
 
-    /** The class major version of JAVA_8. */
+    /**
+     * The class major version introduced by Java SE 8, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_8
+     */
     int JAVA_8_VERSION = 52;
 
-    /** The class major version of JAVA_9. */
+    /**
+     * The class major version introduced by Java SE 9, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_9
+     */
     int JAVA_9_VERSION = 53;
 
-    /** The class major version of JAVA_10. */
+    /**
+     * The class major version introduced by Java SE 10, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_10
+     */
     int JAVA_10_VERSION = 54;
 
-    /** The class major version of JAVA_11. */
+    /**
+     * The class major version introduced by Java SE 11, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_11
+     */
     int JAVA_11_VERSION = 55;
 
-    /** The class major version of JAVA_12. */
+    /**
+     * The class major version introduced by Java SE 12, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_12
+     */
     int JAVA_12_VERSION = 56;
 
-    /** The class major version of JAVA_13. */
+    /**
+     * The class major version introduced by Java SE 13, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_13
+     */
     int JAVA_13_VERSION = 57;
 
-    /** The class major version of JAVA_14. */
+    /**
+     * The class major version introduced by Java SE 14, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_14
+     */
     int JAVA_14_VERSION = 58;
 
-    /** The class major version of JAVA_15. */
+    /**
+     * The class major version introduced by Java SE 15, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_15
+     */
     int JAVA_15_VERSION = 59;
 
-    /** The class major version of JAVA_16. */
+    /**
+     * The class major version introduced by Java SE 16, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_16
+     */
     int JAVA_16_VERSION = 60;
 
-    /** The class major version of JAVA_17. */
+    /**
+     * The class major version introduced by Java SE 17, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_17
+     */
     int JAVA_17_VERSION = 61;
 
-    /** The class major version of JAVA_18. */
+    /**
+     * The class major version introduced by Java SE 18, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_18
+     */
     int JAVA_18_VERSION = 62;
 
-    /** The class major version of JAVA_19. */
+    /**
+     * The class major version introduced by Java SE 19, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_19
+     */
     int JAVA_19_VERSION = 63;
 
-    /** The class major version of JAVA_20. */
+    /**
+     * The class major version introduced by Java SE 20, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_20
+     */
     int JAVA_20_VERSION = 64;
 
-    /** The class major version of JAVA_21. */
+    /**
+     * The class major version introduced by Java SE 21, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_21
+     */
     int JAVA_21_VERSION = 65;
 
-    /** The class major version of JAVA_22. */
+    /**
+     * The class major version introduced by Java SE 22, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_22
+     */
     int JAVA_22_VERSION = 66;
 
-    /** 67 */
+    /**
+     * The class major version introduced by Java SE 23, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_23
+     */
     int JAVA_23_VERSION = 67;
 
     /**
-     * A minor version number indicating a class uses preview features
-     * of a Java SE version since 12, for major versions {@value
+     * The class major version introduced by Java SE 24, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_24
+     */
+    int JAVA_24_VERSION = 68;
+
+    /**
+     * The class major version introduced by Java SE 25, {@value}.
+     *
+     * @see ClassFileFormatVersion#RELEASE_25
+     * @since 25
+     */
+    int JAVA_25_VERSION = 69;
+
+    /**
+     * A minor version number {@value} indicating a class uses preview features
+     * of a Java SE release since 12, for major versions {@value
      * #JAVA_12_VERSION} and above.
      */
     int PREVIEW_MINOR_VERSION = 65535;
 
     /**
-     * {@return the latest major Java version}
+     * {@return the latest class major version supported by the current runtime}
      */
     static int latestMajorVersion() {
-        return JAVA_23_VERSION;
+        return JAVA_25_VERSION;
     }
 
     /**
-     * {@return the latest minor Java version}
+     * {@return the latest class minor version supported by the current runtime}
+     *
+     * @apiNote
+     * This does not report the {@link #PREVIEW_MINOR_VERSION} when the current
+     * runtime has preview feature enabled, as {@code class} files with a major
+     * version other than {@link #latestMajorVersion()} and the preview minor
+     * version are not supported.
      */
     static int latestMinorVersion() {
         return 0;

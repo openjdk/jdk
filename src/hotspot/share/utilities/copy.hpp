@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,6 +211,7 @@ class Copy : AllStatic {
     // byte_count is in bytes to check its alignment
     assert_params_ok(from, to, HeapWordSize);
     assert_byte_count_ok(byte_count, HeapWordSize);
+    if (byte_count == 0) return;
 
     size_t count = align_up(byte_count, HeapWordSize) >> LogHeapWordSize;
     assert(from <= to || to + count <= from, "do not overwrite source data");

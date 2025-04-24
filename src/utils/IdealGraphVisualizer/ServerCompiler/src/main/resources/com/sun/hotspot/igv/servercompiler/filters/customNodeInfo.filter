@@ -30,3 +30,31 @@ editProperty(matches("name", "CallLeaf|CallLeafNoFP"), ["dump_spec"], "extra_lab
              function(dump_spec) {return callLeafInfo(dump_spec[0], 1);});
 editProperty(matches("name", "CallLeafDirect|CallLeafDirectVector|CallLeafNoFPDirect"), ["dump_spec"], "extra_label",
              function(dump_spec) {return callLeafInfo(dump_spec[0], 0);});
+
+// Show pre/main/post at CountedLoopNodes.
+editProperty(hasProperty("loop_kind"), ["loop_kind"], "extra_label",
+             function(loop_kind) { return loop_kind[0]; });
+
+// Show Parse Predicate type.
+function parsePredicateInfo(dump_spec) {
+  // It's easier to match with ".*" because type "Loop" can also be found in type "Loop Limit Check" and "Profiled Loop".
+  // Matching with ".*" also requires us to exclude the optional "#useless" string at the end.
+  var predicateMatch = /#(.*)(#useless)?/.exec(dump_spec);
+  if (predicateMatch != null) {
+     return predicateMatch[1].trim();
+  }
+  return null;
+}
+editProperty(matches("name", "ParsePredicate"), ["dump_spec"], "extra_label",
+             function(dump_spec) { return parsePredicateInfo(dump_spec[0]);});
+
+// Show Assertion Predicate type.
+function assertionPredicateInfo(dump_spec) {
+  var predicateMatch = /#((Init|Last) Value Assertion Predicate)/.exec(dump_spec);
+  if (predicateMatch != null) {
+     return predicateMatch[1];
+  }
+  return null;
+}
+editProperty(matches("name", "If|RangeCheck"), ["dump_spec"], "extra_label",
+             function(dump_spec) { return assertionPredicateInfo(dump_spec[0]);});

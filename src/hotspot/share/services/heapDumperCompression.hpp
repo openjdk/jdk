@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 SAP SE. All rights reserved.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public:
   virtual char const* open_writer() = 0;
 
   // Does the write. Returns null on success and a static error message otherwise.
-  virtual char const* write_buf(char* buf, ssize_t size) = 0;
+  virtual char const* write_buf(char* buf, size_t size) = 0;
 };
 
 
@@ -74,7 +74,7 @@ public:
   virtual char const* open_writer();
 
   // Does the write. Returns null on success and a static error message otherwise.
-  virtual char const* write_buf(char* buf, ssize_t size);
+  virtual char const* write_buf(char* buf, size_t size);
 
   const char* get_file_path() { return _path; }
 

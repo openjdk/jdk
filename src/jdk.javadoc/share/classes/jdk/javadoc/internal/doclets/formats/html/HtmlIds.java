@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,19 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -40,10 +47,10 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.SimpleTypeVisitor9;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.HtmlId;
 
 /**
  * Centralized constants and factory methods for HTML ids.
@@ -67,6 +74,7 @@ public class HtmlIds {
     private final HtmlConfiguration configuration;
     private final Utils utils;
 
+    static final HtmlId TOP_OF_PAGE = HtmlId.of(""); // empty fragment/id indicates top of page
     static final HtmlId ALL_CLASSES_TABLE = HtmlId.of("all-classes-table");
     static final HtmlId ALL_MODULES_TABLE = HtmlId.of("all-modules-table");
     static final HtmlId ALL_PACKAGES_TABLE = HtmlId.of("all-packages-table");
@@ -84,13 +92,14 @@ public class HtmlIds {
     static final HtmlId FIELD_SUMMARY = HtmlId.of("field-summary");
     static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
     static final HtmlId HELP_NAVIGATION = HtmlId.of("help-navigation");
+    static final HtmlId HELP_KEYBOARD_NAVIGATION = HtmlId.of("help-keyboard-navigation");
     static final HtmlId HELP_PAGES = HtmlId.of("help-pages");
+    static final HtmlId HELP_RELEASES = HtmlId.of("help-releases");
     static final HtmlId METHOD_DETAIL = HtmlId.of("method-detail");
     static final HtmlId METHOD_SUMMARY = HtmlId.of("method-summary");
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");
     static final HtmlId MODULES = HtmlId.of("modules-summary");
     static final HtmlId MODULE_DESCRIPTION = HtmlId.of("module-description");
-    static final HtmlId NAVBAR_SUB_LIST = HtmlId.of("navbar-sub-list");
     static final HtmlId NAVBAR_TOGGLE_BUTTON = HtmlId.of("navbar-toggle-button");
     static final HtmlId NAVBAR_TOP = HtmlId.of("navbar-top");
     static final HtmlId NAVBAR_TOP_FIRSTROW = HtmlId.of("navbar-top-firstrow");
@@ -101,7 +110,7 @@ public class HtmlIds {
     static final HtmlId PROPERTY_DETAIL = HtmlId.of("property-detail");
     static final HtmlId PROPERTY_SUMMARY = HtmlId.of("property-summary");
     static final HtmlId RELATED_PACKAGE_SUMMARY = HtmlId.of("related-package-summary");
-    static final HtmlId RESET_BUTTON = HtmlId.of("reset-button");
+    static final HtmlId RESET_SEARCH = HtmlId.of("reset-search");
     static final HtmlId SEARCH_INPUT = HtmlId.of("search-input");
     static final HtmlId SERVICES = HtmlId.of("services-summary");
     static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");
@@ -159,32 +168,87 @@ public class HtmlIds {
     }
 
     /**
-     * Returns an id for an executable element, suitable for use when the
-     * simple name and argument list will be unique within the page, such as
-     * in the page for the declaration of the enclosing class or interface.
+     * {@return a non-empty list of ids to a constructor or a method}
+     * The ids from the returned list are alternative: the given constructor
+     * or method can be equally referred to by any of those ids.
      *
-     * @param element the element
-     *
-     * @return the id
+     * @param executable a constructor or method
      */
-    HtmlId forMember(ExecutableElement element) {
+    List<HtmlId> forMember(ExecutableElement executable) {
+        var htmlId = ids.get(executable);
+        if (htmlId != null)
+            return htmlId;
+        if (executable.getKind() != ElementKind.CONSTRUCTOR
+                && executable.getKind() != ElementKind.METHOD)
+            throw new IllegalArgumentException(String.valueOf(executable.getKind()));
+        var vmt = configuration.getVisibleMemberTable((TypeElement) executable.getEnclosingElement());
+        var ctors = vmt.getVisibleMembers(VisibleMemberTable.Kind.CONSTRUCTORS);
+        var methods = vmt.getVisibleMembers(VisibleMemberTable.Kind.METHODS);
+        record Erased(ExecutableElement element, HtmlId id) { }
+        // split elements into two buckets:
+        //  - elements whose erased id is present
+        //  - elements whose erased id is absent (i.e. is null)
+        enum ErasedId { PRESENT, ABSENT }
+        var buckets = Stream.concat(ctors.stream(), methods.stream())
+                .map(e -> (ExecutableElement) e)
+                .map(e -> new Erased(e, forErasure(e)))
+                .collect(Collectors.groupingBy(erased -> erased.id == null ?
+                        ErasedId.ABSENT : ErasedId.PRESENT));
+        var dups = new HashSet<String>();
+        // the order of elements in each bucket is important for reproducibility
+        // of ids: the same executable element must have the same id in any
+        // javadoc run
+        // Use simple id, unless we have to use erased id; for that, do the
+        // following _in order_:
+        // 1. Map all elements that can _only_ be addressed by the simple id
+        for (var e : buckets.getOrDefault(ErasedId.ABSENT, List.of())) {
+            var simpleId = forMember0(e.element);
+            ids.put(e.element, List.of(simpleId));
+            boolean added = dups.add(simpleId.name());
+            // we assume that the simple id for an executable member that
+            // does not use type parameters is unique
+            assert added;
+        }
+        // 2. Map all elements that can be addressed by simple id or erased id;
+        // if the simple id is not yet used, use it, otherwise use the erased id
+        for (var e : buckets.getOrDefault(ErasedId.PRESENT, List.of())) {
+            var simpleId = forMember0(e.element);
+            if (dups.add(simpleId.name())) {
+                ids.put(e.element, List.of(simpleId, e.id));
+            } else {
+                ids.put(e.element, List.of(e.id));
+                boolean added = dups.add(e.id.name());
+                // Not only must an erased id not clash with any simple id,
+                // but it must also not clash with any other erased id.
+                // The latter is because JLS 8.4.2. Method Signature:
+                // it is a compile-time error to declare two methods
+                // with override-equivalent signatures in a class
+                assert added;
+            }
+        }
+        // Safety net: if for whatever reason we cannot find the element
+        // among those we just expanded, return the simple id. It might
+        // not be always right, but at least it won't fail.
+        //
+        // - one example where it might happen is linking to an inherited
+        //   undocumented method (see test case T5093723)
+        //   TODO the above will need to be revisited if and when we redesign
+        //    VisibleMemberTable, which currently cannot correctly return the
+        //    owner of such a method
+        //
+        // - another example is annotation interface methods: they are not
+        //   included in VisibleMemberTable.Kind.METHODS and so cannot be
+        //   found among them
+        return ids.computeIfAbsent(executable, e -> List.of(forMember0(e)));
+    }
+
+    private final Map<ExecutableElement, List<HtmlId>> ids = new HashMap<>();
+
+    private HtmlId forMember0(ExecutableElement element) {
         String a = element.getSimpleName()
                         + utils.makeSignature(element, null, true, true);
         // utils.makeSignature includes spaces
         return HtmlId.of(a.replaceAll("\\s", ""));
-    }
-
-    /**
-     * Returns an id for an executable element, including the context
-     * of its documented enclosing class or interface.
-     *
-     * @param typeElement the enclosing class or interface
-     * @param member      the element
-     *
-     * @return the id
-     */
-    HtmlId forMember(TypeElement typeElement, ExecutableElement member) {
-        return HtmlId.of(utils.getSimpleName(member) + utils.signature(member, typeElement));
     }
 
     /**
@@ -229,7 +293,7 @@ public class HtmlIds {
      * @param executableElement the element to anchor to
      * @return the 1.4.x style anchor for the executable element
      */
-    protected HtmlId forErasure(ExecutableElement executableElement) {
+    private HtmlId forErasure(ExecutableElement executableElement) {
         final StringBuilder buf = new StringBuilder(executableElement.getSimpleName().toString());
         buf.append("(");
         List<? extends VariableElement> parameters = executableElement.getParameters();
@@ -401,6 +465,22 @@ public class HtmlIds {
     }
 
     /**
+     * Returns an id for text documenting a type parameter of a class or method.
+     *
+     * @param paramName the name of the type parameter
+     * @param owner the enclosing element
+     *
+     * @return the id
+     */
+    public HtmlId forTypeParam(String paramName, Element owner) {
+        if (utils.isExecutableElement(owner)) {
+            return HtmlId.of(forMember((ExecutableElement) owner).getFirst().name()
+                    + "-type-param-" + paramName);
+        }
+        return HtmlId.of("type-param-" + paramName);
+    }
+
+    /**
      * Returns an id for one of the kinds of section in the pages for item group summaries.
      *
      * <p>Note: while the use of simple names (that are not keywords)
@@ -483,7 +563,7 @@ public class HtmlIds {
      */
     public HtmlId forPreviewSection(Element el) {
         return HtmlId.of("preview-" + switch (el.getKind()) {
-            case CONSTRUCTOR, METHOD -> forMember((ExecutableElement) el).name();
+            case CONSTRUCTOR, METHOD -> forMember((ExecutableElement) el).getFirst().name();
             case PACKAGE -> forPackage((PackageElement) el).name();
             default -> utils.getFullyQualifiedName(el, false);
         });
@@ -497,7 +577,7 @@ public class HtmlIds {
      * @return the id
      */
     public HtmlId forRestrictedSection(ExecutableElement el) {
-        return HtmlId.of("restricted-" + forMember(el).name());
+        return HtmlId.of("restricted-" + forMember(el).getFirst().name());
     }
 
     /**
@@ -534,5 +614,36 @@ public class HtmlIds {
             idValue = idValue + counter;
         }
         return HtmlId.of(idValue);
+    }
+
+    /**
+     * Returns an id for a snippet.
+     *
+     * @param e the element in whose documentation the snippet appears
+     * @param snippetIds the set of snippet ids already generated
+     * @return a unique id for the snippet
+     */
+    public HtmlId forSnippet(Element e, Set<String> snippetIds) {
+        String id = "snippet-";
+        ElementKind kind = e.getKind();
+        if (kind == ElementKind.PACKAGE) {
+            id += forPackage((PackageElement) e).name();
+        } else if (kind.isDeclaredType()) {
+            id += forClass((TypeElement) e).name();
+        } else if (kind.isExecutable()) {
+            id += forMember((ExecutableElement) e).getFirst().name();
+        } else if (kind.isField()) {
+            id += forMember((VariableElement) e).name();
+        } else if (kind == ElementKind.MODULE) {
+            id += ((ModuleElement) e).getQualifiedName();
+        } else {
+            // while utterly unexpected, we shouldn't fail
+            id += "unknown-element";
+        }
+        int counter = 1;
+        while (!snippetIds.add(id + counter)) {
+            counter++;
+        }
+        return HtmlId.of(id + counter);
     }
 }

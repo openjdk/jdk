@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,32 +30,25 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import static java.util.Locale.ROOT;
 
 public class Platform {
-    public  static final String vmName      = privilegedGetProperty("java.vm.name");
-    public  static final String vmInfo      = privilegedGetProperty("java.vm.info");
-    private static final String osVersion   = privilegedGetProperty("os.version");
+    public  static final String vmName      = System.getProperty("java.vm.name");
+    public  static final String vmInfo      = System.getProperty("java.vm.info");
+    private static final String osVersion   = System.getProperty("os.version");
     private static       int osVersionMajor = -1;
     private static       int osVersionMinor = -1;
-    private static final String osName      = privilegedGetProperty("os.name");
-    private static final String dataModel   = privilegedGetProperty("sun.arch.data.model");
-    private static final String vmVersion   = privilegedGetProperty("java.vm.version");
-    private static final String jdkDebug    = privilegedGetProperty("jdk.debug");
-    private static final String osArch      = privilegedGetProperty("os.arch");
-    private static final String userName    = privilegedGetProperty("user.name");
-    private static final String compiler    = privilegedGetProperty("sun.management.compiler");
-    private static final String testJdk     = privilegedGetProperty("test.jdk");
-
-    @SuppressWarnings("removal")
-    private static String privilegedGetProperty(String key) {
-        return AccessController.doPrivileged((
-                PrivilegedAction<String>) () -> System.getProperty(key));
-    }
+    private static final String osName      = System.getProperty("os.name");
+    private static final String dataModel   = System.getProperty("sun.arch.data.model");
+    private static final String vmVersion   = System.getProperty("java.vm.version");
+    private static final String jdkDebug    = System.getProperty("jdk.debug");
+    private static final String osArch      = System.getProperty("os.arch");
+    private static final String userName    = System.getProperty("user.name");
+    private static final String compiler    = System.getProperty("sun.management.compiler");
+    private static final String testJdk     = System.getProperty("test.jdk");
 
     public static boolean isClient() {
         return vmName.endsWith(" Client VM");
@@ -75,6 +68,10 @@ public class Platform {
 
     public static boolean isEmbedded() {
         return vmName.contains("Embedded");
+    }
+
+    public static boolean isStatic() {
+        return vmInfo.contains("static");
     }
 
     public static boolean isEmulatedClient() {
@@ -134,7 +131,7 @@ public class Platform {
     }
 
     private static boolean isOs(String osname) {
-        return osName.toLowerCase().startsWith(osname.toLowerCase());
+        return osName.toLowerCase(ROOT).startsWith(osname.toLowerCase(ROOT));
     }
 
     public static String getOsName() {
@@ -175,15 +172,15 @@ public class Platform {
     }
 
     public static boolean isDebugBuild() {
-        return (jdkDebug.toLowerCase().contains("debug"));
+        return (jdkDebug.toLowerCase(ROOT).contains("debug"));
     }
 
     public static boolean isSlowDebugBuild() {
-        return (jdkDebug.toLowerCase().equals("slowdebug"));
+        return (jdkDebug.toLowerCase(ROOT).equals("slowdebug"));
     }
 
     public static boolean isFastDebugBuild() {
-        return (jdkDebug.toLowerCase().equals("fastdebug"));
+        return (jdkDebug.toLowerCase(ROOT).equals("fastdebug"));
     }
 
     public static String getVMVersion() {
@@ -350,8 +347,8 @@ public class Platform {
     }
 
     public static boolean isOracleLinux7() {
-        if (System.getProperty("os.name").toLowerCase().contains("linux") &&
-                System.getProperty("os.version").toLowerCase().contains("el")) {
+        if (System.getProperty("os.name").toLowerCase(ROOT).contains("linux") &&
+                System.getProperty("os.version").toLowerCase(ROOT).contains("el")) {
             Pattern p = Pattern.compile("el(\\d+)");
             Matcher m = p.matcher(System.getProperty("os.version"));
             if (m.find()) {
@@ -472,5 +469,14 @@ public class Platform {
      */
     public static boolean areCustomLoadersSupportedForCDS() {
         return (is64bit() && (isLinux() || isOSX() || isWindows()));
+    }
+
+    /**
+     * Checks if the current system is running on Wayland display server on Linux.
+     *
+     * @return {@code true} if the system is running on Wayland display server
+     */
+    public static boolean isOnWayland() {
+        return System.getenv("WAYLAND_DISPLAY") != null;
     }
 }

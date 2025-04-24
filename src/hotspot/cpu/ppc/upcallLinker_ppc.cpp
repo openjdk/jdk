@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,8 +22,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/upcallLinker.hpp"
@@ -118,7 +118,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
 static const int upcall_stub_code_base_size = 1024;
 static const int upcall_stub_size_per_arg = 16; // arg save & restore + move
 
-address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
+address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,
@@ -167,7 +167,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 #ifndef PRODUCT
   LogTarget(Trace, foreign, upcall) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     arg_shuffle.print_on(&ls);
   }
@@ -221,7 +220,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("{ on_entry");
   __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::on_entry), R0);
   __ addi(R3_ARG1, R1_SP, frame_data_offset);
-  __ load_const_optimized(R4_ARG2, (intptr_t)receiver, R0);
   __ call_c(call_target_address);
   __ mr(R16_thread, R3_RET);
   __ block_comment("} on_entry");
@@ -236,16 +234,20 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   arg_shuffle.generate(_masm, as_VMStorage(callerSP), frame::native_abi_minframe_size, frame::jit_out_preserve_size);
   __ block_comment("} argument shuffle");
 
-  __ block_comment("{ receiver ");
-  __ get_vm_result(R3_ARG1);
-  __ block_comment("} receiver ");
+  __ block_comment("{ load target ");
+  __ load_const_optimized(call_target_address, StubRoutines::upcall_stub_load_target(), R0);
+  __ load_const_optimized(R3_ARG1, (intptr_t)receiver, R0);
+  __ mtctr(call_target_address);
+  __ bctrl(); // loads target Method* into R19_method
+  __ block_comment("} load target ");
 
-  __ load_const_optimized(R19_method, (intptr_t)entry);
-  __ std(R19_method, in_bytes(JavaThread::callee_target_offset()), R16_thread);
+  __ push_cont_fastpath();
 
   __ ld(call_target_address, in_bytes(Method::from_compiled_offset()), R19_method);
   __ mtctr(call_target_address);
   __ bctrl();
+
+  __ pop_cont_fastpath();
 
   // return value shuffle
   if (!needs_return_buffer) {
@@ -322,7 +324,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
 #ifndef PRODUCT
   stringStream ss;
-  ss.print("upcall_stub_%s", entry->signature()->as_C_string());
+  ss.print("upcall_stub_%s", signature->as_C_string());
   const char* name = _masm->code_string(ss.as_string());
 #else // PRODUCT
   const char* name = "upcall_stub";
@@ -348,7 +350,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
 #ifndef PRODUCT
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     blob->print_on(&ls);
   }

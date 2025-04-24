@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -941,13 +941,6 @@ public class XBaseWindow {
 
     // called from ungrabInput, used in popup windows to hide theirselfs in ungrabbing
     void ungrabInputImpl() {
-    }
-
-    static void checkSecurity() {
-        if (XToolkit.isSecurityWarningEnabled() && XToolkit.isToolkitThread()) {
-            StackTraceElement[] stack = (new Throwable()).getStackTrace();
-            log.warning(stack[1] + ": Security violation: calling user code on toolkit thread");
-        }
     }
 
     public Set<Long> getChildren() {

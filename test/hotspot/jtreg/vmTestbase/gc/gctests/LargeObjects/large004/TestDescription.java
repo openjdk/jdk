@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@
  * @comment generate and compile nsk.share.gc.newclass.* classes
  * @run driver nsk.share.gc.GenClassesBuilder
  *
- * @run main/othervm
+ * @run main/othervm/timeout=300
  *      -XX:-UseGCOverheadLimit
  *      gc.gctests.LargeObjects.large001.large001
  *      -largeClassesPath classes

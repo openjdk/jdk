@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public final class RecordedFrame extends RecordedObject {
      * @return byte code index, or {@code -1} if doesn't exist
      */
     public int getBytecodeIndex() {
-        return getTyped("bytecodeIndex", Integer.class, Integer.valueOf(-1));
+        return getTyped("bytecodeIndex", Integer.class, INTEGER_MINUS_ONE);
     }
 
     /**
@@ -75,7 +75,7 @@ public final class RecordedFrame extends RecordedObject {
      * @return the line number, or {@code -1} if doesn't exist
      */
     public int getLineNumber() {
-        return getTyped("lineNumber", Integer.class, Integer.valueOf(-1));
+        return getTyped("lineNumber", Integer.class, INTEGER_MINUS_ONE);
     }
 
     /**

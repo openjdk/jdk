@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 // This test performs mocking of certain JVM functionality. This works by
 // including the source file under test inside an anonymous namespace (which
@@ -123,7 +122,7 @@ namespace {
    public:
     MockJfrOSInterface() {}
     static int network_utilization(NetworkInterface** network_interfaces) {
-      *network_interfaces = NULL;
+      *network_interfaces = nullptr;
       for (std::list<MockNetworkInterface>::const_iterator i = _interfaces.begin();
            i != _interfaces.end();
            ++i) {
@@ -205,12 +204,6 @@ namespace {
   std::vector<MockEventNetworkUtilization> MockEventNetworkUtilization::committed;
 
   jlong MockFastUnorderedElapsedCounterSource::current_ticks;
-
-// Reincluding source files in the anonymous namespace unfortunately seems to
-// behave strangely with precompiled headers (only when using gcc though)
-#ifndef DONT_USE_PRECOMPILED_HEADER
-#define DONT_USE_PRECOMPILED_HEADER
-#endif
 
 #define EventNetworkUtilization MockEventNetworkUtilization
 #define FastUnorderedElapsedCounterSource MockFastUnorderedElapsedCounterSource

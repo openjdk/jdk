@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "registerSaver_s390.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -119,7 +118,8 @@ class StubGenerator: public StubCodeGenerator {
     // Set up a new C frame, copy Java arguments, call frame manager
     // or native_entry, and process result.
 
-    StubCodeMark mark(this, "StubRoutines", "call_stub");
+    StubGenStubId stub_id = StubGenStubId::call_stub_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     Register r_arg_call_wrapper_addr   = Z_ARG1;
@@ -459,7 +459,8 @@ class StubGenerator: public StubCodeGenerator {
   // pending exception stored in JavaThread that can be tested from
   // within the VM.
   address generate_catch_exception() {
-    StubCodeMark mark(this, "StubRoutines", "catch_exception");
+    StubGenStubId stub_id = StubGenStubId::catch_exception_id;
+    StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
 
@@ -510,7 +511,8 @@ class StubGenerator: public StubCodeGenerator {
   //   (Z_R14 is unchanged and is live out).
   //
   address generate_forward_exception() {
-    StubCodeMark mark(this, "StubRoutines", "forward_exception");
+    StubGenStubId stub_id = StubGenStubId::forward_exception_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     #define pending_exception_offset in_bytes(Thread::pending_exception_offset())
@@ -572,89 +574,6 @@ class StubGenerator: public StubCodeGenerator {
     #undef pending_exception_offset
   }
 
-  // Continuation point for throwing of implicit exceptions that are
-  // not handled in the current activation. Fabricates an exception
-  // oop and initiates normal exception dispatching in this
-  // frame. Only callee-saved registers are preserved (through the
-  // normal RegisterMap handling). If the compiler
-  // needs all registers to be preserved between the fault point and
-  // the exception handler then it must assume responsibility for that
-  // in AbstractCompiler::continuation_for_implicit_null_exception or
-  // continuation_for_implicit_division_by_zero_exception. All other
-  // implicit exceptions (e.g., NullPointerException or
-  // AbstractMethodError on entry) are either at call sites or
-  // otherwise assume that stack unwinding will be initiated, so
-  // caller saved registers were assumed volatile in the compiler.
-
-  // Note that we generate only this stub into a RuntimeStub, because
-  // it needs to be properly traversed and ignored during GC, so we
-  // change the meaning of the "__" macro within this method.
-
-  // Note: the routine set_pc_not_at_call_for_caller in
-  // SharedRuntime.cpp requires that this code be generated into a
-  // RuntimeStub.
-#undef __
-#define __ masm->
-
-  address generate_throw_exception(const char* name, address runtime_entry,
-                                   bool restore_saved_exception_pc,
-                                   Register arg1 = noreg, Register arg2 = noreg) {
-    assert_different_registers(arg1, Z_R0_scratch);  // would be destroyed by push_frame()
-    assert_different_registers(arg2, Z_R0_scratch);  // would be destroyed by push_frame()
-
-    int insts_size = 256;
-    int locs_size  = 0;
-    CodeBuffer      code(name, insts_size, locs_size);
-    MacroAssembler* masm = new MacroAssembler(&code);
-    int framesize_in_bytes;
-    address start = __ pc();
-
-    __ save_return_pc();
-    framesize_in_bytes = __ push_frame_abi160(0);
-
-    address frame_complete_pc = __ pc();
-    if (restore_saved_exception_pc) {
-      __ unimplemented("StubGenerator::throw_exception", 74);
-    }
-
-    // Note that we always have a runtime stub frame on the top of stack at this point.
-    __ get_PC(Z_R1);
-    __ set_last_Java_frame(/*sp*/Z_SP, /*pc*/Z_R1);
-
-    // Do the call.
-    BLOCK_COMMENT("call runtime_entry");
-    __ call_VM_leaf(runtime_entry, Z_thread, arg1, arg2);
-
-    __ reset_last_Java_frame();
-
-#ifdef ASSERT
-    // Make sure that this code is only executed if there is a pending exception.
-    { Label L;
-      __ z_lg(Z_R0,
-                in_bytes(Thread::pending_exception_offset()),
-                Z_thread);
-      __ z_ltgr(Z_R0, Z_R0);
-      __ z_brne(L);
-      __ stop("StubRoutines::throw_exception: no pending exception");
-      __ bind(L);
-    }
-#endif
-
-    __ pop_frame();
-    __ restore_return_pc();
-
-    __ load_const_optimized(Z_R1, StubRoutines::forward_exception_entry());
-    __ z_br(Z_R1);
-
-    RuntimeStub* stub =
-      RuntimeStub::new_runtime_stub(name, &code,
-                                    frame_complete_pc - start,
-                                    framesize_in_bytes/wordSize,
-                                    nullptr /*oop_maps*/, false);
-
-    return stub->entry_point();
-  }
-
 #undef __
 #ifdef PRODUCT
 #define __ _masm->
@@ -673,7 +592,8 @@ class StubGenerator: public StubCodeGenerator {
   //   raddr: Z_R14, blown by call
   //
   address generate_partial_subtype_check() {
-    StubCodeMark mark(this, "StubRoutines", "partial_subtype_check");
+    StubGenStubId stub_id = StubGenStubId::partial_subtype_check_id;
+    StubCodeMark mark(this, stub_id);
     Label miss;
 
     address start = __ pc();
@@ -705,6 +625,51 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  void generate_lookup_secondary_supers_table_stub() {
+    StubGenStubId stub_id = StubGenStubId::lookup_secondary_supers_table_id;
+    StubCodeMark mark(this, stub_id);
+
+    const Register
+        r_super_klass  = Z_ARG1,
+        r_sub_klass    = Z_ARG2,
+        r_array_index  = Z_ARG3,
+        r_array_length = Z_ARG4,
+        r_array_base   = Z_ARG5,
+        r_bitmap       = Z_R10,
+        r_result       = Z_R11;
+    for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+      StubRoutines::_lookup_secondary_supers_table_stubs[slot] = __ pc();
+      __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                             r_array_base, r_array_length, r_array_index,
+                                             r_bitmap, r_result, slot);
+
+      __ z_br(Z_R14);
+    }
+  }
+
+  // Slow path implementation for UseSecondarySupersTable.
+  address generate_lookup_secondary_supers_table_slow_path_stub() {
+    StubGenStubId stub_id = StubGenStubId::lookup_secondary_supers_table_slow_path_id;
+    StubCodeMark mark(this, stub_id);
+
+    address start = __ pc();
+
+    const Register
+        r_super_klass  = Z_ARG1,
+        r_array_base   = Z_ARG5,
+        r_temp1        = Z_ARG4,
+        r_array_index  = Z_ARG3,
+        r_bitmap       = Z_R10,
+        r_result       = Z_R11;
+
+    __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base,
+                                               r_array_index, r_bitmap, r_temp1, r_result, /* is_stub */ true);
+
+    __ z_br(Z_R14);
+
+    return start;
+  }
+
 #if !defined(PRODUCT)
   // Wrapper which calls oopDesc::is_oop_or_null()
   // Only called by MacroAssembler::verify_oop
@@ -727,7 +692,7 @@ class StubGenerator: public StubCodeGenerator {
     // code (code_size == 0) confuses opjitconv
     // StubCodeMark mark(this, "StubRoutines", "verify_oop_stub");
 
-    address start = 0;
+    address start = nullptr;
 
 #if !defined(PRODUCT)
     start = CAST_FROM_FN_PTR(address, verify_oop_helper);
@@ -1300,51 +1265,75 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  // Generate stub for disjoint byte copy. If "aligned" is true, the
-  // "from" and "to" addresses are assumed to be heapword aligned.
-  address generate_disjoint_byte_copy(bool aligned, const char * name) {
-    StubCodeMark mark(this, "StubRoutines", name);
-
-    // This is the zarch specific stub generator for byte array copy.
-    // Refer to generate_disjoint_copy for a list of prereqs and features:
+  address generate_disjoint_nonoop_copy(StubGenStubId stub_id) {
+    bool aligned;
+    int element_size;
+    switch (stub_id) {
+    case jbyte_disjoint_arraycopy_id:
+      aligned = false;
+      element_size = 1;
+      break;
+    case arrayof_jbyte_disjoint_arraycopy_id:
+      aligned = true;
+      element_size = 1;
+      break;
+    case jshort_disjoint_arraycopy_id:
+      aligned = false;
+      element_size = 2;
+      break;
+    case arrayof_jshort_disjoint_arraycopy_id:
+      aligned = true;
+      element_size = 2;
+      break;
+    case jint_disjoint_arraycopy_id:
+      aligned = false;
+      element_size = 4;
+      break;
+    case arrayof_jint_disjoint_arraycopy_id:
+      aligned = true;
+      element_size = 4;
+      break;
+    case jlong_disjoint_arraycopy_id:
+      aligned = false;
+      element_size = 8;
+      break;
+    case arrayof_jlong_disjoint_arraycopy_id:
+      aligned = true;
+      element_size = 8;
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+    StubCodeMark mark(this, stub_id);
     unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
-    generate_disjoint_copy(aligned, 1, false, false);
+    generate_disjoint_copy(aligned, element_size, false, false);
     return __ addr_at(start_off);
   }
 
-
-  address generate_disjoint_short_copy(bool aligned, const char * name) {
-    StubCodeMark mark(this, "StubRoutines", name);
-    // This is the zarch specific stub generator for short array copy.
-    // Refer to generate_disjoint_copy for a list of prereqs and features:
-    unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
-    generate_disjoint_copy(aligned, 2, false, false);
-    return __ addr_at(start_off);
-  }
-
-
-  address generate_disjoint_int_copy(bool aligned, const char * name) {
-    StubCodeMark mark(this, "StubRoutines", name);
-    // This is the zarch specific stub generator for int array copy.
-    // Refer to generate_disjoint_copy for a list of prereqs and features:
-    unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
-    generate_disjoint_copy(aligned, 4, false, false);
-    return __ addr_at(start_off);
-  }
-
-
-  address generate_disjoint_long_copy(bool aligned, const char * name) {
-    StubCodeMark mark(this, "StubRoutines", name);
-    // This is the zarch specific stub generator for long array copy.
-    // Refer to generate_disjoint_copy for a list of prereqs and features:
-    unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
-    generate_disjoint_copy(aligned, 8, false, false);
-    return __ addr_at(start_off);
-  }
-
-
-  address generate_disjoint_oop_copy(bool aligned, const char * name, bool dest_uninitialized) {
-    StubCodeMark mark(this, "StubRoutines", name);
+  address generate_disjoint_oop_copy(StubGenStubId stub_id) {
+    bool aligned;
+    bool dest_uninitialized;
+    switch (stub_id) {
+    case oop_disjoint_arraycopy_id:
+      aligned = false;
+      dest_uninitialized = false;
+      break;
+    case arrayof_oop_disjoint_arraycopy_id:
+      aligned = true;
+      dest_uninitialized = false;
+      break;
+    case oop_disjoint_arraycopy_uninit_id:
+      aligned = false;
+      dest_uninitialized = true;
+      break;
+    case arrayof_oop_disjoint_arraycopy_uninit_id:
+      aligned = true;
+      dest_uninitialized = true;
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+    StubCodeMark mark(this, stub_id);
     // This is the zarch specific stub generator for oop array copy.
     // Refer to generate_disjoint_copy for a list of prereqs and features.
     unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
@@ -1368,76 +1357,95 @@ class StubGenerator: public StubCodeGenerator {
     return __ addr_at(start_off);
   }
 
-
-  address generate_conjoint_byte_copy(bool aligned, const char * name) {
-    StubCodeMark mark(this, "StubRoutines", name);
-    // This is the zarch specific stub generator for overlapping byte array copy.
-    // Refer to generate_conjoint_copy for a list of prereqs and features:
-    unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
-    address nooverlap_target = aligned ? StubRoutines::arrayof_jbyte_disjoint_arraycopy()
-                                       : StubRoutines::jbyte_disjoint_arraycopy();
-
-    array_overlap_test(nooverlap_target, 0); // Branch away to nooverlap_target if disjoint.
-    generate_conjoint_copy(aligned, 1, false);
-
+  address generate_conjoint_nonoop_copy(StubGenStubId stub_id) {
+    bool aligned;
+    int shift; // i.e. log2(element size)
+    address nooverlap_target;
+    switch (stub_id) {
+    case jbyte_arraycopy_id:
+      aligned = false;
+      shift = 0;
+      nooverlap_target = StubRoutines::jbyte_disjoint_arraycopy();
+      break;
+    case arrayof_jbyte_arraycopy_id:
+      aligned = true;
+      shift = 0;
+      nooverlap_target = StubRoutines::arrayof_jbyte_disjoint_arraycopy();
+      break;
+    case jshort_arraycopy_id:
+      aligned = false;
+      shift = 1;
+      nooverlap_target = StubRoutines::jshort_disjoint_arraycopy();
+      break;
+    case arrayof_jshort_arraycopy_id:
+      aligned = true;
+      shift = 1;
+      nooverlap_target = StubRoutines::arrayof_jshort_disjoint_arraycopy();
+      break;
+    case jint_arraycopy_id:
+      aligned = false;
+      shift = 2;
+      nooverlap_target = StubRoutines::jint_disjoint_arraycopy();
+      break;
+    case arrayof_jint_arraycopy_id:
+      aligned = true;
+      shift = 2;
+      nooverlap_target = StubRoutines::arrayof_jint_disjoint_arraycopy();
+      break;
+    case jlong_arraycopy_id:
+      aligned = false;
+      shift = 3;
+      nooverlap_target = StubRoutines::jlong_disjoint_arraycopy();
+      break;
+    case arrayof_jlong_arraycopy_id:
+      aligned = true;
+      shift = 3;
+      nooverlap_target = StubRoutines::arrayof_jlong_disjoint_arraycopy();
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+    StubCodeMark mark(this, stub_id);
+    unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
+    array_overlap_test(nooverlap_target, shift); // Branch away to nooverlap_target if disjoint.
+    generate_conjoint_copy(aligned, 1 << shift, false);
     return __ addr_at(start_off);
   }
 
-
-  address generate_conjoint_short_copy(bool aligned, const char * name) {
-    StubCodeMark mark(this, "StubRoutines", name);
-    // This is the zarch specific stub generator for overlapping short array copy.
-    // Refer to generate_conjoint_copy for a list of prereqs and features:
-    unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
-    address nooverlap_target = aligned ? StubRoutines::arrayof_jshort_disjoint_arraycopy()
-                                       : StubRoutines::jshort_disjoint_arraycopy();
-
-    array_overlap_test(nooverlap_target, 1); // Branch away to nooverlap_target if disjoint.
-    generate_conjoint_copy(aligned, 2, false);
-
-    return __ addr_at(start_off);
-  }
-
-  address generate_conjoint_int_copy(bool aligned, const char * name) {
-    StubCodeMark mark(this, "StubRoutines", name);
-    // This is the zarch specific stub generator for overlapping int array copy.
-    // Refer to generate_conjoint_copy for a list of prereqs and features:
-
-    unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
-    address nooverlap_target = aligned ? StubRoutines::arrayof_jint_disjoint_arraycopy()
-                                       : StubRoutines::jint_disjoint_arraycopy();
-
-    array_overlap_test(nooverlap_target, 2); // Branch away to nooverlap_target if disjoint.
-    generate_conjoint_copy(aligned, 4, false);
-
-    return __ addr_at(start_off);
-  }
-
-  address generate_conjoint_long_copy(bool aligned, const char * name) {
-    StubCodeMark mark(this, "StubRoutines", name);
-    // This is the zarch specific stub generator for overlapping long array copy.
-    // Refer to generate_conjoint_copy for a list of prereqs and features:
-
-    unsigned int start_off   = __ offset();  // Remember stub start address (is rtn value).
-    address nooverlap_target = aligned ? StubRoutines::arrayof_jlong_disjoint_arraycopy()
-                                       : StubRoutines::jlong_disjoint_arraycopy();
-
-    array_overlap_test(nooverlap_target, 3); // Branch away to nooverlap_target if disjoint.
-    generate_conjoint_copy(aligned, 8, false);
-
-    return __ addr_at(start_off);
-  }
-
-  address generate_conjoint_oop_copy(bool aligned, const char * name, bool dest_uninitialized) {
-    StubCodeMark mark(this, "StubRoutines", name);
+  address generate_conjoint_oop_copy(StubGenStubId stub_id) {
+    bool aligned;
+    bool dest_uninitialized;
+    address nooverlap_target;
+    switch (stub_id) {
+    case oop_arraycopy_id:
+      aligned = false;
+      dest_uninitialized = false;
+      nooverlap_target = StubRoutines::oop_disjoint_arraycopy(dest_uninitialized);
+      break;
+    case arrayof_oop_arraycopy_id:
+      aligned = true;
+      dest_uninitialized = false;
+      nooverlap_target = StubRoutines::arrayof_oop_disjoint_arraycopy(dest_uninitialized);
+      break;
+    case oop_arraycopy_uninit_id:
+      aligned = false;
+      dest_uninitialized = true;
+      nooverlap_target = StubRoutines::oop_disjoint_arraycopy(dest_uninitialized);
+      break;
+    case arrayof_oop_arraycopy_uninit_id:
+      aligned = true;
+      dest_uninitialized = true;
+      nooverlap_target = StubRoutines::arrayof_oop_disjoint_arraycopy(dest_uninitialized);
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+    StubCodeMark mark(this, stub_id);
     // This is the zarch specific stub generator for overlapping oop array copy.
     // Refer to generate_conjoint_copy for a list of prereqs and features.
     unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
     unsigned int size      = UseCompressedOops ? 4 : 8;
     unsigned int shift     = UseCompressedOops ? 2 : 3;
-
-    address nooverlap_target = aligned ? StubRoutines::arrayof_oop_disjoint_arraycopy(dest_uninitialized)
-                                       : StubRoutines::oop_disjoint_arraycopy(dest_uninitialized);
 
     // Branch to disjoint_copy (if applicable) before pre_barrier to avoid double pre_barrier.
     array_overlap_test(nooverlap_target, shift);  // Branch away to nooverlap_target if disjoint.
@@ -1465,33 +1473,33 @@ class StubGenerator: public StubCodeGenerator {
 
     // Note: the disjoint stubs must be generated first, some of
     // the conjoint stubs use them.
-    StubRoutines::_jbyte_disjoint_arraycopy      = generate_disjoint_byte_copy (false, "jbyte_disjoint_arraycopy");
-    StubRoutines::_jshort_disjoint_arraycopy     = generate_disjoint_short_copy(false, "jshort_disjoint_arraycopy");
-    StubRoutines::_jint_disjoint_arraycopy       = generate_disjoint_int_copy  (false, "jint_disjoint_arraycopy");
-    StubRoutines::_jlong_disjoint_arraycopy      = generate_disjoint_long_copy (false, "jlong_disjoint_arraycopy");
-    StubRoutines::_oop_disjoint_arraycopy        = generate_disjoint_oop_copy  (false, "oop_disjoint_arraycopy", false);
-    StubRoutines::_oop_disjoint_arraycopy_uninit = generate_disjoint_oop_copy  (false, "oop_disjoint_arraycopy_uninit", true);
+    StubRoutines::_jbyte_disjoint_arraycopy      = generate_disjoint_nonoop_copy (StubGenStubId::jbyte_disjoint_arraycopy_id);
+    StubRoutines::_jshort_disjoint_arraycopy     = generate_disjoint_nonoop_copy(StubGenStubId::jshort_disjoint_arraycopy_id);
+    StubRoutines::_jint_disjoint_arraycopy       = generate_disjoint_nonoop_copy  (StubGenStubId::jint_disjoint_arraycopy_id);
+    StubRoutines::_jlong_disjoint_arraycopy      = generate_disjoint_nonoop_copy (StubGenStubId::jlong_disjoint_arraycopy_id);
+    StubRoutines::_oop_disjoint_arraycopy        = generate_disjoint_oop_copy  (StubGenStubId::oop_disjoint_arraycopy_id);
+    StubRoutines::_oop_disjoint_arraycopy_uninit = generate_disjoint_oop_copy  (StubGenStubId::oop_disjoint_arraycopy_uninit_id);
 
-    StubRoutines::_arrayof_jbyte_disjoint_arraycopy      = generate_disjoint_byte_copy (true, "arrayof_jbyte_disjoint_arraycopy");
-    StubRoutines::_arrayof_jshort_disjoint_arraycopy     = generate_disjoint_short_copy(true, "arrayof_jshort_disjoint_arraycopy");
-    StubRoutines::_arrayof_jint_disjoint_arraycopy       = generate_disjoint_int_copy  (true, "arrayof_jint_disjoint_arraycopy");
-    StubRoutines::_arrayof_jlong_disjoint_arraycopy      = generate_disjoint_long_copy (true, "arrayof_jlong_disjoint_arraycopy");
-    StubRoutines::_arrayof_oop_disjoint_arraycopy        = generate_disjoint_oop_copy  (true, "arrayof_oop_disjoint_arraycopy", false);
-    StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit = generate_disjoint_oop_copy  (true, "arrayof_oop_disjoint_arraycopy_uninit", true);
+    StubRoutines::_arrayof_jbyte_disjoint_arraycopy      = generate_disjoint_nonoop_copy (StubGenStubId::arrayof_jbyte_disjoint_arraycopy_id);
+    StubRoutines::_arrayof_jshort_disjoint_arraycopy     = generate_disjoint_nonoop_copy(StubGenStubId::arrayof_jshort_disjoint_arraycopy_id);
+    StubRoutines::_arrayof_jint_disjoint_arraycopy       = generate_disjoint_nonoop_copy  (StubGenStubId::arrayof_jint_disjoint_arraycopy_id);
+    StubRoutines::_arrayof_jlong_disjoint_arraycopy      = generate_disjoint_nonoop_copy (StubGenStubId::arrayof_jlong_disjoint_arraycopy_id);
+    StubRoutines::_arrayof_oop_disjoint_arraycopy        = generate_disjoint_oop_copy  (StubGenStubId::arrayof_oop_disjoint_arraycopy_id);
+    StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit = generate_disjoint_oop_copy  (StubGenStubId::arrayof_oop_disjoint_arraycopy_uninit_id);
 
-    StubRoutines::_jbyte_arraycopy           = generate_conjoint_byte_copy (false, "jbyte_arraycopy");
-    StubRoutines::_jshort_arraycopy          = generate_conjoint_short_copy(false, "jshort_arraycopy");
-    StubRoutines::_jint_arraycopy            = generate_conjoint_int_copy  (false, "jint_arraycopy");
-    StubRoutines::_jlong_arraycopy           = generate_conjoint_long_copy (false, "jlong_arraycopy");
-    StubRoutines::_oop_arraycopy             = generate_conjoint_oop_copy  (false, "oop_arraycopy", false);
-    StubRoutines::_oop_arraycopy_uninit      = generate_conjoint_oop_copy  (false, "oop_arraycopy_uninit", true);
+    StubRoutines::_jbyte_arraycopy           = generate_conjoint_nonoop_copy(StubGenStubId::jbyte_arraycopy_id);
+    StubRoutines::_jshort_arraycopy          = generate_conjoint_nonoop_copy(StubGenStubId::jshort_arraycopy_id);
+    StubRoutines::_jint_arraycopy            = generate_conjoint_nonoop_copy(StubGenStubId::jint_arraycopy_id);
+    StubRoutines::_jlong_arraycopy           = generate_conjoint_nonoop_copy(StubGenStubId::jlong_arraycopy_id);
+    StubRoutines::_oop_arraycopy             = generate_conjoint_oop_copy(StubGenStubId::oop_arraycopy_id);
+    StubRoutines::_oop_arraycopy_uninit      = generate_conjoint_oop_copy(StubGenStubId::oop_arraycopy_uninit_id);
 
-    StubRoutines::_arrayof_jbyte_arraycopy      = generate_conjoint_byte_copy (true, "arrayof_jbyte_arraycopy");
-    StubRoutines::_arrayof_jshort_arraycopy     = generate_conjoint_short_copy(true, "arrayof_jshort_arraycopy");
-    StubRoutines::_arrayof_jint_arraycopy       = generate_conjoint_int_copy  (true, "arrayof_jint_arraycopy");
-    StubRoutines::_arrayof_jlong_arraycopy      = generate_conjoint_long_copy (true, "arrayof_jlong_arraycopy");
-    StubRoutines::_arrayof_oop_arraycopy        = generate_conjoint_oop_copy  (true, "arrayof_oop_arraycopy", false);
-    StubRoutines::_arrayof_oop_arraycopy_uninit = generate_conjoint_oop_copy  (true, "arrayof_oop_arraycopy_uninit", true);
+    StubRoutines::_arrayof_jbyte_arraycopy      = generate_conjoint_nonoop_copy(StubGenStubId::arrayof_jbyte_arraycopy_id);
+    StubRoutines::_arrayof_jshort_arraycopy     = generate_conjoint_nonoop_copy(StubGenStubId::arrayof_jshort_arraycopy_id);
+    StubRoutines::_arrayof_jint_arraycopy       = generate_conjoint_nonoop_copy (StubGenStubId::arrayof_jint_arraycopy_id);
+    StubRoutines::_arrayof_jlong_arraycopy      = generate_conjoint_nonoop_copy(StubGenStubId::arrayof_jlong_arraycopy_id);
+    StubRoutines::_arrayof_oop_arraycopy        = generate_conjoint_oop_copy(StubGenStubId::arrayof_oop_arraycopy_id);
+    StubRoutines::_arrayof_oop_arraycopy_uninit = generate_conjoint_oop_copy(StubGenStubId::arrayof_oop_arraycopy_uninit_id);
   }
 
   // Call interface for AES_encryptBlock, AES_decryptBlock stubs.
@@ -1773,9 +1781,10 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Compute AES encrypt function.
-  address generate_AES_encryptBlock(const char* name) {
+  address generate_AES_encryptBlock() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubGenStubId stub_id = StubGenStubId::aescrypt_encryptBlock_id;
+    StubCodeMark mark(this, stub_id);
     unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
 
     generate_AES_cipherBlock(false);
@@ -1784,9 +1793,10 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Compute AES decrypt function.
-  address generate_AES_decryptBlock(const char* name) {
+  address generate_AES_decryptBlock() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubGenStubId stub_id = StubGenStubId::aescrypt_decryptBlock_id;
+    StubCodeMark mark(this, stub_id);
     unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
 
     generate_AES_cipherBlock(true);
@@ -1844,9 +1854,10 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Compute chained AES encrypt function.
-  address generate_cipherBlockChaining_AES_encrypt(const char* name) {
+  address generate_cipherBlockChaining_AES_encrypt() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_encryptAESCrypt_id;
+    StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
     generate_AES_cipherBlockChaining(false);
@@ -1855,9 +1866,10 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Compute chained AES decrypt function.
-  address generate_cipherBlockChaining_AES_decrypt(const char* name) {
+  address generate_cipherBlockChaining_AES_decrypt() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_decryptAESCrypt_id;
+    StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
     generate_AES_cipherBlockChaining(true);
@@ -2561,9 +2573,10 @@ class StubGenerator: public StubCodeGenerator {
 
   // Compute AES-CTR crypto function.
   // Encrypt or decrypt is selected via parameters. Only one stub is necessary.
-  address generate_counterMode_AESCrypt(const char* name) {
+  address generate_counterMode_AESCrypt() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubGenStubId stub_id = StubGenStubId::counterMode_AESCrypt_id;
+    StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
     generate_counterMode_AES(false);
@@ -2576,7 +2589,8 @@ class StubGenerator: public StubCodeGenerator {
   // Compute GHASH function.
   address generate_ghash_processBlocks() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "ghash_processBlocks");
+    StubGenStubId stub_id = StubGenStubId::ghash_processBlocks_id;
+    StubCodeMark mark(this, stub_id);
     unsigned int start_off = __ offset();   // Remember stub start address (is rtn value).
 
     const Register state   = Z_ARG1;
@@ -2653,9 +2667,20 @@ class StubGenerator: public StubCodeGenerator {
   //      provides for a large enough source data buffer.
   //
   // Compute SHA-1 function.
-  address generate_SHA1_stub(bool multiBlock, const char* name) {
+  address generate_SHA1_stub(StubGenStubId stub_id) {
+    bool multiBlock;
+    switch (stub_id) {
+    case sha1_implCompress_id:
+      multiBlock = false;
+      break;
+    case sha1_implCompressMB_id:
+      multiBlock = true;
+      break;
+    default:
+      ShouldNotReachHere();
+    }
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubCodeMark mark(this, stub_id);
     unsigned int start_off = __ offset();   // Remember stub start address (is rtn value).
 
     const Register srcBuff        = Z_ARG1; // Points to first block to process (offset already added).
@@ -2735,9 +2760,20 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Compute SHA-256 function.
-  address generate_SHA256_stub(bool multiBlock, const char* name) {
+  address generate_SHA256_stub(StubGenStubId stub_id) {
+    bool multiBlock;
+    switch (stub_id) {
+    case sha256_implCompress_id:
+      multiBlock = false;
+      break;
+    case sha256_implCompressMB_id:
+      multiBlock = true;
+      break;
+    default:
+      ShouldNotReachHere();
+    }
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubCodeMark mark(this, stub_id);
     unsigned int start_off = __ offset();   // Remember stub start address (is rtn value).
 
     const Register srcBuff        = Z_ARG1;
@@ -2815,9 +2851,20 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Compute SHA-512 function.
-  address generate_SHA512_stub(bool multiBlock, const char* name) {
+  address generate_SHA512_stub(StubGenStubId stub_id) {
+    bool multiBlock;
+    switch (stub_id) {
+    case sha512_implCompress_id:
+      multiBlock = false;
+      break;
+    case sha512_implCompressMB_id:
+      multiBlock = true;
+      break;
+    default:
+      ShouldNotReachHere();
+    }
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubCodeMark mark(this, stub_id);
     unsigned int start_off = __ offset();   // Remember stub start address (is rtn value).
 
     const Register srcBuff        = Z_ARG1;
@@ -2907,7 +2954,7 @@ class StubGenerator: public StubCodeGenerator {
    *   Z_RET     - int   crc result
    **/
   // Compute CRC function (generic, for all polynomials).
-  void generate_CRC_updateBytes(const char* name, Register table, bool invertCRC) {
+  void generate_CRC_updateBytes(Register table, bool invertCRC) {
 
     // arguments to kernel_crc32:
     Register       crc     = Z_ARG1;  // Current checksum, preset by caller or result from previous call, int.
@@ -2938,18 +2985,19 @@ class StubGenerator: public StubCodeGenerator {
 
 
   // Compute CRC32 function.
-  address generate_CRC32_updateBytes(const char* name) {
+  address generate_CRC32_updateBytes() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubGenStubId stub_id =  StubGenStubId::updateBytesCRC32_id;
+    StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
-    assert(UseCRC32Intrinsics, "should not generate this stub (%s) with CRC32 intrinsics disabled", name);
+    assert(UseCRC32Intrinsics, "should not generate this stub (%s) with CRC32 intrinsics disabled", StubRoutines::get_stub_name(stub_id));
 
     BLOCK_COMMENT("CRC32_updateBytes {");
     Register       table   = Z_ARG4;  // crc32 table address.
     StubRoutines::zarch::generate_load_crc_table_addr(_masm, table);
 
-    generate_CRC_updateBytes(name, table, true);
+    generate_CRC_updateBytes(table, true);
     BLOCK_COMMENT("} CRC32_updateBytes");
 
     return __ addr_at(start_off);
@@ -2957,18 +3005,19 @@ class StubGenerator: public StubCodeGenerator {
 
 
   // Compute CRC32C function.
-  address generate_CRC32C_updateBytes(const char* name) {
+  address generate_CRC32C_updateBytes() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", name);
+    StubGenStubId stub_id =  StubGenStubId::updateBytesCRC32C_id;
+    StubCodeMark mark(this, stub_id);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
-    assert(UseCRC32CIntrinsics, "should not generate this stub (%s) with CRC32C intrinsics disabled", name);
+    assert(UseCRC32CIntrinsics, "should not generate this stub (%s) with CRC32C intrinsics disabled", StubRoutines::get_stub_name(stub_id));
 
     BLOCK_COMMENT("CRC32C_updateBytes {");
     Register       table   = Z_ARG4;  // crc32c table address.
     StubRoutines::zarch::generate_load_crc32c_table_addr(_masm, table);
 
-    generate_CRC_updateBytes(name, table, false);
+    generate_CRC_updateBytes(table, false);
     BLOCK_COMMENT("} CRC32C_updateBytes");
 
     return __ addr_at(start_off);
@@ -2981,10 +3030,10 @@ class StubGenerator: public StubCodeGenerator {
   //   Z_ARG3    - y address
   //   Z_ARG4    - y length
   //   Z_ARG5    - z address
-  //   160[Z_SP] - z length
   address generate_multiplyToLen() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "multiplyToLen");
+    StubGenStubId stub_id =  StubGenStubId::multiplyToLen_id;
+    StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
 
@@ -2993,8 +3042,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register y    = Z_ARG3;
     const Register ylen = Z_ARG4;
     const Register z    = Z_ARG5;
-    // zlen is passed on the stack:
-    // Address zlen(Z_SP, _z_abi(remaining_cargs));
 
     // Next registers will be saved on stack in multiply_to_len().
     const Register tmp1 = Z_tmp_1;
@@ -3017,7 +3064,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_method_entry_barrier() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
+    StubGenStubId stub_id =  StubGenStubId::method_entry_barrier_id;
+    StubCodeMark mark(this, stub_id);
 
     address start = __ pc();
 
@@ -3080,24 +3128,10 @@ class StubGenerator: public StubCodeGenerator {
     return nullptr;
   }
 
-  #if INCLUDE_JFR
-  RuntimeStub* generate_jfr_write_checkpoint() {
-    if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
-  }
-
-  RuntimeStub* generate_jfr_return_lease() {
-    if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
-  }
-
-  #endif // INCLUDE_JFR
-
   // exception handler for upcall stubs
   address generate_upcall_stub_exception_handler() {
-    StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
+    StubGenStubId stub_id =  StubGenStubId::upcall_stub_exception_handler_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ pc();
 
     // Native caller has no idea how to handle exceptions,
@@ -3106,6 +3140,30 @@ class StubGenerator: public StubCodeGenerator {
     __ load_const_optimized(Z_R1_scratch, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::handle_uncaught_exception));
     __ call_c(Z_R1_scratch);
     __ should_not_reach_here();
+
+    return start;
+  }
+
+  // load Method* target of MethodHandle
+  // Z_ARG1 = jobject receiver
+  // Z_method = Method* result
+  address generate_upcall_stub_load_target() {
+    StubGenStubId stub_id =  StubGenStubId::upcall_stub_load_target_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+
+    __ resolve_global_jobject(Z_ARG1, Z_tmp_1, Z_tmp_2);
+      // Load target method from receiver
+    __ load_heap_oop(Z_method, Address(Z_ARG1, java_lang_invoke_MethodHandle::form_offset()),
+                    noreg, noreg, IS_NOT_NULL);
+    __ load_heap_oop(Z_method, Address(Z_method, java_lang_invoke_LambdaForm::vmentry_offset()),
+                    noreg, noreg, IS_NOT_NULL);
+    __ load_heap_oop(Z_method, Address(Z_method, java_lang_invoke_MemberName::method_offset()),
+                    noreg, noreg, IS_NOT_NULL);
+    __ z_lg(Z_method, Address(Z_method, java_lang_invoke_ResolvedMethodName::vmtarget_offset()));
+    __ z_stg(Z_method, Address(Z_thread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+
+    __ z_br(Z_R14);
 
     return start;
   }
@@ -3123,25 +3181,17 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_call_stub_entry                         = generate_call_stub(StubRoutines::_call_stub_return_address);
     StubRoutines::_catch_exception_entry                   = generate_catch_exception();
 
-    // Build this early so it's available for the interpreter.
-    StubRoutines::_throw_StackOverflowError_entry          =
-      generate_throw_exception("StackOverflowError throw_exception",
-                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError), false);
-    StubRoutines::_throw_delayed_StackOverflowError_entry  =
-      generate_throw_exception("delayed StackOverflowError throw_exception",
-                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_delayed_StackOverflowError), false);
-
     //----------------------------------------------------------------------
     // Entry points that are platform specific.
 
     if (UseCRC32Intrinsics) {
       StubRoutines::_crc_table_adr     = (address)StubRoutines::zarch::_crc_table;
-      StubRoutines::_updateBytesCRC32  = generate_CRC32_updateBytes("CRC32_updateBytes");
+      StubRoutines::_updateBytesCRC32  = generate_CRC32_updateBytes();
     }
 
     if (UseCRC32CIntrinsics) {
       StubRoutines::_crc32c_table_addr = (address)StubRoutines::zarch::_crc32c_table;
-      StubRoutines::_updateBytesCRC32C = generate_CRC32C_updateBytes("CRC32C_updateBytes");
+      StubRoutines::_updateBytesCRC32C = generate_CRC32C_updateBytes();
     }
 
     // Comapct string intrinsics: Translate table for string inflate intrinsic. Used by trot instruction.
@@ -3155,28 +3205,10 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-
-    JFR_ONLY(generate_jfr_stubs();)
   }
-
-#if INCLUDE_JFR
-  void generate_jfr_stubs() {
-    StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
-    StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
-    StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
-    StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
-  }
-#endif // INCLUDE_JFR
 
   void generate_final_stubs() {
     // Generates all stubs and initializes the entry points.
-
-    StubRoutines::zarch::_partial_subtype_check            = generate_partial_subtype_check();
-
-    // These entry points require SharedInfo::stack0 to be set up in non-core builds.
-    StubRoutines::_throw_AbstractMethodError_entry         = generate_throw_exception("AbstractMethodError throw_exception",          CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError),  false);
-    StubRoutines::_throw_IncompatibleClassChangeError_entry= generate_throw_exception("IncompatibleClassChangeError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError),  false);
-    StubRoutines::_throw_NullPointerException_at_call_entry= generate_throw_exception("NullPointerException at call throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call), false);
 
     // Support for verify_oop (must happen after universe_init).
     StubRoutines::_verify_oop_subroutine_entry             = generate_verify_oop_subroutine();
@@ -3185,23 +3217,33 @@ class StubGenerator: public StubCodeGenerator {
     generate_arraycopy_stubs();
 
     // nmethod entry barriers for concurrent class unloading
-    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
+    StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
+
+#ifdef COMPILER2
+    if (UseSecondarySupersTable) {
+      StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
+      if (!InlineSecondarySupersTest) {
+        generate_lookup_secondary_supers_table_stub();
+      }
     }
+#endif // COMPILER2
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
   }
 
   void generate_compiler_stubs() {
+
+    StubRoutines::zarch::_partial_subtype_check            = generate_partial_subtype_check();
+
 #if COMPILER2_OR_JVMCI
     // Generate AES intrinsics code.
     if (UseAESIntrinsics) {
       if (VM_Version::has_Crypto_AES()) {
-        StubRoutines::_aescrypt_encryptBlock = generate_AES_encryptBlock("AES_encryptBlock");
-        StubRoutines::_aescrypt_decryptBlock = generate_AES_decryptBlock("AES_decryptBlock");
-        StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_AES_encrypt("AES_encryptBlock_chaining");
-        StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_AES_decrypt("AES_decryptBlock_chaining");
+        StubRoutines::_aescrypt_encryptBlock = generate_AES_encryptBlock();
+        StubRoutines::_aescrypt_decryptBlock = generate_AES_decryptBlock();
+        StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_AES_encrypt();
+        StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_AES_decrypt();
       } else {
         // In PRODUCT builds, the function pointers will keep their initial (null) value.
         // LibraryCallKit::try_to_inline() will return false then, preventing the intrinsic to be called.
@@ -3211,7 +3253,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (UseAESCTRIntrinsics) {
       if (VM_Version::has_Crypto_AES_CTR()) {
-        StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt("counterMode_AESCrypt");
+        StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
       } else {
         // In PRODUCT builds, the function pointers will keep their initial (null) value.
         // LibraryCallKit::try_to_inline() will return false then, preventing the intrinsic to be called.
@@ -3226,16 +3268,16 @@ class StubGenerator: public StubCodeGenerator {
 
     // Generate SHA1/SHA256/SHA512 intrinsics code.
     if (UseSHA1Intrinsics) {
-      StubRoutines::_sha1_implCompress     = generate_SHA1_stub(false,   "SHA1_singleBlock");
-      StubRoutines::_sha1_implCompressMB   = generate_SHA1_stub(true,    "SHA1_multiBlock");
+      StubRoutines::_sha1_implCompress     = generate_SHA1_stub(StubGenStubId::sha1_implCompress_id);
+      StubRoutines::_sha1_implCompressMB   = generate_SHA1_stub(StubGenStubId::sha1_implCompressMB_id);
     }
     if (UseSHA256Intrinsics) {
-      StubRoutines::_sha256_implCompress   = generate_SHA256_stub(false, "SHA256_singleBlock");
-      StubRoutines::_sha256_implCompressMB = generate_SHA256_stub(true,  "SHA256_multiBlock");
+      StubRoutines::_sha256_implCompress   = generate_SHA256_stub(StubGenStubId::sha256_implCompress_id);
+      StubRoutines::_sha256_implCompressMB = generate_SHA256_stub(StubGenStubId::sha256_implCompressMB_id);
     }
     if (UseSHA512Intrinsics) {
-      StubRoutines::_sha512_implCompress   = generate_SHA512_stub(false, "SHA512_singleBlock");
-      StubRoutines::_sha512_implCompressMB = generate_SHA512_stub(true,  "SHA512_multiBlock");
+      StubRoutines::_sha512_implCompress   = generate_SHA512_stub(StubGenStubId::sha512_implCompress_id);
+      StubRoutines::_sha512_implCompressMB = generate_SHA512_stub(StubGenStubId::sha512_implCompressMB_id);
     }
 
 #ifdef COMPILER2
@@ -3255,22 +3297,22 @@ class StubGenerator: public StubCodeGenerator {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, StubsKind kind) : StubCodeGenerator(code) {
-    switch(kind) {
-    case Initial_stubs:
+  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
+    switch(blob_id) {
+    case initial_id:
       generate_initial_stubs();
       break;
-     case Continuation_stubs:
+     case continuation_id:
       generate_continuation_stubs();
       break;
-    case Compiler_stubs:
+    case compiler_id:
       generate_compiler_stubs();
       break;
-    case Final_stubs:
+    case final_id:
       generate_final_stubs();
       break;
     default:
-      fatal("unexpected stubs kind: %d", kind);
+      fatal("unexpected blob id: %d", blob_id);
       break;
     };
   }
@@ -3309,6 +3351,6 @@ class StubGenerator: public StubCodeGenerator {
 
 };
 
-void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind) {
-  StubGenerator g(code, kind);
+void StubGenerator_generate(CodeBuffer* code, StubGenBlobId blob_id) {
+  StubGenerator g(code, blob_id);
 }

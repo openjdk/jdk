@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,9 @@ public:
   void enqueue(void* value);
 
   // Transfer all completed buffers to the shared qset.
-  void flush();
+  // Returns the flushed BufferNodeList which is later used
+  // as a shortcut into the shared qset.
+  BufferNodeList flush();
 };
 
 // Card table entries to be redirtied and the cards reprocessed later.

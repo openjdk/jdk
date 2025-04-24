@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package sun.nio.fs;
-
-import jdk.internal.misc.Blocker;
 
 /**
  * Bsd specific system calls.
@@ -69,13 +67,7 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
     {
         try (NativeBuffer srcBuffer = copyToNativeBuffer(src);
             NativeBuffer dstBuffer = copyToNativeBuffer(dst)) {
-            long comp = Blocker.begin();
-            try {
-                return clonefile0(srcBuffer.address(), dstBuffer.address(),
-                                  flags);
-            } finally {
-                Blocker.end(comp);
-            }
+            return clonefile0(srcBuffer.address(), dstBuffer.address(), flags);
         }
     }
     private static native int clonefile0(long srcAddress, long dstAddress,
@@ -90,13 +82,8 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
         throws UnixException
     {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                setattrlist0(buffer.address(), commonattr, modTime, accTime,
-                             createTime, options);
-            } finally {
-                Blocker.end(comp);
-            }
+            setattrlist0(buffer.address(), commonattr, modTime, accTime,
+                         createTime, options);
         }
     }
     private static native void setattrlist0(long pathAddress, int commonattr,
@@ -112,13 +99,7 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
                              long accTime, long createTime, long options)
         throws UnixException
     {
-        long comp = Blocker.begin();
-        try {
-            fsetattrlist0(fd, commonattr, modTime, accTime,
-                          createTime, options);
-        } finally {
-            Blocker.end(comp);
-        }
+        fsetattrlist0(fd, commonattr, modTime, accTime, createTime, options);
     }
     private static native void fsetattrlist0(int fd, int commonattr,
                                              long modTime, long accTime,

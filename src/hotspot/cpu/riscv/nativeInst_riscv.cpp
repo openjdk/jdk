@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,10 +24,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/compiledIC.hpp"
-#include "memory/resourceArea.hpp"
 #include "nativeInst_riscv.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.hpp"
@@ -40,173 +38,261 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
-Register NativeInstruction::extract_rs1(address instr) {
-  assert_cond(instr != nullptr);
-  return as_Register(Assembler::extract(Assembler::ld_instr(instr), 19, 15));
+//-----------------------------------------------------------------------------
+// NativeInstruction
+
+bool NativeInstruction::is_call_at(address addr) {
+  return NativeCall::is_at(addr);
 }
 
-Register NativeInstruction::extract_rs2(address instr) {
-  assert_cond(instr != nullptr);
-  return as_Register(Assembler::extract(Assembler::ld_instr(instr), 24, 20));
-}
+//-----------------------------------------------------------------------------
+// NativeFarCall
+//
+// Implements direct far calling loading an address from the stub section version of reloc call.
 
-Register NativeInstruction::extract_rd(address instr) {
-  assert_cond(instr != nullptr);
-  return as_Register(Assembler::extract(Assembler::ld_instr(instr), 11, 7));
-}
+class NativeFarCall: public NativeInstruction {
+ public:
+  enum RISCV_specific_constants {
+    return_address_offset       =    3 * NativeInstruction::instruction_size, // auipc + ld + jalr
+  };
 
-uint32_t NativeInstruction::extract_opcode(address instr) {
-  assert_cond(instr != nullptr);
-  return Assembler::extract(Assembler::ld_instr(instr), 6, 0);
-}
+  address instruction_address() const       { return addr_at(0); }
+  address next_instruction_address() const  { return addr_at(return_address_offset); }
+  address return_address() const            { return addr_at(return_address_offset); }
+  address destination() const;
+  address reloc_destination(address orig_address);
 
-uint32_t NativeInstruction::extract_funct3(address instr) {
-  assert_cond(instr != nullptr);
-  return Assembler::extract(Assembler::ld_instr(instr), 14, 12);
-}
+  void set_destination(address dest);
+  void verify();
+  void print();
 
-bool NativeInstruction::is_pc_relative_at(address instr) {
-  // auipc + jalr
-  // auipc + addi
-  // auipc + load
-  // auipc + fload_load
-  return (is_auipc_at(instr)) &&
-         (is_addi_at(instr + instruction_size) ||
-          is_jalr_at(instr + instruction_size) ||
-          is_load_at(instr + instruction_size) ||
-          is_float_load_at(instr + instruction_size)) &&
-         check_pc_relative_data_dependency(instr);
-}
+  bool set_destination_mt_safe(address dest, bool assert_lock = true);
+  bool reloc_set_destination(address dest);
 
-// ie:ld(Rd, Label)
-bool NativeInstruction::is_load_pc_relative_at(address instr) {
-  return is_auipc_at(instr) && // auipc
-         is_ld_at(instr + instruction_size) && // ld
-         check_load_pc_relative_data_dependency(instr);
-}
+ private:
+  address stub_address();
 
-bool NativeInstruction::is_movptr_at(address instr) {
-  return is_lui_at(instr) && // Lui
-         is_addi_at(instr + instruction_size) && // Addi
-         is_slli_shift_at(instr + instruction_size * 2, 11) && // Slli Rd, Rs, 11
-         is_addi_at(instr + instruction_size * 3) && // Addi
-         is_slli_shift_at(instr + instruction_size * 4, 6) && // Slli Rd, Rs, 6
-         (is_addi_at(instr + instruction_size * 5) ||
-          is_jalr_at(instr + instruction_size * 5) ||
-          is_load_at(instr + instruction_size * 5)) && // Addi/Jalr/Load
-         check_movptr_data_dependency(instr);
-}
+  static void set_stub_address_destination_at(address dest, address value);
+  static address stub_address_destination_at(address src);
+ public:
 
-bool NativeInstruction::is_li16u_at(address instr) {
-  return is_lui_at(instr) && // lui
-         is_srli_at(instr + instruction_size) && // srli
-         check_li16u_data_dependency(instr);
-}
+  static NativeFarCall* at(address addr);
+  static bool is_at(address addr);
+  static bool is_call_before(address return_address);
+};
 
-bool NativeInstruction::is_li32_at(address instr) {
-  return is_lui_at(instr) && // lui
-         is_addiw_at(instr + instruction_size) && // addiw
-         check_li32_data_dependency(instr);
-}
+address NativeFarCall::destination() const {
+  address addr = instruction_address();
+  assert(NativeFarCall::is_at(addr), "unexpected code at call site");
 
-bool NativeInstruction::is_li64_at(address instr) {
-  return is_lui_at(instr) && // lui
-         is_addi_at(instr + instruction_size) && // addi
-         is_slli_shift_at(instr + instruction_size * 2, 12) &&  // Slli Rd, Rs, 12
-         is_addi_at(instr + instruction_size * 3) && // addi
-         is_slli_shift_at(instr + instruction_size * 4, 12) &&  // Slli Rd, Rs, 12
-         is_addi_at(instr + instruction_size * 5) && // addi
-         is_slli_shift_at(instr + instruction_size * 6, 8) &&   // Slli Rd, Rs, 8
-         is_addi_at(instr + instruction_size * 7) && // addi
-         check_li64_data_dependency(instr);
-}
+  address destination = MacroAssembler::target_addr_for_insn(addr);
 
-void NativeCall::verify() {
-  assert(NativeCall::is_call_at((address)this), "unexpected code at call site");
-}
-
-address NativeCall::destination() const {
-  address addr = (address)this;
-  assert(NativeInstruction::is_jal_at(instruction_address()), "inst must be jal.");
-  address destination = MacroAssembler::target_addr_for_insn(instruction_address());
-
-  // Do we use a trampoline stub for this call?
   CodeBlob* cb = CodeCache::find_blob(addr);
   assert(cb && cb->is_nmethod(), "sanity");
   nmethod *nm = (nmethod *)cb;
-  if (nm != nullptr && nm->stub_contains(destination) && is_NativeCallTrampolineStub_at(destination)) {
-    // Yes we do, so get the destination from the trampoline stub.
-    const address trampoline_stub_addr = destination;
-    destination = nativeCallTrampolineStub_at(trampoline_stub_addr)->destination();
-  }
-
-  return destination;
+  assert(nm != nullptr, "Sanity");
+  assert(nm->stub_contains(destination), "Sanity");
+  assert(destination != nullptr, "Sanity");
+  return stub_address_destination_at(destination);
 }
 
-// Similar to replace_mt_safe, but just changes the destination. The
-// important thing is that free-running threads are able to execute this
-// call instruction at all times.
-//
-// Used in the runtime linkage of calls; see class CompiledIC.
-//
-// Add parameter assert_lock to switch off assertion
-// during code generation, where no patching lock is needed.
-void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
+address NativeFarCall::reloc_destination(address orig_address) {
+  address call_addr = instruction_address();
+
+  CodeBlob *code = CodeCache::find_blob(call_addr);
+  assert(code != nullptr, "Could not find the containing code blob");
+
+  address stub_addr = nullptr;
+  if (code != nullptr && code->is_nmethod()) {
+    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, (nmethod*)code);
+  }
+
+  if (stub_addr != nullptr) {
+    stub_addr = MacroAssembler::target_addr_for_insn(call_addr);
+  }
+  return stub_addr;
+}
+
+void NativeFarCall::set_destination(address dest) {
+  address addr = instruction_address();
+  assert(NativeFarCall::is_at(addr), "unexpected code at call site");
+  Unimplemented();
+}
+
+void NativeFarCall::verify() {
+  assert(NativeFarCall::is_at(instruction_address()), "unexpected code at call site");
+}
+
+void NativeFarCall::print() {
+  assert(NativeFarCall::is_at(instruction_address()), "unexpected code at call site");
+  tty->print_cr(PTR_FORMAT ": auipc,ld,jalr x1, offset/reg, ", p2i(addr_at(0)));
+}
+
+bool NativeFarCall::set_destination_mt_safe(address dest, bool assert_lock) {
+  assert(NativeFarCall::is_at(addr_at(0)), "unexpected code at call site");
   assert(!assert_lock ||
-         (Patching_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
+         (CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 
-  ResourceMark rm;
-  address addr_call = addr_at(0);
-  assert(NativeCall::is_call_at(addr_call), "unexpected code at call site");
+  address call_addr = addr_at(0);
+  assert(NativeFarCall::is_at(call_addr), "unexpected code at call site");
 
-  // Patch the constant in the call's trampoline stub.
-  address trampoline_stub_addr = get_trampoline();
-  if (trampoline_stub_addr != nullptr) {
-    assert (!is_NativeCallTrampolineStub_at(dest), "chained trampolines");
-    nativeCallTrampolineStub_at(trampoline_stub_addr)->set_destination(dest);
+  address stub_addr = stub_address();
+
+  if (stub_addr != nullptr) {
+    set_stub_address_destination_at(stub_addr, dest);
+    return true;
   }
 
-  // Patch the call.
-  if (Assembler::reachable_from_branch_at(addr_call, dest)) {
-    set_destination(dest);
-  } else {
-    assert (trampoline_stub_addr != nullptr, "we need a trampoline");
-    set_destination(trampoline_stub_addr);
-  }
-
-  ICache::invalidate_range(addr_call, instruction_size);
+  return false;
 }
 
-address NativeCall::get_trampoline() {
+bool NativeFarCall::reloc_set_destination(address dest) {
+  address call_addr = addr_at(0);
+  assert(NativeFarCall::is_at(call_addr), "unexpected code at call site");
+
+  CodeBlob *code = CodeCache::find_blob(call_addr);
+  assert(code != nullptr, "Could not find the containing code blob");
+
+  address stub_addr = nullptr;
+  if (code != nullptr && code->is_nmethod()) {
+    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, (nmethod*)code);
+  }
+
+  if (stub_addr != nullptr) {
+    MacroAssembler::pd_patch_instruction_size(call_addr, stub_addr);
+  }
+
+  return true;
+}
+
+void NativeFarCall::set_stub_address_destination_at(address dest, address value) {
+  assert_cond(dest != nullptr);
+  assert_cond(value != nullptr);
+
+  set_data64_at(dest, (uint64_t)value);
+  OrderAccess::release();
+}
+
+address NativeFarCall::stub_address_destination_at(address src) {
+  assert_cond(src != nullptr);
+  address dest = (address)get_data64_at(src);
+  return dest;
+}
+
+address NativeFarCall::stub_address() {
   address call_addr = addr_at(0);
 
   CodeBlob *code = CodeCache::find_blob(call_addr);
   assert(code != nullptr, "Could not find the containing code blob");
 
-  address jal_destination = MacroAssembler::pd_call_destination(call_addr);
-  if (code != nullptr && code->contains(jal_destination) && is_NativeCallTrampolineStub_at(jal_destination)) {
-    return jal_destination;
-  }
-
-  if (code != nullptr && code->is_nmethod()) {
-    return trampoline_stub_Relocation::get_trampoline_for(call_addr, (nmethod*)code);
-  }
-
-  return nullptr;
+  address dest = MacroAssembler::pd_call_destination(call_addr);
+  assert(code->contains(dest), "Sanity");
+  return dest;
 }
 
-// Inserts a native call instruction at a given pc
-void NativeCall::insert(address code_pos, address entry) { Unimplemented(); }
+NativeFarCall* NativeFarCall::at(address addr) {
+  assert_cond(addr != nullptr);
+  assert(NativeFarCall::is_at(addr), "unexpected code at call site: %p", addr);
+  NativeFarCall* call = (NativeFarCall*)(addr);
+  return call;
+}
+
+bool NativeFarCall::is_at(address addr) {
+  assert_cond(addr != nullptr);
+  const int instr_size = NativeInstruction::instruction_size;
+  if (MacroAssembler::is_auipc_at(addr) &&
+      MacroAssembler::is_ld_at(addr + instr_size) &&
+      MacroAssembler::is_jalr_at(addr + 2 * instr_size) &&
+      (MacroAssembler::extract_rd(addr)                    == x6) &&
+      (MacroAssembler::extract_rd(addr + instr_size)       == x6) &&
+      (MacroAssembler::extract_rs1(addr + instr_size)      == x6) &&
+      (MacroAssembler::extract_rs1(addr + 2 * instr_size)  == x6) &&
+      (MacroAssembler::extract_rd(addr + 2 * instr_size)  == x1)) {
+    return true;
+  }
+  return false;
+}
+
+bool NativeFarCall::is_call_before(address return_address) {
+  return NativeFarCall::is_at(return_address - return_address_offset);
+}
+
+//-----------------------------------------------------------------------------
+// NativeCall
+
+address NativeCall::instruction_address() const {
+  return NativeFarCall::at(addr_at(0))->instruction_address();
+}
+
+address NativeCall::next_instruction_address() const {
+  return NativeFarCall::at(addr_at(0))->next_instruction_address();
+}
+
+address NativeCall::return_address() const {
+  return NativeFarCall::at(addr_at(0))->return_address();
+}
+
+address NativeCall::destination() const {
+  return NativeFarCall::at(addr_at(0))->destination();
+}
+
+address NativeCall::reloc_destination(address orig_address) {
+  return NativeFarCall::at(addr_at(0))->reloc_destination(orig_address);
+}
+
+void NativeCall::set_destination(address dest) {
+  NativeFarCall::at(addr_at(0))->set_destination(dest);
+}
+
+void NativeCall::verify() {
+  NativeFarCall::at(addr_at(0))->verify();;
+}
+
+void NativeCall::print() {
+  NativeFarCall::at(addr_at(0))->print();;
+}
+
+bool NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
+  return NativeFarCall::at(addr_at(0))->set_destination_mt_safe(dest, assert_lock);
+}
+
+bool NativeCall::reloc_set_destination(address dest) {
+  return NativeFarCall::at(addr_at(0))->reloc_set_destination(dest);
+}
+
+bool NativeCall::is_at(address addr) {
+  return NativeFarCall::is_at(addr);
+}
+
+bool NativeCall::is_call_before(address return_address) {
+  return NativeFarCall::is_call_before(return_address);
+}
+
+NativeCall* nativeCall_at(address addr) {
+  assert_cond(addr != nullptr);
+  NativeCall* call = (NativeCall*)(addr);
+  DEBUG_ONLY(call->verify());
+  return call;
+}
+
+NativeCall* nativeCall_before(address return_address) {
+  assert_cond(return_address != nullptr);
+  NativeCall* call = nullptr;
+  call = (NativeCall*)(return_address - NativeFarCall::return_address_offset);
+  DEBUG_ONLY(call->verify());
+  return call;
+}
 
 //-------------------------------------------------------------------
 
 void NativeMovConstReg::verify() {
-  if (!(nativeInstruction_at(instruction_address())->is_movptr() ||
-        is_auipc_at(instruction_address()))) {
-    fatal("should be MOVPTR or AUIPC");
+  NativeInstruction* ni = nativeInstruction_at(instruction_address());
+  if (ni->is_movptr() || ni->is_auipc()) {
+    return;
   }
+  fatal("should be MOVPTR or AUIPC");
 }
 
 intptr_t NativeMovConstReg::data() const {
@@ -225,7 +311,7 @@ void NativeMovConstReg::set_data(intptr_t x) {
   } else {
     // Store x into the instruction stream.
     MacroAssembler::pd_patch_instruction_size(instruction_address(), (address)x);
-    ICache::invalidate_range(instruction_address(), movptr_instruction_size);
+    ICache::invalidate_range(instruction_address(), movptr1_instruction_size /* > movptr2_instruction_size */ );
   }
 
   // Find and replace the oop/metadata corresponding to this
@@ -292,7 +378,7 @@ address NativeJump::jump_destination() const {
   // load
 
   // return -1 if jump to self or to 0
-  if ((dest == (address) this) || dest == 0) {
+  if ((dest == (address) this) || dest == nullptr) {
     dest = (address) -1;
   }
 
@@ -321,7 +407,7 @@ address NativeGeneralJump::jump_destination() const {
   // a general jump
 
   // return -1 if jump to self or to 0
-  if ((dest == (address) this) || dest == 0) {
+  if ((dest == (address) this) || dest == nullptr) {
     dest = (address) -1;
   }
 
@@ -331,14 +417,7 @@ address NativeGeneralJump::jump_destination() const {
 //-------------------------------------------------------------------
 
 bool NativeInstruction::is_safepoint_poll() {
-  return is_lwu_to_zr(address(this));
-}
-
-bool NativeInstruction::is_lwu_to_zr(address instr) {
-  assert_cond(instr != nullptr);
-  return (extract_opcode(instr) == 0b0000011 &&
-          extract_funct3(instr) == 0b110 &&
-          extract_rd(instr) == zr);         // zr
+  return MacroAssembler::is_lwu_to_zr(address(this));
 }
 
 // A 16-bit instruction with all bits ones is permanently reserved as an illegal instruction.
@@ -395,14 +474,16 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
   ICache::invalidate_range(verified_entry, instruction_size);
 }
 
+//-------------------------------------------------------------------
+
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   CodeBuffer cb(code_pos, instruction_size);
   MacroAssembler a(&cb);
   Assembler::IncompressibleRegion ir(&a);  // Fixed length: see NativeGeneralJump::get_instruction_size()
 
   int32_t offset = 0;
-  a.movptr(t0, entry, offset); // lui, addi, slli, addi, slli
-  a.jalr(x0, t0, offset); // jalr
+  a.movptr(t1, entry, offset, t0); // lui, lui, slli, add
+  a.jr(t1, offset); // jalr
 
   ICache::invalidate_range(code_pos, instruction_size);
 }
@@ -412,39 +493,7 @@ void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer)
   ShouldNotCallThis();
 }
 
-
-address NativeCallTrampolineStub::destination(nmethod *nm) const {
-  return ptr_at(data_offset);
-}
-
-void NativeCallTrampolineStub::set_destination(address new_destination) {
-  set_ptr_at(data_offset, new_destination);
-  OrderAccess::release();
-}
-
-uint32_t NativeMembar::get_kind() {
-  uint32_t insn = uint_at(0);
-
-  uint32_t predecessor = Assembler::extract(insn, 27, 24);
-  uint32_t successor = Assembler::extract(insn, 23, 20);
-
-  return MacroAssembler::pred_succ_to_membar_mask(predecessor, successor);
-}
-
-void NativeMembar::set_kind(uint32_t order_kind) {
-  uint32_t predecessor = 0;
-  uint32_t successor = 0;
-
-  MacroAssembler::membar_mask_to_pred_succ(order_kind, predecessor, successor);
-
-  uint32_t insn = uint_at(0);
-  address pInsn = (address) &insn;
-  Assembler::patch(pInsn, 27, 24, predecessor);
-  Assembler::patch(pInsn, 23, 20, successor);
-
-  address membar = addr_at(0);
-  Assembler::sd_instr(membar, insn);
-}
+//-------------------------------------------------------------------
 
 void NativePostCallNop::make_deopt() {
   MacroAssembler::assert_alignment(addr_at(0));
@@ -468,7 +517,7 @@ bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
   }
   int32_t data = (oopmap_slot << 24) | cb_offset;
   assert(data != 0, "must be");
-  assert(is_lui_to_zr_at(addr_at(4)) && is_addiw_to_zr_at(addr_at(8)), "must be");
+  assert(MacroAssembler::is_lui_to_zr_at(addr_at(4)) && MacroAssembler::is_addiw_to_zr_at(addr_at(8)), "must be");
 
   MacroAssembler::patch_imm_in_li32(addr_at(4), data);
   return true; // successfully encoded

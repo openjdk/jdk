@@ -38,6 +38,7 @@ inline bool Assembler::is_simm13(int64_t x) { return is_simm(x, 13); }
 inline bool Assembler::is_simm18(int64_t x) { return is_simm(x, 18); }
 inline bool Assembler::is_simm21(int64_t x) { return is_simm(x, 21); }
 
+inline bool Assembler::is_uimm2(uint64_t x) { return is_uimm(x, 2); }
 inline bool Assembler::is_uimm3(uint64_t x) { return is_uimm(x, 3); }
 inline bool Assembler::is_uimm5(uint64_t x) { return is_uimm(x, 5); }
 inline bool Assembler::is_uimm6(uint64_t x) { return is_uimm(x, 6); }

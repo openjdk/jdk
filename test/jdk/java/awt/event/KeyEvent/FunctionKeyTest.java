@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,18 @@ import java.awt.Label;
 import java.awt.Robot;
 import java.awt.TextArea;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static java.awt.Event.KEY_ACTION;
+import static java.awt.Event.KEY_ACTION_RELEASE;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /*
  * @test
@@ -39,35 +51,38 @@ import java.awt.event.KeyEvent;
  * @key headful
  */
 
-public class FunctionKeyTest {
-    private static FunctionKeyTester frame;
+public final class FunctionKeyTest {
+    private static Frame frame;
     private static Robot robot;
 
-    static volatile boolean keyPressReceived;
-    static volatile boolean keyReleaseReceived;
+    private static final CyclicBarrier keyPress = new CyclicBarrier(2);
+    private static final CyclicBarrier keyRelease = new CyclicBarrier(2);
 
-    static final StringBuilder failures = new StringBuilder();
+    private static final CountDownLatch frameActivated = new CountDownLatch(1);
 
-    private static void testKey(int keyCode, String keyText) {
-        keyPressReceived = false;
-        keyReleaseReceived = false;
+    private static final List<Error> failures = new ArrayList<>(4);
+    private static final AtomicReference<Exception> edtException = new AtomicReference<>();
 
+    private static void testKey(int keyCode, String keyText) throws Exception {
         robot.keyPress(keyCode);
-
-        if (!keyPressReceived) {
-            failures.append(keyText).append(" key press is not received\n");
+        try {
+            keyPress.await(2, SECONDS);
+        } catch (TimeoutException e) {
+            keyPress.reset();
+            failures.add(new Error(keyText + " key press is not received", e));
         }
 
         robot.keyRelease(keyCode);
-
-        if (!keyReleaseReceived) {
-            failures.append(keyText).append(" key release is not received\n");
+        try {
+            keyRelease.await(2, SECONDS);
+        } catch (TimeoutException e) {
+            keyRelease.reset();
+            failures.add(new Error(keyText + " key release is not received", e));
         }
     }
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
-        robot.setAutoWaitForIdle(true);
         robot.setAutoDelay(150);
 
         try {
@@ -75,11 +90,20 @@ public class FunctionKeyTest {
                 frame = new FunctionKeyTester();
                 frame.setSize(200, 200);
                 frame.setLocationRelativeTo(null);
+                frame.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowActivated(WindowEvent e) {
+                        System.out.println("frame.windowActivated");
+                        frameActivated.countDown();
+                    }
+                });
                 frame.setVisible(true);
             });
 
-            robot.waitForIdle();
-            robot.delay(1000);
+            if (!frameActivated.await(2, SECONDS)) {
+                throw new Error("Frame wasn't activated");
+            }
+            robot.delay(100);
 
             testKey(KeyEvent.VK_F11, "F11");
             testKey(KeyEvent.VK_F12, "F12");
@@ -91,46 +115,69 @@ public class FunctionKeyTest {
             });
         }
 
-        if (failures.isEmpty()) {
-            System.out.println("Passed");
-        } else {
-            throw new RuntimeException(failures.toString());
-        }
-    }
-}
-
-class FunctionKeyTester extends Frame {
-    Label l = new Label ("NULL");
-    Button b = new Button();
-    TextArea log = new TextArea();
-
-    FunctionKeyTester() {
-        super("Function Key Test");
-        this.setLayout(new BorderLayout());
-        this.add(BorderLayout.NORTH, l);
-        this.add(BorderLayout.SOUTH, b);
-        this.add(BorderLayout.CENTER, log);
-        log.setFocusable(false);
-        log.setEditable(false);
-        l.setBackground(Color.red);
-        setSize(200, 200);
-    }
-
-    public boolean handleEvent(Event e) {
-        String message = "e.id=" + e.id + "\n";
-        System.out.print(message);
-        log.append(message);
-
-        switch (e.id) {
-            case 403 -> FunctionKeyTest.keyPressReceived = true;
-            case 404 -> FunctionKeyTest.keyReleaseReceived = true;
+        if (!failures.isEmpty()) {
+            System.err.println("Failures detected:");
+            failures.forEach(System.err::println);
+            if (edtException.get() != null) {
+                System.err.println("\nException on EDT:");
+                edtException.get().printStackTrace();
+            }
+            System.err.println();
+            throw new RuntimeException("Test failed: " + failures.get(0).getMessage(),
+                                       failures.get(0));
         }
 
-        return super.handleEvent(e);
+        if (edtException.get() != null) {
+            throw new RuntimeException("Test failed because of exception on EDT",
+                                       edtException.get());
+        }
     }
 
-    public boolean keyDown(Event e, int key) {
-        l.setText("e.key=" + Integer.valueOf(e.key).toString());
-        return false;
+    private static final class FunctionKeyTester extends Frame {
+        Label l = new Label ("NULL");
+        Button b = new Button("button");
+        TextArea log = new TextArea();
+
+        FunctionKeyTester() {
+            super("Function Key Test");
+            this.setLayout(new BorderLayout());
+            this.add(BorderLayout.NORTH, l);
+            this.add(BorderLayout.SOUTH, b);
+            this.add(BorderLayout.CENTER, log);
+            log.setFocusable(false);
+            log.setEditable(false);
+            l.setBackground(Color.red);
+            setSize(200, 200);
+        }
+
+        @Override
+        @SuppressWarnings("deprecation")
+        public boolean handleEvent(Event e) {
+            String message = "e.id=" + e.id + "\n";
+            System.out.print(message);
+            log.append(message);
+
+            try {
+                switch (e.id) {
+                    case KEY_ACTION
+                            -> keyPress.await();
+                    case KEY_ACTION_RELEASE
+                            -> keyRelease.await();
+                }
+            } catch (Exception ex) {
+                if (!edtException.compareAndSet(null, ex)) {
+                    edtException.get().addSuppressed(ex);
+                }
+            }
+
+            return super.handleEvent(e);
+        }
+
+        @Override
+        @SuppressWarnings("deprecation")
+        public boolean keyDown(Event e, int key) {
+            l.setText("e.key=" + e.key);
+            return false;
+        }
     }
 }

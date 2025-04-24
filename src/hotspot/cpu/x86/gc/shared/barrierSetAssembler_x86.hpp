@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,15 @@
 #include "asm/macroAssembler.hpp"
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
+#ifdef COMPILER2
+#include "opto/optoreg.hpp"
 
+class BarrierStubC2;
+class Node;
+#endif // COMPILER2
 class InterpreterMacroAssembler;
 
 class BarrierSetAssembler: public CHeapObj<mtGC> {
-private:
-  void incr_allocated_bytes(MacroAssembler* masm, Register thread,
-                            Register var_size_in_bytes,
-                            int con_size_in_bytes,
-                            Register t1);
-
 public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register src, Register dst, Register count) {}
@@ -45,7 +44,7 @@ public:
                                   Register src, Register dst, Register count) {}
 
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                       Register dst, Address src, Register tmp1, Register tmp_thread);
+                       Register dst, Address src, Register tmp1);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
 
@@ -94,7 +93,7 @@ public:
                                              Register obj, Register tmp, Label& slowpath);
 
   virtual void tlab_allocate(MacroAssembler* masm,
-                             Register thread, Register obj,
+                             Register obj,
                              Register var_size_in_bytes,
                              int con_size_in_bytes,
                              Register t1, Register t2,
@@ -106,6 +105,59 @@ public:
   virtual void c2i_entry_barrier(MacroAssembler* masm);
 
   virtual void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
+
+#ifdef COMPILER2
+  OptoReg::Name refine_register(const Node* node,
+                                OptoReg::Name opto_reg);
+#endif // COMPILER2
 };
+
+#ifdef COMPILER2
+
+// This class saves and restores the registers that need to be preserved across
+// the runtime call represented by a given C2 barrier stub. Use as follows:
+// {
+//   SaveLiveRegisters save(masm, stub);
+//   ..
+//   __ call(RuntimeAddress(...);
+//   ..
+// }
+class SaveLiveRegisters {
+private:
+  struct XMMRegisterData {
+    XMMRegister _reg;
+    int         _size;
+
+    // Used by GrowableArray::find()
+    bool operator == (const XMMRegisterData& other) {
+      return _reg == other._reg;
+    }
+  };
+
+  MacroAssembler* const          _masm;
+  GrowableArray<Register>        _gp_registers;
+  GrowableArray<KRegister>       _opmask_registers;
+  GrowableArray<XMMRegisterData> _xmm_registers;
+  int                            _spill_size;
+  int                            _spill_offset;
+
+  static int xmm_compare_register_size(XMMRegisterData* left, XMMRegisterData* right);
+  static int xmm_slot_size(OptoReg::Name opto_reg);
+  static uint xmm_ideal_reg_for_size(int reg_size);
+  bool xmm_needs_vzeroupper() const;
+  void xmm_register_save(const XMMRegisterData& reg_data);
+  void xmm_register_restore(const XMMRegisterData& reg_data);
+  void gp_register_save(Register reg);
+  void opmask_register_save(KRegister reg);
+  void gp_register_restore(Register reg);
+  void opmask_register_restore(KRegister reg);
+  void initialize(BarrierStubC2* stub);
+
+public:
+  SaveLiveRegisters(MacroAssembler* masm, BarrierStubC2* stub);
+  ~SaveLiveRegisters();
+};
+
+#endif // COMPILER2
 
 #endif // CPU_X86_GC_SHARED_BARRIERSETASSEMBLER_X86_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 
-#include "nsk_tools.h"
-#include "jni_tools.h"
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
+#include "nsk_tools.hpp"
+#include "jni_tools.hpp"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
 #define EXP_OBJ_NUMBER 1
 
-static JNIEnv *jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv *jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jvmtiCapabilities caps;
 
@@ -98,7 +98,7 @@ Java_nsk_jvmti_scenarios_allocation_AP03_ap03t001_setTag(JNIEnv* jni, jobject ob
 static void JNICALL
 agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
-    jclass debugeeClass = NULL;
+    jclass debugeeClass = nullptr;
 
     NSK_DISPLAY0("Wait for debugee start\n\n");
     if (!NSK_VERIFY(nsk_jvmti_waitForSync(timeout)))
@@ -110,7 +110,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
         NSK_DISPLAY1("Find debugee class: %s\n", DEBUGEE_SIGNATURE);
         debugeeClass = nsk_jvmti_classBySignature(DEBUGEE_SIGNATURE);
-        if (debugeeClass == NULL) {
+        if (debugeeClass == nullptr) {
             nsk_jvmti_setFailStatus();
             break;
         }
@@ -160,14 +160,14 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         }
 
         if (!NSK_JNI_VERIFY(jni, (fid =
-                jni->GetStaticFieldID(debugeeClass, "catcher", DEBUGEE_SIGNATURE)) != NULL)) {
+                jni->GetStaticFieldID(debugeeClass, "catcher", DEBUGEE_SIGNATURE)) != nullptr)) {
             nsk_jvmti_setFailStatus();
             break;
         }
 
         if (!NSK_JNI_VERIFY(jni, (catcher =
-                jni->GetStaticObjectField(debugeeClass, fid)) != NULL)) {
-            NSK_COMPLAIN0("GetStaticObjectField returned NULL for 'catcher' field value\n\n");
+                jni->GetStaticObjectField(debugeeClass, fid)) != nullptr)) {
+            NSK_COMPLAIN0("GetStaticObjectField returned null for 'catcher' field value\n\n");
             nsk_jvmti_setFailStatus();
             break;
         }
@@ -215,7 +215,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     memset(&caps, 0, sizeof(jvmtiCapabilities));
@@ -244,11 +244,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     NSK_DISPLAY0("setting event callbacks done\nenabling JVMTI events ...\n");
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
                                                           JVMTI_EVENT_OBJECT_FREE,
-                                                          NULL)))
+                                                          nullptr)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done\n\n");
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
     NSK_DISPLAY0("agentProc has been set\n\n");
 

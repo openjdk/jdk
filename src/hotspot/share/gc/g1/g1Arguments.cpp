@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,17 +23,17 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1HeapRegionBounds.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
-#include "gc/g1/heapRegion.hpp"
-#include "gc/g1/heapRegionBounds.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "runtime/globals.hpp"
@@ -55,9 +55,9 @@ void G1Arguments::initialize_alignments() {
   // There is a circular dependency here. We base the region size on the heap
   // size, but the heap size should be aligned with the region size. To get
   // around this we use the unaligned values for the heap.
-  HeapRegion::setup_heap_region_size(MaxHeapSize);
+  G1HeapRegion::setup_heap_region_size(MaxHeapSize);
 
-  SpaceAlignment = HeapRegion::GrainBytes;
+  SpaceAlignment = G1HeapRegion::GrainBytes;
   HeapAlignment = calculate_heap_alignment(SpaceAlignment);
 
   // We need to initialize card set configuration as soon as heap region size is
@@ -71,7 +71,7 @@ void G1Arguments::initialize_alignments() {
 }
 
 size_t G1Arguments::conservative_max_heap_alignment() {
-  return HeapRegion::max_region_size();
+  return G1HeapRegion::max_region_size();
 }
 
 void G1Arguments::initialize_verification_types() {
@@ -125,32 +125,25 @@ void G1Arguments::initialize_mark_stack_size() {
                                   MAX2(MarkStackSize, (size_t)ConcGCThreads * TASKQUEUE_SIZE));
     FLAG_SET_ERGO(MarkStackSize, mark_stack_size);
   }
-
 }
 
-
 void G1Arguments::initialize_card_set_configuration() {
-  assert(HeapRegion::LogOfHRGrainBytes != 0, "not initialized");
+  assert(G1HeapRegion::LogOfHRGrainBytes != 0, "not initialized");
   // Array of Cards card set container globals.
   const uint LOG_M = 20;
-  assert(log2i_exact(HeapRegionBounds::min_size()) == LOG_M, "inv");
-  assert(HeapRegion::LogOfHRGrainBytes >= LOG_M, "from the above");
-  uint region_size_log_mb = HeapRegion::LogOfHRGrainBytes - LOG_M;
+  assert(log2i_exact(G1HeapRegionBounds::min_size()) == LOG_M, "inv");
+  assert(G1HeapRegion::LogOfHRGrainBytes >= LOG_M, "from the above");
+  uint region_size_log_mb = G1HeapRegion::LogOfHRGrainBytes - LOG_M;
 
   if (FLAG_IS_DEFAULT(G1RemSetArrayOfCardsEntries)) {
-    uint max_cards_in_inline_ptr = G1CardSetConfiguration::max_cards_in_inline_ptr(HeapRegion::LogCardsPerRegion);
+    uint max_cards_in_inline_ptr = G1CardSetConfiguration::max_cards_in_inline_ptr(G1HeapRegion::LogCardsPerRegion);
     FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(max_cards_in_inline_ptr * 2,
                                                     G1RemSetArrayOfCardsEntriesBase << region_size_log_mb));
   }
 
-  // Round to next 8 byte boundary for array to maximize space usage.
-  size_t const cur_size = G1CardSetArray::size_in_bytes(G1RemSetArrayOfCardsEntries);
-  FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries,
-                G1RemSetArrayOfCardsEntries + (uint)(align_up(cur_size, G1CardSetAllocOptions::SlotAlignment) - cur_size) / sizeof(G1CardSetArray::EntryDataType));
-
   // Howl card set container globals.
   if (FLAG_IS_DEFAULT(G1RemSetHowlNumBuckets)) {
-    FLAG_SET_ERGO(G1RemSetHowlNumBuckets, G1CardSetHowl::num_buckets(HeapRegion::CardsPerRegion,
+    FLAG_SET_ERGO(G1RemSetHowlNumBuckets, G1CardSetHowl::num_buckets(G1HeapRegion::CardsPerRegion,
                                                                      G1RemSetArrayOfCardsEntries,
                                                                      G1RemSetHowlMaxNumBuckets));
   }
@@ -250,10 +243,8 @@ void G1Arguments::initialize() {
   if (max_parallel_refinement_threads > UINT_MAX / divisor) {
     vm_exit_during_initialization("Too large parallelism for remembered sets.");
   }
-}
 
-void G1Arguments::initialize_heap_flags_and_sizes() {
-  GCArguments::initialize_heap_flags_and_sizes();
+  FullGCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 
 CollectedHeap* G1Arguments::create_heap() {

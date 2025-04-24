@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,32 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
-import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.Instruction;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.constantpool.ClassEntry;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
-import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code new} instruction in the {@code code} array of a {@code Code}
+ * Models a {@link Opcode#NEW new} instruction in the {@code code} array of a {@code Code}
  * attribute.  Delivered as a {@link CodeElement} when traversing the elements
  * of a {@link CodeModel}.
+ * <p>
+ * A new object instruction is composite:
+ * {@snippet lang=text :
+ * // @link substring="NewObjectInstruction" target="#of" :
+ * NewObjectInstruction(ClassEntry className) // @link substring="className" target="#className"
+ * }
+ * where the {@code className} is a non-abstract class.
  *
- * @since 22
+ * @see Opcode.Kind#NEW_OBJECT
+ * @see CodeBuilder#new_ CodeBuilder::new_
+ * @jvms 6.5.new <em>new</em>
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface NewObjectInstruction extends Instruction
         permits AbstractInstruction.BoundNewObjectInstruction, AbstractInstruction.UnboundNewObjectInstruction {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,6 @@ public class JMXStatusPerfCountersTest {
 
     @BeforeTest
     public void setup() {
-        jcmd = new ManagementAgentJcmd(TEST_APP_NAME, false);
     }
 
     @BeforeMethod
@@ -76,6 +75,7 @@ public class JMXStatusPerfCountersTest {
             TEST_APP_NAME, testAppPb,
             (Predicate<String>)l->l.trim().equals("main enter")
         );
+        jcmd = new ManagementAgentJcmd(testApp, false);
     }
 
     @AfterMethod

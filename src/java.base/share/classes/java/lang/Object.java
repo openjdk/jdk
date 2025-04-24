@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.lang;
 
-import jdk.internal.misc.Blocker;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -109,7 +108,7 @@ public class Object {
     /**
      * Indicates whether some other object is "equal to" this one.
      * <p>
-     * The {@code equals} method implements an equivalence relation
+     * The {@code equals} method implements an <dfn>{@index "equivalence relation"}</dfn>
      * on non-null object references:
      * <ul>
      * <li>It is <i>reflexive</i>: for any non-null reference value
@@ -237,6 +236,10 @@ public class Object {
 
     /**
      * {@return a string representation of the object}
+     *
+     * Satisfying this method's contract implies a non-{@code null}
+     * result must be returned.
+     *
      * @apiNote
      * In general, the
      * {@code toString} method returns a string that
@@ -370,16 +373,20 @@ public class Object {
      * @see    #wait(long, int)
      */
     public final void wait(long timeoutMillis) throws InterruptedException {
-        long comp = Blocker.begin();
-        try {
+        if (timeoutMillis < 0) {
+            throw new IllegalArgumentException("timeout value is negative");
+        }
+
+        if (Thread.currentThread() instanceof VirtualThread vthread) {
+            try {
+                wait0(timeoutMillis);
+            } catch (InterruptedException e) {
+                // virtual thread's interrupt status needs to be cleared
+                vthread.getAndClearInterrupt();
+                throw e;
+            }
+        } else {
             wait0(timeoutMillis);
-        } catch (InterruptedException e) {
-            Thread thread = Thread.currentThread();
-            if (thread.isVirtual())
-                thread.getAndClearInterrupt();
-            throw e;
-        } finally {
-            Blocker.end(comp);
         }
     }
 

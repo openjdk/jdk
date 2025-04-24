@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 package com.sun.security.sasl;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.NoSuchAlgorithmException;
 import java.security.InvalidParameterException;
 import java.security.ProviderException;
@@ -98,34 +96,28 @@ public final class Provider extends java.security.Provider {
         }
     }
 
-    @SuppressWarnings("removal")
     public Provider() {
         super("SunSASL", PROVIDER_VER, info);
 
         final Provider p = this;
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                // Client mechanisms
-                putService(new ProviderService(p, "SaslClientFactory",
-                           "DIGEST-MD5", "com.sun.security.sasl.digest.FactoryImpl"));
-                putService(new ProviderService(p, "SaslClientFactory",
-                           "NTLM", "com.sun.security.sasl.ntlm.FactoryImpl"));
-                putService(new ProviderService(p, "SaslClientFactory",
-                           "EXTERNAL", "com.sun.security.sasl.ClientFactoryImpl"));
-                putService(new ProviderService(p, "SaslClientFactory",
-                           "PLAIN", "com.sun.security.sasl.ClientFactoryImpl"));
-                putService(new ProviderService(p, "SaslClientFactory",
-                           "CRAM-MD5", "com.sun.security.sasl.ClientFactoryImpl"));
+        // Client mechanisms
+        putService(new ProviderService(p, "SaslClientFactory",
+                   "DIGEST-MD5", "com.sun.security.sasl.digest.FactoryImpl"));
+        putService(new ProviderService(p, "SaslClientFactory",
+                   "NTLM", "com.sun.security.sasl.ntlm.FactoryImpl"));
+        putService(new ProviderService(p, "SaslClientFactory",
+                   "EXTERNAL", "com.sun.security.sasl.ClientFactoryImpl"));
+        putService(new ProviderService(p, "SaslClientFactory",
+                   "PLAIN", "com.sun.security.sasl.ClientFactoryImpl"));
+        putService(new ProviderService(p, "SaslClientFactory",
+                   "CRAM-MD5", "com.sun.security.sasl.ClientFactoryImpl"));
 
-                // Server mechanisms
-                putService(new ProviderService(p, "SaslServerFactory",
-                           "CRAM-MD5", "com.sun.security.sasl.ServerFactoryImpl"));
-                putService(new ProviderService(p, "SaslServerFactory",
-                           "DIGEST-MD5", "com.sun.security.sasl.digest.FactoryImpl"));
-                putService(new ProviderService(p, "SaslServerFactory",
-                           "NTLM", "com.sun.security.sasl.ntlm.FactoryImpl"));
-                return null;
-            }
-        });
+        // Server mechanisms
+        putService(new ProviderService(p, "SaslServerFactory",
+                   "CRAM-MD5", "com.sun.security.sasl.ServerFactoryImpl"));
+        putService(new ProviderService(p, "SaslServerFactory",
+                   "DIGEST-MD5", "com.sun.security.sasl.digest.FactoryImpl"));
+        putService(new ProviderService(p, "SaslServerFactory",
+                   "NTLM", "com.sun.security.sasl.ntlm.FactoryImpl"));
     }
 }

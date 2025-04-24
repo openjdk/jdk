@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  * @author Arthur van Hoff, Kara Kytle, Jan Borgersen
  * @author Florian Bomers
  */
-@SuppressWarnings({"deprecation", "removal"})
+@SuppressWarnings("removal")
 public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, LineListener {
 
     private long lastPlayCall = 0;

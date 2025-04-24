@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jni.h"
 #include "jvm.h"
@@ -50,7 +49,7 @@ static char* jstr_to_utf(JNIEnv *env, jstring str, TRAPS) {
   char* utfstr = nullptr;
 
   if (str == nullptr) {
-    THROW_0(vmSymbols::java_lang_NullPointerException());
+    THROW_NULL(vmSymbols::java_lang_NullPointerException());
     //throw_new(env,"NullPointerException");
   }
 
@@ -68,7 +67,7 @@ PERF_ENTRY(jobject, Perf_Attach(JNIEnv *env, jobject unused, int vmid))
 
   PerfWrapper("Perf_Attach");
 
-  char* address = 0;
+  char* address = nullptr;
   size_t capacity = 0;
 
   // attach to the PerfData memory region for the specified VM
@@ -90,7 +89,7 @@ PERF_ENTRY(void, Perf_Detach(JNIEnv *env, jobject unused, jobject buffer))
     return;
   }
 
-  void* address = 0;
+  void* address = nullptr;
   jlong capacity = 0;
 
   // get buffer address and capacity
@@ -113,7 +112,7 @@ PERF_ENTRY(jobject, Perf_CreateLong(JNIEnv *env, jobject perf, jstring name,
 
   if (units <= 0 || units > PerfData::U_Last) {
     debug_only(warning("unexpected units argument, units = %d", units));
-    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+    THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
 
   ResourceMark rm;
@@ -128,7 +127,7 @@ PERF_ENTRY(jobject, Perf_CreateLong(JNIEnv *env, jobject perf, jstring name,
 
   // check that the PerfData name doesn't already exist
   if (PerfDataManager::exists(name_utf)) {
-    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "PerfLong name already exists");
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "PerfLong name already exists");
   }
 
   switch(variability) {
@@ -152,7 +151,7 @@ PERF_ENTRY(jobject, Perf_CreateLong(JNIEnv *env, jobject perf, jstring name,
 
   default: /* Illegal Argument */
     debug_only(warning("unexpected variability value: %d", variability));
-    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+    THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
     break;
   }
 
@@ -174,21 +173,21 @@ PERF_ENTRY(jobject, Perf_CreateByteArray(JNIEnv *env, jobject perf,
 
   // check for valid byte array objects
   if (name == nullptr || value == nullptr) {
-    THROW_0(vmSymbols::java_lang_NullPointerException());
+    THROW_NULL(vmSymbols::java_lang_NullPointerException());
   }
 
   // check for valid variability classification
   if (variability != PerfData::V_Constant &&
       variability != PerfData::V_Variable) {
     debug_only(warning("unexpected variability value: %d", variability));
-    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+    THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
 
   // check for valid units
   if (units != PerfData::U_String) {
     // only String based ByteArray objects are currently supported
     debug_only(warning("unexpected units value: %d", variability));
-    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+    THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
 
   int value_length;
@@ -211,7 +210,7 @@ PERF_ENTRY(jobject, Perf_CreateByteArray(JNIEnv *env, jobject perf,
 
   // check that the counter name doesn't already exist
   if (PerfDataManager::exists((char*)name_utf)) {
-    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "PerfByteArray name already exists");
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "PerfByteArray name already exists");
   }
 
   PerfByteArray* pbv = nullptr;

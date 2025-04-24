@@ -426,8 +426,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             long deadline = (timed) ? System.nanoTime() + ns : 0L;
             boolean upc = isUniprocessor;  // don't spin but later recheck
             Thread w = Thread.currentThread();
-            if (w.isVirtual())             // don't spin
-                spin = false;
+            if (spin && ForkJoinWorkerThread.hasKnownQueuedWork())
+                spin = false;              // don't spin
             int spins = (spin & !upc) ? SPINS : 0; // negative when may park
             while ((m = item) == e) {
                 if (spins >= 0) {
@@ -1143,7 +1143,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified element is null
      */
     public void put(E e) {
-        offer(e);
+        Objects.requireNonNull(e);
+        xfer(e, -1L);
     }
 
     /**
@@ -1156,7 +1157,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified element is null
      */
     public boolean offer(E e, long timeout, TimeUnit unit) {
-        return offer(e);
+        Objects.requireNonNull(e);
+        xfer(e, -1L);
+        return true;
     }
 
     /**
@@ -1181,7 +1184,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified element is null
      */
     public boolean add(E e) {
-        return offer(e);
+        Objects.requireNonNull(e);
+        xfer(e, -1L);
+        return true;
     }
 
     /**

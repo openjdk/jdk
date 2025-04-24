@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,68 +21,71 @@
  * questions.
  */
 
+import java.awt.AWTException;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+
 /*
-  test
-  @bug 6384984 8004032
-  @summary TrayIcon try to dispay a tooltip when is not visible
-  @author Dmitry.Cherepanov@sun.com area=awt.tray
-  @run applet/manual=yesno ShowAfterDisposeTest.html
-*/
+ * @test
+ * @bug 6384984 8004032 8316931
+ * @library ../../regtesthelpers /test/lib
+ * @build PassFailJFrame jtreg.SkippedException
+ * @summary TrayIcon try to dispay a tooltip when is not visible
+ * @run main/manual ShowAfterDisposeTest
+ */
+public class ShowAfterDisposeTest {
+    private static SystemTray tray;
+    private static TrayIcon icon;
 
-import java.applet.*;
-
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
-
-public class ShowAfterDisposeTest extends Applet
-{
-    boolean traySupported;
-
-    public void init()
-    {
-        this.setLayout (new BorderLayout ());
-
-        String[] instructions;
-        traySupported = SystemTray.isSupported();
-        if (traySupported)
-        {
-            String[] s =
-            {
-                "1) When the test starts an icon is added to the SystemTray area.",
-                "2a) If you use Apple OS X,",
-                "    right click on this icon (it's important to click before the tooltip is shown).",
-                "    The icon should disappear.",
-                "2b) If you use other os (Windows, Linux, Solaris),",
-                "    double click on this icon (it's important to click before the tooltip is shown).",
-                "    The icon should disappear.",
-                "3) If the bug is reproducible then the test will fail without assistance.",
-                "4) Just press the 'pass' button."
-            };
-            instructions = s;
+    public static void main(String[] args) throws Exception {
+        if (!SystemTray.isSupported()) {
+            throw new jtreg.SkippedException("The test cannot be run because SystemTray is not supported.");
         }
-        else
-        {
-            String[] s =
-            {
-              "The test cannot be run because SystemTray is not supported.",
-              "Simply press PASS button."
-            };
-            instructions = s;
-        }
-        Sysout.createDialogWithInstructions(instructions);
+
+        ShowAfterDisposeTest test = new ShowAfterDisposeTest();
+        test.startTest();
     }
 
-    public void start ()
-    {
-        setSize (200,200);
-        setVisible(true);
-        validate();
+    public void startTest() throws Exception {
+        String instructions =
+            "1) When the test starts an icon is added to the SystemTray area.\n" +
+            "2a) If you use Apple OS X,\n" +
+            "    right click on this icon (it's important to click before the tooltip is shown).\n" +
+            "    The icon should disappear.\n" +
+            "2b) If you use other os (Windows, Linux, Solaris),\n" +
+            "    double click on this icon (it's important to click before the tooltip is shown).\n" +
+            "    The icon should disappear.\n" +
+            "3) If the bug is reproducible then the test will fail without assistance.\n" +
+            "4) Just press the 'pass' button.";
 
-        if (!traySupported)
-        {
-            return;
+        try {
+            PassFailJFrame.builder()
+                    .title("Test Instructions Frame")
+                    .instructions(instructions)
+                    .testTimeOut(10)
+                    .rows(10)
+                    .columns(45)
+                    .testUI(ShowAfterDisposeTest::showFrameAndIcon)
+                    .build()
+                    .awaitAndCheck();
+        } finally {
+            if (tray != null) {
+                tray.remove(icon);
+            }
         }
+    }
+
+    private static JFrame showFrameAndIcon() {
+        JFrame frame = new JFrame("ShowAfterDisposeTest");
+        frame.setLayout(new BorderLayout());
 
         BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
         Graphics g = img.createGraphics();
@@ -92,155 +95,21 @@ public class ShowAfterDisposeTest extends Applet
         g.fillRect(6, 6, 20, 20);
         g.dispose();
 
-        final SystemTray tray = SystemTray.getSystemTray();
-        final TrayIcon icon = new TrayIcon(img);
+        tray = SystemTray.getSystemTray();
+        icon = new TrayIcon(img);
         icon.setImageAutoSize(true);
-        icon.addActionListener(new ActionListener()
-            {
-                public void actionPerformed(ActionEvent ev)
-                {
-                    tray.remove(icon);
-                }
-            }
-        );
+        icon.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent ev) {
+                tray.remove(icon);
+            }});
 
         try {
             tray.add(icon);
         } catch (AWTException e) {
-            Sysout.println(e.toString());
-            Sysout.println("!!! The test coudn't be performed !!!");
-            return;
+            throw new RuntimeException("Could not add icon to tray");
         }
         icon.setToolTip("tooltip");
-    }
-}
 
-/****************************************************
- Standard Test Machinery
- DO NOT modify anything below -- it's a standard
-  chunk of code whose purpose is to make user
-  interaction uniform, and thereby make it simpler
-  to read and understand someone else's test.
- ****************************************************/
-
-/**
- This is part of the standard test machinery.
- It creates a dialog (with the instructions), and is the interface
-  for sending text messages to the user.
- To print the instructions, send an array of strings to Sysout.createDialog
-  WithInstructions method.  Put one line of instructions per array entry.
- To display a message for the tester to see, simply call Sysout.println
-  with the string to be displayed.
- This mimics System.out.println but works within the test harness as well
-  as standalone.
- */
-
-class Sysout
-{
-    private static TestDialog dialog;
-
-    public static void createDialogWithInstructions( String[] instructions )
-    {
-        dialog = new TestDialog( new Frame(), "Instructions" );
-        dialog.printInstructions( instructions );
-        dialog.setVisible(true);
-        println( "Any messages for the tester will display here." );
-    }
-
-    public static void createDialog( )
-    {
-        dialog = new TestDialog( new Frame(), "Instructions" );
-        String[] defInstr = { "Instructions will appear here. ", "" } ;
-        dialog.printInstructions( defInstr );
-        dialog.setVisible(true);
-        println( "Any messages for the tester will display here." );
-    }
-
-    public static void printInstructions( String[] instructions )
-    {
-        dialog.printInstructions( instructions );
-    }
-
-    public static void println( String messageIn )
-    {
-        dialog.displayMessage( messageIn );
-    }
-}
-
-/**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog
-{
-
-    TextArea instructionsText;
-    TextArea messageText;
-    int maxStringLength = 80;
-
-    //DO NOT call this directly, go through Sysout
-    public TestDialog( Frame frame, String name )
-    {
-        super( frame, name );
-        int scrollBoth = TextArea.SCROLLBARS_BOTH;
-        instructionsText = new TextArea( "", 15, maxStringLength, scrollBoth );
-        add( "North", instructionsText );
-
-        messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-        add("Center", messageText);
-
-        pack();
-
-        setVisible(true);
-    }
-
-    //DO NOT call this directly, go through Sysout
-    public void printInstructions( String[] instructions )
-    {
-        //Clear out any current instructions
-        instructionsText.setText( "" );
-
-        //Go down array of instruction strings
-
-        String printStr, remainingStr;
-        for( int i=0; i < instructions.length; i++ )
-        {
-            //chop up each into pieces maxSringLength long
-            remainingStr = instructions[ i ];
-            while( remainingStr.length() > 0 )
-            {
-                //if longer than max then chop off first max chars to print
-                if( remainingStr.length() >= maxStringLength )
-                {
-                    //Try to chop on a word boundary
-                    int posOfSpace = remainingStr.
-                        lastIndexOf( ' ', maxStringLength - 1 );
-
-                    if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-                    printStr = remainingStr.substring( 0, posOfSpace + 1 );
-                    remainingStr = remainingStr.substring( posOfSpace + 1 );
-                }
-                //else just print
-                else
-                {
-                    printStr = remainingStr;
-                    remainingStr = "";
-                }
-
-                instructionsText.append( printStr + "\n" );
-            }
-        }
-    }
-
-    //DO NOT call this directly, go through Sysout
-    public void displayMessage( String messageIn )
-    {
-        messageText.append( messageIn + "\n" );
-        System.out.println(messageIn);
+        return frame;
     }
 }

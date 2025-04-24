@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "memory/allocation.hpp"
@@ -61,11 +60,11 @@ int compare_malloc_site(const MallocSite& s1, const MallocSite& s2) {
   return s1.call_stack()->compare(*s2.call_stack());
 }
 
-// Sort into allocation site addresses and memory type order for baseline comparison
-int compare_malloc_site_and_type(const MallocSite& s1, const MallocSite& s2) {
+// Sort into allocation site addresses and memory tag order for baseline comparison
+int compare_malloc_site_and_tag(const MallocSite& s1, const MallocSite& s2) {
   int res = compare_malloc_site(s1, s2);
   if (res == 0) {
-    res = (int)(NMTUtil::flag_to_index(s1.flag()) - NMTUtil::flag_to_index(s2.flag()));
+    res = (int)(NMTUtil::tag_to_index(s1.mem_tag()) - NMTUtil::tag_to_index(s2.mem_tag()));
   }
 
   return res;
@@ -137,10 +136,14 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
   }
 };
 
-
 void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
+  {
+    MemTracker::NmtVirtualMemoryLocker nvml;
+    MemoryFileTracker::Instance::summary_snapshot(&_virtual_memory_snapshot);
+  }
+
   _metaspace_stats = MetaspaceUtils::get_combined_statistics();
 }
 
@@ -148,11 +151,6 @@ bool MemBaseline::baseline_allocation_sites() {
   // Malloc allocation sites
   MallocAllocationSiteWalker malloc_walker;
   if (!MallocSiteTable::walk_malloc_site(&malloc_walker)) {
-    return false;
-  }
-
-  // Walk simple thread stacks
-  if (!ThreadStackTracker::walk_simple_thread_stack_site(&malloc_walker)) {
     return false;
   }
 
@@ -194,7 +192,6 @@ void MemBaseline::baseline(bool summaryOnly) {
     baseline_allocation_sites();
     _baseline_type = Detail_baselined;
   }
-
 }
 
 int compare_allocation_site(const VirtualMemoryAllocationSite& s1,
@@ -209,7 +206,7 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
   const ReservedMemoryRegion* rgn;
   VirtualMemoryAllocationSite* site;
   while ((rgn = itr.next()) != nullptr) {
-    VirtualMemoryAllocationSite tmp(*rgn->call_stack(), rgn->flag());
+    VirtualMemoryAllocationSite tmp(*rgn->call_stack(), rgn->mem_tag());
     site = allocation_sites.find(tmp);
     if (site == nullptr) {
       LinkedListNode<VirtualMemoryAllocationSite>* node =
@@ -234,8 +231,8 @@ MallocSiteIterator MemBaseline::malloc_sites(SortingOrder order) {
     case by_site:
       malloc_sites_to_allocation_site_order();
       break;
-    case by_site_and_type:
-      malloc_sites_to_allocation_site_and_type_order();
+    case by_site_and_tag:
+      malloc_sites_to_allocation_site_and_tag_order();
       break;
     case by_address:
     default:
@@ -275,7 +272,7 @@ void MemBaseline::malloc_sites_to_size_order() {
 }
 
 void MemBaseline::malloc_sites_to_allocation_site_order() {
-  if (_malloc_sites_order != by_site && _malloc_sites_order != by_site_and_type) {
+  if (_malloc_sites_order != by_site && _malloc_sites_order != by_site_and_tag) {
     SortedLinkedList<MallocSite, compare_malloc_site> tmp;
     // Add malloc sites to sorted linked list to sort into site (address) order
     tmp.move(&_malloc_sites);
@@ -285,14 +282,14 @@ void MemBaseline::malloc_sites_to_allocation_site_order() {
   }
 }
 
-void MemBaseline::malloc_sites_to_allocation_site_and_type_order() {
-  if (_malloc_sites_order != by_site_and_type) {
-    SortedLinkedList<MallocSite, compare_malloc_site_and_type> tmp;
+void MemBaseline::malloc_sites_to_allocation_site_and_tag_order() {
+  if (_malloc_sites_order != by_site_and_tag) {
+    SortedLinkedList<MallocSite, compare_malloc_site_and_tag> tmp;
     // Add malloc sites to sorted linked list to sort into site (address) order
     tmp.move(&_malloc_sites);
     _malloc_sites.set_head(tmp.head());
     tmp.set_head(nullptr);
-    _malloc_sites_order = by_site_and_type;
+    _malloc_sites_order = by_site_and_tag;
   }
 }
 

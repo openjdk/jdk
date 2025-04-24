@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4903007 6972468
  * @summary Tests encoding of container with boxes and BoxLayout
- * @run main/othervm -Djava.security.manager=allow Test4903007
+ * @run main/othervm Test4903007
  * @author Sergey Malenkov, Mark Davidson
  */
 
@@ -37,7 +37,7 @@ import javax.swing.JPanel;
 
 public class Test4903007 extends AbstractTest<JPanel> {
     public static void main(String[] args) throws Exception {
-        new Test4903007().test(true);
+        new Test4903007().test();
     }
 
     protected JPanel getObject() {

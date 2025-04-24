@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.ModuleHelper;
 import com.sun.tools.javac.util.StringUtils;
 
 import jdk.internal.opt.CommandLine;
@@ -335,7 +336,6 @@ public class Start {
     /**
      * Main program - external wrapper.
      */
-    @SuppressWarnings("deprecation")
     Result begin(String... argv) {
         // Preprocess @file arguments
         List<String> allArgs;
@@ -555,10 +555,24 @@ public class Start {
         if (options.modules().isEmpty()) {
             if (options.subpackages().isEmpty()) {
                 if (javaNames.isEmpty() && isEmpty(fileObjects)) {
+                    showLinesUsingKey("main.usage.short");
+                    showLinesUsingKey("main.for-more-details-see-usage");
+                    log.flush();
                     String text = log.getText("main.No_modules_packages_or_classes_specified");
                     throw new ToolException(CMDERR, text);
                 }
             }
+        }
+
+        // Allow doclets to access internal API if the appropriate
+        // option is given on the command line.
+        // A better solution would be to modify the javadoc API to
+        // permit an instance of an appropriately configured instance
+        // of a doclet to be specified instead of the name of the
+        // doclet class and optional doclet path.
+        // See https://bugs.openjdk.org/browse/JDK-8263219
+        if (options.compilerOptions().isSet("accessInternalAPI")) {
+            ModuleHelper.addExports(ModuleHelper.class.getModule(), doclet.getClass().getModule());
         }
 
         JavadocTool comp = JavadocTool.make0(context);

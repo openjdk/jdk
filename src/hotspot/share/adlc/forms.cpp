@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,7 @@ Form::DataType Form::ideal_to_const_type(const char *name) const {
   if (strcmp(name,"ConNKlass")==0) return Form::idealNKlass;
   if (strcmp(name,"ConL")==0) return Form::idealL;
   if (strcmp(name,"ConF")==0) return Form::idealF;
+  if (strcmp(name,"ConH")==0) return Form::idealH;
   if (strcmp(name,"ConD")==0) return Form::idealD;
   if (strcmp(name,"Bool")==0) return Form::idealI;
 
@@ -276,7 +277,6 @@ Form::DataType Form::is_load_from_memory(const char *opType) const {
 
 Form::DataType Form::is_store_to_memory(const char *opType) const {
   if( strcmp(opType,"StoreB")==0)  return Form::idealB;
-  if( strcmp(opType,"StoreCM")==0) return Form::idealB;
   if( strcmp(opType,"StoreC")==0)  return Form::idealC;
   if( strcmp(opType,"StoreD")==0)  return Form::idealD;
   if( strcmp(opType,"StoreF")==0)  return Form::idealF;
@@ -362,6 +362,15 @@ void FormDict::dump() {
   _form.print(dumpkey, dumpform);
 }
 
+void FormDict::forms_do(FormClosure* f) {;
+  DictI iter(&_form);
+  for( ; iter.test(); ++iter ) {
+    Form* form = (Form*) iter._value;
+    assert(form != nullptr, "sanity");
+    f->do_form(form);
+  }
+}
+
 //------------------------------SourceForm-------------------------------------
 SourceForm::SourceForm(char* code) : _code(code) { }; // Constructor
 SourceForm::~SourceForm() {
@@ -373,4 +382,12 @@ void SourceForm::dump() {                    // Debug printer
 
 void SourceForm::output(FILE *fp) {
   fprintf(fp,"\n//%s\n%s\n",classname(),(_code?_code:""));
+}
+
+void FormClosure::do_form(Form* form) {
+  assert(false, "should not reach here");
+}
+
+void FormClosure::do_form_by_name(const char* name) {
+  assert(false, "should not reach here");
 }

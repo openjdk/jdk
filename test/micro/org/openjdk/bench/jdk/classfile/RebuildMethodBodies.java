@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,7 @@ import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Benchmark)
-@Fork(value = 1, jvmArgsAppend = {
-        "--enable-preview"})
+@Fork(value = 1)
 @Warmup(iterations = 2)
 @Measurement(iterations = 4)
 public class RebuildMethodBodies {
@@ -88,14 +87,14 @@ public class RebuildMethodBodies {
     }
 
     private static void transform(ClassFile cc, ClassModel clm) {
-        cc.transform(clm, ClassTransform.transformingMethodBodies((cob, coe) -> {
+        cc.transformClass(clm, ClassTransform.transformingMethodBodies((cob, coe) -> {
             switch (coe) {
                 case FieldInstruction i ->
-                    cob.fieldInstruction(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());
+                    cob.fieldAccess(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());
                 case InvokeDynamicInstruction i ->
                     cob.invokedynamic(i.invokedynamic().asSymbol());
                 case InvokeInstruction i ->
-                    cob.invokeInstruction(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol(), i.isInterface());
+                    cob.invoke(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol(), i.isInterface());
                 case NewMultiArrayInstruction i ->
                     cob.multianewarray(i.arrayType().asSymbol(), i.dimensions());
                 case NewObjectInstruction i ->
@@ -103,7 +102,7 @@ public class RebuildMethodBodies {
                 case NewReferenceArrayInstruction i ->
                     cob.anewarray(i.componentType().asSymbol());
                 case TypeCheckInstruction i ->
-                    cob.typeCheckInstruction(i.opcode(), i.type().asSymbol());
+                    cob.with(TypeCheckInstruction.of(i.opcode(), i.type().asSymbol()));
                 default -> cob.with(coe);
             }
         }));

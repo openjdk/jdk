@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,20 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
+#include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 
-G1FullGCCompactionPoint::G1FullGCCompactionPoint(G1FullCollector* collector) :
+G1FullGCCompactionPoint::G1FullGCCompactionPoint(G1FullCollector* collector, PreservedMarks* preserved_stack) :
     _collector(collector),
     _current_region(nullptr),
-    _compaction_top(nullptr) {
-  _compaction_regions = new (mtGC) GrowableArray<HeapRegion*>(32, mtGC);
+    _compaction_top(nullptr),
+    _preserved_stack(preserved_stack) {
+  _compaction_regions = new (mtGC) GrowableArray<G1HeapRegion*>(32, mtGC);
   _compaction_region_iterator = _compaction_regions->begin();
 }
 
@@ -60,22 +61,22 @@ bool G1FullGCCompactionPoint::is_initialized() {
   return _current_region != nullptr;
 }
 
-void G1FullGCCompactionPoint::initialize(HeapRegion* hr) {
+void G1FullGCCompactionPoint::initialize(G1HeapRegion* hr) {
   _current_region = hr;
   initialize_values();
 }
 
-HeapRegion* G1FullGCCompactionPoint::current_region() {
+G1HeapRegion* G1FullGCCompactionPoint::current_region() {
   return *_compaction_region_iterator;
 }
 
-HeapRegion* G1FullGCCompactionPoint::next_region() {
-  HeapRegion* next = *(++_compaction_region_iterator);
+G1HeapRegion* G1FullGCCompactionPoint::next_region() {
+  G1HeapRegion* next = *(++_compaction_region_iterator);
   assert(next != nullptr, "Must return valid region");
   return next;
 }
 
-GrowableArray<HeapRegion*>* G1FullGCCompactionPoint::regions() {
+GrowableArray<G1HeapRegion*>* G1FullGCCompactionPoint::regions() {
   return _compaction_regions;
 }
 
@@ -102,10 +103,13 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
 
   // Store a forwarding pointer if the object should be moved.
   if (cast_from_oop<HeapWord*>(object) != _compaction_top) {
-    object->forward_to(cast_to_oop(_compaction_top));
-    assert(object->is_forwarded(), "must be forwarded");
+    if (!object->is_forwarded()) {
+      preserved_stack()->push_if_necessary(object, object->mark());
+    }
+    FullGCForwarding::forward_to(object, cast_to_oop(_compaction_top));
+    assert(FullGCForwarding::is_forwarded(object), "must be forwarded");
   } else {
-    assert(!object->is_forwarded(), "must not be forwarded");
+    assert(!FullGCForwarding::is_forwarded(object), "must not be forwarded");
   }
 
   // Update compaction values.
@@ -113,16 +117,16 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
   _current_region->update_bot_for_block(_compaction_top - size, _compaction_top);
 }
 
-void G1FullGCCompactionPoint::add(HeapRegion* hr) {
+void G1FullGCCompactionPoint::add(G1HeapRegion* hr) {
   _compaction_regions->append(hr);
 }
 
 void G1FullGCCompactionPoint::remove_at_or_above(uint bottom) {
-  HeapRegion* cur = current_region();
+  G1HeapRegion* cur = current_region();
   assert(cur->hrm_index() >= bottom, "Sanity!");
 
   int start_index = 0;
-  for (HeapRegion* r : *_compaction_regions) {
+  for (G1HeapRegion* r : *_compaction_regions) {
     if (r->hrm_index() < bottom) {
       start_index++;
     }
@@ -132,20 +136,20 @@ void G1FullGCCompactionPoint::remove_at_or_above(uint bottom) {
   _compaction_regions->trunc_to(start_index);
 }
 
-void G1FullGCCompactionPoint::add_humongous(HeapRegion* hr) {
+void G1FullGCCompactionPoint::add_humongous(G1HeapRegion* hr) {
   assert(hr->is_starts_humongous(), "Sanity!");
 
   _collector->add_humongous_region(hr);
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   g1h->humongous_obj_regions_iterate(hr,
-                                     [&] (HeapRegion* r) {
+                                     [&] (G1HeapRegion* r) {
                                        add(r);
                                        _collector->update_from_skip_compacting_to_compacting(r->hrm_index());
                                      });
 }
 
-void G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
+void G1FullGCCompactionPoint::forward_humongous(G1HeapRegion* hr) {
   assert(hr->is_starts_humongous(), "Sanity!");
 
   oop obj = cast_to_oop(hr->bottom());
@@ -165,11 +169,11 @@ void G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
   }
 
   // Preserve the mark for the humongous object as the region was initially not compacting.
-  _collector->marker(0)->preserved_stack()->push_if_necessary(obj, obj->mark());
+  preserved_stack()->push_if_necessary(obj, obj->mark());
 
-  HeapRegion* dest_hr = _compaction_regions->at(range_begin);
-  obj->forward_to(cast_to_oop(dest_hr->bottom()));
-  assert(obj->is_forwarded(), "Object must be forwarded!");
+  G1HeapRegion* dest_hr = _compaction_regions->at(range_begin);
+  FullGCForwarding::forward_to(obj, cast_to_oop(dest_hr->bottom()));
+  assert(FullGCForwarding::is_forwarded(obj), "Object must be forwarded!");
 
   // Add the humongous object regions to the compaction point.
   add_humongous(hr);
@@ -180,7 +184,7 @@ void G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
   return;
 }
 
-uint G1FullGCCompactionPoint::find_contiguous_before(HeapRegion* hr, uint num_regions) {
+uint G1FullGCCompactionPoint::find_contiguous_before(G1HeapRegion* hr, uint num_regions) {
   assert(num_regions > 0, "Sanity!");
   assert(has_regions(), "Sanity!");
 

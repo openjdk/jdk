@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -119,13 +118,13 @@ void ZOldTracer::report_end(const Ticks& timestamp) {
 }
 
 void ZTracer::initialize() {
-  JFR_ONLY(register_jfr_type_serializers());
+  JFR_ONLY(register_jfr_type_serializers();)
 }
 
 void ZTracer::send_stat_counter(const ZStatCounter& counter, uint64_t increment, uint64_t value) {
   NoSafepointVerifier nsv;
 
-  EventZStatisticsCounter e;
+  JfrNonReentrant<EventZStatisticsCounter> e;
   if (e.should_commit()) {
     e.set_id(counter.id());
     e.set_increment(increment);
@@ -137,7 +136,7 @@ void ZTracer::send_stat_counter(const ZStatCounter& counter, uint64_t increment,
 void ZTracer::send_stat_sampler(const ZStatSampler& sampler, uint64_t value) {
   NoSafepointVerifier nsv;
 
-  EventZStatisticsSampler e;
+  JfrNonReentrant<EventZStatisticsSampler> e;
   if (e.should_commit()) {
     e.set_id(sampler.id());
     e.set_value(value);

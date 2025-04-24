@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 # questions.
 #
 
-###############################################################################
+################################################################################
 # It is recommended to use exactly this version of pandoc, especially for
 # re-generating checked in html files
 RECOMMENDED_PANDOC_VERSION=2.19.2
 
-###############################################################################
+################################################################################
 # Setup the most fundamental tools, used for setting up build platform and
 # path handling.
 AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
@@ -54,11 +54,13 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_REQUIRE_SPECIAL(SED, [AC_PROG_SED])
 
   # Tools only needed on some platforms
+  UTIL_LOOKUP_PROGS(LOCALE, locale)
   UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
   UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH:/cygdrive/c/windows/system32:/mnt/c/windows/system32:/c/windows/system32)
+  UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)
 ])
 
-###############################################################################
+################################################################################
 # Setup further tools that should be resolved early but after setting up
 # build platform and path handling.
 AC_DEFUN_ONCE([BASIC_SETUP_TOOLS],
@@ -98,14 +100,12 @@ AC_DEFUN_ONCE([BASIC_SETUP_TOOLS],
   UTIL_REQUIRE_SPECIAL(FGREP, [AC_PROG_FGREP])
 
   # Optional tools, we can do without them
+  UTIL_LOOKUP_PROGS(CMAKE, cmake)
   UTIL_LOOKUP_PROGS(DF, df)
   UTIL_LOOKUP_PROGS(GIT, git)
   UTIL_LOOKUP_PROGS(NICE, nice)
   UTIL_LOOKUP_PROGS(READLINK, greadlink readlink)
   UTIL_LOOKUP_PROGS(WHOAMI, whoami)
-
-  # Tools only needed on some platforms
-  UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)
 
   # For compare.sh only
   UTIL_LOOKUP_PROGS(CMP, cmp)
@@ -115,7 +115,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_TOOLS],
   RM="$RM -f"
 ])
 
-###############################################################################
+################################################################################
 # Check if we have found a usable version of make
 # $1: the path to a potential make binary (or empty)
 # $2: the description on how we found this
@@ -128,7 +128,7 @@ AC_DEFUN([BASIC_CHECK_MAKE_VERSION],
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     MAKE_VERSION_EXPR="-e 4\."
     MAKE_REQUIRED_VERSION="4.0"
-   else
+  else
     MAKE_VERSION_EXPR="-e 3\.8[[12]] -e 4\."
     MAKE_REQUIRED_VERSION="3.81"
   fi
@@ -175,7 +175,7 @@ AC_DEFUN([BASIC_CHECK_MAKE_VERSION],
   fi
 ])
 
-###############################################################################
+################################################################################
 AC_DEFUN([BASIC_CHECK_MAKE_OUTPUT_SYNC],
 [
   # Check if make supports the output sync option and if so, setup using it.
@@ -200,7 +200,7 @@ AC_DEFUN([BASIC_CHECK_MAKE_OUTPUT_SYNC],
   AC_SUBST(OUTPUT_SYNC)
 ])
 
-###############################################################################
+################################################################################
 # Goes looking for a usable version of GNU make.
 AC_DEFUN([BASIC_CHECK_GNU_MAKE],
 [
@@ -248,7 +248,7 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
   BASIC_CHECK_MAKE_OUTPUT_SYNC
 ])
 
-###############################################################################
+################################################################################
 AC_DEFUN([BASIC_CHECK_FIND_DELETE],
 [
   # Test if find supports -delete
@@ -277,7 +277,7 @@ AC_DEFUN([BASIC_CHECK_FIND_DELETE],
   AC_SUBST(FIND_DELETE)
 ])
 
-###############################################################################
+################################################################################
 AC_DEFUN([BASIC_CHECK_TAR],
 [
   # Test which kind of tar was found
@@ -315,7 +315,7 @@ AC_DEFUN([BASIC_CHECK_TAR],
   AC_SUBST(TAR_SUPPORTS_TRANSFORM)
 ])
 
-###############################################################################
+################################################################################
 AC_DEFUN([BASIC_CHECK_GREP],
 [
   # Test that grep supports -Fx with a list of pattern which includes null pattern.
@@ -339,7 +339,7 @@ AC_DEFUN([BASIC_CHECK_GREP],
   fi
 ])
 
-###############################################################################
+################################################################################
 AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 [
   BASIC_CHECK_GNU_MAKE
@@ -411,7 +411,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Check for support for specific options in bash
 AC_DEFUN_ONCE([BASIC_CHECK_BASH_OPTIONS],
 [
@@ -468,7 +468,15 @@ AC_DEFUN_ONCE([BASIC_SETUP_PANDOC],
     AC_MSG_CHECKING([if the pandoc smart extension needs to be disabled for markdown])
     if $PANDOC --list-extensions | $GREP -q '+smart'; then
       AC_MSG_RESULT([yes])
-      PANDOC_MARKDOWN_FLAG="markdown-smart"
+      PANDOC_MARKDOWN_FLAG="$PANDOC_MARKDOWN_FLAG-smart"
+    else
+      AC_MSG_RESULT([no])
+    fi
+
+    AC_MSG_CHECKING([if the pandoc tex_math_dollars extension needs to be disabled for markdown])
+    if $PANDOC --list-extensions | $GREP -q '+tex_math_dollars'; then
+      AC_MSG_RESULT([yes])
+      PANDOC_MARKDOWN_FLAG="$PANDOC_MARKDOWN_FLAG-tex_math_dollars"
     else
       AC_MSG_RESULT([no])
     fi

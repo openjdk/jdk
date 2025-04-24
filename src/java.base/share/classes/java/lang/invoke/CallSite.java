@@ -139,12 +139,6 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
     }
 
     /**
-     * {@code CallSite} dependency context.
-     * JVM uses CallSite.context to store nmethod dependencies on the call site target.
-     */
-    private final MethodHandleNatives.CallSiteContext context = MethodHandleNatives.CallSiteContext.make(this);
-
-    /**
      * Returns the type of this call site's target.
      * Although targets may change, any call site's type is permanent, and can never change to an unequal type.
      * The {@code setTarget} method enforces this invariant by refusing any new target that does

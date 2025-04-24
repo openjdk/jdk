@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,8 @@ public class TestKATForECB_IV
 
     public boolean execute() throws Exception {
         String transformation = ALGO+"/"+MODE+"/"+PADDING;
-        Cipher c = Cipher.getInstance(transformation, "SunJCE");
+        Cipher c = Cipher.getInstance(transformation,
+                System.getProperty("test.provider.name", "SunJCE"));
         for (int i=0; i<KEYS.length; i++) {
             SecretKey aesKey = constructAESKey(KEYS[i]);
             if (aesKey.getEncoded().length*8 >

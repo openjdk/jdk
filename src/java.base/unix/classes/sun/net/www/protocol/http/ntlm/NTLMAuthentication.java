@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,14 +35,12 @@ import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Base64;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Properties;
 
 import sun.net.www.HeaderParser;
 import sun.net.www.protocol.http.AuthenticationInfo;
 import sun.net.www.protocol.http.AuthScheme;
 import sun.net.www.protocol.http.HttpURLConnection;
-import sun.security.action.GetPropertyAction;
 
 /**
  * NTLMAuthentication:
@@ -70,25 +68,24 @@ import sun.security.action.GetPropertyAction;
  *    through a proxy, rather between client and proxy, or between client and server (with no proxy)
  */
 
-public class NTLMAuthentication extends AuthenticationInfo {
-    private static final long serialVersionUID = 170L;
+public final class NTLMAuthentication extends AuthenticationInfo {
 
     private static final NTLMAuthenticationCallback NTLMAuthCallback =
-        NTLMAuthenticationCallback.getNTLMAuthenticationCallback();
+            NTLMAuthenticationCallback.getNTLMAuthenticationCallback();
 
     private String hostname;
     /* Domain to use if not specified by user */
     private static final String defaultDomain;
     /* Whether cache is enabled for NTLM */
     private static final boolean ntlmCache;
+
     static {
-        Properties props = GetPropertyAction.privilegedGetProperties();
-        defaultDomain = props.getProperty("http.auth.ntlm.domain", "");
-        String ntlmCacheProp = props.getProperty("jdk.ntlm.cache", "true");
+        defaultDomain = System.getProperty("http.auth.ntlm.domain", "");
+        String ntlmCacheProp = System.getProperty("jdk.ntlm.cache", "true");
         ntlmCache = Boolean.parseBoolean(ntlmCacheProp);
     }
 
-    public static boolean supportsTransparentAuth () {
+    public static boolean supportsTransparentAuth() {
         return false;
     }
 
@@ -103,27 +100,8 @@ public class NTLMAuthentication extends AuthenticationInfo {
         return false;
     }
 
-    @SuppressWarnings("removal")
-    private void init0() {
-
-        hostname = java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<>() {
-            public String run() {
-                String localhost;
-                try {
-                    localhost = InetAddress.getLocalHost().getHostName();
-                } catch (UnknownHostException e) {
-                     localhost = "localhost";
-                }
-                return localhost;
-            }
-        });
-    };
-
-    @SuppressWarnings("serial") // Type of field is not Serializable
     PasswordAuthentication pw;
 
-    @SuppressWarnings("serial") // Type of field is not Serializable
     Client client;
     /**
      * Create a NTLMAuthentication:
@@ -154,9 +132,13 @@ public class NTLMAuthentication extends AuthenticationInfo {
             username = s.substring (i+1);
         }
         password = pw.getPassword();
-        init0();
         try {
-            String version = GetPropertyAction.privilegedGetProperty("ntlm.version");
+            hostname = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            hostname = "localhost";
+        }
+        try {
+            String version = System.getProperty("ntlm.version");
             client = new Client(version, hostname, username, ntdomain, password);
         } catch (NTLMException ne) {
             try {

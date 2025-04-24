@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package javax.xml.transform;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -51,16 +49,9 @@ class FactoryFinder {
 
     // Define system property "jaxp.debug" to get output
     static {
-        // Use try/catch block to support applets, which throws
-        // SecurityException out of this code.
-        try {
-            String val = SecuritySupport.getSystemProperty("jaxp.debug");
-            // Allow simply setting the prop to turn on debug
-            debug = val != null && !"false".equals(val);
-        }
-        catch (SecurityException se) {
-            debug = false;
-        }
+        String val = System.getProperty("jaxp.debug");
+        // Allow simply setting the prop to turn on debug
+        debug = val != null && !"false".equals(val);
     }
 
     private static void dPrint(Supplier<String> msgGen) {
@@ -128,10 +119,9 @@ class FactoryFinder {
      * @param doFallback True if the current ClassLoader should be tried as
      * a fallback if the class is not found using cl
      *
-     * @param overrideDefaultParser True to allow overriding the system-default
+     * @param doFallback True to allow overriding the system-default
      * parser.
      */
-    @SuppressWarnings("removal")
     static <T> T newInstance(Class<T> type, String className, ClassLoader cl,
                              boolean doFallback)
         throws TransformerFactoryConfigurationError
@@ -139,13 +129,6 @@ class FactoryFinder {
         assert type != null;
 
         boolean useBSClsLoader = false;
-        // make sure we have access to restricted packages
-        if (System.getSecurityManager() != null) {
-            if (className != null && className.startsWith(DEFAULT_PACKAGE)) {
-                cl = null;
-                useBSClsLoader = true;
-            }
-        }
 
         try {
             Class<?> providerClass = getProviderClass(className, cl, doFallback, useBSClsLoader);
@@ -191,15 +174,10 @@ class FactoryFinder {
 
         dPrint(()->"find factoryId =" + factoryId);
         // Use the system property first
-        try {
-            String systemProp = SecuritySupport.getSystemProperty(factoryId);
-            if (systemProp != null) {
-                dPrint(()->"found system property, value=" + systemProp);
-                return newInstance(type, systemProp, null, true);
-            }
-        }
-        catch (SecurityException se) {
-            if (debug) se.printStackTrace();
+        String systemProp = System.getProperty(factoryId);
+        if (systemProp != null) {
+            dPrint(()->"found system property, value=" + systemProp);
+            return newInstance(type, systemProp, null, true);
         }
 
         // try to read from the configuration file
@@ -229,22 +207,17 @@ class FactoryFinder {
      *
      * @return instance of provider class if found or null
      */
-    @SuppressWarnings("removal")
     private static <T> T findServiceProvider(final Class<T> type)
         throws TransformerFactoryConfigurationError
     {
       try {
-            return AccessController.doPrivileged(new PrivilegedAction<T>() {
-                public T run() {
-                    final ServiceLoader<T> serviceLoader = ServiceLoader.load(type);
-                    final Iterator<T> iterator = serviceLoader.iterator();
-                    if (iterator.hasNext()) {
-                        return iterator.next();
-                    } else {
-                        return null;
-                    }
-                 }
-            });
+            final ServiceLoader<T> serviceLoader = ServiceLoader.load(type);
+            final Iterator<T> iterator = serviceLoader.iterator();
+            if (iterator.hasNext()) {
+                return iterator.next();
+            } else {
+                return null;
+            }
         } catch(ServiceConfigurationError e) {
             // It is not possible to wrap an error directly in
             // FactoryConfigurationError - so we need to wrap the

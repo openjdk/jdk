@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 // Major contributions by AHa, AS, JL, ML.
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -94,8 +93,6 @@ void InterpreterMacroAssembler::dispatch_next(TosState state, int bcp_incr, bool
 // Dispatch value in Lbyte_code and increment Lbcp.
 
 void InterpreterMacroAssembler::dispatch_base(TosState state, address* table, bool generate_poll) {
-  verify_FPU(1, state);
-
 #ifdef ASSERT
   address reentry = nullptr;
   { Label OK;
@@ -324,12 +321,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index, int bcp_o
   } else if (index_size == sizeof(u4)) {
 
     load_sized_value(index, param, 4, false);
-
-    // Check if the secondary index definition is still ~x, otherwise
-    // we have to change the following assembler code to calculate the
-    // plain index.
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    not_(index);  // Convert to plain index.
   } else if (index_size == sizeof(u1)) {
     z_llgc(index, param);
   } else {
@@ -447,9 +438,6 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
 
   // Do the check.
   check_klass_subtype(Rsub_klass, Rsuper_klass, Rtmp1, Rtmp2, ok_is_subtype);
-
-  // Profile the failure of the check.
-  profile_typecheck_failed(Rtmp1, Rtmp2);
 }
 
 // Pop topmost element from stack. It just disappears.
@@ -789,7 +777,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
     get_method(R_method);
     verify_oop(Z_tos, state);
     push(state); // Save tos/result.
-    testbit(method2_(R_method, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
+    testbit_ushort(method2_(R_method, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
     z_bfalse(unlocked);
 
     // Don't unlock anything if the _do_not_unlock_if_synchronized flag
@@ -1014,18 +1002,18 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   // markWord header = obj->mark().set_unlocked();
 
-  // Load markWord from object into header.
-  z_lg(header, hdr_offset, object);
-
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(tmp, object);
-    testbit(Address(tmp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
-    z_btrue(slow_case);
-  }
-
   if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(object, /* mark word */ header, tmp, slow_case);
+    lightweight_lock(monitor, object, header, tmp, slow_case);
   } else if (LockingMode == LM_LEGACY) {
+
+    if (DiagnoseSyncOnValueBasedClasses != 0) {
+      load_klass(tmp, object);
+      z_tm(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
+      z_btrue(slow_case);
+    }
+
+    // Load markWord from object into header.
+    z_lg(header, hdr_offset, object);
 
     // Set header to be (markWord of object | UNLOCK_VALUE).
     // This will not change anything if it was unlocked before.
@@ -1081,16 +1069,9 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   // None of the above fast optimizations worked so we have to get into the
   // slow case of monitor enter.
   bind(slow_case);
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    // for lightweight locking we need to use monitorenter_obj, see interpreterRuntime.cpp
-    call_VM(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj),
-            object);
-  } else {
-    call_VM(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            monitor);
-  }
+  call_VM(noreg,
+          CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
+          monitor);
   // }
 
   bind(done);
@@ -1162,26 +1143,8 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 
   // If we still have a lightweight lock, unlock the object and be done.
   if (LockingMode == LM_LIGHTWEIGHT) {
-    // Check for non-symmetric locking. This is allowed by the spec and the interpreter
-    // must handle it.
 
-    Register tmp = current_header;
-
-    // First check for lock-stack underflow.
-    z_lgf(tmp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
-    compareU32_and_branch(tmp, (unsigned)LockStack::start_offset(), Assembler::bcondNotHigh, slow_case);
-
-    // Then check if the top of the lock-stack matches the unlocked object.
-    z_aghi(tmp, -oopSize);
-    z_lg(tmp, Address(Z_thread, tmp));
-    compare64_and_branch(tmp, object, Assembler::bcondNotEqual, slow_case);
-
-    z_lg(header, Address(object, hdr_offset));
-    z_lgr(tmp, header);
-    z_nill(tmp, markWord::monitor_value);
-    z_brne(slow_case);
-
-    lightweight_unlock(object, header, tmp, slow_case);
+    lightweight_unlock(object, header, current_header, slow_case);
 
     z_bru(done);
   } else {
@@ -1425,7 +1388,7 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
     }
 
     // Record the receiver type.
-    record_klass_in_profile(receiver, mdp, reg2, true);
+    record_klass_in_profile(receiver, mdp, reg2);
     bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
@@ -1448,11 +1411,9 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
 void InterpreterMacroAssembler::record_klass_in_profile_helper(
                                         Register receiver, Register mdp,
                                         Register reg2, int start_row,
-                                        Label& done, bool is_virtual_call) {
+                                        Label& done) {
   if (TypeProfileWidth == 0) {
-    if (is_virtual_call) {
-      increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-    }
+    increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
     return;
   }
 
@@ -1487,23 +1448,19 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
       z_ltgr(reg2, reg2);
       if (start_row == last_row) {
         // The only thing left to do is handle the null case.
-        if (is_virtual_call) {
-          z_brz(found_null);
-          // Receiver did not match any saved receiver and there is no empty row for it.
-          // Increment total counter to indicate polymorphic case.
-          increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-          z_bru(done);
-          bind(found_null);
-        } else {
-          z_brnz(done);
-        }
+        z_brz(found_null);
+        // Receiver did not match any saved receiver and there is no empty row for it.
+        // Increment total counter to indicate polymorphic case.
+        increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
+        z_bru(done);
+        bind(found_null);
         break;
       }
       // Since null is rare, make it be the branch-taken case.
       z_brz(found_null);
 
       // Put all the "Case 3" tests here.
-      record_klass_in_profile_helper(receiver, mdp, reg2, start_row + 1, done, is_virtual_call);
+      record_klass_in_profile_helper(receiver, mdp, reg2, start_row + 1, done);
 
       // Found a null. Keep searching for a matching receiver,
       // but remember that this is an empty (unused) slot.
@@ -1550,12 +1507,11 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
 //   done:
 
 void InterpreterMacroAssembler::record_klass_in_profile(Register receiver,
-                                                        Register mdp, Register reg2,
-                                                        bool is_virtual_call) {
+                                                        Register mdp, Register reg2) {
   assert(ProfileInterpreter, "must be profiling");
   Label done;
 
-  record_klass_in_profile_helper(receiver, mdp, reg2, 0, done, is_virtual_call);
+  record_klass_in_profile_helper(receiver, mdp, reg2, 0, done);
 
   bind (done);
 }
@@ -1615,24 +1571,6 @@ void InterpreterMacroAssembler::profile_null_seen(Register mdp) {
   }
 }
 
-void InterpreterMacroAssembler::profile_typecheck_failed(Register mdp, Register tmp) {
-  if (ProfileInterpreter && TypeProfileCasts) {
-    Label profile_continue;
-
-    // If no method data exists, go to profile_continue.
-    test_method_data_pointer(mdp, profile_continue);
-
-    int count_offset = in_bytes(CounterData::count_offset());
-    // Back up the address, since we have already bumped the mdp.
-    count_offset -= in_bytes(VirtualCallData::virtual_call_data_size());
-
-    // *Decrement* the counter. We expect to see zero or small negatives.
-    increment_mdp_data_at(mdp, count_offset, tmp, true);
-
-    bind (profile_continue);
-  }
-}
-
 void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass, Register reg2) {
   if (ProfileInterpreter) {
     Label profile_continue;
@@ -1646,7 +1584,7 @@ void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass, 
       mdp_delta = in_bytes(VirtualCallData::virtual_call_data_size());
 
       // Record the object type.
-      record_klass_in_profile(klass, mdp, reg2, false);
+      record_klass_in_profile(klass, mdp, reg2);
     }
     update_mdp_by_constant(mdp, mdp_delta);
 
@@ -2190,18 +2128,6 @@ void InterpreterMacroAssembler::notify_method_exit(bool native_method,
     if (!native_method) pop(state);
     bind(jvmti_post_done);
   }
-
-#if 0
-  // Dtrace currently not supported on z/Architecture.
-  {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false);
-    push(state);
-    get_method(c_rarg1);
-    call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),
-                 r15_thread, c_rarg1);
-    pop(state);
-  }
-#endif
 }
 
 void InterpreterMacroAssembler::skip_if_jvmti_mode(Label &Lskip, Register Rscratch) {
@@ -2260,10 +2186,4 @@ void InterpreterMacroAssembler::pop_interpreter_frame(Register return_pc, Regist
   load_const_optimized(Z_ARG3, 0xb00b1);
   z_stg(Z_ARG3, _z_parent_ijava_frame_abi(return_pc), Z_SP);
 #endif
-}
-
-void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
-  if (VerifyFPU) {
-    unimplemented("verifyFPU");
-  }
 }

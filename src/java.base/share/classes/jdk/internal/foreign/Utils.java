@@ -1,30 +1,35 @@
 /*
- *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.  Oracle designates this
- *  particular file as subject to the "Classpath" exception as provided
- *  by Oracle in the LICENSE file that accompanied this code.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *   Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
- *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package jdk.internal.foreign;
+
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.abi.SharedUtils;
+import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.ForceInline;
+import sun.invoke.util.Wrapper;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.MemoryLayout;
@@ -39,42 +44,42 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
-
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.ForceInline;
-import sun.invoke.util.Wrapper;
-
-import static sun.security.action.GetPropertyAction.privilegedGetProperty;
 
 /**
  * This class contains misc helper functions to support creation of memory segments.
  */
 public final class Utils {
 
-    public static final boolean IS_WINDOWS = privilegedGetProperty("os.name").startsWith("Windows");
-
     // Suppresses default constructor, ensuring non-instantiability.
     private Utils() {}
 
-    private static final MethodHandle BYTE_TO_BOOL;
-    private static final MethodHandle BOOL_TO_BYTE;
-    private static final MethodHandle ADDRESS_TO_LONG;
-    private static final MethodHandle LONG_TO_ADDRESS;
+    private static final Class<?> ADDRESS_CARRIER_TYPE;
+    private static final MethodHandle LONG_TO_CARRIER;
+    private static final MethodHandle LONG_TO_ADDRESS_TARGET;
+    private static final MethodHandle LONG_TO_ADDRESS_NO_TARGET;
 
     static {
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        String unboxSegmentName;
+        Class<?> rawAddressType;
+        if (Unsafe.getUnsafe().addressSize() == 8) {
+            unboxSegmentName = "unboxSegment";
+            rawAddressType = long.class;
+        } else {
+            assert Unsafe.getUnsafe().addressSize() == 4 : Unsafe.getUnsafe().addressSize();
+            unboxSegmentName = "unboxSegment32";
+            rawAddressType = int.class;
+        }
+        ADDRESS_CARRIER_TYPE = rawAddressType;
         try {
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-            BYTE_TO_BOOL = lookup.findStatic(Utils.class, "byteToBoolean",
-                    MethodType.methodType(boolean.class, byte.class));
-            BOOL_TO_BYTE = lookup.findStatic(Utils.class, "booleanToByte",
-                    MethodType.methodType(byte.class, boolean.class));
-            ADDRESS_TO_LONG = lookup.findStatic(SharedUtils.class, "unboxSegment",
-                    MethodType.methodType(long.class, MemorySegment.class));
-            LONG_TO_ADDRESS = lookup.findStatic(Utils.class, "longToAddress",
-                    MethodType.methodType(MemorySegment.class, long.class, long.class, long.class));
+            LONG_TO_CARRIER = lookup.findStatic(SharedUtils.class, unboxSegmentName,
+                    MethodType.methodType(rawAddressType, MemorySegment.class));
+            LONG_TO_ADDRESS_TARGET = lookup.findStatic(Utils.class, "longToAddress",
+                    MethodType.methodType(MemorySegment.class, rawAddressType, AddressLayout.class));
+            LONG_TO_ADDRESS_NO_TARGET = lookup.findStatic(Utils.class, "longToAddress",
+                    MethodType.methodType(MemorySegment.class, rawAddressType));
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -89,51 +94,60 @@ public final class Utils {
         return ms.asSlice(alignUp(offset, alignment) - offset);
     }
 
-    public static VarHandle makeSegmentViewVarHandle(ValueLayout layout) {
-        final class VarHandleCache {
-            private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
+    /**
+     * This method returns a var handle that accesses a target layout in an enclosing layout, taking the memory offset
+     * and the base offset of the enclosing layout in the segment.
+     * <p>
+     * If the offset of the target layout in the enclosing layout is constant, the coordinates are (MS, long).
+     * If the offset of the target layout in the enclosing layout is variable, the coordinates are (MS, long, long).
+     * The trailing long is a pre-validated, variable extra offset, which the var handle does not perform any size or
+     * alignment checks against. Such checks are added (using adaptation) by {@link LayoutPath#dereferenceHandle()}.
+     * <p>
+     * We provide two level of caching of the generated var handles. First, the var handle associated
+     * with a {@link ValueLayout#varHandle()} call is cached inside a stable field of the value layout implementation.
+     * This optimizes common code idioms like {@code JAVA_INT.varHandle().getInt(...)}. A second layer of caching
+     * is then provided by this method, so different value layouts with same effects can reuse var handle instances.
+     * (The 2nd layer may be redundant in the long run)
+     *
+     * @param enclosing the enclosing context of the value layout
+     * @param layout the value layout for which a raw memory segment var handle is to be created
+     * @param constantOffset if the VH carries a constant offset instead of taking a variable offset
+     * @param offset the offset if it is a constant
+     * @return a raw memory segment var handle
+     */
+    public static VarHandle makeRawSegmentViewVarHandle(MemoryLayout enclosing, ValueLayout layout, boolean constantOffset, long offset) {
+        if (enclosing instanceof ValueLayout direct) {
+            assert direct.equals(layout) && constantOffset && offset == 0;
+            record VarHandleCache() implements Function<ValueLayout, VarHandle> {
+                private static final Map<ValueLayout, VarHandle> HANDLE_MAP = new ConcurrentHashMap<>();
+                private static final VarHandleCache INSTANCE = new VarHandleCache();
 
-            static VarHandle put(ValueLayout layout, VarHandle handle) {
-                VarHandle prev = HANDLE_MAP.putIfAbsent(layout, handle);
-                return prev != null ? prev : handle;
+                @Override
+                public VarHandle apply(ValueLayout valueLayout) {
+                    return Utils.makeRawSegmentViewVarHandleInternal(valueLayout, valueLayout, true, 0);
+                }
             }
-
-            static VarHandle get(ValueLayout layout) {
-                return HANDLE_MAP.get(layout);
-            }
+            return VarHandleCache.HANDLE_MAP.computeIfAbsent(direct.withoutName(), VarHandleCache.INSTANCE);
         }
-        layout = layout.withoutName(); // name doesn't matter
-        // keep the addressee layout as it's used below
+        return makeRawSegmentViewVarHandleInternal(enclosing, layout, constantOffset, offset);
+    }
 
-        VarHandle handle = VarHandleCache.get(layout);
-        if (handle != null) {
-            return handle;
-        }
-
+    private static VarHandle makeRawSegmentViewVarHandleInternal(MemoryLayout enclosing, ValueLayout layout, boolean constantOffset, long offset) {
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
-            baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
-                case Long.BYTES -> long.class;
-                case Integer.BYTES -> int.class;
-                default -> throw new UnsupportedOperationException("Unsupported address layout");
-            };
-        } else if (layout.carrier() == boolean.class) {
-            baseCarrier = byte.class;
+            baseCarrier = ADDRESS_CARRIER_TYPE;
         }
 
-        handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
-                layout.byteAlignment() - 1, layout.order());
+        VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
+                enclosing, layout.byteAlignment() - 1, layout.order(), constantOffset, offset);
 
-        if (layout.carrier() == boolean.class) {
-            handle = MethodHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
-        } else if (layout instanceof AddressLayout addressLayout) {
-            handle = MethodHandles.filterValue(handle,
-                    MethodHandles.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
-                    MethodHandles.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
-                            pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
-                            MethodType.methodType(MemorySegment.class, baseCarrier)));
+        if (layout instanceof AddressLayout addressLayout) {
+            MethodHandle longToAddressAdapter = addressLayout.targetLayout().isPresent() ?
+                    MethodHandles.insertArguments(LONG_TO_ADDRESS_TARGET, 1, addressLayout) :
+                    LONG_TO_ADDRESS_NO_TARGET;
+            handle = MethodHandles.filterValue(handle, LONG_TO_CARRIER, longToAddressAdapter);
         }
-        return VarHandleCache.put(layout, handle);
+        return handle;
     }
 
     public static boolean byteToBoolean(byte b) {
@@ -142,6 +156,28 @@ public final class Utils {
 
     private static byte booleanToByte(boolean b) {
         return b ? (byte)1 : (byte)0;
+    }
+
+    @ForceInline
+    public static MemorySegment longToAddress(long addr) {
+        return longToAddress(addr, 0, 1);
+    }
+
+    // 32 bit
+    @ForceInline
+    public static MemorySegment longToAddress(int addr) {
+        return longToAddress(addr, 0, 1);
+    }
+
+    @ForceInline
+    public static MemorySegment longToAddress(long addr, AddressLayout layout) {
+        return longToAddress(addr, pointeeByteSize(layout), pointeeByteAlign(layout));
+    }
+
+    // 32 bit
+    @ForceInline
+    public static MemorySegment longToAddress(int addr, AddressLayout layout) {
+        return longToAddress(addr, pointeeByteSize(layout), pointeeByteAlign(layout));
     }
 
     @ForceInline
@@ -288,7 +324,7 @@ public final class Utils {
         return "0x" + Long.toHexString(value);
     }
 
-    public record BaseAndScale(int base, long scale) {
+    public record BaseAndScale(long base, long scale) {
 
         public static final BaseAndScale BYTE =
                 new BaseAndScale(Unsafe.ARRAY_BYTE_BASE_OFFSET, Unsafe.ARRAY_BYTE_INDEX_SCALE);

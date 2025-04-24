@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,8 @@ class ZCollectedHeap : public CollectedHeap {
   friend class VMStructs;
 
 private:
-  SoftRefPolicy     _soft_ref_policy;
   ZBarrierSet       _barrier_set;
-  ZInitialize       _initialize;
+  ZInitializer      _initializer;
   ZHeap             _heap;
   ZDriverMinor*     _driver_minor;
   ZDriverMajor*     _driver_major;
@@ -65,8 +64,6 @@ public:
   jint initialize() override;
   void initialize_serviceability() override;
   void stop() override;
-
-  SoftRefPolicy* soft_ref_policy() override;
 
   size_t max_capacity() const override;
   size_t capacity() const override;
@@ -90,8 +87,6 @@ public:
   size_t tlab_used(Thread* thr) const override;
   size_t max_tlab_size() const override;
   size_t unsafe_max_tlab_alloc(Thread* thr) const override;
-
-  bool uses_stack_watermark_barrier() const override;
 
   MemoryUsage memory_usage() override;
   GrowableArray<GCMemoryManager*> memory_managers() override;
@@ -120,9 +115,8 @@ public:
   void pin_object(JavaThread* thread, oop obj) override;
   void unpin_object(JavaThread* thread, oop obj) override;
 
-  void print_on(outputStream* st) const override;
-  void print_on_error(outputStream* st) const override;
-  void print_extended_on(outputStream* st) const override;
+  void print_heap_on(outputStream* st) const override;
+  void print_gc_on(outputStream* st) const override;
   void print_tracing_info() const override;
   bool print_location(outputStream* st, void* addr) const override;
 

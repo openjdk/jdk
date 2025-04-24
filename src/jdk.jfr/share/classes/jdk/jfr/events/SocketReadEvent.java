@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,7 @@ import jdk.jfr.internal.Type;
 @Label("Socket Read")
 @Category("Java Application")
 @Description("Reading data from a socket")
-@MirrorEvent(className = "jdk.internal.event.SocketReadEvent")
-public final class SocketReadEvent extends AbstractJDKEvent {
+public final class SocketReadEvent extends MirrorEvent {
 
     @Label("Remote Host")
     public String host;

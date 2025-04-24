@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2021, Intel Corporation. All rights reserved.
+* Copyright (c) 2016, 2024, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -23,7 +23,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -236,17 +235,10 @@ void MacroAssembler::fast_sha1(XMMRegister abcd, XMMRegister e0, XMMRegister e1,
 // and state0 and state1 can never use xmm0 register.
 // ofs and limit are used for multi-block byte array.
 // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
-#ifdef _LP64
 void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
   XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
   Register buf, Register state, Register ofs, Register limit, Register rsp,
   bool multi_block, XMMRegister shuf_mask) {
-#else
-void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
-  XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
-  Register buf, Register state, Register ofs, Register limit, Register rsp,
-  bool multi_block) {
-#endif
   Label done_hash, loop0;
 
   address K256 = StubRoutines::x86::k256_addr();
@@ -261,9 +253,7 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
   palignr(state0, state1, 8);
   pblendw(state1, msgtmp4, 0xF0);
 
-#ifdef _LP64
   movdqu(shuf_mask, ExternalAddress(pshuffle_byte_flip_mask));
-#endif
   lea(rax, ExternalAddress(K256));
 
   bind(loop0);
@@ -272,11 +262,7 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
 
   // Rounds 0-3
   movdqu(msg, Address(buf, 0));
-#ifdef _LP64
   pshufb(msg, shuf_mask);
-#else
-  pshufb(msg, ExternalAddress(pshuffle_byte_flip_mask));
-#endif
   movdqa(msgtmp0, msg);
   paddd(msg, Address(rax, 0));
   sha256rnds2(state1, state0);
@@ -285,11 +271,7 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
 
   // Rounds 4-7
   movdqu(msg, Address(buf, 16));
-#ifdef _LP64
   pshufb(msg, shuf_mask);
-#else
-  pshufb(msg, ExternalAddress(pshuffle_byte_flip_mask));
-#endif
   movdqa(msgtmp1, msg);
   paddd(msg, Address(rax, 16));
   sha256rnds2(state1, state0);
@@ -299,11 +281,7 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
 
   // Rounds 8-11
   movdqu(msg, Address(buf, 32));
-#ifdef _LP64
   pshufb(msg, shuf_mask);
-#else
-  pshufb(msg, ExternalAddress(pshuffle_byte_flip_mask));
-#endif
   movdqa(msgtmp2, msg);
   paddd(msg, Address(rax, 32));
   sha256rnds2(state1, state0);
@@ -313,11 +291,7 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
 
   // Rounds 12-15
   movdqu(msg, Address(buf, 48));
-#ifdef _LP64
   pshufb(msg, shuf_mask);
-#else
-  pshufb(msg, ExternalAddress(pshuffle_byte_flip_mask));
-#endif
   movdqa(msgtmp3, msg);
   paddd(msg, Address(rax, 48));
   sha256rnds2(state1, state0);
@@ -492,10 +466,9 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
 
 }
 
-#ifdef _LP64
 /*
   The algorithm below is based on Intel publication:
-  "Fast SHA-256 Implementations on Intelë Architecture Processors" by Jim Guilford, Kirk Yap and Vinodh Gopal.
+  "Fast SHA-256 Implementations on Intel(R) Architecture Processors" by Jim Guilford, Kirk Yap and Vinodh Gopal.
   The assembly code was originally provided by Sean Gulley and in many places preserves
   the original assembly NAMES and comments to simplify matching Java assembly with its original.
   The Java version was substantially redesigned to replace 1200 assembly instruction with
@@ -689,7 +662,7 @@ void MacroAssembler::sha256_AVX2(XMMRegister msg, XMMRegister state0, XMMRegiste
 
   address K256_W = StubRoutines::x86::k256_W_addr();
   address pshuffle_byte_flip_mask = StubRoutines::x86::pshuffle_byte_flip_mask_addr();
-  address pshuffle_byte_flip_mask_addr = 0;
+  address pshuffle_byte_flip_mask_addr = nullptr;
 
 const XMMRegister& SHUF_00BA        = xmm10;    // ymm10: shuffle xBxA -> 00BA
 const XMMRegister& SHUF_DC00        = xmm12;    // ymm12: shuffle xDxC -> DC00
@@ -1247,7 +1220,7 @@ void MacroAssembler::sha512_AVX2(XMMRegister msg, XMMRegister state0, XMMRegiste
 
     address K512_W = StubRoutines::x86::k512_W_addr();
     address pshuffle_byte_flip_mask_sha512 = StubRoutines::x86::pshuffle_byte_flip_mask_addr_sha512();
-    address pshuffle_byte_flip_mask_addr = 0;
+    address pshuffle_byte_flip_mask_addr = nullptr;
 
     const XMMRegister& XFER = xmm0; // YTMP0
     const XMMRegister& BYTE_FLIP_MASK = xmm9; // ymm9
@@ -1519,5 +1492,181 @@ void MacroAssembler::sha512_AVX2(XMMRegister msg, XMMRegister state0, XMMRegiste
     }
 }
 
-#endif //#ifdef _LP64
+//Implemented using Intel IpSec implementation (intel-ipsec-mb on github)
+void MacroAssembler::sha512_update_ni_x1(Register arg_hash, Register arg_msg, Register ofs, Register limit, bool multi_block) {
+    Label done_hash, block_loop;
+    address K512_W = StubRoutines::x86::k512_W_addr();
 
+    vbroadcasti128(xmm15, ExternalAddress(StubRoutines::x86::pshuffle_byte_flip_mask_addr_sha512()), Assembler::AVX_256bit, r10);
+
+    //load current hash value and transform
+    vmovdqu(xmm0, Address(arg_hash));
+    vmovdqu(xmm1, Address(arg_hash, 32));
+    //ymm0 = D C B A, ymm1 = H G F E
+    vperm2i128(xmm2, xmm0, xmm1, 0x20);
+    vperm2i128(xmm3, xmm0, xmm1, 0x31);
+    //ymm2 = F E B A, ymm3 = H G D C
+    vpermq(xmm13, xmm2, 0x1b, Assembler::AVX_256bit);
+    vpermq(xmm14, xmm3, 0x1b, Assembler::AVX_256bit);
+    //ymm13 = A B E F, ymm14 = C D G H
+
+    lea(rax, ExternalAddress(K512_W));
+    align(32);
+    bind(block_loop);
+    vmovdqu(xmm11, xmm13);//ABEF
+    vmovdqu(xmm12, xmm14);//CDGH
+
+    //R0 - R3
+    vmovdqu(xmm0, Address(arg_msg, 0 * 32));
+    vpshufb(xmm3, xmm0, xmm15, Assembler::AVX_256bit);//ymm0 / ymm3 = W[0..3]
+    vpaddq(xmm0, xmm3, Address(rax, 0 * 32), Assembler::AVX_256bit);
+    sha512rnds2(xmm12, xmm11, xmm0);
+    vperm2i128(xmm0, xmm0, xmm0, 0x01);
+    sha512rnds2(xmm11, xmm12, xmm0);
+
+    //R4 - R7
+    vmovdqu(xmm0, Address(arg_msg, 1 * 32));
+    vpshufb(xmm4, xmm0, xmm15, Assembler::AVX_256bit);//ymm0 / ymm4 = W[4..7]
+    vpaddq(xmm0, xmm4, Address(rax, 1 * 32), Assembler::AVX_256bit);
+    sha512rnds2(xmm12, xmm11, xmm0);
+    vperm2i128(xmm0, xmm0, xmm0, 0x01);
+    sha512rnds2(xmm11, xmm12, xmm0);
+    sha512msg1(xmm3, xmm4); //ymm3 = W[0..3] + S0(W[1..4])
+
+    //R8 - R11
+    vmovdqu(xmm0, Address(arg_msg, 2 * 32));
+    vpshufb(xmm5, xmm0, xmm15, Assembler::AVX_256bit);//ymm0 / ymm5 = W[8..11]
+    vpaddq(xmm0, xmm5, Address(rax, 2 * 32), Assembler::AVX_256bit);
+    sha512rnds2(xmm12, xmm11, xmm0);
+    vperm2i128(xmm0, xmm0, xmm0, 0x01);
+    sha512rnds2(xmm11, xmm12, xmm0);
+    sha512msg1(xmm4, xmm5);//ymm4 = W[4..7] + S0(W[5..8])
+
+    //R12 - R15
+    vmovdqu(xmm0, Address(arg_msg, 3 * 32));
+    vpshufb(xmm6, xmm0, xmm15, Assembler::AVX_256bit); //ymm0 / ymm6 = W[12..15]
+    vpaddq(xmm0, xmm6, Address(rax, 3 * 32), Assembler::AVX_256bit);
+    vpermq(xmm8, xmm6, 0x1b, Assembler::AVX_256bit); //ymm8 = W[12] W[13] W[14] W[15]
+    vpermq(xmm9, xmm5, 0x39, Assembler::AVX_256bit); //ymm9 = W[8]  W[11] W[10] W[9]
+    vpblendd(xmm8, xmm8, xmm9, 0x3f, Assembler::AVX_256bit); //ymm8 = W[12] W[11] W[10] W[9]
+    vpaddq(xmm3, xmm3, xmm8, Assembler::AVX_256bit);
+    sha512msg2(xmm3, xmm6);//W[16..19] = xmm3 + W[9..12] + S1(W[14..17])
+    sha512rnds2(xmm12, xmm11, xmm0);
+    vperm2i128(xmm0, xmm0, xmm0, 0x01);
+    sha512rnds2(xmm11, xmm12, xmm0);
+    sha512msg1(xmm5, xmm6); //ymm5 = W[8..11] + S0(W[9..12])
+
+    //R16 - R19, R32 - R35, R48 - R51
+    for (int i = 4, j = 3; j > 0; j--) {
+      vpaddq(xmm0, xmm3, Address(rax, i * 32), Assembler::AVX_256bit);
+      vpermq(xmm8, xmm3, 0x1b, Assembler::AVX_256bit);//ymm8 = W[16] W[17] W[18] W[19]
+      vpermq(xmm9, xmm6, 0x39, Assembler::AVX_256bit);//ymm9 = W[12] W[15] W[14] W[13]
+      vpblendd(xmm7, xmm8, xmm9, 0x3f, Assembler::AVX_256bit);//xmm7 = W[16] W[15] W[14] W[13]
+      vpaddq(xmm4, xmm4, xmm7, Assembler::AVX_256bit);//ymm4 = W[4..7] + S0(W[5..8]) + W[13..16]
+      sha512msg2(xmm4, xmm3);//ymm4 += S1(W[14..17])
+      sha512rnds2(xmm12, xmm11, xmm0);
+      vperm2i128(xmm0, xmm0, xmm0, 0x01);
+      sha512rnds2(xmm11, xmm12, xmm0);
+      sha512msg1(xmm6, xmm3); //ymm6 = W[12..15] + S0(W[13..16])
+      i += 1;
+      //R20 - R23, R36 - R39, R52 - R55
+      vpaddq(xmm0, xmm4, Address(rax, i * 32), Assembler::AVX_256bit);
+      vpermq(xmm8, xmm4, 0x1b, Assembler::AVX_256bit);//ymm8 = W[20] W[21] W[22] W[23]
+      vpermq(xmm9, xmm3, 0x39, Assembler::AVX_256bit);//ymm9 = W[16] W[19] W[18] W[17]
+      vpblendd(xmm7, xmm8, xmm9, 0x3f, Assembler::AVX_256bit);//ymm7 = W[20] W[19] W[18] W[17]
+      vpaddq(xmm5, xmm5, xmm7, Assembler::AVX_256bit);//ymm5 = W[8..11] + S0(W[9..12]) + W[17..20]
+      sha512msg2(xmm5, xmm4);//ymm5 += S1(W[18..21])
+      sha512rnds2(xmm12, xmm11, xmm0);
+      vperm2i128(xmm0, xmm0, xmm0, 0x01);
+      sha512rnds2(xmm11, xmm12, xmm0);
+      sha512msg1(xmm3, xmm4); //ymm3 = W[16..19] + S0(W[17..20])
+      i += 1;
+      //R24 - R27, R40 - R43, R56 - R59
+      vpaddq(xmm0, xmm5, Address(rax, i * 32), Assembler::AVX_256bit);
+      vpermq(xmm8, xmm5, 0x1b, Assembler::AVX_256bit);//ymm8 = W[24] W[25] W[26] W[27]
+      vpermq(xmm9, xmm4, 0x39, Assembler::AVX_256bit);//ymm9 = W[20] W[23] W[22] W[21]
+      vpblendd(xmm7, xmm8, xmm9, 0x3f, Assembler::AVX_256bit);//ymm7 = W[24] W[23] W[22] W[21]
+      vpaddq(xmm6, xmm6, xmm7, Assembler::AVX_256bit);//ymm6 = W[12..15] + S0(W[13..16]) + W[21..24]
+      sha512msg2(xmm6, xmm5);//ymm6 += S1(W[22..25])
+      sha512rnds2(xmm12, xmm11, xmm0);
+      vperm2i128(xmm0, xmm0, xmm0, 0x01);
+      sha512rnds2(xmm11, xmm12, xmm0);
+      sha512msg1(xmm4, xmm5);//ymm4 = W[20..23] + S0(W[21..24])
+      i += 1;
+      //R28 - R31, R44 - R47, R60 - R63
+      vpaddq(xmm0, xmm6, Address(rax, i * 32), Assembler::AVX_256bit);
+      vpermq(xmm8, xmm6, 0x1b, Assembler::AVX_256bit);//ymm8 = W[28] W[29] W[30] W[31]
+      vpermq(xmm9, xmm5, 0x39, Assembler::AVX_256bit);//ymm9 = W[24] W[27] W[26] W[25]
+      vpblendd(xmm7, xmm8, xmm9, 0x3f, Assembler::AVX_256bit);//ymm7 = W[28] W[27] W[26] W[25]
+      vpaddq(xmm3, xmm3, xmm7, Assembler::AVX_256bit);//ymm3 = W[16..19] + S0(W[17..20]) + W[25..28]
+      sha512msg2(xmm3, xmm6); //ymm3 += S1(W[26..29])
+      sha512rnds2(xmm12, xmm11, xmm0);
+      vperm2i128(xmm0, xmm0, xmm0, 0x01);
+      sha512rnds2(xmm11, xmm12, xmm0);
+      sha512msg1(xmm5, xmm6);//ymm5 = W[24..27] + S0(W[25..28])
+      i += 1;
+    }
+    //R64 - R67
+    vpaddq(xmm0, xmm3, Address(rax, 16 * 32), Assembler::AVX_256bit);
+    vpermq(xmm8, xmm3, 0x1b, Assembler::AVX_256bit);//ymm8 = W[64] W[65] W[66] W[67]
+    vpermq(xmm9, xmm6, 0x39, Assembler::AVX_256bit);//ymm9 = W[60] W[63] W[62] W[61]
+    vpblendd(xmm7, xmm8, xmm9, 0x3f, Assembler::AVX_256bit);//ymm7 = W[64] W[63] W[62] W[61]
+    vpaddq(xmm4, xmm4, xmm7, Assembler::AVX_256bit);//ymm4 = W[52..55] + S0(W[53..56]) + W[61..64]
+    sha512msg2(xmm4, xmm3);//ymm4 += S1(W[62..65])
+    sha512rnds2(xmm12, xmm11, xmm0);
+    vperm2i128(xmm0, xmm0, xmm0, 0x01);
+    sha512rnds2(xmm11, xmm12, xmm0);
+    sha512msg1(xmm6, xmm3);//ymm6 = W[60..63] + S0(W[61..64])
+
+    //R68 - R71
+    vpaddq(xmm0, xmm4, Address(rax, 17 * 32), Assembler::AVX_256bit);
+    vpermq(xmm8, xmm4, 0x1b, Assembler::AVX_256bit);//ymm8 = W[68] W[69] W[70] W[71]
+    vpermq(xmm9, xmm3, 0x39, Assembler::AVX_256bit);//ymm9 = W[64] W[67] W[66] W[65]
+    vpblendd(xmm7, xmm8, xmm9, 0x3f, Assembler::AVX_256bit);//ymm7 = W[68] W[67] W[66] W[65]
+    vpaddq(xmm5, xmm5, xmm7, Assembler::AVX_256bit);//ymm5 = W[56..59] + S0(W[57..60]) + W[65..68]
+    sha512msg2(xmm5, xmm4);//ymm5 += S1(W[66..69])
+    sha512rnds2(xmm12, xmm11, xmm0);
+    vperm2i128(xmm0, xmm0, xmm0, 0x01);
+    sha512rnds2(xmm11, xmm12, xmm0);
+
+    //R72 - R75
+    vpaddq(xmm0, xmm5, Address(rax, 18 * 32), Assembler::AVX_256bit);
+    vpermq(xmm8, xmm5, 0x1b, Assembler::AVX_256bit);//ymm8 = W[72] W[73] W[74] W[75]
+    vpermq(xmm9, xmm4, 0x39, Assembler::AVX_256bit);//ymm9 = W[68] W[71] W[70] W[69]
+    vpblendd(xmm7, xmm8, xmm9, 0x3f, Assembler::AVX_256bit);//ymm7 = W[72] W[71] W[70] W[69]
+    vpaddq(xmm6, xmm6, xmm7, Assembler::AVX_256bit);//ymm6 = W[60..63] + S0(W[61..64]) + W[69..72]
+    sha512msg2(xmm6, xmm5);//ymm6 += S1(W[70..73])
+    sha512rnds2(xmm12, xmm11, xmm0);
+    vperm2i128(xmm0, xmm0, xmm0, 0x01);
+    sha512rnds2(xmm11, xmm12, xmm0);
+
+    //R76 - R79
+    vpaddq(xmm0, xmm6, Address(rax, 19 * 32), Assembler::AVX_256bit);
+    sha512rnds2(xmm12, xmm11, xmm0);
+    vperm2i128(xmm0, xmm0, xmm0, 0x01);
+    sha512rnds2(xmm11, xmm12, xmm0);
+
+    //update hash value
+    vpaddq(xmm14, xmm14, xmm12, Assembler::AVX_256bit);
+    vpaddq(xmm13, xmm13, xmm11, Assembler::AVX_256bit);
+
+    if (multi_block) {
+      addptr(arg_msg, 4 * 32);
+      addptr(ofs, 128);
+      cmpptr(ofs, limit);
+      jcc(Assembler::belowEqual, block_loop);
+      movptr(rax, ofs); //return ofs
+    }
+
+    //store the hash value back in memory
+    //xmm13 = ABEF
+    //xmm14 = CDGH
+    vperm2i128(xmm1, xmm13, xmm14, 0x31);
+    vperm2i128(xmm2, xmm13, xmm14, 0x20);
+    vpermq(xmm1, xmm1, 0xb1, Assembler::AVX_256bit);//ymm1 = D C B A
+    vpermq(xmm2, xmm2, 0xb1, Assembler::AVX_256bit);//ymm2 = H G F E
+    vmovdqu(Address(arg_hash, 0 * 32), xmm1);
+    vmovdqu(Address(arg_hash, 1 * 32), xmm2);
+
+    bind(done_hash);
+}

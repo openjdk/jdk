@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     //       super.bOp((Byte128Vector) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
-    // into a sharply type- and size-specific
+    // into a sharply-typed and size-specific
     // wrapper in the subclass file, so that
     // the JIT can specialize the code.
     // The code is only inlined and expanded
@@ -525,12 +525,25 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return r;
     }
 
+    static FloatVector selectFromTwoVectorHelper(Vector<Float> indexes, Vector<Float> src1, Vector<Float> src2) {
+        int vlen = indexes.length();
+        float[] res = new float[vlen];
+        float[] vecPayload1 = ((FloatVector)indexes).vec();
+        float[] vecPayload2 = ((FloatVector)src1).vec();
+        float[] vecPayload3 = ((FloatVector)src2).vec();
+        for (int i = 0; i < vlen; i++) {
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
+        }
+        return ((FloatVector)src1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
     // sometimes makes a lone /** {@inheritDoc} */
     // comment drop the method altogether,
-    // apparently if the method mentions an
+    // apparently if the method mentions a
     // parameter or return type of Vector<Float>
     // instead of Vector<E> as originally specified.
     // Adding an empty HTML fragment appears to
@@ -953,7 +966,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     // and broadcast, but it would be more surprising not to continue
     // the obvious pattern started by unary and binary.
 
-   /**
+    /**
      * {@inheritDoc} <!--workaround-->
      * @see #lanewise(VectorOperators.Ternary,float,float,VectorMask)
      * @see #lanewise(VectorOperators.Ternary,Vector,float,VectorMask)
@@ -2137,9 +2150,10 @@ public abstract class FloatVector extends AbstractVector<Float> {
         FloatVector that = (FloatVector) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Float> iota = iotaShuffle();
-        VectorMask<Float> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((float)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
+        IntVector filter = IntVector.broadcast((IntVector.IntSpecies) vspecies().asIntegral(), (int)(length() - origin));
+        VectorMask<Float> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
+        AbstractShuffle<Float> iota = iotaShuffle(origin, 1, true);
         return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
@@ -2167,9 +2181,10 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @ForceInline
     FloatVector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Float> iota = iotaShuffle();
-        VectorMask<Float> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((float)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
+        IntVector filter = IntVector.broadcast((IntVector.IntSpecies) vspecies().asIntegral(), (int)(length() - origin));
+        VectorMask<Float> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
+        AbstractShuffle<Float> iota = iotaShuffle(origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2188,10 +2203,10 @@ public abstract class FloatVector extends AbstractVector<Float> {
         FloatVector that = (FloatVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Float> iota = iotaShuffle();
-        VectorMask<Float> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
-                                                                  (broadcast((float)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
+        IntVector filter = IntVector.broadcast((IntVector.IntSpecies) vspecies().asIntegral(), (int)origin);
+        VectorMask<Float> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter).cast(vspecies());
+        AbstractShuffle<Float> iota = iotaShuffle(-origin, 1, true);
         return that.blend(this.rearrange(iota), blendMask);
     }
 
@@ -2228,10 +2243,10 @@ public abstract class FloatVector extends AbstractVector<Float> {
     FloatVector
     unsliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Float> iota = iotaShuffle();
-        VectorMask<Float> blendMask = iota.toVector().compare(VectorOperators.GE,
-                                                                  (broadcast((float)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
+        IntVector filter = IntVector.broadcast((IntVector.IntSpecies) vspecies().asIntegral(), (int)origin);
+        VectorMask<Float> blendMask = iotaVector.compare(VectorOperators.GE, filter).cast(vspecies());
+        AbstractShuffle<Float> iota = iotaShuffle(-origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2247,19 +2262,19 @@ public abstract class FloatVector extends AbstractVector<Float> {
      */
     @Override
     public abstract
-    FloatVector rearrange(VectorShuffle<Float> m);
+    FloatVector rearrange(VectorShuffle<Float> shuffle);
 
     /*package-private*/
     @ForceInline
     final
     <S extends VectorShuffle<Float>>
     FloatVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        shuffle.checkIndexes();
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, float.class, length(),
             this, shuffle, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
-                int ei = s_.laneSource(i);
+                int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
     }
@@ -2280,19 +2295,14 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
-        VectorMask<Float> valid = shuffle.laneIsValid();
-        if (m.andNot(valid).anyTrue()) {
-            shuffle.checkIndexes();
-            throw new AssertionError();
-        }
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, float.class, length(),
                    this, shuffle, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
-                        int ei = s_.laneSource(i);
-                        return ei < 0  || !m_.laneIsSet(i) ? 0 : v1.lane(ei);
+                        int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
+                        return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
     }
 
@@ -2312,48 +2322,43 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                            S shuffle,
                                            FloatVector v) {
         VectorMask<Float> valid = shuffle.laneIsValid();
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
         FloatVector r0 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, float.class, length(),
-                this, ws, null,
+                this, shuffle, null,
                 (v0, s_, m_) -> v0.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
         FloatVector r1 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, float.class, length(),
-                v, ws, null,
+                v, shuffle, null,
                 (v1, s_, m_) -> v1.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));
         return r1.blend(r0, valid);
     }
 
+    @Override
     @ForceInline
-    private final
-    VectorShuffle<Float> toShuffle0(FloatSpecies dsp) {
-        float[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(dsp, sa, 0);
+    final <F> VectorShuffle<F> bitsToShuffle0(AbstractSpecies<F> dsp) {
+        throw new AssertionError();
     }
 
-    /*package-private*/
     @ForceInline
-    final
-    VectorShuffle<Float> toShuffleTemplate(Class<?> shuffleType) {
-        FloatSpecies vsp = vspecies();
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     getClass(), float.class, length(),
-                                     shuffleType, byte.class, length(),
-                                     this, vsp,
-                                     FloatVector::toShuffle0);
+    final <F>
+    VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap) {
+        assert(dsp.elementSize() == vspecies().elementSize());
+        IntVector idx = convert(VectorOperators.F2I, 0).reinterpretAsInts();
+        IntVector wrapped = idx.lanewise(VectorOperators.AND, length() - 1);
+        if (!wrap) {
+            IntVector wrappedEx = wrapped.lanewise(VectorOperators.SUB, length());
+            VectorMask<Integer> inBound = wrapped.compare(VectorOperators.EQ, idx);
+            wrapped = wrappedEx.blend(wrapped, inBound);
+        }
+        return wrapped.bitsToShuffle(dsp);
     }
 
     /**
@@ -2405,7 +2410,10 @@ public abstract class FloatVector extends AbstractVector<Float> {
     /*package-private*/
     @ForceInline
     final FloatVector selectFromTemplate(FloatVector v) {
-        return v.rearrange(this.toShuffle());
+        return (FloatVector)VectorSupport.selectFromOp(getClass(), null, float.class,
+                                                        length(), this, v, null,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle()));
     }
 
     /**
@@ -2417,9 +2425,31 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     /*package-private*/
     @ForceInline
-    final FloatVector selectFromTemplate(FloatVector v,
-                                                  AbstractMask<Float> m) {
-        return v.rearrange(this.toShuffle(), m);
+    final
+    <M extends VectorMask<Float>>
+    FloatVector selectFromTemplate(FloatVector v,
+                                            Class<M> masktype, M m) {
+        m.check(masktype, this);
+        return (FloatVector)VectorSupport.selectFromOp(getClass(), masktype, float.class,
+                                                        length(), this, v, m,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle(), _m));
+    }
+
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    FloatVector selectFrom(Vector<Float> v1, Vector<Float> v2);
+
+
+    /*package-private*/
+    @ForceInline
+    final FloatVector selectFromTemplate(FloatVector v1, FloatVector v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), float.class, length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations
@@ -2760,7 +2790,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code FloatVector},
      * there will be no loss of precision.
      */
@@ -2830,7 +2860,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
             return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<Float>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
@@ -3040,7 +3071,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
             return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_IN_RANGE).maybeSwap(bo);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 4, ms.byteSize());
+        ((AbstractMask<Float>)m)
+            .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 4);
         return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_OUT_OF_RANGE).maybeSwap(bo);
     }
 
@@ -3108,7 +3140,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
         } else {
             FloatSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<Float>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoArray0(a, offset, m);
         }
@@ -3247,7 +3280,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
             }
             FloatSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
-                checkMaskFromIndexSize(offset, vsp, m, 4, ms.byteSize());
+                ((AbstractMask<Float>)m)
+                    .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 4);
             }
             maybeSwap(bo).intoMemorySegment0(ms, offset, m);
         }
@@ -3474,26 +3508,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     // End of low-level memory operations.
 
-    private static
-    void checkMaskFromIndexSize(int offset,
-                                FloatSpecies vsp,
-                                VectorMask<Float> m,
-                                int scale,
-                                int limit) {
-        ((AbstractMask<Float>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
-
-    private static
-    void checkMaskFromIndexSize(long offset,
-                                FloatSpecies vsp,
-                                VectorMask<Float> m,
-                                int scale,
-                                long limit) {
-        ((AbstractMask<Float>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
-
     @ForceInline
     private void conditionalStoreNYI(int offset,
                                      FloatSpecies vsp,
@@ -3645,9 +3659,10 @@ public abstract class FloatVector extends AbstractVector<Float> {
         private FloatSpecies(VectorShape shape,
                 Class<? extends FloatVector> vectorType,
                 Class<? extends AbstractMask<Float>> maskType,
+                Class<? extends AbstractShuffle<Float>> shuffleType,
                 Function<Object, FloatVector> vectorFactory) {
             super(shape, LaneType.of(float.class),
-                  vectorType, maskType,
+                  vectorType, maskType, shuffleType,
                   vectorFactory);
             assert(this.elementSize() == Float.SIZE);
         }
@@ -3747,9 +3762,19 @@ public abstract class FloatVector extends AbstractVector<Float> {
         @ForceInline
         @Override final
         public FloatVector fromArray(Object a, int offset) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return FloatVector
                 .fromArray(this, (float[]) a, offset);
+        }
+
+        @ForceInline
+        @Override final
+        public FloatVector fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
+            return FloatVector
+                .fromMemorySegment(this, ms, offset, bo);
         }
 
         @ForceInline
@@ -3923,6 +3948,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         = new FloatSpecies(VectorShape.S_64_BIT,
                             Float64Vector.class,
                             Float64Vector.Float64Mask.class,
+                            Float64Vector.Float64Shuffle.class,
                             Float64Vector::new);
 
     /** Species representing {@link FloatVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
@@ -3930,6 +3956,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         = new FloatSpecies(VectorShape.S_128_BIT,
                             Float128Vector.class,
                             Float128Vector.Float128Mask.class,
+                            Float128Vector.Float128Shuffle.class,
                             Float128Vector::new);
 
     /** Species representing {@link FloatVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
@@ -3937,6 +3964,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         = new FloatSpecies(VectorShape.S_256_BIT,
                             Float256Vector.class,
                             Float256Vector.Float256Mask.class,
+                            Float256Vector.Float256Shuffle.class,
                             Float256Vector::new);
 
     /** Species representing {@link FloatVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
@@ -3944,6 +3972,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         = new FloatSpecies(VectorShape.S_512_BIT,
                             Float512Vector.class,
                             Float512Vector.Float512Mask.class,
+                            Float512Vector.Float512Shuffle.class,
                             Float512Vector::new);
 
     /** Species representing {@link FloatVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
@@ -3951,6 +3980,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         = new FloatSpecies(VectorShape.S_Max_BIT,
                             FloatMaxVector.class,
                             FloatMaxVector.FloatMaxMask.class,
+                            FloatMaxVector.FloatMaxShuffle.class,
                             FloatMaxVector::new);
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
 
 package com.sun.tools.jdeps;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
-
+import java.lang.classfile.ClassModel;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
@@ -44,8 +42,8 @@ public class VersionHelper {
         return classname;
     }
 
-    public static void add(JarFile jarfile, JarEntry e, ClassFile cf)
-            throws ConstantPoolException
+    public static void add(JarFile jarfile, JarEntry e, ClassModel cf)
+            throws IllegalArgumentException
     {
         String realName = e.getRealName();
         if (realName.startsWith(META_INF_VERSIONS)) {
@@ -54,7 +52,7 @@ public class VersionHelper {
             if (n > 0) {
                 String version = realName.substring(len, n);
                 assert (Integer.parseInt(version) > 8);
-                String name = cf.getName().replace('/', '.');
+                String name = cf.thisClass().asInternalName().replace('/', '.');
                 String v = nameToVersion.computeIfAbsent(name, _n -> version);
                 if (!version.equals(v)) {
                     throw new MultiReleaseException("err.multirelease.version.associated",
