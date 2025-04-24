@@ -4876,15 +4876,15 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       if (mem->Opcode() == Op_NarrowMemProj) {
         const TypePtr* at = mem->adr_type();
         uint alias_idx = (uint) _compile->get_alias_index(at->is_ptr());
-        if (idx == i) {
+        if (alias_idx == i) {
           // projection for a non known allocation on a non known allocation slice: can't skip over the allocation
           if (cur == nullptr) {
             cur = mem;
           }
         } else {
           // projection for a known allocation on a non known allocation slice: skip over the allocation
-          if (idx >= nmm->req() || nmm->is_empty_memory(nmm->in(idx))) {
-            nmm->set_memory_at(idx, mem);
+          if (alias_idx >= nmm->req() || nmm->is_empty_memory(nmm->in(alias_idx))) {
+            nmm->set_memory_at(alias_idx, mem);
           }
           InitializeNode* init = mem->in(0)->as_Initialize();
           AllocateNode* alloc = init->allocation();
