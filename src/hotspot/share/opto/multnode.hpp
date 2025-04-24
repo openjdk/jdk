@@ -121,7 +121,7 @@ protected:
     return sizeof(*this);
   }
 public:
-  NarrowMemProjNode(Node *src, uint con, const TypePtr* adr_type)
+  NarrowMemProjNode(Node* src, uint con, const TypePtr* adr_type)
     : ProjNode(src, con), _adr_type(adr_type) {
   }
 
