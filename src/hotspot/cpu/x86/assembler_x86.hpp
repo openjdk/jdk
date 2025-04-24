@@ -788,6 +788,9 @@ private:
                              VexSimdPrefix pre, VexOpcode opc,
                              InstructionAttr *attributes, bool src_is_gpr = false, bool nds_is_ndd = false, bool no_flags = false);
 
+  int  evex_prefix_and_encode_ndd(bool demote, int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+                                  InstructionAttr *attributes, bool no_flags, bool use_prefixq, bool is_map1 = false);
+
   int  evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                   InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
 
@@ -804,13 +807,13 @@ private:
                                         InstructionAttr *attributes, bool no_flags, int op1, int op2, Register dst, int32_t imm32, bool use_prefixq = false);
 
   void evex_shift_ndd_and_int16(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                InstructionAttr *attributes, int byte1, int byte2, bool no_flags, bool use_prefixq = false);
+                                InstructionAttr *attributes, int byte1, int byte2, bool no_flags, bool use_prefixq = false, bool is_map1 = true);
 
   void evex_shift_ndd_and_int24(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
-                                InstructionAttr *attributes, int byte1, int byte2, int byte1_ndd, bool no_flags, bool use_prefixq = false);
+                                InstructionAttr *attributes, int byte1, int byte2, int byte1_ndd, bool no_flags, bool use_prefixq = false, bool is_map1 = true);
 
-  void evex_imul_ndd_and_int16(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                               InstructionAttr *attributes, int byte1, int byte2, bool no_flags, bool use_prefixq = false);
+  void evex_opcode_ndd_and_int16(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+                               InstructionAttr *attributes, int byte1, int byte2, bool no_flags, bool use_prefixq = false, bool is_map1 = true);
 
   void evex_imul_nf_and_int16(int dst_enc, int src_enc, int value, VexSimdPrefix pre, VexOpcode opc,
                                 InstructionAttr *attributes, bool no_flags, bool use_prefixq = false);
@@ -823,6 +826,7 @@ private:
 
   // Helper functions for groups of instructions
   bool is_demotable(bool no_flags, int dst_enc, int nds_enc);
+  void emit_demotable_int16(bool demote, int byte1, int byte2, int encode);
   void emit_arith_b(int op1, int op2, Register dst, int imm8);
 
   void emit_arith(int op1, int op2, Register dst, int32_t imm32, bool optimize_rax_dst = true);

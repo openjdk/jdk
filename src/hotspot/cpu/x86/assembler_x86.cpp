@@ -2529,7 +2529,7 @@ void Assembler::imull(Register dst, Register src) {
 
 void Assembler::eimull(Register dst, Register src1, Register src2, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  evex_imul_ndd_and_int16(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xAF, 0xC0, no_flags);
+  evex_opcode_ndd_and_int16(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xAF, 0xC0, no_flags);
 }
 
 void Assembler::imull(Register dst, Address src, int32_t value) {
@@ -12967,19 +12967,8 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
   return (((dst_enc & 7) << 3) | (src_enc & 7));
 }
 
-void Assembler::evex_imul_ndd_and_int16(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-  InstructionAttr *attributes, int byte1, int byte2, bool no_flags, bool use_prefixq) {
-  if (is_demotable(no_flags, dst_enc, nds_enc)) {
-    int encode = use_prefixq ? prefixq_and_encode(dst_enc, src_enc, true /* is_map1 */) : prefix_and_encode(dst_enc, src_enc, true /* is_map1 */);
-    return emit_opcode_prefix_and_encoding((unsigned char)byte1, byte2, encode);
-  }
-  attributes->set_is_evex_instruction();
-  int encode = vex_prefix_and_encode(nds_enc, dst_enc, src_enc, pre, opc, attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true, no_flags);
-  emit_int16(byte1, (byte2 | encode));
-}
-
 void Assembler::evex_imul_nf_and_int16(int dst_enc, int src_enc, int value, VexSimdPrefix pre, VexOpcode opc,
-  InstructionAttr *attributes, bool no_flags, bool use_prefixq) {
+                                       InstructionAttr *attributes, bool no_flags, bool use_prefixq) {
   int encode;
   if (is_demotable(no_flags, dst_enc, src_enc)) {
     encode = use_prefixq ? prefixq_and_encode(dst_enc, src_enc) : prefix_and_encode(dst_enc, src_enc);
@@ -12996,41 +12985,55 @@ void Assembler::evex_imul_nf_and_int16(int dst_enc, int src_enc, int value, VexS
   }
 }
 
-void Assembler::evex_shift_ndd_and_int16(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-  InstructionAttr *attributes, int byte1, int byte2, bool no_flags, bool use_prefixq) {
-  if (is_demotable(no_flags, dst_enc, nds_enc)) {
-    int encode = use_prefixq ? prefixq_and_encode(src_enc, dst_enc, true /* is_map1 */) : prefix_and_encode(src_enc, dst_enc, true /* is_map1 */);
-    return emit_opcode_prefix_and_encoding((unsigned char)byte1, byte2, encode);
-  }
-  attributes->set_is_evex_instruction();
-  int encode = vex_prefix_and_encode(src_enc, dst_enc, nds_enc, pre, opc, attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true, no_flags);
-  emit_int16(byte1, (byte2 | encode));
-}
-
 void Assembler::evex_shift_ndd_and_int24(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
-  InstructionAttr *attributes, int byte1, int byte2, int byte1_ndd, bool no_flags, bool use_prefixq) {
-  if (is_demotable(no_flags, dst_enc, nds_enc)) {
-    int encode = use_prefixq ? prefixq_and_encode(src_enc, dst_enc, true /* is_map1 */) : prefix_and_encode(src_enc, dst_enc, true /* is_map1 */);
+                                         InstructionAttr *attributes, int byte1, int byte2, int byte1_ndd, bool no_flags, bool use_prefixq, bool is_map1) {
+  bool demote = is_demotable(no_flags, dst_enc, nds_enc);
+  int encode = evex_prefix_and_encode_ndd(demote, src_enc, dst_enc, nds_enc, pre, opc, attributes, no_flags, use_prefixq, is_map1);
+  if (demote) {
     return emit_opcode_prefix_and_encoding((unsigned char)byte1, byte2, encode, imm8);
   }
-  attributes->set_is_evex_instruction();
-  int encode = vex_prefix_and_encode(src_enc, dst_enc, nds_enc, pre, opc, attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true, no_flags);
   emit_int24(byte1_ndd, (byte2 | encode), imm8);
 }
 
-int Assembler::evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                           InstructionAttr *attributes, bool no_flags, bool use_prefixq) {
-  // Demote RegRegReg instructions
-  if (is_demotable(no_flags, dst_enc, nds_enc)) {
-    return use_prefixq ? prefixq_and_encode(dst_enc, src_enc) : prefix_and_encode(dst_enc, src_enc);
+void Assembler::emit_demotable_int16(bool demote, int byte1, int byte2, int encode) {
+  if (demote) {
+    return emit_opcode_prefix_and_encoding((unsigned char)byte1, byte2, encode);
+  }
+  emit_int16(byte1, (byte2 | encode));
+}
+
+void Assembler::evex_shift_ndd_and_int16(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+                                         InstructionAttr *attributes, int byte1, int byte2, bool no_flags, bool use_prefixq, bool is_map1) {
+  bool demote = is_demotable(no_flags, dst_enc, nds_enc);
+  int encode = evex_prefix_and_encode_ndd(demote, src_enc, dst_enc, nds_enc, pre, opc, attributes, no_flags, use_prefixq, is_map1);
+  emit_demotable_int16(demote, byte1, byte2, encode);
+}
+
+void Assembler::evex_opcode_ndd_and_int16(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+                                          InstructionAttr *attributes, int byte1, int byte2, bool no_flags, bool use_prefixq, bool is_map1) {
+  bool demote = is_demotable(no_flags, dst_enc, nds_enc);
+  int encode = evex_prefix_and_encode_ndd(demote, nds_enc, dst_enc, src_enc, pre, opc, attributes, no_flags, use_prefixq, is_map1);
+  emit_demotable_int16(demote, byte1, byte2, encode);
+}
+
+int Assembler::evex_prefix_and_encode_ndd(bool demote, int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+                                          InstructionAttr *attributes, bool no_flags, bool use_prefixq, bool is_map1) {
+  if (demote) {
+    return use_prefixq ? prefixq_and_encode(dst_enc, src_enc, is_map1) : prefix_and_encode(dst_enc, src_enc, is_map1);
   }
   attributes->set_is_evex_instruction();
   return vex_prefix_and_encode(dst_enc, nds_enc, src_enc, pre, opc, attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true, no_flags);
 }
 
+int Assembler::evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+                           InstructionAttr *attributes, bool no_flags, bool use_prefixq) {
+  bool demote = is_demotable(no_flags, dst_enc, nds_enc);
+  return evex_prefix_and_encode_ndd(demote, dst_enc, nds_enc, src_enc, pre, opc, attributes, no_flags, use_prefixq);
+}
+
 int Assembler::evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, VexSimdPrefix pre, VexOpcode opc,
                            InstructionAttr *attributes, bool no_flags, bool use_prefixq) {
-  // Demote RegReg and RegRegImm instructions
+  //Demote RegReg and RegRegImm instructions
   if (is_demotable(no_flags, dst_enc, nds_enc)) {
     return use_prefixq ? prefixq_and_encode(dst_enc) : prefix_and_encode(dst_enc);
   }
@@ -14826,12 +14829,8 @@ void Assembler::cmovq(Condition cc, Register dst, Register src) {
 }
 
 void Assembler::ecmovq(Condition cc, Register dst, Register src1, Register src2) {
-  if (dst->encoding() == src1->encoding()) {
-    return cmovq(cc, dst, src2);
-  }
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  int encode = evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, false, true);
-  emit_int16((0x40 | cc), (0xC0 | encode));
+  evex_opcode_ndd_and_int16(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, 0x40 | cc, 0xC0, false, true);
 }
 
 void Assembler::cmovq(Condition cc, Register dst, Address src) {
@@ -15048,7 +15047,7 @@ void Assembler::eimulq(Register dst, Register src, bool no_flags) {
 
 void Assembler::eimulq(Register dst, Register src1, Register src2, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  evex_imul_ndd_and_int16(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xAF, 0xC0, no_flags, true);
+  evex_opcode_ndd_and_int16(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, /* MAP4 */VEX_OPCODE_0F_3C, &attributes, 0xAF, 0xC0, no_flags, true);
 }
 
 void Assembler::imulq(Register src) {
