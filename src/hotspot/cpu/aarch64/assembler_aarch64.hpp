@@ -2075,7 +2075,6 @@ public:
     data_processing(op31, type, opcode, op21, Vd, Vn, Vm);              \
   }
 
-  INSN(fabds,  0b011, 0b10, 0b110101, 0b1);
   INSN(fmuls,  0b000, 0b00, 0b000010, 0b1);
   INSN(fdivs,  0b000, 0b00, 0b000110, 0b1);
   INSN(fadds,  0b000, 0b00, 0b001010, 0b1);
@@ -2084,7 +2083,6 @@ public:
   INSN(fmins,  0b000, 0b00, 0b010110, 0b1);
   INSN(fnmuls, 0b000, 0b00, 0b100010, 0b1);
 
-  INSN(fabdd,  0b011, 0b11, 0b110101, 0b1);
   INSN(fmuld,  0b000, 0b01, 0b000010, 0b1);
   INSN(fdivd,  0b000, 0b01, 0b000110, 0b1);
   INSN(faddd,  0b000, 0b01, 0b001010, 0b1);
@@ -2094,7 +2092,6 @@ public:
   INSN(fnmuld, 0b000, 0b01, 0b100010, 0b1);
 
   // Half-precision floating-point instructions
-  INSN(fabdh,  0b011, 0b11, 0b000101, 0b0);
   INSN(fmulh,  0b000, 0b11, 0b000010, 0b1);
   INSN(fdivh,  0b000, 0b11, 0b000110, 0b1);
   INSN(faddh,  0b000, 0b11, 0b001010, 0b1);
@@ -2102,6 +2099,31 @@ public:
   INSN(fmaxh,  0b000, 0b11, 0b010010, 0b1);
   INSN(fminh,  0b000, 0b11, 0b010110, 0b1);
   INSN(fnmulh, 0b000, 0b11, 0b100010, 0b1);
+#undef INSN
+
+// Advanced SIMD scalar three same
+#define INSN(NAME, U, size, opcode)                                                     \
+  void NAME(FloatRegister Vd, FloatRegister Vn, FloatRegister Vm) {                     \
+    starti;                                                                             \
+    f(0b01, 31, 30), f(U, 29), f(0b11110, 28, 24), f(size, 23, 22), f(1, 21);           \
+    rf(Vm, 16), f(opcode, 15, 11), f(1, 10), rf(Vn, 5), rf(Vd, 0);                      \
+  }
+
+  INSN(fabds, 0b1, 0b10, 0b11010); // Floating-point Absolute Difference (single-precision)
+  INSN(fabdd, 0b1, 0b11, 0b11010); // Floating-point Absolute Difference (double-precision)
+
+#undef INSN
+
+// Advanced SIMD scalar three same FP16
+#define INSN(NAME, U, a, opcode)                                                       \
+  void NAME(FloatRegister Vd, FloatRegister Vn, FloatRegister Vm) {                    \
+    starti;                                                                            \
+    f(0b01, 31, 30), f(U, 29), f(0b11110, 28, 24), f(a, 23), f(0b10, 22, 21);          \
+    rf(Vm, 16), f(0b00, 15, 14), f(opcode, 13, 11), f(1, 10), rf(Vn, 5), rf(Vd, 0);    \
+  }
+
+  INSN(fabdh, 0b1, 0b1, 0b010); // Floating-point Absolute Difference (half-precision float)
+
 #undef INSN
 
    // Floating-point data-processing (3 source)
