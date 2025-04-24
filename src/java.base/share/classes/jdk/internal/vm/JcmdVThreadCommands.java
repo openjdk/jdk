@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,19 +49,6 @@ public class JcmdVThreadCommands {
         // virtual thread scheduler
         sb.append(JLA.virtualThreadDefaultScheduler())
           .append(System.lineSeparator());
-
-        // break
-        sb.append(System.lineSeparator());
-
-        // delayed task schedulers
-        sb.append("Delayed task schedulers:").append(System.lineSeparator());
-        var delayedTaskSchedulers = JLA.virtualThreadDelayedTaskSchedulers().toList();
-        IntStream.range(0, delayedTaskSchedulers.size())
-                .forEach(i -> sb.append('[')
-                                .append(i)
-                                .append("] ")
-                                .append(delayedTaskSchedulers.get(i))
-                                .append(System.lineSeparator()));
 
         return sb.toString().getBytes(StandardCharsets.UTF_8);
     }

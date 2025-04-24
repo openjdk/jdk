@@ -76,6 +76,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/population_count.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
@@ -2206,26 +2207,16 @@ void os::jvm_path(char *buf, jint buflen) {
   }
 
   buf[0] = '\0';
-  if (Arguments::sun_java_launcher_is_altjvm()) {
-    // Support for the java launcher's '-XXaltjvm=<path>' option. Check
-    // for a JAVA_HOME environment variable and fix up the path so it
-    // looks like jvm.dll is installed there (append a fake suffix
-    // hotspot/jvm.dll).
+  // If executing unit tests we require JAVA_HOME to point to the real JDK.
+  if (Arguments::executing_unit_tests()) {
     char* java_home_var = ::getenv("JAVA_HOME");
     if (java_home_var != nullptr && java_home_var[0] != 0 &&
         strlen(java_home_var) < (size_t)buflen) {
-      strncpy(buf, java_home_var, buflen);
-
-      // determine if this is a legacy image or modules image
-      // modules image doesn't have "jre" subdirectory
-      size_t len = strlen(buf);
-      char* jrebin_p = buf + len;
-      jio_snprintf(jrebin_p, buflen-len, "\\jre\\bin\\");
-      if (0 != _access(buf, 0)) {
-        jio_snprintf(jrebin_p, buflen-len, "\\bin\\");
-      }
-      len = strlen(buf);
-      jio_snprintf(buf + len, buflen-len, "hotspot\\jvm.dll");
+      stringStream ss(buf, buflen);
+      ss.print("%s\\bin\\%s\\jvm%s",
+               java_home_var, Abstract_VM_Version::vm_variant(), JNI_LIB_SUFFIX);
+      assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
+             "buf has been truncated");
     }
   }
 
@@ -2600,6 +2591,7 @@ static inline void report_error(Thread* t, DWORD exception_code,
 //-----------------------------------------------------------------------------
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
+  PreserveLastError ple;
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
   PEXCEPTION_RECORD exception_record = exceptionInfo->ExceptionRecord;
   DWORD exception_code = exception_record->ExceptionCode;
@@ -4367,9 +4359,9 @@ static void exit_process_or_thread(Ept what, int exit_code) {
   if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
-    ALLOW_C_FUNCTION(::exit, ::exit(exit_code);)
+    permit_forbidden_function::exit(exit_code);
   } else { // EPT_PROCESS_DIE
-    ALLOW_C_FUNCTION(::_exit, ::_exit(exit_code);)
+    permit_forbidden_function::_exit(exit_code);
   }
 
   // Should not reach here
@@ -5140,7 +5132,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
   }
 
   char* result = nullptr;
-  ALLOW_C_FUNCTION(::_fullpath, char* p = ::_fullpath(nullptr, filename, 0);)
+  char* p = permit_forbidden_function::_fullpath(nullptr, filename, 0);
   if (p != nullptr) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
@@ -5148,7 +5140,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
-    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
+    permit_forbidden_function::free(p); // *not* os::free
   }
   return result;
 }

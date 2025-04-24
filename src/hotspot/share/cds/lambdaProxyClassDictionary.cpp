@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotClassFilter.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
@@ -389,6 +390,10 @@ void LambdaProxyClassDictionary::dumptime_classes_do(MetaspaceClosure* it) {
 void LambdaProxyClassDictionary::add_to_dumptime_table(LambdaProxyClassKey& key,
                                                        InstanceKlass* proxy_klass) {
   assert_lock_strong(DumpTimeTable_lock);
+
+  if (AOTClassFilter::is_aot_tooling_class(proxy_klass)) {
+    return;
+  }
 
   bool created;
   DumpTimeLambdaProxyClassInfo* info = _dumptime_table->put_if_absent(key, &created);

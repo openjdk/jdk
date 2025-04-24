@@ -248,14 +248,6 @@ void VM_Version::common_initialize() {
 
 #ifdef COMPILER2
 void VM_Version::c2_initialize() {
-  if (UseCMoveUnconditionally) {
-    FLAG_SET_DEFAULT(UseCMoveUnconditionally, false);
-  }
-
-  if (ConditionalMoveLimit > 0) {
-    FLAG_SET_DEFAULT(ConditionalMoveLimit, 0);
-  }
-
   if (!UseRVV) {
     FLAG_SET_DEFAULT(MaxVectorSize, 0);
   } else {

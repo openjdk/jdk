@@ -24,8 +24,8 @@
 
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/memoryReserver.hpp"
