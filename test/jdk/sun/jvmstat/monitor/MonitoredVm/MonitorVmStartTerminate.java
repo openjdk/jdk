@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,8 @@ import sun.jvmstat.monitor.event.VmStatusChangeEvent;
 public final class MonitorVmStartTerminate {
 
     private static final int PROCESS_COUNT = 10;
+    private static final int ARGS_ATTEMPTS = 5;
+    private static final int REMOVE_TIMEOUT = 2000;
 
     public static void main(String... args) throws Exception {
 
@@ -175,8 +177,6 @@ public final class MonitorVmStartTerminate {
             }
         }
 
-        private static final int ARGS_ATTEMPTS = 3;
-
         private boolean hasMainArgs(Integer id, String args) {
             VmIdentifier vmid = null;
             try {
@@ -251,16 +251,18 @@ public final class MonitorVmStartTerminate {
         private static void waitForRemoval(Path path) {
             String timeoutFactorText = System.getProperty("test.timeout.factor", "1.0");
             double timeoutFactor = Double.parseDouble(timeoutFactorText);
-            long timeoutNanos = 1000_000_000L*(long)(1000*timeoutFactor);
+            long timeoutNanos = 1000_000_000L*(long)(REMOVE_TIMEOUT * timeoutFactor);
             long start = System.nanoTime();
+            System.out.println("Waiting for " + path + " to be removed");
             while (true) {
                 long now = System.nanoTime();
                 long waited = now - start;
-                System.out.println("Waiting for " + path + " to be removed, " + waited + " ns");
                 if (!Files.exists(path)) {
+                    System.out.println("waitForRemoval: " + path + " has been removed");
                     return;
                 }
                 if (waited > timeoutNanos) {
+                    System.out.println("Timeout waiting for " + path + " to be removed");
                     System.out.println("Start: " + start);
                     System.out.println("Now: " + now);
                     System.out.println("Process timed out after " + waited + " ns. Abort.");
