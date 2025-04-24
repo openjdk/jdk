@@ -135,6 +135,7 @@ Mutex*   DCmdFactory_lock             = nullptr;
 Mutex*   NMTQuery_lock                = nullptr;
 Mutex*   NMTCompilationCostHistory_lock = nullptr;
 Mutex*   NmtVirtualMemory_lock          = nullptr;
+Mutex*   NMTRecorder_lock             = nullptr;
 
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
@@ -289,6 +290,7 @@ void mutex_init() {
   MUTEX_DEFN(NMTQuery_lock                   , PaddedMutex  , safepoint);
   MUTEX_DEFN(NMTCompilationCostHistory_lock  , PaddedMutex  , nosafepoint);
   MUTEX_DEFN(NmtVirtualMemory_lock           , PaddedMutex  , service-4); // Must be lower than G1Mapper_lock used from G1RegionsSmallerThanCommitSizeMapper::commit_regions
+  MUTEX_DEFN(NMTRecorder_lock                , PaddedMutex  , nosafepoint);
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
   MUTEX_DEFN(CDSClassFileStream_lock         , PaddedMutex  , safepoint);
