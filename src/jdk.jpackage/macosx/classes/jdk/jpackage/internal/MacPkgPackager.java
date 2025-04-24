@@ -54,9 +54,7 @@ import jdk.internal.util.OSVersion;
 import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.StartupParameters;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
-import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacPkgPackage;
-import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.resources.ResourceLocator;
 import jdk.jpackage.internal.util.XmlUtils;
@@ -220,12 +218,12 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
             this.nameSuffix = Optional.empty();
         }
 
-        private String identifier(Package pkg) {
-            final var baseIdentifier = ((MacApplication)pkg.app()).bundleIdentifier();
+        private String identifier(MacPkgPackage pkg) {
+            final var baseIdentifier = pkg.app().bundleIdentifier();
             return nameSuffix.map(v -> baseIdentifier + "." + v).orElse(baseIdentifier);
         }
 
-        private String filename(Package pkg) {
+        private String filename(MacPkgPackage pkg) {
             return String.format("%s-%s.pkg", pkg.app().name(), nameSuffix.orElse("app"));
         }
 
@@ -295,18 +293,12 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
         args.add("--component-plist");
         args.add(normalizedAbsolutePathString(componentPlistFile()));
 
-        if (!app().appStore()) {
+        if (!pkg.app().appStore()) {
             args.add("--scripts");
             args.add(normalizedAbsolutePathString(scriptsRoot()));
         }
 
-        return InternalPackageType.MAIN.createInternalPackage(env.appImageDir(), pkg, env, List.of(
-                "--install-location", normalizedAbsolutePathString(installLocation()),
-                "--component-plist", normalizedAbsolutePathString(componentPlistFile())));
-    }
-
-    MacApplication app() {
-        return (MacApplication)pkg.app();
+        return InternalPackageType.MAIN.createInternalPackage(env.appImageDir(), pkg, env, args);
     }
 
     Path scriptsRoot() {
@@ -456,7 +448,7 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
                 .setCategory(I18N.getString("resource.pkg-background-image"))
                 .saveToFile(backgroundImageDarkAqua());
 
-        if (app().appStore()) {
+        if (pkg.app().appStore()) {
             env.createResource(DEFAULT_PDF)
                     .setCategory(I18N.getString("resource.pkg-pdf"))
                     .saveToFile(appStoreProductFile());
@@ -537,7 +529,7 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
             });
         }
 
-        if (app().appStore()) {
+        if (pkg.app().appStore()) {
             commandLine.add("--product");
             commandLine.add(normalizedAbsolutePathString(appStoreProductFile()));
             commandLine.add("--component");
