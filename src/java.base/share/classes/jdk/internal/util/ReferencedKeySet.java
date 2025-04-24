@@ -193,4 +193,8 @@ public final class ReferencedKeySet<T> extends AbstractSet<T> {
     public T intern(T e, UnaryOperator<T> interner) {
         return ReferencedKeyMap.intern(map, e, interner);
     }
+
+    public void prepareForAOTCache() {
+        map.prepareForAOTCache();
+    }
 }

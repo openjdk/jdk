@@ -1381,4 +1381,10 @@ s.writeObject(this.parameterArray());
         wrapAlt = null;
         return mt;
     }
+
+    // This is called from C code, at the very end of Java code execution
+    // during the AOT cache assembly phase.
+    private static void prepareForAOTCache() {
+        internTable.prepareForAOTCache();
+    }
 }

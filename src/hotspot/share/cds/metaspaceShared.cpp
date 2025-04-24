@@ -28,6 +28,7 @@
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
+#include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveHeapWriter.hpp"
@@ -902,51 +903,6 @@ void MetaspaceShared::exercise_runtime_cds_code(TRAPS) {
   CDSProtectionDomain::to_file_URL("dummy.jar", Handle(), CHECK);
 }
 
-#if INCLUDE_CDS_JAVA_HEAP
-void MetaspaceShared::process_pending_references(TRAPS) {
-  precond(CDSConfig::is_dumping_heap());
-  precond(CDSConfig::allow_only_single_java_thread());
-
-  // When dumping heap objects, the JVM runs a single Java thread, so the ReferenceHandler
-  // thread is not running. We need to ensure that all objects in Universe::reference_pending_list()
-  // are processed. Otherwise we might pull in unwanted objects into the archived heap. Example:
-  //
-  //     class UnwantedWeakRef extends WeakReference { Object junk = ...; }
-  //     WeakReference   A = ...;
-  //     UnwantedWeakRef B = ...;
-  //
-  // If the referent of both A and B are collected, A and B will be placed in
-  // the Universe::reference_pending_list() by the GC, which A.next == B.
-  //
-  // When HeapShared::archiveObject() find A, it will find B from A.next and end up
-  // dumping the object B.junk that we don't want.
-  //
-  // After ReferenceHandler::processPendingReferences0() completes, A.next will be
-  // cleared and we won't be able to find B anymore.
-
-  Symbol* klass_name = SymbolTable::new_symbol("java/lang/ref/Reference$ReferenceHandler");
-  Klass* k = SystemDictionary::resolve_or_fail(klass_name, true, CHECK);
-  Symbol* method_name = SymbolTable::new_symbol("processPendingReferences0");
-  Symbol* method_sig = vmSymbols::void_method_signature();
-
-  while (true) {
-    {
-      MonitorLocker ml(Heap_lock);
-      if (!Universe::has_reference_pending_list()) {
-        break;
-      }
-    }
-
-    JavaValue result(T_VOID);
-    JavaCalls::call_static(&result, k, method_name, method_sig, CHECK);
-
-    // In case ReferenceHandler::processPendingReferences0() creates garbage and causes
-    // more refs to be added to Universe::reference_pending_list()
-    Universe::heap()->collect(GCCause::_java_lang_system_gc);
-  }
-}
-#endif
-
 void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS) {
   if (CDSConfig::is_dumping_classic_static_archive()) {
     // We are running with -Xshare:dump
@@ -1007,10 +963,25 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     ArchiveHeapWriter::init();
+    AOTReferenceObjSupport::initialize(CHECK);
     if (CDSConfig::is_dumping_full_module_graph()) {
       ClassLoaderDataShared::ensure_module_entry_tables_exist();
       HeapShared::reset_archived_object_states(CHECK);
     }
+
+    if (CDSConfig::is_dumping_method_handles()) {
+      // This assert means that the MethodType and MethodTypeForm tables won't be
+      // updated concurrently, so we can remove GC'ed entries ...
+      assert(CDSConfig::allow_only_single_java_thread(), "Required");
+
+      TempNewSymbol method_name = SymbolTable::new_symbol("prepareForAOTCache");
+      JavaValue result(T_VOID);
+      JavaCalls::call_static(&result, vmClasses::MethodType_klass(),
+                             method_name,
+                             vmSymbols::void_method_signature(),
+                             CHECK);
+    }
+
 
     if (CDSConfig::is_initing_classes_at_dump_time()) {
       // java.lang.Class::reflectionFactory cannot be archived yet. We set this field
@@ -1029,7 +1000,6 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
     // Do this at the very end, when no Java code will be executed. Otherwise
     // some new strings may be added to the intern table.
     StringTable::allocate_shared_strings_array(CHECK);
-    process_pending_references(CHECK);
   } else {
     log_info(cds)("Not dumping heap, reset CDSConfig::_is_using_optimized_module_handling");
     CDSConfig::stop_using_optimized_module_handling();

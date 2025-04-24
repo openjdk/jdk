@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.CDS;
 
 /**
  * This class provides management of {@link Map maps} where it is desirable to
@@ -335,6 +336,40 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
             map.remove(key);
         }
     }
+
+    @SuppressWarnings("unchecked")
+    public void prepareForAOTCache() {
+        // We are running the AOT assembly phase. The JVM has a single Java thread, so
+        // we don't have any concurrent threads that may modify the map while we are
+        // iterating its keys.
+        //
+        // Also, the java.lang.ref.Reference$ReferenceHandler thread is not running,
+        // so even if the GC has put some of the keys on the pending ReferencePendingList,
+        // none of the keys would have been added to the stale queue yet.
+        assert CDS.isSingleThreadVM();
+
+        for (ReferenceKey<K> key : map.keySet()) {
+            Object referent = key.get();
+            if (referent == null) {
+                // We don't need this key anymore. Add to stale queue
+                ((Reference)key).enqueue();
+            } else {
+                // Make sure the referent cannot be collected. Otherwise, when
+                // the referent is collected, the GC may push the key onto
+                // Universe::reference_pending_list() at an unpredictable time,
+                // making it difficult to correctly serialize the key's
+                // state into the CDS archive.
+                //
+                // See aotReferenceObjSupport.cpp for more info.
+                CDS.keepAlive(referent);
+            }
+            Reference.reachabilityFence(referent);
+        }
+
+        // Remove all keys enqueued above
+        removeStaleReferences();
+    }
+
 
     /**
      * Puts an entry where the key and the value are the same. Used for

@@ -195,6 +195,5 @@ private:
   static MapArchiveResult map_archive(FileMapInfo* mapinfo, char* mapped_base_address, ReservedSpace rs);
   static void unmap_archive(FileMapInfo* mapinfo);
   static void get_default_classlist(char* default_classlist, const size_t buf_size);
-  static void process_pending_references(TRAPS);
 };
 #endif // SHARE_CDS_METASPACESHARED_HPP

@@ -208,13 +208,6 @@ public abstract sealed class Reference<T>
                 processPendingReferences();
             }
         }
-
-        // Called by the JVM during AOT cache creation (which does not
-        // launch the ReferenceHandler thread).
-        static void processPendingReferences0() {
-            Unsafe.getUnsafe().ensureClassInitialized(Cleaner.class);
-            processPendingReferences();
-        }
     }
 
     /*

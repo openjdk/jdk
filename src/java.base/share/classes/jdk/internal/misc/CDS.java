@@ -82,8 +82,23 @@ public class CDS {
         return (configStatus & IS_DUMPING_STATIC_ARCHIVE) != 0;
     }
 
+    public static boolean isSingleThreadVM() {
+        return isDumpingStaticArchive();
+    }
+
     private static native int getCDSConfigStatus();
     private static native void logLambdaFormInvoker(String line);
+
+
+    private static ArrayList<Object> keepAliveList;
+
+    public static void keepAlive(Object s) {
+        assert isSingleThreadVM();
+        if (keepAliveList == null) {
+            keepAliveList = new ArrayList<>();
+        }
+        keepAliveList.add(s);
+    }
 
     /**
      * Initialize archived static fields in the given Class using archived
