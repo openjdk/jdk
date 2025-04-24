@@ -1259,6 +1259,10 @@ void VMError::report(outputStream* st, bool _verbose) {
     LogConfiguration::describe_current_configuration(st);
     st->cr();
 
+  STEP_IF("printing release file content", _verbose)
+    st->print_cr("Release file:");
+    os::print_image_release_file(st);
+
   STEP_IF("printing all environment variables", _verbose)
     os::print_environment_variables(st, env_list);
     st->cr();
@@ -1438,6 +1442,10 @@ void VMError::print_vm_info(outputStream* st) {
   st->print_cr("Logging:");
   LogConfiguration::describe(st);
   st->cr();
+
+  // STEP("printing release file content")
+  st->print_cr("Release file:");
+  os::print_image_release_file(st);
 
   // STEP("printing all environment variables")
 

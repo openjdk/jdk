@@ -24,10 +24,12 @@
 package jdk.test.lib.cds;
 
 import java.io.File;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
+import jdk.test.lib.cds.CDSAppTester.RunMode;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.StringArrayUtils;
-
-import java.util.function.Consumer;
 
 /*
  * A simpler way to use CDSAppTester. Example:
@@ -49,8 +51,8 @@ import java.util.function.Consumer;
  */
 public class SimpleCDSAppTester {
     private String name;
-    private Consumer<OutputAnalyzer> assemblyChecker;
-    private Consumer<OutputAnalyzer> productionChecker;
+    private BiConsumer<OutputAnalyzer, RunMode> assemblyChecker;
+    private BiConsumer<OutputAnalyzer, RunMode> productionChecker;
     private String classpath;
     private String modulepath;
     private String[] appCommandLine;
@@ -98,13 +100,28 @@ public class SimpleCDSAppTester {
         return this;
     }
 
-    public SimpleCDSAppTester setAssemblyChecker(Consumer<OutputAnalyzer> checker) {
+    public SimpleCDSAppTester setAssemblyChecker(BiConsumer<OutputAnalyzer, RunMode> checker) {
         this.assemblyChecker = checker;
         return this;
     }
 
-    public SimpleCDSAppTester setProductionChecker(Consumer<OutputAnalyzer> checker) {
+    public SimpleCDSAppTester setProductionChecker(BiConsumer<OutputAnalyzer, RunMode> checker) {
         this.productionChecker = checker;
+        return this;
+    }
+
+
+    public SimpleCDSAppTester setAssemblyChecker(Consumer<OutputAnalyzer> checker) {
+        this.assemblyChecker = (OutputAnalyzer out, RunMode runMode) -> {
+            checker.accept(out);
+        };
+        return this;
+    }
+
+    public SimpleCDSAppTester setProductionChecker(Consumer<OutputAnalyzer> checker) {
+        this.productionChecker = (OutputAnalyzer out, RunMode runMode) -> {
+            checker.accept(out);
+        };
         return this;
     }
 
@@ -137,11 +154,11 @@ public class SimpleCDSAppTester {
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
             if (isDumping(runMode) && runMode != RunMode.TRAINING) {
                 if (assemblyChecker != null) {
-                    assemblyChecker.accept(out);
+                    assemblyChecker.accept(out, runMode);
                 }
             } else if (runMode.isProductionRun()) {
                 if (productionChecker != null) {
-                    productionChecker.accept(out);
+                    productionChecker.accept(out, runMode);
                 }
             }
         }
