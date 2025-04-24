@@ -32,7 +32,6 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
 import jdk.internal.util.ArraysSupport;
 
 /**
@@ -298,15 +297,15 @@ class ReverseOrderListView<E> implements List<E> {
     // copied from AbstractCollection
     public String toString() {
         Iterator<E> it = iterator();
-        if (!it.hasNext())
+        if (! it.hasNext())
             return "[]";
 
         StringBuilder sb = new StringBuilder();
         sb.append('[');
-        for (; ; ) {
+        for (;;) {
             E e = it.next();
             sb.append(e == this ? "(this Collection)" : e);
-            if (!it.hasNext())
+            if (! it.hasNext())
                 return sb.append(']').toString();
             sb.append(',').append(' ');
         }
