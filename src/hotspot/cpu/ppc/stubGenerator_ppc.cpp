@@ -553,27 +553,27 @@ class StubGenerator: public StubCodeGenerator {
   // The subkey H is divided into lower, middle, and higher halves.
   // The multiplication results are reduced using `vConstC2` to stay within GF(2^128).
   // The final computed value is stored back into `vState`.
-  static void computeGCMProduct(MacroAssembler* masm,
+  static void computeGCMProduct(MacroAssembler* _masm,
                                 VectorRegister vLowerH, VectorRegister vH, VectorRegister vHigherH,
                                 VectorRegister vConstC2, VectorRegister vZero, VectorRegister vState,
                                 VectorRegister vLowProduct, VectorRegister vMidProduct, VectorRegister vHighProduct,
                                 VectorRegister vReducedLow, VectorRegister vTmp8, VectorRegister vTmp9,
                                 VectorRegister vCombinedResult, VectorRegister vSwappedH) {
-    masm->vxor(vH, vH, vState);
-    masm->vpmsumd(vLowProduct, vLowerH, vH);                          // L : Lower Half of subkey H
-    masm->vpmsumd(vMidProduct, vSwappedH, vH);                        // M : Combined halves of subkey H
-    masm->vpmsumd(vHighProduct, vHigherH, vH);                        // H : Higher Half of subkey H
-    masm->vpmsumd(vReducedLow, vLowProduct, vConstC2);                // Reduction
-    masm->vsldoi(vTmp8, vMidProduct, vZero, 8);                       // mL : Extract the lower 64 bits of M
-    masm->vsldoi(vTmp9, vZero, vMidProduct, 8);                       // mH : Extract the higher 64 bits of M
-    masm->vxor(vLowProduct, vLowProduct, vTmp8);                      // LL + mL : Partial result for lower half
-    masm->vxor(vHighProduct, vHighProduct, vTmp9);                    // HH + mH : Partial result for upper half
-    masm->vsldoi(vLowProduct, vLowProduct, vLowProduct, 8);           // Swap
-    masm->vxor(vLowProduct, vLowProduct, vReducedLow);
-    masm->vsldoi(vCombinedResult, vLowProduct, vLowProduct, 8);       // Swap
-    masm->vpmsumd(vLowProduct, vLowProduct, vConstC2);                // Reduction using constant
-    masm->vxor(vCombinedResult, vCombinedResult, vHighProduct);       // Combine reduced Low & High products
-    masm->vxor(vState, vLowProduct, vCombinedResult);
+    __ vxor(vH, vH, vState);
+    __ vpmsumd(vLowProduct, vLowerH, vH);                          // L : Lower Half of subkey H
+    __ vpmsumd(vMidProduct, vSwappedH, vH);                        // M : Combined halves of subkey H
+    __ vpmsumd(vHighProduct, vHigherH, vH);                        // H : Higher Half of subkey H
+    __ vpmsumd(vReducedLow, vLowProduct, vConstC2);                // Reduction
+    __ vsldoi(vTmp8, vMidProduct, vZero, 8);                       // mL : Extract the lower 64 bits of M
+    __ vsldoi(vTmp9, vZero, vMidProduct, 8);                       // mH : Extract the higher 64 bits of M
+    __ vxor(vLowProduct, vLowProduct, vTmp8);                      // LL + mL : Partial result for lower half
+    __ vxor(vHighProduct, vHighProduct, vTmp9);                    // HH + mH : Partial result for upper half
+    __ vsldoi(vLowProduct, vLowProduct, vLowProduct, 8);           // Swap
+    __ vxor(vLowProduct, vLowProduct, vReducedLow);
+    __ vsldoi(vCombinedResult, vLowProduct, vLowProduct, 8);       // Swap
+    __ vpmsumd(vLowProduct, vLowProduct, vConstC2);                // Reduction using constant
+    __ vxor(vCombinedResult, vCombinedResult, vHighProduct);       // Combine reduced Low & High products
+    __ vxor(vState, vLowProduct, vCombinedResult);
   }
 
   // Generate stub for ghash process blocks.
