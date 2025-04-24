@@ -65,6 +65,7 @@
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/klassInfoLUT.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -170,6 +171,7 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
 
     // No other thread has acquired this yet, so give it to *this thread*
     ik->set_class_loader_data(loader_data);
+    KlassInfoLUT::shared_klass_cld_changed(ik);
   }
 
   // No longer holding SharedDictionary_lock

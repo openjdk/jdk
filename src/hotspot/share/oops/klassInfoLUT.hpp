@@ -111,9 +111,10 @@ public:
   static inline ClassLoaderData* lookup_cld(int index);
 
   static void print_statistics(outputStream* out);
-
   static void register_cld_if_needed(ClassLoaderData* cld);
-
+#if INCLUDE_CDS
+  static void shared_klass_cld_changed(Klass* k);
+#endif
 };
 
 #endif // SHARE_OOPS_KLASSINFOLUT_HPP
