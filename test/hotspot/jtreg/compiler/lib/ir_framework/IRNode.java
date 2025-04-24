@@ -2126,24 +2126,24 @@ public class IRNode {
         machOnlyNameRegex(VAND_NOT_L_MASKED, "vand_notL_masked");
     }
 
-    public static final String VAND_NOTI_VX = PREFIX + "VAND_NOTI_VX" + POSTFIX;
+    public static final String RISCV_VAND_NOTI_VX = PREFIX + "RISCV_VAND_NOTI_VX" + POSTFIX;
     static {
-        machOnlyNameRegex(VAND_NOTI_VX, "vand_notI_vx");
+        machOnlyNameRegex(RISCV_VAND_NOTI_VX, "vand_notI_vx");
     }
 
-    public static final String VAND_NOTL_VX = PREFIX + "VAND_NOTL_VX" + POSTFIX;
+    public static final String RISCV_VAND_NOTL_VX = PREFIX + "RISCV_VAND_NOTL_VX" + POSTFIX;
     static {
-        machOnlyNameRegex(VAND_NOTL_VX, "vand_notL_vx");
+        machOnlyNameRegex(RISCV_VAND_NOTL_VX, "vand_notL_vx");
     }
 
-    public static final String VAND_NOTI_VX_MASKED = PREFIX + "VAND_NOTI_VX_MASKED" + POSTFIX;
+    public static final String RISCV_VAND_NOTI_VX_MASKED = PREFIX + "RISCV_VAND_NOTI_VX_MASKED" + POSTFIX;
     static {
-        machOnlyNameRegex(VAND_NOTI_VX_MASKED, "vand_notI_vx_masked");
+        machOnlyNameRegex(RISCV_VAND_NOTI_VX_MASKED, "vand_notI_vx_masked");
     }
 
-    public static final String VAND_NOTL_VX_MASKED = PREFIX + "VAND_NOTL_VX_MASKED" + POSTFIX;
+    public static final String RISCV_VAND_NOTL_VX_MASKED = PREFIX + "RISCV_VAND_NOTL_VX_MASKED" + POSTFIX;
     static {
-        machOnlyNameRegex(VAND_NOTL_VX_MASKED, "vand_notL_vx_masked");
+        machOnlyNameRegex(RISCV_VAND_NOTL_VX_MASKED, "vand_notL_vx_masked");
     }
 
     public static final String VECTOR_BLEND_B = VECTOR_PREFIX + "VECTOR_BLEND_B" + POSTFIX;
