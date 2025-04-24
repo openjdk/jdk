@@ -3685,7 +3685,7 @@ public class Check {
      */
     public boolean validateAnnotationDeferErrors(JCAnnotation a) {
         boolean res = false;
-        final Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
+        final Log.DiagnosticHandler diagHandler = log.new DiscardDiagnosticHandler();
         try {
             res = validateAnnotation(a);
         } finally {
@@ -4777,7 +4777,7 @@ public class Check {
         new TreeScanner() {
             @Override
             public void visitBindingPattern(JCBindingPattern tree) {
-                bindings[0] = !tree.var.sym.isUnnamedVariable();
+                bindings[0] |= !tree.var.sym.isUnnamedVariable();
                 super.visitBindingPattern(tree);
             }
         }.scan(p);

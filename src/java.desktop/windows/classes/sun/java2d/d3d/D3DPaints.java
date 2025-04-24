@@ -76,7 +76,7 @@ abstract class D3DPaints {
 
 /************************* GradientPaint support ****************************/
 
-    private static class Gradient extends D3DPaints {
+    private static final class Gradient extends D3DPaints {
         private Gradient() {}
 
         /**
@@ -96,7 +96,7 @@ abstract class D3DPaints {
 
 /************************** TexturePaint support ****************************/
 
-    private static class Texture extends D3DPaints {
+    private static final class Texture extends D3DPaints {
         private Texture() {}
 
         /**
@@ -201,7 +201,7 @@ abstract class D3DPaints {
 
 /********************** LinearGradientPaint support *************************/
 
-    private static class LinearGradient extends MultiGradient {
+    private static final class LinearGradient extends MultiGradient {
         private LinearGradient() {}
 
         @Override
@@ -228,7 +228,7 @@ abstract class D3DPaints {
 
 /********************** RadialGradientPaint support *************************/
 
-    private static class RadialGradient extends MultiGradient {
+    private static final class RadialGradient extends MultiGradient {
         private RadialGradient() {}
     }
 }
