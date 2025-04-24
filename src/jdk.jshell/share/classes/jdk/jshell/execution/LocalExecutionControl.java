@@ -31,6 +31,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import java.lang.classfile.ClassFile;
@@ -98,13 +99,17 @@ public class LocalExecutionControl extends DirectExecutionControl {
                         ClassTransform.transformingMethodBodies(
                             CodeTransform.ofStateful(() -> {
                                 Set<Label> priorLabels = new HashSet<>();
+                                AtomicBoolean methodEntry = new AtomicBoolean();
                                 return (builder, element) -> {
+                                    boolean insertStopCheck = methodEntry.compareAndSet(false, true);
                                     switch (element) {
                                         case LabelTarget target -> priorLabels.add(target.label());
                                         case BranchInstruction branch when priorLabels.contains(branch.target())
-                                            -> builder.invokestatic(CD_Cancel, "stopCheck", ConstantDescs.MTD_void);
+                                            -> insertStopCheck = true;
                                         default -> { }
                                     }
+                                    if (insertStopCheck)
+                                        builder.invokestatic(CD_Cancel, "stopCheck", ConstantDescs.MTD_void);
                                     builder.with(element);
                                 };
                             })));
