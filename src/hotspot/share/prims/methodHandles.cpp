@@ -1237,7 +1237,6 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
                                               jint start, jint end,
                                               jobjectArray buf_jh, jint pos,
                                               jboolean resolve, jobject ifna_jh)) {
-
   Klass* caller_k = java_lang_Class::as_Klass(JNIHandles::resolve(caller_jh));
   if (caller_k == nullptr || !caller_k->is_instance_klass()) {
       THROW_MSG(vmSymbols::java_lang_InternalError(), "bad caller");
