@@ -2010,6 +2010,11 @@ void Assembler::cpuid() {
   emit_int16(0x0F, (unsigned char)0xA2);
 }
 
+void Assembler::serialize() {
+  assert(VM_Version::supports_serialize(), "");
+  emit_int24(0x0F, 0x01, 0xE8);
+}
+
 // Opcode / Instruction                      Op /  En  64 - Bit Mode     Compat / Leg Mode Description                  Implemented
 // F2 0F 38 F0 / r       CRC32 r32, r / m8   RM        Valid             Valid             Accumulate CRC32 on r / m8.  v
 // F2 REX 0F 38 F0 / r   CRC32 r32, r / m8*  RM        Valid             N.E.              Accumulate CRC32 on r / m8.  -

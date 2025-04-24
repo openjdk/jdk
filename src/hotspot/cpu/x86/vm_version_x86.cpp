@@ -1101,8 +1101,32 @@ void VM_Version::get_processor_features() {
     _has_intel_jcc_erratum = IntelJccErratumMitigation;
   }
 
-  char buf[2048] = {'\0'};
-  size_t res = jio_snprintf(
+  assert(supports_cpuid(), "Always present");
+  assert(supports_clflush(), "Always present");
+  if (X86ICacheSync == -1) {
+    // Auto-detect, choosing the best performant one that still flushes
+    // the cache. We could switch to CPUID/SERIALIZE ("4"/"5") going forward.
+    if (supports_clwb()) {
+      FLAG_SET_ERGO(X86ICacheSync, 3);
+    } else if (supports_clflushopt()) {
+      FLAG_SET_ERGO(X86ICacheSync, 2);
+    } else {
+      FLAG_SET_ERGO(X86ICacheSync, 1);
+    }
+  } else {
+    if ((X86ICacheSync == 2) && !supports_clflushopt()) {
+      vm_exit_during_initialization("CPU does not support CLFLUSHOPT, unable to use X86ICacheSync=2");
+    }
+    if ((X86ICacheSync == 3) && !supports_clwb()) {
+      vm_exit_during_initialization("CPU does not support CLWB, unable to use X86ICacheSync=3");
+    }
+    if ((X86ICacheSync == 5) && !supports_serialize()) {
+      vm_exit_during_initialization("CPU does not support SERIALIZE, unable to use X86ICacheSync=5");
+    }
+  }
+
+  char buf[2048];
+  int res = jio_snprintf(
               buf, sizeof(buf),
               "(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
               cores_per_cpu(), threads_per_core(),
