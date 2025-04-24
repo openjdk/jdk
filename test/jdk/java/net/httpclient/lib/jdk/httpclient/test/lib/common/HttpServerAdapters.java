@@ -976,6 +976,13 @@ public interface HttpServerAdapters {
                 System.out.println("Http2TestServerImpl: stop");
                 impl.stop();
             }
+
+            @Override
+            public void close() {
+                System.out.println("Http2TestServerImpl: close");
+                impl.stop();
+            }
+
             @Override
             public HttpTestContext addHandler(HttpTestHandler handler, String path) {
                 System.out.println("Http2TestServerImpl[" + getAddress()
