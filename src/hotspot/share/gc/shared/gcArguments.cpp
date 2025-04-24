@@ -128,6 +128,18 @@ void GCArguments::initialize_heap_flags_and_sizes() {
     vm_exit_during_initialization("Incompatible minimum and initial heap sizes specified");
   }
 
+  if (UseSerialGC && SharedSerialGCVirtualSpace) {
+    if (FLAG_IS_CMDLINE(SwapSerialGCGenerations)) {
+      if (SwapSerialGCGenerations) {
+        warning("The SwapSerialGCGenerations command line option does not need to be set when SharedSerialGCVirtualSpace is enabled.");
+      } else {
+        warning("The SwapSerialGCGenerations command line option is forced to true when SharedSerialGCVirtualSpace is enabled.");
+      }
+    }
+
+    FLAG_SET_ERGO(SwapSerialGCGenerations, true);
+  }
+
   // Check heap parameter properties
   if (MaxHeapSize < 2 * M) {
     vm_exit_during_initialization("Too small maximum heap");

@@ -35,6 +35,14 @@
           "When disabled, informs the GC to shrink the java heap directly"  \
           " to the target size at the next full GC rather than requiring"   \
           " smaller steps during multiple full GCs.")                       \
+                                                                            \
+  product(bool, SharedSerialGCVirtualSpace, false, EXPERIMENTAL,            \
+          "When enabled, informs the GC to use a single VirtualSpace for"   \
+          " both the young and tenured regions.")                           \
+                                                                            \
+  product(bool, SwapSerialGCGenerations, false, EXPERIMENTAL,               \
+          "When enabled, informs the GC to place the tenured region before" \
+          " the young region in memory.")                                   \
 
 // end of GC_SERIAL_FLAGS
 
