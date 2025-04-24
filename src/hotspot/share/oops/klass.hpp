@@ -84,6 +84,14 @@ class Klass : public Metadata {
   };
   static const uint KLASS_KIND_COUNT = ObjArrayKlassKind + 1;
 
+  // Define a set of handy cast functions (e.g. "as_InstanceStackChunkKlass")
+#define WHAT(name, shortname)                       \
+  name* as_##name() {                               \
+    assert(_kind == name ## Kind, "not a " #name ); \
+    return (name*) this; }
+  KLASS_ALL_KINDS_DO(WHAT)
+#undef WHAT
+
  protected:
 
   // If you add a new field that points to any metaspace object, you

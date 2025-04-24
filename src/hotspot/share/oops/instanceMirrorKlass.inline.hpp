@@ -47,32 +47,9 @@ void InstanceMirrorKlass::oop_oop_iterate_statics(oop obj, OopClosureType* closu
 }
 
 template <typename T, class OopClosureType>
-void InstanceMirrorKlass::oop_oop_iterate_statics_bounded(oop obj,
-                                                          OopClosureType* closure,
-                                                          MemRegion mr) {
-  T* p   = (T*)start_of_static_fields(obj);
-  T* end = p + java_lang_Class::static_oop_field_count(obj);
+void InstanceMirrorKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
+  InstanceKlass::oop_oop_iterate<T>(obj, closure, klute);
 
-  T* const l   = (T*)mr.start();
-  T* const h   = (T*)mr.end();
-  assert(mask_bits((intptr_t)l, sizeof(T)-1) == 0 &&
-         mask_bits((intptr_t)h, sizeof(T)-1) == 0,
-         "bounded region must be properly aligned");
-
-  if (p < l) {
-    p = l;
-  }
-  if (end > h) {
-    end = h;
-  }
-
-  for (;p < end; ++p) {
-    Devirtualizer::do_oop(closure, p);
-  }
-}
-
-template <typename T, class OopClosureType>
-void InstanceMirrorKlass::oop_oop_iterate_metadata(oop obj, OopClosureType* closure) {
   if (Devirtualizer::do_metadata(closure)) {
     Klass* klass = java_lang_Class::as_Klass(obj);
     // We'll get null for primitive mirrors.
@@ -102,10 +79,48 @@ void InstanceMirrorKlass::oop_oop_iterate_metadata(oop obj, OopClosureType* clos
       // assert(java_lang_Class::is_primitive(obj), "Sanity check");
     }
   }
+
+  InstanceMirrorKlass* const ik = obj->klass()->as_InstanceMirrorKlass();
+  ik->oop_oop_iterate_statics<T>(obj, closure);
 }
 
 template <typename T, class OopClosureType>
-void InstanceMirrorKlass::oop_oop_iterate_metadata_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
+void InstanceMirrorKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
+  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure, klute);
+
+  InstanceMirrorKlass* const ik = obj->klass()->as_InstanceMirrorKlass();
+  ik->oop_oop_iterate_statics<T>(obj, closure);
+}
+
+template <typename T, class OopClosureType>
+void InstanceMirrorKlass::oop_oop_iterate_statics_bounded(oop obj,
+                                                          OopClosureType* closure,
+                                                          MemRegion mr) {
+  T* p   = (T*)start_of_static_fields(obj);
+  T* end = p + java_lang_Class::static_oop_field_count(obj);
+
+  T* const l   = (T*)mr.start();
+  T* const h   = (T*)mr.end();
+  assert(mask_bits((intptr_t)l, sizeof(T)-1) == 0 &&
+         mask_bits((intptr_t)h, sizeof(T)-1) == 0,
+         "bounded region must be properly aligned");
+
+  if (p < l) {
+    p = l;
+  }
+  if (end > h) {
+    end = h;
+  }
+
+  for (;p < end; ++p) {
+    Devirtualizer::do_oop(closure, p);
+  }
+}
+
+template <typename T, class OopClosureType>
+void InstanceMirrorKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute) {
+  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr, klute);
+
   if (Devirtualizer::do_metadata(closure)) {
     if (mr.contains(obj)) {
       Klass* klass = java_lang_Class::as_Klass(obj);
@@ -115,28 +130,9 @@ void InstanceMirrorKlass::oop_oop_iterate_metadata_bounded(oop obj, OopClosureTy
       }
     }
   }
+
+  InstanceMirrorKlass* const ik = obj->klass()->as_InstanceMirrorKlass();
+  ik->oop_oop_iterate_statics_bounded<T>(obj, closure, mr);
 }
 
-template <typename T, class OopClosureType>
-void InstanceMirrorKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
-  InstanceKlass::oop_oop_iterate<T>(obj, closure, klute);
-  oop_oop_iterate_metadata<T>(obj, closure);
-  oop_oop_iterate_statics<T>(obj, closure);
-
-}
-
-template <typename T, class OopClosureType>
-void InstanceMirrorKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
-  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure, klute);
-
-  InstanceMirrorKlass::oop_oop_iterate_statics<T>(obj, closure);
-}
-
-
-template <typename T, class OopClosureType>
-void InstanceMirrorKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute) {
-  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr, klute);
-  oop_oop_iterate_metadata_bounded<T>(obj, closure, mr);
-  oop_oop_iterate_statics_bounded<T>(obj, closure, mr);
-}
 #endif // SHARE_OOPS_INSTANCEMIRRORKLASS_INLINE_HPP

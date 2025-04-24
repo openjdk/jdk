@@ -90,25 +90,22 @@ void InstanceStackChunkKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* c
   oop_oop_iterate_lockstack<T>(chunk, closure, mr);
 }
 
-static InstanceStackChunkKlass* get_isck(oop obj) {
-  Klass* const k = obj->klass();
-  assert(k->is_stack_chunk_instance_klass(), "must be");
-  return (InstanceStackChunkKlass*)k;
-}
-
 template <typename T, class OopClosureType>
 void InstanceStackChunkKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
-  get_isck(obj)->oop_oop_iterate<T>(obj, closure);
+  InstanceStackChunkKlass* ik = obj->klass()->as_InstanceStackChunkKlass();
+  ik->oop_oop_iterate<T>(obj, closure);
 }
 
 template <typename T, class OopClosureType>
 void InstanceStackChunkKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute) {
-  get_isck(obj)->oop_oop_iterate_reverse<T>(obj, closure);
+  InstanceStackChunkKlass* ik = obj->klass()->as_InstanceStackChunkKlass();
+  ik->oop_oop_iterate_reverse<T>(obj, closure);
 }
 
 template <typename T, class OopClosureType>
 void InstanceStackChunkKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute) {
-  get_isck(obj)->oop_oop_iterate_bounded<T>(obj, closure, mr);
+  InstanceStackChunkKlass* ik = obj->klass()->as_InstanceStackChunkKlass();
+  ik->oop_oop_iterate_bounded<T>(obj, closure, mr);
 }
 
 template <typename T, class OopClosureType>
