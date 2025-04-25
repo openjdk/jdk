@@ -696,24 +696,23 @@ public class Throwable implements Serializable {
             java.lang.Throwable[] suppressed = getSuppressed();
             Throwable ourCause = getCause();
 
-            /*
-             * Guard against malicious overrides of Throwable.equals by
-             * using a Set with identity equality semantics.
-             */
-            Set<Throwable> dejaVu = null;
             if (suppressed.length > 0 || ourCause != null) {
-                dejaVu = Collections.newSetFromMap(new IdentityHashMap<>());
+                /*
+                 * Guard against malicious overrides of Throwable.equals by
+                 * using a Set with identity equality semantics.
+                 */
+                Set<Throwable> dejaVu = Collections.newSetFromMap(new IdentityHashMap<>());
                 dejaVu.add(this);
-            }
 
-            // Print suppressed exceptions, if any
-            for (Throwable se : suppressed)
-                se.printEnclosedStackTrace(s, trace, "\t".concat(SUPPRESSED_CAPTION), "\t", dejaVu);
+                // Print suppressed exceptions, if any
+                for (Throwable se : suppressed)
+                    se.printEnclosedStackTrace(s, trace, "\t".concat(SUPPRESSED_CAPTION), "\t", dejaVu);
 
-            // Print cause, if any
+                // Print cause, if any
 
-            if (ourCause != null) {
-                ourCause.printEnclosedStackTrace(s, trace, CAUSE_CAPTION, "", dejaVu);
+                if (ourCause != null) {
+                    ourCause.printEnclosedStackTrace(s, trace, CAUSE_CAPTION, "", dejaVu);
+                }
             }
         }
     }
