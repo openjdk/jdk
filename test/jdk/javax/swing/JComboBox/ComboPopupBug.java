@@ -57,9 +57,11 @@ public class ComboPopupBug {
 
             SwingUtilities.invokeAndWait(() -> closeButton.doClick());
         } finally {
-            if (frame != null) {
-                SwingUtilities.invokeAndWait(() -> frame.dispose());
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
