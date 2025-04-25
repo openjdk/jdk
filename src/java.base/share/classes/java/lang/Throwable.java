@@ -744,14 +744,9 @@ public class Throwable implements Serializable {
             printStackTrace0(s, prefix, trace, m);
 
             // Print suppressed exceptions, if any
-            Throwable[] suppressed = getSuppressed();
-            if (suppressed != null) {
-                String prefixT = prefix.concat("\t");
-                for (Throwable se : suppressed) {
-                    se.printEnclosedStackTrace(s, trace, prefixT.concat(SUPPRESSED_CAPTION),
-                            prefixT, dejaVu);
-                }
-            }
+            for (Throwable se : getSuppressed())
+                se.printEnclosedStackTrace(s, trace, prefix.concat("\t" + SUPPRESSED_CAPTION),
+                        prefix.concat("\t"), dejaVu);
 
             // Print cause, if any
             Throwable ourCause = getCause();
