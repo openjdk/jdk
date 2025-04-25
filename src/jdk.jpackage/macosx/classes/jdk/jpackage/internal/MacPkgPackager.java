@@ -272,7 +272,7 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
             disabledTasks.addAll(List.of(PkgPackageTaskID.PREPARE_SERVICES, InternalPackageType.SERVICES, InternalPackageType.SUPPORT));
         }
 
-        if (pkg.isRuntimeInstaller()) {
+        if (scriptsRoot().isEmpty()) {
             disabledTasks.add(PkgPackageTaskID.PREPARE_MAIN_SCRIPTS);
         }
 
@@ -293,16 +293,20 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
         args.add("--component-plist");
         args.add(normalizedAbsolutePathString(componentPlistFile()));
 
-        if (!pkg.app().appStore()) {
+        scriptsRoot().ifPresent(scriptsRoot -> {
             args.add("--scripts");
-            args.add(normalizedAbsolutePathString(scriptsRoot()));
-        }
+            args.add(normalizedAbsolutePathString(scriptsRoot));
+        });
 
         return InternalPackageType.MAIN.createInternalPackage(env.appImageDir(), pkg, env, args);
     }
 
-    Path scriptsRoot() {
-        return env.configDir().resolve("scripts");
+    Optional<Path> scriptsRoot() {
+        if (pkg.app().appStore() || pkg.isRuntimeInstaller()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(env.configDir().resolve("scripts"));
+        }
     }
 
     Path componentPlistFile() {
@@ -356,9 +360,11 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
     private void prepareMainScripts() throws IOException {
         Log.verbose(I18N.getString("message.preparing-scripts"));
 
-        Files.createDirectories(scriptsRoot());
+        final var scriptsRoot = scriptsRoot().orElseThrow();
 
-        Map<String, String> data = new HashMap<>();
+        Files.createDirectories(scriptsRoot);
+
+        final Map<String, String> data = new HashMap<>();
 
         final var appLocation = pkg.asInstalledPackageApplicationLayout().orElseThrow().appDirectory();
 
@@ -368,7 +374,7 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
         MacPkgInstallerScripts.createAppScripts()
                 .setResourceDir(env.resourceDir().orElse(null))
                 .setSubstitutionData(data)
-                .saveInFolder(scriptsRoot());
+                .saveInFolder(scriptsRoot);
     }
 
     private void prepareDistributionXMLFile() throws IOException {
