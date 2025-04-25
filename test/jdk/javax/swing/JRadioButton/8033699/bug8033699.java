@@ -166,7 +166,6 @@ public class bug8033699 {
         radioBtnSingle = new JRadioButton("Not Grouped");
         radioBtnSingle.setSelected(true);
 
-        // Create main vertical box
         Box mainBox = Box.createVerticalBox();
         mainBox.add(btnStart);
         mainBox.add(box);
