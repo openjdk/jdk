@@ -113,11 +113,11 @@ public class KAKeyDerivation implements SSLKeyDerivation {
 
             CipherSuite.HashAlg hashAlg = context.negotiatedCipherSuite.hashAlg;
             SSLKeyDerivation kd = context.handshakeKeyDerivation;
-            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             if (kd == null) {   // No PSK is in use.
                 // If PSK is not in use, Early Secret will still be
                 // HKDF-Extract(0, 0).
                 byte[] zeros = new byte[hashAlg.hashLength];
+                KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
                 earlySecret = hkdf.deriveKey("TlsEarlySecret",
                         HKDFParameterSpec.ofExtract().addSalt(zeros)
                         .addIKM(zeros).extractOnly());
@@ -128,6 +128,7 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             saltSecret = kd.deriveKey("TlsSaltSecret");
 
             // derive handshake secret
+            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             return hkdf.deriveKey(type, HKDFParameterSpec.ofExtract()
                     .addSalt(saltSecret).addIKM(sharedSecret).extractOnly());
         } catch (GeneralSecurityException gse) {

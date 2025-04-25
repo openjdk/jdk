@@ -837,24 +837,18 @@ final class PreSharedKeyExtension {
         SecretKey earlySecret = null;
         try {
             CipherSuite.HashAlg hashAlg = session.getSuite().hashAlg;
-            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
             byte[] zeros = new byte[hashAlg.hashLength];
-            earlySecret = hkdf.deriveKey("TlsEarlySecret",
-                    HKDFParameterSpec.ofExtract().addSalt(zeros).addIKM(psk)
-                    .extractOnly());
             byte[] label = ("tls13 res binder").getBytes();
             MessageDigest md = MessageDigest.getInstance(hashAlg.name);
             byte[] hkdfInfo = SSLSecretDerivation.createHkdfInfo(
                     label, md.digest(new byte[0]), hashAlg.hashLength);
-            return hkdf.deriveKey("TlsBinderKey",
-                    HKDFParameterSpec.expandOnly(earlySecret, hkdfInfo,
-                    hashAlg.hashLength));
+            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
+            HKDFParameterSpec spec = HKDFParameterSpec.ofExtract()
+                    .addSalt(zeros).addIKM(psk)
+                    .thenExpand(hkdfInfo, hashAlg.hashLength);
+            return hkdf.deriveKey("TlsBinderKey", spec);
         } catch (GeneralSecurityException ex) {
             throw context.conContext.fatal(Alert.INTERNAL_ERROR, ex);
-        } finally {
-            if (earlySecret instanceof SecretKeySpec s) {
-                SharedSecrets.getJavaxCryptoSpecAccess().clearSecretKeySpec(s);
-            }
         }
     }
 
