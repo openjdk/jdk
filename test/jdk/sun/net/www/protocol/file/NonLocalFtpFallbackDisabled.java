@@ -51,7 +51,7 @@ public class NonLocalFtpFallbackDisabled {
      * @throws MalformedURLException if an unexpected URL exception occurs
      */
     @Test
-    public void verifyNonLocalFtpFallback() throws MalformedURLException {
+    public void verifyNonLocalFileURLRejected() throws MalformedURLException {
         URL localURL = file.toUri().toURL();
         // We can use a fake host name here, no actual FTP request will be made
         String hostname = "remotehost";
