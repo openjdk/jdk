@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import sun.awt.OSInfo;
 import sun.awt.util.ThreadGroupUtils;
 import sun.util.logging.PlatformLogger;
 
@@ -76,6 +75,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         sun.awt.windows.WToolkit.loadLibraries();
     }
 
+    @Override
     public ShellFolder createShellFolder(File file) throws FileNotFoundException {
         try {
             return createShellFolder(getDesktop(), file);
@@ -265,6 +265,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
      *
      * @return An Object matching the key string.
      */
+    @Override
     public Object get(String key) {
         if (key.equals("fileChooserDefaultFolder")) {
             File file = getPersonal();
@@ -291,7 +292,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
                 Win32ShellFolder2 drives = getDrives();
 
                 Win32ShellFolder2 recentFolder = getRecent();
-                if (recentFolder != null && OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_2000) >= 0) {
+                if (recentFolder != null) {
                     folders.add(recentFolder);
                 }
 
@@ -409,6 +410,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
      * Does {@code dir} represent a "computer" such as a node on the network, or
      * "My Computer" on the desktop.
      */
+    @Override
     public boolean isComputerNode(final File dir) {
         if (dir != null && dir == getDrives()) {
             return true;
@@ -419,6 +421,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         }
     }
 
+    @Override
     public boolean isFileSystemRoot(File dir) {
         //Note: Removable drives don't "exist" but are listed in "My Computer"
         if (dir != null) {
@@ -499,7 +502,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         return new ComInvoker();
     }
 
-    private static class ComInvoker extends ThreadPoolExecutor implements ThreadFactory, ShellFolder.Invoker {
+    private static final class ComInvoker extends ThreadPoolExecutor implements ThreadFactory, ShellFolder.Invoker {
         private static Thread comThread;
 
         private ComInvoker() {
@@ -513,6 +516,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
             Runtime.getRuntime().addShutdownHook(t);
         }
 
+        @Override
         public synchronized Thread newThread(final Runnable task) {
             final Runnable comRun = new Runnable() {
                 public void run() {
@@ -540,6 +544,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
             return comThread;
         }
 
+        @Override
         public <T> T invoke(Callable<T> task) throws Exception {
             if (Thread.currentThread() == comThread) {
                 // if it's already called from the COM

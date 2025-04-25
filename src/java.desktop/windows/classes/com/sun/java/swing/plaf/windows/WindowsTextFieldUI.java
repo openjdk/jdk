@@ -62,7 +62,7 @@ import javax.swing.text.Position;
  *
  * @author  Timothy Prinzing
  */
-public class WindowsTextFieldUI extends BasicTextFieldUI
+public final class WindowsTextFieldUI extends BasicTextFieldUI
 {
     /**
      * Creates a UI for a JTextField.
@@ -82,6 +82,7 @@ public class WindowsTextFieldUI extends BasicTextFieldUI
      *
      * @param g the graphics context
      */
+    @Override
     protected void paintBackground(Graphics g) {
         super.paintBackground(g);
     }
@@ -91,6 +92,7 @@ public class WindowsTextFieldUI extends BasicTextFieldUI
      *
      * @return the caret
      */
+    @Override
     protected Caret createCaret() {
         return new WindowsFieldCaret();
     }
@@ -100,7 +102,7 @@ public class WindowsTextFieldUI extends BasicTextFieldUI
      * DefaultCaret.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class WindowsFieldCaret extends DefaultCaret implements UIResource {
+    static final class WindowsFieldCaret extends DefaultCaret implements UIResource {
 
         public WindowsFieldCaret() {
             super();
@@ -112,6 +114,7 @@ public class WindowsTextFieldUI extends BasicTextFieldUI
          * caret out into the field by about a quarter of
          * a field length if not visible.
          */
+        @Override
         protected void adjustVisibility(Rectangle r) {
             SwingUtilities.invokeLater(new SafeScroller(r));
         }
@@ -121,16 +124,18 @@ public class WindowsTextFieldUI extends BasicTextFieldUI
          *
          * @return the painter
          */
+        @Override
         protected Highlighter.HighlightPainter getSelectionPainter() {
             return WindowsTextUI.WindowsPainter;
         }
 
 
-        private class SafeScroller implements Runnable {
+        private final class SafeScroller implements Runnable {
             SafeScroller(Rectangle r) {
                 this.r = r;
             }
 
+            @Override
             @SuppressWarnings("deprecation")
             public void run() {
                 JTextField field = (JTextField) getComponent();

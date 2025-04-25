@@ -92,6 +92,7 @@ public:
 
   void close() {
     if (opened()) {
+      ThreadBlockInVM tbivm(JavaThread::current());
       FlushFileBuffers(_hPipe);
       CloseHandle(_hPipe);
       _hPipe = INVALID_HANDLE_VALUE;

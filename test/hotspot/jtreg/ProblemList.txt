@@ -56,7 +56,6 @@ compiler/c2/irTests/TestDuplicateBackedge.java 8318904 generic-all
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
 compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897,8348519 aix-ppc64,linux-ppc64le,linux-s390x
-compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
 compiler/vectorapi/VectorRebracket128Test.java 8330538 generic-all
 
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
@@ -70,14 +69,14 @@ compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/VirtualObjectDebugInf
 compiler/floatingpoint/TestSubnormalFloat.java 8317810 generic-i586
 compiler/floatingpoint/TestSubnormalDouble.java 8317810 generic-i586
 
-compiler/startup/StartupOutput.java 8347406 generic-x64
-
 compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 
 compiler/interpreter/Test6833129.java 8335266 generic-i586
 
 compiler/ciReplay/TestInliningProtectionDomain.java 8349191 generic-all
 compiler/ciReplay/TestIncrementalInlining.java 8349191 generic-all
+
+compiler/c2/TestVerifyConstraintCasts.java 8355574 generic-all
 
 #############################################################################
 
@@ -100,7 +99,6 @@ gc/TestAlwaysPreTouchBehavior.java#Z 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#Epsilon 8334513 generic-all
 gc/shenandoah/oom/TestAllocOutOfMemory.java#large 8344312 linux-ppc64le
 gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
-gc/TestAllocHumongousFragment.java#generational 8351464 generic-all
 
 #############################################################################
 

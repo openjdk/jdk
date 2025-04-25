@@ -1087,9 +1087,9 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
     if (UseLoopPredicate) {
       add_parse_predicate(Deoptimization::Reason_predicate, inner_head, outer_ilt, cloned_sfpt);
-    }
-    if (UseProfiledLoopPredicate) {
-      add_parse_predicate(Deoptimization::Reason_profile_predicate, inner_head, outer_ilt, cloned_sfpt);
+      if (UseProfiledLoopPredicate) {
+        add_parse_predicate(Deoptimization::Reason_profile_predicate, inner_head, outer_ilt, cloned_sfpt);
+      }
     }
 
     // We only want to use the auto-vectorization check as a trap once per bci. And
@@ -4298,11 +4298,13 @@ void IdealLoopTree::dump_head() {
   if (predicates.loop_limit_check_predicate_block()->is_non_empty()) {
     tty->print(" limit_check");
   }
-  if (UseProfiledLoopPredicate && predicates.profiled_loop_predicate_block()->is_non_empty()) {
-    tty->print(" profile_predicated");
-  }
-  if (UseLoopPredicate && predicates.loop_predicate_block()->is_non_empty()) {
-    tty->print(" predicated");
+  if (UseLoopPredicate) {
+    if (UseProfiledLoopPredicate && predicates.profiled_loop_predicate_block()->is_non_empty()) {
+      tty->print(" profile_predicated");
+    }
+    if (predicates.loop_predicate_block()->is_non_empty()) {
+      tty->print(" predicated");
+    }
   }
   if (_head->is_CountedLoop()) {
     CountedLoopNode *cl = _head->as_CountedLoop();
@@ -4399,116 +4401,13 @@ void PhaseIdealLoop::log_loop_tree() {
 
 // Eliminate all Parse and Template Assertion Predicates that are not associated with a loop anymore. The eliminated
 // predicates will be removed during the next round of IGVN.
-void PhaseIdealLoop::eliminate_useless_predicates() {
+void PhaseIdealLoop::eliminate_useless_predicates() const {
   if (C->parse_predicate_count() == 0 && C->template_assertion_predicate_count() == 0) {
     return; // No predicates left.
   }
 
-  eliminate_useless_parse_predicates();
-  eliminate_useless_template_assertion_predicates();
-}
-
-// Eliminate all Parse Predicates that do not belong to a loop anymore by marking them useless. These will be removed
-// during the next round of IGVN.
-void PhaseIdealLoop::eliminate_useless_parse_predicates() {
-  mark_all_parse_predicates_useless();
-  if (C->has_loops()) {
-    mark_loop_associated_parse_predicates_useful();
-  }
-  add_useless_parse_predicates_to_igvn_worklist();
-}
-
-void PhaseIdealLoop::mark_all_parse_predicates_useless() const {
-  for (int i = 0; i < C->parse_predicate_count(); i++) {
-    C->parse_predicate(i)->mark_useless();
-  }
-}
-
-void PhaseIdealLoop::mark_loop_associated_parse_predicates_useful() {
-  for (LoopTreeIterator iterator(_ltree_root); !iterator.done(); iterator.next()) {
-    IdealLoopTree* loop = iterator.current();
-    if (loop->can_apply_loop_predication()) {
-      mark_useful_parse_predicates_for_loop(loop);
-    }
-  }
-}
-
-// This visitor marks all visited Parse Predicates useful.
-class ParsePredicateUsefulMarker : public PredicateVisitor {
- public:
-  using PredicateVisitor::visit;
-
-  void visit(const ParsePredicate& parse_predicate) override {
-    parse_predicate.head()->mark_useful();
-  }
-};
-
-void PhaseIdealLoop::mark_useful_parse_predicates_for_loop(IdealLoopTree* loop) {
-  Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
-  const PredicateIterator predicate_iterator(entry);
-  ParsePredicateUsefulMarker useful_marker;
-  predicate_iterator.for_each(useful_marker);
-}
-
-void PhaseIdealLoop::add_useless_parse_predicates_to_igvn_worklist() {
-  for (int i = 0; i < C->parse_predicate_count(); i++) {
-    ParsePredicateNode* parse_predicate_node = C->parse_predicate(i);
-    if (parse_predicate_node->is_useless()) {
-      _igvn._worklist.push(parse_predicate_node);
-    }
-  }
-}
-
-
-// Eliminate all Template Assertion Predicates that do not belong to their originally associated loop anymore by
-// replacing the OpaqueTemplateAssertionPredicate node of the If node with true. These nodes will be removed during the
-// next round of IGVN.
-void PhaseIdealLoop::eliminate_useless_template_assertion_predicates() {
-  Unique_Node_List useful_predicates;
-  if (C->has_loops()) {
-    collect_useful_template_assertion_predicates(useful_predicates);
-  }
-  eliminate_useless_template_assertion_predicates(useful_predicates);
-}
-
-void PhaseIdealLoop::collect_useful_template_assertion_predicates(Unique_Node_List& useful_predicates) {
-  for (LoopTreeIterator iterator(_ltree_root); !iterator.done(); iterator.next()) {
-    IdealLoopTree* loop = iterator.current();
-    if (loop->can_apply_loop_predication()) {
-      collect_useful_template_assertion_predicates_for_loop(loop, useful_predicates);
-    }
-  }
-}
-
-void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(IdealLoopTree* loop,
-                                                                           Unique_Node_List &useful_predicates) {
-  Node* entry = loop->_head->as_Loop()->skip_strip_mined()->in(LoopNode::EntryControl);
-  const Predicates predicates(entry);
-  if (UseProfiledLoopPredicate) {
-    const PredicateBlock* profiled_loop_predicate_block = predicates.profiled_loop_predicate_block();
-    if (profiled_loop_predicate_block->has_parse_predicate()) {
-      ParsePredicateSuccessProj* parse_predicate_proj = profiled_loop_predicate_block->parse_predicate_success_proj();
-      get_opaque_template_assertion_predicate_nodes(parse_predicate_proj, useful_predicates);
-    }
-  }
-
-  if (UseLoopPredicate) {
-    const PredicateBlock* loop_predicate_block = predicates.loop_predicate_block();
-    if (loop_predicate_block->has_parse_predicate()) {
-      ParsePredicateSuccessProj* parse_predicate_proj = loop_predicate_block->parse_predicate_success_proj();
-      get_opaque_template_assertion_predicate_nodes(parse_predicate_proj, useful_predicates);
-    }
-  }
-}
-
-void PhaseIdealLoop::eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) const {
-  for (int i = C->template_assertion_predicate_count(); i > 0; i--) {
-    OpaqueTemplateAssertionPredicateNode* opaque_node =
-        C->template_assertion_predicate_opaq_node(i - 1)->as_OpaqueTemplateAssertionPredicate();
-    if (!useful_predicates.member(opaque_node)) { // not in the useful list
-      opaque_node->mark_useless(_igvn);
-    }
-  }
+  EliminateUselessPredicates eliminate_useless_predicates(_igvn, _ltree_root);
+  eliminate_useless_predicates.eliminate();
 }
 
 // If a post or main loop is removed due to an assert predicate, the opaque that guards the loop is not needed anymore
@@ -4574,6 +4473,10 @@ void PhaseIdealLoop::eliminate_useless_multiversion_if() {
         IfNode* multiversion_if = head->find_multiversion_if_from_multiversion_fast_main_loop();
         if (multiversion_if != nullptr) {
             useful_multiversioning_opaque_nodes.push(multiversion_if->in(1)->as_OpaqueMultiversioning());
+        } else {
+          // We could not find the multiversion_if, and would never find it again. Remove the
+          // multiversion marking for consistency.
+          head->set_no_multiversion();
         }
       }
     }
@@ -6153,6 +6056,24 @@ CountedLoopEndNode* CountedLoopNode::find_pre_loop_end() {
     return nullptr;
   }
   return pre_end;
+}
+
+Node* CountedLoopNode::uncasted_init_trip(bool uncast) {
+  Node* init = init_trip();
+  if (uncast && init->is_CastII()) {
+    // skip over the cast added by PhaseIdealLoop::cast_incr_before_loop() when pre/post/main loops are created because
+    // it can get in the way of type propagation. For instance, the index tested by an Assertion Predicate, if the cast
+    // is not skipped over, could be (1):
+    // (AddI (CastII (AddI pre_loop_iv -2) int) 1)
+    // while without the cast, it is (2):
+    // (AddI (AddI pre_loop_iv -2) 1)
+    // which is be transformed to (3):
+    // (AddI pre_loop_iv -1)
+    // The compiler may be able to constant fold the Assertion Predicate condition for (3) but not (1)
+    assert(init->as_CastII()->carry_dependency() && skip_assertion_predicates_with_halt() == init->in(0), "casted iv phi from pre loop expected");
+    init = init->in(1);
+  }
+  return init;
 }
 
 //------------------------------get_late_ctrl----------------------------------

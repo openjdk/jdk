@@ -675,4 +675,11 @@ public final class JVM {
      * @param value
      */
     public static native void setMiscellaneous(long eventTypeId, long value);
+
+    /**
+     * Returns whether the current build is a product build.
+     *
+     * @return {@code true} if this is a product build, {@code false} otherwise.
+     */
+    public static native boolean isProduct();
 }

@@ -93,7 +93,6 @@ public final class PlatformRecording implements AutoCloseable {
     private long finalStartChunkNanos = Long.MIN_VALUE;
     private long startNanos = -1;
 
-    @SuppressWarnings("removal")
     PlatformRecording(PlatformRecorder recorder, long id) {
         this.id = id;
         this.recorder = recorder;
