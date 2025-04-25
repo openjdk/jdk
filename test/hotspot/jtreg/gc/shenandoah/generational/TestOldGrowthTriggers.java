@@ -58,14 +58,6 @@ public class TestOldGrowthTriggers {
                 int replaceIndex = r.nextInt(ArraySize);
                 int deriveIndex = r.nextInt(ArraySize);
                 switch (i & 0x3) {
-                    case 0:
-                        // 50% chance of creating garbage
-                        array[replaceIndex] = array[replaceIndex].max(array[deriveIndex]);
-                        break;
-                    case 1:
-                        // 50% chance of creating garbage
-                        array[replaceIndex] = array[replaceIndex].min(array[deriveIndex]);
-                        break;
                     case 2:
                         // creates new old BigInteger, releases old BigInteger,
                         // may create ephemeral data while computing gcd
@@ -105,6 +97,18 @@ public class TestOldGrowthTriggers {
                 "-XX:ShenandoahGCMode=generational",
                 "-XX:ShenandoahGuaranteedYoungGCInterval=0",
                 "-XX:ShenandoahGuaranteedOldGCInterval=0"
+        );
+
+        testOld("-Xlog:gc",
+                "-Xms96m",
+                "-Xmx96m",
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:+UseShenandoahGC",
+                "-XX:ShenandoahGCMode=generational",
+                "-XX:ShenandoahGuaranteedYoungGCInterval=0",
+                "-XX:ShenandoahGuaranteedOldGCInterval=0",
+                "-XX:+UseCompactObjectHeaders"
         );
     }
 }
