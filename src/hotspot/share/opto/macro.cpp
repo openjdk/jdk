@@ -2457,6 +2457,13 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
+  // Perform refining of strip mined loop node before we start to expand.
+  for (int i = C->macro_count(); i > 0; i--) {
+    Node* n = C->macro_node(i-1);
+    if (n->Opcode() == Op_OuterStripMinedLoop) {
+      n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
+    }
+  }
   // Do not allow new macro nodes once we started to expand
   C->reset_allow_macro_nodes();
   if (StressMacroExpansion) {
@@ -2509,7 +2516,6 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         _igvn.replace_node(n, _igvn.intcon(1));
 #endif // ASSERT
       } else if (n->Opcode() == Op_OuterStripMinedLoop) {
-        n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
         C->remove_macro_node(n);
         success = true;
       } else if (n->Opcode() == Op_MaxL) {
