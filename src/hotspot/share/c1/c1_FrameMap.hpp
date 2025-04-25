@@ -29,10 +29,10 @@
 #include "c1/c1_LIR.hpp"
 #include "code/vmreg.hpp"
 #include "memory/allocation.hpp"
+#include "oops/compressedOops.hpp"
 #include "runtime/frame.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "oops/compressedOops.hpp"
 
 class ciMethod;
 class CallingConvention;

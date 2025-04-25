@@ -1087,9 +1087,9 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
     if (UseLoopPredicate) {
       add_parse_predicate(Deoptimization::Reason_predicate, inner_head, outer_ilt, cloned_sfpt);
-    }
-    if (UseProfiledLoopPredicate) {
-      add_parse_predicate(Deoptimization::Reason_profile_predicate, inner_head, outer_ilt, cloned_sfpt);
+      if (UseProfiledLoopPredicate) {
+        add_parse_predicate(Deoptimization::Reason_profile_predicate, inner_head, outer_ilt, cloned_sfpt);
+      }
     }
 
     // We only want to use the auto-vectorization check as a trap once per bci. And
@@ -4298,11 +4298,13 @@ void IdealLoopTree::dump_head() {
   if (predicates.loop_limit_check_predicate_block()->is_non_empty()) {
     tty->print(" limit_check");
   }
-  if (UseProfiledLoopPredicate && predicates.profiled_loop_predicate_block()->is_non_empty()) {
-    tty->print(" profile_predicated");
-  }
-  if (UseLoopPredicate && predicates.loop_predicate_block()->is_non_empty()) {
-    tty->print(" predicated");
+  if (UseLoopPredicate) {
+    if (UseProfiledLoopPredicate && predicates.profiled_loop_predicate_block()->is_non_empty()) {
+      tty->print(" profile_predicated");
+    }
+    if (predicates.loop_predicate_block()->is_non_empty()) {
+      tty->print(" predicated");
+    }
   }
   if (_head->is_CountedLoop()) {
     CountedLoopNode *cl = _head->as_CountedLoop();
@@ -4471,6 +4473,10 @@ void PhaseIdealLoop::eliminate_useless_multiversion_if() {
         IfNode* multiversion_if = head->find_multiversion_if_from_multiversion_fast_main_loop();
         if (multiversion_if != nullptr) {
             useful_multiversioning_opaque_nodes.push(multiversion_if->in(1)->as_OpaqueMultiversioning());
+        } else {
+          // We could not find the multiversion_if, and would never find it again. Remove the
+          // multiversion marking for consistency.
+          head->set_no_multiversion();
         }
       }
     }
@@ -6050,6 +6056,24 @@ CountedLoopEndNode* CountedLoopNode::find_pre_loop_end() {
     return nullptr;
   }
   return pre_end;
+}
+
+Node* CountedLoopNode::uncasted_init_trip(bool uncast) {
+  Node* init = init_trip();
+  if (uncast && init->is_CastII()) {
+    // skip over the cast added by PhaseIdealLoop::cast_incr_before_loop() when pre/post/main loops are created because
+    // it can get in the way of type propagation. For instance, the index tested by an Assertion Predicate, if the cast
+    // is not skipped over, could be (1):
+    // (AddI (CastII (AddI pre_loop_iv -2) int) 1)
+    // while without the cast, it is (2):
+    // (AddI (AddI pre_loop_iv -2) 1)
+    // which is be transformed to (3):
+    // (AddI pre_loop_iv -1)
+    // The compiler may be able to constant fold the Assertion Predicate condition for (3) but not (1)
+    assert(init->as_CastII()->carry_dependency() && skip_assertion_predicates_with_halt() == init->in(0), "casted iv phi from pre loop expected");
+    init = init->in(1);
+  }
+  return init;
 }
 
 //------------------------------get_late_ctrl----------------------------------

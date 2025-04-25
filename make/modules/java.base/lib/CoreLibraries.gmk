@@ -167,6 +167,14 @@ endif
 ifeq ($(call isTargetOs, aix), true)
   # AIX requires a static libjli because the compiler doesn't support '-rpath'
   BUILD_LIBJLI_TYPE := STATIC_LIBRARY
+
+  # This is the object file to provide the dladdr API, which is not
+  # part of AIX. It occurs several times in the jdk code base.
+  # Do not include it. When statically linking the java
+  # launcher with all JDK and VM static libraries, we use the
+  # --whole-archive linker option. The duplicate objects in different
+  # static libraries cause linking errors due to duplicate symbols.
+  LIBJLI_STATIC_EXCLUDE_OBJS += java_md_aix.o
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \

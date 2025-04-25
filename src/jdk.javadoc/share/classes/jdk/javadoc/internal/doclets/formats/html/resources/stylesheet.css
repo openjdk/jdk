@@ -79,9 +79,10 @@
     --search-input-placeholder-color: #909090;
     /* Highlight color for active search tag target */
     --search-tag-highlight-color: #ffff66;
-    /* Adjustments for icon and active background colors of copy-to-clipboard buttons */
-    --copy-icon-brightness: 100%;
-    --copy-button-background-color-active: rgba(168, 168, 176, 0.3);
+    /* Copy button colors and filters */
+    --button-border-color: #b0b8c8;
+    --button-active-filter: brightness(96%);
+    --button-focus-filter: brightness(104%);
     /* Colors for invalid tag notifications */
     --invalid-tag-background-color: #ffe6e6;
     --invalid-tag-text-color: #000000;
@@ -132,7 +133,7 @@ pre {
     line-height: var(--code-line-height);
     background-color: var(--pre-background-color);
     color: var(--pre-text-color);
-    padding: 8px;
+    padding: 10px;
     overflow-x:auto;
 }
 h1 {
@@ -535,6 +536,9 @@ nav.toc a {
 }
 nav.toc ol.toc-list ol.toc-list a {
     padding-left: 24px;
+}
+nav.toc ol.toc-list ol.toc-list ol.toc-list a {
+    padding-left: 40px;
 }
 nav.toc a:hover {
     background-color: var(--toc-hover-color);
@@ -1053,7 +1057,7 @@ input[type="text"] {
 }
 input#page-search-input {
     width: calc(180px + 10vw);
-    margin: 0;
+    margin: 10px 0;
 }
 input#search-input {
     width: 270px;
@@ -1101,7 +1105,7 @@ input:focus::placeholder {
     color: transparent;
 }
 select#search-modules {
-    margin: 0 10px 0 2px;
+    margin: 0 10px 10px 2px;
     font-size: var(--nav-font-size);
     padding: 3px 5px;
     border-radius: 4px;
@@ -1329,49 +1333,48 @@ a.anchor-link > img {
  * Styles for copy-to-clipboard buttons
  */
 button.copy {
-    opacity: 60%;
-    border: none;
+    font-size: var(--nav-font-size);
+    line-height: 1.2;
+    padding:0.3em;
+    background-color: transparent;
+    border: 1px solid transparent;
     border-radius: 3px;
     position: relative;
-    background:none;
-    transition: opacity 0.3s;
+    opacity: 80%;
+    transition: all 0.1s ease;
     cursor: pointer;
-}
-:hover > button.copy {
-    opacity: 70%;
 }
 button.copy:hover,
 button.copy:active,
-button.copy:focus-visible,
+button.copy:focus,
 button.copy.visible {
     opacity: 100%;
+    background-color: inherit;
+    border-color: var(--button-border-color);
+    filter: var(--button-focus-filter);
+}
+button.copy:active {
+    filter: var(--button-active-filter);
 }
 button.copy img {
     position: relative;
-    background: none;
-    filter: brightness(var(--copy-icon-brightness));
-}
-button.copy:active {
-    background-color: var(--copy-button-background-color-active);
 }
 button.copy span {
     color: var(--body-text-color);
     position: relative;
+    padding: 0.2em;
     top: -0.1em;
-    transition: all 0.1s;
-    font-size: 0.76rem;
-    line-height: 1.2;
+    transition: opacity 0.1s ease;
     opacity: 0;
 }
 button.copy:hover span,
-button.copy:focus-visible span,
+button.copy:focus span,
 button.copy.visible span {
     opacity: 100%;
 }
 /* search page copy button */
 button#page-search-copy {
     margin-left: 0.4em;
-    padding:0.3em;
     top:0.13em;
 }
 button#page-search-copy img {
@@ -1381,35 +1384,22 @@ button#page-search-copy img {
     top: 0.15em;
 }
 button#page-search-copy span {
-    color: var(--body-text-color);
-    line-height: 1.2;
-    padding: 0.2em;
     top: -0.18em;
-}
-div.page-search-info:hover button#page-search-copy span {
-    opacity: 100%;
 }
 /* snippet copy button */
 button.snippet-copy {
     position: absolute;
-    top: 6px;
-    right: 6px;
-    height: 1.7em;
-    padding: 2px;
+    top: 2px;
+    right: 2px;
+    height: 32px;
 }
 button.snippet-copy img {
     width: 18px;
     height: 18px;
-    padding: 0.05em 0;
+    padding: 2px 0;
 }
 button.snippet-copy span {
-    line-height: 1.2;
-    padding: 0.2em;
-    position: relative;
-    top: -0.5em;
-}
-div.snippet-container button.snippet-copy:hover span {
-    opacity: 100%;
+    top: -7px;
 }
 /*
  * Styles for user-provided tables.
@@ -1667,15 +1657,8 @@ pre.snippet {
 }
 div.snippet-container {
     position: relative;
-}
-@media screen and (max-width: 800px) {
-    pre.snippet {
-        padding-top: 26px;
-    }
-    button.snippet-copy {
-        top: 4px;
-        right: 4px;
-    }
+    padding-right: 30px;
+    background-color: var(--snippet-background-color);
 }
 pre.snippet .italic {
     font-style: italic;

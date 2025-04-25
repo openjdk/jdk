@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,15 @@ public class AddOpens {
     private static Path moduleDir2 = null;
     private static Path destJar = null;
 
+    private static String addOpensArg = "java.base/java.lang=" + TEST_MODULE1;
+    private static String addOpensAllUnnamed = "java.base/java.lang=ALL-UNNAMED";
+    private static String extraOpts[][] =
+        {{"-Xlog:cds", "-Xlog:cds"},
+         {"--add-opens", addOpensArg}};
+    private static String expectedOutput[] =
+        { "[class,load] com.simple.Main source: shared objects file",
+          "method.setAccessible succeeded!"};
+
     public static void buildTestModule() throws Exception {
 
         // javac -d mods/$TESTMODULE --module-path MOD_DIR src/$TESTMODULE/**
@@ -79,28 +88,45 @@ public class AddOpens {
         // compile the modules and create the modular jar files
         buildTestModule();
         String appClasses[] = {MAIN_CLASS};
-        // create an archive with both -cp and --module-path in the command line.
-        // Only the class in the modular jar in the --module-path will be archived;
-        // the class in the modular jar in the -cp won't be archived.
-        OutputAnalyzer output = TestCommon.createArchive(
-                                        destJar.toString(), appClasses,
-                                        "--module-path", moduleDir.toString(),
-                                        "-m", TEST_MODULE1);
+        OutputAnalyzer output;
+
+        for (int i = 0; i < 2; i++) {
+            // create an archive with both -cp and --module-path, and with the
+            // --add-opens option if i == 1, in the command line.
+            // Only the class in the modular jar in the --module-path will be archived;
+            // the class in the modular jar in the -cp won't be archived.
+            output = TestCommon.createArchive(
+                             destJar.toString(), appClasses,
+                             extraOpts[i][0], extraOpts[i][1],
+                             "--module-path", moduleDir.toString(),
+                             "-m", TEST_MODULE1);
+            TestCommon.checkDump(output);
+
+            // run with the archive using the same command line as in dump time
+            // plus the "--add-opens java.base/java.lang=com.simple" option.
+            // The main class should be loaded from the archive.
+            // The setaccessible(true) on the ClassLoader.defineClass method should
+            // be successful.
+            TestCommon.run( "-Xlog:class+load=trace",
+                            "-cp", destJar.toString(),
+                            "--add-opens", addOpensArg,
+                            "--module-path", moduleDir.toString(),
+                            "-m", TEST_MODULE1, "with_add_opens")
+                    .assertNormalExit(expectedOutput[0], expectedOutput[1]);
+        }
+
+        // Test --add-opens to ALL-UNNAMED modules
+        output = TestCommon.createArchive(
+                         destJar.toString(), appClasses,
+                         "--add-opens", addOpensAllUnnamed,
+                         MAIN_CLASS);
         TestCommon.checkDump(output);
 
-        // run with the archive using the same command line as in dump time
-        // plus the "--add-opens java.base/java.lang=com.simple" option.
-        // The main class should be loaded from the archive.
-        // The setaccessible(true) on the ClassLoader.defineClass method should
-        // be successful.
         TestCommon.run( "-Xlog:class+load=trace",
                         "-cp", destJar.toString(),
-                        "--add-opens", "java.base/java.lang=" + TEST_MODULE1,
-                        "--module-path", moduleDir.toString(),
-                        "-m", TEST_MODULE1, "with_add_opens")
-            .assertNormalExit(
-                "[class,load] com.simple.Main source: shared objects file",
-                "method.setAccessible succeeded!");
+                        "--add-opens", addOpensAllUnnamed,
+                        MAIN_CLASS, "with_add_opens")
+                .assertNormalExit(expectedOutput[0], expectedOutput[1]);
 
     }
 }
