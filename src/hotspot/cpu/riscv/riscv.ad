@@ -1948,7 +1948,7 @@ bool Matcher::supports_vector_calling_convention(void) {
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
-  assert(EnableVectorSupport && UseVectorStubs, "sanity");
+  assert(EnableVectorSupport, "sanity");
   assert(ideal_reg == Op_VecA, "sanity");
   // check more info at https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-cc.adoc
   int lo = V8_num;
