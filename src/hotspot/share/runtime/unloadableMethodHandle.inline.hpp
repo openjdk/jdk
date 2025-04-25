@@ -33,12 +33,11 @@
 #include "oops/weakHandle.inline.hpp"
 
 inline UnloadableMethodHandle::UnloadableMethodHandle(Method* method) {
+  assert(method != nullptr, "Should be");
   _method = method;
-  if (method != nullptr) {
-    oop obj = get_unload_blocker(method);
-    if (obj != nullptr) {
-      _weak_handle = WeakHandle(Universe::vm_weak(), obj);
-    }
+  oop obj = get_unload_blocker(method);
+  if (obj != nullptr) {
+    _weak_handle = WeakHandle(Universe::vm_weak(), obj);
   }
 }
 
