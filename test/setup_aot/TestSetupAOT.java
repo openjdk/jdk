@@ -157,7 +157,7 @@ public class TestSetupAOT {
         execTool("jar", "tvf", jarOutput)
             .shouldContain("META-INF/MANIFEST.MF");
         execTool("jar", "--describe-module", "--file=" + jarOutput)
-            .shouldMatch("Unable to derive module descriptor for: .*/tmp.jar");
+            .shouldMatch("Unable to derive module descriptor for: .*tmp.jar");
         deleteAll(jarOutput);
 
         // ------------------------------
