@@ -77,8 +77,8 @@ void ShenandoahRegulatorThread::regulate_young_and_old_cycles() {
           _young_heuristics->cancel_trigger_request();
           _old_heuristics->cancel_trigger_request();
         } else if (start_young_cycle()) {
-            log_debug(gc)("Heuristics request for young collection accepted");
-            _young_heuristics->cancel_trigger_request();
+          log_debug(gc)("Heuristics request for young collection accepted");
+          _young_heuristics->cancel_trigger_request();
         }
       }
     } else if (mode == ShenandoahGenerationalControlThread::servicing_old) {
