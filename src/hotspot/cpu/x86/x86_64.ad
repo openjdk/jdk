@@ -1596,14 +1596,11 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 //=============================================================================
 
 bool Matcher::supports_vector_calling_convention(void) {
-  if (EnableVectorSupport && UseVectorStubs) {
-    return true;
-  }
-  return false;
+  return EnableVectorSupport;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
-  assert(EnableVectorSupport && UseVectorStubs, "sanity");
+  assert(EnableVectorSupport, "sanity");
   int lo = XMM0_num;
   int hi = XMM0b_num;
   if (ideal_reg == Op_VecX) hi = XMM0d_num;

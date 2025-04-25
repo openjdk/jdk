@@ -3786,11 +3786,6 @@ jint Arguments::apply_ergo() {
       }
     }
     FLAG_SET_DEFAULT(EnableVectorAggressiveReboxing, false);
-
-    if (!FLAG_IS_DEFAULT(UseVectorStubs) && UseVectorStubs) {
-      warning("Disabling UseVectorStubs since EnableVectorSupport is turned off.");
-    }
-    FLAG_SET_DEFAULT(UseVectorStubs, false);
   }
 #endif // COMPILER2_OR_JVMCI
 

@@ -2306,11 +2306,11 @@ const RegMask* Matcher::predicate_reg_mask(void) {
 }
 
 bool Matcher::supports_vector_calling_convention(void) {
-  return EnableVectorSupport && UseVectorStubs;
+  return EnableVectorSupport;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
-  assert(EnableVectorSupport && UseVectorStubs, "sanity");
+  assert(EnableVectorSupport, "sanity");
   int lo = V0_num;
   int hi = V0_H_num;
   if (ideal_reg == Op_VecX || ideal_reg == Op_VecA) {
