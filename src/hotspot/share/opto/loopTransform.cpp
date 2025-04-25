@@ -539,6 +539,10 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
     // every path through the loop.
     test = phase->idom(test);
   }
+  if (StressLoopPeeling && phase->C->random() % 2 == 0) {
+    // Let's go crazy! No good reason to peel, but no good reason not to, so let's!
+    return estimate;
+  }
   return 0;
 }
 
