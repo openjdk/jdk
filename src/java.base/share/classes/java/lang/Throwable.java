@@ -706,7 +706,7 @@ public class Throwable implements Serializable {
 
                 // Print suppressed exceptions, if any
                 for (Throwable se : suppressed)
-                    se.printEnclosedStackTrace(s, trace, "\t".concat(SUPPRESSED_CAPTION), "\t", dejaVu);
+                    se.printEnclosedStackTrace(s, trace, "\t" + SUPPRESSED_CAPTION, "\t", dejaVu);
 
                 // Print cause, if any
 
@@ -738,11 +738,10 @@ public class Throwable implements Serializable {
             while (m >= 0 && n >=0 && trace[m].equals(enclosingTrace[n])) {
                 m--; n--;
             }
-            int framesInCommon = trace.length - 1 - m;
 
             // Print our stack trace
             s.println(prefixCaption.concat(this.toString()));
-            printStackTrace0(s, prefix, trace, m, framesInCommon);
+            printStackTrace0(s, prefix, trace, m);
 
             // Print suppressed exceptions, if any
             for (Throwable se : getSuppressed())
@@ -771,7 +770,7 @@ public class Throwable implements Serializable {
      * Use a StringBuilder to print multiple StackTraceElements
      */
     private static void printStackTrace0(PrintStreamOrWriter printer, StackTraceElement[] trace) {
-        printStackTrace0(printer, null, trace, trace.length - 1, 0);
+        printStackTrace0(printer, null, trace, trace.length - 1);
     }
 
     /**
@@ -781,8 +780,7 @@ public class Throwable implements Serializable {
             PrintStreamOrWriter printer,
             String prefix,
             StackTraceElement[] trace,
-            int traceEnd,
-            int framesInCommon) {
+            int traceEnd) {
         var sb = new StringBuilder(128);
         if (prefix != null) {
             sb.append(prefix);
@@ -797,6 +795,7 @@ public class Throwable implements Serializable {
                             .appendTo(sb));
         }
 
+        int framesInCommon = trace.length - 1 - traceEnd;
         if (framesInCommon != 0) {
             sb.setLength(prefix == null ? 0 : prefix.length());
             printer.println(
