@@ -86,7 +86,7 @@ ATTRIBUTE_ALIGNED(4) static const juint _NEG_INF[] =
     0, 4293918720
 };
 
-ATTRIBUTE_ALIGNED(4) static const juint _coeff_table[] =
+ATTRIBUTE_ALIGNED(16) static const juint _coeff_table[] =
 {
     1553778919, 3213899486, 3534952507, 3215266280, 1646371399,
     3214412045, 477218588,  3216798151, 3582521621, 1066628362,
@@ -223,7 +223,7 @@ address StubGenerator::generate_libmCbrt() {
   __ movsd(xmm2, ExternalAddress(SIG_MASK), r11 /*rscratch*/);
   __ andl(rcx, 248);
   __ lea(r8, ExternalAddress(rcp_table));
-  __ movsd(xmm4, Address(r8, RegisterOrConstant(rcx)));
+  __ movsd(xmm4, Address(r8, rcx, Address::times_1));
   __ movq(r9, rax);
   __ andl(rdx, rax);
   __ cmpl(rdx, 0);
@@ -260,10 +260,10 @@ address StubGenerator::generate_libmCbrt() {
   __ subsd(xmm1, xmm3);
   __ movq(xmm3, xmm7);
   __ lea(r8, ExternalAddress(cbrt_table));
-  __ mulsd(xmm7, Address(r8, RegisterOrConstant(rcx)));
+  __ mulsd(xmm7, Address(r8, rcx, Address::times_1));
   __ mulsd(xmm1, xmm4);
   __ lea(r8, ExternalAddress(D_table));
-  __ mulsd(xmm3, Address(r8, RegisterOrConstant(rcx)));
+  __ mulsd(xmm3, Address(r8, rcx, Address::times_1));
   __ movapd(xmm4, xmm1);
   __ unpcklpd(xmm1, xmm1);
   __ mulpd(xmm5, xmm1);
@@ -292,7 +292,7 @@ address StubGenerator::generate_libmCbrt() {
   __ movdl(rax, xmm7);
   __ andl(rcx, 248);
   __ lea(r8, ExternalAddress(rcp_table));
-  __ movsd(xmm4, Address(r8, RegisterOrConstant(rcx)));
+  __ movsd(xmm4, Address(r8, rcx, Address::times_1));
   __ movq(r9, rax);
   __ andl(rdx, rax);
   __ shrl(rdx, 8);
