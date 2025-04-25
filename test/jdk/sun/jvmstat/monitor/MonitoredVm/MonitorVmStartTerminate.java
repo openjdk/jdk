@@ -75,7 +75,7 @@ public final class MonitorVmStartTerminate {
 
     private static final int PROCESS_COUNT = 10;
     private static final int ARGS_ATTEMPTS = 5;
-    private static final int REMOVE_TIMEOUT = 2000;
+    private static final int REMOVE_TIMEOUT_SECONDS = 300;
 
     public static void main(String... args) throws Exception {
 
@@ -254,14 +254,14 @@ public final class MonitorVmStartTerminate {
         private static void waitForRemoval(Path path) {
             String timeoutFactorText = System.getProperty("test.timeout.factor", "1.0");
             double timeoutFactor = Double.parseDouble(timeoutFactorText);
-            long timeoutNanos = 1000_000_000L*(long)(REMOVE_TIMEOUT * timeoutFactor);
+            long timeoutNanos = 1000_000_000L*(long)(REMOVE_TIMEOUT_SECONDS * timeoutFactor);
             long start = System.nanoTime();
             System.out.println("Waiting for " + path + " to be removed");
             while (true) {
                 long now = System.nanoTime();
                 long waited = now - start;
                 if (!Files.exists(path)) {
-                    System.out.println("waitForRemoval: " + path + " has been removed");
+                    System.out.println("waitForRemoval: " + path + " has been removed in " + waited + " ns");
                     return;
                 }
                 if (waited > timeoutNanos) {
