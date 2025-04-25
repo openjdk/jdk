@@ -527,7 +527,12 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
              "Check this code when new subtype is added");
       // Condition is not a member of this loop?
       if (!is_member(phase->get_loop(ctrl)) && is_loop_exit(test)) {
-        return estimate;    // Found reason to peel!
+        // Found reason to peel!...
+        if (StressLoopPeeling && phase->C->random() % 2 == 0) {
+          // ...but sometimes, let's not, just to see what happens.
+          return 0;
+        }
+        return estimate;
       }
     }
     // Walk up dominators to loop _head looking for test which is executed on
