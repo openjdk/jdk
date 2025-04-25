@@ -396,16 +396,16 @@ void ArenaStatCounter::print_peak_state_on(outputStream* st) const {
 #ifdef COMPILER2
     // C2: print counters and timeline on multiple lines, indented
     if (_comp_type == CompilerType::compiler_c2) {
-      streamIndentor si(st, 4);
+      StreamAutoIndentor sai(st, 4);
       st->cr();
       st->print_cr("--- Arena Usage by Arena Type and compilation phase, at arena usage peak of %zu ---", _peak);
       {
-        streamIndentor si(st, 4);
+        StreamAutoIndentor sai(st, 4);
        _counters_at_global_peak.print_on(st);
       }
       st->print_cr("--- Allocation timelime by phase ---");
       {
-        streamIndentor si(st, 4);
+        StreamAutoIndentor sai(st, 4);
         _timeline.print_on(st);
       }
       st->print_cr("---");
@@ -825,7 +825,6 @@ void CompilationMemoryStatistic::on_end_compilation() {
   if (print) {
     // Pre-assemble string to prevent tearing
     stringStream ss;
-    StreamAutoIndentor sai(&ss);
     ss.print("%s (%d) (%s) Arena usage ", compilertype2name(arena_stat->comp_type()), arena_stat->comp_id(), result);
     arena_stat->fmn().print_on(&ss);
     ss.print_raw(": ");
