@@ -30,16 +30,16 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.RecordComponentVisitor;
 
 /*
-This is class is a dumper for the original OOMCrashClass4000_1.class, i.e. its dump() method
+This is class is a dumper for the original OOMCrashClass1960_2.class, i.e. its dump() method
 produces a byte array with the original class file data.
 
 To get this source code, one needs to run the following command:
-java jdk.internal.org.objectweb.asm.util.ASMifier OOMCrashClass4000_1.class >> OOMCrashClass4000_1.java
+java jdk.internal.org.objectweb.asm.util.ASMifier OOMCrashClass1960_2.class >> OOMCrashClass1960_2.java
 
 The resulting java source code is large (>2 mb), so certain refactoring is applied.
  */
 
-public class OOMCrashClass4000_1 implements Opcodes {
+public class OOMCrashClass1960_2 implements Opcodes {
 
     public static byte[] dump() throws Exception {
 
@@ -49,7 +49,7 @@ public class OOMCrashClass4000_1 implements Opcodes {
         MethodVisitor methodVisitor;
         AnnotationVisitor annotationVisitor0;
 
-        classWriter.visit(V1_1, ACC_PUBLIC | ACC_SUPER, "OOMCrashClass4000_1", null, "java/applet/Applet", null);
+        classWriter.visit(V1_1, ACC_PUBLIC | ACC_SUPER, "OOMCrashClass1960_2", null, "java/applet/Applet", null);
 
         classWriter.visitSource("<generated>", null);
 
@@ -72,28 +72,28 @@ public class OOMCrashClass4000_1 implements Opcodes {
             // This line overflows the jump target for jsr
 
             Label prevLabel = label2;
-            for (int i = 0; i < 3999; ++i) {
+            for (int i = 0; i < 1959; ++i) {
                 Label curLabel = getCurLabel(methodVisitor, prevLabel);
                 prevLabel = curLabel;
             }
 
-            Label label11997 = prevLabel;
+            Label label5877 = prevLabel;
 
             methodVisitor.visitLabel(label1);
             methodVisitor.visitVarInsn(ILOAD, 1);
-            methodVisitor.visitJumpInsn(IFEQ, label11997);
-            Label label12000 = new Label();
-            methodVisitor.visitJumpInsn(JSR, label12000);
-            Label label12001 = new Label();
-            methodVisitor.visitJumpInsn(GOTO, label12001);
-            methodVisitor.visitLabel(label12000);
+            methodVisitor.visitJumpInsn(IFEQ, label5877);
+            Label label5880 = new Label();
+            methodVisitor.visitJumpInsn(JSR, label5880);
+            Label label5881 = new Label();
+            methodVisitor.visitJumpInsn(GOTO, label5881);
+            methodVisitor.visitLabel(label5880);
             methodVisitor.visitInsn(RETURN);
-            methodVisitor.visitLabel(label12001);
+            methodVisitor.visitLabel(label5881);
             methodVisitor.visitInsn(ACONST_NULL);
             methodVisitor.visitJumpInsn(GOTO, label1);
-            Label label12002 = new Label();
-            methodVisitor.visitLabel(label12002);
-            methodVisitor.visitLocalVariable("argv", "[Ljava/lang/String;", null, label0, label12002, 0);
+            Label label5882 = new Label();
+            methodVisitor.visitLabel(label5882);
+            methodVisitor.visitLocalVariable("argv", "[Ljava/lang/String;", null, label0, label5882, 0);
             methodVisitor.visitMaxs(65535, 2);
             methodVisitor.visitEnd();
         }
@@ -107,7 +107,7 @@ public class OOMCrashClass4000_1 implements Opcodes {
             methodVisitor.visitInsn(RETURN);
             Label label1 = new Label();
             methodVisitor.visitLabel(label1);
-            methodVisitor.visitLocalVariable("this", "LOOMCrashClass4000_1;", null, label0, label1, 0);
+            methodVisitor.visitLocalVariable("this", "LOOMCrashClass1960_2;", null, label0, label1, 0);
             methodVisitor.visitMaxs(1, 1);
             methodVisitor.visitEnd();
         }

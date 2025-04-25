@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
  * @bug 8016029
  * @requires vm.flagless
  * @library /test/lib
- * @compile OOMCrashClass1960_2.jasm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  *          java.desktop
  *          java.management
@@ -45,17 +45,28 @@
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import java.io.File;
+import java.nio.file.Files;
+
 public class OomWhileParsingRepeatedJsr {
 
     public static void main(String[] args) throws Exception {
 
-        // ======= Compiled from jasm
         String className = "OOMCrashClass1960_2";
+
+        // create a file in the scratch dir
+        File classFile = new File(className + ".class");
+        classFile.createNewFile();
+
+        // fill it with the binary data of the class file
+        byte[] bytes = OOMCrashClass1960_2.dump();
+        Files.write(classFile.toPath(), bytes);
 
         // ======= execute the test
         // We run the test with MallocLimit set to 768m in oom mode,
         // in order to trigger and observe a fake os::malloc oom. This needs NMT.
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-cp", ".",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:NativeMemoryTracking=summary",
             "-XX:MallocLimit=768m:oom",
