@@ -326,7 +326,7 @@ bool FileMapInfo::validate_class_location() {
 
   if (header()->has_full_module_graph() && has_extra_module_paths) {
     CDSConfig::stop_using_optimized_module_handling();
-    log_info(cds)("optimized module handling: disabled because extra module path(s) are specified");
+    MetaspaceShared::report_loading_error("optimized module handling: disabled because extra module path(s) are specified");
   }
 
   if (CDSConfig::is_dumping_dynamic_archive()) {
@@ -1253,7 +1253,7 @@ char* FileMapInfo::map_bitmap_region() {
   char* bitmap_base = map_memory(_fd, _full_path, r->file_offset(),
                                  requested_addr, r->used_aligned(), read_only, allow_exec, mtClassShared);
   if (bitmap_base == nullptr) {
-    log_info(cds)("failed to map relocation bitmap");
+    MetaspaceShared::report_loading_error("failed to map relocation bitmap");
     return nullptr;
   }
 
@@ -1415,9 +1415,9 @@ void FileMapInfo::map_or_load_heap_region() {
       success = ArchiveHeapLoader::load_heap_region(this);
     } else {
       if (!UseCompressedOops && !ArchiveHeapLoader::can_map()) {
-        log_info(cds)("Cannot use CDS heap data. Selected GC not compatible -XX:-UseCompressedOops");
+        MetaspaceShared::report_loading_error("Cannot use CDS heap data. Selected GC not compatible -XX:-UseCompressedOops");
       } else {
-        log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC, UseParallelGC, or UseShenandoahGC are required.");
+        MetaspaceShared::report_loading_error("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC, UseParallelGC, or UseShenandoahGC are required.");
       }
     }
   }
@@ -1596,7 +1596,7 @@ bool FileMapInfo::map_heap_region_impl() {
   // allocate from java heap
   HeapWord* start = G1CollectedHeap::heap()->alloc_archive_region(word_size, (HeapWord*)requested_start);
   if (start == nullptr) {
-    log_info(cds)("UseSharedSpaces: Unable to allocate java heap region for archive heap.");
+    MetaspaceShared::report_loading_error("UseSharedSpaces: Unable to allocate java heap region for archive heap.");
     return false;
   }
 
@@ -1631,7 +1631,7 @@ bool FileMapInfo::map_heap_region_impl() {
 
     if (VerifySharedSpaces && !r->check_region_crc(base)) {
       dealloc_heap_region();
-      log_info(cds)("UseSharedSpaces: mapped heap region is corrupt");
+      MetaspaceShared::report_loading_error("UseSharedSpaces: mapped heap region is corrupt");
       return false;
     }
   }
@@ -1655,7 +1655,7 @@ bool FileMapInfo::map_heap_region_impl() {
   if (_heap_pointers_need_patching) {
     char* bitmap_base = map_bitmap_region();
     if (bitmap_base == nullptr) {
-      log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
+      MetaspaceShared::report_loading_error("CDS heap cannot be used because bitmap region cannot be mapped");
       dealloc_heap_region();
       _heap_pointers_need_patching = false;
       return false;
@@ -1768,16 +1768,16 @@ bool FileMapInfo::open_as_input() {
     // are replaced at runtime by JVMTI ClassFileLoadHook. All of those classes are resolved
     // during the JVMTI "early" stage, so we can still use CDS if
     // JvmtiExport::has_early_class_hook_env() is false.
-    log_info(cds)("CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
+    MetaspaceShared::report_loading_error("CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
     return false;
   }
 
   if (!open_for_read() || !init_from_file(_fd) || !validate_header()) {
     if (_is_static) {
-      log_info(cds)("Loading static archive failed.");
+      MetaspaceShared::report_loading_error("Loading static archive failed.");
       return false;
     } else {
-      log_info(cds)("Loading dynamic archive failed.");
+      MetaspaceShared::report_loading_error("Loading dynamic archive failed.");
       if (AutoCreateSharedArchive) {
         CDSConfig::enable_dumping_dynamic_archive(_full_path);
       }
@@ -1939,7 +1939,7 @@ bool FileMapHeader::validate() {
 
   if (!_use_optimized_module_handling && !CDSConfig::is_dumping_final_static_archive()) {
     CDSConfig::stop_using_optimized_module_handling();
-    log_info(cds)("optimized module handling: disabled because archive was created without optimized module handling");
+    MetaspaceShared::report_loading_error("optimized module handling: disabled because archive was created without optimized module handling");
   }
 
   if (is_static()) {
