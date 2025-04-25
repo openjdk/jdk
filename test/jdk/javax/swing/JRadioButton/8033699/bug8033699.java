@@ -62,7 +62,7 @@ public class bug8033699 {
         SwingUtilities.invokeAndWait(() -> {
             focusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         });
-        // Get all installed Look and Feels
+
         UIManager.LookAndFeelInfo[] lafs = UIManager.getInstalledLookAndFeels();
         for (UIManager.LookAndFeelInfo laf : lafs) {
             testLaF(laf);
