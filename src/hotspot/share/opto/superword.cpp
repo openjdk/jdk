@@ -2676,7 +2676,12 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
     MemNode* p0 = vtn->nodes().at(0)->as_Mem();
 
     int vw = p0->memory_size() * vtn->nodes().length();
-    if (vw > max_aw) {
+    // Generally, we prefer to align with the largest memory op (load or store).
+    // If there are multiple, then SuperWordAutomaticAlignment determines if we
+    // prefer loads or stores.
+    bool prefer_store = mem_ref != nullptr && SuperWordAutomaticAlignment == 1 && mem_ref->is_Load() && p0->is_Store();
+    bool prefer_load  = mem_ref != nullptr && SuperWordAutomaticAlignment == 2 && mem_ref->is_Store() && p0->is_Load();
+    if (vw > max_aw || (vw == max_aw && (prefer_load && prefer_store))) {
       max_aw = vw;
       mem_ref = p0;
     }
@@ -2703,6 +2708,16 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   determine_mem_ref_and_aw_for_main_loop_alignment();
   const MemNode* align_to_ref = _mem_ref_for_main_loop_alignment;
   const int aw                = _aw_for_main_loop_alignment;
+
+  if (!VLoop::vectors_should_be_aligned() && SuperWordAutomaticAlignment == 0) {
+#ifdef ASSERT
+    if (_trace._align_vector) {
+      tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors: disabled.");
+    }
+#endif
+    return;
+  }
+
   assert(align_to_ref != nullptr && aw > 0, "must have alignment reference and aw");
   assert(cl()->is_main_loop(), "can only do alignment for main loop");
 
