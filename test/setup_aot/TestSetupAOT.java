@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import static java.util.stream.Collectors.*;
@@ -81,6 +83,17 @@ public class TestSetupAOT {
             for (String s : substrings) {
                 if (!output.contains(s)) {
                     throw new RuntimeException("\"" + s + "\" missing from tool output");
+                }
+            }
+
+            return this;
+        }
+
+        ToolOutput shouldMatch(String... regexps) {
+            for (String regexp : regexps) {
+                Pattern pattern = Pattern.compile(regexp, Pattern.MULTILINE);
+                if (!pattern.matcher(output).find()) {
+                    throw new RuntimeException("Pattern \"" + regexp + "\" missing from tool output");
                 }
             }
 
@@ -144,7 +157,7 @@ public class TestSetupAOT {
         execTool("jar", "tvf", jarOutput)
             .shouldContain("META-INF/MANIFEST.MF");
         execTool("jar", "--describe-module", "--file=" + jarOutput)
-            .shouldContain("Unable to derive module descriptor for: ./tmp.jar");
+            .shouldMatch("Unable to derive module descriptor for: .*/tmp.jar");
         deleteAll(jarOutput);
 
         // ------------------------------
