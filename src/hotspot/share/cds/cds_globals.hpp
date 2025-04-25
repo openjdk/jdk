@@ -141,6 +141,9 @@
   product(bool, AOTVerifyTrainingData, trueInDebug, DIAGNOSTIC,             \
           "Verify archived training data")                                  \
                                                                             \
+  product(bool, AOTCompileEagerly, false, DIAGNOSTIC,                       \
+          "Compile methods as soon as possible")                            \
+                                                                            \
 // end of CDS_FLAGS
 
 DECLARE_FLAGS(CDS_FLAGS)

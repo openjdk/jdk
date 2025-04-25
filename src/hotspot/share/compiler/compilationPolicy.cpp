@@ -148,15 +148,17 @@ void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, TRAPS
       guarantee(ktd->has_holder(), "");
       ktd->notice_fully_initialized(); // sets klass->has_init_deps_processed bit
       assert(klass->has_init_deps_processed(), "");
-      ktd->iterate_comp_deps([&](CompileTrainingData* ctd) {
-        if (ctd->init_deps_left() == 0) {
-          MethodTrainingData* mtd = ctd->method();
-          if (mtd->has_holder()) {
-            const methodHandle mh(THREAD, const_cast<Method*>(mtd->holder()));
-            CompilationPolicy::maybe_compile_early(mh, THREAD);
+      if (AOTCompileEagerly) {
+        ktd->iterate_comp_deps([&](CompileTrainingData* ctd) {
+          if (ctd->init_deps_left() == 0) {
+            MethodTrainingData* mtd = ctd->method();
+            if (mtd->has_holder()) {
+              const methodHandle mh(THREAD, const_cast<Method*>(mtd->holder()));
+              CompilationPolicy::maybe_compile_early(mh, THREAD);
+            }
           }
-        }
-      });
+        });
+      }
     }
   }
 }
