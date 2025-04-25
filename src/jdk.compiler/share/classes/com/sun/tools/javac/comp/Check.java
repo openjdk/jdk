@@ -5737,14 +5737,14 @@ public class Check {
                         VarSymbol lastParam = ms.params.head;
                         for (VarSymbol param: ms.params) {
                             if (param.attribute(syms.requiresIdentityType.tsym) != null && argExps.head.type.isValueBased()) {
-                                lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected(argExps.head.type));
+                                lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
                             }
                             lastParam = param;
                             argExps = argExps.tail;
                         }
                         while (argExps != null && !argExps.isEmpty() && lastParam != null) {
                             if (lastParam.attribute(syms.requiresIdentityType.tsym) != null && argExps.head.type.isValueBased()) {
-                                lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected(argExps.head.type));
+                                lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
                             }
                             argExps = argExps.tail;
                         }
@@ -5772,7 +5772,7 @@ public class Check {
             // we need to avoid recursion due to self referencing type vars or captures, this is why we need a set
             requiresIdentityVisitor.visit(t, new HashSet<>());
             if (requiresIdentityVisitor.requiresWarning) {
-                lint.logIfEnabled(pos, LintWarnings.AttemptToUseValueBasedWhereIdentityExpected(t));
+                lint.logIfEnabled(pos, LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
                 return true;
             }
         }
@@ -5780,7 +5780,7 @@ public class Check {
     }
 
     // where
-    class RequiresIdentityVisitor extends Types.SimpleVisitor<Void, Set<Type>> {
+    private class RequiresIdentityVisitor extends Types.SimpleVisitor<Void, Set<Type>> {
         boolean requiresWarning = false;
 
         @Override
@@ -5850,8 +5850,7 @@ public class Check {
                     if (typeParamTrees.get(ta.position.parameter_index).type.isValueBased())
                         lint.logIfEnabled(
                                 typeParamTrees.get(ta.position.parameter_index).pos(),
-                                CompilerProperties.LintWarnings
-                                        .AttemptToUseValueBasedWhereIdentityExpected(typeParamTrees.get(ta.position.parameter_index).type)
+                                CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected
                         );
         }
     }
