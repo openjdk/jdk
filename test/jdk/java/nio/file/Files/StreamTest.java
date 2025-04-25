@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @build PassThroughFileSystem FaultyFileSystem
  * @run testng StreamTest
  * @summary Unit test for java.nio.file.Files methods that return a Stream
- * @requires (os.family == "linux")
  */
 
 import java.io.IOException;
@@ -537,13 +536,15 @@ public class StreamTest {
     }
 
     public void testProcFile() throws IOException {
-        Path path = Paths.get("/proc/cpuinfo");
-        if (Files.exists(path)) {
-            String NEW_LINE = System.getProperty("line.separator");
-            String s =
-                Files.lines(path).collect(Collectors.joining(NEW_LINE));
-            if (s.length() == 0) {
-                fail("Files.lines(\"" + path + "\") returns no data");
+        if (System.getProperty("os.name").equals("Linux")) {
+            Path path = Paths.get("/proc/cpuinfo");
+            if (Files.exists(path)) {
+                String NEW_LINE = System.getProperty("line.separator");
+                String s =
+                    Files.lines(path).collect(Collectors.joining(NEW_LINE));
+                if (s.length() == 0) {
+                    fail("Files.lines(\"" + path + "\") returns no data");
+                }
             }
         }
     }
