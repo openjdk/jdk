@@ -171,11 +171,15 @@ void BootstrapInfo::resolve_args(TRAPS) {
         // potential recursion point condy -> condy
         bool found_it = false;
         _pool->find_cached_constant_at(arg_index, found_it, CHECK);
-        if (!found_it) { found_unresolved_condy = true; break; }
+        if (!found_it) {
+          found_unresolved_condy = true;
+          break;
+        }
       }
     }
-    if (found_unresolved_condy)
+    if (found_unresolved_condy) {
       use_BSCI = true;
+    }
   }
 
   const int SMALL_ARITY = 5;
@@ -188,10 +192,14 @@ void BootstrapInfo::resolve_args(TRAPS) {
       bool found_it = false;
       int arg_index = attr->argument_index(i);
       _pool->find_cached_constant_at(arg_index, found_it, CHECK);
-      if (!found_it) { all_resolved = false; break; }
+      if (!found_it) {
+        all_resolved = false;
+        break;
+      }
     }
-    if (all_resolved)
+    if (all_resolved) {
       use_BSCI = false;
+    }
   }
 
   if (!use_BSCI) {

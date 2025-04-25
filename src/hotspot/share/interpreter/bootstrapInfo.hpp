@@ -43,7 +43,7 @@ class BootstrapInfo : public StackObj {
   Handle      _name_arg;        // resolved String
   Handle      _type_arg;        // resolved Class or MethodType
   Handle      _arg_values;      // array of static arguments; null implies either
-                                // uresolved or zero static arguments are specified
+                                // unresolved or zero static arguments are specified
 
   // post-bootstrap resolution state:
   bool        _is_resolved;       // set true when any of the next fields are set
