@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import javax.xml.XMLConstants;
-import javax.xml.catalog.CatalogFeatures.Feature;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
@@ -404,10 +403,11 @@ public final class XMLSchemaFactory extends SchemaFactory {
         }
         try {
             /** Check to see if the property is managed by the security manager **/
-            String propertyValue = (fSecurityManager != null) ?
-                    fSecurityManager.getLimitAsString(name) : null;
-            return propertyValue != null ? propertyValue :
-                    fXMLSchemaLoader.getProperty(name);
+            String value;
+            if ((value = JdkXmlUtils.getProperty(fSecurityManager, fSecurityPropertyMgr, name)) != null) {
+                return value;
+            }
+            return fXMLSchemaLoader.getProperty(name);
         }
         catch (XMLConfigurationException e) {
             String identifier = e.getIdentifier();
@@ -513,15 +513,9 @@ public final class XMLSchemaFactory extends SchemaFactory {
                     "property-not-supported", new Object [] {name}));
         }
         try {
-            //check if the property is managed by security manager
-            if (fSecurityManager == null ||
-                    !fSecurityManager.setLimit(name, JdkProperty.State.APIPROPERTY, object)) {
-                //check if the property is managed by security property manager
-                if (fSecurityPropertyMgr == null ||
-                        !fSecurityPropertyMgr.setValue(name, FeaturePropertyBase.State.APIPROPERTY, object)) {
-                    //fall back to the existing property manager
-                    fXMLSchemaLoader.setProperty(name, object);
-                }
+            if (!JdkXmlUtils.setProperty(fSecurityManager, fSecurityPropertyMgr, name, object)) {
+                //fall back to the existing property manager
+                fXMLSchemaLoader.setProperty(name, object);
             }
         }
         catch (XMLConfigurationException e) {

@@ -25,15 +25,15 @@
 
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
+#include "gc/shenandoah/c2/shenandoahSupport.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
-#include "gc/shenandoah/c2/shenandoahSupport.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/escape.hpp"
 #include "opto/graphKit.hpp"
@@ -825,11 +825,6 @@ bool ShenandoahBarrierSetC2::optimize_loops(PhaseIdealLoop* phase, LoopOptsMode 
   if (mode == LoopOptsShenandoahExpand) {
     assert(UseShenandoahGC, "only for shenandoah");
     ShenandoahBarrierC2Support::pin_and_expand(phase);
-    return true;
-  } else if (mode == LoopOptsShenandoahPostExpand) {
-    assert(UseShenandoahGC, "only for shenandoah");
-    visited.clear();
-    ShenandoahBarrierC2Support::optimize_after_expansion(visited, nstack, worklist, phase);
     return true;
   }
   return false;
