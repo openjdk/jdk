@@ -368,7 +368,7 @@ public class VectorUnsignedMinMaxOperationsTest {
         for (int i = 0; i < COUNT; i += ispec.length()) {
             IntVector vec1 = IntVector.fromArray(ispec, int_in1, i);
             IntVector vec2 = IntVector.fromArray(ispec, int_in2, i);
-            // UMaxV (UMinV vec2, vec1) (UMaxV vec1, vec2) => UMinV vec1 vec2
+            // UMaxV (UMinV vec2, vec1) (UMaxV vec1, vec2) => UMaxV vec1 vec2
             vec2.lanewise(VectorOperators.UMIN, vec1)
                 .lanewise(VectorOperators.UMAX,
                           vec1.lanewise(VectorOperators.UMAX, vec2))
@@ -449,7 +449,7 @@ public class VectorUnsignedMinMaxOperationsTest {
         for (int i = 0; i < COUNT; i += ispec.length()) {
             IntVector vec1 = IntVector.fromArray(ispec, int_in1, i);
             IntVector vec2 = IntVector.fromArray(ispec, int_in2, i);
-            // UMaxV (UMinV vec1, vec2) (UMaxV vec2, vec1) => UMinV vec1 vec2
+            // UMaxV (UMinV vec1, vec2) (UMaxV vec2, vec1) => UMaxV vec1 vec2
             vec1.lanewise(VectorOperators.UMIN, vec2)
                 .lanewise(VectorOperators.UMAX,
                           vec2.lanewise(VectorOperators.UMAX, vec1))
