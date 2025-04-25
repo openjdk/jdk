@@ -176,9 +176,6 @@ public class bug8033699 {
         btnStart.requestFocus();
 
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        mainFrame.getContentPane()
-                 .setLayout(new BoxLayout(mainFrame.getContentPane(),
-                                          BoxLayout.Y_AXIS));
 
         mainFrame.setSize(300, 300);
         mainFrame.setLocationRelativeTo(null);
