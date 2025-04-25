@@ -173,7 +173,7 @@ public class bug8033699 {
         mainBox.add(radioBtnSingle);
         mainBox.add(btnEnd);
 
-        mainFrame.getContentPane().add(mainBox);
+        mainFrame.add(mainBox);
         mainFrame.getRootPane().setDefaultButton(btnStart);
         btnStart.requestFocus();
 
