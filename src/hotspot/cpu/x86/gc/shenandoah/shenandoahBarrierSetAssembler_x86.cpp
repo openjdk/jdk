@@ -53,61 +53,31 @@ static void save_machine_state(MacroAssembler* masm, bool handle_gpr, bool handl
     // Some paths can be reached from the c2i adapter with live fp arguments in registers.
     assert(Argument::n_float_register_parameters_j == 8, "8 fp registers to save at java call");
 
-    if (UseSSE >= 2) {
-      const int xmm_size = wordSize * 2;
-      __ subptr(rsp, xmm_size * 8);
-      __ movdbl(Address(rsp, xmm_size * 0), xmm0);
-      __ movdbl(Address(rsp, xmm_size * 1), xmm1);
-      __ movdbl(Address(rsp, xmm_size * 2), xmm2);
-      __ movdbl(Address(rsp, xmm_size * 3), xmm3);
-      __ movdbl(Address(rsp, xmm_size * 4), xmm4);
-      __ movdbl(Address(rsp, xmm_size * 5), xmm5);
-      __ movdbl(Address(rsp, xmm_size * 6), xmm6);
-      __ movdbl(Address(rsp, xmm_size * 7), xmm7);
-    } else if (UseSSE >= 1) {
-      const int xmm_size = wordSize * 1;
-      __ subptr(rsp, xmm_size * 8);
-      __ movflt(Address(rsp, xmm_size * 0), xmm0);
-      __ movflt(Address(rsp, xmm_size * 1), xmm1);
-      __ movflt(Address(rsp, xmm_size * 2), xmm2);
-      __ movflt(Address(rsp, xmm_size * 3), xmm3);
-      __ movflt(Address(rsp, xmm_size * 4), xmm4);
-      __ movflt(Address(rsp, xmm_size * 5), xmm5);
-      __ movflt(Address(rsp, xmm_size * 6), xmm6);
-      __ movflt(Address(rsp, xmm_size * 7), xmm7);
-    } else {
-      __ push_FPU_state();
-    }
+    const int xmm_size = wordSize * 2;
+    __ subptr(rsp, xmm_size * 8);
+    __ movdbl(Address(rsp, xmm_size * 0), xmm0);
+    __ movdbl(Address(rsp, xmm_size * 1), xmm1);
+    __ movdbl(Address(rsp, xmm_size * 2), xmm2);
+    __ movdbl(Address(rsp, xmm_size * 3), xmm3);
+    __ movdbl(Address(rsp, xmm_size * 4), xmm4);
+    __ movdbl(Address(rsp, xmm_size * 5), xmm5);
+    __ movdbl(Address(rsp, xmm_size * 6), xmm6);
+    __ movdbl(Address(rsp, xmm_size * 7), xmm7);
   }
 }
 
 static void restore_machine_state(MacroAssembler* masm, bool handle_gpr, bool handle_fp) {
   if (handle_fp) {
-    if (UseSSE >= 2) {
-      const int xmm_size = wordSize * 2;
-      __ movdbl(xmm0, Address(rsp, xmm_size * 0));
-      __ movdbl(xmm1, Address(rsp, xmm_size * 1));
-      __ movdbl(xmm2, Address(rsp, xmm_size * 2));
-      __ movdbl(xmm3, Address(rsp, xmm_size * 3));
-      __ movdbl(xmm4, Address(rsp, xmm_size * 4));
-      __ movdbl(xmm5, Address(rsp, xmm_size * 5));
-      __ movdbl(xmm6, Address(rsp, xmm_size * 6));
-      __ movdbl(xmm7, Address(rsp, xmm_size * 7));
-      __ addptr(rsp, xmm_size * 8);
-    } else if (UseSSE >= 1) {
-      const int xmm_size = wordSize * 1;
-      __ movflt(xmm0, Address(rsp, xmm_size * 0));
-      __ movflt(xmm1, Address(rsp, xmm_size * 1));
-      __ movflt(xmm2, Address(rsp, xmm_size * 2));
-      __ movflt(xmm3, Address(rsp, xmm_size * 3));
-      __ movflt(xmm4, Address(rsp, xmm_size * 4));
-      __ movflt(xmm5, Address(rsp, xmm_size * 5));
-      __ movflt(xmm6, Address(rsp, xmm_size * 6));
-      __ movflt(xmm7, Address(rsp, xmm_size * 7));
-      __ addptr(rsp, xmm_size * 8);
-    } else {
-      __ pop_FPU_state();
-    }
+    const int xmm_size = wordSize * 2;
+    __ movdbl(xmm0, Address(rsp, xmm_size * 0));
+    __ movdbl(xmm1, Address(rsp, xmm_size * 1));
+    __ movdbl(xmm2, Address(rsp, xmm_size * 2));
+    __ movdbl(xmm3, Address(rsp, xmm_size * 3));
+    __ movdbl(xmm4, Address(rsp, xmm_size * 4));
+    __ movdbl(xmm5, Address(rsp, xmm_size * 5));
+    __ movdbl(xmm6, Address(rsp, xmm_size * 6));
+    __ movdbl(xmm7, Address(rsp, xmm_size * 7));
+    __ addptr(rsp, xmm_size * 8);
   }
 
   if (handle_gpr) {
