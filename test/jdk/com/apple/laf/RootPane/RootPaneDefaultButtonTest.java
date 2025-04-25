@@ -36,20 +36,23 @@ import java.awt.*;
 import java.awt.event.*;
 
 /**
- * This presents two dialogs, each with two possible default buttons. The background color of the
- * default button should change based on which radio button is selected.
+ * This presents two dialogs, each with two possible default buttons. The
+ * background color of the default button should change based on which radio
+ * button is selected.
  * <p>
- * Note we've never expected this test to fail. This test was introduced because the resolution
- * to JDK-8344697 involved removing code, and we wanted to double-check that the removed code
- * didn't negatively affect how default buttons are repainted.
+ * Note we've never expected this test to fail. This test was introduced
+ * because the resolution to JDK-8344697 involved removing code, and we wanted
+ * to double-check that the removed code didn't negatively affect how default
+ * buttons are repainted.
  */
 public class RootPaneDefaultButtonTest extends JDialog {
 
-    record ButtonRenderingExpectation(JButton button, boolean appearAsDefault) {}
+    record ButtonRenderingExpectation(JButton button,
+                                      boolean appearAsDefault) {}
 
     public static void main(String[] args) throws Exception {
         if (!System.getProperty("os.name").contains("OS X")) {
-            System.out.println("This test is for MacOS only. Automatically passed on: " + System.getProperty("os.name"));
+            System.out.println("This test is for MacOS only.");
             return;
         }
 
@@ -118,19 +121,21 @@ public class RootPaneDefaultButtonTest extends JDialog {
             throws Exception {
         robot.delay(100);
 
-        robot.mouseMove(buttonToClick.getLocationOnScreen().x + buttonToClick.getSize().width/2,
-                buttonToClick.getLocationOnScreen().y + buttonToClick.getSize().height/2 );
+        Point mouseLoc = buttonToClick.getLocationOnScreen();
+        robot.mouseMove(mouseLoc.x + buttonToClick.getSize().width / 2,
+                mouseLoc.y + buttonToClick.getSize().height / 2);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(20);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
         robot.delay(100);
 
-        // the colors may change depending on your system's appearance. Depending
-        // on how you've configured "Appearance" in the System Settings app: the
-        // default button may be blue (the default), red, purple, etc. So instead
-        // of checking for a specific color: we'll make sure 3-4 are the same color,
-        // and one is significantly different.
+        // the colors may change depending on your system's appearance.
+        // Depending on how you've configured "Appearance" in the
+        // System Settings app: the default button may be blue (the default),
+        // red, purple, etc. So instead of checking for a specific color: we'll
+        // make sure 3-4 are the same color, and one is significantly
+        // different.
         Color defaultColor = null;
         Color nonDefaultColor = null;
 
@@ -138,8 +143,8 @@ public class RootPaneDefaultButtonTest extends JDialog {
             int x = expectation.button.getLocationOnScreen().x + 20;
             int y = expectation.button.getLocationOnScreen().y + 10;
 
-            // this mouseMove is optional, but it helps debug this test to see where
-            // we're sampling the pixel color from:
+            // this mouseMove is optional, but it helps debug this test to see
+            // where we're sampling the pixel color from:
             robot.mouseMove(x, y);
 
             Color c = robot.getPixelColor(x, y);
@@ -147,19 +152,25 @@ public class RootPaneDefaultButtonTest extends JDialog {
                 if (defaultColor == null) {
                     defaultColor = c;
                 } else {
-                    throw new IllegalStateException("there should only be at most 1 default button sampled");
+                    throw new IllegalStateException(
+                            "there should only be at most 1 default button");
                 }
             } else {
                 if (nonDefaultColor == null) {
                     nonDefaultColor = c;
                 } else if (!isSimilar(nonDefaultColor, c)) {
-                    throw new IllegalStateException("these two colors should match: " + c + ", " + nonDefaultColor);
+                    throw new IllegalStateException(
+                            "these two colors should match: " + c + ", " +
+                                    nonDefaultColor);
                 }
             }
         }
 
         if (defaultColor != null && isSimilar(defaultColor, nonDefaultColor)) {
-            throw new IllegalStateException("The default button and non-default buttons should look different: " + defaultColor + " matches " + nonDefaultColor);
+            throw new IllegalStateException(
+                    "The default button and non-default buttons should " +
+                            "look different: " + defaultColor + " matches " +
+                            nonDefaultColor);
         }
     }
 
@@ -176,8 +187,10 @@ public class RootPaneDefaultButtonTest extends JDialog {
         return true;
     }
 
-    JRadioButton radioButton1 = new JRadioButton("\"Button 1\" is the default button");
-    JRadioButton radioButton2 = new JRadioButton("\"Button 2\" is the default button");
+    JRadioButton radioButton1 = new JRadioButton(
+            "\"Button 1\" is the default button");
+    JRadioButton radioButton2 = new JRadioButton(
+            "\"Button 2\" is the default button");
     JRadioButton radioButton3 = new JRadioButton("No default button");
 
     JButton button1 = new JButton("Button 1");
