@@ -5731,22 +5731,20 @@ public class Check {
                 List<JCExpression> argExps = poly instanceof JCNewClass ?
                         ((JCNewClass)poly).args :
                         ((JCMethodInvocation)poly).args;
-                Symbol msym = poly instanceof JCNewClass ?
-                        ((JCNewClass)poly).constructor :
-                        TreeInfo.symbol(((JCMethodInvocation)poly).meth);
+                Symbol msym = TreeInfo.symbolFor(poly);
                 if (msym != null) {
                     if (!argExps.isEmpty() && msym instanceof MethodSymbol ms && ms.params != null) {
                         VarSymbol lastParam = ms.params.head;
                         for (VarSymbol param: ms.params) {
                             if (param.attribute(syms.requiresIdentityType.tsym) != null && argExps.head.type.isValueBased()) {
-                                lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                                lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected(argExps.head.type));
                             }
                             lastParam = param;
                             argExps = argExps.tail;
                         }
                         while (argExps != null && !argExps.isEmpty() && lastParam != null) {
                             if (lastParam.attribute(syms.requiresIdentityType.tsym) != null && argExps.head.type.isValueBased()) {
-                                lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                                lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected(argExps.head.type));
                             }
                             argExps = argExps.tail;
                         }
@@ -5771,10 +5769,10 @@ public class Check {
                 lint != null &&
                 lint.isEnabled(LintCategory.IDENTITY)) {
             RequiresIdentityVisitor requiresIdentityVisitor = new RequiresIdentityVisitor();
-            // we need to avoid self referencing type vars or captures
+            // we need to avoid recursion due to self referencing type vars or captures, this is why we need a set
             requiresIdentityVisitor.visit(t, new HashSet<>());
             if (requiresIdentityVisitor.requiresWarning) {
-                lint.logIfEnabled(pos, LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                lint.logIfEnabled(pos, LintWarnings.AttemptToUseValueBasedWhereIdentityExpected(t));
                 return true;
             }
         }
@@ -5820,9 +5818,15 @@ public class Check {
         @Override
         public Void visitClassType(ClassType t, Set<Type> seen) {
             if (t != null && t.tsym != null) {
-                if (checkIfTypeParamsRequiresIdentity(t.tsym.getMetadata(), t.getTypeArguments())) {
-                    requiresWarning = true;
-                    return null;
+                SymbolMetadata sm = t.tsym.getMetadata();
+                if (sm != null && !t.getTypeArguments().isEmpty()) {
+                    for (Attribute.TypeCompound ta: sm.getTypeAttributes().stream()
+                            .filter(ta -> ta.type.tsym == syms.requiresIdentityType.tsym).toList()) {
+                        if (t.getTypeArguments().get(ta.position.parameter_index).isValueBased()) {
+                            requiresWarning = true;
+                            return null;
+                        }
+                    }
                 }
             }
             visit(t.getEnclosingType(), seen);
@@ -5833,40 +5837,22 @@ public class Check {
         }
     } // RequiresIdentityVisitor
 
-    private boolean checkIfTypeParamsRequiresIdentity(SymbolMetadata sm, List<Type> typeParams) {
-        boolean result = false;
-        if (sm != null && !typeParams.isEmpty()) {
-            for (Attribute.TypeCompound ta: sm.getTypeAttributes()) {
-                if (ta.type.tsym == syms.requiresIdentityType.tsym) {
-                    if (typeParams.get(ta.position.parameter_index).isValueBased()) {
-                        result = true;
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
-    private boolean checkIfTypeParamsRequiresIdentity(SymbolMetadata sm,
+    private void checkIfTypeParamsRequiresIdentity(SymbolMetadata sm,
                                                      List<JCExpression> typeParamTrees,
                                                      Lint lint) {
-        boolean result = false;
         if (typeParamTrees != null && !typeParamTrees.isEmpty()) {
-            for (JCExpression targ: typeParamTrees) {
+            for (JCExpression targ : typeParamTrees) {
                 checkIfIdentityIsExpected(targ.pos(), targ.type, lint);
             }
-            if (sm != null) {
-                for (Attribute.TypeCompound ta: sm.getTypeAttributes()) {
-                    if (ta.type.tsym == syms.requiresIdentityType.tsym) {
-                        if (typeParamTrees.get(ta.position.parameter_index).type.isValueBased()) {
-                            lint.logIfEnabled(typeParamTrees.get(ta.position.parameter_index).pos(),
-                                    CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
-                            result = true;
-                        }
-                    }
-                }
-            }
+            if (sm != null)
+                for (Attribute.TypeCompound ta : sm.getTypeAttributes().stream()
+                        .filter(ta -> ta.type.tsym == syms.requiresIdentityType.tsym).toList())
+                    if (typeParamTrees.get(ta.position.parameter_index).type.isValueBased())
+                        lint.logIfEnabled(
+                                typeParamTrees.get(ta.position.parameter_index).pos(),
+                                CompilerProperties.LintWarnings
+                                        .AttemptToUseValueBasedWhereIdentityExpected(typeParamTrees.get(ta.position.parameter_index).type)
+                        );
         }
-        return result;
     }
 }
