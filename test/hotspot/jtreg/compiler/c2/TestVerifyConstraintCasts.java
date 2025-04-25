@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_OPTO_C2_MACROASSEMBLER_HPP
-#define SHARE_OPTO_C2_MACROASSEMBLER_HPP
+/*
+ * @test
+ * @bug 8346836
+ * @requires vm.debug == true & vm.flavor == "server"
+ * @summary Empty main program to run with flag VerifyConstraintCasts.
+ *
+ * @run main/othervm/timeout=300 -Xbatch -Xcomp -XX:+StressGCM -XX:VerifyConstraintCasts=1 compiler.c2.TestVerifyConstraintCasts
+ * @run main/othervm/timeout=300 -Xbatch -Xcomp -XX:+StressGCM -XX:VerifyConstraintCasts=2 compiler.c2.TestVerifyConstraintCasts
+ */
+package compiler.c2;
 
-#include "asm/macroAssembler.hpp"
-#include "asm/macroAssembler.inline.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
-
-class C2EntryBarrierStub;
-class TypeInt;
-class TypeLong;
-
-class C2_MacroAssembler: public MacroAssembler {
- public:
-  // creation
-  C2_MacroAssembler(CodeBuffer* code) : MacroAssembler(code) {}
-
-#include CPU_HEADER(c2_MacroAssembler)
-
-};
-
-#endif // SHARE_OPTO_C2_MACROASSEMBLER_HPP
+public class TestVerifyConstraintCasts {
+    public static void main(String[] args) {
+    }
+}
