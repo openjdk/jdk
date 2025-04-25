@@ -547,7 +547,6 @@ void ErrorContext::bytecode_details(outputStream* ss, const Method* method) cons
     StreamAutoIndentor sai(ss, 2);
     ss->print_cr("Bytecode:");
     StreamAutoIndentor sai2(ss, 2);
-    // TODO: print_data should not indent
     ss->print_data(method->code_base(), method->code_size(), false);
   }
 }
