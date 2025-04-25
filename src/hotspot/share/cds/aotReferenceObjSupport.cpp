@@ -50,10 +50,10 @@
 // Eligibility
 // ===========
 //
-// [1] A reference that does not require special clean up (i.e., Reference::queue == ReferenceQueue::NULL)
+// [1] A reference that does not require special clean up (i.e., Reference::queue == _null_queue.resolve())
 //     is eligible.
 //
-// [2] A reference that REQUIRE specials clean up (i.e., Reference::queue != ReferenceQueue::NULL)
+// [2] A reference that REQUIRE specials clean up (i.e., Reference::queue != _null_queue.resolve())
 //     is eligible ONLY if it has not been put into the "pending" state by the GC (See Reference.java).
 //
 // AOTReferenceObjSupport::check_if_ref_obj() detects the "pending" state by checking the "next" and
@@ -85,7 +85,7 @@ void AOTReferenceObjSupport::initialize(TRAPS) {
   InstanceKlass* ik = InstanceKlass::cast(k);
   ik->initialize(CHECK);
 
-  TempNewSymbol field_name = SymbolTable::new_symbol("NULL");
+  TempNewSymbol field_name = SymbolTable::new_symbol("N""ULL");
   fieldDescriptor fd;
   bool found = ik->find_local_field(field_name, vmSymbols::referencequeue_signature(), &fd);
   precond(found);
@@ -115,7 +115,7 @@ bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
                              ", next = " PTR_FORMAT
                              ", discovered = " PTR_FORMAT,
                              p2i(referent), p2i(queue), p2i(next), p2i(discovered));
-        log_error(cds, heap)("This object requires special clean up as its queue is not ReferenceQueue::NULL ("
+        log_error(cds, heap)("This object requires special clean up as its queue is not ReferenceQueue::N" "ULL ("
                              PTR_FORMAT ")", p2i(_null_queue.resolve()));
         HeapShared::debug_trace();
         MetaspaceShared::unrecoverable_writing_error();
