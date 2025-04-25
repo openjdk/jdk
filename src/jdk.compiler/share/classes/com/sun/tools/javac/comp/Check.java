@@ -5709,6 +5709,15 @@ public class Check {
                 }
                 break;
             }
+            case JCMethodDecl methodDecl : {
+                for (JCTypeParameter tp : methodDecl.typarams) {
+                    checkIfIdentityIsExpected(tp.pos(), tp.type, lint);
+                }
+                if (methodDecl.restype != null && !methodDecl.restype.type.hasTag(VOID)) {
+                    checkIfIdentityIsExpected(methodDecl.restype.pos(), methodDecl.restype.type, lint);
+                }
+                break;
+            }
             case JCMemberReference mref : {
                 checkIfIdentityIsExpected(mref.expr.pos(), mref.target, lint);
                 if (mref.typeargs != null) {
@@ -5720,23 +5729,16 @@ public class Check {
                 }
                 break;
             }
-            case JCMethodDecl methodDecl : {
-                for (JCTypeParameter tp : methodDecl.typarams) {
-                    checkIfIdentityIsExpected(tp.pos(), tp.type, lint);
+            case JCPolyExpression poly when (poly instanceof JCNewClass || poly instanceof JCMethodInvocation): {
+                if (poly instanceof JCNewClass newClass) {
+                    checkIfIdentityIsExpected(newClass.clazz.pos(), newClass.clazz.type, lint);
                 }
-                if (methodDecl.restype != null && !methodDecl.restype.type.hasTag(VOID)) {
-                    checkIfIdentityIsExpected(methodDecl.restype.pos(), methodDecl.restype.type, lint);
-                }
-                break;
-            }
-            case JCNewClass newClass : {
-                checkIfIdentityIsExpected(newClass.clazz.pos(), newClass.clazz.type, lint);
-                // check here also the arguments and type arguments
-                break;
-            }
-            case JCMethodInvocation apply : {
-                List<JCExpression> argExps = apply.args;
-                Symbol msym = TreeInfo.symbol(apply.meth);
+                List<JCExpression> argExps = poly instanceof JCNewClass ?
+                        ((JCNewClass)poly).args :
+                        ((JCMethodInvocation)poly).args;
+                Symbol msym = poly instanceof JCNewClass ?
+                        ((JCNewClass)poly).constructor :
+                        TreeInfo.symbol(((JCMethodInvocation)poly).meth);
                 if (msym != null) {
                     if (!argExps.isEmpty() && msym instanceof MethodSymbol ms && ms.params != null) {
                         VarSymbol lastParam = ms.params.head;
@@ -5755,7 +5757,10 @@ public class Check {
                         }
                     }
                     ListBuffer<Type> typeParamTypes = new ListBuffer<>();
-                    for (JCExpression targ: apply.typeargs) {
+                    List<JCExpression> typeargs = poly instanceof JCNewClass ?
+                                                      ((JCNewClass)poly).typeargs :
+                                                      ((JCMethodInvocation)poly).typeargs;
+                    for (JCExpression targ: typeargs) {
                         checkIfIdentityIsExpected(targ.pos(), targ.type, lint);
                         typeParamTypes.add(targ.type);
                     }
