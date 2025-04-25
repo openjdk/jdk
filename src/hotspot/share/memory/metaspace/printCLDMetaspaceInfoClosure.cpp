@@ -144,7 +144,7 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
     if (_do_print_classes) {
       // Print a detailed description of all loaded classes.
       _out->cr();
-      StreamAutoIndentor sai(_out, 6);
+      StreamIndentor sai(_out, 6);
       _out->print("Loaded classes");
       if (ckc._num_classes_shared > 0) {
         _out->print("('s' = shared)");

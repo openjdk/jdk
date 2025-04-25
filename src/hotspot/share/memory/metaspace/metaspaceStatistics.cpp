@@ -150,12 +150,12 @@ InUseChunkStats ArenaStats::totals() const {
 }
 
 void ArenaStats::print_on(outputStream* st, size_t scale,  bool detailed) const {
-  StreamAutoIndentor sai(st, 2);
+  StreamIndentor si(st, 2);
   if (detailed) {
     st->cr();
     st->print("Usage by chunk level:");
     {
-      StreamAutoIndentor sai2(st, 2);
+      StreamIndentor si2(st, 2);
       for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
         st->cr();
         chunklevel::print_chunk_size(st, l);
@@ -203,7 +203,7 @@ ArenaStats ClmsStats::totals() const {
 }
 
 void ClmsStats::print_on(outputStream* st, size_t scale, bool detailed) const {
-  StreamAutoIndentor sai(st, 2);
+  StreamIndentor si(st, 2);
   st->cr();
   if (Metaspace::using_class_space()) {
     st->print("Non-Class: ");

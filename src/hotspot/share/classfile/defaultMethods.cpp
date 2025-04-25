@@ -237,7 +237,7 @@ class PrintHierarchy : public HierarchyVisitor<PrintHierarchy> {
  public:
   bool visit() {
     InstanceKlass* cls = current_class();
-    StreamAutoIndentor sai(_st, current_depth() * 2);
+    StreamIndentor si(_st, current_depth() * 2);
     _st->print_cr("%s", cls->name()->as_C_string());
     return true;
   }
@@ -436,7 +436,7 @@ class MethodFamily : public ResourceObj {
 
   void print_selected(outputStream* str, int indent) const {
     assert(has_target(), "Should be called otherwise");
-    StreamAutoIndentor sai(str, indent * 2);
+    StreamIndentor si(str, indent * 2);
     str->print("Selected method: ");
     print_method(str, _selected_target);
     Klass* method_holder = _selected_target->method_holder();
@@ -449,7 +449,7 @@ class MethodFamily : public ResourceObj {
   void print_exception(outputStream* str, int indent) {
     assert(throws_exception(), "Should be called otherwise");
     assert(_exception_name != nullptr, "exception_name should be set");
-    StreamAutoIndentor sai(str, indent * 2);
+    StreamIndentor si(str, indent * 2);
     str->print_cr("%s: %s", _exception_name->as_C_string(), _exception_message->as_C_string());
   }
 };
@@ -678,7 +678,7 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
     lt.print("Slots that need filling:");
     ResourceMark rm;
     LogStream ls(lt);
-    StreamAutoIndentor sai(&ls, 2);
+    StreamIndentor si(&ls, 2);
     for (int i = 0; i < slots->length(); ++i) {
       slots->at(i)->print_on(&ls);
       ls.cr();
@@ -850,7 +850,7 @@ void DefaultMethods::generate_default_methods(
       LogTarget(Debug, defaultmethods) lt;
       if (lt.is_enabled()) {
         LogStream ls(lt);
-        StreamAutoIndentor sai(&ls, 2);
+        StreamIndentor si(&ls, 2);
         ls.print("Looking for default methods for slot ");
         slot->print_on(&ls);
         ls.cr();

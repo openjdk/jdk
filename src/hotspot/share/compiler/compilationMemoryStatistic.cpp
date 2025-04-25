@@ -396,16 +396,16 @@ void ArenaStatCounter::print_peak_state_on(outputStream* st) const {
 #ifdef COMPILER2
     // C2: print counters and timeline on multiple lines, indented
     if (_comp_type == CompilerType::compiler_c2) {
-      StreamAutoIndentor sai(st, 4);
+      StreamIndentor si(st, 4);
       st->cr();
       st->print_cr("--- Arena Usage by Arena Type and compilation phase, at arena usage peak of %zu ---", _peak);
       {
-        StreamAutoIndentor sai(st, 4);
+        StreamIndentor si(st, 4);
        _counters_at_global_peak.print_on(st);
       }
       st->print_cr("--- Allocation timelime by phase ---");
       {
-        StreamAutoIndentor sai(st, 4);
+        StreamIndentor si(st, 4);
         _timeline.print_on(st);
       }
       st->print_cr("---");
@@ -999,7 +999,7 @@ void CompilationMemoryStatistic::print_error_report(outputStream* st) {
   if (!check_before_reporting(st)) {
     return;
   }
-  StreamAutoIndentor sai(tty, 4);
+  StreamIndentor si(tty, 4);
   const ArenaStatCounter* const oom_stats = Atomic::load(&_arenastat_oom_crash);
   if (oom_stats != nullptr) {
     // we crashed due to a compiler limit hit. Lead with a printout of the offending stats
@@ -1019,7 +1019,7 @@ void CompilationMemoryStatistic::print_final_report(outputStream* st) {
     return;
   }
   st->print_cr("Compiler Memory Statistic, 10 most expensive compilations:");
-  StreamAutoIndentor sai(st, 4);
+  StreamIndentor si(st, 4);
   print_all_by_size(st, false, false, 0, 10);
 }
 
@@ -1028,7 +1028,7 @@ void CompilationMemoryStatistic::print_jcmd_report(outputStream* st, bool verbos
     return;
   }
   st->print_cr("Compiler Memory Statistic");
-  StreamAutoIndentor sai(st, 4);
+  StreamIndentor si(st, 4);
   print_all_by_size(st, verbose, legend, minsize, -1);
 }
 

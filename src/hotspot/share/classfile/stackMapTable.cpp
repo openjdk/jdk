@@ -146,7 +146,7 @@ void StackMapTable::print_on(outputStream* str) const {
   str->print_cr("StackMapTable: frame_count = %d", _frame_count);
   str->print_cr("table = {");
   {
-    StreamAutoIndentor sai(str, 2);
+    StreamIndentor si(str, 2);
     for (int32_t i = 0; i < _frame_count; ++i) {
       _frame_array->at(i)->print_on(str);
     }

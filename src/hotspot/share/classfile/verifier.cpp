@@ -446,10 +446,10 @@ void ErrorContext::details(outputStream* ss, const Method* method) const {
 }
 
 void ErrorContext::reason_details(outputStream* ss) const {
-  StreamAutoIndentor sai(ss, 2);
+  StreamIndentor si(ss, 2);
   ss->print_cr("Reason:");
 
-  StreamAutoIndentor sai2(ss, 2);
+  StreamIndentor si2(ss, 2);
   switch (_fault) {
     case INVALID_BYTECODE:
       ss->print("Error exists in the bytecode");
@@ -518,10 +518,10 @@ void ErrorContext::location_details(outputStream* ss, const Method* method) cons
     }
     InstanceKlass* ik = method->method_holder();
 
-    StreamAutoIndentor sai(ss, 2);
+    StreamIndentor si(ss, 2);
     ss->print_cr("Location:");
 
-    StreamAutoIndentor sai2(ss, 2);
+    StreamIndentor si2(ss, 2);
     ss->print_cr("%s.%s%s @%d: %s",
         ik->name()->as_C_string(), method->name()->as_C_string(),
         method->signature()->as_C_string(), _bci, bytecode_name);
@@ -529,36 +529,36 @@ void ErrorContext::location_details(outputStream* ss, const Method* method) cons
 }
 
 void ErrorContext::frame_details(outputStream* ss) const {
-  StreamAutoIndentor sai(ss, 2);
+  StreamIndentor si(ss, 2);
   if (_type.is_valid() && _type.frame() != nullptr) {
     ss->print_cr("Current Frame:");
-    StreamAutoIndentor sai2(ss, 2);
+    StreamIndentor si2(ss, 2);
     _type.frame()->print_on(ss);
   }
   if (_expected.is_valid() && _expected.frame() != nullptr) {
     ss->print_cr("Stackmap Frame:");
-    StreamAutoIndentor sai2(ss, 2);
+    StreamIndentor si2(ss, 2);
     _expected.frame()->print_on(ss);
   }
 }
 
 void ErrorContext::bytecode_details(outputStream* ss, const Method* method) const {
   if (method != nullptr) {
-    StreamAutoIndentor sai(ss, 2);
+    StreamIndentor si(ss, 2);
     ss->print_cr("Bytecode:");
-    StreamAutoIndentor sai2(ss, 2);
+    StreamIndentor si2(ss, 2);
     ss->print_data(method->code_base(), method->code_size(), false);
   }
 }
 
 void ErrorContext::handler_details(outputStream* ss, const Method* method) const {
   if (method != nullptr) {
-    StreamAutoIndentor sai(ss, 2);
+    StreamIndentor si(ss, 2);
 
     ExceptionTable table(method);
     if (table.length() > 0) {
       ss->print_cr("Exception Handler Table:");
-      StreamAutoIndentor sai2(ss, 2);
+      StreamIndentor si2(ss, 2);
       for (int i = 0; i < table.length(); ++i) {
         ss->print_cr("bci [%d, %d] => handler: %d", table.start_pc(i),
             table.end_pc(i), table.handler_pc(i));
@@ -569,13 +569,13 @@ void ErrorContext::handler_details(outputStream* ss, const Method* method) const
 
 void ErrorContext::stackmap_details(outputStream* ss, const Method* method) const {
   if (method != nullptr && method->has_stackmap_table()) {
-    StreamAutoIndentor sai(ss, 2);
+    StreamIndentor si(ss, 2);
     ss->print_cr("Stackmap Table:");
     Array<u1>* data = method->stackmap_data();
     stack_map_table* sm_table =
         stack_map_table::at((address)data->adr_at(0));
     stack_map_frame* sm_frame = sm_table->entries();
-    StreamAutoIndentor sai2(ss, 2);
+    StreamIndentor si2(ss, 2);
     int current_offset = -1;
     address end_of_sm_table = (address)sm_table + method->stackmap_data()->length();
     for (u2 i = 0; i < sm_table->number_of_entries(); ++i) {

@@ -36,7 +36,7 @@
 #include "utilities/ostream.hpp"
 
 #define INDENT_BY(num_chars, CODE) { \
-  StreamAutoIndentor sai(out, num_chars); \
+  StreamIndentor si(out, num_chars); \
   { CODE }                           \
 }
 
@@ -230,7 +230,7 @@ void MemSummaryReporter::report_summary_of_tag(MemTag mem_tag,
 #endif
   out->print_cr(")");
 
-  StreamAutoIndentor sai(out, indent);
+  StreamIndentor si(out, indent);
 
   if (mem_tag == mtClass) {
     // report class count
@@ -641,7 +641,7 @@ void MemSummaryDiffReporter::diff_summary_of_tag(MemTag mem_tag,
       early_reserved_amount, early_committed_amount);
     out->print_cr(")");
 
-    StreamAutoIndentor sai(out, indent);
+    StreamIndentor si(out, indent);
 
     // detail lines
     if (mem_tag == mtClass) {

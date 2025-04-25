@@ -304,7 +304,7 @@ public:
     st->print_cr("vminfo:  VM information (requires NMT)");
     st->print_cr("file:    file mapped, if mapping is not anonymous");
     {
-      StreamAutoIndentor sai(st, 16);
+      StreamIndentor si(st, 16);
       _session.print_nmt_flag_legend();
     }
     st->print_cr("file:            file mapped, if mapping is not anonymous");

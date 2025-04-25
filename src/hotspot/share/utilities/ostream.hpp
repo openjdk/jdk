@@ -175,15 +175,15 @@ class outputStream : public CHeapObjBase {
 // ANSI C++ name collision
 extern outputStream* tty;           // tty output
 
-class StreamAutoIndentor {
+class StreamIndentor {
 private:
   outputStream* const _stream;
   const int _indentation;
   const bool _old_autoindent;
-  NONCOPYABLE(StreamAutoIndentor);
+  NONCOPYABLE(StreamIndentor);
 
 public:
-  StreamAutoIndentor(outputStream* os, int indentation) :
+  StreamIndentor(outputStream* os, int indentation) :
     _stream(os),
     _indentation(indentation),
     _old_autoindent(_stream->set_autoindent(true)) {
@@ -191,7 +191,7 @@ public:
     _stream->inc(_indentation);
   }
 
-  ~StreamAutoIndentor() {
+  ~StreamIndentor() {
     _stream->dec(_indentation);
     _stream->set_autoindent(_old_autoindent);
   }
