@@ -49,7 +49,7 @@ public class OOMCrashClass1960_2 implements Opcodes {
         MethodVisitor methodVisitor;
         AnnotationVisitor annotationVisitor0;
 
-        classWriter.visit(V1_1, ACC_PUBLIC | ACC_SUPER, "OOMCrashClass1960_2", null, "java/applet/Applet", null);
+        classWriter.visit(V1_1, ACC_PUBLIC | ACC_SUPER, "OOMCrashClass1960_2", null, "java/lang/Object", null);
 
         classWriter.visitSource("<generated>", null);
 
@@ -103,7 +103,7 @@ public class OOMCrashClass1960_2 implements Opcodes {
             Label label0 = new Label();
             methodVisitor.visitLabel(label0);
             methodVisitor.visitVarInsn(ALOAD, 0);
-            methodVisitor.visitMethodInsn(INVOKESPECIAL, "java/applet/Applet", "<init>", "()V", false);
+            methodVisitor.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
             methodVisitor.visitInsn(RETURN);
             Label label1 = new Label();
             methodVisitor.visitLabel(label1);
