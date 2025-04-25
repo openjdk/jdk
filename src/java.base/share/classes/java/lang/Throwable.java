@@ -693,7 +693,7 @@ public class Throwable implements Serializable {
             StackTraceElement[] trace = getOurStackTrace();
             printStackTrace0(s, trace);
 
-            java.lang.Throwable[] suppressed = getSuppressed();
+            Throwable[] suppressed = getSuppressed();
             Throwable ourCause = getCause();
 
             if (suppressed.length > 0 || ourCause != null) {
