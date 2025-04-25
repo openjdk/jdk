@@ -1009,11 +1009,6 @@ public class Attr extends JCTree.Visitor {
             localEnv.info.lint = lint;
 
             attribStats(tree.typarams, localEnv);
-            if (env.info.lint.isEnabled(LintCategory.IDENTITY)) {
-                for (JCTypeParameter tp : tree.typarams) {
-                    chk.checkIfIdentityIsExpected(tp.pos(), tp.type, env.info.lint);
-                }
-            }
 
             // If we override any other methods, check that we do so properly.
             // JLS ???
@@ -1054,8 +1049,8 @@ public class Attr extends JCTree.Visitor {
             // Check that result type is well-formed.
             if (tree.restype != null && !tree.restype.type.hasTag(VOID)) {
                 chk.validate(tree.restype, localEnv);
-                chk.checkIfIdentityIsExpected(tree.restype.pos(), tree.restype.type, env.info.lint);
             }
+            chk.checkRequiresIdentity(tree, env.info.lint);
 
             // Check that receiver type is well-formed.
             if (tree.recvparam != null) {
@@ -2677,7 +2672,7 @@ public class Attr extends JCTree.Visitor {
             result = check(tree, capturedRes, KindSelector.VAL, resultInfo);
         }
         if (env.info.lint.isEnabled(LintCategory.IDENTITY)) {
-            chk.checkIfRequireIdentity(tree, msym, env.info.lint);
+            chk.checkRequiresIdentity(tree, env.info.lint);
         }
         chk.validate(tree.typeargs, localEnv);
     }
@@ -2921,8 +2916,7 @@ public class Attr extends JCTree.Visitor {
                 }
             }
 
-            chk.checkIfIdentityIsExpected(tree.clazz.pos(), clazztype, env.info.lint);
-            // check here also the arguments and type arguments
+            chk.checkRequiresIdentity(tree, env.info.lint);
 
             if (cdef != null) {
                 visitAnonymousClassDefinition(tree, clazz, clazztype, cdef, localEnv, argtypes, typeargtypes, pkind);
@@ -3793,15 +3787,8 @@ public class Attr extends JCTree.Visitor {
             checkReferenceCompatible(that, desc, refType, resultInfo.checkContext, isSpeculativeRound);
             if (!isSpeculativeRound) {
                 checkAccessibleTypes(that, localEnv, resultInfo.checkContext.inferenceContext(), desc, currentTarget);
-                chk.checkIfIdentityIsExpected(that.expr.pos(), currentTarget, localEnv.info.lint);
-                if (that.typeargs != null) {
-                    ListBuffer<Type> lbTypes = new ListBuffer<>();
-                    for (JCExpression targ : that.typeargs) {
-                        lbTypes.add(targ.type);
-                    }
-                    chk.checkIfTypeParamsRequiresIdentity(refSym.getMetadata(), lbTypes.toList(), that.pos(), localEnv.info.lint, true);
-                }
             }
+            chk.checkRequiresIdentity(that, localEnv.info.lint);
             result = check(that, currentTarget, KindSelector.VAL, resultInfo);
         } catch (Types.FunctionDescriptorLookupError ex) {
             JCDiagnostic cause = ex.getDiagnostic();
@@ -4105,7 +4092,7 @@ public class Attr extends JCTree.Visitor {
     public void visitTypeCast(final JCTypeCast tree) {
         Type clazztype = attribType(tree.clazz, env);
         chk.validate(tree.clazz, env, false);
-        chk.checkIfIdentityIsExpected(tree.clazz.pos(), clazztype, env.info.lint);
+        chk.checkRequiresIdentity(tree, env.info.lint);
         //a fresh environment is required for 292 inference to work properly ---
         //see Infer.instantiatePolymorphicSignatureInstance()
         Env<AttrContext> localEnv = env.dup(tree);
@@ -4247,9 +4234,7 @@ public class Attr extends JCTree.Visitor {
         } else {
             matchBindings = new MatchBindings(List.of(v), List.nil());
         }
-        if (tree.var.vartype != null) {
-            chk.checkIfIdentityIsExpected(tree.var.vartype.pos(), tree.var.vartype.type, env.info.lint);
-        }
+        chk.checkRequiresIdentity(tree, env.info.lint);
     }
 
     @Override

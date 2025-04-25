@@ -5669,36 +5669,107 @@ public class Check {
     }
 
     void checkRequiresIdentity(JCTree tree, Lint lint) {
-        if (tree instanceof JCClassDecl classDecl) {
-            Type st = types.supertype(classDecl.sym.type);
-            if (st != null &&
-                    // no need to recheck j.l.Object, shortcut,
-                    st.tsym != syms.objectType.tsym &&
-                    // this one could be null, no explicit extends
-                    classDecl.extending != null) {
-                checkIfIdentityIsExpected(classDecl.extending.pos(), st, lint);
+        switch (tree) {
+            case JCClassDecl classDecl : {
+                Type st = types.supertype(classDecl.sym.type);
+                if (st != null &&
+                        // no need to recheck j.l.Object, shortcut,
+                        st.tsym != syms.objectType.tsym &&
+                        // this one could be null, no explicit extends
+                        classDecl.extending != null) {
+                    checkIfIdentityIsExpected(classDecl.extending.pos(), st, lint);
+                }
+                for (JCExpression intrface: classDecl.implementing) {
+                    checkIfIdentityIsExpected(intrface.pos(), intrface.type, lint);
+                }
+                for (JCTypeParameter tp : classDecl.typarams) {
+                    checkIfIdentityIsExpected(tp.pos(), tp.type, lint);
+                }
+                break;
             }
-            for (JCExpression intrface: classDecl.implementing) {
-                checkIfIdentityIsExpected(intrface.pos(), intrface.type, lint);
+            case JCVariableDecl variableDecl : {
+                if (variableDecl.vartype != null &&
+                        (variableDecl.sym.flags_field & RECORD) == 0 ||
+                        (variableDecl.sym.flags_field & ~(Flags.PARAMETER | RECORD | GENERATED_MEMBER)) != 0) {
+                    /* we don't want to warn twice so if this variable is a compiler generated parameter of
+                     * a canonical record constructor, we don't want to issue a warning as we will warn the
+                     * corresponding compiler generated private record field anyways
+                     */
+                    checkIfIdentityIsExpected(variableDecl.vartype.pos(), variableDecl.vartype.type, lint);
+                }
+                break;
             }
-            for (JCTypeParameter tp : classDecl.typarams) {
-                checkIfIdentityIsExpected(tp.pos(), tp.type, lint);
+            case JCTypeCast typeCast : {
+                checkIfIdentityIsExpected(typeCast.clazz.pos(), typeCast.clazz.type, lint);
+                break;
             }
-        } else if (tree instanceof JCVariableDecl variableDecl) {
-            /* we don't want to warn twice so if this variable is a compiler generated parameter of
-             * a canonical record constructor, we don't want to issue a warning as we will warn the
-             * corresponding compiler generated private record field anyways
-             */
-            if ((variableDecl.sym.flags_field & RECORD) == 0 ||
-                    (variableDecl.sym.flags_field & ~(Flags.PARAMETER | RECORD | GENERATED_MEMBER)) != 0) {
-                checkIfIdentityIsExpected(variableDecl.vartype.pos(), variableDecl.vartype.type, lint);
+            case JCBindingPattern bindingPattern : {
+                if (bindingPattern.var.vartype != null) {
+                    checkIfIdentityIsExpected(bindingPattern.var.vartype.pos(), bindingPattern.var.vartype.type, lint);
+                }
+                break;
             }
+            case JCMemberReference mref : {
+                checkIfIdentityIsExpected(mref.expr.pos(), mref.target, lint);
+                if (mref.typeargs != null) {
+                    ListBuffer<Type> lbTypes = new ListBuffer<>();
+                    for (JCExpression targ : mref.typeargs) {
+                        lbTypes.add(targ.type);
+                    }
+                    checkIfTypeParamsRequiresIdentity(mref.sym.getMetadata(), lbTypes.toList(), mref.pos(), lint, true);
+                }
+                break;
+            }
+            case JCMethodDecl methodDecl : {
+                for (JCTypeParameter tp : methodDecl.typarams) {
+                    checkIfIdentityIsExpected(tp.pos(), tp.type, lint);
+                }
+                if (methodDecl.restype != null && !methodDecl.restype.type.hasTag(VOID)) {
+                    checkIfIdentityIsExpected(methodDecl.restype.pos(), methodDecl.restype.type, lint);
+                }
+                break;
+            }
+            case JCNewClass newClass : {
+                checkIfIdentityIsExpected(newClass.clazz.pos(), newClass.clazz.type, lint);
+                // check here also the arguments and type arguments
+                break;
+            }
+            case JCMethodInvocation apply : {
+                List<JCExpression> argExps = apply.args;
+                Symbol msym = TreeInfo.symbol(apply.meth);
+                if (msym != null) {
+                    if (!argExps.isEmpty() && msym instanceof MethodSymbol ms && ms.params != null) {
+                        VarSymbol lastParam = ms.params.head;
+                        for (VarSymbol param: ms.params) {
+                            if (param.attribute(syms.requiresIdentityType.tsym) != null && argExps.head.type.isValueBased()) {
+                                lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                            }
+                            lastParam = param;
+                            argExps = argExps.tail;
+                        }
+                        while (argExps != null && !argExps.isEmpty() && lastParam != null) {
+                            if (lastParam.attribute(syms.requiresIdentityType.tsym) != null && argExps.head.type.isValueBased()) {
+                                lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                            }
+                            argExps = argExps.tail;
+                        }
+                    }
+                    ListBuffer<Type> typeParamTypes = new ListBuffer<>();
+                    for (JCExpression targ: apply.typeargs) {
+                        checkIfIdentityIsExpected(targ.pos(), targ.type, lint);
+                        typeParamTypes.add(targ.type);
+                    }
+                    checkIfTypeParamsRequiresIdentity(msym.getMetadata(), typeParamTypes.toList(), tree.pos(), lint, true);
+                }
+                break;
+            }
+            default: throw new AssertionError("unexpected tree " + tree);
         }
     }
 
     /** Check if a type required an identity class
      */
-    boolean checkIfIdentityIsExpected(DiagnosticPosition pos, Type t, Lint lint) {
+    private boolean checkIfIdentityIsExpected(DiagnosticPosition pos, Type t, Lint lint) {
         if (t != null &&
                 lint != null &&
                 lint.isEnabled(LintCategory.IDENTITY)) {
@@ -5763,63 +5834,31 @@ public class Check {
             }
             return null;
         }
-    }
+    } // RequiresIdentityVisitor
 
     private boolean checkIfTypeParamsRequiresIdentity(SymbolMetadata sm, List<Type> typeParams) {
         return checkIfTypeParamsRequiresIdentity(sm, typeParams, null, null, false);
     }
 
-    public boolean checkIfTypeParamsRequiresIdentity(SymbolMetadata sm,
+    private boolean checkIfTypeParamsRequiresIdentity(SymbolMetadata sm,
                                                      List<Type> typeParams,
                                                      JCDiagnostic.DiagnosticPosition pos,
                                                      Lint lint,
                                                      boolean warn) {
         boolean result = false;
-        if (sm != null) {
+        if (sm != null && !typeParams.isEmpty()) {
             for (Attribute.TypeCompound ta: sm.getTypeAttributes()) {
                 if (ta.type.tsym == syms.requiresIdentityType.tsym) {
-                    TypeAnnotationPosition tap = ta.position;
-                    if (tap.type == TargetType.CLASS_TYPE_PARAMETER || tap.type == TargetType.METHOD_TYPE_PARAMETER) {
-                        int index = tap.parameter_index;
-                        // ClassType::getTypeArguments() can be empty for raw types
-                        Type tparam = typeParams.isEmpty() ? null : typeParams.get(index);
-                        if (tparam != null && tparam.isValueBased()) {
-                            if (warn) {
-                                lint.logIfEnabled(pos,
-                                        CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
-                            }
-                            result = true;
+                    if (typeParams.get(ta.position.parameter_index).isValueBased()) {
+                        if (warn) {
+                            lint.logIfEnabled(pos,
+                                    CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
                         }
+                        result = true;
                     }
                 }
             }
         }
         return result;
-    }
-
-    public void checkIfRequireIdentity(JCMethodInvocation tree, Symbol sym, Lint lint) {
-        List<JCExpression> argExps = tree.args;
-        if (!argExps.isEmpty() && sym instanceof MethodSymbol ms && ms.params != null) {
-            VarSymbol lastParam = ms.params.head;
-            for (VarSymbol param: ms.params) {
-                if (param.attribute(syms.requiresIdentityType.tsym) != null && argExps.head.type.isValueBased()) {
-                    lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
-                }
-                lastParam = param;
-                argExps = argExps.tail;
-            }
-            while (argExps != null && !argExps.isEmpty() && lastParam != null) {
-                if (lastParam.attribute(syms.requiresIdentityType.tsym) != null && argExps.head.type.isValueBased()) {
-                    lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
-                }
-                argExps = argExps.tail;
-            }
-        }
-        ListBuffer<Type> typeParamTypes = new ListBuffer<>();
-        for (JCExpression targ: tree.typeargs) {
-            checkIfIdentityIsExpected(targ.pos(), targ.type, lint);
-            typeParamTypes.add(targ.type);
-        }
-        checkIfTypeParamsRequiresIdentity(sym.getMetadata(), typeParamTypes.toList(), tree.pos(), lint, true);
     }
 }
