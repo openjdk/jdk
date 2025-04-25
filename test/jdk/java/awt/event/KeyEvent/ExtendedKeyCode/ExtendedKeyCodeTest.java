@@ -25,31 +25,63 @@ import java.awt.Frame;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyAdapter;
+import javax.swing.SwingUtilities;
 
 /*
  * @test
  * @key headful
  * @bug 8007156 8025126
  * @summary Extended key code is not set for a key event
- * @author Alexandr Scherbatiy
- * @library /lib/client
- * @build ExtendedRobot
  * @run main ExtendedKeyCodeTest
  */
-public class ExtendedKeyCodeTest {
 
-    private static volatile boolean setExtendedKeyCode = true;
-    private static volatile int eventsCount = 0;
+public class ExtendedKeyCodeTest {
+    private static Frame frame;
+    private static volatile boolean setExtendedKeyCode;
+    private static volatile int eventsCount;
 
     public static void main(String[] args) throws Exception {
-        ExtendedRobot robot = new ExtendedRobot();
+        Robot robot = new Robot();
         robot.setAutoDelay(50);
 
-        Frame frame = new Frame();
-        frame.setSize(300, 300);
+        try {
+            SwingUtilities.invokeAndWait(() -> createTestGUI());
+            robot.waitForIdle();
+            robot.delay(1000);
 
+            robot.keyPress(KeyEvent.VK_D);
+            robot.keyRelease(KeyEvent.VK_D);
+            robot.waitForIdle();
+
+            if (!setExtendedKeyCode) {
+                throw new RuntimeException("Wrong extended key code!");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> frame.dispose());
+        }
+
+        try {
+            SwingUtilities.invokeAndWait(() -> createTestGUI2());
+            robot.waitForIdle();
+            robot.delay(1000);
+
+            robot.keyPress(KeyEvent.VK_LEFT);
+            robot.keyRelease(KeyEvent.VK_LEFT);
+            robot.waitForIdle();
+
+            if (eventsCount != 2 || !setExtendedKeyCode) {
+                throw new RuntimeException("Wrong extended key code");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> frame.dispose());
+        }
+    }
+
+    public static void createTestGUI() {
+        eventsCount = 0;
+        setExtendedKeyCode = true;
+        frame = new Frame("ExtendedKeyCodeTest1");
         frame.addKeyListener(new KeyAdapter() {
-
             @Override
             public void keyPressed(KeyEvent e) {
                 eventsCount++;
@@ -65,41 +97,23 @@ public class ExtendedKeyCodeTest {
             }
         });
 
-        frame.setVisible(true);
-        robot.waitForIdle();
-
-        robot.keyPress(KeyEvent.VK_D);
-        robot.keyRelease(KeyEvent.VK_D);
-        robot.waitForIdle();
-
-        frame.dispose();
-
-        if (eventsCount != 2 || !setExtendedKeyCode) {
-            throw new RuntimeException("Wrong extended key code");
-        }
-
-        frame = new Frame();
+        frame.setLocationRelativeTo(null);
         frame.setSize(300, 300);
+        frame.setVisible(true);
+    }
+
+    public static void createTestGUI2() {
         setExtendedKeyCode = false;
-
+        frame = new Frame("ExtendedKeyCodeTest2");
         frame.addKeyListener(new KeyAdapter() {
-
             @Override
             public void keyPressed(KeyEvent e) {
                 setExtendedKeyCode = e.getExtendedKeyCode() == KeyEvent.VK_LEFT;
             }
         });
 
+        frame.setLocationRelativeTo(null);
+        frame.setSize(300, 300);
         frame.setVisible(true);
-        robot.waitForIdle();
-
-        robot.keyPress(KeyEvent.VK_LEFT);
-        robot.keyRelease(KeyEvent.VK_LEFT);
-        robot.waitForIdle();
-        frame.dispose();
-
-        if (!setExtendedKeyCode) {
-            throw new RuntimeException("Wrong extended key code!");
-        }
     }
 }
