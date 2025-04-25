@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -906,6 +906,57 @@ public class CreateSymbolsTestImpl {
                        public static class OtherNested {}
                    }
                    """);
+    }
+
+    @Test
+    void testTypeAnnotations() throws Exception {
+        doPrintElementTest("""
+                           package t;
+                           public class T {
+                           }
+                           """,
+                           """
+                           package t;
+                           import java.lang.annotation.*;
+                           import java.util.*;
+                           public class T<@AnnInvisible @AnnVisible E extends @AnnInvisible @AnnVisible ArrayList<@AnnInvisible @AnnVisible ArrayList>> extends @AnnInvisible @AnnVisible ArrayList {
+                               public @AnnInvisible @AnnVisible List<@AnnInvisible @AnnVisible E> field;
+                               public <@AnnInvisible @AnnVisible M extends @AnnInvisible @AnnVisible ArrayList<@AnnInvisible @AnnVisible ArrayList>> @AnnInvisible @AnnVisible List<@AnnInvisible @AnnVisible M> convert(@AnnInvisible @AnnVisible T<E> this, @AnnInvisible @AnnVisible M e1, @AnnInvisible @AnnVisible List<@AnnInvisible @AnnVisible E> e2) throws @AnnInvisible @AnnVisible IllegalStateException, @AnnInvisible @AnnVisible IllegalArgumentException {
+                                   return null;
+                               }
+                           }
+                           @Retention(RetentionPolicy.RUNTIME)
+                           @Target(ElementType.TYPE_USE)
+                           @interface AnnVisible {
+                           }
+                           @Retention(RetentionPolicy.CLASS)
+                           @Target(ElementType.TYPE_USE)
+                           @interface AnnInvisible {
+                           }
+                           """,
+                           "t.T",
+                           """
+                           package t;
+
+                           public class T {
+
+                             public T();
+                           }
+                           """,
+                           "t.T",
+                           """
+                           package t;
+
+                           public class T<@t.AnnInvisible @t.AnnVisible E extends java.util.@t.AnnInvisible @t.AnnVisible ArrayList<java.util.@t.AnnInvisible @t.AnnVisible ArrayList>> extends java.util.@t.AnnInvisible @t.AnnVisible ArrayList {
+                             public java.util.@t.AnnInvisible @t.AnnVisible List<@t.AnnInvisible @t.AnnVisible E> field;
+
+                             public T();
+
+                             public <@t.AnnInvisible @t.AnnVisible M extends java.util.@t.AnnInvisible @t.AnnVisible ArrayList<java.util.@t.AnnInvisible @t.AnnVisible ArrayList>> java.util.@t.AnnInvisible @t.AnnVisible List<@t.AnnInvisible @t.AnnVisible M> convert(@t.AnnInvisible @t.AnnVisible M arg0,
+                               java.util.@t.AnnInvisible @t.AnnVisible List<@t.AnnInvisible @t.AnnVisible E> arg1) throws java.lang.@t.AnnInvisible @t.AnnVisible IllegalStateException,\s
+                               java.lang.@t.AnnInvisible @t.AnnVisible IllegalArgumentException;
+                           }
+                           """);
     }
 
     void doTestData(String data,
