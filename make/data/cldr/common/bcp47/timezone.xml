@@ -130,6 +130,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="chzrh" description="Zurich, Switzerland" alias="Europe/Zurich"/>
             <type name="ciabj" description="Abidjan, Côte d'Ivoire" alias="Africa/Abidjan"/>
             <type name="ckrar" description="Rarotonga, Cook Islands" alias="Pacific/Rarotonga"/>
+            <type name="clcxq" description="Aysén Region, Chile" alias="America/Coyhaique" since="48"/>
             <type name="clipc" description="Easter Island, Chile" alias="Pacific/Easter Chile/EasterIsland"/>
             <type name="clpuq" description="Punta Arenas, Chile" alias="America/Punta_Arenas" since="31"/>
             <type name="clscl" description="Santiago, Chile" alias="America/Santiago Chile/Continental"/>

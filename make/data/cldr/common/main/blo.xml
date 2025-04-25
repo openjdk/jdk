@@ -414,8 +414,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[aáàâ b c ɖ eéèê ǝ{ǝ́}{ǝ̀}{ǝ̂} ɛ{ɛ́}{ɛ̀}{ɛ̂} f g {gb} h iíìî ɩ{ɩ́}{ɩ̀}{ɩ̂} j k {kp} l mḿ{m̀} nńǹ {ny} ŋ{ŋ́}{ŋ̀} {ŋm} oóòô ɔ{ɔ́}{ɔ̀}{ɔ̂} p r s {sh} t uúùû ʊ{ʊ́}{ʊ̀}{ʊ̂} w y]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ăǎåäãā{a̰} æ ɓ ćç d ɗ ĕěëẽēḛ {ǝ̃}{ǝ̄}{ǝ̰} {ə̌} {ɛ̌}{ɛ̃}{ɛ̄}{ɛ̰} ƒ ɣ {hw} ĭǐïĩīḭ ĳ {ɩ̃}{ɩ̄}{ɩ̰} {m̌}{m̄} ňñ{n̄} {ŋw} ŏǒöõøō{o̰} œ {ɔ̌}{ɔ̃}{ɔ̄}{ɔ̰} ř šſ ß ŭǔüūṵ {̃ũ} {ʊ̌}{ʊ̃}{ʊ̄}{ʊ̰} v ʋ x {xw} ÿ ƴ z ʒ {̃ʼ}]</exemplarCharacters>
+		<exemplarCharacters>[aáàâ ǝ{ǝ́}{ǝ̀}{ǝ̂} b c ɖ eéèê ɛ{ɛ́}{ɛ̀}{ɛ̂} f g {gb} h iíìî ɩ{ɩ́}{ɩ̀}{ɩ̂} j k {kp} l mḿ{m̀} nńǹ {ny} ŋ{ŋ́}{ŋ̀} {ŋm} oóòô ɔ{ɔ́}{ɔ̀}{ɔ̂} p r s {sh} t uúùû ʊ{ʊ́}{ʊ̀}{ʊ̂} w y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ăǎåäãā{a̰} æ {ǝ̃}{ǝ̄}{ǝ̰} ɓ ćç d ɗ ĕěëẽēḛ {ə̌} {ɛ̌}{ɛ̃}{ɛ̄}{ɛ̰} ƒ ɣ {hw} ĭǐïĩīḭ ĳ {ɩ̃}{ɩ̄}{ɩ̰} {m̌}{m̄} ňñ{n̄} {ŋw} ŏǒöõøō{o̰} œ {ɔ̌}{ɔ̃}{ɔ̄}{ɔ̰} ř šſ ß ŭǔüūṵ {̃ũ} {ʊ̌}{ʊ̃}{ʊ̄}{ʊ̰} v ʋ x {xw} ÿ ƴ z ʒ {̃ʼ}]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[   \- ‑ , . % ‰ ‱ + 0 1 2² 3³ 4 5 6 7 8 9 {ʲᵃ} {ᵏᵃ}]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[_ \- ‐‑ – — ― , ; \: ! ? . … '‘’ ‹ › &quot;“” « » ( ) \[ \] \{ \} § @ * / \\ \&amp; # % ‰ ‱ † ‡ • ‣ ‧ ′ ″ ° &lt; = &gt; | ¦ ~]</exemplarCharacters>
 	</characters>

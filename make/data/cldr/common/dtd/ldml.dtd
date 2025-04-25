@@ -64,6 +64,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@MATCH:validity/locale-for-names-->
 <!ATTLIST language alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/long, secondary, short, variant, menu, official-->
+<!ATTLIST language menu NMTOKENS #IMPLIED >
+    <!--@MATCH:literal/core, extension-->
 <!ATTLIST language draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED:true, false-->

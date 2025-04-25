@@ -254,13 +254,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel	value="basic"	 	match="localeDisplayNames/codePatterns/codePattern[@type='(language|script|territory)']"/>
 
 		<coverageLevel	value="basic"	 	match="localeDisplayNames/languages/language[@type='${Target-Language}']"/>
+		<coverageLevel	value="basic"	 	match="localeDisplayNames/languages/language[@type='${Target-Language}'][@menu='%anyAttribute']"/>
 		<coverageLevel	value="basic"	 	match="localeDisplayNames/languages/language[@type='${Target-Language}'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="basic"	 	match="localeDisplayNames/languages/language[@type='${Target-Language}'][@alt='%anyAttribute'][@menu='%anyAttribute']"/>
 		<coverageLevel	value="basic"	 	match="localeDisplayNames/languages/language[@type='en']"/>
+		<coverageLevel	value="basic"	 	match="localeDisplayNames/languages/language[@type='en'][@menu='%anyAttribute']"/>
 		<coverageLevel	value="basic"	 	match="localeDisplayNames/languages/language[@type='en'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="basic"	 	match="localeDisplayNames/languages/language[@type='en'][@alt='%anyAttribute'][@menu='%anyAttribute']"/>
 		<coverageLevel	value="moderate"	 	match="localeDisplayNames/languages/language[@type='%language30']"/>
+		<coverageLevel	value="moderate"	 	match="localeDisplayNames/languages/language[@type='%language30'][@menu='%anyAttribute']"/>
 		<coverageLevel	value="moderate"	 	match="localeDisplayNames/languages/language[@type='%language30'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="moderate"	 	match="localeDisplayNames/languages/language[@type='%language30'][@alt='%anyAttribute'][@menu='%anyAttribute']"/>
 		<coverageLevel	value="moderate"	 	match="localeDisplayNames/languages/language[@type='%language40']"/>
+		<coverageLevel	value="moderate"	 	match="localeDisplayNames/languages/language[@type='%language40'][@menu='%anyAttribute']"/>
 		<coverageLevel	value="moderate"	 	match="localeDisplayNames/languages/language[@type='%language40'][@alt='%anyAttribute']"/>
+		<coverageLevel	value="moderate"	 	match="localeDisplayNames/languages/language[@type='%language40'][@alt='%anyAttribute'][@menu='%anyAttribute']"/>
 
 		<coverageLevel	value="basic"	 	match="localeDisplayNames/scripts/script[@type='${Target-Scripts}']"/>
 		<coverageLevel	value="moderate"	 	match="localeDisplayNames/scripts/script[@type='%script30']"/>
@@ -706,21 +714,37 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel	value="moderate"	inTerritory="TW"	match="dates/calendars/calendar[@type='roc']/dateFormats/dateFormatLength[@type='%dateTimeFormatLengths']/dateFormat%stdPattern"/>
 
 		<coverageLevel value="moderate" match="localeDisplayNames/languages/language[@type='%language60']"/>
+		<coverageLevel value="moderate" match="localeDisplayNames/languages/language[@type='%language60'][@menu='%anyAttribute']"/>
 		<coverageLevel value="moderate" match="localeDisplayNames/languages/language[@type='%language60'][@alt='%anyAttribute']"/>
+		<coverageLevel value="moderate" match="localeDisplayNames/languages/language[@type='%language60'][@alt='%anyAttribute'][@menu='%anyAttribute']"/>
 		<coverageLevel inTerritory="CF" value="moderate" match="localeDisplayNames/languages/language[@type='sg']"/>
+		<coverageLevel inTerritory="CF" value="moderate" match="localeDisplayNames/languages/language[@type='sg'][@menu='%anyAttribute']"/>
 		<coverageLevel inTerritory="CF" value="moderate" match="localeDisplayNames/languages/language[@type='sg'][@alt='%anyAttribute']"/>
+		<coverageLevel inTerritory="CF" value="moderate" match="localeDisplayNames/languages/language[@type='sg'][@alt='%anyAttribute'][@menu='%anyAttribute']"/>
 		<coverageLevel inTerritory="CG" value="moderate" match="localeDisplayNames/languages/language[@type='(kg|ln)']"/>
+		<coverageLevel inTerritory="CG" value="moderate" match="localeDisplayNames/languages/language[@type='(kg|ln)'][@menu='%anyAttribute']"/>
 		<coverageLevel inTerritory="CG" value="moderate" match="localeDisplayNames/languages/language[@type='(kg|ln)'][@alt='%anyAttribute']"/>
+		<coverageLevel inTerritory="CG" value="moderate" match="localeDisplayNames/languages/language[@type='(kg|ln)'][@alt='%anyAttribute'][@menu='%anyAttribute']"/>
 		<coverageLevel inTerritory="CM" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_CM']"/>
+		<coverageLevel inTerritory="CM" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_CM'][@menu='%anyAttribute']"/>
 		<coverageLevel inTerritory="CM" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_CM'][@alt='%anyAttribute']"/>
+		<coverageLevel inTerritory="CM" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_CM'][@alt='%anyAttribute'][@menu='%anyAttribute']"/>
 		<coverageLevel inTerritory="EU" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_EU']"/>
+		<coverageLevel inTerritory="EU" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_EU'][@menu='%anyAttribute']"/>
 		<coverageLevel inTerritory="EU" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_EU'][@alt='%anyAttribute']"/>
+		<coverageLevel inTerritory="EU" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_EU'][@alt='%anyAttribute'][@menu='%anyAttribute']"/>
 		<coverageLevel inTerritory="GA" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_GA']"/>
+		<coverageLevel inTerritory="GA" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_GA'][@menu='%anyAttribute']"/>
 		<coverageLevel inTerritory="GA" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_GA'][@alt='%anyAttribute']"/>
+		<coverageLevel inTerritory="GA" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_GA'][@alt='%anyAttribute'][@menu='%anyAttribute']"/>
 		<coverageLevel inTerritory="NG" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_NG']"/>
+		<coverageLevel inTerritory="NG" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_NG'][@menu='%anyAttribute']"/>
 		<coverageLevel inTerritory="NG" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_NG'][@alt='%anyAttribute']"/>
+		<coverageLevel inTerritory="NG" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_NG'][@alt='%anyAttribute'][@menu='%anyAttribute']"/>
 		<coverageLevel inTerritory="TD" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_TD']"/>
+		<coverageLevel inTerritory="TD" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_TD'][@menu='%anyAttribute']"/>
 		<coverageLevel inTerritory="TD" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_TD'][@alt='%anyAttribute']"/>
+		<coverageLevel inTerritory="TD" value="moderate" match="localeDisplayNames/languages/language[@type='%language60_TD'][@alt='%anyAttribute'][@menu='%anyAttribute']"/>
 		<coverageLevel value="moderate" match="localeDisplayNames/scripts/script[@type='%script60']"/>
 		<coverageLevel value="moderate" match="localeDisplayNames/territories/territory[@type='%territory60']"/>
 		<coverageLevel inTerritory="EU" value="moderate" match="localeDisplayNames/territories/territory[@type='%territory60_EU']"/>
@@ -995,7 +1019,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel value="moderate" match="dates/timeZoneNames/metazone[@type='%metazone60']/long/daylight"/>
 		<coverageLevel value="moderate" match="dates/timeZoneNames/metazone[@type='%metazone60_stdonly']/long/standard"/>
 		<coverageLevel inTerritory="AE" value="moderate" match="dates/timeZoneNames/metazone[@type='%metazone60_AE_stdonly']/long/standard"/>
-		<coverageLevel inTerritory="AE" value="moderate" match="dates/timeZoneNames/metazone[@type='%metazone60_AE_stdonly']/short/standard"/>
 
 		<coverageLevel value="moderate" match="listPatterns/listPattern[@type='%anyAlphaNum']/listPatternPart[@type='%anyAlphaNum']"/>
 		<coverageLevel value="moderate" match="numbers/minimalPairs/pluralMinimalPairs[@count='%anyAlphaNum']"/>
@@ -1042,7 +1065,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel value="moderate" match="units/unitLength[@type='%unitLengths']/coordinateUnit/displayName"/>
 
 		<coverageLevel value="modern" match="localeDisplayNames/languages/language[@type='%language80']"/>
+		<coverageLevel value="modern" match="localeDisplayNames/languages/language[@type='%language80'][@menu='%anyAttribute']"/>
 		<coverageLevel value="modern" match="localeDisplayNames/languages/language[@type='%language80'][@alt='%anyAttribute']"/>
+		<coverageLevel value="modern" match="localeDisplayNames/languages/language[@type='%language80'][@alt='%anyAttribute'][@menu='%anyAttribute']"/>
 		<coverageLevel value="modern" match="localeDisplayNames/scripts/script[@type='%script80']"/>
 		<coverageLevel value="modern" match="localeDisplayNames/scripts/script[@type='%script80'][@alt='%anyAttribute']"/>
 		<coverageLevel value="modern" match="localeDisplayNames/keys/key[@type='%anyAttribute']"/>

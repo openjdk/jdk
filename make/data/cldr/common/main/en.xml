@@ -100,6 +100,7 @@ annotations.
 			<language type="bo">Tibetan</language>
 			<language type="bpy">Bishnupriya</language>
 			<language type="bqi">Bakhtiari</language>
+			<language type="bqi" alt="variant">Luri Bakhtiari</language>
 			<language type="br">Breton</language>
 			<language type="bra">Braj</language>
 			<language type="brh">Brahui</language>
@@ -132,6 +133,8 @@ annotations.
 			<language type="chy">Cheyenne</language>
 			<language type="cic">Chickasaw</language>
 			<language type="ckb">Central Kurdish</language>
+			<language type="ckb" menu="core">Kurdish</language>
+			<language type="ckb" menu="extension">Central</language>
 			<language type="ckb" alt="menu">Kurdish, Central</language>
 			<language type="ckb" alt="variant">Kurdish, Sorani</language>
 			<language type="clc">Chilcotin</language>
@@ -347,6 +350,8 @@ annotations.
 			<language type="ksf">Bafia</language>
 			<language type="ksh">Colognian</language>
 			<language type="ku">Kurdish</language>
+			<language type="ku" menu="core">Kurdish</language>
+			<language type="ku" menu="extension">Kurmanji</language>
 			<language type="kum">Kumyk</language>
 			<language type="kut">Kutenai</language>
 			<language type="kv">Komi</language>
@@ -494,6 +499,7 @@ annotations.
 			<language type="pfl">Palatine German</language>
 			<language type="phn">Phoenician</language>
 			<language type="pi">Pali</language>
+			<language type="pi" alt="variant">Pāli</language>
 			<language type="pis">Pijin</language>
 			<language type="pl">Polish</language>
 			<language type="pms">Piedmontese</language>
@@ -545,6 +551,8 @@ annotations.
 			<language type="sd">Sindhi</language>
 			<language type="sdc">Sassarese Sardinian</language>
 			<language type="sdh">Southern Kurdish</language>
+			<language type="sdh" menu="core">Kurdish</language>
+			<language type="sdh" menu="extension">Southern</language>
 			<language type="se">Northern Sami</language>
 			<language type="se" alt="menu">Sami, Northern</language>
 			<language type="see">Seneca</language>
@@ -3242,8 +3250,13 @@ annotations.
 					</monthContext>
 				</months>
 				<eras>
+					<eraNames>
+						<era type="0">Anno Hegirae</era>
+						<era type="1">Before Hijrah</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">AH</era>
+						<era type="1">BH</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>

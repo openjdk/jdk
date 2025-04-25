@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2025 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="sgs"/>
+	</identity>
+	<characters>
+		<exemplarCharacters>[aā b cč d eė{ė̄}ē f g h iī j k l m n oō p r sš t uū v zž]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[{ch} {dz}{dž}]</exemplarCharacters>
+		<exemplarCharacters type="index">[AĀ B CČ D EĖ{Ė̄}Ē F G H IĪ J K L M N OŌ P R SŠ T UŪ V ZŽ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[, % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … “„ ( ) \[ \] \{ \}]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart>„</quotationStart>
+		<quotationEnd>“</quotationEnd>
+		<alternateQuotationStart>„</alternateQuotationStart>
+		<alternateQuotationEnd>“</alternateQuotationEnd>
+	</delimiters>
+	<posix>
+		<messages>
+			<yesstr>tēp:t</yesstr>
+			<nostr>nē:n</nostr>
+		</messages>
+	</posix>
+</ldml>
