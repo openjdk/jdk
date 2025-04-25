@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @test
- * @bug 8353662
+ * @bug 8353662 8202708
  * @summary Verify long-standing, disabled by default behavior of resolving non-local
  *          file URLs using FTP.
  * @run junit/othervm -Djdk.net.file.ftpfallback=true NonLocalFtpFallback
@@ -169,5 +169,19 @@ public class NonLocalFtpFallback {
 
         // Assert that no FTP URIs were requested in the HTTP proxy
         assertEquals(0, uris.size());
+    }
+
+    /**
+     * Verify that opening a stream on a non-proxy URLConnection for a non-local
+     * file URL with an unknown host fails with UnknownHostException
+     * when the fallback FtpURLConnection attempts to connect to the non-existing
+     * FTP server.
+     */
+    @Test
+    public void verifyFtpUnknownHost() throws IOException {
+        URL url  = new URL("file://nonexistinghost/not-exist.txt");
+        assertThrows(UnknownHostException.class, () -> {
+            InputStream in = url.openConnection(Proxy.NO_PROXY).getInputStream();
+        });
     }
 }

@@ -34,22 +34,13 @@ import java.net.*;
 public class OpenStream {
 
     private static final String badHttp = "http://foo.bar.baz/";
-    private static final String badUnc = "file://h7qbp368oix47/not-exist.txt";
 
     public static void main(String[] args) throws IOException {
         testHttp();
-        testUnc();
     }
 
     static void testHttp() throws IOException {
         checkThrows(badHttp);
-    }
-
-    static void testUnc() throws IOException {
-        boolean isWindows = System.getProperty("os.name").startsWith("Windows");
-        if (isWindows) {
-            checkThrows(badUnc);
-        }
     }
 
     static void checkThrows(String url) throws IOException {
@@ -62,7 +53,6 @@ public class OpenStream {
         }
         throw new RuntimeException("Expected UnknownHostException to be " +
                 "thrown for " + url);
-
     }
 }
 
