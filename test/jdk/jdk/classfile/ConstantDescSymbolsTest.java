@@ -37,6 +37,7 @@ import java.lang.invoke.MethodType;
 import java.nio.charset.StandardCharsets;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.lang.classfile.ClassFile;
@@ -46,7 +47,6 @@ import jdk.internal.classfile.impl.Util;
 import jdk.internal.constant.ConstantUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -91,7 +91,8 @@ final class ConstantDescSymbolsTest {
     // Tests that condy symbols with non-static-method bootstraps are using the right lookup descriptor.
     @Test
     void testConstantDynamicNonStaticBootstrapMethod() throws Throwable {
-        record CondyBoot(MethodHandles.Lookup lookup, String name, Class<?> type) {}
+        record CondyBoot(MethodHandles.Lookup lookup, String name, Class<?> type) {
+        }
         var bootClass = CondyBoot.class.describeConstable().orElseThrow();
         var bootMhDesc = MethodHandleDesc.ofConstructor(bootClass, CD_MethodHandles_Lookup, CD_String, CD_Class);
         var condyDesc = DynamicConstantDesc.of(bootMhDesc);
@@ -169,19 +170,72 @@ final class ConstantDescSymbolsTest {
         assertEquals(cd, ce.asSymbol(), "Symbol propagation on create with utf8");
     }
 
+    @ParameterizedTest
+    @MethodSource("equalityCases")
+    <T, P extends PoolEntry> void testAsSymbolEquality(ValidSymbolCase<T, P> validSymbolCase, String entryState, P p) {
+        var asSymbol = validSymbolCase.translator.extractor.apply(p);
+        assertEquals(validSymbolCase.sym, asSymbol, "asSym vs sym");
+        assertEquals(validSymbolCase.other, asSymbol, "asSym vs other sym");
+    }
+
+    @ParameterizedTest
+    @MethodSource("equalityCases")
+    <T, P extends PoolEntry> void testMatchesOriginalEquality(ValidSymbolCase<T, P> validSymbolCase, String entryState, P p) {
+        assertTrue(validSymbolCase.translator.tester.test(p, validSymbolCase.sym));
+    }
+
+    @ParameterizedTest
+    @MethodSource("equalityCases")
+    <T, P extends PoolEntry> void testMatchesEquivalentEquality(ValidSymbolCase<T, P> validSymbolCase, String entryState, P p) {
+        assertTrue(validSymbolCase.translator.tester.test(p, validSymbolCase.other));
+    }
+
+    @ParameterizedTest
+    @MethodSource("inequalityCases")
+    <T, P extends PoolEntry> void testAsSymbolInequality(ValidSymbolCase<T, P> validSymbolCase, String stateName, P p) {
+        var asSymbol = validSymbolCase.translator.extractor.apply(p);
+        assertEquals(validSymbolCase.sym, asSymbol, "asSymbol vs original");
+        assertNotEquals(validSymbolCase.other, asSymbol, "asSymbol vs inequal");
+    }
+
+    @ParameterizedTest
+    @MethodSource("inequalityCases")
+    <T, P extends PoolEntry> void testMatchesOriginalInequality(ValidSymbolCase<T, P> validSymbolCase, String stateName, P p) {
+        assertTrue(validSymbolCase.translator.tester.test(p, validSymbolCase.sym));
+    }
+
+    @ParameterizedTest
+    @MethodSource("inequalityCases")
+    <T, P extends PoolEntry> void testMatchesNonEquivalentInequality(ValidSymbolCase<T, P> validSymbolCase, String stateName, P p) {
+        assertFalse(validSymbolCase.translator.tester.test(p, validSymbolCase.other));
+    }
+
+    @ParameterizedTest
+    @MethodSource("malformedCases")
+    <T, P extends PoolEntry> void testAsSymbolMalformed(InvalidSymbolCase<T, P> baseCase, String entryState, P p) {
+        assertThrows(IllegalArgumentException.class, () -> baseCase.translator.extractor.apply(p));
+    }
+
+    @ParameterizedTest
+    @MethodSource("malformedCases")
+    <T, P extends PoolEntry> void testMatchesMalformed(InvalidSymbolCase<T, P> baseCase, String entryState, P p) {
+        assertFalse(baseCase.translator.tester.test(p, baseCase.target));
+    }
+
+    // Support for complex pool entry creation with different inflation states.
+    // Inflation states include:
+    //   - bound/unbound,
+    //   - asSymbol()
+    //   - matches() resulting in match
+    //   - matches() resulting in mismatch
+
     // a pool entry, suitable for testing lazy behaviors and has descriptive name
-    record PoolEntryCase<P>(String desc, Supplier<P> poolEntry) {
-        void test(ThrowingConsumer<P> job) {
-            try {
-                job.accept(poolEntry.get());
-            } catch (Throwable e) {
-                Assertions.fail("Tested entry: " + desc, e);
-            }
-        }
+    record StatefulPoolEntry<P>(String desc, Supplier<P> factory) {
     }
 
     // Test pool entry <-> nominal descriptor, also the equals methods
-    record SymbolicTranslator<T, P extends PoolEntry>(String name, BiFunction<ConstantPoolBuilder, T, P> writer, BiPredicate<P, T> tester, Function<P, T> extractor) {
+    record SymbolicTranslator<T, P extends PoolEntry>(String name, BiFunction<ConstantPoolBuilder, T, P> writer,
+                                                      BiPredicate<P, T> tester, Function<P, T> extractor) {
         private P createUnboundEntry(T symbol) {
             ConstantPoolBuilder cpb = ConstantPoolBuilder.of(); // Temp pool does not support some entries
             return writer.apply(cpb, symbol);
@@ -191,28 +245,29 @@ final class ConstantDescSymbolsTest {
         private P toBoundEntry(P unboundEntry) {
             ConstantPoolBuilder cpb = (ConstantPoolBuilder) unboundEntry.constantPool();
             int index = unboundEntry.index();
-            var bytes = ClassFile.of().build(cpb.classEntry(ClassDesc.of("Test")), cpb, _ -> {});
+            var bytes = ClassFile.of().build(cpb.classEntry(ClassDesc.of("Test")), cpb, _ -> {
+            });
             return (P) ClassFile.of().parse(bytes).constantPool().entryByIndex(index);
         }
 
         // Spawn entries to test from a nominal descriptor
-        public Stream<PoolEntryCase<P>> entriesSpawner(T original) {
-            return entriesSpawner(() -> this.createUnboundEntry(original));
+        public Stream<StatefulPoolEntry<P>> entriesSpawner(T original) {
+            return spawnBounded(() -> this.createUnboundEntry(original));
         }
 
         // Spawn additional bound entries to test from an initial unbound entry
-        public Stream<PoolEntryCase<P>> entriesSpawner(Supplier<P> original) {
-            return Stream.of(new PoolEntryCase<>(original.get().toString(), original))
+        public Stream<StatefulPoolEntry<P>> spawnBounded(Supplier<P> original) {
+            return Stream.of(new StatefulPoolEntry<>(original.get().toString(), original))
                     .mapMulti((s, sink) -> {
-                sink.accept(s); // unbound
-                sink.accept(new PoolEntryCase<>(s.desc + "+lazy", () -> toBoundEntry(s.poolEntry.get()))); // bound
-            });
+                        sink.accept(s); // unbound
+                        sink.accept(new StatefulPoolEntry<>(s.desc + "+lazy", () -> toBoundEntry(s.factory.get()))); // bound
+                    });
         }
 
         // Add extra stage of entry spawn to "inflate" entries via positive/negative tests
-        public PoolEntryCase<P> inflateByTest(PoolEntryCase<P> last, T arg, String msg) {
-            return new PoolEntryCase<>("+matches(" + msg + ")", () -> {
-                var ret = last.poolEntry.get();
+        public StatefulPoolEntry<P> inflateByMatching(StatefulPoolEntry<P> last, T arg, String msg) {
+            return new StatefulPoolEntry<>("+matches(" + msg + ")", () -> {
+                var ret = last.factory.get();
                 tester.test(ret, arg);
                 return ret;
             });
@@ -220,9 +275,9 @@ final class ConstantDescSymbolsTest {
 
         // Add extra stage of entry spawn to "inflate" entries via descriptor computation
         // This should not be used if the pool entry may be invalid (i.e. throws IAE)
-        public PoolEntryCase<P> inflateByComputeSymbol(PoolEntryCase<P> last) {
-            return new PoolEntryCase<>(last.desc + "+asSymbol()", () -> {
-                var ret = last.poolEntry.get();
+        public StatefulPoolEntry<P> inflateByComputeSymbol(StatefulPoolEntry<P> last) {
+            return new StatefulPoolEntry<>(last.desc + "+asSymbol()", () -> {
+                var ret = last.factory.get();
                 extractor.apply(ret);
                 return ret;
             });
@@ -234,92 +289,68 @@ final class ConstantDescSymbolsTest {
         }
     }
 
+    // A case testing valid symbol sym; other is another symbol that may match or mismatch.
+    record ValidSymbolCase<T, P extends PoolEntry>(SymbolicTranslator<T, P> translator, T sym, T other) {
+    }
+
     // Current supported conversions
     static final SymbolicTranslator<String, Utf8Entry> UTF8_STRING_TRANSLATOR = new SymbolicTranslator<>("Utf8", ConstantPoolBuilder::utf8Entry, Utf8Entry::equalsString, Utf8Entry::stringValue);
-    static final SymbolicTranslator<ClassDesc, Utf8Entry> UTF8_CLASS_TRANSLATOR = new SymbolicTranslator<>("FieldDescriptorUtf8", ConstantPoolBuilder::utf8Entry, Utf8Entry::isFieldType, Util::fieldTypeSymbol);
-    static final SymbolicTranslator<MethodTypeDesc, Utf8Entry> UTF8_METHOD_TYPE_TRANSLATOR = new SymbolicTranslator<>("MethodDescriptorUtf8", ConstantPoolBuilder::utf8Entry, Utf8Entry::isMethodType, Util::methodTypeSymbol);
+    static final SymbolicTranslator<ClassDesc, Utf8Entry> UTF8_CLASS_TRANSLATOR = new SymbolicTranslator<>("FieldTypeUtf8", ConstantPoolBuilder::utf8Entry, Utf8Entry::isFieldType, Util::fieldTypeSymbol);
+    static final SymbolicTranslator<MethodTypeDesc, Utf8Entry> UTF8_METHOD_TYPE_TRANSLATOR = new SymbolicTranslator<>("MethodTypeUtf8", ConstantPoolBuilder::utf8Entry, Utf8Entry::isMethodType, Util::methodTypeSymbol);
     static final SymbolicTranslator<ClassDesc, ClassEntry> CLASS_ENTRY_TRANSLATOR = new SymbolicTranslator<>("ClassEntry", ConstantPoolBuilder::classEntry, ClassEntry::matches, ClassEntry::asSymbol);
     static final SymbolicTranslator<MethodTypeDesc, MethodTypeEntry> METHOD_TYPE_ENTRY_TRANSLATOR = new SymbolicTranslator<>("MethodTypeEntry", ConstantPoolBuilder::methodTypeEntry, MethodTypeEntry::matches, MethodTypeEntry::asSymbol);
     static final SymbolicTranslator<String, StringEntry> STRING_ENTRY_TRANSLATOR = new SymbolicTranslator<>("StringEntry", ConstantPoolBuilder::stringEntry, StringEntry::equalsString, StringEntry::stringValue);
     static final SymbolicTranslator<PackageDesc, PackageEntry> PACKAGE_ENTRY_TRANSLATOR = new SymbolicTranslator<>("PackageEntry", ConstantPoolBuilder::packageEntry, PackageEntry::matches, PackageEntry::asSymbol);
     static final SymbolicTranslator<ModuleDesc, ModuleEntry> MODULE_ENTRY_TRANSLATOR = new SymbolicTranslator<>("ModuleEntry", ConstantPoolBuilder::moduleEntry, ModuleEntry::matches, ModuleEntry::asSymbol);
 
-    static Stream<Arguments> equalityCases() {
-        return Stream.of(
-                Arguments.of(CLASS_ENTRY_TRANSLATOR, CD_Object, ClassDesc.ofInternalName("java/lang/Object")), // class or interface
-                Arguments.of(CLASS_ENTRY_TRANSLATOR, CD_Object.arrayType(), ClassDesc.ofDescriptor("[Ljava/lang/Object;")), // array
-                Arguments.of(UTF8_CLASS_TRANSLATOR, CD_int, ClassDesc.ofDescriptor("I")), // primitive
-                Arguments.of(UTF8_CLASS_TRANSLATOR, CD_Object, ClassDesc.ofInternalName("java/lang/Object")), // class or interface
-                Arguments.of(UTF8_CLASS_TRANSLATOR, CD_Object.arrayType(), ClassDesc.ofDescriptor("[Ljava/lang/Object;")), // array
-                Arguments.of(UTF8_STRING_TRANSLATOR, "Ab\u0000c", "Ab\u0000c"),
-                Arguments.of(UTF8_METHOD_TYPE_TRANSLATOR, MTD_void, MethodTypeDesc.ofDescriptor("()V")),
-                Arguments.of(UTF8_METHOD_TYPE_TRANSLATOR, MethodTypeDesc.of(CD_int, CD_Long), MethodTypeDesc.ofDescriptor("(Ljava/lang/Long;)I")),
-                Arguments.of(METHOD_TYPE_ENTRY_TRANSLATOR, MethodTypeDesc.of(CD_Object), MethodTypeDesc.ofDescriptor("()Ljava/lang/Object;")),
-                Arguments.of(STRING_ENTRY_TRANSLATOR, "Ape", new String("Ape".getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8)),
-                Arguments.of(PACKAGE_ENTRY_TRANSLATOR, PackageDesc.of("java.lang"), PackageDesc.ofInternalName("java/lang")),
-                Arguments.of(MODULE_ENTRY_TRANSLATOR, ModuleDesc.of("java.base"), ModuleDesc.of(new String("java.base".getBytes(StandardCharsets.US_ASCII), StandardCharsets.US_ASCII)))
-        );
+    // Create arguments of tuple (ValidSymbolCase, entryState, PoolEntry) to verify symbolic behavior of pool entries
+    // with particular inflation states
+    static <T, P extends PoolEntry> void specializeInflation(ValidSymbolCase<T, P> validSymbolCase, Consumer<Arguments> callArgs) {
+        validSymbolCase.translator.entriesSpawner(validSymbolCase.sym)
+                .<StatefulPoolEntry<P>>mapMulti((src, sink) -> {
+                    sink.accept(src);
+                    sink.accept(validSymbolCase.translator.inflateByMatching(src, validSymbolCase.sym, "same symbol"));
+                    sink.accept(validSymbolCase.translator.inflateByMatching(src, validSymbolCase.other, "another symbol"));
+                    sink.accept(validSymbolCase.translator.inflateByComputeSymbol(src));
+                })
+                .forEach(stateful -> callArgs.accept(Arguments.of(validSymbolCase, stateful.desc, stateful.factory.get())));
     }
 
-    @ParameterizedTest
-    @MethodSource("equalityCases")
-    <T, P extends PoolEntry> void testEquality(SymbolicTranslator<T, P> translator, T first, T alt) {
-        assertEquals(first, alt, "Bad test data");
-        translator.entriesSpawner(first)
-                .<PoolEntryCase<P>>mapMulti((src, sink) -> {
-                    sink.accept(src);
-                    sink.accept(translator.inflateByTest(src, first, "first"));
-                    sink.accept(translator.inflateByTest(src, alt, "alt"));
-                    sink.accept(translator.inflateByComputeSymbol(src));
-                })
-                .forEach(scenario -> {
-                    scenario.test(p -> {
-                        var asSymbol = translator.extractor.apply(p);
-                        assertEquals(first, asSymbol, "asSym vs first");
-                        assertEquals(alt, asSymbol, "asSym vs alt");
-                    });
-                    scenario.test(p -> assertTrue(translator.tester.test(p, first), "eqSym first"));
-                    scenario.test(p -> assertTrue(translator.tester.test(p, alt), "eqSym alt"));
-                });
+    static Stream<Arguments> equalityCases() {
+        return Stream.of(
+                new ValidSymbolCase<>(CLASS_ENTRY_TRANSLATOR, CD_Object, ClassDesc.ofInternalName("java/lang/Object")), // class or interface
+                new ValidSymbolCase<>(CLASS_ENTRY_TRANSLATOR, CD_Object.arrayType(), ClassDesc.ofDescriptor("[Ljava/lang/Object;")), // array
+                new ValidSymbolCase<>(UTF8_CLASS_TRANSLATOR, CD_int, ClassDesc.ofDescriptor("I")), // primitive
+                new ValidSymbolCase<>(UTF8_CLASS_TRANSLATOR, CD_Object, ClassDesc.ofInternalName("java/lang/Object")), // class or interface
+                new ValidSymbolCase<>(UTF8_CLASS_TRANSLATOR, CD_Object.arrayType(), ClassDesc.ofDescriptor("[Ljava/lang/Object;")), // array
+                new ValidSymbolCase<>(UTF8_STRING_TRANSLATOR, "Ab\u0000c", "Ab\u0000c"),
+                new ValidSymbolCase<>(UTF8_METHOD_TYPE_TRANSLATOR, MTD_void, MethodTypeDesc.ofDescriptor("()V")),
+                new ValidSymbolCase<>(UTF8_METHOD_TYPE_TRANSLATOR, MethodTypeDesc.of(CD_int, CD_Long), MethodTypeDesc.ofDescriptor("(Ljava/lang/Long;)I")),
+                new ValidSymbolCase<>(METHOD_TYPE_ENTRY_TRANSLATOR, MethodTypeDesc.of(CD_Object), MethodTypeDesc.ofDescriptor("()Ljava/lang/Object;")),
+                new ValidSymbolCase<>(STRING_ENTRY_TRANSLATOR, "Ape", new String("Ape".getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8)),
+                new ValidSymbolCase<>(PACKAGE_ENTRY_TRANSLATOR, PackageDesc.of("java.lang"), PackageDesc.ofInternalName("java/lang")),
+                new ValidSymbolCase<>(MODULE_ENTRY_TRANSLATOR, ModuleDesc.of("java.base"), ModuleDesc.of(new String("java.base".getBytes(StandardCharsets.US_ASCII), StandardCharsets.US_ASCII)))
+        ).mapMulti(ConstantDescSymbolsTest::specializeInflation);
     }
 
     static Stream<Arguments> inequalityCases() {
         return Stream.of(
-                Arguments.of(CLASS_ENTRY_TRANSLATOR, CD_Object, ClassDesc.ofInternalName("java/io/Object")), // class or interface
-                Arguments.of(CLASS_ENTRY_TRANSLATOR, CD_Object.arrayType(), ClassDesc.ofDescriptor("[Ljava/lang/String;")), // array
-                Arguments.of(UTF8_CLASS_TRANSLATOR, CD_int, ClassDesc.ofDescriptor("S")), // primitive
-                Arguments.of(UTF8_CLASS_TRANSLATOR, CD_Object, ClassDesc.ofInternalName("java/lang/String")), // class or interface
-                Arguments.of(UTF8_CLASS_TRANSLATOR, CD_Object.arrayType(), ClassDesc.ofDescriptor("[Ljava/lang/System;")), // array
-                Arguments.of(UTF8_STRING_TRANSLATOR, "Ab\u0000c", "Abdc"),
-                Arguments.of(UTF8_METHOD_TYPE_TRANSLATOR, MTD_void, MethodTypeDesc.ofDescriptor("()I")),
-                Arguments.of(UTF8_METHOD_TYPE_TRANSLATOR, MethodTypeDesc.of(CD_int, CD_Short), MethodTypeDesc.ofDescriptor("(Ljava/lang/Long;)I")),
-                Arguments.of(METHOD_TYPE_ENTRY_TRANSLATOR, MethodTypeDesc.of(CD_String), MethodTypeDesc.ofDescriptor("()Ljava/lang/Object;")),
-                Arguments.of(STRING_ENTRY_TRANSLATOR, "Cat", new String("Ape".getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8)),
-                Arguments.of(PACKAGE_ENTRY_TRANSLATOR, PackageDesc.of("java.lang"), PackageDesc.ofInternalName("java/util")),
-                Arguments.of(MODULE_ENTRY_TRANSLATOR, ModuleDesc.of("java.base"), ModuleDesc.of(new String("java.desktop".getBytes(StandardCharsets.US_ASCII), StandardCharsets.US_ASCII)))
-        );
+                new ValidSymbolCase<>(CLASS_ENTRY_TRANSLATOR, CD_Object, ClassDesc.ofInternalName("java/io/Object")), // class or interface
+                new ValidSymbolCase<>(CLASS_ENTRY_TRANSLATOR, CD_Object.arrayType(), ClassDesc.ofDescriptor("[Ljava/lang/String;")), // array
+                new ValidSymbolCase<>(UTF8_CLASS_TRANSLATOR, CD_int, ClassDesc.ofDescriptor("S")), // primitive
+                new ValidSymbolCase<>(UTF8_CLASS_TRANSLATOR, CD_Object, ClassDesc.ofInternalName("java/lang/String")), // class or interface
+                new ValidSymbolCase<>(UTF8_CLASS_TRANSLATOR, CD_Object.arrayType(), ClassDesc.ofDescriptor("[Ljava/lang/System;")), // array
+                new ValidSymbolCase<>(UTF8_STRING_TRANSLATOR, "Ab\u0000c", "Abdc"),
+                new ValidSymbolCase<>(UTF8_METHOD_TYPE_TRANSLATOR, MTD_void, MethodTypeDesc.ofDescriptor("()I")),
+                new ValidSymbolCase<>(UTF8_METHOD_TYPE_TRANSLATOR, MethodTypeDesc.of(CD_int, CD_Short), MethodTypeDesc.ofDescriptor("(Ljava/lang/Long;)I")),
+                new ValidSymbolCase<>(METHOD_TYPE_ENTRY_TRANSLATOR, MethodTypeDesc.of(CD_String), MethodTypeDesc.ofDescriptor("()Ljava/lang/Object;")),
+                new ValidSymbolCase<>(STRING_ENTRY_TRANSLATOR, "Cat", new String("Ape".getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8)),
+                new ValidSymbolCase<>(PACKAGE_ENTRY_TRANSLATOR, PackageDesc.of("java.lang"), PackageDesc.ofInternalName("java/util")),
+                new ValidSymbolCase<>(MODULE_ENTRY_TRANSLATOR, ModuleDesc.of("java.base"), ModuleDesc.of(new String("java.desktop".getBytes(StandardCharsets.US_ASCII), StandardCharsets.US_ASCII)))
+        ).mapMulti(ConstantDescSymbolsTest::specializeInflation);
     }
 
-    @ParameterizedTest
-    @MethodSource("inequalityCases")
-    <T, P extends PoolEntry> void testInequality(SymbolicTranslator<T, P> translator, T obj, T bad) {
-        assertNotEquals(obj, bad, "Bad test data");
-        translator.entriesSpawner(obj)
-                .<PoolEntryCase<P>>mapMulti((src, sink) -> {
-                    sink.accept(src);
-                    sink.accept(translator.inflateByTest(src, obj, "obj"));
-                    sink.accept(translator.inflateByTest(src, bad, "bad"));
-                    sink.accept(translator.inflateByComputeSymbol(src));
-                })
-                .forEach(scenario -> {
-                    scenario.test(p -> {
-                        var asSymbol = translator.extractor.apply(p);
-                        assertEquals(obj, asSymbol, "asSym vs obj");
-                        assertNotEquals(bad, asSymbol, "asSym vs bad");
-                    });
-                    scenario.test(p -> assertTrue(translator.tester.test(p, obj), "eqSym obj"));
-                    scenario.test(p -> assertFalse(translator.tester.test(p, bad), "eqSym bad"));
-                });
+    record InvalidSymbolCase<T, P extends PoolEntry>(SymbolicTranslator<T, P> translator, Supplier<P> factory, T target) {
     }
 
     // Type hint function
@@ -327,32 +358,27 @@ final class ConstantDescSymbolsTest {
         return () -> func.apply(ConstantPoolBuilder.of());
     }
 
-    static Stream<Arguments> malformedCases() {
-        return Stream.of(
-                Arguments.of(CLASS_ENTRY_TRANSLATOR, badFactory(b -> b.classEntry(b.utf8Entry("java.lang.Object"))), CD_Object), // class or interface
-                Arguments.of(CLASS_ENTRY_TRANSLATOR, badFactory(b -> b.classEntry(b.utf8Entry("[Ljava/lang/String"))), CD_String.arrayType()), // array
-                Arguments.of(UTF8_CLASS_TRANSLATOR, badFactory(b -> b.utf8Entry("int")), ClassDesc.ofDescriptor("I")), // primitive
-                Arguments.of(UTF8_CLASS_TRANSLATOR, badFactory(b -> b.utf8Entry("Ljava/lang/String")), CD_String), // class or interface
-                Arguments.of(UTF8_CLASS_TRANSLATOR, badFactory(b -> b.utf8Entry("[Ljava/lang/String")), CD_String.arrayType()), // array
-                Arguments.of(METHOD_TYPE_ENTRY_TRANSLATOR, badFactory(b -> b.methodTypeEntry(b.utf8Entry("()"))), MTD_void),
-                Arguments.of(METHOD_TYPE_ENTRY_TRANSLATOR, badFactory(b -> b.methodTypeEntry(b.utf8Entry("(V)"))), MTD_void),
-                Arguments.of(UTF8_METHOD_TYPE_TRANSLATOR, badFactory(b -> b.utf8Entry("()Ljava/lang/String")), MethodTypeDesc.of(CD_String)),
-                Arguments.of(PACKAGE_ENTRY_TRANSLATOR, badFactory(b -> b.packageEntry(b.utf8Entry("java.lang"))), PackageDesc.of("java.lang")),
-                Arguments.of(MODULE_ENTRY_TRANSLATOR, badFactory(b -> b.moduleEntry(b.utf8Entry("java@base"))), ModuleDesc.of("java.base"))
-        );
+    static <T, P extends PoolEntry> void specializeInflation(InvalidSymbolCase<T, P> invalidSymbolCase, Consumer<Arguments> callArgs) {
+        invalidSymbolCase.translator.spawnBounded(invalidSymbolCase.factory)
+                .<StatefulPoolEntry<P>>mapMulti((src, sink) -> {
+                    sink.accept(src);
+                    sink.accept(invalidSymbolCase.translator.inflateByMatching(src, invalidSymbolCase.target, "target"));
+                })
+                .forEach(stateful -> callArgs.accept(Arguments.of(invalidSymbolCase, stateful.desc, stateful.factory.get())));
     }
 
-    @ParameterizedTest
-    @MethodSource("malformedCases")
-    <T, P extends PoolEntry> void testMalformed(SymbolicTranslator<T, P> translator, Supplier<P> factory, T target) {
-        translator.entriesSpawner(factory)
-                .<PoolEntryCase<P>>mapMulti((src, sink) -> {
-                    sink.accept(src);
-                    sink.accept(translator.inflateByTest(src, target, "target"));
-                })
-                .forEach(scenario -> {
-                    scenario.test(p -> assertThrows(IllegalArgumentException.class, () -> translator.extractor.apply(p), "asSym"));
-                    scenario.test(p -> assertFalse(translator.tester.test(p, target), "eqSym"));
-                });
+    static Stream<Arguments> malformedCases() {
+        return Stream.of(
+                new InvalidSymbolCase<>(CLASS_ENTRY_TRANSLATOR, badFactory(b -> b.classEntry(b.utf8Entry("java.lang.Object"))), CD_Object), // class or interface
+                new InvalidSymbolCase<>(CLASS_ENTRY_TRANSLATOR, badFactory(b -> b.classEntry(b.utf8Entry("[Ljava/lang/String"))), CD_String.arrayType()), // array
+                new InvalidSymbolCase<>(UTF8_CLASS_TRANSLATOR, badFactory(b -> b.utf8Entry("int")), ClassDesc.ofDescriptor("I")), // primitive
+                new InvalidSymbolCase<>(UTF8_CLASS_TRANSLATOR, badFactory(b -> b.utf8Entry("Ljava/lang/String")), CD_String), // class or interface
+                new InvalidSymbolCase<>(UTF8_CLASS_TRANSLATOR, badFactory(b -> b.utf8Entry("[Ljava/lang/String")), CD_String.arrayType()), // array
+                new InvalidSymbolCase<>(METHOD_TYPE_ENTRY_TRANSLATOR, badFactory(b -> b.methodTypeEntry(b.utf8Entry("()"))), MTD_void),
+                new InvalidSymbolCase<>(METHOD_TYPE_ENTRY_TRANSLATOR, badFactory(b -> b.methodTypeEntry(b.utf8Entry("(V)"))), MTD_void),
+                new InvalidSymbolCase<>(UTF8_METHOD_TYPE_TRANSLATOR, badFactory(b -> b.utf8Entry("()Ljava/lang/String")), MethodTypeDesc.of(CD_String)),
+                new InvalidSymbolCase<>(PACKAGE_ENTRY_TRANSLATOR, badFactory(b -> b.packageEntry(b.utf8Entry("java.lang"))), PackageDesc.of("java.lang")),
+                new InvalidSymbolCase<>(MODULE_ENTRY_TRANSLATOR, badFactory(b -> b.moduleEntry(b.utf8Entry("java@base"))), ModuleDesc.of("java.base"))
+        ).mapMulti(ConstantDescSymbolsTest::specializeInflation);
     }
 }
