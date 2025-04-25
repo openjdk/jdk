@@ -161,6 +161,12 @@ void outputStream::do_vsnprintf_and_write(const char* format, va_list ap, bool a
   }
 }
 
+bool outputStream::set_autoindent(bool value) {
+  const bool old = _autoindent;
+  _autoindent = value;
+  return old;
+}
+
 void outputStream::print(const char* format, ...) {
   va_list ap;
   va_start(ap, format);
@@ -275,12 +281,6 @@ void outputStream::date_stamp(bool guard,
 outputStream& outputStream::indent() {
   sp(_indentation - _position);
   return *this;
-}
-
-bool outputStream::set_autoindent(bool value) {
-  const bool old = _autoindent;
-  _autoindent = value;
-  return old;
 }
 
 void outputStream::print_jlong(jlong value) {

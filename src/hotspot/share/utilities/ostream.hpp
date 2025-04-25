@@ -44,6 +44,8 @@ DEBUG_ONLY(class ResourceMark;)
 // -XX:+DisplayVMOutputToStderr.
 
 class outputStream : public CHeapObjBase {
+  friend class StreamIndentor;
+
  private:
    NONCOPYABLE(outputStream);
    int _indentation; // current indentation
@@ -87,6 +89,9 @@ class outputStream : public CHeapObjBase {
    // calls do_vsnprintf, then writes output to stream.
    void do_vsnprintf_and_write(const char* format, va_list ap, bool add_cr) ATTRIBUTE_PRINTF(2, 0);
 
+   // Automatic indentation. Returns old autoindent state.
+   bool set_autoindent(bool value);
+
  public:
    class TestSupport;  // Unit test support
 
@@ -103,14 +108,6 @@ class outputStream : public CHeapObjBase {
    void set_indentation(int i) { _indentation = i;    }
    int fill_to(int col);
    void move_to(int col, int slop = 6, int min_space = 2);
-
-   // Automatic indentation:
-   // If autoindent mode is on, the following APIs will automatically indent
-   // line starts depending on the current indentation level:
-   // print(), print_cr(), print_raw(), print_raw_cr()
-   // Other APIs are unaffected
-   // Returns old autoindent state.
-   bool set_autoindent(bool value);
 
    // sizing
    int position() const { return _position; }
@@ -175,14 +172,17 @@ class outputStream : public CHeapObjBase {
 // ANSI C++ name collision
 extern outputStream* tty;           // tty output
 
+// outputStream indentation. When used, indentation is automatically applied
+// when printing on the stream using the following APIs:
+// print(), print_cr(), print_raw(), print_raw_cr()
 class StreamIndentor {
-private:
+ private:
   outputStream* const _stream;
-  const int _indentation;
-  const bool _old_autoindent;
+  const int           _indentation;
+  const bool          _old_autoindent;
   NONCOPYABLE(StreamIndentor);
 
-public:
+ public:
   StreamIndentor(outputStream* os, int indentation) :
     _stream(os),
     _indentation(indentation),

@@ -105,8 +105,6 @@ TEST_VM(ostream, bufferedStream_dynamic_small) {
 
 static void test_autoindent(bool on) {
   stringStream ss;
-  const bool prior = ss.set_autoindent(on);
-  EXPECT_FALSE(prior);
   {
     StreamIndentor si(&ss, 5);
     ss.print("ABC");
@@ -146,8 +144,6 @@ static void test_autoindent(bool on) {
         "end"
     );
   }
-  bool prior2 = ss.set_autoindent(prior);
-  EXPECT_EQ(prior2, on);
 }
 
 TEST_VM(ostream, autoindent_on)  { test_autoindent(true);  }
