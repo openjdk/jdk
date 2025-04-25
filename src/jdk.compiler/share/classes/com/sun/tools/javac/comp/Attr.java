@@ -1011,7 +1011,7 @@ public class Attr extends JCTree.Visitor {
             attribStats(tree.typarams, localEnv);
             if (env.info.lint.isEnabled(LintCategory.IDENTITY)) {
                 for (JCTypeParameter tp : tree.typarams) {
-                    chk.checkIfIdentityIsRequired(tp.pos(), tp.type, env);
+                    chk.checkIfIdentityIsExpected(tp.pos(), tp.type, env.info.lint);
                 }
             }
 
@@ -1054,7 +1054,7 @@ public class Attr extends JCTree.Visitor {
             // Check that result type is well-formed.
             if (tree.restype != null && !tree.restype.type.hasTag(VOID)) {
                 chk.validate(tree.restype, localEnv);
-                chk.checkIfIdentityIsRequired(tree.restype.pos(), tree.restype.type, env);
+                chk.checkIfIdentityIsExpected(tree.restype.pos(), tree.restype.type, env.info.lint);
             }
 
             // Check that receiver type is well-formed.
@@ -1335,22 +1335,11 @@ public class Attr extends JCTree.Visitor {
                     log.error(tree, Errors.IllegalRecordComponentName(v));
                 }
             }
-            if (notACanonicalConstructorArg(v)) {
-                chk.checkIfIdentityIsRequired(tree.vartype.pos(), tree.vartype.type, env);
-            }
+            chk.checkRequiresIdentity(tree, env.info.lint);
         }
         finally {
             chk.setLint(prevLint);
         }
-    }
-
-    /* we don't want to warn twice so if this variable is a compiler generated parameter to
-     * a canonical record constructor, we don't want to issue a warning as we will warn the
-     * corresponding compiler generated private record field
-     */
-    boolean notACanonicalConstructorArg(VarSymbol vs) {
-        return (vs.flags_field & RECORD) == 0 ||
-                (vs.flags_field & ~(Flags.PARAMETER | RECORD | GENERATED_MEMBER)) != 0;
     }
 
     private void doQueueScanTreeAndTypeAnnotateForVarInit(JCVariableDecl tree, Env<AttrContext> env) {
@@ -1964,7 +1953,7 @@ public class Attr extends JCTree.Visitor {
 
     public void visitSynchronized(JCSynchronized tree) {
         chk.checkRefType(tree.pos(), attribExpr(tree.lock, env));
-        if (chk.isValueBased(tree.lock.type)) {
+        if (tree.lock.type.isValueBased()) {
             if (env.info.lint.isEnabled(LintCategory.SYNCHRONIZATION)) {
                 env.info.lint.logIfEnabled(tree.pos(), LintWarnings.AttemptToSynchronizeOnInstanceOfValueBasedClass);
             } else {
@@ -2688,53 +2677,11 @@ public class Attr extends JCTree.Visitor {
             result = check(tree, capturedRes, KindSelector.VAL, resultInfo);
         }
         if (env.info.lint.isEnabled(LintCategory.IDENTITY)) {
-            checkIfRequireIdentity(tree, msym);
+            chk.checkIfRequireIdentity(tree, msym, env.info.lint);
         }
         chk.validate(tree.typeargs, localEnv);
     }
     //where
-        void checkIfRequireIdentity(JCMethodInvocation tree, Symbol sym) {
-            List<JCExpression> argExps = tree.args;
-            if (!argExps.isEmpty() && sym instanceof MethodSymbol ms && ms.params != null) {
-                VarSymbol lastParam = ms.params.head;
-                for (VarSymbol param: ms.params) {
-                    if (requiresIdentity(param) && chk.isValueBased(argExps.head.type)) {
-                        env.info.lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
-                    }
-                    lastParam = param;
-                    argExps = argExps.tail;
-                }
-                while (argExps != null && !argExps.isEmpty() && lastParam != null) {
-                    if (requiresIdentity(lastParam) && chk.isValueBased(argExps.head.type)) {
-                        env.info.lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
-                    }
-                    argExps = argExps.tail;
-                }
-            }
-            ListBuffer<Type> typeParamTypes = new ListBuffer<>();
-            for (JCExpression targ: tree.typeargs) {
-                chk.checkIfIdentityIsRequired(targ.pos(), targ.type, env);
-                typeParamTypes.add(targ.type);
-            }
-            chk.checkIfTypeParamsRequiresIdentity(sym.getMetadata(), typeParamTypes.toList(), tree.pos(), env.info.lint, true);
-        }
-
-        /* vsym is expected to be a method argument
-         */
-        private boolean requiresIdentity(VarSymbol vsym) {
-            if (vsym != null) {
-                SymbolMetadata sm = vsym.getMetadata();
-                if (sm != null) {
-                    for (Attribute.Compound ca: sm.getDeclarationAttributes()) {
-                        if (ca.type.tsym == syms.requiresIdentityType.tsym) {
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-
         Type adjustMethodReturnType(Symbol msym, Type qualifierType, Name methodName, List<Type> argtypes, Type restype) {
             if (msym != null &&
                     (msym.owner == syms.objectType.tsym || msym.owner.isInterface()) &&
@@ -2852,8 +2799,6 @@ public class Attr extends JCTree.Visitor {
         } finally {
             env.info.isAnonymousNewClass = false;
         }
-
-        chk.checkIfIdentityIsRequired(tree.clazz.pos(), clazztype, env);
 
         clazztype = chk.checkDiamond(tree, clazztype);
         chk.validate(clazz, localEnv);
@@ -2975,6 +2920,9 @@ public class Attr extends JCTree.Visitor {
                         Assert.check(tree.constructorType.isErroneous() || tree.varargsElement != null);
                 }
             }
+
+            chk.checkIfIdentityIsExpected(tree.clazz.pos(), clazztype, env.info.lint);
+            // check here also the arguments and type arguments
 
             if (cdef != null) {
                 visitAnonymousClassDefinition(tree, clazz, clazztype, cdef, localEnv, argtypes, typeargtypes, pkind);
@@ -3845,7 +3793,7 @@ public class Attr extends JCTree.Visitor {
             checkReferenceCompatible(that, desc, refType, resultInfo.checkContext, isSpeculativeRound);
             if (!isSpeculativeRound) {
                 checkAccessibleTypes(that, localEnv, resultInfo.checkContext.inferenceContext(), desc, currentTarget);
-                chk.checkIfIdentityIsRequired(that.expr.pos(), currentTarget, localEnv);
+                chk.checkIfIdentityIsExpected(that.expr.pos(), currentTarget, localEnv.info.lint);
                 if (that.typeargs != null) {
                     ListBuffer<Type> lbTypes = new ListBuffer<>();
                     for (JCExpression targ : that.typeargs) {
@@ -4157,7 +4105,7 @@ public class Attr extends JCTree.Visitor {
     public void visitTypeCast(final JCTypeCast tree) {
         Type clazztype = attribType(tree.clazz, env);
         chk.validate(tree.clazz, env, false);
-        chk.checkIfIdentityIsRequired(tree.clazz.pos(), clazztype, env);
+        chk.checkIfIdentityIsExpected(tree.clazz.pos(), clazztype, env.info.lint);
         //a fresh environment is required for 292 inference to work properly ---
         //see Infer.instantiatePolymorphicSignatureInstance()
         Env<AttrContext> localEnv = env.dup(tree);
@@ -4300,7 +4248,7 @@ public class Attr extends JCTree.Visitor {
             matchBindings = new MatchBindings(List.of(v), List.nil());
         }
         if (tree.var.vartype != null) {
-            chk.checkIfIdentityIsRequired(tree.var.vartype.pos(), tree.var.vartype.type, env);
+            chk.checkIfIdentityIsExpected(tree.var.vartype.pos(), tree.var.vartype.type, env.info.lint);
         }
     }
 
@@ -5599,17 +5547,6 @@ public class Attr extends JCTree.Visitor {
                     log.error(env.tree.pos(), Errors.EnumTypesNotExtensible);
                 }
 
-                if (st != null &&
-                        // no need to recheck j.l.Object, shortcut,
-                        st.tsym != syms.objectType.tsym &&
-                        // this one could be null, no explicit extends
-                        env.enclClass.extending != null) {
-                    chk.checkIfIdentityIsRequired(env.enclClass.extending.pos(), st, env);
-                }
-                for (JCExpression intrface: env.enclClass.implementing) {
-                    chk.checkIfIdentityIsRequired(intrface.pos(), intrface.type, env);
-                }
-
                 if (rs.isSerializable(c.type)) {
                     env.info.isSerializable = true;
                 }
@@ -5665,9 +5602,8 @@ public class Attr extends JCTree.Visitor {
             chk.validate(tree.extending, env);
             chk.validate(tree.implementing, env);
         }
-        for (JCTypeParameter tp : tree.typarams) {
-            chk.checkIfIdentityIsRequired(tp.pos(), tp.type, env);
-        }
+
+        chk.checkRequiresIdentity(tree, env.info.lint);
 
         c.markAbstractIfNeeded(types);
 

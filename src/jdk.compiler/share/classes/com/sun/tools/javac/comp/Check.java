@@ -5668,64 +5668,49 @@ public class Check {
 
     }
 
-    /** Check if a type required an identity class
-     */
-    boolean checkIfIdentityIsRequired(DiagnosticPosition pos, Type t, Env<AttrContext> env) {
-        if (t != null &&
-                env.info.lint != null &&
-                env.info.lint.isEnabled(LintCategory.IDENTITY) &&
-                needsRequiresIdentityWarning(t)) {
-            env.info.lint.logIfEnabled(pos, LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
-            return true;
-        }
-        return false;
-    }
-
-    public boolean isValueBased(Type t) {
-        return t != null && t.tsym != null && (t.tsym.flags() & VALUE_BASED) != 0;
-    }
-
-    public boolean needsRequiresIdentityWarning(Type t) {
-        if (t != null) {
-            RequiresIdentityVisitor requiresIdentityVisitor = new RequiresIdentityVisitor();
-            // we need to avoid self referencing type vars or captures
-            Set<Type> seen = new HashSet<>();
-            requiresIdentityVisitor.visit(t, seen);
-            return requiresIdentityVisitor.requiresWarning;
-        }
-        return false;
-    }
-
-    public boolean checkIfTypeParamsRequiresIdentity(SymbolMetadata sm, List<Type> typeParams) {
-        return checkIfTypeParamsRequiresIdentity(sm, typeParams, null, null, false);
-    }
-
-    public boolean checkIfTypeParamsRequiresIdentity(SymbolMetadata sm,
-                                                     List<Type> typeParams,
-                                                     JCDiagnostic.DiagnosticPosition pos,
-                                                     Lint lint,
-                                                     boolean warn) {
-        boolean result = false;
-        if (sm != null) {
-            for (Attribute.TypeCompound ta: sm.getTypeAttributes()) {
-                if (ta.type.tsym == syms.requiresIdentityType.tsym) {
-                    TypeAnnotationPosition tap = ta.position;
-                    if (tap.type == TargetType.CLASS_TYPE_PARAMETER || tap.type == TargetType.METHOD_TYPE_PARAMETER) {
-                        int index = tap.parameter_index;
-                        // ClassType::getTypeArguments() can be empty for raw types
-                        Type tparam = typeParams.isEmpty() ? null : typeParams.get(index);
-                        if (tparam != null && isValueBased(tparam)) {
-                            if (warn) {
-                                lint.logIfEnabled(pos,
-                                        CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
-                            }
-                            result = true;
-                        }
-                    }
-                }
+    void checkRequiresIdentity(JCTree tree, Lint lint) {
+        if (tree instanceof JCClassDecl classDecl) {
+            Type st = types.supertype(classDecl.sym.type);
+            if (st != null &&
+                    // no need to recheck j.l.Object, shortcut,
+                    st.tsym != syms.objectType.tsym &&
+                    // this one could be null, no explicit extends
+                    classDecl.extending != null) {
+                checkIfIdentityIsExpected(classDecl.extending.pos(), st, lint);
+            }
+            for (JCExpression intrface: classDecl.implementing) {
+                checkIfIdentityIsExpected(intrface.pos(), intrface.type, lint);
+            }
+            for (JCTypeParameter tp : classDecl.typarams) {
+                checkIfIdentityIsExpected(tp.pos(), tp.type, lint);
+            }
+        } else if (tree instanceof JCVariableDecl variableDecl) {
+            /* we don't want to warn twice so if this variable is a compiler generated parameter of
+             * a canonical record constructor, we don't want to issue a warning as we will warn the
+             * corresponding compiler generated private record field anyways
+             */
+            if ((variableDecl.sym.flags_field & RECORD) == 0 ||
+                    (variableDecl.sym.flags_field & ~(Flags.PARAMETER | RECORD | GENERATED_MEMBER)) != 0) {
+                checkIfIdentityIsExpected(variableDecl.vartype.pos(), variableDecl.vartype.type, lint);
             }
         }
-        return result;
+    }
+
+    /** Check if a type required an identity class
+     */
+    boolean checkIfIdentityIsExpected(DiagnosticPosition pos, Type t, Lint lint) {
+        if (t != null &&
+                lint != null &&
+                lint.isEnabled(LintCategory.IDENTITY)) {
+            RequiresIdentityVisitor requiresIdentityVisitor = new RequiresIdentityVisitor();
+            // we need to avoid self referencing type vars or captures
+            requiresIdentityVisitor.visit(t, new HashSet<>());
+            if (requiresIdentityVisitor.requiresWarning) {
+                lint.logIfEnabled(pos, LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                return true;
+            }
+        }
+        return false;
     }
 
     // where
@@ -5778,5 +5763,63 @@ public class Check {
             }
             return null;
         }
+    }
+
+    private boolean checkIfTypeParamsRequiresIdentity(SymbolMetadata sm, List<Type> typeParams) {
+        return checkIfTypeParamsRequiresIdentity(sm, typeParams, null, null, false);
+    }
+
+    public boolean checkIfTypeParamsRequiresIdentity(SymbolMetadata sm,
+                                                     List<Type> typeParams,
+                                                     JCDiagnostic.DiagnosticPosition pos,
+                                                     Lint lint,
+                                                     boolean warn) {
+        boolean result = false;
+        if (sm != null) {
+            for (Attribute.TypeCompound ta: sm.getTypeAttributes()) {
+                if (ta.type.tsym == syms.requiresIdentityType.tsym) {
+                    TypeAnnotationPosition tap = ta.position;
+                    if (tap.type == TargetType.CLASS_TYPE_PARAMETER || tap.type == TargetType.METHOD_TYPE_PARAMETER) {
+                        int index = tap.parameter_index;
+                        // ClassType::getTypeArguments() can be empty for raw types
+                        Type tparam = typeParams.isEmpty() ? null : typeParams.get(index);
+                        if (tparam != null && tparam.isValueBased()) {
+                            if (warn) {
+                                lint.logIfEnabled(pos,
+                                        CompilerProperties.LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                            }
+                            result = true;
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    public void checkIfRequireIdentity(JCMethodInvocation tree, Symbol sym, Lint lint) {
+        List<JCExpression> argExps = tree.args;
+        if (!argExps.isEmpty() && sym instanceof MethodSymbol ms && ms.params != null) {
+            VarSymbol lastParam = ms.params.head;
+            for (VarSymbol param: ms.params) {
+                if (param.attribute(syms.requiresIdentityType.tsym) != null && argExps.head.type.isValueBased()) {
+                    lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                }
+                lastParam = param;
+                argExps = argExps.tail;
+            }
+            while (argExps != null && !argExps.isEmpty() && lastParam != null) {
+                if (lastParam.attribute(syms.requiresIdentityType.tsym) != null && argExps.head.type.isValueBased()) {
+                    lint.logIfEnabled(argExps.head.pos(), LintWarnings.AttemptToUseValueBasedWhereIdentityExpected);
+                }
+                argExps = argExps.tail;
+            }
+        }
+        ListBuffer<Type> typeParamTypes = new ListBuffer<>();
+        for (JCExpression targ: tree.typeargs) {
+            checkIfIdentityIsExpected(targ.pos(), targ.type, lint);
+            typeParamTypes.add(targ.type);
+        }
+        checkIfTypeParamsRequiresIdentity(sym.getMetadata(), typeParamTypes.toList(), tree.pos(), lint, true);
     }
 }
