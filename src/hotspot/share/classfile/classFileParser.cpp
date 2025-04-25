@@ -1477,6 +1477,50 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
   }
   assert(_temp_field_info->length() == length, "Must be");
 
+  if (length > JUMP_TABLE_STRIDE) {
+    // We need to reorder the fields deterministically right after parsing,
+    // as the FieldLayout is partially dependend on the order of fields
+    // in the stream. Had we sorted only later, the field layout could be
+    // different after RedefineClass and some assertions would fail.
+    // Also the annotations defined on the fields (and it types) are linked
+    // only through the order of fields, so we need to reorder these arrays
+    // in sync.
+    typedef struct {
+      Symbol *symbol;
+      int src;
+      int target;
+    } order_mapping_t;
+    order_mapping_t *order_mapping = NEW_RESOURCE_ARRAY(order_mapping_t, length);
+    for (int i = 0; i < length; ++i) {
+      order_mapping[i].symbol = _temp_field_info->at(i).name(_cp);
+      order_mapping[i].src = i;
+    }
+    // Reorder fields based on FieldInfoStream::compare_symbols
+    auto compare_pair = [](const void *v1, const void *v2) {
+      return FieldInfoStream::compare_symbols(reinterpret_cast<const order_mapping_t *>(v1)->symbol,
+        reinterpret_cast<const order_mapping_t *>(v2)->symbol);
+    };
+    qsort(order_mapping, length, sizeof(order_mapping_t), compare_pair);
+    // create reverse permutation in target
+    for (int i = 0; i < length; ++i) {
+      order_mapping[order_mapping[i].src].target = i;
+    }
+    // do the final move in-place
+    for (int i = 0; i < length; ++i) {
+      while (order_mapping[i].target != i) {
+        int target = order_mapping[i].target;
+        swap(_temp_field_info->at(i), _temp_field_info->at(target));
+        if (_fields_annotations != nullptr) {
+          _fields_annotations->swap(i, target);
+        }
+        if (_fields_type_annotations != nullptr) {
+          _fields_type_annotations->swap(i, target);
+        }
+        swap(order_mapping[i], order_mapping[target]);
+      }
+    }
+  }
+
   int index = length;
   if (num_injected != 0) {
     for (int n = 0; n < num_injected; n++) {

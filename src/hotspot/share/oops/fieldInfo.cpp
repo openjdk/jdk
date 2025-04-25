@@ -48,7 +48,7 @@ void FieldInfo::print_from_growable_array(outputStream* os, GrowableArray<FieldI
   }
 }
 
-static int compare_symbols(const Symbol *s1, const Symbol *s2) {
+int FieldInfoStream::compare_symbols(const Symbol *s1, const Symbol *s2) {
   // not lexicographical sort, since we need only total ordering
   int l1 = s1->utf8_length();
   int l2 = s2->utf8_length();
@@ -66,11 +66,6 @@ static int compare_symbols(const Symbol *s1, const Symbol *s2) {
   }
 }
 
-static int compare_fields(const FieldInfo *f1, const FieldInfo *f2, void *arg) {
-  ConstantPool* cp = static_cast<ConstantPool*>(arg);
-  return compare_symbols(f1->name(cp), f2->name(cp));
-}
-
 Array<u1>* FieldInfoStream::create_FieldInfoStream(ConstantPool* constants, GrowableArray<FieldInfo>* fields, int java_fields, int injected_fields,
                                                           ClassLoaderData* loader_data, TRAPS) {
   // The stream format described in fieldInfo.hpp is:
@@ -83,9 +78,13 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(ConstantPool* constants, Grow
   //   End = 0
 
   // We create JumpTable only for java_fields; JavaFieldStream relies on non-injected fields preceding injected
+#ifdef ASSERT
   if (java_fields > JUMP_TABLE_STRIDE) {
-    fields->sort_range(0, java_fields, compare_fields, constants);
+    for (int i = 1; i < java_fields; ++i) {
+      assert(compare_symbols(fields->adr_at(i - 1)->name(constants), fields->adr_at(i)->name(constants)) < 0, "Fields should be sorted");
+    }
   }
+#endif
 
   using StreamSizer = UNSIGNED5::Sizer<>;
   using StreamFieldSizer = Mapper<StreamSizer>;
@@ -212,7 +211,7 @@ int FieldInfoReader::skip_fields_until(const Symbol *name, ConstantPool *cp, int
     int pos2 = pos; // read_uint updates this by reference
     uint32_t name_index = UNSIGNED5::read_uint<const u1 *, int>(_r.array(), pos2, _r.limit());
     Symbol *sym = cp->symbol_at(name_index);
-    if (compare_symbols(name, sym) < 0) {
+    if (FieldInfoStream::compare_symbols(name, sym) < 0) {
       break;
     }
     field_pos = pos;

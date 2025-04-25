@@ -127,6 +127,13 @@ protected:
   void at_put(const int i, const T& x) { assert(i >= 0 && i< _length, "oob: 0 <= %d < %d", i, _length); data()[i] = x; }
   T*   adr_at(const int i)             { assert(i >= 0 && i< _length, "oob: 0 <= %d < %d", i, _length); return &data()[i]; }
   int  find(const T& x)                { return index_of(x); }
+  void swap(int i, int j) {
+    assert(i >= 0 && i < _length, "oob: 0 <= %d < %d", i, _length);
+    assert(j >= 0 && j < _length, "oob: 0 <= %d < %d", j, _length);
+    T t = data()[i];
+    data()[i] = data()[j];
+    data()[j] = t;
+  }
 
   T at_acquire(const int i)            { return Atomic::load_acquire(adr_at(i)); }
   void release_at_put(int i, T x)      { Atomic::release_store(adr_at(i), x); }

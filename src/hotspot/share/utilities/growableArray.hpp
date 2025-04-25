@@ -310,37 +310,6 @@ public:
     qsort(_data, length() / stride, sizeof(E) * stride, (_sort_Fn)f);
   }
 
-private:
-  typedef struct {
-    int (*f)(const E*, const E*, void*);
-    void *arg;
-  } qsort_r_arg_t;
-  static int qsort_r_adapter(void *arg, const void *e1, const void *e2) {
-    qsort_r_arg_t *qa = (qsort_r_arg_t *) arg;
-    return qa->f((const E*) e1, (const E*) e2, qa->arg);
-  }
-
-public:
-  // end is exclusive
-  void sort_range(int start, int end, int f(const E*, const E*, void *), void *arg) {
-    if (_data == nullptr) return;
-    assert(start >= 0, "start is negative");
-    assert(end <= length(), "range too long");
-#if defined(LINUX)
-    qsort_r(_data + start, end - start, sizeof(E), (__compar_d_fn_t)f, arg);
-#elif defined(_ALLBSD_SOURCE)
-    qsort_r(_data + start, end - start, sizeof(E), (int(*)(const void*, const void*, void*))f, arg);
-#elif defined(_WINDOWS)
-    qsort_r_arg_t qa = { f, arg };
-    qsort_s(_data + start, end - start, sizeof(E), qsort_r_adapter, &qa);
-#elif defined(MACOSX)
-    qsort_r_arg_t qa = { f, arg };
-    qsort_r(_data + start, end - start, sizeof(E), &qa, qsort_r_adapter);
-#else
-# error "Find qsort_r equivalent on your platform"
-#endif
-  }
-
   template <typename K, int compare(const K&, const E&)> int find_sorted(const K& key, bool& found) const {
     found = false;
     int min = 0;

@@ -285,6 +285,8 @@ class FieldInfoStream : AllStatic {
   static int num_injected_java_fields(const Array<u1>* fis);
   static int num_total_fields(const Array<u1>* fis);
 
+  static int compare_symbols(const Symbol *s1, const Symbol *s2);
+
   static Array<u1>* create_FieldInfoStream(ConstantPool* constants, GrowableArray<FieldInfo>* fields, int java_fields, int injected_fields,
                                                           ClassLoaderData* loader_data, TRAPS);
   static GrowableArray<FieldInfo>* create_FieldInfoArray(const Array<u1>* fis, int* java_fields_count, int* injected_fields_count);
