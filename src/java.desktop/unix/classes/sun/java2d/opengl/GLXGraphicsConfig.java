@@ -49,6 +49,7 @@ import sun.awt.X11GraphicsEnvironment;
 import sun.awt.image.OffScreenImage;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.SurfaceManager;
+import sun.awt.image.VolatileSurfaceManager;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.Surface;
 import sun.java2d.SurfaceData;
@@ -412,5 +413,10 @@ public final class GLXGraphicsConfig
     @Override
     public ContextCapabilities getContextCapabilities() {
         return oglCaps;
+    }
+
+    @Override
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image, Object context) {
+        return new GLXVolatileSurfaceManager(image, context);
     }
 }

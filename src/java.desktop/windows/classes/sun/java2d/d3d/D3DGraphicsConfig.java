@@ -39,6 +39,7 @@ import java.awt.image.VolatileImage;
 import sun.awt.Win32GraphicsConfig;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.SurfaceManager;
+import sun.awt.image.VolatileSurfaceManager;
 import sun.awt.windows.WComponentPeer;
 import sun.java2d.Surface;
 import sun.java2d.SurfaceData;
@@ -51,7 +52,7 @@ import static sun.java2d.d3d.D3DContext.D3DContextCaps.*;
 
 public final class D3DGraphicsConfig
     extends Win32GraphicsConfig
-    implements AccelGraphicsConfig
+    implements AccelGraphicsConfig, SurfaceManager.Factory
 {
     private static ImageCapabilities imageCaps = new D3DImageCaps();
 
@@ -306,5 +307,10 @@ public final class D3DGraphicsConfig
     @Override
     public ContextCapabilities getContextCapabilities() {
         return device.getContextCapabilities();
+    }
+
+    @Override
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image, Object context) {
+        return new D3DVolatileSurfaceManager(image, context);
     }
 }

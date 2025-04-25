@@ -185,6 +185,21 @@ public abstract class SurfaceManager {
 
     /**
      * An interface for GraphicsConfiguration objects to implement if
+     * they create their own VolatileSurfaceManager implementations.
+     */
+    public interface Factory {
+
+        /**
+         * Creates a new instance of a VolatileSurfaceManager given a
+         * compatible SunVolatileImage. An optional context Object can be supplied
+         * as a way for the caller to pass pipeline-specific context data to
+         * the VolatileSurfaceManager (such as a backbuffer handle, for example).
+         */
+        VolatileSurfaceManager createVolatileManager(SunVolatileImage image, Object context);
+    }
+
+    /**
+     * An interface for GraphicsConfiguration objects to implement if
      * their surfaces accelerate images using SurfaceDataProxy objects.
      *
      * Implementing this interface facilitates the default

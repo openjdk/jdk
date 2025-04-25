@@ -30,10 +30,12 @@ import sun.awt.X11GraphicsConfig;
 import sun.awt.X11GraphicsDevice;
 import sun.awt.X11GraphicsEnvironment;
 import sun.awt.image.SurfaceManager;
+import sun.awt.image.SunVolatileImage;
+import sun.awt.image.VolatileSurfaceManager;
 import sun.java2d.SurfaceData;
 
 public class XRGraphicsConfig extends X11GraphicsConfig implements
-        SurfaceManager.ProxiedGraphicsConfig {
+        SurfaceManager.ProxiedGraphicsConfig, SurfaceManager.Factory {
     private final SurfaceManager.ProxyCache surfaceDataProxyCache = new SurfaceManager.ProxyCache();
 
     private XRGraphicsConfig(X11GraphicsDevice device, int visualnum,
@@ -58,5 +60,10 @@ public class XRGraphicsConfig extends X11GraphicsConfig implements
     @Override
     public SurfaceManager.ProxyCache getSurfaceDataProxyCache() {
         return surfaceDataProxyCache;
+    }
+
+    @Override
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image, Object context) {
+        return new XRVolatileSurfaceManager(image, context);
     }
 }
