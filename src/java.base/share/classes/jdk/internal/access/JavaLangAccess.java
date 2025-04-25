@@ -231,11 +231,6 @@ public interface JavaLangAccess {
     void addOpensToAllUnnamed(Module m, String pkg);
 
     /**
-     * Updates module m to open all packages in the given sets.
-     */
-    void addOpensToAllUnnamed(Module m, Set<String> concealedPkgs, Set<String> exportedPkgs);
-
-    /**
      * Updates module m to use a service.
      */
     void addUses(Module m, Class<?> service);

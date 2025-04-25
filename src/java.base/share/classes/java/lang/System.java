@@ -2059,9 +2059,6 @@ public final class System {
             public void addOpensToAllUnnamed(Module m, String pn) {
                 m.implAddOpensToAllUnnamed(pn);
             }
-            public void addOpensToAllUnnamed(Module m, Set<String> concealedPackages, Set<String> exportedPackages) {
-                m.implAddOpensToAllUnnamed(concealedPackages, exportedPackages);
-            }
             public void addUses(Module m, Class<?> service) {
                 m.implAddUses(service);
             }

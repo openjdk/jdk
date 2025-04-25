@@ -580,13 +580,14 @@ public:
 };
 
 Modules::ArchivedProperty Modules::_archived_props[] = {
-  // numbered
+  // non-numbered
   {"jdk.module.main", false},
 
-  // non-numbered
+  // numbered
   {"jdk.module.addexports", true},             // --add-exports
   {"jdk.module.addmods", true},                // --add-modules
   {"jdk.module.enable.native.access", true},   // --enable-native-access
+  {"jdk.module.addopens", true},               // --add-opens
 };
 
 constexpr size_t Modules::num_archived_props() {
