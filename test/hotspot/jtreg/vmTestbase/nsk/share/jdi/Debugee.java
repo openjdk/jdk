@@ -460,7 +460,7 @@ public class Debugee extends DebugeeProcess {
 
             EventSet eventSet = eventQueue.remove(timeLeft);
             if (eventSet == null) {
-                throw new Failure("Timed out waiting for event: " + request);
+                return null;
             }
 
             EventIterator eventIterator = eventSet.eventIterator();
