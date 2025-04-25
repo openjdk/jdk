@@ -5130,11 +5130,10 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
                  &ldummy, &ldummy, &ldummy, &ldummy, &ldummy,
                  &user_time, &sys_time);
   if (count != 13) return -1;
-  double clock_tics_factor = 1000000000 / os::Posix::clock_tics_per_second();
   if (user_sys_cpu_time) {
-    return ((jlong)sys_time + (jlong)user_time) * clock_tics_factor;
+    return ((jlong)sys_time + (jlong)user_time) * (1000000000 / os::Posix::clock_tics_per_second());
   } else {
-    return (jlong)user_time * clock_tics_factor;
+    return (jlong)user_time * (1000000000 / os::Posix::clock_tics_per_second());
   }
 }
 
