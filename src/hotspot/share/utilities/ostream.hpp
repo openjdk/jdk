@@ -175,25 +175,26 @@ class outputStream : public CHeapObjBase {
 // ANSI C++ name collision
 extern outputStream* tty;           // tty output
 
-class streamIndentor : public StackObj {
-protected:
-  outputStream* const _str;
-  const int _amount;
-  NONCOPYABLE(streamIndentor);
-public:
-  streamIndentor(outputStream* str, int amt = 2) : _str(str), _amount(amt) {
-    _str->inc(_amount);
-  }
-  ~streamIndentor() { _str->dec(_amount); }
-};
-
-class StreamAutoIndentor : public streamIndentor {
-  const bool _old;
+class StreamAutoIndentor {
+private:
+  outputStream* const _stream;
+  const int _indentation;
+  const bool _old_autoindent;
   NONCOPYABLE(StreamAutoIndentor);
- public:
-  StreamAutoIndentor(outputStream* os, int indentation = 0) :
-    streamIndentor(os, indentation), _old(os->set_autoindent(true)) {}
-  ~StreamAutoIndentor() { _str->set_autoindent(_old); }
+
+public:
+  StreamAutoIndentor(outputStream* os, int indentation) :
+    _stream(os),
+    _indentation(indentation),
+    _old_autoindent(_stream->set_autoindent(true)) {
+
+    _stream->inc(_indentation);
+  }
+
+  ~StreamAutoIndentor() {
+    _stream->dec(_indentation);
+    _stream->set_autoindent(_old_autoindent);
+  }
 };
 
 // advisory locking for the shared tty stream:

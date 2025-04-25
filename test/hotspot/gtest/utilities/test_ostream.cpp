@@ -108,13 +108,13 @@ static void test_autoindent(bool on) {
   const bool prior = ss.set_autoindent(on);
   EXPECT_FALSE(prior);
   {
-    streamIndentor si(&ss, 5);
+    StreamAutoIndentor si(&ss, 5);
     ss.print("ABC");
     ss.print("DEF");
     ss.cr();
     ss.print_cr("0123");
     {
-      streamIndentor si(&ss, 5);
+      StreamAutoIndentor si(&ss, 5);
       ss.print_cr("4567");
       ss.print_raw("89AB");
       ss.print_raw("CDEXXXX", 3);
