@@ -1126,7 +1126,7 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[2048];
-  int res = jio_snprintf(
+  size_t res = jio_snprintf(
               buf, sizeof(buf),
               "(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
               cores_per_cpu(), threads_per_core(),
