@@ -783,20 +783,15 @@ public class Throwable implements Serializable {
             StackTraceElement[] trace,
             int traceEnd,
             int framesInCommon) {
-        String at = "\tat ";
-        int prefixAndAtLength = at.length();
-        if (prefix != null) {
-            prefixAndAtLength += prefix.length();
-        }
-
         var sb = new StringBuilder(128);
         if (prefix != null) {
             sb.append(prefix);
         }
-        sb.append(at);
+        sb.append("\tat ");
+        int prefixAndAtLength = sb.length();
         for (int i = 0; i <= traceEnd; i++) {
             if (i != 0) {
-                sb.delete(prefixAndAtLength, sb.length());
+                sb.setLength(prefixAndAtLength);
             }
             printer.println(trace[i]
                             .appendTo(sb)
@@ -804,8 +799,8 @@ public class Throwable implements Serializable {
         }
 
         if (framesInCommon != 0) {
-            sb.delete(prefix.length(), sb.length())
-              .append("\t... ")
+            sb.setLength(prefix == null ? 0 : prefix.length());
+            sb.append("\t... ")
               .append(framesInCommon)
               .append(" more");
             printer.println(sb.toString());
