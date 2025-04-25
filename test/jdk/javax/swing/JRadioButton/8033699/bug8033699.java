@@ -59,7 +59,9 @@ public class bug8033699 {
 
     public static void main(String[] args) throws Throwable {
         robot = new Robot();
-
+        SwingUtilities.invokeAndWait(() -> {
+            focusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        });
         // Get all installed Look and Feels
         UIManager.LookAndFeelInfo[] lafs = UIManager.getInstalledLookAndFeels();
         for (UIManager.LookAndFeelInfo laf : lafs) {
@@ -69,10 +71,6 @@ public class bug8033699 {
 
     private static void testLaF(UIManager.LookAndFeelInfo laf) throws Exception {
         try {
-            SwingUtilities.invokeAndWait(() -> {
-                focusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
-            });
-
             System.out.println("Testing LaF: " + laf.getName());
             SwingUtilities.invokeAndWait(() -> {
                 setLookAndFeel(laf);
@@ -168,11 +166,14 @@ public class bug8033699 {
         radioBtnSingle = new JRadioButton("Not Grouped");
         radioBtnSingle.setSelected(true);
 
-        mainFrame.getContentPane().add(btnStart);
-        mainFrame.getContentPane().add(box);
-        mainFrame.getContentPane().add(radioBtnSingle);
-        mainFrame.getContentPane().add(btnEnd);
+        // Create main vertical box
+        Box mainBox = Box.createVerticalBox();
+        mainBox.add(btnStart);
+        mainBox.add(box);
+        mainBox.add(radioBtnSingle);
+        mainBox.add(btnEnd);
 
+        mainFrame.getContentPane().add(mainBox);
         mainFrame.getRootPane().setDefaultButton(btnStart);
         btnStart.requestFocus();
 
@@ -314,7 +315,7 @@ public class bug8033699 {
         ActionListener actLrRB3 = e -> actRB3 = true;
 
         // Adding Action Listeners
-        SwingUtilities.invokeLater(() -> {
+        SwingUtilities.invokeAndWait(() -> {
             radioBtn1.addActionListener(actLrRB1);
             radioBtn2.addActionListener(actLrRB2);
             radioBtn3.addActionListener(actLrRB3);
@@ -337,7 +338,7 @@ public class bug8033699 {
         }
 
         // Removing Action Listeners
-        SwingUtilities.invokeLater(() -> {
+        SwingUtilities.invokeAndWait(() -> {
             radioBtn1.removeActionListener(actLrRB1);
             radioBtn2.removeActionListener(actLrRB2);
             radioBtn3.removeActionListener(actLrRB3);
