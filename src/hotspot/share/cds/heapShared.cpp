@@ -1403,10 +1403,9 @@ class HeapShared::OopFieldPusher: public BasicOopIterateClosure {
 
  protected:
   template <class T> void do_oop_work(T *p) {
-    oop obj = RawAccess<>::oop_load(p);
+    int field_offset = pointer_delta_as_int((char*)p, cast_from_oop<char*>(_referencing_obj));
+    oop obj = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load_at(_referencing_obj, field_offset);
     if (!CompressedOops::is_null(obj)) {
-      int field_offset = pointer_delta_as_int((char*)p, cast_from_oop<char*>(_referencing_obj));
-
       if (_is_java_lang_ref && AOTReferenceObjSupport::skip_field(field_offset)) {
         // Do not follow these fields. They will be cleared to null.
         return;
