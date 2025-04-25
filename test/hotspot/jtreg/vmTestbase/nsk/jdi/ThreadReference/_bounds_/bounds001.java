@@ -97,7 +97,7 @@ public class bounds001 {
     private void execTest() {
 
         debugee.VM().suspend();
-        ThreadReference thread = debugee.threadByName("main");
+        ThreadReference thread = debugee.mainThread();
 
         display("\nTEST BEGINS");
         display("===========");

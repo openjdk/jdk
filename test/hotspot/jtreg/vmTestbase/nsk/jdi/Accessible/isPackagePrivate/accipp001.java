@@ -108,8 +108,7 @@ public class accipp001 extends Log {
         logHandler      = new Log(out, argsHandler);
         Binder binder   = new Binder(argsHandler, logHandler);
 
-        debugee = Debugee.prepareDebugee(argsHandler, logHandler,
-                debugeeName + (argsHandler.verbose() ? " -vbs" : ""));
+        debugee = Debugee.prepareDebugee(argsHandler, logHandler, debugeeName);
 
 //        ReferenceType classes[] = debugee.classes();
 //        for (int i=0; i<classes.length; i++) {

@@ -87,7 +87,7 @@ public class filters001 {
         display("");
         display(">>>creating StepRequest");
 
-        ThreadReference thread = debugee.threadByName("main");
+        ThreadReference thread = debugee.mainThread();
         EventRequestManager evm = debugee.getEventRequestManager();
         StepRequest request = evm.createStepRequest(thread, StepRequest.STEP_LINE,
                                                             StepRequest.STEP_INTO);

@@ -267,7 +267,7 @@ public class redefineclasses025 {
     }
 
     void displayVMStatus() {
-        ThreadReference thrd = debugee.threadByName("main");
+        ThreadReference thrd = debugee.mainThread();
         if (thrd.isSuspended()) {
             statDebugee = "Debugee is suspended";
             display("\n\n<<<" + statDebugee + ">>>");

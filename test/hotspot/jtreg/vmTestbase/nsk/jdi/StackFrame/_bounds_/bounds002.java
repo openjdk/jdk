@@ -95,7 +95,7 @@ public class bounds002 {
     private void execTest() {
 
         debugee.VM().suspend();
-        ThreadReference thread = debugee.threadByName("main");
+        ThreadReference thread = debugee.mainThread();
         StackFrame stackFrame = null;
         boolean isTopmostFrame = false;
         try {

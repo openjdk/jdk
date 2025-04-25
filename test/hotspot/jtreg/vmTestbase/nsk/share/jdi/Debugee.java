@@ -38,11 +38,11 @@ import java.util.*;
  * This class is wrapper for debugee VM constructed by <code>Binder</code>
  * and it uses <code>com.sun.jdi.VirtualMachine</code> to interact with debugee VM.
  * <p>
- * In addition to the general abities to control of debugee VM process,
+ * In addition to the general abilities to control the debugee VM process
  * provided by the base class <code>DebugeeProcess</code>, this class
  * adds also several service methods over the JDI features to simplify interaction
  * with debugee VM (such as finding classes, setting breakpoints,
- * handling events, and so on.).
+ * handling events, and so on).
  *
  * @see Binder
  * @see DebugeeProcess
@@ -61,11 +61,18 @@ public class Debugee extends DebugeeProcess {
     /** Argument handler. */
     protected ArgumentHandler argumentHandler = null;
 
+    /** wait time in ms. */
+    protected long waitTime;
+
+    /** Stashed ThreadReference for debuggee "main" thread. Not always setup. */
+    protected ThreadReference mainThread;
+
     /** Create new <code>Debugee</code> object for a given binder. */
     protected Debugee (Binder binder) {
         super(binder);
         this.binder = binder;
         this.argumentHandler = (ArgumentHandler)binder.getArgumentHandler();
+        this.waitTime = argumentHandler.getWaitTime() * 60000;
     }
 
     protected Debugee (Process process, Binder binder) {
@@ -73,6 +80,7 @@ public class Debugee extends DebugeeProcess {
         this.process = process;
         this.binder = binder;
         this.argumentHandler = (ArgumentHandler)binder.getArgumentHandler();
+        this.waitTime = argumentHandler.getWaitTime() * 60000;
     }
 
     /** Setup <code>Debugee</code> object with given VM mirror. */
@@ -262,6 +270,21 @@ public class Debugee extends DebugeeProcess {
             return null;
         }
         throw new JDITestRuntimeException("** Thread IS NOT found ** : " + name);
+    }
+
+    public void setMainThread(ThreadReference thread) {
+        String threadName = thread.name();
+        if (!threadName.equals("main")) {
+            throw new TestBug("Thread is not \"main\" thread: " + threadName);
+        }
+        mainThread = thread;
+    }
+
+    public ThreadReference mainThread() {
+        if (mainThread == null) {
+            throw new JDITestRuntimeException("** mainThrad has not been set **");
+        }
+        return mainThread;
     }
 
     // --------------------------------------------------- //
@@ -550,13 +573,49 @@ public class Debugee extends DebugeeProcess {
         Debugee debugee = binder.bindToDebugee(mainClassName);
 
         debugee.createIOPipe();
-
         debugee.redirectStderr(log, DEBUGEE_STDERR_LOG_PREFIX);
+
+        // Get the ClassPrepareEvent for the main class for the sole purpose
+        // of using it to get the ThreadReference for the "main" thread.
+        ClassPrepareEvent cpEvent = debugee.waitForClassPrepare(mainClassName);
+        debugee.setMainThread(cpEvent.thread());
+
         debugee.resume();
 
         debugee.receiveExpectedSignal("ready");
 
         return debugee;
+    }
+
+    public ClassPrepareEvent waitForClassPrepare(String classname) {
+        Event event;
+        EventRequestManager eventRManager = getEventRequestManager();
+        ClassPrepareRequest cpRequest = eventRManager.createClassPrepareRequest();
+        cpRequest.setSuspendPolicy(EventRequest.SUSPEND_ALL);
+        cpRequest.addClassFilter(classname);
+        cpRequest.addCountFilter(1);
+
+        cpRequest.enable();
+        vm.resume();
+        try {
+            event = (ClassPrepareEvent)waitingEvent(cpRequest, waitTime);
+        } catch (InterruptedException e) {
+            throw new Failure("Thread interrupted while waiting for ClassPrepareEvent: " + e);
+        }
+        cpRequest.disable();
+
+        if (!(event instanceof ClassPrepareEvent)) {
+            throw new Failure("Unexpected Event: " + event);
+        }
+
+        ClassPrepareEvent cpEvent = (ClassPrepareEvent)event;
+        ReferenceType cls = cpEvent.referenceType();
+        if (!cls.name().equals(classname)) {
+            throw new Failure("Unexpected ClassName for ClassPrepareEvent: " + cls.name());
+        }
+
+        display("received: ClassPrepareEvent for class: " + classname);
+        return cpEvent;
     }
 
     /**

@@ -95,7 +95,7 @@ public class requests001 {
 
         EventRequest request;
         EventRequestManager evm = debugee.getEventRequestManager();
-        ThreadReference thread = debugee.threadByName("main");
+        ThreadReference thread = debugee.mainThread();
 
         display("");
         display("...calling createStepRequest(null, StepRequest.STEP_LINE, "

@@ -110,6 +110,9 @@ public class method001 {
 
         pipe = debuggee.createIOPipe();
 
+        ClassPrepareEvent cpEvent = debuggee.waitForClassPrepare(DEBUGGEE_NAME);
+        debuggee.setMainThread(cpEvent.thread());
+
         // resume debuggee
         log.display("Resuming debuggee");
         debuggee.resume();
@@ -131,7 +134,7 @@ public class method001 {
             checkedClass = debuggee.classByName(DEBUGGEE_NAME);
 
             log.display("Getting reference to thread <main>");
-            checkedThread = debuggee.threadByName("main");
+            checkedThread = debuggee.mainThread();
             if (checkedThread == null) {
                 throw new Failure("TEST BUG: unable to find reference to main thread");
             }

@@ -158,7 +158,7 @@ public class redefineclasses004 {
         display("\nTEST BEGINS");
         display("===========");
 
-        ThreadReference thrd = debugee.threadByName("main");
+        ThreadReference thrd = debugee.mainThread();
         if (thrd.isSuspended()) {
             display("\n\n<<<Debugee is suspended>>>");
             display("--------------------------");
@@ -167,7 +167,6 @@ public class redefineclasses004 {
 
         debugee.resume();
 
-        thrd = debugee.threadByName("main");
         if (!thrd.isSuspended()) {
             display("\n\n<<<Debugee is not suspended>>>");
             display("------------------------------");

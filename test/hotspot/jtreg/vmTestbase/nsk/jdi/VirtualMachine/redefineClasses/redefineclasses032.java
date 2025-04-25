@@ -124,7 +124,7 @@ public class redefineclasses032 {
 
         display("Tested class\t:" + debugeeClass.name());
 
-        ThreadReference thrd = debugee.threadByName("main");
+        ThreadReference thrd = debugee.mainThread();
 
         BreakpointRequest brkp = debugee.setBreakpoint(debugeeClass,
                                             redefineclasses032a.brkpMethodName,
