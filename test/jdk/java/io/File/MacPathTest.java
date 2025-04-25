@@ -21,10 +21,10 @@
  * questions.
  */
 
-/* @test
- * @bug 7130915
- * @summary Tests paths on macOS
- * @requires (os.family == "mac")
+/*
+ * This test is launched via a ProcessBuilder in the main test MacPath which
+ * includes a @requires (os.family == "mac") tag so no operating system
+ * conditional is applied here.
  */
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,10 +34,6 @@ import java.text.Normalizer;
 public class MacPathTest {
 
     public static void main(String args[]) throws Throwable {
-        String osname = System.getProperty("os.name");
-        if (!osname.contains("OS X") && !osname.contains("Darwin"))
-            return;
-
         // English
         test("TestDir_apple",                                    // test dir
              "dir_macosx",                                       // dir
