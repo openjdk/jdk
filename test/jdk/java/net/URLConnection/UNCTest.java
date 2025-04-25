@@ -40,7 +40,7 @@ import java.net.URL;
 import java.net.URLConnection;
 
 public class UNCTest {
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         // Get the "computer name" for this host
         String hostName = InetAddress.getLocalHost().getHostName();
 
