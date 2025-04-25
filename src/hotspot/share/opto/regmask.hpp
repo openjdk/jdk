@@ -748,7 +748,7 @@ public:
   }
 
   // Subtract 'rm' from 'this', but ignore everything in 'rm' that does not
-  // overlap with us and does not modify our all_stack flag. Supports masks of
+  // overlap with us and do not modify our all_stack flag. Supports masks of
   // differing offsets. Does not support 'rm' with the all_stack flag set.
   void SUBTRACT_inner(const RegMask& rm) {
     assert(valid_watermarks() && rm.valid_watermarks(), "sanity");
