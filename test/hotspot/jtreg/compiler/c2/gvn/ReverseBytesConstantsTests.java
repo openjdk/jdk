@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package compiler.c2.irTests;
+package compiler.c2.gvn;
 
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.RestrictableGenerator;
