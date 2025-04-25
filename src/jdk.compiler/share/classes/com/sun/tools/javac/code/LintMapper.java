@@ -76,10 +76,37 @@ import static com.sun.tools.javac.code.Lint.LintCategory.SUPPRESSION_OPTION;
  * The method {@link #lintAt} returns the {@link Lint} instance applicable to source position;
  * if it can't be determined yet, an empty {@link Optional} is returned.
  *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own risk.
- * This code and its internal interfaces are subject to change or
- * deletion without notice.</b>
+ * <p>
+ * This class also tracks which {@code @SuppressWarnings} and {@code -Xlint:-key} suppressions actually
+ * suppress something. Those that don't are unnecessary and trigger warnings in the {@code "suppression"}
+ * and {@code "suppression-option"} lint categories. For this to work, this class must be notified any
+ * time a warning that is currently suppressed would have been reported; this is termed the "validation"
+ * of the suppression. That notification happens via {@link #validateSuppression}.
+ *
+ * <p>
+ * Validation events "bubble up" the source tree until they are "caught" by a {@code @SuppressWarnings}
+ * annotation or they escape the file entirely, in which case they may be "caught" by a {@code -Xlint:key}
+ * flag. That validates the suppression. A suppression that is never validated is unnecessary.
+ *
+ * <p>
+ * Additional observations and corner cases:
+ * <ul>
+ *  <li>Lint warnings can be suppressed at a module, package, class, method, or variable declaration
+ *      (via {@code @SuppressWarnings}), or globally (via {@code -Xlint:-key}).
+ *  <li>Consequently, an unnecessary suppression warning can only be emitted at one of those declarations,
+ *      or globally at the end of compilation.
+ *  <li>Some categories (e.g., {@code classfile}) don't support suppression via {@code @SuppressWarnings}.
+ *      These can only generate warnings at the global level (and therefore any {@code @SuppressWarnings}
+ *      annotation is always unnecessary).
+ *  <li>Some categories are never tracked for suppression, e.g., {@code options}, {@code path}, and the
+ *      suppression categories {@code "suppression"} and {@code "suppression-option"} themselves.
+ *  <li>{@code @SuppressWarnings("suppression")} is perfectly valid: it means unnecessary suppression
+ *      warnings will never be reported for any lint category suppressed by that annotation or by any
+ *      {@code @SuppressWarnings} annotation nested within the scope of its declaration.
+ * </ul>
+ *
+ * <p><b>This is NOT part of any supported API. If you write code that depends on this, you do so at your
+ * own risk. This code and its internal interfaces are subject to change or deletion without notice.</b>
  */
 public class LintMapper {
 

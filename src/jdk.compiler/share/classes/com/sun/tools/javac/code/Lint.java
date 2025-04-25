@@ -60,7 +60,7 @@ import com.sun.tools.javac.util.Options;
  * {@code @SuppressWarnings} annotation; see {@link LintCategory#annotationSuppression}.
  *
  * <p>
- * The meta-categories {@code suppression-option} and {@code suppression} warn about unnecessary
+ * The meta-categories {@code "suppression-option"} and {@code "suppression"} warn about unnecessary
  * {@code -Xlint:-key} flags and {@code @SuppressWarnings} annotations (respectively), i.e., they warn
  * about explicit suppressions that don't actually suppress anything. In order for this calculation
  * to be correct, <i>code that generates a warning must execute even when the corresponding category
